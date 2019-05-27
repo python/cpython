@@ -58,7 +58,7 @@ class BaseStartServer(func_tests.FunctionalTestCaseMixin):
             with self.tcp_client(lambda sock: client(sock, addr)):
                 self.loop.run_until_complete(main_task)
 
-        self.assertEqual(srv.sockets, [])
+        self.assertEqual(srv.sockets, ())
 
         self.assertIsNone(srv._sockets)
         self.assertIsNone(srv._waiters)
@@ -73,7 +73,7 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
     def new_loop(self):
         return asyncio.SelectorEventLoop()
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'no Unix sockets')
+    @support.skip_unless_bind_unix_socket
     def test_start_unix_server_1(self):
         HELLO_MSG = b'1' * 1024 * 5 + b'\n'
         started = threading.Event()
@@ -111,7 +111,7 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
                 with self.unix_client(lambda sock: client(sock, addr)):
                     self.loop.run_until_complete(main_task)
 
-            self.assertEqual(srv.sockets, [])
+            self.assertEqual(srv.sockets, ())
 
             self.assertIsNone(srv._sockets)
             self.assertIsNone(srv._waiters)

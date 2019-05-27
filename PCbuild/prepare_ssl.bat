@@ -23,8 +23,6 @@ setlocal
 if "%PCBUILD%"=="" (set PCBUILD=%~dp0)
 if "%EXTERNALS_DIR%"=="" (set EXTERNALS_DIR=%PCBUILD%\..\externals)
 
-set OUT=
-set SRC=
 set ORG_SETTING=
 
 :CheckOpts
@@ -32,26 +30,19 @@ if "%~1"=="-h" shift & goto Usage
 if "%~1"=="--certificate" (set SigningCertificate=%~2) && shift && shift & goto CheckOpts
 if "%~1"=="-c" (set SigningCertificate=%~2) && shift && shift & goto CheckOpts
 if "%~1"=="--organization" (set ORG_SETTING=--organization "%~2") && shift && shift && goto CheckOpts
-if "%~1"=="-i" (SET SRC=$~2) && shift && shift && goto CheckOpts
-if "%~1"=="--in" (SET SRC=$~2) && shift && shift && goto CheckOpts
-if "%~1"=="-o" (set OUT=$~2) && shift && shift && goto CheckOpts
-if "%~1"=="--out" (set OUT=$~2) && shift && shift && goto CheckOpts
 
 if "%~1"=="" goto Build
 echo Unrecognized option: %1
 goto Usage
 
 :Build
-if not defined SRC (echo --in directory is required & exit /b 1)
-if not defined OUT (echo --out directory is required & exit /b 1)
-
 call "%PCBUILD%\find_msbuild.bat" %MSBUILD%
 if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
 call "%PCBUILD%\find_python.bat" "%PYTHON%"
 if ERRORLEVEL 1 (echo Cannot locate python.exe on PATH or as PYTHON variable & exit /b 3)
 
-call "%PCBUILD%\get_externals.bat" --openssl-src %ORG_SETTING%
+call "%PCBUILD%\get_externals.bat" --openssl-src --no-openssl %ORG_SETTING%
 
 if "%PERL%" == "" where perl > "%TEMP%\perl.loc" 2> nul && set /P PERL= <"%TEMP%\perl.loc" & del "%TEMP%\perl.loc"
 if "%PERL%" == "" (echo Cannot locate perl.exe on PATH or as PERL variable & exit /b 4)
@@ -59,5 +50,9 @@ if "%PERL%" == "" (echo Cannot locate perl.exe on PATH or as PERL variable & exi
 %MSBUILD% "%PCBUILD%\openssl.vcxproj" /p:Configuration=Release /p:Platform=Win32
 if errorlevel 1 exit /b
 %MSBUILD% "%PCBUILD%\openssl.vcxproj" /p:Configuration=Release /p:Platform=x64
+if errorlevel 1 exit /b
+%MSBUILD% "%PCBUILD%\openssl.vcxproj" /p:Configuration=Release /p:Platform=ARM
+if errorlevel 1 exit /b
+%MSBUILD% "%PCBUILD%\openssl.vcxproj" /p:Configuration=Release /p:Platform=ARM64
 if errorlevel 1 exit /b
 

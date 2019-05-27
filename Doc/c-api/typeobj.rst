@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _type-structs:
 
@@ -1558,6 +1558,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :c:member:`~PyTypeObject.tp_init` function is called; if :c:member:`~PyTypeObject.tp_new` returns an instance of a
    subtype of the original type, the subtype's :c:member:`~PyTypeObject.tp_init` is called.
 
+   Returns ``0`` on success, ``-1`` and sets an exception on error.
+
    **Inheritance:**
 
    This field is inherited by subtypes.
@@ -1820,16 +1822,35 @@ objects on the thread which called tp_dealloc will not violate any assumptions
 of the library.
 
 
+.. _heap-types:
+
 Heap Types
 ----------
 
-In addition to defining Python types statically, you can define them
-dynamically (i.e. to the heap) using  :c:func:`PyType_FromSpec` and
+Traditionally, types defined in C code are *static*, that is,
+a static :c:type:`PyTypeObject` structure is defined directly in code
+and initialized using :c:func:`PyType_Ready`.
+
+This results in types that are limited relative to types defined in Python:
+
+* Static types are limited to one base, i.e. they cannot use multiple
+  inheritance.
+* Static type objects (but not necessarily their instances) are immutable.
+  It is not possible to add or modify the type object's attributes from Python.
+* Static type objects are shared across
+  :ref:`sub-interpreters <sub-interpreter-support>`, so they should not
+  include any subinterpreter-specific state.
+
+Also, since *PyTypeObject* is not part of the :ref:`stable ABI <stable>`,
+any extension modules using static types must be compiled for a specific
+Python minor version.
+
+An alternative to static types is *heap-allocated types*, or *heap types*
+for short, which correspond closely to classes created by Python's
+``class`` statement.
+
+This is done by filling a :c:type:`PyType_Spec` structure and calling
 :c:func:`PyType_FromSpecWithBases`.
-
-.. XXX Explain how to use PyType_FromSpec().
-
-.. XXX Document PyType_Spec.
 
 
 .. _number-structs:
@@ -2050,7 +2071,7 @@ Sequence Object Structures
    signature.  It should modify its first operand, and return it.  This slot
    may be left to *NULL*, in this case :c:func:`!PySequence_InPlaceConcat`
    will fall back to :c:func:`PySequence_Concat`.  It is also used by the
-   augmented assignment ``+=``, after trying numeric inplace addition
+   augmented assignment ``+=``, after trying numeric in-place addition
    via the :c:member:`~PyNumberMethods.nb_inplace_add` slot.
 
 .. c:member:: ssizeargfunc PySequenceMethods.sq_inplace_repeat
@@ -2059,7 +2080,7 @@ Sequence Object Structures
    signature.  It should modify its first operand, and return it.  This slot
    may be left to *NULL*, in this case :c:func:`!PySequence_InPlaceRepeat`
    will fall back to :c:func:`PySequence_Repeat`.  It is also used by the
-   augmented assignment ``*=``, after trying numeric inplace multiplication
+   augmented assignment ``*=``, after trying numeric in-place multiplication
    via the :c:member:`~PyNumberMethods.nb_inplace_multiply` slot.
 
 

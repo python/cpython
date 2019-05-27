@@ -767,8 +767,13 @@ class SysModuleTest(unittest.TestCase):
         except ImportError:
             with_pymalloc = support.with_pymalloc()
         else:
-            alloc_name = _testcapi.pymem_getallocatorsname()
-            with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
+            try:
+                alloc_name = _testcapi.pymem_getallocatorsname()
+            except RuntimeError as exc:
+                # "cannot get allocators name" (ex: tracemalloc is used)
+                with_pymalloc = True
+            else:
+                with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
 
         # Some sanity checks
         a = sys.getallocatedblocks()
@@ -869,6 +874,127 @@ class SysModuleTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', '; '.join(code))
         out = out.decode('ascii', 'replace').rstrip()
         self.assertEqual(out, 'mbcs replace')
+
+
+@test.support.cpython_only
+class UnraisableHookTest(unittest.TestCase):
+    def write_unraisable_exc(self, exc, err_msg, obj):
+        import _testcapi
+        import types
+        err_msg2 = f"Exception ignored {err_msg}"
+        try:
+            _testcapi.write_unraisable_exc(exc, err_msg, obj)
+            return types.SimpleNamespace(exc_type=type(exc),
+                                         exc_value=exc,
+                                         exc_traceback=exc.__traceback__,
+                                         err_msg=err_msg2,
+                                         object=obj)
+        finally:
+            # Explicitly break any reference cycle
+            exc = None
+
+    def test_original_unraisablehook(self):
+        for err_msg in (None, "original hook"):
+            with self.subTest(err_msg=err_msg):
+                obj = "an object"
+
+                with test.support.captured_output("stderr") as stderr:
+                    with test.support.swap_attr(sys, 'unraisablehook',
+                                                sys.__unraisablehook__):
+                        self.write_unraisable_exc(ValueError(42), err_msg, obj)
+
+                err = stderr.getvalue()
+                if err_msg is not None:
+                    self.assertIn(f'Exception ignored {err_msg}: {obj!r}\n', err)
+                else:
+                    self.assertIn(f'Exception ignored in: {obj!r}\n', err)
+                self.assertIn('Traceback (most recent call last):\n', err)
+                self.assertIn('ValueError: 42\n', err)
+
+    def test_original_unraisablehook_err(self):
+        # bpo-22836: PyErr_WriteUnraisable() should give sensible reports
+        class BrokenDel:
+            def __del__(self):
+                exc = ValueError("del is broken")
+                # The following line is included in the traceback report:
+                raise exc
+
+        class BrokenStrException(Exception):
+            def __str__(self):
+                raise Exception("str() is broken")
+
+        class BrokenExceptionDel:
+            def __del__(self):
+                exc = BrokenStrException()
+                # The following line is included in the traceback report:
+                raise exc
+
+        for test_class in (BrokenDel, BrokenExceptionDel):
+            with self.subTest(test_class):
+                obj = test_class()
+                with test.support.captured_stderr() as stderr, \
+                     test.support.swap_attr(sys, 'unraisablehook',
+                                            sys.__unraisablehook__):
+                    # Trigger obj.__del__()
+                    del obj
+
+                report = stderr.getvalue()
+                self.assertIn("Exception ignored", report)
+                self.assertIn(test_class.__del__.__qualname__, report)
+                self.assertIn("test_sys.py", report)
+                self.assertIn("raise exc", report)
+                if test_class is BrokenExceptionDel:
+                    self.assertIn("BrokenStrException", report)
+                    self.assertIn("<exception str() failed>", report)
+                else:
+                    self.assertIn("ValueError", report)
+                    self.assertIn("del is broken", report)
+                self.assertTrue(report.endswith("\n"))
+
+
+    def test_original_unraisablehook_wrong_type(self):
+        exc = ValueError(42)
+        with test.support.swap_attr(sys, 'unraisablehook',
+                                    sys.__unraisablehook__):
+            with self.assertRaises(TypeError):
+                sys.unraisablehook(exc)
+
+    def test_custom_unraisablehook(self):
+        hook_args = None
+
+        def hook_func(args):
+            nonlocal hook_args
+            hook_args = args
+
+        obj = object()
+        try:
+            with test.support.swap_attr(sys, 'unraisablehook', hook_func):
+                expected = self.write_unraisable_exc(ValueError(42),
+                                                     "custom hook", obj)
+                for attr in "exc_type exc_value exc_traceback err_msg object".split():
+                    self.assertEqual(getattr(hook_args, attr),
+                                     getattr(expected, attr),
+                                     (hook_args, expected))
+        finally:
+            # expected and hook_args contain an exception: break reference cycle
+            expected = None
+            hook_args = None
+
+    def test_custom_unraisablehook_fail(self):
+        def hook_func(*args):
+            raise Exception("hook_func failed")
+
+        with test.support.captured_output("stderr") as stderr:
+            with test.support.swap_attr(sys, 'unraisablehook', hook_func):
+                self.write_unraisable_exc(ValueError(42),
+                                          "custom hook fail", None)
+
+        err = stderr.getvalue()
+        self.assertIn(f'Exception ignored in sys.unraisablehook: '
+                      f'{hook_func!r}\n',
+                      err)
+        self.assertIn('Traceback (most recent call last):\n', err)
+        self.assertIn('Exception: hook_func failed\n', err)
 
 
 @test.support.cpython_only
@@ -982,8 +1108,10 @@ class SizeofTest(unittest.TestCase):
         check(int.__add__, size('3P2P'))
         # method-wrapper (descriptor object)
         check({}.__iter__, size('2P'))
+        # empty dict
+        check({}, size('nQ2P'))
         # dict
-        check({}, size('nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
+        check({"a": 1}, size('nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
         check(longdict, size('nQ2P') + calcsize('2nP2n') + 16 + (16*2//3)*calcsize('n2P'))
         # dictionary-keyview
@@ -1270,8 +1398,5 @@ class SizeofTest(unittest.TestCase):
         self.assertIsNone(cur.finalizer)
 
 
-def test_main():
-    test.support.run_unittest(SysModuleTest, SizeofTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

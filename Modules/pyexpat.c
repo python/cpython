@@ -226,10 +226,13 @@ string_intern(xmlparseobject *self, const char* str)
         return result;
     if (!self->intern)
         return result;
-    value = PyDict_GetItem(self->intern, result);
+    value = PyDict_GetItemWithError(self->intern, result);
     if (!value) {
-        if (PyDict_SetItem(self->intern, result, result) == 0)
+        if (!PyErr_Occurred() &&
+            PyDict_SetItem(self->intern, result, result) == 0)
+        {
             return result;
+        }
         else {
             Py_DECREF(result);
             return NULL;
@@ -1604,13 +1607,18 @@ static int init_handler_descrs(void)
         hi->getset.set = (setter)xmlparse_handler_setter;
         hi->getset.closure = &handler_info[i];
 
-        PyObject *descr;
-        if (PyDict_GetItemString(Xmlparsetype.tp_dict, hi->name))
-            continue;
-        descr = PyDescr_NewGetSet(&Xmlparsetype, &hi->getset);
-
+        PyObject *descr = PyDescr_NewGetSet(&Xmlparsetype, &hi->getset);
         if (descr == NULL)
             return -1;
+
+        if (PyDict_GetItemWithError(Xmlparsetype.tp_dict, PyDescr_NAME(descr))) {
+            Py_DECREF(descr);
+            continue;
+        }
+        else if (PyErr_Occurred()) {
+            Py_DECREF(descr);
+            return -1;
+        }
         if (PyDict_SetItem(Xmlparsetype.tp_dict, PyDescr_NAME(descr), descr) < 0) {
             Py_DECREF(descr);
             return -1;
@@ -1682,8 +1690,8 @@ MODULE_INITFUNC(void)
         Py_DECREF(m);
         return NULL;
     }
-    errors_module = PyDict_GetItem(d, errmod_name);
-    if (errors_module == NULL) {
+    errors_module = PyDict_GetItemWithError(d, errmod_name);
+    if (errors_module == NULL && !PyErr_Occurred()) {
         errors_module = PyModule_New(MODULE_NAME ".errors");
         if (errors_module != NULL) {
             _PyImport_SetModule(errmod_name, errors_module);
@@ -1692,8 +1700,8 @@ MODULE_INITFUNC(void)
         }
     }
     Py_DECREF(errmod_name);
-    model_module = PyDict_GetItem(d, modelmod_name);
-    if (model_module == NULL) {
+    model_module = PyDict_GetItemWithError(d, modelmod_name);
+    if (model_module == NULL && !PyErr_Occurred()) {
         model_module = PyModule_New(MODULE_NAME ".model");
         if (model_module != NULL) {
             _PyImport_SetModule(modelmod_name, model_module);

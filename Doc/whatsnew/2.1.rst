@@ -52,7 +52,7 @@ The function :func:`g` will always raise a :exc:`NameError` exception, because
 the binding of the name ``g`` isn't in either its local namespace or in the
 module-level namespace.  This isn't much of a problem in practice (how often do
 you recursively define interior functions like this?), but this also made using
-the :keyword:`lambda` statement clumsier, and this was a problem in practice.
+the :keyword:`lambda` expression clumsier, and this was a problem in practice.
 In code which uses :keyword:`lambda` you can often find local variables being
 copied by passing them as the default values of arguments. ::
 
@@ -143,7 +143,7 @@ The syntax uses a ``from...import`` statement using the reserved module name
 While it looks like a normal :keyword:`import` statement, it's not; there are
 strict rules on where such a future statement can be put. They can only be at
 the top of a module, and must precede any Python code or regular
-:keyword:`import` statements.  This is because such statements can affect how
+:keyword:`!import` statements.  This is because such statements can affect how
 the Python bytecode compiler parses code and generates bytecode, so they must
 precede any statement that will result in bytecodes being produced.
 

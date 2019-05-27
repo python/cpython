@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "structmember.h" /* Why is this not included in Python.h? */
 
 /*[clinic input]
@@ -77,8 +78,8 @@ descr_check(PyDescrObject *descr, PyObject *obj, PyObject **pres)
     }
     if (!PyObject_TypeCheck(obj, descr->d_type)) {
         PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' for '%s' objects "
-                     "doesn't apply to '%s' object",
+                     "descriptor '%V' for '%.100s' objects "
+                     "doesn't apply to a '%.100s' object",
                      descr_name((PyDescrObject *)descr), "?",
                      descr->d_type->tp_name,
                      obj->ob_type->tp_name);
@@ -98,7 +99,7 @@ classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
         else {
             /* Wot - no type?! */
             PyErr_Format(PyExc_TypeError,
-                         "descriptor '%V' for type '%s' "
+                         "descriptor '%V' for type '%.100s' "
                          "needs either an object or a type",
                          descr_name((PyDescrObject *)descr), "?",
                          PyDescr_TYPE(descr)->tp_name);
@@ -107,8 +108,8 @@ classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
     }
     if (!PyType_Check(type)) {
         PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' for type '%s' "
-                     "needs a type, not a '%s' as arg 2",
+                     "descriptor '%V' for type '%.100s' "
+                     "needs a type, not a '%.100s' as arg 2",
                      descr_name((PyDescrObject *)descr), "?",
                      PyDescr_TYPE(descr)->tp_name,
                      type->ob_type->tp_name);
@@ -116,8 +117,8 @@ classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
     }
     if (!PyType_IsSubtype((PyTypeObject *)type, PyDescr_TYPE(descr))) {
         PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' for type '%s' "
-                     "doesn't apply to type '%s'",
+                     "descriptor '%V' requires a subtype of '%.100s' "
+                     "but received '%.100s'",
                      descr_name((PyDescrObject *)descr), "?",
                      PyDescr_TYPE(descr)->tp_name,
                      ((PyTypeObject *)type)->tp_name);
@@ -143,6 +144,14 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
 
     if (descr_check((PyDescrObject *)descr, obj, &res))
         return res;
+
+    if (descr->d_member->flags & READ_RESTRICTED) {
+        if (PySys_Audit("object.__getattr__", "Os",
+            obj ? obj : Py_None, descr->d_member->name) < 0) {
+            return NULL;
+        }
+    }
+
     return PyMember_GetOne((char *)obj, descr->d_member);
 }
 
@@ -180,7 +189,7 @@ descr_setcheck(PyDescrObject *descr, PyObject *obj, PyObject *value,
     if (!PyObject_TypeCheck(obj, descr->d_type)) {
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%V' for '%.100s' objects "
-                     "doesn't apply to '%.100s' object",
+                     "doesn't apply to a '%.100s' object",
                      descr_name(descr), "?",
                      descr->d_type->tp_name,
                      obj->ob_type->tp_name);
@@ -238,9 +247,8 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
     if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
                                   (PyObject *)PyDescr_TYPE(descr))) {
         PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' "
-                     "requires a '%.100s' object "
-                     "but received a '%.100s'",
+                     "descriptor '%V' for '%.100s' objects "
+                     "doesn't apply to a '%.100s' object",
                      descr_name((PyDescrObject *)descr), "?",
                      PyDescr_TYPE(descr)->tp_name,
                      self->ob_type->tp_name);
@@ -277,9 +285,8 @@ _PyMethodDescr_FastCallKeywords(PyObject *descrobj,
     if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
                                   (PyObject *)PyDescr_TYPE(descr))) {
         PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' "
-                     "requires a '%.100s' object "
-                     "but received a '%.100s'",
+                     "descriptor '%V' for '%.100s' objects "
+                     "doesn't apply to a '%.100s' object",
                      descr_name((PyDescrObject *)descr), "?",
                      PyDescr_TYPE(descr)->tp_name,
                      self->ob_type->tp_name);
@@ -314,20 +321,18 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
     if (!PyType_Check(self)) {
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%V' requires a type "
-                     "but received a '%.100s'",
+                     "but received a '%.100s' instance",
                      descr_name((PyDescrObject *)descr), "?",
-                     PyDescr_TYPE(descr)->tp_name,
                      self->ob_type->tp_name);
         return NULL;
     }
     if (!PyType_IsSubtype((PyTypeObject *)self, PyDescr_TYPE(descr))) {
         PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' "
-                     "requires a subtype of '%.100s' "
-                     "but received '%.100s",
+                     "descriptor '%V' requires a subtype of '%.100s' "
+                     "but received '%.100s'",
                      descr_name((PyDescrObject *)descr), "?",
                      PyDescr_TYPE(descr)->tp_name,
-                     self->ob_type->tp_name);
+                     ((PyTypeObject*)self)->tp_name);
         return NULL;
     }
 
@@ -345,7 +350,7 @@ wrapperdescr_raw_call(PyWrapperDescrObject *descr, PyObject *self,
     wrapperfunc wrapper = descr->d_base->wrapper;
 
     if (descr->d_base->flags & PyWrapperFlag_KEYWORDS) {
-        wrapperfunc_kwds wk = (wrapperfunc_kwds)wrapper;
+        wrapperfunc_kwds wk = (wrapperfunc_kwds)(void(*)(void))wrapper;
         return (*wk)(self, args, descr->d_wrapped, kwds);
     }
 
@@ -440,7 +445,7 @@ calculate_qualname(PyDescrObject *descr)
 }
 
 static PyObject *
-descr_get_qualname(PyDescrObject *descr)
+descr_get_qualname(PyDescrObject *descr, void *Py_UNUSED(ignored))
 {
     if (descr->d_qualname == NULL)
         descr->d_qualname = calculate_qualname(descr);
@@ -451,14 +456,9 @@ descr_get_qualname(PyDescrObject *descr)
 static PyObject *
 descr_reduce(PyDescrObject *descr, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *builtins;
-    PyObject *getattr;
     _Py_IDENTIFIER(getattr);
-
-    builtins = PyEval_GetBuiltins();
-    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
-    return Py_BuildValue("O(OO)", getattr, PyDescr_TYPE(descr),
-                         PyDescr_NAME(descr));
+    return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_getattr),
+                         PyDescr_TYPE(descr), PyDescr_NAME(descr));
 }
 
 static PyMethodDef descr_methods[] = {
@@ -1029,11 +1029,11 @@ static void
 wrapper_dealloc(wrapperobject *wp)
 {
     PyObject_GC_UnTrack(wp);
-    Py_TRASHCAN_SAFE_BEGIN(wp)
+    Py_TRASHCAN_BEGIN(wp, wrapper_dealloc)
     Py_XDECREF(wp->descr);
     Py_XDECREF(wp->self);
     PyObject_GC_Del(wp);
-    Py_TRASHCAN_SAFE_END(wp)
+    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -1086,13 +1086,9 @@ wrapper_repr(wrapperobject *wp)
 static PyObject *
 wrapper_reduce(wrapperobject *wp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *builtins;
-    PyObject *getattr;
     _Py_IDENTIFIER(getattr);
-
-    builtins = PyEval_GetBuiltins();
-    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
-    return Py_BuildValue("O(OO)", getattr, wp->self, PyDescr_NAME(wp->descr));
+    return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_getattr),
+                         wp->self, PyDescr_NAME(wp->descr));
 }
 
 static PyMethodDef wrapper_methods[] = {
@@ -1106,7 +1102,7 @@ static PyMemberDef wrapper_members[] = {
 };
 
 static PyObject *
-wrapper_objclass(wrapperobject *wp)
+wrapper_objclass(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     PyObject *c = (PyObject *)PyDescr_TYPE(wp->descr);
 
@@ -1115,7 +1111,7 @@ wrapper_objclass(wrapperobject *wp)
 }
 
 static PyObject *
-wrapper_name(wrapperobject *wp)
+wrapper_name(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     const char *s = wp->descr->d_base->name;
 
@@ -1123,21 +1119,21 @@ wrapper_name(wrapperobject *wp)
 }
 
 static PyObject *
-wrapper_doc(wrapperobject *wp, void *closure)
+wrapper_doc(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     return _PyType_GetDocFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
 }
 
 static PyObject *
-wrapper_text_signature(wrapperobject *wp, void *closure)
+wrapper_text_signature(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     return _PyType_GetTextSignatureFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
 }
 
 static PyObject *
-wrapper_qualname(wrapperobject *wp)
+wrapper_qualname(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
-    return descr_get_qualname((PyDescrObject *)wp->descr);
+    return descr_get_qualname((PyDescrObject *)wp->descr, NULL);
 }
 
 static PyGetSetDef wrapper_getsets[] = {

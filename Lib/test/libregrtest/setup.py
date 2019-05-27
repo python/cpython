@@ -10,8 +10,6 @@ try:
 except ImportError:
     gc = None
 
-from test.libregrtest.refleak import warm_caches
-
 
 def setup_tests(ns):
     try:
@@ -79,10 +77,6 @@ def setup_tests(ns):
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
 
-        # Avoid false positives due to various caches
-        # filling slowly with random data:
-        warm_caches()
-
     if ns.memlimit is not None:
         support.set_memlimit(ns.memlimit)
 
@@ -112,6 +106,12 @@ def setup_tests(ns):
                     msvcrt.CrtSetReportMode(m, 0)
 
     support.use_resources = ns.use_resources
+
+    if hasattr(sys, 'addaudithook'):
+        # Add an auditing hook for all tests to ensure PySys_Audit is tested
+        def _test_audit_hook(name, args):
+            pass
+        sys.addaudithook(_test_audit_hook)
 
 
 def replace_stdout():

@@ -80,6 +80,7 @@
 
 
 #include "Python.h"
+#include "pycore_coreconfig.h"
 #include "pycore_pystate.h"
 #include "osdefs.h"
 #include <wchar.h>
@@ -507,8 +508,8 @@ done:
 #endif /* Py_ENABLE_SHARED */
 
 
-static _PyInitError
-get_dll_path(PyCalculatePath *calculate, _PyPathConfig *config)
+wchar_t*
+_Py_GetDLLPath(void)
 {
     wchar_t dll_path[MAXPATHLEN+1];
     memset(dll_path, 0, sizeof(dll_path));
@@ -524,11 +525,7 @@ get_dll_path(PyCalculatePath *calculate, _PyPathConfig *config)
     dll_path[0] = 0;
 #endif
 
-    config->dll_path = _PyMem_RawWcsdup(dll_path);
-    if (config->dll_path == NULL) {
-        return _Py_INIT_NO_MEMORY();
-    }
-    return _Py_INIT_OK();
+    return _PyMem_RawWcsdup(dll_path);
 }
 
 
@@ -536,10 +533,16 @@ static _PyInitError
 get_program_full_path(const _PyCoreConfig *core_config,
                       PyCalculatePath *calculate, _PyPathConfig *config)
 {
+    const wchar_t *pyvenv_launcher;
     wchar_t program_full_path[MAXPATHLEN+1];
     memset(program_full_path, 0, sizeof(program_full_path));
 
-    if (!GetModuleFileNameW(NULL, program_full_path, MAXPATHLEN)) {
+    /* The launcher may need to force the executable path to a
+     * different environment, so override it here. */
+    pyvenv_launcher = _wgetenv(L"__PYVENV_LAUNCHER__");
+    if (pyvenv_launcher && pyvenv_launcher[0]) {
+        wcscpy_s(program_full_path, MAXPATHLEN+1, pyvenv_launcher);
+    } else if (!GetModuleFileNameW(NULL, program_full_path, MAXPATHLEN)) {
         /* GetModuleFileName should never fail when passed NULL */
         return _Py_INIT_ERR("Cannot determine program path");
     }
@@ -569,6 +572,9 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path)
     size_t prefixlen = wcslen(prefix);
 
     wchar_t *buf = (wchar_t*)PyMem_RawMalloc(bufsiz * sizeof(wchar_t));
+    if (buf == NULL) {
+        goto error;
+    }
     buf[0] = '\0';
 
     while (!feof(sp_file)) {
@@ -597,17 +603,22 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path)
 
         DWORD wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, NULL, 0);
         wchar_t *wline = (wchar_t*)PyMem_RawMalloc((wn + 1) * sizeof(wchar_t));
+        if (wline == NULL) {
+            goto error;
+        }
         wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, wline, wn + 1);
         wline[wn] = '\0';
 
         size_t usedsiz = wcslen(buf);
         while (usedsiz + wn + prefixlen + 4 > bufsiz) {
             bufsiz += MAXPATHLEN;
-            buf = (wchar_t*)PyMem_RawRealloc(buf, (bufsiz + 1) * sizeof(wchar_t));
-            if (!buf) {
+            wchar_t *tmp = (wchar_t*)PyMem_RawRealloc(buf, (bufsiz + 1) *
+                                                            sizeof(wchar_t));
+            if (tmp == NULL) {
                 PyMem_RawFree(wline);
                 goto error;
             }
+            buf = tmp;
         }
 
         if (usedsiz) {
@@ -941,9 +952,11 @@ calculate_path_impl(const _PyCoreConfig *core_config,
 {
     _PyInitError err;
 
-    err = get_dll_path(calculate, config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    assert(config->dll_path == NULL);
+
+    config->dll_path = _Py_GetDLLPath();
+    if (config->dll_path == NULL) {
+        return _Py_INIT_NO_MEMORY();
     }
 
     err = get_program_full_path(core_config, calculate, config);

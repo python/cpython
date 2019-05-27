@@ -1029,7 +1029,7 @@ _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
     int offset;
     int i;
     int word;
-    unsigned char* w;
+    const unsigned char* w;
 
     if (code >= 0x110000)
         return 0;

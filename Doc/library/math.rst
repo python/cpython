@@ -10,8 +10,8 @@
 
 --------------
 
-This module is always available.  It provides access to the mathematical
-functions defined by the C standard.
+This module provides access to the mathematical functions defined by the C
+standard.
 
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
@@ -166,6 +166,20 @@ Number-theoretic and representation functions
    Return ``True`` if *x* is a NaN (not a number), and ``False`` otherwise.
 
 
+.. function:: isqrt(n)
+
+   Return the integer square root of the nonnegative integer *n*. This is the
+   floor of the exact square root of *n*, or equivalently the greatest integer
+   *a* such that *a*\ ² |nbsp| ≤ |nbsp| *n*.
+
+   For some applications, it may be more convenient to have the least integer
+   *a* such that *n* |nbsp| ≤ |nbsp| *a*\ ², or in other words the ceiling of
+   the exact square root of *n*. For positive *n*, this can be computed using
+   ``a = 1 + isqrt(n - 1)``.
+
+   .. versionadded:: 3.8
+
+
 .. function:: ldexp(x, i)
 
    Return ``x * (2**i)``.  This is essentially the inverse of function
@@ -176,6 +190,18 @@ Number-theoretic and representation functions
 
    Return the fractional and integer parts of *x*.  Both results carry the sign
    of *x* and are floats.
+
+
+.. function:: prod(iterable, *, start=1)
+
+   Calculate the product of all the elements in the input *iterable*.
+   The default *start* value for the product is ``1``.
+
+   When the iterable is empty, return the start value.  This function is
+   intended specifically for use with numeric values and may reject
+   non-numeric types.
+
+   .. versionadded:: 3.8
 
 
 .. function:: remainder(x, y)
@@ -526,3 +552,6 @@ Constants
 
    Module :mod:`cmath`
       Complex number versions of many of these functions.
+
+.. |nbsp| unicode:: 0xA0
+   :trim:

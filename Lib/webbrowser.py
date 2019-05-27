@@ -86,7 +86,7 @@ def open_new_tab(url):
     return open(url, 2)
 
 
-def _synthesize(browser, *, preferred=True):
+def _synthesize(browser, *, preferred=False):
     """Attempt to synthesize a controller base on existing controllers.
 
     This is useful to create a controller when a user specifies a path to
@@ -563,7 +563,7 @@ def register_standard_browsers():
         # and prepend to _tryorder
         for cmdline in userchoices:
             if cmdline != '':
-                cmd = _synthesize(cmdline, preferred=False)
+                cmd = _synthesize(cmdline, preferred=True)
                 if cmd[1] is None:
                     register(cmdline, None, GenericBrowser(cmdline), preferred=True)
 

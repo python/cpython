@@ -14,7 +14,6 @@ from asyncio.selector_events import BaseSelectorEventLoop
 from asyncio.selector_events import _SelectorTransport
 from asyncio.selector_events import _SelectorSocketTransport
 from asyncio.selector_events import _SelectorDatagramTransport
-from asyncio.selector_events import _set_nodelay
 from test.test_asyncio import utils as test_utils
 
 
@@ -449,10 +448,23 @@ class SelectorTransportTests(test_utils.TestCase):
         tr._force_close = mock.Mock()
         tr._fatal_error(exc)
 
+        m_exc.assert_not_called()
+
+        tr._force_close.assert_called_with(exc)
+
+    @mock.patch('asyncio.log.logger.error')
+    def test_fatal_error_custom_exception(self, m_exc):
+        class MyError(Exception):
+            pass
+        exc = MyError()
+        tr = self.create_transport()
+        tr._force_close = mock.Mock()
+        tr._fatal_error(exc)
+
         m_exc.assert_called_with(
             test_utils.MockPattern(
                 'Fatal error on transport\nprotocol:.*\ntransport:.*'),
-            exc_info=(OSError, MOCK_ANY, MOCK_ANY))
+            exc_info=(MyError, MOCK_ANY, MOCK_ANY))
 
         tr._force_close.assert_called_with(exc)
 
@@ -1066,6 +1078,7 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         self.sock.fileno.return_value = 7
 
     def datagram_transport(self, address=None):
+        self.sock.getpeername.side_effect = None if address else OSError
         transport = _SelectorDatagramTransport(self.loop, self.sock,
                                                self.protocol,
                                                address=address)
@@ -1338,35 +1351,20 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         err = ConnectionRefusedError()
         transport._fatal_error(err)
         self.assertFalse(self.protocol.error_received.called)
+        m_exc.assert_not_called()
+
+    @mock.patch('asyncio.base_events.logger.error')
+    def test_fatal_error_connected_custom_error(self, m_exc):
+        class MyException(Exception):
+            pass
+        transport = self.datagram_transport(address=('0.0.0.0', 1))
+        err = MyException()
+        transport._fatal_error(err)
+        self.assertFalse(self.protocol.error_received.called)
         m_exc.assert_called_with(
             test_utils.MockPattern(
                 'Fatal error on transport\nprotocol:.*\ntransport:.*'),
-            exc_info=(ConnectionRefusedError, MOCK_ANY, MOCK_ANY))
-
-
-class TestSelectorUtils(test_utils.TestCase):
-    def check_set_nodelay(self, sock):
-        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
-        self.assertFalse(opt)
-
-        _set_nodelay(sock)
-
-        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
-        self.assertTrue(opt)
-
-    @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
-                         'need socket.TCP_NODELAY')
-    def test_set_nodelay(self):
-        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                             proto=socket.IPPROTO_TCP)
-        with sock:
-            self.check_set_nodelay(sock)
-
-        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                             proto=socket.IPPROTO_TCP)
-        with sock:
-            sock.setblocking(False)
-            self.check_set_nodelay(sock)
+            exc_info=(MyException, MOCK_ANY, MOCK_ANY))
 
 
 if __name__ == '__main__':

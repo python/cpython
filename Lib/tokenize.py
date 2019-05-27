@@ -32,6 +32,7 @@ import itertools as _itertools
 import re
 import sys
 from token import *
+from token import EXACT_TOKEN_TYPES
 
 cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
@@ -40,55 +41,6 @@ import token
 __all__ = token.__all__ + ["tokenize", "generate_tokens", "detect_encoding",
                            "untokenize", "TokenInfo"]
 del token
-
-EXACT_TOKEN_TYPES = {
-    '(':   LPAR,
-    ')':   RPAR,
-    '[':   LSQB,
-    ']':   RSQB,
-    ':':   COLON,
-    ',':   COMMA,
-    ';':   SEMI,
-    '+':   PLUS,
-    '-':   MINUS,
-    '*':   STAR,
-    '/':   SLASH,
-    '|':   VBAR,
-    '&':   AMPER,
-    '<':   LESS,
-    '>':   GREATER,
-    '=':   EQUAL,
-    '.':   DOT,
-    '%':   PERCENT,
-    '{':   LBRACE,
-    '}':   RBRACE,
-    '==':  EQEQUAL,
-    '!=':  NOTEQUAL,
-    '<=':  LESSEQUAL,
-    '>=':  GREATEREQUAL,
-    '~':   TILDE,
-    '^':   CIRCUMFLEX,
-    '<<':  LEFTSHIFT,
-    '>>':  RIGHTSHIFT,
-    '**':  DOUBLESTAR,
-    '+=':  PLUSEQUAL,
-    '-=':  MINEQUAL,
-    '*=':  STAREQUAL,
-    '/=':  SLASHEQUAL,
-    '%=':  PERCENTEQUAL,
-    '&=':  AMPEREQUAL,
-    '|=':  VBAREQUAL,
-    '^=':  CIRCUMFLEXEQUAL,
-    '<<=': LEFTSHIFTEQUAL,
-    '>>=': RIGHTSHIFTEQUAL,
-    '**=': DOUBLESTAREQUAL,
-    '//':  DOUBLESLASH,
-    '//=': DOUBLESLASHEQUAL,
-    '...': ELLIPSIS,
-    '->':  RARROW,
-    '@':   AT,
-    '@=':  ATEQUAL,
-}
 
 class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
     def __repr__(self):
@@ -130,7 +82,7 @@ Number = group(Imagnumber, Floatnumber, Intnumber)
 # Return the empty string, plus all of the valid string prefixes.
 def _all_string_prefixes():
     # The valid string prefixes. Only contain the lower case versions,
-    #  and don't contain any permuations (include 'fr', but not
+    #  and don't contain any permutations (include 'fr', but not
     #  'rf'). The various permutations will be generated.
     _valid_string_prefixes = ['b', 'r', 'u', 'f', 'br', 'fr']
     # if we add binary f-strings, add: ['fb', 'fbr']
@@ -163,17 +115,11 @@ Triple = group(StringPrefix + "'''", StringPrefix + '"""')
 String = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
                StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
 
-# Because of leftmost-then-longest match semantics, be sure to put the
-# longest operators first (e.g., if = came before ==, == would get
-# recognized as two instances of =).
-Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"!=",
-                 r"//=?", r"->",
-                 r"[+\-*/%&@|^=<>]=?",
-                 r"~")
-
-Bracket = '[][(){}]'
-Special = group(r'\r?\n', r'\.\.\.', r'[:;.,@]')
-Funny = group(Operator, Bracket, Special)
+# Sorting in reverse order puts the long operators before their prefixes.
+# Otherwise if = came before ==, == would get recognized as two instances
+# of =.
+Special = group(*map(re.escape, sorted(EXACT_TOKEN_TYPES, reverse=True)))
+Funny = group(r'\r?\n', Special)
 
 PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken

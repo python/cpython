@@ -10,7 +10,9 @@ sub-second periodicity (contrarily to signal()).
 
 import contextlib
 import faulthandler
+import fcntl
 import os
+import platform
 import select
 import signal
 import socket
@@ -68,8 +70,6 @@ class EINTRBaseTest(unittest.TestCase):
         signal.signal(signal.SIGALRM, self.orig_handler)
         if hasattr(faulthandler, 'cancel_dump_traceback_later'):
             faulthandler.cancel_dump_traceback_later()
-        # make sure that at least one signal has been received
-        self.assertGreater(self.signals, 0)
 
     def subprocess(self, *args, **kw):
         cmd_args = (sys.executable, '-c') + args
@@ -285,12 +285,9 @@ class SocketEINTRTest(EINTRBaseTest):
         self._test_send(lambda sock, data: sock.sendmsg([data]))
 
     def test_accept(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock = socket.create_server((support.HOST, 0))
         self.addCleanup(sock.close)
-
-        sock.bind((support.HOST, 0))
         port = sock.getsockname()[1]
-        sock.listen()
 
         code = '\n'.join((
             'import socket, time',
@@ -350,16 +347,18 @@ class SocketEINTRTest(EINTRBaseTest):
         fp = open(path, 'w')
         fp.close()
 
+    @unittest.skipIf(sys.platform == "darwin",
+                     "hangs under macOS; see bpo-25234, bpo-35363")
     def test_open(self):
         self._test_open("fp = open(path, 'r')\nfp.close()",
                         self.python_open)
 
-    @unittest.skipIf(sys.platform == 'darwin', "hangs under OS X; see issue #25234")
     def os_open(self, path):
         fd = os.open(path, os.O_WRONLY)
         os.close(fd)
 
-    @unittest.skipIf(sys.platform == "darwin", "hangs under OS X; see issue #25234")
+    @unittest.skipIf(sys.platform == "darwin",
+                     "hangs under macOS; see bpo-25234, bpo-35363")
     def test_os_open(self):
         self._test_open("fd = os.open(path, os.O_RDONLY)\nos.close(fd)",
                         self.os_open)
@@ -484,6 +483,47 @@ class SelectEINTRTest(EINTRBaseTest):
         dt = time.monotonic() - t0
         self.stop_alarm()
         self.assertGreaterEqual(dt, self.sleep_time)
+
+
+class FNTLEINTRTest(EINTRBaseTest):
+    def _lock(self, lock_func, lock_name):
+        self.addCleanup(support.unlink, support.TESTFN)
+        code = '\n'.join((
+            "import fcntl, time",
+            "with open('%s', 'wb') as f:" % support.TESTFN,
+            "   fcntl.%s(f, fcntl.LOCK_EX)" % lock_name,
+            "   time.sleep(%s)" % self.sleep_time))
+        start_time = time.monotonic()
+        proc = self.subprocess(code)
+        with kill_on_error(proc):
+            with open(support.TESTFN, 'wb') as f:
+                while True:  # synchronize the subprocess
+                    dt = time.monotonic() - start_time
+                    if dt > 60.0:
+                        raise Exception("failed to sync child in %.1f sec" % dt)
+                    try:
+                        lock_func(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        lock_func(f, fcntl.LOCK_UN)
+                        time.sleep(0.01)
+                    except BlockingIOError:
+                        break
+                # the child locked the file just a moment ago for 'sleep_time' seconds
+                # that means that the lock below will block for 'sleep_time' minus some
+                # potential context switch delay
+                lock_func(f, fcntl.LOCK_EX)
+                dt = time.monotonic() - start_time
+                self.assertGreaterEqual(dt, self.sleep_time)
+                self.stop_alarm()
+            proc.wait()
+
+    # Issue 35633: See https://bugs.python.org/issue35633#msg333662
+    # skip test rather than accept PermissionError from all platforms
+    @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
+    def test_lockf(self):
+        self._lock(fcntl.lockf, "lockf")
+
+    def test_flock(self):
+        self._lock(fcntl.flock, "flock")
 
 
 if __name__ == "__main__":

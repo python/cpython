@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "frameobject.h"
 
 
@@ -113,7 +114,7 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args, Py_ssize_t nar
             return NULL;
         }
 
-        argstuple = _PyStack_AsTuple(args, nargs);
+        argstuple = _PyTuple_FromArray(args, nargs);
         if (argstuple == NULL) {
             return NULL;
         }
@@ -175,7 +176,7 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject *const *stack, Py_ssize_
             return NULL;
         }
 
-        argstuple = _PyStack_AsTuple(stack, nargs);
+        argstuple = _PyTuple_FromArray(stack, nargs);
         if (argstuple == NULL) {
             return NULL;
         }
@@ -319,11 +320,11 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         /* Fast paths */
-        if (argdefs == NULL && co->co_argcount == nargs) {
+        if (argdefs == NULL && co->co_argcount + co->co_posonlyargcount == nargs) {
             return function_code_fastcall(co, args, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
+                 && co->co_argcount + co->co_posonlyargcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             args = _PyTuple_ITEMS(argdefs);
@@ -405,11 +406,11 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject *const *stack,
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
-        if (argdefs == NULL && co->co_argcount == nargs) {
+        if (argdefs == NULL && co->co_argcount + co->co_posonlyargcount== nargs) {
             return function_code_fastcall(co, stack, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
+                 && co->co_argcount + co->co_posonlyargcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             stack = _PyTuple_ITEMS(argdefs);
@@ -507,13 +508,13 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
     case METH_VARARGS | METH_KEYWORDS:
     {
         /* Slow-path: create a temporary tuple for positional arguments */
-        PyObject *argstuple = _PyStack_AsTuple(args, nargs);
+        PyObject *argstuple = _PyTuple_FromArray(args, nargs);
         if (argstuple == NULL) {
             goto exit;
         }
 
         if (flags & METH_KEYWORDS) {
-            result = (*(PyCFunctionWithKeywords)meth) (self, argstuple, kwargs);
+            result = (*(PyCFunctionWithKeywords)(void(*)(void))meth) (self, argstuple, kwargs);
         }
         else {
             result = (*meth) (self, argstuple);
@@ -528,7 +529,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
             goto no_keyword_error;
         }
 
-        result = (*(_PyCFunctionFast)meth) (self, args, nargs);
+        result = (*(_PyCFunctionFast)(void(*)(void))meth) (self, args, nargs);
         break;
     }
 
@@ -536,17 +537,21 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
     {
         PyObject *const *stack;
         PyObject *kwnames;
-        _PyCFunctionFastWithKeywords fastmeth = (_PyCFunctionFastWithKeywords)meth;
+        _PyCFunctionFastWithKeywords fastmeth = (_PyCFunctionFastWithKeywords)(void(*)(void))meth;
 
         if (_PyStack_UnpackDict(args, nargs, kwargs, &stack, &kwnames) < 0) {
             goto exit;
         }
 
         result = (*fastmeth) (self, stack, nargs, kwnames);
-        if (stack != args) {
+        if (kwnames != NULL) {
+            Py_ssize_t i, n = nargs + PyTuple_GET_SIZE(kwnames);
+            for (i = 0; i < n; i++) {
+                Py_DECREF(stack[i]);
+            }
             PyMem_Free((PyObject **)stack);
+            Py_DECREF(kwnames);
         }
-        Py_XDECREF(kwnames);
         break;
     }
 
@@ -649,12 +654,12 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
         if (nkwargs) {
             goto no_keyword_error;
         }
-        result = ((_PyCFunctionFast)meth) (self, args, nargs);
+        result = ((_PyCFunctionFast)(void(*)(void))meth) (self, args, nargs);
         break;
 
     case METH_FASTCALL | METH_KEYWORDS:
         /* Fast-path: avoid temporary dict to pass keyword arguments */
-        result = ((_PyCFunctionFastWithKeywords)meth) (self, args, nargs, kwnames);
+        result = ((_PyCFunctionFastWithKeywords)(void(*)(void))meth) (self, args, nargs, kwnames);
         break;
 
     case METH_VARARGS:
@@ -669,7 +674,7 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
            and a temporary dict for keyword arguments */
         PyObject *argtuple;
 
-        argtuple = _PyStack_AsTuple(args, nargs);
+        argtuple = _PyTuple_FromArray(args, nargs);
         if (argtuple == NULL) {
             goto exit;
         }
@@ -688,7 +693,7 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
                 kwdict = NULL;
             }
 
-            result = (*(PyCFunctionWithKeywords)meth) (self, argtuple, kwdict);
+            result = (*(PyCFunctionWithKeywords)(void(*)(void))meth) (self, argtuple, kwdict);
             Py_XDECREF(kwdict);
         }
         else {
@@ -700,7 +705,7 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
 
     default:
         PyErr_SetString(PyExc_SystemError,
-                        "Bad call flags in _PyCFunction_FastCallKeywords. "
+                        "Bad call flags in _PyMethodDef_RawFastCallKeywords. "
                         "METH_OLDARGS is no longer supported!");
         goto exit;
     }
@@ -751,7 +756,7 @@ cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
             return NULL;
         }
 
-        result = (*(PyCFunctionWithKeywords)meth)(self, args, kwargs);
+        result = (*(PyCFunctionWithKeywords)(void(*)(void))meth)(self, args, kwargs);
 
         Py_LeaveRecursiveCall();
     }
@@ -1154,7 +1159,7 @@ _PyObject_CallMethodId_SizeT(PyObject *obj, _Py_Identifier *name,
 /* --- Call with "..." arguments ---------------------------------- */
 
 static PyObject *
-object_vacall(PyObject *callable, va_list vargs)
+object_vacall(PyObject *base, PyObject *callable, va_list vargs)
 {
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject **stack;
@@ -1169,7 +1174,7 @@ object_vacall(PyObject *callable, va_list vargs)
 
     /* Count the number of arguments */
     va_copy(countva, vargs);
-    nargs = 0;
+    nargs = base ? 1 : 0;
     while (1) {
         PyObject *arg = va_arg(countva, PyObject *);
         if (arg == NULL) {
@@ -1191,7 +1196,12 @@ object_vacall(PyObject *callable, va_list vargs)
         }
     }
 
-    for (i = 0; i < nargs; ++i) {
+    i = 0;
+    if (base) {
+        stack[i++] = base;
+    }
+
+    for (; i < nargs; ++i) {
         stack[i] = va_arg(vargs, PyObject *);
     }
 
@@ -1205,23 +1215,26 @@ object_vacall(PyObject *callable, va_list vargs)
 }
 
 
-PyObject *
-PyObject_CallMethodObjArgs(PyObject *callable, PyObject *name, ...)
-{
-    va_list vargs;
-    PyObject *result;
+/* Private API for the LOAD_METHOD opcode. */
+extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
 
-    if (callable == NULL || name == NULL) {
+PyObject *
+PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
+{
+    if (obj == NULL || name == NULL) {
         return null_error();
     }
 
-    callable = PyObject_GetAttr(callable, name);
+    PyObject *callable = NULL;
+    int is_method = _PyObject_GetMethod(obj, name, &callable);
     if (callable == NULL) {
         return NULL;
     }
+    obj = is_method ? obj : NULL;
 
+    va_list vargs;
     va_start(vargs, name);
-    result = object_vacall(callable, vargs);
+    PyObject *result = object_vacall(obj, callable, vargs);
     va_end(vargs);
 
     Py_DECREF(callable);
@@ -1233,20 +1246,25 @@ PyObject *
 _PyObject_CallMethodIdObjArgs(PyObject *obj,
                               struct _Py_Identifier *name, ...)
 {
-    va_list vargs;
-    PyObject *callable, *result;
-
     if (obj == NULL || name == NULL) {
         return null_error();
     }
 
-    callable = _PyObject_GetAttrId(obj, name);
-    if (callable == NULL) {
+    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+    if (!oname) {
         return NULL;
     }
 
+    PyObject *callable = NULL;
+    int is_method = _PyObject_GetMethod(obj, oname, &callable);
+    if (callable == NULL) {
+        return NULL;
+    }
+    obj = is_method ? obj : NULL;
+
+    va_list vargs;
     va_start(vargs, name);
-    result = object_vacall(callable, vargs);
+    PyObject *result = object_vacall(obj, callable, vargs);
     va_end(vargs);
 
     Py_DECREF(callable);
@@ -1261,7 +1279,7 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
     PyObject *result;
 
     va_start(vargs, callable);
-    result = object_vacall(callable, vargs);
+    result = object_vacall(NULL, callable, vargs);
     va_end(vargs);
 
     return result;
@@ -1269,53 +1287,6 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 
 
 /* --- PyStack functions ------------------------------------------ */
-
-/* Issue #29234: Inlining _PyStack_AsTuple() into callers increases their
-   stack consumption, Disable inlining to optimize the stack consumption. */
-_Py_NO_INLINE PyObject *
-_PyStack_AsTuple(PyObject *const *stack, Py_ssize_t nargs)
-{
-    PyObject *args;
-    Py_ssize_t i;
-
-    args = PyTuple_New(nargs);
-    if (args == NULL) {
-        return NULL;
-    }
-
-    for (i=0; i < nargs; i++) {
-        PyObject *item = stack[i];
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(args, i, item);
-    }
-    return args;
-}
-
-
-PyObject*
-_PyStack_AsTupleSlice(PyObject *const *stack, Py_ssize_t nargs,
-                      Py_ssize_t start, Py_ssize_t end)
-{
-    PyObject *args;
-    Py_ssize_t i;
-
-    assert(0 <= start);
-    assert(end <= nargs);
-    assert(start <= end);
-
-    args = PyTuple_New(end - start);
-    if (args == NULL) {
-        return NULL;
-    }
-
-    for (i=start; i < end; i++) {
-        PyObject *item = stack[i];
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(args, i - start, item);
-    }
-    return args;
-}
-
 
 PyObject *
 _PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
@@ -1380,8 +1351,11 @@ _PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
         return -1;
     }
 
-    /* Copy position arguments (borrowed references) */
-    memcpy(stack, args, nargs * sizeof(stack[0]));
+    /* Copy positional arguments */
+    for (i = 0; i < nargs; i++) {
+        Py_INCREF(args[i]);
+        stack[i] = args[i];
+    }
 
     kwstack = stack + nargs;
     pos = i = 0;
@@ -1390,8 +1364,8 @@ _PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
        called in the performance critical hot code. */
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
         Py_INCREF(key);
+        Py_INCREF(value);
         PyTuple_SET_ITEM(kwnames, i, key);
-        /* The stack contains borrowed references */
         kwstack[i] = value;
         i++;
     }

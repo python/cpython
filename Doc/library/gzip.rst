@@ -59,6 +59,14 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+.. exception:: BadGzipFile
+
+   An exception raised for invalid gzip files.  It inherits :exc:`OSError`.
+   :exc:`EOFError` and :exc:`zlib.error` can also be raised for invalid gzip
+   files.
+
+   .. versionadded:: 3.8
+
 .. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
 
    Constructor for the :class:`GzipFile` class, which simulates most of the

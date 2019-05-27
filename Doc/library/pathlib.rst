@@ -728,7 +728,7 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.glob(pattern)
 
-   Glob the given *pattern* in the directory represented by this path,
+   Glob the given relative *pattern* in the directory represented by this path,
    yielding all matching files (of any kind)::
 
       >>> sorted(Path('.').glob('*.py'))
@@ -976,12 +976,12 @@ call fails (for example because the path doesn't exist).
    is raised.
 
    .. versionadded:: 3.6
-      The *strict* argument.
+      The *strict* argument (pre-3.6 behavior is strict).
 
 .. method:: Path.rglob(pattern)
 
-   This is like calling :meth:`Path.glob` with "``**``" added in front of the
-   given *pattern*::
+   This is like calling :func:`Path.glob` with "``**/``" added in front of the
+   given relative *pattern*::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),
@@ -1048,10 +1048,26 @@ call fails (for example because the path doesn't exist).
    otherwise :exc:`FileExistsError` is raised.
 
 
-.. method:: Path.unlink()
+.. method:: Path.unlink(missing_ok=False)
 
    Remove this file or symbolic link.  If the path points to a directory,
    use :func:`Path.rmdir` instead.
+
+   If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
+   raised if the path does not exist.
+
+   If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
+   ignored (same behavior as the POSIX ``rm -f`` command).
+
+   .. versionchanged:: 3.8
+      The *missing_ok* parameter was added.
+
+
+.. method:: Path.link_to(target)
+
+   Create a hard link pointing to a path named *target*.
+
+   .. versionchanged:: 3.8
 
 
 .. method:: Path.write_bytes(data)

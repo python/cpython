@@ -559,7 +559,7 @@ set_dealloc(PySetObject *so)
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
-    Py_TRASHCAN_SAFE_BEGIN(so)
+    Py_TRASHCAN_BEGIN(so, set_dealloc)
     if (so->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) so);
 
@@ -572,7 +572,7 @@ set_dealloc(PySetObject *so)
     if (so->table != so->smalltable)
         PyMem_DEL(so->table);
     Py_TYPE(so)->tp_free(so);
-    Py_TRASHCAN_SAFE_END(so)
+    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -842,6 +842,7 @@ static PyObject *setiter_iternext(setiterobject *si);
 static PyObject *
 setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     setiterobject tmp = *si;
     Py_XINCREF(tmp.si_set);
@@ -852,7 +853,7 @@ setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");

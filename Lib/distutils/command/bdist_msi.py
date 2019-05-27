@@ -390,18 +390,18 @@ class bdist_msi(Command):
         #     entries for each version as the above code does
         if self.pre_install_script:
             scriptfn = os.path.join(self.bdist_dir, "preinstall.bat")
-            f = open(scriptfn, "w")
-            # The batch file will be executed with [PYTHON], so that %1
-            # is the path to the Python interpreter; %0 will be the path
-            # of the batch file.
-            # rem ="""
-            # %1 %0
-            # exit
-            # """
-            # <actual script>
-            f.write('rem ="""\n%1 %0\nexit\n"""\n')
-            f.write(open(self.pre_install_script).read())
-            f.close()
+            with open(scriptfn, "w") as f:
+                # The batch file will be executed with [PYTHON], so that %1
+                # is the path to the Python interpreter; %0 will be the path
+                # of the batch file.
+                # rem ="""
+                # %1 %0
+                # exit
+                # """
+                # <actual script>
+                f.write('rem ="""\n%1 %0\nexit\n"""\n')
+                with open(self.pre_install_script) as fin:
+                    f.write(fin.read())
             add_data(self.db, "Binary",
                 [("PreInstall", msilib.Binary(scriptfn))
                 ])

@@ -281,9 +281,9 @@ clocks to track time.
    the event loop's internal monotonic clock.
 
 .. note::
-
-   Timeouts (relative *delay* or absolute *when*) should not
-   exceed one day.
+   .. versionchanged:: 3.8
+      In Python 3.7 and earlier timeouts (relative *delay* or absolute *when*)
+      should not exceed one day.  This has been fixed in Python 3.8.
 
 .. seealso::
 
@@ -397,9 +397,27 @@ Opening network connections
      If given, these should all be integers from the corresponding
      :mod:`socket` module constants.
 
+   * *happy_eyeballs_delay*, if given, enables Happy Eyeballs for this
+     connection. It should
+     be a floating-point number representing the amount of time in seconds
+     to wait for a connection attempt to complete, before starting the next
+     attempt in parallel. This is the "Connection Attempt Delay" as defined
+     in :rfc:`8305`. A sensible default value recommended by the RFC is ``0.25``
+     (250 milliseconds).
+
+   * *interleave* controls address reordering when a host name resolves to
+     multiple IP addresses.
+     If ``0`` or unspecified, no reordering is done, and addresses are
+     tried in the order returned by :meth:`getaddrinfo`. If a positive integer
+     is specified, the addresses are interleaved by address family, and the
+     given integer is interpreted as "First Address Family Count" as defined
+     in :rfc:`8305`. The default is ``0`` if *happy_eyeballs_delay* is not
+     specified, and ``1`` if it is.
+
    * *sock*, if given, should be an existing, already connected
      :class:`socket.socket` object to be used by the transport.
-     If *sock* is given, none of *host*, *port*, *family*, *proto*, *flags*
+     If *sock* is given, none of *host*, *port*, *family*, *proto*, *flags*,
+     *happy_eyeballs_delay*, *interleave*
      and *local_addr* should be specified.
 
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
@@ -409,6 +427,10 @@ Opening network connections
    * *ssl_handshake_timeout* is (for a TLS connection) the time in seconds
      to wait for the TLS handshake to complete before aborting the connection.
      ``60.0`` seconds if ``None`` (default).
+
+   .. versionadded:: 3.8
+
+      The *happy_eyeballs_delay* and *interleave* parameters.
 
    .. versionadded:: 3.7
 
@@ -756,7 +778,7 @@ Watching file descriptors
    writing.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
-   <asyncio-pass-keywords>` to *func*.
+   <asyncio-pass-keywords>` to *callback*.
 
 .. method:: loop.remove_writer(fd)
 
@@ -966,11 +988,19 @@ Unix signals
 
    Set *callback* as the handler for the *signum* signal.
 
+   The callback will be invoked by *loop*, along with other queued callbacks
+   and runnable coroutines of that event loop. Unlike signal handlers
+   registered using :func:`signal.signal`, a callback registered with this
+   function is allowed to interact with the event loop.
+
    Raise :exc:`ValueError` if the signal number is invalid or uncatchable.
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
-   <asyncio-pass-keywords>` to *func*.
+   <asyncio-pass-keywords>` to *callback*.
+
+   Like :func:`signal.signal`, this function must be invoked in the main
+   thread.
 
 .. method:: loop.remove_signal_handler(sig)
 
@@ -1386,8 +1416,7 @@ Do not instantiate the class directly.
 
    .. attribute:: sockets
 
-      List of :class:`socket.socket` objects the server is listening on,
-      or ``None`` if the server is closed.
+      List of :class:`socket.socket` objects the server is listening on.
 
       .. versionchanged:: 3.7
          Prior to Python 3.7 ``Server.sockets`` used to return an
@@ -1594,7 +1623,7 @@ using the :meth:`loop.add_signal_handler` method::
     import os
     import signal
 
-    def ask_exit(signame):
+    def ask_exit(signame, loop):
         print("got signal %s: exit" % signame)
         loop.stop()
 
@@ -1604,7 +1633,7 @@ using the :meth:`loop.add_signal_handler` method::
         for signame in {'SIGINT', 'SIGTERM'}:
             loop.add_signal_handler(
                 getattr(signal, signame),
-                functools.partial(ask_exit, signame))
+                functools.partial(ask_exit, signame, loop))
 
         await asyncio.sleep(3600)
 

@@ -622,6 +622,18 @@ class TestLiterals(GrammarTest):
         self.validate(s)
 
 
+class TestPickleableException(unittest.TestCase):
+    def test_ParseError(self):
+        err = ParseError('msg', 2, None, (1, 'context'))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            err2 = pickle.loads(pickle.dumps(err, protocol=proto))
+            self.assertEqual(err.args, err2.args)
+            self.assertEqual(err.msg, err2.msg)
+            self.assertEqual(err.type, err2.type)
+            self.assertEqual(err.value, err2.value)
+            self.assertEqual(err.context, err2.context)
+
+
 def diff_texts(a, b, filename):
     a = a.splitlines()
     b = b.splitlines()

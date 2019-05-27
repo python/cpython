@@ -152,6 +152,8 @@ The :mod:`binascii` module defines the following functions:
    *data* is converted into the corresponding 2-digit hex representation.  The
    returned bytes object is therefore twice as long as the length of *data*.
 
+   Similar functionality (but returning a text string) is also conveniently
+   accessible using the :meth:`bytes.hex` method.
 
 .. function:: a2b_hex(hexstr)
               unhexlify(hexstr)
@@ -161,6 +163,9 @@ The :mod:`binascii` module defines the following functions:
    of hexadecimal digits (which can be upper or lower case), otherwise an
    :exc:`Error` exception is raised.
 
+   Similar functionality (accepting only text string arguments, but more
+   liberal towards whitespace) is also accessible using the
+   :meth:`bytes.fromhex` class method.
 
 .. exception:: Error
 

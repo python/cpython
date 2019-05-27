@@ -5,6 +5,7 @@
 #include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "code.h"
 #include "structmember.h"
 
@@ -53,10 +54,14 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
 
     /* __module__: If module name is in globals, use it.
        Otherwise, use None. */
-    module = PyDict_GetItem(globals, __name__);
+    module = PyDict_GetItemWithError(globals, __name__);
     if (module) {
         Py_INCREF(module);
         op->func_module = module;
+    }
+    else if (PyErr_Occurred()) {
+        Py_DECREF(op);
+        return NULL;
     }
     if (qualname)
         op->func_qualname = qualname;
@@ -243,14 +248,18 @@ static PyMemberDef func_memberlist[] = {
 };
 
 static PyObject *
-func_get_code(PyFunctionObject *op)
+func_get_code(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
+    if (PySys_Audit("object.__getattr__", "Os", op, "__code__") < 0) {
+        return NULL;
+    }
+
     Py_INCREF(op->func_code);
     return op->func_code;
 }
 
 static int
-func_set_code(PyFunctionObject *op, PyObject *value)
+func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
     Py_ssize_t nfree, nclosure;
 
@@ -261,6 +270,12 @@ func_set_code(PyFunctionObject *op, PyObject *value)
                         "__code__ must be set to a code object");
         return -1;
     }
+
+    if (PySys_Audit("object.__setattr__", "OsO",
+                    op, "__code__", value) < 0) {
+        return -1;
+    }
+
     nfree = PyCode_GetNumFree((PyCodeObject *)value);
     nclosure = (op->func_closure == NULL ? 0 :
             PyTuple_GET_SIZE(op->func_closure));
@@ -278,14 +293,14 @@ func_set_code(PyFunctionObject *op, PyObject *value)
 }
 
 static PyObject *
-func_get_name(PyFunctionObject *op)
+func_get_name(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
     Py_INCREF(op->func_name);
     return op->func_name;
 }
 
 static int
-func_set_name(PyFunctionObject *op, PyObject *value)
+func_set_name(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
     /* Not legal to del f.func_name or to set it to anything
      * other than a string object. */
@@ -300,14 +315,14 @@ func_set_name(PyFunctionObject *op, PyObject *value)
 }
 
 static PyObject *
-func_get_qualname(PyFunctionObject *op)
+func_get_qualname(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
     Py_INCREF(op->func_qualname);
     return op->func_qualname;
 }
 
 static int
-func_set_qualname(PyFunctionObject *op, PyObject *value)
+func_set_qualname(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
     /* Not legal to del f.__qualname__ or to set it to anything
      * other than a string object. */
@@ -322,8 +337,11 @@ func_set_qualname(PyFunctionObject *op, PyObject *value)
 }
 
 static PyObject *
-func_get_defaults(PyFunctionObject *op)
+func_get_defaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
+    if (PySys_Audit("object.__getattr__", "Os", op, "__defaults__") < 0) {
+        return NULL;
+    }
     if (op->func_defaults == NULL) {
         Py_RETURN_NONE;
     }
@@ -332,7 +350,7 @@ func_get_defaults(PyFunctionObject *op)
 }
 
 static int
-func_set_defaults(PyFunctionObject *op, PyObject *value)
+func_set_defaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
     /* Legal to del f.func_defaults.
      * Can only set func_defaults to NULL or a tuple. */
@@ -343,14 +361,28 @@ func_set_defaults(PyFunctionObject *op, PyObject *value)
                         "__defaults__ must be set to a tuple object");
         return -1;
     }
+    if (value) {
+        if (PySys_Audit("object.__setattr__", "OsO",
+                        op, "__defaults__", value) < 0) {
+            return -1;
+        }
+    } else if (PySys_Audit("object.__delattr__", "Os",
+                           op, "__defaults__") < 0) {
+        return -1;
+    }
+
     Py_XINCREF(value);
     Py_XSETREF(op->func_defaults, value);
     return 0;
 }
 
 static PyObject *
-func_get_kwdefaults(PyFunctionObject *op)
+func_get_kwdefaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
+    if (PySys_Audit("object.__getattr__", "Os",
+                    op, "__kwdefaults__") < 0) {
+        return NULL;
+    }
     if (op->func_kwdefaults == NULL) {
         Py_RETURN_NONE;
     }
@@ -359,7 +391,7 @@ func_get_kwdefaults(PyFunctionObject *op)
 }
 
 static int
-func_set_kwdefaults(PyFunctionObject *op, PyObject *value)
+func_set_kwdefaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
     if (value == Py_None)
         value = NULL;
@@ -370,13 +402,23 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value)
             "__kwdefaults__ must be set to a dict object");
         return -1;
     }
+    if (value) {
+        if (PySys_Audit("object.__setattr__", "OsO",
+                        op, "__kwdefaults__", value) < 0) {
+            return -1;
+        }
+    } else if (PySys_Audit("object.__delattr__", "Os",
+                           op, "__kwdefaults__") < 0) {
+        return -1;
+    }
+
     Py_XINCREF(value);
     Py_XSETREF(op->func_kwdefaults, value);
     return 0;
 }
 
 static PyObject *
-func_get_annotations(PyFunctionObject *op)
+func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
     if (op->func_annotations == NULL) {
         op->func_annotations = PyDict_New();
@@ -388,7 +430,7 @@ func_get_annotations(PyFunctionObject *op)
 }
 
 static int
-func_set_annotations(PyFunctionObject *op, PyObject *value)
+func_set_annotations(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
     if (value == Py_None)
         value = NULL;
@@ -501,6 +543,9 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
                                     o->ob_type->tp_name);
             }
         }
+    }
+    if (PySys_Audit("function.__new__", "O", code) < 0) {
+        return NULL;
     }
 
     newfunc = (PyFunctionObject *)PyFunction_New((PyObject *)code,
@@ -837,7 +882,8 @@ PyClassMethod_New(PyObject *callable)
              ...
 
    It can be called either on the class (e.g. C.f()) or on an instance
-   (e.g. C().f()); the instance is ignored except for its class.
+   (e.g. C().f()). Both the class and the instance are ignored, and
+   neither is passed implicitly as the first argument to the method.
 
    Static methods in Python are similar to those found in Java or C++.
    For a more advanced concept, see class methods above.
@@ -944,7 +990,8 @@ To declare a static method, use this idiom:\n\
              ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\
-(e.g. C().f()).  The instance is ignored except for its class.\n\
+(e.g. C().f()). Both the class and the instance are ignored, and\n\
+neither is passed implicitly as the first argument to the method.\n\
 \n\
 Static methods in Python are similar to those found in Java or C++.\n\
 For a more advanced concept, see the classmethod builtin.");

@@ -10,15 +10,16 @@ import io
 import os
 import socket
 import warnings
+import signal
 
 from . import base_events
 from . import constants
-from . import events
 from . import futures
 from . import exceptions
 from . import protocols
 from . import sslproto
 from . import transports
+from . import trsock
 from .log import logger
 
 
@@ -89,15 +90,14 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._read_fut.cancel()
             self._read_fut = None
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         if self._sock is not None:
-            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
-                          source=self)
+            _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         try:
-            if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
+            if isinstance(exc, OSError):
                 if self._loop.get_debug():
                     logger.debug("%r: %s", self, message, exc_info=True)
             else:
@@ -111,7 +111,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._force_close(exc)
 
     def _force_close(self, exc):
-        if self._empty_waiter is not None:
+        if self._empty_waiter is not None and not self._empty_waiter.done():
             if exc is None:
                 self._empty_waiter.set_result(None)
             else:
@@ -213,7 +213,9 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
 
         try:
             keep_open = self._protocol.eof_received()
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             self._fatal_error(
                 exc, 'Fatal error: protocol.eof_received() call failed.')
             return
@@ -236,7 +238,9 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         if isinstance(self._protocol, protocols.BufferedProtocol):
             try:
                 protocols._feed_data_to_buffered_proto(self._protocol, data)
-            except Exception as exc:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
                 self._fatal_error(exc,
                                   'Fatal error: protocol.buffer_updated() '
                                   'call failed.')
@@ -445,8 +449,13 @@ class _ProactorSocketTransport(_ProactorReadPipeTransport,
 
     _sendfile_compatible = constants._SendfileMode.TRY_NATIVE
 
+    def __init__(self, loop, sock, protocol, waiter=None,
+                 extra=None, server=None):
+        super().__init__(loop, sock, protocol, waiter, extra, server)
+        base_events._set_nodelay(sock)
+
     def _set_extra(self, sock):
-        self._extra['socket'] = sock
+        self._extra['socket'] = trsock.TransportSocket(sock)
 
         try:
             self._extra['sockname'] = sock.getsockname()
@@ -485,6 +494,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._accept_futures = {}   # socket file descriptor => Future
         proactor.set_loop(self)
         self._make_self_pipe()
+        self_no = self._csock.fileno()
+        signal.set_wakeup_fd(self_no)
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
                                extra=None, server=None):
@@ -525,6 +536,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         if self.is_closed():
             return
 
+        signal.set_wakeup_fd(-1)
         # Call these methods before closing the event loop (before calling
         # BaseEventLoop.close), because they can schedule callbacks with
         # call_soon(), which is forbidden when the event loop is closed.
@@ -609,7 +621,6 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._ssock.setblocking(False)
         self._csock.setblocking(False)
         self._internal_fds += 1
-        self.call_soon(self._loop_self_reading)
 
     def _loop_self_reading(self, f=None):
         try:
@@ -619,7 +630,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         except exceptions.CancelledError:
             # _close_self_pipe() has been called, stop waiting for data
             return
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             self.call_exception_handler({
                 'message': 'Error on reading from the event loop self pipe',
                 'exception': exc,
@@ -630,7 +643,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             f.add_done_callback(self._loop_self_reading)
 
     def _write_to_self(self):
-        self._csock.send(b'\0')
+        try:
+            self._csock.send(b'\0')
+        except OSError:
+            if self._debug:
+                logger.debug("Fail to write a null byte into the "
+                             "self-pipe socket",
+                             exc_info=True)
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
@@ -661,7 +680,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                     self.call_exception_handler({
                         'message': 'Accept failed on a socket',
                         'exception': exc,
-                        'socket': sock,
+                        'socket': trsock.TransportSocket(sock),
                     })
                     sock.close()
                 elif self._debug:

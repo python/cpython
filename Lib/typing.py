@@ -35,7 +35,9 @@ __all__ = [
     'Any',
     'Callable',
     'ClassVar',
+    'Final',
     'Generic',
+    'Literal',
     'Optional',
     'Tuple',
     'Type',
@@ -74,6 +76,7 @@ __all__ = [
     'SupportsBytes',
     'SupportsComplex',
     'SupportsFloat',
+    'SupportsIndex',
     'SupportsInt',
     'SupportsRound',
 
@@ -86,11 +89,13 @@ __all__ = [
     'Set',
     'FrozenSet',
     'NamedTuple',  # Not really a type.
+    'TypedDict',  # Not really a type.
     'Generator',
 
     # One-off things.
     'AnyStr',
     'cast',
+    'final',
     'get_type_hints',
     'NewType',
     'no_type_check',
@@ -120,7 +125,7 @@ def _type_check(arg, msg, is_argument=True):
     """
     invalid_generic_forms = (Generic, _Protocol)
     if is_argument:
-        invalid_generic_forms = invalid_generic_forms + (ClassVar, )
+        invalid_generic_forms = invalid_generic_forms + (ClassVar, Final)
 
     if arg is None:
         return type(None)
@@ -335,8 +340,8 @@ class _SpecialForm(_Final, _Immutable, _root=True):
 
     @_tp_cache
     def __getitem__(self, parameters):
-        if self._name == 'ClassVar':
-            item = _type_check(parameters, 'ClassVar accepts only single type.')
+        if self._name in ('ClassVar', 'Final'):
+            item = _type_check(parameters, f'{self._name} accepts only single type.')
             return _GenericAlias(self, (item,))
         if self._name == 'Union':
             if parameters == ():
@@ -352,6 +357,10 @@ class _SpecialForm(_Final, _Immutable, _root=True):
         if self._name == 'Optional':
             arg = _type_check(parameters, "Optional[t] requires a single type.")
             return Union[arg, type(None)]
+        if self._name == 'Literal':
+            # There is no '_type_check' call because arguments to Literal[...] are
+            # values, not types.
+            return _GenericAlias(self, parameters)
         raise TypeError(f"{self} is not subscriptable")
 
 
@@ -397,6 +406,24 @@ ClassVar = _SpecialForm('ClassVar', doc=
     be used with isinstance() or issubclass().
     """)
 
+Final = _SpecialForm('Final', doc=
+    """Special typing construct to indicate final names to type checkers.
+
+    A final name cannot be re-assigned or overridden in a subclass.
+    For example:
+
+      MAX_SIZE: Final = 9000
+      MAX_SIZE += 1  # Error reported by type checker
+
+      class Connection:
+          TIMEOUT: Final[int] = 10
+
+      class FastConnector(Connection):
+          TIMEOUT = 1  # Error reported by type checker
+
+    There is no runtime checking of these properties.
+    """)
+
 Union = _SpecialForm('Union', doc=
     """Union type; Union[X, Y] means either X or Y.
 
@@ -428,6 +455,28 @@ Optional = _SpecialForm('Optional', doc=
     """Optional type.
 
     Optional[X] is equivalent to Union[X, None].
+    """)
+
+Literal = _SpecialForm('Literal', doc=
+    """Special typing form to define literal types (a.k.a. value types).
+
+    This form can be used to indicate to type checkers that the corresponding
+    variable or function parameter has a value equivalent to the provided
+    literal (or one of several literals):
+
+      def validate_simple(data: Any) -> Literal[True]:  # always returns True
+          ...
+
+      MODE = Literal['r', 'rb', 'w', 'wb']
+      def open_helper(file: str, mode: MODE) -> str:
+          ...
+
+      open_helper('/some/path', 'r')  # Passes type check
+      open_helper('/other/path', 'typo')  # Error in type checker
+
+   Literal[...] cannot be subclassed. At runtime, an arbitrary value
+   is allowed as type argument to Literal[...], but type checkers may
+   impose restrictions.
     """)
 
 
@@ -1084,6 +1133,32 @@ def overload(func):
     return _overload_dummy
 
 
+def final(f):
+    """A decorator to indicate final methods and final classes.
+
+    Use this decorator to indicate to type checkers that the decorated
+    method cannot be overridden, and decorated class cannot be subclassed.
+    For example:
+
+      class Base:
+          @final
+          def done(self) -> None:
+              ...
+      class Sub(Base):
+          def done(self) -> None:  # Error reported by type checker
+                ...
+
+      @final
+      class Leaf:
+          ...
+      class Other(Leaf):  # Error reported by type checker
+          ...
+
+    There is no runtime checking of these properties.
+    """
+    return f
+
+
 class _ProtocolMeta(type):
     """Internal metaclass for _Protocol.
 
@@ -1241,6 +1316,7 @@ ContextManager = _alias(contextlib.AbstractContextManager, T_co)
 AsyncContextManager = _alias(contextlib.AbstractAsyncContextManager, T_co)
 Dict = _alias(dict, (KT, VT), inst=False)
 DefaultDict = _alias(collections.defaultdict, (KT, VT))
+OrderedDict = _alias(collections.OrderedDict, (KT, VT))
 Counter = _alias(collections.Counter, T)
 ChainMap = _alias(collections.ChainMap, (KT, VT))
 Generator = _alias(collections.abc.Generator, (T_co, T_contra, V_co))
@@ -1303,6 +1379,14 @@ class SupportsBytes(_Protocol):
         pass
 
 
+class SupportsIndex(_Protocol):
+    __slots__ = ()
+
+    @abstractmethod
+    def __index__(self) -> int:
+        pass
+
+
 class SupportsAbs(_Protocol[T_co]):
     __slots__ = ()
 
@@ -1324,8 +1408,8 @@ def _make_nmtuple(name, types):
     types = [(n, _type_check(t, msg)) for n, t in types]
     nm_tpl = collections.namedtuple(name, [n for n, t in types])
     # Prior to PEP 526, only _field_types attribute was assigned.
-    # Now, both __annotations__ and _field_types are used to maintain compatibility.
-    nm_tpl.__annotations__ = nm_tpl._field_types = collections.OrderedDict(types)
+    # Now __annotations__ are used and _field_types is deprecated (remove in 3.9)
+    nm_tpl.__annotations__ = nm_tpl._field_types = dict(types)
     try:
         nm_tpl.__module__ = sys._getframe(2).f_globals.get('__name__', '__main__')
     except (AttributeError, ValueError):
@@ -1360,7 +1444,7 @@ class NamedTupleMeta(type):
                                 "follow default field(s) {default_names}"
                                 .format(field_name=field_name,
                                         default_names=', '.join(defaults_dict.keys())))
-        nm_tpl.__new__.__annotations__ = collections.OrderedDict(types)
+        nm_tpl.__new__.__annotations__ = dict(types)
         nm_tpl.__new__.__defaults__ = tuple(defaults)
         nm_tpl._field_defaults = defaults_dict
         # update from user namespace without overriding special namedtuple attributes
@@ -1385,12 +1469,10 @@ class NamedTuple(metaclass=NamedTupleMeta):
 
         Employee = collections.namedtuple('Employee', ['name', 'id'])
 
-    The resulting class has extra __annotations__ and _field_types
-    attributes, giving an ordered dict mapping field names to types.
-    __annotations__ should be preferred, while _field_types
-    is kept to maintain pre PEP 526 compatibility. (The field names
-    are in the _fields attribute, which is part of the namedtuple
-    API.) Alternative equivalent keyword syntax is also accepted::
+    The resulting class has an extra __annotations__ attribute, giving a
+    dict that maps field names to types.  (The field names are also in
+    the _fields attribute, which is part of the namedtuple API.)
+    Alternative equivalent keyword syntax is also accepted::
 
         Employee = NamedTuple('Employee', name=str, id=int)
 
@@ -1407,6 +1489,89 @@ class NamedTuple(metaclass=NamedTupleMeta):
             raise TypeError("Either list of fields or keywords"
                             " can be provided to NamedTuple, not both")
         return _make_nmtuple(typename, fields)
+
+
+def _dict_new(cls, *args, **kwargs):
+    return dict(*args, **kwargs)
+
+
+def _typeddict_new(cls, _typename, _fields=None, **kwargs):
+    total = kwargs.pop('total', True)
+    if _fields is None:
+        _fields = kwargs
+    elif kwargs:
+        raise TypeError("TypedDict takes either a dict or keyword arguments,"
+                        " but not both")
+
+    ns = {'__annotations__': dict(_fields), '__total__': total}
+    try:
+        # Setting correct module is necessary to make typed dict classes pickleable.
+        ns['__module__'] = sys._getframe(1).f_globals.get('__name__', '__main__')
+    except (AttributeError, ValueError):
+        pass
+
+    return _TypedDictMeta(_typename, (), ns)
+
+
+def _check_fails(cls, other):
+    # Typed dicts are only for static structural subtyping.
+    raise TypeError('TypedDict does not support instance and class checks')
+
+
+class _TypedDictMeta(type):
+    def __new__(cls, name, bases, ns, total=True):
+        """Create new typed dict class object.
+
+        This method is called directly when TypedDict is subclassed,
+        or via _typeddict_new when TypedDict is instantiated. This way
+        TypedDict supports all three syntax forms described in its docstring.
+        Subclasses and instances of TypedDict return actual dictionaries
+        via _dict_new.
+        """
+        ns['__new__'] = _typeddict_new if name == 'TypedDict' else _dict_new
+        tp_dict = super(_TypedDictMeta, cls).__new__(cls, name, (dict,), ns)
+
+        anns = ns.get('__annotations__', {})
+        msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
+        anns = {n: _type_check(tp, msg) for n, tp in anns.items()}
+        for base in bases:
+            anns.update(base.__dict__.get('__annotations__', {}))
+        tp_dict.__annotations__ = anns
+        if not hasattr(tp_dict, '__total__'):
+            tp_dict.__total__ = total
+        return tp_dict
+
+    __instancecheck__ = __subclasscheck__ = _check_fails
+
+
+class TypedDict(dict, metaclass=_TypedDictMeta):
+    """A simple typed namespace. At runtime it is equivalent to a plain dict.
+
+    TypedDict creates a dictionary type that expects all of its
+    instances to have a certain set of keys, where each key is
+    associated with a value of a consistent type. This expectation
+    is not checked at runtime but is only enforced by type checkers.
+    Usage::
+
+        class Point2D(TypedDict):
+            x: int
+            y: int
+            label: str
+
+        a: Point2D = {'x': 1, 'y': 2, 'label': 'good'}  # OK
+        b: Point2D = {'z': 3, 'label': 'bad'}           # Fails type check
+
+        assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
+
+    The type info can be accessed via Point2D.__annotations__. TypedDict
+    supports two additional equivalent forms::
+
+        Point2D = TypedDict('Point2D', x=int, y=int, label=str)
+        Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+    The class syntax is only supported in Python 3.6+, while two other
+    syntax forms work for Python 2.7 and 3.2+
+    """
 
 
 def NewType(name, tp):

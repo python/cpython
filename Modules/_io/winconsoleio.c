@@ -725,7 +725,7 @@ readinto(winconsoleio *self, char *buf, Py_ssize_t len)
 
     if (u8n) {
         PyErr_Format(PyExc_SystemError,
-            "Buffer had room for %d bytes but %d bytes required",
+            "Buffer had room for %zd bytes but %u bytes required",
             len, u8n);
         return -1;
     }
@@ -816,11 +816,13 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
             }
             bufsize = newsize;
 
-            buf = PyMem_Realloc(buf, (bufsize + 1) * sizeof(wchar_t));
-            if (!buf) {
+            wchar_t *tmp = PyMem_Realloc(buf,
+                                         (bufsize + 1) * sizeof(wchar_t));
+            if (tmp == NULL) {
                 PyMem_Free(buf);
                 return NULL;
             }
+            buf = tmp;
         }
 
         subbuf = read_console_w(self->handle, bufsize - len, &n);

@@ -1,6 +1,10 @@
 import os
+import signal
 import socket
 import sys
+import subprocess
+import time
+import threading
 import unittest
 from unittest import mock
 
@@ -8,11 +12,13 @@ if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
 
 import _overlapped
+import _testcapi
 import _winapi
 
 import asyncio
 from asyncio import windows_events
 from test.test_asyncio import utils as test_utils
+from test.support.script_helper import spawn_python
 
 
 def tearDownModule():
@@ -31,6 +37,27 @@ class UpperProto(asyncio.Protocol):
         if b'\n' in data:
             self.trans.write(b''.join(self.buf).upper())
             self.trans.close()
+
+
+class ProactorLoopCtrlC(test_utils.TestCase):
+
+    def test_ctrl_c(self):
+
+        def SIGINT_after_delay():
+            time.sleep(1)
+            signal.raise_signal(signal.SIGINT)
+
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        l = asyncio.get_event_loop()
+        try:
+            t = threading.Thread(target=SIGINT_after_delay)
+            t.start()
+            l.run_forever()
+            self.fail("should not fall through 'run_forever'")
+        except KeyboardInterrupt:
+            pass
+        finally:
+            l.close()
 
 
 class ProactorTests(test_utils.TestCase):
@@ -73,9 +100,11 @@ class ProactorTests(test_utils.TestCase):
 
         clients = []
         for i in range(5):
-            stream_reader = asyncio.StreamReader(loop=self.loop)
+            stream_reader = asyncio.StreamReader(loop=self.loop,
+                                                 _asyncio_internal=True)
             protocol = asyncio.StreamReaderProtocol(stream_reader,
-                                                    loop=self.loop)
+                                                    loop=self.loop,
+                                                    _asyncio_internal=True)
             trans, proto = await self.loop.create_pipe_connection(
                 lambda: protocol, ADDRESS)
             self.assertIsInstance(trans, asyncio.Transport)
