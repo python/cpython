@@ -298,7 +298,11 @@ always available.
    before the program exits.  The handling of such top-level exceptions can be
    customized by assigning another three-argument function to ``sys.excepthook``.
 
-   See also :func:`unraisablehook` which handles unraisable exceptions.
+   .. seealso::
+
+      The :func:`sys.unraisablehook` function handles unraisable exceptions
+      and the :func:`threading.excepthook` function handles exception raised
+      by :func:`threading.Thread.run`.
 
 
 .. data:: __breakpointhook__
