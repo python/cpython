@@ -708,11 +708,54 @@ mmap__sizeof__method(mmap_object *self, void *unused)
 }
 #endif
 
+#ifdef HAVE_MADVISE
+static PyObject *
+mmap_madvise_method(mmap_object *self, PyObject *args)
+{
+    int option;
+    Py_ssize_t start = 0, length;
+
+    CHECK_VALID(NULL);
+    length = self->size;
+
+    if (!PyArg_ParseTuple(args, "i|nn:madvise", &option, &start, &length)) {
+        return NULL;
+    }
+
+    if (start < 0 || start >= self->size) {
+        PyErr_SetString(PyExc_ValueError, "madvise start out of bounds");
+        return NULL;
+    }
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError, "madvise length invalid");
+        return NULL;
+    }
+    if (PY_SSIZE_T_MAX - start < length) {
+        PyErr_SetString(PyExc_OverflowError, "madvise length too large");
+        return NULL;
+    }
+
+    if (start + length > self->size) {
+        length = self->size - start;
+    }
+
+    if (madvise(self->data + start, length, option) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+#endif // HAVE_MADVISE
+
 static struct PyMethodDef mmap_object_methods[] = {
     {"close",           (PyCFunction) mmap_close_method,        METH_NOARGS},
     {"find",            (PyCFunction) mmap_find_method,         METH_VARARGS},
     {"rfind",           (PyCFunction) mmap_rfind_method,        METH_VARARGS},
     {"flush",           (PyCFunction) mmap_flush_method,        METH_VARARGS},
+#ifdef HAVE_MADVISE
+    {"madvise",         (PyCFunction) mmap_madvise_method,      METH_VARARGS},
+#endif
     {"move",            (PyCFunction) mmap_move_method,         METH_VARARGS},
     {"read",            (PyCFunction) mmap_read_method,         METH_VARARGS},
     {"read_byte",       (PyCFunction) mmap_read_byte_method,    METH_NOARGS},
@@ -1494,5 +1537,80 @@ PyInit_mmap(void)
     setint(dict, "ACCESS_READ", ACCESS_READ);
     setint(dict, "ACCESS_WRITE", ACCESS_WRITE);
     setint(dict, "ACCESS_COPY", ACCESS_COPY);
+
+#ifdef HAVE_MADVISE
+    // Conventional advice values
+#ifdef MADV_NORMAL
+    setint(dict, "MADV_NORMAL", MADV_NORMAL);
+#endif
+#ifdef MADV_RANDOM
+    setint(dict, "MADV_RANDOM", MADV_RANDOM);
+#endif
+#ifdef MADV_SEQUENTIAL
+    setint(dict, "MADV_SEQUENTIAL", MADV_SEQUENTIAL);
+#endif
+#ifdef MADV_WILLNEED
+    setint(dict, "MADV_WILLNEED", MADV_WILLNEED);
+#endif
+#ifdef MADV_DONTNEED
+    setint(dict, "MADV_DONTNEED", MADV_DONTNEED);
+#endif
+
+    // Linux-specific advice values
+#ifdef MADV_REMOVE
+    setint(dict, "MADV_REMOVE", MADV_REMOVE);
+#endif
+#ifdef MADV_DONTFORK
+    setint(dict, "MADV_DONTFORK", MADV_DONTFORK);
+#endif
+#ifdef MADV_DOFORK
+    setint(dict, "MADV_DOFORK", MADV_DOFORK);
+#endif
+#ifdef MADV_HWPOISON
+    setint(dict, "MADV_HWPOISON", MADV_HWPOISON);
+#endif
+#ifdef MADV_MERGEABLE
+    setint(dict, "MADV_MERGEABLE", MADV_MERGEABLE);
+#endif
+#ifdef MADV_UNMERGEABLE
+    setint(dict, "MADV_UNMERGEABLE", MADV_UNMERGEABLE);
+#endif
+#ifdef MADV_SOFT_OFFLINE
+    setint(dict, "MADV_SOFT_OFFLINE", MADV_SOFT_OFFLINE);
+#endif
+#ifdef MADV_HUGEPAGE
+    setint(dict, "MADV_HUGEPAGE", MADV_HUGEPAGE);
+#endif
+#ifdef MADV_NOHUGEPAGE
+    setint(dict, "MADV_NOHUGEPAGE", MADV_NOHUGEPAGE);
+#endif
+#ifdef MADV_DONTDUMP
+    setint(dict, "MADV_DONTDUMP", MADV_DONTDUMP);
+#endif
+#ifdef MADV_DODUMP
+    setint(dict, "MADV_DODUMP", MADV_DODUMP);
+#endif
+#ifdef MADV_FREE // (Also present on FreeBSD and macOS.)
+    setint(dict, "MADV_FREE", MADV_FREE);
+#endif
+
+    // FreeBSD-specific
+#ifdef MADV_NOSYNC
+    setint(dict, "MADV_NOSYNC", MADV_NOSYNC);
+#endif
+#ifdef MADV_AUTOSYNC
+    setint(dict, "MADV_AUTOSYNC", MADV_AUTOSYNC);
+#endif
+#ifdef MADV_NOCORE
+    setint(dict, "MADV_NOCORE", MADV_NOCORE);
+#endif
+#ifdef MADV_CORE
+    setint(dict, "MADV_CORE", MADV_CORE);
+#endif
+#ifdef MADV_PROTECT
+    setint(dict, "MADV_PROTECT", MADV_PROTECT);
+#endif
+#endif // HAVE_MADVISE
+
     return module;
 }

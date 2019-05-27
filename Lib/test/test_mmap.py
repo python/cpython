@@ -739,6 +739,25 @@ class MmapTests(unittest.TestCase):
             # See bpo-34754 for details.
             self.assertRaises(OSError, mm.flush, 1, len(b'python'))
 
+    @unittest.skipUnless(hasattr(mmap.mmap, 'madvise'), 'needs madvise')
+    def test_madvise(self):
+        size = 8192
+        m = mmap.mmap(-1, size)
+
+        with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
+            m.madvise(mmap.MADV_NORMAL, size)
+        with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
+            m.madvise(mmap.MADV_NORMAL, -1)
+        with self.assertRaisesRegex(ValueError, "madvise length invalid"):
+            m.madvise(mmap.MADV_NORMAL, 0, -1)
+        with self.assertRaisesRegex(OverflowError, "madvise length too large"):
+            m.madvise(mmap.MADV_NORMAL, PAGESIZE, sys.maxsize)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE, size), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
+
 
 class LargeMmapTests(unittest.TestCase):
 
