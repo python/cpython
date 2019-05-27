@@ -534,6 +534,8 @@ frame_tp_clear(PyFrameObject *f)
     for (i = slots; --i >= 0; ++fastlocals)
         Py_CLEAR(*fastlocals);
 
+    /* TODO: The fast locals proxy is no longer valid here... */
+
     /* stack */
     if (oldtop != NULL) {
         for (p = f->f_valuestack; p < oldtop; p++)
@@ -955,8 +957,11 @@ add_local_refs(PyObject *map, Py_ssize_t nmap, PyObject *fast_refs)
         PyObject *key = PyTuple_GET_ITEM(map, j);
         PyObject *value = PyLong_FromSsize_t(j);
         assert(PyUnicode_Check(key));
-        if (PyDict_SetItem(fast_refs, key, value) != 0) {
-                return -1;
+        /* Values may be missing if the frame has been cleared */
+        if (value != NULL) {
+            if (PyDict_SetItem(fast_refs, key, value) != 0) {
+                    return -1;
+            }
         }
     }
     return 0;
@@ -974,10 +979,13 @@ add_nonlocal_refs(PyObject *map, Py_ssize_t nmap, PyObject *fast_refs, PyObject 
         PyObject *key = PyTuple_GET_ITEM(map, j);
         PyObject *value = cells[j];
         assert(PyUnicode_Check(key));
-        assert(PyCell_Check(value));
-        assert(PyUnicode_Check(key));
-        if (PyDict_SetItem(fast_refs, key, value) != 0) {
-                return -1;
+        /* Values may be missing if the frame has been cleared */
+        if (value != NULL) {
+            assert(PyCell_Check(value));
+            assert(PyUnicode_Check(key));
+            if (PyDict_SetItem(fast_refs, key, value) != 0) {
+                    return -1;
+            }
         }
     }
     return 0;
@@ -1121,7 +1129,7 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
                 result = -1;
             } else if (offset > max_offset) {
                 PyErr_Format(PyExc_SystemError,
-                             "Fast locals ref (%d) exceeds array bound (%d)",
+                             "Fast locals ref (%z) exceeds array bound (%z)",
                              offset, max_offset);
                 result = -1;
             }
@@ -1228,7 +1236,7 @@ static PyObject *
 _PyFastLocalsProxy_New(PyObject *frame)
 {
     fastlocalsproxyobject *flp;
-    PyObject *mapping;
+    PyObject *mapping, *fast_refs;
 
     if (fastlocalsproxy_check_frame(frame) == -1)
         return NULL;
@@ -1244,7 +1252,14 @@ _PyFastLocalsProxy_New(PyObject *frame)
     flp->mapping = mapping;
     Py_INCREF(frame);
     flp->frame = (PyFrameObject *) frame;
-    flp->fast_refs = _PyFrame_BuildFastRefs(flp->frame);
+    fast_refs = _PyFrame_BuildFastRefs(flp->frame);
+    if (fast_refs == NULL) {
+        Py_DECREF(flp);
+        Py_DECREF(mapping);
+        Py_DECREF(frame);
+        return NULL;
+    }
+    flp->fast_refs = fast_refs;
     _PyObject_GC_TRACK(flp);
     return (PyObject *)flp;
 }
