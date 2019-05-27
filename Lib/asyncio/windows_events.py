@@ -607,7 +607,7 @@ class IocpProactor:
 
             # ConnectPipe() failed with ERROR_PIPE_BUSY: retry later
             delay = min(delay * 2, CONNECT_PIPE_MAX_DELAY)
-            await tasks.sleep(delay, loop=self._loop)
+            await tasks.sleep(delay)
 
         return windows_utils.PipeHandle(handle)
 

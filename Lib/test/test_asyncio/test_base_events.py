@@ -1152,8 +1152,9 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     @unittest.skipUnless(hasattr(socket, 'AF_INET6'), 'no IPv6 support')
     def test_create_server_ipv6(self):
         async def main():
-            srv = await asyncio.start_server(
-                lambda: None, '::1', 0, loop=self.loop)
+            with self.assertWarns(DeprecationWarning):
+                srv = await asyncio.start_server(
+                    lambda: None, '::1', 0, loop=self.loop)
             try:
                 self.assertGreater(len(srv.sockets), 0)
             finally:
