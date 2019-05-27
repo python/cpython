@@ -1246,15 +1246,13 @@ class _OptionalAwait:
     # if not awaited
     # It prevents "coroutine is never awaited" message
 
-    __slot___ = ('_method', '_args', '_kwargs')
+    __slots___ = ('_method',)
 
-    def __init__(self, method, *args, **kwargs):
+    def __init__(self, method):
         self._method = method
-        self._args = args
-        self._kwargs = kwargs
 
     def __await__(self):
-        return self._method(*self._args, *self._kwargs).__await__()
+        return self._method().__await__()
 
 
 class Stream:
