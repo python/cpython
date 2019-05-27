@@ -1205,6 +1205,21 @@ the reduction mechanism:
 
 .. currentmodule:: multiprocessing.reduction
 
+.. class:: AbstractPickler()
+   Abstract base class that can be implemented in order to override specidifc
+   methods of the reduction machinery used by multiprocessing.
+
+   .. method:: dump(obj)
+      Write a pickled representation of obj to the open file.
+
+      Defaults to :meth:`pickle.Pickle.dump`
+
+   .. classmethod:: loads(bytes_object, *, fix_imports=True, encoding="ASCII", errors="strict")
+      Read a pickled object hierarchy from a bytes object and return the reconstituted
+      object hierarchy specified therein.
+
+      Defaults to :func:`pickle.loads`
+
 .. class:: AbstractReducer()
 
    Abstract base class that can be implemented in order to replace the standard
@@ -1231,16 +1246,16 @@ For example, substituting the reducer class to use the :mod:`pickle` protocol
 version 2 to be able to communicate with a Python 2.x programs.::
 
    import multiprocessing
-   from multiprocessing.reduction import AbstractReducer, ForkingPickler
+   from multiprocessing.reduction import AbstractReducer, AbstractPickler
 
-   class ForkingPicklerProtocol2(ForkingPickler):
+   class PicklerProtocol2(AbstractPickler):
        @classmethod
        def dumps(cls, obj, protocol=2):
            return super().dumps(obj, protocol=protocol)
 
    class PickleProtocol2Reducer(AbstractReducer):
        def get_pickler_class(self):
-           return ForkingPicklerProtocol2
+           return PicklerProtocol2
 
    multiprocessing.set_reducer(PickleProtocol2Reducer())
 
