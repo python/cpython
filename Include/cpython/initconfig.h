@@ -401,6 +401,18 @@ typedef struct {
     /* If equal to 0, stop Python initialization before the "main" phase */
     int _init_main;
 
+    /* --- Configuration version 2 (new fields) ------ */
+
+    /* Should the compiler optimize bytecode?
+
+       If equal to 0, disable compiler optimizations and set optimization_level
+       to 0.
+
+       If equal to 1, enable compiler optimizations.
+
+       Set to 0 by -X noopt. */
+    int optimize;
+
 } PyConfig;
 
 PyAPI_FUNC(PyStatus) PyConfig_InitPythonConfig(PyConfig *config);

@@ -512,6 +512,7 @@ class TestSupport(unittest.TestCase):
             ['-O'],
             ['-OO'],
             ['-OOOO'],
+            ['-X', 'noopt'],
         ):
             with self.subTest(opts=opts):
                 self.check_options(opts, 'optim_args_from_interpreter_flags')

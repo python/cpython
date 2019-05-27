@@ -166,10 +166,10 @@ class install_lib(Command):
                 continue
             if self.compile:
                 bytecode_files.append(importlib.util.cache_from_source(
-                    py_file, optimization=''))
+                    py_file, optimization='', noopt=False))
             if self.optimize > 0:
                 bytecode_files.append(importlib.util.cache_from_source(
-                    py_file, optimization=self.optimize))
+                    py_file, optimization=self.optimize, noopt=False))
 
         return bytecode_files
 

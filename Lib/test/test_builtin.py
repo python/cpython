@@ -24,6 +24,7 @@ from itertools import product
 from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType
 from operator import neg
+from test import support
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink,
     maybe_get_event_loop_policy)
@@ -333,6 +334,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, compile, chr(0), 'f', 'exec')
         self.assertRaises(ValueError, compile, str('a = 1'), 'f', 'bad')
 
+    @support.requires_compiler_optimizations
+    def test_compile_optimize(self):
         # test the optimize argument
 
         codestr = '''def f():

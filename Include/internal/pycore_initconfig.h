@@ -135,7 +135,9 @@ extern PyStatus _PyPreConfig_Write(const PyPreConfig *preconfig);
 
 /* --- PyConfig ---------------------------------------------- */
 
-#define _Py_CONFIG_VERSION 1
+/* Version 2: Add optimize field.
+   Version 1: Initial version (Python 3.8.0) */
+#define _Py_CONFIG_VERSION 2
 
 typedef enum {
     /* Py_Initialize() API: backward compatibility with Python 3.6 and 3.7 */

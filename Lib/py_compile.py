@@ -77,7 +77,7 @@ def _get_default_invalidation_mode():
 
 
 def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
-            invalidation_mode=None, quiet=0):
+            invalidation_mode=None, quiet=0, *, noopt=None):
     """Byte-compile one Python source file to Python bytecode.
 
     :param file: The source file name.
@@ -97,6 +97,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
     :param invalidation_mode:
     :param quiet: Return full output with False or 0, errors only with 1,
         and no output with 2.
+    :param noopt: If true, disable compiler optimizations.
 
     :return: Path to the resulting byte compiled file.
 
@@ -127,9 +128,10 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
         if optimize >= 0:
             optimization = optimize if optimize >= 1 else ''
             cfile = importlib.util.cache_from_source(file,
-                                                     optimization=optimization)
+                                                     optimization=optimization,
+                                                     noopt=noopt)
         else:
-            cfile = importlib.util.cache_from_source(file)
+            cfile = importlib.util.cache_from_source(file, noopt=noopt)
     if os.path.islink(cfile):
         msg = ('{} is a symlink and will be changed into a regular file if '
                'import writes a byte-compiled file to it')
@@ -142,7 +144,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
     source_bytes = loader.get_data(file)
     try:
         code = loader.source_to_code(source_bytes, dfile or file,
-                                     _optimize=optimize)
+                                     _optimize=optimize, _noopt=noopt)
     except Exception as err:
         py_exc = PyCompileError(err.__class__, err, dfile or file)
         if quiet < 2:

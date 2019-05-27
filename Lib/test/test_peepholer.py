@@ -1,7 +1,12 @@
 import dis
+import sys
 import unittest
 
 from test.bytecode_helper import BytecodeTestCase
+
+
+if sys.flags.noopt:
+    raise unittest.SkipTest("need compiler optimizations")
 
 
 def count_instr_recursively(f, opname):

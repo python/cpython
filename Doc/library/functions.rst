@@ -227,7 +227,7 @@ are always available.  They are listed here in alphabetical order.
    For more information on class methods, see :ref:`types`.
 
 
-.. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
+.. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1, noopt=None)
 
    Compile the *source* into a code or AST object.  Code objects can be executed
    by :func:`exec` or :func:`eval`.  *source* can either be a normal string, a
@@ -271,6 +271,9 @@ are always available.  They are listed here in alphabetical order.
    ``__debug__`` is true), ``1`` (asserts are removed, ``__debug__`` is false)
    or ``2`` (docstrings are removed too).
 
+   If *noopt* is false, disable compiler optimizations and ignore *optimize*
+   argument. If it is ``None``, use ``sys.flags.noopt`` value.
+
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
    and :exc:`ValueError` if the source contains null bytes.
 
@@ -304,9 +307,12 @@ are always available.  They are listed here in alphabetical order.
       Previously, :exc:`TypeError` was raised when null bytes were encountered
       in *source*.
 
-   .. versionadded:: 3.8
+   .. versionchanged:: 3.8
       ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
       support for top-level ``await``, ``async for``, and ``async with``.
+
+   .. versionachanged:: 3.9
+      New *noopt* optional keyword-only parameter.
 
 
 .. class:: complex([real[, imag]])

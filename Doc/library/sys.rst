@@ -418,6 +418,7 @@ always available.
    :const:`inspect`              :option:`-i`
    :const:`interactive`          :option:`-i`
    :const:`isolated`             :option:`-I`
+   :const:`noopt`                :option:`-X noopt <-X>`
    :const:`optimize`             :option:`-O` or :option:`-OO`
    :const:`dont_write_bytecode`  :option:`-B`
    :const:`no_user_site`         :option:`-s`
@@ -446,6 +447,9 @@ always available.
    .. versionchanged:: 3.7
       Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag
       and ``utf8_mode`` attribute for the new  :option:`-X` ``utf8`` flag.
+
+   .. versionchanged:: 3.9
+      Added ``noopt`` attribute for the new :option:`-X noopt <-X>` option.
 
 
 .. data:: float_info

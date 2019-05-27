@@ -702,6 +702,7 @@ compile as builtin_compile
     optimize: int = -1
     *
     _feature_version as feature_version: int = -1
+    noopt as noopt_obj: object = None
 
 Compile source into a code object that can be executed by exec() or eval().
 
@@ -720,8 +721,8 @@ in addition to any features explicitly specified.
 static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
-                     int optimize, int feature_version)
-/*[clinic end generated code: output=b0c09c84f116d3d7 input=40171fb92c1d580d]*/
+                     int optimize, int feature_version, PyObject *noopt_obj)
+/*[clinic end generated code: output=0fac52056ff4025d input=5c58fcfcf38274ac]*/
 {
     PyObject *source_copy;
     const char *str;
@@ -729,6 +730,27 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     int is_ast;
     int start[] = {Py_file_input, Py_eval_input, Py_single_input, Py_func_type_input};
     PyObject *result;
+    int noopt;
+
+    if (noopt_obj == Py_None) {
+        const PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
+        noopt = !config->optimize;
+    }
+    else {
+        noopt = _PyLong_AsInt(noopt_obj);
+        if (noopt == -1 && PyErr_Occurred()) {
+            goto error;
+        }
+        if (noopt < -1) {
+            PyErr_SetString(PyExc_ValueError,
+                            "compile(): invalid noopt value");
+            goto error;
+        }
+        /* normalize noopt value (ex: noopt=4 becomes noopt=1) */
+        if (noopt > 1) {
+            noopt = 1;
+        }
+    }
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags = flags | PyCF_SOURCE_IS_UTF8;
@@ -803,8 +825,8 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                 PyArena_Free(arena);
                 goto error;
             }
-            result = (PyObject*)PyAST_CompileObject(mod, filename,
-                                                    &cf, optimize, arena);
+            result = (PyObject*)_PyAST_Compile(mod, filename,
+                                               &cf, optimize, arena, noopt);
             PyArena_Free(arena);
         }
         goto finally;
@@ -814,7 +836,8 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (str == NULL)
         goto error;
 
-    result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
+    result = _Py_CompileString(str, filename, start[compile_mode],
+                               &cf, optimize, noopt);
     Py_XDECREF(source_copy);
     goto finally;
 

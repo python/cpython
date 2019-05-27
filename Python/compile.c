@@ -158,7 +158,8 @@ struct compiler {
     PyFutureFeatures *c_future; /* pointer to module's __future__ */
     PyCompilerFlags *c_flags;
 
-    int c_optimize;              /* optimization level */
+    int c_optimize;              /* optimize bytecode? */
+    int c_optimization_level;    /* optimization level */
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
     int c_do_not_emit_bytecode;  /* The compiler won't emit any bytecode
@@ -309,8 +310,8 @@ compiler_init(struct compiler *c)
 }
 
 PyCodeObject *
-PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
-                   int optimize, PyArena *arena)
+_PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
+               int optimization_level, PyArena *arena, int noopt)
 {
     struct compiler c;
     PyCodeObject *co = NULL;
@@ -343,12 +344,25 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_future->ff_features = merged;
     flags->cf_flags = merged;
     c.c_flags = flags;
-    c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
+    if (noopt != -1) {
+        c.c_optimize = !noopt;
+    }
+    else {
+        c.c_optimize = config->optimize;
+    }
+    if (optimization_level != -1) {
+        c.c_optimization_level = optimization_level;
+    }
+    else {
+        c.c_optimization_level = config->optimization_level;
+    }
     c.c_nestlevel = 0;
     c.c_do_not_emit_bytecode = 0;
 
-    if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
-        goto finally;
+    if (c.c_optimize) {
+        if (!_PyAST_Optimize(mod, arena, c.c_optimization_level)) {
+            goto finally;
+        }
     }
 
     c.c_st = PySymtable_BuildObject(mod, filename, c.c_future);
@@ -364,6 +378,13 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     compiler_free(&c);
     assert(co || PyErr_Occurred());
     return co;
+}
+
+PyCodeObject *
+PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
+                   int optimize, PyArena *arena)
+{
+    return _PyAST_Compile(mod, filename, flags, optimize, arena, -1);
 }
 
 PyCodeObject *
@@ -1744,7 +1765,7 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
     if (!asdl_seq_LEN(stmts))
         return 1;
     /* if not -OO mode, set docstring */
-    if (c->c_optimize < 2) {
+    if (c->c_optimization_level < 2) {
         docstring = _PyAST_GetDocString(stmts);
         if (docstring) {
             i = 1;
@@ -2167,7 +2188,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     /* if not -OO mode, add docstring */
-    if (c->c_optimize < 2) {
+    if (c->c_optimization_level < 2) {
         docstring = _PyAST_GetDocString(body);
     }
     if (compiler_add_const(c, docstring ? docstring : Py_None) < 0) {
@@ -2584,13 +2605,16 @@ static int
 compiler_if(struct compiler *c, stmt_ty s)
 {
     basicblock *end, *next;
-    int constant;
     assert(s->kind == If_kind);
     end = compiler_new_block(c);
     if (end == NULL)
         return 0;
 
-    constant = expr_constant(s->v.If.test);
+    int constant = -1;
+    if (c->c_optimize) {
+        constant = expr_constant(s->v.If.test);
+    }
+
     /* constant = 0: "if 0"
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
@@ -2714,7 +2738,11 @@ static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
     basicblock *loop, *orelse, *end, *anchor = NULL;
-    int constant = expr_constant(s->v.While.test);
+
+    int constant = -1;
+    if (c->c_optimize) {
+        constant = expr_constant(s->v.While.test);
+    }
 
     if (constant == 0) {
         BEGIN_DO_NOT_EMIT_BYTECODE
@@ -3212,7 +3240,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     static PyObject *assertion_error = NULL;
     basicblock *end;
 
-    if (c->c_optimize)
+    if (c->c_optimization_level)
         return 1;
     if (assertion_error == NULL) {
         assertion_error = PyUnicode_InternFromString("AssertionError");
@@ -5852,9 +5880,16 @@ makecode(struct compiler *c, struct assembler *a)
     if (flags < 0)
         goto error;
 
-    bytecode = PyCode_Optimize(a->a_bytecode, consts, names, a->a_lnotab);
-    if (!bytecode)
-        goto error;
+    if (c->c_optimize) {
+        bytecode = PyCode_Optimize(a->a_bytecode, consts, names, a->a_lnotab);
+        if (!bytecode) {
+            goto error;
+        }
+    }
+    else {
+        bytecode = a->a_bytecode;
+        Py_INCREF(bytecode);
+    }
 
     tmp = PyList_AsTuple(consts); /* PyCode_New requires a tuple */
     if (!tmp)
@@ -5873,7 +5908,7 @@ makecode(struct compiler *c, struct assembler *a)
         goto error;
     }
     co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
-                                   posonlyargcount, kwonlyargcount, nlocals_int, 
+                                   posonlyargcount, kwonlyargcount, nlocals_int,
                                    maxdepth, flags, bytecode, consts, names,
                                    varnames, freevars, cellvars, c->c_filename,
                                    c->u->u_name, c->u->u_firstlineno, a->a_lnotab);

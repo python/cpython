@@ -627,6 +627,8 @@ static int check_init_parse_argv(int parse_argv)
     wchar_t* argv[] = {
         L"./argv0",
         L"-E",
+        L"-X",
+        L"noopt",
         L"-c",
         L"pass",
         L"arg1",

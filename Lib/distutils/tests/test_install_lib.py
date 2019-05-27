@@ -44,9 +44,11 @@ class InstallLibTestCase(support.TempdirManager,
         f = os.path.join(project_dir, 'foo.py')
         self.write_file(f, '# python file')
         cmd.byte_compile([f])
-        pyc_file = importlib.util.cache_from_source('foo.py', optimization='')
+        pyc_file = importlib.util.cache_from_source('foo.py', optimization='',
+                                                    noopt=False)
         pyc_opt_file = importlib.util.cache_from_source('foo.py',
-                                                    optimization=cmd.optimize)
+                                                    optimization=cmd.optimize,
+                                                    noopt=False)
         self.assertTrue(os.path.exists(pyc_file))
         self.assertTrue(os.path.exists(pyc_opt_file))
 

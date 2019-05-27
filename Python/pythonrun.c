@@ -1184,8 +1184,8 @@ error:
 }
 
 PyObject *
-Py_CompileStringObject(const char *str, PyObject *filename, int start,
-                       PyCompilerFlags *flags, int optimize)
+_Py_CompileString(const char *str, PyObject *filename, int start,
+                  PyCompilerFlags *flags, int optimize, int noopt)
 {
     PyCodeObject *co;
     mod_ty mod;
@@ -1203,9 +1203,16 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
         PyArena_Free(arena);
         return result;
     }
-    co = PyAST_CompileObject(mod, filename, flags, optimize, arena);
+    co = _PyAST_Compile(mod, filename, flags, optimize, arena, noopt);
     PyArena_Free(arena);
     return (PyObject *)co;
+}
+
+PyObject *
+Py_CompileStringObject(const char *str, PyObject *filename, int start,
+                       PyCompilerFlags *flags, int optimize)
+{
+    return _Py_CompileString(str, filename, start, flags, optimize, -1);
 }
 
 PyObject *

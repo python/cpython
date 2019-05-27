@@ -90,6 +90,7 @@ __all__ = [
     "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
     "transient_internet", "BasicTestRunner", "run_unittest", "run_doctest",
     "skip_unless_symlink", "requires_gzip", "requires_bz2", "requires_lzma",
+    "requires_compiler_optimizations",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
@@ -480,6 +481,7 @@ def forget(modname):
         unlink(source + 'c')
         for opt in ('', 1, 2):
             unlink(importlib.util.cache_from_source(source, optimization=opt))
+        unlink(importlib.util.cache_from_source(source, noopt=True))
 
 # Check whether a gui is actually available
 def _is_gui_available():
@@ -816,6 +818,17 @@ requires_gzip = unittest.skipUnless(gzip, 'requires gzip')
 requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
+
+
+def requires_compiler_optimizations(test):
+    """Skip decorator for tests that require compiler optimizations.
+
+    Skip test if sys.flags.noopt is true.
+    """
+    ok = not sys.flags.noopt
+    msg = 'need compiler optimizations'
+    return test if ok else unittest.skip(msg)(test)
+
 
 is_jython = sys.platform.startswith('java')
 

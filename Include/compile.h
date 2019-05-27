@@ -67,6 +67,14 @@ PyAPI_FUNC(PyCodeObject *) PyAST_CompileObject(
     PyCompilerFlags *flags,
     int optimize,
     PyArena *arena);
+PyAPI_FUNC(PyCodeObject *) _PyAST_Compile(
+    struct _mod *mod,
+    PyObject *filename,
+    PyCompilerFlags *flags,
+    int optimization_level,
+    PyArena *arena,
+    int noopt);
+
 PyAPI_FUNC(PyFutureFeatures *) PyFuture_FromAST(
     struct _mod * mod,
     const char *filename        /* decoded from the filesystem encoding */

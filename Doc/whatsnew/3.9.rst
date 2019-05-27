@@ -99,6 +99,10 @@ Other Language Changes
   ignored for empty strings.
   (Contributed by Victor Stinner in :issue:`37388`.)
 
+* Added :option:`-X noopt <-X>` command line to disable compiler optimizations.
+  :mod:`importlib` uses ``.noopt.pyc`` suffix for ``.pyc`` filenames if
+  :data:`sys.flags.noopt` is true.
+  (Contributed by Yury Selivanov and Victor Stinner in :issue:`2506`)
 
 New Modules
 ===========
@@ -108,6 +112,12 @@ New Modules
 
 Improved Modules
 ================
+
+builtins
+--------
+
+The :func:`compile` function gets a new optional keyword-only *noopt* parameter
+to disable compiler optimizations.
 
 threading
 ---------
@@ -131,6 +141,22 @@ To improve consistency with import statements, :func:`importlib.util.resolve_nam
 now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
 import attempts.
 (Contributed by Ngalim Siregar in :issue:`37444`.)
+
+Add a new *noopt* optional keyword-only parameter to
+:func:`importlib.util.cache_from_source` to disable compiler optimizations.
+
+py_compile
+----------
+
+Add a new *noopt* optional keyword-only parameter to :func:`py_compile.compile`
+to disable compiler optimizations.
+
+sys
+---
+
+Add new :data:`sys.flags.noopt` flag for the new :option:`-X noopt <-X>` option
+(disable compiler optimizations).
+(Contributed by Yury Selivanov and Victor Stinner in :issue:`2506`)
 
 Optimizations
 =============
