@@ -13,6 +13,7 @@ mmap = import_module('mmap')
 
 PAGESIZE = mmap.PAGESIZE
 
+
 class MmapTests(unittest.TestCase):
 
     def setUp(self):
@@ -741,7 +742,7 @@ class MmapTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(mmap.mmap, 'madvise'), 'needs madvise')
     def test_madvise(self):
-        size = 8192
+        size = 2 * PAGESIZE
         m = mmap.mmap(-1, size)
 
         with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
