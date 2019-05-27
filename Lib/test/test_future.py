@@ -270,12 +270,6 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("f'{x}'")
         eq("f'{x!r}'")
         eq("f'{x!a}'")
-        eq("f'{x=!r}'")
-        eq("f'{x=:}'")
-        eq("f'{x=:.2f}'")
-        eq("f'{x=!r}'")
-        eq("f'{x=!a}'")
-        eq("f'{x=!s:*^20}'")
         eq('(yield from outside_of_generator)')
         eq('(yield)')
         eq('(yield a + b)')
@@ -289,6 +283,15 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('(((a, b)))', '(a, b)')
         eq("(x:=10)")
         eq("f'{(x:=10):=10}'")
+
+        # f-strings with '=' don't round trip very well, so set the expected
+        # result explicitely.
+        self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
+        self.assertAnnotationEqual("f'{x=:}'", expected="f'x={x:}'")
+        self.assertAnnotationEqual("f'{x=:.2f}'", expected="f'x={x:.2f}'")
+        self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
+        self.assertAnnotationEqual("f'{x=!a}'", expected="f'x={x!a}'")
+        self.assertAnnotationEqual("f'{x=!s:*^20}'", expected="f'x={x!s:*^20}'")
 
 
 if __name__ == "__main__":
