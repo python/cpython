@@ -1112,6 +1112,98 @@ class ThreadingExceptionTests(BaseTestCase):
         # explicitly break the reference cycle to not leak a dangling thread
         thread.exc = None
 
+
+class ThreadRunFail(threading.Thread):
+    def run(self):
+        raise ValueError("run failed")
+
+
+class ExceptHookTests(BaseTestCase):
+    def test_excepthook(self):
+        with support.captured_output("stderr") as stderr:
+            thread = ThreadRunFail(name="excepthook thread")
+            thread.start()
+            thread.join()
+
+        stderr = stderr.getvalue().strip()
+        self.assertIn(f'Exception in thread {thread.name}:\n', stderr)
+        self.assertIn('Traceback (most recent call last):\n', stderr)
+        self.assertIn('  raise ValueError("run failed")', stderr)
+        self.assertIn('ValueError: run failed', stderr)
+
+    @support.cpython_only
+    def test_excepthook_thread_None(self):
+        # threading.excepthook called with thread=None: log the thread
+        # identifier in this case.
+        with support.captured_output("stderr") as stderr:
+            try:
+                raise ValueError("bug")
+            except Exception as exc:
+                args = threading.ExceptHookArgs([*sys.exc_info(), None])
+                threading.excepthook(args)
+
+        stderr = stderr.getvalue().strip()
+        self.assertIn(f'Exception in thread {threading.get_ident()}:\n', stderr)
+        self.assertIn('Traceback (most recent call last):\n', stderr)
+        self.assertIn('  raise ValueError("bug")', stderr)
+        self.assertIn('ValueError: bug', stderr)
+
+    def test_system_exit(self):
+        class ThreadExit(threading.Thread):
+            def run(self):
+                sys.exit(1)
+
+        # threading.excepthook() silently ignores SystemExit
+        with support.captured_output("stderr") as stderr:
+            thread = ThreadExit()
+            thread.start()
+            thread.join()
+
+        self.assertEqual(stderr.getvalue(), '')
+
+    def test_custom_excepthook(self):
+        args = None
+
+        def hook(hook_args):
+            nonlocal args
+            args = hook_args
+
+        try:
+            with support.swap_attr(threading, 'excepthook', hook):
+                thread = ThreadRunFail()
+                thread.start()
+                thread.join()
+
+            self.assertEqual(args.exc_type, ValueError)
+            self.assertEqual(str(args.exc_value), 'run failed')
+            self.assertEqual(args.exc_traceback, args.exc_value.__traceback__)
+            self.assertIs(args.thread, thread)
+        finally:
+            # Break reference cycle
+            args = None
+
+    def test_custom_excepthook_fail(self):
+        def threading_hook(args):
+            raise ValueError("threading_hook failed")
+
+        err_str = None
+
+        def sys_hook(exc_type, exc_value, exc_traceback):
+            nonlocal err_str
+            err_str = str(exc_value)
+
+        with support.swap_attr(threading, 'excepthook', threading_hook), \
+             support.swap_attr(sys, 'excepthook', sys_hook), \
+             support.captured_output('stderr') as stderr:
+            thread = ThreadRunFail()
+            thread.start()
+            thread.join()
+
+        self.assertEqual(stderr.getvalue(),
+                         'Exception in threading.excepthook:\n')
+        self.assertEqual(err_str, 'threading_hook failed')
+
+
 class TimerTests(BaseTestCase):
 
     def setUp(self):
