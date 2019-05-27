@@ -107,7 +107,7 @@ async def _connect(host, port,
 
 def connect_read_pipe(pipe, *, limit=_DEFAULT_LIMIT):
     # Design note:
-    # Don't use decorator approach but exilicit non-async
+    # Don't use decorator approach but explicit non-async
     # function to fail fast and explicitly
     # if passed arguments don't match the function signature
     return _ContextManagerHelper(_connect_read_pipe(pipe, limit))
