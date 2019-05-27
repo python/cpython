@@ -851,7 +851,8 @@ class CLanguage(Language):
                 """ % (nargs, min_pos, max_pos), indent=4)]
             has_optional = False
             for i, p in enumerate(parameters):
-                parsearg = p.converter.parse_arg(argname_fmt % i, i + 1)
+                argnum = repr(p.name) if p.is_keyword_only() else str(i + 1)
+                parsearg = p.converter.parse_arg(argname_fmt % i, argnum)
                 if parsearg is None:
                     #print('Cannot convert %s %r for %s' % (p.converter.__class__.__name__, p.converter.format_unit, p.converter.name), file=sys.stderr)
                     parser_code = None
@@ -927,7 +928,8 @@ class CLanguage(Language):
 
             add_label = None
             for i, p in enumerate(parameters):
-                parsearg = p.converter.parse_arg(argname_fmt % i, i + 1)
+                argnum = repr(p.name) if p.is_keyword_only() else str(i + 1)
+                parsearg = p.converter.parse_arg(argname_fmt % i, argnum)
                 if parsearg is None:
                     #print('Cannot convert %s %r for %s' % (p.converter.__class__.__name__, p.converter.format_unit, p.converter.name), file=sys.stderr)
                     parser_code = None
@@ -2648,7 +2650,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                 typecheck, typename = type_checks[self.subclass_of]
                 return """
                     if (!{typecheck}({argname})) {{{{
-                        _PyArg_BadArgument("{{name}}", {argnum}, "{typename}", {argname});
+                        _PyArg_BadArgument("{{name}}", "{argnum}", "{typename}", {argname});
                         goto exit;
                     }}}}
                     {paramname} = {cast}{argname};
@@ -2657,7 +2659,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                                typecheck=typecheck, typename=typename, cast=cast)
             return """
                 if (!PyObject_TypeCheck({argname}, {subclass_of})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, ({subclass_of})->tp_name, {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", ({subclass_of})->tp_name, {argname});
                     goto exit;
                 }}}}
                 {paramname} = {cast}{argname};
@@ -2747,7 +2749,7 @@ class char_converter(CConverter):
                     {paramname} = PyByteArray_AS_STRING({argname})[0];
                 }}}}
                 else {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, "a byte string of length 1", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "a byte string of length 1", {argname});
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name, argnum=argnum)
@@ -2907,14 +2909,14 @@ class int_converter(CConverter):
         elif self.format_unit == 'C':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, "a unicode character", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "a unicode character", {argname});
                     goto exit;
                 }}}}
                 if (PyUnicode_READY({argname})) {{{{
                     goto exit;
                 }}}}
                 if (PyUnicode_GET_LENGTH({argname}) != 1) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, "a unicode character", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "a unicode character", {argname});
                     goto exit;
                 }}}}
                 {paramname} = PyUnicode_READ_CHAR({argname}, 0);
@@ -2983,7 +2985,7 @@ class unsigned_long_converter(CConverter):
         if self.format_unit == 'k':
             return """
                 if (!PyLong_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, "int", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "int", {argname});
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsUnsignedLongMask({argname});
@@ -3026,7 +3028,7 @@ class unsigned_long_long_converter(CConverter):
         if self.format_unit == 'K':
             return """
                 if (!PyLong_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, "int", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "int", {argname});
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsUnsignedLongLongMask({argname});
@@ -3214,7 +3216,7 @@ class str_converter(CConverter):
         if self.format_unit == 's':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, "str", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "str", {argname});
                     goto exit;
                 }}}}
                 Py_ssize_t {paramname}_length;
@@ -3244,7 +3246,7 @@ class str_converter(CConverter):
                     }}}}
                 }}}}
                 else {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, "str or None", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "str or None", {argname});
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name, argnum=argnum)
@@ -3307,7 +3309,7 @@ class PyBytesObject_converter(CConverter):
         if self.format_unit == 'S':
             return """
                 if (!PyBytes_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, "bytes", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "bytes", {argname});
                     goto exit;
                 }}}}
                 {paramname} = ({type}){argname};
@@ -3324,7 +3326,7 @@ class PyByteArrayObject_converter(CConverter):
         if self.format_unit == 'Y':
             return """
                 if (!PyByteArray_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, "bytearray", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "bytearray", {argname});
                     goto exit;
                 }}}}
                 {paramname} = ({type}){argname};
@@ -3341,7 +3343,7 @@ class unicode_converter(CConverter):
         if self.format_unit == 'U':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, "str", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "str", {argname});
                     goto exit;
                 }}}}
                 if (PyUnicode_READY({argname}) == -1) {{{{
@@ -3405,7 +3407,7 @@ class Py_buffer_converter(CConverter):
                     goto exit;
                 }}}}
                 if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, "contiguous buffer", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "contiguous buffer", {argname});
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name, argnum=argnum)
@@ -3424,7 +3426,7 @@ class Py_buffer_converter(CConverter):
                         goto exit;
                     }}}}
                     if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                        _PyArg_BadArgument("{{name}}", {argnum}, "contiguous buffer", {argname});
+                        _PyArg_BadArgument("{{name}}", "{argnum}", "contiguous buffer", {argname});
                         goto exit;
                     }}}}
                 }}}}
@@ -3433,11 +3435,11 @@ class Py_buffer_converter(CConverter):
             return """
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_WRITABLE) < 0) {{{{
                     PyErr_Clear();
-                    _PyArg_BadArgument("{{name}}", {argnum}, "read-write bytes-like object", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "read-write bytes-like object", {argname});
                     goto exit;
                 }}}}
                 if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, "contiguous buffer", {argname});
+                    _PyArg_BadArgument("{{name}}", "{argnum}", "contiguous buffer", {argname});
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name, argnum=argnum)
