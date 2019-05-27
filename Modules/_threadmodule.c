@@ -1344,6 +1344,8 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
             Py_DECREF(str);
         }
         else {
+            PyErr_Clear();
+
             if (PyFile_WriteString("<failed to get thread name>", file) < 0) {
                 return -1;
             }
