@@ -2,7 +2,8 @@ import asyncio
 import inspect
 import unittest
 
-from unittest.mock import call, AsyncMock, patch, MagicMock, create_autospec
+from unittest.mock import (call, AsyncMock, patch, MagicMock, create_autospec,
+                           _AwaitEvent)
 
 
 def tearDownModule():
@@ -18,6 +19,9 @@ class AsyncClass:
         pass
 
 async def async_func():
+    pass
+
+async def async_func_args(a, b, *, c):
     pass
 
 def normal_func():
@@ -141,8 +145,63 @@ class AsyncAutospecTest(unittest.TestCase):
             create_autospec(async_func, instance=True)
 
     def test_create_autospec(self):
-        spec = create_autospec(async_func)
+        spec = create_autospec(async_func_args)
+        awaitable = spec(1, 2, c=3)
+        async def main():
+            await awaitable
+
+        self.assertEqual(spec.await_count, 0)
+        self.assertIsNone(spec.await_args)
+        self.assertEqual(spec.await_args_list, [])
+        self.assertIsInstance(spec.awaited, _AwaitEvent)
+        spec.assert_not_awaited()
+
+        asyncio.run(main())
+
         self.assertTrue(asyncio.iscoroutinefunction(spec))
+        self.assertTrue(asyncio.iscoroutine(awaitable))
+        self.assertEqual(spec.await_count, 1)
+        self.assertEqual(spec.await_args, call(1, 2, c=3))
+        self.assertEqual(spec.await_args_list, [call(1, 2, c=3)])
+        spec.assert_awaited_once()
+        spec.assert_awaited_once_with(1, 2, c=3)
+        spec.assert_awaited_with(1, 2, c=3)
+        spec.assert_awaited()
+
+    def test_patch_with_autospec(self):
+
+        async def test_async():
+            with patch(f"{__name__}.async_func_args", autospec=True) as mock_method:
+                awaitable = mock_method(1, 2, c=3)
+                self.assertIsInstance(mock_method.mock, AsyncMock)
+
+                self.assertTrue(asyncio.iscoroutinefunction(mock_method))
+                self.assertTrue(asyncio.iscoroutine(awaitable))
+                self.assertTrue(inspect.isawaitable(awaitable))
+
+                # Verify the default values during mock setup
+                self.assertEqual(mock_method.await_count, 0)
+                self.assertEqual(mock_method.await_args_list, [])
+                self.assertIsNone(mock_method.await_args)
+                self.assertIsInstance(mock_method.awaited, _AwaitEvent)
+                mock_method.assert_not_awaited()
+
+                await awaitable
+
+            self.assertEqual(mock_method.await_count, 1)
+            self.assertEqual(mock_method.await_args, call(1, 2, c=3))
+            self.assertEqual(mock_method.await_args_list, [call(1, 2, c=3)])
+            mock_method.assert_awaited_once()
+            mock_method.assert_awaited_once_with(1, 2, c=3)
+            mock_method.assert_awaited_with(1, 2, c=3)
+            mock_method.assert_awaited()
+
+            mock_method.reset_mock()
+            self.assertEqual(mock_method.await_count, 0)
+            self.assertIsNone(mock_method.await_args)
+            self.assertEqual(mock_method.await_args_list, [])
+
+        asyncio.run(test_async())
 
 
 class AsyncSpecTest(unittest.TestCase):
