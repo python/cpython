@@ -16,9 +16,9 @@ extern int PyInitFrozenExtensions(void);
 int
 Py_FrozenMain(int argc, char **argv)
 {
-    _PyInitError err = _PyRuntime_Initialize();
-    if (_PyInitError_Failed(err)) {
-        _Py_ExitInitError(err);
+    PyStatus status = _PyRuntime_Initialize();
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
     }
 
     const char *p;
@@ -39,11 +39,11 @@ Py_FrozenMain(int argc, char **argv)
         }
     }
 
-    _PyCoreConfig config;
-    err = _PyCoreConfig_InitPythonConfig(&config);
-    if (_PyInitError_Failed(err)) {
-        _PyCoreConfig_Clear(&config);
-        _Py_ExitInitError(err);
+    PyConfig config;
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
     }
     config.pathconfig_warnings = 0;   /* Suppress errors from getpath.c */
 
@@ -85,10 +85,10 @@ Py_FrozenMain(int argc, char **argv)
     if (argc >= 1)
         Py_SetProgramName(argv_copy[0]);
 
-    err = _Py_InitializeFromConfig(&config);
-    _PyCoreConfig_Clear(&config);
-    if (_PyInitError_Failed(err)) {
-        _Py_ExitInitError(err);
+    status = Py_InitializeFromConfig(&config);
+    PyConfig_Clear(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
     }
 
 #ifdef MS_WINDOWS

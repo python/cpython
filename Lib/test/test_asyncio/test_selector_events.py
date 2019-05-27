@@ -448,10 +448,23 @@ class SelectorTransportTests(test_utils.TestCase):
         tr._force_close = mock.Mock()
         tr._fatal_error(exc)
 
+        m_exc.assert_not_called()
+
+        tr._force_close.assert_called_with(exc)
+
+    @mock.patch('asyncio.log.logger.error')
+    def test_fatal_error_custom_exception(self, m_exc):
+        class MyError(Exception):
+            pass
+        exc = MyError()
+        tr = self.create_transport()
+        tr._force_close = mock.Mock()
+        tr._fatal_error(exc)
+
         m_exc.assert_called_with(
             test_utils.MockPattern(
                 'Fatal error on transport\nprotocol:.*\ntransport:.*'),
-            exc_info=(OSError, MOCK_ANY, MOCK_ANY))
+            exc_info=(MyError, MOCK_ANY, MOCK_ANY))
 
         tr._force_close.assert_called_with(exc)
 
@@ -1338,10 +1351,20 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         err = ConnectionRefusedError()
         transport._fatal_error(err)
         self.assertFalse(self.protocol.error_received.called)
+        m_exc.assert_not_called()
+
+    @mock.patch('asyncio.base_events.logger.error')
+    def test_fatal_error_connected_custom_error(self, m_exc):
+        class MyException(Exception):
+            pass
+        transport = self.datagram_transport(address=('0.0.0.0', 1))
+        err = MyException()
+        transport._fatal_error(err)
+        self.assertFalse(self.protocol.error_received.called)
         m_exc.assert_called_with(
             test_utils.MockPattern(
                 'Fatal error on transport\nprotocol:.*\ntransport:.*'),
-            exc_info=(ConnectionRefusedError, MOCK_ANY, MOCK_ANY))
+            exc_info=(MyException, MOCK_ANY, MOCK_ANY))
 
 
 if __name__ == '__main__':

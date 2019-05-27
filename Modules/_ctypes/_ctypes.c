@@ -150,9 +150,9 @@ _DictRemover_call(PyObject *myself, PyObject *args, PyObject *kw)
 {
     DictRemoverObject *self = (DictRemoverObject *)myself;
     if (self->key && self->dict) {
-        if (-1 == PyDict_DelItem(self->dict, self->key))
-            /* XXX Error context */
-            PyErr_WriteUnraisable(Py_None);
+        if (-1 == PyDict_DelItem(self->dict, self->key)) {
+            _PyErr_WriteUnraisableMsg("on calling _ctypes.DictRemover", NULL);
+        }
         Py_CLEAR(self->key);
         Py_CLEAR(self->dict);
     }

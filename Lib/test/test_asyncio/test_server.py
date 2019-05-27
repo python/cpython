@@ -58,7 +58,7 @@ class BaseStartServer(func_tests.FunctionalTestCaseMixin):
             with self.tcp_client(lambda sock: client(sock, addr)):
                 self.loop.run_until_complete(main_task)
 
-        self.assertEqual(srv.sockets, [])
+        self.assertEqual(srv.sockets, ())
 
         self.assertIsNone(srv._sockets)
         self.assertIsNone(srv._waiters)
@@ -111,7 +111,7 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
                 with self.unix_client(lambda sock: client(sock, addr)):
                     self.loop.run_until_complete(main_task)
 
-            self.assertEqual(srv.sockets, [])
+            self.assertEqual(srv.sockets, ())
 
             self.assertIsNone(srv._sockets)
             self.assertIsNone(srv._waiters)
