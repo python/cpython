@@ -460,6 +460,15 @@ numbers. (Contributed by Pablo Galindo in :issue:`35606`)
 Added new function :func:`math.isqrt` for computing integer square roots.
 (Contributed by Mark Dickinson in :issue:`36887`.)
 
+
+mmap
+----
+
+The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.madvise` method to
+access the ``madvise()`` system call.
+(Contributed by Zackery Spytz in :issue:`32941`.)
+
+
 os
 --
 
