@@ -7343,7 +7343,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_MEMFD_CREATE_SYSCALL)
+#if defined(HAVE_MEMFD_CREATE)
 
 PyDoc_STRVAR(os_memfd_create__doc__,
 "memfd_create($module, name, flags, /)\n"
@@ -7387,7 +7387,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MEMFD_CREATE_SYSCALL) */
+#endif /* defined(HAVE_MEMFD_CREATE) */
 
 PyDoc_STRVAR(os_cpu_count__doc__,
 "cpu_count($module, /)\n"
@@ -8626,4 +8626,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=e6a5172c69f2c30a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7446453677391010 input=a9049054013a1b77]*/

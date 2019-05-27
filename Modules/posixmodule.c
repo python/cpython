@@ -376,10 +376,6 @@ extern char        *ctermid_r(char *);
 #endif
 #endif
 
-#ifdef HAVE_MEMFD_CREATE_SYSCALL
-#include <sys/mman.h>
-#endif
-
 #ifdef MS_WINDOWS
 #define INITFUNC PyInit_nt
 #define MODNAME "nt"
@@ -391,6 +387,19 @@ extern char        *ctermid_r(char *);
 #if defined(__sun)
 /* Something to implement in autoconf, not present in autoconf 2.69 */
 #define HAVE_STRUCT_STAT_ST_FSTYPE 1
+#endif
+
+/* memfd_create is either defined in sys/mman.h or sys/memfd.h
+ * linux/memfd.h defines additional flags
+ */
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+#ifdef HAVE_SYS_MEMFD_H
+#include <sys/memfd.h>
+#endif
+#ifdef HAVE_LINUX_MEMFD_H
+#include <linux/memfd.h>
 #endif
 
 #ifdef _Py_MEMORY_SANITIZER
@@ -11901,7 +11910,7 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
     return bytes;
 }
 
-#ifdef HAVE_MEMFD_CREATE_SYSCALL
+#ifdef HAVE_MEMFD_CREATE
 /*[clinic input]
 os.memfd_create
 
@@ -11916,8 +11925,11 @@ os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
 /*[clinic end generated code: output=6681ede983bdb9a6 input=5659b8bdae914e4f]*/
 {
     int fd;
-    if ((fd = syscall(__NR_memfd_create, PyBytes_AS_STRING(name),
-                      flags)) == -1) {
+    const char *bytes = PyBytes_AS_STRING(name);
+    Py_BEGIN_ALLOW_THREADS
+    fd = memfd_create(bytes, flags);
+    Py_END_ALLOW_THREADS
+    if (fd == -1) {
         return PyErr_SetFromErrno(PyExc_OSError);
     }
     return PyLong_FromLong(fd);
@@ -14031,11 +14043,25 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
 #endif
-#ifdef HAVE_MEMFD_CREATE_SYSCALL
+#ifdef HAVE_MEMFD_CREATE
     if (PyModule_AddIntMacro(m, MFD_CLOEXEC)) return -1;
     if (PyModule_AddIntMacro(m, MFD_ALLOW_SEALING)) return -1;
 #ifdef MFD_HUGETLB
     if (PyModule_AddIntMacro(m, MFD_HUGETLB)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_SHIFT)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_MASK)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_64KB)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_512KB)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_1MB)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_2MB)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_8MB)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_16MB)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_32MB)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_256MB)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_512MB)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_1GB)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_2GB)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_HUGE_16GB)) return -1;
 #endif
 #endif
 
@@ -14152,6 +14178,10 @@ static const char * const have_functions[] = {
 
 #ifdef HAVE_LUTIMES
     "HAVE_LUTIMES",
+#endif
+
+#ifdef HAVE_MEMFD_CREATE
+    "HAVE_MEMFD_CREATE",
 #endif
 
 #ifdef HAVE_MKDIRAT
