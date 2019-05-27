@@ -5604,7 +5604,6 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
     /* Parse the f-string. */
     while (1) {
         PyObject *literal[2] = {NULL, NULL};
-        PyObject *expr_text = NULL;
         expr_ty expression = NULL;
 
         /* If there's a zero length literal in front of the
@@ -5618,7 +5617,7 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
             return -1;
 
         /* Add the literals, if any. */
-        for (int i = 0; i < sizeof(literal) / sizeof(literal[0]); i++) {
+        for (int i = 0; i < 2; i++) {
             if (!literal[i]) {
                 /* Do nothing. Just leave last_str alone (and possibly
                    NULL). */
