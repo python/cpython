@@ -5,56 +5,49 @@
 extern "C" {
 #endif
 
-/* --- _PyInitError ----------------------------------------------- */
+/* --- PyStatus ----------------------------------------------- */
 
 typedef struct {
     enum {
-        _Py_INIT_ERR_TYPE_OK=0,
-        _Py_INIT_ERR_TYPE_ERROR=1,
-        _Py_INIT_ERR_TYPE_EXIT=2
+        _PyStatus_TYPE_OK=0,
+        _PyStatus_TYPE_ERROR=1,
+        _PyStatus_TYPE_EXIT=2
     } _type;
-    const char *_func;
+    const char *func;
     const char *err_msg;
     int exitcode;
-} _PyInitError;
+} PyStatus;
 
-PyAPI_FUNC(_PyInitError) _PyInitError_Ok(void);
-PyAPI_FUNC(_PyInitError) _PyInitError_Error(const char *err_msg);
-PyAPI_FUNC(_PyInitError) _PyInitError_NoMemory(void);
-PyAPI_FUNC(_PyInitError) _PyInitError_Exit(int exitcode);
-PyAPI_FUNC(int) _PyInitError_IsError(_PyInitError err);
-PyAPI_FUNC(int) _PyInitError_IsExit(_PyInitError err);
-PyAPI_FUNC(int) _PyInitError_Failed(_PyInitError err);
+PyAPI_FUNC(PyStatus) PyStatus_Ok(void);
+PyAPI_FUNC(PyStatus) PyStatus_Error(const char *err_msg);
+PyAPI_FUNC(PyStatus) PyStatus_NoMemory(void);
+PyAPI_FUNC(PyStatus) PyStatus_Exit(int exitcode);
+PyAPI_FUNC(int) PyStatus_IsError(PyStatus err);
+PyAPI_FUNC(int) PyStatus_IsExit(PyStatus err);
+PyAPI_FUNC(int) PyStatus_Exception(PyStatus err);
 
-/* --- _PyWstrList ------------------------------------------------ */
+/* --- PyWideStringList ------------------------------------------------ */
 
 typedef struct {
     /* If length is greater than zero, items must be non-NULL
        and all items strings must be non-NULL */
     Py_ssize_t length;
     wchar_t **items;
-} _PyWstrList;
+} PyWideStringList;
+
+PyAPI_FUNC(PyStatus) PyWideStringList_Append(PyWideStringList *list,
+    const wchar_t *item);
 
 
-/* --- _PyPreConfig ----------------------------------------------- */
-
-#define _Py_CONFIG_VERSION 1
-
-typedef enum {
-    /* Py_Initialize() API: backward compatibility with Python 3.6 and 3.7 */
-    _PyConfig_INIT_COMPAT = 1,
-    _PyConfig_INIT_PYTHON = 2,
-    _PyConfig_INIT_ISOLATED = 3
-} _PyConfigInitEnum;
-
+/* --- PyPreConfig ----------------------------------------------- */
 
 typedef struct {
     int _config_version;  /* Internal configuration version,
                              used for ABI compatibility */
     int _config_init;     /* _PyConfigInitEnum value */
 
-    /* Parse _Py_PreInitializeFromArgs() arguments?
-       See _PyCoreConfig.parse_argv */
+    /* Parse Py_PreInitializeFromBytesArgs() arguments?
+       See PyConfig.parse_argv */
     int parse_argv;
 
     /* If greater than 0, enable isolated mode: sys.path contains
@@ -124,22 +117,22 @@ typedef struct {
     /* Memory allocator: PYTHONMALLOC env var.
        See PyMemAllocatorName for valid values. */
     int allocator;
-} _PyPreConfig;
+} PyPreConfig;
 
-PyAPI_FUNC(void) _PyPreConfig_InitPythonConfig(_PyPreConfig *config);
-PyAPI_FUNC(void) _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config);
+PyAPI_FUNC(void) PyPreConfig_InitPythonConfig(PyPreConfig *config);
+PyAPI_FUNC(void) PyPreConfig_InitIsolatedConfig(PyPreConfig *config);
 
 
-/* --- _PyCoreConfig ---------------------------------------------- */
+/* --- PyConfig ---------------------------------------------- */
 
 typedef struct {
     int _config_version;  /* Internal configuration version,
                              used for ABI compatibility */
     int _config_init;     /* _PyConfigInitEnum value */
 
-    int isolated;         /* Isolated mode? see _PyPreConfig.isolated */
-    int use_environment;  /* Use environment variables? see _PyPreConfig.use_environment */
-    int dev_mode;         /* Development mode? See _PyPreConfig.dev_mode */
+    int isolated;         /* Isolated mode? see PyPreConfig.isolated */
+    int use_environment;  /* Use environment variables? see PyPreConfig.use_environment */
+    int dev_mode;         /* Development mode? See PyPreConfig.dev_mode */
 
     /* Install signal handlers? Yes by default. */
     int install_signal_handlers;
@@ -207,7 +200,7 @@ typedef struct {
 
        If argv is empty, an empty string is added to ensure that sys.argv
        always exists and is never empty. */
-    _PyWstrList argv;
+    PyWideStringList argv;
 
     /* Program name:
 
@@ -219,8 +212,8 @@ typedef struct {
        - Use "python" on Windows, or "python3 on other platforms. */
     wchar_t *program_name;
 
-    _PyWstrList xoptions;     /* Command line -X options */
-    _PyWstrList warnoptions;  /* Warnings options */
+    PyWideStringList xoptions;     /* Command line -X options */
+    PyWideStringList warnoptions;  /* Warnings options */
 
     /* If equal to zero, disable the import of the module site and the
        site-dependent manipulations of sys.path that it entails. Also disable
@@ -347,17 +340,37 @@ typedef struct {
     int legacy_windows_stdio;
 #endif
 
+    /* Value of the --check-hash-based-pycs command line option:
+
+       - "default" means the 'check_source' flag in hash-based pycs
+         determines invalidation
+       - "always" causes the interpreter to hash the source file for
+         invalidation regardless of value of 'check_source' bit
+       - "never" causes the interpreter to always assume hash-based pycs are
+         valid
+
+       The default value is "default".
+
+       See PEP 552 "Deterministic pycs" for more details. */
+    wchar_t *check_hash_pycs_mode;
+
     /* --- Path configuration inputs ------------ */
 
-    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
+    /* If greater than 0, suppress _PyPathConfig_Calculate() warnings on Unix.
+       The parameter has no effect on Windows.
+
+       If set to -1 (default), inherit !Py_FrozenFlag value. */
+    int pathconfig_warnings;
+
+    wchar_t *pythonpath_env; /* PYTHONPATH environment variable */
     wchar_t *home;          /* PYTHONHOME environment variable,
                                see also Py_SetPythonHome(). */
 
     /* --- Path configuration outputs ----------- */
 
-    int use_module_search_paths;  /* If non-zero, use module_search_paths */
-    _PyWstrList module_search_paths;  /* sys.path paths. Computed if
-                                       use_module_search_paths is equal
+    int module_search_paths_set;  /* If non-zero, use module_search_paths */
+    PyWideStringList module_search_paths;  /* sys.path paths. Computed if
+                                       module_search_paths_set is equal
                                        to zero. */
 
     wchar_t *executable;    /* sys.executable */
@@ -384,48 +397,28 @@ typedef struct {
        Needed by freeze_importlib. */
     int _install_importlib;
 
-    /* Value of the --check-hash-based-pycs command line option:
-
-       - "default" means the 'check_source' flag in hash-based pycs
-         determines invalidation
-       - "always" causes the interpreter to hash the source file for
-         invalidation regardless of value of 'check_source' bit
-       - "never" causes the interpreter to always assume hash-based pycs are
-         valid
-
-       The default value is "default".
-
-       See PEP 552 "Deterministic pycs" for more details. */
-    wchar_t *check_hash_pycs_mode;
-
-    /* If greater than 0, suppress _PyPathConfig_Calculate() warnings on Unix.
-       The parameter has no effect on Windows.
-
-       If set to -1 (default), inherit !Py_FrozenFlag value. */
-    int pathconfig_warnings;
-
     /* If equal to 0, stop Python initialization before the "main" phase */
     int _init_main;
 
-} _PyCoreConfig;
+} PyConfig;
 
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPythonConfig(_PyCoreConfig *config);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitIsolatedConfig(_PyCoreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetString(
-    _PyCoreConfig *config,
+PyAPI_FUNC(PyStatus) PyConfig_InitPythonConfig(PyConfig *config);
+PyAPI_FUNC(PyStatus) PyConfig_InitIsolatedConfig(PyConfig *config);
+PyAPI_FUNC(void) PyConfig_Clear(PyConfig *);
+PyAPI_FUNC(PyStatus) PyConfig_SetString(
+    PyConfig *config,
     wchar_t **config_str,
     const wchar_t *str);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_DecodeLocale(
-    _PyCoreConfig *config,
+PyAPI_FUNC(PyStatus) PyConfig_SetBytesString(
+    PyConfig *config,
     wchar_t **config_str,
     const char *str);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetArgv(
-    _PyCoreConfig *config,
+PyAPI_FUNC(PyStatus) PyConfig_Read(PyConfig *config);
+PyAPI_FUNC(PyStatus) PyConfig_SetBytesArgv(
+    PyConfig *config,
     Py_ssize_t argc,
     char * const *argv);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetWideArgv(_PyCoreConfig *config,
+PyAPI_FUNC(PyStatus) PyConfig_SetArgv(PyConfig *config,
     Py_ssize_t argc,
     wchar_t * const *argv);
 
