@@ -1326,8 +1326,10 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
     }
     if (name != NULL) {
         if (PyFile_WriteObject(name, file, Py_PRINT_RAW) < 0) {
+            Py_DECREF(name);
             return -1;
         }
+        Py_DECREF(name);
     }
     else {
         PyErr_Clear();
@@ -1347,7 +1349,6 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
             }
         }
     }
-    Py_XDECREF(name);
 
     if (PyFile_WriteString(":\n", file) < 0) {
         return -1;

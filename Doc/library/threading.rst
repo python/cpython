@@ -40,7 +40,7 @@ This module defines the following functions:
 
 .. function:: excepthook(args, /)
 
-   Handle uncaught :func:`Thread.run` exception.
+   Handle uncaught exception raised by :func:`Thread.run`.
 
    The *args* argument has the following attributes:
 
@@ -50,11 +50,13 @@ This module defines the following functions:
    * *thread*: Thread which raised the exception, can be ``None``.
 
    If *exc_type* is :exc:`SystemExit`, the exception is silently ignored.
+   Otherwise, the exception is printed out on :data:`sys.stderr`.
 
-   If it raises an exception, :func:`sys.excepthook` is called to handle it.
+   If  this function raises an exception, :func:`sys.excepthook` is called to
+   handle it.
 
    :func:`threading.excepthook` can be overridden to control how uncaught
-   :func:`Thread.run` exceptions are handled.
+   exceptions raised by :func:`Thread.run` are handled.
 
    .. seealso::
       :func:`sys.excepthook` handles uncaught exceptions.
