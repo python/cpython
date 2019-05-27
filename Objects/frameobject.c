@@ -1129,7 +1129,7 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
                 result = -1;
             } else if (offset > max_offset) {
                 PyErr_Format(PyExc_SystemError,
-                             "Fast locals ref (%z) exceeds array bound (%z)",
+                             "Fast locals ref (%zd) exceeds array bound (%zd)",
                              offset, max_offset);
                 result = -1;
             }
