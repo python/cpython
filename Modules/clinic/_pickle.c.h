@@ -356,7 +356,7 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     if (fastargs[2]) {
         if (!PyUnicode_Check(fastargs[2])) {
-            _PyArg_BadArgument("Unpickler", 3, "str", fastargs[2]);
+            _PyArg_BadArgument("Unpickler", "'encoding'", "str", fastargs[2]);
             goto exit;
         }
         Py_ssize_t encoding_length;
@@ -374,7 +374,7 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     if (fastargs[3]) {
         if (!PyUnicode_Check(fastargs[3])) {
-            _PyArg_BadArgument("Unpickler", 4, "str", fastargs[3]);
+            _PyArg_BadArgument("Unpickler", "'errors'", "str", fastargs[3]);
             goto exit;
         }
         Py_ssize_t errors_length;
@@ -691,7 +691,7 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
     if (args[2]) {
         if (!PyUnicode_Check(args[2])) {
-            _PyArg_BadArgument("load", 3, "str", args[2]);
+            _PyArg_BadArgument("load", "'encoding'", "str", args[2]);
             goto exit;
         }
         Py_ssize_t encoding_length;
@@ -709,7 +709,7 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
     if (args[3]) {
         if (!PyUnicode_Check(args[3])) {
-            _PyArg_BadArgument("load", 4, "str", args[3]);
+            _PyArg_BadArgument("load", "'errors'", "str", args[3]);
             goto exit;
         }
         Py_ssize_t errors_length;
@@ -794,7 +794,7 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     }
     if (args[2]) {
         if (!PyUnicode_Check(args[2])) {
-            _PyArg_BadArgument("loads", 3, "str", args[2]);
+            _PyArg_BadArgument("loads", "'encoding'", "str", args[2]);
             goto exit;
         }
         Py_ssize_t encoding_length;
@@ -812,7 +812,7 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     }
     if (args[3]) {
         if (!PyUnicode_Check(args[3])) {
-            _PyArg_BadArgument("loads", 4, "str", args[3]);
+            _PyArg_BadArgument("loads", "'errors'", "str", args[3]);
             goto exit;
         }
         Py_ssize_t errors_length;
@@ -835,4 +835,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8dc0e862f96c4afe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7eebae00cf0a4457 input=a9049054013a1b77]*/

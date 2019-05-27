@@ -590,7 +590,7 @@ signal_pthread_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyLong_Check(args[0])) {
-        _PyArg_BadArgument("pthread_kill", 1, "int", args[0]);
+        _PyArg_BadArgument("pthread_kill", "1", "int", args[0]);
         goto exit;
     }
     thread_id = PyLong_AsUnsignedLongMask(args[0]);
@@ -658,4 +658,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=f0d3a5703581da76 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=00e33cc3cc3277f8 input=a9049054013a1b77]*/
