@@ -104,12 +104,8 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
                 False, parent_pid)
         else:
             source_process = None
-        try:
-            new_handle = context.reduction.duplicate(pipe_handle,
-                                             source_process=source_process)
-        finally:
-            if source_process is not None:
-                _winapi.CloseHandle(source_process)
+        new_handle = context.reduction.duplicate(pipe_handle,
+                                                 source_process=source_process)
         fd = msvcrt.open_osfhandle(new_handle, os.O_RDONLY)
         parent_sentinel = source_process
     else:
