@@ -541,6 +541,9 @@
 /* Define if you have the 'inet_pton' function. */
 #undef HAVE_INET_PTON
 
+/* Define to 1 if you have the `initgroups' function. */
+#undef HAVE_INITGROUPS
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -549,6 +552,12 @@
 
 /* Define if gcc has the ipa-pure-const bug. */
 #undef HAVE_IPA_PURE_CONST_BUG
+
+/* Define to 1 if you have the `kill' function. */
+#undef HAVE_KILL
+
+/* Define to 1 if you have the `killpg' function. */
+#undef HAVE_KILLPG
 
 /* Define if you have the 'kqueue' functions. */
 #undef HAVE_KQUEUE
@@ -567,6 +576,9 @@
 
 /* Define to 1 if you have the `lchmod' function. */
 #undef HAVE_LCHMOD
+
+/* Define to 1 if you have the `lchown' function. */
+#undef HAVE_LCHOWN
 
 /* Define to 1 if you have the `lgamma' function. */
 #undef HAVE_LGAMMA
@@ -598,6 +610,9 @@
 /* Define if you have the 'link' function. */
 #undef HAVE_LINK
 
+/* Define to 1 if you have the `linkat' function. */
+#undef HAVE_LINKAT
+
 /* Define to 1 if you have the <linux/can/bcm.h> header file. */
 #undef HAVE_LINUX_CAN_BCM_H
 
@@ -628,6 +643,9 @@
 /* Define to 1 if you have the <linux/vm_sockets.h> header file. */
 #undef HAVE_LINUX_VM_SOCKETS_H
 
+/* Define to 1 if you have the `lockf' function. */
+#undef HAVE_LOCKF
+
 /* Define to 1 if you have the `log1p' function. */
 #undef HAVE_LOG1P
 
@@ -637,14 +655,32 @@
 /* Define to 1 if the system has the type `long double'. */
 #undef HAVE_LONG_DOUBLE
 
+/* Define to 1 if you have the `lstat' function. */
+#undef HAVE_LSTAT
+
+/* Define to 1 if you have the `lutimes' function. */
+#undef HAVE_LUTIMES
+
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
+
+/* Define to 1 if you have the `mbrtowc' function. */
+#undef HAVE_MBRTOWC
 
 /* Define if you have the 'memfd_create' function. */
 #undef HAVE_MEMFD_CREATE
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `memrchr' function. */
+#undef HAVE_MEMRCHR
+
+/* Define to 1 if you have the `mkdirat' function. */
+#undef HAVE_MKDIRAT
+
+/* Define to 1 if you have the `mkfifo' function. */
+#undef HAVE_MKFIFO
 
 /* Define to 1 if you have the `mkfifoat' function. */
 #undef HAVE_MKFIFOAT
@@ -657,6 +693,9 @@
 
 /* Define to 1 if you have the `mktime' function. */
 #undef HAVE_MKTIME
+
+/* Define to 1 if you have the `mmap' function. */
+#undef HAVE_MMAP
 
 /* Define to 1 if you have the `mremap' function. */
 #undef HAVE_MREMAP
