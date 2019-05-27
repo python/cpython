@@ -118,7 +118,7 @@ extern PyStatus _PyPreCmdline_Read(_PyPreCmdline *cmdline,
 
 /* --- PyPreConfig ----------------------------------------------- */
 
-extern void _PyPreConfig_InitCompatConfig(PyPreConfig *preconfig);
+PyAPI_FUNC(void) _PyPreConfig_InitCompatConfig(PyPreConfig *preconfig);
 extern void _PyPreConfig_InitFromConfig(
     PyPreConfig *preconfig,
     const PyConfig *config);
