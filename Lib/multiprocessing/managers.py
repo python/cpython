@@ -160,8 +160,9 @@ class Server(object):
         self.mutex = threading.Lock()
 
     def _track_parent(self):
-        process.parent_process().join()
-        self.stop_event.set()
+        if parent_process := process.parent_process():
+            parent_process.join()
+            self.stop_event.set()
 
     def serve_forever(self):
         '''

@@ -3852,7 +3852,8 @@ class _TestSharedMemory(BaseTestCase):
         t = 0.1
         while time.monotonic() < deadline:
             time.sleep(t)
-            t = min(t*2, 5)
+            # The shared_memory segment should be released by the
+            # SharedMemoryManager server process before it shuts down.
             try:
                 sl = shared_memory.SharedMemory(shm_name, create=False)
             except FileNotFoundError:
