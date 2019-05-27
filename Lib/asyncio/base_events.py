@@ -186,7 +186,7 @@ def _interleave_addrinfos(addrinfos, first_address_family_count=1):
 def _run_until_complete_cb(fut):
     if not fut.cancelled():
         exc = fut.exception()
-        if isinstance(exc, BaseException) and not isinstance(exc, Exception):
+        if isinstance(exc, (SystemExit, KeyboardInterrupt)):
             # Issue #22429: run_forever() already finished, no need to
             # stop it.
             return
@@ -1196,7 +1196,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         try:
             await waiter
-        except Exception:
+        except BaseException:
             transport.close()
             conmade_cb.cancel()
             resume_cb.cancel()
@@ -1710,7 +1710,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         if self._exception_handler is None:
             try:
                 self.default_exception_handler(context)
-            except Exception:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException:
                 # Second protection layer for unexpected errors
                 # in the default implementation, as well as for subclassed
                 # event loops with overloaded "default_exception_handler".
@@ -1719,7 +1721,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         else:
             try:
                 self._exception_handler(self, context)
-            except Exception as exc:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
                 # Exception in the user set custom exception handler.
                 try:
                     # Let's try default handler.
@@ -1728,7 +1732,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                         'exception': exc,
                         'context': context,
                     })
-                except Exception:
+                except (SystemExit, KeyboardInterrupt):
+                    raise
+                except BaseException:
                     # Guard 'default_exception_handler' in case it is
                     # overloaded.
                     logger.error('Exception in default exception handler '

@@ -194,7 +194,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                       self._child_watcher_callback, transp)
             try:
                 await waiter
-            except Exception:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException:
                 transp.close()
                 await transp._wait()
                 raise
@@ -390,7 +392,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             else:
                 self._sock_sendfile_update_filepos(fileno, offset, total_sent)
                 fut.set_exception(exc)
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             self._sock_sendfile_update_filepos(fileno, offset, total_sent)
             fut.set_exception(exc)
         else:
@@ -641,7 +645,9 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
                 n = os.write(self._fileno, data)
             except (BlockingIOError, InterruptedError):
                 n = 0
-            except Exception as exc:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
                 self._conn_lost += 1
                 self._fatal_error(exc, 'Fatal write error on pipe transport')
                 return
@@ -661,7 +667,9 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             n = os.write(self._fileno, self._buffer)
         except (BlockingIOError, InterruptedError):
             pass
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             self._buffer.clear()
             self._conn_lost += 1
             # Remove writer here, _fatal_error() doesn't it
@@ -879,7 +887,9 @@ class BaseChildWatcher(AbstractChildWatcher):
     def _sig_chld(self):
         try:
             self._do_waitpid_all()
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             # self._loop should always be available here
             # as '_sig_chld' is added as a signal handler
             # in 'attach_loop'

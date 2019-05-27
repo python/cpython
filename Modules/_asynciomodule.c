@@ -2672,8 +2672,10 @@ set_exception:
         assert(o == Py_None);
         Py_DECREF(o);
 
-        if (!PyErr_GivenExceptionMatches(et, PyExc_Exception)) {
-            /* We've got a BaseException; re-raise it */
+        if (PyErr_GivenExceptionMatches(et, PyExc_KeyboardInterrupt) ||
+            PyErr_GivenExceptionMatches(et, PyExc_SystemExit))
+        {
+            /* We've got a KeyboardInterrupt or a SystemError; re-raise it */
             PyErr_Restore(et, ev, tb);
             goto fail;
         }
@@ -2950,11 +2952,6 @@ task_wakeup(TaskObj *task, PyObject *o)
     }
 
     PyErr_Fetch(&et, &ev, &tb);
-    if (!PyErr_GivenExceptionMatches(et, PyExc_Exception)) {
-        /* We've got a BaseException; re-raise it */
-        PyErr_Restore(et, ev, tb);
-        return NULL;
-    }
     if (!ev || !PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
         PyErr_NormalizeException(&et, &ev, &tb);
     }
