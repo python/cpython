@@ -6,19 +6,19 @@ extern "C" {
  
 typedef struct {
     PyObject *ptr;
-    PY_UINT64_T globals_ver;
-    PY_UINT64_T builtins_ver;
-} _PyOpCodeOpt_LoadGlobal;
+    uint64_t globals_ver;
+    uint64_t builtins_ver;
+} _PyOpcache_LoadGlobal;
 
-typedef struct _PyOpCodeOpt {
+struct _PyOpcache {
     union {
-        _PyOpCodeOpt_LoadGlobal lg;
+        _PyOpcache_LoadGlobal lg;
     } u;
     char optimized;
-} _PyOpCodeOpt;
+};
 
 /* Private API */
-int _PyCode_InitOptCache(PyCodeObject *co);
+int _PyCode_InitOpcache(PyCodeObject *co);
 
 
 #ifdef __cplusplus

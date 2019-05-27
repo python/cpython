@@ -237,19 +237,19 @@ PyCode_New(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
 
-    co->co_opt_flag = 0;
-    co->co_opt_size = 0;
-    co->co_opt_opcodemap = NULL;
-    co->co_opt = NULL;
+    co->co_opcache_flag = 0;
+    co->co_opcache_size = 0;
+    co->co_opcache_map = NULL;
+    co->co_opcache = NULL;
     return co;
 }
 
 int
-_PyCode_InitOptCache(PyCodeObject *co)
+_PyCode_InitOpcache(PyCodeObject *co)
 {
     Py_ssize_t co_size = PyBytes_Size(co->co_code) / sizeof(_Py_CODEUNIT);
-    co->co_opt_opcodemap = (unsigned char *)PyMem_Calloc(co_size, 1);
-    if (co->co_opt_opcodemap == NULL) {
+    co->co_opcache_map = (unsigned char *)PyMem_Calloc(co_size, 1);
+    if (co->co_opcache_map == NULL) {
         return -1;
     }
 
@@ -262,7 +262,7 @@ _PyCode_InitOptCache(PyCodeObject *co)
 
         // TODO: LOAD_METHOD, LOAD_ATTR
         if (opcode == LOAD_GLOBAL) {
-            co->co_opt_opcodemap[i] = ++opts;
+            co->co_opcache_map[i] = ++opts;
             if (opts > 254) {
                 break;
             }
@@ -270,19 +270,19 @@ _PyCode_InitOptCache(PyCodeObject *co)
     }
 
     if (opts) {
-        co->co_opt = (_PyOpCodeOpt *)PyMem_Calloc(opts, sizeof(_PyOpCodeOpt));
-        if (co->co_opt == NULL) {
-        PyMem_FREE(co->co_opt_opcodemap);
+        co->co_opcache = (_PyOpcache *)PyMem_Calloc(opts, sizeof(_PyOpcache));
+        if (co->co_opcache == NULL) {
+            PyMem_FREE(co->co_opcache_map);
             return -1;
         }
     }
     else {
-        PyMem_FREE(co->co_opt_opcodemap);
-        co->co_opt_opcodemap = NULL;
-        co->co_opt = NULL;
+        PyMem_FREE(co->co_opcache_map);
+        co->co_opcache_map = NULL;
+        co->co_opcache = NULL;
     }
 
-    co->co_opt_size = opts;
+    co->co_opcache_size = opts;
     return 0;
 }
 
@@ -508,14 +508,14 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static void
 code_dealloc(PyCodeObject *co)
 {
-    if (co->co_opt != NULL) {
-        PyMem_FREE(co->co_opt);
+    if (co->co_opcache != NULL) {
+        PyMem_FREE(co->co_opcache);
     }
-    if (co->co_opt_opcodemap != NULL) {
-        PyMem_FREE(co->co_opt_opcodemap);
+    if (co->co_opcache_map != NULL) {
+        PyMem_FREE(co->co_opcache_map);
     }
-    co->co_opt_flag = 0;
-    co->co_opt_size = 0;
+    co->co_opcache_flag = 0;
+    co->co_opcache_size = 0;
 
     if (co->co_extra != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
@@ -563,12 +563,12 @@ code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
         res += sizeof(_PyCodeObjectExtra) +
                (co_extra->ce_size-1) * sizeof(co_extra->ce_extras[0]);
     }
-    if (co->co_opt != NULL) {
-        assert(co->co_opt_opcodemap != NULL);
+    if (co->co_opcache != NULL) {
+        assert(co->co_opcache_map != NULL);
         // opcodemap
         res += PyBytes_GET_SIZE(co->co_code) / sizeof(_Py_CODEUNIT);
         // opcode
-        res += co->co_opt_size * sizeof(_PyOpCodeOpt);
+        res += co->co_opcache_size * sizeof(_PyOpcache);
     }
     return PyLong_FromSsize_t(res);
 }

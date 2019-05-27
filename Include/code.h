@@ -17,7 +17,7 @@ typedef uint16_t _Py_CODEUNIT;
 #  define _Py_OPARG(word) ((word) >> 8)
 #endif
 
-typedef struct _PyOpCodeOpt _PyOpCodeOpt;
+typedef struct _PyOpcache _PyOpcache;
 
 /* Bytecode object */
 typedef struct {
@@ -52,11 +52,13 @@ typedef struct {
        people to go through the proper APIs. */
     void *co_extra;
 
-    /* Opcodes just-in-time cache */
-    unsigned char *co_opt_opcodemap;
-    _PyOpCodeOpt *co_opt;
-    PY_UINT64_T co_opt_flag;
-    unsigned char co_opt_size;
+    /* Per opcodes just-in-time cache */
+    // To reduce cache size, we use indirect mapping from opcode index
+    // to cache object: co_opcache[co_opcache_map[next_instr/sizeof(_Py_CODEUNIT)]]
+    unsigned char *co_opcache_map;
+    _PyOpcache *co_opcache;
+    int32_t co_opcache_flag;  // used to determine when create cache
+    unsigned char co_opcache_size;  // length of co_opcache.
 } PyCodeObject;
 
 /* Masks for co_flags above */

@@ -102,18 +102,17 @@ static long dxp[256];
 #endif
 #endif
 
-/* opcode cache */
-#define OPCODE_CACHE_MIN_RUNS 1024
-#define OPCODE_CACHE_MAX_TRIES 20
-#define OPCODE_CACHE_STATS 0
+/* per opcode cache */
+#define OPCACHE_MIN_RUNS 1024  /* create opcache when code executed this time */
+#define OPCACHE_STATS 0  /* Enable stats */
 
-#if OPCODE_CACHE_STATS
-static size_t opcode_cache_code_objects = 0;
-static size_t opcode_cache_code_objects_extra_mem = 0;
+#if OPCACHE_STATS
+static size_t opcache_code_objects = 0;
+static size_t opcache_code_objects_extra_mem = 0;
 
-static size_t opcode_cache_global_opts = 0;
-static size_t opcode_cache_global_hits = 0;
-static size_t opcode_cache_global_misses = 0;
+static size_t opcache_global_opts = 0;
+static size_t opcache_global_hits = 0;
+static size_t opcache_global_misses = 0;
 #endif
 
 
@@ -246,27 +245,27 @@ exit_thread_if_finalizing(_PyRuntimeState *runtime, PyThreadState *tstate)
 void
 _PyEval_Fini(void)
 {
-#if OPCODE_CACHE_STATS
+#if OPCACHE_STATS
     fprintf(stderr, "-- Opcode cache number of objects  = %zd\n",
-            opcode_cache_code_objects);
+            opcache_code_objects);
 
     fprintf(stderr, "-- Opcode cache total extra mem    = %zd\n",
-            opcode_cache_code_objects_extra_mem);
+            opcache_code_objects_extra_mem);
 
     fprintf(stderr, "\n");
 
     fprintf(stderr, "-- Opcode cache LOAD_GLOBAL hits   = %zd (%d%%)\n",
-            opcode_cache_global_hits,
-            (int) (100.0 * opcode_cache_global_hits /
-                (opcode_cache_global_hits + opcode_cache_global_misses)));
+            opcache_global_hits,
+            (int) (100.0 * opcache_global_hits /
+                (opcache_global_hits + opcache_global_misses)));
 
     fprintf(stderr, "-- Opcode cache LOAD_GLOBAL misses = %zd (%d%%)\n",
-            opcode_cache_global_misses,
-            (int) (100.0 * opcode_cache_global_misses /
-                (opcode_cache_global_hits + opcode_cache_global_misses)));
+            opcache_global_misses,
+            (int) (100.0 * opcache_global_misses /
+                (opcache_global_hits + opcache_global_misses)));
 
     fprintf(stderr, "-- Opcode cache LOAD_GLOBAL opts   = %zd\n",
-            opcode_cache_global_opts);
+            opcache_global_opts);
 
     fprintf(stderr, "\n");
 #endif
@@ -767,7 +766,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     const _Py_CODEUNIT *first_instr;
     PyObject *names;
     PyObject *consts;
-    _PyOpCodeOpt *co_opt;
+    _PyOpcache *co_opcache;
 
 #ifdef LLTRACE
     _Py_IDENTIFIER(__ltrace__);
@@ -1031,54 +1030,54 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     } while(0)
 
     /* macros for opcode cache */
-#define OPCODE_CACHE_CHECK() \
+#define OPCACHE_CHECK() \
     do { \
-        co_opt = NULL; \
-        if (co->co_opt != NULL) { \
+        co_opcache = NULL; \
+        if (co->co_opcache != NULL) { \
             unsigned char co_opt_offset = \
-                co->co_opt_opcodemap[next_instr - first_instr]; \
+                co->co_opcache_map[next_instr - first_instr]; \
             if (co_opt_offset > 0) { \
-                assert(co_opt_offset <= co->co_opt_size); \
-                co_opt = &co->co_opt[co_opt_offset - 1]; \
-                assert(co_opt != NULL); \
-                if (co_opt->optimized < 0) { \
-                    co_opt = NULL; \
+                assert(co_opt_offset <= co->co_opcache_size); \
+                co_opcache = &co->co_opcache[co_opt_offset - 1]; \
+                assert(co_opcache != NULL); \
+                if (co_opcache->optimized < 0) { \
+                    co_opcache = NULL; \
                 } \
             } \
         } \
     } while (0)
 
-#define OPCODE_CACHE_DEOPT() \
+#define OPCACHE_DEOPT() \
     do { \
-        if (co_opt != NULL) { \
-            co_opt->optimized = -1; \
-            co->co_opt_opcodemap[next_instr - first_instr] = 0; \
-            co_opt = NULL; \
+        if (co_opcache != NULL) { \
+            co_opcache->optimized = -1; \
+            co->co_opcache_map[next_instr - first_instr] = 0; \
+            co_opcache = NULL; \
         } \
     } while (0)
 
-#if OPCODE_CACHE_STATS
+#if OPCACHE_STATS
 
-#define OPCODE_CACHE_STAT_GLOBAL_HIT() \
+#define OPCACHE_STAT_GLOBAL_HIT() \
     do { \
-        if (co->co_opt != NULL) opcode_cache_global_hits++; \
+        if (co->co_opcache != NULL) opcache_global_hits++; \
     } while (0)
 
-#define OPCODE_CACHE_STAT_GLOBAL_MISS() \
+#define OPCACHE_STAT_GLOBAL_MISS() \
     do { \
-        if (co->co_opt != NULL) opcode_cache_global_misses++; \
+        if (co->co_opcache != NULL) opcache_global_misses++; \
     } while (0)
 
-#define OPCODE_CACHE_STAT_GLOBAL_OPT() \
+#define OPCACHE_STAT_GLOBAL_OPT() \
     do { \
-        if (co->co_opt != NULL) opcode_cache_global_opts++; \
+        if (co->co_opcache != NULL) opcache_global_opts++; \
     } while (0)
 
-#else /* OPCODE_CACHE_STATS */
+#else /* OPCACHE_STATS */
 
-#define OPCODE_CACHE_STAT_GLOBAL_HIT()
-#define OPCODE_CACHE_STAT_GLOBAL_MISS()
-#define OPCODE_CACHE_STAT_GLOBAL_OPT()
+#define OPCACHE_STAT_GLOBAL_HIT()
+#define OPCACHE_STAT_GLOBAL_MISS()
+#define OPCACHE_STAT_GLOBAL_OPT()
 
 #endif
 
@@ -1163,17 +1162,17 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     f->f_stacktop = NULL;       /* remains NULL unless yield suspends frame */
     f->f_executing = 1;
 
-    if (co->co_opt_flag < OPCODE_CACHE_MIN_RUNS) {
-        co->co_opt_flag++;
-        if (co->co_opt_flag == OPCODE_CACHE_MIN_RUNS) {
-            if (_PyCode_InitOptCache(co) < 0) {
+    if (co->co_opcache_flag < OPCACHE_MIN_RUNS) {
+        co->co_opcache_flag++;
+        if (co->co_opcache_flag == OPCACHE_MIN_RUNS) {
+            if (_PyCode_InitOpcache(co) < 0) {
                 return NULL;
             }
-#if OPCODE_CACHE_STATS
-            opcode_cache_code_objects_extra_mem +=
+#if OPCACHE_STATS
+            opcache_code_objects_extra_mem +=
                 PyBytes_Size(co->co_code) / sizeof(_Py_CODEUNIT) +
-                sizeof(_PyOpCodeOpt) * co->co_opt_size;
-            opcode_cache_code_objects++;
+                sizeof(_PyOpcache) * co->co_opcache_size;
+            opcache_code_objects++;
 #endif
         }
     }
@@ -2491,9 +2490,9 @@ main_loop:
             if (PyDict_CheckExact(f->f_globals)
                 && PyDict_CheckExact(f->f_builtins))
             {
-                OPCODE_CACHE_CHECK();
-                if (co_opt != NULL && co_opt->optimized > 0) {
-                    _PyOpCodeOpt_LoadGlobal *lg = &co_opt->u.lg;
+                OPCACHE_CHECK();
+                if (co_opcache != NULL && co_opcache->optimized > 0) {
+                    _PyOpcache_LoadGlobal *lg = &co_opcache->u.lg;
 
                     if (lg->globals_ver ==
                             ((PyDictObject *)f->f_globals)->ma_version_tag
@@ -2501,7 +2500,7 @@ main_loop:
                            ((PyDictObject *)f->f_builtins)->ma_version_tag)
                     {
                         PyObject *ptr = lg->ptr;
-                        OPCODE_CACHE_STAT_GLOBAL_HIT();
+                        OPCACHE_STAT_GLOBAL_HIT();
                         assert(ptr != NULL);
                         Py_INCREF(ptr);
                         PUSH(ptr);
@@ -2523,17 +2522,17 @@ main_loop:
                     goto error;
                 }
 
-                if (co_opt != NULL) {
-                    _PyOpCodeOpt_LoadGlobal *lg = &co_opt->u.lg;
+                if (co_opcache != NULL) {
+                    _PyOpcache_LoadGlobal *lg = &co_opcache->u.lg;
 
-                    if (co_opt->optimized == 0) {
+                    if (co_opcache->optimized == 0) {
                         /* Wasn't optimized before. */
-                        OPCODE_CACHE_STAT_GLOBAL_OPT();
+                        OPCACHE_STAT_GLOBAL_OPT();
                     } else {
-                        OPCODE_CACHE_STAT_GLOBAL_MISS();
+                        OPCACHE_STAT_GLOBAL_MISS();
                     }
 
-                    co_opt->optimized = 1;
+                    co_opcache->optimized = 1;
                     lg->globals_ver =
                         ((PyDictObject *)f->f_globals)->ma_version_tag;
                     lg->builtins_ver =
