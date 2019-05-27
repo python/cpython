@@ -5006,9 +5006,14 @@ fstring_parse(const char **str, const char *end, int raw, int recurse_lvl,
    closing brace doesn't match an opening paren, for example. It
    doesn't need to error on all invalid expressions, just correctly
    find the end of all valid ones. Any errors inside the expression
-   will be caught when we parse it later. */
+   will be caught when we parse it later.
+
+   *expression is set to the expression.  For an '=' "debug" expression,
+   *expr_text_start is set to the start of the debug text, and *expr_text_len
+   is set to its length.  If not a debug expression, both are set to NULL. */
 static int
 fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
+                  const char **expr_text_start, Py_ssize_t *expr_text_len,
                   expr_ty *expression, struct compiling *c, const node *n)
 {
     /* Return -1 on error, else 0. */
@@ -5228,8 +5233,8 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
 
     }
     if (equal_flag) {
-        Py_ssize_t len = expr_text_end - expr_start;
-        expr_text = PyUnicode_FromStringAndSize(expr_start, len);
+        *expr_text_len = expr_text_end - expr_start;
+        expr_text = PyUnicode_FromStringAndSize(expr_start, *expr_text_len);
         if (!expr_text) {
             goto error;
         }
@@ -5237,6 +5242,10 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             Py_DECREF(expr_text);
             goto error;
         }
+        *expr_text_start = expr_start;
+    } else {
+        *expr_text_start = NULL;
+        *expr_text_len  = 0;
     }
 
     /* Check for the format spec, if present. */
@@ -5270,7 +5279,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */
     *expression = FormattedValue(simple_expression, conversion,
-                                 format_spec, expr_text, LINENO(n),
+                                 format_spec, LINENO(n),
                                  n->n_col_offset, n->n_end_lineno,
                                  n->n_end_col_offset, c->c_arena);
     if (!*expression)
@@ -5341,7 +5350,9 @@ fstring_find_literal_and_expr(const char **str, const char *end, int raw,
     /* We must now be the start of an expression, on a '{'. */
     assert(**str == '{');
 
-    if (fstring_find_expr(str, end, raw, recurse_lvl, expression, c, n) < 0)
+    Py_ssize_t len;
+    const char *st;
+    if (fstring_find_expr(str, end, raw, recurse_lvl, &st, &len, expression, c, n) < 0)
         goto error;
 
     return 0;
