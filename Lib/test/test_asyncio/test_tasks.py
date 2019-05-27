@@ -1527,7 +1527,7 @@ class BaseTaskTests:
         async def sleeper():
             await asyncio.sleep(10)
 
-        base_exc = BaseException()
+        base_exc = SystemExit()
 
         async def notmutch():
             try:
@@ -1541,7 +1541,7 @@ class BaseTaskTests:
         task.cancel()
         self.assertFalse(task.done())
 
-        self.assertRaises(BaseException, test_utils.run_briefly, loop)
+        self.assertRaises(SystemExit, test_utils.run_briefly, loop)
 
         self.assertTrue(task.done())
         self.assertFalse(task.cancelled())
