@@ -66,6 +66,16 @@ class BaseContext(object):
         from .connection import Pipe
         return Pipe(duplex)
 
+    def Listener(self, *args, **kwargs):
+        '''Returns a connection Listener object'''
+        from .connection import Listener
+        return Listener(*args, ctx=self.get_context(), **kwargs)
+
+    def Client(self, *args, **kwargs):
+        '''Returns a connection Client object'''
+        from .connection import Client
+        return Client(*args, ctx=self.get_context(), **kwargs)
+
     def Lock(self):
         '''Returns a non-recursive lock object'''
         from .synchronize import Lock
@@ -207,14 +217,16 @@ class BaseContext(object):
     def get_reducer(self):
         '''Controls how objects will be reduced to a form that can be
         shared with other processes.'''
-        reducer = self._reducer
+        ctx = self.get_context()
+        reducer = ctx._reducer
         if reducer is None:
             return reduction
         return reducer
 
     def set_reducer(self, reduction):
+        ctx = self.get_context()
         if reduction is original_reducer:
-            self._reducer = None
+            ctx._reducer = None
             return
 
         if not isinstance(reduction, original_reducer.AbstractReducer):
@@ -224,7 +236,7 @@ class BaseContext(object):
             raise TypeError("Custom reducers must return an subclass of "
                             "pickler.Pickler in the get_pickler_class() method")
 
-        self._reducer = reduction
+        ctx._reducer = reduction
 
     def _check_available(self):
         pass

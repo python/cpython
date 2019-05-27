@@ -1210,18 +1210,18 @@ the reduction mechanism:
    Abstract base class that can be implemented in order to replace the standard
    reduction mechanism used in multiprocessing
 
-   .. function:: get_pickler_class():
+   .. method:: get_pickler_class():
 
-      This method must return an instance of a subclass of :class:`pickler.Pickler`
-      to be used by the multiprocessing reducer mechanism.
+      This method must return an subclass of :class:`pickler.Pickler` to be used by
+      the multiprocessing reducer mechanism.
 
 .. currentmodule:: multiprocessing
 
 .. method:: set_reducer(reduction)
 
-   Sets a reduction class to be used for serialization and deserialization by the module
-   primitive internals. **reduction** must be an instance of a subclass of
-   :class:`multiprocessing.reduction.AbstractReducer`.
+   Sets a reduction instance to be used for serialization and deserialization
+   by the module primitive internals. **reduction** must be an instance of a
+   subclass of :class:`multiprocessing.reduction.AbstractReducer`.
 
 .. method:: get_reducer()
 
@@ -1235,14 +1235,14 @@ version 2 to be able to communicate with a Python 2.x programs.::
 
    class ForkingPicklerProtocol2(ForkingPickler):
        @classmethod
-       def dumps(cls, obj, pickle_protocol=2):
-           return super().dumps(obj, protocol=pickle_protocol)
+       def dumps(cls, obj, protocol=2):
+           return super().dumps(obj, protocol=protocol)
 
    class PickleProtocol2Reducer(AbstractReducer):
        def get_pickler_class(self):
            return ForkingPicklerProtocol2
 
-   multiprocessing.set_reducer(PickleProtocol2Reducer)
+   multiprocessing.set_reducer(PickleProtocol2Reducer())
 
 Notice that using :meth:`multiprocessing.set_reducer` changes the reducer globally. If
 changing this setting globally is undesirable you could call :meth:`context.set_reducer`,

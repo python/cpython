@@ -437,16 +437,16 @@ class Listener(object):
     This is a wrapper for a bound socket which is 'listening' for
     connections, or for a Windows named pipe.
     '''
-    def __init__(self, address=None, family=None, backlog=1, authkey=None):
+    def __init__(self, address=None, family=None, backlog=1, authkey=None, *, ctx=None):
         family = family or (address and address_type(address)) \
                  or default_family
         address = address or arbitrary_address(family)
 
         _validate_family(family)
         if family == 'AF_PIPE':
-            self._listener = PipeListener(address, backlog)
+            self._listener = PipeListener(address, backlog, ctx=ctx)
         else:
-            self._listener = SocketListener(address, family, backlog)
+            self._listener = SocketListener(address, family, backlog, ctx=ctx)
 
         if authkey is not None and not isinstance(authkey, bytes):
             raise TypeError('authkey should be a byte string')
@@ -491,16 +491,16 @@ class Listener(object):
         self.close()
 
 
-def Client(address, family=None, authkey=None):
+def Client(address, family=None, authkey=None, *, ctx=None):
     '''
     Returns a connection to the address of a `Listener`
     '''
     family = family or address_type(address)
     _validate_family(family)
     if family == 'AF_PIPE':
-        c = PipeClient(address)
+        c = PipeClient(address, ctx=ctx)
     else:
-        c = SocketClient(address)
+        c = SocketClient(address, ctx=ctx)
 
     if authkey is not None and not isinstance(authkey, bytes):
         raise TypeError('authkey should be a byte string')
@@ -581,7 +581,7 @@ class SocketListener(object):
     '''
     Representation of a socket which is bound to an address and listening
     '''
-    def __init__(self, address, family, backlog=1):
+    def __init__(self, address, family, backlog=1, *, ctx=None):
         self._socket = socket.socket(getattr(socket, family))
         try:
             # SO_REUSEADDR has different semantics on Windows (issue #2550).
@@ -604,11 +604,12 @@ class SocketListener(object):
                 )
         else:
             self._unlink = None
+        self._ctx = ctx
 
     def accept(self):
         s, self._last_accepted = self._socket.accept()
         s.setblocking(True)
-        return Connection(s.detach())
+        return Connection(s.detach(), ctx=self._ctx)
 
     def close(self):
         try:
@@ -620,7 +621,7 @@ class SocketListener(object):
                 unlink()
 
 
-def SocketClient(address):
+def SocketClient(address, *, ctx=None):
     '''
     Return a connection object connected to the socket given by `address`
     '''
@@ -628,7 +629,7 @@ def SocketClient(address):
     with socket.socket( getattr(socket, family) ) as s:
         s.setblocking(True)
         s.connect(address)
-        return Connection(s.detach())
+        return Connection(s.detach(), ctx=ctx)
 
 #
 # Definitions for connections based on named pipes
@@ -640,7 +641,7 @@ if sys.platform == 'win32':
         '''
         Representation of a named pipe
         '''
-        def __init__(self, address, backlog=None):
+        def __init__(self, address, backlog=None, *, ctx=None):
             self._address = address
             self._handle_queue = [self._new_handle(first=True)]
 
@@ -650,6 +651,7 @@ if sys.platform == 'win32':
                 self, PipeListener._finalize_pipe_listener,
                 args=(self._handle_queue, self._address), exitpriority=0
                 )
+            self._ctx = ctx
 
         def _new_handle(self, first=False):
             flags = _winapi.PIPE_ACCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAPPED
@@ -684,7 +686,7 @@ if sys.platform == 'win32':
                 finally:
                     _, err = ov.GetOverlappedResult(True)
                     assert err == 0
-            return PipeConnection(handle)
+            return PipeConnection(handle, ctx=self._ctx)
 
         @staticmethod
         def _finalize_pipe_listener(queue, address):
@@ -692,7 +694,7 @@ if sys.platform == 'win32':
             for handle in queue:
                 _winapi.CloseHandle(handle)
 
-    def PipeClient(address):
+    def PipeClient(address, *, ctx=None):
         '''
         Return a connection object connected to the pipe given by `address`
         '''
@@ -717,7 +719,7 @@ if sys.platform == 'win32':
         _winapi.SetNamedPipeHandleState(
             h, _winapi.PIPE_READMODE_MESSAGE, None, None
             )
-        return PipeConnection(h)
+        return PipeConnection(h, ctx=ctx)
 
 #
 # Authentication stuff
