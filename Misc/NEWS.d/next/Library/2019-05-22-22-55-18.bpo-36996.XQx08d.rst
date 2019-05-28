@@ -1,0 +1,1 @@
+Handle :func:`unittest.mock.patch` used as a decorator on async functions.
