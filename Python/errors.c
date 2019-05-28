@@ -26,6 +26,7 @@ extern "C" {
 
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(flush);
 
 
 /* Forward declarations */
@@ -1254,6 +1255,14 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     if (PyFile_WriteString("\n", file) < 0) {
         return -1;
     }
+
+    /* Explicitly call file.flush() */
+    PyObject *res = _PyObject_CallMethodId(file, &PyId_flush, NULL);
+    if (!res) {
+        return -1;
+    }
+    Py_DECREF(res);
+
     return 0;
 }
 

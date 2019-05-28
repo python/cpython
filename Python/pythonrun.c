@@ -978,6 +978,16 @@ _PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *t
     }
     print_exception_recursive(file, value, seen);
     Py_XDECREF(seen);
+
+    /* Call file.flush() */
+    PyObject *res = _PyObject_CallMethodId(file, &PyId_flush, NULL);
+    if (!res) {
+        /* Silently ignore file.flush() error */
+        PyErr_Clear();
+    }
+    else {
+        Py_DECREF(res);
+    }
 }
 
 void
