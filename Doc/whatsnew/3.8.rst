@@ -990,9 +990,9 @@ The following features and APIs have been removed from Python 3.8:
   :func:`fileinput.FileInput` which was ignored and deprecated since Python 3.6
   has been removed. :issue:`36952` (Contributed by Matthias Bussonnier)
 
-* The function :func:`sys.set_coroutine_wrapper` deprecated in Python 3.7 has
-  been removed; :func:`sys.get_coroutine_wrapper` now always return ``None``.
-  :issue:`36933`  (Contributed by Matthias Bussonnier)
+* The functions :func:`sys.set_coroutine_wrapper` and
+  :func:`sys.get_coroutine_wrapper` deprecated in Python 3.7 have been removed;
+  :issue:`36933` (Contributed by Matthias Bussonnier)
 
 
 Porting to Python 3.8
