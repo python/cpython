@@ -226,7 +226,7 @@ def _EndRecData64(fpin, offset, endrec):
     if sig != stringEndArchive64Locator:
         return endrec
 
-    if diskno != 0 or disks != 1:
+    if diskno != 0 or disks > 1:
         raise BadZipFile("zipfiles that span multiple disks are not supported")
 
     # Assume no 'zip64 extensible data'
