@@ -107,6 +107,8 @@ PyAPI_FUNC(int) _Py_HandleSystemExit(int *exitcode_p);
 PyAPI_FUNC(PyObject*) _PyErr_WriteUnraisableDefaultHook(PyObject *unraisable);
 
 PyAPI_FUNC(void) _PyErr_Print(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyErr_Display(PyObject *file, PyObject *exception,
+                                PyObject *value, PyObject *tb);
 
 #ifdef __cplusplus
 }
