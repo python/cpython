@@ -403,6 +403,10 @@ class OperatorsTest(unittest.TestCase):
         a.setstate(100)
         self.assertEqual(a.getstate(), 100)
 
+    def test_wrap_lenfunc_bad_cast(self):
+        self.assertEqual(xrange(sys.maxsize).__len__(), sys.maxsize)
+
+
 class ClassPropertiesAndMethods(unittest.TestCase):
 
     def assertHasAttr(self, obj, name):
