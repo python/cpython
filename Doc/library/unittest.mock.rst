@@ -1556,15 +1556,24 @@ patch.dict
     decorator. When used as a class decorator :func:`patch.dict` honours
     ``patch.TEST_PREFIX`` for choosing which methods to wrap.
 
+    .. versionchanged:: 3.8
+
+        :func:`patch.dict` now returns the patched dictionary when used as a context
+        manager.
+
 :func:`patch.dict` can be used to add members to a dictionary, or simply let a test
 change a dictionary, and ensure the dictionary is restored when the test
 ends.
 
     >>> foo = {}
-    >>> with patch.dict(foo, {'newkey': 'newvalue'}):
+    >>> with patch.dict(foo, {'newkey': 'newvalue'}) as patched_foo:
     ...     assert foo == {'newkey': 'newvalue'}
+    ...     assert patched_foo == {'newkey': 'newvalue'}
+    ...     # You can add, update or delete keys of foo (or patched_foo, it's the same dict)
+    ...     patched_foo['spam'] = 'eggs'
     ...
     >>> assert foo == {}
+    >>> assert patched_foo == {}
 
     >>> import os
     >>> with patch.dict('os.environ', {'newkey': 'newvalue'}):
