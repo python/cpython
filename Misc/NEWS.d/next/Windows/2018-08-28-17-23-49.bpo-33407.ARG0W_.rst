@@ -1,1 +1,1 @@
-Implement ``Py_DEPRECATED()`` on Windows.
+The :c:macro:`Py_DEPRECATED()` macro has been implemented for MSVC.
