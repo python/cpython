@@ -645,12 +645,12 @@ definition::
    TypeError: combined_example() got an unexpected keyword argument 'pos_only'
 
 
-Finally, consider this function definition::
+Finally, consider this function definition which has a potential collision between the positional argument ``name``  and ``**kwds`` which has ``name`` as a key::
 
     def foo(name, **kwds):
         return 'name' in kwds
 
-There is no possible call that will make it return ``True`` as the keyword 'name'
+There is no possible call that will make it return ``True`` as the keyword ``'name'``
 will always to bind to the first parameter. For example::
 
     >>> foo(1, **{'name': 2})
@@ -659,7 +659,7 @@ will always to bind to the first parameter. For example::
     TypeError: foo() got multiple values for argument 'name'
     >>>
 
-But using ``/`` (positional only arguments), this is possible::
+But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments.
 
     def foo(name, /, **kwds):
         return 'name' in kwds
@@ -682,7 +682,7 @@ As guidance:
 * Use positional-only if you want the name of the parameters to not be
   available to the user. This is useful when parameter names have no real
   meaning, if you want to enforce the order of the arguments when the function
-  is called or if you need to take some positinal parameters and arbitrary
+  is called or if you need to take some positional parameters and arbitrary
   keywords.
 * Use keyword-only when names have meaning and the function definition is
   more understandable by being explicit with names or you want to prevent
