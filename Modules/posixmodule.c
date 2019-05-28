@@ -11915,14 +11915,13 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
 os.memfd_create
 
     name: FSConverter
-    flags: unsigned_int(bitwise=True)
-    /
+    flags: unsigned_int(bitwise=True, c_default="MFD_CLOEXEC") = MFD_CLOEXEC
 
 [clinic start generated code]*/
 
 static PyObject *
 os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
-/*[clinic end generated code: output=6681ede983bdb9a6 input=5659b8bdae914e4f]*/
+/*[clinic end generated code: output=6681ede983bdb9a6 input=a42cfc199bcd56e9]*/
 {
     int fd;
     const char *bytes = PyBytes_AS_STRING(name);

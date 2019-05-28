@@ -3127,9 +3127,12 @@ class MemfdCreateTests(unittest.TestCase):
     def test_memfd_create(self):
         fd = os.memfd_create("Hi", os.MFD_CLOEXEC)
         self.assertNotEqual(fd, -1)
+        self.assertFalse(os.get_inheritable(fd))
         with open(fd, "wb") as f:
             f.write(b'memfd_create')
             self.assertEqual(f.tell(), 12)
+        fd = os.memfd_create("Hi")
+        self.assertFalse(os.get_inheritable(fd))
 
 
 class OSErrorTests(unittest.TestCase):

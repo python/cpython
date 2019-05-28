@@ -7346,28 +7346,36 @@ exit:
 #if defined(HAVE_MEMFD_CREATE)
 
 PyDoc_STRVAR(os_memfd_create__doc__,
-"memfd_create($module, name, flags, /)\n"
+"memfd_create($module, /, name, flags=MFD_CLOEXEC)\n"
 "--\n"
 "\n");
 
 #define OS_MEMFD_CREATE_METHODDEF    \
-    {"memfd_create", (PyCFunction)(void(*)(void))os_memfd_create, METH_FASTCALL, os_memfd_create__doc__},
+    {"memfd_create", (PyCFunction)(void(*)(void))os_memfd_create, METH_FASTCALL|METH_KEYWORDS, os_memfd_create__doc__},
 
 static PyObject *
 os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags);
 
 static PyObject *
-os_memfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+os_memfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"name", "flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "memfd_create", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *name = NULL;
-    unsigned int flags;
+    unsigned int flags = MFD_CLOEXEC;
 
-    if (!_PyArg_CheckPositional("memfd_create", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_FSConverter(args[0], &name)) {
         goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
     if (PyFloat_Check(args[1])) {
         PyErr_SetString(PyExc_TypeError,
@@ -7378,6 +7386,7 @@ os_memfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (flags == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
     }
+skip_optional_pos:
     return_value = os_memfd_create_impl(module, name, flags);
 
 exit:
@@ -8626,4 +8635,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=7446453677391010 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=855b81aafd05beed input=a9049054013a1b77]*/
