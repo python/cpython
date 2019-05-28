@@ -171,6 +171,9 @@ PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
     const char *reason          /* UTF-8 encoded string */
     );
 
+PyAPI_FUNC(void) _PyErr_WriteUnraisableMsg(
+    const char *err_msg,
+    PyObject *obj);
 
 #ifdef __cplusplus
 }

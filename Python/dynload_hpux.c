@@ -20,7 +20,7 @@ dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
                                        const char *pathname, FILE *fp)
 {
     int flags = BIND_FIRST | BIND_DEFERRED;
-    int verbose = _PyInterpreterState_GET_UNSAFE()->core_config.verbose;
+    int verbose = _PyInterpreterState_GET_UNSAFE()->config.verbose;
     if (verbose) {
         flags = BIND_FIRST | BIND_IMMEDIATE |
             BIND_NONFATAL | BIND_VERBOSE;

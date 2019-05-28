@@ -298,7 +298,11 @@ always available.
    before the program exits.  The handling of such top-level exceptions can be
    customized by assigning another three-argument function to ``sys.excepthook``.
 
-   See also :func:`unraisablehook` which handles unraisable exceptions.
+   .. seealso::
+
+      The :func:`sys.unraisablehook` function handles unraisable exceptions
+      and the :func:`threading.excepthook` function handles exception raised
+      by :func:`threading.Thread.run`.
 
 
 .. data:: __breakpointhook__
@@ -1566,10 +1570,15 @@ always available.
    * *exc_type*: Exception type.
    * *exc_value*: Exception value, can be ``None``.
    * *exc_traceback*: Exception traceback, can be ``None``.
+   * *err_msg*: Error message, can be ``None``.
    * *object*: Object causing the exception, can be ``None``.
 
    :func:`sys.unraisablehook` can be overridden to control how unraisable
    exceptions are handled.
+
+   The default hook formats *err_msg* and *object* as:
+   ``f'{err_msg}: {object!r}'``; use "Exception ignored in" error message
+   if *err_msg* is ``None``.
 
    See also :func:`excepthook` which handles uncaught exceptions.
 

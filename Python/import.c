@@ -43,17 +43,17 @@ module _imp
 
 /* Initialize things */
 
-_PyInitError
+PyStatus
 _PyImport_Init(PyInterpreterState *interp)
 {
     interp->builtins_copy = PyDict_Copy(interp->builtins);
     if (interp->builtins_copy == NULL) {
-        return _Py_INIT_ERR("Can't backup builtins dict");
+        return _PyStatus_ERR("Can't backup builtins dict");
     }
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 }
 
-_PyInitError
+PyStatus
 _PyImportHooks_Init(void)
 {
     PyObject *v, *path_hooks = NULL;
@@ -82,15 +82,15 @@ _PyImportHooks_Init(void)
         goto error;
     }
     Py_DECREF(path_hooks);
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 
   error:
     PyErr_Print();
-    return _Py_INIT_ERR("initializing sys.meta_path, sys.path_hooks, "
+    return _PyStatus_ERR("initializing sys.meta_path, sys.path_hooks, "
                         "or path_importer_cache failed");
 }
 
-_PyInitError
+PyStatus
 _PyImportZip_Init(PyInterpreterState *interp)
 {
     PyObject *path_hooks, *zipimport;
@@ -102,7 +102,7 @@ _PyImportZip_Init(PyInterpreterState *interp)
         goto error;
     }
 
-    int verbose = interp->core_config.verbose;
+    int verbose = interp->config.verbose;
     if (verbose) {
         PySys_WriteStderr("# installing zipimport hook\n");
     }
@@ -138,11 +138,11 @@ _PyImportZip_Init(PyInterpreterState *interp)
         }
     }
 
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 
   error:
     PyErr_Print();
-    return _Py_INIT_ERR("initializing zipimport failed");
+    return _PyStatus_ERR("initializing zipimport failed");
 }
 
 /* Locking primitives to prevent parallel imports of the same module
@@ -418,7 +418,7 @@ PyImport_Cleanup(void)
 
     /* XXX Perhaps these precautions are obsolete. Who knows? */
 
-    int verbose = interp->core_config.verbose;
+    int verbose = interp->config.verbose;
     if (verbose) {
         PySys_WriteStderr("# clear builtins._\n");
     }
@@ -766,7 +766,7 @@ _PyImport_FindExtensionObjectEx(PyObject *name, PyObject *filename,
         PyMapping_DelItem(modules, name);
         return NULL;
     }
-    int verbose = _PyInterpreterState_Get()->core_config.verbose;
+    int verbose = _PyInterpreterState_Get()->config.verbose;
     if (verbose) {
         PySys_FormatStderr("import %U # previously loaded (%R)\n",
                            name, filename);
@@ -1455,7 +1455,7 @@ remove_importlib_frames(PyInterpreterState *interp)
        which end with a call to "_call_with_frames_removed". */
 
     PyErr_Fetch(&exception, &value, &base_tb);
-    if (!exception || interp->core_config.verbose) {
+    if (!exception || interp->config.verbose) {
         goto done;
     }
 
@@ -1655,7 +1655,7 @@ import_find_and_load(PyObject *abs_name)
     _Py_IDENTIFIER(_find_and_load);
     PyObject *mod = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    int import_time = interp->core_config.import_time;
+    int import_time = interp->config.import_time;
     static int import_level;
     static _PyTime_t accumulated;
 
@@ -2338,7 +2338,7 @@ PyInit__imp(void)
         goto failure;
     }
 
-    const wchar_t *mode = _PyInterpreterState_Get()->core_config.check_hash_pycs_mode;
+    const wchar_t *mode = _PyInterpreterState_Get()->config.check_hash_pycs_mode;
     PyObject *pyc_mode = PyUnicode_FromWideChar(mode, -1);
     if (pyc_mode == NULL) {
         goto failure;
