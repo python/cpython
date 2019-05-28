@@ -126,9 +126,6 @@ struct _ts {
 
     int coroutine_origin_tracking_depth;
 
-    PyObject *coroutine_wrapper;
-    int in_coroutine_wrapper;
-
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
 

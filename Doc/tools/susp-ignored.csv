@@ -337,7 +337,6 @@ library/zipapp,,:main,"$ python -m zipapp myapp -m ""myapp:main"""
 library/zipapp,,:fn,"pkg.mod:fn"
 library/zipapp,,:callable,"pkg.module:callable"
 library/stdtypes,,::,>>> m[::2].tolist()
-library/sys,,`,# ``wrapper`` creates a ``wrap(coro)`` coroutine:
 whatsnew/3.5,,:root,'WARNING:root:warning\n'
 whatsnew/3.5,,:warning,'WARNING:root:warning\n'
 whatsnew/3.5,,::,>>> addr6 = ipaddress.IPv6Address('::1')

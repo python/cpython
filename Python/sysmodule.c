@@ -1158,62 +1158,6 @@ sys_get_coroutine_origin_tracking_depth_impl(PyObject *module)
     return _PyEval_GetCoroutineOriginTrackingDepth();
 }
 
-/*[clinic input]
-sys.set_coroutine_wrapper
-
-    wrapper: object
-    /
-
-Set a wrapper for coroutine objects.
-[clinic start generated code]*/
-
-static PyObject *
-sys_set_coroutine_wrapper(PyObject *module, PyObject *wrapper)
-/*[clinic end generated code: output=9c7db52d65f6b188 input=df6ac09a06afef34]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "set_coroutine_wrapper is deprecated", 1) < 0) {
-        return NULL;
-    }
-
-    if (wrapper != Py_None) {
-        if (!PyCallable_Check(wrapper)) {
-            PyErr_Format(PyExc_TypeError,
-                         "callable expected, got %.50s",
-                         Py_TYPE(wrapper)->tp_name);
-            return NULL;
-        }
-        _PyEval_SetCoroutineWrapper(wrapper);
-    }
-    else {
-        _PyEval_SetCoroutineWrapper(NULL);
-    }
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
-sys.get_coroutine_wrapper
-
-Return the wrapper for coroutines set by sys.set_coroutine_wrapper.
-[clinic start generated code]*/
-
-static PyObject *
-sys_get_coroutine_wrapper_impl(PyObject *module)
-/*[clinic end generated code: output=b74a7e4b14fe898e input=ef0351fb9ece0bb4]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "get_coroutine_wrapper is deprecated", 1) < 0) {
-        return NULL;
-    }
-    PyObject *wrapper = _PyEval_GetCoroutineWrapper();
-    if (wrapper == NULL) {
-        wrapper = Py_None;
-    }
-    Py_INCREF(wrapper);
-    return wrapper;
-}
-
-
 static PyTypeObject AsyncGenHooksType;
 
 PyDoc_STRVAR(asyncgen_hooks_doc,
@@ -2002,8 +1946,6 @@ static PyMethodDef sys_methods[] = {
     SYS__DEBUGMALLOCSTATS_METHODDEF
     SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     SYS_GET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
-    SYS_SET_COROUTINE_WRAPPER_METHODDEF
-    SYS_GET_COROUTINE_WRAPPER_METHODDEF
     {"set_asyncgen_hooks", (PyCFunction)(void(*)(void))sys_set_asyncgen_hooks,
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF

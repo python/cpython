@@ -781,22 +781,6 @@ always available.
       for details.)  Use it only for debugging purposes.
 
 
-.. function:: get_coroutine_wrapper()
-
-   Returns ``None``, or a wrapper set by :func:`set_coroutine_wrapper`.
-
-   .. versionadded:: 3.5
-      See :pep:`492` for more details.
-
-   .. note::
-      This function has been added on a provisional basis (see :pep:`411`
-      for details.)  Use it only for debugging purposes.
-
-   .. deprecated:: 3.7
-      The coroutine wrapper functionality has been deprecated, and
-      will be removed in 3.8. See :issue:`32591` for details.
-
-
 .. data:: hash_info
 
    A :term:`struct sequence` giving parameters of the numeric hash
@@ -1383,49 +1367,6 @@ always available.
    .. note::
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
-
-.. function:: set_coroutine_wrapper(wrapper)
-
-   Allows intercepting creation of :term:`coroutine` objects (only ones that
-   are created by an :keyword:`async def` function; generators decorated with
-   :func:`types.coroutine` or :func:`asyncio.coroutine` will not be
-   intercepted).
-
-   The *wrapper* argument must be either:
-
-   * a callable that accepts one argument (a coroutine object);
-   * ``None``, to reset the wrapper.
-
-   If called twice, the new wrapper replaces the previous one.  The function
-   is thread-specific.
-
-   The *wrapper* callable cannot define new coroutines directly or indirectly::
-
-        def wrapper(coro):
-            async def wrap(coro):
-                return await coro
-            return wrap(coro)
-        sys.set_coroutine_wrapper(wrapper)
-
-        async def foo():
-            pass
-
-        # The following line will fail with a RuntimeError, because
-        # ``wrapper`` creates a ``wrap(coro)`` coroutine:
-        foo()
-
-   See also :func:`get_coroutine_wrapper`.
-
-   .. versionadded:: 3.5
-      See :pep:`492` for more details.
-
-   .. note::
-      This function has been added on a provisional basis (see :pep:`411`
-      for details.)  Use it only for debugging purposes.
-
-   .. deprecated-removed:: 3.7 3.8
-      The coroutine wrapper functionality has been deprecated, and
-      will be removed in 3.8. See :issue:`32591` for details.
 
 .. function:: _enablelegacywindowsfsencoding()
 
