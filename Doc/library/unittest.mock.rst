@@ -1945,7 +1945,7 @@ The full list of supported magic methods is:
 * Container methods: ``__getitem__``, ``__setitem__``, ``__delitem__``,
   ``__contains__``, ``__len__``, ``__iter__``, ``__reversed__``
   and ``__missing__``
-* Context manager: ``__enter__``, ``__exit__``, ``__aenter`` and ``__aexit__``
+* Context manager: ``__enter__``, ``__exit__``, ``__aenter__`` and ``__aexit__``
 * Unary numeric methods: ``__neg__``, ``__pos__`` and ``__invert__``
 * The numeric methods (including right hand and in-place variants):
   ``__add__``, ``__sub__``, ``__mul__``, ``__matmul__``, ``__div__``, ``__truediv__``,
