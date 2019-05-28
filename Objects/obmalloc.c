@@ -1166,7 +1166,7 @@ used to be done by one-at-a-time linear search when an arena's number of
 free pools changed.  That could, overall, consume time quadratic in the
 number of arenas.  That didn't really matter when there were only a few
 hundred arenas (typical!), but could be a timing disaster when there were
-hundreds of thousands.  See PR FIXME.
+hundreds of thousands.  See bpo-37029.
 
 Now we have a vector of "search fingers" to eliminate the need to search:
 nfp2lasta[nfp] returns the last ("rightmost") arena in usable_arenas
@@ -1742,7 +1742,12 @@ pymalloc_free(void *ctx, void *p)
      * are no arenas in usable_arenas with that value.
      */
     struct arena_object* lastnf = nfp2lasta[nf];
-    assert(nf == 0 || lastnf != NULL);
+    assert((nf == 0 && lastnf == NULL) || 
+           (nf > 0 && 
+            lastnf != NULL &&
+            lastnf->nfreepools == nf &&
+            (lastnf->nextarena == NULL ||
+             nf < lastnf->nextarena->nfreepools)));
     if (lastnf == ao) {  /* it is the rightmost */
         struct arena_object* p = ao->prevarena;
         nfp2lasta[nf] = (p != NULL && p->nfreepools == nf) ? p : NULL;
