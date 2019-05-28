@@ -1101,6 +1101,57 @@ class FastChildWatcher(BaseChildWatcher):
                 callback(pid, returncode, *args)
 
 
+class AbstractMultiLoopChildWatcher:
+
+    def add_child_handler(self, loop, pid, callback, *args):
+        raise NotImplementedError()
+
+    def remove_child_handler(self, loop, pid):
+        raise NotImplementedError()
+
+    def attach_loop(self, loop):
+        # No-op for smooth transition from loop-attached watchers.
+        # There is external code that calls watcher.attach_loop() explicitly
+        pass
+
+    def close(self):
+        raise NotImplementedError()
+
+    def __enter__(self):
+        raise NotImplementedError()
+
+    def __exit__(self, a, b, c):
+        raise NotImplementedError()
+
+
+class MultiLoopChildWatcher(AbstractMultiLoopChildWatcher):
+    def __init__(self):
+        self._pids = {}
+
+    def close(self):
+        raise NotImplementedError()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, a, b, c):
+        # SafeChildWatcher doesn't close on __exit__ too
+        pass
+
+    def add_child_handler(self, loop, pid, callback, *args):
+        raise NotImplementedError()
+
+    def remove_child_handler(self, loop, pid):
+        raise NotImplementedError()
+
+    def attach_loop(self, loop):
+        # No-op for smooth transition from loop-attached watchers.
+        # There is external code that calls watcher.attach_loop() explicitly
+        pass
+
+
+
+
 class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
     """UNIX event loop policy with a watcher for child processes."""
     _loop_factory = _UnixSelectorEventLoop
