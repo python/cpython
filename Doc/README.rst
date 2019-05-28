@@ -113,6 +113,21 @@ Then, from the ``Doc`` directory, run ::
 where ``<builder>`` is one of html, text, latex, or htmlhelp (for explanations
 see the make targets above).
 
+Deprecation header
+==================
+
+You can define the ``outdated_message`` and ``outdated_link_text``
+variables in ``html_context`` to show a red banner on each page
+redirecting to the "latest" version.
+
+The ``outdated_message`` comes first, the ``outdated_link_text`` comes
+afterwards as a link, like this::
+
+    {{ outdated_message }}<a href="to new version">{{ outdated_link_text }}</a>.
+
+The link points to the same page on ``/3/``, sadly for the moment the
+language is lost during the process.
+
 
 Contributing
 ============

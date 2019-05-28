@@ -1,5 +1,14 @@
 {% extends "!layout.html" %}
 
+{% block header %}
+{%- if outdated_message is defined and outdated_link_text is defined %}
+<div id="outdated-warning" style="padding: .5em; text-align: center; background-color: #FFBABA; color: #6A0E0E;">
+    {{ outdated_message }}
+    <a href="/3/{{ pagename }}{{ file_suffix }}">{{ outdated_link_text }}</a>.
+</div>
+{%- endif %}
+{% endblock %}
+
 {% block rootrellink %}
 {{ super() }}
     <li>
