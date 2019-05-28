@@ -2027,6 +2027,7 @@ Methods and their defaults:
 * ``__len__``: 0
 * ``__iter__``: iter([])
 * ``__exit__``: False
+* ``__aexit__``: False
 * ``__complex__``: 1j
 * ``__float__``: 1.0
 * ``__bool__``: True
