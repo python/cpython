@@ -23,9 +23,9 @@ Return symbol and scope dictionaries used internally by compiler.
 [clinic start generated code]*/
 
 static PyObject *
-_symtable_symtable_impl(PyObject *module, PyObject *source, PyObject *filename,
-                        const char *startstr)
-/*[clinic end generated code: output=da9d42d2103ea619 input=a8b56a8eee46c26b]*/
+_symtable_symtable_impl(PyObject *module, PyObject *source,
+                        PyObject *filename, const char *startstr)
+/*[clinic end generated code: output=59eb0d5fc7285ac4 input=9dd8a50c0c36a4d7]*/
 {
     struct symtable *st;
     PyObject *t;
