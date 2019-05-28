@@ -557,8 +557,8 @@ Positional-Only Parameters
 
 Looking at this in a bit more detail, it is possible to mark certain parameters
 as *positional-only*. If *positional-only*, the parameters' order matters, and
-the parameters cannot be passed by keyword. Positional-only parameters would
-be placed before a ``/`` (forward-slash). The ``/`` is used to logically
+the parameters cannot be passed by keyword. Positional-only parameters are
+placed before a ``/`` (forward-slash). The ``/`` is used to logically
 separate the positional-only parameters from the rest of the parameters.
 If there is no ``/`` in the function definition, there are no positional-only
 parameters.
@@ -687,6 +687,8 @@ As guidance:
 * Use keyword-only when names have meaning and the function definition is
   more understandable by being explicit with names or you want to prevent
   users relying on the position of the argument being passed.
+* For an API, use positional-only to prevent prevent breaking API changes
+  if the parameter's name is modified in the future.
 
 .. _tut-arbitraryargs:
 
