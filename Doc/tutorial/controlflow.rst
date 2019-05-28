@@ -519,6 +519,176 @@ and of course it would print:
 Note that the order in which the keyword arguments are printed is guaranteed
 to match the order in which they were provided in the function call.
 
+Special parameters
+------------------
+
+By default, arguments may be passed to a Python function either by position
+or explicitly by keyword. For readability and performance, it makes sense to
+restrict the way arguments can be passed so that a developer need only look
+at the function definition to determine if items are passed by position, by
+position or keyword, or by keyword.
+
+A function definition may look like:
+
+.. code-block:: none
+
+   def f(pos1, pos2, /, pos_or_kwd, *, kwd1, kwd2):
+         -----------    ----------     ----------
+           |             |                  |
+           |        Positional or keyword   |
+           |                                - Keyword only
+            -- Positional only
+
+where ``/`` and ``*`` are optional. If used, these symbols indicate the kind of
+parameter by how the arguments may be passed to the function:
+positional-only, positional-or-keyword, and keyword-only. Keyword parameters
+are also referred to as named parameters.
+
+-------------------------------
+Positional-or-Keyword Arguments
+-------------------------------
+
+If ``/`` and ``*`` are not present in the function definition, arguments may
+be passed to a function by position or by keyword.
+
+--------------------------
+Positional-Only Parameters
+--------------------------
+
+Looking at this in a bit more detail, it is possible to mark certain parameters
+as *positional-only*. If *positional-only*, the parameters' order matters, and
+the parameters cannot be passed by keyword. Positional-only parameters are
+placed before a ``/`` (forward-slash). The ``/`` is used to logically
+separate the positional-only parameters from the rest of the parameters.
+If there is no ``/`` in the function definition, there are no positional-only
+parameters.
+
+Parameters following the ``/`` may be *positional-or-keyword* or *keyword-only*.
+
+----------------------
+Keyword-Only Arguments
+----------------------
+
+To mark parameters as *keyword-only*, indicating the parameters must be passed
+by keyword argument, place an ``*`` in the arguments list just before the first
+*keyword-only* parameter.
+
+-----------------
+Function Examples
+-----------------
+
+Consider the following example function definitions paying close attention to the
+markers ``/`` and ``*``::
+
+   >>> def standard_arg(arg):
+   ...     print(arg)
+   ...
+   >>> def pos_only_arg(arg, /):
+   ...     print(arg)
+   ...
+   >>> def kwd_only_arg(*, arg):
+   ...     print(arg)
+   ...
+   >>> def combined_example(pos_only, /, standard, *, kwd_only):
+   ...     print(pos_only, standard, kwd_only)
+
+
+The first function definition, ``standard_arg``, the most familiar form,
+places no restrictions on the calling convention and arguments may be
+passed by position or keyword::
+
+   >>> standard_arg(2)
+   2
+
+   >>> standard_arg(arg=2)
+   2
+
+The second function ``pos_only_arg`` is restricted to only use positional
+parameters as there is a ``/`` in the function definition::
+
+   >>> pos_only_arg(1)
+   1
+
+   >>> pos_only_arg(arg=1)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: pos_only_arg() got an unexpected keyword argument 'arg'
+
+The third function ``kwd_only_args`` only allows keyword arguments as indicated
+by a ``*`` in the function definition::
+
+   >>> kwd_only_arg(3)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: kwd_only_arg() takes 0 positional arguments but 1 was given
+
+   >>> kwd_only_arg(arg=3)
+   3
+
+And the last uses all three calling conventions in the same function
+definition::
+
+   >>> combined_example(1, 2, 3)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: combined_example() takes 2 positional arguments but 3 were given
+
+   >>> combined_example(1, 2, kwd_only=3)
+   1 2 3
+
+   >>> combined_example(1, standard=2, kwd_only=3)
+   1 2 3
+
+   >>> combined_example(pos_only=1, standard=2, kwd_only=3)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: combined_example() got an unexpected keyword argument 'pos_only'
+
+
+Finally, consider this function definition which has a potential collision between the positional argument ``name``  and ``**kwds`` which has ``name`` as a key::
+
+    def foo(name, **kwds):
+        return 'name' in kwds
+
+There is no possible call that will make it return ``True`` as the keyword ``'name'``
+will always to bind to the first parameter. For example::
+
+    >>> foo(1, **{'name': 2})
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: foo() got multiple values for argument 'name'
+    >>>
+
+But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
+
+    def foo(name, /, **kwds):
+        return 'name' in kwds
+    >>> foo(1, **{'name': 2})
+    True
+
+In other words, the names of positional-only parameters can be used in
+``**kwds`` without ambiguity.
+
+-----
+Recap
+-----
+
+The use case will determine which parameters to use in the function definition::
+
+   def f(pos1, pos2, /, pos_or_kwd, *, kwd1, kwd2):
+
+As guidance:
+
+* Use positional-only if you want the name of the parameters to not be
+  available to the user. This is useful when parameter names have no real
+  meaning, if you want to enforce the order of the arguments when the function
+  is called or if you need to take some positional parameters and arbitrary
+  keywords.
+* Use keyword-only when names have meaning and the function definition is
+  more understandable by being explicit with names or you want to prevent
+  users relying on the position of the argument being passed.
+* For an API, use positional-only to prevent prevent breaking API changes
+  if the parameter's name is modified in the future.
 
 .. _tut-arbitraryargs:
 
