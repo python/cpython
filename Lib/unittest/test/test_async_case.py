@@ -23,7 +23,7 @@ class TestAsyncCase(unittest.TestCase):
                 self.assertEqual(events, ['setUp',
                                           'asyncSetUp'])
                 events.append('test')
-                self.addCleanup(self.on_cleanup)
+                self.addAsyncCleanup(self.on_cleanup)
 
             async def asyncTearDown(self):
                 self.assertEqual(events, ['setUp',
@@ -55,7 +55,6 @@ class TestAsyncCase(unittest.TestCase):
                                   'tearDown',
                                   'cleanup'])
 
-
     def test_exception_in_setup(self):
         events = []
 
@@ -66,7 +65,7 @@ class TestAsyncCase(unittest.TestCase):
 
             async def test_func(self):
                 events.append('test')
-                self.addCleanup(self.on_cleanup)
+                self.addAsyncCleanup(self.on_cleanup)
 
             async def asyncTearDown(self):
                 events.append('asyncTearDown')
@@ -79,7 +78,6 @@ class TestAsyncCase(unittest.TestCase):
         test.run()
         self.assertEqual(events, ['asyncSetUp'])
 
-
     def test_exception_in_test(self):
         events = []
 
@@ -90,7 +88,7 @@ class TestAsyncCase(unittest.TestCase):
             async def test_func(self):
                 events.append('test')
                 raise Exception()
-                self.addCleanup(self.on_cleanup)
+                self.addAsyncCleanup(self.on_cleanup)
 
             async def asyncTearDown(self):
                 events.append('asyncTearDown')
@@ -111,7 +109,7 @@ class TestAsyncCase(unittest.TestCase):
 
             async def test_func(self):
                 events.append('test')
-                self.addCleanup(self.on_cleanup)
+                self.addAsyncCleanup(self.on_cleanup)
                 raise Exception()
 
             async def asyncTearDown(self):
@@ -133,7 +131,7 @@ class TestAsyncCase(unittest.TestCase):
 
             async def test_func(self):
                 events.append('test')
-                self.addCleanup(self.on_cleanup)
+                self.addAsyncCleanup(self.on_cleanup)
 
             async def asyncTearDown(self):
                 events.append('asyncTearDown')
@@ -156,7 +154,7 @@ class TestAsyncCase(unittest.TestCase):
 
             async def test_func(self):
                 events.append('test')
-                self.addCleanup(self.on_cleanup)
+                self.addAsyncCleanup(self.on_cleanup)
 
             async def asyncTearDown(self):
                 events.append('asyncTearDown')
@@ -168,6 +166,29 @@ class TestAsyncCase(unittest.TestCase):
         test = Test("test_func")
         test.run()
         self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown', 'cleanup'])
+
+    def test_cleanups_interleave_order(self):
+        events = []
+
+        class Test(unittest.IsolatedAsyncioTestCase):
+            async def test_func(self):
+                self.addAsyncCleanup(self.on_sync_cleanup, 1)
+                self.addAsyncCleanup(self.on_async_cleanup, 2)
+                self.addAsyncCleanup(self.on_sync_cleanup, 3)
+                self.addAsyncCleanup(self.on_async_cleanup, 4)
+
+            async def on_sync_cleanup(self, val):
+                events.append(f'sync_cleanup {val}')
+
+            async def on_async_cleanup(self, val):
+                events.append(f'async_cleanup {val}')
+
+        test = Test("test_func")
+        test.run()
+        self.assertEqual(events, ['async_cleanup 4',
+                                  'sync_cleanup 3',
+                                  'async_cleanup 2',
+                                  'sync_cleanup 1'])
 
 
 if __name__ == "__main__":
