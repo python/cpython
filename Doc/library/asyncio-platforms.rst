@@ -53,9 +53,6 @@ All event loops on Windows do not support the following methods:
 
 :class:`ProactorEventLoop` has the following limitations:
 
-* The :meth:`loop.create_datagram_endpoint` method
-  is not supported.
-
 * The :meth:`loop.add_reader` and :meth:`loop.add_writer`
   methods are not supported.
 
