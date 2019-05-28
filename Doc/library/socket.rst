@@ -373,7 +373,7 @@ Constants
 
    Enables CAN FD support in a CAN_RAW socket. This is disabled by default.
    This allows your application to send both CAN and CAN FD frames; however,
-   you one must accept both CAN and CAN FD frames when reading from the socket.
+   you must accept both CAN and CAN FD frames when reading from the socket.
 
    This constant is documented in the Linux documentation.
 
