@@ -1002,6 +1002,7 @@ t_bootstrap(void *boot_raw)
     res = PyObject_Call(boot->func, boot->args, boot->keyw);
     if (res == NULL) {
         if (PyErr_ExceptionMatches(PyExc_SystemExit))
+            /* SystemExit is ignored silently */
             PyErr_Clear();
         else {
             _PyErr_WriteUnraisableMsg("in thread started by", boot->func);
