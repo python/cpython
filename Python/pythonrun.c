@@ -94,7 +94,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     PyCompilerFlags local_flags;
     int nomem_count = 0;
 #ifdef Py_REF_DEBUG
-    int show_ref_count = _PyInterpreterState_Get()->core_config.show_ref_count;
+    int show_ref_count = _PyInterpreterState_Get()->config.show_ref_count;
 #endif
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
@@ -584,7 +584,7 @@ print_error_text(PyObject *f, int offset, PyObject *text_obj)
 int
 _Py_HandleSystemExit(int *exitcode_p)
 {
-    int inspect = _PyInterpreterState_GET_UNSAFE()->core_config.inspect;
+    int inspect = _PyInterpreterState_GET_UNSAFE()->config.inspect;
     if (inspect) {
         /* Don't exit if -i flag was given. This flag is set to 0
          * when entering interactive mode for inspecting. */
@@ -953,10 +953,11 @@ print_exception_recursive(PyObject *f, PyObject *value, PyObject *seen)
 }
 
 void
-PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
+_PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *tb)
 {
+    assert(file != NULL && file != Py_None);
+
     PyObject *seen;
-    PyObject *f = _PySys_GetObjectId(&PyId_stderr);
     if (PyExceptionInstance_Check(value)
         && tb != NULL && PyTraceBack_Check(tb)) {
         /* Put the traceback on the exception, otherwise it won't get
@@ -967,23 +968,32 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
         else
             Py_DECREF(cur_tb);
     }
-    if (f == Py_None) {
-        /* pass */
+
+    /* We choose to ignore seen being possibly NULL, and report
+       at least the main exception (it could be a MemoryError).
+    */
+    seen = PySet_New(NULL);
+    if (seen == NULL) {
+        PyErr_Clear();
     }
-    else if (f == NULL) {
+    print_exception_recursive(file, value, seen);
+    Py_XDECREF(seen);
+}
+
+void
+PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
+{
+    PyObject *file = _PySys_GetObjectId(&PyId_stderr);
+    if (file == NULL) {
         _PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
+        return;
     }
-    else {
-        /* We choose to ignore seen being possibly NULL, and report
-           at least the main exception (it could be a MemoryError).
-        */
-        seen = PySet_New(NULL);
-        if (seen == NULL)
-            PyErr_Clear();
-        print_exception_recursive(f, value, seen);
-        Py_XDECREF(seen);
+    if (file == Py_None) {
+        return;
     }
+
+    _PyErr_Display(file, exception, value, tb);
 }
 
 PyObject *

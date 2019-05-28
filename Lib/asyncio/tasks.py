@@ -260,11 +260,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 super().set_result(exc.value)
         except exceptions.CancelledError:
             super().cancel()  # I.e., Future.cancel(self).
-        except Exception as exc:
-            super().set_exception(exc)
-        except BaseException as exc:
+        except (KeyboardInterrupt, SystemExit) as exc:
             super().set_exception(exc)
             raise
+        except BaseException as exc:
+            super().set_exception(exc)
         else:
             blocking = getattr(result, '_asyncio_future_blocking', None)
             if blocking is not None:
@@ -318,7 +318,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def __wakeup(self, future):
         try:
             future.result()
-        except Exception as exc:
+        except BaseException as exc:
             # This may also be a cancellation.
             self.__step(exc)
         else:
@@ -858,7 +858,9 @@ def run_coroutine_threadsafe(coro, loop):
     def callback():
         try:
             futures._chain_future(ensure_future(coro, loop=loop), future)
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             if future.set_running_or_notify_cancel():
                 future.set_exception(exc)
             raise

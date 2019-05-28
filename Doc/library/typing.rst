@@ -878,6 +878,39 @@ The module defines the following classes, functions and decorators:
       The ``_field_types`` and ``__annotations__`` attributes are
       now regular dictionaries instead of instances of ``OrderedDict``.
 
+.. class:: TypedDict(dict)
+
+   A simple typed namespace. At runtime it is equivalent to
+   a plain :class:`dict`.
+
+   ``TypedDict`` creates a dictionary type that expects all of its
+   instances to have a certain set of keys, where each key is
+   associated with a value of a consistent type. This expectation
+   is not checked at runtime but is only enforced by type checkers.
+   Usage::
+
+      class Point2D(TypedDict):
+          x: int
+          y: int
+          label: str
+
+      a: Point2D = {'x': 1, 'y': 2, 'label': 'good'}  # OK
+      b: Point2D = {'z': 3, 'label': 'bad'}           # Fails type check
+
+      assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
+
+   The type info for introspection can be accessed via ``Point2D.__annotations__``
+   and ``Point2D.__total__``.  To allow using this feature with older versions
+   of Python that do not support :pep:`526`, ``TypedDict`` supports two additional
+   equivalent syntactic forms::
+
+      Point2D = TypedDict('Point2D', x=int, y=int, label=str)
+      Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+   See :pep:`589` for more examples and detailed rules of using ``TypedDict``
+   with type checkers.
+
+   .. versionadded:: 3.8
 
 .. function:: NewType(typ)
 
@@ -939,6 +972,31 @@ The module defines the following classes, functions and decorators:
           <actual implementation>
 
    See :pep:`484` for details and comparison with other typing semantics.
+
+.. decorator:: final
+
+   A decorator to indicate to type checkers that the decorated method
+   cannot be overridden, and the decorated class cannot be subclassed.
+   For example::
+
+      class Base:
+          @final
+          def done(self) -> None:
+              ...
+      class Sub(Base):
+          def done(self) -> None:  # Error reported by type checker
+                ...
+
+      @final
+      class Leaf:
+          ...
+      class Other(Leaf):  # Error reported by type checker
+          ...
+
+   There is no runtime checking of these properties. See :pep:`591` for
+   more details.
+
+   .. versionadded:: 3.8
 
 .. decorator:: no_type_check
 
@@ -1078,6 +1136,28 @@ The module defines the following classes, functions and decorators:
    ``Callable[..., Any]``, and in turn to
    :class:`collections.abc.Callable`.
 
+.. data:: Literal
+
+   A type that can be used to indicate to type checkers that the
+   corresponding variable or function parameter has a value equivalent to
+   the provided literal (or one of several literals). For example::
+
+      def validate_simple(data: Any) -> Literal[True]:  # always returns True
+          ...
+
+      MODE = Literal['r', 'rb', 'w', 'wb']
+      def open_helper(file: str, mode: MODE) -> str:
+          ...
+
+      open_helper('/some/path', 'r')  # Passes type check
+      open_helper('/other/path', 'typo')  # Error in type checker
+
+   ``Literal[...]`` cannot be subclassed. At runtime, an arbitrary value
+   is allowed as type argument to ``Literal[...]``, but type checkers may
+   impose restrictions. See :pep:`586` for more details about literal types.
+
+   .. versionadded:: 3.8
+
 .. data:: ClassVar
 
    Special type construct to mark class variables.
@@ -1103,6 +1183,25 @@ The module defines the following classes, functions and decorators:
       Starship.stats = {}     # This is OK
 
    .. versionadded:: 3.5.3
+
+.. data:: Final
+
+   A special typing construct to indicate to type checkers that a name
+   cannot be re-assigned or overridden in a subclass. For example::
+
+      MAX_SIZE: Final = 9000
+      MAX_SIZE += 1  # Error reported by type checker
+
+      class Connection:
+          TIMEOUT: Final[int] = 10
+
+      class FastConnector(Connection):
+          TIMEOUT = 1  # Error reported by type checker
+
+   There is no runtime checking of these properties. See :pep:`591` for
+   more details.
+
+   .. versionadded:: 3.8
 
 .. data:: AnyStr
 
