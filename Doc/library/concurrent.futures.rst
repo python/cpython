@@ -159,6 +159,23 @@ And::
    .. versionchanged:: 3.7
       Added the *initializer* and *initargs* arguments.
 
+    .. method:: shutdown(wait=True, wait_at_exit=True)
+
+       Like :meth:`Executor.shutdown`, with the additional option to
+       suppress waiting for running futures at Python exit.
+
+       Normally, this method waits for all submitted jobs to finish
+       before returning. Specifying ``wait=False`` makes the method
+       return immediately, but when the Python process is about to
+       exit, it will still wait for the remaining futures to complete.
+
+       Specifying ``False`` for *wait_at_exit* inhibits waiting at
+       process exit.  It is typically used along with ``wait=False``,
+       so ``shutdown(wait=False, wait_at_exit=False)`` abandons the
+       executor and its futures.  This is useful when the submitted
+       jobs are possibly stuck, and waiting for them would make the
+       process hang.
+
 
 .. _threadpoolexecutor-example:
 
