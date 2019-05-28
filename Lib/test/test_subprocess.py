@@ -304,6 +304,18 @@ class ProcessTestCase(BaseTestCase):
                                     "doesnotexist")
         self._assert_python([doesnotexist, "-c"], executable=sys.executable)
 
+    def test_bytes_executable(self):
+        doesnotexist = os.path.join(os.path.dirname(sys.executable),
+                                    "doesnotexist")
+        self._assert_python([doesnotexist, "-c"],
+                            executable=os.fsencode(sys.executable))
+
+    def test_pathlike_executable(self):
+        doesnotexist = os.path.join(os.path.dirname(sys.executable),
+                                    "doesnotexist")
+        self._assert_python([doesnotexist, "-c"],
+                            executable=FakePath(sys.executable))
+
     def test_executable_takes_precedence(self):
         # Check that the executable argument takes precedence over args[0].
         #
@@ -319,6 +331,16 @@ class ProcessTestCase(BaseTestCase):
         # Check that the executable argument replaces the default shell
         # when shell=True.
         self._assert_python([], executable=sys.executable, shell=True)
+
+    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    def test_bytes_executable_replaces_shell(self):
+        self._assert_python([], executable=os.fsencode(sys.executable),
+                            shell=True)
+
+    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    def test_pathlike_executable_replaces_shell(self):
+        self._assert_python([], executable=FakePath(sys.executable),
+                            shell=True)
 
     # For use in the test_cwd* tests below.
     def _normalize_cwd(self, cwd):
@@ -357,6 +379,11 @@ class ProcessTestCase(BaseTestCase):
         temp_dir = tempfile.gettempdir()
         temp_dir = self._normalize_cwd(temp_dir)
         self._assert_cwd(temp_dir, sys.executable, cwd=temp_dir)
+
+    def test_cwd_with_bytes(self):
+        temp_dir = tempfile.gettempdir()
+        temp_dir = self._normalize_cwd(temp_dir)
+        self._assert_cwd(temp_dir, sys.executable, cwd=os.fsencode(temp_dir))
 
     def test_cwd_with_pathlike(self):
         temp_dir = tempfile.gettempdir()
@@ -1472,6 +1499,34 @@ class RunFuncTestCase(BaseTestCase):
                       'sys.exit(33 if os.getenv("FRUIT")=="banana" else 31)'),
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
+
+    def test_run_with_pathlike_path(self):
+        # bpo-31961: test run(pathlike_object)
+        # the name of a command that can be run without
+        # any argumenets that exit fast
+        prog = 'tree.com' if mswindows else 'ls'
+        path = shutil.which(prog)
+        if path is None:
+            self.skipTest(f'{prog} required for this test')
+        path = FakePath(path)
+        res = subprocess.run(path, stdout=subprocess.DEVNULL)
+        self.assertEqual(res.returncode, 0)
+        with self.assertRaises(TypeError):
+            subprocess.run(path, stdout=subprocess.DEVNULL, shell=True)
+
+    def test_run_with_bytes_path_and_arguments(self):
+        # bpo-31961: test run([bytes_object, b'additional arguments'])
+        path = os.fsencode(sys.executable)
+        args = [path, '-c', b'import sys; sys.exit(57)']
+        res = subprocess.run(args)
+        self.assertEqual(res.returncode, 57)
+
+    def test_run_with_pathlike_path_and_arguments(self):
+        # bpo-31961: test run([pathlike_object, 'additional arguments'])
+        path = FakePath(sys.executable)
+        args = [path, '-c', 'import sys; sys.exit(57)']
+        res = subprocess.run(args)
+        self.assertEqual(res.returncode, 57)
 
     def test_capture_output(self):
         cp = self.run_python(("import sys;"
