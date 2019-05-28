@@ -71,11 +71,11 @@ typedef struct {
        Set to 0 by PYTHONCOERCECLOCALE=0. Set to 1 by PYTHONCOERCECLOCALE=1.
        Set to 2 if the user preferred LC_CTYPE locale is "C".
 
-       If it is equal to 1, LC_CTYPE locale is read to decide it it should be
+       If it is equal to 1, LC_CTYPE locale is read to decide if it should be
        coerced or not (ex: PYTHONCOERCECLOCALE=1). Internally, it is set to 2
        if the LC_CTYPE locale must be coerced.
 
-       Disable by default (set to 0). Set it to -1 to let Python decides if it
+       Disable by default (set to 0). Set it to -1 to let Python decide if it
        should be enabled or not. */
     int coerce_c_locale;
 
@@ -83,7 +83,7 @@ typedef struct {
 
        Set to 1 by PYTHONCOERCECLOCALE=warn.
 
-       Disable by default (set to 0). Set it to -1 to let Python decides if it
+       Disable by default (set to 0). Set it to -1 to let Python decide if it
        should be enabled or not. */
     int coerce_c_locale_warn;
 
