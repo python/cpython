@@ -5592,28 +5592,6 @@ FstringParser_ConcatAndDel(FstringParser *state, PyObject *str)
     return 0;
 }
 
-/* Move *literal into the parser state object, thus transfering ownership.
-   Set *literal to NULL. If there's already a literal in the state object,
-   concatenate to it. */
-static int
-FstringParser_ConcatLiteral(FstringParser *state, PyObject **literal)
-{
-    if (!*literal) {
-        /* Do nothing. Just leave last_str alone (and possibly NULL). */
-    } else if (!state->last_str) {
-        /* Note that the literal can be zero length, if the input string is
-           "\\\n" or "\\\r", among others. */
-        state->last_str = *literal;
-    } else {
-        /* We have a literal, concatenate it. */
-        assert(PyUnicode_GET_LENGTH(*literal) != 0);
-        if (FstringParser_ConcatAndDel(state, *literal) < 0)
-            return -1;
-    }
-    *literal = NULL;  /* We've transfered ownership to the "state" object. */
-    return 0;
-}
-
 /* Parse an f-string. The f-string is in *str to end, with no
    'f' or quotes. */
 static int
@@ -5641,19 +5619,17 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
             return -1;
 
         /* Add the literal, if any. */
-        if (FstringParser_ConcatLiteral(state, &literal) < 0) {
+        if (literal && FstringParser_ConcatAndDel(state, literal) < 0) {
             Py_XDECREF(expr_text);
             return -1;
         }
         /* Add the expr_text, if any. */
-        if (FstringParser_ConcatLiteral(state, &expr_text) < 0) {
+        if (expr_text && FstringParser_ConcatAndDel(state, expr_text) < 0) {
             return -1;
         }
 
-        /* We've dealt with the literals now. They can't be leaked on further
-           errors. */
-        assert(literal == NULL);
-        assert(expr_text == NULL);
+        /* We've dealt with the literal and expr_text, their ownership has
+           been transferred to the state object.  Don't look at them again. */
 
         /* See if we should just loop around to get the next literal
            and expression, while ignoring the expression this
