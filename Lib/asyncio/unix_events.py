@@ -194,7 +194,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                       self._child_watcher_callback, transp)
             try:
                 await waiter
-            except Exception:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException:
                 transp.close()
                 await transp._wait()
                 raise
@@ -390,7 +392,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             else:
                 self._sock_sendfile_update_filepos(fileno, offset, total_sent)
                 fut.set_exception(exc)
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             self._sock_sendfile_update_filepos(fileno, offset, total_sent)
             fut.set_exception(exc)
         else:
@@ -641,7 +645,9 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
                 n = os.write(self._fileno, data)
             except (BlockingIOError, InterruptedError):
                 n = 0
-            except Exception as exc:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
                 self._conn_lost += 1
                 self._fatal_error(exc, 'Fatal write error on pipe transport')
                 return
@@ -661,7 +667,9 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             n = os.write(self._fileno, self._buffer)
         except (BlockingIOError, InterruptedError):
             pass
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             self._buffer.clear()
             self._conn_lost += 1
             # Remove writer here, _fatal_error() doesn't it
@@ -716,7 +724,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         # should be called by exception handler only
-        if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
+        if isinstance(exc, OSError):
             if self._loop.get_debug():
                 logger.debug("%r: %s", self, message, exc_info=True)
         else:
@@ -757,12 +765,18 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
             # other end).  Notably this is needed on AIX, and works
             # just fine on other platforms.
             stdin, stdin_w = socket.socketpair()
-        self._proc = subprocess.Popen(
-            args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
-            universal_newlines=False, bufsize=bufsize, **kwargs)
-        if stdin_w is not None:
-            stdin.close()
-            self._proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)
+        try:
+            self._proc = subprocess.Popen(
+                args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
+                universal_newlines=False, bufsize=bufsize, **kwargs)
+            if stdin_w is not None:
+                stdin.close()
+                self._proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)
+                stdin_w = None
+        finally:
+            if stdin_w is not None:
+                stdin.close()
+                stdin_w.close()
 
 
 class AbstractChildWatcher:
@@ -873,7 +887,9 @@ class BaseChildWatcher(AbstractChildWatcher):
     def _sig_chld(self):
         try:
             self._do_waitpid_all()
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             # self._loop should always be available here
             # as '_sig_chld' is added as a signal handler
             # in 'attach_loop'

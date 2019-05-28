@@ -72,23 +72,27 @@ xpath_tokenizer_re = re.compile(
 
 def xpath_tokenizer(pattern, namespaces=None):
     default_namespace = namespaces.get('') if namespaces else None
+    parsing_attribute = False
     for token in xpath_tokenizer_re.findall(pattern):
-        tag = token[1]
+        ttype, tag = token
         if tag and tag[0] != "{":
             if ":" in tag:
                 prefix, uri = tag.split(":", 1)
                 try:
                     if not namespaces:
                         raise KeyError
-                    yield token[0], "{%s}%s" % (namespaces[prefix], uri)
+                    yield ttype, "{%s}%s" % (namespaces[prefix], uri)
                 except KeyError:
                     raise SyntaxError("prefix %r not found in prefix map" % prefix) from None
-            elif default_namespace:
-                yield token[0], "{%s}%s" % (default_namespace, tag)
+            elif default_namespace and not parsing_attribute:
+                yield ttype, "{%s}%s" % (default_namespace, tag)
             else:
                 yield token
+            parsing_attribute = False
         else:
             yield token
+            parsing_attribute = ttype == '@'
+
 
 def get_parent_map(context):
     parent_map = context.parent_map
@@ -98,7 +102,6 @@ def get_parent_map(context):
             for e in p:
                 parent_map[e] = p
     return parent_map
-
 
 
 def _is_wildcard_tag(tag):

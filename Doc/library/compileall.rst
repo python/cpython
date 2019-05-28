@@ -158,7 +158,8 @@ Public functions
    The argument *workers* specifies how many workers are used to
    compile files in parallel. The default is to not use multiple workers.
    If the platform can't use multiple workers and *workers* argument is given,
-   then sequential compilation will be used as a fallback.  If *workers* is
+   then sequential compilation will be used as a fallback.  If *workers*
+   is 0, the number of cores in the system is used.  If *workers* is
    lower than ``0``, a :exc:`ValueError` will be raised.
 
    *invalidation_mode* should be a member of the
@@ -183,6 +184,9 @@ Public functions
 
    .. versionchanged:: 3.7
       The *invalidation_mode* parameter was added.
+
+   .. versionchanged:: 3.8
+      Setting *workers* to 0 now chooses the optimal number of cores.
 
 .. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
 

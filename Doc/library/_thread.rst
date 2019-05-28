@@ -53,8 +53,12 @@ This module defines the following constants and functions:
 
 .. function:: interrupt_main()
 
-   Raise a :exc:`KeyboardInterrupt` exception in the main thread.  A subthread can
-   use this function to interrupt the main thread.
+   Simulate the effect of a :data:`signal.SIGINT` signal arriving in the main
+   thread. A thread can use this function to interrupt the main thread.
+
+   If :data:`signal.SIGINT` isn't handled by Python (it was set to
+   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
+   nothing.
 
 
 .. function:: exit()
@@ -83,6 +87,18 @@ This module defines the following constants and functions:
    integer.  Its value has no direct meaning; it is intended as a magic cookie to
    be used e.g. to index a dictionary of thread-specific data.  Thread identifiers
    may be recycled when a thread exits and another thread is created.
+
+
+.. function:: get_native_id()
+
+   Return the native integral Thread ID of the current thread assigned by the kernel.
+   This is a non-negative integer.
+   Its value may be used to uniquely identify this particular thread system-wide
+   (until the thread terminates, after which the value may be recycled by the OS).
+
+   .. availability:: Windows, FreeBSD, Linux, macOS.
+
+   .. versionadded:: 3.8
 
 
 .. function:: stack_size([size])
