@@ -1514,6 +1514,7 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
     }
     /* If any free pools will remain, it will be the new smallest. */
     if (usable_arenas->nfreepools > 1) {
+        assert(nfp2lasta[usable_arenas->nfreepools - 1] == NULL);
         nfp2lasta[usable_arenas->nfreepools - 1] = usable_arenas;
     }
 
