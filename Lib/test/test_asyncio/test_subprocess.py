@@ -622,6 +622,18 @@ class SubprocessMixin:
         self.loop.run_until_complete(execute())
 
 
+    def test_create_subprocess_exec_with_path(self):
+        async def execute():
+            from pathlib import Path
+            p = await subprocess.create_subprocess_exec(
+                Path(sys.executable), '-c', 'pass')
+            await p.wait()
+            p = await subprocess.create_subprocess_exec(
+                sys.executable, '-c', 'pass', Path('.'))
+            await p.wait()
+
+        self.loop.run_until_complete(execute())
+
 if sys.platform != 'win32':
     # Unix
     class SubprocessWatcherMixin(SubprocessMixin):
