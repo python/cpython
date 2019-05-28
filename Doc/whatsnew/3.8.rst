@@ -1240,6 +1240,15 @@ Changes in the C API
 
   (Contributed by Eddie Elizondo in :issue:`35810`.)
 
+* The :c:macro:`Py_DEPRECATED()` macro has been implemented for MSVC.
+  The macro now must be placed before the symbol name.
+
+  Example::
+
+      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
+
+  (Contributed by Zackery Spytz in :issue:`33407`.)
+
 
 CPython bytecode changes
 ------------------------
