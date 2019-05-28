@@ -953,10 +953,11 @@ print_exception_recursive(PyObject *f, PyObject *value, PyObject *seen)
 }
 
 void
-PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
+_PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *tb)
 {
+    assert(file != NULL && file != Py_None);
+
     PyObject *seen;
-    PyObject *f = _PySys_GetObjectId(&PyId_stderr);
     if (PyExceptionInstance_Check(value)
         && tb != NULL && PyTraceBack_Check(tb)) {
         /* Put the traceback on the exception, otherwise it won't get
@@ -967,23 +968,42 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
         else
             Py_DECREF(cur_tb);
     }
-    if (f == Py_None) {
-        /* pass */
+
+    /* We choose to ignore seen being possibly NULL, and report
+       at least the main exception (it could be a MemoryError).
+    */
+    seen = PySet_New(NULL);
+    if (seen == NULL) {
+        PyErr_Clear();
     }
-    else if (f == NULL) {
-        _PyObject_Dump(value);
-        fprintf(stderr, "lost sys.stderr\n");
+    print_exception_recursive(file, value, seen);
+    Py_XDECREF(seen);
+
+    /* Call file.flush() */
+    PyObject *res = _PyObject_CallMethodId(file, &PyId_flush, NULL);
+    if (!res) {
+        /* Silently ignore file.flush() error */
+        PyErr_Clear();
     }
     else {
-        /* We choose to ignore seen being possibly NULL, and report
-           at least the main exception (it could be a MemoryError).
-        */
-        seen = PySet_New(NULL);
-        if (seen == NULL)
-            PyErr_Clear();
-        print_exception_recursive(f, value, seen);
-        Py_XDECREF(seen);
+        Py_DECREF(res);
     }
+}
+
+void
+PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
+{
+    PyObject *file = _PySys_GetObjectId(&PyId_stderr);
+    if (file == NULL) {
+        _PyObject_Dump(value);
+        fprintf(stderr, "lost sys.stderr\n");
+        return;
+    }
+    if (file == Py_None) {
+        return;
+    }
+
+    _PyErr_Display(file, exception, value, tb);
 }
 
 PyObject *

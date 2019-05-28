@@ -335,6 +335,63 @@ class SubprocessMixin:
         self.assertEqual(output.rstrip(), b'0')
         self.assertEqual(exitcode, 0)
 
+    def test_devnull_input(self):
+
+        async def empty_input():
+            code = 'import sys; data = sys.stdin.read(); print(len(data))'
+            proc = await asyncio.create_subprocess_exec(
+                                          sys.executable, '-c', code,
+                                          stdin=asyncio.subprocess.DEVNULL,
+                                          stdout=asyncio.subprocess.PIPE,
+                                          stderr=asyncio.subprocess.PIPE,
+                                          close_fds=False,
+                                          loop=self.loop)
+            stdout, stderr = await proc.communicate()
+            exitcode = await proc.wait()
+            return (stdout, exitcode)
+
+        output, exitcode = self.loop.run_until_complete(empty_input())
+        self.assertEqual(output.rstrip(), b'0')
+        self.assertEqual(exitcode, 0)
+
+    def test_devnull_output(self):
+
+        async def empty_output():
+            code = 'import sys; data = sys.stdin.read(); print(len(data))'
+            proc = await asyncio.create_subprocess_exec(
+                                          sys.executable, '-c', code,
+                                          stdin=asyncio.subprocess.PIPE,
+                                          stdout=asyncio.subprocess.DEVNULL,
+                                          stderr=asyncio.subprocess.PIPE,
+                                          close_fds=False,
+                                          loop=self.loop)
+            stdout, stderr = await proc.communicate(b"abc")
+            exitcode = await proc.wait()
+            return (stdout, exitcode)
+
+        output, exitcode = self.loop.run_until_complete(empty_output())
+        self.assertEqual(output, None)
+        self.assertEqual(exitcode, 0)
+
+    def test_devnull_error(self):
+
+        async def empty_error():
+            code = 'import sys; data = sys.stdin.read(); print(len(data))'
+            proc = await asyncio.create_subprocess_exec(
+                                          sys.executable, '-c', code,
+                                          stdin=asyncio.subprocess.PIPE,
+                                          stdout=asyncio.subprocess.PIPE,
+                                          stderr=asyncio.subprocess.DEVNULL,
+                                          close_fds=False,
+                                          loop=self.loop)
+            stdout, stderr = await proc.communicate(b"abc")
+            exitcode = await proc.wait()
+            return (stderr, exitcode)
+
+        output, exitcode = self.loop.run_until_complete(empty_error())
+        self.assertEqual(output, None)
+        self.assertEqual(exitcode, 0)
+
     def test_cancel_process_wait(self):
         # Issue #23140: cancel Process.wait()
 
@@ -530,6 +587,39 @@ class SubprocessMixin:
 
         with self.assertWarns(DeprecationWarning):
             subprocess.Process(transp, proto, loop=self.loop)
+
+    def test_create_subprocess_exec_text_mode_fails(self):
+        async def execute():
+            with self.assertRaises(ValueError):
+                await subprocess.create_subprocess_exec(sys.executable,
+                                                        text=True)
+
+            with self.assertRaises(ValueError):
+                await subprocess.create_subprocess_exec(sys.executable,
+                                                        encoding="utf-8")
+
+            with self.assertRaises(ValueError):
+                await subprocess.create_subprocess_exec(sys.executable,
+                                                        errors="strict")
+
+        self.loop.run_until_complete(execute())
+
+    def test_create_subprocess_shell_text_mode_fails(self):
+
+        async def execute():
+            with self.assertRaises(ValueError):
+                await subprocess.create_subprocess_shell(sys.executable,
+                                                         text=True)
+
+            with self.assertRaises(ValueError):
+                await subprocess.create_subprocess_shell(sys.executable,
+                                                         encoding="utf-8")
+
+            with self.assertRaises(ValueError):
+                await subprocess.create_subprocess_shell(sys.executable,
+                                                         errors="strict")
+
+        self.loop.run_until_complete(execute())
 
 
 if sys.platform != 'win32':
