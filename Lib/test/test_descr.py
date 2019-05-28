@@ -404,7 +404,11 @@ class OperatorsTest(unittest.TestCase):
         self.assertEqual(a.getstate(), 100)
 
     def test_wrap_lenfunc_bad_cast(self):
-        self.assertEqual(xrange(sys.maxsize).__len__(), sys.maxsize)
+        try:
+            large_range = xrange(sys.maxsize)
+        except OverflowError as exc:
+            self.skipTest("xrange(sys.maxsize) failed with: %s" % exc)
+        self.assertEqual(large_range.__len__(), sys.maxsize)
 
 
 class ClassPropertiesAndMethods(unittest.TestCase):
