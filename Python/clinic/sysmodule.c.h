@@ -106,9 +106,10 @@ PyDoc_STRVAR(sys_unraisablehook__doc__,
 "The unraisable argument has the following attributes:\n"
 "\n"
 "* exc_type: Exception type.\n"
-"* exc_value: Exception value.\n"
-"* exc_tb: Exception traceback, can be None.\n"
-"* obj: Object causing the exception, can be None.");
+"* exc_value: Exception value, can be None.\n"
+"* exc_traceback: Exception traceback, can be None.\n"
+"* err_msg: Error message, can be None.\n"
+"* object: Object causing the exception, can be None.");
 
 #define SYS_UNRAISABLEHOOK_METHODDEF    \
     {"unraisablehook", (PyCFunction)sys_unraisablehook, METH_O, sys_unraisablehook__doc__},
@@ -507,33 +508,6 @@ sys_get_coroutine_origin_tracking_depth(PyObject *module, PyObject *Py_UNUSED(ig
 
 exit:
     return return_value;
-}
-
-PyDoc_STRVAR(sys_set_coroutine_wrapper__doc__,
-"set_coroutine_wrapper($module, wrapper, /)\n"
-"--\n"
-"\n"
-"Set a wrapper for coroutine objects.");
-
-#define SYS_SET_COROUTINE_WRAPPER_METHODDEF    \
-    {"set_coroutine_wrapper", (PyCFunction)sys_set_coroutine_wrapper, METH_O, sys_set_coroutine_wrapper__doc__},
-
-PyDoc_STRVAR(sys_get_coroutine_wrapper__doc__,
-"get_coroutine_wrapper($module, /)\n"
-"--\n"
-"\n"
-"Return the wrapper for coroutines set by sys.set_coroutine_wrapper.");
-
-#define SYS_GET_COROUTINE_WRAPPER_METHODDEF    \
-    {"get_coroutine_wrapper", (PyCFunction)sys_get_coroutine_wrapper, METH_NOARGS, sys_get_coroutine_wrapper__doc__},
-
-static PyObject *
-sys_get_coroutine_wrapper_impl(PyObject *module);
-
-static PyObject *
-sys_get_coroutine_wrapper(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_get_coroutine_wrapper_impl(module);
 }
 
 PyDoc_STRVAR(sys_get_asyncgen_hooks__doc__,
@@ -1108,4 +1082,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=3c32bc91ec659509 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=43c4fde7b5783d8d input=a9049054013a1b77]*/

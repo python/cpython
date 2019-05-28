@@ -288,7 +288,7 @@ iobase_finalize(PyObject *self)
            shutdown issues). */
         if (res == NULL) {
 #ifndef Py_DEBUG
-            const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+            const PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
             if (config->dev_mode) {
                 PyErr_WriteUnraisable(self);
             }

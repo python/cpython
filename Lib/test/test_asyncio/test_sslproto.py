@@ -649,12 +649,13 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         async def client(addr):
-            reader, writer = await asyncio.open_connection(
-                *addr,
-                ssl=client_sslctx,
-                server_hostname='',
-                loop=self.loop,
-                ssl_handshake_timeout=1.0)
+            with self.assertWarns(DeprecationWarning):
+                reader, writer = await asyncio.open_connection(
+                    *addr,
+                    ssl=client_sslctx,
+                    server_hostname='',
+                    loop=self.loop,
+                    ssl_handshake_timeout=1.0)
 
         with self.tcp_server(server,
                              max_clients=1,
@@ -688,12 +689,13 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         async def client(addr):
-            reader, writer = await asyncio.open_connection(
-                *addr,
-                ssl=client_sslctx,
-                server_hostname='',
-                loop=self.loop,
-                ssl_handshake_timeout=1.0)
+            with self.assertWarns(DeprecationWarning):
+                reader, writer = await asyncio.open_connection(
+                    *addr,
+                    ssl=client_sslctx,
+                    server_hostname='',
+                    loop=self.loop,
+                    ssl_handshake_timeout=1.0)
 
         with self.tcp_server(server,
                              max_clients=1,
@@ -724,11 +726,12 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         async def client(addr):
-            reader, writer = await asyncio.open_connection(
-                *addr,
-                ssl=client_sslctx,
-                server_hostname='',
-                loop=self.loop)
+            with self.assertWarns(DeprecationWarning):
+                reader, writer = await asyncio.open_connection(
+                    *addr,
+                    ssl=client_sslctx,
+                    server_hostname='',
+                    loop=self.loop)
 
             self.assertEqual(await reader.readline(), b'A\n')
             writer.write(b'B')

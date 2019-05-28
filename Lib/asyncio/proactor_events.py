@@ -20,11 +20,12 @@ from . import exceptions
 from . import protocols
 from . import sslproto
 from . import transports
+from . import trsock
 from .log import logger
 
 
 def _set_socket_extra(transport, sock):
-    transport._extra['socket'] = sock
+    transport._extra['socket'] = trsock.TransportSocket(sock)
 
     try:
         transport._extra['sockname'] = sock.getsockname()
@@ -115,7 +116,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         try:
-            if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
+            if isinstance(exc, OSError):
                 if self._loop.get_debug():
                     logger.debug("%r: %s", self, message, exc_info=True)
             else:
@@ -231,7 +232,9 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
 
         try:
             keep_open = self._protocol.eof_received()
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             self._fatal_error(
                 exc, 'Fatal error: protocol.eof_received() call failed.')
             return
@@ -254,7 +257,9 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         if isinstance(self._protocol, protocols.BufferedProtocol):
             try:
                 protocols._feed_data_to_buffered_proto(self._protocol, data)
-            except Exception as exc:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
                 self._fatal_error(exc,
                                   'Fatal error: protocol.buffer_updated() '
                                   'call failed.')
@@ -762,7 +767,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         except exceptions.CancelledError:
             # _close_self_pipe() has been called, stop waiting for data
             return
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             self.call_exception_handler({
                 'message': 'Error on reading from the event loop self pipe',
                 'exception': exc,
@@ -810,7 +817,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                     self.call_exception_handler({
                         'message': 'Accept failed on a socket',
                         'exception': exc,
-                        'socket': sock,
+                        'socket': trsock.TransportSocket(sock),
                     })
                     sock.close()
                 elif self._debug:
