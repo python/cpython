@@ -78,7 +78,7 @@ class BaseProcess(object):
         raise NotImplementedError
 
     def __init__(self, group=None, target=None, name=None, args=(), kwargs={},
-                 *, daemon=None):
+                 *, daemon=None, ctx=None):
         assert group is None, 'group argument must be None for now'
         count = next(_process_counter)
         self._identity = _current_process._identity + (count,)
@@ -95,6 +95,7 @@ class BaseProcess(object):
         if daemon is not None:
             self.daemon = daemon
         _dangling.add(self)
+        self._ctx = ctx
 
     def _check_closed(self):
         if self._closed:
@@ -118,7 +119,7 @@ class BaseProcess(object):
         assert not _current_process._config.get('daemon'), \
                'daemonic processes are not allowed to have children'
         _cleanup()
-        self._popen = self._Popen(self)
+        self._popen = self._Popen(self, ctx=self._ctx)
         self._sentinel = self._popen.sentinel
         # Avoid a refcycle if the target function holds an indirect
         # reference to the process object (see bpo-30775)
