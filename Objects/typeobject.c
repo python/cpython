@@ -4950,7 +4950,7 @@ static void
 inherit_special(PyTypeObject *type, PyTypeObject *base)
 {
 
-    /* Copying basicsize is connected to the GC flags */
+    /* Copying tp_traverse and tp_clear is connected to the GC flags */
     if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC) &&
         (base->tp_flags & Py_TPFLAGS_HAVE_GC) &&
         (!type->tp_traverse && !type->tp_clear)) {
@@ -5165,6 +5165,15 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
     }
     {
         COPYSLOT(tp_descr_get);
+        /* Inherit Py_TPFLAGS_METHOD_DESCRIPTOR if tp_descr_get was inherited,
+         * but only for extension types */
+        if (base->tp_descr_get &&
+            type->tp_descr_get == base->tp_descr_get &&
+            !(type->tp_flags & Py_TPFLAGS_HEAPTYPE) &&
+            (base->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR))
+        {
+            type->tp_flags |= Py_TPFLAGS_METHOD_DESCRIPTOR;
+        }
         COPYSLOT(tp_descr_set);
         COPYSLOT(tp_dictoffset);
         COPYSLOT(tp_init);
