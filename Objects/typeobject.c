@@ -4398,7 +4398,7 @@ wrap_lenfunc(PyObject *self, PyObject *args, void *wrapped)
     res = (*func)(self);
     if (res == -1 && PyErr_Occurred())
         return NULL;
-    return PyInt_FromLong((long)res);
+    return PyInt_FromSsize_t(res);
 }
 
 static PyObject *
