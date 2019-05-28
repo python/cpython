@@ -7,6 +7,7 @@ from unittest import mock
 import asyncio
 from asyncio import base_subprocess
 from asyncio import subprocess
+import pathlib
 from test.test_asyncio import utils as test_utils
 from test import support
 
@@ -624,15 +625,14 @@ class SubprocessMixin:
 
     def test_create_subprocess_exec_with_path(self):
         async def execute():
-            from pathlib import Path
             p = await subprocess.create_subprocess_exec(
-                Path(sys.executable), '-c', 'pass')
+                pathlib.Path(sys.executable), '-c', 'pass')
             await p.wait()
             p = await subprocess.create_subprocess_exec(
-                sys.executable, '-c', 'pass', Path('.'))
+                sys.executable, '-c', 'pass', pathlib.Path('.'))
             await p.wait()
 
-        self.loop.run_until_complete(execute())
+        self.assertIsNone(self.loop.run_until_complete(execute()))
 
 if sys.platform != 'win32':
     # Unix
