@@ -1177,10 +1177,131 @@ static PyMappingMethods fastlocalsproxy_as_mapping = {
 };
 
 
-/* TODO: Delegate the mutating methods not delegated by mappingproxy */
+/* setdefault() */
+
+PyDoc_STRVAR(fastlocalsproxy_setdefault__doc__,
+"flp.setdefault(k[, d=None]) -> v, Insert key with a value of default if key\n\
+        is not in the dictionary.\n\n\
+        Return the value for key if key is in the dictionary, else default.");
+
+
+
+static PyObject *
+fastlocalsproxy_setdefault(PyObject *flp, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"key", "default", 0};
+    PyObject *key, *failobj = NULL;
+
+    /* borrowed */
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:pop", kwlist,
+                                     &key, &failobj)) {
+        return NULL;
+    }
+
+    PyObject *value = NULL;
+
+    PyErr_Format(PyExc_NotImplementedError,
+                 "FastLocalsProxy does not yet implement setdefault()");
+    return value;
+}
+
+
+/* pop() */
+
+PyDoc_STRVAR(fastlocalsproxy_pop__doc__,
+"flp.pop(k[,d]) -> v, remove specified key and return the corresponding\n\
+        value.  If key is not found, d is returned if given, otherwise KeyError\n\
+        is raised.");
+
+/* forward */
+static PyObject * _fastlocalsproxy_popkey(PyObject *, PyObject *, PyObject *);
+
+static PyObject *
+fastlocalsproxy_pop(PyObject *flp, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"key", "default", 0};
+    PyObject *key, *failobj = NULL;
+
+    /* borrowed */
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:pop", kwlist,
+                                     &key, &failobj)) {
+        return NULL;
+    }
+
+    return _fastlocalsproxy_popkey(flp, key, failobj);
+}
+
+static PyObject *
+_fastlocalsproxy_popkey_hash(PyObject *flp, PyObject *key, PyObject *failobj,
+                   Py_hash_t hash)
+{
+    PyObject *value = NULL;
+
+    PyErr_Format(PyExc_NotImplementedError,
+                 "FastLocalsProxy does not yet implement pop()");
+    return value;
+}
+
+static PyObject *
+_fastlocalsproxy_popkey(PyObject *flp, PyObject *key, PyObject *failobj)
+{
+    Py_hash_t hash = PyObject_Hash(key);
+    if (hash == -1)
+        return NULL;
+
+    return _fastlocalsproxy_popkey_hash(flp, key, failobj, hash);
+}
+
+/* popitem() */
+
+PyDoc_STRVAR(fastlocalsproxy_popitem__doc__,
+"flp.popitem() -> (k, v), remove and return some (key, value) pair as a\n\
+        2-tuple; but raise KeyError if D is empty.");
+
+static PyObject *
+fastlocalsproxy_popitem(PyObject *flp, PyObject *Py_UNUSED(ignored))
+{
+    PyErr_Format(PyExc_NotImplementedError,
+                 "FastLocalsProxy does not yet implement popitem()");
+    return NULL;
+}
+
+/* update() */
+
+/* MutableMapping.update() does not have a docstring. */
+PyDoc_STRVAR(fastlocalsproxy_update__doc__, "");
+
+/* forward */
+static PyObject * mutablemapping_update(PyObject *, PyObject *, PyObject *);
+
+#define fastlocalsproxy_update mutablemapping_update
+
+/* clear() */
+
+PyDoc_STRVAR(fastlocalsproxy_clear__doc__,
+             "flp.clear() -> None.  Remove all items from snapshot and frame.");
+
+static PyObject *
+fastlocalsproxy_clear(register PyObject *flp, PyObject *Py_UNUSED(ignored))
+{
+    PyErr_Format(PyExc_NotImplementedError,
+                 "FastLocalsProxy does not yet implement clear()");
+    return NULL;
+}
 
 static PyMethodDef fastlocalsproxy_methods[] = {
-    {0}
+    {"setdefault",      (PyCFunction)(void(*)(void))fastlocalsproxy_setdefault,
+     METH_VARARGS | METH_KEYWORDS, fastlocalsproxy_pop__doc__},
+    {"pop",             (PyCFunction)(void(*)(void))fastlocalsproxy_pop,
+     METH_VARARGS | METH_KEYWORDS, fastlocalsproxy_pop__doc__},
+    {"clear",           (PyCFunction)fastlocalsproxy_popitem,
+     METH_NOARGS, fastlocalsproxy_popitem__doc__},
+    {"update",          (PyCFunction)(void(*)(void))fastlocalsproxy_update,
+     METH_VARARGS | METH_KEYWORDS, fastlocalsproxy_update__doc__},
+    {"clear",           (PyCFunction)fastlocalsproxy_clear,
+     METH_NOARGS, fastlocalsproxy_clear__doc__},
+
+    {NULL, NULL}   /* sentinel */
 };
 
 static void
@@ -1329,3 +1450,185 @@ PyTypeObject PyFastLocalsProxy_Type = {
     fastlocalsproxy_new,                        /* tp_new */
     0,                                          /* tp_free */
 };
+
+
+
+//==========================================================================
+// The rest of this file is currently DUPLICATED CODE from odictobject.c
+//
+// TODO: move the duplicated code to abstract.c and expose it to the
+//       linker as a private API
+//
+//==========================================================================
+
+static int
+mutablemapping_add_pairs(PyObject *self, PyObject *pairs)
+{
+    PyObject *pair, *iterator, *unexpected;
+    int res = 0;
+
+    iterator = PyObject_GetIter(pairs);
+    if (iterator == NULL)
+        return -1;
+    PyErr_Clear();
+
+    while ((pair = PyIter_Next(iterator)) != NULL) {
+        /* could be more efficient (see UNPACK_SEQUENCE in ceval.c) */
+        PyObject *key = NULL, *value = NULL;
+        PyObject *pair_iterator = PyObject_GetIter(pair);
+        if (pair_iterator == NULL)
+            goto Done;
+
+        key = PyIter_Next(pair_iterator);
+        if (key == NULL) {
+            if (!PyErr_Occurred())
+                PyErr_SetString(PyExc_ValueError,
+                                "need more than 0 values to unpack");
+            goto Done;
+        }
+
+        value = PyIter_Next(pair_iterator);
+        if (value == NULL) {
+            if (!PyErr_Occurred())
+                PyErr_SetString(PyExc_ValueError,
+                                "need more than 1 value to unpack");
+            goto Done;
+        }
+
+        unexpected = PyIter_Next(pair_iterator);
+        if (unexpected != NULL) {
+            Py_DECREF(unexpected);
+            PyErr_SetString(PyExc_ValueError,
+                            "too many values to unpack (expected 2)");
+            goto Done;
+        }
+        else if (PyErr_Occurred())
+            goto Done;
+
+        res = PyObject_SetItem(self, key, value);
+
+Done:
+        Py_DECREF(pair);
+        Py_XDECREF(pair_iterator);
+        Py_XDECREF(key);
+        Py_XDECREF(value);
+        if (PyErr_Occurred())
+            break;
+    }
+    Py_DECREF(iterator);
+
+    if (res < 0 || PyErr_Occurred() != NULL)
+        return -1;
+    else
+        return 0;
+}
+
+static PyObject *
+mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int res = 0;
+    Py_ssize_t len;
+    _Py_IDENTIFIER(items);
+    _Py_IDENTIFIER(keys);
+
+    /* first handle args, if any */
+    assert(args == NULL || PyTuple_Check(args));
+    len = (args != NULL) ? PyTuple_GET_SIZE(args) : 0;
+    if (len > 1) {
+        const char *msg = "update() takes at most 1 positional argument (%zd given)";
+        PyErr_Format(PyExc_TypeError, msg, len);
+        return NULL;
+    }
+
+    if (len) {
+        PyObject *func;
+        PyObject *other = PyTuple_GET_ITEM(args, 0);  /* borrowed reference */
+        assert(other != NULL);
+        Py_INCREF(other);
+        if (PyDict_CheckExact(other)) {
+            PyObject *items = PyDict_Items(other);
+            Py_DECREF(other);
+            if (items == NULL)
+                return NULL;
+            res = mutablemapping_add_pairs(self, items);
+            Py_DECREF(items);
+            if (res == -1)
+                return NULL;
+            goto handle_kwargs;
+        }
+
+        if (_PyObject_LookupAttrId(other, &PyId_keys, &func) < 0) {
+            Py_DECREF(other);
+            return NULL;
+        }
+        if (func != NULL) {
+            PyObject *keys, *iterator, *key;
+            keys = _PyObject_CallNoArg(func);
+            Py_DECREF(func);
+            if (keys == NULL) {
+                Py_DECREF(other);
+                return NULL;
+            }
+            iterator = PyObject_GetIter(keys);
+            Py_DECREF(keys);
+            if (iterator == NULL) {
+                Py_DECREF(other);
+                return NULL;
+            }
+            while (res == 0 && (key = PyIter_Next(iterator))) {
+                PyObject *value = PyObject_GetItem(other, key);
+                if (value != NULL) {
+                    res = PyObject_SetItem(self, key, value);
+                    Py_DECREF(value);
+                }
+                else {
+                    res = -1;
+                }
+                Py_DECREF(key);
+            }
+            Py_DECREF(other);
+            Py_DECREF(iterator);
+            if (res != 0 || PyErr_Occurred())
+                return NULL;
+            goto handle_kwargs;
+        }
+
+        if (_PyObject_LookupAttrId(other, &PyId_items, &func) < 0) {
+            Py_DECREF(other);
+            return NULL;
+        }
+        if (func != NULL) {
+            PyObject *items;
+            Py_DECREF(other);
+            items = _PyObject_CallNoArg(func);
+            Py_DECREF(func);
+            if (items == NULL)
+                return NULL;
+            res = mutablemapping_add_pairs(self, items);
+            Py_DECREF(items);
+            if (res == -1)
+                return NULL;
+            goto handle_kwargs;
+        }
+
+        res = mutablemapping_add_pairs(self, other);
+        Py_DECREF(other);
+        if (res != 0)
+            return NULL;
+    }
+
+  handle_kwargs:
+    /* now handle kwargs */
+    assert(kwargs == NULL || PyDict_Check(kwargs));
+    if (kwargs != NULL && PyDict_GET_SIZE(kwargs)) {
+        PyObject *items = PyDict_Items(kwargs);
+        if (items == NULL)
+            return NULL;
+        res = mutablemapping_add_pairs(self, items);
+        Py_DECREF(items);
+        if (res == -1)
+            return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
