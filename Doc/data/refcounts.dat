@@ -236,6 +236,7 @@ PyCode_GetNumFree:PyCodeObject*:co:0:
 
 PyCode_New:PyCodeObject*::+1:
 PyCode_New:int:argcount::
+PyCode_New:int:posonlyargcount::
 PyCode_New:int:kwonlyargcount::
 PyCode_New:int:nlocals::
 PyCode_New:int:stacksize::
