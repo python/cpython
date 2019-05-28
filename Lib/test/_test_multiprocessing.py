@@ -5541,7 +5541,7 @@ class _TestCustomReducerWithContext(BaseTestCase):
 
         queue = self.custom_ctx.Queue()
         p = self.custom_ctx.Process(target=self._put_and_get_in_queue,
-            args=(queue,))
+            args=(queue,), ctx=self.custom_ctx)
         p.start()
         element = queue.get(timeout=TIMEOUT)
         self.assertEqual(element, "Something")
