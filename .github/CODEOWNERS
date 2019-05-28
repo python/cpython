@@ -37,7 +37,7 @@ Objects/dict*                 @methane
 Python/bootstrap_hash.c       @python/crypto-team
 
 # Email and related
-**/*mail*                     @python/email-team
+**/*mail*                     @python/email-team @maxking
 **/*smtp*                     @python/email-team
 **/*mime*                     @python/email-team
 **/*imap*                     @python/email-team
