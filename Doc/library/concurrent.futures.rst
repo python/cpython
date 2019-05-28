@@ -159,6 +159,15 @@ And::
    .. versionchanged:: 3.7
       Added the *initializer* and *initargs* arguments.
 
+   .. versionchanged:: 3.8
+      Default value of *max_workers* is changed to ``min(32, os.cpu_count() + 4)``.
+      This default value preserves at least 5 workers for I/O bound tasks.
+      It utilizes at most 32 CPU cores for CPU bound tasks which release the GIL.
+      And it avoids using very large resources implicitly on many-core machines.
+
+      ThreadPoolExecutor now reuses idle worker threads before starting
+      *max_workers* worker threads too.
+
 
 .. _threadpoolexecutor-example:
 

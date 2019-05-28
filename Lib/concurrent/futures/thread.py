@@ -129,9 +129,14 @@ class ThreadPoolExecutor(_base.Executor):
             initargs: A tuple of arguments to pass to the initializer.
         """
         if max_workers is None:
-            # Use this number because ThreadPoolExecutor is often
-            # used to overlap I/O instead of CPU work.
-            max_workers = (os.cpu_count() or 1) * 5
+            # ThreadPoolExecutor is often used to:
+            # * CPU bound task which releases GIL
+            # * I/O bound task (which releases GIL, of course)
+            #
+            # We use cpu_count + 4 for both types of tasks.
+            # But we limit it to 32 to avoid consuming surprisingly large resource
+            # on many core machine.
+            max_workers = min(32, (os.cpu_count() or 1) + 4)
         if max_workers <= 0:
             raise ValueError("max_workers must be greater than 0")
 
