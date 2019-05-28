@@ -784,6 +784,80 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         m['Subject'] = 'unicöde'
         self.assertEqual(str(m), 'Subject: unicöde\n\n')
 
+    def test_folding_with_utf8_encoding_1(self):
+        # issue #36520
+        m = EmailMessage()
+        m['Subject'] = 'Hello Wörld! Hello Wörld! '\
+                       'Hello Wörld! Hello Wörld!Hello Wörld!'
+        self.assertEqual(bytes(m), \
+                         b'Subject: Hello =?utf-8?q?W=C3=B6rld!_Hello_W'\
+                         b'=C3=B6rld!_Hello_W=C3=B6rld!?=\n'\
+                         b' Hello =?utf-8?q?W=C3=B6rld!Hello_W=C3=B6rld!?=\n\n')
+
+
+    def test_folding_with_utf8_encoding_2(self):
+        # issue #36520
+        m = EmailMessage()
+        m['Subject'] = 'Hello Wörld! Hello Wörld! '\
+                       'Hello Wörlds123! Hello Wörld!Hello Wörld!'
+        self.assertEqual(bytes(m), \
+                         b'Subject: Hello =?utf-8?q?W=C3=B6rld!_Hello_W'\
+                         b'=C3=B6rld!_Hello_W=C3=B6rlds123!?=\n'\
+                         b' Hello =?utf-8?q?W=C3=B6rld!Hello_W=C3=B6rld!?=\n\n')
+
+    def test_folding_with_utf8_encoding_3(self):
+        # issue #36520
+        m = EmailMessage()
+        m['Subject'] = 'Hello-Wörld!-Hello-Wörld!-Hello-Wörlds123! '\
+                       'Hello Wörld!Hello Wörld!'
+        self.assertEqual(bytes(m), \
+                         b'Subject: =?utf-8?q?Hello-W=C3=B6rld!-Hello-W'\
+                         b'=C3=B6rld!-Hello-W=C3=B6rlds123!?=\n'\
+                         b' Hello =?utf-8?q?W=C3=B6rld!Hello_W=C3=B6rld!?=\n\n')
+
+    def test_folding_with_utf8_encoding_4(self):
+        # issue #36520
+        m = EmailMessage()
+        m['Subject'] = 'Hello-Wörld!-Hello-Wörld!-Hello-Wörlds123!-Hello'\
+                       ' Wörld!Hello Wörld!'
+        self.assertEqual(bytes(m), \
+                         b'Subject: =?utf-8?q?Hello-W=C3=B6rld!-Hello-W'\
+                         b'=C3=B6rld!-Hello-W=C3=B6rlds123!?=\n'\
+                         b' =?utf-8?q?-Hello_W=C3=B6rld!Hello_W=C3=B6rld!?=\n\n')
+
+    def test_folding_with_utf8_encoding_5(self):
+        # issue #36520
+        m = EmailMessage()
+        m['Subject'] = '123456789 123456789 123456789 123456789 123456789'\
+                       ' 123456789 123456789 Hello Wörld!'
+        self.assertEqual(bytes(m), \
+                         b'Subject: 123456789 123456789 123456789 123456789'\
+                         b' 123456789 123456789 123456789\n'\
+                         b' Hello =?utf-8?q?W=C3=B6rld!?=\n\n')
+
+    def test_folding_with_utf8_encoding_6(self):
+        # issue #36520
+        m = EmailMessage()
+        m['Subject'] = '123456789 123456789 123456789 123456789 Hello Wörld!'\
+                       ' 123456789 123456789 123456789 123456789 123456789'\
+                       ' 123456789'
+        self.assertEqual(bytes(m), \
+                         b'Subject: 123456789 123456789 123456789 123456789'\
+                         b' Hello =?utf-8?q?W=C3=B6rld!?=\n 123456789 '\
+                         b'123456789 123456789 123456789 123456789 '\
+                         b'123456789\n\n')
+
+    def test_folding_with_utf8_encoding_7(self):
+        # issue #36520
+        m = EmailMessage()
+        m['Subject'] = '123456789 123456789 Hello Wörld! Hello Wörld! '\
+                       '123456789-123456789 123456789 Hello Wörld! 123456789'\
+                       ' 123456789'
+        self.assertEqual(bytes(m), \
+                         b'Subject: 123456789 123456789 Hello =?utf-8?q?'\
+                         b'W=C3=B6rld!_Hello_W=C3=B6rld!?=\n'\
+                         b' 123456789-123456789 123456789 Hello '\
+                         b'=?utf-8?q?W=C3=B6rld!?= 123456789\n 123456789\n\n')
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
     # Doing the full test run here may seem a bit redundant, since the two
