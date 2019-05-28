@@ -926,10 +926,7 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         err = ConnectionRefusedError()
         transport._fatal_error(err)
         self.assertFalse(self.protocol.error_received.called)
-        m_exc.assert_called_with(
-            test_utils.MockPattern(
-                'Fatal error on pipe transport\nprotocol:.*\ntransport:.*'),
-            exc_info=(ConnectionRefusedError, mock.ANY, mock.ANY))
+        m_exc.assert_not_called()
 
 
 class BaseProactorEventLoopTests(test_utils.TestCase):
