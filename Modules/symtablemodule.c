@@ -14,7 +14,7 @@ module _symtable
 /*[clinic input]
 _symtable.symtable
 
-    str:       object
+    source:    object
     filename:  object(converter='PyUnicode_FSDecoder')
     startstr:  str
     /
@@ -23,7 +23,7 @@ Return symbol and scope dictionaries used internally by compiler.
 [clinic start generated code]*/
 
 static PyObject *
-_symtable_symtable_impl(PyObject *module, PyObject *str, PyObject *filename,
+_symtable_symtable_impl(PyObject *module, PyObject *source, PyObject *filename,
                         const char *startstr)
 /*[clinic end generated code: output=da9d42d2103ea619 input=a8b56a8eee46c26b]*/
 {
@@ -36,8 +36,8 @@ _symtable_symtable_impl(PyObject *module, PyObject *str, PyObject *filename,
     cf.cf_flags = PyCF_SOURCE_IS_UTF8;
     cf.cf_feature_version = PY_MINOR_VERSION;
 
-    const char *source = _Py_SourceAsString(str, "symtable", "string or bytes", &cf, &source_copy);
-    if (source == NULL) {
+    const char *str = _Py_SourceAsString(source, "symtable", "string or bytes", &cf, &source_copy);
+    if (str == NULL) {
         return NULL;
     }
 
@@ -54,10 +54,10 @@ _symtable_symtable_impl(PyObject *module, PyObject *str, PyObject *filename,
         Py_XDECREF(source_copy);
         return NULL;
     }
-    st = _Py_SymtableStringObjectFlags(source, filename, start, &cf);
+    st = _Py_SymtableStringObjectFlags(str, filename, start, &cf);
     Py_DECREF(filename);
+    Py_XDECREF(source_copy);
     if (st == NULL) {
-        Py_XDECREF(source_copy);
         return NULL;
     }
     t = (PyObject *)st->st_top;
