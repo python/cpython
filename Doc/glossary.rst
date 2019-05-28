@@ -225,7 +225,7 @@ Glossary
       statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
       See :pep:`343`.
 
-    context variable
+   context variable
       A variable which can have different values depending on its context.
       This is similar to Thread-Local Storage in which each execution
       thread may have a different value for a variable. However, with context
