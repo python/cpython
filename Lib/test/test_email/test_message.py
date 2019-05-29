@@ -786,6 +786,12 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
 
     def test_folding_with_utf8_encoding_1(self):
         # issue #36520
+        #
+        # Fold a line that contains UTF-8 words before
+        # and after the whitespace fold point, where the
+        # line length limit is reached within an ASCII
+        # word.
+
         m = EmailMessage()
         m['Subject'] = 'Hello Wörld! Hello Wörld! '\
                        'Hello Wörld! Hello Wörld!Hello Wörld!'
@@ -797,6 +803,12 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
 
     def test_folding_with_utf8_encoding_2(self):
         # issue #36520
+        #
+        # Fold a line that contains UTF-8 words before
+        # and after the whitespace fold point, where the
+        # line length limit is reached at the end of an
+        # encoded word.
+
         m = EmailMessage()
         m['Subject'] = 'Hello Wörld! Hello Wörld! '\
                        'Hello Wörlds123! Hello Wörld!Hello Wörld!'
@@ -807,6 +819,12 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
 
     def test_folding_with_utf8_encoding_3(self):
         # issue #36520
+        #
+        # Fold a line that contains UTF-8 words before
+        # and after the whitespace fold point, where the
+        # line length limit is reached at the end of the
+        # first word.
+
         m = EmailMessage()
         m['Subject'] = 'Hello-Wörld!-Hello-Wörld!-Hello-Wörlds123! '\
                        'Hello Wörld!Hello Wörld!'
@@ -817,6 +835,12 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
 
     def test_folding_with_utf8_encoding_4(self):
         # issue #36520
+        #
+        # Fold a line that contains UTF-8 words before
+        # and after the fold point, where the first
+        # word is UTF-8 and the fold point is within
+        # the word.
+
         m = EmailMessage()
         m['Subject'] = 'Hello-Wörld!-Hello-Wörld!-Hello-Wörlds123!-Hello'\
                        ' Wörld!Hello Wörld!'
@@ -827,6 +851,10 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
 
     def test_folding_with_utf8_encoding_5(self):
         # issue #36520
+        #
+        # Fold a line that contains a UTF-8 word after
+        # the fold point.
+
         m = EmailMessage()
         m['Subject'] = '123456789 123456789 123456789 123456789 123456789'\
                        ' 123456789 123456789 Hello Wörld!'
@@ -837,6 +865,10 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
 
     def test_folding_with_utf8_encoding_6(self):
         # issue #36520
+        #
+        # Fold a line that contains a UTF-8 word before
+        # the fold point and ASCII words after
+
         m = EmailMessage()
         m['Subject'] = '123456789 123456789 123456789 123456789 Hello Wörld!'\
                        ' 123456789 123456789 123456789 123456789 123456789'\
@@ -849,6 +881,11 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
 
     def test_folding_with_utf8_encoding_7(self):
         # issue #36520
+        #
+        # Fold a line twice that contains UTF-8 words before
+        # and after the first fold point, and ASCII words
+        # after the second fold point.
+
         m = EmailMessage()
         m['Subject'] = '123456789 123456789 Hello Wörld! Hello Wörld! '\
                        '123456789-123456789 123456789 Hello Wörld! 123456789'\
@@ -858,6 +895,26 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
                          b'W=C3=B6rld!_Hello_W=C3=B6rld!?=\n'\
                          b' 123456789-123456789 123456789 Hello '\
                          b'=?utf-8?q?W=C3=B6rld!?= 123456789\n 123456789\n\n')
+
+    def test_folding_with_utf8_encoding_8(self):
+        # issue #36520
+        #
+        # Fold a line twice that contains UTF-8 words before
+        # the first fold point, and ASCII words after the
+        # first fold point, and UTF-8 words after the second
+        # fold point.
+        
+        m = EmailMessage()
+        m['Subject'] = '123456789 123456789 Hello Wörld! Hello Wörld! '\
+                       '123456789 123456789 123456789 123456789 123456789 '\
+                       '123456789-123456789 123456789 Hello Wörld! 123456789'\
+                       ' 123456789'
+        self.assertEqual(bytes(m), \
+                         b'Subject: 123456789 123456789 Hello '\
+                         b'=?utf-8?q?W=C3=B6rld!_Hello_W=C3=B6rld!?=\n 123456789 '\
+                         b'123456789 123456789 123456789 123456789 '\
+                         b'123456789-123456789\n 123456789 Hello '\
+                         b'=?utf-8?q?W=C3=B6rld!?= 123456789 123456789\n\n')
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
     # Doing the full test run here may seem a bit redundant, since the two
