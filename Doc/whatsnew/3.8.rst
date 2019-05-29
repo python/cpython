@@ -552,6 +552,11 @@ convenience functions to automate the necessary tasks usually involved when
 creating a server socket, including accepting both IPv4 and IPv6 connections
 on the same socket.  (Contributed by Giampaolo Rodola in :issue:`17561`.)
 
+shlex
+----------
+
+The new :func:`shlex.join` function acts as the inverse of :func:`shlex.split`.
+(Contributed by Bo Bayles in :issue:`32102`.)
 
 shutil
 ------
