@@ -1,0 +1,2 @@
+Added support for ZIP files with disks set to 0. Such files are commonly created by builtin tools on Windows when use ZIP64 extension.
+Patch by Francisco Facioni.

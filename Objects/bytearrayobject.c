@@ -410,7 +410,8 @@ bytearray_subscript(PyByteArrayObject *self, PyObject *index)
         return PyLong_FromLong((unsigned char)(PyByteArray_AS_STRING(self)[i]));
     }
     else if (PySlice_Check(index)) {
-        Py_ssize_t start, stop, step, slicelength, cur, i;
+        Py_ssize_t start, stop, step, slicelength, i;
+        size_t cur;
         if (PySlice_Unpack(index, &start, &stop, &step) < 0) {
             return NULL;
         }
@@ -998,7 +999,7 @@ bytearray_repr(PyByteArrayObject *self)
 static PyObject *
 bytearray_str(PyObject *op)
 {
-    _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
     if (config->bytes_warning) {
         if (PyErr_WarnEx(PyExc_BytesWarning,
                          "str() on a bytearray instance", 1)) {
@@ -1024,7 +1025,7 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
     if (rc < 0)
         return NULL;
     if (rc) {
-        _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+        PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
         if (config->bytes_warning && (op == Py_EQ || op == Py_NE)) {
             if (PyErr_WarnEx(PyExc_BytesWarning,
                             "Comparison between bytearray and string", 1))
@@ -2019,18 +2020,36 @@ bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
     return result;
 }
 
-PyDoc_STRVAR(hex__doc__,
-"B.hex() -> string\n\
-\n\
-Create a string of hexadecimal numbers from a bytearray object.\n\
-Example: bytearray([0xb9, 0x01, 0xef]).hex() -> 'b901ef'.");
+/*[clinic input]
+bytearray.hex
+
+    sep: object = NULL
+        An optional single character or byte to separate hex bytes.
+    bytes_per_sep: int = 1
+        How many bytes between separators.  Positive values count from the
+        right, negative values count from the left.
+
+Create a str of hexadecimal numbers from a bytearray object.
+
+Example:
+>>> value = bytearray([0xb9, 0x01, 0xef])
+>>> value.hex()
+'b901ef'
+>>> value.hex(':')
+'b9:01:ef'
+>>> value.hex(':', 2)
+'b9:01ef'
+>>> value.hex(':', -2)
+'b901:ef'
+[clinic start generated code]*/
 
 static PyObject *
-bytearray_hex(PyBytesObject *self, PyObject *Py_UNUSED(ignored))
+bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep, int bytes_per_sep)
+/*[clinic end generated code: output=29c4e5ef72c565a0 input=814c15830ac8c4b5]*/
 {
     char* argbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t arglen = PyByteArray_GET_SIZE(self);
-    return _Py_strhex(argbuf, arglen);
+    return _Py_strhex_with_sep(argbuf, arglen, sep, bytes_per_sep);
 }
 
 static PyObject *
@@ -2159,7 +2178,7 @@ bytearray_methods[] = {
     {"find", (PyCFunction)bytearray_find, METH_VARARGS,
      _Py_find__doc__},
     BYTEARRAY_FROMHEX_METHODDEF
-    {"hex", (PyCFunction)bytearray_hex, METH_NOARGS, hex__doc__},
+    BYTEARRAY_HEX_METHODDEF
     {"index", (PyCFunction)bytearray_index, METH_VARARGS, _Py_index__doc__},
     BYTEARRAY_INSERT_METHODDEF
     {"isalnum", stringlib_isalnum, METH_NOARGS,

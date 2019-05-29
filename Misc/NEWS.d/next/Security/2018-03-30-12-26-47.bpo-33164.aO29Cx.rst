@@ -1,0 +1,1 @@
+Updated blake2 implementation which uses secure memset implementation provided by platform.

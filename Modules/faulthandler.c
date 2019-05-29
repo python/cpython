@@ -1,4 +1,6 @@
 #include "Python.h"
+#include "pycore_initconfig.h"
+#include "pycore_traceback.h"
 #include "pythread.h"
 #include <signal.h>
 #include <object.h>
@@ -1313,7 +1315,7 @@ faulthandler_init_enable(void)
     return 0;
 }
 
-_PyInitError
+PyStatus
 _PyFaulthandler_Init(int enable)
 {
 #ifdef HAVE_SIGALTSTACK
@@ -1338,17 +1340,17 @@ _PyFaulthandler_Init(int enable)
     thread.cancel_event = PyThread_allocate_lock();
     thread.running = PyThread_allocate_lock();
     if (!thread.cancel_event || !thread.running) {
-        return _Py_INIT_ERR("failed to allocate locks for faulthandler");
+        return _PyStatus_ERR("failed to allocate locks for faulthandler");
     }
     PyThread_acquire_lock(thread.cancel_event, 1);
 #endif
 
     if (enable) {
         if (faulthandler_init_enable() < 0) {
-            return _Py_INIT_ERR("failed to enable faulthandler");
+            return _PyStatus_ERR("failed to enable faulthandler");
         }
     }
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 }
 
 void _PyFaulthandler_Fini(void)

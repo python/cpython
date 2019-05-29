@@ -1,0 +1,2 @@
+``_thread.interrupt_main()`` now avoids setting the Python error status
+if the ``SIGINT`` signal is ignored or not handled by Python.

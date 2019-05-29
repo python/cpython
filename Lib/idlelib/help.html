@@ -313,14 +313,14 @@ size, additional help sources, and extensions.  On macOS,  open the
 configuration dialog by selecting Preferences in the application
 menu. For more, see
 <a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a> under Help and preferences.</dd>
-<dt>Zoom/Restore Height</dt>
-<dd>Toggles the window between normal size and maximum height. The initial size
-defaults to 40 lines by 80 chars unless changed on the General tab of the
-Configure IDLE dialog.</dd>
 <dt>Show/Hide Code Context (Editor Window only)</dt>
 <dd>Open a pane at the top of the edit window which shows the block context
 of the code which has scrolled above the top of the window.  See
 <a class="reference internal" href="#code-context"><span class="std std-ref">Code Context</span></a> in the Editing and Navigation section below.</dd>
+<dt>Zoom/Restore Height</dt>
+<dd>Toggles the window between normal size and maximum height. The initial size
+defaults to 40 lines by 80 chars unless changed on the General tab of the
+Configure IDLE dialog.</dd>
 </dl>
 </div>
 <div class="section" id="window-menu-shell-and-editor">
@@ -659,6 +659,8 @@ will then be attached to that window for input and output.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">sys</span></code> is reset by user code, such as with <code class="docutils literal notranslate"><span class="pre">importlib.reload(sys)</span></code>,
 IDLE’s changes are lost and input from the keyboard and output to the screen
 will not work correctly.</p>
+<p>When user code raises SystemExit either directly or by calling sys.exit, IDLE
+returns to a Shell prompt instead of exiting.</p>
 </div>
 <div class="section" id="user-output-in-shell">
 <h3>User output in Shell<a class="headerlink" href="#user-output-in-shell" title="Permalink to this headline">¶</a></h3>
@@ -941,7 +943,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on May 16, 2019.
+    Last updated on May 25, 2019.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 
