@@ -95,7 +95,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
         None is returned when called not in the context of a Task.
         """
-        warnings.warn("Task.current_task() is deprecated, "
+        warnings.warn("Task.current_task() is deprecated since Python 3.7, "
                       "use asyncio.current_task() instead",
                       DeprecationWarning,
                       stacklevel=2)
@@ -109,7 +109,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
         By default all tasks for the current event loop are returned.
         """
-        warnings.warn("Task.all_tasks() is deprecated, "
+        warnings.warn("Task.all_tasks() is deprecated since Python 3.7, "
                       "use asyncio.all_tasks() instead",
                       DeprecationWarning,
                       stacklevel=2)
@@ -260,11 +260,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 super().set_result(exc.value)
         except exceptions.CancelledError:
             super().cancel()  # I.e., Future.cancel(self).
-        except Exception as exc:
-            super().set_exception(exc)
-        except BaseException as exc:
+        except (KeyboardInterrupt, SystemExit) as exc:
             super().set_exception(exc)
             raise
+        except BaseException as exc:
+            super().set_exception(exc)
         else:
             blocking = getattr(result, '_asyncio_future_blocking', None)
             if blocking is not None:
@@ -318,7 +318,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def __wakeup(self, future):
         try:
             future.result()
-        except Exception as exc:
+        except BaseException as exc:
             # This may also be a cancellation.
             self.__step(exc)
         else:
@@ -388,8 +388,8 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     if loop is None:
         loop = events.get_running_loop()
     else:
-        warnings.warn("The loop argument is deprecated and scheduled for "
-                      "removal in Python 3.10.",
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
 
     fs = {ensure_future(f, loop=loop) for f in set(fs)}
@@ -418,8 +418,8 @@ async def wait_for(fut, timeout, *, loop=None):
     if loop is None:
         loop = events.get_running_loop()
     else:
-        warnings.warn("The loop argument is deprecated and scheduled for "
-                      "removal in Python 3.10.",
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
 
     if timeout is None:
@@ -600,8 +600,8 @@ async def sleep(delay, result=None, *, loop=None):
     if loop is None:
         loop = events.get_running_loop()
     else:
-        warnings.warn("The loop argument is deprecated and scheduled for "
-                      "removal in Python 3.10.",
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
 
     future = loop.create_future()
@@ -858,7 +858,9 @@ def run_coroutine_threadsafe(coro, loop):
     def callback():
         try:
             futures._chain_future(ensure_future(coro, loop=loop), future)
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             if future.set_running_or_notify_cancel():
                 future.set_exception(exc)
             raise

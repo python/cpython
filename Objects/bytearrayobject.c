@@ -999,7 +999,7 @@ bytearray_repr(PyByteArrayObject *self)
 static PyObject *
 bytearray_str(PyObject *op)
 {
-    _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
     if (config->bytes_warning) {
         if (PyErr_WarnEx(PyExc_BytesWarning,
                          "str() on a bytearray instance", 1)) {
@@ -1025,7 +1025,7 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
     if (rc < 0)
         return NULL;
     if (rc) {
-        _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+        PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
         if (config->bytes_warning && (op == Py_EQ || op == Py_NE)) {
             if (PyErr_WarnEx(PyExc_BytesWarning,
                             "Comparison between bytearray and string", 1))

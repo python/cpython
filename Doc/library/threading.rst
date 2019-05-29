@@ -38,6 +38,32 @@ This module defines the following functions:
    returned.
 
 
+.. function:: excepthook(args, /)
+
+   Handle uncaught exception raised by :func:`Thread.run`.
+
+   The *args* argument has the following attributes:
+
+   * *exc_type*: Exception type.
+   * *exc_value*: Exception value, can be ``None``.
+   * *exc_traceback*: Exception traceback, can be ``None``.
+   * *thread*: Thread which raised the exception, can be ``None``.
+
+   If *exc_type* is :exc:`SystemExit`, the exception is silently ignored.
+   Otherwise, the exception is printed out on :data:`sys.stderr`.
+
+   If  this function raises an exception, :func:`sys.excepthook` is called to
+   handle it.
+
+   :func:`threading.excepthook` can be overridden to control how uncaught
+   exceptions raised by :func:`Thread.run` are handled.
+
+   .. seealso::
+      :func:`sys.excepthook` handles uncaught exceptions.
+
+   .. versionadded:: 3.8
+
+
 .. function:: get_ident()
 
    Return the 'thread identifier' of the current thread.  This is a nonzero
@@ -191,6 +217,10 @@ called is terminated.
 A thread has a name.  The name can be passed to the constructor, and read or
 changed through the :attr:`~Thread.name` attribute.
 
+If the :meth:`~Thread.run` method raises an exception,
+:func:`threading.excepthook` is called to handle it. By default,
+:func:`threading.excepthook` ignores silently :exc:`SystemExit`.
+
 A thread can be flagged as a "daemon thread".  The significance of this flag is
 that the entire Python program exits when only daemon threads are left.  The
 initial value is inherited from the creating thread.  The flag can be set
@@ -311,12 +341,13 @@ since it is impossible to detect the termination of alien threads.
 
    .. attribute:: native_id
 
-      The native integral thread ID of this thread or ``0`` if the thread has not
-      been started.  This is a non-negative integer.  See the
-      :func:`get_native_id` function.
+      The native integral thread ID of this thread.
+      This is a non-negative integer, or ``None`` if the thread has not
+      been started. See the :func:`get_native_id` function.
       This represents the Thread ID (``TID``) as assigned to the
       thread by the OS (kernel).  Its value may be used to uniquely identify
-      this particular thread system-wide.
+      this particular thread system-wide (until the thread terminates,
+      after which the value may be recycled by the OS).
 
       .. note::
 

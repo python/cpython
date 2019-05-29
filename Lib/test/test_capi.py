@@ -27,6 +27,8 @@ _testcapi = support.import_module('_testcapi')
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
+Py_TPFLAGS_METHOD_DESCRIPTOR = 1 << 17
+
 
 def testfunction(self):
     """some doc"""
@@ -456,6 +458,28 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_wait(l, n)
 
 
+class TestPEP590(unittest.TestCase):
+
+    def test_method_descriptor_flag(self):
+        import functools
+        cached = functools.lru_cache(1)(testfunction)
+
+        self.assertFalse(type(repr).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(list.append).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(list.__add__).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(testfunction).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(cached).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+
+        self.assertTrue(_testcapi.MethodDescriptorBase.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(_testcapi.MethodDescriptorDerived.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+
+        # Heap type should not inherit Py_TPFLAGS_METHOD_DESCRIPTOR
+        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
+            pass
+        self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+
+
 class SubinterpreterTest(unittest.TestCase):
 
     def test_subinterps(self):
@@ -472,6 +496,19 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertEqual(ret, 0)
             self.assertNotEqual(pickle.load(f), id(sys.modules))
             self.assertNotEqual(pickle.load(f), id(builtins))
+
+    def test_mutate_exception(self):
+        """
+        Exceptions saved in global module state get shared between
+        individual module instances. This test checks whether or not
+        a change in one interpreter's module gets reflected into the
+        other ones.
+        """
+        import binascii
+
+        support.run_in_subinterp("import binascii; binascii.Error.foobar = 'foobar'")
+
+        self.assertFalse(hasattr(binascii.Error, "foobar"))
 
 
 class TestThreadState(unittest.TestCase):

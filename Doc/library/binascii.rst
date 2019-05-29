@@ -163,8 +163,8 @@ The :mod:`binascii` module defines the following functions:
       >>> from binascii
       >>> binascii.b2a_hex(b'\xb9\x01\xef')
       b'b901ef'
-      >>> binascii.hexlify(b'\xb9\x01\xef', ':')
-      b'b9\:01\:ef'
+      >>> binascii.hexlify(b'\xb9\x01\xef', '-')
+      b'b9-01-ef'
       >>> binascii.b2a_hex(b'\xb9\x01\xef', b'_', 2)
       b'b9_01ef'
       >>> binascii.b2a_hex(b'\xb9\x01\xef', b' ', -2)
