@@ -35,6 +35,7 @@ __all__ = [
     'Callable',
     'ClassVar',
     'Final',
+    'ForwardRef',
     'Generic',
     'Literal',
     'Optional',
@@ -81,11 +82,13 @@ __all__ = [
     'SupportsRound',
 
     # Concrete collection types.
+    'ChainMap',
     'Counter',
     'Deque',
     'Dict',
     'DefaultDict',
     'List',
+    'OrderedDict',
     'Set',
     'FrozenSet',
     'NamedTuple',  # Not really a type.
