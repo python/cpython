@@ -1099,6 +1099,11 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       .. versionadded:: 3.4
 
+      .. deprecated:: 3.8
+         This flag isn't necessary anymore, as the interpreter assumes the
+         :c:member:`~PyTypeObject.tp_finalize` slot is always present in the
+         type structure.
+
 
 .. c:member:: const char* PyTypeObject.tp_doc
 
