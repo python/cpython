@@ -483,6 +483,44 @@ class IocpProactor:
 
         return self._register(ov, conn, finish_recv)
 
+    def recvfrom(self, conn, nbytes, flags=0):
+        self._register_with_iocp(conn)
+        ov = _overlapped.Overlapped(NULL)
+        try:
+            ov.WSARecvFrom(conn.fileno(), nbytes, flags)
+        except BrokenPipeError:
+            return self._result((b'', None))
+
+        def finish_recv(trans, key, ov):
+            try:
+                return ov.getresult()
+            except OSError as exc:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
+                    raise ConnectionResetError(*exc.args)
+                else:
+                    raise
+
+        return self._register(ov, conn, finish_recv)
+
+    def sendto(self, conn, buf, flags=0, addr=None):
+        self._register_with_iocp(conn)
+        ov = _overlapped.Overlapped(NULL)
+
+        ov.WSASendTo(conn.fileno(), buf, flags, addr)
+
+        def finish_send(trans, key, ov):
+            try:
+                return ov.getresult()
+            except OSError as exc:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
+                    raise ConnectionResetError(*exc.args)
+                else:
+                    raise
+
+        return self._register(ov, conn, finish_send)
+
     def send(self, conn, buf, flags=0):
         self._register_with_iocp(conn)
         ov = _overlapped.Overlapped(NULL)
@@ -532,6 +570,14 @@ class IocpProactor:
         return future
 
     def connect(self, conn, address):
+        if conn.type == socket.SOCK_DGRAM:
+            # WSAConnect will complete immediately for UDP sockets so we don't
+            # need to register any IOCP operation
+            _overlapped.WSAConnect(conn.fileno(), address)
+            fut = self._loop.create_future()
+            fut.set_result(None)
+            return fut
+
         self._register_with_iocp(conn)
         # The socket needs to be locally bound before we call ConnectEx().
         try:

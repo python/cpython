@@ -1730,6 +1730,7 @@ class _patch_dict(object):
     def __enter__(self):
         """Patch the dict."""
         self._patch_dict()
+        return self.in_dict
 
 
     def _patch_dict(self):
