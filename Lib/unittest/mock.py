@@ -26,6 +26,7 @@ __all__ = (
 __version__ = '1.0'
 
 import asyncio
+import contextlib
 import io
 import inspect
 import pprint
@@ -47,6 +48,13 @@ _safe_super = super
 def _is_async_obj(obj):
     if getattr(obj, '__code__', None):
         return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
+    else:
+        return False
+
+
+def _is_async_func(func):
+    if getattr(func, '__code__', None):
+        return asyncio.iscoroutinefunction(func)
     else:
         return False
 
@@ -223,6 +231,34 @@ def _setup_func(funcopy, mock, sig):
     funcopy.__signature__ = sig
 
     mock._mock_delegate = funcopy
+
+
+def _setup_async_mock(mock):
+    mock._is_coroutine = asyncio.coroutines._is_coroutine
+    mock.await_count = 0
+    mock.await_args = None
+    mock.await_args_list = _CallList()
+    mock.awaited = _AwaitEvent(mock)
+
+    # Mock is not configured yet so the attributes are set
+    # to a function and then the corresponding mock helper function
+    # is called when the helper is accessed similar to _setup_func.
+    def wrapper(attr, *args, **kwargs):
+        return getattr(mock.mock, attr)(*args, **kwargs)
+
+    for attribute in ('assert_awaited',
+                      'assert_awaited_once',
+                      'assert_awaited_with',
+                      'assert_awaited_once_with',
+                      'assert_any_await',
+                      'assert_has_awaits',
+                      'assert_not_awaited'):
+
+        # setattr(mock, attribute, wrapper) causes late binding
+        # hence attribute will always be the last value in the loop
+        # Use partial(wrapper, attribute) to ensure the attribute is bound
+        # correctly.
+        setattr(mock, attribute, partial(wrapper, attribute))
 
 
 def _is_magic(name):
@@ -755,12 +791,12 @@ class NonCallableMock(Base):
         return _format_call_signature(name, args, kwargs)
 
 
-    def _format_mock_failure_message(self, args, kwargs):
-        message = 'expected call not found.\nExpected: %s\nActual: %s'
+    def _format_mock_failure_message(self, args, kwargs, action='call'):
+        message = 'expected %s not found.\nExpected: %s\nActual: %s'
         expected_string = self._format_mock_call_signature(args, kwargs)
         call_args = self.call_args
         actual_string = self._format_mock_call_signature(*call_args)
-        return message % (expected_string, actual_string)
+        return message % (action, expected_string, actual_string)
 
 
     def _call_matcher(self, _call):
@@ -1185,6 +1221,8 @@ class _patch(object):
     def __call__(self, func):
         if isinstance(func, type):
             return self.decorate_class(func)
+        if inspect.iscoroutinefunction(func):
+            return self.decorate_async_callable(func)
         return self.decorate_callable(func)
 
 
@@ -1202,41 +1240,68 @@ class _patch(object):
         return klass
 
 
+    @contextlib.contextmanager
+    def decoration_helper(self, patched, args, keywargs):
+        extra_args = []
+        entered_patchers = []
+        patching = None
+
+        exc_info = tuple()
+        try:
+            for patching in patched.patchings:
+                arg = patching.__enter__()
+                entered_patchers.append(patching)
+                if patching.attribute_name is not None:
+                    keywargs.update(arg)
+                elif patching.new is DEFAULT:
+                    extra_args.append(arg)
+
+            args += tuple(extra_args)
+            yield (args, keywargs)
+        except:
+            if (patching not in entered_patchers and
+                _is_started(patching)):
+                # the patcher may have been started, but an exception
+                # raised whilst entering one of its additional_patchers
+                entered_patchers.append(patching)
+            # Pass the exception to __exit__
+            exc_info = sys.exc_info()
+            # re-raise the exception
+            raise
+        finally:
+            for patching in reversed(entered_patchers):
+                patching.__exit__(*exc_info)
+
+
     def decorate_callable(self, func):
+        # NB. Keep the method in sync with decorate_async_callable()
         if hasattr(func, 'patchings'):
             func.patchings.append(self)
             return func
 
         @wraps(func)
         def patched(*args, **keywargs):
-            extra_args = []
-            entered_patchers = []
+            with self.decoration_helper(patched,
+                                        args,
+                                        keywargs) as (newargs, newkeywargs):
+                return func(*newargs, **newkeywargs)
 
-            exc_info = tuple()
-            try:
-                for patching in patched.patchings:
-                    arg = patching.__enter__()
-                    entered_patchers.append(patching)
-                    if patching.attribute_name is not None:
-                        keywargs.update(arg)
-                    elif patching.new is DEFAULT:
-                        extra_args.append(arg)
+        patched.patchings = [self]
+        return patched
 
-                args += tuple(extra_args)
-                return func(*args, **keywargs)
-            except:
-                if (patching not in entered_patchers and
-                    _is_started(patching)):
-                    # the patcher may have been started, but an exception
-                    # raised whilst entering one of its additional_patchers
-                    entered_patchers.append(patching)
-                # Pass the exception to __exit__
-                exc_info = sys.exc_info()
-                # re-raise the exception
-                raise
-            finally:
-                for patching in reversed(entered_patchers):
-                    patching.__exit__(*exc_info)
+
+    def decorate_async_callable(self, func):
+        # NB. Keep the method in sync with decorate_callable()
+        if hasattr(func, 'patchings'):
+            func.patchings.append(self)
+            return func
+
+        @wraps(func)
+        async def patched(*args, **keywargs):
+            with self.decoration_helper(patched,
+                                        args,
+                                        keywargs) as (newargs, newkeywargs):
+                return await func(*newargs, **newkeywargs)
 
         patched.patchings = [self]
         return patched
@@ -1665,6 +1730,7 @@ class _patch_dict(object):
     def __enter__(self):
         """Patch the dict."""
         self._patch_dict()
+        return self.in_dict
 
 
     def _patch_dict(self):
@@ -2073,7 +2139,7 @@ class AsyncMockMixin(Base):
             raise AssertionError(f'Expected await: {expected}\nNot awaited')
 
         def _error_message():
-            msg = self._format_mock_failure_message(args, kwargs)
+            msg = self._format_mock_failure_message(args, kwargs, action='await')
             return msg
 
         expected = self._call_matcher((args, kwargs))
@@ -2127,7 +2193,7 @@ class AsyncMockMixin(Base):
         if not any_order:
             if expected not in all_awaits:
                 raise AssertionError(
-                    f'Awaits not found.\nExpected: {_CallList(calls)}\n',
+                    f'Awaits not found.\nExpected: {_CallList(calls)}\n'
                     f'Actual: {self.await_args_list}'
                 ) from cause
             return
@@ -2151,7 +2217,7 @@ class AsyncMockMixin(Base):
         """
         self = _mock_self
         if self.await_count != 0:
-            msg = (f"Expected {self._mock_name or 'mock'} to have been awaited once."
+            msg = (f"Expected {self._mock_name or 'mock'} to not have been awaited."
                    f" Awaited {self.await_count} times.")
             raise AssertionError(msg)
 
@@ -2457,10 +2523,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         spec = type(spec)
 
     is_type = isinstance(spec, type)
-    if getattr(spec, '__code__', None):
-        is_async_func = asyncio.iscoroutinefunction(spec)
-    else:
-        is_async_func = False
+    is_async_func = _is_async_func(spec)
     _kwargs = {'spec': spec}
     if spec_set:
         _kwargs = {'spec_set': spec}
@@ -2498,26 +2561,11 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                  name=_name, **_kwargs)
 
     if isinstance(spec, FunctionTypes):
-        wrapped_mock = mock
         # should only happen at the top level because we don't
         # recurse for functions
         mock = _set_signature(mock, spec)
         if is_async_func:
-            mock._is_coroutine = asyncio.coroutines._is_coroutine
-            mock.await_count = 0
-            mock.await_args = None
-            mock.await_args_list = _CallList()
-
-            for a in ('assert_awaited',
-                      'assert_awaited_once',
-                      'assert_awaited_with',
-                      'assert_awaited_once_with',
-                      'assert_any_await',
-                      'assert_has_awaits',
-                      'assert_not_awaited'):
-                def f(*args, **kwargs):
-                    return getattr(wrapped_mock, a)(*args, **kwargs)
-                setattr(mock, a, f)
+            _setup_async_mock(mock)
     else:
         _check_signature(spec, mock, is_type, instance)
 

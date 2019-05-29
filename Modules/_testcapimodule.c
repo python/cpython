@@ -4985,13 +4985,24 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject*
 test_write_unraisable_exc(PyObject *self, PyObject *args)
 {
-    PyObject *exc, *obj;
-    if (!PyArg_ParseTuple(args, "OO", &exc, &obj)) {
+    PyObject *exc, *err_msg, *obj;
+    if (!PyArg_ParseTuple(args, "OOO", &exc, &err_msg, &obj)) {
         return NULL;
     }
 
+    const char *err_msg_utf8;
+    if (err_msg != Py_None) {
+        err_msg_utf8 = PyUnicode_AsUTF8(err_msg);
+        if (err_msg_utf8 == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        err_msg_utf8 = NULL;
+    }
+
     PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
-    PyErr_WriteUnraisable(obj);
+    _PyErr_WriteUnraisableMsg(err_msg_utf8, obj);
     Py_RETURN_NONE;
 }
 
@@ -5776,6 +5787,46 @@ static PyTypeObject Generic_Type = {
 };
 
 
+/* Test PEP 590 */
+
+static PyObject *
+func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
+{
+    if (obj == Py_None || obj == NULL) {
+        Py_INCREF(func);
+        return func;
+    }
+    return PyMethod_New(func, obj);
+}
+
+static PyObject *
+nop_descr_get(PyObject *func, PyObject *obj, PyObject *type)
+{
+    Py_INCREF(func);
+    return func;
+}
+
+static PyTypeObject MethodDescriptorBase_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MethodDescriptorBase",
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_METHOD_DESCRIPTOR,
+    .tp_descr_get = func_descr_get,
+};
+
+static PyTypeObject MethodDescriptorDerived_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MethodDescriptorDerived",
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+};
+
+static PyTypeObject MethodDescriptorNopGet_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MethodDescriptorNopGet",
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_descr_get = nop_descr_get,
+};
+
+
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
     "_testcapi",
@@ -5822,6 +5873,23 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&MyList_Type);
     PyModule_AddObject(m, "MyList", (PyObject *)&MyList_Type);
+
+    if (PyType_Ready(&MethodDescriptorBase_Type) < 0)
+        return NULL;
+    Py_INCREF(&MethodDescriptorBase_Type);
+    PyModule_AddObject(m, "MethodDescriptorBase", (PyObject *)&MethodDescriptorBase_Type);
+
+    MethodDescriptorDerived_Type.tp_base = &MethodDescriptorBase_Type;
+    if (PyType_Ready(&MethodDescriptorDerived_Type) < 0)
+        return NULL;
+    Py_INCREF(&MethodDescriptorDerived_Type);
+    PyModule_AddObject(m, "MethodDescriptorDerived", (PyObject *)&MethodDescriptorDerived_Type);
+
+    MethodDescriptorNopGet_Type.tp_base = &MethodDescriptorBase_Type;
+    if (PyType_Ready(&MethodDescriptorNopGet_Type) < 0)
+        return NULL;
+    Py_INCREF(&MethodDescriptorNopGet_Type);
+    PyModule_AddObject(m, "MethodDescriptorNopGet", (PyObject *)&MethodDescriptorNopGet_Type);
 
     if (PyType_Ready(&GenericAlias_Type) < 0)
         return NULL;

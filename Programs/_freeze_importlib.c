@@ -36,7 +36,7 @@ main(int argc, char *argv[])
     const char *name, *inpath, *outpath;
     char buf[100];
     FILE *infile = NULL, *outfile = NULL;
-    struct _Py_stat_struct status;
+    struct _Py_stat_struct stat;
     size_t text_size, data_size, i, n;
     char *text = NULL;
     unsigned char *data;
@@ -56,11 +56,11 @@ main(int argc, char *argv[])
         fprintf(stderr, "cannot open '%s' for reading\n", inpath);
         goto error;
     }
-    if (_Py_fstat_noraise(fileno(infile), &status)) {
+    if (_Py_fstat_noraise(fileno(infile), &stat)) {
         fprintf(stderr, "cannot fstat '%s'\n", inpath);
         goto error;
     }
-    text_size = (size_t)status.st_size;
+    text_size = (size_t)stat.st_size;
     text = (char *) malloc(text_size + 1);
     if (text == NULL) {
         fprintf(stderr, "could not allocate %ld bytes\n", (long) text_size);
@@ -76,32 +76,32 @@ main(int argc, char *argv[])
     }
     text[text_size] = '\0';
 
-    _PyInitError err;
-    _PyCoreConfig config;
+    PyStatus status;
+    PyConfig config;
 
-    err = _PyCoreConfig_InitIsolatedConfig(&config);
-    if (_PyInitError_Failed(err)) {
-        _PyCoreConfig_Clear(&config);
-        _Py_ExitInitError(err);
+    status = PyConfig_InitIsolatedConfig(&config);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
     }
 
     config.site_import = 0;
 
-    err = _PyCoreConfig_SetString(&config, &config.program_name,
+    status = PyConfig_SetString(&config, &config.program_name,
                                   L"./_freeze_importlib");
-    if (_PyInitError_Failed(err)) {
-        _PyCoreConfig_Clear(&config);
-        _Py_ExitInitError(err);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
     }
 
     /* Don't install importlib, since it could execute outdated bytecode. */
     config._install_importlib = 0;
     config._init_main = 0;
 
-    err = _Py_InitializeFromConfig(&config);
-    _PyCoreConfig_Clear(&config);
-    if (_PyInitError_Failed(err)) {
-        _Py_ExitInitError(err);
+    status = Py_InitializeFromConfig(&config);
+    PyConfig_Clear(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
     }
 
     sprintf(buf, "<frozen %s>", name);
