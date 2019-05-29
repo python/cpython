@@ -887,7 +887,7 @@ id(42)
                                           breakpoint='time_gmtime',
                                           cmds_after_breakpoint=['py-bt-full'],
                                           )
-        self.assertIn('#2 <built-in method gmtime', gdb_output)
+        self.assertIn('#1 <built-in method gmtime', gdb_output)
 
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
