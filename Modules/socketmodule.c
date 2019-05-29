@@ -6685,6 +6685,7 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
     int ret;
     if ((ret = GetIfTable2Ex(MibIfTableRaw, &tbl)) != NO_ERROR) {
         Py_DECREF(list);
+        // ret is used instead of GetLastError()
         return PyErr_SetFromWindowsErr(ret);
     }
     for (ULONG i = 0; i < tbl->NumEntries; ++i) {
@@ -6694,6 +6695,7 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
                                                Py_ARRAY_LENGTH(buf)))) {
             Py_DECREF(list);
             FreeMibTable(tbl);
+            // ret is used instead of GetLastError()
             return PyErr_SetFromWindowsErr(ret);
         }
         PyObject *tuple = Py_BuildValue("Iu", r.InterfaceIndex, buf);
