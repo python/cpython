@@ -3605,6 +3605,30 @@ class AllTests(BaseTestCase):
         self.assertIn('SupportsBytes', a)
         self.assertIn('SupportsComplex', a)
 
+    def test_all_exported_names(self):
+        import typing
+
+        actual_all = set(typing.__all__)
+        computed_all = {
+            k for k, v in vars(typing).items()
+            # explicitly exported, not a thing with __module__
+            if k in actual_all or (
+                # avoid private names
+                not k.startswith('_') and
+                # avoid things in the io / re typing submodules
+                k not in typing.io.__all__ and
+                k not in typing.re.__all__ and
+                k not in {'io', 're'} and
+                # there's a few types and metaclasses that aren't exported
+                not k.endswith(('Meta', '_contra', '_co')) and
+                not k.upper() == k and
+                # but export all things that have __module__ == 'typing'
+                getattr(v, '__module__', None) == typing.__name__
+            )
+        }
+        self.assertSetEqual(computed_all, actual_all)
+
+
 
 if __name__ == '__main__':
     main()
