@@ -3014,8 +3014,8 @@ features:
 
    These flags can be passed to :func:`memfd_create`.
 
-   .. availability:: Linux 3.17 and newer.  The ``MFD_HUGE*`` flags are only
-      available since Linux 4.14.
+   .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.  The
+      ``MFD_HUGE*`` flags are only available since Linux 4.14.
 
    .. versionadded:: 3.8
 
