@@ -1895,6 +1895,44 @@ sys_getandroidapilevel_impl(PyObject *module)
 #endif   /* ANDROID_API_LEVEL */
 
 
+static int
+_call_pending_pycallback(void *arg)
+{
+    PyObject *callback = (PyObject *)arg;
+    PyObject *res = PyObject_CallFunctionObjArgs(callback, NULL);
+
+    if (res == NULL) {
+        PyErr_WriteUnraisable(callback);
+    }
+    else {
+        Py_DECREF(res);
+    }
+
+    return 0;
+}
+
+
+/*[clinic input]
+sys.addpendingcall
+
+    callback: object
+
+Schedule a *callback* to eventually execute in the main thread.
+[clinic start generated code]*/
+
+static PyObject *
+sys_addpendingcall_impl(PyObject *module, PyObject *callback)
+/*[clinic end generated code: output=8af6dede85199179 input=edaaec4bd3f2c753]*/
+{
+    if (Py_AddPendingCall(&_call_pending_pycallback, (void *)callback)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to add a pending callback");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
@@ -1902,6 +1940,7 @@ static PyMethodDef sys_methods[] = {
     {"audit",           (PyCFunction)(void(*)(void))sys_audit, METH_FASTCALL, audit_doc },
     {"breakpointhook",  (PyCFunction)(void(*)(void))sys_breakpointhook,
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
+    SYS_ADDPENDINGCALL_METHODDEF
     SYS_CALLSTATS_METHODDEF
     SYS__CLEAR_TYPE_CACHE_METHODDEF
     SYS__CURRENT_FRAMES_METHODDEF

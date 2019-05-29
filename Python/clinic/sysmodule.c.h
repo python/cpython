@@ -1051,6 +1051,38 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(ANDROID_API_LEVEL) */
 
+PyDoc_STRVAR(sys_addpendingcall__doc__,
+"addpendingcall($module, /, callback)\n"
+"--\n"
+"\n"
+"Schedule a *callback* to eventually execute in the main thread.");
+
+#define SYS_ADDPENDINGCALL_METHODDEF    \
+    {"addpendingcall", (PyCFunction)(void(*)(void))sys_addpendingcall, METH_FASTCALL|METH_KEYWORDS, sys_addpendingcall__doc__},
+
+static PyObject *
+sys_addpendingcall_impl(PyObject *module, PyObject *callback);
+
+static PyObject *
+sys_addpendingcall(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"callback", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "addpendingcall", 0};
+    PyObject *argsbuf[1];
+    PyObject *callback;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    callback = args[0];
+    return_value = sys_addpendingcall_impl(module, callback);
+
+exit:
+    return return_value;
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1082,4 +1114,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=43c4fde7b5783d8d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d09a9c68a5603785 input=a9049054013a1b77]*/

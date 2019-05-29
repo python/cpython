@@ -43,6 +43,20 @@ always available.
       functions will not see the hook.
 
 
+.. function:: addpendingcall(callback)
+
+   Schedule a *callback* to eventually execute in the main thread.
+
+   A :exc:`RuntimeError` is raised if the *callback* could not be
+   scheduled.
+
+   If *callback* raises an exception it is converted into an
+   *unraisable exception*, see :func:`sys.unraisablehook` for more
+   details.
+
+   .. versionadded:: 3.8
+
+
 .. data:: argv
 
    The list of command line arguments passed to a Python script. ``argv[0]`` is the
