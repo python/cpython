@@ -33,8 +33,6 @@ PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);
 PyAPI_FUNC(void) PyEval_SetTrace(Py_tracefunc, PyObject *);
 PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(int new_depth);
 PyAPI_FUNC(int) _PyEval_GetCoroutineOriginTrackingDepth(void);
-PyAPI_FUNC(void) _PyEval_SetCoroutineWrapper(PyObject *);
-PyAPI_FUNC(PyObject *) _PyEval_GetCoroutineWrapper(void);
 PyAPI_FUNC(void) _PyEval_SetAsyncGenFirstiter(PyObject *);
 PyAPI_FUNC(PyObject *) _PyEval_GetAsyncGenFirstiter(void);
 PyAPI_FUNC(void) _PyEval_SetAsyncGenFinalizer(PyObject *);
@@ -191,8 +189,8 @@ PyAPI_FUNC(void) PyEval_RestoreThread(PyThreadState *);
 
 PyAPI_FUNC(int)  PyEval_ThreadsInitialized(void);
 PyAPI_FUNC(void) PyEval_InitThreads(void);
-PyAPI_FUNC(void) PyEval_AcquireLock(void) Py_DEPRECATED(3.2);
-PyAPI_FUNC(void) PyEval_ReleaseLock(void) /* Py_DEPRECATED(3.2) */;
+Py_DEPRECATED(3.2) PyAPI_FUNC(void) PyEval_AcquireLock(void);
+/* Py_DEPRECATED(3.2) */ PyAPI_FUNC(void) PyEval_ReleaseLock(void);
 PyAPI_FUNC(void) PyEval_AcquireThread(PyThreadState *tstate);
 PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
 

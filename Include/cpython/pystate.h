@@ -6,12 +6,10 @@
 extern "C" {
 #endif
 
-#include "cpython/coreconfig.h"
+#include "cpython/initconfig.h"
 
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
-
-PyAPI_FUNC(_PyCoreConfig *) _PyInterpreterState_GetCoreConfig(PyInterpreterState *);
 
 PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
 
@@ -127,9 +125,6 @@ struct _ts {
     void *on_delete_data;
 
     int coroutine_origin_tracking_depth;
-
-    PyObject *coroutine_wrapper;
-    int in_coroutine_wrapper;
 
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;

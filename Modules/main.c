@@ -1,7 +1,7 @@
 /* Python interpreter main program */
 
 #include "Python.h"
-#include "pycore_coreconfig.h"
+#include "pycore_initconfig.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
@@ -33,14 +33,14 @@ extern "C" {
 
 /* --- pymain_init() ---------------------------------------------- */
 
-static _PyInitError
+static PyStatus
 pymain_init(const _PyArgv *args)
 {
-    _PyInitError err;
+    PyStatus status;
 
-    err = _PyRuntime_Initialize();
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    status = _PyRuntime_Initialize();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     /* 754 requires that FP exceptions run in "no stop" mode by default,
@@ -52,29 +52,36 @@ pymain_init(const _PyArgv *args)
     fedisableexcept(FE_OVERFLOW);
 #endif
 
-    _PyPreConfig preconfig;
-    _PyPreConfig_InitPythonConfig(&preconfig);
-    err = _Py_PreInitializeFromPyArgv(&preconfig, args);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    PyPreConfig preconfig;
+    PyPreConfig_InitPythonConfig(&preconfig);
+    status = _Py_PreInitializeFromPyArgv(&preconfig, args);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
-    _PyCoreConfig config;
-    err = _PyCoreConfig_InitPythonConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    PyConfig config;
+    status = PyConfig_InitPythonConfig(&config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     /* pass NULL as the config: config is read from command line arguments,
        environment variables, configuration files */
     if (args->use_bytes_argv) {
-        return _Py_InitializeFromArgs(&config,
-                                      args->argc, args->bytes_argv);
+        status = PyConfig_SetBytesArgv(&config, args->argc, args->bytes_argv);
     }
     else {
-        return _Py_InitializeFromWideArgs(&config,
-                                          args->argc, args->wchar_argv);
+        status = PyConfig_SetArgv(&config, args->argc, args->wchar_argv);
     }
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = Py_InitializeFromConfig(&config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    return _PyStatus_OK();
 }
 
 
@@ -82,13 +89,17 @@ pymain_init(const _PyArgv *args)
 
 /* Non-zero if filename, command (-c) or module (-m) is set
    on the command line */
-#define RUN_CODE(config) \
-    (config->run_command != NULL || config->run_filename != NULL \
-     || config->run_module != NULL)
+static inline int config_run_code(const PyConfig *config)
+{
+    return (config->run_command != NULL
+            || config->run_filename != NULL
+            || config->run_module != NULL);
+}
+
 
 /* Return non-zero is stdin is a TTY or if -i command line option is used */
 static int
-stdin_is_interactive(const _PyCoreConfig *config)
+stdin_is_interactive(const PyConfig *config)
 {
     return (isatty(fileno(stdin)) || config->interactive);
 }
@@ -181,13 +192,13 @@ pymain_sys_path_add_path0(PyInterpreterState *interp, PyObject *path0)
 
 
 static void
-pymain_header(const _PyCoreConfig *config)
+pymain_header(const PyConfig *config)
 {
     if (config->quiet) {
         return;
     }
 
-    if (!config->verbose && (RUN_CODE(config) || !stdin_is_interactive(config))) {
+    if (!config->verbose && (config_run_code(config) || !stdin_is_interactive(config))) {
         return;
     }
 
@@ -199,12 +210,12 @@ pymain_header(const _PyCoreConfig *config)
 
 
 static void
-pymain_import_readline(const _PyCoreConfig *config)
+pymain_import_readline(const PyConfig *config)
 {
     if (config->isolated) {
         return;
     }
-    if (!config->inspect && RUN_CODE(config)) {
+    if (!config->inspect && config_run_code(config)) {
         return;
     }
     if (!isatty(fileno(stdin))) {
@@ -293,7 +304,7 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
 
 
 static int
-pymain_run_file(_PyCoreConfig *config, PyCompilerFlags *cf)
+pymain_run_file(PyConfig *config, PyCompilerFlags *cf)
 {
     const wchar_t *filename = config->run_filename;
     FILE *fp = _Py_wfopen(filename, L"rb");
@@ -362,7 +373,7 @@ pymain_run_file(_PyCoreConfig *config, PyCompilerFlags *cf)
 
 
 static int
-pymain_run_startup(_PyCoreConfig *config, PyCompilerFlags *cf, int *exitcode)
+pymain_run_startup(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
 {
     const char *startup = _Py_GetEnv(config->use_environment, "PYTHONSTARTUP");
     if (startup == NULL) {
@@ -421,7 +432,7 @@ error:
 
 
 static int
-pymain_run_stdin(_PyCoreConfig *config, PyCompilerFlags *cf)
+pymain_run_stdin(PyConfig *config, PyCompilerFlags *cf)
 {
     if (stdin_is_interactive(config)) {
         config->inspect = 0;
@@ -448,7 +459,7 @@ pymain_run_stdin(_PyCoreConfig *config, PyCompilerFlags *cf)
 
 
 static void
-pymain_repl(_PyCoreConfig *config, PyCompilerFlags *cf, int *exitcode)
+pymain_repl(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
 {
     /* Check this environment variable at the end, to give programs the
        opportunity to set it from Python. */
@@ -457,7 +468,7 @@ pymain_repl(_PyCoreConfig *config, PyCompilerFlags *cf, int *exitcode)
         Py_InspectFlag = 1;
     }
 
-    if (!(config->inspect && stdin_is_interactive(config) && RUN_CODE(config))) {
+    if (!(config->inspect && stdin_is_interactive(config) && config_run_code(config))) {
         return;
     }
 
@@ -477,7 +488,7 @@ pymain_run_python(int *exitcode)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     /* pymain_run_stdin() modify the config */
-    _PyCoreConfig *config = &interp->core_config;
+    PyConfig *config = &interp->config;
 
     PyObject *main_importer_path = NULL;
     if (config->run_filename != NULL) {
@@ -590,20 +601,20 @@ exit_sigint(void)
 
 
 static void _Py_NO_RETURN
-pymain_exit_error(_PyInitError err)
+pymain_exit_error(PyStatus status)
 {
-    if (_Py_INIT_IS_EXIT(err)) {
+    if (_PyStatus_IS_EXIT(status)) {
         /* If it's an error rather than a regular exit, leave Python runtime
-           alive: _Py_ExitInitError() uses the current exception and use
+           alive: Py_ExitStatusException() uses the current exception and use
            sys.stdout in this case. */
         pymain_free();
     }
-    _Py_ExitInitError(err);
+    Py_ExitStatusException(status);
 }
 
 
 int
-_Py_RunMain(void)
+Py_RunMain(void)
 {
     int exitcode = 0;
 
@@ -628,16 +639,16 @@ _Py_RunMain(void)
 static int
 pymain_main(_PyArgv *args)
 {
-    _PyInitError err = pymain_init(args);
-    if (_Py_INIT_IS_EXIT(err)) {
+    PyStatus status = pymain_init(args);
+    if (_PyStatus_IS_EXIT(status)) {
         pymain_free();
-        return err.exitcode;
+        return status.exitcode;
     }
-    if (_Py_INIT_FAILED(err)) {
-        pymain_exit_error(err);
+    if (_PyStatus_EXCEPTION(status)) {
+        pymain_exit_error(status);
     }
 
-    return _Py_RunMain();
+    return Py_RunMain();
 }
 
 
@@ -654,7 +665,7 @@ Py_Main(int argc, wchar_t **argv)
 
 
 int
-_Py_UnixMain(int argc, char **argv)
+Py_BytesMain(int argc, char **argv)
 {
     _PyArgv args = {
         .argc = argc,

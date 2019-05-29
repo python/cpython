@@ -3043,12 +3043,14 @@ class catch_unraisable_exception:
     Usage:
 
         with support.catch_unraisable_exception() as cm:
+            # code creating an "unraisable exception"
             ...
 
-            # check the expected unraisable exception: use cm.unraisable
+            # check the unraisable exception: use cm.unraisable
             ...
 
-        # cm.unraisable is None here (to break a reference cycle)
+        # cm.unraisable attribute no longer exists at this point
+        # (to break a reference cycle)
     """
 
     def __init__(self):
@@ -3065,5 +3067,5 @@ class catch_unraisable_exception:
 
     def __exit__(self, *exc_info):
         # Clear the unraisable exception to explicitly break a reference cycle
-        self.unraisable = None
+        del self.unraisable
         sys.unraisablehook = self._old_hook

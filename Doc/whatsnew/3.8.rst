@@ -138,7 +138,8 @@ environment variable, can be set using the new ``./configure --with-trace-refs``
 build option.
 (Contributed by Victor Stinner in :issue:`36465`.)
 
-On Unix, C extensions are no longer linked to libpython except on Android.
+On Unix, C extensions are no longer linked to libpython except on Android
+and Cygwin.
 It is now possible
 for a statically linked Python to load a C extension built using a shared
 library Python.
@@ -163,8 +164,8 @@ previous command fails (replace ``X.Y`` with the Python version).
 
 On the other hand, ``pkg-config python3.8 --libs`` no longer contains
 ``-lpython3.8``. C extensions must not be linked to libpython (except on
-Android, case handled by the script); this change is backward incompatible on
-purpose.
+Android and Cygwin, whose cases are handled by the script);
+this change is backward incompatible on purpose.
 (Contributed by Victor Stinner in :issue:`36721`.)
 
 f-strings now support =  for quick and easy debugging
@@ -180,6 +181,61 @@ evaluated expression.  So::
 Would print ``x*9 + 15=42``.
 
 (Contributed by Eric V. Smith and Larry Hastings in :issue:`36817`.)
+
+PEP 587: Python Initialization Configuration
+--------------------------------------------
+
+The :pep:`587` adds a new C API to configure the Python Initialization
+providing finer control on the whole configuration and better error reporting.
+
+New structures:
+
+* :c:type:`PyConfig`
+* :c:type:`PyPreConfig`
+* :c:type:`PyStatus`
+* :c:type:`PyWideStringList`
+
+New functions:
+
+* :c:func:`PyConfig_Clear`
+* :c:func:`PyConfig_InitIsolatedConfig`
+* :c:func:`PyConfig_InitPythonConfig`
+* :c:func:`PyConfig_Read`
+* :c:func:`PyConfig_SetArgv`
+* :c:func:`PyConfig_SetBytesArgv`
+* :c:func:`PyConfig_SetBytesString`
+* :c:func:`PyConfig_SetString`
+* :c:func:`PyPreConfig_InitIsolatedConfig`
+* :c:func:`PyPreConfig_InitPythonConfig`
+* :c:func:`PyStatus_Error`
+* :c:func:`PyStatus_Exception`
+* :c:func:`PyStatus_Exit`
+* :c:func:`PyStatus_IsError`
+* :c:func:`PyStatus_IsExit`
+* :c:func:`PyStatus_NoMemory`
+* :c:func:`PyStatus_Ok`
+* :c:func:`PyWideStringList_Append`
+* :c:func:`PyWideStringList_Insert`
+* :c:func:`Py_BytesMain`
+* :c:func:`Py_ExitStatusException`
+* :c:func:`Py_InitializeFromConfig`
+* :c:func:`Py_PreInitialize`
+* :c:func:`Py_PreInitializeFromArgs`
+* :c:func:`Py_PreInitializeFromBytesArgs`
+* :c:func:`Py_RunMain`
+
+This PEP also adds ``_PyRuntimeState.preconfig`` (:c:type:`PyPreConfig` type)
+and ``PyInterpreterState.config`` (:c:type:`PyConfig` type) fields to these
+internal structures. ``PyInterpreterState.config`` becomes the new
+reference configuration, replacing global configuration variables and
+other private variables.
+
+See :ref:`Python Initialization Configuration <init-config>` for the
+documentation.
+
+See :pep:`587` for a full description.
+
+(Contributed by Victor Stinner in :issue:`36763`.)
 
 
 Other Language Changes
@@ -239,6 +295,9 @@ Other Language Changes
   and Windows use this to properly terminate scripts in interactive sessions.
   (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
 
+* Added new ``replace()`` method to the code type (:class:`types.CodeType`).
+  (Contributed by Victor Stinner in :issue:`37032`.)
+
 
 New Modules
 ===========
@@ -285,6 +344,23 @@ to specify flags for the underlying ``LoadLibraryEx`` call. The default flags ar
 set to only load DLL dependencies from trusted locations, including the path
 where the DLL is stored (if a full or partial path is used to load the initial
 DLL) and paths added by :func:`~os.add_dll_directory`.
+
+
+functools
+---------
+
+:func:`functools.lru_cache` can now be used as a straight decorator rather
+than as a function returning a decorator.  So both of these are now supported::
+
+    @lru_cache
+    def f(x):
+        ...
+
+    @lru_cache(maxsize=256)
+    def f(x):
+        ...
+
+(Contributed by Raymond Hettinger in :issue:`36772`.)
 
 
 datetime
@@ -384,6 +460,25 @@ numbers. (Contributed by Pablo Galindo in :issue:`35606`)
 Added new function :func:`math.isqrt` for computing integer square roots.
 (Contributed by Mark Dickinson in :issue:`36887`.)
 
+
+mmap
+----
+
+The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.madvise` method to
+access the ``madvise()`` system call.
+(Contributed by Zackery Spytz in :issue:`32941`.)
+
+
+multiprocessing
+---------------
+
+Added new :mod:`multiprocessing.shared_memory` module.
+(Contributed Davin Potts in :issue:`35813`.)
+
+On macOS, the *spawn* start method is now used by default.
+(Contributed by Victor Stinner in :issue:`33725`.)
+
+
 os
 --
 
@@ -442,6 +537,13 @@ NSKeyedArchiver-encoded binary plists.
 (Contributed by Jon Janzen in :issue:`26707`.)
 
 
+py_compile
+----------
+
+:func:`py_compile.compile` now supports silent mode.
+(Contributed by Joannah Nanjekye in :issue:`22640`.)
+
+
 socket
 ------
 
@@ -454,6 +556,11 @@ The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
 :func:`socket.if_indextoname()` functions have been implemented on Windows.
 (Contributed by Zackery Spytz in :issue:`37007`.)
 
+shlex
+----------
+
+The new :func:`shlex.join` function acts as the inverse of :func:`shlex.split`.
+(Contributed by Bo Bayles in :issue:`32102`.)
 
 shutil
 ------
@@ -540,6 +647,15 @@ format for new archives, instead of the previous GNU-specific one.
 This improves cross-platform portability with a consistent encoding (UTF-8)
 in a standardized and extensible format, and offers several other benefits.
 (Contributed by C.A.M. Gerlach in :issue:`36268`.)
+
+
+threading
+---------
+
+Add a new :func:`threading.excepthook` function which handles uncaught
+:meth:`threading.Thread.run` exception. It can be overridden to control how
+uncaught :meth:`threading.Thread.run` exceptions are handled.
+(Contributed by Victor Stinner in :issue:`1230540`.)
 
 
 tokenize
@@ -883,6 +999,10 @@ The following features and APIs have been removed from Python 3.8:
   :func:`fileinput.FileInput` which was ignored and deprecated since Python 3.6
   has been removed. :issue:`36952` (Contributed by Matthias Bussonnier)
 
+* The functions :func:`sys.set_coroutine_wrapper` and
+  :func:`sys.get_coroutine_wrapper` deprecated in Python 3.7 have been removed;
+  :issue:`36933` (Contributed by Matthias Bussonnier)
+
 
 Porting to Python 3.8
 =====================
@@ -1054,7 +1174,8 @@ Changes in the Python API
 
 * :class:`types.CodeType` has a new parameter in the second position of the
   constructor (*posonlyargcount*) to support positional-only arguments defined
-  in :pep:`570`.
+  in :pep:`570`. A new ``replace()`` method of :class:`types.CodeType` can be
+  used to make the code future-proof.
 
 
 Changes in the C API
@@ -1065,12 +1186,12 @@ Changes in the C API
   instead.
   (Contributed by Victor Stinner in :issue:`36728`.)
 
-* On Unix, C extensions are no longer linked to libpython except on
-  Android. When Python is embedded, ``libpython`` must not be loaded with
+* On Unix, C extensions are no longer linked to libpython except on Android
+  and Cygwin. When Python is embedded, ``libpython`` must not be loaded with
   ``RTLD_LOCAL``, but ``RTLD_GLOBAL`` instead. Previously, using
-  ``RTLD_LOCAL``, it was already not possible to load C extensions which were
-  not linked to ``libpython``, like C extensions of the standard library built
-  by the ``*shared*`` section of ``Modules/Setup``.
+  ``RTLD_LOCAL``, it was already not possible to load C extensions which
+  were not linked to ``libpython``, like C extensions of the standard
+  library built by the ``*shared*`` section of ``Modules/Setup``.
 
 * Use of ``#`` variants of formats in parsing or building value (e.g.
   :c:func:`PyArg_ParseTuple`, :c:func:`Py_BuildValue`, :c:func:`PyObject_CallFunction`,
@@ -1134,6 +1255,15 @@ Changes in the C API
         }
 
   (Contributed by Eddie Elizondo in :issue:`35810`.)
+
+* The :c:macro:`Py_DEPRECATED()` macro has been implemented for MSVC.
+  The macro now must be placed before the symbol name.
+
+  Example::
+
+      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
+
+  (Contributed by Zackery Spytz in :issue:`33407`.)
 
 
 CPython bytecode changes
