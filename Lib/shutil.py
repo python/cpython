@@ -317,8 +317,8 @@ if hasattr(os, 'listxattr'):
                 value = os.getxattr(src, name, follow_symlinks=follow_symlinks)
                 os.setxattr(dst, name, value, follow_symlinks=follow_symlinks)
             except OSError as e:
-                if e.errno not in (errno.EPERM,
-                    errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
+                if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA,
+                                   errno.EINVAL):
                     raise
 else:
     def _copyxattr(*args, **kwargs):
