@@ -36,14 +36,6 @@ import unittest
 import urllib.error
 import warnings
 
-ANDROID  = hasattr(sys, 'getandroidapilevel')
-JYTHON = sys.platform.startswith('java')
-
-AIX = platform.system() == 'AIX'
-LINUX = platform.system() == 'Linux'
-MACOS = platform.system() == 'Darwin'
-MS_WINDOWS = platform.system() == 'Windows'
-
 from .testresult import get_test_runner
 
 try:
@@ -125,6 +117,16 @@ __all__ = [
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
     ]
+
+
+ANDROID  = hasattr(sys, 'getandroidapilevel')
+JYTHON = sys.platform.startswith('java')
+
+AIX = platform.system() == 'AIX'
+LINUX = platform.system() == 'Linux'
+MACOS = platform.system() == 'Darwin'
+MS_WINDOWS = platform.system() == 'Windows'
+
 
 class Error(Exception):
     """Base class for regression test exceptions."""
