@@ -9516,9 +9516,7 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
     do {
         Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
         ret = copy_file_range(src, p_offset_src, dst, p_offset_dst, count, flags);
-        _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
