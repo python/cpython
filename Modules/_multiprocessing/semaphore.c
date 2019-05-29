@@ -633,7 +633,7 @@ PyTypeObject _PyMp_SemLockType = {
     /* tp_basicsize      */ sizeof(SemLockObject),
     /* tp_itemsize       */ 0,
     /* tp_dealloc        */ (destructor)semlock_dealloc,
-    /* tp_vectorcall_offset          */ 0,
+    /* tp_vectorcall_offset */ 0,
     /* tp_getattr        */ 0,
     /* tp_setattr        */ 0,
     /* tp_as_async       */ 0,

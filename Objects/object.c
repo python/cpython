@@ -669,7 +669,7 @@ PyObject_Bytes(PyObject *v)
 /* For Python 3.0.1 and later, the old three-way comparison has been
    completely removed in favour of rich comparisons.  PyObject_Compare() and
    PyObject_Cmp() are gone, and the builtin cmp function no longer exists.
-   The old tp_as_async slot has been renamed to tp_as_async, and should no
+   The old tp_compare slot has been renamed to tp_as_async, and should no
    longer be used.  Use tp_richcompare instead.
 
    See (*) below for practical amendments.

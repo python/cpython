@@ -1704,8 +1704,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
  * Miscellaneous helpers.
  */
 
-/* For various reasons, we need to use tp_richcompare instead of tp_as_async.
- * The comparisons here all most naturally compute a cmp()-like result.
+/* The comparisons here all most naturally compute a cmp()-like result.
  * This little helper turns that into a bool result for rich comparisons.
  */
 static PyObject *

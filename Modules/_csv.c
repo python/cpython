@@ -469,7 +469,7 @@ static PyTypeObject Dialect_Type = {
     0,                                      /* tp_itemsize */
     /*  methods  */
     (destructor)Dialect_dealloc,            /* tp_dealloc */
-    (printfunc)0,                           /* tp_vectorcall_offset */
+    0,                                      /* tp_vectorcall_offset */
     (getattrfunc)0,                         /* tp_getattr */
     (setattrfunc)0,                         /* tp_setattr */
     0,                                      /* tp_as_async */
@@ -902,10 +902,10 @@ static PyTypeObject Reader_Type = {
     0,                                      /*tp_itemsize*/
     /* methods */
     (destructor)Reader_dealloc,             /*tp_dealloc*/
-    (printfunc)0,                           /*tp_vectorcall_offset*/
+    0,                                      /*tp_vectorcall_offset*/
     (getattrfunc)0,                         /*tp_getattr*/
     (setattrfunc)0,                         /*tp_setattr*/
-    0,                                     /*tp_as_async*/
+    0,                                      /*tp_as_async*/
     (reprfunc)0,                            /*tp_repr*/
     0,                                      /*tp_as_number*/
     0,                                      /*tp_as_sequence*/
@@ -1332,7 +1332,7 @@ static PyTypeObject Writer_Type = {
     0,                                      /*tp_itemsize*/
     /* methods */
     (destructor)Writer_dealloc,             /*tp_dealloc*/
-    (printfunc)0,                           /*tp_vectorcall_offset*/
+    0,                                      /*tp_vectorcall_offset*/
     (getattrfunc)0,                         /*tp_getattr*/
     (setattrfunc)0,                         /*tp_setattr*/
     0,                                      /*tp_as_async*/

@@ -15238,10 +15238,10 @@ Core and Builtins
 
 - Issue #5182: Removed memoryview.__str__.
 
-- Issue #1717: Removed builtin cmp() function, dropped tp_as_async
+- Issue #1717: Removed builtin cmp() function, dropped tp_compare
   slot, the C API functions PyObject_Compare and PyUnicode_Compare and
-  the type definition cmpfunc.  The tp_as_async slot has been renamed
-  to tp_as_async, and is reserved for future usage.
+  the type definition cmpfunc.  The tp_compare slot has been renamed
+  to tp_reserved, and is reserved for future usage.
 
 - Issue #1242657: the __len__() and __length_hint__() calls in several tools
   were suppressing all exceptions.  These include list() and bytearray().
@@ -23981,7 +23981,7 @@ Build
 C API
 -----
 
-- The documentation for the tp_as_async slot is updated to require that
+- The documentation for the tp_compare slot is updated to require that
   the return value must be -1, 0, 1; an arbitrary number <0 or >0 is
   not correct.  This is not yet enforced but will be enforced in
   Python 2.3; even later, we may use -2 to indicate errors and +2 for
@@ -25419,7 +25419,7 @@ Core language, builtins, and interpreter
   which is guaranteed to have the type that provided the function) and
   an integer indicating the opcode, which can be Py_LT, Py_LE, Py_EQ,
   Py_NE, Py_GT, Py_GE (for <, <=, ==, !=, >, >=), and returns a Python
-  object, which may be NotImplemented (in which case the tp_as_async
+  object, which may be NotImplemented (in which case the tp_compare
   slot function is used as a fallback, if defined).
 
   Classes can overload individual comparison operators by defining one

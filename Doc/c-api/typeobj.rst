@@ -49,7 +49,7 @@ Quick Reference
    +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_dealloc`        | :c:type:`destructor`              |                   | X | X |   | X |
    +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | (:c:member:`~PyTypeObject.tp_vectorcall_offset`)        |                                                                       |
+   | (:c:member:`~PyTypeObject.tp_print`)        |                                                                       |
    +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | (:c:member:`~PyTypeObject.tp_getattr`)      | :c:type:`getattrfunc`             | __getattribute__, |   |   |   | G |
    |                                             |                                   | __getattr__       |   |   |   |   |
@@ -675,7 +675,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is inherited by subtypes.
 
 
-.. c:member:: printfunc PyTypeObject.tp_vectorcall_offset
+.. c:member:: printfunc PyTypeObject.tp_print
 
    Reserved slot, formerly used for print formatting in Python 2.x.
 
@@ -721,7 +721,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    protocols at the C-level.  See :ref:`async-structs` for details.
 
    .. versionadded:: 3.5
-      Formerly known as ``tp_as_async`` and ``tp_as_async``.
+      Formerly known as ``tp_compare`` and ``tp_reserved``.
 
    **Inheritance:**
 
@@ -2404,7 +2404,7 @@ with a more verbose initializer::
        sizeof(MyObject),               /* tp_basicsize */
        0,                              /* tp_itemsize */
        (destructor)myobj_dealloc,      /* tp_dealloc */
-       0,                              /* tp_vectorcall_offset */
+       0,                              /* tp_print */
        0,                              /* tp_getattr */
        0,                              /* tp_setattr */
        0,                              /* tp_as_async */
