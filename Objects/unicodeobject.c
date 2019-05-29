@@ -8099,19 +8099,13 @@ static PyMethodDef encoding_map_methods[] = {
     { 0 }
 };
 
-static void
-encoding_map_dealloc(PyObject* o)
-{
-    PyObject_FREE(o);
-}
-
 static PyTypeObject EncodingMapType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "EncodingMap",          /*tp_name*/
     sizeof(struct encoding_map),   /*tp_basicsize*/
     0,                      /*tp_itemsize*/
     /* methods */
-    encoding_map_dealloc,   /*tp_dealloc*/
+    0,                      /*tp_dealloc*/
     0,                      /*tp_print*/
     0,                      /*tp_getattr*/
     0,                      /*tp_setattr*/
