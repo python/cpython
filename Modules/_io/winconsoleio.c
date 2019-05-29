@@ -1133,7 +1133,7 @@ PyTypeObject PyWindowsConsoleIO_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,       /* tp_flags */
+        | Py_TPFLAGS_HAVE_GC,                   /* tp_flags */
     _io__WindowsConsoleIO___init____doc__,      /* tp_doc */
     (traverseproc)winconsoleio_traverse,        /* tp_traverse */
     (inquiry)winconsoleio_clear,                /* tp_clear */
