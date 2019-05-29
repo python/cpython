@@ -539,12 +539,13 @@ This is the output of running the example above in verbose mode::
 
    test_format (__main__.MyTestCase) ... skipped 'not supported in this library version'
    test_nothing (__main__.MyTestCase) ... skipped 'demonstrating skipping'
+   test_skip_me (tmp.MyTestCase) ... skipped 'skip'
    test_windows_support (__main__.MyTestCase) ... skipped 'requires Windows'
 
    ----------------------------------------------------------------------
-   Ran 3 tests in 0.005s
+   Ran 4 tests in 0.005s
 
-   OK (skipped=3)
+   OK (skipped=4)
 
 Classes can be skipped just like methods::
 
