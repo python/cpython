@@ -367,8 +367,7 @@ call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx)
         }
         stack[nargs] = (PyObject *)ctx;
 
-        handle = _PyObject_FastCallKeywords(
-            callable, stack, nargs, context_kwname);
+        handle = _PyObject_Vectorcall(callable, stack, nargs, context_kwname);
         Py_DECREF(callable);
     }
 
@@ -2805,8 +2804,7 @@ set_exception:
         PyObject *stack[2];
         stack[0] = wrapper;
         stack[1] = (PyObject *)task->task_context;
-        res = _PyObject_FastCallKeywords(
-            add_cb, stack, 1, context_kwname);
+        res = _PyObject_Vectorcall(add_cb, stack, 1, context_kwname);
         Py_DECREF(add_cb);
         Py_DECREF(wrapper);
         if (res == NULL) {
