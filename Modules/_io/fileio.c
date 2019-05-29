@@ -1200,12 +1200,12 @@ PyTypeObject PyFileIO_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,       /* tp_flags */
+        | Py_TPFLAGS_HAVE_GC,                   /* tp_flags */
     _io_FileIO___init____doc__,                 /* tp_doc */
     (traverseproc)fileio_traverse,              /* tp_traverse */
     (inquiry)fileio_clear,                      /* tp_clear */
     0,                                          /* tp_richcompare */
-    offsetof(fileio, weakreflist),      /* tp_weaklistoffset */
+    offsetof(fileio, weakreflist),              /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
     fileio_methods,                             /* tp_methods */
@@ -1215,7 +1215,7 @@ PyTypeObject PyFileIO_Type = {
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
-    offsetof(fileio, dict),         /* tp_dictoffset */
+    offsetof(fileio, dict),                     /* tp_dictoffset */
     _io_FileIO___init__,                        /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     fileio_new,                                 /* tp_new */

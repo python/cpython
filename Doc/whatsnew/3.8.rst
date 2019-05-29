@@ -486,6 +486,10 @@ Added new function :func:`~os.add_dll_directory` on Windows for providing
 additional search paths for native dependencies when importing extension
 modules or loading DLLs using :mod:`ctypes`.
 
+A new :func:`os.memfd_create` function was added to wrap the
+``memfd_create()`` syscall.
+(Contributed by Zackery Spytz and Christian Heimes in :issue:`26836`.)
+
 
 os.path
 -------
@@ -1260,6 +1264,15 @@ Changes in the C API
       Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
 
   (Contributed by Zackery Spytz in :issue:`33407`.)
+
+* The interpreter does not pretend to support binary compatibility of
+  extension types accross feature releases, anymore.  A :c:type:`PyTypeObject`
+  exported by a third-party extension module is supposed to have all the
+  slots expected in the current Python version, including
+  :c:member:`~PyTypeObject.tp_finalize` (:const:`Py_TPFLAGS_HAVE_FINALIZE`
+  is not checked anymore before reading :c:member:`~PyTypeObject.tp_finalize`).
+
+  (Contributed by Antoine Pitrou in :issue:`32388`.)
 
 
 CPython bytecode changes
