@@ -556,6 +556,10 @@ convenience functions to automate the necessary tasks usually involved when
 creating a server socket, including accepting both IPv4 and IPv6 connections
 on the same socket.  (Contributed by Giampaolo Rodola in :issue:`17561`.)
 
+The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
+:func:`socket.if_indextoname()` functions have been implemented on Windows.
+(Contributed by Zackery Spytz in :issue:`37007`.)
+
 shlex
 ----------
 

@@ -1034,9 +1034,12 @@ The :mod:`socket` module also offers various network-related services:
    (index int, name string) tuples.
    :exc:`OSError` if the system call fails.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.8
+      Windows support was added.
 
 
 .. function:: if_nametoindex(if_name)
@@ -1045,9 +1048,12 @@ The :mod:`socket` module also offers various network-related services:
    interface name.
    :exc:`OSError` if no interface with the given name exists.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.8
+      Windows support was added.
 
 
 .. function:: if_indextoname(if_index)
@@ -1056,9 +1062,12 @@ The :mod:`socket` module also offers various network-related services:
    interface index number.
    :exc:`OSError` if no interface with the given index exists.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.8
+      Windows support was added.
 
 
 .. _socket-objects:
