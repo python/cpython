@@ -2989,7 +2989,7 @@ features:
    (or a bitwise ORed combination of them).  By default, the new file
    descriptor is :ref:`non-inheritable <fd_inheritance>`.
 
-   .. availability:: Linux 3.17 and newer.
+   .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.
 
    .. versionadded:: 3.8
 
