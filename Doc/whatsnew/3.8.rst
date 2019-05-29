@@ -469,6 +469,16 @@ access the ``madvise()`` system call.
 (Contributed by Zackery Spytz in :issue:`32941`.)
 
 
+multiprocessing
+---------------
+
+Added new :mod:`multiprocessing.shared_memory` module.
+(Contributed Davin Potts in :issue:`35813`.)
+
+On macOS, the *spawn* start method is now used by default.
+(Contributed by Victor Stinner in :issue:`33725`.)
+
+
 os
 --
 
@@ -527,6 +537,13 @@ NSKeyedArchiver-encoded binary plists.
 (Contributed by Jon Janzen in :issue:`26707`.)
 
 
+py_compile
+----------
+
+:func:`py_compile.compile` now supports silent mode.
+(Contributed by Joannah Nanjekye in :issue:`22640`.)
+
+
 socket
 ------
 
@@ -535,6 +552,11 @@ convenience functions to automate the necessary tasks usually involved when
 creating a server socket, including accepting both IPv4 and IPv6 connections
 on the same socket.  (Contributed by Giampaolo Rodola in :issue:`17561`.)
 
+shlex
+----------
+
+The new :func:`shlex.join` function acts as the inverse of :func:`shlex.split`.
+(Contributed by Bo Bayles in :issue:`32102`.)
 
 shutil
 ------
@@ -973,9 +995,9 @@ The following features and APIs have been removed from Python 3.8:
   :func:`fileinput.FileInput` which was ignored and deprecated since Python 3.6
   has been removed. :issue:`36952` (Contributed by Matthias Bussonnier)
 
-* The function :func:`sys.set_coroutine_wrapper` deprecated in Python 3.7 has
-  been removed; :func:`sys.get_coroutine_wrapper` now always return ``None``.
-  :issue:`36933`  (Contributed by Matthias Bussonnier)
+* The functions :func:`sys.set_coroutine_wrapper` and
+  :func:`sys.get_coroutine_wrapper` deprecated in Python 3.7 have been removed;
+  :issue:`36933` (Contributed by Matthias Bussonnier)
 
 
 Porting to Python 3.8
@@ -1229,6 +1251,15 @@ Changes in the C API
         }
 
   (Contributed by Eddie Elizondo in :issue:`35810`.)
+
+* The :c:macro:`Py_DEPRECATED()` macro has been implemented for MSVC.
+  The macro now must be placed before the symbol name.
+
+  Example::
+
+      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
+
+  (Contributed by Zackery Spytz in :issue:`33407`.)
 
 
 CPython bytecode changes
