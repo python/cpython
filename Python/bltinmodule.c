@@ -351,11 +351,12 @@ Fail_arg:
 }
 
 PyDoc_STRVAR(filter_doc,
-"filter(function or None, sequence) -> list, tuple, or string\n"
-"\n"
-"Return those items of sequence for which function(item) is true.  If\n"
-"function is None, return the items that are true.  If sequence is a tuple\n"
-"or string, return the same type, else return a list.");
+"filter(function or None, iterable) -> list, string or tuple\n\
+\n\
+Return a sequence yielding those items of iterable for which function(item)\n\
+is true. If function is None, return the items that are true.\n\
+If iterable is a string or a tuple, the result also has that type; otherwise\n\
+it is always a list.");
 
 static PyObject *
 builtin_format(PyObject *self, PyObject *args)
