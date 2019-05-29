@@ -1951,6 +1951,84 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_curses_color_content__doc__,
+"color_content($module, color_number, /)\n"
+"--\n"
+"\n"
+"Return the red, green, and blue (RGB) components of the specified color.\n"
+"\n"
+"  color_number\n"
+"    The number of the color (0 - COLORS).\n"
+"\n"
+"A 3-tuple is returned, containing the R, G, B values for the given color,\n"
+"which will be between 0 (no component) and 1000 (maximum amount of component).");
+
+#define _CURSES_COLOR_CONTENT_METHODDEF    \
+    {"color_content", (PyCFunction)_curses_color_content, METH_O, _curses_color_content__doc__},
+
+static PyObject *
+_curses_color_content_impl(PyObject *module, int color_number);
+
+static PyObject *
+_curses_color_content(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int color_number;
+
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    color_number = _PyLong_AsInt(arg);
+    if (color_number == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_color_content_impl(module, color_number);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_color_pair__doc__,
+"color_pair($module, color_number, /)\n"
+"--\n"
+"\n"
+"Return the attribute value for displaying text in the specified color.\n"
+"\n"
+"  color_number\n"
+"    The number of the color (0 - COLORS).\n"
+"\n"
+"This attribute value can be combined with A_STANDOUT, A_REVERSE, and the\n"
+"other A_* attributes.  pair_number() is the counterpart to this function.");
+
+#define _CURSES_COLOR_PAIR_METHODDEF    \
+    {"color_pair", (PyCFunction)_curses_color_pair, METH_O, _curses_color_pair__doc__},
+
+static PyObject *
+_curses_color_pair_impl(PyObject *module, int color_number);
+
+static PyObject *
+_curses_color_pair(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int color_number;
+
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    color_number = _PyLong_AsInt(arg);
+    if (color_number == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_color_pair_impl(module, color_number);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_curses_curs_set__doc__,
 "curs_set($module, visibility, /)\n"
 "--\n"
@@ -2468,6 +2546,152 @@ exit:
 }
 
 #endif /* defined(HAVE_CURSES_HAS_KEY) */
+
+PyDoc_STRVAR(_curses_init_color__doc__,
+"init_color($module, color_number, r, g, b, /)\n"
+"--\n"
+"\n"
+"Change the definition of a color.\n"
+"\n"
+"  color_number\n"
+"    The number of the color to be changed (0 - COLORS).\n"
+"  r\n"
+"    Red component (0 - 1000).\n"
+"  g\n"
+"    Green component (0 - 1000).\n"
+"  b\n"
+"    Blue component (0 - 1000).\n"
+"\n"
+"When init_color() is used, all occurrences of that color on the screen\n"
+"immediately change to the new definition.  This function is a no-op on\n"
+"most terminals; it is active only if can_change_color() returns 1.");
+
+#define _CURSES_INIT_COLOR_METHODDEF    \
+    {"init_color", (PyCFunction)(void(*)(void))_curses_init_color, METH_FASTCALL, _curses_init_color__doc__},
+
+static PyObject *
+_curses_init_color_impl(PyObject *module, int color_number, int r, int g,
+                        int b);
+
+static PyObject *
+_curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int color_number;
+    int r;
+    int g;
+    int b;
+
+    if (!_PyArg_CheckPositional("init_color", nargs, 4, 4)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    color_number = _PyLong_AsInt(args[0]);
+    if (color_number == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    r = _PyLong_AsInt(args[1]);
+    if (r == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    g = _PyLong_AsInt(args[2]);
+    if (g == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[3])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    b = _PyLong_AsInt(args[3]);
+    if (b == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_init_color_impl(module, color_number, r, g, b);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_init_pair__doc__,
+"init_pair($module, pair_number, fg, bg, /)\n"
+"--\n"
+"\n"
+"Change the definition of a color-pair.\n"
+"\n"
+"  pair_number\n"
+"    The number of the color-pair to be changed (1 - (COLOR_PAIRS-1)).\n"
+"  fg\n"
+"    Foreground color number (0 - COLORS).\n"
+"  bg\n"
+"    Background color number (0 - COLORS).\n"
+"\n"
+"If the color-pair was previously initialized, the screen is refreshed and\n"
+"all occurrences of that color-pair are changed to the new definition.");
+
+#define _CURSES_INIT_PAIR_METHODDEF    \
+    {"init_pair", (PyCFunction)(void(*)(void))_curses_init_pair, METH_FASTCALL, _curses_init_pair__doc__},
+
+static PyObject *
+_curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg);
+
+static PyObject *
+_curses_init_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int pair_number;
+    int fg;
+    int bg;
+
+    if (!_PyArg_CheckPositional("init_pair", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    pair_number = _PyLong_AsInt(args[0]);
+    if (pair_number == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fg = _PyLong_AsInt(args[1]);
+    if (fg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    bg = _PyLong_AsInt(args[2]);
+    if (bg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_init_pair_impl(module, pair_number, fg, bg);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_curses_initscr__doc__,
 "initscr($module, /)\n"
@@ -3975,6 +4199,27 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 #endif /* !defined(STRICT_SYSV_CURSES) */
+
+PyDoc_STRVAR(_curses_has_extended_color_support__doc__,
+"has_extended_color_support($module, /)\n"
+"--\n"
+"\n"
+"Return True if the module supports extended colors; otherwise, return False.\n"
+"\n"
+"Extended color support allows more than 256 color-pairs for terminals\n"
+"that support more than 16 colors (e.g. xterm-256color).");
+
+#define _CURSES_HAS_EXTENDED_COLOR_SUPPORT_METHODDEF    \
+    {"has_extended_color_support", (PyCFunction)_curses_has_extended_color_support, METH_NOARGS, _curses_has_extended_color_support__doc__},
+
+static PyObject *
+_curses_has_extended_color_support_impl(PyObject *module);
+
+static PyObject *
+_curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_has_extended_color_support_impl(module);
+}
 
 #ifndef _CURSES_WINDOW_ENCLOSE_METHODDEF
     #define _CURSES_WINDOW_ENCLOSE_METHODDEF
