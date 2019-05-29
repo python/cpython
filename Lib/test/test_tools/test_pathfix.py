@@ -1,5 +1,6 @@
-import unittest
+import unittest, os
 from test.test_tools import import_tool
+from unittest.mock import patch
 
 
 class TestPathFix(unittest.TestCase):
@@ -31,6 +32,17 @@ class TestPathFix(unittest.TestCase):
             b'#!/usr/python -s sfj',
         ]
 
+        cls.input_file = \
+            b"#! /usr/bin/env python -u\n" + \
+            b"import random.randint\n" + \
+            b"print(random.randint(1,7))\n"
+
+        cls.output_file = \
+            b"#! /usr/bin/python -Ru\n" + \
+            b"import random.randint\n" + \
+            b"print(random.randint(1,7))\n"
+
+
     def test_parse_shebangs(self):
         for line, output in self.test_cases_for_parsing:
             self.assertEqual(self.pathfix.parse_shebang(line), output)
@@ -48,6 +60,25 @@ class TestPathFix(unittest.TestCase):
             self.pathfix.add_flag = None
             testing_output = self.pathfix.fixline(line)
             self.assertEqual(testing_output, b'#! ' + self.pathfix.new_interpreter + b'\n')
+
+    def test_main(self):
+
+        with open('file', 'wb') as f:
+            f.write(self.input_file)
+
+        with self.assertRaises(SystemExit) as cm:
+            with patch(f'{__name__}.TestPathFix.pathfix.getopt') as mgetopt:
+                mgetopt.getopt.return_value = (
+                    [('-i', '/usr/bin/python'), ('-f', 'R')],
+                    ['./file'],
+                                        )
+                self.pathfix.main()
+
+        self.assertEqual(cm.exception.code, 0)
+
+        with open('file', 'rb') as f:
+            self.assertEqual(f.read(), self.output_file)
+        os.remove('file')
 
 if __name__ == '__main__':
     unittest.main()
