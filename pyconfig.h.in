@@ -673,9 +673,6 @@
 /* Define to 1 if you have the `memrchr' function. */
 #undef HAVE_MEMRCHR
 
-/* Define to 1 if you have the `memset_s' function. */
-#undef HAVE_MEMSET_S
-
 /* Define to 1 if you have the `mkdirat' function. */
 #undef HAVE_MKDIRAT
 
