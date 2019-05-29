@@ -2,7 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
-#include "pycore_coreconfig.h"
+#include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_context.h"
@@ -124,7 +124,7 @@ void
 _Py_dump_counts(FILE* f)
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    if (!interp->core_config.show_alloc_count) {
+    if (!interp->config.show_alloc_count) {
         return;
     }
 
@@ -1155,8 +1155,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     descr = _PyType_Lookup(tp, name);
     if (descr != NULL) {
         Py_INCREF(descr);
-        if (PyFunction_Check(descr) ||
-                (Py_TYPE(descr) == &PyMethodDescr_Type)) {
+        if (PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             meth_found = 1;
         } else {
             f = descr->ob_type->tp_descr_get;
@@ -1767,13 +1766,13 @@ PyObject _Py_NotImplementedStruct = {
     1, &_PyNotImplemented_Type
 };
 
-_PyInitError
+PyStatus
 _PyTypes_Init(void)
 {
 #define INIT_TYPE(TYPE, NAME) \
     do { \
         if (PyType_Ready(TYPE) < 0) { \
-            return _Py_INIT_ERR("Can't initialize " NAME " type"); \
+            return _PyStatus_ERR("Can't initialize " NAME " type"); \
         } \
     } while (0)
 
@@ -1843,7 +1842,7 @@ _PyTypes_Init(void)
     INIT_TYPE(&PyCoro_Type, "coroutine");
     INIT_TYPE(&_PyCoroWrapper_Type, "coroutine wrapper");
     INIT_TYPE(&_PyInterpreterID_Type, "interpreter ID");
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 
 #undef INIT_TYPE
 }

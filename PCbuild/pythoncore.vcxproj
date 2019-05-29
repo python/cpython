@@ -127,9 +127,9 @@
     <ClInclude Include="..\Include\complexobject.h" />
     <ClInclude Include="..\Include\context.h" />
     <ClInclude Include="..\Include\cpython\abstract.h" />
-    <ClInclude Include="..\Include\cpython\coreconfig.h" />
     <ClInclude Include="..\Include\cpython\dictobject.h" />
     <ClInclude Include="..\Include\cpython\fileobject.h" />
+    <ClInclude Include="..\Include\cpython\initconfig.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\pyerrors.h" />
@@ -161,11 +161,11 @@
     <ClInclude Include="..\Include\internal\pycore_ceval.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
     <ClInclude Include="..\Include\internal\pycore_context.h" />
-    <ClInclude Include="..\Include\internal\pycore_coreconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_fileutils.h" />
     <ClInclude Include="..\Include\internal\pycore_getopt.h" />
     <ClInclude Include="..\Include\internal\pycore_gil.h" />
     <ClInclude Include="..\Include\internal\pycore_hamt.h" />
+    <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
@@ -420,7 +420,6 @@
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\compile.c" />
     <ClCompile Include="..\Python\context.c" />
-    <ClCompile Include="..\Python\coreconfig.c" />
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />
@@ -438,6 +437,7 @@
     <ClCompile Include="..\Python\hamt.c" />
     <ClCompile Include="..\Python\import.c" />
     <ClCompile Include="..\Python\importdl.c" />
+    <ClCompile Include="..\Python\initconfig.c" />
     <ClCompile Include="..\Python\marshal.c" />
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />

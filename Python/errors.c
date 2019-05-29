@@ -2,7 +2,7 @@
 /* Error handling */
 
 #include "Python.h"
-#include "pycore_coreconfig.h"
+#include "pycore_initconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "pycore_traceback.h"
@@ -26,6 +26,7 @@ extern "C" {
 
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(flush);
 
 
 /* Forward declarations */
@@ -1090,16 +1091,16 @@ static PyStructSequence_Desc UnraisableHookArgs_desc = {
 };
 
 
-_PyInitError
+PyStatus
 _PyErr_Init(void)
 {
     if (UnraisableHookArgsType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&UnraisableHookArgsType,
                                        &UnraisableHookArgs_desc) < 0) {
-            return _Py_INIT_ERR("failed to initialize UnraisableHookArgs type");
+            return _PyStatus_ERR("failed to initialize UnraisableHookArgs type");
         }
     }
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 }
 
 
@@ -1254,6 +1255,14 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     if (PyFile_WriteString("\n", file) < 0) {
         return -1;
     }
+
+    /* Explicitly call file.flush() */
+    PyObject *res = _PyObject_CallMethodId(file, &PyId_flush, NULL);
+    if (!res) {
+        return -1;
+    }
+    Py_DECREF(res);
+
     return 0;
 }
 
