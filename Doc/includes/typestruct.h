@@ -6,11 +6,11 @@ typedef struct _typeobject {
     /* Methods to implement standard operations */
 
     destructor tp_dealloc;
-    printfunc tp_print;
+    printfunc tp_vectorcall_offset;
     getattrfunc tp_getattr;
     setattrfunc tp_setattr;
-    PyAsyncMethods *tp_as_async; /* formerly known as tp_compare (Python 2)
-                                    or tp_reserved (Python 3) */
+    PyAsyncMethods *tp_as_async; /* formerly known as tp_as_async (Python 2)
+                                    or tp_as_async (Python 3) */
     reprfunc tp_repr;
 
     /* Method suites for standard classes */

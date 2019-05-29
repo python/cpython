@@ -2322,10 +2322,10 @@ static PyTypeObject ElementIter_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)elementiter_dealloc,            /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -4228,10 +4228,10 @@ static PyTypeObject Element_Type = {
     "xml.etree.ElementTree.Element", sizeof(ElementObject), 0,
     /* methods */
     (destructor)element_dealloc,                    /* tp_dealloc */
-    0,                                              /* tp_print */
+    0,                                              /* tp_vectorcall_offset */
     0,                                              /* tp_getattr */
     0,                                              /* tp_setattr */
-    0,                                              /* tp_reserved */
+    0,                                              /* tp_as_async */
     (reprfunc)element_repr,                         /* tp_repr */
     0,                                              /* tp_as_number */
     &element_as_sequence,                           /* tp_as_sequence */
@@ -4280,10 +4280,10 @@ static PyTypeObject TreeBuilder_Type = {
     "xml.etree.ElementTree.TreeBuilder", sizeof(TreeBuilderObject), 0,
     /* methods */
     (destructor)treebuilder_dealloc,                /* tp_dealloc */
-    0,                                              /* tp_print */
+    0,                                              /* tp_vectorcall_offset */
     0,                                              /* tp_getattr */
     0,                                              /* tp_setattr */
-    0,                                              /* tp_reserved */
+    0,                                              /* tp_as_async */
     0,                                              /* tp_repr */
     0,                                              /* tp_as_number */
     0,                                              /* tp_as_sequence */
@@ -4330,10 +4330,10 @@ static PyTypeObject XMLParser_Type = {
     "xml.etree.ElementTree.XMLParser", sizeof(XMLParserObject), 0,
     /* methods */
     (destructor)xmlparser_dealloc,                  /* tp_dealloc */
-    0,                                              /* tp_print */
+    0,                                              /* tp_vectorcall_offset */
     0,                                              /* tp_getattr */
     0,                                              /* tp_setattr */
-    0,                                              /* tp_reserved */
+    0,                                              /* tp_as_async */
     0,                                              /* tp_repr */
     0,                                              /* tp_as_number */
     0,                                              /* tp_as_sequence */

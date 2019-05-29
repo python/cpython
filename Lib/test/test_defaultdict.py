@@ -77,7 +77,7 @@ class TestDefaultDict(unittest.TestCase):
         def foo(): return 42
         d2 = defaultdict(foo, {1: 2})
         # NOTE: We can't use tempfile.[Named]TemporaryFile since this
-        # code must exercise the tp_print C code, which only gets
+        # code must exercise the tp_vectorcall_offset C code, which only gets
         # invoked for *real* files.
         tfn = tempfile.mktemp()
         try:
@@ -161,7 +161,7 @@ class TestDefaultDict(unittest.TestCase):
             r"of sub\(\.\.\., \{\}\)>, \{\}\)")
 
         # NOTE: printing a subclass of a builtin type does not call its
-        # tp_print slot. So this part is essentially the same test as above.
+        # tp_vectorcall_offset slot. So this part is essentially the same test as above.
         tfn = tempfile.mktemp()
         try:
             f = open(tfn, "w+")
