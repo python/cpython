@@ -158,7 +158,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[7]) {
         if (!PyBytes_Check(args[7])) {
-            _PyArg_BadArgument("replace", "'co_code'", "bytes", args[7]);
+            _PyArg_BadArgument("replace", 8, "co_code", "bytes", args[7]);
             goto exit;
         }
         co_code = (PyBytesObject *)args[7];
@@ -168,7 +168,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[8]) {
         if (!PyTuple_Check(args[8])) {
-            _PyArg_BadArgument("replace", "'co_consts'", "tuple", args[8]);
+            _PyArg_BadArgument("replace", 9, "co_consts", "tuple", args[8]);
             goto exit;
         }
         co_consts = args[8];
@@ -178,7 +178,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[9]) {
         if (!PyTuple_Check(args[9])) {
-            _PyArg_BadArgument("replace", "'co_names'", "tuple", args[9]);
+            _PyArg_BadArgument("replace", 10, "co_names", "tuple", args[9]);
             goto exit;
         }
         co_names = args[9];
@@ -188,7 +188,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[10]) {
         if (!PyTuple_Check(args[10])) {
-            _PyArg_BadArgument("replace", "'co_varnames'", "tuple", args[10]);
+            _PyArg_BadArgument("replace", 11, "co_varnames", "tuple", args[10]);
             goto exit;
         }
         co_varnames = args[10];
@@ -198,7 +198,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[11]) {
         if (!PyTuple_Check(args[11])) {
-            _PyArg_BadArgument("replace", "'co_freevars'", "tuple", args[11]);
+            _PyArg_BadArgument("replace", 12, "co_freevars", "tuple", args[11]);
             goto exit;
         }
         co_freevars = args[11];
@@ -208,7 +208,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[12]) {
         if (!PyTuple_Check(args[12])) {
-            _PyArg_BadArgument("replace", "'co_cellvars'", "tuple", args[12]);
+            _PyArg_BadArgument("replace", 13, "co_cellvars", "tuple", args[12]);
             goto exit;
         }
         co_cellvars = args[12];
@@ -218,7 +218,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[13]) {
         if (!PyUnicode_Check(args[13])) {
-            _PyArg_BadArgument("replace", "'co_filename'", "str", args[13]);
+            _PyArg_BadArgument("replace", 14, "co_filename", "str", args[13]);
             goto exit;
         }
         if (PyUnicode_READY(args[13]) == -1) {
@@ -231,7 +231,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[14]) {
         if (!PyUnicode_Check(args[14])) {
-            _PyArg_BadArgument("replace", "'co_name'", "str", args[14]);
+            _PyArg_BadArgument("replace", 15, "co_name", "str", args[14]);
             goto exit;
         }
         if (PyUnicode_READY(args[14]) == -1) {
@@ -243,7 +243,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (!PyBytes_Check(args[15])) {
-        _PyArg_BadArgument("replace", "'co_lnotab'", "bytes", args[15]);
+        _PyArg_BadArgument("replace", 16, "co_lnotab", "bytes", args[15]);
         goto exit;
     }
     co_lnotab = (PyBytesObject *)args[15];
@@ -253,4 +253,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=42e00fc97bcf657b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a9c21d66b7513a60 input=a9049054013a1b77]*/

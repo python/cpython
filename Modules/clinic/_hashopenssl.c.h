@@ -145,7 +145,7 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("pbkdf2_hmac", "1", "str", args[0]);
+        _PyArg_BadArgument("pbkdf2_hmac", 1, "hash_name", "str", args[0]);
         goto exit;
     }
     Py_ssize_t hash_name_length;
@@ -161,14 +161,14 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&password, 'C')) {
-        _PyArg_BadArgument("pbkdf2_hmac", "2", "contiguous buffer", args[1]);
+        _PyArg_BadArgument("pbkdf2_hmac", 2, "password", "contiguous buffer", args[1]);
         goto exit;
     }
     if (PyObject_GetBuffer(args[2], &salt, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&salt, 'C')) {
-        _PyArg_BadArgument("pbkdf2_hmac", "3", "contiguous buffer", args[2]);
+        _PyArg_BadArgument("pbkdf2_hmac", 3, "salt", "contiguous buffer", args[2]);
         goto exit;
     }
     if (PyFloat_Check(args[3])) {
@@ -243,7 +243,7 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&password, 'C')) {
-        _PyArg_BadArgument("scrypt", "1", "contiguous buffer", args[0]);
+        _PyArg_BadArgument("scrypt", 1, "password", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -254,7 +254,7 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto exit;
         }
         if (!PyBuffer_IsContiguous(&salt, 'C')) {
-            _PyArg_BadArgument("scrypt", "'salt'", "contiguous buffer", args[1]);
+            _PyArg_BadArgument("scrypt", 2, "salt", "contiguous buffer", args[1]);
             goto exit;
         }
         if (!--noptargs) {
@@ -263,7 +263,7 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     }
     if (args[2]) {
         if (!PyLong_Check(args[2])) {
-            _PyArg_BadArgument("scrypt", "'n'", "int", args[2]);
+            _PyArg_BadArgument("scrypt", 3, "n", "int", args[2]);
             goto exit;
         }
         n_obj = args[2];
@@ -273,7 +273,7 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     }
     if (args[3]) {
         if (!PyLong_Check(args[3])) {
-            _PyArg_BadArgument("scrypt", "'r'", "int", args[3]);
+            _PyArg_BadArgument("scrypt", 4, "r", "int", args[3]);
             goto exit;
         }
         r_obj = args[3];
@@ -283,7 +283,7 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     }
     if (args[4]) {
         if (!PyLong_Check(args[4])) {
-            _PyArg_BadArgument("scrypt", "'p'", "int", args[4]);
+            _PyArg_BadArgument("scrypt", 5, "p", "int", args[4]);
             goto exit;
         }
         p_obj = args[4];
@@ -364,18 +364,18 @@ _hashlib_hmac_digest(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&key, 'C')) {
-        _PyArg_BadArgument("hmac_digest", "1", "contiguous buffer", args[0]);
+        _PyArg_BadArgument("hmac_digest", 1, "key", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &msg, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&msg, 'C')) {
-        _PyArg_BadArgument("hmac_digest", "2", "contiguous buffer", args[1]);
+        _PyArg_BadArgument("hmac_digest", 2, "msg", "contiguous buffer", args[1]);
         goto exit;
     }
     if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("hmac_digest", "3", "str", args[2]);
+        _PyArg_BadArgument("hmac_digest", 3, "digest", "str", args[2]);
         goto exit;
     }
     Py_ssize_t digest_length;
@@ -409,4 +409,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=0625639de9103841 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d19b13b0a11cd8d3 input=a9049054013a1b77]*/

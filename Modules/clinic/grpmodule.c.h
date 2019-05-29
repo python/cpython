@@ -64,7 +64,7 @@ grp_getgrnam(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("getgrnam", "1", "str", args[0]);
+        _PyArg_BadArgument("getgrnam", 1, "name", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -97,4 +97,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=07535b7468ff0486 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a832b5d8c6c2bcb input=a9049054013a1b77]*/

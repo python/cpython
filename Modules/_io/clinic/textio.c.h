@@ -229,7 +229,7 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             }
         }
         else {
-            _PyArg_BadArgument("TextIOWrapper", "2", "str or None", fastargs[1]);
+            _PyArg_BadArgument("TextIOWrapper", 2, "encoding", "str or None", fastargs[1]);
             goto exit;
         }
         if (!--noptargs) {
@@ -258,7 +258,7 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             }
         }
         else {
-            _PyArg_BadArgument("TextIOWrapper", "4", "str or None", fastargs[3]);
+            _PyArg_BadArgument("TextIOWrapper", 4, "newline", "str or None", fastargs[3]);
             goto exit;
         }
         if (!--noptargs) {
@@ -401,7 +401,7 @@ _io_TextIOWrapper_write(textio *self, PyObject *arg)
     PyObject *text;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("write", "0", "str", arg);
+        _PyArg_BadArgument("write", 0, NULL, "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -701,4 +701,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=a38b219e50d81690 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aa82a263f8ca3b83 input=a9049054013a1b77]*/

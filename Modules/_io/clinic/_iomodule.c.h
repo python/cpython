@@ -161,7 +161,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     }
     if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
-            _PyArg_BadArgument("open", "2", "str", args[1]);
+            _PyArg_BadArgument("open", 2, "mode", "str", args[1]);
             goto exit;
         }
         Py_ssize_t mode_length;
@@ -207,7 +207,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             }
         }
         else {
-            _PyArg_BadArgument("open", "4", "str or None", args[3]);
+            _PyArg_BadArgument("open", 4, "encoding", "str or None", args[3]);
             goto exit;
         }
         if (!--noptargs) {
@@ -230,7 +230,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             }
         }
         else {
-            _PyArg_BadArgument("open", "5", "str or None", args[4]);
+            _PyArg_BadArgument("open", 5, "errors", "str or None", args[4]);
             goto exit;
         }
         if (!--noptargs) {
@@ -253,7 +253,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             }
         }
         else {
-            _PyArg_BadArgument("open", "6", "str or None", args[5]);
+            _PyArg_BadArgument("open", 6, "newline", "str or None", args[5]);
             goto exit;
         }
         if (!--noptargs) {
@@ -311,7 +311,7 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("open_code", "1", "str", args[0]);
+        _PyArg_BadArgument("open_code", 1, "path", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -323,4 +323,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4803ae2e28c6093a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9b417c2cdcf46cc input=a9049054013a1b77]*/

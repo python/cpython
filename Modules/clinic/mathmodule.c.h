@@ -320,12 +320,12 @@ math_dist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyTuple_Check(args[0])) {
-        _PyArg_BadArgument("dist", "1", "tuple", args[0]);
+        _PyArg_BadArgument("dist", 1, NULL, "tuple", args[0]);
         goto exit;
     }
     p = args[0];
     if (!PyTuple_Check(args[1])) {
-        _PyArg_BadArgument("dist", "2", "tuple", args[1]);
+        _PyArg_BadArgument("dist", 2, NULL, "tuple", args[1]);
         goto exit;
     }
     q = args[1];
@@ -637,4 +637,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3bcbaf1c1f729d06 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d3c6c5c698b5c656 input=a9049054013a1b77]*/

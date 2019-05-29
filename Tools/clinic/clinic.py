@@ -1733,7 +1733,7 @@ class Destination:
 # "languages" maps the name of the language ("C", "Python").
 # "extensions" maps the file extension ("c", "py").
 languages = { 'C': CLanguage, 'Python': PythonLanguage }
-extensions = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx".split() }
+extensions = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx test".split() }
 extensions['py'] = PythonLanguage
 
 
@@ -3350,7 +3350,7 @@ class PyByteArrayObject_converter(CConverter):
                 }}}}
                 {paramname} = ({type}){argname};
                 """.format(argname=argname, paramname=self.name, argnum=argnum,
-                           type=self.type)
+                           type=self.type, displayname=displayname)
         return super().parse_arg(argname, argnum, displayname)
 
 class unicode_converter(CConverter):

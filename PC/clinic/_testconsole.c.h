@@ -33,7 +33,7 @@ _testconsole_write_input(PyObject *module, PyObject *const *args, Py_ssize_t nar
     }
     file = args[0];
     if (!PyBytes_Check(args[1])) {
-        _PyArg_BadArgument("write_input", "2", "bytes", args[1]);
+        _PyArg_BadArgument("write_input", 2, "s", "bytes", args[1]);
         goto exit;
     }
     s = (PyBytesObject *)args[1];
@@ -88,4 +88,4 @@ exit:
 #ifndef _TESTCONSOLE_READ_OUTPUT_METHODDEF
     #define _TESTCONSOLE_READ_OUTPUT_METHODDEF
 #endif /* !defined(_TESTCONSOLE_READ_OUTPUT_METHODDEF) */
-/*[clinic end generated code: output=92f624ac54ce33ff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ccf0c449053656a6 input=a9049054013a1b77]*/
