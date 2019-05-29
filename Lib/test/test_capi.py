@@ -503,18 +503,19 @@ class TestPEP590(unittest.TestCase):
         from types import MethodType
         from functools import partial
         for (func, args, kwargs, expected) in calls:
-            args1 = args[1:]
-            meth = MethodType(func, args[0])
-            wrapped = partial(func)
-            if not kwargs:
-                self.assertEqual(expected, func(*args))
-                self.assertEqual(expected, vectorcall(func, args))
-                self.assertEqual(expected, meth(*args1))
-                self.assertEqual(expected, wrapped(*args))
-            self.assertEqual(expected, func(*args, **kwargs))
-            self.assertEqual(expected, vectorcall(func, args, kwargs))
-            self.assertEqual(expected, meth(*args1, **kwargs))
-            self.assertEqual(expected, wrapped(*args, **kwargs))
+            with self.subTest(str(func)):
+                args1 = args[1:]
+                meth = MethodType(func, args[0])
+                wrapped = partial(func)
+                if not kwargs:
+                    self.assertEqual(expected, func(*args))
+                    self.assertEqual(expected, vectorcall(func, args))
+                    self.assertEqual(expected, meth(*args1))
+                    self.assertEqual(expected, wrapped(*args))
+                self.assertEqual(expected, func(*args, **kwargs))
+                self.assertEqual(expected, vectorcall(func, args, kwargs))
+                self.assertEqual(expected, meth(*args1, **kwargs))
+                self.assertEqual(expected, wrapped(*args, **kwargs))
 
 
 class SubinterpreterTest(unittest.TestCase):
