@@ -486,6 +486,10 @@ Added new function :func:`~os.add_dll_directory` on Windows for providing
 additional search paths for native dependencies when importing extension
 modules or loading DLLs using :mod:`ctypes`.
 
+A new :func:`os.memfd_create` function was added to wrap the
+``memfd_create()`` syscall.
+(Contributed by Zackery Spytz and Christian Heimes in :issue:`26836`.)
+
 
 os.path
 -------
