@@ -363,9 +363,12 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock.accept.return_value = (mock.Mock(), mock.Mock())
         backlog = 100
         # Mock the coroutine generation for a connection to prevent
-        # warnings related to un-awaited coroutines.
+        # warnings related to un-awaited coroutines. _accept_connection2
+        # is an async function that is patched with AsyncMock. Use MagicMock
+        # since the coroutine is not awaited.
         mock_obj = mock.patch.object
-        with mock_obj(self.loop, '_accept_connection2') as accept2_mock:
+        with mock_obj(self.loop, '_accept_connection2',
+                      new=mock.MagicMock()) as accept2_mock:
             accept2_mock.return_value = None
             with mock_obj(self.loop, 'create_task') as task_mock:
                 task_mock.return_value = None
