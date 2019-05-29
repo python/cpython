@@ -612,9 +612,8 @@ Notes:
     <https://pypi.org>`_.
 
 (5)
-    The ``long_description`` field is used by PyPI when you are
-    :ref:`registering <package-register>` a package, to
-    :ref:`build its home page <package-display>`.
+    The ``long_description`` field is used by PyPI when you publish a package,
+    to build its project page.
 
 (6)
     The ``license`` field is a text indicating the license covering the
