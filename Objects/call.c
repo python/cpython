@@ -107,9 +107,12 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args,
         return _PyObject_MakeTpCall(callable, args, nargs, kwargs);
     }
 
-    PyObject *res;
+    PyObject *res = NULL;
     if (kwargs == NULL) {
-        res = func(callable, args, nargsf, NULL);
+        if (Py_EnterRecursiveCall(" while calling a Python object") == 0) {
+            res = func(callable, args, nargsf, NULL);
+            Py_LeaveRecursiveCall();
+        }
     }
     else {
         PyObject *kwnames;
@@ -117,7 +120,10 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args,
         if (_PyStack_UnpackDict(args, nargs, kwargs, &newargs, &kwnames) < 0) {
             return NULL;
         }
-        res = func(callable, newargs, nargs, kwnames);
+        if (Py_EnterRecursiveCall(" while calling a Python object") == 0) {
+            res = func(callable, newargs, nargs, kwnames);
+            Py_LeaveRecursiveCall();
+        }
         if (kwnames != NULL) {
             Py_ssize_t i, n = PyTuple_GET_SIZE(kwnames) + nargs;
             for (i = 0; i < n; i++) {
