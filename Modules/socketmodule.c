@@ -6602,21 +6602,21 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
     }
 #ifdef MS_WINDOWS
     PMIB_IF_TABLE2 tbl;
-    if (GetIfTable2Ex(MibIfTableRaw, &tbl) != NO_ERROR) {
+    int ret;
+    if ((ret = GetIfTable2Ex(MibIfTableRaw, &tbl)) != NO_ERROR) {
         Py_DECREF(list);
-        return PyErr_SetFromErrno(PyExc_OSError);
+        return PyErr_SetFromWindowsErr(ret);
     }
     for (ULONG i = 0; i < tbl->NumEntries; ++i) {
         MIB_IF_ROW2 r = tbl->Table[i];
         WCHAR buf[NDIS_IF_MAX_STRING_SIZE + 1];
-        if (ConvertInterfaceLuidToNameW(&r.InterfaceLuid, buf,
-                                        NDIS_IF_MAX_STRING_SIZE + 1)) {
+        if ((ret = ConvertInterfaceLuidToNameW(&r.InterfaceLuid, buf,
+                                               Py_ARRAY_LENGTH(buf)))) {
             Py_DECREF(list);
             FreeMibTable(tbl);
-            return PyErr_SetFromErrno(PyExc_OSError);
+            return PyErr_SetFromWindowsErr(ret);
         }
-        PyObject *tuple = Py_BuildValue("IN", r.InterfaceIndex,
-                PyUnicode_FromWideChar(buf, -1));
+        PyObject *tuple = Py_BuildValue("Iu", r.InterfaceIndex, buf);
         if (tuple == NULL || PyList_Append(list, tuple) == -1) {
             Py_XDECREF(tuple);
             Py_DECREF(list);
