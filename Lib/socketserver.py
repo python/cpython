@@ -444,9 +444,8 @@ class TCPServer(BaseServer):
 
     def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
         """Constructor.  May be extended, do not override."""
-        BaseServer.__init__(self, server_address, RequestHandlerClass)
-        self.socket = socket.socket(self.address_family,
-                                    self.socket_type)
+        super().__init__(server_address, RequestHandlerClass)
+        self.socket = socket.socket(self.address_family, self.socket_type)
         if bind_and_activate:
             try:
                 self.server_bind()
