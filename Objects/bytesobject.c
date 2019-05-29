@@ -1077,14 +1077,6 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
     return NULL;
 }
 
-/* =-= */
-
-static void
-bytes_dealloc(PyObject *op)
-{
-    Py_TYPE(op)->tp_free(op);
-}
-
 /* Unescape a backslash-escaped string. If unicode is non-zero,
    the string is a u-literal. If recode_encoding is non-zero,
    the string is UTF-8 encoded and should be re-encoded in the
@@ -2875,7 +2867,7 @@ PyTypeObject PyBytes_Type = {
     "bytes",
     PyBytesObject_SIZE,
     sizeof(char),
-    bytes_dealloc,                      /* tp_dealloc */
+    0,                                          /* tp_dealloc */
     0,                                          /* tp_print */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
