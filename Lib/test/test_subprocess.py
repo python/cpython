@@ -330,12 +330,12 @@ class ProcessTestCase(BaseTestCase):
         # when shell=True.
         self._assert_python([], executable=sys.executable, shell=True)
 
-    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    @unittest.skipIf(MS_WINDOWS, "executable argument replaces shell")
     def test_bytes_executable_replaces_shell(self):
         self._assert_python([], executable=os.fsencode(sys.executable),
                             shell=True)
 
-    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    @unittest.skipIf(MS_WINDOWS, "executable argument replaces shell")
     def test_pathlike_executable_replaces_shell(self):
         self._assert_python([], executable=FakePath(sys.executable),
                             shell=True)
@@ -1501,7 +1501,7 @@ class RunFuncTestCase(BaseTestCase):
         # bpo-31961: test run(pathlike_object)
         # the name of a command that can be run without
         # any argumenets that exit fast
-        prog = 'tree.com' if mswindows else 'ls'
+        prog = 'tree.com' if MS_WINDOWS else 'ls'
         path = shutil.which(prog)
         if path is None:
             self.skipTest(f'{prog} required for this test')
