@@ -145,8 +145,8 @@ The :mod:`binascii` module defines the following functions:
       platforms, use ``crc32(data) & 0xffffffff``.
 
 
-.. function:: b2a_hex(data)
-              hexlify(data)
+.. function:: b2a_hex(data[, sep[, bytes_per_sep=1]])
+              hexlify(data[, sep[, bytes_per_sep=1]])
 
    Return the hexadecimal representation of the binary *data*.  Every byte of
    *data* is converted into the corresponding 2-digit hex representation.  The
@@ -154,6 +154,24 @@ The :mod:`binascii` module defines the following functions:
 
    Similar functionality (but returning a text string) is also conveniently
    accessible using the :meth:`bytes.hex` method.
+
+   If *sep* is specified, it must be a single character str or bytes object.
+   It will be inserted in the output after every *bytes_per_sep* input bytes.
+   Separator placement is counted from the right end of the output by default,
+   if you wish to count from the left, supply a negative *bytes_per_sep* value.
+
+      >>> import binascii
+      >>> binascii.b2a_hex(b'\xb9\x01\xef')
+      b'b901ef'
+      >>> binascii.hexlify(b'\xb9\x01\xef', '-')
+      b'b9-01-ef'
+      >>> binascii.b2a_hex(b'\xb9\x01\xef', b'_', 2)
+      b'b9_01ef'
+      >>> binascii.b2a_hex(b'\xb9\x01\xef', b' ', -2)
+      b'b901 ef'
+
+   .. versionchanged:: 3.8
+      The *sep* and *bytes_per_sep* parameters were added.
 
 .. function:: a2b_hex(hexstr)
               unhexlify(hexstr)
