@@ -510,7 +510,8 @@ that is broken and will fail, but shouldn't be counted as a failure on a
 :class:`TestResult`.
 
 Skipping a test is simply a matter of using the :func:`skip` :term:`decorator`
-or one of its conditional variants.
+or one of its conditional variants. And :meth:`TestCase.skipTest` could be used to
+skip a test.
 
 Basic skipping looks like this::
 
@@ -530,6 +531,9 @@ Basic skipping looks like this::
        def test_windows_support(self):
            # windows specific testing code
            pass
+
+       def test_skip_me(self):
+           self.skipTest("skip")
 
 This is the output of running the example above in verbose mode::
 
@@ -568,7 +572,7 @@ the test unless the passed object has a certain attribute::
            return lambda func: func
        return unittest.skip("{!r} doesn't have {!r}".format(obj, attr))
 
-The following decorators implement test skipping and expected failures:
+The following decorators and exception implement test skipping and expected failures:
 
 .. decorator:: skip(reason)
 
