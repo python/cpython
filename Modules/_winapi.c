@@ -502,7 +502,9 @@ _winapi_CreateFileMapping_impl(PyObject *module, HANDLE file_handle,
     Py_END_ALLOW_THREADS
 
     if (handle == NULL) {
-        PyErr_SetFromWindowsErr(0);
+        PyObject *temp = PyUnicode_FromWideChar(name, -1);
+        PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError, 0, temp);
+        Py_XDECREF(temp);
         handle = INVALID_HANDLE_VALUE;
     }
 
@@ -1379,7 +1381,9 @@ _winapi_OpenFileMapping_impl(PyObject *module, DWORD desired_access,
     Py_END_ALLOW_THREADS
 
     if (handle == NULL) {
-        PyErr_SetFromWindowsErr(0);
+        PyObject *temp = PyUnicode_FromWideChar(name, -1);
+        PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError, 0, temp);
+        Py_XDECREF(temp);
         handle = INVALID_HANDLE_VALUE;
     }
 
