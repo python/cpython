@@ -858,7 +858,6 @@ finalize_garbage(PyGC_Head *collectable)
         PyObject *op = FROM_GC(gc);
         gc_list_move(gc, &seen);
         if (!_PyGCHead_FINALIZED(gc) &&
-                PyType_HasFeature(Py_TYPE(op), Py_TPFLAGS_HAVE_FINALIZE) &&
                 (finalize = Py_TYPE(op)->tp_finalize) != NULL) {
             _PyGCHead_SET_FINALIZED(gc);
             Py_INCREF(op);
