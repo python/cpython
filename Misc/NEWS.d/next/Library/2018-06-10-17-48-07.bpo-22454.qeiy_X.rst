@@ -1,0 +1,2 @@
+The :mod:`shlex` module now exposes :func:`shlex.join`, the inverse of
+:func:`shlex.split`. Patch by Bo Bayles.
