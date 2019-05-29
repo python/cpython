@@ -724,8 +724,7 @@ as internal buffering of data.
    The return value is the amount of bytes copied. This could be less than the
    amount requested.
 
-   Availability: Linux 4.5 and later (glibc 2.27 and later provides a user-space
-   emulation when it is not available).
+   .. availability:: Linux kernel >= 4.5 or glibc >= 2.27.
 
    .. versionadded:: 3.8
 
