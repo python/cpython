@@ -321,7 +321,7 @@ class PathDistribution(Distribution):
 
     def read_text(self, filename):
         with suppress(FileNotFoundError, IsADirectoryError, KeyError,
-                      NotADirectoryError):
+                      NotADirectoryError, PermissionError):
             return self._path.joinpath(filename).read_text(encoding='utf-8')
     read_text.__doc__ = Distribution.read_text.__doc__
 
