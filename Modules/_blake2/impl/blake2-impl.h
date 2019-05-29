@@ -140,6 +140,9 @@ static inline void secure_zero_memory(void *v, size_t n)
 {
 #if defined(_WIN32) || defined(WIN32)
   SecureZeroMemory(v, n);
+#elif defined(__hpux)
+  static void *(*const volatile memset_v)(void *, int, size_t) = &memset;
+  memset_v(v, 0, n);
 #else
 // prioritize first the general C11 call
 #if defined(HAVE_MEMSET_S)
