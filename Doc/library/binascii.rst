@@ -160,7 +160,7 @@ The :mod:`binascii` module defines the following functions:
    Separator placement is counted from the right end of the output by default,
    if you wish to count from the left, supply a negative *bytes_per_sep* value.
 
-      >>> from binascii
+      >>> import binascii
       >>> binascii.b2a_hex(b'\xb9\x01\xef')
       b'b901ef'
       >>> binascii.hexlify(b'\xb9\x01\xef', '-')
