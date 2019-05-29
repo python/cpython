@@ -822,6 +822,22 @@ class SysModuleTest(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok('-c', code)
         self.assertEqual(stdout.rstrip(), b'True')
 
+    @test.support.requires_type_collecting
+    def test_issue20602(self):
+        # sys.flags and sys.float_info were wiped during shutdown.
+        code = """if 1:
+            import sys
+            class A:
+                def __del__(self, sys=sys):
+                    print(sys.flags)
+                    print(sys.float_info)
+            a = A()
+            """
+        rc, out, err = assert_python_ok('-c', code)
+        out = out.splitlines()
+        self.assertIn(b'sys.flags', out[0])
+        self.assertIn(b'sys.float_info', out[1])
+
     @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
                          'need sys.getandroidapilevel()')
     def test_getandroidapilevel(self):
