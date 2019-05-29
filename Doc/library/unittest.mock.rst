@@ -1556,15 +1556,24 @@ patch.dict
     decorator. When used as a class decorator :func:`patch.dict` honours
     ``patch.TEST_PREFIX`` for choosing which methods to wrap.
 
+    .. versionchanged:: 3.8
+
+        :func:`patch.dict` now returns the patched dictionary when used as a context
+        manager.
+
 :func:`patch.dict` can be used to add members to a dictionary, or simply let a test
 change a dictionary, and ensure the dictionary is restored when the test
 ends.
 
     >>> foo = {}
-    >>> with patch.dict(foo, {'newkey': 'newvalue'}):
+    >>> with patch.dict(foo, {'newkey': 'newvalue'}) as patched_foo:
     ...     assert foo == {'newkey': 'newvalue'}
+    ...     assert patched_foo == {'newkey': 'newvalue'}
+    ...     # You can add, update or delete keys of foo (or patched_foo, it's the same dict)
+    ...     patched_foo['spam'] = 'eggs'
     ...
     >>> assert foo == {}
+    >>> assert patched_foo == {}
 
     >>> import os
     >>> with patch.dict('os.environ', {'newkey': 'newvalue'}):
@@ -1945,7 +1954,7 @@ The full list of supported magic methods is:
 * Container methods: ``__getitem__``, ``__setitem__``, ``__delitem__``,
   ``__contains__``, ``__len__``, ``__iter__``, ``__reversed__``
   and ``__missing__``
-* Context manager: ``__enter__``, ``__exit__``, ``__aenter`` and ``__aexit__``
+* Context manager: ``__enter__``, ``__exit__``, ``__aenter__`` and ``__aexit__``
 * Unary numeric methods: ``__neg__``, ``__pos__`` and ``__invert__``
 * The numeric methods (including right hand and in-place variants):
   ``__add__``, ``__sub__``, ``__mul__``, ``__matmul__``, ``__div__``, ``__truediv__``,
@@ -2027,6 +2036,7 @@ Methods and their defaults:
 * ``__len__``: 0
 * ``__iter__``: iter([])
 * ``__exit__``: False
+* ``__aexit__``: False
 * ``__complex__``: 1j
 * ``__float__``: 1.0
 * ``__bool__``: True
