@@ -343,7 +343,7 @@ given type object has a specified feature.
  */
 
 /* Type structure has tp_finalize member (3.4) */
-#define Py_TPFLAGS_HAVE_FINALIZE Py_TPFLAGS_DEFAULT
+#define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
 
 #ifdef Py_LIMITED_API
 #  define PyType_HasFeature(t,f)  ((PyType_GetFlags(t) & (f)) != 0)
