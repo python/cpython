@@ -1,0 +1,1 @@
+Added support for the Linux SocketCAN Broadcast Manager API constants.
