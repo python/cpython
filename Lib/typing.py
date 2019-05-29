@@ -90,6 +90,7 @@ __all__ = [
     'NewType',
     'no_type_check',
     'no_type_check_decorator',
+    'NoReturn',
     'overload',
     'Text',
     'TYPE_CHECKING',

@@ -1,0 +1,1 @@
+Add missing names to ``typing.__all__``: ``NoReturn`` - by Anthony Sottile.
