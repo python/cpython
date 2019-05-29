@@ -665,7 +665,7 @@ Constants
 
 .. data:: PROTOCOL_SSLv23
 
-   Alias for data:`PROTOCOL_TLS`.
+   Alias for :data:`PROTOCOL_TLS`.
 
    .. deprecated:: 3.6
 
@@ -1821,7 +1821,7 @@ to speed up repeated connections from the same clients.
 
 .. attribute:: SSLContext.sslsocket_class
 
-   The return type of :meth:`SSLContext.wrap_sockets`, defaults to
+   The return type of :meth:`SSLContext.wrap_socket`, defaults to
    :class:`SSLSocket`. The attribute can be overridden on instance of class
    in order to return a custom subclass of :class:`SSLSocket`.
 
@@ -1831,7 +1831,7 @@ to speed up repeated connections from the same clients.
                                 server_hostname=None, session=None)
 
    Wrap the BIO objects *incoming* and *outgoing* and return an instance of
-   attr:`SSLContext.sslobject_class` (default :class:`SSLObject`). The SSL
+   :attr:`SSLContext.sslobject_class` (default :class:`SSLObject`). The SSL
    routines will read input data from the incoming BIO and write data to the
    outgoing BIO.
 

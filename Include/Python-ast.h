@@ -466,6 +466,7 @@ struct _type_ignore {
     union {
         struct {
             int lineno;
+            string tag;
         } TypeIgnore;
 
     } v;
@@ -701,8 +702,8 @@ alias_ty _Py_alias(identifier name, identifier asname, PyArena *arena);
 #define withitem(a0, a1, a2) _Py_withitem(a0, a1, a2)
 withitem_ty _Py_withitem(expr_ty context_expr, expr_ty optional_vars, PyArena
                          *arena);
-#define TypeIgnore(a0, a1) _Py_TypeIgnore(a0, a1)
-type_ignore_ty _Py_TypeIgnore(int lineno, PyArena *arena);
+#define TypeIgnore(a0, a1, a2) _Py_TypeIgnore(a0, a1, a2)
+type_ignore_ty _Py_TypeIgnore(int lineno, string tag, PyArena *arena);
 
 PyObject* PyAST_mod2obj(mod_ty t);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);

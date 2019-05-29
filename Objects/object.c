@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_context.h"
@@ -123,7 +124,7 @@ void
 _Py_dump_counts(FILE* f)
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    if (!interp->core_config.show_alloc_count) {
+    if (!interp->config.show_alloc_count) {
         return;
     }
 
@@ -382,7 +383,7 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
                universally available */
             Py_BEGIN_ALLOW_THREADS
             fprintf(fp, "<refcnt %ld at %p>",
-                (long)op->ob_refcnt, op);
+                (long)op->ob_refcnt, (void *)op);
             Py_END_ALLOW_THREADS
         }
         else {
@@ -496,7 +497,7 @@ _PyObject_Dump(PyObject* op)
         "address : %p\n",
         Py_TYPE(op)==NULL ? "NULL" : Py_TYPE(op)->tp_name,
         (long)op->ob_refcnt,
-        op);
+        (void *)op);
     fflush(stderr);
 }
 
@@ -1151,8 +1152,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     descr = _PyType_Lookup(tp, name);
     if (descr != NULL) {
         Py_INCREF(descr);
-        if (PyFunction_Check(descr) ||
-                (Py_TYPE(descr) == &PyMethodDescr_Type)) {
+        if (PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             meth_found = 1;
         } else {
             f = descr->ob_type->tp_descr_get;
@@ -1361,6 +1361,14 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             goto done;
         }
     }
+
+    /* XXX [Steve Dower] These are really noisy - worth it? */
+    /*if (PyType_Check(obj) || PyModule_Check(obj)) {
+        if (value && PySys_Audit("object.__setattr__", "OOO", obj, name, value) < 0)
+            return -1;
+        if (!value && PySys_Audit("object.__delattr__", "OO", obj, name) < 0)
+            return -1;
+    }*/
 
     if (dict == NULL) {
         dictptr = _PyObject_GetDictPtr(obj);
@@ -1755,13 +1763,13 @@ PyObject _Py_NotImplementedStruct = {
     1, &_PyNotImplemented_Type
 };
 
-_PyInitError
+PyStatus
 _PyTypes_Init(void)
 {
 #define INIT_TYPE(TYPE, NAME) \
     do { \
         if (PyType_Ready(TYPE) < 0) { \
-            return _Py_INIT_ERR("Can't initialize " NAME " type"); \
+            return _PyStatus_ERR("Can't initialize " NAME " type"); \
         } \
     } while (0)
 
@@ -1827,10 +1835,11 @@ _PyTypes_Init(void)
     INIT_TYPE(&PyMethodDescr_Type, "method descr");
     INIT_TYPE(&PyCallIter_Type, "call iter");
     INIT_TYPE(&PySeqIter_Type, "sequence iterator");
+    INIT_TYPE(&PyPickleBuffer_Type, "pickle.PickleBuffer");
     INIT_TYPE(&PyCoro_Type, "coroutine");
     INIT_TYPE(&_PyCoroWrapper_Type, "coroutine wrapper");
     INIT_TYPE(&_PyInterpreterID_Type, "interpreter ID");
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 
 #undef INIT_TYPE
 }
@@ -1891,7 +1900,7 @@ _Py_PrintReferences(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining objects:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", op, op->ob_refcnt);
+        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", (void *)op, op->ob_refcnt);
         if (PyObject_Print(op, fp, 0) != 0)
             PyErr_Clear();
         putc('\n', fp);
@@ -1907,7 +1916,7 @@ _Py_PrintReferenceAddresses(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining object addresses:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", op,
+        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", (void *)op,
             op->ob_refcnt, Py_TYPE(op)->tp_name);
 }
 
@@ -2164,10 +2173,10 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         fprintf(stderr, "<object: ob_type=NULL>\n");
     }
     else if (_PyObject_IsFreed((PyObject *)Py_TYPE(obj))) {
-        fprintf(stderr, "<object: freed type %p>\n", Py_TYPE(obj));
+        fprintf(stderr, "<object: freed type %p>\n", (void *)Py_TYPE(obj));
     }
     else {
-        /* Diplay the traceback where the object has been allocated.
+        /* Display the traceback where the object has been allocated.
            Do it before dumping repr(obj), since repr() is more likely
            to crash than dumping the traceback. */
         void *ptr;

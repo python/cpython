@@ -6,6 +6,8 @@
 
 .. moduleauthor:: Just van Rossum <just@letterror.com>
 
+**Source code:** :source:`Lib/zipimport.py`
+
 --------------
 
 This module adds the ability to import Python modules (:file:`\*.py`,

@@ -15,10 +15,10 @@ Glossary
    ``...``
       Can refer to:
 
-      * The default Python prompt of the interactive shell when entering code for
-        an indented code block, when within a pair of matching left and right
-        delimiters (parentheses, square brackets, curly braces or triple quotes),
-        or after specifying a decorator.
+      * The default Python prompt of the interactive shell when entering the
+        code for an indented code block, when within a pair of matching left and
+        right delimiters (parentheses, square brackets, curly braces or triple
+        quotes), or after specifying a decorator.
 
       * The :const:`Ellipsis` built-in constant.
 
@@ -224,6 +224,15 @@ Glossary
       An object which controls the environment seen in a :keyword:`with`
       statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
       See :pep:`343`.
+
+   context variable
+      A variable which can have different values depending on its context.
+      This is similar to Thread-Local Storage in which each execution
+      thread may have a different value for a variable. However, with context
+      variables, there may be several contexts in one execution thread and the
+      main usage for context variables is to keep track of variables in
+      concurrent asynchronous tasks.
+      See :mod:`contextvars`.
 
    contiguous
       .. index:: C-contiguous, Fortran contiguous
@@ -503,8 +512,10 @@ Glossary
       Hashability makes an object usable as a dictionary key and a set member,
       because these data structures use the hash value internally.
 
-      All of Python's immutable built-in objects are hashable; mutable
-      containers (such as lists or dictionaries) are not.  Objects which are
+      Most of Python's immutable built-in objects are hashable; mutable
+      containers (such as lists or dictionaries) are not; immutable
+      containers (such as tuples and frozensets) are only hashable if
+      their elements are hashable.  Objects which are
       instances of user-defined classes are hashable by default.  They all
       compare unequal (except with themselves), and their hash value is derived
       from their :func:`id`.

@@ -9,7 +9,7 @@ from unittest import mock
 from unittest.mock import (
     call, DEFAULT, patch, sentinel,
     MagicMock, Mock, NonCallableMock,
-    NonCallableMagicMock, _Call, _CallList,
+    NonCallableMagicMock, AsyncMock, _Call, _CallList,
     create_autospec
 )
 
@@ -1453,9 +1453,10 @@ class MockTest(unittest.TestCase):
     #Issue21238
     def test_mock_unsafe(self):
         m = Mock()
-        with self.assertRaises(AttributeError):
+        msg = "Attributes cannot start with 'assert' or 'assret'"
+        with self.assertRaisesRegex(AttributeError, msg):
             m.assert_foo_call()
-        with self.assertRaises(AttributeError):
+        with self.assertRaisesRegex(AttributeError, msg):
             m.assret_foo_call()
         m = Mock(unsafe=True)
         m.assert_foo_call()
@@ -1617,7 +1618,8 @@ class MockTest(unittest.TestCase):
 
 
     def test_adding_child_mock(self):
-        for Klass in NonCallableMock, Mock, MagicMock, NonCallableMagicMock:
+        for Klass in (NonCallableMock, Mock, MagicMock, NonCallableMagicMock,
+                      AsyncMock):
             mock = Klass()
 
             mock.foo = Mock()
@@ -1699,6 +1701,19 @@ class MockTest(unittest.TestCase):
         self.assertEqual(lines[0], 'Remarkable\n')
         self.assertEqual(lines[1], 'Norwegian Blue')
         self.assertEqual(list(f1), [])
+
+    def test_mock_open_using_next(self):
+        mocked_open = mock.mock_open(read_data='1st line\n2nd line\n3rd line')
+        f1 = mocked_open('a-name')
+        line1 = next(f1)
+        line2 = f1.__next__()
+        lines = [line for line in f1]
+        self.assertEqual(line1, '1st line\n')
+        self.assertEqual(line2, '2nd line\n')
+        self.assertEqual(lines[0], '3rd line')
+        self.assertEqual(list(f1), [])
+        with self.assertRaises(StopIteration):
+            next(f1)
 
     def test_mock_open_write(self):
         # Test exception in file writing write()

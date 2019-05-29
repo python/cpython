@@ -150,9 +150,9 @@ _DictRemover_call(PyObject *myself, PyObject *args, PyObject *kw)
 {
     DictRemoverObject *self = (DictRemoverObject *)myself;
     if (self->key && self->dict) {
-        if (-1 == PyDict_DelItem(self->dict, self->key))
-            /* XXX Error context */
-            PyErr_WriteUnraisable(Py_None);
+        if (-1 == PyDict_DelItem(self->dict, self->key)) {
+            _PyErr_WriteUnraisableMsg("on calling _ctypes.DictRemover", NULL);
+        }
         Py_CLEAR(self->key);
         Py_CLEAR(self->dict);
     }
@@ -2920,6 +2920,10 @@ PyCData_AtAddress(PyObject *type, void *buf)
     CDataObject *pd;
     StgDictObject *dict;
 
+    if (PySys_Audit("ctypes.cdata", "n", (Py_ssize_t)buf) < 0) {
+        return NULL;
+    }
+
     assert(PyType_Check(type));
     dict = PyType_stgdict(type);
     if (!dict) {
@@ -3454,6 +3458,18 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(ftuple);
         return NULL;
     }
+
+#ifdef MS_WIN32
+    if (PySys_Audit("ctypes.dlsym",
+                    ((uintptr_t)name & ~0xFFFF) ? "Os" : "On",
+                    dll, name) < 0) {
+        return NULL;
+    }
+#else
+    if (PySys_Audit("ctypes.dlsym", "Os", dll, name) < 0) {
+        return NULL;
+    }
+#endif
 
     obj = PyObject_GetAttrString(dll, "_handle");
     if (!obj) {
@@ -4487,7 +4503,8 @@ Array_subscript(PyObject *myself, PyObject *item)
         StgDictObject *stgdict, *itemdict;
         PyObject *proto;
         PyObject *np;
-        Py_ssize_t start, stop, step, slicelen, cur, i;
+        Py_ssize_t start, stop, step, slicelen, i;
+        size_t cur;
 
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
@@ -4627,7 +4644,8 @@ Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
         return Array_ass_item(myself, i, value);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelen, otherlen, i, cur;
+        Py_ssize_t start, stop, step, slicelen, otherlen, i;
+        size_t cur;
 
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;

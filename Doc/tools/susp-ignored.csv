@@ -4,7 +4,7 @@ c-api/sequence,,:i2,del o[i1:i2]
 c-api/sequence,,:i2,o[i1:i2]
 c-api/unicode,,:end,str[start:end]
 c-api/unicode,,:start,unicode[start:start+length]
-distutils/examples,267,`,This is the description of the ``foobar`` package.
+distutils/examples,274,`,This is the description of the ``foobar`` package.
 distutils/setupscript,,::,
 extending/embedding,,:numargs,"if(!PyArg_ParseTuple(args, "":numargs""))"
 extending/extending,,:myfunction,"PyArg_ParseTuple(args, ""D:myfunction"", &c);"
@@ -236,6 +236,8 @@ library/urllib.request,,:close,Connection:close
 library/urllib.request,,:port,:port
 library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
 library/urllib.request,,:password,"""joe:password@python.org"""
+library/urllib.parse,,:scheme,<URL:scheme://host/path>
+library/urllib.parse,,:scheme,URL:scheme://host/path
 library/uuid,,:uuid,urn:uuid:12345678-1234-5678-1234-567812345678
 library/venv,,:param,":param nodist: If True, setuptools and pip are not installed into the"
 library/venv,,:param,":param progress: If setuptools or pip are installed, the progress of the"
@@ -335,7 +337,6 @@ library/zipapp,,:main,"$ python -m zipapp myapp -m ""myapp:main"""
 library/zipapp,,:fn,"pkg.mod:fn"
 library/zipapp,,:callable,"pkg.module:callable"
 library/stdtypes,,::,>>> m[::2].tolist()
-library/sys,,`,# ``wrapper`` creates a ``wrap(coro)`` coroutine:
 whatsnew/3.5,,:root,'WARNING:root:warning\n'
 whatsnew/3.5,,:warning,'WARNING:root:warning\n'
 whatsnew/3.5,,::,>>> addr6 = ipaddress.IPv6Address('::1')
@@ -350,3 +351,5 @@ whatsnew/3.7,,::,error::BytesWarning
 whatsnew/changelog,,::,error::BytesWarning
 whatsnew/changelog,,::,default::BytesWarning
 whatsnew/changelog,,::,default::DeprecationWarning
+library/importlib.metadata,,:main,"EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')"
+library/importlib.metadata,,`,of directories ``path`` (defaults to sys.path).
