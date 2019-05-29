@@ -3053,12 +3053,6 @@ PyLong_AsDouble(PyObject *v)
 
 /* Methods */
 
-static void
-long_dealloc(PyObject *v)
-{
-    Py_TYPE(v)->tp_free(v);
-}
-
 static int
 long_compare(PyLongObject *a, PyLongObject *b)
 {
@@ -5628,7 +5622,7 @@ PyTypeObject PyLong_Type = {
     "int",                                      /* tp_name */
     offsetof(PyLongObject, ob_digit),           /* tp_basicsize */
     sizeof(digit),                              /* tp_itemsize */
-    long_dealloc,                               /* tp_dealloc */
+    0,                                          /* tp_dealloc */
     0,                                          /* tp_print */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */

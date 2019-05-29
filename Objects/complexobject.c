@@ -343,12 +343,6 @@ PyComplex_AsCComplex(PyObject *op)
     }
 }
 
-static void
-complex_dealloc(PyObject *op)
-{
-    op->ob_type->tp_free(op);
-}
-
 static PyObject *
 complex_repr(PyComplexObject *v)
 {
@@ -1118,7 +1112,7 @@ PyTypeObject PyComplex_Type = {
     "complex",
     sizeof(PyComplexObject),
     0,
-    complex_dealloc,                            /* tp_dealloc */
+    0,                                          /* tp_dealloc */
     0,                                          /* tp_print */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
