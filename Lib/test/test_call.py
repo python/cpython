@@ -402,7 +402,7 @@ class FastCallTests(unittest.TestCase):
                     result = _testcapi.pyobject_fastcall(func, None)
                     self.check_result(result, expected)
 
-    def test_fastcall_dict(self):
+    def test_vectorcall_dict(self):
         # Test _PyObject_FastCallDict()
 
         for func, args, expected in self.CALLS_POSARGS:
@@ -429,33 +429,33 @@ class FastCallTests(unittest.TestCase):
                 result = _testcapi.pyobject_fastcalldict(func, args, kwargs)
                 self.check_result(result, expected)
 
-    def test_fastcall_keywords(self):
-        # Test _PyObject_FastCallKeywords()
+    def test_vectorcall(self):
+        # Test _PyObject_Vectorcall()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
                 # kwnames=NULL
-                result = _testcapi.pyobject_fastcallkeywords(func, args, None)
+                result = _testcapi.pyobject_vectorcall(func, args, None)
                 self.check_result(result, expected)
 
                 # kwnames=()
-                result = _testcapi.pyobject_fastcallkeywords(func, args, ())
+                result = _testcapi.pyobject_vectorcall(func, args, ())
                 self.check_result(result, expected)
 
                 if not args:
                     # kwnames=NULL
-                    result = _testcapi.pyobject_fastcallkeywords(func, None, None)
+                    result = _testcapi.pyobject_vectorcall(func, None, None)
                     self.check_result(result, expected)
 
                     # kwnames=()
-                    result = _testcapi.pyobject_fastcallkeywords(func, None, ())
+                    result = _testcapi.pyobject_vectorcall(func, None, ())
                     self.check_result(result, expected)
 
         for func, args, kwargs, expected in self.CALLS_KWARGS:
             with self.subTest(func=func, args=args, kwargs=kwargs):
                 kwnames = tuple(kwargs.keys())
                 args = args + tuple(kwargs.values())
-                result = _testcapi.pyobject_fastcallkeywords(func, args, kwnames)
+                result = _testcapi.pyobject_vectorcall(func, args, kwnames)
                 self.check_result(result, expected)
 
     def test_fastcall_clearing_dict(self):

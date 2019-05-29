@@ -631,7 +631,7 @@ context_run(PyContext *self, PyObject *const *args,
         return NULL;
     }
 
-    PyObject *call_result = _PyObject_FastCallKeywords(
+    PyObject *call_result = _PyObject_Vectorcall(
         args[0], args + 1, nargs - 1, kwnames);
 
     if (PyContext_Exit((PyObject *)self)) {
