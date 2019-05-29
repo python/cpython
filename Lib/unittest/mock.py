@@ -791,12 +791,12 @@ class NonCallableMock(Base):
         return _format_call_signature(name, args, kwargs)
 
 
-    def _format_mock_failure_message(self, args, kwargs):
-        message = 'expected call not found.\nExpected: %s\nActual: %s'
+    def _format_mock_failure_message(self, args, kwargs, action='call'):
+        message = 'expected %s not found.\nExpected: %s\nActual: %s'
         expected_string = self._format_mock_call_signature(args, kwargs)
         call_args = self.call_args
         actual_string = self._format_mock_call_signature(*call_args)
-        return message % (expected_string, actual_string)
+        return message % (action, expected_string, actual_string)
 
 
     def _call_matcher(self, _call):
@@ -2139,7 +2139,7 @@ class AsyncMockMixin(Base):
             raise AssertionError(f'Expected await: {expected}\nNot awaited')
 
         def _error_message():
-            msg = self._format_mock_failure_message(args, kwargs)
+            msg = self._format_mock_failure_message(args, kwargs, action='await')
             return msg
 
         expected = self._call_matcher((args, kwargs))
@@ -2193,7 +2193,7 @@ class AsyncMockMixin(Base):
         if not any_order:
             if expected not in all_awaits:
                 raise AssertionError(
-                    f'Awaits not found.\nExpected: {_CallList(calls)}\n',
+                    f'Awaits not found.\nExpected: {_CallList(calls)}\n'
                     f'Actual: {self.await_args_list}'
                 ) from cause
             return
