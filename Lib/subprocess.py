@@ -1886,12 +1886,12 @@ class Popen(object):
         def send_signal(self, sig):
             """Send a signal to the process."""
             # Skip signalling a process that we know has already died.
-            try:
-                if self.returncode is None:
+            if self.returncode is None:
+                try:
                     os.kill(self.pid, sig)
-            # Pass if operation not permitted
-            except PermissionError:
-                pass
+                # Pass if operation not permitted
+                except PermissionError:
+                    pass
 
         def terminate(self):
             """Terminate the process with SIGTERM
