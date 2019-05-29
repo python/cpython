@@ -1,5 +1,15 @@
 {% extends "!layout.html" %}
 
+{% block header %}
+{%- if outdated %}
+<div id="outdated-warning" style="padding: .5em; text-align: center; background-color: #FFBABA; color: #6A0E0E;">
+    {% trans %}This document is for an old version of Python that is no longer supported.
+    You should upgrade, and read the {% endtrans %}
+    <a href="/3/{{ pagename }}{{ file_suffix }}">{% trans %} Python documentation for the last stable release {% endtrans %}</a>.
+</div>
+{%- endif %}
+{% endblock %}
+
 {% block rootrellink %}
 {{ super() }}
     <li>
