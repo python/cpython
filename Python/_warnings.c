@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
+#include "traceback.h"
 #include "clinic/_warnings.c.h"
 
 #define MODULE_NAME "_warnings"
@@ -613,7 +614,7 @@ tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
 
     if (filename == NULL || name == NULL)
         return -1;
-    line = PyUnicode_FromFormat("  File \"%U\", line %d, in %U\n",
+    line = PyUnicode_FromFormat("  File \"%S\", line %d, in %U\n",
                                 filename, lineno, name);
     if (line == NULL)
         return -1;
@@ -621,7 +622,6 @@ tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
     Py_DECREF(line);
     if (err != 0)
         return err;
-    /* ignore errors since we can't report them, can we? */
     if (_Py_DisplaySourceLine(f, filename, lineno, 4))
         PyErr_Clear();
     return err;
@@ -629,16 +629,18 @@ tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
 
 
 static void
-print_frames(PyFrameObject *frame)
+print_stack()
 {
     PyObject *f_stderr;
     f_stderr = _PySys_GetObjectId(&PyId_stderr);
+    PyFrameObject *frame = _PyThreadState_GET()->frame;
 
     while (frame != NULL){
+        int lineno = PyFrame_GetLineNumber(frame);
         tb_displayline(
             f_stderr,
             frame->f_code->co_filename,
-            PyCode_Addr2Line(frame->f_code, frame->f_lasti),
+            lineno,
             frame->f_code->co_name);
         frame = frame->f_back;
     }
@@ -653,7 +655,6 @@ warn_explicit(PyObject *category, PyObject *message,
     PyObject *key = NULL, *text = NULL, *result = NULL, *lineno_obj = NULL;
     PyObject *item = NULL;
     PyObject *action;
-    PyFrameObject *f = PyThreadState_GET()->frame;
     int rc;
 
     /* module can be None if a warning is emitted late during Python shutdown.
@@ -760,7 +761,7 @@ warn_explicit(PyObject *category, PyObject *message,
                 rc = update_registry(registry, text, category, 0);
         }
         else if (_PyUnicode_EqualToASCIIString(action, "stack")) {
-            print_frames(f);
+            print_stack();
         }
         else if (!_PyUnicode_EqualToASCIIString(action, "default")) {
             PyErr_Format(PyExc_RuntimeError,
