@@ -4713,7 +4713,7 @@ test_pyobject_fastcalldict(PyObject *self, PyObject *args)
 
 
 static PyObject *
-test_pyobject_fastcallkeywords(PyObject *self, PyObject *args)
+test_pyobject_vectorcall(PyObject *self, PyObject *args)
 {
     PyObject *func, *func_args, *kwnames = NULL;
     PyObject **stack;
@@ -4747,7 +4747,7 @@ test_pyobject_fastcallkeywords(PyObject *self, PyObject *args)
 
 
 static PyObject *
-vectorcall(PyObject *self, PyObject *args)
+test_pyvectorcall_call(PyObject *self, PyObject *args)
 {
     PyObject *func;
     PyObject *argstuple;
@@ -5254,8 +5254,8 @@ static PyMethodDef TestMethods[] = {
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {"pyobject_fastcall", test_pyobject_fastcall, METH_VARARGS},
     {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
-    {"pyobject_fastcallkeywords", test_pyobject_fastcallkeywords, METH_VARARGS},
-    {"vectorcall", vectorcall, METH_VARARGS},
+    {"pyobject_vectorcall", test_pyobject_vectorcall, METH_VARARGS},
+    {"pyvectorcall_call", test_pyvectorcall_call, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},

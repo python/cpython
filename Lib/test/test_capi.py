@@ -499,9 +499,15 @@ class TestPEP590(unittest.TestCase):
                  (testfunction, (42,), {}, 42),
                  (testfunction_kw, (42,), {"kw":None}, 42)]
 
-        from _testcapi import vectorcall
+        from _testcapi import pyobject_vectorcall, pyvectorcall_call
         from types import MethodType
         from functools import partial
+
+        def vectorcall(func, args, kwargs=None):
+            args = *args, *kwargs.values()
+            kwnames = tuple(kwargs)
+            return pyobject_vectorcall(func, args, kwnames)
+
         for (func, args, kwargs, expected) in calls:
             with self.subTest(str(func)):
                 args1 = args[1:]
@@ -509,11 +515,13 @@ class TestPEP590(unittest.TestCase):
                 wrapped = partial(func)
                 if not kwargs:
                     self.assertEqual(expected, func(*args))
-                    self.assertEqual(expected, vectorcall(func, args))
+                    self.assertEqual(expected, pyobject_vectorcall(func, args, None))
+                    self.assertEqual(expected, pyvectorcall_call(func, args))
                     self.assertEqual(expected, meth(*args1))
                     self.assertEqual(expected, wrapped(*args))
                 self.assertEqual(expected, func(*args, **kwargs))
                 self.assertEqual(expected, vectorcall(func, args, kwargs))
+                self.assertEqual(expected, pyvectorcall_call(func, args, kwargs))
                 self.assertEqual(expected, meth(*args1, **kwargs))
                 self.assertEqual(expected, wrapped(*args, **kwargs))
 
