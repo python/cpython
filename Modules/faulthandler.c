@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
 #include "pycore_traceback.h"
+#include "pycore_thread.h"
 #include "pythread.h"
 #include <signal.h>
 #include <object.h>
@@ -1325,7 +1326,7 @@ _PyFaulthandler_Init(int enable)
      * be able to allocate memory on the stack, even on a stack overflow. If it
      * fails, ignore the error. */
     stack.ss_flags = 0;
-    stack.ss_size = SIGSTKSZ;
+    stack.ss_size = _PyThread_preferred_stacksize();
     stack.ss_sp = PyMem_Malloc(stack.ss_size);
     if (stack.ss_sp != NULL) {
         err = sigaltstack(&stack, &old_stack);
