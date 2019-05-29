@@ -487,9 +487,10 @@ class TestPEP590(unittest.TestCase):
     def test_vectorcall(self):
         # Test a bunch of different ways to call objects:
         # 1. normal call
-        # 2. vectorcall
-        # 3. call as bound method
-        # 4. call using functools.partial
+        # 2. vectorcall using _PyObject_Vectorcall()
+        # 3. vectorcall using PyVectorcall_Call()
+        # 4. call as bound method
+        # 5. call using functools.partial
 
         # A list of (function, args, kwargs, result) calls to test
         calls = [(len, (range(42),), {}, 42),
@@ -503,7 +504,7 @@ class TestPEP590(unittest.TestCase):
         from types import MethodType
         from functools import partial
 
-        def vectorcall(func, args, kwargs=None):
+        def vectorcall(func, args, kwargs):
             args = *args, *kwargs.values()
             kwnames = tuple(kwargs)
             return pyobject_vectorcall(func, args, kwnames)
