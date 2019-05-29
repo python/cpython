@@ -1605,11 +1605,6 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError("errors must be None")
 
         popen_args = (program,) + args
-        for arg in popen_args:
-            if not isinstance(arg, (str, bytes)):
-                raise TypeError(
-                    f"program arguments must be a bytes or text string, "
-                    f"not {type(arg).__name__}")
         protocol = protocol_factory()
         debug_log = None
         if self._debug:
