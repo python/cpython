@@ -5010,8 +5010,8 @@ fstring_parse(const char **str, const char *end, int raw, int recurse_lvl,
 
    *expression is set to the expression.  For an '=' "debug" expression,
    *expr_text is set to the debug text (the original text of the expression,
-   *including the '=' and any whitespace around it, as a string object).  If
-   *not a debug expression, *expr_text set to NULL. */
+   including the '=' and any whitespace around it, as a string object).  If
+   not a debug expression, *expr_text set to NULL. */
 static int
 fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
                   PyObject **expr_text, expr_ty *expression,
@@ -5038,6 +5038,8 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
        expressions. */
     Py_ssize_t nested_depth = 0;
     char parenstack[MAXLEVEL];
+
+    *expr_text = NULL;
 
     /* Can only nest one level deep. */
     if (recurse_lvl >= 2) {
@@ -5214,8 +5216,6 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         if (!*expr_text) {
             goto error;
         }
-    } else {
-        *expr_text = NULL;
     }
 
     /* Check for a conversion char, if present. */
@@ -5281,6 +5281,7 @@ unexpected_end_of_string:
     /* Falls through to error. */
 
 error:
+    Py_XDECREF(*expr_text);
     return -1;
 
 }
@@ -5603,7 +5604,8 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
 
     /* Parse the f-string. */
     while (1) {
-        PyObject *literal[2] = {NULL, NULL};
+        PyObject *literal = NULL;
+        PyObject *expr_text = NULL;
         expr_ty expression = NULL;
 
         /* If there's a zero length literal in front of the
@@ -5611,34 +5613,23 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
            the f-string, expression will be NULL (unless result == 1,
            see below). */
         int result = fstring_find_literal_and_expr(str, end, raw, recurse_lvl,
-                                                   &literal[0], &literal[1],
+                                                   &literal, &expr_text,
                                                    &expression, c, n);
         if (result < 0)
             return -1;
 
-        /* Add the literals, if any. */
-        for (int i = 0; i < 2; i++) {
-            if (!literal[i]) {
-                /* Do nothing. Just leave last_str alone (and possibly
-                   NULL). */
-            } else if (!state->last_str) {
-                /*  Note that the literal can be zero length, if the
-                    input string is "\\\n" or "\\\r", among others. */
-                state->last_str = literal[i];
-                literal[i] = NULL;
-            } else {
-                /* We have a literal, concatenate it. */
-                assert(PyUnicode_GET_LENGTH(literal[i]) != 0);
-                if (FstringParser_ConcatAndDel(state, literal[i]) < 0)
-                    return -1;
-                literal[i] = NULL;
-            }
+        /* Add the literal, if any. */
+        if (literal && FstringParser_ConcatAndDel(state, literal) < 0) {
+            Py_XDECREF(expr_text);
+            return -1;
+        }
+        /* Add the expr_text, if any. */
+        if (expr_text && FstringParser_ConcatAndDel(state, expr_text) < 0) {
+            return -1;
         }
 
-        /* We've dealt with the literals now. They can't be leaked on further
-           errors. */
-        assert(literal[0] == NULL);
-        assert(literal[1] == NULL);
+        /* We've dealt with the literal and expr_text, their ownership has
+           been transferred to the state object.  Don't look at them again. */
 
         /* See if we should just loop around to get the next literal
            and expression, while ignoring the expression this
