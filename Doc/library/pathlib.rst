@@ -947,12 +947,18 @@ call fails (for example because the path doesn't exist).
       >>> target.open().read()
       'some text'
 
+   .. versionchanged:: 3.8
+      Added return value, return the new Path instance.
+
 
 .. method:: Path.replace(target)
 
    Rename this file or directory to the given *target*, and return a new Path
    instance pointing to *target*.  If *target* points to an existing file or
    directory, it will be unconditionally replaced.
+
+   .. versionchanged:: 3.8
+      Added return value, return the new Path instance.
 
 
 .. method:: Path.resolve(strict=False)
