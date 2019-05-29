@@ -496,3 +496,13 @@ PyThread_tss_get(Py_tss_t *key)
     SetLastError(error);
     return result;
 }
+
+size_t
+_PyThread_preferred_stacksize()
+{
+    /*
+     * Windows default stack size is 1MB, overridable by the linker in the
+     * executable
+     */
+    return 1024 * 1024;
+}

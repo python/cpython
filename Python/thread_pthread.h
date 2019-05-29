@@ -24,13 +24,6 @@
 #   include <lwp.h>             /* _lwp_self() */
 #endif
 
-/* The POSIX spec requires that use of pthread_attr_setstacksize
-   be conditional on _POSIX_THREAD_ATTR_STACKSIZE being defined. */
-#ifdef _POSIX_THREAD_ATTR_STACKSIZE
-#ifndef THREAD_STACK_SIZE
-#define THREAD_STACK_SIZE       0       /* use default stack size */
-#endif
-
 /* The default stack size for new threads on OSX and BSD is small enough that
  * we'll get hard crashes instead of 'maximum recursion depth exceeded'
  * exceptions.
@@ -38,25 +31,49 @@
  * The default stack sizes below are the empirically determined minimal stack
  * sizes where a simple recursive function doesn't cause a hard crash.
  */
-#if defined(__APPLE__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
-#undef  THREAD_STACK_SIZE
+#if defined(__APPLE__)
 /* Note: This matches the value of -Wl,-stack_size in configure.ac */
-#define THREAD_STACK_SIZE       0x1000000
+#define PLATFORM_STACK_SIZE       0x1000000
+#elif defined(__FreeBSD__)
+#define PLATFORM_STACK_SIZE       0x400000
+#elif defined(_AIX)
+#define PLATFORM_STACK_SIZE       0x200000
+#else
+#define PLATFORM_STACK_SIZE       0 /* use system default */
 #endif
-#if defined(__FreeBSD__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
-#undef  THREAD_STACK_SIZE
-#define THREAD_STACK_SIZE       0x400000
+
+/* The POSIX spec requires that use of pthread_attr_setstacksize
+   be conditional on _POSIX_THREAD_ATTR_STACKSIZE being defined. */
+#ifdef _POSIX_THREAD_ATTR_STACKSIZE
+#ifndef THREAD_STACK_SIZE
+#define THREAD_STACK_SIZE       PLATFORM_STACK_SIZE
 #endif
-#if defined(_AIX) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
-#undef  THREAD_STACK_SIZE
-#define THREAD_STACK_SIZE       0x200000
-#endif
-/* for safety, ensure a viable minimum stacksize */
-#define THREAD_STACK_MIN        0x8000  /* 32 KiB */
 #else  /* !_POSIX_THREAD_ATTR_STACKSIZE */
 #ifdef THREAD_STACK_SIZE
 #error "THREAD_STACK_SIZE defined but _POSIX_THREAD_ATTR_STACKSIZE undefined"
 #endif
+#endif
+
+/* for safety, ensure a viable minimum stacksize. Either the specified pthread
+ * minimum, or a floor of 32KiB
+ *
+ * XXX: note this is lower than the emprical minimum for
+ * __APPLE__/__FreeBSD__ above
+ */
+#if defined(PTHREAD_STACK_MIN) && PTHREAD_STACK_MIN > 0x8000 /* 32KiB */
+#define THREAD_STACK_MIN        PTHREAD_STACK_MIN
+#else
+#define THREAD_STACK_MIN        0x8000 /* 32 KiB */
+#endif
+
+/*
+ * Static preferred size for a stack on the platform. Use if we can't make a
+ * good guess dynamically. Maximum of PLATFORM_STACK_SIZE and THREAD_STACK_MIN.
+ */
+#if THREAD_STACK_MIN > PLATFORM_STACK_SIZE
+#define PLATFORM_STACK_PREFERRED THREAD_STACK_MIN
+#else
+#define PLATFORM_STACK_PREFERRED PLATFORM_STACK_SIZE
 #endif
 
 /* The POSIX spec says that implementations supporting the sem_*
@@ -241,9 +258,6 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
     pthread_attr_t attrs;
 #endif
-#if defined(THREAD_STACK_SIZE)
-    size_t      tss;
-#endif
 
     dprintf(("PyThread_start_new_thread called\n"));
     if (!initialized)
@@ -256,9 +270,11 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #if defined(THREAD_STACK_SIZE)
     PyThreadState *tstate = _PyThreadState_GET();
     size_t stacksize = tstate ? tstate->interp->pythread_stacksize : 0;
-    tss = (stacksize != 0) ? stacksize : THREAD_STACK_SIZE;
-    if (tss != 0) {
-        if (pthread_attr_setstacksize(&attrs, tss) != 0) {
+    if (stacksize == 0) {
+        stacksize = THREAD_STACK_SIZE;
+    }
+    if (stacksize != 0) {
+        if (pthread_attr_setstacksize(&attrs, stacksize) != 0) {
             pthread_attr_destroy(&attrs);
             return PYTHREAD_INVALID_THREAD_ID;
         }
@@ -706,7 +722,6 @@ _pythread_pthread_set_stacksize(size_t size)
 {
 #if defined(THREAD_STACK_SIZE)
     pthread_attr_t attrs;
-    size_t tss_min;
     int rc = 0;
 #endif
 
@@ -717,17 +732,11 @@ _pythread_pthread_set_stacksize(size_t size)
     }
 
 #if defined(THREAD_STACK_SIZE)
-#if defined(PTHREAD_STACK_MIN)
-    tss_min = PTHREAD_STACK_MIN > THREAD_STACK_MIN ? PTHREAD_STACK_MIN
-                                                   : THREAD_STACK_MIN;
-#else
-    tss_min = THREAD_STACK_MIN;
-#endif
-    if (size >= tss_min) {
+    if (size >= THREAD_STACK_MIN) {
         /* validate stack size by setting thread attribute */
         if (pthread_attr_init(&attrs) == 0) {
             rc = pthread_attr_setstacksize(&attrs, size);
-            pthread_attr_destroy(&attrs);
+            (void)pthread_attr_destroy(&attrs);
             if (rc == 0) {
                 _PyInterpreterState_GET_UNSAFE()->pythread_stacksize = size;
                 return 0;
@@ -871,4 +880,32 @@ PyThread_tss_get(Py_tss_t *key)
 {
     assert(key != NULL);
     return pthread_getspecific(key->_key);
+}
+
+/*
+ * Provide the preferred stack size to use if we need to create a stack and
+ * need to know the actual amount of space to allocate.
+ */
+size_t
+_PyThread_preferred_stacksize()
+{
+#if defined(THREAD_STACK_SIZE) && (THREAD_STACK_SIZE == 0)
+    /* If we have the stacksize thread attribute, we can use it to find the
+     * system's preferred stack size, and use that.
+     */
+    pthread_attr_t attrs;
+    if (pthread_attr_init(&attrs) == 0) {
+        size_t size;
+        int rc = pthread_attr_getstacksize(&attrs, &size);
+        (void)pthread_attr_destroy(&attrs);
+        /* Ensure the default size is at least PLATFORM_STACK_PREFERRED for
+         * systems that default to a stack too small for our needs. */
+        if (rc == 0 && size != 0 && size > PLATFORM_STACK_PREFERRED) {
+            return size;
+        }
+    }
+#endif
+    /* If all else fails, use the minimum viable thread stack size for the
+     * platform. */
+    return PLATFORM_STACK_PREFERRED;
 }
