@@ -50,8 +50,8 @@ This module defines the following constants and functions:
    When the function returns, the thread silently exits.
 
    When the function terminates with an unhandled exception,
-   :func:`sys.unraisablehook` is called to handle the exception (the *object*
-   attribute of the hook is set to *function*). By default, a stack trace is
+   :func:`sys.unraisablehook` is called to handle the exception. The *object*
+   attribute of the hook argument is *function*. By default, a stack trace is
    printed and then the thread exits (but other threads continue to run).
 
    When the function raises a :exc:`SystemExit` exception, it is silently
