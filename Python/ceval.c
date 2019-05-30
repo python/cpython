@@ -682,7 +682,12 @@ PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    return interp->eval_frame(f, throwflag);
+    PyObject * result = interp->eval_frame(f, throwflag);
+    if (f->f_locals != NULL) {
+        // There may be a cyclic reference that needs to be cleaned up...
+        _PyFrame_PostEvalCleanup(f);
+    }
+    return result;
 }
 
 PyObject* _Py_HOT_FUNCTION

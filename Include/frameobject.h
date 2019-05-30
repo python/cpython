@@ -96,6 +96,7 @@ PyAPI_FUNC(PyObject *) PyFrame_GetLocalsAttr(PyFrameObject *);  // = frame.f_loc
 
 #ifdef Py_BUILD_CORE
 PyObject *_PyFrame_BorrowPyLocals(PyFrameObject *f); /* For PyEval_GetLocals() */
+void _PyFrame_PostEvalCleanup(PyFrameObject *f);     /* For PyEval_EvalFrameEx() */
 #endif
 
 

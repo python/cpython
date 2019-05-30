@@ -13,6 +13,7 @@
 
 static PyObject *_PyFastLocalsProxy_New(PyObject *frame);
 static PyObject *_PyFastLocalsProxy_BorrowLocals(PyObject *flp);
+static void _PyFastLocalsProxy_BreakReferenceCycle(PyObject *flp);
 
 static PyMemberDef frame_memberlist[] = {
     {"f_back",          T_OBJECT,       OFF(f_back),      READONLY},
@@ -53,6 +54,18 @@ _PyFrame_BorrowPyLocals(PyFrameObject *f)
     }
     return updated_locals;
 }
+
+void _PyFrame_PostEvalCleanup(PyFrameObject *f)
+{
+     // This is called by PyEval_EvalFrameEx() to ensure that any reference
+     // cycle between the frame and f_locals gets broken when the frame finishes
+     // execution.
+     assert(f->f_locals);
+     if (_PyFastLocalsProxy_CheckExact(f->f_locals)) {
+         _PyFastLocalsProxy_BreakReferenceCycle(f->f_locals);
+     }
+}
+
 
 PyObject *
 PyFrame_GetPyLocals(PyFrameObject *f)
@@ -534,7 +547,7 @@ frame_tp_clear(PyFrameObject *f)
     for (i = slots; --i >= 0; ++fastlocals)
         Py_CLEAR(*fastlocals);
 
-    /* TODO: The fast locals proxy is no longer valid here... */
+    Py_CLEAR(f->f_locals);
 
     /* stack */
     if (oldtop != NULL) {
@@ -1116,6 +1129,11 @@ static int
 fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObject *value)
 {
     int result = 0;
+    if (flp->frame == NULL) {
+        // This indicates the frame has finished executing and the proxy's link
+        // back to the frame has been cleared to break the reference cycle
+        return 0;
+    }
     PyObject *fast_ref = PyDict_GetItem(flp->fast_refs, key);
     if (fast_ref != NULL) {
         /* Key is also stored on the frame, so update that reference */
@@ -1291,7 +1309,7 @@ fastlocalsproxy_clear(register PyObject *flp, PyObject *Py_UNUSED(ignored))
 
 static PyMethodDef fastlocalsproxy_methods[] = {
     {"setdefault",      (PyCFunction)(void(*)(void))fastlocalsproxy_setdefault,
-     METH_VARARGS | METH_KEYWORDS, fastlocalsproxy_pop__doc__},
+     METH_VARARGS | METH_KEYWORDS, fastlocalsproxy_setdefault__doc__},
     {"pop",             (PyCFunction)(void(*)(void))fastlocalsproxy_pop,
      METH_VARARGS | METH_KEYWORDS, fastlocalsproxy_pop__doc__},
     {"clear",           (PyCFunction)fastlocalsproxy_popitem,
@@ -1308,8 +1326,8 @@ static void
 fastlocalsproxy_dealloc(fastlocalsproxyobject *flp)
 {
     _PyObject_GC_UNTRACK(flp);
-    Py_CLEAR(flp->frame);
     Py_CLEAR(flp->mapping);
+    Py_CLEAR(flp->frame);
     Py_CLEAR(flp->fast_refs);
     PyObject_GC_Del(flp);
 }
@@ -1324,8 +1342,8 @@ static int
 fastlocalsproxy_traverse(PyObject *self, visitproc visit, void *arg)
 {
     fastlocalsproxyobject *flp = (fastlocalsproxyobject *)self;
-    Py_VISIT(flp->frame);
     Py_VISIT(flp->mapping);
+    Py_VISIT(flp->frame);
     Py_VISIT(flp->fast_refs);
     return 0;
 }
@@ -1391,6 +1409,16 @@ _PyFastLocalsProxy_BorrowLocals(PyObject *self)
     assert(_PyFastLocalsProxy_CheckExact(self));
     return ((fastlocalsproxyobject *) self)->mapping;
 }
+
+static void
+_PyFastLocalsProxy_BreakReferenceCycle(PyObject *self)
+{
+    assert(_PyFastLocalsProxy_CheckExact(self));
+    fastlocalsproxyobject *flp = (fastlocalsproxyobject *) self;
+    Py_CLEAR(flp->frame);
+    Py_CLEAR(flp->fast_refs);
+}
+
 
 /*[clinic input]
 @classmethod
