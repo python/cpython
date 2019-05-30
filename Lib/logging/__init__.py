@@ -801,7 +801,7 @@ class Filterer(object):
 
            Allow filters to be just callables.
 
-        .. versionchanged: 3.9
+        .. versionchanged: 3.8
 
            Improve readability using efficient Python 3 builtins.
         """
