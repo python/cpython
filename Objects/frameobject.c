@@ -1393,9 +1393,7 @@ _PyFastLocalsProxy_New(PyObject *frame)
     flp->frame = (PyFrameObject *) frame;
     fast_refs = _PyFrame_BuildFastRefs(flp->frame);
     if (fast_refs == NULL) {
-        Py_DECREF(flp);
-        Py_DECREF(mapping);
-        Py_DECREF(frame);
+        Py_DECREF(flp); // Also handles DECREF for mapping and frame
         return NULL;
     }
     flp->fast_refs = fast_refs;
