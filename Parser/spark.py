@@ -612,7 +612,7 @@ class GenericParser:
 
         for i in range(len(rhs)-1, -1, -1):
             attr[i] = self.deriveEpsilon(rhs[i])
-        return self.rule2func[self.new2old[rule]](attr)
+        return self.rule2func[self.new2old[rule]](*attr)
 
     def buildTree(self, nt, item, tokens, k):
         state, parent = item
