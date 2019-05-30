@@ -1122,9 +1122,11 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
     def close(self):
         self._callbacks.clear()
         if self._saved_sighandler is not None:
+            handler = signal.getsignal(signal.SIGCHLD)
+            if handler != self._sig_chld:
+                raise RuntimeError("SIGCHLD handler was changed by outside code")
             signal.signal(signal.SIGCHLD, self._saved_sighandler)
             self._saved_sighandler = None
-        super().close()
 
     def __enter__(self):
         return self
@@ -1227,6 +1229,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
     def __init__(self):
         super().__init__()
         self._watcher = None
+        self._init_watcher()
 
     def _init_watcher(self):
         with events._lock:
