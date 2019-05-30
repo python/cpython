@@ -152,6 +152,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
 
+    def get_coro(self):
+        return self._coro
+
     def get_name(self):
         return self._name
 
