@@ -27,6 +27,7 @@ _testcapi = support.import_module('_testcapi')
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
+Py_TPFLAGS_HAVE_VECTORCALL = 1 << 11
 Py_TPFLAGS_METHOD_DESCRIPTOR = 1 << 17
 
 
@@ -484,6 +485,27 @@ class TestPEP590(unittest.TestCase):
             pass
         self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
 
+    def test_vectorcall_flag(self):
+        self.assertTrue(_testcapi.MethodDescriptorBase.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        self.assertTrue(_testcapi.MethodDescriptorDerived.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        self.assertTrue(_testcapi.MethodDescriptor2.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+
+        # Heap type should not inherit Py_TPFLAGS_HAVE_VECTORCALL
+        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
+            pass
+        self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+
+    def test_vectorcall_override(self):
+        # Check that tp_call can correctly override vectorcall.
+        # MethodDescriptorNopGet implements tp_call but it inherits from
+        # MethodDescriptorBase, which implements vectorcall. Since
+        # MethodDescriptorNopGet returns the args tuple when called, we check
+        # additionally that no new tuple is created for this call.
+        args = tuple(range(5))
+        f = _testcapi.MethodDescriptorNopGet()
+        self.assertIs(f(*args), args)
+
     def test_vectorcall(self):
         # Test a bunch of different ways to call objects:
         # 1. normal call
@@ -498,7 +520,10 @@ class TestPEP590(unittest.TestCase):
                  ([].append, (0,), {}, None),
                  (sum, ([36],), {"start":6}, 42),
                  (testfunction, (42,), {}, 42),
-                 (testfunction_kw, (42,), {"kw":None}, 42)]
+                 (testfunction_kw, (42,), {"kw":None}, 42),
+                 (_testcapi.MethodDescriptorBase(), (0,), {}, True),
+                 (_testcapi.MethodDescriptorDerived(), (0,), {}, True),
+                 (_testcapi.MethodDescriptor2(), (0,), {}, False)]
 
         from _testcapi import pyobject_vectorcall, pyvectorcall_call
         from types import MethodType
