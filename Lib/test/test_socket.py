@@ -2276,6 +2276,7 @@ class BasicTCPTest(SocketConnectedTest):
         self.serv_conn.send(MSG)
 
     @requireAttrs(socket.socket, "sendmsg")
+    @requireAttrs(socket, "AF_UNIX")
     @unittest.skipUnless(_socket is not None, 'need _socket module')
     def testSendAndRecvFds(self):
         fds = []
