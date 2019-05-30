@@ -352,6 +352,15 @@ is the module's name in the Python package namespace.
    .. versionchanged:: 3.7
       Loggers can now be pickled and unpickled.
 
+   .. attribute:: Logger.disabled
+
+      If this attribute evaluates to ``True``, this logger will not output any
+      of the events logged through this logger directly. Note that this
+      disables logging on this specific Logger object, not in any of its
+      children.
+
+      The constructor sets this attribute to ``False``.
+
 .. _levels:
 
 Logging Levels
