@@ -264,9 +264,9 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
 
 // same to methoddescr_call(), but use FASTCALL convention.
 PyObject *
-_PyMethodDescr_FastCallKeywords(PyObject *descrobj,
-                                PyObject *const *args, size_t nargsf,
-                                PyObject *kwnames)
+_PyMethodDescr_Vectorcall(PyObject *descrobj,
+                          PyObject *const *args, size_t nargsf,
+                          PyObject *kwnames)
 {
     assert(Py_TYPE(descrobj) == &PyMethodDescr_Type);
     PyMethodDescrObject *descr = (PyMethodDescrObject *)descrobj;
@@ -756,7 +756,7 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
                                              type, method->ml_name);
     if (descr != NULL) {
         descr->d_method = method;
-        descr->vectorcall = &_PyMethodDescr_FastCallKeywords;
+        descr->vectorcall = _PyMethodDescr_Vectorcall;
     }
     return (PyObject *)descr;
 }
