@@ -1027,7 +1027,7 @@ The module defines the following classes, functions and decorators:
    Provide basic introspection for generic types and special typing forms.
 
    For a typing object of the form ``X[Y, Z, ...]`` these functions return
-   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for builtin or
+   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
    :mod:`collections` class, it gets normalized to the original class.
    For unsupported objects return ``None`` and ``()`` correspondingly.
    Examples::
