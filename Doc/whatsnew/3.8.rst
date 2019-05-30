@@ -772,7 +772,7 @@ Optimizations
 
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
-  "fast-copy" syscalls on Linux, macOS and Solaris in order to copy the file
+  "fast-copy" syscalls on Linux and macOS in order to copy the file
   more efficiently.
   "fast-copy" means that the copying operation occurs within the kernel,
   avoiding the use of userspace buffers in Python as in
