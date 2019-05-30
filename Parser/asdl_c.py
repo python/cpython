@@ -1194,7 +1194,10 @@ def main(srcfile):
         sys.exit(1)
     if INC_DIR:
         p = "%s/%s-ast.h" % (INC_DIR, mod.name)
-        f = open(p, "w")
+        try:
+            f = open(p, "w", newline="\n")
+        except TypeError:
+            f = open(p, "wb")
         f.write(auto_gen_msg)
         f.write('#include "asdl.h"\n\n')
         c = ChainOfVisitors(TypeDefVisitor(f),
