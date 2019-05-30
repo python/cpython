@@ -3123,6 +3123,7 @@ class TermsizeTests(unittest.TestCase):
 
 
 @unittest.skipUnless(hasattr(os, 'memfd_create'), 'requires os.memfd_create')
+@support.requires_linux_version(3, 17)
 class MemfdCreateTests(unittest.TestCase):
     def test_memfd_create(self):
         fd = os.memfd_create("Hi", os.MFD_CLOEXEC)
