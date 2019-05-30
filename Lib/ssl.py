@@ -165,7 +165,7 @@ class TLSVersion(_IntEnum):
     MAXIMUM_SUPPORTED = _ssl.PROTO_MAXIMUM_SUPPORTED
 
 
-class TLSContentType(_IntEnum):
+class _TLSContentType(_IntEnum):
     """Content types (record layer)
 
     See RFC 8446, section B.1
@@ -179,7 +179,7 @@ class TLSContentType(_IntEnum):
     INNER_CONTENT_TYPE = 0x101
 
 
-class TLSAlertType(_IntEnum):
+class _TLSAlertType(_IntEnum):
     """Alert types for TLSContentType.ALERT messages
 
     See RFC 8466, section B.2
@@ -220,7 +220,7 @@ class TLSAlertType(_IntEnum):
     NO_APPLICATION_PROTOCOL = 120
 
 
-class TLSMessageType(_IntEnum):
+class _TLSMessageType(_IntEnum):
     """Message types (handshake protocol)
 
     See RFC 8446, section B.3
@@ -608,13 +608,48 @@ class SSLContext(_SSLContext):
             return True
 
     @property
-    def msg_callback(self):
-        return super().msg_callback.user_function
+    def _msg_callback(self):
+        """TLS message callback
 
-    @msg_callback.setter
-    def msg_callback(self, callback):
+        The message callback provides a debugging hook to analyze TLS
+        connections. The callback is called for any TLS protocol message
+        (header, handshake, alert, and more), but not for application data.
+        Due to technical  limitations, the callback can't be used to filter
+        traffic or to abort a connection. Any exception raised in the
+        callback is delayed until the handshake, read, or write operation
+        has been performed.
+
+        def msg_cb(conn, direction, version, content_type, msg_type, data):
+            pass
+
+        conn
+            :class:`SSLSocket` or :class:`SSLObject` instance
+        direction
+            ``read`` or ``write``
+        version
+            :class:`TLSVersion` enum member or int for unknown version. For a
+            frame header, it's the header version.
+        content_type
+            :class:`_TLSContentType` enum member or int for unsupported
+            content type.
+        msg_type
+            Either a :class:`_TLSContentType` enum number for a header
+            message, a :class:`_TLSAlertType` enum member for an alert
+            message, a :class:`_TLSMessageType` enum member for other
+            messages, or int for unsupported message types.
+        data
+            Raw, decrypted message content as bytes
+        """
+        inner = super()._msg_callback
+        if inner is not None:
+            return inner.user_function
+        else:
+            return None
+
+    @_msg_callback.setter
+    def _msg_callback(self, callback):
         if callback is None:
-            super(SSLContext, SSLContext).msg_callback.__set__(self, None)
+            super(SSLContext, SSLContext)._msg_callback.__set__(self, None)
             return
 
         if not hasattr(callback, '__call__'):
@@ -627,16 +662,16 @@ class SSLContext(_SSLContext):
                 pass
 
             try:
-                content_type = TLSContentType(content_type)
+                content_type = _TLSContentType(content_type)
             except TypeError:
                 pass
 
-            if content_type == TLSContentType.HEADER:
-                msg_enum = TLSContentType
-            elif content_type == TLSContentType.ALERT:
-                msg_enum = TLSAlertType
+            if content_type == _TLSContentType.HEADER:
+                msg_enum = _TLSContentType
+            elif content_type == _TLSContentType.ALERT:
+                msg_enum = _TLSAlertType
             else:
-                msg_enum = TLSMessageType
+                msg_enum = _TLSMessageType
             try:
                 msg_type = msg_enum(msg_type)
             except TypeError:
@@ -647,7 +682,7 @@ class SSLContext(_SSLContext):
 
         inner.user_function = callback
 
-        super(SSLContext, SSLContext).msg_callback.__set__(self, inner)
+        super(SSLContext, SSLContext)._msg_callback.__set__(self, inner)
 
     @property
     def protocol(self):

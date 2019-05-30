@@ -4650,8 +4650,8 @@ static PyGetSetDef context_getsetlist[] = {
     {"keylog_filename", (getter) _PySSLContext_get_keylog_filename,
                         (setter) _PySSLContext_set_keylog_filename, NULL},
 #endif
-    {"msg_callback", (getter) _PySSLContext_get_msg_callback,
-                     (setter) _PySSLContext_set_msg_callback, NULL},
+    {"_msg_callback", (getter) _PySSLContext_get_msg_callback,
+                      (setter) _PySSLContext_set_msg_callback, NULL},
     {"sni_callback", (getter) get_sni_callback,
                      (setter) set_sni_callback, PySSLContext_sni_callback_doc},
     {"options", (getter) get_options,

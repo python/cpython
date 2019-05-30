@@ -1064,27 +1064,6 @@ Constants
 
    SSL 3.0 to TLS 1.3.
 
-.. class:: TLSContentType
-
-   :class:`enum.IntEnum` collection of SSL and TLS content types from
-   :rfc:`8443`, section B.1.
-
-   .. versionadded:: 3.8
-
-.. class:: TLSMessageType
-
-   :class:`enum.IntEnum` collection of SSL and TLS message types from
-   :rfc:`8443`, section B.3.
-
-   .. versionadded:: 3.8
-
-.. class:: TLSAlertType
-
-   :class:`enum.IntEnum` collection of SSL and TLS alert types from
-   :rfc:`8443`, section B.2.
-
-   .. versionadded:: 3.8
-
 
 SSL Sockets
 -----------
@@ -1936,7 +1915,7 @@ to speed up repeated connections from the same clients.
    Write TLS keys to a keylog file, whenever key material is generated or
    received. The keylog file is designed for debugging purposes only. The
    file format is specified by NSS and used by many traffic analyzers such
-   as Wireshark. The log file is opened in append-only mode. Writes a
+   as Wireshark. The log file is opened in append-only mode. Writes are
    synchronized between threads, but not between processes.
 
    .. versionadded:: 3.8
@@ -1979,78 +1958,6 @@ to speed up repeated connections from the same clients.
      with OpenSSL 1.1.0g or newer.
 
    .. versionadded:: 3.7
-
-.. attribute:: SSLContext.msg_callback
-
-   The message callback provides a debugging hook to analyze TLS connections.
-   The callback is called for any TLS protocol message (header, handshake,
-   alert, and more), but not for application data. Due to technical
-   limitations, the callback can't be used to filter traffic or to abort a
-   connection. Any exception raised in the callback is delayed until the
-   handshake, read, or write operation has been performed.
-
-   Example::
-
-       def msg_cb(conn, direction, version, content_type, msg_type, data):
-          print(f"{direction:5} {version._name_:7} {content_type._name_:18} "
-                f"{msg_type._name_:20} {len(data):4}")
-
-       ctx = ssl.create_default_context()
-       ctx.msg_callback = msg_cb
-       host = 'tls13.crypto.mozilla.org'
-       with ctx.wrap_socket(socket.socket(), server_hostname=host) as s:
-           s.connect((host, 443))
-           s.sendall(b'HEAD / HTTP/1.1\r\n')
-           s.sendall(b'Host: %s\r\n\r\n' % host)
-           s.recv(4096)
-           s.unwrap()
-
-   Output::
-
-        write TLSv1   HEADER             HANDSHAKE               5
-        write TLSv1_3 HANDSHAKE          CLIENT_HELLO          512
-        read  TLSv1_2 HEADER             HANDSHAKE               5
-        read  TLSv1_3 HANDSHAKE          SERVER_HELLO          122
-        read  TLSv1_2 HEADER             CHANGE_CIPHER_SPEC      5
-        read  TLSv1_2 HEADER             APPLICATION_DATA        5
-        read  TLSv1_3 INNER_CONTENT_TYPE CERTIFICATE_STATUS      1
-        read  TLSv1_3 HANDSHAKE          ENCRYPTED_EXTENSIONS    6
-        read  TLSv1_3 HANDSHAKE          CERTIFICATE          3226
-        read  TLSv1_3 HANDSHAKE          CERTIFICATE_VERIFY     79
-        read  TLSv1_3 HANDSHAKE          FINISHED               52
-        write TLSv1_2 HEADER             CHANGE_CIPHER_SPEC      5
-        write TLSv1_3 CHANGE_CIPHER_SPEC CHANGE_CIPHER_SPEC      1
-        write TLSv1_2 HEADER             APPLICATION_DATA        5
-        write TLSv1_3 INNER_CONTENT_TYPE CERTIFICATE_STATUS      1
-        write TLSv1_3 HANDSHAKE          FINISHED               52
-        write TLSv1_2 HEADER             APPLICATION_DATA        5
-        write TLSv1_3 INNER_CONTENT_TYPE SUPPLEMENTAL_DATA       1
-        write TLSv1_2 HEADER             APPLICATION_DATA        5
-        write TLSv1_3 INNER_CONTENT_TYPE SUPPLEMENTAL_DATA       1
-        read  TLSv1_2 HEADER             APPLICATION_DATA        5
-        read  TLSv1_3 INNER_CONTENT_TYPE CERTIFICATE_STATUS      1
-        read  TLSv1_3 HANDSHAKE          NEWSESSION_TICKET     238
-        read  TLSv1_3 HANDSHAKE          NEWSESSION_TICKET     238
-
-
-   conn
-     :class:`SSLSocket` or :class:`SSLObject` instance
-   direction
-     ``read`` or ``write``
-   version
-     :class:`TLSVersion` enum member or int for unknown version. For a
-     frame header, it's the header version.
-   content_type
-     :class:`TLSContentType` enum member or int for unsupported content type.
-   msg_type
-     Either a :class:`TLSContentType` enum number for a header message,
-     a :class:`TLSAlertType` enum member for an alert message,
-     a :class:`TLSMessageType` enum member for other messages, or int for
-     unsupported message types.
-   data
-     Raw, decrypted message content as bytes
-
-   .. versionadded:: 3.8
 
 .. attribute:: SSLContext.options
 

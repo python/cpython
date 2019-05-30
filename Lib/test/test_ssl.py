@@ -26,7 +26,7 @@ except ImportError:
 
 ssl = support.import_module("ssl")
 
-from ssl import TLSVersion, TLSContentType, TLSMessageType, TLSAlertType
+from ssl import TLSVersion, _TLSContentType, _TLSMessageType, _TLSAlertType
 
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = support.HOST
@@ -4493,6 +4493,18 @@ class TestSSLDebug(unittest.TestCase):
             ctx = ssl._create_stdlib_context()
             self.assertEqual(ctx.keylog_filename, support.TESTFN)
 
+    def test_msg_callback(self):
+        client_context, server_context, hostname = testing_context()
+
+        def msg_cb(conn, direction, version, content_type, msg_type, data):
+            pass
+
+        self.assertIs(client_context._msg_callback, None)
+        client_context._msg_callback = msg_cb
+        self.assertIs(client_context._msg_callback, msg_cb)
+        with self.assertRaises(TypeError):
+            client_context._msg_callback = object()
+
     def test_msg_callback_tls12(self):
         client_context, server_context, hostname = testing_context()
         client_context.options |= ssl.OP_NO_TLSv1_3
@@ -4505,7 +4517,7 @@ class TestSSLDebug(unittest.TestCase):
             self.assertIn(direction, {'read', 'write'})
             msg.append((direction, version, content_type, msg_type))
 
-        client_context.msg_callback = msg_cb
+        client_context._msg_callback = msg_cb
 
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
@@ -4514,48 +4526,48 @@ class TestSSLDebug(unittest.TestCase):
                 s.connect((HOST, server.port))
 
         self.assertEqual(msg, [
-            ("write", TLSVersion.TLSv1, TLSContentType.HEADER,
-             TLSMessageType.CERTIFICATE_STATUS),
-            ("write", TLSVersion.TLSv1_2, TLSContentType.HANDSHAKE,
-             TLSMessageType.CLIENT_HELLO),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HEADER,
-             TLSMessageType.CERTIFICATE_STATUS),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HANDSHAKE,
-             TLSMessageType.SERVER_HELLO),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HEADER,
-             TLSMessageType.CERTIFICATE_STATUS),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HANDSHAKE,
-             TLSMessageType.CERTIFICATE),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HEADER,
-             TLSMessageType.CERTIFICATE_STATUS),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HANDSHAKE,
-             TLSMessageType.SERVER_KEY_EXCHANGE),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HEADER,
-             TLSMessageType.CERTIFICATE_STATUS),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HANDSHAKE,
-             TLSMessageType.SERVER_DONE),
-            ("write", TLSVersion.TLSv1_2, TLSContentType.HEADER,
-             TLSMessageType.CERTIFICATE_STATUS),
-            ("write", TLSVersion.TLSv1_2, TLSContentType.HANDSHAKE,
-             TLSMessageType.CLIENT_KEY_EXCHANGE),
-            ("write", TLSVersion.TLSv1_2, TLSContentType.HEADER,
-             TLSMessageType.FINISHED),
-            ("write", TLSVersion.TLSv1_2, TLSContentType.CHANGE_CIPHER_SPEC,
-             TLSMessageType.CHANGE_CIPHER_SPEC),
-            ("write", TLSVersion.TLSv1_2, TLSContentType.HEADER,
-             TLSMessageType.CERTIFICATE_STATUS),
-            ("write", TLSVersion.TLSv1_2, TLSContentType.HANDSHAKE,
-             TLSMessageType.FINISHED),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HEADER,
-             TLSMessageType.CERTIFICATE_STATUS),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HANDSHAKE,
-             TLSMessageType.NEWSESSION_TICKET),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HEADER,
-             TLSMessageType.FINISHED),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HEADER,
-             TLSMessageType.CERTIFICATE_STATUS),
-            ("read", TLSVersion.TLSv1_2, TLSContentType.HANDSHAKE,
-             TLSMessageType.FINISHED),
+            ("write", TLSVersion.TLSv1, _TLSContentType.HEADER,
+             _TLSMessageType.CERTIFICATE_STATUS),
+            ("write", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
+             _TLSMessageType.CLIENT_HELLO),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
+             _TLSMessageType.CERTIFICATE_STATUS),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
+             _TLSMessageType.SERVER_HELLO),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
+             _TLSMessageType.CERTIFICATE_STATUS),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
+             _TLSMessageType.CERTIFICATE),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
+             _TLSMessageType.CERTIFICATE_STATUS),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
+             _TLSMessageType.SERVER_KEY_EXCHANGE),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
+             _TLSMessageType.CERTIFICATE_STATUS),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
+             _TLSMessageType.SERVER_DONE),
+            ("write", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
+             _TLSMessageType.CERTIFICATE_STATUS),
+            ("write", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
+             _TLSMessageType.CLIENT_KEY_EXCHANGE),
+            ("write", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
+             _TLSMessageType.FINISHED),
+            ("write", TLSVersion.TLSv1_2, _TLSContentType.CHANGE_CIPHER_SPEC,
+             _TLSMessageType.CHANGE_CIPHER_SPEC),
+            ("write", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
+             _TLSMessageType.CERTIFICATE_STATUS),
+            ("write", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
+             _TLSMessageType.FINISHED),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
+             _TLSMessageType.CERTIFICATE_STATUS),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
+             _TLSMessageType.NEWSESSION_TICKET),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
+             _TLSMessageType.FINISHED),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
+             _TLSMessageType.CERTIFICATE_STATUS),
+            ("read", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
+             _TLSMessageType.FINISHED),
         ])
 
 
