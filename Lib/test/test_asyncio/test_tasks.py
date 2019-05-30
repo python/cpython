@@ -2425,6 +2425,16 @@ class BaseTaskTests:
 
         self.assertEqual(cvar.get(), -1)
 
+    def test_get_coro(self):
+        loop = asyncio.new_event_loop()
+        coro = coroutine_function()
+        try:
+            task = self.new_task(loop, coro)
+            loop.run_until_complete(task)
+            self.assertIs(task.get_coro(), coro)
+        finally:
+            loop.close()
+
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task
