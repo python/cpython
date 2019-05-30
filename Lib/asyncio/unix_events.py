@@ -840,6 +840,15 @@ class AbstractChildWatcher:
         """
         raise NotImplementedError()
 
+    def is_active(self):
+        """Watcher status.
+
+        Return True if the watcher is installed and ready to handle process exit
+        notifications.
+
+        """
+        raise NotImplementedError()
+
     def __enter__(self):
         """Enter the watcher's context and allow starting new processes
 
@@ -873,6 +882,9 @@ class BaseChildWatcher(AbstractChildWatcher):
 
     def close(self):
         self.attach_loop(None)
+
+    def is_active(self):
+        return self._loop is not None
 
     def _do_waitpid(self, expected_pid):
         raise NotImplementedError()
@@ -1119,17 +1131,18 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         self._callbacks = {}
         self._saved_sighandler = None
 
+    def is_active(self):
+        return self._saved_sighandler is not None
+
     def close(self):
         self._callbacks.clear()
-        if self._saved_sighandler is not None:
+        if self._saved_sighandler is not _SENTINEL:
             handler = signal.getsignal(signal.SIGCHLD)
             if handler != self._sig_chld:
-                warnings.warn("SIGCHLD handler was changed by outside code",
-                              ResourceWarning,
-                              source=self)
+                logger.warning("SIGCHLD handler was changed by outside code")
             else:
                 signal.signal(signal.SIGCHLD, self._saved_sighandler)
-            self._saved_sighandler = None
+            self._saved_sighandler = _SENTINEL
 
     def __enter__(self):
         return self
@@ -1159,6 +1172,10 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         # Main thread is required for subscription on SIGCHLD signal
         if self._saved_sighandler is None:
             self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
+            if self._saved_sighandler is None:
+                logger.warning("Previous SIGCHLD handler was set by non-Python code, "
+                               "restore to default handler on watcher close.")
+                self._saved_sighandler = signal.SIG_DFL
 
             # Set SA_RESTART to limit EINTR occurrences.
             signal.siginterrupt(signal.SIGCHLD, False)
