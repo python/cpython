@@ -844,7 +844,7 @@ Task Object
 
    .. method:: get_coro()
 
-      Return the coroutine object that was passed to the constructor.
+      Return the coroutine object wrapped by the :class:`Task`.
 
       .. versionadded:: 3.8
 
