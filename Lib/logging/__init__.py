@@ -800,10 +800,6 @@ class Filterer(object):
         .. versionchanged:: 3.2
 
            Allow filters to be just callables.
-
-        .. versionchanged: 3.8
-
-           Improve readability using efficient Python 3 builtins.
         """
         filters = (getattr(f, 'filter', f) for f in self.filters)
         return all(f(record) for f in filters) # assume callable - will raise if not
