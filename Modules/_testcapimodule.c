@@ -5814,6 +5814,29 @@ static PyTypeObject Generic_Type = {
 
 /* Test PEP 590 */
 
+typedef struct {
+    PyObject_HEAD
+    vectorcallfunc vectorcall;
+} MethodDescriptorObject;
+
+static PyObject *
+MethodDescriptor_vectorcall(PyObject *callable, PyObject *const *args,
+                            size_t nargsf, PyObject *kwnames)
+{
+    /* True if using the vectorcall function in MethodDescriptorObject
+     * but False for MethodDescriptor2Object */
+    MethodDescriptorObject *md = (MethodDescriptorObject *)callable;
+    return PyBool_FromLong(md->vectorcall != NULL);
+}
+
+static PyObject *
+MethodDescriptor_new(PyTypeObject* type, PyObject* args, PyObject *kw)
+{
+    MethodDescriptorObject *op = PyObject_New(MethodDescriptorObject, type);
+    op->vectorcall = MethodDescriptor_vectorcall;
+    return (PyObject *)op;
+}
+
 static PyObject *
 func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 {
@@ -5831,10 +5854,22 @@ nop_descr_get(PyObject *func, PyObject *obj, PyObject *type)
     return func;
 }
 
+static PyObject *
+call_return_args(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    Py_INCREF(args);
+    return args;
+}
+
 static PyTypeObject MethodDescriptorBase_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "MethodDescriptorBase",
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_METHOD_DESCRIPTOR,
+    sizeof(MethodDescriptorObject),
+    .tp_new = MethodDescriptor_new,
+    .tp_call = PyVectorcall_Call,
+    .tp_vectorcall_offset = offsetof(MethodDescriptorObject, vectorcall),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+                Py_TPFLAGS_METHOD_DESCRIPTOR | _Py_TPFLAGS_HAVE_VECTORCALL,
     .tp_descr_get = func_descr_get,
 };
 
@@ -5848,7 +5883,32 @@ static PyTypeObject MethodDescriptorNopGet_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "MethodDescriptorNopGet",
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_call = call_return_args,
     .tp_descr_get = nop_descr_get,
+};
+
+typedef struct {
+    MethodDescriptorObject base;
+    vectorcallfunc vectorcall;
+} MethodDescriptor2Object;
+
+static PyObject *
+MethodDescriptor2_new(PyTypeObject* type, PyObject* args, PyObject *kw)
+{
+    MethodDescriptor2Object *op = PyObject_New(MethodDescriptor2Object, type);
+    op->base.vectorcall = NULL;
+    op->vectorcall = MethodDescriptor_vectorcall;
+    return (PyObject *)op;
+}
+
+static PyTypeObject MethodDescriptor2_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MethodDescriptor2",
+    sizeof(MethodDescriptor2Object),
+    .tp_new = MethodDescriptor2_new,
+    .tp_call = PyVectorcall_Call,
+    .tp_vectorcall_offset = offsetof(MethodDescriptor2Object, vectorcall),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_HAVE_VECTORCALL,
 };
 
 
@@ -5915,6 +5975,12 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&MethodDescriptorNopGet_Type);
     PyModule_AddObject(m, "MethodDescriptorNopGet", (PyObject *)&MethodDescriptorNopGet_Type);
+
+    MethodDescriptor2_Type.tp_base = &MethodDescriptorBase_Type;
+    if (PyType_Ready(&MethodDescriptor2_Type) < 0)
+        return NULL;
+    Py_INCREF(&MethodDescriptor2_Type);
+    PyModule_AddObject(m, "MethodDescriptor2", (PyObject *)&MethodDescriptor2_Type);
 
     if (PyType_Ready(&GenericAlias_Type) < 0)
         return NULL;
