@@ -2278,6 +2278,7 @@ class BasicTCPTest(SocketConnectedTest):
     @requireAttrs(socket.socket, "sendmsg")
     @requireAttrs(socket, "AF_UNIX")
     @requireAttrs(socket, "SCM_RIGHTS")
+    @requireAttrs(socket, "SOL_SOCKET")
     def testSendAndRecvFds(self):
         fds = []
         # create two new file descriptors.
