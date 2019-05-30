@@ -383,8 +383,6 @@ static const char * const sys_deletes[] = {
     "last_type", "last_value", "last_traceback",
     "path_hooks", "path_importer_cache", "meta_path",
     "__interactivehook__",
-    /* misc stuff */
-    "flags", "float_info",
     NULL
 };
 
