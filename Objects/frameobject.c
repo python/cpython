@@ -1325,11 +1325,17 @@ static PyMethodDef fastlocalsproxy_methods[] = {
 static void
 fastlocalsproxy_dealloc(fastlocalsproxyobject *flp)
 {
-    _PyObject_GC_UNTRACK(flp);
+    if (_PyObject_GC_IS_TRACKED(flp))
+        _PyObject_GC_UNTRACK(flp);
+
+    Py_TRASHCAN_SAFE_BEGIN(flp)
+
     Py_CLEAR(flp->mapping);
     Py_CLEAR(flp->frame);
     Py_CLEAR(flp->fast_refs);
     PyObject_GC_Del(flp);
+
+    Py_TRASHCAN_SAFE_END(flp)
 }
 
 static PyObject *
