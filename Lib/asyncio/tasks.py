@@ -116,6 +116,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         return _all_tasks_compat(loop)
 
     def __init__(self, coro, *, loop=None, name=None):
+        if loop:
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                           DeprecationWarning, stacklevel=2)
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -544,7 +548,12 @@ def as_completed(fs, *, loop=None, timeout=None):
     """
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
         raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
-    loop = loop if loop is not None else events.get_event_loop()
+    if loop is None:
+        loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
     todo = {ensure_future(f, loop=loop) for f in set(fs)}
     from .queues import Queue  # Import here to avoid circular import problem.
     done = Queue(loop=loop)
@@ -619,6 +628,10 @@ def ensure_future(coro_or_future, *, loop=None):
 
     If the argument is a Future, it is returned directly.
     """
+    if loop:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
     if coroutines.iscoroutine(coro_or_future):
         if loop is None:
             loop = events.get_event_loop()
@@ -659,6 +672,10 @@ class _GatheringFuture(futures.Future):
     """
 
     def __init__(self, children, *, loop=None):
+        if loop:
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
         super().__init__(loop=loop)
         self._children = children
         self._cancel_requested = False
@@ -704,6 +721,10 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
     if not coros_or_futures:
         if loop is None:
             loop = events.get_event_loop()
+        else:
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
         outer = loop.create_future()
         outer.set_result([])
         return outer
@@ -813,6 +834,10 @@ def shield(arg, *, loop=None):
         except CancelledError:
             res = None
     """
+    if loop:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
     inner = ensure_future(arg, loop=loop)
     if inner.done():
         # Shortcut.

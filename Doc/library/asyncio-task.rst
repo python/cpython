@@ -334,6 +334,9 @@ Running Tasks Concurrently
    cancellation of one submitted Task/Future to cause other
    Tasks/Futures to be cancelled.
 
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
+
    .. _asyncio_example_gather:
 
    Example::
@@ -410,6 +413,9 @@ Shielding From Cancellation
            res = await shield(something())
        except CancelledError:
            res = None
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
 
 Timeouts
@@ -568,6 +574,9 @@ Waiting Primitives
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
 
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
+
    Example::
 
        for f in as_completed(aws):
@@ -693,6 +702,9 @@ Task Object
 
    .. versionchanged:: 3.8
       Added the ``name`` parameter.
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
    .. method:: cancel()
 
