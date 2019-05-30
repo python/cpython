@@ -12,6 +12,8 @@ Functions:
 socket() -- create a new socket object
 socketpair() -- create a pair of new socket objects [*]
 fromfd() -- create a socket object from an open file descriptor [*]
+send_fds() -- Send file descriptor to the socket.
+recv_fds() -- Recieve file descriptor from the socket.
 fromshare() -- create a socket object from data received from socket.share() [*]
 gethostname() -- return the current hostname
 gethostbyname() -- map a hostname to its IP number
@@ -49,7 +51,7 @@ the setsockopt() and getsockopt() methods.
 import _socket
 from _socket import *
 
-import os, sys, io, selectors
+import os, sys, io, selectors, array
 from enum import IntEnum, IntFlag
 
 try:
@@ -462,6 +464,34 @@ def fromfd(fd, family, type, proto=0):
     """
     nfd = dup(fd)
     return socket(family, type, proto, nfd)
+
+if hasattr(_socket.socket, "sendmsg"):
+    def send_fds(sock, msg, fds):
+        """ send_fds(sock, msg, fds) -> socket object
+
+        Send the list of file descriptors fds over an AF_UNIX socket.
+        """
+        return sock.sendmsg([msg], [(_socket.SOL_SOCKET,
+            _socket.SCM_RIGHTS, array.array("i", fds))])
+    __all__.append("send_fds")
+
+if hasattr(_socket.socket, "recvmsg"):
+    def recv_fds(sock, msglen, maxfds):
+        """ recv_fds(sock, msglen, maxfds) -> (socket object, socket object)
+
+        receive up to maxfds file descriptors returning the message
+        data and a list containing the descriptors.
+        """
+        # Array of ints
+        fds = array.array("i")
+        msg, ancdata, flags, addr = sock.recvmsg(msglen,
+            _socket.CMSG_LEN(maxfds * fds.itemsize))
+        for cmsg_level, cmsg_type, cmsg_data in ancdata:
+            if (cmsg_level == _socket.SOL_SOCKET and cmsg_type == _socket.SCM_RIGHTS):
+                # Append data, ignoring any truncated integers at the end.
+                fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+        return msg, list(fds)
+    __all__.append("recv_fds")
 
 if hasattr(_socket.socket, "share"):
     def fromshare(info):

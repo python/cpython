@@ -669,6 +669,30 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionadded:: 3.3
 
 
+.. function:: socket.send_fds(sock, msg, fds)
+
+   :func:`socket.send_fds` sends the list of file descriptors *fds*
+   over an :const:`AF_UNIX` socket, on systems which support the
+   :const:`SCM_RIGHTS` mechanism.
+
+   .. availability:: most Unix platforms, possibly others.
+
+   .. versionadded:: 3.8
+
+
+.. function:: socket.recv_fds(sock, msglen, maxfds)
+
+   On systems which support the :const:`SCM_RIGHTS` mechanism,
+   :func:`socket.recv_fds` will receive up to *maxfds* file descriptors,
+   returning the message data and a list containing the descriptors
+   (while ignoring unexpected conditions such as unrelated control
+   messages being received).
+
+   .. availability:: most Unix platforms, possibly others.
+
+   .. versionadded:: 3.8
+
+
 .. data:: SocketType
 
    This is a Python type object that represents the socket object type. It is the

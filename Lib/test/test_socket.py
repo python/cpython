@@ -2275,6 +2275,30 @@ class BasicTCPTest(SocketConnectedTest):
     def _testFromFd(self):
         self.serv_conn.send(MSG)
 
+    @requireAttrs(socket.socket, "sendmsg")
+    @requireAttrs(socket, "AF_UNIX")
+    @requireAttrs(socket, "SCM_RIGHTS")
+    def testSendAndRecvFds(self):
+        fds = []
+        # create two new file descriptors.
+        for i in range(2):
+            fd, path = tempfile.mkstemp()
+            self.addCleanup(os.unlink, path)
+            self.addCleanup(os.close, fd)
+            os.write(fd, str(i).encode())
+            fds.append(fd)
+        f = self.cli_conn.detach()
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, fileno=f)
+        self.addCleanup(sock.close)
+        with sock:
+            socket.send_fds(sock, MSG, fds)
+            msg, fds_list = socket.recv_fds(sock, len(MSG), 1024)
+            self.assertEqual(msg, MSG)
+
+    @testSendAndRecvFds.client_skip
+    def _testSendAndRecvFds(self):
+        self.serv_conn.send(MSG)
+
     def testDup(self):
         # Testing dup()
         sock = self.cli_conn.dup()
