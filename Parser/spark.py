@@ -31,7 +31,7 @@ def _namelist(instance):
     for c in classlist:
         for b in c.__bases__:
             classlist.append(b)
-        for name in c.__dict__.keys():
+        for name in c.__dict__:
             if name not in namedict:
                 namelist.append(name)
                 namedict[name] = 1
