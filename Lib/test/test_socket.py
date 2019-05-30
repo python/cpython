@@ -2276,8 +2276,8 @@ class BasicTCPTest(SocketConnectedTest):
         self.serv_conn.send(MSG)
 
     @requireAttrs(socket.socket, "sendmsg")
-    @requireAttrs(socket, "SCM_RIGHTS")
-    @requireAttrs(socket, "SOL_SOCKET")
+    @requireAttrs(socket, "AF_UNIX")
+    @unittest.skipIf(sys.platform == 'darwin', 'test not working for MacOSX')
     def testSendAndRecvFds(self):
         fds = []
         # create two new file descriptors.
