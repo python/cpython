@@ -5,17 +5,17 @@ import os
 import stat
 import sys
 import unittest
+import importlib
 from test.support import TESTFN, requires, unlink, bigmemtest
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
 
 # size of file to create (>2 GiB; 2 GiB == 2,147,483,648 bytes)
 size = 2_500_000_000
+TESTFN2 = TESTFN + '2'
+
 
 class LargeFileTest:
-    """Test that each file function works as expected for large
-    (i.e. > 2 GiB) files.
-    """
 
     def setUp(self):
         if os.path.exists(TESTFN):
@@ -44,6 +44,13 @@ class LargeFileTest:
         if not os.stat(TESTFN)[stat.ST_SIZE] == 0:
             raise cls.failureException('File was not truncated by opening '
                                        'with mode "wb"')
+        unlink(TESTFN2)
+
+
+class TestFileMethods(LargeFileTest):
+    """Test that each file function works as expected for large
+    (i.e. > 2 GiB) files.
+    """
 
     # _pyio.FileIO.readall() uses a temporary bytearray then casted to bytes,
     # so memuse=2 is needed
@@ -140,6 +147,23 @@ class LargeFileTest:
                 f.seek(pos)
                 self.assertTrue(f.seekable())
 
+
+class TestCopyfile(LargeFileTest, unittest.TestCase):
+    open = staticmethod(io.open)
+
+    def test_it(self):
+        # ...in case _USE_CP_SENDFILE has been set to False by another test.
+        import shutil as _shutil
+        shutil = importlib.reload(_shutil)
+        size = os.path.getsize(TESTFN)
+        shutil.copyfile(TESTFN, TESTFN2)
+        self.assertEqual(os.path.getsize(TESTFN2), size)
+        with open(TESTFN2, 'rb') as f:
+            self.assertEqual(f.read(5), b'z\x00\x00\x00\x00')
+            f.seek(size - 5)
+            self.assertEqual(f.read(), b'\x00\x00\x00\x00a')
+
+
 def setUpModule():
     try:
         import signal
@@ -176,14 +200,18 @@ def setUpModule():
             unlink(TESTFN)
 
 
-class CLargeFileTest(LargeFileTest, unittest.TestCase):
+class CLargeFileTest(TestFileMethods, unittest.TestCase):
     open = staticmethod(io.open)
 
-class PyLargeFileTest(LargeFileTest, unittest.TestCase):
+
+class PyLargeFileTest(TestFileMethods, unittest.TestCase):
     open = staticmethod(pyio.open)
+
 
 def tearDownModule():
     unlink(TESTFN)
+    unlink(TESTFN2)
+
 
 if __name__ == '__main__':
     unittest.main()
