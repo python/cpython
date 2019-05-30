@@ -66,7 +66,7 @@ PyAPI_FUNC(PyObject *) _PyFunction_FastCallDict(
     Py_ssize_t nargs,
     PyObject *kwargs);
 
-PyAPI_FUNC(PyObject *) _PyFunction_FastCallKeywords(
+PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     PyObject *func,
     PyObject *const *stack,
     size_t nargsf,
