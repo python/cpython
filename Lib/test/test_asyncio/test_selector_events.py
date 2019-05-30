@@ -370,8 +370,8 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         # task pending warnings.
         mock_obj = mock.patch.object
         with mock_obj(self.loop, '_accept_connection2') as accept2_mock:
-                self.loop._accept_connection(
-                    mock.Mock(), sock, backlog=backlog)
+            self.loop._accept_connection(
+                mock.Mock(), sock, backlog=backlog)
         self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(sock.accept.call_count, backlog)
 
