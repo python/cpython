@@ -2276,9 +2276,7 @@ class BasicTCPTest(SocketConnectedTest):
         self.serv_conn.send(MSG)
 
     @requireAttrs(socket.socket, "sendmsg")
-    @requireAttrs(socket, "AF_UNIX")
-    @requireAttrs(socket, "SCM_RIGHTS")
-    @requireAttrs(socket, "SOL_SOCKET")
+    @unittest.skipUnless(_socket is not None, 'need _socket module')
     def testSendAndRecvFds(self):
         fds = []
         # create two new file descriptors.
