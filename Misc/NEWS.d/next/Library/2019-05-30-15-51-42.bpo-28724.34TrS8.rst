@@ -1,0 +1,2 @@
+The socket module now has the :func:`socket.send_fds()` and :func:`socket.recv.fds()` functions.
+Contributed by Joannah Nanjekye and Shinya Okano .
