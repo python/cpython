@@ -107,7 +107,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    pto->use_fastcall = _PyObject_HasFastCall(func);
+    pto->use_fastcall = (_PyVectorcall_Function(func) != NULL);
 
     return (PyObject *)pto;
 }
@@ -365,7 +365,7 @@ partial_setstate(partialobject *pto, PyObject *state)
         Py_INCREF(dict);
 
     Py_INCREF(fn);
-    pto->use_fastcall = _PyObject_HasFastCall(fn);
+    pto->use_fastcall = (_PyVectorcall_Function(fn) != NULL);
     Py_SETREF(pto->fn, fn);
     Py_SETREF(pto->args, fnargs);
     Py_SETREF(pto->kw, kw);

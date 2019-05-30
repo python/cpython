@@ -486,6 +486,10 @@ Added new function :func:`~os.add_dll_directory` on Windows for providing
 additional search paths for native dependencies when importing extension
 modules or loading DLLs using :mod:`ctypes`.
 
+A new :func:`os.memfd_create` function was added to wrap the
+``memfd_create()`` syscall.
+(Contributed by Zackery Spytz and Christian Heimes in :issue:`26836`.)
+
 
 os.path
 -------
@@ -551,6 +555,10 @@ Added :meth:`~socket.create_server()` and :meth:`~socket.has_dualstack_ipv6()`
 convenience functions to automate the necessary tasks usually involved when
 creating a server socket, including accepting both IPv4 and IPv6 connections
 on the same socket.  (Contributed by Giampaolo Rodola in :issue:`17561`.)
+
+The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
+:func:`socket.if_indextoname()` functions have been implemented on Windows.
+(Contributed by Zackery Spytz in :issue:`37007`.)
 
 shlex
 ----------
@@ -764,7 +772,7 @@ Optimizations
 
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
-  "fast-copy" syscalls on Linux, macOS and Solaris in order to copy the file
+  "fast-copy" syscalls on Linux and macOS in order to copy the file
   more efficiently.
   "fast-copy" means that the copying operation occurs within the kernel,
   avoiding the use of userspace buffers in Python as in
@@ -1260,6 +1268,15 @@ Changes in the C API
       Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
 
   (Contributed by Zackery Spytz in :issue:`33407`.)
+
+* The interpreter does not pretend to support binary compatibility of
+  extension types accross feature releases, anymore.  A :c:type:`PyTypeObject`
+  exported by a third-party extension module is supposed to have all the
+  slots expected in the current Python version, including
+  :c:member:`~PyTypeObject.tp_finalize` (:const:`Py_TPFLAGS_HAVE_FINALIZE`
+  is not checked anymore before reading :c:member:`~PyTypeObject.tp_finalize`).
+
+  (Contributed by Antoine Pitrou in :issue:`32388`.)
 
 
 CPython bytecode changes

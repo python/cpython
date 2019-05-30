@@ -4806,6 +4806,40 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
     x = call; \
     }
 
+
+static PyObject *
+trace_call_function(PyThreadState *tstate,
+                    PyObject *func,
+                    PyObject **args, Py_ssize_t nargs,
+                    PyObject *kwnames)
+{
+    PyObject *x;
+    if (PyCFunction_Check(func)) {
+        C_TRACE(x, _PyCFunction_FastCallKeywords(func, args, nargs, kwnames));
+        return x;
+    }
+    else if (Py_TYPE(func) == &PyMethodDescr_Type && nargs > 0) {
+        /* We need to create a temporary bound method as argument
+           for profiling.
+
+           If nargs == 0, then this cannot work because we have no
+           "self". In any case, the call itself would raise
+           TypeError (foo needs an argument), so we just skip
+           profiling. */
+        PyObject *self = args[0];
+        func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
+        if (func == NULL) {
+            return NULL;
+        }
+        C_TRACE(x, _PyCFunction_FastCallKeywords(func,
+                                                 args+1, nargs-1,
+                                                 kwnames));
+        Py_DECREF(func);
+        return x;
+    }
+    return _PyObject_Vectorcall(func, args, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+}
+
 /* Issue #29227: Inline call_function() into _PyEval_EvalFrameDefault()
    to reduce the stack consumption. */
 Py_LOCAL_INLINE(PyObject *) _Py_HOT_FUNCTION
@@ -4818,63 +4852,11 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
     Py_ssize_t nargs = oparg - nkwargs;
     PyObject **stack = (*pp_stack) - nargs - nkwargs;
 
-    /* Always dispatch PyCFunction first, because these are
-       presumed to be the most frequent callable object.
-    */
-    if (PyCFunction_Check(func)) {
-        C_TRACE(x, _PyCFunction_FastCallKeywords(func, stack, nargs, kwnames));
-    }
-    else if (Py_TYPE(func) == &PyMethodDescr_Type) {
-        if (nargs > 0 && tstate->use_tracing) {
-            /* We need to create a temporary bound method as argument
-               for profiling.
-
-               If nargs == 0, then this cannot work because we have no
-               "self". In any case, the call itself would raise
-               TypeError (foo needs an argument), so we just skip
-               profiling. */
-            PyObject *self = stack[0];
-            func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
-            if (func != NULL) {
-                C_TRACE(x, _PyCFunction_FastCallKeywords(func,
-                                                         stack+1, nargs-1,
-                                                         kwnames));
-                Py_DECREF(func);
-            }
-            else {
-                x = NULL;
-            }
-        }
-        else {
-            x = _PyMethodDescr_FastCallKeywords(func, stack, nargs, kwnames);
-        }
+    if (tstate->use_tracing) {
+        x = trace_call_function(tstate, func, stack, nargs, kwnames);
     }
     else {
-        if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
-            /* Optimize access to bound methods. Reuse the Python stack
-               to pass 'self' as the first argument, replace 'func'
-               with 'self'. It avoids the creation of a new temporary tuple
-               for arguments (to replace func with self) when the method uses
-               FASTCALL. */
-            PyObject *self = PyMethod_GET_SELF(func);
-            Py_INCREF(self);
-            func = PyMethod_GET_FUNCTION(func);
-            Py_INCREF(func);
-            Py_SETREF(*pfunc, self);
-            nargs++;
-            stack--;
-        }
-        else {
-            Py_INCREF(func);
-        }
-
-        if (PyFunction_Check(func)) {
-            x = _PyFunction_FastCallKeywords(func, stack, nargs, kwnames);
-        }
-        else {
-            x = _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
-        }
-        Py_DECREF(func);
+        x = _PyObject_Vectorcall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
     }
 
     assert((x != NULL) ^ (_PyErr_Occurred(tstate) != NULL));

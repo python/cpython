@@ -248,8 +248,8 @@ PyType_Modified(PyTypeObject *type)
        Invariants:
 
        - Py_TPFLAGS_VALID_VERSION_TAG is never set if
-         Py_TPFLAGS_HAVE_VERSION_TAG is not set (e.g. on type
-         objects coming from non-recompiled extension modules)
+         Py_TPFLAGS_HAVE_VERSION_TAG is not set (in case of a
+         bizarre MRO, see type_mro_modified()).
 
        - before Py_TPFLAGS_VALID_VERSION_TAG can be set on a type,
          it must first be set on all super types.
@@ -2571,7 +2571,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
     /* Initialize tp_flags */
     type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE |
-        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_FINALIZE;
+        Py_TPFLAGS_BASETYPE;
     if (base->tp_flags & Py_TPFLAGS_HAVE_GC)
         type->tp_flags |= Py_TPFLAGS_HAVE_GC;
 
@@ -5147,6 +5147,17 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
     COPYSLOT(tp_repr);
     /* tp_hash see tp_richcompare */
     COPYSLOT(tp_call);
+    /* Inherit tp_vectorcall_offset and _Py_TPFLAGS_HAVE_VECTORCALL if tp_call
+     * was inherited, but only for extension types */
+    if ((base->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
+        !(type->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
+        !(type->tp_flags & Py_TPFLAGS_HEAPTYPE) &&
+        base->tp_call &&
+        type->tp_call == base->tp_call)
+    {
+        type->tp_vectorcall_offset = base->tp_vectorcall_offset;
+        type->tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
+    }
     COPYSLOT(tp_str);
     {
         /* Copy comparison-related slots only when
@@ -5179,10 +5190,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         COPYSLOT(tp_init);
         COPYSLOT(tp_alloc);
         COPYSLOT(tp_is_gc);
-        if ((type->tp_flags & Py_TPFLAGS_HAVE_FINALIZE) &&
-            (base->tp_flags & Py_TPFLAGS_HAVE_FINALIZE)) {
-            COPYSLOT(tp_finalize);
-        }
+        COPYSLOT(tp_finalize);
         if ((type->tp_flags & Py_TPFLAGS_HAVE_GC) ==
             (base->tp_flags & Py_TPFLAGS_HAVE_GC)) {
             /* They agree about gc. */

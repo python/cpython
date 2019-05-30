@@ -1159,19 +1159,33 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
 binascii.b2a_hex
 
     data: Py_buffer
-    /
+    sep: object = NULL
+        An optional single character or byte to separate hex bytes.
+    bytes_per_sep: int = 1
+        How many bytes between separators.  Positive values count from the
+        right, negative values count from the left.
 
 Hexadecimal representation of binary data.
 
 The return value is a bytes object.  This function is also
 available as "hexlify()".
+
+Example:
+>>> binascii.b2a_hex(b'\xb9\x01\xef')
+b'b901ef'
+>>> binascii.hexlify(b'\xb9\x01\xef', ':')
+b'b9:01:ef'
+>>> binascii.b2a_hex(b'\xb9\x01\xef', b'_', 2)
+b'b9_01ef'
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_hex_impl(PyObject *module, Py_buffer *data)
-/*[clinic end generated code: output=92fec1a95c9897a0 input=96423cfa299ff3b1]*/
+binascii_b2a_hex_impl(PyObject *module, Py_buffer *data, PyObject *sep,
+                      int bytes_per_sep)
+/*[clinic end generated code: output=a26937946a81d2c7 input=ec0ade6ba2e43543]*/
 {
-    return _Py_strhex_bytes((const char *)data->buf, data->len);
+    return _Py_strhex_bytes_with_sep((const char *)data->buf, data->len,
+                                     sep, bytes_per_sep);
 }
 
 /*[clinic input]
@@ -1179,14 +1193,17 @@ binascii.hexlify = binascii.b2a_hex
 
 Hexadecimal representation of binary data.
 
-The return value is a bytes object.
+The return value is a bytes object.  This function is also
+available as "b2a_hex()".
 [clinic start generated code]*/
 
 static PyObject *
-binascii_hexlify_impl(PyObject *module, Py_buffer *data)
-/*[clinic end generated code: output=749e95e53c14880c input=2e3afae7f083f061]*/
+binascii_hexlify_impl(PyObject *module, Py_buffer *data, PyObject *sep,
+                      int bytes_per_sep)
+/*[clinic end generated code: output=d12aa1b001b15199 input=bc317bd4e241f76b]*/
 {
-    return _Py_strhex_bytes((const char *)data->buf, data->len);
+    return _Py_strhex_bytes_with_sep((const char *)data->buf, data->len,
+                                     sep, bytes_per_sep);
 }
 
 /*[clinic input]
