@@ -15,6 +15,7 @@ from typing import Callable
 from typing import Generic, ClassVar, Final, final, Protocol
 from typing import cast, runtime_checkable
 from typing import get_type_hints
+from typing import get_origin, get_args
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
 from typing import NewType
@@ -2733,6 +2734,42 @@ class GetTypeHintTests(BaseTestCase):
                          {'z': ClassVar[CSub], 'y': int, 'b': int,
                           'x': ClassVar[Optional[B]]})
         self.assertEqual(gth(G), {'lst': ClassVar[List[T]]})
+
+
+class GetUtilitiesTestCase(TestCase):
+    def test_get_origin(self):
+        T = TypeVar('T')
+        class C(Generic[T]): pass
+        self.assertIs(get_origin(C[int]), C)
+        self.assertIs(get_origin(C[T]), C)
+        self.assertIs(get_origin(int), None)
+        self.assertIs(get_origin(ClassVar[int]), ClassVar)
+        self.assertIs(get_origin(Union[int, str]), Union)
+        self.assertIs(get_origin(Literal[42, 43]), Literal)
+        self.assertIs(get_origin(Final[List[int]]), Final)
+        self.assertIs(get_origin(Generic), Generic)
+        self.assertIs(get_origin(Generic[T]), Generic)
+        self.assertIs(get_origin(List[Tuple[T, T]][int]), list)
+
+    def test_get_args(self):
+        T = TypeVar('T')
+        class C(Generic[T]): pass
+        self.assertEqual(get_args(C[int]), (int,))
+        self.assertEqual(get_args(C[T]), (T,))
+        self.assertEqual(get_args(int), ())
+        self.assertEqual(get_args(ClassVar[int]), (int,))
+        self.assertEqual(get_args(Union[int, str]), (int, str))
+        self.assertEqual(get_args(Literal[42, 43]), (42, 43))
+        self.assertEqual(get_args(Final[List[int]]), (List[int],))
+        self.assertEqual(get_args(Union[int, Tuple[T, int]][str]),
+                         (int, Tuple[str, int]))
+        self.assertEqual(get_args(typing.Dict[int, Tuple[T, T]][Optional[int]]),
+                         (int, Tuple[Optional[int], Optional[int]]))
+        self.assertEqual(get_args(Callable[[], T][int]), ([], int,))
+        self.assertEqual(get_args(Union[int, Callable[[Tuple[T, ...]], str]]),
+                         (int, Callable[[Tuple[T, ...]], str]))
+        self.assertEqual(get_args(Tuple[int, ...]), (int, ...))
+        self.assertEqual(get_args(Tuple[()]), ((),))
 
 
 class CollectionsAbcTests(BaseTestCase):
