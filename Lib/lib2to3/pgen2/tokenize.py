@@ -346,7 +346,7 @@ def generate_tokens(readline):
     column where the token begins in the source; a 2-tuple (erow, ecol) of
     ints specifying the row and column where the token ends in the source;
     and the line on which the token was found. The line passed is the
-    physical line; continuation lines are included.
+    physical line.
     """
     lnum = parenlev = continued = 0
     contstr, needcont = '', 0
