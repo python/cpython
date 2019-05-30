@@ -1,1 +1,1 @@
-Modified logging.Filterer.filter() to use efficient, readable built-ins.
+Improved the efficiency of :mod:`logging` record filtering.
