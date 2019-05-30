@@ -52,7 +52,7 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
         op->vectorcall = NULL;
     }
     else {
-        op->vectorcall = &_PyCFunction_FastCallKeywords;
+        op->vectorcall = _PyCFunction_Vectorcall;
     }
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
