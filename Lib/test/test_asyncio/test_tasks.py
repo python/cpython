@@ -2433,7 +2433,6 @@ class BaseTaskTests:
             loop.run_until_complete(task)
             self.assertIs(task.get_coro(), coro)
         finally:
-            coro.close()
             loop.close()
 
 
