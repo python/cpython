@@ -83,6 +83,15 @@ class MsiDatabaseTestCase(unittest.TestCase):
         db.Close()
         self.addCleanup(unlink, db_path)
 
+    def test_directory_start_component_keyfile(self):
+        db, db_path = init_database()
+        self.addCleanup(db.Close)
+        feature = msilib.Feature(db, 0, 'Feature', 'A feature', 'Python')
+        cab = msilib.CAB('CAB')
+        dir = msilib.Directory(db, cab, None, TESTFN, 'TARGETDIR',
+                               'SourceDir', 0)
+        dir.start_component(None, feature, None, 'keyfile')
+
 
 class Test_make_id(unittest.TestCase):
     #http://msdn.microsoft.com/en-us/library/aa369212(v=vs.85).aspx
