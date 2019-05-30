@@ -55,10 +55,6 @@ PyAPI_FUNC(int) _PyStack_UnpackDict(
    40 bytes on the stack. */
 #define _PY_FASTCALL_SMALL_STACK 5
 
-/* Return 1 if callable supports FASTCALL calling convention for positional
-   arguments: see _PyObject_Vectorcall() and _PyObject_FastCallDict() */
-PyAPI_FUNC(int) _PyObject_HasFastCall(PyObject *callable);
-
 PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *callable,
                                                PyObject *result,
                                                const char *where);
