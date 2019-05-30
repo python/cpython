@@ -2437,7 +2437,6 @@ class BaseTaskTests:
             loop.close()
 
 
-
 def add_subclass_tests(cls):
     BaseTask = cls.Task
     BaseFuture = cls.Future
