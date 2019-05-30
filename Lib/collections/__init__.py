@@ -47,8 +47,8 @@ def __getattr__(name):
         obj = getattr(_collections_abc, name)
         import warnings
         warnings.warn("Using or importing the ABCs from 'collections' instead "
-                      "of from 'collections.abc' is deprecated, "
-                      "and in 3.8 it will stop working",
+                      "of from 'collections.abc' is deprecated since Python 3.3,"
+                      "and in 3.9 it will stop working",
                       DeprecationWarning, stacklevel=2)
         globals()[name] = obj
         return obj
