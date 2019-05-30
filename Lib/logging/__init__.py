@@ -789,6 +789,15 @@ class Filterer(object):
         if filter in self.filters:
             self.filters.remove(filter)
 
+    @staticmethod
+    def _filter_callable(filter):
+        """
+        Returns a predicate, based on the given object.
+
+        Uses 'filter' attribute if present, else returns the given object.
+        """
+        return filter.filter if hasattr(filter, 'filter') else filter
+
     def filter(self, record):
         """
         Determine if a record is loggable by consulting all the filters.
@@ -800,17 +809,14 @@ class Filterer(object):
         .. versionchanged:: 3.2
 
            Allow filters to be just callables.
+
+        .. versionchanged: 3.9
+
+           Improve readability using efficient Python 3 builtins.
         """
-        rv = True
-        for f in self.filters:
-            if hasattr(f, 'filter'):
-                result = f.filter(record)
-            else:
-                result = f(record) # assume callable - will raise if not
-            if not result:
-                rv = False
-                break
-        return rv
+        filters = map(self._filter_callable, self.filters)
+        return all(f(record) for f in filters) # assume callable - will raise if not
+
 
 #---------------------------------------------------------------------------
 #   Handler classes and functions
