@@ -281,15 +281,15 @@ Configure IDLE
    menu. For more, see
    :ref:`Setting preferences <preferences>` under Help and preferences.
 
-Zoom/Restore Height
-   Toggles the window between normal size and maximum height. The initial size
-   defaults to 40 lines by 80 chars unless changed on the General tab of the
-   Configure IDLE dialog.
-
 Show/Hide Code Context (Editor Window only)
    Open a pane at the top of the edit window which shows the block context
    of the code which has scrolled above the top of the window.  See
    :ref:`Code Context <code-context>` in the Editing and Navigation section below.
+
+Zoom/Restore Height
+   Toggles the window between normal size and maximum height. The initial size
+   defaults to 40 lines by 80 chars unless changed on the General tab of the
+   Configure IDLE dialog.
 
 Window menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

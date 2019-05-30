@@ -288,7 +288,7 @@ iobase_finalize(PyObject *self)
            shutdown issues). */
         if (res == NULL) {
 #ifndef Py_DEBUG
-            const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+            const PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
             if (config->dev_mode) {
                 PyErr_WriteUnraisable(self);
             }
@@ -856,7 +856,7 @@ PyTypeObject PyIOBase_Type = {
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,   /*tp_flags*/
+        | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
     iobase_doc,                 /* tp_doc */
     (traverseproc)iobase_traverse, /* tp_traverse */
     (inquiry)iobase_clear,      /* tp_clear */
@@ -1051,7 +1051,7 @@ PyTypeObject PyRawIOBase_Type = {
     0,                          /*tp_getattro*/
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_FINALIZE,  /*tp_flags*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
     rawiobase_doc,              /* tp_doc */
     0,                          /* tp_traverse */
     0,                          /* tp_clear */

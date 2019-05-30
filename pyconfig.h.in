@@ -302,6 +302,12 @@
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
 
+/* Define to 1 if you have the `explicit_bzero' function. */
+#undef HAVE_EXPLICIT_BZERO
+
+/* Define to 1 if you have the `explicit_memset' function. */
+#undef HAVE_EXPLICIT_MEMSET
+
 /* Define to 1 if you have the `expm1' function. */
 #undef HAVE_EXPM1
 
@@ -619,6 +625,9 @@
 /* Define to 1 if you have the <linux/can/raw.h> header file. */
 #undef HAVE_LINUX_CAN_RAW_H
 
+/* Define to 1 if you have the <linux/memfd.h> header file. */
+#undef HAVE_LINUX_MEMFD_H
+
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
 
@@ -652,11 +661,17 @@
 /* Define to 1 if you have the `lutimes' function. */
 #undef HAVE_LUTIMES
 
+/* Define to 1 if you have the `madvise' function. */
+#undef HAVE_MADVISE
+
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
 
 /* Define to 1 if you have the `mbrtowc' function. */
 #undef HAVE_MBRTOWC
+
+/* Define if you have the 'memfd_create' function. */
+#undef HAVE_MEMFD_CREATE
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -1106,6 +1121,9 @@
 
 /* Define to 1 if you have the <sys/lock.h> header file. */
 #undef HAVE_SYS_LOCK_H
+
+/* Define to 1 if you have the <sys/memfd.h> header file. */
+#undef HAVE_SYS_MEMFD_H
 
 /* Define to 1 if you have the <sys/mkdev.h> header file. */
 #undef HAVE_SYS_MKDEV_H

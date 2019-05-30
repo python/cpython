@@ -83,6 +83,7 @@ The module defines the following type:
    to add initial items to the array.  Otherwise, the iterable initializer is
    passed to the :meth:`extend` method.
 
+   .. audit-event:: array.__new__ "typecode initializer"
 
 .. data:: typecodes
 

@@ -389,6 +389,19 @@ extern char        *ctermid_r(char *);
 #define HAVE_STRUCT_STAT_ST_FSTYPE 1
 #endif
 
+/* memfd_create is either defined in sys/mman.h or sys/memfd.h
+ * linux/memfd.h defines additional flags
+ */
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+#ifdef HAVE_SYS_MEMFD_H
+#include <sys/memfd.h>
+#endif
+#ifdef HAVE_LINUX_MEMFD_H
+#include <linux/memfd.h>
+#endif
+
 #ifdef _Py_MEMORY_SANITIZER
 # include <sanitizer/msan_interface.h>
 #endif
@@ -448,11 +461,11 @@ PyOS_AfterFork_Child(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
     _PyGILState_Reinit(runtime);
-    _PyInterpreterState_DeleteExceptMain(runtime);
     _PyEval_ReInitThreads(runtime);
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
     _PyRuntimeState_ReInitThreads(runtime);
+    _PyInterpreterState_DeleteExceptMain(runtime);
 
     run_at_forkers(_PyInterpreterState_Get()->after_forkers_child, 0);
 }
@@ -4264,6 +4277,11 @@ os_system_impl(PyObject *module, const Py_UNICODE *command)
 /*[clinic end generated code: output=5b7c3599c068ca42 input=303f5ce97df606b0]*/
 {
     long result;
+
+    if (PySys_Audit("system", "(u)", command) < 0) {
+        return -1;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     result = _wsystem(command);
@@ -4286,6 +4304,11 @@ os_system_impl(PyObject *module, PyObject *command)
 {
     long result;
     const char *bytes = PyBytes_AsString(command);
+
+    if (PySys_Audit("system", "(O)", command) < 0) {
+        return -1;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     result = system(bytes);
     Py_END_ALLOW_THREADS
@@ -8279,6 +8302,10 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
     flags |= O_CLOEXEC;
 #endif
 
+    if (PySys_Audit("open", "OOi", path->object, Py_None, flags) < 0) {
+        return -1;
+    }
+
     _Py_BEGIN_SUPPRESS_IPH
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -9598,6 +9625,10 @@ os_ftruncate_impl(PyObject *module, int fd, Py_off_t length)
     int result;
     int async_err = 0;
 
+    if (PySys_Audit("os.truncate", "in", fd, length) < 0) {
+        return NULL;
+    }
+
     do {
         Py_BEGIN_ALLOW_THREADS
         _Py_BEGIN_SUPPRESS_IPH
@@ -9640,6 +9671,10 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
 
     if (path->fd != -1)
         return os_ftruncate_impl(module, path->fd, length);
+
+    if (PySys_Audit("os.truncate", "On", path->object, length) < 0) {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
@@ -11875,6 +11910,31 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
     return bytes;
 }
 
+#ifdef HAVE_MEMFD_CREATE
+/*[clinic input]
+os.memfd_create
+
+    name: FSConverter
+    flags: unsigned_int(bitwise=True, c_default="MFD_CLOEXEC") = MFD_CLOEXEC
+
+[clinic start generated code]*/
+
+static PyObject *
+os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
+/*[clinic end generated code: output=6681ede983bdb9a6 input=a42cfc199bcd56e9]*/
+{
+    int fd;
+    const char *bytes = PyBytes_AS_STRING(name);
+    Py_BEGIN_ALLOW_THREADS
+    fd = memfd_create(bytes, flags);
+    Py_END_ALLOW_THREADS
+    if (fd == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return PyLong_FromLong(fd);
+}
+#endif
+
 /* Terminal size querying */
 
 static PyTypeObject* TerminalSizeType;
@@ -12972,8 +13032,7 @@ static PyTypeObject ScandirIteratorType = {
     0,                                      /* tp_getattro */
     0,                                      /* tp_setattro */
     0,                                      /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT
-        | Py_TPFLAGS_HAVE_FINALIZE,         /* tp_flags */
+    Py_TPFLAGS_DEFAULT,                     /* tp_flags */
     0,                                      /* tp_doc */
     0,                                      /* tp_traverse */
     0,                                      /* tp_clear */
@@ -13532,6 +13591,7 @@ static PyMethodDef posix_methods[] = {
     OS_SCANDIR_METHODDEF
     OS_FSPATH_METHODDEF
     OS_GETRANDOM_METHODDEF
+    OS_MEMFD_CREATE_METHODDEF
 #ifdef MS_WINDOWS
     OS__ADD_DLL_DIRECTORY_METHODDEF
     OS__REMOVE_DLL_DIRECTORY_METHODDEF
@@ -13981,6 +14041,55 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
 #endif
+#ifdef HAVE_MEMFD_CREATE
+    if (PyModule_AddIntMacro(m, MFD_CLOEXEC)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_ALLOW_SEALING)) return -1;
+#ifdef MFD_HUGETLB
+    if (PyModule_AddIntMacro(m, MFD_HUGETLB)) return -1;
+#endif
+#ifdef MFD_HUGE_SHIFT
+    if (PyModule_AddIntMacro(m, MFD_HUGE_SHIFT)) return -1;
+#endif
+#ifdef MFD_HUGE_MASK
+    if (PyModule_AddIntMacro(m, MFD_HUGE_MASK)) return -1;
+#endif
+#ifdef MFD_HUGE_64KB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_64KB)) return -1;
+#endif
+#ifdef MFD_HUGE_512KB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_512KB)) return -1;
+#endif
+#ifdef MFD_HUGE_1MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_1MB)) return -1;
+#endif
+#ifdef MFD_HUGE_2MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_2MB)) return -1;
+#endif
+#ifdef MFD_HUGE_8MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_8MB)) return -1;
+#endif
+#ifdef MFD_HUGE_16MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_16MB)) return -1;
+#endif
+#ifdef MFD_HUGE_32MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_32MB)) return -1;
+#endif
+#ifdef MFD_HUGE_256MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_256MB)) return -1;
+#endif
+#ifdef MFD_HUGE_512MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_512MB)) return -1;
+#endif
+#ifdef MFD_HUGE_1GB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_1GB)) return -1;
+#endif
+#ifdef MFD_HUGE_2GB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_2GB)) return -1;
+#endif
+#ifdef MFD_HUGE_16GB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_16GB)) return -1;
+#endif
+#endif
 
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
@@ -14095,6 +14204,10 @@ static const char * const have_functions[] = {
 
 #ifdef HAVE_LUTIMES
     "HAVE_LUTIMES",
+#endif
+
+#ifdef HAVE_MEMFD_CREATE
+    "HAVE_MEMFD_CREATE",
 #endif
 
 #ifdef HAVE_MKDIRAT

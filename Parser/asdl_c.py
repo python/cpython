@@ -1000,6 +1000,8 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("if (!m) return NULL;", 1)
         self.emit("d = PyModule_GetDict(m);", 1)
         self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)', 1)
+        self.emit("return NULL;", 2)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)', 1)
         self.emit("return NULL;", 2)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)', 1)
@@ -1198,6 +1200,10 @@ mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_ver
     PyObject *req_type[3];
     char *req_name[] = {"Module", "Expression", "Interactive"};
     int isinstance;
+
+    if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
+        return NULL;
+    }
 
     req_type[0] = (PyObject*)Module_type;
     req_type[1] = (PyObject*)Expression_type;
