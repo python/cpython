@@ -79,6 +79,8 @@ class TestPathFix(unittest.TestCase):
         with open('file', 'rb') as f:
             self.assertEqual(f.read(), self.output_file)
         os.remove('file')
+        os.remove('file~')
+
 
 if __name__ == '__main__':
     unittest.main()
