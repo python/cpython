@@ -1814,11 +1814,12 @@ class PolicyTests(unittest.TestCase):
         self.assertIsNone(policy._watcher)
 
         watcher = policy.get_child_watcher()
-        self.assertIsInstance(watcher, asyncio.MultiLoopChildWatcher)
+        self.assertIsInstance(watcher, asyncio.SafeChildWatcher)
 
         self.assertIs(policy._watcher, watcher)
 
         self.assertIs(watcher, policy.get_child_watcher())
+        self.assertIsNone(watcher._loop)
 
     def test_get_child_watcher_after_set(self):
         policy = self.create_policy()
@@ -1835,7 +1836,8 @@ class PolicyTests(unittest.TestCase):
         self.assertIsNone(policy._watcher)
         watcher = policy.get_child_watcher()
 
-        self.assertIsInstance(watcher, asyncio.MultiLoopChildWatcher)
+        self.assertIsInstance(watcher, asyncio.SafeChildWatcher)
+        self.assertIs(watcher._loop, loop)
 
         loop.close()
 
@@ -1861,13 +1863,9 @@ class PolicyTests(unittest.TestCase):
 
     def test_child_watcher_replace_mainloop_existing(self):
         policy = self.create_policy()
-
-        # Set SafeChildWatcher to test attach_loop functionality
-        # Default MultiLoopChildWatcher doesn't have _loop attribute at all
-        watcher = asyncio.SafeChildWatcher()
-        policy.set_child_watcher(watcher)
-
         loop = policy.get_event_loop()
+
+        watcher = policy.get_child_watcher()
 
         self.assertIs(watcher._loop, loop)
 

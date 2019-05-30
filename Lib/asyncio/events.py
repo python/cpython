@@ -663,7 +663,7 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 _event_loop_policy = None
 
 # Lock for protecting the on-the-fly creation of the event loop policy.
-_lock = threading.RLock()
+_lock = threading.Lock()
 
 
 # A TLS for the running event loop, used by _get_running_loop.

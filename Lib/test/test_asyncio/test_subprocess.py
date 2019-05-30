@@ -646,8 +646,8 @@ if sys.platform != 'win32':
             self.set_event_loop(self.loop)
 
             watcher = self.Watcher()
-            policy.set_child_watcher(watcher)
             watcher.attach_loop(self.loop)
+            policy.set_child_watcher(watcher)
             self.addCleanup(policy.set_child_watcher, None)
 
     class SubprocessSafeWatcherTests(SubprocessWatcherMixin,

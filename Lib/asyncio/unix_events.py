@@ -1124,8 +1124,11 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         if self._saved_sighandler is not None:
             handler = signal.getsignal(signal.SIGCHLD)
             if handler != self._sig_chld:
-                raise RuntimeError("SIGCHLD handler was changed by outside code")
-            signal.signal(signal.SIGCHLD, self._saved_sighandler)
+                warnings.warn("SIGCHLD handler was changed by outside code",
+                              ResourceWarning,
+                              source=self)
+            else:
+                signal.signal(signal.SIGCHLD, self._saved_sighandler)
             self._saved_sighandler = None
 
     def __enter__(self):
@@ -1229,12 +1232,11 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
     def __init__(self):
         super().__init__()
         self._watcher = None
-        self._init_watcher()
 
     def _init_watcher(self):
         with events._lock:
             if self._watcher is None:  # pragma: no branch
-                self._watcher = MultiLoopChildWatcher()
+                self._watcher = SafeChildWatcher()
                 if isinstance(threading.current_thread(),
                               threading._MainThread):
                     self._watcher.attach_loop(self._local._loop)
@@ -1256,7 +1258,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
     def get_child_watcher(self):
         """Get the watcher for child processes.
 
-        If not yet set, a MultiLoopChildWatcher object is automatically created.
+        If not yet set, a SafeChildWatcher object is automatically created.
         """
         if self._watcher is None:
             self._init_watcher()
