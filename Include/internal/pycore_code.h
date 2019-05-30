@@ -5,7 +5,7 @@ extern "C" {
 #endif
  
 typedef struct {
-    PyObject *ptr;  /* Cached pointer (stealed reference) */
+    PyObject *ptr;  /* Cached pointer (borrowed reference) */
     uint64_t globals_ver;  /* ma_version of global dict */
     uint64_t builtins_ver; /* ma_version of builtin dict */
 } _PyOpcache_LoadGlobal;
