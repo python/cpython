@@ -826,15 +826,17 @@ class GenericASTMatcher(GenericParser):
 
 def _dump(tokens, sets, states):
     for i in range(len(sets)):
-        print('set', i)
+        print('set %d' % i)
         for item in sets[i]:
-            print('\t', item)
+            print('\t %s' % item)
             for (lhs, rhs), pos in states[item[0]].items:
-                print('\t\t', lhs, '::=', end=' ')
-                print(' '.join(rhs[:pos]), end=' ')
-                print('.', end=' ')
-                print(' '.join(rhs[pos:]))
+                print('\t\t %s ::= %s . %s' % (
+                    lhs,
+                    ' '.join(rhs[:pos]),
+                    ' '.join(rhs[pos:])
+                ))
+                print()
         if i < len(tokens):
             print()
-            print('token', str(tokens[i]))
+            print('token %s' % tokens[i])
             print()
