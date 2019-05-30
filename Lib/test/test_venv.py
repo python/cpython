@@ -14,7 +14,8 @@ import subprocess
 import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
-                          can_symlink, EnvironmentVarGuard, rmtree)
+                          can_symlink, EnvironmentVarGuard, rmtree,
+                          import_module)
 import threading
 import unittest
 import venv
@@ -315,6 +316,10 @@ class BasicTest(BaseTest):
         """
         Test that the multiprocessing is able to spawn.
         """
+        # Issue bpo-36342: Instanciation of a Pool object imports the
+        # multiprocessing.synchronize module. Skip the test if this module
+        # cannot be imported.
+        import_module('multiprocessing.synchronize')
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         envpy = os.path.join(os.path.realpath(self.env_dir),
