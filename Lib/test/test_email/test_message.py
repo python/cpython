@@ -903,7 +903,7 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # the first fold point, and ASCII words after the
         # first fold point, and UTF-8 words after the second
         # fold point.
-        
+
         m = EmailMessage()
         m['Subject'] = '123456789 123456789 Hello Wörld! Hello Wörld! '\
                        '123456789 123456789 123456789 123456789 123456789 '\
