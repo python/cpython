@@ -1083,6 +1083,8 @@ class AbstractChildWatcherTests(unittest.TestCase):
         self.assertRaises(
             NotImplementedError, watcher.close)
         self.assertRaises(
+            NotImplementedError, watcher.is_active)
+        self.assertRaises(
             NotImplementedError, watcher.__enter__)
         self.assertRaises(
             NotImplementedError, watcher.__exit__, f, f, f)

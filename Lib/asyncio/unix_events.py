@@ -187,6 +187,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                          stdin, stdout, stderr, bufsize,
                                          extra=None, **kwargs):
         with events.get_child_watcher() as watcher:
+            if not watcher.is_active():
+                raise RuntimeError("asyncio.get_child_watcher() is not ready, "
+                                   "subproccess support is not installed.")
             waiter = self.create_future()
             transp = _UnixSubprocessTransport(self, protocol, args, shell,
                                               stdin, stdout, stderr, bufsize,
