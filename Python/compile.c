@@ -1991,6 +1991,8 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
     if (!compiler_visit_argannotations(c, args->args, names))
         goto error;
+    if (!compiler_visit_argannotations(c, args->posonlyargs, names))
+        goto error;
     if (args->vararg && args->vararg->annotation &&
         !compiler_visit_argannotation(c, args->vararg->arg,
                                      args->vararg->annotation, names))
