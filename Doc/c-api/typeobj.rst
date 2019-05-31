@@ -671,20 +671,28 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_vectorcall_offset
 
+   An optional offset to a per-instance function that implements calling
+   the object using the *vectorcall* protocol, a more efficient alternative
+   of the simpler :c:member:`~PyTypeObject.tp_call`.
+
    This field is only used if the flag :const:`_Py_TPFLAGS_HAVE_VECTORCALL`
    is set. If so, this must be a positive integer containing the offset in the
-   instance struct of the :c:type:`vectorcallfunc` pointer used for the vectorcall
-   protocol.
+   instance of a :c:type:`vectorcallfunc` pointer.
+   Arguments to ``vectorcallfunc`` are the same as for :c:func:`_PyObject_Vectorcall`.
 
-   This pointer may be zero, in which case the instance behaves as if
-   :const:`_Py_TPFLAGS_HAVE_VECTORCALL` was not set.
+   The *vectorcallfunc* pointer may be zero, in which case the instance behaves
+   as if :const:`_Py_TPFLAGS_HAVE_VECTORCALL` was not set: calling the instance
+   falls back to :c:member:`~PyTypeObject.tp_call`.
 
-   **Inheritance:**
+   Any class that sets ``_Py_TPFLAGS_HAVE_VECTORCALL`` must also set
+   :c:member:`~PyTypeObject.tp_call` and make sure its behaviour is consistent
+   with the *vectorcallfunc* function. This can be done by setting *tp_call* to
+   ``PyVectorcall_Call``:
 
-   This field is inherited for extension types
-   together with the flag :const:`_Py_TPFLAGS_HAVE_VECTORCALL`,
-   but only if :c:member:`~PyTypeObject.tp_call` is also inherited.
-   Heap types never inherit this.
+   .. c:function:: PyObject *PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict)
+
+      Call *callable*'s *vectorcallfunc* with positional and keyword
+      arguments given in a tuple and dict, respectively.
 
    .. note::
 
@@ -695,7 +703,14 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    .. versionchanged:: 3.8
 
       This slot was used for print formatting in Python 2.x.
-      Up to Python 3.7, it was named ``tp_print``.
+      In Python 3.0 to 3.7, it was reserved and named ``tp_print``.
+
+   **Inheritance:**
+
+   This slot is inherited for static extension types
+   together with the flag :const:`_Py_TPFLAGS_HAVE_VECTORCALL`,
+   but only if :c:member:`~PyTypeObject.tp_call` is also inherited.
+   `Heap types`_ never inherit this.
 
 
 .. c:member:: getattrfunc PyTypeObject.tp_getattr
@@ -1121,6 +1136,19 @@ and :c:type:`PyType_Type` effectively act as defaults.)
          This flag isn't necessary anymore, as the interpreter assumes the
          :c:member:`~PyTypeObject.tp_finalize` slot is always present in the
          type structure.
+
+   .. data:: _Py_TPFLAGS_HAVE_VECTORCALL
+
+      This bit is set when the class implements the vectorcall protocol.
+      See :c:member:`~PyTypeObject.tp_vectorcall_offset` for details.
+
+      .. note::
+
+         This flag is provisional and expected to become public in Python 3.9,
+         with a different name and, possibly, changed semantics.
+         If you use vectorcall, plan for updating your code for Python 3.9.
+
+      .. versionadded:: 3.8
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -2307,6 +2335,8 @@ Slot Type typedefs
 .. c:type:: PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 
    See :c:member:`~PyTypeObject.tp_vectorcall_offset`.
+
+   Arguments to ``vectorcallfunc`` are the same as for :c:func:`_PyObject_Vectorcall`.
 
    .. versionadded: 3.8
 
