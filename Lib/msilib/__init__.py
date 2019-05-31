@@ -276,7 +276,7 @@ class Directory:
         if Win64:
             flags |= 256
         if keyfile:
-            keyid = self.cab.gen_id(self.absolute, keyfile)
+            keyid = self.cab.gen_id(keyfile)
             self.keyfiles[keyfile] = keyid
         else:
             keyid = None
