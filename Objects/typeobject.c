@@ -7016,7 +7016,7 @@ static slotdef slotdefs[] = {
     IBSLOT("__imod__", nb_inplace_remainder, slot_nb_inplace_remainder,
            wrap_binaryfunc, "%="),
     IBSLOT("__ipow__", nb_inplace_power, slot_nb_inplace_power,
-           wrap_binaryfunc, "**="),
+           wrap_ternaryfunc, "**="),
     IBSLOT("__ilshift__", nb_inplace_lshift, slot_nb_inplace_lshift,
            wrap_binaryfunc, "<<="),
     IBSLOT("__irshift__", nb_inplace_rshift, slot_nb_inplace_rshift,
@@ -7807,7 +7807,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
                             "super(): no code object");
             return -1;
         }
-        if (co->co_argcount == 0) {
+        if (co->co_posonlyargcount + co->co_argcount == 0) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no arguments");
             return -1;
