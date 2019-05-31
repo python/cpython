@@ -101,15 +101,13 @@ static long dxp[256];
 #endif
 #endif
 
-#define GIL_REQUEST _Py_atomic_load_relaxed(&(ceval_r)->gil_drop_request)
-
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
    the GIL eventually anyway. */
 #define COMPUTE_EVAL_BREAKER(ceval_r) \
     _Py_atomic_store_relaxed( \
         &(ceval_r)->eval_breaker, \
-        GIL_REQUEST | \
+        _Py_atomic_load_relaxed(&(ceval_r)->gil_drop_request) | \
         _Py_atomic_load_relaxed(&(ceval_r)->signals_pending) | \
         _Py_atomic_load_relaxed(&(ceval_r)->pending.calls_to_do) | \
         (ceval_r)->pending.async_exc)
