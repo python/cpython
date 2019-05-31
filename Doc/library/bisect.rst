@@ -21,7 +21,7 @@ example of the algorithm (the boundary conditions are already right!).
 The following functions are provided:
 
 
-.. function:: bisect_left(a, x, lo=0, hi=len(a), key=None)
+.. function:: bisect_left(a, x, lo=0, hi=len(a), *, key=None)
 
    Locate the insertion point for *x* in *a* to maintain sorted order.
    The parameters *lo* and *hi* may be used to specify a subset of the list
@@ -40,8 +40,8 @@ The following functions are provided:
    that ``all(val < x for val in a[lo:i])`` for the left side and
    ``all(val >= x for val in a[i:hi])`` for the right side.
 
-.. function:: bisect_right(a, x, lo=0, hi=len(a), key=None)
-              bisect(a, x, lo=0, hi=len(a), key=None)
+.. function:: bisect_right(a, x, lo=0, hi=len(a), *, key=None)
+              bisect(a, x, lo=0, hi=len(a), *, key=None)
 
    Similar to :func:`bisect_left`, but returns an insertion point which comes
    after (to the right of) any existing entries of *x* in *a*.
@@ -50,15 +50,15 @@ The following functions are provided:
    that ``all(val <= x for val in a[lo:i])`` for the left side and
    ``all(val > x for val in a[i:hi])`` for the right side.
 
-.. function:: insort_left(a, x, lo=0, hi=len(a), key=None)
+.. function:: insort_left(a, x, lo=0, hi=len(a), *, key=None)
 
    Insert *x* in *a* in sorted order.  This is equivalent to
    ``a.insert(bisect.bisect_left(a, x, lo, hi), x)`` assuming that *a* is
    already sorted.  Keep in mind that the O(log n) search is dominated by
    the slow O(n) insertion step.
 
-.. function:: insort_right(a, x, lo=0, hi=len(a), key=None)
-              insort(a, x, lo=0, hi=len(a), key=None)
+.. function:: insort_right(a, x, lo=0, hi=len(a), *, key=None)
+              insort(a, x, lo=0, hi=len(a), *, key=None)
 
    Similar to :func:`insort_left`, but inserting *x* in *a* after any existing
    entries of *x*.
@@ -80,35 +80,35 @@ can be tricky or awkward to use for common searching tasks. The following five
 functions show how to transform them into the standard lookups for sorted
 lists::
 
-    def index(a, x, key=None):
+    def index(a, x, *, key=None):
         'Locate the leftmost value exactly equal to x'
         i = bisect_left(a, x, key=key)
         if i != len(a) and a[i] == x:
             return i
         raise ValueError
 
-    def find_lt(a, x, key=None):
+    def find_lt(a, x, *, key=None):
         'Find rightmost value less than x'
         i = bisect_left(a, x, key=key)
         if i:
             return a[i-1]
         raise ValueError
 
-    def find_le(a, x, key=None):
+    def find_le(a, x, *, key=None):
         'Find rightmost value less than or equal to x'
         i = bisect_right(a, x, key=key)
         if i:
             return a[i-1]
         raise ValueError
 
-    def find_gt(a, x, key=None):
+    def find_gt(a, x, *, key=None):
         'Find leftmost value greater than x'
         i = bisect_right(a, x, key=key)
         if i != len(a):
             return a[i]
         raise ValueError
 
-    def find_ge(a, x, key=None):
+    def find_ge(a, x, *, key=None):
         'Find leftmost item greater than or equal to x'
         i = bisect_left(a, x, key=key)
         if i != len(a):

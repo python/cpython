@@ -95,7 +95,7 @@ bisect_right(PyObject *self, PyObject *args, PyObject *kw)
         item = PyTuple_GET_ITEM(args, 1);
     }
     else {
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nnO:bisect_right",
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn$O:bisect_right",
                                          keywords, &list, &item, &lo, &hi, &key))
             return NULL;
     }
@@ -139,7 +139,7 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
         item = PyTuple_GET_ITEM(args, 1);
     }
     else {
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nnO:insort_right",
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn$O:insort_right",
                                          keywords, &list, &item, &lo, &hi, &key))
             return NULL;
     }
@@ -263,7 +263,7 @@ bisect_left(PyObject *self, PyObject *args, PyObject *kw)
         item = PyTuple_GET_ITEM(args, 1);
     }
     else {
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nnO:bisect_left",
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn$O:bisect_left",
                                          keywords, &list, &item, &lo, &hi, &key))
             return NULL;
     }
@@ -306,7 +306,7 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
     } else {
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nnO:insort_left",
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn$O:insort_left",
                                          keywords, &list, &item, &lo, &hi, &key))
             return NULL;
     }
