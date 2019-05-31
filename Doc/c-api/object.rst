@@ -362,10 +362,8 @@ Object Protocol
 .. note::
 
    This function is provisional and expected to become public in Python 3.9,
-   with a different name. If so, the plan is to keep the old name
-   ``_PyObject_Vectorcall`` at least in Python 3.9 for backwards compatibility.
-   It is also possible however that the API will be changed and that
-   this functions will be dropped or replaced by a different function.
+   with a different name and, possibly, changed semantics.
+   If you use the function, plan for updating your code for Python 3.9.
 
 .. c:function:: PyObject* _PyObject_FastCallDict(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwdict)
 
@@ -381,10 +379,8 @@ Object Protocol
 .. note::
 
    This function is provisional and expected to become public in Python 3.9,
-   with a different name. If so, the plan is to keep the old name
-   ``_PyObject_FastCallDict`` at least in Python 3.9 for backwards compatibility.
-   It is also possible however that the API will be changed and that
-   this functions will be dropped or replaced by a different function.
+   with a different name and, possibly, changed semantics.
+   If you use the function, plan for updating your code for Python 3.9.
 
 
 .. c:function:: Py_hash_t PyObject_Hash(PyObject *o)
