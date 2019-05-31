@@ -361,11 +361,13 @@ Object Protocol
    otherwise, the arguments are converted to use
    :c:member:`~PyTypeObject.tp_call`.
 
-.. note::
+   .. note::
 
-   This function is provisional and expected to become public in Python 3.9,
-   with a different name and, possibly, changed semantics.
-   If you use the function, plan for updating your code for Python 3.9.
+      This function is provisional and expected to become public in Python 3.9,
+      with a different name and, possibly, changed semantics.
+      If you use the function, plan for updating your code for Python 3.9.
+
+   .. versionadded:: 3.8
 
 .. c:data:``PY_VECTORCALL_ARGUMENTS_OFFSET``
 
@@ -378,6 +380,8 @@ Object Protocol
    are encouraged to use :const:`PY_VECTORCALL_ARGUMENTS_OFFSET`.
    Doing so will allow callables such as bound methods to make their onward
    calls (which include a prepended *self* argument) cheaply.
+
+   .. versionadded:: 3.8
 
 .. c:function:: Py_ssize_t PyVectorcall_NARGS(size_t nargsf)
 
@@ -397,11 +401,13 @@ Object Protocol
    :c:func:`_PyObject_Vectorcall`.
    It should only be used if the caller already has a dictionary ready to use.
 
-.. note::
+   .. note::
 
-   This function is provisional and expected to become public in Python 3.9,
-   with a different name and, possibly, changed semantics.
-   If you use the function, plan for updating your code for Python 3.9.
+      This function is provisional and expected to become public in Python 3.9,
+      with a different name and, possibly, changed semantics.
+      If you use the function, plan for updating your code for Python 3.9.
+
+   .. versionadded:: 3.8
 
 
 .. c:function:: Py_hash_t PyObject_Hash(PyObject *o)

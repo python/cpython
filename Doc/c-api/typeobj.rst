@@ -686,6 +686,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    but only if :c:member:`~PyTypeObject.tp_call` is also inherited.
    Heap types never inherit this.
 
+   .. note::
+
+      The semantics of slot are provisional and expected to be finalized
+      in Python 3.9.
+      If you use vectorcall, plan for updating your code for Python 3.9.
+
+   .. versionchanged:: 3.8
+
+      This slot was used for print formatting in Python 2.x.
+      Up to Python 3.7, it was named ``tp_print``.
+
 
 .. c:member:: getattrfunc PyTypeObject.tp_getattr
 
@@ -2296,6 +2307,8 @@ Slot Type typedefs
 .. c:type:: PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 
    See :c:member:`~PyTypeObject.tp_vectorcall_offset`.
+
+   .. versionadded: 3.8
 
 .. c:type:: void (*freefunc)(void *)
 
