@@ -67,7 +67,7 @@ and work with streams:
 
       The *ssl_handshake_timeout* parameter.
 
-   .. deprecated-removed :: 3.8 3.10
+   .. deprecated-removed:: 3.8 3.10
 
       `open_connection()` is deprecated in favor of `connect()`.
 
@@ -104,7 +104,7 @@ and work with streams:
 
       The *ssl_handshake_timeout* and *start_serving* parameters.
 
-   .. deprecated-removed :: 3.8 3.10
+   .. deprecated-removed:: 3.8 3.10
 
       `start_server()` is deprecated if favor of `StreamServer()`
 
@@ -132,7 +132,7 @@ and work with streams:
 
       The *path* parameter can now be a :term:`path-like object`
 
-   .. deprecated-removed :: 3.8 3.10
+   .. deprecated-removed:: 3.8 3.10
 
       `open_unix_connection()` is deprecated if favor of `connect_unix()`.
 
@@ -158,7 +158,7 @@ and work with streams:
 
       The *path* parameter can now be a :term:`path-like object`.
 
-   .. deprecated-removed :: 3.8 3.10
+   .. deprecated-removed:: 3.8 3.10
 
       `start_unix_server()` is deprecated in favor of `UnixStreamServer()`.
 
