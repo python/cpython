@@ -678,7 +678,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is only used if the flag :const:`_Py_TPFLAGS_HAVE_VECTORCALL`
    is set. If so, this must be a positive integer containing the offset in the
    instance of a :c:type:`vectorcallfunc` pointer.
-   Arguments to ``vectorcallfunc`` are the same as for :c:func:`_PyObject_Vectorcall`.
+   The signature is the same as for :c:func:`_PyObject_Vectorcall`::
+
+        PyObject *vectorcallfunc(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 
    The *vectorcallfunc* pointer may be zero, in which case the instance behaves
    as if :const:`_Py_TPFLAGS_HAVE_VECTORCALL` was not set: calling the instance
@@ -707,10 +709,14 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    **Inheritance:**
 
-   This slot is inherited for static extension types
-   together with the flag :const:`_Py_TPFLAGS_HAVE_VECTORCALL`,
-   but only if :c:member:`~PyTypeObject.tp_call` is also inherited.
-   `Heap types`_ never inherit this.
+   This field is inherited by *static* subtypes together with
+   :c:member:`~PyTypeObject.tp_call`: a subtype inherits both
+   :c:member:`~PyTypeObject.tp_vectorcall_offset` and
+   :c:member:`~PyTypeObject.tp_call` from its base type when the subtype’s
+   :c:member:`~PyTypeObject.tp_call` and :c:member:`~PyTypeObject.tp_vectorcall_offset`
+   are both NULL.
+
+   `Heap types`_ never inherit :c:member:`~PyTypeObject.tp_vectorcall_offset`.
 
 
 .. c:member:: getattrfunc PyTypeObject.tp_getattr
