@@ -512,7 +512,6 @@ that is broken and will fail, but shouldn't be counted as a failure on a
 Skipping a test is simply a matter of using the :func:`skip` :term:`decorator`
 or one of its conditional variants, calling :meth:`TestCase.skipTest` within a
 :meth:`~TestCase.setUp` or test method, or raising :exc:`SkipTest` directly.
-skip a test.
 
 Basic skipping looks like this::
 
@@ -533,7 +532,7 @@ Basic skipping looks like this::
            # windows specific testing code
            pass
 
-       def test_skip_me(self):
+       def test_maybe_skipped(self):
            if not external_resource_available():
                self.skipTest("external resource not available")
            # test code that depends on the external resource
@@ -543,7 +542,7 @@ This is the output of running the example above in verbose mode::
 
    test_format (__main__.MyTestCase) ... skipped 'not supported in this library version'
    test_nothing (__main__.MyTestCase) ... skipped 'demonstrating skipping'
-   test_skip_me (__main__.MyTestCase) ... skipped 'skip'
+   test_maybe_skipped (__main__.MyTestCase) ... skipped 'external resource not available'
    test_windows_support (__main__.MyTestCase) ... skipped 'requires Windows'
 
    ----------------------------------------------------------------------
