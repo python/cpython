@@ -144,7 +144,7 @@ the single expression that makes up the expression list.
 .. index:: pair: empty; tuple
 
 An empty pair of parentheses yields an empty tuple object.  Since tuples are
-immutable, the rules for literals apply (i.e., two occurrences of the empty
+immutable, the same rules as for literals apply (i.e., two occurrences of the empty
 tuple may or may not yield the same object).
 
 .. index::
@@ -196,7 +196,7 @@ the comprehension is executed in a separate implicitly nested scope. This ensure
 that names assigned to in the target list don't "leak" into the enclosing scope.
 
 The iterable expression in the leftmost :keyword:`!for` clause is evaluated
-directly in the enclosing scope and then passed as an argument to the implictly
+directly in the enclosing scope and then passed as an argument to the implicitly
 nested scope. Subsequent :keyword:`!for` clauses and any filter condition in the
 leftmost :keyword:`!for` clause cannot be evaluated in the enclosing scope as
 they may depend on the values obtained from the leftmost iterable. For example:
@@ -479,8 +479,8 @@ will raise :exc:`AttributeError` or :exc:`TypeError`, while
 When the underlying iterator is complete, the :attr:`~StopIteration.value`
 attribute of the raised :exc:`StopIteration` instance becomes the value of
 the yield expression. It can be either set explicitly when raising
-:exc:`StopIteration`, or automatically when the sub-iterator is a generator
-(by returning a value from the sub-generator).
+:exc:`StopIteration`, or automatically when the subiterator is a generator
+(by returning a value from the subgenerator).
 
    .. versionchanged:: 3.3
       Added ``yield from <expr>`` to delegate control flow to a subiterator.
@@ -499,7 +499,7 @@ on the right hand side of an assignment statement.
 
    :pep:`380` - Syntax for Delegating to a Subgenerator
       The proposal to introduce the :token:`yield_from` syntax, making delegation
-      to sub-generators easy.
+      to subgenerators easy.
 
    :pep:`525` - Asynchronous Generators
       The proposal that expanded on :pep:`492` by adding generator capabilities to
@@ -608,7 +608,7 @@ Asynchronous generator functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The presence of a yield expression in a function or method defined using
-:keyword:`async def` further defines the function as a
+:keyword:`async def` further defines the function as an
 :term:`asynchronous generator` function.
 
 When an asynchronous generator function is called, it returns an
@@ -673,13 +673,13 @@ which are used to control the execution of a generator function.
 
    Returns an awaitable which when run starts to execute the asynchronous
    generator or resumes it at the last executed yield expression.  When an
-   asynchronous generator function is resumed with a :meth:`~agen.__anext__`
+   asynchronous generator function is resumed with an :meth:`~agen.__anext__`
    method, the current yield expression always evaluates to :const:`None` in
    the returned awaitable, which when run will continue to the next yield
    expression. The value of the :token:`expression_list` of the yield
    expression is the value of the :exc:`StopIteration` exception raised by
    the completing coroutine.  If the asynchronous generator exits without
-   yielding another value, the awaitable instead raises an
+   yielding another value, the awaitable instead raises a
    :exc:`StopAsyncIteration` exception, signalling that the asynchronous
    iteration has completed.
 
@@ -707,7 +707,7 @@ which are used to control the execution of a generator function.
    where the asynchronous generator was paused, and returns the next value
    yielded by the generator function as the value of the raised
    :exc:`StopIteration` exception.  If the asynchronous generator exits
-   without yielding another value, an :exc:`StopAsyncIteration` exception is
+   without yielding another value, a :exc:`StopAsyncIteration` exception is
    raised by the awaitable.
    If the generator function does not catch the passed-in exception, or
    raises a different exception, then when the awaitable is run that exception
@@ -1563,14 +1563,15 @@ y`` returns ``True`` if ``y.__contains__(x)`` returns a true value, and
 ``False`` otherwise.
 
 For user-defined classes which do not define :meth:`__contains__` but do define
-:meth:`__iter__`, ``x in y`` is ``True`` if some value ``z`` with ``x == z`` is
-produced while iterating over ``y``.  If an exception is raised during the
-iteration, it is as if :keyword:`in` raised that exception.
+:meth:`__iter__`, ``x in y`` is ``True`` if some value ``z``, for which the
+expression ``x is z or x == z`` is true, is produced while iterating over ``y``.
+If an exception is raised during the iteration, it is as if :keyword:`in` raised
+that exception.
 
 Lastly, the old-style iteration protocol is tried: if a class defines
 :meth:`__getitem__`, ``x in y`` is ``True`` if and only if there is a non-negative
-integer index *i* such that ``x == y[i]``, and all lower integer indices do not
-raise :exc:`IndexError` exception.  (If any other exception is raised, it is as
+integer index *i* such that ``x is y[i] or x == y[i]``, and no lower integer index
+raises the :exc:`IndexError` exception.  (If any other exception is raised, it is as
 if :keyword:`in` raised that exception).
 
 .. index::
@@ -1579,7 +1580,7 @@ if :keyword:`in` raised that exception).
    pair: membership; test
    object: sequence
 
-The operator :keyword:`not in` is defined to have the inverse true value of
+The operator :keyword:`not in` is defined to have the inverse truth value of
 :keyword:`in`.
 
 .. index::
@@ -1594,8 +1595,8 @@ The operator :keyword:`not in` is defined to have the inverse true value of
 Identity comparisons
 --------------------
 
-The operators :keyword:`is` and :keyword:`is not` test for object identity: ``x
-is y`` is true if and only if *x* and *y* are the same object.  Object identity
+The operators :keyword:`is` and :keyword:`is not` test for an object's identity: ``x
+is y`` is true if and only if *x* and *y* are the same object.  An Object's identity
 is determined using the :meth:`id` function.  ``x is not y`` yields the inverse
 truth value. [#]_
 

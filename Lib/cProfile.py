@@ -109,6 +109,7 @@ class Profile(_lsprof.Profiler):
             return func(*args, **kw)
         finally:
             self.disable()
+    runcall.__text_signature__ = '($self, func, /, *args, **kw)'
 
     def __enter__(self):
         self.enable()

@@ -531,11 +531,11 @@ PyCArg_repr(PyCArgObject *self)
     default:
         if (is_literal_char((unsigned char)self->tag)) {
             sprintf(buffer, "<cparam '%c' at %p>",
-                (unsigned char)self->tag, self);
+                (unsigned char)self->tag, (void *)self);
         }
         else {
             sprintf(buffer, "<cparam 0x%02x at %p>",
-                (unsigned char)self->tag, self);
+                (unsigned char)self->tag, (void *)self);
         }
         break;
     }
@@ -555,10 +555,10 @@ PyTypeObject PyCArg_Type = {
     sizeof(PyCArgObject),
     0,
     (destructor)PyCArg_dealloc,                 /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)PyCArg_repr,                      /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -737,12 +737,17 @@ of 1, 2, 4, 8, 16, 32, or 64 bits
 */
 int can_return_struct_as_int(size_t s)
 {
-  return s == 1 || s == 2 || s == 4;
+    return s == 1 || s == 2 || s == 4;
 }
 
 int can_return_struct_as_sint64(size_t s)
 {
-  return s == 8;
+#ifdef _M_ARM
+    // 8 byte structs cannot be returned in a register on ARM32
+    return 0;
+#else
+    return s == 8;
+#endif
 }
 #endif
 
@@ -807,7 +812,7 @@ static int _call_function_pointer(int flags,
     }
 
     cc = FFI_DEFAULT_ABI;
-#if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(_WIN32_WCE)
+#if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(_WIN32_WCE) && !defined(_M_ARM)
     if ((flags & FUNCFLAG_CDECL) == 0)
         cc = FFI_STDCALL;
 #endif
@@ -1272,6 +1277,10 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     if (!name)
         return NULL;
 
+    if (PySys_Audit("ctypes.dlopen", "O", nameobj) < 0) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     /* bpo-36085: Limit DLL search directories to avoid pre-loading
      * attacks and enable use of the AddDllDirectory function.
@@ -1376,6 +1385,9 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     } else {
         name_str = NULL;
         name2 = NULL;
+    }
+    if (PySys_Audit("ctypes.dlopen", "s", name_str) < 0) {
+        return NULL;
     }
     handle = ctypes_dlopen(name_str, mode);
     Py_XDECREF(name2);

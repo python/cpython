@@ -1,2 +1,0 @@
-Regenerate :mod:`keyword` from the Grammar and Tokens file using pgen. Patch
-by Pablo Galindo.

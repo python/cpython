@@ -139,6 +139,10 @@ Extension types can easily be made to support weak references; see
    prevent their use as dictionary keys.  *callback* is the same as the parameter
    of the same name to the :func:`ref` function.
 
+   .. versionchanged:: 3.8
+      Extended the operator support on proxy objects to include the matrix
+      multiplication operators ``@`` and ``@=``.
+
 
 .. function:: getweakrefcount(object)
 
@@ -489,11 +493,14 @@ Unless you set the :attr:`~finalize.atexit` attribute to
 :const:`False`, a finalizer will be called when the program exits if it
 is still alive.  For instance
 
-    >>> obj = Object()
-    >>> weakref.finalize(obj, print, "obj dead or exiting")  #doctest:+ELLIPSIS
-    <finalize object at ...; for 'Object' at ...>
-    >>> exit()                                               #doctest:+SKIP
-    obj dead or exiting
+.. doctest::
+   :options: +SKIP
+
+   >>> obj = Object()
+   >>> weakref.finalize(obj, print, "obj dead or exiting")
+   <finalize object at ...; for 'Object' at ...>
+   >>> exit()
+   obj dead or exiting
 
 
 Comparing finalizers with :meth:`__del__` methods

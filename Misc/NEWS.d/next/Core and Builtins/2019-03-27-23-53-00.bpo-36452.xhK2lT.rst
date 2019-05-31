@@ -1,1 +1,0 @@
-Changing `dict` keys during iteration will now be detected in certain corner cases where the number of keys isn't changed (but they keys themselves are), and a `RuntimeError` will be raised.

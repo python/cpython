@@ -363,6 +363,7 @@ class partialmethod(object):
             self.func = func
             self.args = args
             self.keywords = keywords
+    __init__.__text_signature__ = '($self, func, /, *args, **keywords)'
 
     def __repr__(self):
         args = ", ".join(map(repr, self.args))
@@ -491,14 +492,18 @@ def lru_cache(maxsize=128, typed=False):
     # The internals of the lru_cache are encapsulated for thread safety and
     # to allow the implementation to change (including a possible C version).
 
-    # Early detection of an erroneous call to @lru_cache without any arguments
-    # resulting in the inner function being passed to maxsize instead of an
-    # integer or None.  Negative maxsize is treated as 0.
     if isinstance(maxsize, int):
+        # Negative maxsize is treated as 0
         if maxsize < 0:
             maxsize = 0
+    elif callable(maxsize) and isinstance(typed, bool):
+        # The user_function was passed in directly via the maxsize argument
+        user_function, maxsize = maxsize, 128
+        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
+        return update_wrapper(wrapper, user_function)
     elif maxsize is not None:
-        raise TypeError('Expected maxsize to be an integer or None')
+        raise TypeError(
+            'Expected first argument to be an integer, a callable, or None')
 
     def decorating_function(user_function):
         wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
@@ -834,9 +839,11 @@ def singledispatch(func):
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
             argname, cls = next(iter(get_type_hints(func).items()))
-            assert isinstance(cls, type), (
-                f"Invalid annotation for {argname!r}. {cls!r} is not a class."
-            )
+            if not isinstance(cls, type):
+                raise TypeError(
+                    f"Invalid annotation for {argname!r}. "
+                    f"{cls!r} is not a class."
+                )
         registry[cls] = func
         if cache_token is None and hasattr(cls, '__abstractmethods__'):
             cache_token = get_cache_token()

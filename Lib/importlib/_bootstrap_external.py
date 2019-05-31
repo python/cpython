@@ -265,6 +265,7 @@ _code_type = type(_write_atomic.__code__)
 #                         this might affected the first line number #32911)
 #     Python 3.8a1  3400 (move frame block handling to compiler #17611)
 #     Python 3.8a1  3401 (add END_ASYNC_FOR #33041)
+#     Python 3.8a1  3410 (PEP570 Python Positional-Only Parameters #36540)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -273,7 +274,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3401).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3410).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -962,8 +963,12 @@ class FileLoader:
 
     def get_data(self, path):
         """Return the data from path as raw bytes."""
-        with _io.FileIO(path, 'r') as file:
-            return file.read()
+        if isinstance(self, (SourceLoader, ExtensionFileLoader)):
+            with _io.open_code(str(path)) as file:
+                return file.read()
+        else:
+            with _io.FileIO(path, 'r') as file:
+                return file.read()
 
     # ResourceReader ABC API.
 
@@ -1357,6 +1362,58 @@ class PathFinder:
         if spec is None:
             return None
         return spec.loader
+
+    search_template = r'(?:{pattern}(-.*)?\.(dist|egg)-info|EGG-INFO)'
+
+    @classmethod
+    def find_distributions(cls, name=None, path=None):
+        """
+        Find distributions.
+
+        Return an iterable of all Distribution instances capable of
+        loading the metadata for packages matching the ``name``
+        (or all names if not supplied) along the paths in the list
+        of directories ``path`` (defaults to sys.path).
+        """
+        import re
+        from importlib.metadata import PathDistribution
+        if path is None:
+            path = sys.path
+        pattern = '.*' if name is None else re.escape(name)
+        found = cls._search_paths(pattern, path)
+        return map(PathDistribution, found)
+
+    @classmethod
+    def _search_paths(cls, pattern, paths):
+        """Find metadata directories in paths heuristically."""
+        import itertools
+        return itertools.chain.from_iterable(
+            cls._search_path(path, pattern)
+            for path in map(cls._switch_path, paths)
+            )
+
+    @staticmethod
+    def _switch_path(path):
+        from contextlib import suppress
+        import zipfile
+        from pathlib import Path
+        with suppress(Exception):
+            return zipfile.Path(path)
+        return Path(path)
+
+    @classmethod
+    def _predicate(cls, pattern, root, item):
+        import re
+        return re.match(pattern, str(item.name), flags=re.IGNORECASE)
+
+    @classmethod
+    def _search_path(cls, root, pattern):
+        if not root.is_dir():
+            return ()
+        normalized = pattern.replace('-', '_')
+        matcher = cls.search_template.format(pattern=normalized)
+        return (item for item in root.iterdir()
+                if cls._predicate(matcher, root, item))
 
 
 class FileFinder:

@@ -47,7 +47,7 @@ PyAPI_FUNC(int) _PyStack_UnpackDict(
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
    array is used to pass positional arguments to call functions of the
-   _PyObject_FastCall() family.
+   _PyObject_Vectorcall() family.
 
    The size is chosen to not abuse the C stack and so limit the risk of stack
    overflow. The size is also chosen to allow using the small stack for most
@@ -55,51 +55,100 @@ PyAPI_FUNC(int) _PyStack_UnpackDict(
    40 bytes on the stack. */
 #define _PY_FASTCALL_SMALL_STACK 5
 
-/* Return 1 if callable supports FASTCALL calling convention for positional
-   arguments: see _PyObject_FastCallDict() and _PyObject_FastCallKeywords() */
-PyAPI_FUNC(int) _PyObject_HasFastCall(PyObject *callable);
+PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *callable,
+                                               PyObject *result,
+                                               const char *where);
 
-/* Call the callable object 'callable' with the "fast call" calling convention:
-   args is a C array for positional arguments (nargs is the number of
-   positional arguments), kwargs is a dictionary for keyword arguments.
+/* === Vectorcall protocol (PEP 590) ============================= */
 
-   If nargs is equal to zero, args can be NULL. kwargs can be NULL.
-   nargs must be greater or equal to zero.
+/* Call callable using tp_call. Arguments are like _PyObject_Vectorcall()
+   or _PyObject_FastCallDict() (both forms are supported),
+   except that nargs is plainly the number of arguments without flags. */
+PyAPI_FUNC(PyObject *) _PyObject_MakeTpCall(
+    PyObject *callable,
+    PyObject *const *args, Py_ssize_t nargs,
+    PyObject *keywords);
+
+#define PY_VECTORCALL_ARGUMENTS_OFFSET ((size_t)1 << (8 * sizeof(size_t) - 1))
+
+static inline Py_ssize_t
+PyVectorcall_NARGS(size_t n)
+{
+    return n & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+}
+
+static inline vectorcallfunc
+_PyVectorcall_Function(PyObject *callable)
+{
+    PyTypeObject *tp = Py_TYPE(callable);
+    if (!PyType_HasFeature(tp, _Py_TPFLAGS_HAVE_VECTORCALL)) {
+        return NULL;
+    }
+    assert(PyCallable_Check(callable));
+    Py_ssize_t offset = tp->tp_vectorcall_offset;
+    assert(offset > 0);
+    vectorcallfunc *ptr = (vectorcallfunc *)(((char *)callable) + offset);
+    return *ptr;
+}
+
+/* Call the callable object 'callable' with the "vectorcall" calling
+   convention.
+
+   args is a C array for positional arguments.
+
+   nargsf is the number of positional arguments plus optionally the flag
+   PY_VECTORCALL_ARGUMENTS_OFFSET which means that the caller is allowed to
+   modify args[-1].
+
+   kwnames is a tuple of keyword names. The values of the keyword arguments
+   are stored in "args" after the positional arguments (note that the number
+   of keyword arguments does not change nargsf). kwnames can also be NULL if
+   there are no keyword arguments.
+
+   keywords must only contains str strings (no subclass), and all keys must
+   be unique.
 
    Return the result on success. Raise an exception and return NULL on
    error. */
+static inline PyObject *
+_PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
+                     size_t nargsf, PyObject *kwnames)
+{
+    assert(kwnames == NULL || PyTuple_Check(kwnames));
+    assert(args != NULL || PyVectorcall_NARGS(nargsf) == 0);
+    vectorcallfunc func = _PyVectorcall_Function(callable);
+    if (func == NULL) {
+        Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+        return _PyObject_MakeTpCall(callable, args, nargs, kwnames);
+    }
+    PyObject *res = func(callable, args, nargsf, kwnames);
+    return _Py_CheckFunctionResult(callable, res, NULL);
+}
+
+/* Same as _PyObject_Vectorcall except that keyword arguments are passed as
+   dict, which may be NULL if there are no keyword arguments. */
 PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(
     PyObject *callable,
     PyObject *const *args,
-    Py_ssize_t nargs,
+    size_t nargsf,
     PyObject *kwargs);
 
-/* Call the callable object 'callable' with the "fast call" calling convention:
-   args is a C array for positional arguments followed by values of
-   keyword arguments. Keys of keyword arguments are stored as a tuple
-   of strings in kwnames. nargs is the number of positional parameters at
-   the beginning of stack. The size of kwnames gives the number of keyword
-   values in the stack after positional arguments.
+/* Call "callable" (which must support vectorcall) with positional arguments
+   "tuple" and keyword arguments "dict". "dict" may also be NULL */
+PyAPI_FUNC(PyObject *) PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict);
 
-   kwnames must only contains str strings, no subclass, and all keys must
-   be unique.
+/* Same as _PyObject_Vectorcall except without keyword arguments */
+static inline PyObject *
+_PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
+{
+    return _PyObject_Vectorcall(func, args, (size_t)nargs, NULL);
+}
 
-   If nargs is equal to zero and there is no keyword argument (kwnames is
-   NULL or its size is zero), args can be NULL.
-
-   Return the result on success. Raise an exception and return NULL on
-   error. */
-PyAPI_FUNC(PyObject *) _PyObject_FastCallKeywords(
-    PyObject *callable,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwnames);
-
-#define _PyObject_FastCall(func, args, nargs) \
-    _PyObject_FastCallDict((func), (args), (nargs), NULL)
-
-#define _PyObject_CallNoArg(func) \
-    _PyObject_FastCallDict((func), NULL, 0, NULL)
+/* Call a callable without any arguments */
+static inline PyObject *
+_PyObject_CallNoArg(PyObject *func) {
+    return _PyObject_Vectorcall(func, NULL, 0, NULL);
+}
 
 PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(
     PyObject *callable,
@@ -112,10 +161,6 @@ PyAPI_FUNC(PyObject *) _PyObject_FastCall_Prepend(
     PyObject *obj,
     PyObject *const *args,
     Py_ssize_t nargs);
-
-PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *callable,
-                                               PyObject *result,
-                                               const char *where);
 
 /* Like PyObject_CallMethod(), but expect a _Py_Identifier*
    as the method name. */

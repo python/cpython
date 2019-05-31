@@ -1,0 +1,7 @@
+Add a ``=`` feature f-strings for debugging. This can precede ``!s``,
+``!r``, or ``!a``. It produces the text of the expression, followed by
+an equal sign, followed by the repr of the value of the expression. So
+``f'{3*9+15=}'`` would be equal to the string ``'3*9+15=42'``.  If
+``=`` is specified, the default conversion is set to ``!r``, unless a
+format spec is given, in which case the formatting behavior is
+unchanged, and __format__ will be used.

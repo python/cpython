@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _type-structs:
 
@@ -1045,6 +1045,32 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       ???
 
+
+   .. data:: Py_TPFLAGS_METHOD_DESCRIPTOR
+
+      This bit indicates that objects behave like unbound methods.
+
+      If this flag is set for ``type(meth)``, then:
+
+      - ``meth.__get__(obj, cls)(*args, **kwds)`` (with ``obj`` not None)
+        must be equivalent to ``meth(obj, *args, **kwds)``.
+
+      - ``meth.__get__(None, cls)(*args, **kwds)``
+        must be equivalent to ``meth(*args, **kwds)``.
+
+      This flag enables an optimization for typical method calls like
+      ``obj.meth()``: it avoids creating a temporary "bound method" object for
+      ``obj.meth``.
+
+      .. versionadded:: 3.8
+
+      **Inheritance:**
+
+      This flag is never inherited by heap types.
+      For extension types, it is inherited whenever
+      :c:member:`~PyTypeObject.tp_descr_get` is inherited.
+
+
    .. XXX Document more flags here?
 
 
@@ -1072,6 +1098,11 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       type structure.
 
       .. versionadded:: 3.4
+
+      .. deprecated:: 3.8
+         This flag isn't necessary anymore, as the interpreter assumes the
+         :c:member:`~PyTypeObject.tp_finalize` slot is always present in the
+         type structure.
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -1822,16 +1853,35 @@ objects on the thread which called tp_dealloc will not violate any assumptions
 of the library.
 
 
+.. _heap-types:
+
 Heap Types
 ----------
 
-In addition to defining Python types statically, you can define them
-dynamically (i.e. to the heap) using  :c:func:`PyType_FromSpec` and
+Traditionally, types defined in C code are *static*, that is,
+a static :c:type:`PyTypeObject` structure is defined directly in code
+and initialized using :c:func:`PyType_Ready`.
+
+This results in types that are limited relative to types defined in Python:
+
+* Static types are limited to one base, i.e. they cannot use multiple
+  inheritance.
+* Static type objects (but not necessarily their instances) are immutable.
+  It is not possible to add or modify the type object's attributes from Python.
+* Static type objects are shared across
+  :ref:`sub-interpreters <sub-interpreter-support>`, so they should not
+  include any subinterpreter-specific state.
+
+Also, since *PyTypeObject* is not part of the :ref:`stable ABI <stable>`,
+any extension modules using static types must be compiled for a specific
+Python minor version.
+
+An alternative to static types is *heap-allocated types*, or *heap types*
+for short, which correspond closely to classes created by Python's
+``class`` statement.
+
+This is done by filling a :c:type:`PyType_Spec` structure and calling
 :c:func:`PyType_FromSpecWithBases`.
-
-.. XXX Explain how to use PyType_FromSpec().
-
-.. XXX Document PyType_Spec.
 
 
 .. _number-structs:
@@ -2052,7 +2102,7 @@ Sequence Object Structures
    signature.  It should modify its first operand, and return it.  This slot
    may be left to *NULL*, in this case :c:func:`!PySequence_InPlaceConcat`
    will fall back to :c:func:`PySequence_Concat`.  It is also used by the
-   augmented assignment ``+=``, after trying numeric inplace addition
+   augmented assignment ``+=``, after trying numeric in-place addition
    via the :c:member:`~PyNumberMethods.nb_inplace_add` slot.
 
 .. c:member:: ssizeargfunc PySequenceMethods.sq_inplace_repeat
@@ -2061,7 +2111,7 @@ Sequence Object Structures
    signature.  It should modify its first operand, and return it.  This slot
    may be left to *NULL*, in this case :c:func:`!PySequence_InPlaceRepeat`
    will fall back to :c:func:`PySequence_Repeat`.  It is also used by the
-   augmented assignment ``*=``, after trying numeric inplace multiplication
+   augmented assignment ``*=``, after trying numeric in-place multiplication
    via the :c:member:`~PyNumberMethods.nb_inplace_multiply` slot.
 
 

@@ -90,6 +90,7 @@ def addModuleCleanup(function, /, *args, **kwargs):
     """Same as addCleanup, except the cleanup items are called even if
     setUpModule fails (unlike tearDownModule)."""
     _module_cleanups.append((function, args, kwargs))
+addModuleCleanup.__text_signature__ = '(function, /, *args, **kwargs)'
 
 
 def doModuleCleanups():
@@ -470,6 +471,7 @@ class TestCase(object):
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
         self._cleanups.append((function, args, kwargs))
+    addCleanup.__text_signature__ = '($self, function, /, *args, **kwargs)'
 
     @classmethod
     def addClassCleanup(cls, function, /, *args, **kwargs):
@@ -604,6 +606,18 @@ class TestCase(object):
         else:
             addUnexpectedSuccess(self)
 
+    def _callSetUp(self):
+        self.setUp()
+
+    def _callTestMethod(self, method):
+        method()
+
+    def _callTearDown(self):
+        self.tearDown()
+
+    def _callCleanup(self, function, /, *args, **kwargs):
+        function(*args, **kwargs)
+
     def run(self, result=None):
         orig_result = result
         if result is None:
@@ -635,14 +649,14 @@ class TestCase(object):
             self._outcome = outcome
 
             with outcome.testPartExecutor(self):
-                self.setUp()
+                self._callSetUp()
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
-                    testMethod()
+                    self._callTestMethod(testMethod)
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
-                    self.tearDown()
+                    self._callTearDown()
 
             self.doCleanups()
             for test, reason in outcome.skipped:
@@ -680,7 +694,7 @@ class TestCase(object):
         while self._cleanups:
             function, args, kwargs = self._cleanups.pop()
             with outcome.testPartExecutor(self):
-                function(*args, **kwargs)
+                self._callCleanup(function, *args, **kwargs)
 
         # return this for backwards compatibility
         # even though we no longer use it internally
@@ -1206,9 +1220,8 @@ class TestCase(object):
 
 
     def assertCountEqual(self, first, second, msg=None):
-        """An unordered sequence comparison asserting that the same elements,
-        regardless of order.  If the same element occurs more than once,
-        it verifies that the elements occur the same number of times.
+        """Asserts that two iterables have the same elements, the same number of
+        times, without regard to order.
 
             self.assertEqual(Counter(list(first)),
                              Counter(list(second)))
