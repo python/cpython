@@ -199,6 +199,13 @@ class TestBisect:
         self.module.insort(a=data, x=25, lo=1, hi=3)
         self.assertEqual(data, [10, 20, 25, 25, 25, 30, 40, 50])
 
+        for func in (self.module.bisect, self.module.bisect_right,
+                     self.module.bisect_left, self.module.insort_left,
+                     self.module.insort_right, self.module.insort):
+
+            with self.assertRaises(TypeError):
+                func(data, 25, 1, 3, lambda e: e)
+
     def test_key(self):
         data = ["z", "yy", "www"]
         self.assertEqual(self.module.bisect_left(data, "xx", key=len), 1)
