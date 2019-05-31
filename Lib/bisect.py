@@ -29,15 +29,22 @@ def bisect_right(a, x, lo=0, hi=None, key=None):
     customize the order.
     """
 
-    if key is None:
-        key = lambda e: e
-
-    x_value = key(x)
-
     if lo < 0:
         raise ValueError('lo must be non-negative')
     if hi is None:
         hi = len(a)
+
+    if key is None:
+        while lo < hi:
+            mid = (lo+hi)//2
+            if x < a[mid]:
+                hi = mid
+            else:
+                lo = mid+1
+        return lo
+
+    x_value = key(x)
+
     while lo < hi:
         mid = (lo+hi)//2
         if x_value < key(a[mid]):
@@ -76,15 +83,22 @@ def bisect_left(a, x, lo=0, hi=None, key=None):
     customize the order.
     """
 
-    if key is None:
-        key = lambda e: e
-
-    x_value = key(x)
-
     if lo < 0:
         raise ValueError('lo must be non-negative')
     if hi is None:
         hi = len(a)
+
+    if key is None:
+        while lo < hi:
+            mid = (lo+hi)//2
+            if a[mid] < x:
+                lo = mid+1
+            else:
+                hi = mid
+        return lo
+
+    x_value = key(x)
+
     while lo < hi:
         mid = (lo+hi)//2
         if key(a[mid]) < x_value:
