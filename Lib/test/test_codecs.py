@@ -1259,10 +1259,12 @@ class RecodingTest(unittest.TestCase):
         b = io.BytesIO('123456789\n'.encode('utf-16-le'))
         s = codecs.EncodedFile(b, 'utf-8', 'utf-16-le')
 
+        # Test that seek() only resets its internal buffer when offset
+        # and whence are zero.
         s.seek(2)
         s.write(b'\nabc\n')
+        self.assertEqual(s.readline(), b'789\n')
         s.seek(0)
-
         self.assertEqual(s.readline(), b'1\n')
         self.assertEqual(s.readline(), b'abc\n')
         self.assertEqual(s.readline(), b'789\n')
