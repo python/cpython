@@ -603,9 +603,9 @@ class TestBaseExitStack:
                 stack.callback(arg=1)
             with self.assertRaises(TypeError):
                 self.exit_stack.callback(arg=2)
-            with self.assertRaises(TypeError):
+            with self.assertWarns(DeprecationWarning):
                 stack.callback(callback=_exit, arg=3)
-        self.assertEqual(result, [])
+        self.assertEqual(result, [((), {'arg': 3})])
 
     def test_push(self):
         exc_raised = ZeroDivisionError
