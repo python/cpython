@@ -468,17 +468,17 @@ def fromfd(fd, family, type, proto=0):
 _GLOBAL_DEFAULT_MAXFDS = object()
 
 if hasattr(_socket.socket, "sendmsg"):
-    def send_fds(sock, buffers=None, fds=[], flags=[], address=None):
+    def send_fds(sock, buffers, fds, flags=0, address=None):
         """ send_fds(sock, buffers, fds[, flags[, address]]) -> socket object
 
         Send the list of file descriptors fds over an AF_UNIX socket.
         """
-        return sock.sendmsg([buffers], [(_socket.SOL_SOCKET,
+        return sock.sendmsg(buffers, [(_socket.SOL_SOCKET,
             _socket.SCM_RIGHTS, array.array("i", fds))])
     __all__.append("send_fds")
 
 if hasattr(_socket.socket, "recvmsg"):
-    def recv_fds(sock, bufsize=0, maxfds=_GLOBAL_DEFAULT_MAXFDS, flags=0):
+    def recv_fds(sock, bufsize, maxfds, flags=0):
         """ recv_fds(sock, bufsize, maxfds[, flags]) -> (socket object, socket object)
 
         receive up to maxfds file descriptors returning the message
@@ -492,7 +492,7 @@ if hasattr(_socket.socket, "recvmsg"):
             if (cmsg_level == _socket.SOL_SOCKET and cmsg_type == _socket.SCM_RIGHTS):
                 # Append data, ignoring any truncated integers at the end.
                 fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
-        return msg, list(fds)
+        return msg, list(fds), flags, addr
     __all__.append("recv_fds")
 
 if hasattr(_socket.socket, "share"):

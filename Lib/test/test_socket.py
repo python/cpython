@@ -2291,8 +2291,8 @@ class BasicTCPTest(SocketConnectedTest):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, fileno=f)
         self.addCleanup(sock.close)
         with sock:
-            socket.send_fds(sock, MSG, fds)
-            msg, fds_list = socket.recv_fds(sock, len(MSG), 1024)
+            socket.send_fds(sock, [MSG], fds)
+            msg, fds_list, flags, addr  = socket.recv_fds(sock, len(MSG), 1024)
             self.assertEqual(msg, MSG)
 
     @testSendAndRecvFds.client_skip
