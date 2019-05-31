@@ -8,15 +8,56 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "cpython/coreconfig.h"
+#include "cpython/initconfig.h"
+#include "fileobject.h"
 #include "pystate.h"
 #include "pythread.h"
+#include "sysmodule.h"
 
-#include "pycore_ceval.h"
+#include "pycore_gil.h"   /* _gil_runtime_state  */
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"
 #include "pycore_warnings.h"
 
+
+/* ceval state */
+
+struct _pending_calls {
+    int finishing;
+    PyThread_type_lock lock;
+    /* Request for running pending calls. */
+    _Py_atomic_int calls_to_do;
+    /* Request for looking at the `async_exc` field of the current
+       thread state.
+       Guarded by the GIL. */
+    int async_exc;
+#define NPENDINGCALLS 32
+    struct {
+        int (*func)(void *);
+        void *arg;
+    } calls[NPENDINGCALLS];
+    int first;
+    int last;
+};
+
+struct _ceval_runtime_state {
+    int recursion_limit;
+    /* Records whether tracing is on for any thread.  Counts the number
+       of threads for which tstate->c_tracefunc is non-NULL, so if the
+       value is 0, we know we don't have to check this thread's
+       c_tracefunc.  This speeds up the if statement in
+       PyEval_EvalFrameEx() after fast_next_opcode. */
+    int tracing_possible;
+    /* This single variable consolidates all requests to break out of
+       the fast path in the eval loop. */
+    _Py_atomic_int eval_breaker;
+    /* Request for dropping the GIL */
+    _Py_atomic_int gil_drop_request;
+    struct _pending_calls pending;
+    /* Request for checking signals. */
+    _Py_atomic_int signals_pending;
+    struct _gil_runtime_state gil;
+};
 
 /* interpreter state */
 
@@ -56,9 +97,16 @@ struct _is {
     PyObject *codec_search_cache;
     PyObject *codec_error_registry;
     int codecs_initialized;
-    int fscodec_initialized;
 
-    _PyCoreConfig core_config;
+    /* fs_codec.encoding is initialized to NULL.
+       Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
+    struct {
+        char *encoding;   /* Filesystem encoding (encoded to UTF-8) */
+        char *errors;     /* Filesystem errors (encoded to UTF-8) */
+        _Py_error_handler error_handler;
+    } fs_codec;
+
+    PyConfig config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
@@ -83,6 +131,10 @@ struct _is {
     PyObject *pyexitmodule;
 
     uint64_t tstate_next_unique_id;
+
+    struct _warnings_runtime_state warnings;
+
+    PyObject *audit_hooks;
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
@@ -106,6 +158,13 @@ struct _xidregitem {
     struct _xidregitem *next;
 };
 
+/* runtime audit hook state */
+
+typedef struct _Py_AuditHookEntry {
+    struct _Py_AuditHookEntry *next;
+    Py_AuditHookFunction hookCFunction;
+    void *userData;
+} _Py_AuditHookEntry;
 
 /* GIL state */
 
@@ -134,7 +193,7 @@ struct _gilstate_runtime_state {
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
-    /* Is Python pre-initialized? Set to 1 by _Py_PreInitialize() */
+    /* Is Python pre-initialized? Set to 1 by Py_PreInitialize() */
     int pre_initialized;
 
     /* Is Python core initialized? Set to 1 by _Py_InitializeCore() */
@@ -172,11 +231,15 @@ typedef struct pyruntimestate {
     int nexitfuncs;
 
     struct _gc_runtime_state gc;
-    struct _warnings_runtime_state warnings;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 
-    _PyPreConfig preconfig;
+    PyPreConfig preconfig;
+
+    Py_OpenCodeHookFunction open_code_hook;
+    void *open_code_userdata;
+    _Py_AuditHookEntry *audit_hook_head;
+
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
@@ -185,22 +248,25 @@ typedef struct pyruntimestate {
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
-PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *runtime);
+PyAPI_FUNC(PyStatus) _PyRuntimeState_Init(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime);
 
 /* Initialize _PyRuntimeState.
    Return NULL on success, or return an error message on failure. */
-PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
+PyAPI_FUNC(PyStatus) _PyRuntime_Initialize(void);
 
 PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
-#define _Py_CURRENTLY_FINALIZING(tstate) \
-    (_PyRuntime.finalizing == tstate)
+#define _Py_CURRENTLY_FINALIZING(runtime, tstate) \
+    (runtime->finalizing == tstate)
 
 
 /* Variable and macro for in-line access to current thread
    and interpreter state */
+
+#define _PyRuntimeState_GetThreadState(runtime) \
+    ((PyThreadState*)_Py_atomic_load_relaxed(&(runtime)->gilstate.tstate_current))
 
 /* Get the current Python thread state.
 
@@ -211,8 +277,7 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
    The caller must hold the GIL.
 
    See also PyThreadState_Get() and PyThreadState_GET(). */
-#define _PyThreadState_GET() \
-    ((PyThreadState*)_Py_atomic_load_relaxed(&_PyRuntime.gilstate.tstate_current))
+#define _PyThreadState_GET() _PyRuntimeState_GetThreadState(&_PyRuntime)
 
 /* Redefine PyThreadState_GET() as an alias to _PyThreadState_GET() */
 #undef PyThreadState_GET
@@ -234,9 +299,15 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 PyAPI_FUNC(void) _PyThreadState_Init(
     _PyRuntimeState *runtime,
     PyThreadState *tstate);
-PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
+    _PyRuntimeState *runtime,
+    PyThreadState *tstate);
 
-PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
+PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
+    struct _gilstate_runtime_state *gilstate,
+    PyThreadState *newts);
+
+PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 
 PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);

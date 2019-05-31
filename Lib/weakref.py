@@ -569,6 +569,7 @@ class finalize:
         info.index = next(self._index_iter)
         self._registry[self] = info
         finalize._dirty = True
+    __init__.__text_signature__ = '($self, obj, func, /, *args, **kwargs)'
 
     def __call__(self, _=None):
         """If alive then mark as dead and return func(*args, **kwargs);

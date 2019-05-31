@@ -1257,10 +1257,10 @@ PyTypeObject PyScannerType = {
     sizeof(PyScannerObject), /* tp_basicsize */
     0,                    /* tp_itemsize */
     scanner_dealloc, /* tp_dealloc */
-    0,                    /* tp_print */
+    0,                    /* tp_vectorcall_offset */
     0,                    /* tp_getattr */
     0,                    /* tp_setattr */
-    0,                    /* tp_compare */
+    0,                    /* tp_as_async */
     0,                    /* tp_repr */
     0,                    /* tp_as_number */
     0,                    /* tp_as_sequence */
@@ -1482,7 +1482,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
         return _steal_accumulate(acc, encoded);
     }
     else if (PyLong_Check(obj)) {
-        PyObject *encoded = PyLong_Type.tp_str(obj);
+        PyObject *encoded = PyLong_Type.tp_repr(obj);
         if (encoded == NULL)
             return -1;
         return _steal_accumulate(acc, encoded);
@@ -1646,7 +1646,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                 goto bail;
         }
         else if (PyLong_Check(key)) {
-            kstr = PyLong_Type.tp_str(key);
+            kstr = PyLong_Type.tp_repr(key);
             if (kstr == NULL) {
                 goto bail;
             }
@@ -1849,10 +1849,10 @@ PyTypeObject PyEncoderType = {
     sizeof(PyEncoderObject), /* tp_basicsize */
     0,                    /* tp_itemsize */
     encoder_dealloc, /* tp_dealloc */
-    0,                    /* tp_print */
+    0,                    /* tp_vectorcall_offset */
     0,                    /* tp_getattr */
     0,                    /* tp_setattr */
-    0,                    /* tp_compare */
+    0,                    /* tp_as_async */
     0,                    /* tp_repr */
     0,                    /* tp_as_number */
     0,                    /* tp_as_sequence */

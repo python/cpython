@@ -504,14 +504,18 @@ extern "C" {
 
 /* Py_DEPRECATED(version)
  * Declare a variable, type, or function deprecated.
+ * The macro must be placed before the declaration.
  * Usage:
- *    extern int old_var Py_DEPRECATED(2.3);
- *    typedef int T1 Py_DEPRECATED(2.4);
- *    extern int x() Py_DEPRECATED(2.5);
+ *    Py_DEPRECATED(3.3) extern int old_var;
+ *    Py_DEPRECATED(3.4) typedef int T1;
+ *    Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
  */
 #if defined(__GNUC__) \
     && ((__GNUC__ >= 4) || (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1))
 #define Py_DEPRECATED(VERSION_UNUSED) __attribute__((__deprecated__))
+#elif defined(_MSC_VER)
+#define Py_DEPRECATED(VERSION) __declspec(deprecated( \
+                                          "deprecated in " #VERSION))
 #else
 #define Py_DEPRECATED(VERSION_UNUSED)
 #endif
@@ -827,6 +831,20 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #if defined(_Py_FORCE_UTF8_LOCALE) || defined(__APPLE__)
    /* Use UTF-8 as filesystem encoding */
 #  define _Py_FORCE_UTF8_FS_ENCODING
+#endif
+
+/* Mark a function which cannot return. Example:
+
+   PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void); */
+#if defined(__clang__) || \
+    (defined(__GNUC__) && \
+     ((__GNUC__ >= 3) || \
+      (__GNUC__ == 2) && (__GNUC_MINOR__ >= 5)))
+#  define _Py_NO_RETURN __attribute__((__noreturn__))
+#elif defined(_MSC_VER)
+#  define _Py_NO_RETURN __declspec(noreturn)
+#else
+#  define _Py_NO_RETURN
 #endif
 
 #endif /* Py_PYPORT_H */

@@ -497,8 +497,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
-        if sys.platform.startswith('freebsd'):
-            # bpo-35031: Some FreeBSD buildbots fail to run this test
+        if sys.platform.startswith('freebsd') or sys.platform.startswith('win'):
+            # bpo-35031: Some FreeBSD and Windows buildbots fail to run this test
             # as the eof was not being received by the server if the payload
             # size is not big enough. This behaviour only appears if the
             # client is using TLS1.3.
@@ -649,12 +649,13 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         async def client(addr):
-            reader, writer = await asyncio.open_connection(
-                *addr,
-                ssl=client_sslctx,
-                server_hostname='',
-                loop=self.loop,
-                ssl_handshake_timeout=1.0)
+            with self.assertWarns(DeprecationWarning):
+                reader, writer = await asyncio.open_connection(
+                    *addr,
+                    ssl=client_sslctx,
+                    server_hostname='',
+                    loop=self.loop,
+                    ssl_handshake_timeout=1.0)
 
         with self.tcp_server(server,
                              max_clients=1,
@@ -688,12 +689,13 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         async def client(addr):
-            reader, writer = await asyncio.open_connection(
-                *addr,
-                ssl=client_sslctx,
-                server_hostname='',
-                loop=self.loop,
-                ssl_handshake_timeout=1.0)
+            with self.assertWarns(DeprecationWarning):
+                reader, writer = await asyncio.open_connection(
+                    *addr,
+                    ssl=client_sslctx,
+                    server_hostname='',
+                    loop=self.loop,
+                    ssl_handshake_timeout=1.0)
 
         with self.tcp_server(server,
                              max_clients=1,
@@ -724,11 +726,12 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         async def client(addr):
-            reader, writer = await asyncio.open_connection(
-                *addr,
-                ssl=client_sslctx,
-                server_hostname='',
-                loop=self.loop)
+            with self.assertWarns(DeprecationWarning):
+                reader, writer = await asyncio.open_connection(
+                    *addr,
+                    ssl=client_sslctx,
+                    server_hostname='',
+                    loop=self.loop)
 
             self.assertEqual(await reader.readline(), b'A\n')
             writer.write(b'B')

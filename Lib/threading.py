@@ -5,7 +5,6 @@ import sys as _sys
 import _thread
 
 from time import monotonic as _time
-from traceback import format_exc as _format_exc
 from _weakrefset import WeakSet
 from itertools import islice as _islice, count as _count
 try:
@@ -27,13 +26,20 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'enumerate', 'main_thread', 'TIMEOUT_MAX',
            'Event', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
-           'setprofile', 'settrace', 'local', 'stack_size']
+           'setprofile', 'settrace', 'local', 'stack_size',
+           'excepthook', 'ExceptHookArgs']
 
 # Rename some stuff so "from threading import *" is safe
 _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
+try:
+    get_native_id = _thread.get_native_id
+    _HAVE_THREAD_NATIVE_ID = True
+    __all__.append('get_native_id')
+except AttributeError:
+    _HAVE_THREAD_NATIVE_ID = False
 ThreadError = _thread.error
 try:
     _CRLock = _thread.RLock
@@ -746,14 +752,6 @@ class Thread:
     """
 
     _initialized = False
-    # Need to store a reference to sys.exc_info for printing
-    # out exceptions when a thread tries to use a global var. during interp.
-    # shutdown and thus raises an exception about trying to perform some
-    # operation on/with a NoneType
-    _exc_info = _sys.exc_info
-    # Keep sys.exc_clear too to clear the exception just before
-    # allowing .join() to return.
-    #XXX __exc_clear = _sys.exc_clear
 
     def __init__(self, group=None, target=None, name=None,
                  args=(), kwargs=None, *, daemon=None):
@@ -790,13 +788,15 @@ class Thread:
         else:
             self._daemonic = current_thread().daemon
         self._ident = None
+        if _HAVE_THREAD_NATIVE_ID:
+            self._native_id = None
         self._tstate_lock = None
         self._started = Event()
         self._is_stopped = False
         self._initialized = True
-        # sys.stderr is not stored in the class like
-        # sys.exc_info since it can be changed between instances
+        # Copy of sys.stderr used by self._invoke_excepthook()
         self._stderr = _sys.stderr
+        self._invoke_excepthook = _make_invoke_excepthook()
         # For debugging and _after_fork()
         _dangling.add(self)
 
@@ -891,6 +891,10 @@ class Thread:
     def _set_ident(self):
         self._ident = get_ident()
 
+    if _HAVE_THREAD_NATIVE_ID:
+        def _set_native_id(self):
+            self._native_id = get_native_id()
+
     def _set_tstate_lock(self):
         """
         Set a lock object which will be released by the interpreter when
@@ -903,6 +907,8 @@ class Thread:
         try:
             self._set_ident()
             self._set_tstate_lock()
+            if _HAVE_THREAD_NATIVE_ID:
+                self._set_native_id()
             self._started.set()
             with _active_limbo_lock:
                 _active[self._ident] = self
@@ -915,47 +921,8 @@ class Thread:
 
             try:
                 self.run()
-            except SystemExit:
-                pass
             except:
-                # If sys.stderr is no more (most likely from interpreter
-                # shutdown) use self._stderr.  Otherwise still use sys (as in
-                # _sys) in case sys.stderr was redefined since the creation of
-                # self.
-                if _sys and _sys.stderr is not None:
-                    print("Exception in thread %s:\n%s" %
-                          (self.name, _format_exc()), file=_sys.stderr)
-                elif self._stderr is not None:
-                    # Do the best job possible w/o a huge amt. of code to
-                    # approximate a traceback (code ideas from
-                    # Lib/traceback.py)
-                    exc_type, exc_value, exc_tb = self._exc_info()
-                    try:
-                        print((
-                            "Exception in thread " + self.name +
-                            " (most likely raised during interpreter shutdown):"), file=self._stderr)
-                        print((
-                            "Traceback (most recent call last):"), file=self._stderr)
-                        while exc_tb:
-                            print((
-                                '  File "%s", line %s, in %s' %
-                                (exc_tb.tb_frame.f_code.co_filename,
-                                    exc_tb.tb_lineno,
-                                    exc_tb.tb_frame.f_code.co_name)), file=self._stderr)
-                            exc_tb = exc_tb.tb_next
-                        print(("%s: %s" % (exc_type, exc_value)), file=self._stderr)
-                        self._stderr.flush()
-                    # Make sure that exc_tb gets deleted since it is a memory
-                    # hog; deleting everything else is just for thoroughness
-                    finally:
-                        del exc_type, exc_value, exc_tb
-            finally:
-                # Prevent a race in
-                # test_threading.test_no_refcycle_through_target when
-                # the exception keeps the target alive past when we
-                # assert that it's dead.
-                #XXX self._exc_clear()
-                pass
+                self._invoke_excepthook(self)
         finally:
             with _active_limbo_lock:
                 try:
@@ -1077,6 +1044,18 @@ class Thread:
         assert self._initialized, "Thread.__init__() not called"
         return self._ident
 
+    if _HAVE_THREAD_NATIVE_ID:
+        @property
+        def native_id(self):
+            """Native integral thread ID of this thread, or None if it has not been started.
+
+            This is a non-negative integer. See the get_native_id() function.
+            This represents the Thread ID as reported by the kernel.
+
+            """
+            assert self._initialized, "Thread.__init__() not called"
+            return self._native_id
+
     def is_alive(self):
         """Return whether the thread is alive.
 
@@ -1137,6 +1116,104 @@ class Thread:
     def setName(self, name):
         self.name = name
 
+
+try:
+    from _thread import (_excepthook as excepthook,
+                         _ExceptHookArgs as ExceptHookArgs)
+except ImportError:
+    # Simple Python implementation if _thread._excepthook() is not available
+    from traceback import print_exception as _print_exception
+    from collections import namedtuple
+
+    _ExceptHookArgs = namedtuple(
+        'ExceptHookArgs',
+        'exc_type exc_value exc_traceback thread')
+
+    def ExceptHookArgs(args):
+        return _ExceptHookArgs(*args)
+
+    def excepthook(args, /):
+        """
+        Handle uncaught Thread.run() exception.
+        """
+        if args.exc_type == SystemExit:
+            # silently ignore SystemExit
+            return
+
+        if _sys is not None and _sys.stderr is not None:
+            stderr = _sys.stderr
+        elif args.thread is not None:
+            stderr = args.thread._stderr
+            if stderr is None:
+                # do nothing if sys.stderr is None and sys.stderr was None
+                # when the thread was created
+                return
+        else:
+            # do nothing if sys.stderr is None and args.thread is None
+            return
+
+        if args.thread is not None:
+            name = args.thread.name
+        else:
+            name = get_ident()
+        print(f"Exception in thread {name}:",
+              file=stderr, flush=True)
+        _print_exception(args.exc_type, args.exc_value, args.exc_traceback,
+                         file=stderr)
+        stderr.flush()
+
+
+def _make_invoke_excepthook():
+    # Create a local namespace to ensure that variables remain alive
+    # when _invoke_excepthook() is called, even if it is called late during
+    # Python shutdown. It is mostly needed for daemon threads.
+
+    old_excepthook = excepthook
+    old_sys_excepthook = _sys.excepthook
+    if old_excepthook is None:
+        raise RuntimeError("threading.excepthook is None")
+    if old_sys_excepthook is None:
+        raise RuntimeError("sys.excepthook is None")
+
+    sys_exc_info = _sys.exc_info
+    local_print = print
+    local_sys = _sys
+
+    def invoke_excepthook(thread):
+        global excepthook
+        try:
+            hook = excepthook
+            if hook is None:
+                hook = old_excepthook
+
+            args = ExceptHookArgs([*sys_exc_info(), thread])
+
+            hook(args)
+        except Exception as exc:
+            exc.__suppress_context__ = True
+            del exc
+
+            if local_sys is not None and local_sys.stderr is not None:
+                stderr = local_sys.stderr
+            else:
+                stderr = thread._stderr
+
+            local_print("Exception in threading.excepthook:",
+                        file=stderr, flush=True)
+
+            if local_sys is not None and local_sys.excepthook is not None:
+                sys_excepthook = local_sys.excepthook
+            else:
+                sys_excepthook = old_sys_excepthook
+
+            sys_excepthook(*sys_exc_info())
+        finally:
+            # Break reference cycle (exception stored in a variable)
+            args = None
+
+    return invoke_excepthook
+
+
 # The timer class was contributed by Itamar Shtull-Trauring
 
 class Timer(Thread):
@@ -1176,6 +1253,8 @@ class _MainThread(Thread):
         self._set_tstate_lock()
         self._started.set()
         self._set_ident()
+        if _HAVE_THREAD_NATIVE_ID:
+            self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
 
@@ -1195,6 +1274,8 @@ class _DummyThread(Thread):
 
         self._started.set()
         self._set_ident()
+        if _HAVE_THREAD_NATIVE_ID:
+            self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
 

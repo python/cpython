@@ -404,7 +404,10 @@ class Future(object):
             if self._state not in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]:
                 self._done_callbacks.append(fn)
                 return
-        fn(self)
+        try:
+            fn(self)
+        except Exception:
+            LOGGER.exception('exception calling callback for %r', self)
 
     def result(self, timeout=None):
         """Return the result of the call that the future represents.
@@ -567,6 +570,7 @@ class Executor(object):
                             'got %d' % (len(args)-1))
 
         raise NotImplementedError()
+    submit.__text_signature__ = '($self, fn, /, *args, **kwargs)'
 
     def map(self, fn, *iterables, timeout=None, chunksize=1):
         """Returns an iterator equivalent to map(fn, iter).
