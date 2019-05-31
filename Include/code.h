@@ -57,7 +57,7 @@ typedef struct {
     // to cache object: co_opcache[co_opcache_map[next_instr/sizeof(_Py_CODEUNIT)]]
     unsigned char *co_opcache_map;
     _PyOpcache *co_opcache;
-    int32_t co_opcache_flag;  // used to determine when create cache
+    int co_opcache_flag;  // used to determine when create cache
     unsigned char co_opcache_size;  // length of co_opcache.
 } PyCodeObject;
 

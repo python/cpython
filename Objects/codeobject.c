@@ -237,10 +237,10 @@ PyCode_New(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
 
-    co->co_opcache_flag = 0;
-    co->co_opcache_size = 0;
     co->co_opcache_map = NULL;
     co->co_opcache = NULL;
+    co->co_opcache_flag = 0;
+    co->co_opcache_size = 0;
     return co;
 }
 

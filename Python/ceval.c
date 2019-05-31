@@ -1047,15 +1047,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         } \
     } while (0)
 
-#define OPCACHE_DEOPT() \
-    do { \
-        if (co_opcache != NULL) { \
-            co_opcache->optimized = -1; \
-            co->co_opcache_map[next_instr - first_instr] = 0; \
-            co_opcache = NULL; \
-        } \
-    } while (0)
-
 #if OPCACHE_STATS
 
 #define OPCACHE_STAT_GLOBAL_HIT() \
