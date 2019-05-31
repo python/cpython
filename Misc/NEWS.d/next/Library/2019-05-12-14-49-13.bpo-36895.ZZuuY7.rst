@@ -1,0 +1,2 @@
+The function ``time.clock()`` was deprecated in 3.3 in favor of
+``time.perf_counter()`` and marked for removal in 3.8, it has removed.

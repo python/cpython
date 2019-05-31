@@ -104,7 +104,7 @@ static void
 show_alloc(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    if (!interp->core_config.show_alloc_count) {
+    if (!interp->config.show_alloc_count) {
         return;
     }
 
@@ -1380,9 +1380,8 @@ gallop_left(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_
         while (ofs < maxofs) {
             IFLT(a[ofs], key) {
                 lastofs = ofs;
+                assert(ofs <= (PY_SSIZE_T_MAX - 1) / 2);
                 ofs = (ofs << 1) + 1;
-                if (ofs <= 0)                   /* int overflow */
-                    ofs = maxofs;
             }
             else                /* key <= a[hint + ofs] */
                 break;
@@ -1403,9 +1402,8 @@ gallop_left(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_
                 break;
             /* key <= a[hint - ofs] */
             lastofs = ofs;
+            assert(ofs <= (PY_SSIZE_T_MAX - 1) / 2);
             ofs = (ofs << 1) + 1;
-            if (ofs <= 0)               /* int overflow */
-                ofs = maxofs;
         }
         if (ofs > maxofs)
             ofs = maxofs;
@@ -1471,9 +1469,8 @@ gallop_right(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize
         while (ofs < maxofs) {
             IFLT(key, *(a-ofs)) {
                 lastofs = ofs;
+                assert(ofs <= (PY_SSIZE_T_MAX - 1) / 2);
                 ofs = (ofs << 1) + 1;
-                if (ofs <= 0)                   /* int overflow */
-                    ofs = maxofs;
             }
             else                /* a[hint - ofs] <= key */
                 break;
@@ -1495,9 +1492,8 @@ gallop_right(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize
                 break;
             /* a[hint + ofs] <= key */
             lastofs = ofs;
+            assert(ofs <= (PY_SSIZE_T_MAX - 1) / 2);
             ofs = (ofs << 1) + 1;
-            if (ofs <= 0)               /* int overflow */
-                ofs = maxofs;
         }
         if (ofs > maxofs)
             ofs = maxofs;
@@ -3002,10 +2998,10 @@ PyTypeObject PyList_Type = {
     sizeof(PyListObject),
     0,
     (destructor)list_dealloc,                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)list_repr,                        /* tp_repr */
     0,                                          /* tp_as_number */
     &list_as_sequence,                          /* tp_as_sequence */
@@ -3073,10 +3069,10 @@ PyTypeObject PyListIter_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)listiter_dealloc,               /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -3221,10 +3217,10 @@ PyTypeObject PyListRevIter_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)listreviter_dealloc,            /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

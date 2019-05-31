@@ -262,7 +262,9 @@ class _FlowControlMixin(Transport):
             self._protocol_paused = True
             try:
                 self._protocol.pause_writing()
-            except Exception as exc:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
                 self._loop.call_exception_handler({
                     'message': 'protocol.pause_writing() failed',
                     'exception': exc,
@@ -276,7 +278,9 @@ class _FlowControlMixin(Transport):
             self._protocol_paused = False
             try:
                 self._protocol.resume_writing()
-            except Exception as exc:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
                 self._loop.call_exception_handler({
                     'message': 'protocol.resume_writing() failed',
                     'exception': exc,

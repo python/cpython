@@ -12,6 +12,7 @@
 
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"
 #include "grammar.h"
@@ -93,7 +94,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     PyCompilerFlags local_flags;
     int nomem_count = 0;
 #ifdef Py_REF_DEBUG
-    int show_ref_count = _PyInterpreterState_Get()->core_config.show_ref_count;
+    int show_ref_count = _PyInterpreterState_Get()->config.show_ref_count;
 #endif
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
@@ -542,12 +543,6 @@ finally:
     return 0;
 }
 
-void
-PyErr_Print(void)
-{
-    PyErr_PrintEx(1);
-}
-
 static void
 print_error_text(PyObject *f, int offset, PyObject *text_obj)
 {
@@ -585,21 +580,31 @@ print_error_text(PyObject *f, int offset, PyObject *text_obj)
     PyFile_WriteString("^\n", f);
 }
 
-static void
-handle_system_exit(void)
-{
-    PyObject *exception, *value, *tb;
-    int exitcode = 0;
 
-    if (Py_InspectFlag)
+int
+_Py_HandleSystemExit(int *exitcode_p)
+{
+    int inspect = _PyInterpreterState_GET_UNSAFE()->config.inspect;
+    if (inspect) {
         /* Don't exit if -i flag was given. This flag is set to 0
          * when entering interactive mode for inspecting. */
-        return;
+        return 0;
+    }
 
+    if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
+        return 0;
+    }
+
+    PyObject *exception, *value, *tb;
     PyErr_Fetch(&exception, &value, &tb);
+
     fflush(stdout);
-    if (value == NULL || value == Py_None)
+
+    int exitcode = 0;
+    if (value == NULL || value == Py_None) {
         goto done;
+    }
+
     if (PyExceptionInstance_Check(value)) {
         /* The error code should be in the `code' attribute. */
         _Py_IDENTIFIER(code);
@@ -613,8 +618,10 @@ handle_system_exit(void)
         /* If we failed to dig out the 'code' attribute,
            just let the else clause below print the error. */
     }
-    if (PyLong_Check(value))
+
+    if (PyLong_Check(value)) {
         exitcode = (int)PyLong_AsLong(value);
+    }
     else {
         PyObject *sys_stderr = _PySys_GetObjectId(&PyId_stderr);
         /* We clear the exception here to avoid triggering the assertion
@@ -631,6 +638,7 @@ handle_system_exit(void)
         PySys_WriteStderr("\n");
         exitcode = 1;
     }
+
  done:
     /* Restore and clear the exception info, in order to properly decref
      * the exception, value, and traceback.      If we just exit instead,
@@ -639,39 +647,53 @@ handle_system_exit(void)
      */
     PyErr_Restore(exception, value, tb);
     PyErr_Clear();
-    Py_Exit(exitcode);
-    /* NOTREACHED */
+    *exitcode_p = exitcode;
+    return 1;
 }
 
-void
-PyErr_PrintEx(int set_sys_last_vars)
+
+static void
+handle_system_exit(void)
+{
+    int exitcode;
+    if (_Py_HandleSystemExit(&exitcode)) {
+        Py_Exit(exitcode);
+    }
+}
+
+
+static void
+_PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
 {
     PyObject *exception, *v, *tb, *hook;
 
-    if (PyErr_ExceptionMatches(PyExc_SystemExit)) {
-        handle_system_exit();
+    handle_system_exit();
+
+    _PyErr_Fetch(tstate, &exception, &v, &tb);
+    if (exception == NULL) {
+        goto done;
     }
-    PyErr_Fetch(&exception, &v, &tb);
-    if (exception == NULL)
-        return;
-    PyErr_NormalizeException(&exception, &v, &tb);
+
+    _PyErr_NormalizeException(tstate, &exception, &v, &tb);
     if (tb == NULL) {
         tb = Py_None;
         Py_INCREF(tb);
     }
     PyException_SetTraceback(v, tb);
-    if (exception == NULL)
-        return;
+    if (exception == NULL) {
+        goto done;
+    }
+
     /* Now we know v != NULL too */
     if (set_sys_last_vars) {
         if (_PySys_SetObjectId(&PyId_last_type, exception) < 0) {
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
         }
         if (_PySys_SetObjectId(&PyId_last_value, v) < 0) {
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
         }
         if (_PySys_SetObjectId(&PyId_last_traceback, tb) < 0) {
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
         }
     }
     hook = _PySys_GetObjectId(&PyId_excepthook);
@@ -684,12 +706,11 @@ PyErr_PrintEx(int set_sys_last_vars)
         stack[2] = tb;
         result = _PyObject_FastCall(hook, stack, 3);
         if (result == NULL) {
+            handle_system_exit();
+
             PyObject *exception2, *v2, *tb2;
-            if (PyErr_ExceptionMatches(PyExc_SystemExit)) {
-                handle_system_exit();
-            }
-            PyErr_Fetch(&exception2, &v2, &tb2);
-            PyErr_NormalizeException(&exception2, &v2, &tb2);
+            _PyErr_Fetch(tstate, &exception2, &v2, &tb2);
+            _PyErr_NormalizeException(tstate, &exception2, &v2, &tb2);
             /* It should not be possible for exception2 or v2
                to be NULL. However PyErr_Display() can't
                tolerate NULLs, so just be safe. */
@@ -711,13 +732,35 @@ PyErr_PrintEx(int set_sys_last_vars)
             Py_XDECREF(tb2);
         }
         Py_XDECREF(result);
-    } else {
+    }
+    else {
         PySys_WriteStderr("sys.excepthook is missing\n");
         PyErr_Display(exception, v, tb);
     }
+
+done:
     Py_XDECREF(exception);
     Py_XDECREF(v);
     Py_XDECREF(tb);
+}
+
+void
+_PyErr_Print(PyThreadState *tstate)
+{
+    _PyErr_PrintEx(tstate, 1);
+}
+
+void
+PyErr_PrintEx(int set_sys_last_vars)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_PrintEx(tstate, set_sys_last_vars);
+}
+
+void
+PyErr_Print(void)
+{
+    PyErr_PrintEx(1);
 }
 
 static void
@@ -910,10 +953,11 @@ print_exception_recursive(PyObject *f, PyObject *value, PyObject *seen)
 }
 
 void
-PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
+_PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *tb)
 {
+    assert(file != NULL && file != Py_None);
+
     PyObject *seen;
-    PyObject *f = _PySys_GetObjectId(&PyId_stderr);
     if (PyExceptionInstance_Check(value)
         && tb != NULL && PyTraceBack_Check(tb)) {
         /* Put the traceback on the exception, otherwise it won't get
@@ -924,23 +968,42 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
         else
             Py_DECREF(cur_tb);
     }
-    if (f == Py_None) {
-        /* pass */
+
+    /* We choose to ignore seen being possibly NULL, and report
+       at least the main exception (it could be a MemoryError).
+    */
+    seen = PySet_New(NULL);
+    if (seen == NULL) {
+        PyErr_Clear();
     }
-    else if (f == NULL) {
-        _PyObject_Dump(value);
-        fprintf(stderr, "lost sys.stderr\n");
+    print_exception_recursive(file, value, seen);
+    Py_XDECREF(seen);
+
+    /* Call file.flush() */
+    PyObject *res = _PyObject_CallMethodId(file, &PyId_flush, NULL);
+    if (!res) {
+        /* Silently ignore file.flush() error */
+        PyErr_Clear();
     }
     else {
-        /* We choose to ignore seen being possibly NULL, and report
-           at least the main exception (it could be a MemoryError).
-        */
-        seen = PySet_New(NULL);
-        if (seen == NULL)
-            PyErr_Clear();
-        print_exception_recursive(f, value, seen);
-        Py_XDECREF(seen);
+        Py_DECREF(res);
     }
+}
+
+void
+PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
+{
+    PyObject *file = _PySys_GetObjectId(&PyId_stderr);
+    if (file == NULL) {
+        _PyObject_Dump(value);
+        fprintf(stderr, "lost sys.stderr\n");
+        return;
+    }
+    if (file == Py_None) {
+        return;
+    }
+
+    _PyErr_Display(file, exception, value, tb);
 }
 
 PyObject *
@@ -1044,6 +1107,15 @@ run_eval_code_obj(PyCodeObject *co, PyObject *globals, PyObject *locals)
      * Py_Main() based one.
      */
     _Py_UnhandledKeyboardInterrupt = 0;
+
+    /* Set globals['__builtins__'] if it doesn't exist */
+    if (globals != NULL && PyDict_GetItemString(globals, "__builtins__") == NULL) {
+        PyInterpreterState *interp = _PyInterpreterState_Get();
+        if (PyDict_SetItemString(globals, "__builtins__", interp->builtins) < 0) {
+            return NULL;
+        }
+    }
+
     v = PyEval_EvalCode((PyObject*)co, globals, locals);
     if (!v && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
         _Py_UnhandledKeyboardInterrupt = 1;
@@ -1060,6 +1132,12 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
     co = PyAST_CompileObject(mod, filename, flags, -1, arena);
     if (co == NULL)
         return NULL;
+
+    if (PySys_Audit("exec", "O", co) < 0) {
+        Py_DECREF(co);
+        return NULL;
+    }
+
     v = run_eval_code_obj(co, globals, locals);
     Py_DECREF(co);
     return v;
@@ -1153,21 +1231,77 @@ PyCompileString(const char *str, const char *filename, int start)
     return Py_CompileStringFlags(str, filename, start, NULL);
 }
 
+const char *
+_Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyCompilerFlags *cf, PyObject **cmd_copy)
+{
+    const char *str;
+    Py_ssize_t size;
+    Py_buffer view;
+
+    *cmd_copy = NULL;
+    if (PyUnicode_Check(cmd)) {
+        cf->cf_flags |= PyCF_IGNORE_COOKIE;
+        str = PyUnicode_AsUTF8AndSize(cmd, &size);
+        if (str == NULL)
+            return NULL;
+    }
+    else if (PyBytes_Check(cmd)) {
+        str = PyBytes_AS_STRING(cmd);
+        size = PyBytes_GET_SIZE(cmd);
+    }
+    else if (PyByteArray_Check(cmd)) {
+        str = PyByteArray_AS_STRING(cmd);
+        size = PyByteArray_GET_SIZE(cmd);
+    }
+    else if (PyObject_GetBuffer(cmd, &view, PyBUF_SIMPLE) == 0) {
+        /* Copy to NUL-terminated buffer. */
+        *cmd_copy = PyBytes_FromStringAndSize(
+            (const char *)view.buf, view.len);
+        PyBuffer_Release(&view);
+        if (*cmd_copy == NULL) {
+            return NULL;
+        }
+        str = PyBytes_AS_STRING(*cmd_copy);
+        size = PyBytes_GET_SIZE(*cmd_copy);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+            "%s() arg 1 must be a %s object",
+            funcname, what);
+        return NULL;
+    }
+
+    if (strlen(str) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError,
+            "source code string cannot contain null bytes");
+        Py_CLEAR(*cmd_copy);
+        return NULL;
+    }
+    return str;
+}
+
 struct symtable *
 Py_SymtableStringObject(const char *str, PyObject *filename, int start)
 {
+    PyCompilerFlags flags;
+
+    flags.cf_flags = 0;
+    flags.cf_feature_version = PY_MINOR_VERSION;
+    return _Py_SymtableStringObjectFlags(str, filename, start, &flags);
+}
+
+struct symtable *
+_Py_SymtableStringObjectFlags(const char *str, PyObject *filename, int start, PyCompilerFlags *flags)
+{
     struct symtable *st;
     mod_ty mod;
-    PyCompilerFlags flags;
     PyArena *arena;
 
     arena = PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    flags.cf_flags = 0;
-    flags.cf_feature_version = PY_MINOR_VERSION;
-    mod = PyParser_ASTFromStringObject(str, filename, start, &flags, arena);
+    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
