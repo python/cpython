@@ -531,12 +531,20 @@ class TestShutil(unittest.TestCase):
 
         # test that shutil.copystat copies xattrs
         src = os.path.join(tmp_dir, 'the_original')
+        srcro = os.path.join(tmp_dir, 'the_original_ro')
         write_file(src, src)
+        write_file(srcro, srcro)
         os.setxattr(src, 'user.the_value', b'fiddly')
+        os.setxattr(srcro, 'user.the_value', b'fiddly')
+        os.chmod(srcro, 0o444)
         dst = os.path.join(tmp_dir, 'the_copy')
+        dstro = os.path.join(tmp_dir, 'the_copy_ro')
         write_file(dst, dst)
+        write_file(dstro, dstro)
         shutil.copystat(src, dst)
+        shutil.copystat(srcro, dstro)
         self.assertEqual(os.getxattr(dst, 'user.the_value'), b'fiddly')
+        self.assertEqual(os.getxattr(dstro, 'user.the_value'), b'fiddly')
 
     @support.skip_unless_symlink
     @support.skip_unless_xattr
@@ -2307,7 +2315,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
         # Emulate a case where sendfile() only support file->socket
         # fds. In such a case copyfile() is supposed to skip the
         # fast-copy attempt from then on.
-        assert shutil._HAS_SENDFILE
+        assert shutil._USE_CP_SENDFILE
         try:
             with unittest.mock.patch(
                     self.PATCHPOINT,
@@ -2316,13 +2324,13 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
                     with self.assertRaises(_GiveupOnFastCopy):
                         shutil._fastcopy_sendfile(src, dst)
                 assert m.called
-            assert not shutil._HAS_SENDFILE
+            assert not shutil._USE_CP_SENDFILE
 
             with unittest.mock.patch(self.PATCHPOINT) as m:
                 shutil.copyfile(TESTFN, TESTFN2)
                 assert not m.called
         finally:
-            shutil._HAS_SENDFILE = True
+            shutil._USE_CP_SENDFILE = True
 
 
 @unittest.skipIf(not MACOS, 'macOS only')

@@ -1356,28 +1356,17 @@ static PyGetSetDef odict_getset[] = {
 static void
 odict_dealloc(PyODictObject *self)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_SAFE_BEGIN(self)
+    Py_TRASHCAN_BEGIN(self, odict_dealloc)
 
     Py_XDECREF(self->od_inst_dict);
     if (self->od_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
 
     _odict_clear_nodes(self);
-
-    /* Call the base tp_dealloc().  Since it too uses the trashcan mechanism,
-     * temporarily decrement trash_delete_nesting to prevent triggering it
-     * and putting the partially deallocated object on the trashcan's
-     * to-be-deleted-later list.
-     */
-    --tstate->trash_delete_nesting;
-    assert(_tstate->trash_delete_nesting < PyTrash_UNWIND_LEVEL);
     PyDict_Type.tp_dealloc((PyObject *)self);
-    ++tstate->trash_delete_nesting;
 
-    Py_TRASHCAN_SAFE_END(self)
+    Py_TRASHCAN_END
 }
 
 /* tp_repr */
@@ -1562,10 +1551,10 @@ PyTypeObject PyODict_Type = {
     sizeof(PyODictObject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)odict_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)odict_repr,                       /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -1834,10 +1823,10 @@ PyTypeObject PyODictIter_Type = {
     0,                                        /* tp_itemsize */
     /* methods */
     (destructor)odictiter_dealloc,            /* tp_dealloc */
-    0,                                        /* tp_print */
+    0,                                        /* tp_vectorcall_offset */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
+    0,                                        /* tp_as_async */
     0,                                        /* tp_repr */
     0,                                        /* tp_as_number */
     0,                                        /* tp_as_sequence */
@@ -1927,10 +1916,10 @@ PyTypeObject PyODictKeys_Type = {
     0,                                        /* tp_basicsize */
     0,                                        /* tp_itemsize */
     0,                                        /* tp_dealloc */
-    0,                                        /* tp_print */
+    0,                                        /* tp_vectorcall_offset */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
+    0,                                        /* tp_as_async */
     0,                                        /* tp_repr */
     0,                                        /* tp_as_number */
     0,                                        /* tp_as_sequence */
@@ -1994,10 +1983,10 @@ PyTypeObject PyODictItems_Type = {
     0,                                        /* tp_basicsize */
     0,                                        /* tp_itemsize */
     0,                                        /* tp_dealloc */
-    0,                                        /* tp_print */
+    0,                                        /* tp_vectorcall_offset */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
+    0,                                        /* tp_as_async */
     0,                                        /* tp_repr */
     0,                                        /* tp_as_number */
     0,                                        /* tp_as_sequence */
@@ -2061,10 +2050,10 @@ PyTypeObject PyODictValues_Type = {
     0,                                        /* tp_basicsize */
     0,                                        /* tp_itemsize */
     0,                                        /* tp_dealloc */
-    0,                                        /* tp_print */
+    0,                                        /* tp_vectorcall_offset */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
+    0,                                        /* tp_as_async */
     0,                                        /* tp_repr */
     0,                                        /* tp_as_number */
     0,                                        /* tp_as_sequence */

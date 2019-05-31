@@ -257,6 +257,12 @@ are always available.  They are listed here in alphabetical order.
    can be found as the :attr:`~__future__._Feature.compiler_flag` attribute on
    the :class:`~__future__._Feature` instance in the :mod:`__future__` module.
 
+   The optional argument *flags* also controls whether the compiled source is
+   allowed to contain top-level ``await``, ``async for`` and ``async with``.
+   When the bit ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` is set, the return code
+   object has ``CO_COROUTINE`` set in ``co_code``, and can be interactively
+   executed via ``await eval(code_object)``.
+
    The argument *optimize* specifies the optimization level of the compiler; the
    default value of ``-1`` selects the optimization level of the interpreter as
    given by :option:`-O` options.  Explicit levels are ``0`` (no optimization;
@@ -268,6 +274,12 @@ are always available.  They are listed here in alphabetical order.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
+
+   .. audit-event:: compile "source filename"
+
+      Raises an :func:`auditing event <sys.audit>` ``compile`` with arguments
+      ``source`` and ``filename``. This event may also be raised by implicit
+      compilation.
 
    .. note::
 
@@ -289,6 +301,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.5
       Previously, :exc:`TypeError` was raised when null bytes were encountered
       in *source*.
+
+   .. versionadded:: 3.8
+      ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
+      support for top-level ``await``, ``async for``, and ``async with``.
 
 
 .. class:: complex([real[, imag]])
@@ -472,6 +488,11 @@ are always available.  They are listed here in alphabetical order.
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
 
+   .. audit-event:: exec code_object
+
+      Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
+      the argument. Code compilation events may also be raised.
+
 .. index:: builtin: exec
 
 .. function:: exec(object[, globals[, locals]])
@@ -500,6 +521,11 @@ are always available.  They are listed here in alphabetical order.
    :mod:`builtins` is inserted under that key.  That way you can control what
    builtins are available to the executed code by inserting your own
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
+
+   .. audit-event:: exec code_object
+
+      Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
+      the argument. Code compilation events may also be raised.
 
    .. note::
 
@@ -749,6 +775,16 @@ are always available.  They are listed here in alphabetical order.
 
    If the :mod:`readline` module was loaded, then :func:`input` will use it
    to provide elaborate line editing and history features.
+
+   .. audit-event:: builtins.input prompt
+
+      Raises an :func:`auditing event <sys.audit>` ``builtins.input`` with
+      argument ``prompt`` before reading input
+
+   .. audit-event:: builtins.input/result result
+
+      Raises an auditing event ``builtins.input/result`` with the result after
+      successfully reading input.
 
 
 .. class:: int([x])
@@ -1182,6 +1218,11 @@ are always available.  They are listed here in alphabetical order.
    See also the file handling modules, such as, :mod:`fileinput`, :mod:`io`
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
+
+   .. audit-event:: open "file mode flags"
+
+   The ``mode`` and ``flags`` arguments may have been modified or inferred from
+   the original call.
 
    .. versionchanged::
       3.3

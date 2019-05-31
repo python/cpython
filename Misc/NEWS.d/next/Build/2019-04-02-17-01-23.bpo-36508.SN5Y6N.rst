@@ -1,3 +1,0 @@
-``python-config --ldflags`` no longer includes flags of the
-``LINKFORSHARED`` variable. The ``LINKFORSHARED`` variable must only be used
-to build executables.

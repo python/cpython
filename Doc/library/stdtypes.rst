@@ -351,7 +351,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See http://www.unicode.org/Public/12.0.0/ucd/extracted/DerivedNumericType.txt
+   See http://www.unicode.org/Public/12.1.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -1114,7 +1114,7 @@ Notes:
    item is removed and returned.
 
 (3)
-   ``remove`` raises :exc:`ValueError` when *x* is not found in *s*.
+   :meth:`remove` raises :exc:`ValueError` when *x* is not found in *s*.
 
 (4)
    The :meth:`reverse` method modifies the sequence in place for economy of
@@ -1124,7 +1124,9 @@ Notes:
 (5)
    :meth:`clear` and :meth:`!copy` are included for consistency with the
    interfaces of mutable containers that don't support slicing operations
-   (such as :class:`dict` and :class:`set`)
+   (such as :class:`dict` and :class:`set`). :meth:`!copy` is not part of the
+   :class:`collections.abc.MutableSequence` ABC, but most concrete
+   mutable sequence classes provide it.
 
    .. versionadded:: 3.3
       :meth:`clear` and :meth:`!copy` methods.
@@ -2402,7 +2404,25 @@ data and are closely related to string objects in a variety of other ways.
       >>> b'\xf0\xf1\xf2'.hex()
       'f0f1f2'
 
+      If you want to make the hex string easier to read, you can specify a
+      single character separator *sep* parameter to include in the output.
+      By default between each byte.  A second optional *bytes_per_sep*
+      parameter controls the spacing.  Positive values calculate the
+      separator position from the right, negative values from the left.
+
+      >>> value = b'\xf0\xf1\xf2'
+      >>> value.hex('-')
+      'f0-f1-f2'
+      >>> value.hex('_', 2)
+      'f0_f1f2'
+      >>> b'UUDDLRLRAB'.hex(' ', -4)
+      '55554444 4c524c52 4142'
+
       .. versionadded:: 3.5
+
+      .. versionchanged:: 3.8
+         :meth:`bytes.hex` now supports optional *sep* and *bytes_per_sep*
+         parameters to insert separators between bytes in the hex output.
 
 Since bytes objects are sequences of integers (akin to a tuple), for a bytes
 object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes

@@ -1,0 +1,1 @@
+Handle exceptions raised by functions added by concurrent.futures add_done_callback correctly when the Future has already completed.

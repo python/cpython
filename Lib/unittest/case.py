@@ -102,6 +102,7 @@ def addModuleCleanup(*args, **kwargs):
     args = tuple(args)
 
     _module_cleanups.append((function, args, kwargs))
+addModuleCleanup.__text_signature__ = '(function, /, *args, **kwargs)'
 
 
 def doModuleCleanups():
@@ -498,8 +499,8 @@ class TestCase(object):
         args = tuple(args)
 
         self._cleanups.append((function, args, kwargs))
+    addCleanup.__text_signature__ = '($self, function, /, *args, **kwargs)'
 
-    @classmethod
     def addClassCleanup(*args, **kwargs):
         """Same as addCleanup, except the cleanup items are called even if
         setUpClass fails (unlike tearDownClass)."""
@@ -514,6 +515,8 @@ class TestCase(object):
         args = tuple(args)
 
         cls._class_cleanups.append((function, args, kwargs))
+    addClassCleanup.__text_signature__ = '($cls, function, /, *args, **kwargs)'
+    addClassCleanup = classmethod(addClassCleanup)
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -642,6 +645,18 @@ class TestCase(object):
         else:
             addUnexpectedSuccess(self)
 
+    def _callSetUp(self):
+        self.setUp()
+
+    def _callTestMethod(self, method):
+        method()
+
+    def _callTearDown(self):
+        self.tearDown()
+
+    def _callCleanup(self, function, /, *args, **kwargs):
+        function(*args, **kwargs)
+
     def run(self, result=None):
         orig_result = result
         if result is None:
@@ -673,14 +688,14 @@ class TestCase(object):
             self._outcome = outcome
 
             with outcome.testPartExecutor(self):
-                self.setUp()
+                self._callSetUp()
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
-                    testMethod()
+                    self._callTestMethod(testMethod)
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
-                    self.tearDown()
+                    self._callTearDown()
 
             self.doCleanups()
             for test, reason in outcome.skipped:
@@ -718,7 +733,7 @@ class TestCase(object):
         while self._cleanups:
             function, args, kwargs = self._cleanups.pop()
             with outcome.testPartExecutor(self):
-                function(*args, **kwargs)
+                self._callCleanup(function, *args, **kwargs)
 
         # return this for backwards compatibility
         # even though we no longer use it internally

@@ -4964,6 +4964,9 @@ A very long line that must get split to something other than at the
         msg['SomeHeader'] = '   value with leading ws'
         self.assertEqual(str(msg), "SomeHeader:    value with leading ws\n\n")
 
+    def test_whitespace_header(self):
+        self.assertEqual(Header(' ').encode(), ' ')
+
 
 
 # Test RFC 2231 header parameters (en/de)coding

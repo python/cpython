@@ -1,4 +1,4 @@
-.. highlightlang:: none
+.. highlight:: none
 
 .. _history-and-license:
 
@@ -561,7 +561,7 @@ SipHash24
 ---------
 
 The file :file:`Python/pyhash.c` contains Marek Majkowski' implementation of
-Dan Bernstein's SipHash24 algorithm. The contains the following note::
+Dan Bernstein's SipHash24 algorithm. It contains the following note::
 
   <MIT License>
   Copyright (c) 2013  Marek Majkowski <marek@popcount.org>

@@ -766,9 +766,8 @@ class TestClassesAndFunctions(unittest.TestCase):
                                     posonlyargs_e=[], kwonlyargs_e=[],
                                     kwonlydefaults_e=None,
                                     ann_e={}, formatted=None):
-        with self.assertWarns(DeprecationWarning):
-            args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
-                inspect.getfullargspec(routine)
+        args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
+            inspect.getfullargspec(routine)
         self.assertEqual(args, args_e)
         self.assertEqual(varargs, varargs_e)
         self.assertEqual(varkw, varkw_e)
@@ -780,7 +779,7 @@ class TestClassesAndFunctions(unittest.TestCase):
             with self.assertWarns(DeprecationWarning):
                 self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
                                                        kwonlyargs, kwonlydefaults, ann),
-                             formatted)
+                                 formatted)
 
     def test_getargspec(self):
         self.assertArgSpecEquals(mod.eggs, ['x', 'y'], formatted='(x, y)')
@@ -879,13 +878,11 @@ class TestClassesAndFunctions(unittest.TestCase):
 
     def test_getfullargspec_signature_annos(self):
         def test(a:'spam') -> 'ham': pass
-        with self.assertWarns(DeprecationWarning):
-            spec = inspect.getfullargspec(test)
+        spec = inspect.getfullargspec(test)
         self.assertEqual(test.__annotations__, spec.annotations)
 
         def test(): pass
-        with self.assertWarns(DeprecationWarning):
-            spec = inspect.getfullargspec(test)
+        spec = inspect.getfullargspec(test)
         self.assertEqual(test.__annotations__, spec.annotations)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
@@ -910,8 +907,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     def test_getfullargspec_builtin_func(self):
         import _testcapi
         builtin = _testcapi.docstring_with_signature_with_defaults
-        with self.assertWarns(DeprecationWarning):
-            spec = inspect.getfullargspec(builtin)
+        spec = inspect.getfullargspec(builtin)
         self.assertEqual(spec.defaults[0], 'avocado')
 
     @cpython_only
@@ -920,20 +916,17 @@ class TestClassesAndFunctions(unittest.TestCase):
     def test_getfullargspec_builtin_func_no_signature(self):
         import _testcapi
         builtin = _testcapi.docstring_no_signature
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(TypeError):
-                inspect.getfullargspec(builtin)
+        with self.assertRaises(TypeError):
+            inspect.getfullargspec(builtin)
 
     def test_getfullargspec_definition_order_preserved_on_kwonly(self):
         for fn in signatures_with_lexicographic_keyword_only_parameters():
-            with self.assertWarns(DeprecationWarning):
-                signature = inspect.getfullargspec(fn)
+            signature = inspect.getfullargspec(fn)
             l = list(signature.kwonlyargs)
             sorted_l = sorted(l)
             self.assertTrue(l)
             self.assertEqual(l, sorted_l)
-        with self.assertWarns(DeprecationWarning):
-            signature = inspect.getfullargspec(unsorted_keyword_only_parameters_fn)
+        signature = inspect.getfullargspec(unsorted_keyword_only_parameters_fn)
         l = list(signature.kwonlyargs)
         self.assertEqual(l, unsorted_keyword_only_parameters)
 
@@ -1390,9 +1383,8 @@ class TestGetcallargsFunctions(unittest.TestCase):
     def assertEqualCallArgs(self, func, call_params_string, locs=None):
         locs = dict(locs or {}, func=func)
         r1 = eval('func(%s)' % call_params_string, None, locs)
-        with self.assertWarns(DeprecationWarning):
-            r2 = eval('inspect.getcallargs(func, %s)' % call_params_string, None,
-                      locs)
+        r2 = eval('inspect.getcallargs(func, %s)' % call_params_string, None,
+                  locs)
         self.assertEqual(r1, r2)
 
     def assertEqualException(self, func, call_param_string, locs=None):
@@ -1404,9 +1396,8 @@ class TestGetcallargsFunctions(unittest.TestCase):
         else:
             self.fail('Exception not raised')
         try:
-            with self.assertWarns(DeprecationWarning):
-                eval('inspect.getcallargs(func, %s)' % call_param_string, None,
-                     locs)
+            eval('inspect.getcallargs(func, %s)' % call_param_string, None,
+                 locs)
         except Exception as e:
             ex2 = e
         else:
@@ -1564,16 +1555,14 @@ class TestGetcallargsFunctions(unittest.TestCase):
         def f5(*, a): pass
         with self.assertRaisesRegex(TypeError,
                                     'missing 1 required keyword-only'):
-            with self.assertWarns(DeprecationWarning):
-                inspect.getcallargs(f5)
+            inspect.getcallargs(f5)
 
 
         # issue20817:
         def f6(a, b, c):
             pass
         with self.assertRaisesRegex(TypeError, "'a', 'b' and 'c'"):
-            with self.assertWarns(DeprecationWarning):
-                inspect.getcallargs(f6)
+            inspect.getcallargs(f6)
 
         # bpo-33197
         with self.assertRaisesRegex(ValueError,
@@ -2908,16 +2897,15 @@ class TestSignatureObject(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_on_builtin_class(self):
-        self.assertEqual(str(inspect.signature(_pickle.Pickler)),
-                         '(file, protocol=None, fix_imports=True)')
+        expected = ('(file, protocol=None, fix_imports=True, '
+                    'buffer_callback=None)')
+        self.assertEqual(str(inspect.signature(_pickle.Pickler)), expected)
 
         class P(_pickle.Pickler): pass
         class EmptyTrait: pass
         class P2(EmptyTrait, P): pass
-        self.assertEqual(str(inspect.signature(P)),
-                         '(file, protocol=None, fix_imports=True)')
-        self.assertEqual(str(inspect.signature(P2)),
-                         '(file, protocol=None, fix_imports=True)')
+        self.assertEqual(str(inspect.signature(P)), expected)
+        self.assertEqual(str(inspect.signature(P2)), expected)
 
         class P3(P2):
             def __init__(self, spam):
@@ -3781,6 +3769,17 @@ class TestSignatureDefinitions(unittest.TestCase):
         for name in no_signature:
             with self.subTest(builtin=name):
                 self.assertIsNone(obj.__text_signature__)
+
+    def test_python_function_override_signature(self):
+        def func(*args, **kwargs):
+            pass
+        func.__text_signature__ = '($self, a, b=1, *args, c, d=2, **kwargs)'
+        sig = inspect.signature(func)
+        self.assertIsNotNone(sig)
+        self.assertEqual(str(sig), '(self, /, a, b=1, *args, c, d=2, **kwargs)')
+        func.__text_signature__ = '($self, a, b=1, /, *args, c, d=2, **kwargs)'
+        sig = inspect.signature(func)
+        self.assertEqual(str(sig), '(self, a, b=1, /, *args, c, d=2, **kwargs)')
 
 
 class NTimesUnwrappable:
