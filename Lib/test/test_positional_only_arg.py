@@ -398,6 +398,20 @@ class PositionalOnlyTestCase(unittest.TestCase):
         gen = f()
         self.assertEqual(next(gen), (1, 2))
 
+    def test_super(self):
+
+        sentinel = object()
+
+        class A:
+            def method(self):
+                return sentinel
+
+        class C(A):
+            def method(self, /):
+                return super().method()
+
+        self.assertEqual(C().method(), sentinel)
+
 
 if __name__ == "__main__":
     unittest.main()
