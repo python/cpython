@@ -557,7 +557,6 @@ class Executor(object):
             A Future representing the given call.
         """
         raise NotImplementedError()
-    submit.__text_signature__ = '($self, fn, /, *args, **kwargs)'
 
     def map(self, fn, *iterables, timeout=None, chunksize=1):
         """Returns an iterator equivalent to map(fn, iter).

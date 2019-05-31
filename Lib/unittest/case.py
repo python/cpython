@@ -90,7 +90,6 @@ def addModuleCleanup(function, /, *args, **kwargs):
     """Same as addCleanup, except the cleanup items are called even if
     setUpModule fails (unlike tearDownModule)."""
     _module_cleanups.append((function, args, kwargs))
-addModuleCleanup.__text_signature__ = '(function, /, *args, **kwargs)'
 
 
 def doModuleCleanups():
@@ -471,7 +470,6 @@ class TestCase(object):
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
         self._cleanups.append((function, args, kwargs))
-    addCleanup.__text_signature__ = '($self, function, /, *args, **kwargs)'
 
     @classmethod
     def addClassCleanup(cls, function, /, *args, **kwargs):

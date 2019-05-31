@@ -395,7 +395,6 @@ class Server(object):
 
         self.incref(c, ident)
         return ident, tuple(exposed)
-    create.__text_signature__ = '($self, c, typeid, /, *args, **kwds)'
 
     def get_methods(self, c, token):
         '''

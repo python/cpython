@@ -99,4 +99,3 @@ def wrapper(func, /, *args, **kwds):
             echo()
             nocbreak()
             endwin()
-wrapper.__text_signature__ = '(func, /, *args, **kwds)'
