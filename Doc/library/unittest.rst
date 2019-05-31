@@ -510,7 +510,8 @@ that is broken and will fail, but shouldn't be counted as a failure on a
 :class:`TestResult`.
 
 Skipping a test is simply a matter of using the :func:`skip` :term:`decorator`
-or one of its conditional variants. And :meth:`TestCase.skipTest` could be used to
+or one of its conditional variants, calling :meth:`TestCase.skipTest` within a
+:meth:`~TestCase.setUp` or test method, or raising :exc:`SkipTest` directly.
 skip a test.
 
 Basic skipping looks like this::
@@ -533,7 +534,10 @@ Basic skipping looks like this::
            pass
 
        def test_skip_me(self):
-           self.skipTest("skip")
+           if not external_resource_available():
+               self.skipTest("external resource not available")
+           # test code that depends on the external resource
+           pass
 
 This is the output of running the example above in verbose mode::
 
