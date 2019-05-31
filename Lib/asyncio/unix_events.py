@@ -1155,7 +1155,7 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         pass
 
     def add_child_handler(self, pid, callback, *args):
-        loop = tasks.get_running_loop()
+        loop = events.get_running_loop()
         self._callbacks[pid] = (loop, callback, args)
 
         # Prevent a race condition in case the child is already terminated.
@@ -1254,7 +1254,7 @@ class ThreadedChildWatcher(AbstractChildWatcher):
         pass
 
     def add_child_handler(self, pid, callback, *args):
-        loop = tasks.get_running_loop()
+        loop = events.get_running_loop()
         thread = threading.Thread(target=self._do_waitpid,
                                   name=f"waitpid-{next(self._pid_counter)}",
                                   args=(loop, pid, callback, args),

@@ -650,6 +650,16 @@ if sys.platform != 'win32':
             policy.set_child_watcher(watcher)
             self.addCleanup(policy.set_child_watcher, None)
 
+    class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
+                                         test_utils.TestCase):
+
+        Watcher = unix_events.ThreadedChildWatcher
+
+    class SubprocessMultiLoopWatcherTests(SubprocessWatcherMixin,
+                                          test_utils.TestCase):
+
+        Watcher = unix_events.MultiLoopChildWatcher
+
     class SubprocessSafeWatcherTests(SubprocessWatcherMixin,
                                      test_utils.TestCase):
 
