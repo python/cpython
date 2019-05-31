@@ -1,0 +1,1 @@
+Fix the error handling in :meth:`msilib.SummaryInformation.GetProperty()`.
