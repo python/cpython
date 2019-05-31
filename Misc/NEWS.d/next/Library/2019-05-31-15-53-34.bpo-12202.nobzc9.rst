@@ -1,1 +1,2 @@
-Fix the error handling in :meth:`msilib.SummaryInformation.GetProperty()`.
+Fix the error handling in :meth:`msilib.SummaryInformation.GetProperty`. Patch
+by Zackery Spytz.
