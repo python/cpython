@@ -175,6 +175,10 @@ async def open_connection(host=None, port=None, *,
                   stacklevel=2)
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
     reader = StreamReader(limit=limit, loop=loop)
     protocol = StreamReaderProtocol(reader, loop=loop, _asyncio_internal=True)
     transport, _ = await loop.create_connection(
@@ -213,6 +217,10 @@ async def start_server(client_connected_cb, host=None, port=None, *,
                   stacklevel=2)
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
 
     def factory():
         reader = StreamReader(limit=limit, loop=loop)
@@ -414,6 +422,10 @@ if hasattr(socket, 'AF_UNIX'):
                       stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
+        else:
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
         reader = StreamReader(limit=limit, loop=loop)
         protocol = StreamReaderProtocol(reader, loop=loop,
                                         _asyncio_internal=True)
@@ -473,6 +485,10 @@ if hasattr(socket, 'AF_UNIX'):
                       stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
+        else:
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
 
         def factory():
             reader = StreamReader(limit=limit, loop=loop)
@@ -535,10 +551,6 @@ class FlowControlMixin(protocols.Protocol):
             self._loop = events.get_event_loop()
         else:
             self._loop = loop
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
-
         if not _asyncio_internal:
             # NOTE:
             # Avoid inheritance from FlowControlMixin
@@ -614,10 +626,9 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
     def __init__(self, stream_reader, client_connected_cb=None, loop=None,
                  *, _asyncio_internal=False):
-        if loop:
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
         super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
         self._stream_reader = stream_reader
         self._stream_writer = None
@@ -761,9 +772,6 @@ class StreamReader:
             self._loop = events.get_event_loop()
         else:
             self._loop = loop
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
         self._buffer = bytearray()
         self._eof = False    # Whether we're done.
         self._waiter = None  # A future used by _wait_for_data()
@@ -1308,9 +1316,6 @@ class Stream:
             self._loop = events.get_event_loop()
         else:
             self._loop = loop
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
         self._buffer = bytearray()
         self._eof = False    # Whether we're done.
         self._waiter = None  # A future used by _wait_for_data()
