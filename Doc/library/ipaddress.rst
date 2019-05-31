@@ -219,9 +219,14 @@ write code that handles both IP versions correctly.  Address objects are
       ``"::abc:7:def"``.
    2. An integer that fits into 128 bits.
    3. An integer packed into a :class:`bytes` object of length 16, big-endian.
+   4. String IPv6 address may contain scope (or zone) id in format <address>%<scope_id>.
+      Scope id could not be blank or negative integer.
+      See :RFC: `4007` for details. 
 
    >>> ipaddress.IPv6Address('2001:db8::1000')
    IPv6Address('2001:db8::1000')
+   >>> ipaddress.IPv6Address('2001:db8::1000%1')
+   IPv6Address('2001:db8::1000%1')
 
    .. attribute:: compressed
 
@@ -268,6 +273,12 @@ write code that handles both IP versions correctly.  Address objects are
       ``::FFFF/96``), this property will report the embedded IPv4 address.
       For any other address, this property will be ``None``.
 
+   .. attribute:: scope_id
+
+      For addresses that appear to be scoped addresses (containing
+      ``%<scope_id>``) as defined by :RFC:`4007`, this attribute will consist
+      scope id.  For any other address, this property will be ``None``.
+
    .. attribute:: sixtofour
 
       For addresses that appear to be 6to4 addresses  (starting with
@@ -311,14 +322,16 @@ IPv6).
 Comparison operators
 """"""""""""""""""""
 
-Address objects can be compared with the usual set of comparison operators.  Some
-examples::
+Address objects can be compared with the usual set of comparison operators. Scope id
+is not considered while comparing IPv6 address objects. Some examples::
 
    >>> IPv4Address('127.0.0.2') > IPv4Address('127.0.0.1')
    True
    >>> IPv4Address('127.0.0.2') == IPv4Address('127.0.0.1')
    False
    >>> IPv4Address('127.0.0.2') != IPv4Address('127.0.0.1')
+   True
+   >>> IPv6Address('fe80::1234') == IPv6Address('fe80::1234%1')
    True
 
 
