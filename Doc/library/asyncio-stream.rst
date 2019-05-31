@@ -68,7 +68,8 @@ and work with streams:
       The *ssl_handshake_timeout* parameter.
 
    .. deprecated-removed :: 3.8 3.10
-      ``open_connection()`` is deprecated in favor of ``connect()``.
+
+      `open_connection()` is deprecated in favor of `connect()`.
 
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
                           port=None, \*, loop=None, limit=None, \
@@ -104,7 +105,8 @@ and work with streams:
       The *ssl_handshake_timeout* and *start_serving* parameters.
 
    .. deprecated-removed :: 3.8 3.10
-      ``start_server()`` is deprecated if favor of ``StreamServer()``
+
+      `start_server()` is deprecated if favor of `StreamServer()`
 
 
 .. rubric:: Unix Sockets
@@ -131,7 +133,8 @@ and work with streams:
       The *path* parameter can now be a :term:`path-like object`
 
    .. deprecated-removed :: 3.8 3.10
-      ``open_unix_connection()`` is deprecated if favor of ``connect_unix()``.
+
+      `open_unix_connection()` is deprecated if favor of `connect_unix()`.
 
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
@@ -156,7 +159,8 @@ and work with streams:
       The *path* parameter can now be a :term:`path-like object`.
 
    .. deprecated-removed :: 3.8 3.10
-      ``start_unix_server()`` is deprecated in favor of ``UnixStreamServer()``.
+
+      `start_unix_server()` is deprecated in favor of `UnixStreamServer()`.
 
 
 ---------
