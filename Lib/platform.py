@@ -72,7 +72,7 @@
 #            type information
 #    0.4.0 - added win32_ver() and modified the platform() output for WinXX
 #    0.3.4 - fixed a bug in _follow_symlinks()
-#    0.3.3 - fixed popen() and "file" command invokation bugs
+#    0.3.3 - fixed popen() and "file" command invocation bugs
 #    0.3.2 - added architecture() API and support for it in platform()
 #    0.3.1 - fixed syscmd_ver() RE to support Windows NT
 #    0.3.0 - added system alias support
@@ -113,24 +113,40 @@ __copyright__ = """
 __version__ = '1.0.8'
 
 import collections
-import sys, os, re, subprocess
-
-import warnings
+import os
+import re
+import sys
 
 ### Globals & Constants
 
-# Determine the platform's /dev/null device
-try:
-    DEV_NULL = os.devnull
-except AttributeError:
-    # os.devnull was added in Python 2.4, so emulate it for earlier
-    # Python versions
-    if sys.platform in ('dos', 'win32', 'win16'):
-        # Use the old CP/M NUL as device name
-        DEV_NULL = 'NUL'
-    else:
-        # Standard Unix uses /dev/null
-        DEV_NULL = '/dev/null'
+# Helper for comparing two version number strings.
+# Based on the description of the PHP's version_compare():
+# http://php.net/manual/en/function.version-compare.php
+
+_ver_stages = {
+    # any string not found in this dict, will get 0 assigned
+    'dev': 10,
+    'alpha': 20, 'a': 20,
+    'beta': 30, 'b': 30,
+    'c': 40,
+    'RC': 50, 'rc': 50,
+    # number, will get 100 assigned
+    'pl': 200, 'p': 200,
+}
+
+_component_re = re.compile(r'([0-9]+|[._+-])')
+
+def _comparable_version(version):
+    result = []
+    for v in _component_re.split(version):
+        if v not in '._+-':
+            try:
+                v = int(v, 10)
+                t = 100
+            except ValueError:
+                t = _ver_stages.get(v, 0)
+            result.extend((t, v))
+    return result
 
 ### Platform specific APIs
 
@@ -140,7 +156,7 @@ _libc_search = re.compile(b'(__libc_init)'
                           b'|'
                           br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
 
-def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
+def libc_ver(executable=None, lib='', version='', chunksize=16384):
 
     """ Tries to determine the libc version that the file executable
         (which defaults to the Python interpreter) is linked against.
@@ -155,7 +171,20 @@ def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
         The file is read and scanned in chunks of chunksize bytes.
 
     """
-    from distutils.version import LooseVersion as V
+    if executable is None:
+        try:
+            ver = os.confstr('CS_GNU_LIBC_VERSION')
+            # parse 'glibc 2.28' as ('glibc', '2.28')
+            parts = ver.split(maxsplit=1)
+            if len(parts) == 2:
+                return tuple(parts)
+        except (AttributeError, ValueError, OSError):
+            # os.confstr() or CS_GNU_LIBC_VERSION value not available
+            pass
+
+        executable = sys.executable
+
+    V = _comparable_version
     if hasattr(os.path, 'realpath'):
         # Python 2.2 introduced os.path.realpath(); it is used
         # here to work around problems with Cygwin not being
@@ -197,63 +226,6 @@ def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
                         version = version + threads
             pos = m.end()
     return lib, version
-
-def _dist_try_harder(distname, version, id):
-
-    """ Tries some special tricks to get the distribution
-        information in case the default method fails.
-
-        Currently supports older SuSE Linux, Caldera OpenLinux and
-        Slackware Linux distributions.
-
-    """
-    if os.path.exists('/var/adm/inst-log/info'):
-        # SuSE Linux stores distribution information in that file
-        distname = 'SuSE'
-        for line in open('/var/adm/inst-log/info'):
-            tv = line.split()
-            if len(tv) == 2:
-                tag, value = tv
-            else:
-                continue
-            if tag == 'MIN_DIST_VERSION':
-                version = value.strip()
-            elif tag == 'DIST_IDENT':
-                values = value.split('-')
-                id = values[2]
-        return distname, version, id
-
-    if os.path.exists('/etc/.installed'):
-        # Caldera OpenLinux has some infos in that file (thanks to Colin Kong)
-        for line in open('/etc/.installed'):
-            pkg = line.split('-')
-            if len(pkg) >= 2 and pkg[0] == 'OpenLinux':
-                # XXX does Caldera support non Intel platforms ? If yes,
-                #     where can we find the needed id ?
-                return 'OpenLinux', pkg[1], id
-
-    if os.path.isdir('/usr/lib/setup'):
-        # Check for slackware version tag file (thanks to Greg Andruk)
-        verfiles = os.listdir('/usr/lib/setup')
-        for n in range(len(verfiles)-1, -1, -1):
-            if verfiles[n][:14] != 'slack-version-':
-                del verfiles[n]
-        if verfiles:
-            verfiles.sort()
-            distname = 'slackware'
-            version = verfiles[-1][14:]
-            return distname, version, id
-
-    return distname, version, id
-
-def popen(cmd, mode='r', bufsize=-1):
-
-    """ Portable popen() interface.
-    """
-    import warnings
-    warnings.warn('use os.popen instead', DeprecationWarning, stacklevel=2)
-    return os.popen(cmd, mode, bufsize)
-
 
 def _norm_version(version, build=''):
 
@@ -303,16 +275,15 @@ def _syscmd_ver(system='', release='', version='',
         return system, release, version
 
     # Try some common cmd strings
+    import subprocess
     for cmd in ('ver', 'command /c ver', 'cmd /c ver'):
         try:
-            pipe = os.popen(cmd)
-            info = pipe.read()
-            if pipe.close():
-                raise OSError('command failed')
-            # XXX How can I suppress shell errors from being written
-            #     to stderr ?
-        except OSError as why:
-            #print 'Command %s failed: %s' % (cmd, why)
+            info = subprocess.check_output(cmd,
+                                           stderr=subprocess.DEVNULL,
+                                           text=True,
+                                           shell=True)
+        except (OSError, subprocess.CalledProcessError) as why:
+            #print('Command %s failed: %s' % (cmd, why))
             continue
         else:
             break
@@ -363,15 +334,32 @@ _WIN32_SERVER_RELEASES = {
     (6, None): "post2012ServerR2",
 }
 
+def win32_is_iot():
+    return win32_edition() in ('IoTUAP', 'NanoServer', 'WindowsCoreHeadless', 'IoTEdgeOS')
+
+def win32_edition():
+    try:
+        try:
+            import winreg
+        except ImportError:
+            import _winreg as winreg
+    except ImportError:
+        pass
+    else:
+        try:
+            cvkey = r'SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+            with winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, cvkey) as key:
+                return winreg.QueryValueEx(key, 'EditionId')[0]
+        except OSError:
+            pass
+
+    return None
+
 def win32_ver(release='', version='', csd='', ptype=''):
     try:
         from sys import getwindowsversion
     except ImportError:
         return release, version, csd, ptype
-    try:
-        from winreg import OpenKeyEx, QueryValueEx, CloseKey, HKEY_LOCAL_MACHINE
-    except ImportError:
-        from _winreg import OpenKeyEx, QueryValueEx, CloseKey, HKEY_LOCAL_MACHINE
 
     winver = getwindowsversion()
     maj, min, build = winver.platform_version or winver[:3]
@@ -397,16 +385,20 @@ def win32_ver(release='', version='', csd='', ptype=''):
                    _WIN32_SERVER_RELEASES.get((maj, None)) or
                    release)
 
-    key = None
     try:
-        key = OpenKeyEx(HKEY_LOCAL_MACHINE,
-                        r'SOFTWARE\Microsoft\Windows NT\CurrentVersion')
-        ptype = QueryValueEx(key, 'CurrentType')[0]
-    except:
+        try:
+            import winreg
+        except ImportError:
+            import _winreg as winreg
+    except ImportError:
         pass
-    finally:
-        if key:
-            CloseKey(key)
+    else:
+        try:
+            cvkey = r'SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+            with winreg.OpenKeyEx(HKEY_LOCAL_MACHINE, cvkey) as key:
+                ptype = QueryValueEx(key, 'CurrentType')[0]
+        except:
+            pass
 
     return release, version, csd, ptype
 
@@ -435,7 +427,7 @@ def _mac_ver_xml():
 
 def mac_ver(release='', versioninfo=('', '', ''), machine=''):
 
-    """ Get MacOS version information and return it as tuple (release,
+    """ Get macOS version information and return it as tuple (release,
         versioninfo, machine) with versioninfo being a tuple (version,
         dev_stage, non_release_version).
 
@@ -507,12 +499,7 @@ def system_alias(system, release, version):
         where it would otherwise cause confusion.
 
     """
-    if system == 'Rhapsody':
-        # Apple's BSD derivative
-        # XXX How can we determine the marketing release number ?
-        return 'MacOS X Server', system+release, version
-
-    elif system == 'SunOS':
+    if system == 'SunOS':
         # Sun's OS
         if release < '5':
             # These releases use the old name SunOS
@@ -547,6 +534,9 @@ def system_alias(system, release, version):
     elif system in ('win32', 'win16'):
         # In case one of the other tricks
         system = 'Windows'
+
+    # bpo-35516: Don't replace Darwin with macOS since input release and
+    # version arguments can be different than the currently running version.
 
     return system, release, version
 
@@ -617,16 +607,15 @@ def _syscmd_uname(option, default=''):
     if sys.platform in ('dos', 'win32', 'win16'):
         # XXX Others too ?
         return default
+
+    import subprocess
     try:
-        f = os.popen('uname %s 2> %s' % (option, DEV_NULL))
-    except (AttributeError, OSError):
+        output = subprocess.check_output(('uname', option),
+                                         stderr=subprocess.DEVNULL,
+                                         text=True)
+    except (OSError, subprocess.CalledProcessError):
         return default
-    output = f.read().strip()
-    rc = f.close()
-    if not output or rc:
-        return default
-    else:
-        return output
+    return (output.strip() or default)
 
 def _syscmd_file(target, default=''):
 
@@ -640,19 +629,24 @@ def _syscmd_file(target, default=''):
     if sys.platform in ('dos', 'win32', 'win16'):
         # XXX Others too ?
         return default
-    target = _follow_symlinks(target)
-    try:
-        proc = subprocess.Popen(['file', target],
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-    except (AttributeError, OSError):
+    import subprocess
+    target = _follow_symlinks(target)
+    # "file" output is locale dependent: force the usage of the C locale
+    # to get deterministic behavior.
+    env = dict(os.environ, LC_ALL='C')
+    try:
+        # -b: do not prepend filenames to output lines (brief mode)
+        output = subprocess.check_output(['file', '-b', target],
+                                         stderr=subprocess.DEVNULL,
+                                         env=env)
+    except (OSError, subprocess.CalledProcessError):
         return default
-    output = proc.communicate()[0].decode('latin-1')
-    rc = proc.wait()
-    if not output or rc:
+    if not output:
         return default
-    else:
-        return output
+    # With the C locale, the output should be mostly ASCII-compatible.
+    # Decode from Latin-1 to prevent Unicode decode error.
+    return output.decode('latin-1')
 
 ### Information about the used architecture
 
@@ -689,12 +683,8 @@ def architecture(executable=sys.executable, bits='', linkage=''):
     # else is given as default.
     if not bits:
         import struct
-        try:
-            size = struct.calcsize('P')
-        except struct.error:
-            # Older installations can only query longs
-            size = struct.calcsize('l')
-        bits = str(size*8) + 'bit'
+        size = struct.calcsize('P')
+        bits = str(size * 8) + 'bit'
 
     # Get data from the 'file' system command
     if executable:
@@ -714,7 +704,7 @@ def architecture(executable=sys.executable, bits='', linkage=''):
                 linkage = l
         return bits, linkage
 
-    if 'executable' not in fileout:
+    if 'executable' not in fileout and 'shared object' not in fileout:
         # Format not supported
         return bits, linkage
 
@@ -1195,6 +1185,13 @@ def platform(aliased=0, terse=0):
     if aliased:
         system, release, version = system_alias(system, release, version)
 
+    if system == 'Darwin':
+        # macOS (darwin kernel)
+        macos_release = mac_ver()[0]
+        if macos_release:
+            system = 'macOS'
+            release = macos_release
+
     if system == 'Windows':
         # MS platforms
         rel, vers, csd, ptype = win32_ver(version)
@@ -1218,13 +1215,6 @@ def platform(aliased=0, terse=0):
             platform = _platform(system, release, version,
                                  'on',
                                  os_name, os_version, os_arch)
-
-    elif system == 'MacOS':
-        # MacOS platforms
-        if terse:
-            platform = _platform(system, release)
-        else:
-            platform = _platform(system, release, machine)
 
     else:
         # Generic handler

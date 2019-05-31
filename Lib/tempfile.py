@@ -70,20 +70,10 @@ template = "tmp"
 
 _once_lock = _allocate_lock()
 
-if hasattr(_os, "lstat"):
-    _stat = _os.lstat
-elif hasattr(_os, "stat"):
-    _stat = _os.stat
-else:
-    # Fallback.  All we need is something that raises OSError if the
-    # file doesn't exist.
-    def _stat(fn):
-        fd = _os.open(fn, _os.O_RDONLY)
-        _os.close(fd)
 
 def _exists(fn):
     try:
-        _stat(fn)
+        _os.lstat(fn)
     except OSError:
         return False
     else:
@@ -788,8 +778,38 @@ class TemporaryDirectory(object):
             warn_message="Implicitly cleaning up {!r}".format(self))
 
     @classmethod
+    def _rmtree(cls, name):
+        def onerror(func, path, exc_info):
+            if issubclass(exc_info[0], PermissionError):
+                def resetperms(path):
+                    try:
+                        _os.chflags(path, 0)
+                    except AttributeError:
+                        pass
+                    _os.chmod(path, 0o700)
+
+                try:
+                    if path != name:
+                        resetperms(_os.path.dirname(path))
+                    resetperms(path)
+
+                    try:
+                        _os.unlink(path)
+                    # PermissionError is raised on FreeBSD for directories
+                    except (IsADirectoryError, PermissionError):
+                        cls._rmtree(path)
+                except FileNotFoundError:
+                    pass
+            elif issubclass(exc_info[0], FileNotFoundError):
+                pass
+            else:
+                raise
+
+        _shutil.rmtree(name, onerror=onerror)
+
+    @classmethod
     def _cleanup(cls, name, warn_message):
-        _shutil.rmtree(name)
+        cls._rmtree(name)
         _warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):
@@ -803,4 +823,4 @@ class TemporaryDirectory(object):
 
     def cleanup(self):
         if self._finalizer.detach():
-            _shutil.rmtree(self.name)
+            self._rmtree(self.name)

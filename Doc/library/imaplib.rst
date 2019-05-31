@@ -39,7 +39,7 @@ base class:
 
    The :class:`IMAP4` class supports the :keyword:`with` statement.  When used
    like this, the IMAP4 ``LOGOUT`` command is issued automatically when the
-   :keyword:`with` statement exits.  E.g.::
+   :keyword:`!with` statement exits.  E.g.::
 
     >>> from imaplib import IMAP4
     >>> with IMAP4("domain.org") as M:
@@ -327,6 +327,9 @@ An :class:`IMAP4` instance has the following methods:
 
    Shutdown connection to server. Returns server ``BYE`` response.
 
+   .. versionchanged:: 3.8
+      The method no longer ignores silently arbitrary exceptions.
+
 
 .. method:: IMAP4.lsub(directory='""', pattern='*')
 
@@ -517,7 +520,7 @@ An :class:`IMAP4` instance has the following methods:
       create such tags.  Although it is an RFC violation and IMAP clients and
       servers are supposed to be strict, imaplib nonetheless continues to allow
       such tags to be created for backward compatibility reasons, and as of
-      python 3.6, handles them if they are sent from the server, since this
+      Python 3.6, handles them if they are sent from the server, since this
       improves real-world compatibility.
 
 .. method:: IMAP4.subscribe(mailbox)

@@ -13,7 +13,7 @@ import re
 from sys import maxsize as INFINITY
 
 import tkinter
-from tkinter.constants import TOP, LEFT, X, W, SUNKEN
+from tkinter.constants import TOP, X, SUNKEN
 
 from idlelib.config import idleConf
 
@@ -122,9 +122,13 @@ class CodeContext:
             # thus ensuring that it will appear directly above text_frame.
             self.context.pack(side=TOP, fill=X, expand=False,
                             before=self.editwin.text_frame)
+            menu_status = 'Hide'
         else:
             self.context.destroy()
             self.context = None
+            menu_status = 'Show'
+        self.editwin.update_menu_label(menu='options', index='* Code Context',
+                                       label=f'{menu_status} Code Context')
         return "break"
 
     def get_context(self, new_topvisible, stopline=1, stopindent=0):

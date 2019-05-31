@@ -1,6 +1,5 @@
 # Test various flavors of legal and illegal future statements
 
-from functools import partial
 import unittest
 from test import support
 from textwrap import dedent
@@ -15,7 +14,7 @@ def get_error_location(msg):
 
 class FutureTest(unittest.TestCase):
 
-    def check_syntax_error(self, err, basename, lineno, offset=0):
+    def check_syntax_error(self, err, basename, lineno, offset=1):
         self.assertIn('%s.py, line %d' % (basename, lineno), str(err))
         self.assertEqual(os.path.basename(err.filename), basename + '.py')
         self.assertEqual(err.lineno, lineno)
@@ -68,12 +67,12 @@ class FutureTest(unittest.TestCase):
     def test_badfuture9(self):
         with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future9
-        self.check_syntax_error(cm.exception, "badsyntax_future9", 3, 0)
+        self.check_syntax_error(cm.exception, "badsyntax_future9", 3)
 
     def test_badfuture10(self):
         with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future10
-        self.check_syntax_error(cm.exception, "badsyntax_future10", 3, 0)
+        self.check_syntax_error(cm.exception, "badsyntax_future10", 3)
 
     def test_parserhack(self):
         # test that the parser.c::future_hack function works as expected
@@ -178,11 +177,24 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('-1')
         eq('~int and not v1 ^ 123 + v2 | True')
         eq('a + (not b)')
+        eq('lambda: None')
         eq('lambda arg: None')
         eq('lambda a=True: a')
         eq('lambda a, b, c=True: a')
         eq("lambda a, b, c=True, *, d=1 << v2, e='str': a")
-        eq("lambda a, b, c=True, *vararg, d=v1 << 2, e='str', **kwargs: a + b")
+        eq("lambda a, b, c=True, *vararg, d, e='str', **kwargs: a + b")
+        eq("lambda a, /, b, c=True, *vararg, d, e='str', **kwargs: a + b")
+        eq('lambda x, /: x')
+        eq('lambda x=1, /: x')
+        eq('lambda x, /, y: x + y')
+        eq('lambda x=1, /, y=2: x + y')
+        eq('lambda x, /, y=1: x + y')
+        eq('lambda x, /, y=1, *, z=3: x + y + z')
+        eq('lambda x=1, /, y=2, *, z=3: x + y + z')
+        eq('lambda x=1, /, y=2, *, z: x + y + z')
+        eq('lambda x=1, y=2, z=3, /, w=4, *, l, l2: x + y + z + w + l + l2')
+        eq('lambda x=1, y=2, z=3, /, w=4, *, l, l2, **kwargs: x + y + z + w + l + l2')
+        eq('lambda x, /, y=1, *, z: x + y + z')
         eq('lambda x: lambda y: x + y')
         eq('1 if True else 2')
         eq('str or None if int or True else str or bytes or None')
@@ -230,7 +242,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("lukasz.langa.pl")
         eq("call.me(maybe)")
         eq("1 .real")
-        eq("1.0 .real")
+        eq("1.0.real")
         eq("....__class__")
         eq("list[str]")
         eq("dict[str, int]")
@@ -255,6 +267,9 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("f'space between opening braces: { {a for a in (1, 2, 3)}}'")
         eq("f'{(lambda x: x)}'")
         eq("f'{(None if a else lambda x: x)}'")
+        eq("f'{x}'")
+        eq("f'{x!r}'")
+        eq("f'{x!a}'")
         eq('(yield from outside_of_generator)')
         eq('(yield)')
         eq('(yield a + b)')
@@ -266,6 +281,18 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('f((x for x in a), 2)')
         eq('(((a)))', 'a')
         eq('(((a, b)))', '(a, b)')
+        eq("(x:=10)")
+        eq("f'{(x:=10):=10}'")
+
+    def test_fstring_debug_annotations(self):
+        # f-strings with '=' don't round trip very well, so set the expected
+        # result explicitely.
+        self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
+        self.assertAnnotationEqual("f'{x=:}'", expected="f'x={x:}'")
+        self.assertAnnotationEqual("f'{x=:.2f}'", expected="f'x={x:.2f}'")
+        self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
+        self.assertAnnotationEqual("f'{x=!a}'", expected="f'x={x!a}'")
+        self.assertAnnotationEqual("f'{x=!s:*^20}'", expected="f'x={x!s:*^20}'")
 
 
 if __name__ == "__main__":

@@ -20,8 +20,8 @@ Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes of multiple security
 vulnerabilities including: CVE-2017-9233 (External entity infinite loop
 DoS), CVE-2016-9063 (Integer overflow, re-fix), CVE-2016-0718 (Fix
 regression bugs from 2.2.0's fix to CVE-2016-0718) and CVE-2012-0876
-(Counter hash flooding with SipHash). Note: the CVE-2016-5300 (Use os-
-specific entropy sources like getrandom) doesn't impact Python, since Python
+(Counter hash flooding with SipHash). Note: the CVE-2016-5300 (Use
+os-specific entropy sources like getrandom) doesn't impact Python, since Python
 already gets entropy from the OS to set the expat secret using
 ``XML_SetHashSalt()``.
 
@@ -36,7 +36,7 @@ already gets entropy from the OS to set the expat secret using
 Fix urllib.parse.splithost() to correctly parse fragments. For example,
 ``splithost('//127.0.0.1#@evil.com/')`` now correctly returns the
 ``127.0.0.1`` host, instead of treating ``@evil.com`` as the host in an
-authentification (``login@host``).
+authentication (``login@host``).
 
 ..
 
@@ -250,7 +250,6 @@ by Nir Soffer.
 .. section: Library
 
 signal.setitimer() may disable the timer when passed a tiny value.
-
 Tiny values (such as 1e-6) are valid non-zero values for setitimer(), which
 is specified as taking microsecond-resolution intervals. However, on some
 platform, our conversion routine could convert 1e-6 into a zero interval,
@@ -290,8 +289,8 @@ Update zlib to 1.2.11.
 .. nonce: N3KI-o
 .. section: Library
 
-os.listdir() and os.scandir() now emit bytes names when called with bytes-
-like argument.
+os.listdir() and os.scandir() now emit bytes names when called with
+bytes-like argument.
 
 ..
 
@@ -559,8 +558,8 @@ is received.
 .. section: Library
 
 Various updates to typing module: add typing.NoReturn type, use
-WrapperDescriptorType, minor bug-fixes.  Original PRs by Jim Fasarakis-
-Hilliard and Ivan Levkivskyi.
+WrapperDescriptorType, minor bug-fixes.  Original PRs by Jim
+Fasarakis-Hilliard and Ivan Levkivskyi.
 
 ..
 
@@ -1001,15 +1000,12 @@ test_zipfile64.
 .. section: Tests
 
 regrtest: Enhance regrtest and backport features from the master branch.
-
 Add options: --coverage, --testdir, --list-tests (list test files, don't run
 them), --list-cases (list test identifiers, don't run them, :issue:`30523`),
 --matchfile (load a list of test filters from a text file, :issue:`30540`),
 --slowest (alias to --slow).
-
 Enhance output: add timestamp, test result, currently running tests, "Tests
 result: xxx" summary with total duration, etc.
-
 Fix reference leak hunting in regrtest, --huntrleaks: regrtest now warms up
 caches, create explicitly all internal singletons which are created on
 demand to prevent false positives when checking for reference leaks.
@@ -1070,8 +1066,8 @@ default locale encoding is a multi-byte encoding)
 .. section: Build
 
 Prevent unnecessary rebuilding of Python during ``make test``, ``make
-install`` and some other make targets when configured with ``--enable-
-optimizations``.
+install`` and some other make targets when configured with
+``--enable-optimizations``.
 
 ..
 

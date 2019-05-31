@@ -262,24 +262,31 @@ class TestNtpath(unittest.TestCase):
             env['USERPROFILE'] = 'C:\\eric\\idle'
             tester('ntpath.expanduser("~test")', 'C:\\eric\\test')
             tester('ntpath.expanduser("~")', 'C:\\eric\\idle')
-
-            env.clear()
-            env['HOME'] = 'C:\\idle\\eric'
-            tester('ntpath.expanduser("~test")', 'C:\\idle\\test')
-            tester('ntpath.expanduser("~")', 'C:\\idle\\eric')
-
             tester('ntpath.expanduser("~test\\foo\\bar")',
-                   'C:\\idle\\test\\foo\\bar')
+                   'C:\\eric\\test\\foo\\bar')
             tester('ntpath.expanduser("~test/foo/bar")',
-                   'C:\\idle\\test/foo/bar')
+                   'C:\\eric\\test/foo/bar')
             tester('ntpath.expanduser("~\\foo\\bar")',
-                   'C:\\idle\\eric\\foo\\bar')
+                   'C:\\eric\\idle\\foo\\bar')
             tester('ntpath.expanduser("~/foo/bar")',
-                   'C:\\idle\\eric/foo/bar')
+                   'C:\\eric\\idle/foo/bar')
+
+            # bpo-36264: ignore `HOME` when set on windows
+            env.clear()
+            env['HOME'] = 'F:\\'
+            env['USERPROFILE'] = 'C:\\eric\\idle'
+            tester('ntpath.expanduser("~test")', 'C:\\eric\\test')
+            tester('ntpath.expanduser("~")', 'C:\\eric\\idle')
 
     @unittest.skipUnless(nt, "abspath requires 'nt' module")
     def test_abspath(self):
         tester('ntpath.abspath("C:\\")', "C:\\")
+        with support.temp_cwd(support.TESTFN) as cwd_dir: # bpo-31047
+            tester('ntpath.abspath("")', cwd_dir)
+            tester('ntpath.abspath(" ")', cwd_dir + "\\ ")
+            tester('ntpath.abspath("?")', cwd_dir + "\\?")
+            drive, _ = ntpath.splitdrive(cwd_dir)
+            tester('ntpath.abspath("/abc/")', drive + "\\abc")
 
     def test_relpath(self):
         tester('ntpath.relpath("a")', 'a')
@@ -422,16 +429,22 @@ class TestNtpath(unittest.TestCase):
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$"))
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$\\"))
 
+    def assertEqualCI(self, s1, s2):
+        """Assert that two strings are equal ignoring case differences."""
+        self.assertEqual(s1.lower(), s2.lower())
+
     @unittest.skipUnless(nt, "OS helpers require 'nt' module")
     def test_nt_helpers(self):
         # Trivial validation that the helpers do not break, and support both
         # unicode and bytes (UTF-8) paths
 
-        drive, path = ntpath.splitdrive(sys.executable)
-        drive = drive.rstrip(ntpath.sep) + ntpath.sep
-        self.assertEqual(drive, nt._getvolumepathname(sys.executable))
-        self.assertEqual(drive.encode(),
-                         nt._getvolumepathname(sys.executable.encode()))
+        executable = nt._getfinalpathname(sys.executable)
+
+        for path in executable, os.fsencode(executable):
+            volume_path = nt._getvolumepathname(path)
+            path_drive = ntpath.splitdrive(path)[0]
+            volume_path_drive = ntpath.splitdrive(volume_path)[0]
+            self.assertEqualCI(path_drive, volume_path_drive)
 
         cap, free = nt._getdiskusage(sys.exec_prefix)
         self.assertGreater(cap, 0)

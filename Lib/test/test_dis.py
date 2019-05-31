@@ -124,7 +124,8 @@ dis_bug708901 = """\
               2 LOAD_CONST               1 (1)
 
 %3d           4 LOAD_CONST               2 (10)
-              6 CALL_FUNCTION            2
+
+%3d           6 CALL_FUNCTION            2
               8 GET_ITER
         >>   10 FOR_ITER                 4 (to 16)
              12 STORE_FAST               0 (res)
@@ -134,6 +135,7 @@ dis_bug708901 = """\
              18 RETURN_VALUE
 """ % (bug708901.__code__.co_firstlineno + 1,
        bug708901.__code__.co_firstlineno + 2,
+       bug708901.__code__.co_firstlineno + 1,
        bug708901.__code__.co_firstlineno + 3)
 
 
@@ -154,7 +156,8 @@ dis_bug1333982 = """\
              16 CALL_FUNCTION            1
 
 %3d          18 LOAD_CONST               4 (1)
-             20 BINARY_ADD
+
+%3d          20 BINARY_ADD
              22 CALL_FUNCTION            1
              24 RAISE_VARARGS            1
 
@@ -164,6 +167,7 @@ dis_bug1333982 = """\
        __file__,
        bug1333982.__code__.co_firstlineno + 1,
        bug1333982.__code__.co_firstlineno + 2,
+       bug1333982.__code__.co_firstlineno + 1,
        bug1333982.__code__.co_firstlineno + 3)
 
 _BIG_LINENO_FORMAT = """\
@@ -613,6 +617,7 @@ code_info_code_info = """\
 Name:              code_info
 Filename:          (.*)
 Argument count:    1
+Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  1
 Stack size:        3
@@ -627,50 +632,53 @@ Variable names:
               if sys.flags.optimize < 2 else (None,))
 
 @staticmethod
-def tricky(x, y, z=True, *args, c, d, e=[], **kwds):
+def tricky(a, b, /, x, y, z=True, *args, c, d, e=[], **kwds):
     def f(c=c):
-        print(x, y, z, c, d, e, f)
-    yield x, y, z, c, d, e, f
+        print(a, b, x, y, z, c, d, e, f)
+    yield a, b, x, y, z, c, d, e, f
 
 code_info_tricky = """\
 Name:              tricky
 Filename:          (.*)
 Argument count:    3
+Positional-only arguments: 2
 Kw-only arguments: 3
-Number of locals:  8
-Stack size:        7
+Number of locals:  10
+Stack size:        9
 Flags:             OPTIMIZED, NEWLOCALS, VARARGS, VARKEYWORDS, GENERATOR
 Constants:
    0: None
    1: <code object f at (.*), file "(.*)", line (.*)>
    2: 'tricky.<locals>.f'
 Variable names:
-   0: x
-   1: y
-   2: z
-   3: c
-   4: d
-   5: e
-   6: args
-   7: kwds
+   0: a
+   1: b
+   2: x
+   3: y
+   4: z
+   5: c
+   6: d
+   7: e
+   8: args
+   9: kwds
 Cell variables:
-   0: [edfxyz]
-   1: [edfxyz]
-   2: [edfxyz]
-   3: [edfxyz]
-   4: [edfxyz]
-   5: [edfxyz]"""
+   0: [abedfxyz]
+   1: [abedfxyz]
+   2: [abedfxyz]
+   3: [abedfxyz]
+   4: [abedfxyz]
+   5: [abedfxyz]"""
 # NOTE: the order of the cell variables above depends on dictionary order!
 
 co_tricky_nested_f = tricky.__func__.__code__.co_consts[1]
 
 code_info_tricky_nested_f = """\
-Name:              f
 Filename:          (.*)
 Argument count:    1
+Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  1
-Stack size:        8
+Stack size:        10
 Flags:             OPTIMIZED, NEWLOCALS, NESTED
 Constants:
    0: None
@@ -679,17 +687,18 @@ Names:
 Variable names:
    0: c
 Free variables:
-   0: [edfxyz]
-   1: [edfxyz]
-   2: [edfxyz]
-   3: [edfxyz]
-   4: [edfxyz]
-   5: [edfxyz]"""
+   0: [abedfxyz]
+   1: [abedfxyz]
+   2: [abedfxyz]
+   3: [abedfxyz]
+   4: [abedfxyz]
+   5: [abedfxyz]"""
 
 code_info_expr_str = """\
 Name:              <module>
 Filename:          <disassembly>
 Argument count:    0
+Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  0
 Stack size:        2
@@ -703,6 +712,7 @@ code_info_simple_stmt_str = """\
 Name:              <module>
 Filename:          <disassembly>
 Argument count:    0
+Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  0
 Stack size:        2
@@ -717,6 +727,7 @@ code_info_compound_stmt_str = """\
 Name:              <module>
 Filename:          <disassembly>
 Argument count:    0
+Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  0
 Stack size:        2
@@ -738,6 +749,7 @@ code_info_async_def = """\
 Name:              async_def
 Filename:          (.*)
 Argument count:    0
+Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  2
 Stack size:        10

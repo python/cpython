@@ -1,44 +1,54 @@
-from unittest import mock
 import os
 import platform
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import unittest
-import warnings
+from unittest import mock
 
 from test import support
 
 class PlatformTest(unittest.TestCase):
+    def clear_caches(self):
+        platform._platform_cache.clear()
+        platform._sys_version_cache.clear()
+        platform._uname_cache = None
+
     def test_architecture(self):
         res = platform.architecture()
 
     @support.skip_unless_symlink
     def test_architecture_via_symlink(self): # issue3762
         # On Windows, the EXE needs to know where pythonXY.dll and *.pyd is at
-        # so we add the directory to the path and PYTHONPATH.
+        # so we add the directory to the path, PYTHONHOME and PYTHONPATH.
+        env = None
         if sys.platform == "win32":
-            def restore_environ(old_env):
-                os.environ.clear()
-                os.environ.update(old_env)
+            env = {k.upper(): os.environ[k] for k in os.environ}
+            env["PATH"] = "{};{}".format(
+                os.path.dirname(sys.executable), env.get("PATH", ""))
+            env["PYTHONHOME"] = os.path.dirname(sys.executable)
+            if sysconfig.is_python_build(True):
+                env["PYTHONPATH"] = os.path.dirname(os.__file__)
 
-            self.addCleanup(restore_environ, dict(os.environ))
-
-            os.environ["Path"] = "{};{}".format(
-                os.path.dirname(sys.executable), os.environ["Path"])
-            os.environ["PYTHONPATH"] = os.path.dirname(sys.executable)
-
-        def get(python):
+        def get(python, env=None):
             cmd = [python, '-c',
                 'import platform; print(platform.architecture())']
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-            return p.communicate()
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE, env=env)
+            r = p.communicate()
+            if p.returncode:
+                print(repr(r[0]))
+                print(repr(r[1]), file=sys.stderr)
+                self.fail('unexpected return code: {0} (0x{0:08X})'
+                          .format(p.returncode))
+            return r
 
         real = os.path.realpath(sys.executable)
         link = os.path.abspath(support.TESTFN)
         os.symlink(real, link)
         try:
-            self.assertEqual(get(real), get(link))
+            self.assertEqual(get(real), get(link, env=env))
         finally:
             os.remove(link)
 
@@ -212,16 +222,16 @@ class PlatformTest(unittest.TestCase):
         res = platform.mac_ver()
 
         if platform.uname().system == 'Darwin':
-            # We're on a MacOSX system, check that
-            # the right version information is returned
-            fd = os.popen('sw_vers', 'r')
-            real_ver = None
-            for ln in fd:
-                if ln.startswith('ProductVersion:'):
-                    real_ver = ln.strip().split()[-1]
+            # We are on a macOS system, check that the right version
+            # information is returned
+            output = subprocess.check_output(['sw_vers'], text=True)
+            for line in output.splitlines():
+                if line.startswith('ProductVersion:'):
+                    real_ver = line.strip().split()[-1]
                     break
-            fd.close()
-            self.assertFalse(real_ver is None)
+            else:
+                self.fail(f"failed to parse sw_vers output: {output!r}")
+
             result_list = res[0].split('.')
             expect_list = real_ver.split('.')
             len_diff = len(result_list) - len(expect_list)
@@ -260,52 +270,112 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(sts, 0)
 
     def test_libc_ver(self):
+        # check that libc_ver(executable) doesn't raise an exception
         if os.path.isdir(sys.executable) and \
            os.path.exists(sys.executable+'.exe'):
             # Cygwin horror
             executable = sys.executable + '.exe'
         else:
             executable = sys.executable
-        res = platform.libc_ver(executable)
+        platform.libc_ver(executable)
 
-        self.addCleanup(support.unlink, support.TESTFN)
-        with open(support.TESTFN, 'wb') as f:
-            f.write(b'x'*(16384-10))
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+
+        with mock.patch('os.confstr', create=True, return_value='mock 1.0'):
+            # test os.confstr() code path
+            self.assertEqual(platform.libc_ver(), ('mock', '1.0'))
+
+            # test the different regular expressions
+            for data, expected in (
+                (b'__libc_init', ('libc', '')),
+                (b'GLIBC_2.9', ('glibc', '2.9')),
+                (b'libc.so.1.2.5', ('libc', '1.2.5')),
+                (b'libc_pthread.so.1.2.5', ('libc', '1.2.5_pthread')),
+                (b'', ('', '')),
+            ):
+                with open(filename, 'wb') as fp:
+                    fp.write(b'[xxx%sxxx]' % data)
+                    fp.flush()
+
+                # os.confstr() must not be used if executable is set
+                self.assertEqual(platform.libc_ver(executable=filename),
+                                 expected)
+
+        # binary containing multiple versions: get the most recent,
+        # make sure that 1.9 is seen as older than 1.23.4
+        chunksize = 16384
+        with open(filename, 'wb') as f:
+            # test match at chunk boundary
+            f.write(b'x'*(chunksize - 10))
             f.write(b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0')
-        self.assertEqual(platform.libc_ver(support.TESTFN),
+        self.assertEqual(platform.libc_ver(filename, chunksize=chunksize),
                          ('glibc', '1.23.4'))
 
-    def test_popen(self):
-        mswindows = (sys.platform == "win32")
+    @support.cpython_only
+    def test__comparable_version(self):
+        from platform import _comparable_version as V
+        self.assertEqual(V('1.2.3'), V('1.2.3'))
+        self.assertLess(V('1.2.3'), V('1.2.10'))
+        self.assertEqual(V('1.2.3.4'), V('1_2-3+4'))
+        self.assertLess(V('1.2spam'), V('1.2dev'))
+        self.assertLess(V('1.2dev'), V('1.2alpha'))
+        self.assertLess(V('1.2dev'), V('1.2a'))
+        self.assertLess(V('1.2alpha'), V('1.2beta'))
+        self.assertLess(V('1.2a'), V('1.2b'))
+        self.assertLess(V('1.2beta'), V('1.2c'))
+        self.assertLess(V('1.2b'), V('1.2c'))
+        self.assertLess(V('1.2c'), V('1.2RC'))
+        self.assertLess(V('1.2c'), V('1.2rc'))
+        self.assertLess(V('1.2RC'), V('1.2.0'))
+        self.assertLess(V('1.2rc'), V('1.2.0'))
+        self.assertLess(V('1.2.0'), V('1.2pl'))
+        self.assertLess(V('1.2.0'), V('1.2p'))
 
-        if mswindows:
-            command = '"{}" -c "print(\'Hello\')"'.format(sys.executable)
-        else:
-            command = "'{}' -c 'print(\"Hello\")'".format(sys.executable)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            with platform.popen(command) as stdout:
-                hello = stdout.read().strip()
-                stdout.close()
-                self.assertEqual(hello, "Hello")
+        self.assertLess(V('1.5.1'), V('1.5.2b2'))
+        self.assertLess(V('3.10a'), V('161'))
+        self.assertEqual(V('8.02'), V('8.02'))
+        self.assertLess(V('3.4j'), V('1996.07.12'))
+        self.assertLess(V('3.1.1.6'), V('3.2.pl0'))
+        self.assertLess(V('2g6'), V('11g'))
+        self.assertLess(V('0.9'), V('2.2'))
+        self.assertLess(V('1.2'), V('1.2.1'))
+        self.assertLess(V('1.1'), V('1.2.2'))
+        self.assertLess(V('1.1'), V('1.2'))
+        self.assertLess(V('1.2.1'), V('1.2.2'))
+        self.assertLess(V('1.2'), V('1.2.2'))
+        self.assertLess(V('0.4'), V('0.4.0'))
+        self.assertLess(V('1.13++'), V('5.5.kw'))
+        self.assertLess(V('0.960923'), V('2.2beta29'))
 
-        data = 'plop'
-        if mswindows:
-            command = '"{}" -c "import sys; data=sys.stdin.read(); exit(len(data))"'
-        else:
-            command = "'{}' -c 'import sys; data=sys.stdin.read(); exit(len(data))'"
-        command = command.format(sys.executable)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            with platform.popen(command, 'w') as stdin:
-                stdout = stdin.write(data)
-                ret = stdin.close()
-                self.assertIsNotNone(ret)
-                if os.name == 'nt':
-                    returncode = ret
-                else:
-                    returncode = ret >> 8
-                self.assertEqual(returncode, len(data))
+
+    def test_macos(self):
+        self.addCleanup(self.clear_caches)
+
+        uname = ('Darwin', 'hostname', '17.7.0',
+                 ('Darwin Kernel Version 17.7.0: '
+                  'Thu Jun 21 22:53:14 PDT 2018; '
+                  'root:xnu-4570.71.2~1/RELEASE_X86_64'),
+                 'x86_64', 'i386')
+        arch = ('64bit', '')
+        with mock.patch.object(platform, 'uname', return_value=uname), \
+             mock.patch.object(platform, 'architecture', return_value=arch):
+            for mac_ver, expected_terse, expected in [
+                # darwin: mac_ver() returns empty strings
+                (('', '', ''),
+                 'Darwin-17.7.0',
+                 'Darwin-17.7.0-x86_64-i386-64bit'),
+                # macOS: mac_ver() returns macOS version
+                (('10.13.6', ('', '', ''), 'x86_64'),
+                 'macOS-10.13.6',
+                 'macOS-10.13.6-x86_64-i386-64bit'),
+            ]:
+                with mock.patch.object(platform, 'mac_ver',
+                                       return_value=mac_ver):
+                    self.clear_caches()
+                    self.assertEqual(platform.platform(terse=1), expected_terse)
+                    self.assertEqual(platform.platform(), expected)
+
 
 if __name__ == '__main__':
     unittest.main()

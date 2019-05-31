@@ -3,7 +3,7 @@
 __all__ = (
     'AbstractEventLoopPolicy',
     'AbstractEventLoop', 'AbstractServer',
-    'Handle', 'TimerHandle', 'SendfileNotAvailableError',
+    'Handle', 'TimerHandle',
     'get_event_loop_policy', 'set_event_loop_policy',
     'get_event_loop', 'set_event_loop', 'new_event_loop',
     'get_child_watcher', 'set_child_watcher',
@@ -19,14 +19,7 @@ import sys
 import threading
 
 from . import format_helpers
-
-
-class SendfileNotAvailableError(RuntimeError):
-    """Sendfile syscall is not available.
-
-    Raised if OS does not support sendfile syscall for given socket or
-    file type.
-    """
+from . import exceptions
 
 
 class Handle:
@@ -86,7 +79,9 @@ class Handle:
     def _run(self):
         try:
             self._context.run(self._callback, *self._args)
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             cb = format_helpers._format_callback_source(
                 self._callback, self._args)
             msg = f'Exception in callback {cb}'
@@ -277,7 +272,7 @@ class AbstractEventLoop:
 
     # Method scheduling a coroutine object: create a task.
 
-    def create_task(self, coro):
+    def create_task(self, coro, *, name=None):
         raise NotImplementedError
 
     # Methods for interacting with threads.
@@ -305,7 +300,8 @@ class AbstractEventLoop:
             *, ssl=None, family=0, proto=0,
             flags=0, sock=None, local_addr=None,
             server_hostname=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            happy_eyeballs_delay=None, interleave=None):
         raise NotImplementedError
 
     async def create_server(

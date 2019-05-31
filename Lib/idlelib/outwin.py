@@ -78,6 +78,7 @@ class OutputWindow(EditorWindow):
         EditorWindow.__init__(self, *args)
         self.text.bind("<<goto-file-line>>", self.goto_file_line)
         self.text.unbind("<<toggle-code-context>>")
+        self.update_menu_state('options', '*Code Context', 'disabled')
 
     # Customize EditorWindow
     def ispythonsource(self, filename):
@@ -109,7 +110,7 @@ class OutputWindow(EditorWindow):
         Return:
             Length of text inserted.
         """
-        if isinstance(s, (bytes, bytes)):
+        if isinstance(s, bytes):
             s = s.decode(iomenu.encoding, "replace")
         self.text.insert(mark, s, tags)
         self.text.see(mark)

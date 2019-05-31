@@ -6,6 +6,7 @@ import errno
 import re
 import sys
 import traceback
+import warnings
 
 
 def normalize_text(text):
@@ -144,6 +145,10 @@ def collect_platform(info_add):
     info_add('platform.platform',
              platform.platform(aliased=True))
 
+    libc_ver = ('%s %s' % platform.libc_ver()).strip()
+    if libc_ver:
+        info_add('platform.libc_ver', libc_ver)
+
 
 def collect_locale(info_add):
     import locale
@@ -199,32 +204,74 @@ def collect_os(info_add):
     call_func(info_add, 'os.cpu_count', os, 'cpu_count')
     call_func(info_add, 'os.loadavg', os, 'getloadavg')
 
-    # Get environment variables: filter to list
-    # to not leak sensitive information
-    ENV_VARS = (
+    # Environment variables used by the stdlib and tests. Don't log the full
+    # environment: filter to list to not leak sensitive information.
+    #
+    # HTTP_PROXY is not logged because it can contain a password.
+    ENV_VARS = frozenset((
+        "APPDATA",
+        "AR",
+        "ARCHFLAGS",
+        "ARFLAGS",
+        "AUDIODEV",
         "CC",
+        "CFLAGS",
+        "COLUMNS",
+        "COMPUTERNAME",
         "COMSPEC",
+        "CPP",
+        "CPPFLAGS",
         "DISPLAY",
+        "DISTUTILS_DEBUG",
         "DISTUTILS_USE_SDK",
         "DYLD_LIBRARY_PATH",
+        "ENSUREPIP_OPTIONS",
+        "HISTORY_FILE",
         "HOME",
         "HOMEDRIVE",
         "HOMEPATH",
+        "IDLESTARTUP",
         "LANG",
+        "LDFLAGS",
+        "LDSHARED",
         "LD_LIBRARY_PATH",
+        "LINES",
         "MACOSX_DEPLOYMENT_TARGET",
+        "MAILCAPS",
         "MAKEFLAGS",
+        "MIXERDEV",
         "MSSDK",
         "PATH",
+        "PATHEXT",
+        "PIP_CONFIG_FILE",
+        "PLAT",
+        "POSIXLY_CORRECT",
+        "PY_SAX_PARSER",
+        "ProgramFiles",
+        "ProgramFiles(x86)",
+        "RUNNING_ON_VALGRIND",
         "SDK_TOOLS_BIN",
+        "SERVER_SOFTWARE",
         "SHELL",
+        "SOURCE_DATE_EPOCH",
+        "SYSTEMROOT",
         "TEMP",
         "TERM",
+        "TILE_LIBRARY",
+        "TIX_LIBRARY",
         "TMP",
         "TMPDIR",
+        "TRAVIS",
+        "TZ",
         "USERPROFILE",
+        "VIRTUAL_ENV",
         "WAYLAND_DISPLAY",
-    )
+        "WINDIR",
+        "_PYTHON_HOST_PLATFORM",
+        "_PYTHON_PROJECT_BASE",
+        "_PYTHON_SYSCONFIGDATA_NAME",
+        "__PYVENV_LAUNCHER__",
+    ))
     for name, value in os.environ.items():
         uname = name.upper()
         if (uname in ENV_VARS
@@ -334,9 +381,17 @@ def collect_time(info_add):
     copy_attributes(info_add, time, 'time.%s', attributes)
 
     if hasattr(time, 'get_clock_info'):
-        for clock in ('time', 'perf_counter'):
-            tinfo = time.get_clock_info(clock)
-            info_add('time.get_clock_info(%s)' % clock, tinfo)
+        for clock in ('clock', 'monotonic', 'perf_counter',
+                      'process_time', 'thread_time', 'time'):
+            try:
+                # prevent DeprecatingWarning on get_clock_info('clock')
+                with warnings.catch_warnings(record=True):
+                    clock_info = time.get_clock_info(clock)
+            except ValueError:
+                # missing clock like time.thread_time()
+                pass
+            else:
+                info_add('time.get_clock_info(%s)' % clock, clock_info)
 
 
 def collect_datetime(info_add):
@@ -365,7 +420,10 @@ def collect_sysconfig(info_add):
         'OPT',
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
+        'PY_CORE_LDFLAGS',
         'PY_LDFLAGS',
+        'PY_LDFLAGS_NODIST',
+        'PY_STDMODULE_CFLAGS',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
         'SHELL',
@@ -471,6 +529,8 @@ def collect_resource(info_add):
         value = resource.getrlimit(key)
         info_add('resource.%s' % name, value)
 
+    call_func(info_add, 'resource.pagesize', resource, 'getpagesize')
+
 
 def collect_test_socket(info_add):
     try:
@@ -511,10 +571,17 @@ def collect_cc(info_add):
     except ImportError:
         args = CC.split()
     args.append('--version')
-    proc = subprocess.Popen(args,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            universal_newlines=True)
+    try:
+        proc = subprocess.Popen(args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                universal_newlines=True)
+    except OSError:
+        # Cannot run the compiler, for example when Python has been
+        # cross-compiled and installed on the target platform where the
+        # compiler is missing.
+        return
+
     stdout = proc.communicate()[0]
     if proc.returncode:
         # CC --version failed: ignore error
@@ -532,6 +599,25 @@ def collect_gdbm(info_add):
         return
 
     info_add('gdbm.GDBM_VERSION', '.'.join(map(str, _GDBM_VERSION)))
+
+
+def collect_get_config(info_add):
+    # Get global configuration variables, _PyPreConfig and _PyCoreConfig
+    try:
+        from _testinternalcapi import get_configs
+    except ImportError:
+        return
+
+    all_configs = get_configs()
+    for config_type in sorted(all_configs):
+        config = all_configs[config_type]
+        for key in sorted(config):
+            info_add('%s[%s]' % (config_type, key), repr(config[key]))
+
+
+def collect_subprocess(info_add):
+    import subprocess
+    copy_attributes(info_add, subprocess, 'subprocess.%s', ('_USE_POSIX_SPAWN',))
 
 
 def collect_info(info):
@@ -562,6 +648,8 @@ def collect_info(info):
         collect_resource,
         collect_cc,
         collect_gdbm,
+        collect_get_config,
+        collect_subprocess,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,

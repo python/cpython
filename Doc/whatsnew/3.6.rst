@@ -741,7 +741,7 @@ Some smaller changes made to the core Python language are:
 
 * A ``global`` or ``nonlocal`` statement must now textually appear
   before the first use of the affected name in the same scope.
-  Previously this was a ``SyntaxWarning``.
+  Previously this was a :exc:`SyntaxWarning`.
 
 * It is now possible to set a :ref:`special method <specialnames>` to
   ``None`` to indicate that the corresponding operation is not available.
@@ -824,7 +824,7 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
   (Contributed by Yury Selivanov in :issue:`28613`.)
 
 * The :func:`~asyncio.ensure_future` function and all functions that
-  use it, such as :meth:`loop.run_until_complete() <asyncio.BaseEventLoop.run_until_complete>`,
+  use it, such as :meth:`loop.run_until_complete() <asyncio.loop.run_until_complete>`,
   now accept all kinds of :term:`awaitable objects <awaitable>`.
   (Contributed by Yury Selivanov.)
 
@@ -836,18 +836,18 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
   method to check if the transport is closing or closed.
   (Contributed by Yury Selivanov.)
 
-* The :meth:`loop.create_server() <asyncio.BaseEventLoop.create_server>`
+* The :meth:`loop.create_server() <asyncio.loop.create_server>`
   method can now accept a list of hosts.
   (Contributed by Yann Sionneau.)
 
-* New :meth:`loop.create_future() <asyncio.BaseEventLoop.create_future>`
+* New :meth:`loop.create_future() <asyncio.loop.create_future>`
   method to create Future objects.  This allows alternative event
   loop implementations, such as
   `uvloop <https://github.com/MagicStack/uvloop>`_, to provide a faster
   :class:`asyncio.Future` implementation.
   (Contributed by Yury Selivanov in :issue:`27041`.)
 
-* New :meth:`loop.get_exception_handler() <asyncio.BaseEventLoop.get_exception_handler>`
+* New :meth:`loop.get_exception_handler() <asyncio.loop.get_exception_handler>`
   method to get the current exception handler.
   (Contributed by Yury Selivanov in :issue:`27040`.)
 
@@ -860,12 +860,12 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
   has been improved.
   (Contributed by Mark Korenberg in :issue:`28370`.)
 
-* The :meth:`loop.getaddrinfo() <asyncio.BaseEventLoop.getaddrinfo>`
+* The :meth:`loop.getaddrinfo() <asyncio.loop.getaddrinfo>`
   method is optimized to avoid calling the system ``getaddrinfo``
   function if the address is already resolved.
   (Contributed by A. Jesse Jiryu Davis.)
 
-* The :meth:`loop.stop() <asyncio.BaseEventLoop.stop>`
+* The :meth:`loop.stop() <asyncio.loop.stop>`
   method has been changed to stop the loop immediately after
   the current iteration.  Any new callbacks scheduled as a result
   of the last iteration will be discarded.
@@ -876,7 +876,7 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
   the :exc:`StopIteration` exception.
   (Contributed by Chris Angelico in :issue:`26221`.)
 
-* New :meth:`loop.connect_accepted_socket() <asyncio.BaseEventLoop.connect_accepted_socket>`
+* New :meth:`loop.connect_accepted_socket() <asyncio.loop.connect_accepted_socket>`
   method to be used by servers that accept connections outside of asyncio,
   but that use asyncio to handle them.
   (Contributed by Jim Fulton in :issue:`27392`.)
@@ -884,7 +884,7 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
 * ``TCP_NODELAY`` flag is now set for all TCP transports by default.
   (Contributed by Yury Selivanov in :issue:`27456`.)
 
-* New :meth:`loop.shutdown_asyncgens() <asyncio.AbstractEventLoop.shutdown_asyncgens>`
+* New :meth:`loop.shutdown_asyncgens() <asyncio.loop.shutdown_asyncgens>`
   to properly close pending asynchronous generators before closing the
   loop.
   (Contributed by Yury Selivanov in :issue:`28003`.)
@@ -1177,13 +1177,22 @@ Editor code context option revised.  Box displays all context lines up to
 maxlines.  Clicking on a context line jumps the editor to that line.  Context
 colors for custom themes is added to Highlights tab of Settings dialog.
 (Contributed by Cheryl Sabella and Terry Jan Reedy in :issue:`33642`,
-:issue:`33768`, and :issue:`33679`)
+:issue:`33768`, and :issue:`33679`.)
 
 On Windows, a new API call tells Windows that tk scales for DPI. On Windows
 8.1+ or 10, with DPI compatibility properties of the Python binary
 unchanged, and a monitor resolution greater than 96 DPI, this should
 make text and lines sharper.  It should otherwise have no effect.
-(Contributed by Terry Jan Reedy in :issue:`33656`).
+(Contributed by Terry Jan Reedy in :issue:`33656`.)
+
+New in 3.6.7:
+
+Output over N lines (50 by default) is squeezed down to a button.
+N can be changed in the PyShell section of the General page of the
+Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
+right clicking on the output.  Squeezed output can be expanded in place
+by double-clicking the button or into the clipboard or a separate window
+by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
 
 
 importlib
@@ -1614,7 +1623,7 @@ a class variable and should not be set on instances of that class.
 <https://github.com/python/typing/pull/280>`_.)
 
 A new :const:`~typing.TYPE_CHECKING` constant that is assumed to be
-``True`` by the static type chekers, but is ``False`` at runtime.
+``True`` by the static type checkers, but is ``False`` at runtime.
 (Contributed by Guido van Rossum in `Github #230
 <https://github.com/python/typing/issues/230>`_.)
 
@@ -2307,6 +2316,17 @@ Changes in the Python API
   a :exc:`DeprecationWarning` in Python 3.6 and a :exc:`RuntimeError` in
   Python 3.8.
 
+* With the introduction of :exc:`ModuleNotFoundError`, import system consumers
+  may start expecting import system replacements to raise that more specific
+  exception when appropriate, rather than the less-specific :exc:`ImportError`.
+  To provide future compatibility with such consumers, implementors of
+  alternative import systems that completely replace :func:`__import__` will
+  need to update their implementations to raise the new subclass when a module
+  can't be found at all. Implementors of compliant plugins to the default
+  import system shouldn't need to make any changes, as the default import
+  system will raise the new subclass when appropriate.
+
+
 Changes in the C API
 --------------------
 
@@ -2405,3 +2425,11 @@ Notable changes in Python 3.6.5
 The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
 locale to the ``LC_NUMERIC`` locale in some cases.
 (Contributed by Victor Stinner in :issue:`31900`.)
+
+Notable changes in Python 3.6.7
+===============================
+
+In 3.6.7 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
+when provided with input that does not have a trailing new line.  This behavior
+now matches what the C tokenizer does internally.
+(Contributed by Ammar Askar in :issue:`33899`.)

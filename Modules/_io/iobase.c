@@ -10,6 +10,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_object.h"
 #include "structmember.h"
 #include "_iomodule.h"
 
@@ -224,8 +225,8 @@ static PyObject *
 _io__IOBase_close_impl(PyObject *self)
 /*[clinic end generated code: output=63c6a6f57d783d6d input=f4494d5c31dbc6b7]*/
 {
-    PyObject *res;
-    int closed = iobase_is_closed(self);
+    PyObject *res, *exc, *val, *tb;
+    int rc, closed = iobase_is_closed(self);
 
     if (closed < 0) {
         return NULL;
@@ -236,9 +237,11 @@ _io__IOBase_close_impl(PyObject *self)
 
     res = PyObject_CallMethodObjArgs(self, _PyIO_str_flush, NULL);
 
-    if (_PyObject_SetAttrId(self, &PyId___IOBase_closed, Py_True) < 0) {
-        Py_XDECREF(res);
-        return NULL;
+    PyErr_Fetch(&exc, &val, &tb);
+    rc = _PyObject_SetAttrId(self, &PyId___IOBase_closed, Py_True);
+    _PyErr_ChainExceptions(exc, val, tb);
+    if (rc < 0) {
+        Py_CLEAR(res);
     }
 
     if (res == NULL)
@@ -283,10 +286,22 @@ iobase_finalize(PyObject *self)
         /* Silencing I/O errors is bad, but printing spurious tracebacks is
            equally as bad, and potentially more frequent (because of
            shutdown issues). */
-        if (res == NULL)
-            PyErr_Clear();
-        else
+        if (res == NULL) {
+#ifndef Py_DEBUG
+            const PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
+            if (config->dev_mode) {
+                PyErr_WriteUnraisable(self);
+            }
+            else {
+                PyErr_Clear();
+            }
+#else
+            PyErr_WriteUnraisable(self);
+#endif
+        }
+        else {
             Py_DECREF(res);
+        }
     }
 
     /* Restore the saved exception. */
@@ -736,11 +751,16 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
 _io._IOBase.writelines
     lines: object
     /
+
+Write a list of lines to stream.
+
+Line separators are not added, so it is usual for each of the
+lines provided to have a line separator at the end.
 [clinic start generated code]*/
 
 static PyObject *
 _io__IOBase_writelines(PyObject *self, PyObject *lines)
-/*[clinic end generated code: output=976eb0a9b60a6628 input=432e729a8450b3cb]*/
+/*[clinic end generated code: output=976eb0a9b60a6628 input=cac3fc8864183359]*/
 {
     PyObject *iter, *res;
 
@@ -821,10 +841,10 @@ PyTypeObject PyIOBase_Type = {
     sizeof(iobase),             /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     (destructor)iobase_dealloc, /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -836,7 +856,7 @@ PyTypeObject PyIOBase_Type = {
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,   /*tp_flags*/
+        | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
     iobase_doc,                 /* tp_doc */
     (traverseproc)iobase_traverse, /* tp_traverse */
     (inquiry)iobase_clear,      /* tp_clear */
@@ -1017,10 +1037,10 @@ PyTypeObject PyRawIOBase_Type = {
     0,                          /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     0,                          /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -1031,7 +1051,7 @@ PyTypeObject PyRawIOBase_Type = {
     0,                          /*tp_getattro*/
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_FINALIZE,  /*tp_flags*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
     rawiobase_doc,              /* tp_doc */
     0,                          /* tp_traverse */
     0,                          /* tp_clear */

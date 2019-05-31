@@ -8,6 +8,24 @@ except ImportError:
 import struct
 import collections
 import itertools
+import gc
+
+
+class FunctionCalls(unittest.TestCase):
+
+    def test_kwargs_order(self):
+        # bpo-34320:  **kwargs should preserve order of passed OrderedDict
+        od = collections.OrderedDict([('a', 1), ('b', 2)])
+        od.move_to_end('a')
+        expected = list(od.items())
+
+        def fn(**kw):
+            return kw
+
+        res = fn(**od)
+        self.assertIsInstance(res, dict)
+        self.assertEqual(list(res.items()), expected)
+
 
 # The test cases here cover several paths through the function calling
 # code.  They depend on the METH_XXX flag that is used to define a C
@@ -140,8 +158,27 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, {}.__contains__, 0, 1)
 
     def test_varargs3(self):
-        msg = r"^from_bytes\(\) takes at most 2 positional arguments \(3 given\)"
+        msg = r"^from_bytes\(\) takes exactly 2 positional arguments \(3 given\)"
         self.assertRaisesRegex(TypeError, msg, int.from_bytes, b'a', 'little', False)
+
+    def test_varargs1min(self):
+        msg = r"get expected at least 1 argument, got 0"
+        self.assertRaisesRegex(TypeError, msg, {}.get)
+
+        msg = r"expected 1 argument, got 0"
+        self.assertRaisesRegex(TypeError, msg, {}.__delattr__)
+
+    def test_varargs2min(self):
+        msg = r"getattr expected at least 2 arguments, got 0"
+        self.assertRaisesRegex(TypeError, msg, getattr)
+
+    def test_varargs1max(self):
+        msg = r"input expected at most 1 argument, got 2"
+        self.assertRaisesRegex(TypeError, msg, input, 1, 2)
+
+    def test_varargs2max(self):
+        msg = r"get expected at most 2 arguments, got 3"
+        self.assertRaisesRegex(TypeError, msg, {}.get, 1, 2, 3)
 
     def test_varargs1_kw(self):
         msg = r"__contains__\(\) takes no keyword arguments"
@@ -365,7 +402,7 @@ class FastCallTests(unittest.TestCase):
                     result = _testcapi.pyobject_fastcall(func, None)
                     self.check_result(result, expected)
 
-    def test_fastcall_dict(self):
+    def test_vectorcall_dict(self):
         # Test _PyObject_FastCallDict()
 
         for func, args, expected in self.CALLS_POSARGS:
@@ -392,35 +429,51 @@ class FastCallTests(unittest.TestCase):
                 result = _testcapi.pyobject_fastcalldict(func, args, kwargs)
                 self.check_result(result, expected)
 
-    def test_fastcall_keywords(self):
-        # Test _PyObject_FastCallKeywords()
+    def test_vectorcall(self):
+        # Test _PyObject_Vectorcall()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
                 # kwnames=NULL
-                result = _testcapi.pyobject_fastcallkeywords(func, args, None)
+                result = _testcapi.pyobject_vectorcall(func, args, None)
                 self.check_result(result, expected)
 
                 # kwnames=()
-                result = _testcapi.pyobject_fastcallkeywords(func, args, ())
+                result = _testcapi.pyobject_vectorcall(func, args, ())
                 self.check_result(result, expected)
 
                 if not args:
                     # kwnames=NULL
-                    result = _testcapi.pyobject_fastcallkeywords(func, None, None)
+                    result = _testcapi.pyobject_vectorcall(func, None, None)
                     self.check_result(result, expected)
 
                     # kwnames=()
-                    result = _testcapi.pyobject_fastcallkeywords(func, None, ())
+                    result = _testcapi.pyobject_vectorcall(func, None, ())
                     self.check_result(result, expected)
 
         for func, args, kwargs, expected in self.CALLS_KWARGS:
             with self.subTest(func=func, args=args, kwargs=kwargs):
                 kwnames = tuple(kwargs.keys())
                 args = args + tuple(kwargs.values())
-                result = _testcapi.pyobject_fastcallkeywords(func, args, kwnames)
+                result = _testcapi.pyobject_vectorcall(func, args, kwnames)
                 self.check_result(result, expected)
 
+    def test_fastcall_clearing_dict(self):
+        # Test bpo-36907: the point of the test is just checking that this
+        # does not crash.
+        class IntWithDict:
+            __slots__ = ["kwargs"]
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+            def __index__(self):
+                self.kwargs.clear()
+                gc.collect()
+                return 0
+        x = IntWithDict(dont_inherit=IntWithDict())
+        # We test the argument handling of "compile" here, the compilation
+        # itself is not relevant. When we pass flags=x below, x.__index__() is
+        # called, which changes the keywords dict.
+        compile("pass", "", "exec", x, **x.kwargs)
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,6 +5,8 @@ from test.support import run_unittest
 from distutils.command.bdist_wininst import bdist_wininst
 from distutils.tests import support
 
+@unittest.skipIf(getattr(bdist_wininst, '_unsupported', False),
+    'bdist_wininst is not supported in this install')
 class BuildWinInstTestCase(support.TempdirManager,
                            support.LoggingSilencer,
                            unittest.TestCase):

@@ -304,6 +304,18 @@ class ProcessTestCase(BaseTestCase):
                                     "doesnotexist")
         self._assert_python([doesnotexist, "-c"], executable=sys.executable)
 
+    def test_bytes_executable(self):
+        doesnotexist = os.path.join(os.path.dirname(sys.executable),
+                                    "doesnotexist")
+        self._assert_python([doesnotexist, "-c"],
+                            executable=os.fsencode(sys.executable))
+
+    def test_pathlike_executable(self):
+        doesnotexist = os.path.join(os.path.dirname(sys.executable),
+                                    "doesnotexist")
+        self._assert_python([doesnotexist, "-c"],
+                            executable=FakePath(sys.executable))
+
     def test_executable_takes_precedence(self):
         # Check that the executable argument takes precedence over args[0].
         #
@@ -319,6 +331,16 @@ class ProcessTestCase(BaseTestCase):
         # Check that the executable argument replaces the default shell
         # when shell=True.
         self._assert_python([], executable=sys.executable, shell=True)
+
+    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    def test_bytes_executable_replaces_shell(self):
+        self._assert_python([], executable=os.fsencode(sys.executable),
+                            shell=True)
+
+    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    def test_pathlike_executable_replaces_shell(self):
+        self._assert_python([], executable=FakePath(sys.executable),
+                            shell=True)
 
     # For use in the test_cwd* tests below.
     def _normalize_cwd(self, cwd):
@@ -357,6 +379,11 @@ class ProcessTestCase(BaseTestCase):
         temp_dir = tempfile.gettempdir()
         temp_dir = self._normalize_cwd(temp_dir)
         self._assert_cwd(temp_dir, sys.executable, cwd=temp_dir)
+
+    def test_cwd_with_bytes(self):
+        temp_dir = tempfile.gettempdir()
+        temp_dir = self._normalize_cwd(temp_dir)
+        self._assert_cwd(temp_dir, sys.executable, cwd=os.fsencode(temp_dir))
 
     def test_cwd_with_pathlike(self):
         temp_dir = tempfile.gettempdir()
@@ -1136,7 +1163,8 @@ class ProcessTestCase(BaseTestCase):
         # line is not flushed in binary mode with bufsize=1.
         # we should get empty response
         line = b'line' + os.linesep.encode() # assume ascii-based locale
-        self._test_bufsize_equal_one(line, b'', universal_newlines=False)
+        with self.assertWarnsRegex(RuntimeWarning, 'line buffering'):
+            self._test_bufsize_equal_one(line, b'', universal_newlines=False)
 
     def test_leaking_fds_on_error(self):
         # see bug #5179: Popen leaks file descriptors to PIPEs if
@@ -1472,6 +1500,34 @@ class RunFuncTestCase(BaseTestCase):
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
 
+    def test_run_with_pathlike_path(self):
+        # bpo-31961: test run(pathlike_object)
+        # the name of a command that can be run without
+        # any argumenets that exit fast
+        prog = 'tree.com' if mswindows else 'ls'
+        path = shutil.which(prog)
+        if path is None:
+            self.skipTest(f'{prog} required for this test')
+        path = FakePath(path)
+        res = subprocess.run(path, stdout=subprocess.DEVNULL)
+        self.assertEqual(res.returncode, 0)
+        with self.assertRaises(TypeError):
+            subprocess.run(path, stdout=subprocess.DEVNULL, shell=True)
+
+    def test_run_with_bytes_path_and_arguments(self):
+        # bpo-31961: test run([bytes_object, b'additional arguments'])
+        path = os.fsencode(sys.executable)
+        args = [path, '-c', b'import sys; sys.exit(57)']
+        res = subprocess.run(args)
+        self.assertEqual(res.returncode, 57)
+
+    def test_run_with_pathlike_path_and_arguments(self):
+        # bpo-31961: test run([pathlike_object, 'additional arguments'])
+        path = FakePath(sys.executable)
+        args = [path, '-c', 'import sys; sys.exit(57)']
+        res = subprocess.run(args)
+        self.assertEqual(res.returncode, 57)
+
     def test_capture_output(self):
         cp = self.run_python(("import sys;"
                               "sys.stdout.write('BDFL'); "
@@ -1520,7 +1576,6 @@ class POSIXProcessTestCase(BaseTestCase):
             # string and instead capture the exception that we want to see
             # below for comparison.
             desired_exception = e
-            desired_exception.strerror += ': ' + repr(self._nonexistent_dir)
         else:
             self.fail("chdir to nonexistent directory %s succeeded." %
                       self._nonexistent_dir)
@@ -1537,6 +1592,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
+            self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
@@ -1551,6 +1607,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
+            self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
@@ -1564,6 +1621,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
+            self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
@@ -2228,15 +2286,9 @@ class POSIXProcessTestCase(BaseTestCase):
             env = os.environ.copy()
             env[key] = value
             # Use C locale to get ASCII for the locale encoding to force
-            # surrogate-escaping of \xFF in the child process; otherwise it can
-            # be decoded as-is if the default locale is latin-1.
+            # surrogate-escaping of \xFF in the child process
             env['LC_ALL'] = 'C'
-            if sys.platform.startswith("aix"):
-                # On AIX, the C locale uses the Latin1 encoding
-                decoded_value = encoded_value.decode("latin1", "surrogateescape")
-            else:
-                # On other UNIXes, the C locale uses the ASCII encoding
-                decoded_value = value
+            decoded_value = value
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
                 env=env)
@@ -2534,6 +2586,36 @@ class POSIXProcessTestCase(BaseTestCase):
         # inheritable flag must not be changed in the parent process
         self.assertEqual(os.get_inheritable(inheritable), True)
         self.assertEqual(os.get_inheritable(non_inheritable), False)
+
+
+    # bpo-32270: Ensure that descriptors specified in pass_fds
+    # are inherited even if they are used in redirections.
+    # Contributed by @izbyshev.
+    def test_pass_fds_redirected(self):
+        """Regression test for https://bugs.python.org/issue32270."""
+        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+        pass_fds = []
+        for _ in range(2):
+            fd = os.open(os.devnull, os.O_RDWR)
+            self.addCleanup(os.close, fd)
+            pass_fds.append(fd)
+
+        stdout_r, stdout_w = os.pipe()
+        self.addCleanup(os.close, stdout_r)
+        self.addCleanup(os.close, stdout_w)
+        pass_fds.insert(1, stdout_w)
+
+        with subprocess.Popen([sys.executable, fd_status],
+                              stdin=pass_fds[0],
+                              stdout=pass_fds[1],
+                              stderr=pass_fds[2],
+                              close_fds=True,
+                              pass_fds=pass_fds):
+            output = os.read(stdout_r, 1024)
+        fds = {int(num) for num in output.split(b',')}
+
+        self.assertEqual(fds, {0, 1, 2} | frozenset(pass_fds), f"output={output!a}")
+
 
     def test_stdout_stdin_are_single_inout_fd(self):
         with io.open(os.devnull, "r+") as inout:

@@ -22,6 +22,7 @@ Eitan Adler
 Anton Afanasyev
 Ali Afshar
 Nitika Agarwal
+Pablo S. Blum de Aguiar
 Jim Ahlstrom
 Farhan Ahmad
 Matthew Ahrens
@@ -59,6 +60,7 @@ Heidi Annexstad
 Ramchandra Apte
 Éric Araujo
 Alexandru Ardelean
+Emmanuel Arias
 Alicia Arlen
 Jeffrey Armstrong
 Jason Asbahr
@@ -67,6 +69,7 @@ Ammar Askar
 Neil Aspinall
 Chris AtLee
 Aymeric Augustin
+Andres Ayala
 Cathy Avery
 John Aycock
 Donovan Baarda
@@ -140,12 +143,14 @@ Michel Van den Bergh
 Julian Berman
 Brice Berna
 Olivier Bernard
+Maxwell Bernstein
 Eric Beser
 Steven Bethard
 Stephen Bevan
 Ron Bickers
 Natalia B. Bidart
 Adrian von Bidder
+Olexa Bilaniuk
 David Binger
 Dominic Binks
 Philippe Biondi
@@ -219,6 +224,7 @@ Ian Bruntlett
 Floris Bruynooghe
 Matt Bryant
 Stan Bubrouski
+Brandt Bucher
 Colm Buckley
 Erik de Bueger
 Jan-Hein Bührman
@@ -255,7 +261,7 @@ Donn Cave
 Charles Cazabon
 Jesús Cea Avión
 Per Cederqvist
-Matej Cepl
+Matěj Cepl
 Carl Cerecke
 Octavian Cerna
 Michael Cetrulo
@@ -349,6 +355,7 @@ Tom Culliton
 Raúl Cumplido
 Antonio Cuni
 Brian Curtin
+Paul Dagnelie
 Lisandro Dalcin
 Darren Dale
 Andrew Dalke
@@ -472,6 +479,7 @@ Jim Fasarakis-Hilliard
 Mark Favas
 Sergey Fedoseev
 Boris Feld
+M. Felt
 Thomas Fenzl
 Niels Ferguson
 Francisco Fernández Castaño
@@ -480,6 +488,7 @@ Florian Festi
 John Feuerstein
 Carl Feynman
 Vincent Fiack
+Niklas Fiekas
 Anastasia Filatova
 Tomer Filiba
 Segev Finer
@@ -557,6 +566,7 @@ Julian Gindi
 Yannick Gingras
 Neil Girdhar
 Matt Giuca
+Franz Glasner
 Wim Glenn
 Michael Goderbauer
 Karan Goel
@@ -573,6 +583,7 @@ Elliot Gorokhovsky
 Hans de Graaff
 Tim Graham
 Kim Gräsman
+Alex Grönholm
 Nathaniel Gray
 Eddy De Greef
 Duane Griffin
@@ -594,6 +605,7 @@ Michael Guravage
 Lars Gustäbel
 Thomas Güttler
 Jonas H.
+Antti Haapala
 Joseph Hackman
 Barry Haddow
 Philipp Hagemeister
@@ -639,6 +651,7 @@ Christian Heimes
 Thomas Heller
 Malte Helmert
 Lance Finn Helsten
+Gordon P. Hemsley
 Jonathan Hendry
 Nathan Henrie
 Michael Henry
@@ -668,6 +681,7 @@ Benjamin Hodgson
 Joerg-Cyril Hoehle
 Gregor Hoffleit
 Chris Hoffman
+Tim Hoffmann
 Stefan Hoffmeister
 Albert Hofkamp
 Chris Hogan
@@ -714,6 +728,7 @@ Ludwig Hähne
 Gerhard Häring
 Fredrik Håård
 Florian Höch
+Robert Hölzl
 Catalin Iacob
 Mihai Ibanescu
 Ali Ikinci
@@ -721,7 +736,6 @@ Aaron Iles
 Thomas Ilsche
 Lars Immisch
 Bobby Impollonia
-Naoki Inada
 Meador Inge
 Peter Ingebretson
 Tony Ingraldi
@@ -743,6 +757,7 @@ Geert Jansen
 Jack Jansen
 Hans-Peter Jansen
 Bill Janssen
+Jon Janzen
 Thomas Jarosch
 Juhana Jauhiainen
 Rajagopalasarma Jayakrishnan
@@ -888,6 +903,7 @@ Loïc Lajeanne
 David Lam
 Thomas Lamb
 Valerie Lambert
+Peter Lamut
 Jean-Baptiste "Jiba" Lamy
 Ronan Lamy
 Peter Landry
@@ -898,6 +914,7 @@ Glenn Langford
 Andrew Langmead
 Wolfgang Langner
 Detlef Lannert
+Rémi Lapeyre
 Soren Larsen
 Amos Latteier
 Piers Lauder
@@ -1088,11 +1105,15 @@ Tim Mitchell
 Zubin Mithra
 Florian Mladitsch
 Doug Moen
+Jakub Molinski
+Juliette Monsel
+Paul Monson
 The Dragon De Monsyne
 Bastien Montagne
 Skip Montanaro
 Peter Moody
 Alan D. Moore
+Nicolai Moore
 Paul Moore
 Ross Moore
 Ben Morgan
@@ -1120,6 +1141,7 @@ Dong-hee Na
 Dale Nagata
 John Nagle
 Takahiro Nakayama
+Inada Naoki
 Travers Naran
 Motoki Naruse
 Charles-François Natali
@@ -1140,6 +1162,7 @@ Samuel Nicolary
 Jonathan Niehof
 Gustavo Niemeyer
 Oscar Nierstrasz
+Lysandros Nikolaou
 Hrvoje Nikšić
 Gregory Nofi
 Jesse Noller
@@ -1173,6 +1196,7 @@ Piet van Oostrum
 Tomas Oppelstrup
 Jason Orendorff
 Bastien Orivel
+orlnub123
 Douglas Orr
 William Orr
 Michele Orrù
@@ -1344,6 +1368,7 @@ Juan M. Bello Rivas
 Mohd Sanad Zaki Rizvi
 Davide Rizzo
 Anthony Roach
+Lisa Roach
 Carl Robben
 Ben Roberts
 Mark Roberts
@@ -1435,6 +1460,7 @@ Michael Schneider
 Peter Schneider-Kamp
 Arvin Schnell
 Nofar Schnider
+Mickaël Schoentgen
 Ed Schouten
 Scott Schram
 Robin Schreiber
@@ -1460,6 +1486,7 @@ Roger D. Serwy
 Jerry Seutter
 Pete Sevander
 Denis Severson
+Silas Sewell
 Ian Seyer
 Dmitry Shachnev
 Anish Shah
@@ -1559,6 +1586,7 @@ Daniel Stokes
 Michael Stone
 Serhiy Storchaka
 Ken Stox
+Petter Strandmark
 Charalampos Stratakis
 Dan Stromberg
 Donald Stufft
@@ -1566,6 +1594,7 @@ Daniel Stutzbach
 Andreas Stührk
 Colin Su
 Pal Subbiah
+Michael J. Sullivan
 Nathan Sullivan
 Mark Summerfield
 Reuben Sumner
@@ -1602,6 +1631,7 @@ Monty Taylor
 Anatoly Techtonik
 Martin Teichmann
 Gustavo Temple
+Guo Ci Teo
 Mikhail Terekhov
 Victor Terrón
 Pablo Galindo
@@ -1614,6 +1644,7 @@ Nicolas M. Thiéry
 James Thomas
 Robin Thomas
 Brian Thorne
+Christopher Thorne
 Stephen Thorne
 Jeremy Thurgood
 Eric Tiedemann
@@ -1810,6 +1841,7 @@ Masazumi Yoshikawa
 Arnaud Ysmal
 Bernard Yue
 Moshe Zadka
+Elias Zamaria
 Milan Zamazal
 Artur Zaprzala
 Mike Zarnstorff
@@ -1826,3 +1858,9 @@ Jelle Zijlstra
 Gennadiy Zlobin
 Doug Zongker
 Peter Åstrand
+Zheao Li
+Carsten Klein
+Diego Rojas
+Edison Abahurire
+Geoff Shannon
+Batuhan Taskaya
