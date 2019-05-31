@@ -5522,6 +5522,27 @@ static PyTypeObject matmulType = {
     PyObject_Del,                       /* tp_free */
 };
 
+typedef struct {
+    PyObject_HEAD
+} ipowObject;
+
+static PyObject *
+ipowType_ipow(PyObject *self, PyObject *other, PyObject *mod)
+{
+    return Py_BuildValue("OO", other, mod);
+}
+
+static PyNumberMethods ipowType_as_number = {
+    .nb_inplace_power = ipowType_ipow
+};
+
+static PyTypeObject ipowType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "ipowType",
+    .tp_basicsize = sizeof(ipowObject),
+    .tp_as_number = &ipowType_as_number,
+    .tp_new = PyType_GenericNew
+};
 
 typedef struct {
     PyObject_HEAD
@@ -5947,6 +5968,11 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&matmulType);
     PyModule_AddObject(m, "matmulType", (PyObject *)&matmulType);
+    if (PyType_Ready(&ipowType) < 0) {
+        return NULL;
+    }
+    Py_INCREF(&ipowType);
+    PyModule_AddObject(m, "ipowType", (PyObject *)&ipowType);
 
     if (PyType_Ready(&awaitType) < 0)
         return NULL;
