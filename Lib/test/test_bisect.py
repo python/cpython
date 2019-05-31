@@ -222,6 +222,17 @@ class TestBisect:
         self.module.bisect_right(data, "cc", key=None)
         self.module.bisect_left(data, "cc", key=None)
 
+    def test_reverse(self):
+        data = [50, 40, 30, 20, 10]
+        self.assertEqual(self.module.bisect_left(data, 15, reverse=True), 4)
+        self.assertEqual(self.module.bisect_right(data, 15, reverse=True), 4)
+        self.assertEqual(self.module.bisect(data, 15, reverse=True), 4)
+        self.module.insort_left(data, 15, reverse=True)
+        self.module.insort_right(data, 15, reverse=True)
+        self.module.insort(data, 15, reverse=True)
+        self.assertEqual(data, [50, 40, 30, 20, 15, 15, 15, 10])
+
+
 class TestBisectPython(TestBisect, unittest.TestCase):
     module = py_bisect
 
