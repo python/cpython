@@ -673,7 +673,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    This field is only used if the flag :const:`Py_TPFLAGS_HAVE_VECTORCALL`
    is set. If so, this must be a positive integer containing the offset in the
-   instance struct of the ``vectorcallfunc`` pointer used for the vectorcall
+   instance struct of the :c:type:`vectorcallfunc` pointer used for the vectorcall
    protocol.
 
    This pointer may be zero, in which case the instance behaves as if
@@ -2292,6 +2292,10 @@ Slot Type typedefs
    allocate additional memory; that should be done by :c:member:`~PyTypeObject.tp_new`.
 
 .. c:type:: void (*destructor)(PyObject *)
+
+.. c:type:: PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+
+   See :c:member:`~PyTypeObject.tp_vectorcall_offset`.
 
 .. c:type:: void (*freefunc)(void *)
 

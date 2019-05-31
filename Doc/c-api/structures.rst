@@ -335,11 +335,3 @@ definition with the same method name.
 
    In case the attribute should be deleted the second parameter is *NULL*.
    Should return ``0`` on success or ``-1`` with a set exception on failure.
-
-
-Vectorcall: implementing fast callables
----------------------------------------
-
-
-
-.. c:type:: PyObject *(*_vectorcallfunc)(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
