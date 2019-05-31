@@ -1785,6 +1785,30 @@ class _BaseV6:
         reverse_chars = self.exploded[::-1].replace(':', '')
         return '.'.join(reverse_chars) + '.ip6.arpa'
 
+    @staticmethod
+    def _split_scope_id(ip_str):
+        """Helper function to parse IPv6 string address with scope id.
+
+        See RFC 4007 for details.
+
+        Arg:
+            ip_str: A string, the IPv6 address.
+
+        Returns:
+            [addr, scope_id] list.
+        """
+        if '%' not in ip_str:
+            return ip_str, None
+
+        split_addr = ip_str.split('%')
+        if len(split_addr) > 2 or split_addr[-1] == '':
+            raise AddressValueError('Invalid IPv6 address: "%r"' % ip_str)
+        try:
+            addr, scope_id = split_addr
+        except ValueError:
+            return split_addr, None
+        return addr, scope_id
+
     @property
     def max_prefixlen(self):
         return self._max_prefixlen
@@ -1798,7 +1822,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
     """Represent and manipulate single IPv6 Addresses."""
 
-    __slots__ = ('_ip', '__weakref__')
+    __slots__ = ('_ip', 'scope_id', '__weakref__')
 
     def __init__(self, address):
         """Instantiate a new IPv6 address object.
@@ -1817,6 +1841,8 @@ class IPv6Address(_BaseV6, _BaseAddress):
             AddressValueError: If address isn't a valid IPv6 address.
 
         """
+        self.scope_id = None
+
         # Efficient constructor from integer.
         if isinstance(address, int):
             self._check_int_address(address)
@@ -1829,12 +1855,19 @@ class IPv6Address(_BaseV6, _BaseAddress):
             self._ip = int.from_bytes(address, 'big')
             return
 
+
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP string.
         addr_str = str(address)
         if '/' in addr_str:
             raise AddressValueError("Unexpected '/' in %r" % address)
+        addr_str, self.scope_id = self._split_scope_id(addr_str)
+
         self._ip = self._ip_int_from_string(addr_str)
+
+    def __str__(self):
+        ip_str = self._string_from_ip_int(self._ip)
+        return ip_str if self.scope_id is None else ip_str + '%' + self.scope_id
 
     @property
     def packed(self):
@@ -1973,7 +2006,6 @@ class IPv6Address(_BaseV6, _BaseAddress):
             return None
         return IPv4Address((self._ip >> 80) & 0xFFFFFFFF)
 
-
 class IPv6Interface(IPv6Address):
 
     def __init__(self, address):
@@ -1989,7 +2021,7 @@ class IPv6Interface(IPv6Address):
         return self.network.hostmask
 
     def __str__(self):
-        return '%s/%d' % (self._string_from_ip_int(self._ip),
+        return '%s/%d' % (super().__str__(),
                           self._prefixlen)
 
     def __eq__(self, other):
