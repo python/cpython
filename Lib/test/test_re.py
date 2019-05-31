@@ -2170,6 +2170,18 @@ class PatternReprTests(unittest.TestCase):
         self.assertEqual(r[:30], "re.compile('Very long long lon")
         self.assertEqual(r[-16:], ", re.IGNORECASE)")
 
+    def test_flags_repr(self):
+        self.assertEqual(repr(re.I), "re.IGNORECASE")
+        self.assertEqual(repr(re.I|re.S|re.X),
+                         "re.IGNORECASE|re.DOTALL|re.VERBOSE")
+        self.assertEqual(repr(re.I|re.S|re.X|(1<<20)),
+                         "re.IGNORECASE|re.DOTALL|re.VERBOSE|0x100000")
+        self.assertEqual(repr(~re.I), "~re.IGNORECASE")
+        self.assertEqual(repr(~(re.I|re.S|re.X)),
+                         "~(re.IGNORECASE|re.DOTALL|re.VERBOSE)")
+        self.assertEqual(repr(~(re.I|re.S|re.X|(1<<20))),
+                         "~(re.IGNORECASE|re.DOTALL|re.VERBOSE|0x100000)")
+
 
 class ImplementationTest(unittest.TestCase):
     """
