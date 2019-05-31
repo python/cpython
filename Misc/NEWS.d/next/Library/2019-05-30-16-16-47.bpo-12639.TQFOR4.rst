@@ -1,0 +1,2 @@
+:meth:`msilib.Directory.start_component()` no longer fails if *keyfile* is
+not ``None``.
