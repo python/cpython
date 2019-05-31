@@ -12,9 +12,8 @@ This module is part of the legacy (``Compat32``) email API.  In the
 new API the functionality is provided by the *cte* parameter of
 the :meth:`~email.message.EmailMessage.set_content` method.
 
-This module is also deprecated in Python 3.  The functions provided here
-never need to be called explicitly and any calls should be removed before
-porting to Python 3.  The reason is that the :class:`email.mime.text.MIMEText`
+This module is deprecated in Python 3.  The functions provided here
+should not be called explicitly since the :class:`~email.mime.text.MIMEText`
 class sets the content type and CTE header using the *_subtype* and *_charset*
 values passed during the instaniation of that class.
 
