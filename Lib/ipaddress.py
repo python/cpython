@@ -1795,18 +1795,16 @@ class _BaseV6:
             ip_str: A string, the IPv6 address.
 
         Returns:
-            [addr, scope_id] list.
+            [addr, scope_id] tuple.
         """
         if '%' not in ip_str:
             return ip_str, None
 
-        split_addr = ip_str.split('%')
-        if len(split_addr) > 2 or split_addr[-1] == '':
+        addr, sep, scope_id = ip_str.partition('%')
+        if not sep:
+            scope_id = None
+        elif not scope_id:
             raise AddressValueError('Invalid IPv6 address: "%r"' % ip_str)
-        try:
-            addr, scope_id = split_addr
-        except ValueError:
-            return split_addr, None
         return addr, scope_id
 
     @property
@@ -1854,7 +1852,6 @@ class IPv6Address(_BaseV6, _BaseAddress):
             self._check_packed_address(address, 16)
             self._ip = int.from_bytes(address, 'big')
             return
-
 
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP string.
