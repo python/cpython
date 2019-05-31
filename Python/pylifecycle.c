@@ -1151,7 +1151,7 @@ Py_FinalizeEx(void)
     wait_for_thread_shutdown();
 
     // Make any remaining pending calls.
-    _Py_FinishPendingCalls(runtime);
+    _PyEval_FinishPendingCalls(runtime);
 
     /* Get current thread state and interpreter pointer */
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);

@@ -540,7 +540,7 @@ error:
 }
 
 void
-_Py_FinishPendingCalls(_PyRuntimeState *runtime)
+_PyEval_FinishPendingCalls(_PyRuntimeState *runtime)
 {
     assert(PyGILState_Check());
 
