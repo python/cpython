@@ -1,6 +1,6 @@
 """Bisection algorithms."""
 
-def insort_right(a, x, lo=0, hi=None, *, key=None):
+def insort_right(a, x, lo=0, hi=None, *, key=None, reverse=False):
     """Insert item x in list a, and keep it sorted assuming a is sorted.
 
     If x is already in a, insert it to the right of the rightmost x.
@@ -12,10 +12,10 @@ def insort_right(a, x, lo=0, hi=None, *, key=None):
     customize the order.
     """
 
-    lo = bisect_right(a, x, lo, hi, key=key)
+    lo = bisect_right(a, x, lo, hi, key=key, reverse=reverse)
     a.insert(lo, x)
 
-def bisect_right(a, x, lo=0, hi=None, *, key=None):
+def bisect_right(a, x, lo=0, hi=None, *, key=None, reverse=False):
     """Return the index where to insert item x in list a, assuming a is sorted.
 
     The return value i is such that all e in a[:i] have e <= x, and all e in
@@ -53,7 +53,7 @@ def bisect_right(a, x, lo=0, hi=None, *, key=None):
             lo = mid+1
     return lo
 
-def insort_left(a, x, lo=0, hi=None, *, key=None):
+def insort_left(a, x, lo=0, hi=None, *, key=None, reverse=False):
     """Insert item x in list a, and keep it sorted assuming a is sorted.
 
     If x is already in a, insert it to the left of the leftmost x.
@@ -65,11 +65,11 @@ def insort_left(a, x, lo=0, hi=None, *, key=None):
     customize the order.
     """
 
-    lo = bisect_left(a, x, lo, hi, key=key)
+    lo = bisect_left(a, x, lo, hi, key=key, reverse=reverse)
     a.insert(lo, x)
 
 
-def bisect_left(a, x, lo=0, hi=None, *, key=None):
+def bisect_left(a, x, lo=0, hi=None, *, key=None, reverse=False):
     """Return the index where to insert item x in list a, assuming a is sorted.
 
     The return value i is such that all e in a[:i] have e < x, and all e in

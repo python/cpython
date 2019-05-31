@@ -9,7 +9,8 @@ Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 _Py_IDENTIFIER(insert);
 
 static inline Py_ssize_t
-internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi, PyObject *key)
+internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi,
+                      PyObject *key, int reverse)
 {
     PyObject *litem;
     PyObject *item_value = NULL;
@@ -38,6 +39,8 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
             goto fail;
         }
     }
+
+    int comparator = reverse ? Py_GT : Py_LT;
     while (lo < hi) {
         /* The (size_t)cast ensures that the addition and subsequent division
            are performed as unsigned operations, avoiding difficulties from
@@ -48,7 +51,7 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
             goto fail;
         }
         if (key == NULL) {
-            res = PyObject_RichCompareBool(item_value, litem, Py_LT);
+            res = PyObject_RichCompareBool(item_value, litem, comparator);
         }
         else {
             PyObject *arglist = Py_BuildValue("(O)", litem);
@@ -57,7 +60,7 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
             if (litem_value == NULL) {
                 goto fail;
             }
-            res = PyObject_RichCompareBool(item_value, litem_value, Py_LT);
+            res = PyObject_RichCompareBool(item_value, litem_value, comparator);
             Py_DECREF(litem_value);
         }
 
@@ -85,24 +88,26 @@ bisect_right(PyObject *self, PyObject *args, PyObject *kw)
 {
     PyObject *list, *item;
     PyObject *key = NULL;
+    int reverse = 0;
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", "key", NULL};
+    static char *keywords[] = {"a", "x", "lo", "hi", "key", "reverse", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
     }
     else {
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn$O:bisect_right",
-                                         keywords, &list, &item, &lo, &hi, &key))
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn$Op:bisect_right",
+                                         keywords, &list, &item, &lo, &hi,
+                                         &key, &reverse))
             return NULL;
     }
     if (key == Py_None) {
         key = NULL;
     }
-    index = internal_bisect_right(list, item, lo, hi, key);
+    index = internal_bisect_right(list, item, lo, hi, key, reverse);
     if (index < 0) {
         return NULL;
     }
@@ -129,24 +134,26 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
 {
     PyObject *list, *item, *result;
     PyObject *key = NULL;
+    int reverse = 0;
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", "key", NULL};
+    static char *keywords[] = {"a", "x", "lo", "hi", "key", "reverse", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
     }
     else {
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn$O:insort_right",
-                                         keywords, &list, &item, &lo, &hi, &key))
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn$Op:insort_right",
+                                         keywords, &list, &item, &lo, &hi,
+                                         &key, &reverse))
             return NULL;
     }
     if (key == Py_None) {
         key = NULL;
     }
-    index = internal_bisect_right(list, item, lo, hi, key);
+    index = internal_bisect_right(list, item, lo, hi, key, reverse);
     if (index < 0) {
         return NULL;
     }
@@ -178,7 +185,8 @@ Optional argument key is a function of one argument used to\n\
 customize the order.\n");
 
 static inline Py_ssize_t
-internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi, PyObject *key)
+internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi,
+                     PyObject *key, int reverse)
 {
     PyObject *litem;
     PyObject *item_value = NULL;
@@ -207,6 +215,8 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
             goto fail;
         }
     }
+
+    int comparator = reverse ? Py_GT : Py_LT;
     while (lo < hi) {
         /* The (size_t)cast ensures that the addition and subsequent division
            are performed as unsigned operations, avoiding difficulties from
@@ -217,7 +227,7 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
             goto fail;
         }
         if (key == NULL) {
-            res = PyObject_RichCompareBool(litem, item_value, Py_LT);
+            res = PyObject_RichCompareBool(litem, item_value, comparator);
         }
         else {
             PyObject *arglist = Py_BuildValue("(O)", litem);
@@ -226,7 +236,7 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
             if (litem_value == NULL) {
                 goto fail;
             }
-            res = PyObject_RichCompareBool(litem_value, item_value, Py_LT);
+            res = PyObject_RichCompareBool(litem_value, item_value, comparator);
         }
 
         Py_DECREF(litem);
@@ -253,24 +263,26 @@ bisect_left(PyObject *self, PyObject *args, PyObject *kw)
 {
     PyObject *list, *item;
     PyObject *key = NULL;
+    int reverse = 0;
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", "key", NULL};
+    static char *keywords[] = {"a", "x", "lo", "hi", "key", "reverse", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
     }
     else {
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn$O:bisect_left",
-                                         keywords, &list, &item, &lo, &hi, &key))
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn$Op:bisect_left",
+                                         keywords, &list, &item, &lo, &hi,
+                                         &key, &reverse))
             return NULL;
     }
     if (key == Py_None) {
         key = NULL;
     }
-    index = internal_bisect_left(list, item, lo, hi, key);
+    index = internal_bisect_left(list, item, lo, hi, key, reverse);
     if (index < 0) {
         return NULL;
     }
@@ -297,23 +309,25 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
 {
     PyObject *list, *item, *result;
     PyObject *key = NULL;
+    int reverse = 0;
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", "key", NULL};
+    static char *keywords[] = {"a", "x", "lo", "hi", "key", "reverse", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
     } else {
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn$O:insort_left",
-                                         keywords, &list, &item, &lo, &hi, &key))
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn$Op:insort_left",
+                                         keywords, &list, &item, &lo, &hi,
+                                         &key, &reverse))
             return NULL;
     }
     if (key == Py_None) {
         key = NULL;
     }
-    index = internal_bisect_left(list, item, lo, hi, key);
+    index = internal_bisect_left(list, item, lo, hi, key, reverse);
     if (index < 0)
         return NULL;
     if (PyList_CheckExact(list)) {
