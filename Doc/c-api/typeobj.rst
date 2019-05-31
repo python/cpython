@@ -671,18 +671,18 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_vectorcall_offset
 
-   This field is only used if the flag :const:`Py_TPFLAGS_HAVE_VECTORCALL`
+   This field is only used if the flag :const:`_Py_TPFLAGS_HAVE_VECTORCALL`
    is set. If so, this must be a positive integer containing the offset in the
    instance struct of the :c:type:`vectorcallfunc` pointer used for the vectorcall
    protocol.
 
    This pointer may be zero, in which case the instance behaves as if
-   :const:`Py_TPFLAGS_HAVE_VECTORCALL` was not set.
+   :const:`_Py_TPFLAGS_HAVE_VECTORCALL` was not set.
 
    **Inheritance:**
 
    This field is inherited for extension types
-   together with the flag :const:`Py_TPFLAGS_HAVE_VECTORCALL`,
+   together with the flag :const:`_Py_TPFLAGS_HAVE_VECTORCALL`,
    but only if :c:member:`~PyTypeObject.tp_call` is also inherited.
    Heap types never inherit this.
 
