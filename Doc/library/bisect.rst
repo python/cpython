@@ -25,11 +25,17 @@ The following functions are provided:
 
    Locate the insertion point for *x* in *a* to maintain sorted order.
    The parameters *lo* and *hi* may be used to specify a subset of the list
-   which should be considered; by default the entire list is used. The
-   parameter *key* specifies a function of one argument that is used to
+   which should be considered; by default the entire list is used.
+
+   The parameter *key* specifies a function of one argument that is used to
    extract a comparison key from each element in *a* and from *x* (for example,
    ``key=str.lower``). The default value is ``None`` (compare the elements
    directly).
+
+   .. note::
+
+        When specifying a custom *key* function, you should wrap it with
+        :func:`functools.lru_cache` if the *key* function is not already fast.
 
    If *x* is already present in *a*, the insertion point will be before
    (to the left of) any existing entries.  The return value is suitable for
