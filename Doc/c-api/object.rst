@@ -337,20 +337,22 @@ Object Protocol
 
 .. c:function:: PyObject* _PyObject_Vectorcall(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 
-   Call a callable Python object *callable*.
+   Call a callable Python object *callable*, using
+   :c:data:`vectorcall <PyTypeObject.tp_vectorcall_offset>` if possible.
 
    *args* is a C array with the positional arguments.
 
    *nargsf* is the number of positional arguments plus optionally the flag
-   :const:`PY_VECTORCALL_ARGUMENTS_OFFSET` which means that the callee is
-   allowed to modify ``args[-1]``.
+   :const:`PY_VECTORCALL_ARGUMENTS_OFFSET` (see below).
+   To get actual number of arguments, use
+   :c:func:`PyVectorcall_NARGS(nargsf) <PyVectorcall_NARGS>`.
 
    *kwnames* can be either NULL (no keyword arguments) or a tuple of keyword
    names. In the latter case, the values of the keyword arguments are stored
-   in *args* after the positional arguments
-   (note that the number of keyword arguments does not change *nargsf*).
+   in *args* after the positional arguments.
+   The number of keyword arguments does not influence *nargsf*.
 
-   *kwnames* must only objects of type ``str`` (not a subclass),
+   *kwnames* must contain only objects of type ``str`` (not a subclass),
    and all keys must be unique.
 
    Return the result of the call on success, or *NULL* on failure.
@@ -365,15 +367,34 @@ Object Protocol
    with a different name and, possibly, changed semantics.
    If you use the function, plan for updating your code for Python 3.9.
 
+.. c:data:``PY_VECTORCALL_ARGUMENTS_OFFSET``
+
+   If set in a vectorcall *nargsf* argument, the callee is allowed to
+   temporarily change ``args[-1]``. In other words, *args* points to
+   argument 1 (not 0) in the allocated vector.
+   The callee must restore the value of ``args[-1]`` before returning.
+
+   Whenever they can do so cheaply (without additional allocation), callers
+   are encouraged to use :const:`PY_VECTORCALL_ARGUMENTS_OFFSET`.
+   Doing so will allow callables such as bound methods to make their onward
+   calls (which include a prepended *self* argument) cheaply.
+
+.. c:function:: Py_ssize_t PyVectorcall_NARGS(size_t nargsf)
+
+   Given a vectorcall *nargsf* argument, return the actual number of
+   arguments.
+   Currently equivalent to ``nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET``.
+
 .. c:function:: PyObject* _PyObject_FastCallDict(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwdict)
 
    Same as :c:func:`_PyObject_Vectorcall` except that the keyword arguments
    are passed as a dictionary in *kwdict*. This may be *NULL* if there
    are no keyword arguments.
 
-   For callables supporting vectorcall, the arguments are internally
-   converted to the vectorcall convention. Therefore, this function
-   adds some overhead compared to :c:func:`_PyObject_Vectorcall`.
+   For callables supporting :c:data:`vectorcall <PyTypeObject.tp_vectorcall_offset>`,
+   the arguments are internally converted to the vectorcall convention.
+   Therefore, this function adds some overhead compared to
+   :c:func:`_PyObject_Vectorcall`.
    It should only be used if the caller already has a dictionary ready to use.
 
 .. note::
