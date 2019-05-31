@@ -8,7 +8,6 @@ extern "C" {
 #endif
 
 #include "pythread.h"
-#include "coreconfig.h"
 
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
@@ -25,17 +24,23 @@ typedef struct _ts PyThreadState;
 /* struct _is is defined in internal/pycore_pystate.h */
 typedef struct _is PyInterpreterState;
 
-/* State unique per thread */
-
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
+/* New in 3.8 */
+PyAPI_FUNC(PyObject *) PyInterpreterState_GetDict(PyInterpreterState *);
+#endif
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 /* New in 3.7 */
 PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+
+/* State unique per thread */
+
 /* New in 3.3 */
 PyAPI_FUNC(int) PyState_AddModule(PyObject*, struct PyModuleDef*);
 PyAPI_FUNC(int) PyState_RemoveModule(struct PyModuleDef*);

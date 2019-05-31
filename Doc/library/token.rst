@@ -88,3 +88,6 @@ the :mod:`tokenize` module.
 
 .. versionchanged:: 3.8
    Added :data:`TYPE_COMMENT`.
+   Added :data:`AWAIT` and :data:`ASYNC` tokens back (they're needed
+   to support parsing older Python versions for :func:`ast.parse` with
+   ``feature_version`` set to 6 or lower).

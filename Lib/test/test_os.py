@@ -28,6 +28,7 @@ import unittest
 import uuid
 import warnings
 from test import support
+from platform import win32_is_iot
 
 try:
     import resource
@@ -1200,9 +1201,8 @@ class MakedirTests(unittest.TestCase):
     def test_exist_ok_existing_regular_file(self):
         base = support.TESTFN
         path = os.path.join(support.TESTFN, 'dir1')
-        f = open(path, 'w')
-        f.write('abc')
-        f.close()
+        with open(path, 'w') as f:
+            f.write('abc')
         self.assertRaises(OSError, os.makedirs, path)
         self.assertRaises(OSError, os.makedirs, path, exist_ok=False)
         self.assertRaises(OSError, os.makedirs, path, exist_ok=True)
@@ -1407,6 +1407,8 @@ OS_URANDOM_DONT_USE_FD = (
 
 @unittest.skipIf(OS_URANDOM_DONT_USE_FD ,
                  "os.random() does not use a file descriptor")
+@unittest.skipIf(sys.platform == "vxworks",
+                 "VxWorks can't set RLIMIT_NOFILE to 1")
 class URandomFDTests(unittest.TestCase):
     @unittest.skipUnless(resource, "test requires the resource module")
     def test_urandom_failure(self):
@@ -1517,7 +1519,8 @@ def _execvpe_mockup(defpath=None):
         os.execve = orig_execve
         os.defpath = orig_defpath
 
-
+@unittest.skipUnless(hasattr(os, 'execv'),
+                     "need os.execv()")
 class ExecTests(unittest.TestCase):
     @unittest.skipIf(USING_LINUXTHREADS,
                      "avoid triggering a linuxthreads bug: see issue #4970")
@@ -1797,36 +1800,46 @@ class LinkTests(unittest.TestCase):
 
 @unittest.skipIf(sys.platform == "win32", "Posix specific tests")
 class PosixUidGidTests(unittest.TestCase):
+    # uid_t and gid_t are 32-bit unsigned integers on Linux
+    UID_OVERFLOW = (1 << 32)
+    GID_OVERFLOW = (1 << 32)
+
     @unittest.skipUnless(hasattr(os, 'setuid'), 'test needs os.setuid()')
     def test_setuid(self):
         if os.getuid() != 0:
             self.assertRaises(OSError, os.setuid, 0)
-        self.assertRaises(OverflowError, os.setuid, 1<<32)
+        self.assertRaises(TypeError, os.setuid, 'not an int')
+        self.assertRaises(OverflowError, os.setuid, self.UID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'setgid'), 'test needs os.setgid()')
     def test_setgid(self):
         if os.getuid() != 0 and not HAVE_WHEEL_GROUP:
             self.assertRaises(OSError, os.setgid, 0)
-        self.assertRaises(OverflowError, os.setgid, 1<<32)
+        self.assertRaises(TypeError, os.setgid, 'not an int')
+        self.assertRaises(OverflowError, os.setgid, self.GID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'seteuid'), 'test needs os.seteuid()')
     def test_seteuid(self):
         if os.getuid() != 0:
             self.assertRaises(OSError, os.seteuid, 0)
-        self.assertRaises(OverflowError, os.seteuid, 1<<32)
+        self.assertRaises(TypeError, os.setegid, 'not an int')
+        self.assertRaises(OverflowError, os.seteuid, self.UID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'setegid'), 'test needs os.setegid()')
     def test_setegid(self):
         if os.getuid() != 0 and not HAVE_WHEEL_GROUP:
             self.assertRaises(OSError, os.setegid, 0)
-        self.assertRaises(OverflowError, os.setegid, 1<<32)
+        self.assertRaises(TypeError, os.setegid, 'not an int')
+        self.assertRaises(OverflowError, os.setegid, self.GID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'test needs os.setreuid()')
     def test_setreuid(self):
         if os.getuid() != 0:
             self.assertRaises(OSError, os.setreuid, 0, 0)
-        self.assertRaises(OverflowError, os.setreuid, 1<<32, 0)
-        self.assertRaises(OverflowError, os.setreuid, 0, 1<<32)
+        self.assertRaises(TypeError, os.setreuid, 'not an int', 0)
+        self.assertRaises(TypeError, os.setreuid, 0, 'not an int')
+        self.assertRaises(OverflowError, os.setreuid, self.UID_OVERFLOW, 0)
+        self.assertRaises(OverflowError, os.setreuid, 0, self.UID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'test needs os.setreuid()')
     def test_setreuid_neg1(self):
@@ -1840,8 +1853,10 @@ class PosixUidGidTests(unittest.TestCase):
     def test_setregid(self):
         if os.getuid() != 0 and not HAVE_WHEEL_GROUP:
             self.assertRaises(OSError, os.setregid, 0, 0)
-        self.assertRaises(OverflowError, os.setregid, 1<<32, 0)
-        self.assertRaises(OverflowError, os.setregid, 0, 1<<32)
+        self.assertRaises(TypeError, os.setregid, 'not an int', 0)
+        self.assertRaises(TypeError, os.setregid, 0, 'not an int')
+        self.assertRaises(OverflowError, os.setregid, self.GID_OVERFLOW, 0)
+        self.assertRaises(OverflowError, os.setregid, 0, self.GID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'setregid'), 'test needs os.setregid()')
     def test_setregid_neg1(self):
@@ -2326,19 +2341,10 @@ class Win32JunctionTests(unittest.TestCase):
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 class Win32NtTests(unittest.TestCase):
-    def setUp(self):
-        from test import support
-        self.nt = support.import_module('nt')
-        pass
-
-    def tearDown(self):
-        pass
-
     def test_getfinalpathname_handles(self):
-        try:
-            import ctypes, ctypes.wintypes
-        except ImportError:
-            raise unittest.SkipTest('ctypes module is required for this test')
+        nt = support.import_module('nt')
+        ctypes = support.import_module('ctypes')
+        import ctypes.wintypes
 
         kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
         kernel.GetCurrentProcess.restype = ctypes.wintypes.HANDLE
@@ -2357,21 +2363,23 @@ class Win32NtTests(unittest.TestCase):
         before_count = handle_count.value
 
         # The first two test the error path, __file__ tests the success path
-        filenames = [ r'\\?\C:',
-                      r'\\?\NUL',
-                      r'\\?\CONIN',
-                      __file__ ]
+        filenames = [
+            r'\\?\C:',
+            r'\\?\NUL',
+            r'\\?\CONIN',
+            __file__,
+        ]
 
-        for i in range(10):
+        for _ in range(10):
             for name in filenames:
                 try:
-                    tmp = self.nt._getfinalpathname(name)
-                except:
+                    nt._getfinalpathname(name)
+                except Exception:
                     # Failure is expected
                     pass
                 try:
-                    tmp = os.stat(name)
-                except:
+                    os.stat(name)
+                except Exception:
                     pass
 
         ok = kernel.GetProcessHandleCount(hproc, ctypes.byref(handle_count))
@@ -2435,7 +2443,7 @@ class DeviceEncodingTests(unittest.TestCase):
         # Return None when an fd doesn't actually exist.
         self.assertIsNone(os.device_encoding(123456))
 
-    @unittest.skipUnless(os.isatty(0) and (sys.platform.startswith('win') or
+    @unittest.skipUnless(os.isatty(0) and not win32_is_iot() and (sys.platform.startswith('win') or
             (hasattr(locale, 'nl_langinfo') and hasattr(locale, 'CODESET'))),
             'test requires a tty and either Windows or nl_langinfo(CODESET)')
     def test_device_encoding(self):
@@ -3112,6 +3120,23 @@ class TermsizeTests(unittest.TestCase):
                 self.skipTest("failed to query terminal size")
             raise
         self.assertEqual(expected, actual)
+
+
+@unittest.skipUnless(hasattr(os, 'memfd_create'), 'requires os.memfd_create')
+@support.requires_linux_version(3, 17)
+class MemfdCreateTests(unittest.TestCase):
+    def test_memfd_create(self):
+        fd = os.memfd_create("Hi", os.MFD_CLOEXEC)
+        self.assertNotEqual(fd, -1)
+        self.addCleanup(os.close, fd)
+        self.assertFalse(os.get_inheritable(fd))
+        with open(fd, "wb", closefd=False) as f:
+            f.write(b'memfd_create')
+            self.assertEqual(f.tell(), 12)
+
+        fd2 = os.memfd_create("Hi")
+        self.addCleanup(os.close, fd2)
+        self.assertFalse(os.get_inheritable(fd2))
 
 
 class OSErrorTests(unittest.TestCase):

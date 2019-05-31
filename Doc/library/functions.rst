@@ -211,19 +211,18 @@ are always available.  They are listed here in alphabetical order.
           @classmethod
           def f(cls, arg1, arg2, ...): ...
 
-   The ``@classmethod`` form is a function :term:`decorator` -- see the description
-   of function definitions in :ref:`function` for details.
+   The ``@classmethod`` form is a function :term:`decorator` -- see
+   :ref:`function` for details.
 
-   It can be called either on the class (such as ``C.f()``) or on an instance (such
+   A class method can be called either on the class (such as ``C.f()``) or on an instance (such
    as ``C().f()``).  The instance is ignored except for its class. If a class
    method is called for a derived class, the derived class object is passed as the
    implied first argument.
 
    Class methods are different than C++ or Java static methods. If you want those,
-   see :func:`staticmethod` in this section.
+   see :func:`staticmethod`.
 
-   For more information on class methods, consult the documentation on the standard
-   type hierarchy in :ref:`types`.
+   For more information on class methods, see :ref:`types`.
 
 
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
@@ -258,6 +257,12 @@ are always available.  They are listed here in alphabetical order.
    can be found as the :attr:`~__future__._Feature.compiler_flag` attribute on
    the :class:`~__future__._Feature` instance in the :mod:`__future__` module.
 
+   The optional argument *flags* also controls whether the compiled source is
+   allowed to contain top-level ``await``, ``async for`` and ``async with``.
+   When the bit ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` is set, the return code
+   object has ``CO_COROUTINE`` set in ``co_code``, and can be interactively
+   executed via ``await eval(code_object)``.
+
    The argument *optimize* specifies the optimization level of the compiler; the
    default value of ``-1`` selects the optimization level of the interpreter as
    given by :option:`-O` options.  Explicit levels are ``0`` (no optimization;
@@ -269,6 +274,12 @@ are always available.  They are listed here in alphabetical order.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
+
+   .. audit-event:: compile "source filename"
+
+      Raises an :func:`auditing event <sys.audit>` ``compile`` with arguments
+      ``source`` and ``filename``. This event may also be raised by implicit
+      compilation.
 
    .. note::
 
@@ -290,6 +301,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.5
       Previously, :exc:`TypeError` was raised when null bytes were encountered
       in *source*.
+
+   .. versionadded:: 3.8
+      ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
+      support for top-level ``await``, ``async for``, and ``async with``.
 
 
 .. class:: complex([real[, imag]])
@@ -464,6 +479,11 @@ are always available.  They are listed here in alphabetical order.
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
 
+   .. audit-event:: exec code_object
+
+      Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
+      the argument. Code compilation events may also be raised.
+
 .. index:: builtin: exec
 
 .. function:: exec(object[, globals[, locals]])
@@ -492,6 +512,11 @@ are always available.  They are listed here in alphabetical order.
    :mod:`builtins` is inserted under that key.  That way you can control what
    builtins are available to the executed code by inserting your own
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
+
+   .. audit-event:: exec code_object
+
+      Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
+      the argument. Code compilation events may also be raised.
 
    .. note::
 
@@ -669,6 +694,11 @@ are always available.  They are listed here in alphabetical order.
    topic, and a help page is printed on the console.  If the argument is any other
    kind of object, a help page on the object is generated.
 
+   Note that if a slash(/) appears in the parameter list of a function, when
+   invoking :func:`help`, it means that the parameters prior to the slash are
+   positional-only. For more info, see
+   :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
+
    This function is added to the built-in namespace by the :mod:`site` module.
 
    .. versionchanged:: 3.4
@@ -732,6 +762,16 @@ are always available.  They are listed here in alphabetical order.
 
    If the :mod:`readline` module was loaded, then :func:`input` will use it
    to provide elaborate line editing and history features.
+
+   .. audit-event:: builtins.input prompt
+
+      Raises an :func:`auditing event <sys.audit>` ``builtins.input`` with
+      argument ``prompt`` before reading input
+
+   .. audit-event:: builtins.input/result result
+
+      Raises an auditing event ``builtins.input/result`` with the result after
+      successfully reading input.
 
 
 .. class:: int([x])
@@ -839,7 +879,8 @@ are always available.  They are listed here in alphabetical order.
 
    Update and return a dictionary representing the current local symbol table.
    Free variables are returned by :func:`locals` when it is called in function
-   blocks, but not in class blocks.
+   blocks, but not in class blocks. Note that at the module level, :func:`locals`
+   and :func:`globals` are the same dictionary.
 
    .. note::
       The contents of this dictionary should not be modified; changes may not
@@ -1161,6 +1202,11 @@ are always available.  They are listed here in alphabetical order.
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
 
+   .. audit-event:: open "file mode flags"
+
+   The ``mode`` and ``flags`` arguments may have been modified or inferred from
+   the original call.
+
    .. versionchanged::
       3.3
 
@@ -1447,11 +1493,11 @@ are always available.  They are listed here in alphabetical order.
           @staticmethod
           def f(arg1, arg2, ...): ...
 
-   The ``@staticmethod`` form is a function :term:`decorator` -- see the
-   description of function definitions in :ref:`function` for details.
+   The ``@staticmethod`` form is a function :term:`decorator` -- see
+   :ref:`function` for details.
 
-   It can be called either on the class (such as ``C.f()``) or on an instance (such
-   as ``C().f()``).  The instance is ignored except for its class.
+   A static method can be called either on the class (such as ``C.f()``) or on an instance (such
+   as ``C().f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also see
    :func:`classmethod` for a variant that is useful for creating alternate class
@@ -1466,8 +1512,7 @@ are always available.  They are listed here in alphabetical order.
       class C:
           builtin_open = staticmethod(open)
 
-   For more information on static methods, consult the documentation on the
-   standard type hierarchy in :ref:`types`.
+   For more information on static methods, see :ref:`types`.
 
 
 .. index::

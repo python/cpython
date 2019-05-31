@@ -645,9 +645,20 @@ class CLanguage(Language):
         default_return_converter = (not f.return_converter or
             f.return_converter.type == 'PyObject *')
 
-        positional = parameters and parameters[-1].is_positional_only()
-
         new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
+
+        pos_only = min_pos = max_pos = min_kw_only = 0
+        for i, p in enumerate(parameters, 1):
+            if p.is_keyword_only():
+                assert not p.is_positional_only()
+                if not p.is_optional():
+                    min_kw_only = i - max_pos
+            else:
+                max_pos = i
+                if p.is_positional_only():
+                    pos_only = i
+                if not p.is_optional():
+                    min_pos = i
 
         meth_o = (len(parameters) == 1 and
               parameters[0].is_positional_only() and
@@ -712,16 +723,19 @@ class CLanguage(Language):
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
         parser_body_fields = ()
-        def parser_body(prototype, *fields):
-            nonlocal parser_body_fields
+        parser_body_declarations = ''
+        def parser_body(prototype, *fields, declarations=''):
+            nonlocal parser_body_fields, parser_body_declarations
             add, output = text_accumulator()
             add(prototype)
             parser_body_fields = fields
+            parser_body_declarations = declarations
 
             fields = list(fields)
             fields.insert(0, normalize_snippet("""
                 {{
                     {return_value_declaration}
+                    {parser_declarations}
                     {declarations}
                     {initializers}
                 """) + "\n")
@@ -739,13 +753,7 @@ class CLanguage(Language):
             for field in fields:
                 add('\n')
                 add(field)
-            return output()
-
-        def insert_keywords(s):
-            return linear_format(s, declarations=
-                'static const char * const _keywords[] = {{{keywords}, NULL}};\n'
-                'static _PyArg_Parser _parser = {{"{format_units}:{name}", _keywords, 0}};\n'
-                '{declarations}')
+            return linear_format(output(), parser_declarations=declarations)
 
         if not parameters:
             # no parameters, METH_NOARGS
@@ -818,7 +826,7 @@ class CLanguage(Language):
 
             parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
 
-        elif positional:
+        elif pos_only == len(parameters):
             if not new_or_init:
                 # positional-only, but no option groups
                 # we only need one call to _PyArg_ParseStack
@@ -836,15 +844,19 @@ class CLanguage(Language):
                 nargs = 'PyTuple_GET_SIZE(args)'
                 argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
-            parser_code = []
+            parser_code = [normalize_snippet("""
+                if (!_PyArg_CheckPositional("{name}", %s, %d, %d)) {{
+                    goto exit;
+                }}
+                """ % (nargs, min_pos, max_pos), indent=4)]
             has_optional = False
-            for i, converter in enumerate(converters):
-                parsearg = converter.parse_arg(argname_fmt % i, i + 1)
+            for i, p in enumerate(parameters):
+                parsearg = p.converter.parse_arg(argname_fmt % i, i + 1)
                 if parsearg is None:
-                    #print('Cannot convert %s %r for %s' % (converter.__class__.__name__, converter.format_unit, converter.name), file=sys.stderr)
+                    #print('Cannot convert %s %r for %s' % (p.converter.__class__.__name__, p.converter.format_unit, p.converter.name), file=sys.stderr)
                     parser_code = None
                     break
-                if has_optional or converter.default is not unspecified:
+                if has_optional or p.is_optional():
                     has_optional = True
                     parser_code.append(normalize_snippet("""
                         if (%s < %d) {{
@@ -854,11 +866,6 @@ class CLanguage(Language):
                 parser_code.append(normalize_snippet(parsearg, indent=4))
 
             if parser_code is not None:
-                parser_code.insert(0, normalize_snippet("""
-                    if (!_PyArg_CheckPositional("{name}", %s, {unpack_min}, {unpack_max})) {{
-                        goto exit;
-                    }}
-                    """ % nargs, indent=4))
                 if has_optional:
                     parser_code.append("skip_optional:")
             else:
@@ -878,33 +885,122 @@ class CLanguage(Language):
                         """, indent=4)]
             parser_definition = parser_body(parser_prototype, *parser_code)
 
-        elif not new_or_init:
-            flags = "METH_FASTCALL|METH_KEYWORDS"
-
-            parser_prototype = parser_prototype_fastcall_keywords
-
-            body = normalize_snippet("""
-                if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-                    {parse_arguments})) {{
-                    goto exit;
-                }}
-                """, indent=4)
-            parser_definition = parser_body(parser_prototype, body)
-            parser_definition = insert_keywords(parser_definition)
         else:
-            # positional-or-keyword arguments
-            flags = "METH_VARARGS|METH_KEYWORDS"
+            has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters))
+            if not new_or_init:
+                flags = "METH_FASTCALL|METH_KEYWORDS"
+                parser_prototype = parser_prototype_fastcall_keywords
+                argname_fmt = 'args[%d]'
+                declarations = normalize_snippet("""
+                    static const char * const _keywords[] = {{{keywords}, NULL}};
+                    static _PyArg_Parser _parser = {{NULL, _keywords, "{name}", 0}};
+                    PyObject *argsbuf[%s];
+                    """ % len(converters))
+                if has_optional_kw:
+                    declarations += "\nPy_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (min_pos + min_kw_only)
+                parser_code = [normalize_snippet("""
+                    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, %d, %d, %d, argsbuf);
+                    if (!args) {{
+                        goto exit;
+                    }}
+                    """ % (min_pos, max_pos, min_kw_only), indent=4)]
+            else:
+                # positional-or-keyword arguments
+                flags = "METH_VARARGS|METH_KEYWORDS"
+                parser_prototype = parser_prototype_keyword
+                argname_fmt = 'fastargs[%d]'
+                declarations = normalize_snippet("""
+                    static const char * const _keywords[] = {{{keywords}, NULL}};
+                    static _PyArg_Parser _parser = {{NULL, _keywords, "{name}", 0}};
+                    PyObject *argsbuf[%s];
+                    PyObject * const *fastargs;
+                    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+                    """ % len(converters))
+                if has_optional_kw:
+                    declarations += "\nPy_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (min_pos + min_kw_only)
+                parser_code = [normalize_snippet("""
+                    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %d, %d, %d, argsbuf);
+                    if (!fastargs) {{
+                        goto exit;
+                    }}
+                    """ % (min_pos, max_pos, min_kw_only), indent=4)]
 
-            parser_prototype = parser_prototype_keyword
+            add_label = None
+            for i, p in enumerate(parameters):
+                parsearg = p.converter.parse_arg(argname_fmt % i, i + 1)
+                if parsearg is None:
+                    #print('Cannot convert %s %r for %s' % (p.converter.__class__.__name__, p.converter.format_unit, p.converter.name), file=sys.stderr)
+                    parser_code = None
+                    break
+                if add_label and (i == pos_only or i == max_pos):
+                    parser_code.append("%s:" % add_label)
+                    add_label = None
+                if not p.is_optional():
+                    parser_code.append(normalize_snippet(parsearg, indent=4))
+                elif i < pos_only:
+                    add_label = 'skip_optional_posonly'
+                    parser_code.append(normalize_snippet("""
+                        if (nargs < %d) {{
+                            goto %s;
+                        }}
+                        """ % (i + 1, add_label), indent=4))
+                    if has_optional_kw:
+                        parser_code.append(normalize_snippet("""
+                            noptargs--;
+                            """, indent=4))
+                    parser_code.append(normalize_snippet(parsearg, indent=4))
+                else:
+                    if i < max_pos:
+                        label = 'skip_optional_pos'
+                        first_opt = max(min_pos, pos_only)
+                    else:
+                        label = 'skip_optional_kwonly'
+                        first_opt = max_pos + min_kw_only
+                    if i == first_opt:
+                        add_label = label
+                        parser_code.append(normalize_snippet("""
+                            if (!noptargs) {{
+                                goto %s;
+                            }}
+                            """ % add_label, indent=4))
+                    if i + 1 == len(parameters):
+                        parser_code.append(normalize_snippet(parsearg, indent=4))
+                    else:
+                        add_label = label
+                        parser_code.append(normalize_snippet("""
+                            if (%s) {{
+                            """ % (argname_fmt % i), indent=4))
+                        parser_code.append(normalize_snippet(parsearg, indent=8))
+                        parser_code.append(normalize_snippet("""
+                                if (!--noptargs) {{
+                                    goto %s;
+                                }}
+                            }}
+                            """ % add_label, indent=4))
 
-            body = normalize_snippet("""
-                if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-                    {parse_arguments})) {{
-                    goto exit;
-                }}
-                """, indent=4)
-            parser_definition = parser_body(parser_prototype, body)
-            parser_definition = insert_keywords(parser_definition)
+            if parser_code is not None:
+                if add_label:
+                    parser_code.append("%s:" % add_label)
+            else:
+                declarations = (
+                    'static const char * const _keywords[] = {{{keywords}, NULL}};\n'
+                    'static _PyArg_Parser _parser = {{"{format_units}:{name}", _keywords, 0}};')
+                if not new_or_init:
+                    parser_code = [normalize_snippet("""
+                        if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+                            {parse_arguments})) {{
+                            goto exit;
+                        }}
+                        """, indent=4)]
+                else:
+                    parser_code = [normalize_snippet("""
+                        if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+                            {parse_arguments})) {{
+                            goto exit;
+                        }}
+                        """, indent=4)]
+            parser_definition = parser_body(parser_prototype, *parser_code,
+                                            declarations=declarations)
 
 
         if new_or_init:
@@ -938,9 +1034,8 @@ class CLanguage(Language):
                         }}
                         """, indent=4))
 
-            parser_definition = parser_body(parser_prototype, *fields)
-            if parses_keywords:
-                parser_definition = insert_keywords(parser_definition)
+            parser_definition = parser_body(parser_prototype, *fields,
+                                            declarations=parser_body_declarations)
 
 
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
@@ -2175,6 +2270,9 @@ class Parameter:
 
     def is_positional_only(self):
         return self.kind == inspect.Parameter.POSITIONAL_ONLY
+
+    def is_optional(self):
+        return (self.default is not unspecified)
 
     def copy(self, **overrides):
         kwargs = {

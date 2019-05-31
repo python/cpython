@@ -821,10 +821,9 @@ class SimpleServerTestCase(BaseServerTestCase):
     def test_404(self):
         # send POST with http.client, it should return 404 header and
         # 'Not Found' message.
-        conn = http.client.HTTPConnection(ADDR, PORT)
-        conn.request('POST', '/this-is-not-valid')
-        response = conn.getresponse()
-        conn.close()
+        with contextlib.closing(http.client.HTTPConnection(ADDR, PORT)) as conn:
+            conn.request('POST', '/this-is-not-valid')
+            response = conn.getresponse()
 
         self.assertEqual(response.status, 404)
         self.assertEqual(response.reason, 'Not Found')
@@ -944,9 +943,13 @@ class SimpleServerTestCase(BaseServerTestCase):
 
     def test_partial_post(self):
         # Check that a partial POST doesn't make the server loop: issue #14001.
-        conn = http.client.HTTPConnection(ADDR, PORT)
-        conn.request('POST', '/RPC2 HTTP/1.0\r\nContent-Length: 100\r\n\r\nbye')
-        conn.close()
+        with contextlib.closing(socket.create_connection((ADDR, PORT))) as conn:
+            conn.send('POST /RPC2 HTTP/1.0\r\n'
+                      'Content-Length: 100\r\n\r\n'
+                      'bye HTTP/1.1\r\n'
+                      f'Host: {ADDR}:{PORT}\r\n'
+                      'Accept-Encoding: identity\r\n'
+                      'Content-Length: 0\r\n\r\n'.encode('ascii'))
 
     def test_context_manager(self):
         with xmlrpclib.ServerProxy(URL) as server:

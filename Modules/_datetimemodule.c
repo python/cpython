@@ -1704,8 +1704,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
  * Miscellaneous helpers.
  */
 
-/* For various reasons, we need to use tp_richcompare instead of tp_reserved.
- * The comparisons here all most naturally compute a cmp()-like result.
+/* The comparisons here all most naturally compute a cmp()-like result.
  * This little helper turns that into a bool result for rich comparisons.
  */
 static PyObject *
@@ -2720,10 +2719,10 @@ static PyTypeObject PyDateTime_DeltaType = {
     sizeof(PyDateTime_Delta),                           /* tp_basicsize */
     0,                                                  /* tp_itemsize */
     0,                                                  /* tp_dealloc */
-    0,                                                  /* tp_print */
+    0,                                                  /* tp_vectorcall_offset */
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */
-    0,                                                  /* tp_reserved */
+    0,                                                  /* tp_as_async */
     (reprfunc)delta_repr,                               /* tp_repr */
     &delta_as_number,                                   /* tp_as_number */
     0,                                                  /* tp_as_sequence */
@@ -2921,6 +2920,23 @@ datetime_date_fromtimestamp(PyTypeObject *type, PyObject *timestamp)
     return date_fromtimestamp((PyObject *) type, timestamp);
 }
 
+/* bpo-36025: This is a wrapper for API compatibility with the public C API,
+ * which expects a function that takes an *args tuple, whereas the argument
+ * clinic generates code that takes METH_O.
+ */
+static PyObject *
+datetime_date_fromtimestamp_capi(PyObject *cls, PyObject *args)
+{
+    PyObject *timestamp;
+    PyObject *result = NULL;
+
+    if (PyArg_UnpackTuple(args, "fromtimestamp", 1, 1, &timestamp)) {
+        result = date_fromtimestamp(cls, timestamp);
+    }
+
+    return result;
+}
+
 /* Return new date from proleptic Gregorian ordinal.  Raises ValueError if
  * the ordinal is out of range.
  */
@@ -2985,6 +3001,67 @@ invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);
     return NULL;
 }
+
+
+static PyObject *
+date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
+{
+    static char *keywords[] = {
+        "year", "week", "day", NULL
+    };
+
+    int year, week, day;
+    if (PyArg_ParseTupleAndKeywords(args, kw, "iii:fromisocalendar",
+                keywords,
+                &year, &week, &day) == 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_Format(PyExc_ValueError,
+                    "ISO calendar component out of range");
+
+        }
+        return NULL;
+    }
+
+    // Year is bounded to 0 < year < 10000 because 9999-12-31 is (9999, 52, 5)
+    if (year < MINYEAR || year > MAXYEAR) {
+        PyErr_Format(PyExc_ValueError, "Year is out of range: %d", year);
+        return NULL;
+    }
+
+    if (week <= 0 || week >= 53) {
+        int out_of_range = 1;
+        if (week == 53) {
+            // ISO years have 53 weeks in it on years starting with a Thursday
+            // and on leap years starting on Wednesday
+            int first_weekday = weekday(year, 1, 1);
+            if (first_weekday == 3 || (first_weekday == 2 && is_leap(year))) {
+                out_of_range = 0;
+            }
+        }
+
+        if (out_of_range) {
+            PyErr_Format(PyExc_ValueError, "Invalid week: %d", week);
+            return NULL;
+        }
+    }
+
+    if (day <= 0 || day >= 8) {
+        PyErr_Format(PyExc_ValueError, "Invalid day: %d (range is [1, 7])",
+                     day);
+        return NULL;
+    }
+
+    // Convert (Y, W, D) to (Y, M, D) in-place
+    int day_1 = iso_week1_monday(year);
+
+    int month = week;
+    int day_offset = (month - 1)*7 + day - 1;
+
+    ord_to_ymd(day_1 + day_offset, &year, &month, &day);
+
+    return new_date_subclass_ex(year, month, day, cls);
+}
+
 
 /*
  * Date arithmetic.
@@ -3279,6 +3356,12 @@ static PyMethodDef date_methods[] = {
                                                          METH_CLASS,
       PyDoc_STR("str -> Construct a date from the output of date.isoformat()")},
 
+     {"fromisocalendar", (PyCFunction)(void(*)(void))date_fromisocalendar,
+      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
+      PyDoc_STR("int, int, int -> Construct a date from the ISO year, week "
+                "number and weekday.\n\n"
+                "This is the inverse of the date.isocalendar() function")},
+
     {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
      PyDoc_STR("Current date or datetime:  same as "
                "self.__class__.fromtimestamp(time.time()).")},
@@ -3347,10 +3430,10 @@ static PyTypeObject PyDateTime_DateType = {
     sizeof(PyDateTime_Date),                            /* tp_basicsize */
     0,                                                  /* tp_itemsize */
     0,                                                  /* tp_dealloc */
-    0,                                                  /* tp_print */
+    0,                                                  /* tp_vectorcall_offset */
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */
-    0,                                                  /* tp_reserved */
+    0,                                                  /* tp_as_async */
     (reprfunc)date_repr,                                /* tp_repr */
     &date_as_number,                                    /* tp_as_number */
     0,                                                  /* tp_as_sequence */
@@ -3597,10 +3680,10 @@ static PyTypeObject PyDateTime_TZInfoType = {
     sizeof(PyDateTime_TZInfo),                  /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -3836,10 +3919,10 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     sizeof(PyDateTime_TimeZone),      /* tp_basicsize */
     0,                                /* tp_itemsize */
     (destructor)timezone_dealloc,     /* tp_dealloc */
-    0,                                /* tp_print */
+    0,                                /* tp_vectorcall_offset */
     0,                                /* tp_getattr */
     0,                                /* tp_setattr */
-    0,                                /* tp_reserved */
+    0,                                /* tp_as_async */
     (reprfunc)timezone_repr,          /* tp_repr */
     0,                                /* tp_as_number */
     0,                                /* tp_as_sequence */
@@ -4499,10 +4582,10 @@ static PyTypeObject PyDateTime_TimeType = {
     sizeof(PyDateTime_Time),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)time_dealloc,                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)time_repr,                        /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -6215,10 +6298,10 @@ static PyTypeObject PyDateTime_DateTimeType = {
     sizeof(PyDateTime_DateTime),                /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)datetime_dealloc,               /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)datetime_repr,                    /* tp_repr */
     &datetime_as_number,                        /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -6275,7 +6358,7 @@ static PyDateTime_CAPI CAPI = {
     new_delta_ex,
     new_timezone,
     datetime_fromtimestamp,
-    date_fromtimestamp,
+    datetime_date_fromtimestamp_capi,
     new_datetime_ex2,
     new_time_ex2
 };

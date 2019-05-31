@@ -1,0 +1,2 @@
+The signature of Python functions can now be overridden by specifying the
+``__text_signature__`` attribute.

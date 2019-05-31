@@ -557,7 +557,7 @@ SSLError_str(PyOSErrorObject *self)
 
 static PyType_Slot sslerror_type_slots[] = {
     {Py_tp_base, NULL},  /* Filled out in module init as it's not a constant */
-    {Py_tp_doc, SSLError_doc},
+    {Py_tp_doc, (void*)SSLError_doc},
     {Py_tp_str, SSLError_str},
     {0, 0},
 };
@@ -590,19 +590,18 @@ fill_and_set_sslerror(PySSLSocket *sslsock, PyObject *type, int ssl_errno,
         key = Py_BuildValue("ii", lib, reason);
         if (key == NULL)
             goto fail;
-        reason_obj = PyDict_GetItem(err_codes_to_names, key);
+        reason_obj = PyDict_GetItemWithError(err_codes_to_names, key);
         Py_DECREF(key);
-        if (reason_obj == NULL) {
-            /* XXX if reason < 100, it might reflect a library number (!!) */
-            PyErr_Clear();
+        if (reason_obj == NULL && PyErr_Occurred()) {
+            goto fail;
         }
         key = PyLong_FromLong(lib);
         if (key == NULL)
             goto fail;
-        lib_obj = PyDict_GetItem(lib_codes_to_names, key);
+        lib_obj = PyDict_GetItemWithError(lib_codes_to_names, key);
         Py_DECREF(key);
-        if (lib_obj == NULL) {
-            PyErr_Clear();
+        if (lib_obj == NULL && PyErr_Occurred()) {
+            goto fail;
         }
         if (errstr == NULL)
             errstr = ERR_reason_error_string(errcode);
@@ -669,7 +668,7 @@ fill_and_set_sslerror(PySSLSocket *sslsock, PyObject *type, int ssl_errno,
     if (msg == NULL)
         goto fail;
 
-    init_value = Py_BuildValue("iN", ssl_errno, msg);
+    init_value = Py_BuildValue("iN", ERR_GET_REASON(ssl_errno), msg);
     if (init_value == NULL)
         goto fail;
 
@@ -2874,10 +2873,10 @@ static PyTypeObject PySSLSocket_Type = {
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)PySSL_dealloc,          /*tp_dealloc*/
-    0,                                  /*tp_print*/
+    0,                                  /*tp_vectorcall_offset*/
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
+    0,                                  /*tp_as_async*/
     0,                                  /*tp_repr*/
     0,                                  /*tp_as_number*/
     0,                                  /*tp_as_sequence*/
@@ -3347,7 +3346,7 @@ _ssl__SSLContext__set_alpn_protocols_impl(PySSLContext *self,
 #if HAVE_ALPN
     if ((size_t)protos->len > UINT_MAX) {
         PyErr_Format(PyExc_OverflowError,
-            "protocols longer than %d bytes", UINT_MAX);
+            "protocols longer than %u bytes", UINT_MAX);
         return NULL;
     }
 
@@ -3682,7 +3681,7 @@ _pwinfo_set(_PySSLPasswordInfo *pw_info, PyObject* password,
     Py_ssize_t size;
 
     if (PyUnicode_Check(password)) {
-        password_bytes = PyUnicode_AsEncodedString(password, NULL, NULL);
+        password_bytes = PyUnicode_AsUTF8String(password);
         if (!password_bytes) {
             goto error;
         }
@@ -3787,13 +3786,17 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
     if (keyfile == Py_None)
         keyfile = NULL;
     if (!PyUnicode_FSConverter(certfile, &certfile_bytes)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "certfile should be a valid filesystem path");
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "certfile should be a valid filesystem path");
+        }
         return NULL;
     }
     if (keyfile && !PyUnicode_FSConverter(keyfile, &keyfile_bytes)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "keyfile should be a valid filesystem path");
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "keyfile should be a valid filesystem path");
+        }
         goto error;
     }
     if (password && password != Py_None) {
@@ -3985,22 +3988,44 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
         goto error;
     }
     if (cafile && !PyUnicode_FSConverter(cafile, &cafile_bytes)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "cafile should be a valid filesystem path");
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "cafile should be a valid filesystem path");
+        }
         goto error;
     }
     if (capath && !PyUnicode_FSConverter(capath, &capath_bytes)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "capath should be a valid filesystem path");
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "capath should be a valid filesystem path");
+        }
         goto error;
     }
 
     /* validata cadata type and load cadata */
     if (cadata) {
-        Py_buffer buf;
-        PyObject *cadata_ascii = NULL;
-
-        if (PyObject_GetBuffer(cadata, &buf, PyBUF_SIMPLE) == 0) {
+        if (PyUnicode_Check(cadata)) {
+            PyObject *cadata_ascii = PyUnicode_AsASCIIString(cadata);
+            if (cadata_ascii == NULL) {
+                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+                    goto invalid_cadata;
+                }
+                goto error;
+            }
+            r = _add_ca_certs(self,
+                              PyBytes_AS_STRING(cadata_ascii),
+                              PyBytes_GET_SIZE(cadata_ascii),
+                              SSL_FILETYPE_PEM);
+            Py_DECREF(cadata_ascii);
+            if (r == -1) {
+                goto error;
+            }
+        }
+        else if (PyObject_CheckBuffer(cadata)) {
+            Py_buffer buf;
+            if (PyObject_GetBuffer(cadata, &buf, PyBUF_SIMPLE)) {
+                goto error;
+            }
             if (!PyBuffer_IsContiguous(&buf, 'C') || buf.ndim > 1) {
                 PyBuffer_Release(&buf);
                 PyErr_SetString(PyExc_TypeError,
@@ -4013,23 +4038,13 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
             if (r == -1) {
                 goto error;
             }
-        } else {
-            PyErr_Clear();
-            cadata_ascii = PyUnicode_AsASCIIString(cadata);
-            if (cadata_ascii == NULL) {
-                PyErr_SetString(PyExc_TypeError,
-                                "cadata should be an ASCII string or a "
-                                "bytes-like object");
-                goto error;
-            }
-            r = _add_ca_certs(self,
-                              PyBytes_AS_STRING(cadata_ascii),
-                              PyBytes_GET_SIZE(cadata_ascii),
-                              SSL_FILETYPE_PEM);
-            Py_DECREF(cadata_ascii);
-            if (r == -1) {
-                goto error;
-            }
+        }
+        else {
+  invalid_cadata:
+            PyErr_SetString(PyExc_TypeError,
+                            "cadata should be an ASCII string or a "
+                            "bytes-like object");
+            goto error;
         }
     }
 
@@ -4599,10 +4614,10 @@ static PyTypeObject PySSLContext_Type = {
     sizeof(PySSLContext),                      /*tp_basicsize*/
     0,                                         /*tp_itemsize*/
     (destructor)context_dealloc,               /*tp_dealloc*/
-    0,                                         /*tp_print*/
+    0,                                         /*tp_vectorcall_offset*/
     0,                                         /*tp_getattr*/
     0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
+    0,                                         /*tp_as_async*/
     0,                                         /*tp_repr*/
     0,                                         /*tp_as_number*/
     0,                                         /*tp_as_sequence*/
@@ -4824,10 +4839,10 @@ static PyTypeObject PySSLMemoryBIO_Type = {
     sizeof(PySSLMemoryBIO),                    /*tp_basicsize*/
     0,                                         /*tp_itemsize*/
     (destructor)memory_bio_dealloc,            /*tp_dealloc*/
-    0,                                         /*tp_print*/
+    0,                                         /*tp_vectorcall_offset*/
     0,                                         /*tp_getattr*/
     0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
+    0,                                         /*tp_as_async*/
     0,                                         /*tp_repr*/
     0,                                         /*tp_as_number*/
     0,                                         /*tp_as_sequence*/
@@ -5021,10 +5036,10 @@ static PyTypeObject PySSLSession_Type = {
     sizeof(PySSLSession),                      /*tp_basicsize*/
     0,                                         /*tp_itemsize*/
     (destructor)PySSLSession_dealloc,          /*tp_dealloc*/
-    0,                                         /*tp_print*/
+    0,                                         /*tp_vectorcall_offset*/
     0,                                         /*tp_getattr*/
     0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
+    0,                                         /*tp_as_async*/
     0,                                         /*tp_repr*/
     0,                                         /*tp_as_number*/
     0,                                         /*tp_as_sequence*/
@@ -5400,6 +5415,68 @@ parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
     return retval;
 }
 
+static HCERTSTORE
+ssl_collect_certificates(const char *store_name)
+{
+/* this function collects the system certificate stores listed in
+ * system_stores into a collection certificate store for being
+ * enumerated. The store must be readable to be added to the
+ * store collection.
+ */
+
+    HCERTSTORE hCollectionStore = NULL, hSystemStore = NULL;
+    static DWORD system_stores[] = {
+        CERT_SYSTEM_STORE_LOCAL_MACHINE,
+        CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
+        CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
+        CERT_SYSTEM_STORE_CURRENT_USER,
+        CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY,
+        CERT_SYSTEM_STORE_SERVICES,
+        CERT_SYSTEM_STORE_USERS};
+    size_t i, storesAdded;
+    BOOL result;
+
+    hCollectionStore = CertOpenStore(CERT_STORE_PROV_COLLECTION, 0,
+                                     (HCRYPTPROV)NULL, 0, NULL);
+    if (!hCollectionStore) {
+        return NULL;
+    }
+    storesAdded = 0;
+    for (i = 0; i < sizeof(system_stores) / sizeof(DWORD); i++) {
+        hSystemStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0,
+                                     (HCRYPTPROV)NULL,
+                                     CERT_STORE_READONLY_FLAG |
+                                     system_stores[i], store_name);
+        if (hSystemStore) {
+            result = CertAddStoreToCollection(hCollectionStore, hSystemStore,
+                                     CERT_PHYSICAL_STORE_ADD_ENABLE_FLAG, 0);
+            if (result) {
+                ++storesAdded;
+            }
+        }
+    }
+    if (storesAdded == 0) {
+        CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG);
+        return NULL;
+    }
+
+    return hCollectionStore;
+}
+
+/* code from Objects/listobject.c */
+
+static int
+list_contains(PyListObject *a, PyObject *el)
+{
+    Py_ssize_t i;
+    int cmp;
+
+    for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(a); ++i)
+        cmp = PyObject_RichCompareBool(el, PyList_GET_ITEM(a, i),
+                                           Py_EQ);
+    return cmp;
+}
+
 /*[clinic input]
 _ssl.enum_certificates
     store_name: str
@@ -5417,7 +5494,7 @@ static PyObject *
 _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
 /*[clinic end generated code: output=5134dc8bb3a3c893 input=915f60d70461ea4e]*/
 {
-    HCERTSTORE hStore = NULL;
+    HCERTSTORE hCollectionStore = NULL;
     PCCERT_CONTEXT pCertCtx = NULL;
     PyObject *keyusage = NULL, *cert = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
@@ -5426,15 +5503,13 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     if (result == NULL) {
         return NULL;
     }
-    hStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, (HCRYPTPROV)NULL,
-                            CERT_STORE_READONLY_FLAG | CERT_SYSTEM_STORE_LOCAL_MACHINE,
-                            store_name);
-    if (hStore == NULL) {
+    hCollectionStore = ssl_collect_certificates(store_name);
+    if (hCollectionStore == NULL) {
         Py_DECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
     }
 
-    while (pCertCtx = CertEnumCertificatesInStore(hStore, pCertCtx)) {
+    while (pCertCtx = CertEnumCertificatesInStore(hCollectionStore, pCertCtx)) {
         cert = PyBytes_FromStringAndSize((const char*)pCertCtx->pbCertEncoded,
                                             pCertCtx->cbCertEncoded);
         if (!cert) {
@@ -5464,9 +5539,11 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
         enc = NULL;
         PyTuple_SET_ITEM(tup, 2, keyusage);
         keyusage = NULL;
-        if (PyList_Append(result, tup) < 0) {
-            Py_CLEAR(result);
-            break;
+        if (!list_contains((PyListObject*)result, tup)) {
+            if (PyList_Append(result, tup) < 0) {
+                Py_CLEAR(result);
+                break;
+            }
         }
         Py_CLEAR(tup);
     }
@@ -5481,11 +5558,15 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     Py_XDECREF(keyusage);
     Py_XDECREF(tup);
 
-    if (!CertCloseStore(hStore, 0)) {
+    /* CERT_CLOSE_STORE_FORCE_FLAG forces freeing of memory for all contexts
+       associated with the store, in this case our collection store and the
+       associated system stores. */
+    if (!CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG)) {
         /* This error case might shadow another exception.*/
         Py_XDECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
     }
+
     return result;
 }
 
@@ -5505,7 +5586,7 @@ static PyObject *
 _ssl_enum_crls_impl(PyObject *module, const char *store_name)
 /*[clinic end generated code: output=bce467f60ccd03b6 input=a1f1d7629f1c5d3d]*/
 {
-    HCERTSTORE hStore = NULL;
+    HCERTSTORE hCollectionStore = NULL;
     PCCRL_CONTEXT pCrlCtx = NULL;
     PyObject *crl = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
@@ -5514,15 +5595,13 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
     if (result == NULL) {
         return NULL;
     }
-    hStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, (HCRYPTPROV)NULL,
-                            CERT_STORE_READONLY_FLAG | CERT_SYSTEM_STORE_LOCAL_MACHINE,
-                            store_name);
-    if (hStore == NULL) {
+    hCollectionStore = ssl_collect_certificates(store_name);
+    if (hCollectionStore == NULL) {
         Py_DECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
     }
 
-    while (pCrlCtx = CertEnumCRLsInStore(hStore, pCrlCtx)) {
+    while (pCrlCtx = CertEnumCRLsInStore(hCollectionStore, pCrlCtx)) {
         crl = PyBytes_FromStringAndSize((const char*)pCrlCtx->pbCrlEncoded,
                                             pCrlCtx->cbCrlEncoded);
         if (!crl) {
@@ -5542,9 +5621,11 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
         PyTuple_SET_ITEM(tup, 1, enc);
         enc = NULL;
 
-        if (PyList_Append(result, tup) < 0) {
-            Py_CLEAR(result);
-            break;
+        if (!list_contains((PyListObject*)result, tup)) {
+            if (PyList_Append(result, tup) < 0) {
+                Py_CLEAR(result);
+                break;
+            }
         }
         Py_CLEAR(tup);
     }
@@ -5558,7 +5639,10 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
     Py_XDECREF(enc);
     Py_XDECREF(tup);
 
-    if (!CertCloseStore(hStore, 0)) {
+    /* CERT_CLOSE_STORE_FORCE_FLAG forces freeing of memory for all contexts
+       associated with the store, in this case our collection store and the
+       associated system stores. */
+    if (!CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG)) {
         /* This error case might shadow another exception.*/
         Py_XDECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());

@@ -23,10 +23,12 @@ PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
 #define PyCF_ONLY_AST 0x0400
 #define PyCF_IGNORE_COOKIE 0x0800
 #define PyCF_TYPE_COMMENTS 0x1000
+#define PyCF_ALLOW_TOP_LEVEL_AWAIT 0x2000
 
 #ifndef Py_LIMITED_API
 typedef struct {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
+    int cf_feature_version;  /* minor Python version (PyCF_ONLY_AST) */
 } PyCompilerFlags;
 #endif
 

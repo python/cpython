@@ -285,6 +285,21 @@ class ReferencesTestCase(TestBase):
         p //= 5
         self.assertEqual(p, 21)
 
+    def test_proxy_matmul(self):
+        class C:
+            def __matmul__(self, other):
+                return 1729
+            def __rmatmul__(self, other):
+                return -163
+            def __imatmul__(self, other):
+                return 561
+        o = C()
+        p = weakref.proxy(o)
+        self.assertEqual(p @ 5, 1729)
+        self.assertEqual(5 @ p, -163)
+        p @= 5
+        self.assertEqual(p, 561)
+
     # The PyWeakref_* C API is documented as allowing either NULL or
     # None as the value for the callback, where either means "no
     # callback".  The "no callback" ref and proxy objects are supposed
@@ -1838,6 +1853,35 @@ class FinalizeTestCase(unittest.TestCase):
         self.assertEqual(f.detach(), None)
         self.assertEqual(f.alive, False)
         self.assertEqual(res, [199])
+
+    def test_arg_errors(self):
+        def fin(*args, **kwargs):
+            res.append((args, kwargs))
+
+        a = self.A()
+
+        res = []
+        f = weakref.finalize(a, fin, 1, 2, func=3, obj=4)
+        self.assertEqual(f.peek(), (a, fin, (1, 2), {'func': 3, 'obj': 4}))
+        f()
+        self.assertEqual(res, [((1, 2), {'func': 3, 'obj': 4})])
+
+        res = []
+        with self.assertWarns(DeprecationWarning):
+            f = weakref.finalize(a, func=fin, arg=1)
+        self.assertEqual(f.peek(), (a, fin, (), {'arg': 1}))
+        f()
+        self.assertEqual(res, [((), {'arg': 1})])
+
+        res = []
+        with self.assertWarns(DeprecationWarning):
+            f = weakref.finalize(obj=a, func=fin, arg=1)
+        self.assertEqual(f.peek(), (a, fin, (), {'arg': 1}))
+        f()
+        self.assertEqual(res, [((), {'arg': 1})])
+
+        self.assertRaises(TypeError, weakref.finalize, a)
+        self.assertRaises(TypeError, weakref.finalize)
 
     def test_order(self):
         a = self.A()
