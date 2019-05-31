@@ -4867,10 +4867,10 @@ static PyTypeObject PicklerMemoProxyType = {
     sizeof(PicklerMemoProxyObject),             /*tp_basicsize*/
     0,
     (destructor)PicklerMemoProxy_dealloc,       /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_compare */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -5028,10 +5028,10 @@ static PyTypeObject Pickler_Type = {
     sizeof(PicklerObject),              /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
     (destructor)Pickler_dealloc,        /*tp_dealloc*/
-    0,                                  /*tp_print*/
+    0,                                  /*tp_vectorcall_offset*/
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
+    0,                                  /*tp_as_async*/
     0,                                  /*tp_repr*/
     0,                                  /*tp_as_number*/
     0,                                  /*tp_as_sequence*/
@@ -7404,10 +7404,10 @@ static PyTypeObject UnpicklerMemoProxyType = {
     sizeof(UnpicklerMemoProxyObject),           /*tp_basicsize*/
     0,
     (destructor)UnpicklerMemoProxy_dealloc,     /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_compare */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -7575,10 +7575,10 @@ static PyTypeObject Unpickler_Type = {
     sizeof(UnpicklerObject),            /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
     (destructor)Unpickler_dealloc,      /*tp_dealloc*/
-    0,                                  /*tp_print*/
+    0,                                  /*tp_vectorcall_offset*/
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
+    0,                                  /*tp_as_async*/
     0,                                  /*tp_repr*/
     0,                                  /*tp_as_number*/
     0,                                  /*tp_as_sequence*/
