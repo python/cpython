@@ -645,7 +645,7 @@ PyDoc_STRVAR(count_doc,
 "rangeobject.count(value) -> integer -- return number of occurrences of value");
 
 PyDoc_STRVAR(index_doc,
-"rangeobject.index(value, [start, [stop]]) -> integer -- return index of value.\n"
+"rangeobject.index(value) -> integer -- return index of value.\n"
 "Raise ValueError if the value is not present.");
 
 static PyMethodDef range_methods[] = {
@@ -669,10 +669,10 @@ PyTypeObject PyRange_Type = {
         sizeof(rangeobject),    /* Basic object size */
         0,                      /* Item size for varobject */
         (destructor)range_dealloc, /* tp_dealloc */
-        0,                      /* tp_print */
+        0,                      /* tp_vectorcall_offset */
         0,                      /* tp_getattr */
         0,                      /* tp_setattr */
-        0,                      /* tp_reserved */
+        0,                      /* tp_as_async */
         (reprfunc)range_repr,   /* tp_repr */
         &range_as_number,       /* tp_as_number */
         &range_as_sequence,     /* tp_as_sequence */
@@ -805,10 +805,10 @@ PyTypeObject PyRangeIter_Type = {
         0,                                      /* tp_itemsize */
         /* methods */
         (destructor)PyObject_Del,               /* tp_dealloc */
-        0,                                      /* tp_print */
+        0,                                      /* tp_vectorcall_offset */
         0,                                      /* tp_getattr */
         0,                                      /* tp_setattr */
-        0,                                      /* tp_reserved */
+        0,                                      /* tp_as_async */
         0,                                      /* tp_repr */
         0,                                      /* tp_as_number */
         0,                                      /* tp_as_sequence */
@@ -1008,10 +1008,10 @@ PyTypeObject PyLongRangeIter_Type = {
         0,                                      /* tp_itemsize */
         /* methods */
         (destructor)longrangeiter_dealloc,      /* tp_dealloc */
-        0,                                      /* tp_print */
+        0,                                      /* tp_vectorcall_offset */
         0,                                      /* tp_getattr */
         0,                                      /* tp_setattr */
-        0,                                      /* tp_reserved */
+        0,                                      /* tp_as_async */
         0,                                      /* tp_repr */
         0,                                      /* tp_as_number */
         0,                                      /* tp_as_sequence */

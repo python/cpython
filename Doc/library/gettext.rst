@@ -39,7 +39,7 @@ class-based API instead.
    Bind the *domain* to the locale directory *localedir*.  More concretely,
    :mod:`gettext` will look for binary :file:`.mo` files for the given domain using
    the path (on Unix): :file:`{localedir}/{language}/LC_MESSAGES/{domain}.mo`, where
-   *languages* is searched for in the environment variables :envvar:`LANGUAGE`,
+   *language* is searched for in the environment variables :envvar:`LANGUAGE`,
    :envvar:`LC_ALL`, :envvar:`LC_MESSAGES`, and :envvar:`LANG` respectively.
 
    If *localedir* is omitted or ``None``, then the current binding for *domain* is

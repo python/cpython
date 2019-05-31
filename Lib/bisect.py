@@ -12,24 +12,7 @@ def insort_right(a, x, lo=0, hi=None, key=None):
     customize the order.
     """
 
-    # the python implementation does not
-    # need to optimize for performance
-    if key is None:
-        key = lambda e: e
-
-    # we avoid computing key(x) in each iteration
-    x_value = key(x)
-
-    if lo < 0:
-        raise ValueError('lo must be non-negative')
-    if hi is None:
-        hi = len(a)
-    while lo < hi:
-        mid = (lo+hi)//2
-        if x_value < key(a[mid]):
-            hi = mid
-        else:
-            lo = mid+1
+    lo = bisect_right(a, x, lo, hi, key=key)
     a.insert(lo, x)
 
 def bisect_right(a, x, lo=0, hi=None, key=None):
@@ -75,21 +58,7 @@ def insort_left(a, x, lo=0, hi=None, key=None):
     customize the order.
     """
 
-    if key is None:
-        key = lambda e: e
-
-    x_value = key(x)
-
-    if lo < 0:
-        raise ValueError('lo must be non-negative')
-    if hi is None:
-        hi = len(a)
-    while lo < hi:
-        mid = (lo+hi)//2
-        if key(a[mid]) < x_value:
-            lo = mid+1
-        else:
-            hi = mid
+    lo = bisect_left(a, x, lo, hi, key=key)
     a.insert(lo, x)
 
 

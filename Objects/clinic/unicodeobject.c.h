@@ -142,14 +142,51 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"encoding", "errors", NULL};
-    static _PyArg_Parser _parser = {"|ss:encode", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "encode", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &encoding, &errors)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        if (!PyUnicode_Check(args[0])) {
+            _PyArg_BadArgument("encode", 1, "str", args[0]);
+            goto exit;
+        }
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(args[0], &encoding_length);
+        if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("encode", 2, "str", args[1]);
+        goto exit;
+    }
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+    if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_pos:
     return_value = unicode_encode_impl(self, encoding, errors);
 
 exit:
@@ -175,13 +212,28 @@ unicode_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"tabsize", NULL};
-    static _PyArg_Parser _parser = {"|i:expandtabs", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "expandtabs", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int tabsize = 8;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &tabsize)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    tabsize = _PyLong_AsInt(args[0]);
+    if (tabsize == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = unicode_expandtabs_impl(self, tabsize);
 
 exit:
@@ -781,14 +833,43 @@ unicode_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sep", "maxsplit", NULL};
-    static _PyArg_Parser _parser = {"|On:split", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "split", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &sep, &maxsplit)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        sep = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        maxsplit = ival;
+    }
+skip_optional_pos:
     return_value = unicode_split_impl(self, sep, maxsplit);
 
 exit:
@@ -854,14 +935,43 @@ unicode_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sep", "maxsplit", NULL};
-    static _PyArg_Parser _parser = {"|On:rsplit", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "rsplit", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &sep, &maxsplit)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        sep = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        maxsplit = ival;
+    }
+skip_optional_pos:
     return_value = unicode_rsplit_impl(self, sep, maxsplit);
 
 exit:
@@ -888,13 +998,28 @@ unicode_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"keepends", NULL};
-    static _PyArg_Parser _parser = {"|i:splitlines", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "splitlines", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int keepends = 0;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &keepends)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    keepends = _PyLong_AsInt(args[0]);
+    if (keepends == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = unicode_splitlines_impl(self, keepends);
 
 exit:
@@ -1107,4 +1232,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=087ff163a10505ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d1541724cb4a0070 input=a9049054013a1b77]*/

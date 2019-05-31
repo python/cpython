@@ -169,12 +169,12 @@ Assignment of an object to a single target is recursively defined as follows.
   .. _attr-target-note:
 
   Note: If the object is a class instance and the attribute reference occurs on
-  both sides of the assignment operator, the RHS expression, ``a.x`` can access
+  both sides of the assignment operator, the right-hand side expression, ``a.x`` can access
   either an instance attribute or (if no instance attribute exists) a class
-  attribute.  The LHS target ``a.x`` is always set as an instance attribute,
+  attribute.  The left-hand side target ``a.x`` is always set as an instance attribute,
   creating it if necessary.  Thus, the two occurrences of ``a.x`` do not
-  necessarily refer to the same attribute: if the RHS expression refers to a
-  class attribute, the LHS creates a new instance attribute as the target of the
+  necessarily refer to the same attribute: if the right-hand side expression refers to a
+  class attribute, the left-hand side creates a new instance attribute as the target of the
   assignment::
 
      class Cls:
@@ -828,7 +828,8 @@ exists. Two dots means up one package level. Three dots is up two levels, etc.
 So if you execute ``from . import mod`` from a module in the ``pkg`` package
 then you will end up importing ``pkg.mod``. If you execute ``from ..subpkg2
 import mod`` from within ``pkg.subpkg1`` you will import ``pkg.subpkg2.mod``.
-The specification for relative imports is contained within :pep:`328`.
+The specification for relative imports is contained in
+the :ref:`relativeimports` section.
 
 :func:`importlib.import_module` is provided to support applications that
 determine dynamically the modules to be loaded.

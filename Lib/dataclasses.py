@@ -241,7 +241,7 @@ class Field:
         self.hash = hash
         self.compare = compare
         self.metadata = (_EMPTY_METADATA
-                         if metadata is None or len(metadata) == 0 else
+                         if metadata is None else
                          types.MappingProxyType(metadata))
         self._field_type = None
 

@@ -250,7 +250,10 @@ PyCursesPanel_New(PANEL *pan, PyCursesWindowObject *wo)
 static void
 PyCursesPanel_Dealloc(PyCursesPanelObject *po)
 {
-    PyObject *obj = (PyObject *) panel_userptr(po->pan);
+    PyObject *tp, *obj;
+
+    tp = (PyObject *) Py_TYPE(po);
+    obj = (PyObject *) panel_userptr(po->pan);
     if (obj) {
         (void)set_panel_userptr(po->pan, NULL);
         Py_DECREF(obj);
@@ -261,6 +264,7 @@ PyCursesPanel_Dealloc(PyCursesPanelObject *po)
         remove_lop(po);
     }
     PyObject_DEL(po);
+    Py_DECREF(tp);
 }
 
 /* panel_above(NULL) returns the bottom panel in the stack. To get
@@ -412,12 +416,12 @@ _curses_panel.panel.set_userptr
     obj: object
     /
 
-Set the panel’s user pointer to obj.
+Set the panel's user pointer to obj.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_panel_set_userptr(PyCursesPanelObject *self, PyObject *obj)
-/*[clinic end generated code: output=6fb145b3af88cf4a input=2056be1cd148b05c]*/
+/*[clinic end generated code: output=6fb145b3af88cf4a input=d2c6a9dbefabbf39]*/
 {
     PyObject *oldobj;
     int rc;
@@ -587,12 +591,12 @@ _curses_panel.update_panels
 
 Updates the virtual screen after changes in the panel stack.
 
-This does not call curses.doupdate(), so you’ll have to do this yourself.
+This does not call curses.doupdate(), so you'll have to do this yourself.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_update_panels_impl(PyObject *module)
-/*[clinic end generated code: output=2f3b4c2e03d90ded input=a127069202b0a097]*/
+/*[clinic end generated code: output=2f3b4c2e03d90ded input=5299624c9a708621]*/
 {
     PyCursesInitialised;
     update_panels();

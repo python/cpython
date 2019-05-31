@@ -65,10 +65,12 @@ extern "C" {
 #define ELLIPSIS        52
 #define COLONEQUAL      53
 #define OP              54
-#define TYPE_IGNORE     55
-#define TYPE_COMMENT    56
-#define ERRORTOKEN      57
-#define N_TOKENS        61
+#define AWAIT           55
+#define ASYNC           56
+#define TYPE_IGNORE     57
+#define TYPE_COMMENT    58
+#define ERRORTOKEN      59
+#define N_TOKENS        63
 #define NT_OFFSET       256
 
 /* Special definitions for cooperation with parser */

@@ -403,6 +403,22 @@ class TestModuleCleanUp(unittest.TestCase):
         self.assertEqual(str(e.exception), 'CleanUpExc')
         self.assertEqual(unittest.case._module_cleanups, [])
 
+    def test_addModuleCleanup_arg_errors(self):
+        cleanups = []
+        def cleanup(*args, **kwargs):
+            cleanups.append((args, kwargs))
+
+        class Module(object):
+            unittest.addModuleCleanup(cleanup, 1, 2, function='hello')
+            with self.assertWarns(DeprecationWarning):
+                unittest.addModuleCleanup(function=cleanup, arg='hello')
+            with self.assertRaises(TypeError):
+                unittest.addModuleCleanup()
+        unittest.case.doModuleCleanups()
+        self.assertEqual(cleanups,
+                         [((), {'arg': 'hello'}),
+                          ((1, 2), {'function': 'hello'})])
+
     def test_run_module_cleanUp(self):
         blowUp = True
         ordering = []
@@ -546,6 +562,50 @@ class TestModuleCleanUp(unittest.TestCase):
                          ['setUpModule', 'setUpClass', 'test', 'tearDownClass',
                           'tearDownModule', 'cleanup_good'])
         self.assertEqual(unittest.case._module_cleanups, [])
+
+    def test_addClassCleanup_arg_errors(self):
+        cleanups = []
+        def cleanup(*args, **kwargs):
+            cleanups.append((args, kwargs))
+
+        class TestableTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                cls.addClassCleanup(cleanup, 1, 2, function=3, cls=4)
+                with self.assertRaises(TypeError):
+                    cls.addClassCleanup(function=cleanup, arg='hello')
+            def testNothing(self):
+                pass
+
+        with self.assertRaises(TypeError):
+            TestableTest.addClassCleanup()
+        with self.assertRaises(TypeError):
+            unittest.TestCase.addCleanup(cls=TestableTest(), function=cleanup)
+        runTests(TestableTest)
+        self.assertEqual(cleanups,
+                         [((1, 2), {'function': 3, 'cls': 4})])
+
+    def test_addCleanup_arg_errors(self):
+        cleanups = []
+        def cleanup(*args, **kwargs):
+            cleanups.append((args, kwargs))
+
+        class TestableTest(unittest.TestCase):
+            def setUp(self2):
+                self2.addCleanup(cleanup, 1, 2, function=3, self=4)
+                with self.assertWarns(DeprecationWarning):
+                    self2.addCleanup(function=cleanup, arg='hello')
+            def testNothing(self):
+                pass
+
+        with self.assertRaises(TypeError):
+            TestableTest().addCleanup()
+        with self.assertRaises(TypeError):
+            unittest.TestCase.addCleanup(self=TestableTest(), function=cleanup)
+        runTests(TestableTest)
+        self.assertEqual(cleanups,
+                         [((), {'arg': 'hello'}),
+                          ((1, 2), {'function': 3, 'self': 4})])
 
     def test_with_errors_in_addClassCleanup(self):
         ordering = []
