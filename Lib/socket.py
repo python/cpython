@@ -465,26 +465,28 @@ def fromfd(fd, family, type, proto=0):
     nfd = dup(fd)
     return socket(family, type, proto, nfd)
 
+_GLOBAL_DEFAULT_MAXFDS = object()
+
 if hasattr(_socket.socket, "sendmsg"):
-    def send_fds(sock, msg, fds):
-        """ send_fds(sock, msg, fds) -> socket object
+    def send_fds(sock, buffers=None, fds=[], flags=[], address=None):
+        """ send_fds(sock, buffers, fds[, flags[, address]]) -> socket object
 
         Send the list of file descriptors fds over an AF_UNIX socket.
         """
-        return sock.sendmsg([msg], [(_socket.SOL_SOCKET,
+        return sock.sendmsg([buffers], [(_socket.SOL_SOCKET,
             _socket.SCM_RIGHTS, array.array("i", fds))])
     __all__.append("send_fds")
 
 if hasattr(_socket.socket, "recvmsg"):
-    def recv_fds(sock, msglen, maxfds):
-        """ recv_fds(sock, msglen, maxfds) -> (socket object, socket object)
+    def recv_fds(sock, bufsize=0, maxfds=_GLOBAL_DEFAULT_MAXFDS, flags=0):
+        """ recv_fds(sock, bufsize, maxfds[, flags]) -> (socket object, socket object)
 
         receive up to maxfds file descriptors returning the message
         data and a list containing the descriptors.
         """
         # Array of ints
         fds = array.array("i")
-        msg, ancdata, flags, addr = sock.recvmsg(msglen,
+        msg, ancdata, flags, addr = sock.recvmsg(bufsize,
             _socket.CMSG_LEN(maxfds * fds.itemsize))
         for cmsg_level, cmsg_type, cmsg_data in ancdata:
             if (cmsg_level == _socket.SOL_SOCKET and cmsg_type == _socket.SCM_RIGHTS):

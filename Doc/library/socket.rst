@@ -669,7 +669,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionadded:: 3.3
 
 
-.. function:: socket.send_fds(sock, msg, fds)
+.. function:: socket.send_fds(sock, buffers, fds[, flags[, address]])
 
    :func:`socket.send_fds` sends the list of file descriptors *fds*
    over an :const:`AF_UNIX` socket, on systems which support the
@@ -680,7 +680,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionadded:: 3.8
 
 
-.. function:: socket.recv_fds(sock, msglen, maxfds)
+.. function:: socket.recv_fds(sock, bufsize, maxfds[, flags])
 
    On systems which support the :const:`SCM_RIGHTS` mechanism,
    :func:`socket.recv_fds` will receive up to *maxfds* file descriptors,
