@@ -42,6 +42,8 @@ bound into a function.
 
    .. versionchanged:: 3.8
       An extra parameter is required (*posonlyargcount*) to support :PEP:`570`.
+      The first parameter (*argcount*) now represents the total number of positional arguments,
+      including positional-only.
 
    .. audit-event:: code.__new__ "code filename name argcount kwonlyargcount nlocals stacksize flags"
 

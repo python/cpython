@@ -5815,7 +5815,7 @@ makecode(struct compiler *c, struct assembler *a)
     if (maxdepth < 0) {
         goto error;
     }
-    co = PyCode_New(argcount, posonlyargcount, kwonlyargcount,
+    co = PyCode_New(argcount+posonlyargcount, posonlyargcount, kwonlyargcount,
                     nlocals_int, maxdepth, flags,
                     bytecode, consts, names, varnames,
                     freevars, cellvars,
