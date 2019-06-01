@@ -942,8 +942,13 @@ bytesio_sizeof(bytesio *self, void *unused)
     Py_ssize_t res;
 
     res = _PyObject_SIZE(Py_TYPE(self));
-    if (self->buf && !SHARED_BUF(self))
-        res += _PySys_GetSizeOf(self->buf);
+    if (self->buf && !SHARED_BUF(self)) {
+        Py_ssize_t s = _PySys_GetSizeOf(self->buf);
+        if (s == -1) {
+            return NULL;
+        }
+        res += s;
+    }
     return PyLong_FromSsize_t(res);
 }
 
