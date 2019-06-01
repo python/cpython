@@ -224,10 +224,13 @@ class GeneralFloatCases(unittest.TestCase):
             self.assertIs(type(FloatSubclass(F())), FloatSubclass)
 
         class MyIndex:
+            def __init__(self, value):
+                self.value = value
             def __index__(self):
-                return 42
+                return self.value
 
-        self.assertEqual(float(MyIndex()), 42.0)
+        self.assertEqual(float(MyIndex(42)), 42.0)
+        self.assertRaises(OverflowError, float, MyIndex(2**2000))
 
         class MyInt:
             def __int__(self):

@@ -1494,6 +1494,9 @@ PyNumber_Float(PyObject *o)
         }
         double val = PyLong_AsDouble(res);
         Py_DECREF(res);
+        if (val == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
         return PyFloat_FromDouble(val);
     }
     if (PyFloat_Check(o)) { /* A float subclass with nb_float == NULL */

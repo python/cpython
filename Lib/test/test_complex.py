@@ -369,11 +369,15 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex, float2(None))
 
         class MyIndex:
+            def __init__(self, value):
+                self.value = value
             def __index__(self):
-                return 42
+                return self.value
 
-        self.assertAlmostEqual(complex(MyIndex()), 42.0+0.0j)
-        self.assertAlmostEqual(complex(123, MyIndex()), 123.0+42.0j)
+        self.assertAlmostEqual(complex(MyIndex(42)), 42.0+0.0j)
+        self.assertAlmostEqual(complex(123, MyIndex(42)), 123.0+42.0j)
+        self.assertRaises(OverflowError, complex, MyIndex(2**2000))
+        self.assertRaises(OverflowError, complex, 123, MyIndex(2**2000))
 
         class MyInt:
             def __int__(self):
