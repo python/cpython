@@ -1155,7 +1155,8 @@ Py_FinalizeEx(void)
     wait_for_thread_shutdown();
 
     // Make any remaining pending calls.
-    _PyEval_FinishPendingCalls(interp);
+    // XXX For the moment we are going to ignore any lingering pending calls.
+    //_PyEval_FinishPendingCalls(interp);
 
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
