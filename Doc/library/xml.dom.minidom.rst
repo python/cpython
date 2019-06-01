@@ -134,24 +134,15 @@ module documentation.  This section lists the differences between the API and
 
 .. method:: Node.writexml(writer, indent="", addindent="", newl="")
 
-   Write XML to the writer object.  The writer should have a :meth:`write` method
-   which matches that of the file object interface.  The *indent* parameter is the
-   indentation of the current node.  The *addindent* parameter is the incremental
-   indentation to use for subnodes of the current one.  The *newl* parameter
-   specifies the string to use to terminate newlines.
+   Write XML to the writer object.  The writer receives texts but not bytes as input,
+   it should have a :meth:`write` method which matches that of the file object
+   interface.  The *indent* parameter is the indentation of the current node.
+   The *addindent* parameter is the incremental indentation to use for subnodes
+   of the current one.  The *newl* parameter specifies the string to use to
+   terminate newlines.
 
    For the :class:`Document` node, an additional keyword argument *encoding* can
    be used to specify the encoding field of the XML header.
-
-   .. note::
-
-      You should specify the "xmlcharrefreplace" error handler when open a file with
-      specified encoding::
-
-         writer = open(
-                filename, "w", encoding="utf-8",
-                errors="xmlcharrefreplace")
-         doc.writexml(writer, "", "  ", "utf-8")
 
    .. versionchanged:: 3.8
       The :meth:`writexml` method now preserves the attribute order specified
