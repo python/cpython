@@ -1192,20 +1192,6 @@ _io__Buffered_readline_impl(buffered *self, Py_ssize_t size)
 }
 
 
-static PyObject *
-buffered_tell(buffered *self, PyObject *Py_UNUSED(ignored))
-{
-    Py_off_t pos;
-
-    CHECK_INITIALIZED(self)
-    pos = _buffered_raw_tell(self);
-    if (pos == -1)
-        return NULL;
-    pos -= RAW_OFFSET(self);
-    /* TODO: sanity check (pos >= 0) */
-    return PyLong_FromOff_t(pos);
-}
-
 /*[clinic input]
 _io._Buffered.seek
     target as targetobj: object
@@ -1299,6 +1285,22 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
 end:
     LEAVE_BUFFERED(self)
     return res;
+}
+
+static PyObject *
+buffered_tell(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    /* buffered_tell() is implemented as a wrappper
+       around _io__Buffered_seek_impl() because it
+       keeps the location information properly
+       updated. The optimizations that had previously
+       been implemented are prone to get out of sync
+       with the kernel when the file has been opened
+       in append mode. See issue #36411.
+    */
+
+    CHECK_INITIALIZED(self)
+    return _io__Buffered_seek_impl(self, PyLong_FromLong(0), SEEK_CUR);
 }
 
 /*[clinic input]
