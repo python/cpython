@@ -188,7 +188,12 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                          extra=None, **kwargs):
         with events.get_child_watcher() as watcher:
             if not watcher.is_active():
-                raise RuntimeError("asyncio.get_child_watcher() is not ready, "
+                # Check early.
+                # Raising exception before process creation
+                # prevents subprocess execution if the watcher
+                # canoot handle it (add_child_handler() fails with exception
+                # if watcher.is_active() returns False).
+                raise RuntimeError("asyncio.get_child_watcher() is not activated, "
                                    "subproccess support is not installed.")
             waiter = self.create_future()
             transp = _UnixSubprocessTransport(self, protocol, args, shell,
@@ -1155,6 +1160,10 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         pass
 
     def add_child_handler(self, pid, callback, *args):
+        if self._saved_sighandler is None:
+            raise RuntimeError(
+                "Cannot add child handler, "
+                "the child watcher is not activated (attach_loop() was not called)")
         loop = events.get_running_loop()
         self._callbacks[pid] = (loop, callback, args)
 
