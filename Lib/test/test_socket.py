@@ -2278,6 +2278,7 @@ class BasicTCPTest(SocketConnectedTest):
     @requireAttrs(socket.socket, "sendmsg")
     @requireAttrs(socket, "AF_UNIX")
     @unittest.skipIf(sys.platform == 'darwin', 'test not working for MacOSX')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'netbsd', 'gnukfreebsd')), 'test not working for freebsd')
     def testSendAndRecvFds(self):
         fds = []
         # create two new file descriptors.
