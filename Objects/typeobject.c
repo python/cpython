@@ -7807,7 +7807,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
                             "super(): no code object");
             return -1;
         }
-        if (co->co_posonlyargcount + co->co_argcount == 0) {
+        if (co->co_argcount == 0) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no arguments");
             return -1;

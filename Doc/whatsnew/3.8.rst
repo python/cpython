@@ -1177,8 +1177,10 @@ Changes in the Python API
 
 * :class:`types.CodeType` has a new parameter in the second position of the
   constructor (*posonlyargcount*) to support positional-only arguments defined
-  in :pep:`570`. A new ``replace()`` method of :class:`types.CodeType` can be
-  used to make the code future-proof.
+  in :pep:`570`. The first argument (*argcount*) now represents the total
+  number of positional arguments (including positional-only arguments). A new
+  ``replace()`` method of :class:`types.CodeType` can be used to make the code
+  future-proof.
 
 
 Changes in the C API
