@@ -9,22 +9,6 @@ static PyObject *
 cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs);
 
 
-int
-_PyObject_HasFastCall(PyObject *callable)
-{
-    if (PyFunction_Check(callable)) {
-        return 1;
-    }
-    else if (PyCFunction_Check(callable)) {
-        return !(PyCFunction_GET_FLAGS(callable) & METH_VARARGS);
-    }
-    else {
-        assert (PyCallable_Check(callable));
-        return 0;
-    }
-}
-
-
 static PyObject *
 null_error(void)
 {
@@ -390,8 +374,8 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
 
 
 PyObject *
-_PyFunction_FastCallKeywords(PyObject *func, PyObject* const* stack,
-                             size_t nargsf, PyObject *kwnames)
+_PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
+                       size_t nargsf, PyObject *kwnames)
 {
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
     PyObject *globals = PyFunction_GET_GLOBALS(func);
@@ -730,9 +714,9 @@ exit:
 
 
 PyObject *
-_PyCFunction_FastCallKeywords(PyObject *func,
-                              PyObject *const *args, size_t nargsf,
-                              PyObject *kwnames)
+_PyCFunction_Vectorcall(PyObject *func,
+                        PyObject *const *args, size_t nargsf,
+                        PyObject *kwnames)
 {
     PyObject *result;
 

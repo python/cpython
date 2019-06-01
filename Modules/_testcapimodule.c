@@ -288,10 +288,10 @@ static PyTypeObject _HashInheritanceTester_Type = {
     sizeof(PyObject),           /* Basic object size */
     0,                          /* Item size for varobject */
     (destructor)PyObject_Del, /* tp_dealloc */
-    0,                          /* tp_print */
+    0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
-    0,                          /* tp_reserved */
+    0,                          /* tp_as_async */
     0,                          /* tp_repr */
     0,                          /* tp_as_number */
     0,                          /* tp_as_sequence */
@@ -5383,10 +5383,10 @@ static PyTypeObject test_structmembersType = {
     sizeof(test_structmembers),         /* tp_basicsize */
     0,                                  /* tp_itemsize */
     test_structmembers_free,            /* destructor tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -5486,10 +5486,10 @@ static PyTypeObject matmulType = {
     sizeof(matmulObject),               /* tp_basicsize */
     0,                                  /* tp_itemsize */
     matmulType_dealloc,                 /* destructor tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     &matmulType_as_number,              /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -5522,6 +5522,27 @@ static PyTypeObject matmulType = {
     PyObject_Del,                       /* tp_free */
 };
 
+typedef struct {
+    PyObject_HEAD
+} ipowObject;
+
+static PyObject *
+ipowType_ipow(PyObject *self, PyObject *other, PyObject *mod)
+{
+    return Py_BuildValue("OO", other, mod);
+}
+
+static PyNumberMethods ipowType_as_number = {
+    .nb_inplace_power = ipowType_ipow
+};
+
+static PyTypeObject ipowType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "ipowType",
+    .tp_basicsize = sizeof(ipowObject),
+    .tp_as_number = &ipowType_as_number,
+    .tp_new = PyType_GenericNew
+};
 
 typedef struct {
     PyObject_HEAD
@@ -5578,7 +5599,7 @@ static PyTypeObject awaitType = {
     sizeof(awaitObject),                /* tp_basicsize */
     0,                                  /* tp_itemsize */
     (destructor)awaitObject_dealloc,    /* destructor tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
     &awaitType_as_async,                /* tp_as_async */
@@ -5623,10 +5644,10 @@ static PyTypeObject PyRecursingInfinitelyError_Type = {
     sizeof(PyBaseExceptionObject), /* tp_basicsize */
     0,                          /* tp_itemsize */
     0,                          /* tp_dealloc */
-    0,                          /* tp_print */
+    0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
-    0,                          /* tp_reserved */
+    0,                          /* tp_as_async */
     0,                          /* tp_repr */
     0,                          /* tp_as_number */
     0,                          /* tp_as_sequence */
@@ -5704,10 +5725,10 @@ static PyTypeObject MyList_Type = {
     sizeof(MyListObject),
     0,
     (destructor)MyList_dealloc,                 /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -5814,6 +5835,29 @@ static PyTypeObject Generic_Type = {
 
 /* Test PEP 590 */
 
+typedef struct {
+    PyObject_HEAD
+    vectorcallfunc vectorcall;
+} MethodDescriptorObject;
+
+static PyObject *
+MethodDescriptor_vectorcall(PyObject *callable, PyObject *const *args,
+                            size_t nargsf, PyObject *kwnames)
+{
+    /* True if using the vectorcall function in MethodDescriptorObject
+     * but False for MethodDescriptor2Object */
+    MethodDescriptorObject *md = (MethodDescriptorObject *)callable;
+    return PyBool_FromLong(md->vectorcall != NULL);
+}
+
+static PyObject *
+MethodDescriptor_new(PyTypeObject* type, PyObject* args, PyObject *kw)
+{
+    MethodDescriptorObject *op = PyObject_New(MethodDescriptorObject, type);
+    op->vectorcall = MethodDescriptor_vectorcall;
+    return (PyObject *)op;
+}
+
 static PyObject *
 func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 {
@@ -5831,10 +5875,22 @@ nop_descr_get(PyObject *func, PyObject *obj, PyObject *type)
     return func;
 }
 
+static PyObject *
+call_return_args(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    Py_INCREF(args);
+    return args;
+}
+
 static PyTypeObject MethodDescriptorBase_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "MethodDescriptorBase",
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_METHOD_DESCRIPTOR,
+    sizeof(MethodDescriptorObject),
+    .tp_new = MethodDescriptor_new,
+    .tp_call = PyVectorcall_Call,
+    .tp_vectorcall_offset = offsetof(MethodDescriptorObject, vectorcall),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+                Py_TPFLAGS_METHOD_DESCRIPTOR | _Py_TPFLAGS_HAVE_VECTORCALL,
     .tp_descr_get = func_descr_get,
 };
 
@@ -5848,7 +5904,32 @@ static PyTypeObject MethodDescriptorNopGet_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "MethodDescriptorNopGet",
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_call = call_return_args,
     .tp_descr_get = nop_descr_get,
+};
+
+typedef struct {
+    MethodDescriptorObject base;
+    vectorcallfunc vectorcall;
+} MethodDescriptor2Object;
+
+static PyObject *
+MethodDescriptor2_new(PyTypeObject* type, PyObject* args, PyObject *kw)
+{
+    MethodDescriptor2Object *op = PyObject_New(MethodDescriptor2Object, type);
+    op->base.vectorcall = NULL;
+    op->vectorcall = MethodDescriptor_vectorcall;
+    return (PyObject *)op;
+}
+
+static PyTypeObject MethodDescriptor2_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MethodDescriptor2",
+    sizeof(MethodDescriptor2Object),
+    .tp_new = MethodDescriptor2_new,
+    .tp_call = PyVectorcall_Call,
+    .tp_vectorcall_offset = offsetof(MethodDescriptor2Object, vectorcall),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_HAVE_VECTORCALL,
 };
 
 
@@ -5887,6 +5968,11 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&matmulType);
     PyModule_AddObject(m, "matmulType", (PyObject *)&matmulType);
+    if (PyType_Ready(&ipowType) < 0) {
+        return NULL;
+    }
+    Py_INCREF(&ipowType);
+    PyModule_AddObject(m, "ipowType", (PyObject *)&ipowType);
 
     if (PyType_Ready(&awaitType) < 0)
         return NULL;
@@ -5915,6 +6001,12 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&MethodDescriptorNopGet_Type);
     PyModule_AddObject(m, "MethodDescriptorNopGet", (PyObject *)&MethodDescriptorNopGet_Type);
+
+    MethodDescriptor2_Type.tp_base = &MethodDescriptorBase_Type;
+    if (PyType_Ready(&MethodDescriptor2_Type) < 0)
+        return NULL;
+    Py_INCREF(&MethodDescriptor2_Type);
+    PyModule_AddObject(m, "MethodDescriptor2", (PyObject *)&MethodDescriptor2_Type);
 
     if (PyType_Ready(&GenericAlias_Type) < 0)
         return NULL;

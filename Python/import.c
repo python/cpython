@@ -383,8 +383,6 @@ static const char * const sys_deletes[] = {
     "last_type", "last_value", "last_traceback",
     "path_hooks", "path_importer_cache", "meta_path",
     "__interactivehook__",
-    /* misc stuff */
-    "flags", "float_info",
     NULL
 };
 
@@ -543,7 +541,8 @@ PyImport_Cleanup(void)
     _PyGC_CollectNoFail();
     /* Dump GC stats before it's too late, since it uses the warnings
        machinery. */
-    _PyGC_DumpShutdownStats(&_PyRuntime);
+    _PyRuntimeState *runtime = interp->runtime;
+    _PyGC_DumpShutdownStats(runtime);
 
     /* Now, if there are any modules left alive, clear their globals to
        minimize potential leaks.  All C extension modules actually end

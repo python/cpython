@@ -264,9 +264,9 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
 
 // same to methoddescr_call(), but use FASTCALL convention.
 PyObject *
-_PyMethodDescr_FastCallKeywords(PyObject *descrobj,
-                                PyObject *const *args, size_t nargsf,
-                                PyObject *kwnames)
+_PyMethodDescr_Vectorcall(PyObject *descrobj,
+                          PyObject *const *args, size_t nargsf,
+                          PyObject *kwnames)
 {
     assert(Py_TYPE(descrobj) == &PyMethodDescr_Type);
     PyMethodDescrObject *descr = (PyMethodDescrObject *)descrobj;
@@ -546,7 +546,7 @@ PyTypeObject PyMethodDescr_Type = {
     offsetof(PyMethodDescrObject, vectorcall),  /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)method_repr,                      /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -583,10 +583,10 @@ PyTypeObject PyClassMethodDescr_Type = {
     sizeof(PyMethodDescrObject),
     0,
     (destructor)descr_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)method_repr,                      /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -620,10 +620,10 @@ PyTypeObject PyMemberDescr_Type = {
     sizeof(PyMemberDescrObject),
     0,
     (destructor)descr_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)member_repr,                      /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -657,10 +657,10 @@ PyTypeObject PyGetSetDescr_Type = {
     sizeof(PyGetSetDescrObject),
     0,
     (destructor)descr_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)getset_repr,                      /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -694,10 +694,10 @@ PyTypeObject PyWrapperDescr_Type = {
     sizeof(PyWrapperDescrObject),
     0,
     (destructor)descr_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)wrapperdescr_repr,                /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -756,7 +756,7 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
                                              type, method->ml_name);
     if (descr != NULL) {
         descr->d_method = method;
-        descr->vectorcall = &_PyMethodDescr_FastCallKeywords;
+        descr->vectorcall = _PyMethodDescr_Vectorcall;
     }
     return (PyObject *)descr;
 }
@@ -1173,10 +1173,10 @@ PyTypeObject _PyMethodWrapper_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)wrapper_dealloc,                /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)wrapper_repr,                     /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -1569,10 +1569,10 @@ PyTypeObject PyDictProxy_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)mappingproxy_dealloc,           /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)mappingproxy_repr,                /* tp_repr */
     0,                                          /* tp_as_number */
     &mappingproxy_as_sequence,                  /* tp_as_sequence */
@@ -1611,10 +1611,10 @@ PyTypeObject PyProperty_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     property_dealloc,                           /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

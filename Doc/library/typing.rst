@@ -1021,6 +1021,25 @@ The module defines the following classes, functions and decorators:
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
 
+.. function:: get_origin(typ)
+.. function:: get_args(typ)
+
+   Provide basic introspection for generic types and special typing forms.
+
+   For a typing object of the form ``X[Y, Z, ...]`` these functions return
+   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
+   :mod:`collections` class, it gets normalized to the original class.
+   For unsupported objects return ``None`` and ``()`` correspondingly.
+   Examples::
+
+      assert get_origin(Dict[str, int]) is dict
+      assert get_args(Dict[int, str]) == (int, str)
+
+      assert get_origin(Union[int, str]) is Union
+      assert get_args(Union[int, str]) == (int, str)
+
+   .. versionadded:: 3.8
+
 .. decorator:: overload
 
    The ``@overload`` decorator allows describing functions and methods

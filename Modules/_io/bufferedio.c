@@ -2330,10 +2330,10 @@ PyTypeObject PyBufferedIOBase_Type = {
     0,                          /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     0,                          /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2420,10 +2420,10 @@ PyTypeObject PyBufferedReader_Type = {
     sizeof(buffered),           /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     (destructor)buffered_dealloc,     /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
+    0,                          /*tp_as_async*/
     (reprfunc)buffered_repr,    /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2506,10 +2506,10 @@ PyTypeObject PyBufferedWriter_Type = {
     sizeof(buffered),           /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     (destructor)buffered_dealloc,     /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
+    0,                          /*tp_as_async*/
     (reprfunc)buffered_repr,    /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2583,10 +2583,10 @@ PyTypeObject PyBufferedRWPair_Type = {
     sizeof(rwpair),            /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     (destructor)bufferedrwpair_dealloc,     /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2677,10 +2677,10 @@ PyTypeObject PyBufferedRandom_Type = {
     sizeof(buffered),           /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     (destructor)buffered_dealloc,     /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
+    0,                          /*tp_as_async*/
     (reprfunc)buffered_repr,    /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/

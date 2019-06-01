@@ -147,10 +147,10 @@ PyTypeObject _PyManagedBuffer_Type = {
     sizeof(_PyManagedBufferObject),
     0,
     (destructor)mbuf_dealloc,                /* tp_dealloc */
-    0,                                       /* tp_print */
+    0,                                       /* tp_vectorcall_offset */
     0,                                       /* tp_getattr */
     0,                                       /* tp_setattr */
-    0,                                       /* tp_reserved */
+    0,                                       /* tp_as_async */
     0,                                       /* tp_repr */
     0,                                       /* tp_as_number */
     0,                                       /* tp_as_sequence */
@@ -3155,10 +3155,10 @@ PyTypeObject PyMemoryView_Type = {
     offsetof(PyMemoryViewObject, ob_array),   /* tp_basicsize */
     sizeof(Py_ssize_t),                       /* tp_itemsize */
     (destructor)memory_dealloc,               /* tp_dealloc */
-    0,                                        /* tp_print */
+    0,                                        /* tp_vectorcall_offset */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
+    0,                                        /* tp_as_async */
     (reprfunc)memory_repr,                    /* tp_repr */
     0,                                        /* tp_as_number */
     &memory_as_sequence,                      /* tp_as_sequence */

@@ -39,13 +39,10 @@ extern PyStatus _PyFaulthandler_Init(int enable);
 extern int _PyTraceMalloc_Init(int enable);
 extern PyObject * _PyBuiltin_Init(void);
 extern PyStatus _PySys_Create(
-    _PyRuntimeState *runtime,
     PyInterpreterState *interp,
     PyObject **sysmod_p);
 extern PyStatus _PySys_SetPreliminaryStderr(PyObject *sysdict);
-extern int _PySys_InitMain(
-    _PyRuntimeState *runtime,
-    PyInterpreterState *interp);
+extern int _PySys_InitMain(PyInterpreterState *interp);
 extern PyStatus _PyImport_Init(PyInterpreterState *interp);
 extern PyStatus _PyExc_Init(void);
 extern PyStatus _PyErr_Init(void);
@@ -86,10 +83,7 @@ extern void _PyHash_Fini(void);
 extern int _PyTraceMalloc_Fini(void);
 extern void _PyWarnings_Fini(PyInterpreterState *interp);
 
-extern void _PyGILState_Init(
-    _PyRuntimeState *runtime,
-    PyInterpreterState *interp,
-    PyThreadState *tstate);
+extern void _PyGILState_Init(PyThreadState *tstate);
 extern void _PyGILState_Fini(_PyRuntimeState *runtime);
 
 PyAPI_FUNC(void) _PyGC_DumpShutdownStats(_PyRuntimeState *runtime);

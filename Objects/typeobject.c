@@ -3608,10 +3608,10 @@ PyTypeObject PyType_Type = {
     sizeof(PyHeapTypeObject),                   /* tp_basicsize */
     sizeof(PyMemberDef),                        /* tp_itemsize */
     (destructor)type_dealloc,                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)type_repr,                        /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -4784,10 +4784,10 @@ PyTypeObject PyBaseObject_Type = {
     sizeof(PyObject),                           /* tp_basicsize */
     0,                                          /* tp_itemsize */
     object_dealloc,                             /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     object_repr,                                /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -5143,10 +5143,20 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         type->tp_setattr = base->tp_setattr;
         type->tp_setattro = base->tp_setattro;
     }
-    /* tp_reserved is ignored */
     COPYSLOT(tp_repr);
     /* tp_hash see tp_richcompare */
     COPYSLOT(tp_call);
+    /* Inherit tp_vectorcall_offset and _Py_TPFLAGS_HAVE_VECTORCALL if tp_call
+     * was inherited, but only for extension types */
+    if ((base->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
+        !(type->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
+        !(type->tp_flags & Py_TPFLAGS_HEAPTYPE) &&
+        base->tp_call &&
+        type->tp_call == base->tp_call)
+    {
+        type->tp_vectorcall_offset = base->tp_vectorcall_offset;
+        type->tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
+    }
     COPYSLOT(tp_str);
     {
         /* Copy comparison-related slots only when
@@ -7006,7 +7016,7 @@ static slotdef slotdefs[] = {
     IBSLOT("__imod__", nb_inplace_remainder, slot_nb_inplace_remainder,
            wrap_binaryfunc, "%="),
     IBSLOT("__ipow__", nb_inplace_power, slot_nb_inplace_power,
-           wrap_binaryfunc, "**="),
+           wrap_ternaryfunc, "**="),
     IBSLOT("__ilshift__", nb_inplace_lshift, slot_nb_inplace_lshift,
            wrap_binaryfunc, "<<="),
     IBSLOT("__irshift__", nb_inplace_rshift, slot_nb_inplace_rshift,
@@ -7797,7 +7807,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
                             "super(): no code object");
             return -1;
         }
-        if (co->co_argcount == 0) {
+        if (co->co_posonlyargcount + co->co_argcount == 0) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no arguments");
             return -1;
@@ -7909,10 +7919,10 @@ PyTypeObject PySuper_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     super_dealloc,                              /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     super_repr,                                 /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
