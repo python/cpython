@@ -3021,7 +3021,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
 {
     PyObject *result = NULL, *factor = NULL, *temp;
     int overflow, cmp;
-    long i, factors;
+    long long i, factors;
 
     n = PyNumber_Index(n);
     if (n == NULL)
@@ -3058,7 +3058,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         }
     }
 
-    factors = PyLong_AsLongAndOverflow(k, &overflow);
+    factors = PyLong_AsLongLongAndOverflow(k, &overflow);
     if (overflow > 0) {
         PyErr_NoMemory();
         goto error;
@@ -3094,7 +3094,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
             goto error;
         }
 
-        temp = PyLong_FromUnsignedLong((unsigned long)i + 1);
+        temp = PyLong_FromUnsignedLongLong((unsigned long long)i + 1);
         if (temp == NULL) {
             goto error;
         }
