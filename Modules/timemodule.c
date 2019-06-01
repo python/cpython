@@ -145,44 +145,6 @@ perf_counter(_Py_clock_info_t *info)
     return _PyFloat_FromPyTime(t);
 }
 
-#if (defined(MS_WINDOWS) || defined(HAVE_CLOCK)) && !defined(__VXWORKS__)
-#define PYCLOCK
-static PyObject*
-pyclock(_Py_clock_info_t *info)
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                      "time.clock has been deprecated in Python 3.3 and will "
-                      "be removed from Python 3.8: "
-                      "use time.perf_counter or time.process_time "
-                      "instead", 1) < 0) {
-        return NULL;
-    }
-
-#ifdef MS_WINDOWS
-    return perf_counter(info);
-#else
-    _PyTime_t t;
-    if (_PyTime_GetClockWithInfo(&t, info) < 0) {
-        return NULL;
-    }
-    return _PyFloat_FromPyTime(t);
-#endif
-}
-
-static PyObject *
-time_clock(PyObject *self, PyObject *unused)
-{
-    return pyclock(NULL);
-}
-
-PyDoc_STRVAR(clock_doc,
-"clock() -> floating point number\n\
-\n\
-Return the CPU time or real time since the start of the process or since\n\
-the first call to clock().  This has as much precision as the system\n\
-records.");
-#endif
-
 #ifdef HAVE_CLOCK_GETTIME
 static PyObject *
 time_clock_gettime(PyObject *self, PyObject *args)
@@ -1477,15 +1439,6 @@ time_get_clock_info(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-#ifdef PYCLOCK
-    else if (strcmp(name, "clock") == 0) {
-        obj = pyclock(&info);
-        if (obj == NULL) {
-            return NULL;
-        }
-        Py_DECREF(obj);
-    }
-#endif
     else if (strcmp(name, "monotonic") == 0) {
         if (_PyTime_GetMonotonicClockWithInfo(&t, &info) < 0) {
             return NULL;
@@ -1700,9 +1653,6 @@ init_timezone(PyObject *m)
 static PyMethodDef time_methods[] = {
     {"time",            time_time, METH_NOARGS, time_doc},
     {"time_ns",         time_time_ns, METH_NOARGS, time_ns_doc},
-#ifdef PYCLOCK
-    {"clock",           time_clock, METH_NOARGS, clock_doc},
-#endif
 #ifdef HAVE_CLOCK_GETTIME
     {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
     {"clock_gettime_ns",time_clock_gettime_ns, METH_VARARGS, clock_gettime_ns_doc},

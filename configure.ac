@@ -411,6 +411,7 @@ then
 	'')	MACHDEP="unknown";;
     esac
 fi
+AC_MSG_RESULT("$MACHDEP")
 
 AC_SUBST(_PYTHON_HOST_PLATFORM)
 if test "$cross_compiling" = yes; then
@@ -1543,26 +1544,6 @@ then
     esac
 fi
 
-if test -n "${cc_is_clang}"
-then
-    # bpo-36618: Add -fmax-type-align=8 to CFLAGS when clang compiler is
-    # detected. The pymalloc memory allocator aligns memory on 8 bytes. On
-    # x86-64, clang expects alignment on 16 bytes by default and so uses MOVAPS
-    # instruction which can lead to segmentation fault. Instruct clang that
-    # Python is limited to alignemnt on 8 bytes to use MOVUPS instruction
-    # instead: slower but don't trigger a SIGSEGV if the memory is not aligned
-    # on 16 bytes.
-    #
-    # Sadly, the flag must be added to CFLAGS and not just CFLAGS_NODIST,
-    # since third party C extensions can have the same issue.
-    #
-    # Check if -fmax-type-align flag is supported (it's not supported by old
-    # clang versions):
-    if "$CC" -v --help 2>/dev/null |grep -- -fmax-type-align > /dev/null; then
-        CFLAGS="$CFLAGS -fmax-type-align=8"
-    fi
-fi
-
 AC_SUBST(BASECFLAGS)
 AC_SUBST(CFLAGS_NODIST)
 AC_SUBST(LDFLAGS_NODIST)
@@ -2152,7 +2133,7 @@ sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h sys/sysmacros.h)
+sys/endian.h sys/sysmacros.h linux/memfd.h sys/memfd.h sys/mman.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -3539,16 +3520,17 @@ fi
 
 # checks for library functions
 AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr ctermid dup3 execv faccessat fchmod fchmodat fchown fchownat \
+ clock confstr copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
+ faccessat fchmod fchmodat fchown fchownat \
  fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
  getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
+ initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
- mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
+ madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
  pthread_condattr_setclock pthread_init pthread_kill putenv pwrite pwritev pwritev2 \
  readlink readlinkat readv realpath renameat \
@@ -3561,7 +3543,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \
- wcscoll wcsftime wcsxfrm wmemcmp writev _getpty)
+ wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn)
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
@@ -3641,6 +3623,20 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/resource.h>
     ]], [[void *x=prlimit]])],
   [AC_DEFINE(HAVE_PRLIMIT, 1, Define if you have the 'prlimit' functions.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+])
+
+AC_MSG_CHECKING(for memfd_create)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+#ifdef HAVE_SYS_MEMFD_H
+#include <sys/memfd.h>
+#endif
+]], [[void *x=memfd_create]])],
+  [AC_DEFINE(HAVE_MEMFD_CREATE, 1, Define if you have the 'memfd_create' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
@@ -4642,12 +4638,12 @@ AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT($LDVERSION)
 
-# On Android the shared libraries must be linked with libpython.
+# On Android and Cygwin the shared libraries must be linked with libpython.
 AC_SUBST(LIBPYTHON)
-if test -z "$ANDROID_API_LEVEL"; then
-  LIBPYTHON=''
-else
+if test -n "$ANDROID_API_LEVEL" -o "$MACHDEP" = "cygwin"; then
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+else
+  LIBPYTHON=''
 fi
 
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
@@ -5609,7 +5605,7 @@ AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
 
 
 # generate output files
-AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-config.sh)
+AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 

@@ -1,0 +1,2 @@
+Remove deprecation and document urllib.parse.unwrap(). Patch contributed by
+Rémi Lapeyre.

@@ -684,6 +684,7 @@ class HandlerTest(BaseTest):
 
         self.assertEqual(len(logging._handlers), 0)
         refed_h = _OurHandler()
+        self.addCleanup(refed_h.sub_handler.stream.close)
         refed_h.name = 'because we need at least one for this test'
         self.assertGreater(len(logging._handlers), 0)
         self.assertGreater(len(logging._at_fork_reinit_lock_weakset), 1)
@@ -3631,6 +3632,16 @@ if hasattr(logging.handlers, 'QueueListener'):
                               'Found unexpected messages in queue: %s' % (
                                     [m.msg if isinstance(m, logging.LogRecord)
                                      else m for m in items]))
+
+        def test_calls_task_done_after_stop(self):
+            # Issue 36813: Make sure queue.join does not deadlock.
+            log_queue = queue.Queue()
+            listener = logging.handlers.QueueListener(log_queue)
+            listener.start()
+            listener.stop()
+            with self.assertRaises(ValueError):
+                # Make sure all tasks are done and .join won't block.
+                log_queue.task_done()
 
 
 ZERO = datetime.timedelta(0)

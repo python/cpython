@@ -32,7 +32,8 @@ matrix:
   allow_failures:
     - env: OPTIONAL=true
   include:
-    - os: linux
+    - name: "CPython tests"
+      os: linux
       language: c
       compiler: clang
       # gcc also works, but to keep the # of concurrent builds down, we use one C
@@ -43,7 +44,8 @@ matrix:
         apt:
           packages:
             - xvfb
-    - os: linux
+    - name: "Documentation build"
+      os: linux
       language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
       python: 3.6
@@ -56,7 +58,8 @@ matrix:
         - python -m pip install sphinx==1.8.2 blurb python-docs-theme
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
-    - os: linux
+    - name: "Documentation tests"
+      os: linux
       language: c
       compiler: clang
       env: TESTING=doctest
@@ -70,7 +73,8 @@ matrix:
         - make -C Doc/ PYTHON=../python venv
       script:
         xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest
-    - os: osx
+    - name: "Mac OS X tests"
+      os: osx
       language: c
       compiler: clang
       # Testing under macOS is optional until testing stability has been demonstrated.
@@ -79,7 +83,8 @@ matrix:
         # Python 3 is needed for Argument Clinic and multissl
         - HOMEBREW_NO_AUTO_UPDATE=1 brew install xz python3
         - export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
-    - os: linux
+    - name: "Test code coverage (Python)"
+      os: linux
       language: c
       compiler: gcc
       env: OPTIONAL=true
@@ -101,7 +106,8 @@ matrix:
         # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
         - source ./venv/bin/activate
         - bash <(curl -s https://codecov.io/bash)
-    - os: linux
+    - name: "Test code coverage (C)"
+      os: linux
       language: c
       compiler: gcc
       env: OPTIONAL=true

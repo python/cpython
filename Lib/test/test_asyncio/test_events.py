@@ -253,12 +253,10 @@ class EventLoopTestsMixin:
         super().tearDown()
 
     def test_run_until_complete_nesting(self):
-        @asyncio.coroutine
-        def coro1():
-            yield
+        async def coro1():
+            await asyncio.sleep(0)
 
-        @asyncio.coroutine
-        def coro2():
+        async def coro2():
             self.assertTrue(self.loop.is_running())
             self.loop.run_until_complete(coro1())
 
@@ -735,8 +733,7 @@ class EventLoopTestsMixin:
 
     @mock.patch('asyncio.base_events.socket')
     def create_server_multiple_hosts(self, family, hosts, mock_sock):
-        @asyncio.coroutine
-        def getaddrinfo(host, port, *args, **kw):
+        async def getaddrinfo(host, port, *args, **kw):
             if family == socket.AF_INET:
                 return [(family, socket.SOCK_STREAM, 6, '', (host, port))]
             else:
@@ -1121,7 +1118,7 @@ class EventLoopTestsMixin:
         f = self.loop.create_server(TestMyProto, sock=sock_ob)
         server = self.loop.run_until_complete(f)
         sock = server.sockets[0]
-        self.assertIs(sock, sock_ob)
+        self.assertEqual(sock.fileno(), sock_ob.fileno())
 
         host, port = sock.getsockname()
         self.assertEqual(host, '0.0.0.0')
@@ -1252,11 +1249,6 @@ class EventLoopTestsMixin:
         server.transport.close()
 
     def test_create_datagram_endpoint_sock(self):
-        if (sys.platform == 'win32' and
-                isinstance(self.loop, proactor_events.BaseProactorEventLoop)):
-            raise unittest.SkipTest(
-                'UDP is not supported with proactor event loops')
-
         sock = None
         local_address = ('127.0.0.1', 0)
         infos = self.loop.run_until_complete(
@@ -1662,8 +1654,7 @@ class EventLoopTestsMixin:
             loop.add_writer(w, callback)
 
     def test_close_running_event_loop(self):
-        @asyncio.coroutine
-        def close_loop(loop):
+        async def close_loop(loop):
             self.loop.close()
 
         coro = close_loop(self.loop)
@@ -1673,8 +1664,7 @@ class EventLoopTestsMixin:
     def test_close(self):
         self.loop.close()
 
-        @asyncio.coroutine
-        def test():
+        async def test():
             pass
 
         func = lambda: False
@@ -2009,10 +1999,6 @@ if sys.platform == 'win32':
         def test_writer_callback_cancel(self):
             raise unittest.SkipTest("IocpEventLoop does not have add_writer()")
 
-        def test_create_datagram_endpoint(self):
-            raise unittest.SkipTest(
-                "IocpEventLoop does not have create_datagram_endpoint()")
-
         def test_remove_fds_after_closing(self):
             raise unittest.SkipTest("IocpEventLoop does not have add_reader()")
 else:
@@ -2142,7 +2128,8 @@ class HandleTests(test_utils.TestCase):
                         '<Handle cancelled>')
 
         # decorated function
-        cb = asyncio.coroutine(noop)
+        with self.assertWarns(DeprecationWarning):
+            cb = asyncio.coroutine(noop)
         h = asyncio.Handle(cb, (), self.loop)
         self.assertEqual(repr(h),
                         '<Handle noop() at %s:%s>'

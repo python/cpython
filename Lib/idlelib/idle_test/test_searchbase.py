@@ -32,6 +32,7 @@ class SearchDialogBaseTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
 
@@ -149,7 +150,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         # Look for close button command in buttonframe
         closebuttoncommand = ''
         for child in self.dialog.buttonframe.winfo_children():
-            if child['text'] == 'close':
+            if child['text'] == 'Close':
                 closebuttoncommand = child['command']
         self.assertIn('close', closebuttoncommand)
 

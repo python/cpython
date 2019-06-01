@@ -6,12 +6,10 @@
 extern "C" {
 #endif
 
-#include "cpython/coreconfig.h"
+#include "cpython/initconfig.h"
 
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
-
-PyAPI_FUNC(_PyCoreConfig *) _PyInterpreterState_GetCoreConfig(PyInterpreterState *);
 
 PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
 
@@ -112,9 +110,9 @@ struct _ts {
      * if the thread holds the last reference to the lock, decref'ing the
      * lock will delete the lock, and that may trigger arbitrary Python code
      * if there's a weakref, with a callback, to the lock.  But by this time
-     * _PyRuntime.gilstate.tstate_current is already NULL, so only the simplest
-     * of C code can be allowed to run (in particular it must not be possible to
-     * release the GIL).
+     * _PyRuntimeState.gilstate.tstate_current is already NULL, so only the
+     * simplest of C code can be allowed to run (in particular it must not be
+     * possible to release the GIL).
      * So instead of holding the lock directly, the tstate holds a weakref to
      * the lock:  that's the value of on_delete_data below.  Decref'ing a
      * weakref is harmless.
@@ -127,9 +125,6 @@ struct _ts {
     void *on_delete_data;
 
     int coroutine_origin_tracking_depth;
-
-    PyObject *coroutine_wrapper;
-    int in_coroutine_wrapper;
 
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;

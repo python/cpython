@@ -107,7 +107,7 @@ headers.
    method if it wishes to set additional attributes beyond those provided by
    ``BaseHeader`` itself.  Such an ``init`` method should look like this::
 
-       def init(self, *args, **kw):
+       def init(self, /, *args, **kw):
            self._myattr = kw.pop('myattr')
            super().init(*args, **kw)
 

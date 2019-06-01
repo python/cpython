@@ -27,10 +27,18 @@ _testcapi = support.import_module('_testcapi')
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
+Py_TPFLAGS_HAVE_VECTORCALL = 1 << 11
+Py_TPFLAGS_METHOD_DESCRIPTOR = 1 << 17
+
 
 def testfunction(self):
     """some doc"""
     return self
+
+def testfunction_kw(self, *, kw):
+    """some doc"""
+    return self
+
 
 class InstanceMethod:
     id = _testcapi.instancemethod(id)
@@ -175,6 +183,13 @@ class CAPITest(unittest.TestCase):
         o = 42
         o @= m1
         self.assertEqual(o, ("matmul", 42, m1))
+
+    def test_c_type_with_ipow(self):
+        # When the __ipow__ method of a type was implemented in C, using the
+        # modulo param would cause segfaults.
+        o = _testcapi.ipowType()
+        self.assertEqual(o.__ipow__(1), (1, None))
+        self.assertEqual(o.__ipow__(2, 2), (2, 2))
 
     def test_return_null_without_error(self):
         # Issue #23571: A function must not return NULL without setting an
@@ -456,6 +471,94 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_wait(l, n)
 
 
+class TestPEP590(unittest.TestCase):
+
+    def test_method_descriptor_flag(self):
+        import functools
+        cached = functools.lru_cache(1)(testfunction)
+
+        self.assertFalse(type(repr).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(list.append).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(list.__add__).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(testfunction).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(cached).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+
+        self.assertTrue(_testcapi.MethodDescriptorBase.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(_testcapi.MethodDescriptorDerived.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+
+        # Heap type should not inherit Py_TPFLAGS_METHOD_DESCRIPTOR
+        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
+            pass
+        self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+
+    def test_vectorcall_flag(self):
+        self.assertTrue(_testcapi.MethodDescriptorBase.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        self.assertTrue(_testcapi.MethodDescriptorDerived.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        self.assertTrue(_testcapi.MethodDescriptor2.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+
+        # Heap type should not inherit Py_TPFLAGS_HAVE_VECTORCALL
+        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
+            pass
+        self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+
+    def test_vectorcall_override(self):
+        # Check that tp_call can correctly override vectorcall.
+        # MethodDescriptorNopGet implements tp_call but it inherits from
+        # MethodDescriptorBase, which implements vectorcall. Since
+        # MethodDescriptorNopGet returns the args tuple when called, we check
+        # additionally that no new tuple is created for this call.
+        args = tuple(range(5))
+        f = _testcapi.MethodDescriptorNopGet()
+        self.assertIs(f(*args), args)
+
+    def test_vectorcall(self):
+        # Test a bunch of different ways to call objects:
+        # 1. normal call
+        # 2. vectorcall using _PyObject_Vectorcall()
+        # 3. vectorcall using PyVectorcall_Call()
+        # 4. call as bound method
+        # 5. call using functools.partial
+
+        # A list of (function, args, kwargs, result) calls to test
+        calls = [(len, (range(42),), {}, 42),
+                 (list.append, ([], 0), {}, None),
+                 ([].append, (0,), {}, None),
+                 (sum, ([36],), {"start":6}, 42),
+                 (testfunction, (42,), {}, 42),
+                 (testfunction_kw, (42,), {"kw":None}, 42),
+                 (_testcapi.MethodDescriptorBase(), (0,), {}, True),
+                 (_testcapi.MethodDescriptorDerived(), (0,), {}, True),
+                 (_testcapi.MethodDescriptor2(), (0,), {}, False)]
+
+        from _testcapi import pyobject_vectorcall, pyvectorcall_call
+        from types import MethodType
+        from functools import partial
+
+        def vectorcall(func, args, kwargs):
+            args = *args, *kwargs.values()
+            kwnames = tuple(kwargs)
+            return pyobject_vectorcall(func, args, kwnames)
+
+        for (func, args, kwargs, expected) in calls:
+            with self.subTest(str(func)):
+                args1 = args[1:]
+                meth = MethodType(func, args[0])
+                wrapped = partial(func)
+                if not kwargs:
+                    self.assertEqual(expected, func(*args))
+                    self.assertEqual(expected, pyobject_vectorcall(func, args, None))
+                    self.assertEqual(expected, pyvectorcall_call(func, args))
+                    self.assertEqual(expected, meth(*args1))
+                    self.assertEqual(expected, wrapped(*args))
+                self.assertEqual(expected, func(*args, **kwargs))
+                self.assertEqual(expected, vectorcall(func, args, kwargs))
+                self.assertEqual(expected, pyvectorcall_call(func, args, kwargs))
+                self.assertEqual(expected, meth(*args1, **kwargs))
+                self.assertEqual(expected, wrapped(*args, **kwargs))
+
+
 class SubinterpreterTest(unittest.TestCase):
 
     def test_subinterps(self):
@@ -472,6 +575,19 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertEqual(ret, 0)
             self.assertNotEqual(pickle.load(f), id(sys.modules))
             self.assertNotEqual(pickle.load(f), id(builtins))
+
+    def test_mutate_exception(self):
+        """
+        Exceptions saved in global module state get shared between
+        individual module instances. This test checks whether or not
+        a change in one interpreter's module gets reflected into the
+        other ones.
+        """
+        import binascii
+
+        support.run_in_subinterp("import binascii; binascii.Error.foobar = 'foobar'")
+
+        self.assertFalse(hasattr(binascii.Error, "foobar"))
 
 
 class TestThreadState(unittest.TestCase):

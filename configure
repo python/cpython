@@ -3292,6 +3292,8 @@ then
 	'')	MACHDEP="unknown";;
     esac
 fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
+$as_echo "\"$MACHDEP\"" >&6; }
 
 
 if test "$cross_compiling" = yes; then
@@ -6905,26 +6907,6 @@ then
     esac
 fi
 
-if test -n "${cc_is_clang}"
-then
-    # bpo-36618: Add -fmax-type-align=8 to CFLAGS when clang compiler is
-    # detected. The pymalloc memory allocator aligns memory on 8 bytes. On
-    # x86-64, clang expects alignment on 16 bytes by default and so uses MOVAPS
-    # instruction which can lead to segmentation fault. Instruct clang that
-    # Python is limited to alignemnt on 8 bytes to use MOVUPS instruction
-    # instead: slower but don't trigger a SIGSEGV if the memory is not aligned
-    # on 16 bytes.
-    #
-    # Sadly, the flag must be added to CFLAGS and not just CFLAGS_NODIST,
-    # since third party C extensions can have the same issue.
-    #
-    # Check if -fmax-type-align flag is supported (it's not supported by old
-    # clang versions):
-    if "$CC" -v --help 2>/dev/null |grep -- -fmax-type-align > /dev/null; then
-        CFLAGS="$CFLAGS -fmax-type-align=8"
-    fi
-fi
-
 
 
 
@@ -7910,7 +7892,7 @@ sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h sys/sysmacros.h
+sys/endian.h sys/sysmacros.h linux/memfd.h sys/memfd.h sys/mman.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -11482,16 +11464,17 @@ fi
 
 # checks for library functions
 for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr ctermid dup3 execv faccessat fchmod fchmodat fchown fchownat \
+ clock confstr copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
+ faccessat fchmod fchmodat fchown fchownat \
  fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
  getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
+ initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
- mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
+ madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
  pthread_condattr_setclock pthread_init pthread_kill putenv pwrite pwritev pwritev2 \
  readlink readlinkat readv realpath renameat \
@@ -11504,7 +11487,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \
- wcscoll wcsftime wcsxfrm wmemcmp writev _getpty
+ wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -11793,6 +11776,39 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define HAVE_PRLIMIT 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for memfd_create" >&5
+$as_echo_n "checking for memfd_create... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+#ifdef HAVE_SYS_MEMFD_H
+#include <sys/memfd.h>
+#endif
+
+int
+main ()
+{
+void *x=memfd_create
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_MEMFD_CREATE 1" >>confdefs.h
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -15149,12 +15165,12 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDVERSION" >&5
 $as_echo "$LDVERSION" >&6; }
 
-# On Android the shared libraries must be linked with libpython.
+# On Android and Cygwin the shared libraries must be linked with libpython.
 
-if test -z "$ANDROID_API_LEVEL"; then
-  LIBPYTHON=''
-else
+if test -n "$ANDROID_API_LEVEL" -o "$MACHDEP" = "cygwin"; then
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+else
+  LIBPYTHON=''
 fi
 
 
@@ -17335,7 +17351,7 @@ fi
 
 
 # generate output files
-ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-config.sh"
+ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh"
 
 ac_config_files="$ac_config_files Modules/ld_so_aix"
 
@@ -18038,6 +18054,7 @@ do
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
+    "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;
     "Misc/python-config.sh") CONFIG_FILES="$CONFIG_FILES Misc/python-config.sh" ;;
     "Modules/ld_so_aix") CONFIG_FILES="$CONFIG_FILES Modules/ld_so_aix" ;;
 

@@ -10,8 +10,8 @@
 
 --------------
 
-This module is always available.  It provides access to the mathematical
-functions defined by the C standard.
+This module provides access to the mathematical functions defined by the C
+standard.
 
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
@@ -50,7 +50,7 @@ Number-theoretic and representation functions
 
 .. function:: factorial(x)
 
-   Return *x* factorial.  Raises :exc:`ValueError` if *x* is not integral or
+   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
 
 
@@ -166,6 +166,20 @@ Number-theoretic and representation functions
    Return ``True`` if *x* is a NaN (not a number), and ``False`` otherwise.
 
 
+.. function:: isqrt(n)
+
+   Return the integer square root of the nonnegative integer *n*. This is the
+   floor of the exact square root of *n*, or equivalently the greatest integer
+   *a* such that *a*\ ² |nbsp| ≤ |nbsp| *n*.
+
+   For some applications, it may be more convenient to have the least integer
+   *a* such that *n* |nbsp| ≤ |nbsp| *a*\ ², or in other words the ceiling of
+   the exact square root of *n*. For positive *n*, this can be computed using
+   ``a = 1 + isqrt(n - 1)``.
+
+   .. versionadded:: 3.8
+
+
 .. function:: ldexp(x, i)
 
    Return ``x * (2**i)``.  This is essentially the inverse of function
@@ -216,6 +230,21 @@ Number-theoretic and representation functions
    Return the :class:`~numbers.Real` value *x* truncated to an
    :class:`~numbers.Integral` (usually an integer). Delegates to
    :meth:`x.__trunc__() <object.__trunc__>`.
+
+
+.. function:: comb(n, k)
+
+   Return the number of ways to choose *k* items from *n* items without repetition
+   and without order.
+
+   Also called the binomial coefficient. It is mathematically equal to the expression
+   ``n! / (k! (n - k)!)``. It is equivalent to the coefficient of k-th term in
+   polynomial expansion of the expression ``(1 + x) ** n``.
+
+   Raises :exc:`TypeError` if the arguments not integers.
+   Raises :exc:`ValueError` if the arguments are negative or if k > n.
+
+   .. versionadded:: 3.8
 
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
@@ -538,3 +567,6 @@ Constants
 
    Module :mod:`cmath`
       Complex number versions of many of these functions.
+
+.. |nbsp| unicode:: 0xA0
+   :trim:

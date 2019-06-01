@@ -36,6 +36,7 @@ Lib/test/data/*
 Makefile
 Makefile.pre
 Misc/python.pc
+Misc/python-embed.pc
 Misc/python-config.sh
 Modules/Setup
 Modules/Setup.config
@@ -70,6 +71,7 @@ PCbuild/*.VC.opendb
 PCbuild/.vs/
 PCbuild/amd64/
 PCbuild/arm32/
+PCbuild/arm64/
 PCbuild/obj/
 PCbuild/win32/
 .purify
