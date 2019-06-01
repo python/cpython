@@ -43,9 +43,9 @@ called with a non-bytes parameter.
 
 .. c:function:: PyObject* PyBytes_FromStringAndSize(const char *v, Py_ssize_t len)
 
-   Return a new bytes object with a copy of the string *v* as value and length
-   *len* on success, and *NULL* on failure.  If *v* is *NULL*, the contents of
-   the bytes object are uninitialized.
+   Return a new bytes object with a copy of the first *len* bytes of string *v* as
+   value and length *len* on success, and *NULL* on failure.  If *v* is *NULL*, the
+   contents of the bytes object are uninitialized.
 
 
 .. c:function:: PyObject* PyBytes_FromFormat(const char *format, ...)

@@ -403,9 +403,10 @@ I/O Base Classes
 
       Read bytes into a pre-allocated, writable
       :term:`bytes-like object` *b*, and return the
-      number of bytes read.  For example, *b* might be a :class:`bytearray`.
-      If the object is in non-blocking mode and no bytes
-      are available, ``None`` is returned.
+      number of bytes that read succeed, it may be smaller
+      than *b* or NULL if failed.  For example, *b* might
+      be a :class:`bytearray`.  If the object is in non-blocking
+      mode and no bytes are available, ``None`` is returned.
 
    .. method:: write(b)
 
