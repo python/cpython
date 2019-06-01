@@ -192,6 +192,8 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 PyInterpreterState *
 PyInterpreterState_New(void)
 {
+    _PyRuntimeState *runtime = &_PyRuntime;
+
     if (PySys_Audit("cpython.PyInterpreterState_New", NULL) < 0) {
         return NULL;
     }
@@ -203,7 +205,7 @@ PyInterpreterState_New(void)
 
     memset(interp, 0, sizeof(*interp));
 
-    interp->runtime = &_PyRuntime;
+    interp->runtime = runtime;
 
     interp->id_refcount = -1;
     interp->check_interval = 100;
@@ -226,7 +228,6 @@ PyInterpreterState_New(void)
 #endif
 #endif
 
-    _PyRuntimeState *runtime = &_PyRuntime;
     struct pyinterpreters *interpreters = &runtime->interpreters;
 
     HEAD_LOCK(runtime);
@@ -500,7 +501,8 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     if (interp->id_mutex == NULL) {
         return;
     }
-    struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
+    _PyRuntimeState *runtime = interp->runtime;
+    struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
     PyThread_acquire_lock(interp->id_mutex, WAIT_LOCK);
     assert(interp->id_refcount != 0);
     interp->id_refcount -= 1;
@@ -562,7 +564,7 @@ threadstate_getframe(PyThreadState *self)
 static PyThreadState *
 new_threadstate(PyInterpreterState *interp, int init)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
+    _PyRuntimeState *runtime = interp->runtime;
     PyThreadState *tstate = (PyThreadState *)PyMem_RawMalloc(sizeof(PyThreadState));
     if (tstate == NULL) {
         return NULL;
@@ -1132,8 +1134,9 @@ _PyThread_CurrentFrames(void)
 static int
 PyThreadState_IsCurrent(PyThreadState *tstate)
 {
+    _PyRuntimeState *runtime = tstate->interp->runtime;
     /* Must be the tstate for this thread */
-    struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
+    struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
     assert(_PyGILState_GetThisThreadState(gilstate) == tstate);
     return tstate == _PyRuntimeGILState_GetThreadState(gilstate);
 }

@@ -110,9 +110,9 @@ struct _ts {
      * if the thread holds the last reference to the lock, decref'ing the
      * lock will delete the lock, and that may trigger arbitrary Python code
      * if there's a weakref, with a callback, to the lock.  But by this time
-     * _PyRuntime.gilstate.tstate_current is already NULL, so only the simplest
-     * of C code can be allowed to run (in particular it must not be possible to
-     * release the GIL).
+     * _PyRuntimeState.gilstate.tstate_current is already NULL, so only the
+     * simplest of C code can be allowed to run (in particular it must not be
+     * possible to release the GIL).
      * So instead of holding the lock directly, the tstate holds a weakref to
      * the lock:  that's the value of on_delete_data below.  Decref'ing a
      * weakref is harmless.
