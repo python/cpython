@@ -1911,7 +1911,22 @@ class IsCloseTests(unittest.TestCase):
         self.assertRaises(ValueError, comb, 1, 10**10)
         self.assertRaises(ValueError, comb, 0, 1)
 
+        n = 2**1000
+        self.assertEqual(comb(n, 0), 1)
+        self.assertEqual(comb(n, 1), n)
+        self.assertEqual(comb(n, 2), n * (n-1) // 2)
+        self.assertEqual(comb(n, n), 1)
+        self.assertEqual(comb(n, n-1), n)
+        self.assertEqual(comb(n, n-2), n * (n-1) // 2)
+        self.assertRaises(MemoryError, comb, n, n//2)
 
+        self.assertEqual(comb(MyIndexable(5), MyIndexable(2)), 10)
+        self.assertRaises(TypeError, comb, 5.0, 2)
+        self.assertRaises(TypeError, comb, 5, 2.0)
+        self.assertRaises(TypeError, comb, decimal.Decimal(5.0), 2)
+        self.assertRaises(TypeError, comb, 5, decimal.Decimal(2.0))
+        self.assertRaises(TypeError, comb, '5', 2)
+        self.assertRaises(TypeError, comb, 5, '2')
 
 
 def test_main():

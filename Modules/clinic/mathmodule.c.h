@@ -671,19 +671,11 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     if (!args) {
         goto exit;
     }
-    if (!PyLong_Check(args[0])) {
-        _PyArg_BadArgument("comb", 1, "int", args[0]);
-        goto exit;
-    }
     n = args[0];
-    if (!PyLong_Check(args[1])) {
-        _PyArg_BadArgument("comb", 2, "int", args[1]);
-        goto exit;
-    }
     k = args[1];
     return_value = math_comb_impl(module, n, k);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=00aa76356759617a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2dd872efd11ce246 input=a9049054013a1b77]*/
