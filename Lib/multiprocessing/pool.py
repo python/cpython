@@ -154,7 +154,7 @@ class _PoolCache(dict):
     notification is done by the use of a queue that is provided when
     instantiating the cache.
     """
-    def __init__(self, *args, notifier=None, **kwds):
+    def __init__(self, /, *args, notifier=None, **kwds):
         self.notifier = notifier
         super().__init__(*args, **kwds)
 

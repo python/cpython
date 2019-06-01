@@ -1456,7 +1456,7 @@ Test cases
 
       .. versionadded:: 3.1
 
-   .. classmethod:: addClassCleanup(function, *args, **kwargs)
+   .. classmethod:: addClassCleanup(function, /, *args, **kwargs)
 
       Add a function to be called after :meth:`tearDownClass` to cleanup
       resources used during the test class. Functions will be called in reverse
@@ -2313,7 +2313,7 @@ To add cleanup code that must be run even in the case of an exception, use
 ``addModuleCleanup``:
 
 
-.. function:: addModuleCleanup(function, *args, **kwargs)
+.. function:: addModuleCleanup(function, /, *args, **kwargs)
 
    Add a function to be called after :func:`tearDownModule` to cleanup
    resources used during the test class. Functions will be called in reverse
