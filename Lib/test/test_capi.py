@@ -431,7 +431,7 @@ class TestPendingCalls(unittest.TestCase):
     def test_pendingcalls_threaded(self):
 
         #do every callback on a separate thread
-        n = 32 #total callbacks
+        n = 32 #total callbacks (see NPENDINGCALLS in pycore_ceval.h)
         threads = []
         class foo(object):pass
         context = foo()
