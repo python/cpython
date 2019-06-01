@@ -248,7 +248,7 @@ variables which either control lexical analysis or can be used for debugging:
    :attr:`punctuation_chars`, tokens will be split on whitespace in addition to
    those characters.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       The :attr:`punctuation_chars` attribute was made compatible with the
       :attr:`whitespace_split` attribute.
 
