@@ -93,16 +93,10 @@ class OrderedDict(dict):
     # Individual links are kept alive by the hard reference in self.__map.
     # Those hard references disappear when a key is deleted from an OrderedDict.
 
-    def __init__(*args, **kwds):
+    def __init__(self, other=(), /, **kwds):
         '''Initialize an ordered dictionary.  The signature is the same as
         regular dictionaries.  Keyword argument order is preserved.
         '''
-        if not args:
-            raise TypeError("descriptor '__init__' of 'OrderedDict' object "
-                            "needs an argument")
-        self, *args = args
-        if len(args) > 1:
-            raise TypeError('expected at most 1 arguments, got %d' % len(args))
         try:
             self.__root
         except AttributeError:
@@ -110,7 +104,7 @@ class OrderedDict(dict):
             self.__root = root = _proxy(self.__hardroot)
             root.prev = root.next = root
             self.__map = {}
-        self.__update(*args, **kwds)
+        self.__update(other, **kwds)
 
     def __setitem__(self, key, value,
                     dict_setitem=dict.__setitem__, proxy=_proxy, Link=_Link):
@@ -413,8 +407,8 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     _make.__func__.__doc__ = (f'Make a new {typename} object from a sequence '
                               'or iterable')
 
-    def _replace(_self, **kwds):
-        result = _self._make(_map(kwds.pop, field_names, _self))
+    def _replace(self, /, **kwds):
+        result = self._make(_map(kwds.pop, field_names, self))
         if kwds:
             raise ValueError(f'Got unexpected field names: {list(kwds)!r}')
         return result
@@ -543,7 +537,7 @@ class Counter(dict):
     #   http://code.activestate.com/recipes/259174/
     #   Knuth, TAOCP Vol. II section 4.6.3
 
-    def __init__(*args, **kwds):
+    def __init__(self, iterable=None, /, **kwds):
         '''Create a new, empty Counter object.  And if given, count elements
         from an input iterable.  Or, initialize the count from another mapping
         of elements to their counts.
@@ -554,14 +548,8 @@ class Counter(dict):
         >>> c = Counter(a=4, b=2)                   # a new counter from keyword args
 
         '''
-        if not args:
-            raise TypeError("descriptor '__init__' of 'Counter' object "
-                            "needs an argument")
-        self, *args = args
-        if len(args) > 1:
-            raise TypeError('expected at most 1 arguments, got %d' % len(args))
         super(Counter, self).__init__()
-        self.update(*args, **kwds)
+        self.update(iterable, **kwds)
 
     def __missing__(self, key):
         'The count of elements not in the Counter is zero.'
@@ -617,7 +605,7 @@ class Counter(dict):
         raise NotImplementedError(
             'Counter.fromkeys() is undefined.  Use Counter(iterable) instead.')
 
-    def update(*args, **kwds):
+    def update(self, iterable=None, /, **kwds):
         '''Like dict.update() but add counts instead of replacing them.
 
         Source can be an iterable, a dictionary, or another Counter instance.
@@ -637,13 +625,6 @@ class Counter(dict):
         # contexts.  Instead, we implement straight-addition.  Both the inputs
         # and outputs are allowed to contain zero and negative counts.
 
-        if not args:
-            raise TypeError("descriptor 'update' of 'Counter' object "
-                            "needs an argument")
-        self, *args = args
-        if len(args) > 1:
-            raise TypeError('expected at most 1 arguments, got %d' % len(args))
-        iterable = args[0] if args else None
         if iterable is not None:
             if isinstance(iterable, _collections_abc.Mapping):
                 if self:
@@ -657,7 +638,7 @@ class Counter(dict):
         if kwds:
             self.update(kwds)
 
-    def subtract(*args, **kwds):
+    def subtract(self, iterable=None, /, **kwds):
         '''Like dict.update() but subtracts counts instead of replacing them.
         Counts can be reduced below zero.  Both the inputs and outputs are
         allowed to contain zero and negative counts.
@@ -673,13 +654,6 @@ class Counter(dict):
         -1
 
         '''
-        if not args:
-            raise TypeError("descriptor 'subtract' of 'Counter' object "
-                            "needs an argument")
-        self, *args = args
-        if len(args) > 1:
-            raise TypeError('expected at most 1 arguments, got %d' % len(args))
-        iterable = args[0] if args else None
         if iterable is not None:
             self_get = self.get
             if isinstance(iterable, _collections_abc.Mapping):
@@ -1141,7 +1115,7 @@ class UserList(_collections_abc.MutableSequence):
     def count(self, item): return self.data.count(item)
     def index(self, item, *args): return self.data.index(item, *args)
     def reverse(self): self.data.reverse()
-    def sort(self, *args, **kwds): self.data.sort(*args, **kwds)
+    def sort(self, /, *args, **kwds): self.data.sort(*args, **kwds)
     def extend(self, other):
         if isinstance(other, UserList):
             self.data.extend(other.data)
@@ -1240,7 +1214,7 @@ class UserString(_collections_abc.Sequence):
         if isinstance(sub, UserString):
             sub = sub.data
         return self.data.find(sub, start, end)
-    def format(self, *args, **kwds):
+    def format(self, /, *args, **kwds):
         return self.data.format(*args, **kwds)
     def format_map(self, mapping):
         return self.data.format_map(mapping)

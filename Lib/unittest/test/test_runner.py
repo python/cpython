@@ -410,14 +410,13 @@ class TestModuleCleanUp(unittest.TestCase):
 
         class Module(object):
             unittest.addModuleCleanup(cleanup, 1, 2, function='hello')
-            with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(TypeError):
                 unittest.addModuleCleanup(function=cleanup, arg='hello')
             with self.assertRaises(TypeError):
                 unittest.addModuleCleanup()
         unittest.case.doModuleCleanups()
         self.assertEqual(cleanups,
-                         [((), {'arg': 'hello'}),
-                          ((1, 2), {'function': 'hello'})])
+                         [((1, 2), {'function': 'hello'})])
 
     def test_run_module_cleanUp(self):
         blowUp = True

@@ -962,10 +962,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     return cls
 
 
-# _cls should never be specified by keyword, so start it with an
-# underscore.  The presence of _cls is used to detect if this
-# decorator is being called with parameters or not.
-def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
+def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
               unsafe_hash=False, frozen=False):
     """Returns the same class as was passed in, with dunder methods
     added based on the fields defined in the class.
@@ -983,12 +980,12 @@ def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
         return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen)
 
     # See if we're being called as @dataclass or @dataclass().
-    if _cls is None:
+    if cls is None:
         # We're called with parens.
         return wrap
 
     # We're called as @dataclass without parens.
-    return wrap(_cls)
+    return wrap(cls)
 
 
 def fields(class_or_instance):

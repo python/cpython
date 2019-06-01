@@ -584,11 +584,16 @@ def _rmtree_safe_fd(topfd, path, onerror):
         fullname = os.path.join(path, entry.name)
         try:
             is_dir = entry.is_dir(follow_symlinks=False)
-            if is_dir:
-                orig_st = entry.stat(follow_symlinks=False)
-                is_dir = stat.S_ISDIR(orig_st.st_mode)
         except OSError:
             is_dir = False
+        else:
+            if is_dir:
+                try:
+                    orig_st = entry.stat(follow_symlinks=False)
+                    is_dir = stat.S_ISDIR(orig_st.st_mode)
+                except OSError:
+                    onerror(os.lstat, fullname, sys.exc_info())
+                    continue
         if is_dir:
             try:
                 dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)

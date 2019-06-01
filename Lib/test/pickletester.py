@@ -3067,22 +3067,20 @@ class BadGetattr:
 class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
-        import os
         f = open(TESTFN, "wb")
         try:
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            os.remove(TESTFN)
+            support.unlink(TESTFN)
 
     def test_load_closed_file(self):
-        import os
         f = open(TESTFN, "wb")
         try:
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            os.remove(TESTFN)
+            support.unlink(TESTFN)
 
     def test_load_from_and_dump_to_file(self):
         stream = io.BytesIO()
@@ -3105,6 +3103,19 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.dumps(123, protocol=-1)
         self.Pickler(f, -1)
         self.Pickler(f, protocol=-1)
+
+    def test_dump_text_file(self):
+        f = open(TESTFN, "w")
+        try:
+            for proto in protocols:
+                self.assertRaises(TypeError, self.dump, 123, f, proto)
+        finally:
+            f.close()
+            support.unlink(TESTFN)
+
+    def test_incomplete_input(self):
+        s = io.BytesIO(b"X''.")
+        self.assertRaises((EOFError, struct.error, pickle.UnpicklingError), self.load, s)
 
     def test_bad_init(self):
         # Test issue3664 (pickle can segfault from a badly initialized Pickler).

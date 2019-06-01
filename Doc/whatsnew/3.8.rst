@@ -466,6 +466,9 @@ numbers. (Contributed by Pablo Galindo in :issue:`35606`)
 Added new function :func:`math.isqrt` for computing integer square roots.
 (Contributed by Mark Dickinson in :issue:`36887`.)
 
+The function :func:`math.factorial` no longer accepts arguments that are not
+int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
+
 
 mmap
 ----
@@ -950,8 +953,7 @@ Deprecated
     :meth:`profile.Profile.runcall`, :meth:`cProfile.Profile.runcall`,
     :meth:`bdb.Bdb.runcall`, :meth:`trace.Trace.runfunc` and
     :func:`curses.wrapper`.
-  - *function* in :func:`unittest.addModuleCleanup` and
-    :meth:`unittest.TestCase.addCleanup`.
+  - *function* in :meth:`unittest.TestCase.addCleanup`.
   - *fn* in the :meth:`~concurrent.futures.Executor.submit` method of
     :class:`concurrent.futures.ThreadPoolExecutor` and
     :class:`concurrent.futures.ProcessPoolExecutor`.
@@ -1150,9 +1152,6 @@ Changes in the Python API
   success; an exception was raised on error under Unix.
   (Contributed by Berker Peksag in :issue:`2122`.)
 
-* The function :func:`math.factorial` no longer accepts arguments that are not
-  int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
-
 * :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
@@ -1187,8 +1186,10 @@ Changes in the Python API
 
 * :class:`types.CodeType` has a new parameter in the second position of the
   constructor (*posonlyargcount*) to support positional-only arguments defined
-  in :pep:`570`. A new ``replace()`` method of :class:`types.CodeType` can be
-  used to make the code future-proof.
+  in :pep:`570`. The first argument (*argcount*) now represents the total
+  number of positional arguments (including positional-only arguments). A new
+  ``replace()`` method of :class:`types.CodeType` can be used to make the code
+  future-proof.
 
 
 Changes in the C API
@@ -1286,6 +1287,9 @@ Changes in the C API
   is not checked anymore before reading :c:member:`~PyTypeObject.tp_finalize`).
 
   (Contributed by Antoine Pitrou in :issue:`32388`.)
+
+* The :c:func:`PyCode_New` has a new parameter in the second position (*posonlyargcount*)
+  to support :pep:`570`, indicating the number of positional-only arguments.
 
 
 CPython bytecode changes
