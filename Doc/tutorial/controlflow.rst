@@ -194,13 +194,8 @@ following loop, which searches for prime numbers::
 the :keyword:`for` loop, **not** the :keyword:`if` statement.)
 
 When used with a loop, the ``else`` clause has more in common with the
-<<<<<<< HEAD
-``else`` clause of a :keyword:`try` statement than it does that of
-:keyword:`if` statements: a :keyword:`!try` statement's ``else`` clause runs
-=======
 ``else`` clause of a :keyword:`try` statement than it does with that of
 :keyword:`if` statements: a :keyword:`try` statement's ``else`` clause runs
->>>>>>> bpo-29414: add range to list example.
 when no exception occurs, and a loop's ``else`` clause runs when no ``break``
 occurs. For more on the :keyword:`!try` statement and exceptions, see
 :ref:`tut-handling`.
