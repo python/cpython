@@ -234,7 +234,7 @@ Number-theoretic and representation functions
 
 .. function:: comb(n, k)
 
-   Return the number of ways to choose *k* items from *n( items without repetition
+   Return the number of ways to choose *k* items from *n* items without repetition
    and without order.
 
    Also called the binomial coefficient. It is mathematically equal to the expression
