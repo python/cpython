@@ -440,7 +440,7 @@ ABC hierarchy::
         - :attr:`__package__`
             The module's ``__name__`` attribute for a package, the parent
             package's ``__name__`` attribute for a non-package submodule and
-            the empty string ``''`` for a non-package top-level module.
+            ``''`` for a non-package top-level module.
             The :func:`importlib.util.module_for_loader` decorator can handle
             the details for :attr:`__package__`.
 
@@ -1322,7 +1322,7 @@ find and load modules.
 
    (``__path__``)
 
-   The iterable (possibly empty) of the locations of the module's
+   The (possibly empty) iterable  of the locations of the module's
    submodules.
    It is ``None`` for non-package modules.
 
@@ -1344,7 +1344,7 @@ find and load modules.
 
    The module's ``__name__`` attribute for a package, the parent
    package's ``__name__`` attribute for a non-package submodule and
-   the empty string ``''`` for a non-package top-level module.
+   ``''`` for a non-package top-level module.
    It is a read-only attribute.
 
    .. attribute:: has_location
