@@ -633,46 +633,10 @@ math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     start = args[1];
 skip_optional_kwonly:
     return_value = math_prod_impl(module, iterable, start);
-=======
-PyDoc_STRVAR(math_comb__doc__,
-"comb($module, n, k, /)\n"
-"--\n"
-"\n"
-"Return the binomial coefficient indexed by the pair of integers n >= k >= 0.\n"
-"\n"
-"It is the coefficient of kth term in polynomial expansion of the expression\n"
-"(1 + x)^n. It is also known as the number of ways to choose an unordered\n"
-"subset of k elements from a fixed set of n elements, usually called\n"
-"*n choose k*.\n"
-"\n"
-"Raises a TypeError if argument(s) are non-integer and ValueError\n"
-"if argument(s) are negative or k > n.");
-
-#define MATH_COMB_METHODDEF    \
-    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL, math_comb__doc__},
-
-static PyObject *
-math_comb_impl(PyObject *module, PyObject *n, PyObject *k);
-
-static PyObject *
-math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *n;
-    PyObject *k;
-
-    if (!_PyArg_CheckPositional("comb", nargs, 2, 2)) {
-        goto exit;
-    }
-    n = args[0];
-    k = args[1];
-    return_value = math_comb_impl(module, n, k);
 
 exit:
     return return_value;
 }
-
-/*[clinic end generated code: output=66c5583e59c57e47 input=a9049054013a1b77]*/
 
 PyDoc_STRVAR(math_comb__doc__,
 "comb($module, /, n, k)\n"
@@ -698,18 +662,28 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"n", "k", NULL};
-    static _PyArg_Parser _parser = {"O!O!:comb", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "comb", 0};
+    PyObject *argsbuf[2];
     PyObject *n;
     PyObject *k;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &PyLong_Type, &n, &PyLong_Type, &k)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!PyLong_Check(args[0])) {
+        _PyArg_BadArgument("comb", 1, "int", args[0]);
+        goto exit;
+    }
+    n = args[0];
+    if (!PyLong_Check(args[1])) {
+        _PyArg_BadArgument("comb", 2, "int", args[1]);
+        goto exit;
+    }
+    k = args[1];
     return_value = math_comb_impl(module, n, k);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c91fa426b9d913d2 input=a9049054013a1b77]*/
-
+/*[clinic end generated code: output=b48cc0f0594fe74f input=a9049054013a1b77]*/

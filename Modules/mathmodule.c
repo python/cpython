@@ -3017,7 +3017,7 @@ Raises :exc:`ValueError` if the arguments are negative or if k > n.
 
 static PyObject *
 math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=bd2cec8d854f3493 input=8a54daf9f021f2d0]*/
+/*[clinic end generated code: output=bd2cec8d854f3493 input=e761869513577ae9]*/
 {
     PyObject *val = NULL,
         *temp_obj1 = NULL,
