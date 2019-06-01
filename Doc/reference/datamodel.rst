@@ -2394,11 +2394,9 @@ left undefined.
    functions). Presence of this method indicates that the numeric object is
    an integer type.  Must return an integer.
 
-   .. note::
-
-      In order to have a coherent integer type class, when :meth:`__index__` is
-      defined :meth:`__int__` should also be defined, and both should return
-      the same value.
+   If :meth:`__int__`, :meth:`__float__` and :meth:`__complex__` are not
+   defined then corresponding built-in functions :func:`int`, :func:`float`
+   and :func:`complex` fall back to :meth:`__index__`.
 
 
 .. method:: object.__round__(self, [,ndigits])

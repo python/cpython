@@ -1,0 +1,4 @@
+Constructors of :class:`int`, :class:`float` and :class:`complex` will now
+use the :meth:`~object.__index__` special method, if available and the
+corresponding method :meth:`~object.__int__`, :meth:`~object.__float__`
+or :meth:`~object.__complex__` is not available.
