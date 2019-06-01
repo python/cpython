@@ -996,8 +996,7 @@ t_bootstrap(void *boot_raw)
 
     tstate = boot->tstate;
     tstate->thread_id = PyThread_get_thread_ident();
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    _PyThreadState_Init(runtime, tstate);
+    _PyThreadState_Init(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->num_threads++;
     res = PyObject_Call(boot->func, boot->args, boot->keyw);
