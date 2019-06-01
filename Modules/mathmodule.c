@@ -3024,49 +3024,55 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     long long i, factors;
 
     n = PyNumber_Index(n);
-    if (n == NULL)
+    if (n == NULL) {
         return NULL;
+    }
     k = PyNumber_Index(k);
     if (k == NULL) {
         Py_DECREF(n);
         return NULL;
     }
 
-    cmp = PyObject_RichCompareBool(n, k, Py_LT);
-    if (cmp < 0) {
-        goto error;
-    }
-    else if (cmp > 0) {
+    if (Py_SIZE(n) < 0) {
         PyErr_SetString(PyExc_ValueError,
-                        "n must be an integer greater than or equal to k");
+                        "n must be a non-negative integer");
         goto error;
     }
-
-    /* k = min(k, n - k) */
-    temp = PyNumber_Subtract(n, k);
-    if (temp == NULL) {
-        goto error;
-    }
-    cmp = PyObject_RichCompareBool(k, temp, Py_GT);
-    if (cmp > 0) {
-        Py_SETREF(k, temp);
-    }
-    else {
-        Py_DECREF(temp);
-        if (cmp < 0 && PyErr_Occurred()) {
+    if (Py_SIZE(n) <= Py_SIZE(k)) {
+        /* k = min(k, n - k) */
+        temp = PyNumber_Subtract(n, k);
+        if (temp == NULL) {
             goto error;
+        }
+        if (Py_SIZE(temp) < 0) {
+            Py_DECREF(temp);
+            PyErr_SetString(PyExc_ValueError,
+                            "k must be an integer less than or equal to n");
+            goto error;
+        }
+        cmp = PyObject_RichCompareBool(k, temp, Py_GT);
+        if (cmp > 0) {
+            Py_SETREF(k, temp);
+        }
+        else {
+            Py_DECREF(temp);
+            if (cmp < 0 && PyErr_Occurred()) {
+                goto error;
+            }
         }
     }
 
     factors = PyLong_AsLongLongAndOverflow(k, &overflow);
     if (overflow > 0) {
-        PyErr_NoMemory();
+        PyErr_Format(PyExc_OverflowError,
+                     "min(n - k, k) must not exceed %lld",
+                     LLONG_MAX);
         goto error;
     }
     else if (overflow < 0 || factors < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
-                            "k must be a positive integer");
+                            "k must be a non-negative integer");
         }
         goto error;
     }
