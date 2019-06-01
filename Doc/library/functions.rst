@@ -499,7 +499,8 @@ are always available.  They are listed here in alphabetical order.
    :func:`exec` function. The return value is ``None``.
 
    In all cases, if the optional parts are omitted, the code is executed in the
-   current scope.  If only *globals* is provided, it must be a dictionary, which
+   current scope.  If only *globals* is provided, it must be a dictionary
+   (and not a subclass of dictionary), which
    will be used for both the global and the local variables.  If *globals* and
    *locals* are given, they are used for the global and local variables,
    respectively.  If provided, *locals* can be any mapping object.  Remember
