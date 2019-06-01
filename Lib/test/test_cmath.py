@@ -220,12 +220,11 @@ class CMathTests(unittest.TestCase):
             pass
         class NeitherComplexNorFloatOS:
             pass
-        class MyInt(object):
+        class Index:
             def __int__(self): return 2
             def __index__(self): return 2
-        class MyIntOS:
+        class MyInt:
             def __int__(self): return 2
-            def __index__(self): return 2
 
         # other possible combinations of __float__ and __complex__
         # that should work
@@ -255,6 +254,7 @@ class CMathTests(unittest.TestCase):
             self.assertEqual(f(FloatAndComplexOS()), f(cx_arg))
             self.assertEqual(f(JustFloat()), f(flt_arg))
             self.assertEqual(f(JustFloatOS()), f(flt_arg))
+            self.assertEqual(f(Index()), f(int(Index())))
             # TypeError should be raised for classes not providing
             # either __complex__ or __float__, even if they provide
             # __int__ or __index__.  An old-style class
@@ -263,7 +263,6 @@ class CMathTests(unittest.TestCase):
             self.assertRaises(TypeError, f, NeitherComplexNorFloat())
             self.assertRaises(TypeError, f, MyInt())
             self.assertRaises(Exception, f, NeitherComplexNorFloatOS())
-            self.assertRaises(Exception, f, MyIntOS())
             # non-complex return value from __complex__ -> TypeError
             for bad_complex in non_complexes:
                 self.assertRaises(TypeError, f, MyComplex(bad_complex))

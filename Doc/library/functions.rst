@@ -318,6 +318,11 @@ are always available.  They are listed here in alphabetical order.
    :class:`int` and :class:`float`.  If both arguments are omitted, returns
    ``0j``.
 
+   For a general Python object ``x``, ``complex(x)`` delegates to
+   ``x.__complex__()``.  If ``__complex__()`` is not defined then it falls back
+   to :meth:`__float__`.  If ``__float__()`` is not defined then it falls back
+   to :meth:`__index__`.
+
    .. note::
 
       When converting from a string, the string must not contain whitespace
@@ -329,6 +334,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
+
+   .. versionchanged:: 3.8
+      Falls back to :meth:`__index__` if :meth:`__complex__` and
+      :meth:`__float__` are not defined.
 
 
 .. function:: delattr(object, name)
@@ -584,7 +593,8 @@ are always available.  They are listed here in alphabetical order.
    float, an :exc:`OverflowError` will be raised.
 
    For a general Python object ``x``, ``float(x)`` delegates to
-   ``x.__float__()``.
+   ``x.__float__()``.  If ``__float__()`` is not defined then it falls back
+   to :meth:`__index__`.
 
    If no argument is given, ``0.0`` is returned.
 
@@ -608,6 +618,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.7
       *x* is now a positional-only parameter.
+
+   .. versionchanged:: 3.8
+      Falls back to :meth:`__index__` if :meth:`__float__` is not defined.
 
 
 .. index::
@@ -780,7 +793,8 @@ are always available.  They are listed here in alphabetical order.
 
    Return an integer object constructed from a number or string *x*, or return
    ``0`` if no arguments are given.  If *x* defines :meth:`__int__`,
-   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__trunc__`,
+   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__index__`,
+   it returns ``x.__index__()``.  If *x* defines :meth:`__trunc__`,
    it returns ``x.__trunc__()``.
    For floating point numbers, this truncates towards zero.
 
@@ -811,6 +825,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.7
       *x* is now a positional-only parameter.
+
+   .. versionchanged:: 3.8
+      Falls back to :meth:`__index__` if :meth:`__int__` is not defined.
 
 
 .. function:: isinstance(object, classinfo)
