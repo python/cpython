@@ -139,18 +139,24 @@ but in fact it isn't. It is an object which returns the successive items of
 the desired sequence when you iterate over it, but it doesn't really make
 the list, thus saving space.
 
-We say such an object is *iterable*, that is, suitable as a target for
+We say such an object is :term:`iterable`, that is, suitable as a target for
 functions and constructs that expect something from which they can
-obtain successive items until the supply is exhausted. We have seen that
-the :keyword:`for` statement is such an *iterator*. The function :func:`list`
-is another; it creates lists from iterables::
+obtain successive items until the supply is exhausted.  We have seen that
+the :keyword:`for` statement is such a construct, while an example of function
+that takes an iterable is :func:`sum`::
 
+    >>> sum(range(4))  # 0 + 1 + 2 + 3
+    6
 
-   >>> list(range(5))
-   [0, 1, 2, 3, 4]
+Later we will see more functions that return iterables and take iterables as
+arguments.  Lastly, maybe you are curious about how to get a list from a range.
+Here is the solution::
 
-Later we will see more functions that return iterables and take iterables as argument.
+   >>> list(range(4))
+   [0, 1, 2, 3]
 
+In chapter :ref:`tut-structures`, we will discuss in more detail about
+:func:`list`.
 
 .. _tut-break:
 
@@ -161,7 +167,7 @@ The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
 Loop statements may have an :keyword:`!else` clause; it is executed when the loop
-terminates through exhaustion of the list (with :keyword:`for`) or when the
+terminates through exhaustion of the iterable (with :keyword:`for`) or when the
 condition becomes false (with :keyword:`while`), but not when the loop is
 terminated by a :keyword:`break` statement.  This is exemplified by the
 following loop, which searches for prime numbers::
@@ -188,8 +194,8 @@ following loop, which searches for prime numbers::
 the :keyword:`for` loop, **not** the :keyword:`if` statement.)
 
 When used with a loop, the ``else`` clause has more in common with the
-``else`` clause of a :keyword:`try` statement than it does that of
-:keyword:`if` statements: a :keyword:`!try` statement's ``else`` clause runs
+``else`` clause of a :keyword:`try` statement than it does with that of
+:keyword:`if` statements: a :keyword:`try` statement's ``else`` clause runs
 when no exception occurs, and a loop's ``else`` clause runs when no ``break``
 occurs. For more on the :keyword:`!try` statement and exceptions, see
 :ref:`tut-handling`.
