@@ -232,6 +232,21 @@ Number-theoretic and representation functions
    :meth:`x.__trunc__() <object.__trunc__>`.
 
 
+.. function:: comb(n, k)
+
+   Return the number of ways to choose *k* items from *n* items without repetition
+   and without order.
+
+   Also called the binomial coefficient. It is mathematically equal to the expression
+   ``n! / (k! (n - k)!)``. It is equivalent to the coefficient of k-th term in
+   polynomial expansion of the expression ``(1 + x) ** n``.
+
+   Raises :exc:`TypeError` if the arguments not integers.
+   Raises :exc:`ValueError` if the arguments are negative or if k > n.
+
+   .. versionadded:: 3.8
+
+
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
 than their C equivalents: they take a single argument and return a pair of
 values, rather than returning their second return value through an 'output

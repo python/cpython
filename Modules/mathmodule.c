@@ -2998,6 +2998,126 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 }
 
 
+/*[clinic input]
+math.comb
+
+    n: object(subclass_of='&PyLong_Type')
+    k: object(subclass_of='&PyLong_Type')
+
+Number of ways to choose *k* items from *n* items without repetition and without order.
+
+Also called the binomial coefficient. It is mathematically equal to the expression
+n! / (k! * (n - k)!). It is equivalent to the coefficient of k-th term in
+polynomial expansion of the expression (1 + x)**n.
+
+Raises TypeError if the arguments are not integers.
+Raises ValueError if the arguments are negative or if k > n.
+
+[clinic start generated code]*/
+
+static PyObject *
+math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=bd2cec8d854f3493 input=565f340f98efb5b5]*/
+{
+    PyObject *val = NULL,
+        *temp_obj1 = NULL,
+        *temp_obj2 = NULL,
+        *dump_var = NULL;
+    int overflow, cmp;
+    long long i, terms;
+
+    cmp = PyObject_RichCompareBool(n, k, Py_LT);
+    if (cmp < 0) {
+        goto fail_comb;
+    }
+    else if (cmp > 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "n must be an integer greater than or equal to k");
+        goto fail_comb;
+    }
+
+    /* b = min(b, a - b) */
+    dump_var = PyNumber_Subtract(n, k);
+    if (dump_var == NULL) {
+        goto fail_comb;
+    }
+    cmp = PyObject_RichCompareBool(k, dump_var, Py_GT);
+    if (cmp < 0) {
+        goto fail_comb;
+    }
+    else if (cmp > 0) {
+        k = dump_var;
+        dump_var = NULL;
+    }
+    else {
+        Py_DECREF(dump_var);
+        dump_var = NULL;
+    }
+
+    terms = PyLong_AsLongLongAndOverflow(k, &overflow);
+    if (terms < 0 && PyErr_Occurred()) {
+        goto fail_comb;
+    }
+    else if (overflow > 0) {
+        PyErr_Format(PyExc_OverflowError,
+                     "minimum(n - k, k) must not exceed %lld",
+                     LLONG_MAX);
+        goto fail_comb;
+    }
+    else if (overflow < 0 || terms < 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "k must be a positive integer");
+        goto fail_comb;
+    }
+
+    if (terms == 0) {
+        return PyNumber_Long(_PyLong_One);
+    }
+
+    val = PyNumber_Long(n);
+    for (i = 1; i < terms; ++i) {
+        temp_obj1 = PyLong_FromSsize_t(i);
+        if (temp_obj1 == NULL) {
+            goto fail_comb;
+        }
+        temp_obj2 = PyNumber_Subtract(n, temp_obj1);
+        if (temp_obj2 == NULL) {
+            goto fail_comb;
+        }
+        dump_var = val;
+        val = PyNumber_Multiply(val, temp_obj2);
+        if (val == NULL) {
+            goto fail_comb;
+        }
+        Py_DECREF(dump_var);
+        dump_var = NULL;
+        Py_DECREF(temp_obj2);
+        temp_obj2 = PyLong_FromUnsignedLongLong((unsigned long long)(i + 1));
+        if (temp_obj2 == NULL) {
+            goto fail_comb;
+        }
+        dump_var = val;
+        val = PyNumber_FloorDivide(val, temp_obj2);
+        if (val == NULL) {
+            goto fail_comb;
+        }
+        Py_DECREF(dump_var);
+        Py_DECREF(temp_obj1);
+        Py_DECREF(temp_obj2);
+    }
+
+    return val;
+
+fail_comb:
+    Py_XDECREF(val);
+    Py_XDECREF(dump_var);
+    Py_XDECREF(temp_obj1);
+    Py_XDECREF(temp_obj2);
+
+    return NULL;
+}
+
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
@@ -3047,6 +3167,7 @@ static PyMethodDef math_methods[] = {
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
+    MATH_COMB_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
