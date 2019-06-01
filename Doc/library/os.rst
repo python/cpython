@@ -1235,7 +1235,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Append data to the end of the file.
 
-   .. availability:: Linux 4.7 and newer.
+   .. availability:: Linux 4.16 and newer.
 
    .. versionadded:: 3.8
 
