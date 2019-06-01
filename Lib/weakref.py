@@ -99,13 +99,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
     # objects are unwrapped on the way out, and we always wrap on the
     # way in).
 
-    def __init__(*args, **kw):
-        if not args:
-            raise TypeError("descriptor '__init__' of 'WeakValueDictionary' "
-                            "object needs an argument")
-        self, *args = args
-        if len(args) > 1:
-            raise TypeError('expected at most 1 arguments, got %d' % len(args))
+    def __init__(self, other=(), /, **kw):
         def remove(wr, selfref=ref(self), _atomic_removal=_remove_dead_weakref):
             self = selfref()
             if self is not None:
@@ -120,7 +114,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         self._pending_removals = []
         self._iterating = set()
         self.data = d = {}
-        self.update(*args, **kw)
+        self.update(other, **kw)
 
     def _commit_removals(self):
         l = self._pending_removals
@@ -287,24 +281,17 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         else:
             return o
 
-    def update(*args, **kwargs):
-        if not args:
-            raise TypeError("descriptor 'update' of 'WeakValueDictionary' "
-                            "object needs an argument")
-        self, *args = args
-        if len(args) > 1:
-            raise TypeError('expected at most 1 arguments, got %d' % len(args))
-        dict = args[0] if args else None
+    def update(self, other=None, /, **kwargs):
         if self._pending_removals:
             self._commit_removals()
         d = self.data
-        if dict is not None:
-            if not hasattr(dict, "items"):
-                dict = type({})(dict)
-            for key, o in dict.items():
+        if other is not None:
+            if not hasattr(other, "items"):
+                other = dict(other)
+            for key, o in other.items():
                 d[key] = KeyedRef(o, self._remove, key)
-        if len(kwargs):
-            self.update(kwargs)
+        for key, o in kwargs.items():
+            d[key] = KeyedRef(o, self._remove, key)
 
     def valuerefs(self):
         """Return a list of weak references to the values.
@@ -488,7 +475,7 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
     def setdefault(self, key, default=None):
         return self.data.setdefault(ref(key, self._remove),default)
 
-    def update(self, dict=None, **kwargs):
+    def update(self, dict=None, /, **kwargs):
         d = self.data
         if dict is not None:
             if not hasattr(dict, "items"):

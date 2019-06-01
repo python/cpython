@@ -1002,10 +1002,10 @@ PyTypeObject PyBytesIO_Type = {
     sizeof(bytesio),                     /*tp_basicsize*/
     0,                                         /*tp_itemsize*/
     (destructor)bytesio_dealloc,               /*tp_dealloc*/
-    0,                                         /*tp_print*/
+    0,                                         /*tp_vectorcall_offset*/
     0,                                         /*tp_getattr*/
     0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
+    0,                                         /*tp_as_async*/
     0,                                         /*tp_repr*/
     0,                                         /*tp_as_number*/
     0,                                         /*tp_as_sequence*/
@@ -1102,10 +1102,10 @@ PyTypeObject _PyBytesIOBuffer_Type = {
     sizeof(bytesiobuf),                        /*tp_basicsize*/
     0,                                         /*tp_itemsize*/
     (destructor)bytesiobuf_dealloc,            /*tp_dealloc*/
-    0,                                         /*tp_print*/
+    0,                                         /*tp_vectorcall_offset*/
     0,                                         /*tp_getattr*/
     0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
+    0,                                         /*tp_as_async*/
     0,                                         /*tp_repr*/
     0,                                         /*tp_as_number*/
     0,                                         /*tp_as_sequence*/

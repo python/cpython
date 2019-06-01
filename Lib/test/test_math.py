@@ -1862,6 +1862,57 @@ class IsCloseTests(unittest.TestCase):
         self.assertAllClose(fraction_examples, rel_tol=1e-8)
         self.assertAllNotClose(fraction_examples, rel_tol=1e-9)
 
+    def testComb(self):
+        comb = math.comb
+        factorial = math.factorial
+        # Test if factorial defintion is satisfied
+        for n in range(100):
+            for k in range(n + 1):
+                self.assertEqual(comb(n, k), factorial(n)
+                    // (factorial(k) * factorial(n - k)))
+
+        # Test for Pascal's identity
+        for n in range(1, 100):
+            for k in range(1, n):
+                self.assertEqual(comb(n, k), comb(n - 1, k - 1) + comb(n - 1, k))
+
+        # Test corner cases
+        for n in range(100):
+            self.assertEqual(comb(n, 0), 1)
+            self.assertEqual(comb(n, n), 1)
+
+        for n in range(1, 100):
+            self.assertEqual(comb(n, 1), n)
+            self.assertEqual(comb(n, n - 1), n)
+
+        # Test Symmetry
+        for n in range(100):
+            for k in range(n // 2):
+                self.assertEqual(comb(n, k), comb(n, n - k))
+
+        # Raises TypeError if any argument is non-integer or argument count is
+        # not 2
+        self.assertRaises(TypeError, comb, 10, 1.0)
+        self.assertRaises(TypeError, comb, 10, "1")
+        self.assertRaises(TypeError, comb, "10", 1)
+        self.assertRaises(TypeError, comb, 10.0, 1)
+
+        self.assertRaises(TypeError, comb, 10)
+        self.assertRaises(TypeError, comb, 10, 1, 3)
+        self.assertRaises(TypeError, comb)
+
+        # Raises Value error if not k or n are negative numbers
+        self.assertRaises(ValueError, comb, -1, 1)
+        self.assertRaises(ValueError, comb, -10*10, 1)
+        self.assertRaises(ValueError, comb, 1, -1)
+        self.assertRaises(ValueError, comb, 1, -10*10)
+
+        # Raises value error if k is greater than n
+        self.assertRaises(ValueError, comb, 1, 10**10)
+        self.assertRaises(ValueError, comb, 0, 1)
+
+
+
 
 def test_main():
     from doctest import DocFileSuite

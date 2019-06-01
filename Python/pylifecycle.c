@@ -545,7 +545,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     _PyEval_FiniThreads(&runtime->ceval);
 
     /* Auto-thread-state API */
-    _PyGILState_Init(runtime, interp, tstate);
+    _PyGILState_Init(tstate);
 
     /* Create the GIL */
     PyEval_InitThreads();
@@ -683,7 +683,7 @@ pyinit_config(_PyRuntimeState *runtime,
     }
 
     PyObject *sysmod;
-    status = _PySys_Create(runtime, interp, &sysmod);
+    status = _PySys_Create(interp, &sysmod);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -892,8 +892,9 @@ _Py_ReconfigureMainInterpreter(PyInterpreterState *interp)
  * non-zero return code.
  */
 static PyStatus
-pyinit_main(_PyRuntimeState *runtime, PyInterpreterState *interp)
+pyinit_main(PyInterpreterState *interp)
 {
+    _PyRuntimeState *runtime = interp->runtime;
     if (!runtime->core_initialized) {
         return _PyStatus_ERR("runtime core not initialized");
     }
@@ -919,7 +920,7 @@ pyinit_main(_PyRuntimeState *runtime, PyInterpreterState *interp)
         return _PyStatus_ERR("can't initialize time");
     }
 
-    if (_PySys_InitMain(runtime, interp) < 0) {
+    if (_PySys_InitMain(interp) < 0) {
         return _PyStatus_ERR("can't finish initializing sys");
     }
 
@@ -999,7 +1000,7 @@ _Py_InitializeMain(void)
     _PyRuntimeState *runtime = &_PyRuntime;
     PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
 
-    return pyinit_main(runtime, interp);
+    return pyinit_main(interp);
 }
 
 
@@ -1026,7 +1027,7 @@ Py_InitializeFromConfig(const PyConfig *config)
     config = &interp->config;
 
     if (config->_init_main) {
-        status = pyinit_main(runtime, interp);
+        status = pyinit_main(interp);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -1453,7 +1454,7 @@ new_interpreter(PyThreadState **tstate_p)
         }
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        if (_PySys_InitMain(runtime, interp) < 0) {
+        if (_PySys_InitMain(interp) < 0) {
             return _PyStatus_ERR("can't finish initializing sys");
         }
     }

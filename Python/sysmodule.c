@@ -120,8 +120,9 @@ should_audit(void)
     if (!ts) {
         return 0;
     }
-    PyInterpreterState *is = ts ? ts->interp : NULL;
-    return _PyRuntime.audit_hook_head
+    PyInterpreterState *is = ts->interp;
+    _PyRuntimeState *runtime = is->runtime;
+    return runtime->audit_hook_head
         || (is && is->audit_hooks)
         || PyDTrace_AUDIT_ENABLED();
 }
@@ -280,8 +281,8 @@ void _PySys_ClearAuditHooks(void) {
     PySys_Audit("cpython._PySys_ClearAuditHooks", NULL);
     PyErr_Clear();
 
-    _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head, *n;
-    _PyRuntime.audit_hook_head = NULL;
+    _Py_AuditHookEntry *e = runtime->audit_hook_head, *n;
+    runtime->audit_hook_head = NULL;
     while (e) {
         n = e->next;
         PyMem_RawFree(e);
@@ -292,6 +293,7 @@ void _PySys_ClearAuditHooks(void) {
 int
 PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
 {
+    _PyRuntimeState *runtime = &_PyRuntime;
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
     /* Cannot invoke hooks until we are initialized */
     if (Py_IsInitialized()) {
@@ -305,10 +307,10 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
         }
     }
 
-    _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head;
+    _Py_AuditHookEntry *e = runtime->audit_hook_head;
     if (!e) {
         e = (_Py_AuditHookEntry*)PyMem_RawMalloc(sizeof(_Py_AuditHookEntry));
-        _PyRuntime.audit_hook_head = e;
+        runtime->audit_hook_head = e;
     } else {
         while (e->next)
             e = e->next;
@@ -2413,8 +2415,9 @@ static PyStructSequence_Desc flags_desc = {
 };
 
 static PyObject*
-make_flags(_PyRuntimeState *runtime, PyInterpreterState *interp)
+make_flags(PyInterpreterState *interp)
 {
+    _PyRuntimeState *runtime = interp->runtime;
     int pos = 0;
     PyObject *seq;
     const PyPreConfig *preconfig = &runtime->preconfig;
@@ -2633,8 +2636,7 @@ static struct PyModuleDef sysmodule = {
     } while (0)
 
 static PyStatus
-_PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
-                PyObject *sysdict)
+_PySys_InitCore(PyInterpreterState *interp, PyObject *sysdict)
 {
     PyObject *version_info;
     int res;
@@ -2728,7 +2730,7 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
         }
     }
     /* Set flags to their default values (updated by _PySys_InitMain()) */
-    SET_SYS_FROM_STRING("flags", make_flags(runtime, interp));
+    SET_SYS_FROM_STRING("flags", make_flags(interp));
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
@@ -2849,7 +2851,7 @@ sys_create_xoptions_dict(const PyConfig *config)
 
 
 int
-_PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
+_PySys_InitMain(PyInterpreterState *interp)
 {
     PyObject *sysdict = interp->sysdict;
     const PyConfig *config = &interp->config;
@@ -2903,7 +2905,7 @@ _PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
 #undef SET_SYS_FROM_WSTR
 
     /* Set flags to their final values */
-    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(runtime, interp));
+    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(interp));
     /* prevent user from creating new instances */
     FlagsType.tp_init = NULL;
     FlagsType.tp_new = NULL;
@@ -2970,8 +2972,7 @@ error:
 /* Create sys module without all attributes: _PySys_InitMain() should be called
    later to add remaining attributes. */
 PyStatus
-_PySys_Create(_PyRuntimeState *runtime, PyInterpreterState *interp,
-              PyObject **sysmod_p)
+_PySys_Create(PyInterpreterState *interp, PyObject **sysmod_p)
 {
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
@@ -3000,7 +3001,7 @@ _PySys_Create(_PyRuntimeState *runtime, PyInterpreterState *interp,
         return status;
     }
 
-    status = _PySys_InitCore(runtime, interp, sysdict);
+    status = _PySys_InitCore(interp, sysdict);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
