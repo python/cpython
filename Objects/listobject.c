@@ -2197,12 +2197,20 @@ list.sort
     key as keyfunc: object = None
     reverse: bool(accept={int}) = False
 
-Stable sort *IN PLACE*.
+Sort the list in ascending order and return None.
+
+The sort is in-place (i.e. the list itself is modified) and stable (i.e. the
+order of two equal elements is maintained).
+
+If a key function is given, apply it once to each list item and sort them,
+ascending or descending, according to their function values.
+
+The reverse flag can be set to sort in descending order.
 [clinic start generated code]*/
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
-/*[clinic end generated code: output=57b9f9c5e23fbe42 input=b0fcf743982c5b90]*/
+/*[clinic end generated code: output=57b9f9c5e23fbe42 input=cb56cd179a713060]*/
 {
     MergeState ms;
     Py_ssize_t nremaining;
