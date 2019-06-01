@@ -221,7 +221,7 @@ The :mod:`functools` module defines the following functions:
       Returning NotImplemented from the underlying comparison function for
       unrecognised types is now supported.
 
-.. function:: partial(func, *args, **keywords)
+.. function:: partial(func, /, *args, **keywords)
 
    Return a new :ref:`partial object<partial-objects>` which when called
    will behave like *func* called with the positional arguments *args*
@@ -230,7 +230,7 @@ The :mod:`functools` module defines the following functions:
    supplied, they extend and override *keywords*.
    Roughly equivalent to::
 
-      def partial(func, *args, **keywords):
+      def partial(func, /, *args, **keywords):
           def newfunc(*fargs, **fkeywords):
               newkeywords = {**keywords, **fkeywords}
               return func(*args, *fargs, **newkeywords)

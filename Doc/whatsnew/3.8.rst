@@ -941,8 +941,7 @@ Deprecated
     :meth:`profile.Profile.runcall`, :meth:`cProfile.Profile.runcall`,
     :meth:`bdb.Bdb.runcall`, :meth:`trace.Trace.runfunc` and
     :func:`curses.wrapper`.
-  - *function* in :func:`unittest.addModuleCleanup` and
-    :meth:`unittest.TestCase.addCleanup`.
+  - *function* in :meth:`unittest.TestCase.addCleanup`.
   - *fn* in the :meth:`~concurrent.futures.Executor.submit` method of
     :class:`concurrent.futures.ThreadPoolExecutor` and
     :class:`concurrent.futures.ProcessPoolExecutor`.
@@ -1277,6 +1276,9 @@ Changes in the C API
   is not checked anymore before reading :c:member:`~PyTypeObject.tp_finalize`).
 
   (Contributed by Antoine Pitrou in :issue:`32388`.)
+
+* The :c:func:`PyCode_New` has a new parameter in the second position (*posonlyargcount*)
+  to support :pep:`570`, indicating the number of positional-only arguments.
 
 
 CPython bytecode changes

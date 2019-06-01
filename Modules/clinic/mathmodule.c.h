@@ -637,4 +637,53 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=aeed62f403b90199 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(math_comb__doc__,
+"comb($module, /, n, k)\n"
+"--\n"
+"\n"
+"Number of ways to choose *k* items from *n* items without repetition and without order.\n"
+"\n"
+"Also called the binomial coefficient. It is mathematically equal to the expression\n"
+"n! / (k! * (n - k)!). It is equivalent to the coefficient of k-th term in\n"
+"polynomial expansion of the expression (1 + x)**n.\n"
+"\n"
+"Raises TypeError if the arguments are not integers.\n"
+"Raises ValueError if the arguments are negative or if k > n.");
+
+#define MATH_COMB_METHODDEF    \
+    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL|METH_KEYWORDS, math_comb__doc__},
+
+static PyObject *
+math_comb_impl(PyObject *module, PyObject *n, PyObject *k);
+
+static PyObject *
+math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"n", "k", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "comb", 0};
+    PyObject *argsbuf[2];
+    PyObject *n;
+    PyObject *k;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyLong_Check(args[0])) {
+        _PyArg_BadArgument("comb", 1, "int", args[0]);
+        goto exit;
+    }
+    n = args[0];
+    if (!PyLong_Check(args[1])) {
+        _PyArg_BadArgument("comb", 2, "int", args[1]);
+        goto exit;
+    }
+    k = args[1];
+    return_value = math_comb_impl(module, n, k);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=00aa76356759617a input=a9049054013a1b77]*/

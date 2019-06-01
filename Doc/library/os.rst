@@ -707,6 +707,28 @@ as internal buffering of data.
               pass
 
 
+.. function:: copy_file_range(src, dst, count, offset_src=None, offset_dst=None)
+
+   Copy *count* bytes from file descriptor *src*, starting from offset
+   *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
+   If *offset_src* is None, then *src* is read from the current position;
+   respectively for *offset_dst*. The files pointed by *src* and *dst*
+   must reside in the same filesystem, otherwise an :exc:`OSError` is
+   raised with :attr:`~OSError.errno` set to :data:`errno.EXDEV`.
+
+   This copy is done without the additional cost of transferring data
+   from the kernel to user space and then back into the kernel. Additionally,
+   some filesystems could implement extra optimizations. The copy is done as if
+   both files are opened as binary.
+
+   The return value is the amount of bytes copied. This could be less than the
+   amount requested.
+
+   .. availability:: Linux kernel >= 4.5 or glibc >= 2.27.
+
+   .. versionadded:: 3.8
+
+
 .. function:: device_encoding(fd)
 
    Return a string describing the encoding of the device associated with *fd*

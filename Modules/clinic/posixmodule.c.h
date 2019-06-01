@@ -5395,6 +5395,108 @@ exit:
 
 #endif /* (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)) */
 
+#if defined(HAVE_COPY_FILE_RANGE)
+
+PyDoc_STRVAR(os_copy_file_range__doc__,
+"copy_file_range($module, /, src, dst, count, offset_src=None,\n"
+"                offset_dst=None)\n"
+"--\n"
+"\n"
+"Copy count bytes from one file descriptor to another.\n"
+"\n"
+"  src\n"
+"    Source file descriptor.\n"
+"  dst\n"
+"    Destination file descriptor.\n"
+"  count\n"
+"    Number of bytes to copy.\n"
+"  offset_src\n"
+"    Starting offset in src.\n"
+"  offset_dst\n"
+"    Starting offset in dst.\n"
+"\n"
+"If offset_src is None, then src is read from the current position;\n"
+"respectively for offset_dst.");
+
+#define OS_COPY_FILE_RANGE_METHODDEF    \
+    {"copy_file_range", (PyCFunction)(void(*)(void))os_copy_file_range, METH_FASTCALL|METH_KEYWORDS, os_copy_file_range__doc__},
+
+static PyObject *
+os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
+                        PyObject *offset_src, PyObject *offset_dst);
+
+static PyObject *
+os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"src", "dst", "count", "offset_src", "offset_dst", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "copy_file_range", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
+    int src;
+    int dst;
+    Py_ssize_t count;
+    PyObject *offset_src = Py_None;
+    PyObject *offset_dst = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 5, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    src = _PyLong_AsInt(args[0]);
+    if (src == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    dst = _PyLong_AsInt(args[1]);
+    if (dst == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[3]) {
+        offset_src = args[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    offset_dst = args[4];
+skip_optional_pos:
+    return_value = os_copy_file_range_impl(module, src, dst, count, offset_src, offset_dst);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_COPY_FILE_RANGE) */
+
 #if defined(HAVE_MKFIFO)
 
 PyDoc_STRVAR(os_mkfifo__doc__,
@@ -8460,6 +8562,10 @@ exit:
     #define OS_PWRITEV_METHODDEF
 #endif /* !defined(OS_PWRITEV_METHODDEF) */
 
+#ifndef OS_COPY_FILE_RANGE_METHODDEF
+    #define OS_COPY_FILE_RANGE_METHODDEF
+#endif /* !defined(OS_COPY_FILE_RANGE_METHODDEF) */
+
 #ifndef OS_MKFIFO_METHODDEF
     #define OS_MKFIFO_METHODDEF
 #endif /* !defined(OS_MKFIFO_METHODDEF) */
@@ -8635,4 +8741,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=855b81aafd05beed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b3ae8afd275ea5cd input=a9049054013a1b77]*/
