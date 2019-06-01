@@ -1739,6 +1739,20 @@ class OtherTests(unittest.TestCase):
                 fp.seek(0, os.SEEK_SET)
                 self.assertEqual(fp.tell(), 0)
 
+    def test_malformatted_zip64_extra_field(self):
+        zipdata = (
+            b'PK\x03\x04\xfb\x03PK\x01\x02\x1e\xfb\x13\x00\x00\x00\xd3'
+            b'\x00\x978\xa2NwS\x17\x88\xfa\x00\x00\x00\xff\xff\xff\xff'
+            b'\x12\x00\x18\x00\x00\x00\x00\x00\x01\x00\x00\x00\xb4\x81'
+            b'\x00\x00\x00\x00zipfile_extract/\x00\x00'
+            # Start of the extra field.
+            b'\x01\x00\x00\x00//(///\xff\x00\x00\x00//////\xe8\x03\x00 '
+            b'PK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00X\x00\x00\x00F'
+            b'\x01\x00\xee\xff\x01'
+        )
+        with self.assertRaises(zipfile.BadZipFile):
+            zipfile.ZipFile(io.BytesIO(zipdata))
+
     def tearDown(self):
         unlink(TESTFN)
         unlink(TESTFN2)

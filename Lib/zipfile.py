@@ -463,6 +463,7 @@ class ZipInfo (object):
             tp, ln = unpack('<HH', extra[:4])
             if ln+4 > len(extra):
                 raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
+            # Zip64 extended information extra field
             if tp == 0x0001:
                 if ln >= 24:
                     counts = unpack('<QQQ', extra[4:28])
@@ -470,8 +471,6 @@ class ZipInfo (object):
                     counts = unpack('<QQ', extra[4:20])
                 elif ln == 8:
                     counts = unpack('<Q', extra[4:12])
-                elif ln == 0:
-                    counts = ()
                 else:
                     raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
 

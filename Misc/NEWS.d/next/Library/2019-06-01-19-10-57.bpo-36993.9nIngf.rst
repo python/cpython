@@ -1,0 +1,2 @@
+Improve error detection of malformed extra field in
+:class:`zipfile.ZipFile`.
