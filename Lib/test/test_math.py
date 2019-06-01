@@ -1893,9 +1893,11 @@ class IsCloseTests(unittest.TestCase):
         # Raises TypeError if any argument is non-integer or argument count is
         # not 2
         self.assertRaises(TypeError, comb, 10, 1.0)
+        self.assertRaises(TypeError, comb, 10, decimal.Decimal(1.0))
         self.assertRaises(TypeError, comb, 10, "1")
-        self.assertRaises(TypeError, comb, "10", 1)
         self.assertRaises(TypeError, comb, 10.0, 1)
+        self.assertRaises(TypeError, comb, decimal.Decimal(10.0), 1)
+        self.assertRaises(TypeError, comb, "10", 1)
 
         self.assertRaises(TypeError, comb, 10)
         self.assertRaises(TypeError, comb, 10, 1, 3)
@@ -1903,15 +1905,28 @@ class IsCloseTests(unittest.TestCase):
 
         # Raises Value error if not k or n are negative numbers
         self.assertRaises(ValueError, comb, -1, 1)
-        self.assertRaises(ValueError, comb, -10*10, 1)
+        self.assertRaises(ValueError, comb, -2**1000, 1)
         self.assertRaises(ValueError, comb, 1, -1)
-        self.assertRaises(ValueError, comb, 1, -10*10)
+        self.assertRaises(ValueError, comb, 1, -2**1000)
 
         # Raises value error if k is greater than n
-        self.assertRaises(ValueError, comb, 1, 10**10)
-        self.assertRaises(ValueError, comb, 0, 1)
+        self.assertRaises(ValueError, comb, 1, 2)
+        self.assertRaises(ValueError, comb, 1, 2**1000)
 
+        n = 2**1000
+        self.assertEqual(comb(n, 0), 1)
+        self.assertEqual(comb(n, 1), n)
+        self.assertEqual(comb(n, 2), n * (n-1) // 2)
+        self.assertEqual(comb(n, n), 1)
+        self.assertEqual(comb(n, n-1), n)
+        self.assertEqual(comb(n, n-2), n * (n-1) // 2)
+        self.assertRaises((OverflowError, MemoryError), comb, n, n//2)
 
+        for n, k in (True, True), (True, False), (False, False):
+            self.assertEqual(comb(n, k), 1)
+            self.assertIs(type(comb(n, k)), int)
+        self.assertEqual(comb(MyIndexable(5), MyIndexable(2)), 10)
+        self.assertIs(type(comb(MyIndexable(5), MyIndexable(2))), int)
 
 
 def test_main():

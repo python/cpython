@@ -238,11 +238,11 @@ Number-theoretic and representation functions
    and without order.
 
    Also called the binomial coefficient. It is mathematically equal to the expression
-   ``n! / (k! (n - k)!)``. It is equivalent to the coefficient of k-th term in
+   ``n! / (k! (n - k)!)``. It is equivalent to the coefficient of the *k*-th term in the
    polynomial expansion of the expression ``(1 + x) ** n``.
 
    Raises :exc:`TypeError` if the arguments not integers.
-   Raises :exc:`ValueError` if the arguments are negative or if k > n.
+   Raises :exc:`ValueError` if the arguments are negative or if *k* > *n*.
 
    .. versionadded:: 3.8
 
