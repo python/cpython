@@ -912,6 +912,58 @@ class MathTests(unittest.TestCase):
             self.assertEqual(math.dist(p, q), 5*scale)
             self.assertEqual(math.dist(q, p), 5*scale)
 
+    def testIsqrt(self):
+        # Test a variety of inputs, large and small.
+        test_values = (
+            list(range(1000))
+            + list(range(10**6 - 1000, 10**6 + 1000))
+            + [2**e + i for e in range(60, 200) for i in range(-40, 40)]
+            + [3**9999, 10**5001]
+        )
+
+        for value in test_values:
+            with self.subTest(value=value):
+                s = math.isqrt(value)
+                self.assertIs(type(s), int)
+                self.assertLessEqual(s*s, value)
+                self.assertLess(value, (s+1)*(s+1))
+
+        # Negative values
+        with self.assertRaises(ValueError):
+            math.isqrt(-1)
+
+        # Integer-like things
+        s = math.isqrt(True)
+        self.assertIs(type(s), int)
+        self.assertEqual(s, 1)
+
+        s = math.isqrt(False)
+        self.assertIs(type(s), int)
+        self.assertEqual(s, 0)
+
+        class IntegerLike(object):
+            def __init__(self, value):
+                self.value = value
+
+            def __index__(self):
+                return self.value
+
+        s = math.isqrt(IntegerLike(1729))
+        self.assertIs(type(s), int)
+        self.assertEqual(s, 41)
+
+        with self.assertRaises(ValueError):
+            math.isqrt(IntegerLike(-3))
+
+        # Non-integer-like things
+        bad_values = [
+            3.5, "a string", decimal.Decimal("3.5"), 3.5j,
+            100.0, -4.0,
+        ]
+        for value in bad_values:
+            with self.subTest(value=value):
+                with self.assertRaises(TypeError):
+                    math.isqrt(value)
 
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
@@ -1809,6 +1861,72 @@ class IsCloseTests(unittest.TestCase):
             (Fraction(10**8 + 1, 10**28), Fraction(1, 10**20))]
         self.assertAllClose(fraction_examples, rel_tol=1e-8)
         self.assertAllNotClose(fraction_examples, rel_tol=1e-9)
+
+    def testComb(self):
+        comb = math.comb
+        factorial = math.factorial
+        # Test if factorial defintion is satisfied
+        for n in range(100):
+            for k in range(n + 1):
+                self.assertEqual(comb(n, k), factorial(n)
+                    // (factorial(k) * factorial(n - k)))
+
+        # Test for Pascal's identity
+        for n in range(1, 100):
+            for k in range(1, n):
+                self.assertEqual(comb(n, k), comb(n - 1, k - 1) + comb(n - 1, k))
+
+        # Test corner cases
+        for n in range(100):
+            self.assertEqual(comb(n, 0), 1)
+            self.assertEqual(comb(n, n), 1)
+
+        for n in range(1, 100):
+            self.assertEqual(comb(n, 1), n)
+            self.assertEqual(comb(n, n - 1), n)
+
+        # Test Symmetry
+        for n in range(100):
+            for k in range(n // 2):
+                self.assertEqual(comb(n, k), comb(n, n - k))
+
+        # Raises TypeError if any argument is non-integer or argument count is
+        # not 2
+        self.assertRaises(TypeError, comb, 10, 1.0)
+        self.assertRaises(TypeError, comb, 10, decimal.Decimal(1.0))
+        self.assertRaises(TypeError, comb, 10, "1")
+        self.assertRaises(TypeError, comb, 10.0, 1)
+        self.assertRaises(TypeError, comb, decimal.Decimal(10.0), 1)
+        self.assertRaises(TypeError, comb, "10", 1)
+
+        self.assertRaises(TypeError, comb, 10)
+        self.assertRaises(TypeError, comb, 10, 1, 3)
+        self.assertRaises(TypeError, comb)
+
+        # Raises Value error if not k or n are negative numbers
+        self.assertRaises(ValueError, comb, -1, 1)
+        self.assertRaises(ValueError, comb, -2**1000, 1)
+        self.assertRaises(ValueError, comb, 1, -1)
+        self.assertRaises(ValueError, comb, 1, -2**1000)
+
+        # Raises value error if k is greater than n
+        self.assertRaises(ValueError, comb, 1, 2)
+        self.assertRaises(ValueError, comb, 1, 2**1000)
+
+        n = 2**1000
+        self.assertEqual(comb(n, 0), 1)
+        self.assertEqual(comb(n, 1), n)
+        self.assertEqual(comb(n, 2), n * (n-1) // 2)
+        self.assertEqual(comb(n, n), 1)
+        self.assertEqual(comb(n, n-1), n)
+        self.assertEqual(comb(n, n-2), n * (n-1) // 2)
+        self.assertRaises((OverflowError, MemoryError), comb, n, n//2)
+
+        for n, k in (True, True), (True, False), (False, False):
+            self.assertEqual(comb(n, k), 1)
+            self.assertIs(type(comb(n, k)), int)
+        self.assertEqual(comb(MyIndexable(5), MyIndexable(2)), 10)
+        self.assertIs(type(comb(MyIndexable(5), MyIndexable(2))), int)
 
 
 def test_main():

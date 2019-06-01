@@ -330,7 +330,6 @@ struct _expr {
             expr_ty value;
             int conversion;
             expr_ty format_spec;
-            string expr_text;
         } FormattedValue;
 
         struct {
@@ -467,6 +466,7 @@ struct _type_ignore {
     union {
         struct {
             int lineno;
+            string tag;
         } TypeIgnore;
 
     } v;
@@ -638,10 +638,10 @@ expr_ty _Py_Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators,
 expr_ty _Py_Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int
                  lineno, int col_offset, int end_lineno, int end_col_offset,
                  PyArena *arena);
-#define FormattedValue(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_FormattedValue(a0, a1, a2, a3, a4, a5, a6, a7, a8)
+#define FormattedValue(a0, a1, a2, a3, a4, a5, a6, a7) _Py_FormattedValue(a0, a1, a2, a3, a4, a5, a6, a7)
 expr_ty _Py_FormattedValue(expr_ty value, int conversion, expr_ty format_spec,
-                           string expr_text, int lineno, int col_offset, int
-                           end_lineno, int end_col_offset, PyArena *arena);
+                           int lineno, int col_offset, int end_lineno, int
+                           end_col_offset, PyArena *arena);
 #define JoinedStr(a0, a1, a2, a3, a4, a5) _Py_JoinedStr(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_JoinedStr(asdl_seq * values, int lineno, int col_offset, int
                       end_lineno, int end_col_offset, PyArena *arena);
@@ -702,8 +702,8 @@ alias_ty _Py_alias(identifier name, identifier asname, PyArena *arena);
 #define withitem(a0, a1, a2) _Py_withitem(a0, a1, a2)
 withitem_ty _Py_withitem(expr_ty context_expr, expr_ty optional_vars, PyArena
                          *arena);
-#define TypeIgnore(a0, a1) _Py_TypeIgnore(a0, a1)
-type_ignore_ty _Py_TypeIgnore(int lineno, PyArena *arena);
+#define TypeIgnore(a0, a1, a2) _Py_TypeIgnore(a0, a1, a2)
+type_ignore_ty _Py_TypeIgnore(int lineno, string tag, PyArena *arena);
 
 PyObject* PyAST_mod2obj(mod_ty t);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);

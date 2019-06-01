@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _os:
 
@@ -287,6 +287,56 @@ accessible to C code.  They all work with the current interpreter thread's
    set.
 
    .. versionadded:: 3.2
+
+
+.. c:function:: int PySys_Audit(const char *event, const char *format, ...)
+
+   .. index:: single: audit events
+
+   Raises an auditing event with any active hooks. Returns zero for success
+   and non-zero with an exception set on failure.
+
+   If any hooks have been added, *format* and other arguments will be used
+   to construct a tuple to pass. Apart from ``N``, the same format characters
+   as used in :c:func:`Py_BuildValue` are available. If the built value is not
+   a tuple, it will be added into a single-element tuple. (The ``N`` format
+   option consumes a reference, but since there is no way to know whether
+   arguments to this function will be consumed, using it may cause reference
+   leaks.)
+
+   :func:`sys.audit` performs the same function from Python code.
+
+   .. versionadded:: 3.8
+
+
+.. c:function:: int PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
+
+   .. index:: single: audit events
+
+   Adds to the collection of active auditing hooks. Returns zero for success
+   and non-zero on failure. If the runtime has been initialized, also sets an
+   error on failure. Hooks added through this API are called for all
+   interpreters created by the runtime.
+
+   This function is safe to call before :c:func:`Py_Initialize`. When called
+   after runtime initialization, existing audit hooks are notified and may
+   silently abort the operation by raising an error subclassed from
+   :class:`Exception` (other errors will not be silenced).
+
+   The hook function is of type :c:type:`int (*)(const char *event, PyObject
+   *args, void *userData)`, where *args* is guaranteed to be a
+   :c:type:`PyTupleObject`. The hook function is always called with the GIL
+   held by the Python interpreter that raised the event.
+
+   The *userData* pointer is passed into the hook function. Since hook
+   functions may be called from different runtimes, this pointer should not
+   refer directly to Python state.
+
+   See :pep:`578` for a detailed description of auditing. Functions in the
+   runtime and standard library that raise events include the details in each
+   function's documentation.
+
+   .. versionadded:: 3.8
 
 
 .. _processcontrol:

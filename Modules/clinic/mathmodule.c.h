@@ -65,6 +65,15 @@ PyDoc_STRVAR(math_fsum__doc__,
 #define MATH_FSUM_METHODDEF    \
     {"fsum", (PyCFunction)math_fsum, METH_O, math_fsum__doc__},
 
+PyDoc_STRVAR(math_isqrt__doc__,
+"isqrt($module, n, /)\n"
+"--\n"
+"\n"
+"Return the integer part of the square root of the input.");
+
+#define MATH_ISQRT_METHODDEF    \
+    {"isqrt", (PyCFunction)math_isqrt, METH_O, math_isqrt__doc__},
+
 PyDoc_STRVAR(math_factorial__doc__,
 "factorial($module, x, /)\n"
 "--\n"
@@ -628,4 +637,41 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96e71135dce41c48 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(math_comb__doc__,
+"comb($module, n, k, /)\n"
+"--\n"
+"\n"
+"Number of ways to choose k items from n items without repetition and without order.\n"
+"\n"
+"Also called the binomial coefficient. It is mathematically equal to the expression\n"
+"n! / (k! * (n - k)!). It is equivalent to the coefficient of k-th term in\n"
+"polynomial expansion of the expression (1 + x)**n.\n"
+"\n"
+"Raises TypeError if the arguments are not integers.\n"
+"Raises ValueError if the arguments are negative or if k > n.");
+
+#define MATH_COMB_METHODDEF    \
+    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL, math_comb__doc__},
+
+static PyObject *
+math_comb_impl(PyObject *module, PyObject *n, PyObject *k);
+
+static PyObject *
+math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *n;
+    PyObject *k;
+
+    if (!_PyArg_CheckPositional("comb", nargs, 2, 2)) {
+        goto exit;
+    }
+    n = args[0];
+    k = args[1];
+    return_value = math_comb_impl(module, n, k);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=6709521e5e1d90ec input=a9049054013a1b77]*/

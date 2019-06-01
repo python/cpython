@@ -102,7 +102,7 @@ to start a process.  These *start methods* are
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
 
-    Available on Unix and Windows.  The default on Windows.
+    Available on Unix and Windows.  The default on Windows and macOS.
 
   *fork*
     The parent process uses :func:`os.fork` to fork the Python
@@ -123,6 +123,11 @@ to start a process.  These *start methods* are
 
     Available on Unix platforms which support passing file descriptors
     over Unix pipes.
+
+.. versionchanged:: 3.8
+
+   On macOS, *spawn* start method is now the default: *fork* start method is no
+   longer reliable on macOS, see :issue:`33725`.
 
 .. versionchanged:: 3.4
    *spawn* added on all unix platforms, and *forkserver* added for
@@ -943,6 +948,14 @@ Miscellaneous
    Return the :class:`Process` object corresponding to the current process.
 
    An analogue of :func:`threading.current_thread`.
+
+.. function:: parent_process()
+
+   Return the :class:`Process` object corresponding to the parent process of
+   the :func:`current_process`. For the main process, ``parent_process`` will
+   be ``None``.
+
+   .. versionadded:: 3.8
 
 .. function:: freeze_support()
 
