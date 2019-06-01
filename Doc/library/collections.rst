@@ -1140,7 +1140,7 @@ variants of :func:`functools.lru_cache`::
     class LRU(OrderedDict):
         'Limit size, evicting the least recently looked-up key when full'
 
-        def __init__(self, maxsize=128, *args, **kwds):
+        def __init__(self, maxsize=128, /, *args, **kwds):
             self.maxsize = maxsize
             super().__init__(*args, **kwds)
 

@@ -941,8 +941,7 @@ Deprecated
     :meth:`profile.Profile.runcall`, :meth:`cProfile.Profile.runcall`,
     :meth:`bdb.Bdb.runcall`, :meth:`trace.Trace.runfunc` and
     :func:`curses.wrapper`.
-  - *function* in :func:`unittest.addModuleCleanup` and
-    :meth:`unittest.TestCase.addCleanup`.
+  - *function* in :meth:`unittest.TestCase.addCleanup`.
   - *fn* in the :meth:`~concurrent.futures.Executor.submit` method of
     :class:`concurrent.futures.ThreadPoolExecutor` and
     :class:`concurrent.futures.ProcessPoolExecutor`.
