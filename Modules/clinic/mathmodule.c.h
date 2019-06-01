@@ -642,14 +642,14 @@ PyDoc_STRVAR(math_comb__doc__,
 "comb($module, /, n, k)\n"
 "--\n"
 "\n"
-"Return the number of ways to choose *k* items from *n* items without repetition.\n"
+"Number of ways to choose *k* items from *n* items without repetition and without order.\n"
 "\n"
-"Also called binomial coefficient. It is mathematically equal to the expression\n"
-"(n!) / (k! * (n - k)!). It is equivalent to the coefficient of kth term in\n"
+"Also called the binomial coefficient. It is mathematically equal to the expression\n"
+"n! / (k! * (n - k)!). It is equivalent to the coefficient of k-th term in\n"
 "polynomial expansion of the expression (1 + x)**n.\n"
 "\n"
-"Raises :exc:`TypeError` if the arguments are not integers.\n"
-"Raises :exc:`ValueError` if the arguments are negative or if k > n.");
+"Raises TypeError if the arguments are not integers.\n"
+"Raises ValueError if the arguments are negative or if k > n.");
 
 #define MATH_COMB_METHODDEF    \
     {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL|METH_KEYWORDS, math_comb__doc__},
@@ -686,4 +686,4 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b48cc0f0594fe74f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=00aa76356759617a input=a9049054013a1b77]*/
