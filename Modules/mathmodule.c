@@ -2998,27 +2998,8 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 }
 
 
-/*[clinic input]
-math.comb
-
-    n: object
-    k: object
-    /
-
-Number of ways to choose k items from n items without repetition and without order.
-
-Also called the binomial coefficient. It is mathematically equal to the expression
-n! / (k! * (n - k)!). It is equivalent to the coefficient of k-th term in
-polynomial expansion of the expression (1 + x)**n.
-
-Raises TypeError if the arguments are not integers.
-Raises ValueError if the arguments are negative or if k > n.
-
-[clinic start generated code]*/
-
 static PyObject *
-math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=bd2cec8d854f3493 input=2f336ac9ec8242f9]*/
+perm_comb(PyObject *n, PyObject *k, int comb)
 {
     PyObject *result = NULL, *factor = NULL, *temp;
     int overflow, cmp;
@@ -3028,10 +3009,23 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     if (n == NULL) {
         return NULL;
     }
+    if (!PyLong_CheckExact(n)) {
+        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
+        if (n == NULL) {
+            return NULL;
+        }
+    }
     k = PyNumber_Index(k);
     if (k == NULL) {
         Py_DECREF(n);
         return NULL;
+    }
+    if (!PyLong_CheckExact(k)) {
+        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
+        if (k == NULL) {
+            Py_DECREF(n);
+            return NULL;
+        }
     }
 
     if (Py_SIZE(n) < 0) {
@@ -3039,24 +3033,36 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
                         "n must be a non-negative integer");
         goto error;
     }
-    /* k = min(k, n - k) */
-    temp = PyNumber_Subtract(n, k);
-    if (temp == NULL) {
-        goto error;
-    }
-    if (Py_SIZE(temp) < 0) {
-        Py_DECREF(temp);
-        PyErr_SetString(PyExc_ValueError,
-                        "k must be an integer less than or equal to n");
-        goto error;
-    }
-    cmp = PyObject_RichCompareBool(k, temp, Py_GT);
-    if (cmp > 0) {
-        Py_SETREF(k, temp);
+    if (comb) {
+        /* k = min(k, n - k) */
+        temp = PyNumber_Subtract(n, k);
+        if (temp == NULL) {
+            goto error;
+        }
+        if (Py_SIZE(temp) < 0) {
+            Py_DECREF(temp);
+            PyErr_SetString(PyExc_ValueError,
+                            "k must be an integer less than or equal to n");
+            goto error;
+        }
+        cmp = PyObject_RichCompareBool(temp, k, Py_LT);
+        if (cmp > 0) {
+            Py_SETREF(k, temp);
+        }
+        else {
+            Py_DECREF(temp);
+            if (cmp < 0) {
+                goto error;
+            }
+        }
     }
     else {
-        Py_DECREF(temp);
-        if (cmp < 0) {
+        cmp = PyObject_RichCompareBool(n, k, Py_LT);
+        if (cmp != 0) {
+            if (cmp > 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "k must be an integer less than or equal to n");
+            }
             goto error;
         }
     }
@@ -3064,7 +3070,8 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     factors = PyLong_AsLongLongAndOverflow(k, &overflow);
     if (overflow > 0) {
         PyErr_Format(PyExc_OverflowError,
-                     "min(n - k, k) must not exceed %lld",
+                     "%s must not exceed %lld",
+                     comb ? "min(n - k, k)" : "k",
                      LLONG_MAX);
         goto error;
     }
@@ -3099,14 +3106,16 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
             goto error;
         }
 
-        temp = PyLong_FromUnsignedLongLong((unsigned long long)i + 1);
-        if (temp == NULL) {
-            goto error;
-        }
-        Py_SETREF(result, PyNumber_FloorDivide(result, temp));
-        Py_DECREF(temp);
-        if (result == NULL) {
-            goto error;
+        if (comb) {
+            temp = PyLong_FromUnsignedLongLong((unsigned long long)i + 1);
+            if (temp == NULL) {
+                goto error;
+            }
+            Py_SETREF(result, PyNumber_FloorDivide(result, temp));
+            Py_DECREF(temp);
+            if (result == NULL) {
+                goto error;
+            }
         }
     }
     Py_DECREF(factor);
@@ -3122,6 +3131,55 @@ error:
     Py_DECREF(n);
     Py_DECREF(k);
     return NULL;
+}
+
+
+/*[clinic input]
+math.perm
+
+    n: object
+    k: object
+    /
+
+Number of ways to choose k items from n items without repetition.
+
+It is mathematically equal to the expression n! / (n - k)!.
+
+Raises TypeError if the arguments are not integers.
+Raises ValueError if the arguments are negative or if k > n.
+[clinic start generated code]*/
+
+static PyObject *
+math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=e021a25469653e23 input=bad86be85158ebfd]*/
+{
+    return perm_comb(n, k, 0);
+}
+
+
+/*[clinic input]
+math.comb
+
+    n: object
+    k: object
+    /
+
+Number of ways to choose k items from n items without repetition and without order.
+
+Also called the binomial coefficient. It is mathematically equal to the expression
+n! / (k! * (n - k)!). It is equivalent to the coefficient of k-th term in
+polynomial expansion of the expression (1 + x)**n.
+
+Raises TypeError if the arguments are not integers.
+Raises ValueError if the arguments are negative or if k > n.
+
+[clinic start generated code]*/
+
+static PyObject *
+math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=bd2cec8d854f3493 input=2f336ac9ec8242f9]*/
+{
+    return perm_comb(n, k, 1);
 }
 
 
@@ -3174,6 +3232,7 @@ static PyMethodDef math_methods[] = {
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
+    MATH_PERM_METHODDEF
     MATH_COMB_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
