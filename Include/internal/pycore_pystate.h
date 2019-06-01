@@ -15,7 +15,6 @@ extern "C" {
 #include "sysmodule.h"
 
 #include "pycore_gil.h"   /* _gil_runtime_state  */
-//#include "pycore_atomic.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"
 #include "pycore_warnings.h"
