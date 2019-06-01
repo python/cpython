@@ -1911,9 +1911,6 @@ class IsCloseTests(unittest.TestCase):
         self.assertRaises(ValueError, comb, 1, 10**10)
         self.assertRaises(ValueError, comb, 0, 1)
 
-        # Raises OverflowError if n or k is greater than LLONG_MAX
-        self.assertRaises(OverflowError, comb, 10**400, 10**200)
-        self.assertRaises(OverflowError, comb, 10**400, -10**200)
 
 
 

@@ -3001,35 +3001,24 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 /*[clinic input]
 math.comb
 
-    N: long_long
-    K: long_long
-    /
+    n: object(subclass_of='&PyLong_Type')
+    k: object(subclass_of='&PyLong_Type')
 
-Return the number of ways to choose k items from n items without repetition.
+Return the number of ways to choose *k* items from *n* items without repetition.
 
 Also called binomial coefficient. It is mathematically equal to the expression
-(n!)/(k! * (n - k)!). It is equivalent to the the coefficient of kth term in
-polynomial expansion of the expression (1 + x)^n.
+(n!) / (k! * (n - k)!). It is equivalent to the coefficient of kth term in
+polynomial expansion of the expression (1 + x)**n.
 
-Raises :exc:`TypeError` if argument(s) are non-integer and :exc:`ValueError`
-if argument(s) are negative or k > n.
+Raises :exc:`TypeError` if the arguments are not integers.
+Raises :exc:`ValueError` if the arguments are negative or if k > n.
 
 [clinic start generated code]*/
 
 static PyObject *
-math_comb_impl(PyObject *module, long long N, long long K)
-/*[clinic end generated code: output=07c14ebe36fef64f input=48c80dbbff4b2d8e]*/
+math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=bd2cec8d854f3493 input=8a54daf9f021f2d0]*/
 {
-    PyObject* n = PyLong_FromLongLong(N);
-    if (n == NULL) {
-        return NULL;
-    }
-    PyObject* k = PyLong_FromLongLong(K);
-    if (k == NULL) {
-        Py_DECREF(n);
-        return NULL;
-    }
-
     PyObject *val = NULL,
         *temp_obj1 = NULL,
         *temp_obj2 = NULL,
@@ -3057,7 +3046,6 @@ math_comb_impl(PyObject *module, long long N, long long K)
         goto fail_comb;
     }
     else if (cmp > 0) {
-        Py_DECREF(k);
         k = dump_var;
         dump_var = NULL;
     }
@@ -3083,8 +3071,6 @@ math_comb_impl(PyObject *module, long long N, long long K)
     }
 
     if (terms == 0) {
-        Py_DECREF(n);
-        Py_DECREF(k);
         return PyNumber_Long(_PyLong_One);
     }
 
@@ -3119,14 +3105,10 @@ math_comb_impl(PyObject *module, long long N, long long K)
         Py_DECREF(temp_obj1);
         Py_DECREF(temp_obj2);
     }
-    Py_DECREF(n);
-    Py_DECREF(k);
 
     return val;
 
 fail_comb:
-    Py_XDECREF(n);
-    Py_XDECREF(k);
     Py_XDECREF(val);
     Py_XDECREF(dump_var);
     Py_XDECREF(temp_obj1);
