@@ -2103,20 +2103,18 @@ class AsyncMockMixin(Base):
 
         return await proxy()
 
-    def assert_awaited(_mock_self):
+    def assert_awaited(self):
         """
         Assert that the mock was awaited at least once.
         """
-        self = _mock_self
         if self.await_count == 0:
             msg = f"Expected {self._mock_name or 'mock'} to have been awaited."
             raise AssertionError(msg)
 
-    def assert_awaited_once(_mock_self):
+    def assert_awaited_once(self):
         """
         Assert that the mock was awaited exactly once.
         """
-        self = _mock_self
         if not self.await_count == 1:
             msg = (f"Expected {self._mock_name or 'mock'} to have been awaited once."
                    f" Awaited {self.await_count} times.")
@@ -2164,7 +2162,7 @@ class AsyncMockMixin(Base):
                 '%s await not found' % expected_string
             ) from cause
 
-    def assert_has_awaits(_mock_self, calls, any_order=False):
+    def assert_has_awaits(self, calls, any_order=False):
         """
         Assert the mock has been awaited with the specified calls.
         The :attr:`await_args_list` list is checked for the awaits.
@@ -2176,7 +2174,6 @@ class AsyncMockMixin(Base):
         If `any_order` is True then the awaits can be in any order, but
         they must all appear in :attr:`await_args_list`.
         """
-        self = _mock_self
         expected = [self._call_matcher(c) for c in calls]
         cause = expected if isinstance(expected, Exception) else None
         all_awaits = _CallList(self._call_matcher(c) for c in self.await_args_list)
@@ -2201,11 +2198,10 @@ class AsyncMockMixin(Base):
                 '%r not all found in await list' % (tuple(not_found),)
             ) from cause
 
-    def assert_not_awaited(_mock_self):
+    def assert_not_awaited(self):
         """
         Assert that the mock was never awaited.
         """
-        self = _mock_self
         if self.await_count != 0:
             msg = (f"Expected {self._mock_name or 'mock'} to not have been awaited."
                    f" Awaited {self.await_count} times.")
