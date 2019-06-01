@@ -209,10 +209,18 @@ _PyEval_FiniThreads(struct _ceval_runtime_state *ceval_r)
 static inline void
 exit_thread_if_finalizing(PyThreadState *tstate)
 {
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    /* _Py_Finalizing is protected by the GIL */
+    PyInterpreterState *interp = tstate->interp;
+    // Stop if thread/interpreter inalization already stated.
+    if (interp == NULL) {
+        return;
+    }
+    _PyRuntimeState *runtime = interp->runtime;
+    if (runtime == NULL) {
+        return;
+    }
+    // Don't exit if the main thread (i.e. of the main interpreter).
     if (runtime->finalizing != NULL && !_Py_CURRENTLY_FINALIZING(runtime, tstate)) {
-        drop_gil(&runtime->ceval, &tstate->interp->ceval, tstate);
+        drop_gil(&runtime->ceval, &interp->ceval, tstate);
         PyThread_exit_thread();
     }
 }
@@ -234,14 +242,19 @@ void
 PyEval_ReleaseLock(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     /* This function must succeed when the current thread state is NULL.
        We therefore avoid PyThreadState_Get() which dumps a fatal error
        in debug mode.
     */
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    // Fall back to the main interpreter if there is not active Python
+    // thread.  This only affects the eval_breaker.
     PyInterpreterState *interp = runtime->interpreters.main;
     if (tstate != NULL) {
         interp = tstate->interp;
+        if (interp == NULL) {
+            Py_FatalError("PyEval_ReleaseLock: NULL interpreter state");
+        }
     }
     drop_gil(&runtime->ceval, &interp->ceval, tstate);
 }
@@ -252,9 +265,14 @@ PyEval_AcquireThread(PyThreadState *tstate)
     if (tstate == NULL) {
         Py_FatalError("PyEval_AcquireThread: NULL new thread state");
     }
-    assert(tstate->interp != NULL);
-
-    _PyRuntimeState *runtime = tstate->interp->runtime;
+    PyInterpreterState *interp = tstate->interp;
+    if (interp == NULL) {
+        Py_FatalError("PyEval_AcquireThread: NULL interpreter state");
+    }
+    _PyRuntimeState *runtime = interp->runtime;
+    if (runtime == NULL) {
+        Py_FatalError("PyEval_AcquireThread: NULL runtime state");
+    }
     struct _ceval_runtime_state *ceval_r = &runtime->ceval;
 
     /* Check someone has called PyEval_InitThreads() to create the lock */
@@ -272,14 +290,20 @@ PyEval_ReleaseThread(PyThreadState *tstate)
     if (tstate == NULL) {
         Py_FatalError("PyEval_ReleaseThread: NULL thread state");
     }
-    assert(tstate->interp != NULL);
+    PyInterpreterState *interp = tstate->interp;
+    if (interp == NULL) {
+        Py_FatalError("PyEval_ReleaseThread: NULL interpreter state");
+    }
+    _PyRuntimeState *runtime = interp->runtime;
+    if (runtime == NULL) {
+        Py_FatalError("PyEval_ReleaseThread: NULL runtime state");
+    }
 
-    _PyRuntimeState *runtime = tstate->interp->runtime;
     PyThreadState *new_tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
     if (new_tstate != tstate) {
         Py_FatalError("PyEval_ReleaseThread: wrong thread state");
     }
-    drop_gil(&runtime->ceval, &tstate->interp->ceval, tstate);
+    drop_gil(&runtime->ceval, &interp->ceval, tstate);
 }
 
 /* This function is called from PyOS_AfterFork_Child to destroy all threads
@@ -329,8 +353,13 @@ PyEval_SaveThread(void)
     if (tstate == NULL) {
         Py_FatalError("PyEval_SaveThread: NULL tstate");
     }
+    PyInterpreterState *interp = tstate->interp;
+    if (interp == NULL) {
+        Py_FatalError("PyEval_SaveThread: NULL interpreter state");
+    }
+
     assert(gil_created(&ceval_r->gil));
-    drop_gil(ceval_r, &tstate->interp->ceval, tstate);
+    drop_gil(ceval_r, &interp->ceval, tstate);
     return tstate;
 }
 
@@ -340,10 +369,16 @@ PyEval_RestoreThread(PyThreadState *tstate)
     if (tstate == NULL) {
         Py_FatalError("PyEval_RestoreThread: NULL tstate");
     }
-    assert(tstate->interp != NULL);
-
-    _PyRuntimeState *runtime = tstate->interp->runtime;
+    PyInterpreterState *interp = tstate->interp;
+    if (interp == NULL) {
+        Py_FatalError("PyEval_RestoreThread: NULL interpreter state");
+    }
+    _PyRuntimeState *runtime = interp->runtime;
+    if (runtime == NULL) {
+        Py_FatalError("PyEval_RestoreThread: NULL runtime state");
+    }
     struct _ceval_runtime_state *ceval_r = &runtime->ceval;
+
     assert(gil_created(&ceval_r->gil));
 
     int err = errno;
@@ -500,8 +535,20 @@ handle_signals(_PyRuntimeState *runtime)
 static int
 make_pending_calls(PyInterpreterState *interp)
 {
+    if (interp == NULL) {
+        Py_FatalError("make_pending_calls: NULL interpreter state");
+    }
     _PyRuntimeState *runtime = interp->runtime;
+    if (runtime == NULL) {
+        Py_FatalError("make_pending_calls: NULL runtime state");
+    }
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    if (tstate == NULL) {
+        Py_FatalError("make_pending_calls: NULL thread state");
+    }
+    if (tstate->interp == NULL || tstate->interp != interp) {
+        Py_FatalError("make_pending_calls: thread state mismatch");
+    }
     static int busy = 0;
 
     /* don't perform recursive pending calls */
@@ -574,12 +621,17 @@ _PyEval_FinishPendingCalls(PyInterpreterState *interp)
 
     if (make_pending_calls(interp) < 0) {
         _PyRuntimeState *runtime = interp->runtime;
+        if (runtime == NULL) {
+            runtime = &_PyRuntime;
+        }
         PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-        PyObject *exc, *val, *tb;
-        _PyErr_Fetch(tstate, &exc, &val, &tb);
-        PyErr_BadInternalCall();
-        _PyErr_ChainExceptions(exc, val, tb);
-        _PyErr_Print(tstate);
+        if (tstate != NULL) {
+            PyObject *exc, *val, *tb;
+            _PyErr_Fetch(tstate, &exc, &val, &tb);
+            PyErr_BadInternalCall();
+            _PyErr_ChainExceptions(exc, val, tb);
+            _PyErr_Print(tstate);
+        }
     }
 }
 
@@ -729,8 +781,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     PyObject *retval = NULL;            /* Return value */
     _PyRuntimeState * const runtime = &_PyRuntime;
     PyThreadState * const tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyInterpreterState * const interp = tstate->interp;
     struct _ceval_runtime_state * const ceval_r = &runtime->ceval;
-    struct _ceval_interpreter_state * const ceval_i = &tstate->interp->ceval;
+    struct _ceval_interpreter_state * const ceval_i = &interp->ceval;
     _Py_atomic_int * const eval_breaker = &ceval_r->eval_breaker;
     PyCodeObject *co;
 
@@ -1149,7 +1202,7 @@ main_loop:
                 }
             }
             if (_Py_atomic_load_relaxed(&ceval_i->pending.calls_to_do)) {
-                if (make_pending_calls(tstate->interp) != 0) {
+                if (make_pending_calls(interp) != 0) {
                     goto error;
                 }
             }

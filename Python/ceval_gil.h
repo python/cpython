@@ -189,7 +189,11 @@ take_gil(struct _ceval_runtime_state *ceval_r,
     if (tstate == NULL) {
         Py_FatalError("take_gil: NULL tstate");
     }
-    struct _ceval_interpreter_state *ceval_i = &tstate->interp->ceval;
+    PyInterpreterState *interp = tstate->interp;
+    if (interp == NULL) {
+        Py_FatalError("take_gil: NULL interp");
+    }
+    struct _ceval_interpreter_state *ceval_i = &interp->ceval;
 
     struct _gil_runtime_state *gil = &ceval_r->gil;
     int err = errno;
