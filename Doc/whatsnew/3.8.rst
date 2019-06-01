@@ -250,6 +250,12 @@ Other Language Changes
   compatible with the existing :meth:`float.as_integer_ratio` method.
   (Contributed by Lisa Roach in :issue:`33073`.)
 
+* Constructors of :class:`int`, :class:`float` and :class:`complex` will now
+  use the :meth:`~object.__index__` special method, if available and the
+  corresponding method :meth:`~object.__int__`, :meth:`~object.__float__`
+  or :meth:`~object.__complex__` is not available.
+  (Contributed by Serhiy Storchaka in :issue:`20092`.)
+
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
@@ -868,7 +874,10 @@ Build and C API Changes
   ``__index__()`` method (like :class:`~decimal.Decimal` and
   :class:`~fractions.Fraction`).  :c:func:`PyNumber_Check` will now return
   ``1`` for objects implementing ``__index__()``.
-  (Contributed by Serhiy Storchaka in :issue:`36048`.)
+  :c:func:`PyNumber_Long`, :c:func:`PyNumber_Float` and
+  :c:func:`PyFloat_AsDouble` also now use the ``__index__()`` method if
+  available.
+  (Contributed by Serhiy Storchaka in :issue:`36048` and :issue:`20092`.)
 
 * Heap-allocated type objects will now increase their reference count
   in :c:func:`PyObject_Init` (and its parallel macro ``PyObject_INIT``)

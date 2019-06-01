@@ -984,7 +984,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
 
     nbr = r->ob_type->tp_as_number;
-    if (nbr == NULL || nbr->nb_float == NULL) {
+    if (nbr == NULL || (nbr->nb_float == NULL && nbr->nb_index == NULL)) {
         PyErr_Format(PyExc_TypeError,
                      "complex() first argument must be a string or a number, "
                      "not '%.200s'",
@@ -996,7 +996,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
     if (i != NULL) {
         nbi = i->ob_type->tp_as_number;
-        if (nbi == NULL || nbi->nb_float == NULL) {
+        if (nbi == NULL || (nbi->nb_float == NULL && nbi->nb_index == NULL)) {
             PyErr_Format(PyExc_TypeError,
                          "complex() second argument must be a number, "
                          "not '%.200s'",
@@ -1052,7 +1052,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         /* The "imag" part really is entirely imaginary, and
            contributes nothing in the real direction.
            Just treat it as a double. */
-        tmp = (*nbi->nb_float)(i);
+        tmp = PyNumber_Float(i);
         if (tmp == NULL)
             return NULL;
         ci.real = PyFloat_AsDouble(tmp);
