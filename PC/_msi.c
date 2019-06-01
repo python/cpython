@@ -571,6 +571,9 @@ summary_getproperty(msiobj* si, PyObject *args)
         status = MsiSummaryInfoGetProperty(si->h, field, &type, &ival,
             &fval, sval, &ssize);
     }
+    if (status != ERROR_SUCCESS) {
+        return msierror(status);
+    }
 
     switch(type) {
         case VT_I2:
