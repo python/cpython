@@ -246,7 +246,8 @@ class shlex:
                     escapedstate = 'a'
                     self.state = nextchar
                 elif (nextchar in self.wordchars or nextchar in self.quotes
-                      or self.whitespace_split):
+                      or (self.whitespace_split and
+                          nextchar not in self.punctuation_chars)):
                     self.token += nextchar
                 else:
                     if self.punctuation_chars:
