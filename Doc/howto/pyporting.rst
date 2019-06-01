@@ -45,6 +45,12 @@ are:
    works in both Python 2 & 3 (e.g. use mypy_ to check your typing under both
    Python 2 & Python 3; ``python -m pip install mypy``).
 
+.. note::
+
+   Note: Using ``python -m pip install`` guarantees that the ``pip`` you invoke
+   is the one installed for the Python currently in use, whether it be
+   a system-wide ``pip`` or one installed within a
+   :ref:`virtual environment <tut-venv>`.
 
 Details
 =======
