@@ -3757,10 +3757,10 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
         return;
     if (positional) {
         start = 0;
-        end = co->co_posonlyargcount + co->co_argcount - defcount;
+        end = co->co_argcount - defcount;
     }
     else {
-        start = co->co_posonlyargcount + co->co_argcount;
+        start = co->co_argcount;
         end = start + co->co_kwonlyargcount;
     }
     for (i = start; i < end; i++) {
@@ -3788,25 +3788,23 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     Py_ssize_t kwonly_given = 0;
     Py_ssize_t i;
     PyObject *sig, *kwonly_sig;
-    Py_ssize_t co_posonlyargcount = co->co_posonlyargcount;
     Py_ssize_t co_argcount = co->co_argcount;
-    Py_ssize_t total_positional = co_argcount + co_posonlyargcount;
 
     assert((co->co_flags & CO_VARARGS) == 0);
     /* Count missing keyword-only args. */
-    for (i = total_positional; i < total_positional + co->co_kwonlyargcount; i++) {
+    for (i = co_argcount; i < co_argcount + co->co_kwonlyargcount; i++) {
         if (GETLOCAL(i) != NULL) {
             kwonly_given++;
         }
     }
     if (defcount) {
-        Py_ssize_t atleast = total_positional - defcount;
+        Py_ssize_t atleast = co_argcount - defcount;
         plural = 1;
-        sig = PyUnicode_FromFormat("from %zd to %zd", atleast, total_positional);
+        sig = PyUnicode_FromFormat("from %zd to %zd", atleast, co_argcount);
     }
     else {
-        plural = (total_positional != 1);
-        sig = PyUnicode_FromFormat("%zd", total_positional);
+        plural = (co_argcount != 1);
+        sig = PyUnicode_FromFormat("%zd", co_argcount);
     }
     if (sig == NULL)
         return;
@@ -3917,7 +3915,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     PyObject *retval = NULL;
     PyObject **fastlocals, **freevars;
     PyObject *x, *u;
-    const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount + co->co_posonlyargcount;
+    const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
     Py_ssize_t i, j, n;
     PyObject *kwdict;
 
@@ -3953,9 +3951,9 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         kwdict = NULL;
     }
 
-    /* Copy positional only arguments into local variables */
-    if (argcount > co->co_argcount + co->co_posonlyargcount) {
-        n = co->co_posonlyargcount;
+    /* Copy all positional arguments into local variables */
+    if (argcount > co->co_argcount) {
+        n = co->co_argcount;
     }
     else {
         n = argcount;
@@ -3964,20 +3962,6 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         x = args[j];
         Py_INCREF(x);
         SETLOCAL(j, x);
-    }
-
-
-    /* Copy positional arguments into local variables */
-    if (argcount > co->co_argcount + co->co_posonlyargcount) {
-        n += co->co_argcount;
-    }
-    else {
-        n = argcount;
-    }
-    for (i = j; i < n; i++) {
-        x = args[i];
-        Py_INCREF(x);
-        SETLOCAL(i, x);
     }
 
     /* Pack other positional arguments into the *args argument */
@@ -4059,14 +4043,14 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     }
 
     /* Check the number of positional arguments */
-    if ((argcount > co->co_argcount + co->co_posonlyargcount) && !(co->co_flags & CO_VARARGS)) {
+    if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
         too_many_positional(tstate, co, argcount, defcount, fastlocals);
         goto fail;
     }
 
     /* Add missing positional arguments (copy default values from defs) */
-    if (argcount < co->co_posonlyargcount + co->co_argcount) {
-        Py_ssize_t m = co->co_posonlyargcount + co->co_argcount - defcount;
+    if (argcount < co->co_argcount) {
+        Py_ssize_t m = co->co_argcount - defcount;
         Py_ssize_t missing = 0;
         for (i = argcount; i < m; i++) {
             if (GETLOCAL(i) == NULL) {
@@ -4093,7 +4077,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     /* Add missing keyword arguments (copy default values from kwdefs) */
     if (co->co_kwonlyargcount > 0) {
         Py_ssize_t missing = 0;
-        for (i = co->co_posonlyargcount + co->co_argcount; i < total_args; i++) {
+        for (i = co->co_argcount; i < total_args; i++) {
             PyObject *name;
             if (GETLOCAL(i) != NULL)
                 continue;
