@@ -460,6 +460,9 @@ numbers. (Contributed by Pablo Galindo in :issue:`35606`)
 Added new function :func:`math.isqrt` for computing integer square roots.
 (Contributed by Mark Dickinson in :issue:`36887`.)
 
+The function :func:`math.factorial` no longer accepts arguments that are not
+int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
+
 
 mmap
 ----
@@ -1139,9 +1142,6 @@ Changes in the Python API
   zero was returned on error under Windows.  A zero value was returned on
   success; an exception was raised on error under Unix.
   (Contributed by Berker Peksag in :issue:`2122`.)
-
-* The function :func:`math.factorial` no longer accepts arguments that are not
-  int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
 
 * :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
