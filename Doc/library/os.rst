@@ -1233,7 +1233,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. data:: RWF_APPEND
 
-   Append data to the end of the file.
+   Append data to the end of the file. See the description of the flag 'O_APPEND' in ''os.open()''.
+   The *offset* field is ignored. The file *offset* is not changed.
 
    .. availability:: Linux 4.16 and newer.
 
