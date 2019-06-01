@@ -19,9 +19,10 @@ PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
  * NB: While the object is tracked by the collector, it must be safe to call the
  * ob_traverse method.
  *
- * Internal note: _PyRuntime.gc.generation0->_gc_prev doesn't have any bit flags
- * because it's not object header.  So we don't use _PyGCHead_PREV() and
- * _PyGCHead_SET_PREV() for it to avoid unnecessary bitwise operations.
+ * Internal note: _PyRuntimeState.gc.generation0->_gc_prev doesn't have
+ * any bit flags because it's not object header.  So we don't use
+ * _PyGCHead_PREV() and _PyGCHead_SET_PREV() for it to avoid unnecessary
+ * bitwise operations.
  *
  * The PyObject_GC_Track() function is the public version of this macro.
  */
