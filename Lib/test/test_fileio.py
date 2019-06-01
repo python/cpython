@@ -604,12 +604,12 @@ class OtherFileTests:
         #
         # test text file I/O
         #
-        with open(TESTFN, 'wt') as f:
+        with open(TESTFN, 'wt', encoding="utf-8") as f:
             self.assertEqual(f.write('一二三'), 3)
             self.assertEqual(f.tell(), 9)
             f.close()
 
-        with open(TESTFN, 'a+t') as f:
+        with open(TESTFN, 'a+t', encoding="utf-8") as f:
             self.assertEqual(f.tell(), 9)
             self.assertEqual(f.write('四五六'), 3)
             self.assertEqual(f.tell(), 18)
