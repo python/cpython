@@ -1809,7 +1809,7 @@ class defining the method.
    class, as in::
 
        class Philosopher:
-           def __init_subclass__(cls, default_name, **kwargs):
+           def __init_subclass__(cls, /, default_name, **kwargs):
                super().__init_subclass__(**kwargs)
                cls.default_name = default_name
 
