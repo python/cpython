@@ -1196,6 +1196,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    - :data:`RWF_DSYNC`
    - :data:`RWF_SYNC`
+   - :data:`RWF_APPEND`
 
    Return the total number of bytes actually written.
 
@@ -1228,6 +1229,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Linux 4.7 and newer.
 
    .. versionadded:: 3.7
+
+
+.. data:: RWF_APPEND
+
+   Append data to the end of the file.
+
+   .. availability:: Linux 4.7 and newer.
+
+   .. versionadded:: 3.8
 
 
 .. function:: read(fd, n)

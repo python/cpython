@@ -5334,6 +5334,7 @@ PyDoc_STRVAR(os_pwritev__doc__,
 "\n"
 "- RWF_DSYNC\n"
 "- RWF_SYNC\n"
+"- RWF_APPEND\n"
 "\n"
 "Using non-zero flags requires Linux 4.7 or newer.");
 
