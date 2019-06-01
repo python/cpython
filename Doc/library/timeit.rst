@@ -25,7 +25,7 @@ Basic Examples
 The following example shows how the :ref:`timeit-command-line-interface`
 can be used to compare three different expressions:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 -m timeit '"-".join(str(n) for n in range(100))'
    10000 loops, best of 5: 30.2 usec per loop
@@ -44,8 +44,12 @@ This can be achieved from the :ref:`python-interface` with::
    >>> timeit.timeit('"-".join(map(str, range(100)))', number=10000)
    0.23702679807320237
 
+A callable can also be passed from the :ref:`python-interface`::
 
-Note however that :mod:`timeit` will automatically determine the number of
+   >>> timeit.timeit(lambda: "-".join(map(str, range(100))), number=10000)
+   0.19665591977536678
+
+Note however that :func:`.timeit` will automatically determine the number of
 repetitions only when the command-line interface is used.  In the
 :ref:`timeit-examples` section you can find more advanced examples.
 
@@ -69,7 +73,7 @@ The module defines three convenience functions and a public class:
       The optional *globals* parameter was added.
 
 
-.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=3, number=1000000, globals=None)
+.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=5, number=1000000, globals=None)
 
    Create a :class:`Timer` instance with the given statement, *setup* code and
    *timer* function and run its :meth:`.repeat` method with the given *repeat*
@@ -78,6 +82,9 @@ The module defines three convenience functions and a public class:
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
+
+   .. versionchanged:: 3.7
+      Default value of *repeat* changed from 3 to 5.
 
 .. function:: default_timer()
 
@@ -126,7 +133,7 @@ The module defines three convenience functions and a public class:
 
          By default, :meth:`.timeit` temporarily turns off :term:`garbage
          collection` during the timing.  The advantage of this approach is that
-         it makes independent timings more comparable.  This disadvantage is
+         it makes independent timings more comparable.  The disadvantage is
          that GC may be an important component of the performance of the
          function being measured.  If so, GC can be re-enabled as the first
          statement in the *setup* string.  For example::
@@ -150,7 +157,7 @@ The module defines three convenience functions and a public class:
       .. versionadded:: 3.6
 
 
-   .. method:: Timer.repeat(repeat=3, number=1000000)
+   .. method:: Timer.repeat(repeat=5, number=1000000)
 
       Call :meth:`.timeit` a few times.
 
@@ -170,6 +177,9 @@ The module defines three convenience functions and a public class:
          So the :func:`min` of the result is probably the only number you
          should be interested in.  After that, you should look at the entire
          vector and apply common sense rather than statistics.
+
+      .. versionchanged:: 3.7
+         Default value of *repeat* changed from 3 to 5.
 
 
    .. method:: Timer.print_exc(file=None)
@@ -208,7 +218,7 @@ Where the following options are understood:
 
 .. cmdoption:: -r N, --repeat=N
 
-   how many times to repeat the timer (default 3)
+   how many times to repeat the timer (default 5)
 
 .. cmdoption:: -s S, --setup=S
 
@@ -246,7 +256,7 @@ successive powers of 10 until the total time is at least 0.2 seconds.
 :func:`default_timer` measurements can be affected by other programs running on
 the same machine, so the best thing to do when accurate timing is necessary is
 to repeat the timing a few times and use the best time.  The :option:`-r`
-option is good for this; the default of 3 repetitions is probably enough in
+option is good for this; the default of 5 repetitions is probably enough in
 most cases.  You can use :func:`time.process_time` to measure CPU time.
 
 .. note::
@@ -264,7 +274,7 @@ Examples
 
 It is possible to provide a setup statement that is executed only once at the beginning:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m timeit -s 'text = "sample string"; char = "g"'  'char in text'
    5000000 loops, best of 5: 0.0877 usec per loop
@@ -286,14 +296,14 @@ The same can be done using the :class:`Timer` class and its methods::
    >>> t.timeit()
    0.3955516149999312
    >>> t.repeat()
-   [0.40193588800002544, 0.3960157959998014, 0.39594301399984033]
+   [0.40183617287970225, 0.37027556854118704, 0.38344867356679524, 0.3712595970846668, 0.37866875250654886]
 
 
 The following examples show how to time expressions that contain multiple lines.
 Here we compare the cost of using :func:`hasattr` vs. :keyword:`try`/:keyword:`except`
 to test for missing and present object attributes:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m timeit 'try:' '  str.__bool__' 'except AttributeError:' '  pass'
    20000 loops, best of 5: 15.7 usec per loop

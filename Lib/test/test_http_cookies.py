@@ -121,6 +121,19 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(C.output(),
             'Set-Cookie: Customer="WILE_E_COYOTE"; HttpOnly; Secure')
 
+    def test_samesite_attrs(self):
+        samesite_values = ['Strict', 'Lax', 'strict', 'lax']
+        for val in samesite_values:
+            with self.subTest(val=val):
+                C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
+                C['Customer']['samesite'] = val
+                self.assertEqual(C.output(),
+                    'Set-Cookie: Customer="WILE_E_COYOTE"; SameSite=%s' % val)
+
+                C = cookies.SimpleCookie()
+                C.load('Customer="WILL_E_COYOTE"; SameSite=%s' % val)
+                self.assertEqual(C['Customer']['samesite'], val)
+
     def test_secure_httponly_false_if_not_present(self):
         C = cookies.SimpleCookie()
         C.load('eggs=scrambled; Path=/bacon')
@@ -206,6 +219,16 @@ class CookieTests(unittest.TestCase):
         C = cookies.SimpleCookie()
         with self.assertRaises(cookies.CookieError):
             C.load(rawdata)
+
+    def test_comment_quoting(self):
+        c = cookies.SimpleCookie()
+        c['foo'] = '\N{COPYRIGHT SIGN}'
+        self.assertEqual(str(c['foo']), 'Set-Cookie: foo="\\251"')
+        c['foo']['comment'] = 'comment \N{COPYRIGHT SIGN}'
+        self.assertEqual(
+            str(c['foo']),
+            'Set-Cookie: foo="\\251"; Comment="comment \\251"'
+        )
 
 
 class MorselTests(unittest.TestCase):

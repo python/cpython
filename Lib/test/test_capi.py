@@ -27,10 +27,18 @@ _testcapi = support.import_module('_testcapi')
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
+Py_TPFLAGS_HAVE_VECTORCALL = 1 << 11
+Py_TPFLAGS_METHOD_DESCRIPTOR = 1 << 17
+
 
 def testfunction(self):
     """some doc"""
     return self
+
+def testfunction_kw(self, *, kw):
+    """some doc"""
+    return self
+
 
 class InstanceMethod:
     id = _testcapi.instancemethod(id)
@@ -176,6 +184,13 @@ class CAPITest(unittest.TestCase):
         o @= m1
         self.assertEqual(o, ("matmul", 42, m1))
 
+    def test_c_type_with_ipow(self):
+        # When the __ipow__ method of a type was implemented in C, using the
+        # modulo param would cause segfaults.
+        o = _testcapi.ipowType()
+        self.assertEqual(o.__ipow__(1), (1, None))
+        self.assertEqual(o.__ipow__(2, 2), (2, 2))
+
     def test_return_null_without_error(self):
         # Issue #23571: A function must not return NULL without setting an
         # error
@@ -315,6 +330,67 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
         self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
 
+    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
+                         'need _testcapi.negative_refcount')
+    def test_negative_refcount(self):
+        # bpo-35059: Check that Py_DECREF() reports the correct filename
+        # when calling _Py_NegativeRefcount() to abort Python.
+        code = textwrap.dedent("""
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.negative_refcount()
+        """)
+        rc, out, err = assert_python_failure('-c', code)
+        self.assertRegex(err,
+                         br'_testcapimodule\.c:[0-9]+: '
+                         br'_Py_NegativeRefcount: Assertion failed: '
+                         br'object has negative ref count')
+
+    def test_trashcan_subclass(self):
+        # bpo-35983: Check that the trashcan mechanism for "list" is NOT
+        # activated when its tp_dealloc is being called by a subclass
+        from _testcapi import MyList
+        L = None
+        for i in range(1000):
+            L = MyList((L,))
+
+    def test_trashcan_python_class1(self):
+        self.do_test_trashcan_python_class(list)
+
+    def test_trashcan_python_class2(self):
+        from _testcapi import MyList
+        self.do_test_trashcan_python_class(MyList)
+
+    def do_test_trashcan_python_class(self, base):
+        # Check that the trashcan mechanism works properly for a Python
+        # subclass of a class using the trashcan (this specific test assumes
+        # that the base class "base" behaves like list)
+        class PyList(base):
+            # Count the number of PyList instances to verify that there is
+            # no memory leak
+            num = 0
+            def __init__(self, *args):
+                __class__.num += 1
+                super().__init__(*args)
+            def __del__(self):
+                __class__.num -= 1
+
+        for parity in (0, 1):
+            L = None
+            # We need in the order of 2**20 iterations here such that a
+            # typical 8MB stack would overflow without the trashcan.
+            for i in range(2**20):
+                L = PyList((L,))
+                L.attr = i
+            if parity:
+                # Add one additional nesting layer
+                L = (L,)
+            self.assertGreater(PyList.num, 0)
+            del L
+            self.assertEqual(PyList.num, 0)
+
 
 class TestPendingCalls(unittest.TestCase):
 
@@ -395,6 +471,94 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_wait(l, n)
 
 
+class TestPEP590(unittest.TestCase):
+
+    def test_method_descriptor_flag(self):
+        import functools
+        cached = functools.lru_cache(1)(testfunction)
+
+        self.assertFalse(type(repr).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(list.append).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(list.__add__).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(testfunction).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(cached).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+
+        self.assertTrue(_testcapi.MethodDescriptorBase.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(_testcapi.MethodDescriptorDerived.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+
+        # Heap type should not inherit Py_TPFLAGS_METHOD_DESCRIPTOR
+        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
+            pass
+        self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+
+    def test_vectorcall_flag(self):
+        self.assertTrue(_testcapi.MethodDescriptorBase.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        self.assertTrue(_testcapi.MethodDescriptorDerived.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        self.assertTrue(_testcapi.MethodDescriptor2.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+
+        # Heap type should not inherit Py_TPFLAGS_HAVE_VECTORCALL
+        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
+            pass
+        self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+
+    def test_vectorcall_override(self):
+        # Check that tp_call can correctly override vectorcall.
+        # MethodDescriptorNopGet implements tp_call but it inherits from
+        # MethodDescriptorBase, which implements vectorcall. Since
+        # MethodDescriptorNopGet returns the args tuple when called, we check
+        # additionally that no new tuple is created for this call.
+        args = tuple(range(5))
+        f = _testcapi.MethodDescriptorNopGet()
+        self.assertIs(f(*args), args)
+
+    def test_vectorcall(self):
+        # Test a bunch of different ways to call objects:
+        # 1. normal call
+        # 2. vectorcall using _PyObject_Vectorcall()
+        # 3. vectorcall using PyVectorcall_Call()
+        # 4. call as bound method
+        # 5. call using functools.partial
+
+        # A list of (function, args, kwargs, result) calls to test
+        calls = [(len, (range(42),), {}, 42),
+                 (list.append, ([], 0), {}, None),
+                 ([].append, (0,), {}, None),
+                 (sum, ([36],), {"start":6}, 42),
+                 (testfunction, (42,), {}, 42),
+                 (testfunction_kw, (42,), {"kw":None}, 42),
+                 (_testcapi.MethodDescriptorBase(), (0,), {}, True),
+                 (_testcapi.MethodDescriptorDerived(), (0,), {}, True),
+                 (_testcapi.MethodDescriptor2(), (0,), {}, False)]
+
+        from _testcapi import pyobject_vectorcall, pyvectorcall_call
+        from types import MethodType
+        from functools import partial
+
+        def vectorcall(func, args, kwargs):
+            args = *args, *kwargs.values()
+            kwnames = tuple(kwargs)
+            return pyobject_vectorcall(func, args, kwnames)
+
+        for (func, args, kwargs, expected) in calls:
+            with self.subTest(str(func)):
+                args1 = args[1:]
+                meth = MethodType(func, args[0])
+                wrapped = partial(func)
+                if not kwargs:
+                    self.assertEqual(expected, func(*args))
+                    self.assertEqual(expected, pyobject_vectorcall(func, args, None))
+                    self.assertEqual(expected, pyvectorcall_call(func, args))
+                    self.assertEqual(expected, meth(*args1))
+                    self.assertEqual(expected, wrapped(*args))
+                self.assertEqual(expected, func(*args, **kwargs))
+                self.assertEqual(expected, vectorcall(func, args, kwargs))
+                self.assertEqual(expected, pyvectorcall_call(func, args, kwargs))
+                self.assertEqual(expected, meth(*args1, **kwargs))
+                self.assertEqual(expected, wrapped(*args, **kwargs))
+
+
 class SubinterpreterTest(unittest.TestCase):
 
     def test_subinterps(self):
@@ -412,142 +576,18 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertNotEqual(pickle.load(f), id(sys.modules))
             self.assertNotEqual(pickle.load(f), id(builtins))
 
-
-# Bug #6012
-class Test6012(unittest.TestCase):
-    def test(self):
-        self.assertEqual(_testcapi.argparsing("Hello", "World"), 1)
-
-
-class SkipitemTest(unittest.TestCase):
-
-    def test_skipitem(self):
+    def test_mutate_exception(self):
         """
-        If this test failed, you probably added a new "format unit"
-        in Python/getargs.c, but neglected to update our poor friend
-        skipitem() in the same file.  (If so, shame on you!)
-
-        With a few exceptions**, this function brute-force tests all
-        printable ASCII*** characters (32 to 126 inclusive) as format units,
-        checking to see that PyArg_ParseTupleAndKeywords() return consistent
-        errors both when the unit is attempted to be used and when it is
-        skipped.  If the format unit doesn't exist, we'll get one of two
-        specific error messages (one for used, one for skipped); if it does
-        exist we *won't* get that error--we'll get either no error or some
-        other error.  If we get the specific "does not exist" error for one
-        test and not for the other, there's a mismatch, and the test fails.
-
-           ** Some format units have special funny semantics and it would
-              be difficult to accommodate them here.  Since these are all
-              well-established and properly skipped in skipitem() we can
-              get away with not testing them--this test is really intended
-              to catch *new* format units.
-
-          *** Python C source files must be ASCII.  Therefore it's impossible
-              to have non-ASCII format units.
-
+        Exceptions saved in global module state get shared between
+        individual module instances. This test checks whether or not
+        a change in one interpreter's module gets reflected into the
+        other ones.
         """
-        empty_tuple = ()
-        tuple_1 = (0,)
-        dict_b = {'b':1}
-        keywords = ["a", "b"]
+        import binascii
 
-        for i in range(32, 127):
-            c = chr(i)
+        support.run_in_subinterp("import binascii; binascii.Error.foobar = 'foobar'")
 
-            # skip parentheses, the error reporting is inconsistent about them
-            # skip 'e', it's always a two-character code
-            # skip '|' and '$', they don't represent arguments anyway
-            if c in '()e|$':
-                continue
-
-            # test the format unit when not skipped
-            format = c + "i"
-            try:
-                _testcapi.parse_tuple_and_keywords(tuple_1, dict_b,
-                    format, keywords)
-                when_not_skipped = False
-            except SystemError as e:
-                s = "argument 1 (impossible<bad format char>)"
-                when_not_skipped = (str(e) == s)
-            except TypeError:
-                when_not_skipped = False
-
-            # test the format unit when skipped
-            optional_format = "|" + format
-            try:
-                _testcapi.parse_tuple_and_keywords(empty_tuple, dict_b,
-                    optional_format, keywords)
-                when_skipped = False
-            except SystemError as e:
-                s = "impossible<bad format char>: '{}'".format(format)
-                when_skipped = (str(e) == s)
-
-            message = ("test_skipitem_parity: "
-                "detected mismatch between convertsimple and skipitem "
-                "for format unit '{}' ({}), not skipped {}, skipped {}".format(
-                    c, i, when_skipped, when_not_skipped))
-            self.assertIs(when_skipped, when_not_skipped, message)
-
-    def test_parse_tuple_and_keywords(self):
-        # Test handling errors in the parse_tuple_and_keywords helper itself
-        self.assertRaises(TypeError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, 42, [])
-        self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, '', 42)
-        self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, '', [''] * 42)
-        self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, '', [42])
-
-    def test_bad_use(self):
-        # Test handling invalid format and keywords in
-        # PyArg_ParseTupleAndKeywords()
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (1,), {}, '||O', ['a'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (1, 2), {}, '|O|O', ['a', 'b'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (), {'a': 1}, '$$O', ['a'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (), {'a': 1, 'b': 2}, '$O$O', ['a', 'b'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (), {'a': 1}, '$|O', ['a'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (), {'a': 1, 'b': 2}, '$O|O', ['a', 'b'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (1,), {}, '|O', ['a', 'b'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (1,), {}, '|OO', ['a'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, '|$O', [''])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, '|OO', ['a', ''])
-
-    def test_positional_only(self):
-        parse = _testcapi.parse_tuple_and_keywords
-
-        parse((1, 2, 3), {}, 'OOO', ['', '', 'a'])
-        parse((1, 2), {'a': 3}, 'OOO', ['', '', 'a'])
-        with self.assertRaisesRegex(TypeError,
-               r'function takes at least 2 positional arguments \(1 given\)'):
-            parse((1,), {'a': 3}, 'OOO', ['', '', 'a'])
-        parse((1,), {}, 'O|OO', ['', '', 'a'])
-        with self.assertRaisesRegex(TypeError,
-               r'function takes at least 1 positional arguments \(0 given\)'):
-            parse((), {}, 'O|OO', ['', '', 'a'])
-        parse((1, 2), {'a': 3}, 'OO$O', ['', '', 'a'])
-        with self.assertRaisesRegex(TypeError,
-               r'function takes exactly 2 positional arguments \(1 given\)'):
-            parse((1,), {'a': 3}, 'OO$O', ['', '', 'a'])
-        parse((1,), {}, 'O|O$O', ['', '', 'a'])
-        with self.assertRaisesRegex(TypeError,
-               r'function takes at least 1 positional arguments \(0 given\)'):
-            parse((), {}, 'O|O$O', ['', '', 'a'])
-        with self.assertRaisesRegex(SystemError, r'Empty parameter name after \$'):
-            parse((1,), {}, 'O|$OO', ['', '', 'a'])
-        with self.assertRaisesRegex(SystemError, 'Empty keyword'):
-            parse((1,), {}, 'O|OO', ['', 'a', ''])
+        self.assertFalse(hasattr(binascii.Error, "foobar"))
 
 
 class TestThreadState(unittest.TestCase):
@@ -575,17 +615,9 @@ class TestThreadState(unittest.TestCase):
 
 
 class Test_testcapi(unittest.TestCase):
-    def test__testcapi(self):
-        if support.verbose:
-            print()
-        for name in dir(_testcapi):
-            if not name.startswith('test_'):
-                continue
-            with self.subTest("internal", name=name):
-                if support.verbose:
-                    print(f"  {name}", flush=True)
-                test = getattr(_testcapi, name)
-                test()
+    locals().update((name, getattr(_testcapi, name))
+                    for name in dir(_testcapi)
+                    if name.startswith('test_') and not name.endswith('_code'))
 
 
 class PyMemDebugTests(unittest.TestCase):
@@ -607,11 +639,13 @@ class PyMemDebugTests(unittest.TestCase):
                  r"    The [0-9] pad bytes at p-[0-9] are FORBIDDENBYTE, as expected.\n"
                  r"    The [0-9] pad bytes at tail={ptr} are not all FORBIDDENBYTE \(0x[0-9a-f]{{2}}\):\n"
                  r"        at tail\+0: 0x78 \*\*\* OUCH\n"
-                 r"        at tail\+1: 0xfb\n"
-                 r"        at tail\+2: 0xfb\n"
+                 r"        at tail\+1: 0xfd\n"
+                 r"        at tail\+2: 0xfd\n"
                  r"        .*\n"
-                 r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
-                 r"    Data at p: cb cb cb .*\n"
+                 r"(    The block was made by call #[0-9]+ to debug malloc/realloc.\n)?"
+                 r"    Data at p: cd cd cd .*\n"
+                 r"\n"
+                 r"Enable tracemalloc to get the memory block allocation traceback\n"
                  r"\n"
                  r"Fatal Python error: bad trailing pad byte")
         regex = regex.format(ptr=self.PTR_REGEX)
@@ -624,8 +658,10 @@ class PyMemDebugTests(unittest.TestCase):
                  r"    16 bytes originally requested\n"
                  r"    The [0-9] pad bytes at p-[0-9] are FORBIDDENBYTE, as expected.\n"
                  r"    The [0-9] pad bytes at tail={ptr} are FORBIDDENBYTE, as expected.\n"
-                 r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
-                 r"    Data at p: cb cb cb .*\n"
+                 r"(    The block was made by call #[0-9]+ to debug malloc/realloc.\n)?"
+                 r"    Data at p: cd cd cd .*\n"
+                 r"\n"
+                 r"Enable tracemalloc to get the memory block allocation traceback\n"
                  r"\n"
                  r"Fatal Python error: bad ID: Allocated using API 'm', verified using API 'r'\n")
         regex = regex.format(ptr=self.PTR_REGEX)
@@ -648,6 +684,29 @@ class PyMemDebugTests(unittest.TestCase):
         # without holding the GIL
         code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
         self.check_malloc_without_gil(code)
+
+    def check_pyobject_is_freed(self, func):
+        code = textwrap.dedent('''
+            import gc, os, sys, _testcapi
+            # Disable the GC to avoid crash on GC collection
+            gc.disable()
+            obj = _testcapi.{func}()
+            error = (_testcapi.pyobject_is_freed(obj) == False)
+            # Exit immediately to avoid a crash while deallocating
+            # the invalid object
+            os._exit(int(error))
+        ''')
+        code = code.format(func=func)
+        assert_python_ok('-c', code, PYTHONMALLOC=self.PYTHONMALLOC)
+
+    def test_pyobject_is_freed_uninitialized(self):
+        self.check_pyobject_is_freed('pyobject_uninitialized')
+
+    def test_pyobject_is_freed_forbidden_bytes(self):
+        self.check_pyobject_is_freed('pyobject_forbidden_bytes')
+
+    def test_pyobject_is_freed_free(self):
+        self.check_pyobject_is_freed('pyobject_freed')
 
 
 class PyMemMallocDebugTests(PyMemDebugTests):

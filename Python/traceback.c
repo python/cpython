@@ -2,7 +2,7 @@
 /* Traceback implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 
 #include "code.h"
 #include "frameobject.h"
@@ -27,89 +27,16 @@ _Py_IDENTIFIER(close);
 _Py_IDENTIFIER(open);
 _Py_IDENTIFIER(path);
 
+/*[clinic input]
+class TracebackType "PyTracebackObject *" "&PyTraceback_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=928fa06c10151120]*/
+
+#include "clinic/traceback.c.h"
+
 static PyObject *
-tb_dir(PyTracebackObject *self)
-{
-    return Py_BuildValue("[ssss]", "tb_frame", "tb_next",
-                                   "tb_lasti", "tb_lineno");
-}
-
-static PyMethodDef tb_methods[] = {
-   {"__dir__", (PyCFunction)tb_dir, METH_NOARGS},
-   {NULL, NULL, 0, NULL},
-};
-
-static PyMemberDef tb_memberlist[] = {
-    {"tb_next",         T_OBJECT,       OFF(tb_next),   READONLY},
-    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY},
-    {"tb_lasti",        T_INT,          OFF(tb_lasti),  READONLY},
-    {"tb_lineno",       T_INT,          OFF(tb_lineno), READONLY},
-    {NULL}      /* Sentinel */
-};
-
-static void
-tb_dealloc(PyTracebackObject *tb)
-{
-    PyObject_GC_UnTrack(tb);
-    Py_TRASHCAN_SAFE_BEGIN(tb)
-    Py_XDECREF(tb->tb_next);
-    Py_XDECREF(tb->tb_frame);
-    PyObject_GC_Del(tb);
-    Py_TRASHCAN_SAFE_END(tb)
-}
-
-static int
-tb_traverse(PyTracebackObject *tb, visitproc visit, void *arg)
-{
-    Py_VISIT(tb->tb_next);
-    Py_VISIT(tb->tb_frame);
-    return 0;
-}
-
-static void
-tb_clear(PyTracebackObject *tb)
-{
-    Py_CLEAR(tb->tb_next);
-    Py_CLEAR(tb->tb_frame);
-}
-
-PyTypeObject PyTraceBack_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "traceback",
-    sizeof(PyTracebackObject),
-    0,
-    (destructor)tb_dealloc, /*tp_dealloc*/
-    0,                  /*tp_print*/
-    0,    /*tp_getattr*/
-    0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
-    0,                  /*tp_repr*/
-    0,                  /*tp_as_number*/
-    0,                  /*tp_as_sequence*/
-    0,                  /*tp_as_mapping*/
-    0,                  /* tp_hash */
-    0,                  /* tp_call */
-    0,                  /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                  /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
-    0,                                          /* tp_doc */
-    (traverseproc)tb_traverse,                  /* tp_traverse */
-    (inquiry)tb_clear,                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    tb_methods,         /* tp_methods */
-    tb_memberlist,      /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-};
-
-static PyTracebackObject *
-newtracebackobject(PyTracebackObject *next, PyFrameObject *frame)
+tb_create_raw(PyTracebackObject *next, PyFrameObject *frame, int lasti,
+              int lineno)
 {
     PyTracebackObject *tb;
     if ((next != NULL && !PyTraceBack_Check(next)) ||
@@ -123,19 +50,201 @@ newtracebackobject(PyTracebackObject *next, PyFrameObject *frame)
         tb->tb_next = next;
         Py_XINCREF(frame);
         tb->tb_frame = frame;
-        tb->tb_lasti = frame->f_lasti;
-        tb->tb_lineno = PyFrame_GetLineNumber(frame);
+        tb->tb_lasti = lasti;
+        tb->tb_lineno = lineno;
         PyObject_GC_Track(tb);
     }
-    return tb;
+    return (PyObject *)tb;
 }
+
+/*[clinic input]
+@classmethod
+TracebackType.__new__ as tb_new
+
+  tb_next: object
+  tb_frame: object(type='PyFrameObject *', subclass_of='&PyFrame_Type')
+  tb_lasti: int
+  tb_lineno: int
+
+Create a new traceback object.
+[clinic start generated code]*/
+
+static PyObject *
+tb_new_impl(PyTypeObject *type, PyObject *tb_next, PyFrameObject *tb_frame,
+            int tb_lasti, int tb_lineno)
+/*[clinic end generated code: output=fa077debd72d861a input=01cbe8ec8783fca7]*/
+{
+    if (tb_next == Py_None) {
+        tb_next = NULL;
+    } else if (!PyTraceBack_Check(tb_next)) {
+        return PyErr_Format(PyExc_TypeError,
+                            "expected traceback object or None, got '%s'",
+                            Py_TYPE(tb_next)->tp_name);
+    }
+
+    return tb_create_raw((PyTracebackObject *)tb_next, tb_frame, tb_lasti,
+                         tb_lineno);
+}
+
+static PyObject *
+tb_dir(PyTracebackObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return Py_BuildValue("[ssss]", "tb_frame", "tb_next",
+                                   "tb_lasti", "tb_lineno");
+}
+
+static PyObject *
+tb_next_get(PyTracebackObject *self, void *Py_UNUSED(_))
+{
+    PyObject* ret = (PyObject*)self->tb_next;
+    if (!ret) {
+        ret = Py_None;
+    }
+    Py_INCREF(ret);
+    return ret;
+}
+
+static int
+tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
+{
+    if (!new_next) {
+        PyErr_Format(PyExc_TypeError, "can't delete tb_next attribute");
+        return -1;
+    }
+
+    /* We accept None or a traceback object, and map None -> NULL (inverse of
+       tb_next_get) */
+    if (new_next == Py_None) {
+        new_next = NULL;
+    } else if (!PyTraceBack_Check(new_next)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected traceback object, got '%s'",
+                     Py_TYPE(new_next)->tp_name);
+        return -1;
+    }
+
+    /* Check for loops */
+    PyTracebackObject *cursor = (PyTracebackObject *)new_next;
+    while (cursor) {
+        if (cursor == self) {
+            PyErr_Format(PyExc_ValueError, "traceback loop detected");
+            return -1;
+        }
+        cursor = cursor->tb_next;
+    }
+
+    PyObject *old_next = (PyObject*)self->tb_next;
+    Py_XINCREF(new_next);
+    self->tb_next = (PyTracebackObject *)new_next;
+    Py_XDECREF(old_next);
+
+    return 0;
+}
+
+
+static PyMethodDef tb_methods[] = {
+   {"__dir__", (PyCFunction)tb_dir, METH_NOARGS},
+   {NULL, NULL, 0, NULL},
+};
+
+static PyMemberDef tb_memberlist[] = {
+    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY},
+    {"tb_lasti",        T_INT,          OFF(tb_lasti),  READONLY},
+    {"tb_lineno",       T_INT,          OFF(tb_lineno), READONLY},
+    {NULL}      /* Sentinel */
+};
+
+static PyGetSetDef tb_getsetters[] = {
+    {"tb_next", (getter)tb_next_get, (setter)tb_next_set, NULL, NULL},
+    {NULL}      /* Sentinel */
+};
+
+static void
+tb_dealloc(PyTracebackObject *tb)
+{
+    PyObject_GC_UnTrack(tb);
+    Py_TRASHCAN_BEGIN(tb, tb_dealloc)
+    Py_XDECREF(tb->tb_next);
+    Py_XDECREF(tb->tb_frame);
+    PyObject_GC_Del(tb);
+    Py_TRASHCAN_END
+}
+
+static int
+tb_traverse(PyTracebackObject *tb, visitproc visit, void *arg)
+{
+    Py_VISIT(tb->tb_next);
+    Py_VISIT(tb->tb_frame);
+    return 0;
+}
+
+static int
+tb_clear(PyTracebackObject *tb)
+{
+    Py_CLEAR(tb->tb_next);
+    Py_CLEAR(tb->tb_frame);
+    return 0;
+}
+
+PyTypeObject PyTraceBack_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "traceback",
+    sizeof(PyTracebackObject),
+    0,
+    (destructor)tb_dealloc, /*tp_dealloc*/
+    0,                  /*tp_vectorcall_offset*/
+    0,    /*tp_getattr*/
+    0,                  /*tp_setattr*/
+    0,                  /*tp_as_async*/
+    0,                  /*tp_repr*/
+    0,                  /*tp_as_number*/
+    0,                  /*tp_as_sequence*/
+    0,                  /*tp_as_mapping*/
+    0,                  /* tp_hash */
+    0,                  /* tp_call */
+    0,                  /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                  /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    tb_new__doc__,                              /* tp_doc */
+    (traverseproc)tb_traverse,                  /* tp_traverse */
+    (inquiry)tb_clear,                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    tb_methods,         /* tp_methods */
+    tb_memberlist,      /* tp_members */
+    tb_getsetters,                              /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    tb_new,                                     /* tp_new */
+};
+
+
+PyObject*
+_PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
+{
+    assert(tb_next == NULL || PyTraceBack_Check(tb_next));
+    assert(frame != NULL);
+
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti,
+                         PyFrame_GetLineNumber(frame));
+}
+
 
 int
 PyTraceBack_Here(PyFrameObject *frame)
 {
     PyObject *exc, *val, *tb, *newtb;
     PyErr_Fetch(&exc, &val, &tb);
-    newtb = (PyObject *)newtracebackobject((PyTracebackObject *)tb, frame);
+    newtb = _PyTraceBack_FromFrame(tb, frame);
     if (newtb == NULL) {
         _PyErr_ChainExceptions(exc, val, tb);
         return -1;
@@ -414,16 +523,21 @@ tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
     return err;
 }
 
+static const int TB_RECURSIVE_CUTOFF = 3; // Also hardcoded in traceback.py.
+
 static int
 tb_print_line_repeated(PyObject *f, long cnt)
 {
-    int err;
+    cnt -= TB_RECURSIVE_CUTOFF;
     PyObject *line = PyUnicode_FromFormat(
-            "  [Previous line repeated %ld more times]\n", cnt-3);
+        (cnt > 1)
+          ? "  [Previous line repeated %ld more times]\n"
+          : "  [Previous line repeated %ld more time]\n",
+        cnt);
     if (line == NULL) {
         return -1;
     }
-    err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
+    int err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
     Py_DECREF(line);
     return err;
 }
@@ -447,15 +561,11 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
         tb = tb->tb_next;
     }
     while (tb != NULL && err == 0) {
-        if (last_file != NULL &&
-            tb->tb_frame->f_code->co_filename == last_file &&
-            last_line != -1 && tb->tb_lineno == last_line &&
-            last_name != NULL && tb->tb_frame->f_code->co_name == last_name)
-        {
-            cnt++;
-        }
-        else {
-            if (cnt > 3) {
+        if (last_file == NULL ||
+            tb->tb_frame->f_code->co_filename != last_file ||
+            last_line == -1 || tb->tb_lineno != last_line ||
+            last_name == NULL || tb->tb_frame->f_code->co_name != last_name) {
+            if (cnt > TB_RECURSIVE_CUTOFF) {
                 err = tb_print_line_repeated(f, cnt);
             }
             last_file = tb->tb_frame->f_code->co_filename;
@@ -463,7 +573,8 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
             last_name = tb->tb_frame->f_code->co_name;
             cnt = 0;
         }
-        if (err == 0 && cnt < 3) {
+        cnt++;
+        if (err == 0 && cnt <= TB_RECURSIVE_CUTOFF) {
             err = tb_displayline(f,
                                  tb->tb_frame->f_code->co_filename,
                                  tb->tb_lineno,
@@ -474,7 +585,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
         }
         tb = tb->tb_next;
     }
-    if (err == 0 && cnt > 3) {
+    if (err == 0 && cnt > TB_RECURSIVE_CUTOFF) {
         err = tb_print_line_repeated(f, cnt);
     }
     return err;

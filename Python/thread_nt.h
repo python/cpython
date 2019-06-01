@@ -104,8 +104,9 @@ LeaveNonRecursiveMutex(PNRMUTEX mutex)
     if (PyMUTEX_LOCK(&mutex->cs))
         return FALSE;
     mutex->locked = 0;
-    result = PyCOND_SIGNAL(&mutex->cv);
-    result &= PyMUTEX_UNLOCK(&mutex->cs);
+    /* condvar APIs return 0 on success. We need to return TRUE on success. */
+    result = !PyCOND_SIGNAL(&mutex->cv);
+    PyMUTEX_UNLOCK(&mutex->cs);
     return result;
 }
 
@@ -141,6 +142,10 @@ LeaveNonRecursiveMutex(PNRMUTEX mutex)
 #endif /* _PY_USE_CV_LOCKS */
 
 unsigned long PyThread_get_thread_ident(void);
+
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+unsigned long PyThread_get_thread_native_id(void);
+#endif
 
 /*
  * Initialization of the C package, should not be needed.
@@ -189,7 +194,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         return PYTHREAD_INVALID_THREAD_ID;
     obj->func = func;
     obj->arg = arg;
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     size_t stacksize = tstate ? tstate->interp->pythread_stacksize : 0;
     hThread = (HANDLE)_beginthreadex(0,
                       Py_SAFE_DOWNCAST(stacksize, Py_ssize_t, unsigned int),
@@ -226,7 +231,26 @@ PyThread_get_thread_ident(void)
     return GetCurrentThreadId();
 }
 
-void
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+/*
+ * Return the native Thread ID (TID) of the calling thread.
+ * The native ID of a thread is valid and guaranteed to be unique system-wide
+ * from the time the thread is created until the thread has been terminated.
+ */
+unsigned long
+PyThread_get_thread_native_id(void)
+{
+    if (!initialized) {
+        PyThread_init_thread();
+    }
+
+    DWORD native_id;
+    native_id = GetCurrentThreadId();
+    return (unsigned long) native_id;
+}
+#endif
+
+void _Py_NO_RETURN
 PyThread_exit_thread(void)
 {
     dprintf(("%lu: PyThread_exit_thread called\n", PyThread_get_thread_ident()));
@@ -236,7 +260,7 @@ PyThread_exit_thread(void)
 }
 
 /*
- * Lock support. It has too be implemented as semaphores.
+ * Lock support. It has to be implemented as semaphores.
  * I [Dag] tried to implement it with mutex but I could find a way to
  * tell whether a thread already own the lock or not.
  */
@@ -334,13 +358,13 @@ _pythread_nt_set_stacksize(size_t size)
 {
     /* set to default */
     if (size == 0) {
-        PyThreadState_GET()->interp->pythread_stacksize = 0;
+        _PyInterpreterState_GET_UNSAFE()->pythread_stacksize = 0;
         return 0;
     }
 
     /* valid range? */
     if (size >= THREAD_MIN_STACKSIZE && size < THREAD_MAX_STACKSIZE) {
-        PyThreadState_GET()->interp->pythread_stacksize = size;
+        _PyInterpreterState_GET_UNSAFE()->pythread_stacksize = size;
         return 0;
     }
 

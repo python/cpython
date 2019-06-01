@@ -10,8 +10,6 @@ import unittest
 
 @unittest.skipUnless(hasattr(os, 'kill'), "Test requires os.kill")
 @unittest.skipIf(sys.platform =="win32", "Test cannot run on Windows")
-@unittest.skipIf(sys.platform == 'freebsd6', "Test kills regrtest on freebsd6 "
-    "if threads have been used")
 class TestBreak(unittest.TestCase):
     int_handler = None
 
@@ -41,16 +39,13 @@ class TestBreak(unittest.TestCase):
 
     def testRegisterResult(self):
         result = unittest.TestResult()
+        self.assertNotIn(result, unittest.signals._results)
+
         unittest.registerResult(result)
-
-        for ref in unittest.signals._results:
-            if ref is result:
-                break
-            elif ref is not result:
-                self.fail("odd object in result set")
-        else:
-            self.fail("result not found")
-
+        try:
+            self.assertIn(result, unittest.signals._results)
+        finally:
+            unittest.removeResult(result)
 
     def testInterruptCaught(self):
         default_handler = signal.getsignal(signal.SIGINT)
@@ -267,22 +262,16 @@ class TestBreak(unittest.TestCase):
 
 @unittest.skipUnless(hasattr(os, 'kill'), "Test requires os.kill")
 @unittest.skipIf(sys.platform =="win32", "Test cannot run on Windows")
-@unittest.skipIf(sys.platform == 'freebsd6', "Test kills regrtest on freebsd6 "
-    "if threads have been used")
 class TestBreakDefaultIntHandler(TestBreak):
     int_handler = signal.default_int_handler
 
 @unittest.skipUnless(hasattr(os, 'kill'), "Test requires os.kill")
 @unittest.skipIf(sys.platform =="win32", "Test cannot run on Windows")
-@unittest.skipIf(sys.platform == 'freebsd6', "Test kills regrtest on freebsd6 "
-    "if threads have been used")
 class TestBreakSignalIgnored(TestBreak):
     int_handler = signal.SIG_IGN
 
 @unittest.skipUnless(hasattr(os, 'kill'), "Test requires os.kill")
 @unittest.skipIf(sys.platform =="win32", "Test cannot run on Windows")
-@unittest.skipIf(sys.platform == 'freebsd6', "Test kills regrtest on freebsd6 "
-    "if threads have been used")
 class TestBreakSignalDefault(TestBreak):
     int_handler = signal.SIG_DFL
 

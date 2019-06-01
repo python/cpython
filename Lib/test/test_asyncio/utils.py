@@ -35,6 +35,56 @@ from asyncio.log import logger
 from test import support
 
 
+def data_file(filename):
+    if hasattr(support, 'TEST_HOME_DIR'):
+        fullname = os.path.join(support.TEST_HOME_DIR, filename)
+        if os.path.isfile(fullname):
+            return fullname
+    fullname = os.path.join(os.path.dirname(__file__), '..', filename)
+    if os.path.isfile(fullname):
+        return fullname
+    raise FileNotFoundError(filename)
+
+
+ONLYCERT = data_file('ssl_cert.pem')
+ONLYKEY = data_file('ssl_key.pem')
+SIGNED_CERTFILE = data_file('keycert3.pem')
+SIGNING_CA = data_file('pycacert.pem')
+PEERCERT = {
+    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
+    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
+    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
+    'issuer': ((('countryName', 'XY'),),
+            (('organizationName', 'Python Software Foundation CA'),),
+            (('commonName', 'our-ca-server'),)),
+    'notAfter': 'Jul  7 14:23:16 2028 GMT',
+    'notBefore': 'Aug 29 14:23:16 2018 GMT',
+    'serialNumber': 'CB2D80995A69525C',
+    'subject': ((('countryName', 'XY'),),
+             (('localityName', 'Castle Anthrax'),),
+             (('organizationName', 'Python Software Foundation'),),
+             (('commonName', 'localhost'),)),
+    'subjectAltName': (('DNS', 'localhost'),),
+    'version': 3
+}
+
+
+def simple_server_sslcontext():
+    server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_context.load_cert_chain(ONLYCERT, ONLYKEY)
+    server_context.check_hostname = False
+    server_context.verify_mode = ssl.CERT_NONE
+    return server_context
+
+
+def simple_client_sslcontext(*, disable_verify=True):
+    client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    client_context.check_hostname = False
+    if disable_verify:
+        client_context.verify_mode = ssl.CERT_NONE
+    return client_context
+
+
 def dummy_ssl_context():
     if ssl is None:
         return None
@@ -57,13 +107,13 @@ def run_briefly(loop):
 
 
 def run_until(loop, pred, timeout=30):
-    deadline = time.time() + timeout
+    deadline = time.monotonic() + timeout
     while not pred():
         if timeout is not None:
-            timeout = deadline - time.time()
+            timeout = deadline - time.monotonic()
             if timeout <= 0:
                 raise futures.TimeoutError()
-        loop.run_until_complete(tasks.sleep(0.001, loop=loop))
+        loop.run_until_complete(tasks.sleep(0.001))
 
 
 def run_once(loop):
@@ -106,14 +156,8 @@ class SSLWSGIServerMixin:
         # contains the ssl key and certificate files) differs
         # between the stdlib and stand-alone asyncio.
         # Prefer our own if we can find it.
-        here = os.path.join(os.path.dirname(__file__), '..', 'tests')
-        if not os.path.isdir(here):
-            here = os.path.join(os.path.dirname(os.__file__),
-                                'test', 'test_asyncio')
-        keyfile = os.path.join(here, 'ssl_key.pem')
-        certfile = os.path.join(here, 'ssl_cert.pem')
         context = ssl.SSLContext()
-        context.load_cert_chain(certfile, keyfile)
+        context.load_cert_chain(ONLYCERT, ONLYKEY)
 
         ssock = context.wrap_socket(request, server_side=True)
         try:
@@ -130,11 +174,21 @@ class SSLWSGIServer(SSLWSGIServerMixin, SilentWSGIServer):
 
 def _run_test_server(*, address, use_ssl=False, server_cls, server_ssl_cls):
 
+    def loop(environ):
+        size = int(environ['CONTENT_LENGTH'])
+        while size:
+            data = environ['wsgi.input'].read(min(size, 0x10000))
+            yield data
+            size -= len(data)
+
     def app(environ, start_response):
         status = '200 OK'
         headers = [('Content-type', 'text/plain')]
         start_response(status, headers)
-        return [b'Test message']
+        if environ['PATH_INFO'] == '/loop':
+            return loop(environ)
+        else:
+            return [b'Test message']
 
     # Run the test WSGI server in a separate thread in order not to
     # interfere with event handling in the main thread
@@ -316,7 +370,7 @@ class TestLoop(base_events.BaseEventLoop):
                 raise AssertionError("Time generator is not finished")
 
     def _add_reader(self, fd, callback, *args):
-        self.readers[fd] = events.Handle(callback, args, self)
+        self.readers[fd] = events.Handle(callback, args, self, None)
 
     def _remove_reader(self, fd):
         self.remove_reader_count[fd] += 1
@@ -342,7 +396,7 @@ class TestLoop(base_events.BaseEventLoop):
             raise AssertionError(f'fd {fd} is registered')
 
     def _add_writer(self, fd, callback, *args):
-        self.writers[fd] = events.Handle(callback, args, self)
+        self.writers[fd] = events.Handle(callback, args, self, None)
 
     def _remove_writer(self, fd):
         self.remove_writer_count[fd] += 1
@@ -408,9 +462,9 @@ class TestLoop(base_events.BaseEventLoop):
             self.advance_time(advance)
         self._timers = []
 
-    def call_at(self, when, callback, *args):
+    def call_at(self, when, callback, *args, context=None):
         self._timers.append(when)
-        return super().call_at(when, callback, *args)
+        return super().call_at(when, callback, *args, context=context)
 
     def _process_events(self, event_list):
         return
@@ -434,6 +488,14 @@ class MockPattern(str):
     """
     def __eq__(self, other):
         return bool(re.search(str(self), other, re.S))
+
+
+class MockInstanceOf:
+    def __init__(self, type):
+        self._type = type
+
+    def __eq__(self, other):
+        return isinstance(other, self._type)
 
 
 def get_function_source(func):

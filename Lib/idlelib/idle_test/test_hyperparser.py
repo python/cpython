@@ -1,9 +1,10 @@
-"""Unittest for idlelib.hyperparser.py."""
+"Test hyperparser, coverage 98%."
+
+from idlelib.hyperparser import HyperParser
 import unittest
 from test.support import requires
 from tkinter import Tk, Text
 from idlelib.editor import EditorWindow
-from idlelib.hyperparser import HyperParser
 
 class DummyEditwin:
     def __init__(self, text):
@@ -269,6 +270,7 @@ class HyperParserTest(unittest.TestCase):
             self.assertEqual(eat_id('+' * length, 0, length), 0)
             self.assertEqual(eat_id('2' + 'a' * (length - 1), 0, length), 0)
             self.assertEqual(eat_id('2' + 'é' * (length - 1), 0, length), 0)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

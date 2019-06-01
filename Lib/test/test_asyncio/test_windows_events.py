@@ -1,6 +1,10 @@
 import os
+import signal
 import socket
 import sys
+import subprocess
+import time
+import threading
 import unittest
 from unittest import mock
 
@@ -8,11 +12,18 @@ if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
 
 import _overlapped
+import _testcapi
 import _winapi
 
 import asyncio
 from asyncio import windows_events
+from asyncio.streams import _StreamProtocol
 from test.test_asyncio import utils as test_utils
+from test.support.script_helper import spawn_python
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
 
 class UpperProto(asyncio.Protocol):
@@ -27,6 +38,27 @@ class UpperProto(asyncio.Protocol):
         if b'\n' in data:
             self.trans.write(b''.join(self.buf).upper())
             self.trans.close()
+
+
+class ProactorLoopCtrlC(test_utils.TestCase):
+
+    def test_ctrl_c(self):
+
+        def SIGINT_after_delay():
+            time.sleep(1)
+            signal.raise_signal(signal.SIGINT)
+
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        l = asyncio.get_event_loop()
+        try:
+            t = threading.Thread(target=SIGINT_after_delay)
+            t.start()
+            l.run_forever()
+            self.fail("should not fall through 'run_forever'")
+        except KeyboardInterrupt:
+            pass
+        finally:
+            l.close()
 
 
 class ProactorTests(test_utils.TestCase):
@@ -69,14 +101,16 @@ class ProactorTests(test_utils.TestCase):
 
         clients = []
         for i in range(5):
-            stream_reader = asyncio.StreamReader(loop=self.loop)
-            protocol = asyncio.StreamReaderProtocol(stream_reader,
-                                                    loop=self.loop)
+            stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
+                                    loop=self.loop, _asyncio_internal=True)
+            protocol = _StreamProtocol(stream,
+                                       loop=self.loop,
+                                       _asyncio_internal=True)
             trans, proto = await self.loop.create_pipe_connection(
                 lambda: protocol, ADDRESS)
             self.assertIsInstance(trans, asyncio.Transport)
             self.assertEqual(protocol, proto)
-            clients.append((stream_reader, trans))
+            clients.append((stream, trans))
 
         for i, (r, w) in enumerate(clients):
             w.write('lower-{}\n'.format(i).encode())
@@ -85,6 +119,7 @@ class ProactorTests(test_utils.TestCase):
             response = await r.readline()
             self.assertEqual(response, 'LOWER-{}\n'.format(i).encode())
             w.close()
+            await r.close()
 
         server.close()
 
@@ -160,6 +195,37 @@ class ProactorTests(test_utils.TestCase):
         fut = self.loop._proactor.wait_for_handle(event)
         fut.cancel()
         fut.cancel()
+
+
+class WinPolicyTests(test_utils.TestCase):
+
+    def test_selector_win_policy(self):
+        async def main():
+            self.assertIsInstance(
+                asyncio.get_running_loop(),
+                asyncio.SelectorEventLoop)
+
+        old_policy = asyncio.get_event_loop_policy()
+        try:
+            asyncio.set_event_loop_policy(
+                asyncio.WindowsSelectorEventLoopPolicy())
+            asyncio.run(main())
+        finally:
+            asyncio.set_event_loop_policy(old_policy)
+
+    def test_proactor_win_policy(self):
+        async def main():
+            self.assertIsInstance(
+                asyncio.get_running_loop(),
+                asyncio.ProactorEventLoop)
+
+        old_policy = asyncio.get_event_loop_policy()
+        try:
+            asyncio.set_event_loop_policy(
+                asyncio.WindowsProactorEventLoopPolicy())
+            asyncio.run(main())
+        finally:
+            asyncio.set_event_loop_policy(old_policy)
 
 
 if __name__ == '__main__':

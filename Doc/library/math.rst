@@ -10,8 +10,8 @@
 
 --------------
 
-This module is always available.  It provides access to the mathematical
-functions defined by the C standard.
+This module provides access to the mathematical functions defined by the C
+standard.
 
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
@@ -50,7 +50,7 @@ Number-theoretic and representation functions
 
 .. function:: factorial(x)
 
-   Return *x* factorial.  Raises :exc:`ValueError` if *x* is not integral or
+   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
 
 
@@ -166,6 +166,20 @@ Number-theoretic and representation functions
    Return ``True`` if *x* is a NaN (not a number), and ``False`` otherwise.
 
 
+.. function:: isqrt(n)
+
+   Return the integer square root of the nonnegative integer *n*. This is the
+   floor of the exact square root of *n*, or equivalently the greatest integer
+   *a* such that *a*\ ² |nbsp| ≤ |nbsp| *n*.
+
+   For some applications, it may be more convenient to have the least integer
+   *a* such that *n* |nbsp| ≤ |nbsp| *a*\ ², or in other words the ceiling of
+   the exact square root of *n*. For positive *n*, this can be computed using
+   ``a = 1 + isqrt(n - 1)``.
+
+   .. versionadded:: 3.8
+
+
 .. function:: ldexp(x, i)
 
    Return ``x * (2**i)``.  This is essentially the inverse of function
@@ -176,6 +190,18 @@ Number-theoretic and representation functions
 
    Return the fractional and integer parts of *x*.  Both results carry the sign
    of *x* and are floats.
+
+
+.. function:: prod(iterable, *, start=1)
+
+   Calculate the product of all the elements in the input *iterable*.
+   The default *start* value for the product is ``1``.
+
+   When the iterable is empty, return the start value.  This function is
+   intended specifically for use with numeric values and may reject
+   non-numeric types.
+
+   .. versionadded:: 3.8
 
 
 .. function:: remainder(x, y)
@@ -203,7 +229,22 @@ Number-theoretic and representation functions
 
    Return the :class:`~numbers.Real` value *x* truncated to an
    :class:`~numbers.Integral` (usually an integer). Delegates to
-   ``x.__trunc__()``.
+   :meth:`x.__trunc__() <object.__trunc__>`.
+
+
+.. function:: comb(n, k)
+
+   Return the number of ways to choose *k* items from *n* items without repetition
+   and without order.
+
+   Also called the binomial coefficient. It is mathematically equal to the expression
+   ``n! / (k! (n - k)!)``. It is equivalent to the coefficient of the *k*-th term in the
+   polynomial expansion of the expression ``(1 + x) ** n``.
+
+   Raises :exc:`TypeError` if the arguments not integers.
+   Raises :exc:`ValueError` if the arguments are negative or if *k* > *n*.
+
+   .. versionadded:: 3.8
 
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
@@ -330,10 +371,31 @@ Trigonometric functions
    Return the cosine of *x* radians.
 
 
-.. function:: hypot(x, y)
+.. function:: dist(p, q)
 
-   Return the Euclidean norm, ``sqrt(x*x + y*y)``. This is the length of the vector
-   from the origin to point ``(x, y)``.
+   Return the Euclidean distance between two points *p* and *q*, each
+   given as a tuple of coordinates.  The two tuples must be the same size.
+
+   Roughly equivalent to::
+
+       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+
+   .. versionadded:: 3.8
+
+
+.. function:: hypot(*coordinates)
+
+   Return the Euclidean norm, ``sqrt(sum(x**2 for x in coordinates))``.
+   This is the length of the vector from the origin to the point
+   given by the coordinates.
+
+   For a two dimensional point ``(x, y)``, this is equivalent to computing
+   the hypotenuse of a right triangle using the Pythagorean theorem,
+   ``sqrt(x*x + y*y)``.
+
+   .. versionchanged:: 3.8
+      Added support for n-dimensional points. Formerly, only the two
+      dimensional case was supported.
 
 
 .. function:: sin(x)
@@ -461,7 +523,7 @@ Constants
    Tau is a circle constant equal to 2\ *π*, the ratio of a circle's circumference to
    its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
    Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
-   `Tau day <http://tauday.com/>`_ by eating twice as much pie!
+   `Tau day <https://tauday.com/>`_ by eating twice as much pie!
 
    .. versionadded:: 3.6
 
@@ -505,3 +567,6 @@ Constants
 
    Module :mod:`cmath`
       Complex number versions of many of these functions.
+
+.. |nbsp| unicode:: 0xA0
+   :trim:

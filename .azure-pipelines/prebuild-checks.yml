@@ -1,0 +1,36 @@
+steps:
+- checkout: self
+  fetchDepth: 5
+
+- script: echo "##vso[task.setvariable variable=diffTarget]HEAD~1"
+  displayName: Set default diff target
+
+- script: |
+    git fetch -q origin $(System.PullRequest.TargetBranch)
+    echo "##vso[task.setvariable variable=diffTarget]HEAD \$(git merge-base HEAD FETCH_HEAD)"
+  displayName: Fetch comparison tree
+  condition: and(succeeded(), variables['System.PullRequest.TargetBranch'])
+
+- script: |
+   if ! git diff --name-only $(diffTarget) | grep -qE '(\.rst$|^Doc|^Misc)'
+   then
+     echo "No docs were updated: docs.run=false"
+     echo "##vso[task.setvariable variable=run;isOutput=true]false"
+   else
+     echo "Docs were updated: docs.run=true"
+     echo "##vso[task.setvariable variable=run;isOutput=true]true"
+   fi
+  displayName: Detect documentation changes
+  name: docs
+
+- script: |
+   if ! git diff --name-only $(diffTarget) | grep -qvE '(\.rst$|^Doc|^Misc)'
+   then
+     echo "Only docs were updated: tests.run=false"
+     echo "##vso[task.setvariable variable=run;isOutput=true]false"
+   else
+     echo "Code was updated: tests.run=true"
+     echo "##vso[task.setvariable variable=run;isOutput=true]true"
+   fi
+  displayName: Detect source changes
+  name: tests

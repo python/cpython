@@ -1,11 +1,11 @@
-'''tests idlelib.searchbase.
+"Test searchbase, coverage 98%."
+# The only thing not covered is inconsequential --
+# testing skipping of suite when self.needwrapbutton is false.
 
-Coverage: 99%. The only thing not covered is inconsequential --
-testing skipping of suite when self.needwrapbutton is false.
-'''
 import unittest
 from test.support import requires
-from tkinter import Tk, Frame  ##, BooleanVar, StringVar
+from tkinter import Tk
+from tkinter.ttk import Frame
 from idlelib import searchengine as se
 from idlelib import searchbase as sdb
 from idlelib.idle_test.mock_idle import Func
@@ -22,6 +22,7 @@ from idlelib.idle_test.mock_idle import Func
 ##    se.BooleanVar = BooleanVar
 ##    se.StringVar = StringVar
 
+
 class SearchDialogBaseTest(unittest.TestCase):
 
     @classmethod
@@ -31,6 +32,7 @@ class SearchDialogBaseTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
 
@@ -97,11 +99,12 @@ class SearchDialogBaseTest(unittest.TestCase):
         self.dialog.top = self.root
         frame, label = self.dialog.make_frame()
         self.assertEqual(label, '')
-        self.assertIsInstance(frame, Frame)
+        self.assertEqual(str(type(frame)), "<class 'tkinter.ttk.Frame'>")
+        # self.assertIsInstance(frame, Frame) fails when test is run by
+        # test_idle not run from IDLE editor.  See issue 33987 PR.
 
         frame, label = self.dialog.make_frame('testlabel')
         self.assertEqual(label['text'], 'testlabel')
-        self.assertIsInstance(frame, Frame)
 
     def btn_test_setup(self, meth):
         self.dialog.top = self.root
@@ -147,7 +150,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         # Look for close button command in buttonframe
         closebuttoncommand = ''
         for child in self.dialog.buttonframe.winfo_children():
-            if child['text'] == 'close':
+            if child['text'] == 'Close':
                 closebuttoncommand = child['command']
         self.assertIn('close', closebuttoncommand)
 

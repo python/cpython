@@ -177,10 +177,12 @@ class BuildExtTestCase(TempdirManager,
         cmd.finalize_options()
 
         py_include = sysconfig.get_python_inc()
-        self.assertIn(py_include, cmd.include_dirs)
+        for p in py_include.split(os.path.pathsep):
+            self.assertIn(p, cmd.include_dirs)
 
         plat_py_include = sysconfig.get_python_inc(plat_specific=1)
-        self.assertIn(plat_py_include, cmd.include_dirs)
+        for p in plat_py_include.split(os.path.pathsep):
+            self.assertIn(p, cmd.include_dirs)
 
         # make sure cmd.libraries is turned into a list
         # if it's a string

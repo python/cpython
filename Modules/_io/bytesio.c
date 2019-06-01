@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_object.h"
 #include "structmember.h"       /* for offsetof() */
 #include "_iomodule.h"
 
@@ -201,7 +202,7 @@ write_bytes(bytesio *self, const char *bytes, Py_ssize_t len)
 }
 
 static PyObject *
-bytesio_get_closed(bytesio *self)
+bytesio_get_closed(bytesio *self, void *Py_UNUSED(ignored))
 {
     if (self->buf == NULL) {
         Py_RETURN_TRUE;
@@ -758,7 +759,7 @@ _io_BytesIO_close_impl(bytesio *self)
  */
 
 static PyObject *
-bytesio_getstate(bytesio *self)
+bytesio_getstate(bytesio *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *initvalue = _io_BytesIO_getvalue_impl(self);
     PyObject *dict;
@@ -1001,10 +1002,10 @@ PyTypeObject PyBytesIO_Type = {
     sizeof(bytesio),                     /*tp_basicsize*/
     0,                                         /*tp_itemsize*/
     (destructor)bytesio_dealloc,               /*tp_dealloc*/
-    0,                                         /*tp_print*/
+    0,                                         /*tp_vectorcall_offset*/
     0,                                         /*tp_getattr*/
     0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
+    0,                                         /*tp_as_async*/
     0,                                         /*tp_repr*/
     0,                                         /*tp_as_number*/
     0,                                         /*tp_as_sequence*/
@@ -1101,10 +1102,10 @@ PyTypeObject _PyBytesIOBuffer_Type = {
     sizeof(bytesiobuf),                        /*tp_basicsize*/
     0,                                         /*tp_itemsize*/
     (destructor)bytesiobuf_dealloc,            /*tp_dealloc*/
-    0,                                         /*tp_print*/
+    0,                                         /*tp_vectorcall_offset*/
     0,                                         /*tp_getattr*/
     0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
+    0,                                         /*tp_as_async*/
     0,                                         /*tp_repr*/
     0,                                         /*tp_as_number*/
     0,                                         /*tp_as_sequence*/

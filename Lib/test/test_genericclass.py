@@ -158,7 +158,7 @@ class TestClassGetitem(unittest.TestCase):
         self.assertEqual(getitem_args[0], (C, (int, str)))
         self.assertEqual(getitem_args[1], {})
 
-    def test_class_getitem(self):
+    def test_class_getitem_format(self):
         class C:
             def __class_getitem__(cls, item):
                 return f'C[{item.__name__}]'
@@ -183,12 +183,21 @@ class TestClassGetitem(unittest.TestCase):
         self.assertEqual(D[int], 'D[int]')
         self.assertEqual(D[D], 'D[D]')
 
+    def test_class_getitem_classmethod(self):
+        class C:
+            @classmethod
+            def __class_getitem__(cls, item):
+                return f'{cls.__name__}[{item.__name__}]'
+        class D(C): ...
+        self.assertEqual(D[int], 'D[int]')
+        self.assertEqual(D[D], 'D[D]')
+
     def test_class_getitem_patched(self):
         class C:
             def __init_subclass__(cls):
                 def __class_getitem__(cls, item):
                     return f'{cls.__name__}[{item.__name__}]'
-                cls.__class_getitem__ = __class_getitem__
+                cls.__class_getitem__ = classmethod(__class_getitem__)
         class D(C): ...
         self.assertEqual(D[int], 'D[int]')
         self.assertEqual(D[D], 'D[D]')
@@ -239,7 +248,14 @@ class TestClassGetitem(unittest.TestCase):
                 return f'{cls.__name__}[{item.__name__}]'
         self.assertEqual(Meta[int], 'Meta[int]')
 
-    def test_class_getitem_metaclass_2(self):
+    def test_class_getitem_with_metaclass(self):
+        class Meta(type): pass
+        class C(metaclass=Meta):
+            def __class_getitem__(cls, item):
+                return f'{cls.__name__}[{item.__name__}]'
+        self.assertEqual(C[int], 'C[int]')
+
+    def test_class_getitem_metaclass_first(self):
         class Meta(type):
             def __getitem__(cls, item):
                 return 'from metaclass'
@@ -254,7 +270,7 @@ class CAPITest(unittest.TestCase):
 
     def test_c_class(self):
         from _testcapi import Generic, GenericAlias
-        self.assertIsInstance(Generic.__class_getitem__(Generic, int), GenericAlias)
+        self.assertIsInstance(Generic.__class_getitem__(int), GenericAlias)
 
         IntGeneric = Generic[int]
         self.assertIs(type(IntGeneric), GenericAlias)

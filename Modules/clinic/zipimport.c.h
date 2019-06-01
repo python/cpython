@@ -58,7 +58,7 @@ PyDoc_STRVAR(zipimport_zipimporter_find_module__doc__,
 "with the importer protocol.");
 
 #define ZIPIMPORT_ZIPIMPORTER_FIND_MODULE_METHODDEF    \
-    {"find_module", (PyCFunction)zipimport_zipimporter_find_module, METH_FASTCALL, zipimport_zipimporter_find_module__doc__},
+    {"find_module", (PyCFunction)(void *)zipimport_zipimporter_find_module, METH_FASTCALL, zipimport_zipimporter_find_module__doc__},
 
 static PyObject *
 zipimport_zipimporter_find_module_impl(ZipImporter *self, PyObject *fullname,
@@ -94,7 +94,7 @@ PyDoc_STRVAR(zipimport_zipimporter_find_loader__doc__,
 "there for compatibility with the importer protocol.");
 
 #define ZIPIMPORT_ZIPIMPORTER_FIND_LOADER_METHODDEF    \
-    {"find_loader", (PyCFunction)zipimport_zipimporter_find_loader, METH_FASTCALL, zipimport_zipimporter_find_loader__doc__},
+    {"find_loader", (PyCFunction)(void *)zipimport_zipimporter_find_loader, METH_FASTCALL, zipimport_zipimporter_find_loader__doc__},
 
 static PyObject *
 zipimport_zipimporter_find_loader_impl(ZipImporter *self, PyObject *fullname,
@@ -291,4 +291,35 @@ zipimport_zipimporter_get_source(ZipImporter *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=93cb62a3a9752b9f input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(zipimport_zipimporter_get_resource_reader__doc__,
+"get_resource_reader($self, fullname, /)\n"
+"--\n"
+"\n"
+"Return the ResourceReader for a package in a zip file.\n"
+"\n"
+"If \'fullname\' is a package within the zip file, return the \'ResourceReader\'\n"
+"object for the package.  Otherwise return None.");
+
+#define ZIPIMPORT_ZIPIMPORTER_GET_RESOURCE_READER_METHODDEF    \
+    {"get_resource_reader", (PyCFunction)zipimport_zipimporter_get_resource_reader, METH_O, zipimport_zipimporter_get_resource_reader__doc__},
+
+static PyObject *
+zipimport_zipimporter_get_resource_reader_impl(ZipImporter *self,
+                                               PyObject *fullname);
+
+static PyObject *
+zipimport_zipimporter_get_resource_reader(ZipImporter *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *fullname;
+
+    if (!PyArg_Parse(arg, "U:get_resource_reader", &fullname)) {
+        goto exit;
+    }
+    return_value = zipimport_zipimporter_get_resource_reader_impl(self, fullname);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=854ce3502180dc1f input=a9049054013a1b77]*/

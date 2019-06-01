@@ -14,6 +14,10 @@ from test.test_asyncio import utils as test_utils
 from test import support
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 def _fakefunc(f):
     return f
 
@@ -174,10 +178,6 @@ class BaseFutureTests:
         fut = self.cls.__new__(self.cls, loop=self.loop)
         with self.assertRaises((RuntimeError, AttributeError)):
             fut.remove_done_callback(lambda f: None)
-
-        fut = self.cls.__new__(self.cls, loop=self.loop)
-        with self.assertRaises((RuntimeError, AttributeError)):
-            fut._schedule_callbacks()
 
         fut = self.cls.__new__(self.cls, loop=self.loop)
         try:
@@ -370,8 +370,14 @@ class BaseFutureTests:
         def test():
             arg1, arg2 = coro()
 
-        self.assertRaises(AssertionError, test)
+        with self.assertRaisesRegex(RuntimeError, "await wasn't used"):
+            test()
         fut.cancel()
+
+    def test_log_traceback(self):
+        fut = self._new_future(loop=self.loop)
+        with self.assertRaisesRegex(ValueError, 'can only be set to False'):
+            fut._log_traceback = True
 
     @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_abandoned(self, m_log):
@@ -559,16 +565,29 @@ class BaseFutureTests:
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
 class CFutureTests(BaseFutureTests, test_utils.TestCase):
-    cls = futures._CFuture
+    try:
+        cls = futures._CFuture
+    except AttributeError:
+        cls = None
+
+    def test_future_del_segfault(self):
+        fut = self._new_future(loop=self.loop)
+        with self.assertRaises(AttributeError):
+            del fut._asyncio_future_blocking
+        with self.assertRaises(AttributeError):
+            del fut._log_traceback
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
 class CSubFutureTests(BaseFutureTests, test_utils.TestCase):
-    class CSubFuture(futures._CFuture):
-        pass
+    try:
+        class CSubFuture(futures._CFuture):
+            pass
 
-    cls = CSubFuture
+        cls = CSubFuture
+    except AttributeError:
+        cls = None
 
 
 class PyFutureTests(BaseFutureTests, test_utils.TestCase):
