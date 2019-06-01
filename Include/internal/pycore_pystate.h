@@ -25,7 +25,7 @@ struct pyruntimestate;
 
 /* ceval state */
 
-struct _pending_calls {
+struct _ceval_pending_calls {
     int finishing;
     PyThread_type_lock lock;
     /* Request for running pending calls. */
@@ -65,7 +65,7 @@ struct _ceval_runtime_state {
 };
 
 struct _ceval_interpreter_state {
-    struct _pending_calls pending;
+    struct _ceval_pending_calls pending;
 };
 
 

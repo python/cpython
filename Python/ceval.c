@@ -324,7 +324,7 @@ _PyEval_ReInitThreads(_PyRuntimeState *runtime)
 
     // Only the main interpreter remains, so ignore the rest.
     PyInterpreterState *interp = _PyRuntime.interpreters.main;
-    struct _pending_calls *pending = &interp->ceval.pending;
+    struct _ceval_pending_calls *pending = &interp->ceval.pending;
     pending->lock = PyThread_allocate_lock();
     if (pending->lock == NULL) {
         Py_FatalError("Can't initialize threads for pending calls");
@@ -423,7 +423,7 @@ _PyEval_SignalReceived(struct _ceval_runtime_state *ceval_r)
 
 /* Push one item onto the queue while holding the lock. */
 static int
-_push_pending_call(struct _pending_calls *pending, unsigned long thread_id,
+_push_pending_call(struct _ceval_pending_calls *pending, unsigned long thread_id,
                    int (*func)(void *), void *arg)
 {
     int i = pending->last;
@@ -440,7 +440,7 @@ _push_pending_call(struct _pending_calls *pending, unsigned long thread_id,
 
 /* Pop one item off the queue while holding the lock. */
 static void
-_pop_pending_call(struct _pending_calls *pending, unsigned long *thread_id,
+_pop_pending_call(struct _ceval_pending_calls *pending, unsigned long *thread_id,
                   int (**func)(void *), void **arg)
 {
     int i = pending->first;
@@ -466,7 +466,7 @@ _PyEval_AddPendingCall(PyThreadState *tstate,
                        unsigned long thread_id,
                        int (*func)(void *), void *arg)
 {
-    struct _pending_calls *pending = &ceval_i->pending;
+    struct _ceval_pending_calls *pending = &ceval_i->pending;
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
     if (pending->finishing) {
@@ -564,7 +564,7 @@ make_pending_calls(PyInterpreterState *interp)
     int res = 0;
 
     /* perform a bounded number of calls, in case of recursion */
-    struct _pending_calls *pending = &ceval_i->pending;
+    struct _ceval_pending_calls *pending = &ceval_i->pending;
     unsigned long thread_id = 0;
     for (int i=0; i<NPENDINGCALLS; i++) {
         int (*func)(void *) = NULL;
@@ -609,7 +609,7 @@ _PyEval_FinishPendingCalls(PyInterpreterState *interp)
 {
     assert(PyGILState_Check());
 
-    struct _pending_calls *pending = &interp->ceval.pending;
+    struct _ceval_pending_calls *pending = &interp->ceval.pending;
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
     pending->finishing = 1;
