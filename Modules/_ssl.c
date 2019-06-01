@@ -3617,6 +3617,39 @@ set_maximum_version(PySSLContext *self, PyObject *arg, void *c)
 }
 #endif /* SSL_CTRL_GET_MAX_PROTO_VERSION */
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
+static PyObject *
+get_num_tickets(PySSLContext *self, void *c)
+{
+    return PyLong_FromLong(SSL_CTX_get_num_tickets(self->ctx));
+}
+
+static int
+set_num_tickets(PySSLContext *self, PyObject *arg, void *c)
+{
+    long num;
+    if (!PyArg_Parse(arg, "l", &num))
+        return -1;
+    if (num < 0) {
+        PyErr_SetString(PyExc_ValueError, "value must be non-negative");
+        return -1;
+    }
+    if (self->protocol != PY_SSL_VERSION_TLS_SERVER) {
+        PyErr_SetString(PyExc_ValueError,
+                        "SSLContext is not a server context.");
+        return -1;
+    }
+    if (SSL_CTX_set_num_tickets(self->ctx, num) != 1) {
+        PyErr_SetString(PyExc_ValueError, "failed to set num tickets.");
+        return -1;
+    }
+    return 0;
+}
+
+PyDoc_STRVAR(PySSLContext_num_tickets_doc,
+"Control the number of TLSv1.3 session tickets");
+#endif /* OpenSSL 1.1.1 */
+
 static PyObject *
 get_options(PySSLContext *self, void *c)
 {
@@ -4654,6 +4687,10 @@ static PyGetSetDef context_getsetlist[] = {
                       (setter) _PySSLContext_set_msg_callback, NULL},
     {"sni_callback", (getter) get_sni_callback,
                      (setter) set_sni_callback, PySSLContext_sni_callback_doc},
+#if (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
+    {"num_tickets", (getter) get_num_tickets,
+                    (setter) set_num_tickets, PySSLContext_num_tickets_doc},
+#endif
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
     {"post_handshake_auth", (getter) get_post_handshake_auth,
