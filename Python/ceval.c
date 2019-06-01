@@ -3951,9 +3951,9 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         kwdict = NULL;
     }
 
-    /* Copy positional only arguments into local variables */
+    /* Copy all positional arguments into local variables */
     if (argcount > co->co_argcount) {
-        n = co->co_posonlyargcount;
+        n = co->co_argcount;
     }
     else {
         n = argcount;
@@ -3962,20 +3962,6 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         x = args[j];
         Py_INCREF(x);
         SETLOCAL(j, x);
-    }
-
-
-    /* Copy positional arguments into local variables */
-    if (argcount > co->co_argcount) {
-        n = co->co_argcount;
-    }
-    else {
-        n = argcount;
-    }
-    for (i = j; i < n; i++) {
-        x = args[i];
-        Py_INCREF(x);
-        SETLOCAL(i, x);
     }
 
     /* Pack other positional arguments into the *args argument */
