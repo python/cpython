@@ -390,9 +390,9 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                           &PyTuple_Type, &cellvars))
         return NULL;
 
-    if (PySys_Audit("code.__new__", "OOOiiiii",
-                    code, filename, name, argcount, kwonlyargcount,
-                    nlocals, stacksize, flags) < 0) {
+    if (PySys_Audit("code.__new__", "OOOiiiiii",
+                    code, filename, name, argcount, posonlyargcount,
+                    kwonlyargcount, nlocals, stacksize, flags) < 0) {
         goto cleanup;
     }
 
