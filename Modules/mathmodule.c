@@ -3003,8 +3003,9 @@ math.comb
 
     n: object
     k: object
+    /
 
-Number of ways to choose *k* items from *n* items without repetition and without order.
+Number of ways to choose k items from n items without repetition and without order.
 
 Also called the binomial coefficient. It is mathematically equal to the expression
 n! / (k! * (n - k)!). It is equivalent to the coefficient of k-th term in
@@ -3017,7 +3018,7 @@ Raises ValueError if the arguments are negative or if k > n.
 
 static PyObject *
 math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=bd2cec8d854f3493 input=b2160da8fe59df60]*/
+/*[clinic end generated code: output=bd2cec8d854f3493 input=2f336ac9ec8242f9]*/
 {
     PyObject *result = NULL, *factor = NULL, *temp;
     int overflow, cmp;
