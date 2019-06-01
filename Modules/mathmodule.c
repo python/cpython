@@ -3039,27 +3039,25 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
                         "n must be a non-negative integer");
         goto error;
     }
-    if (Py_SIZE(n) <= Py_SIZE(k)) {
-        /* k = min(k, n - k) */
-        temp = PyNumber_Subtract(n, k);
-        if (temp == NULL) {
+    /* k = min(k, n - k) */
+    temp = PyNumber_Subtract(n, k);
+    if (temp == NULL) {
+        goto error;
+    }
+    if (Py_SIZE(temp) < 0) {
+        Py_DECREF(temp);
+        PyErr_SetString(PyExc_ValueError,
+                        "k must be an integer less than or equal to n");
+        goto error;
+    }
+    cmp = PyObject_RichCompareBool(k, temp, Py_GT);
+    if (cmp > 0) {
+        Py_SETREF(k, temp);
+    }
+    else {
+        Py_DECREF(temp);
+        if (cmp < 0) {
             goto error;
-        }
-        if (Py_SIZE(temp) < 0) {
-            Py_DECREF(temp);
-            PyErr_SetString(PyExc_ValueError,
-                            "k must be an integer less than or equal to n");
-            goto error;
-        }
-        cmp = PyObject_RichCompareBool(k, temp, Py_GT);
-        if (cmp > 0) {
-            Py_SETREF(k, temp);
-        }
-        else {
-            Py_DECREF(temp);
-            if (cmp < 0 && PyErr_Occurred()) {
-                goto error;
-            }
         }
     }
 
