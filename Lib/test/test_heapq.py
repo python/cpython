@@ -2,6 +2,7 @@
 
 import random
 import unittest
+import doctest
 
 from test import support
 from unittest import TestCase, skipUnless
@@ -25,6 +26,23 @@ class TestModules(TestCase):
         for fname in func_names:
             self.assertEqual(getattr(c_heapq, fname).__module__, '_heapq')
 
+
+def load_tests(loader, tests, ignore):
+    # The 'merge' function has examples in its docstring which we should test
+    # with 'doctest'.
+    #
+    # However, doctest can't easily find all docstrings in the module (loading
+    # it through import_fresh_module seems to confuse it), so we specifically
+    # create a finder which returns the doctests from the merge method.
+
+    class HeapqMergeDocTestFinder:
+        def find(self, *args, **kwargs):
+            dtf = doctest.DocTestFinder()
+            return dtf.find(py_heapq.merge)
+
+    tests.addTests(doctest.DocTestSuite(py_heapq,
+                                        test_finder=HeapqMergeDocTestFinder()))
+    return tests
 
 class TestHeap:
 
@@ -135,6 +153,13 @@ class TestHeap:
         x = self.module.heappushpop(h, 11)
         self.assertEqual((h, x), ([11], 10))
 
+    def test_heappop_max(self):
+        # _heapop_max has an optimization for one-item lists which isn't
+        # covered in other tests, so test that case explicitly here
+        h = [3, 2]
+        self.assertEqual(self.module._heappop_max(h), 3)
+        self.assertEqual(self.module._heappop_max(h), 2)
+
     def test_heapsort(self):
         # Exercise everything with repeated heapsort checks
         for trial in range(100):
@@ -167,6 +192,12 @@ class TestHeap:
                 self.assertEqual(sorted(chain(*inputs), key=key, reverse=reverse),
                                  list(self.module.merge(*seqs, key=key, reverse=reverse)))
                 self.assertEqual(list(self.module.merge()), [])
+
+    def test_empty_merges(self):
+        # Merging two empty lists (with or without a key) should produce
+        # another empty list.
+        self.assertEqual(list(self.module.merge([], [])), [])
+        self.assertEqual(list(self.module.merge([], [], key=lambda: 6)), [])
 
     def test_merge_does_not_suppress_index_error(self):
         # Issue 19018: Heapq.merge suppresses IndexError from user generator
