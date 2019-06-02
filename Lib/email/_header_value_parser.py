@@ -2385,7 +2385,7 @@ def parse_mime_parameters(value):
     the formal RFC grammar, but it is more convenient for us for the set of
     parameters to be treated as its own TokenList.
 
-    This is 'parse' routine because it consumes the reminaing value, but it
+    This is 'parse' routine because it consumes the remaining value, but it
     would never be called to parse a full header.  Instead it is called to
     parse everything after the non-parameter value of a specific MIME header.
 

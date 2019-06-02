@@ -815,7 +815,7 @@ Customizing default Python versions
 In some cases, a version qualifier can be included in a command to dictate
 which version of Python will be used by the command. A version qualifier
 starts with a major version number and can optionally be followed by a period
-('.') and a minor version specifier. Furthermore it is possible to specifiy
+('.') and a minor version specifier. Furthermore it is possible to specify
 if a 32 or 64 bit implementation shall be requested by adding "-32" or "-64".
 
 For example, a shebang line of ``#!python`` has no version qualifier, while
