@@ -191,8 +191,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 # Check early.
                 # Raising exception before process creation
                 # prevents subprocess execution if the watcher
-                # canoot handle it (add_child_handler() fails with exception
-                # if watcher.is_active() returns False).
+                # is not ready to handle it.
                 raise RuntimeError("asyncio.get_child_watcher() is not activated, "
                                    "subproccess support is not installed.")
             waiter = self.create_future()
