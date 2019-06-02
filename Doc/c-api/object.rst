@@ -369,7 +369,7 @@ Object Protocol
 
    .. versionadded:: 3.8
 
-.. c:data:``PY_VECTORCALL_ARGUMENTS_OFFSET``
+.. c:var:: PY_VECTORCALL_ARGUMENTS_OFFSET
 
    If set in a vectorcall *nargsf* argument, the callee is allowed to
    temporarily change ``args[-1]``. In other words, *args* points to
