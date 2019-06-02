@@ -1,11 +1,43 @@
 """
 Dialog for building Tkinter accelerator key bindings
 """
-from tkinter import *
-from tkinter.ttk import Scrollbar
+from tkinter import Toplevel, Listbox, Text, StringVar, TclError
+from tkinter.ttk import Frame, Button, Checkbutton, Entry, Label, Scrollbar
 from tkinter import messagebox
 import string
 import sys
+
+
+FUNCTION_KEYS = ('F1', 'F2' ,'F3' ,'F4' ,'F5' ,'F6',
+                 'F7', 'F8' ,'F9' ,'F10' ,'F11' ,'F12')
+ALPHANUM_KEYS = tuple(string.ascii_lowercase + string.digits)
+PUNCTUATION_KEYS = tuple('~!@#%^&*()_-+={}[]|;:,.<>/?')
+WHITESPACE_KEYS = ('Tab', 'Space', 'Return')
+EDIT_KEYS = ('BackSpace', 'Delete', 'Insert')
+MOVE_KEYS = ('Home', 'End', 'Page Up', 'Page Down', 'Left Arrow',
+             'Right Arrow', 'Up Arrow', 'Down Arrow')
+AVAILABLE_KEYS = (ALPHANUM_KEYS + PUNCTUATION_KEYS + FUNCTION_KEYS +
+                  WHITESPACE_KEYS + EDIT_KEYS + MOVE_KEYS)
+
+
+def translate_key(key, modifiers):
+    "Translate from keycap symbol to the Tkinter keysym."
+    mapping = {'Space':'space',
+            '~':'asciitilde', '!':'exclam', '@':'at', '#':'numbersign',
+            '%':'percent', '^':'asciicircum', '&':'ampersand',
+            '*':'asterisk', '(':'parenleft', ')':'parenright',
+            '_':'underscore', '-':'minus', '+':'plus', '=':'equal',
+            '{':'braceleft', '}':'braceright',
+            '[':'bracketleft', ']':'bracketright', '|':'bar',
+            ';':'semicolon', ':':'colon', ',':'comma', '.':'period',
+            '<':'less', '>':'greater', '/':'slash', '?':'question',
+            'Page Up':'Prior', 'Page Down':'Next',
+            'Left Arrow':'Left', 'Right Arrow':'Right',
+            'Up Arrow':'Up', 'Down Arrow': 'Down', 'Tab':'Tab'}
+    key = mapping.get(key, key)
+    if 'Shift' in modifiers and key in string.ascii_lowercase:
+        key = key.upper()
+    return f'Key-{key}'
 
 
 class GetKeysDialog(Toplevel):
@@ -48,7 +80,6 @@ class GetKeysDialog(Toplevel):
             self.modifier_vars.append(variable)
         self.advanced = False
         self.create_widgets()
-        self.load_final_key_list()
         self.update_idletasks()
         self.geometry(
                 "+%d+%d" % (
@@ -67,11 +98,11 @@ class GetKeysDialog(Toplevel):
         messagebox.showerror(*args, **kwargs)
 
     def create_widgets(self):
-        frame = Frame(self, borderwidth=2, relief=SUNKEN)
-        frame.pack(side=TOP, expand=True, fill=BOTH)
+        self.frame = frame = Frame(self, borderwidth=2, relief='sunken')
+        frame.pack(side='top', expand=True, fill='both')
 
         frame_buttons = Frame(self)
-        frame_buttons.pack(side=BOTTOM, fill=X)
+        frame_buttons.pack(side='bottom', fill='x')
 
         self.button_ok = Button(frame_buttons, text='OK',
                                 width=8, command=self.ok)
@@ -81,21 +112,21 @@ class GetKeysDialog(Toplevel):
         self.button_cancel.grid(row=0, column=1, padx=5, pady=5)
 
         # Basic entry key sequence.
-        self.frame_keyseq_basic = Frame(frame)
-        self.frame_keyseq_basic.grid(row=0, column=0, sticky=NSEW,
+        self.frame_keyseq_basic = Frame(frame, name='keyseq_basic')
+        self.frame_keyseq_basic.grid(row=0, column=0, sticky='nsew',
                                       padx=5, pady=5)
         basic_title = Label(self.frame_keyseq_basic,
                             text=f"New keys for '{self.action}' :")
-        basic_title.pack(anchor=W)
+        basic_title.pack(anchor='w')
 
-        basic_keys = Label(self.frame_keyseq_basic, justify=LEFT,
-                           textvariable=self.key_string, relief=GROOVE,
+        basic_keys = Label(self.frame_keyseq_basic, justify='left',
+                           textvariable=self.key_string, relief='groove',
                            borderwidth=2)
-        basic_keys.pack(ipadx=5, ipady=5, fill=X)
+        basic_keys.pack(ipadx=5, ipady=5, fill='x')
 
         # Basic entry controls.
         self.frame_controls_basic = Frame(frame)
-        self.frame_controls_basic.grid(row=1, column=0, sticky=NSEW, padx=5)
+        self.frame_controls_basic.grid(row=1, column=0, sticky='nsew', padx=5)
 
         # Basic entry modifiers.
         self.modifier_checkbuttons = {}
@@ -105,51 +136,52 @@ class GetKeysDialog(Toplevel):
             check = Checkbutton(self.frame_controls_basic,
                                 command=self.build_key_string, text=label,
                                 variable=variable, onvalue=modifier, offvalue='')
-            check.grid(row=0, column=column, padx=2, sticky=W)
+            check.grid(row=0, column=column, padx=2, sticky='w')
             self.modifier_checkbuttons[modifier] = check
             column += 1
 
         # Basic entry help text.
-        help_basic = Label(self.frame_controls_basic, justify=LEFT,
+        help_basic = Label(self.frame_controls_basic, justify='left',
                            text="Select the desired modifier keys\n"+
                                 "above, and the final key from the\n"+
                                 "list on the right.\n\n" +
                                 "Use upper case Symbols when using\n" +
                                 "the Shift modifier.  (Letters will be\n" +
                                 "converted automatically.)")
-        help_basic.grid(row=1, column=0, columnspan=4, padx=2, sticky=W)
+        help_basic.grid(row=1, column=0, columnspan=4, padx=2, sticky='w')
 
         # Basic entry key list.
         self.list_keys_final = Listbox(self.frame_controls_basic, width=15,
-                                       height=10, selectmode=SINGLE)
+                                       height=10, selectmode='single')
+        self.list_keys_final.insert('end', *AVAILABLE_KEYS)
         self.list_keys_final.bind('<ButtonRelease-1>', self.final_key_selected)
-        self.list_keys_final.grid(row=0, column=4, rowspan=4, sticky=NS)
+        self.list_keys_final.grid(row=0, column=4, rowspan=4, sticky='ns')
         scroll_keys_final = Scrollbar(self.frame_controls_basic,
-                                      orient=VERTICAL,
+                                      orient='vertical',
                                       command=self.list_keys_final.yview)
         self.list_keys_final.config(yscrollcommand=scroll_keys_final.set)
-        scroll_keys_final.grid(row=0, column=5, rowspan=4, sticky=NS)
+        scroll_keys_final.grid(row=0, column=5, rowspan=4, sticky='ns')
         self.button_clear = Button(self.frame_controls_basic,
                                    text='Clear Keys',
                                    command=self.clear_key_seq)
         self.button_clear.grid(row=2, column=0, columnspan=4)
 
         # Advanced entry key sequence.
-        self.frame_keyseq_advanced = Frame(frame)
-        self.frame_keyseq_advanced.grid(row=0, column=0, sticky=NSEW,
+        self.frame_keyseq_advanced = Frame(frame, name='keyseq_advanced')
+        self.frame_keyseq_advanced.grid(row=0, column=0, sticky='nsew',
                                          padx=5, pady=5)
-        advanced_title = Label(self.frame_keyseq_advanced, justify=LEFT,
+        advanced_title = Label(self.frame_keyseq_advanced, justify='left',
                                text=f"Enter new binding(s) for '{self.action}' :\n" +
                                      "(These bindings will not be checked for validity!)")
-        advanced_title.pack(anchor=W)
+        advanced_title.pack(anchor='w')
         self.advanced_keys = Entry(self.frame_keyseq_advanced,
                                    textvariable=self.key_string)
-        self.advanced_keys.pack(fill=X)
+        self.advanced_keys.pack(fill='x')
 
         # Advanced entry help text.
         self.frame_help_advanced = Frame(frame)
-        self.frame_help_advanced.grid(row=1, column=0, sticky=NSEW, padx=5)
-        help_advanced = Label(self.frame_help_advanced, justify=LEFT,
+        self.frame_help_advanced.grid(row=1, column=0, sticky='nsew', padx=5)
+        help_advanced = Label(self.frame_help_advanced, justify='left',
             text="Key bindings are specified using Tkinter keysyms as\n"+
                  "in these samples: <Control-f>, <Shift-F2>, <F12>,\n"
                  "<Control-space>, <Meta-less>, <Control-Alt-Shift-X>.\n"
@@ -159,12 +191,12 @@ class GetKeysDialog(Toplevel):
                  "is the 'do-nothing' keybinding.\n\n" +
                  "Multiple separate bindings for one action should be\n"+
                  "separated by a space, eg., <Alt-v> <Meta-v>." )
-        help_advanced.grid(row=0, column=0, sticky=NSEW)
+        help_advanced.grid(row=0, column=0, sticky='nsew')
 
         # Switch between basic and advanced.
         self.button_level = Button(frame, command=self.toggle_level,
                                   text='<< Basic Key Binding Entry')
-        self.button_level.grid(row=2, column=0, stick=EW, padx=5, pady=5)
+        self.button_level.grid(row=2, column=0, stick='ew', padx=5, pady=5)
         self.toggle_level()
 
     def set_modifiers_for_platform(self):
@@ -197,16 +229,16 @@ class GetKeysDialog(Toplevel):
             self.frame_controls_basic.lift()
             self.advanced = False
 
-    def final_key_selected(self, event):
+    def final_key_selected(self, event=None):
         "Handler for clicking on key in basic settings list."
         self.build_key_string()
 
     def build_key_string(self):
         "Create formatted string of modifiers plus the key."
         keylist = modifiers = self.get_modifiers()
-        final_key = self.list_keys_final.get(ANCHOR)
+        final_key = self.list_keys_final.get('anchor')
         if final_key:
-            final_key = self.translate_key(final_key, modifiers)
+            final_key = translate_key(final_key, modifiers)
             keylist.append(final_key)
         self.key_string.set(f"<{'-'.join(keylist)}>")
 
@@ -217,48 +249,11 @@ class GetKeysDialog(Toplevel):
 
     def clear_key_seq(self):
         "Clear modifiers and keys selection."
-        self.list_keys_final.select_clear(0, END)
-        self.list_keys_final.yview(MOVETO, '0.0')
+        self.list_keys_final.select_clear(0, 'end')
+        self.list_keys_final.yview('moveto', '0.0')
         for variable in self.modifier_vars:
             variable.set('')
         self.key_string.set('')
-
-    def load_final_key_list(self):
-        "Populate listbox of available keys."
-        # These tuples are also available for use in validity checks.
-        self.function_keys = ('F1', 'F2' ,'F3' ,'F4' ,'F5' ,'F6',
-                              'F7', 'F8' ,'F9' ,'F10' ,'F11' ,'F12')
-        self.alphanum_keys = tuple(string.ascii_lowercase + string.digits)
-        self.punctuation_keys = tuple('~!@#%^&*()_-+={}[]|;:,.<>/?')
-        self.whitespace_keys = ('Tab', 'Space', 'Return')
-        self.edit_keys = ('BackSpace', 'Delete', 'Insert')
-        self.move_keys = ('Home', 'End', 'Page Up', 'Page Down', 'Left Arrow',
-                          'Right Arrow', 'Up Arrow', 'Down Arrow')
-        # Make a tuple of most of the useful common 'final' keys.
-        keys = (self.alphanum_keys + self.punctuation_keys + self.function_keys +
-                self.whitespace_keys + self.edit_keys + self.move_keys)
-        self.list_keys_final.insert(END, *keys)
-
-    @staticmethod
-    def translate_key(key, modifiers):
-        "Translate from keycap symbol to the Tkinter keysym."
-        translate_dict = {'Space':'space',
-                '~':'asciitilde', '!':'exclam', '@':'at', '#':'numbersign',
-                '%':'percent', '^':'asciicircum', '&':'ampersand',
-                '*':'asterisk', '(':'parenleft', ')':'parenright',
-                '_':'underscore', '-':'minus', '+':'plus', '=':'equal',
-                '{':'braceleft', '}':'braceright',
-                '[':'bracketleft', ']':'bracketright', '|':'bar',
-                ';':'semicolon', ':':'colon', ',':'comma', '.':'period',
-                '<':'less', '>':'greater', '/':'slash', '?':'question',
-                'Page Up':'Prior', 'Page Down':'Next',
-                'Left Arrow':'Left', 'Right Arrow':'Right',
-                'Up Arrow':'Up', 'Down Arrow': 'Down', 'Tab':'Tab'}
-        if key in translate_dict:
-            key = translate_dict[key]
-        if 'Shift' in modifiers and key in string.ascii_lowercase:
-            key = key.upper()
-        return f'Key-{key}'
 
     def ok(self, event=None):
         keys = self.key_string.get().strip()
@@ -282,7 +277,7 @@ class GetKeysDialog(Toplevel):
         Doesn't check the string produced by the advanced dialog because
         'modifiers' isn't set.
         """
-        final_key = self.list_keys_final.get(ANCHOR)
+        final_key = self.list_keys_final.get('anchor')
         modifiers = self.get_modifiers()
         title = self.keyerror_title
         key_sequences = [key for keylist in self.current_key_sequences
@@ -291,12 +286,12 @@ class GetKeysDialog(Toplevel):
             self.showerror(title, parent=self,
                            message='Missing the final Key')
         elif (not modifiers
-              and final_key not in self.function_keys + self.move_keys):
+              and final_key not in FUNCTION_KEYS + MOVE_KEYS):
             self.showerror(title=title, parent=self,
                            message='No modifier key(s) specified.')
         elif (modifiers == ['Shift']) \
                  and (final_key not in
-                      self.function_keys + self.move_keys + ('Tab', 'Space')):
+                      FUNCTION_KEYS + MOVE_KEYS + ('Tab', 'Space')):
             msg = 'The shift modifier by itself may not be used with'\
                   ' this key symbol.'
             self.showerror(title=title, parent=self, message=msg)

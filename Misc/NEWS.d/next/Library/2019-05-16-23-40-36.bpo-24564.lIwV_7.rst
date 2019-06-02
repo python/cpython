@@ -1,0 +1,3 @@
+:func:`shutil.copystat` now ignores :const:`errno.EINVAL` on :func:`os.setxattr` which may occur when copying files on filesystems without extended attributes support.
+
+Original patch by Giampaolo Rodola, updated by Ying Wang.

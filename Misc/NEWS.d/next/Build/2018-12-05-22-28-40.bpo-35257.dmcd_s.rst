@@ -1,2 +1,0 @@
-Avoid leaking the linker flags from Link Time Optimizations (LTO)
-into distutils when compiling C extensions.

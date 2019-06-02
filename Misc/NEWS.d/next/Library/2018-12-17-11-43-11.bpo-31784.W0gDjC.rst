@@ -1,2 +1,0 @@
-:func:`uuid.uuid1` now calls :func:`time.time_ns` rather than
-``int(time.time() * 1e9)``.

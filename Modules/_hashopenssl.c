@@ -28,10 +28,6 @@
 
 #define MUNCH_SIZE INT_MAX
 
-#ifndef HASH_OBJ_CONSTRUCTOR
-#define HASH_OBJ_CONSTRUCTOR 0
-#endif
-
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
 /* OpenSSL < 1.1.0 */
 #define EVP_MD_CTX_new EVP_MD_CTX_create
@@ -113,16 +109,17 @@ newEVPobject(PyObject *name)
         return NULL;
     }
 
-    retval->ctx = EVP_MD_CTX_new();
-    if (retval->ctx == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
     /* save the name for .name to return */
     Py_INCREF(name);
     retval->name = name;
     retval->lock = NULL;
+
+    retval->ctx = EVP_MD_CTX_new();
+    if (retval->ctx == NULL) {
+        Py_DECREF(retval);
+        PyErr_NoMemory();
+        return NULL;
+    }
 
     return retval;
 }
@@ -186,6 +183,7 @@ EVP_copy_impl(EVPobject *self)
         return NULL;
 
     if (!locked_EVP_MD_CTX_copy(newobj->ctx, self)) {
+        Py_DECREF(newobj);
         return _setException(PyExc_ValueError);
     }
     return (PyObject *)newobj;
@@ -345,76 +343,23 @@ EVP_repr(EVPobject *self)
     return PyUnicode_FromFormat("<%U HASH object @ %p>", self->name, self);
 }
 
-/*[clinic input]
-_hashlib.HASH.__init__ as EVP_tp_init
-
-    name as name_obj: object
-    string as data_obj: object(py_default="b''") = NULL
-
-A hash is an object used to calculate a checksum of a string of information.
-
-Methods:
-
-update() -- updates the current digest with an additional string
-digest() -- return the current digest value
-hexdigest() -- return the current digest as a string of hexadecimal digits
-copy() -- return a copy of the current hash object
-
-Attributes:
-
-name -- the hash algorithm being used by this object
-digest_size -- number of bytes in this hashes output
-[clinic start generated code]*/
-
-static int
-EVP_tp_init_impl(EVPobject *self, PyObject *name_obj, PyObject *data_obj)
-/*[clinic end generated code: output=44766d27757cf851 input=dac22658387f9b5d]*/
-{
-    Py_buffer view;
-    char *nameStr;
-    const EVP_MD *digest;
-
-    if (data_obj)
-        GET_BUFFER_VIEW_OR_ERROR(data_obj, &view, return -1);
-
-    if (!PyArg_Parse(name_obj, "s", &nameStr)) {
-        PyErr_SetString(PyExc_TypeError, "name must be a string");
-        if (data_obj)
-            PyBuffer_Release(&view);
-        return -1;
-    }
-
-    digest = EVP_get_digestbyname(nameStr);
-    if (!digest) {
-        PyErr_SetString(PyExc_ValueError, "unknown hash function");
-        if (data_obj)
-            PyBuffer_Release(&view);
-        return -1;
-    }
-    if (!EVP_DigestInit(self->ctx, digest)) {
-        _setException(PyExc_ValueError);
-        if (data_obj)
-            PyBuffer_Release(&view);
-        return -1;
-    }
-
-    Py_INCREF(name_obj);
-    Py_XSETREF(self->name, name_obj);
-
-    if (data_obj) {
-        if (view.len >= HASHLIB_GIL_MINSIZE) {
-            Py_BEGIN_ALLOW_THREADS
-            EVP_hash(self, view.buf, view.len);
-            Py_END_ALLOW_THREADS
-        } else {
-            EVP_hash(self, view.buf, view.len);
-        }
-        PyBuffer_Release(&view);
-    }
-
-    return 0;
-}
-
+PyDoc_STRVAR(hashtype_doc,
+"HASH(name, string=b\'\')\n"
+"--\n"
+"\n"
+"A hash is an object used to calculate a checksum of a string of information.\n"
+"\n"
+"Methods:\n"
+"\n"
+"update() -- updates the current digest with an additional string\n"
+"digest() -- return the current digest value\n"
+"hexdigest() -- return the current digest as a string of hexadecimal digits\n"
+"copy() -- return a copy of the current hash object\n"
+"\n"
+"Attributes:\n"
+"\n"
+"name -- the hash algorithm being used by this object\n"
+"digest_size -- number of bytes in this hashes output");
 
 static PyTypeObject EVPtype = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -423,10 +368,10 @@ static PyTypeObject EVPtype = {
     0,                  /*tp_itemsize*/
     /* methods */
     (destructor)EVP_dealloc, /*tp_dealloc*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     (reprfunc)EVP_repr, /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
@@ -438,7 +383,7 @@ static PyTypeObject EVPtype = {
     0,                  /*tp_setattro*/
     0,                  /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    EVP_tp_init__doc__, /*tp_doc*/
+    hashtype_doc,       /*tp_doc*/
     0,                  /*tp_traverse*/
     0,                  /*tp_clear*/
     0,                  /*tp_richcompare*/
@@ -448,16 +393,11 @@ static PyTypeObject EVPtype = {
     EVP_methods,        /* tp_methods */
     EVP_members,        /* tp_members */
     EVP_getseters,      /* tp_getset */
-#if 1
     0,                  /* tp_base */
     0,                  /* tp_dict */
     0,                  /* tp_descr_get */
     0,                  /* tp_descr_set */
     0,                  /* tp_dictoffset */
-#endif
-#if HASH_OBJ_CONSTRUCTOR
-    (initproc)EVP_tp_init, /* tp_init */
-#endif
 };
 
 static PyObject *
@@ -835,7 +775,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     if (!retval) {
         /* sorry, can't do much better */
         PyErr_SetString(PyExc_ValueError,
-                        "Invalid paramemter combination for n, r, p, maxmem.");
+                        "Invalid parameter combination for n, r, p, maxmem.");
         return NULL;
    }
 

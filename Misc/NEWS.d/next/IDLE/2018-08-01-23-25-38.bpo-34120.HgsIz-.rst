@@ -1,1 +1,0 @@
-Fix unresponsiveness after closing certain windows and dialogs.

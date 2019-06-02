@@ -1,3 +1,0 @@
-Errors other than :exc:`TypeError` raised in methods ``__adapt__()`` and
-``__conform__()`` in the :mod:`sqlite3` module are now propagated to the
-user.

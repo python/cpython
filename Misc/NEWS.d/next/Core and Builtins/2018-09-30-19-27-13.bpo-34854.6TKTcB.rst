@@ -1,2 +1,0 @@
-Fixed a crash in compiling string annotations containing a lambda with a
-keyword-only argument that doesn't have a default value.

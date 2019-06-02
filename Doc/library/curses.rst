@@ -708,9 +708,16 @@ the following methods and attributes:
 
    .. note::
 
-      Writing outside the window, subwindow, or pad raises :exc:`curses.error`.
-      Attempting to write to the lower right corner of a window, subwindow,
-      or pad will cause an exception to be raised after the string is printed.
+      * Writing outside the window, subwindow, or pad raises :exc:`curses.error`.
+        Attempting to write to the lower right corner of a window, subwindow,
+        or pad will cause an exception to be raised after the string is printed.
+
+      * A `bug in ncurses <https://bugs.python.org/issue35924>`_, the backend
+        for this Python module, can cause SegFaults when resizing windows. This
+        is fixed in ncurses-6.1-20190511.  If you are stuck with an earlier
+        ncurses, you can avoid triggering this if you do not call :func:`addstr`
+        with a *str* that has embedded newlines.  Instead, call :func:`addstr`
+        separately for each line.
 
 
 .. method:: window.attroff(attr)

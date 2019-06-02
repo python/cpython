@@ -59,7 +59,12 @@ const char * const _PyParser_TokenNames[] = {
     "ATEQUAL",
     "RARROW",
     "ELLIPSIS",
+    "COLONEQUAL",
     "OP",
+    "AWAIT",
+    "ASYNC",
+    "TYPE_IGNORE",
+    "TYPE_COMMENT",
     "<ERRORTOKEN>",
     "<COMMENT>",
     "<NL>",
@@ -140,6 +145,11 @@ PyToken_TwoChars(int c1, int c2)
         switch (c2) {
         case '/': return DOUBLESLASH;
         case '=': return SLASHEQUAL;
+        }
+        break;
+    case ':':
+        switch (c2) {
+        case '=': return COLONEQUAL;
         }
         break;
     case '<':

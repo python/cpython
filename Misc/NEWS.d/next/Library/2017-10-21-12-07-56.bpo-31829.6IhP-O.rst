@@ -1,0 +1,3 @@
+``\r``, ``\0`` and ``\x1a`` (end-of-file on Windows) are now escaped in
+protocol 0 pickles of Unicode strings. This allows to load them without loss
+from files open in text mode in Python 2.

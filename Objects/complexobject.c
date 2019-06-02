@@ -343,12 +343,6 @@ PyComplex_AsCComplex(PyObject *op)
     }
 }
 
-static void
-complex_dealloc(PyObject *op)
-{
-    op->ob_type->tp_free(op);
-}
-
 static PyObject *
 complex_repr(PyComplexObject *v)
 {
@@ -990,7 +984,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
 
     nbr = r->ob_type->tp_as_number;
-    if (nbr == NULL || nbr->nb_float == NULL) {
+    if (nbr == NULL || (nbr->nb_float == NULL && nbr->nb_index == NULL)) {
         PyErr_Format(PyExc_TypeError,
                      "complex() first argument must be a string or a number, "
                      "not '%.200s'",
@@ -1002,7 +996,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
     if (i != NULL) {
         nbi = i->ob_type->tp_as_number;
-        if (nbi == NULL || nbi->nb_float == NULL) {
+        if (nbi == NULL || (nbi->nb_float == NULL && nbi->nb_index == NULL)) {
             PyErr_Format(PyExc_TypeError,
                          "complex() second argument must be a number, "
                          "not '%.200s'",
@@ -1058,7 +1052,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         /* The "imag" part really is entirely imaginary, and
            contributes nothing in the real direction.
            Just treat it as a double. */
-        tmp = (*nbi->nb_float)(i);
+        tmp = PyNumber_Float(i);
         if (tmp == NULL)
             return NULL;
         ci.real = PyFloat_AsDouble(tmp);
@@ -1118,18 +1112,18 @@ PyTypeObject PyComplex_Type = {
     "complex",
     sizeof(PyComplexObject),
     0,
-    complex_dealloc,                            /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)complex_repr,                     /* tp_repr */
     &complex_as_number,                         /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     (hashfunc)complex_hash,                     /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)complex_repr,                     /* tp_str */
+    0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */

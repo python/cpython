@@ -254,8 +254,9 @@ Supported operations:
 |                                | rounded to the nearest multiple of            |
 |                                | timedelta.resolution using round-half-to-even.|
 +--------------------------------+-----------------------------------------------+
-| ``f = t2 / t3``                | Division (3) of *t2* by *t3*.  Returns a      |
-|                                | :class:`float` object.                        |
+| ``f = t2 / t3``                | Division (3) of overall duration *t2* by      |
+|                                | interval unit *t3*. Returns a :class:`float`  |
+|                                | object.                                       |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 / f or t1 = t2 / i`` | Delta divided by a float or an int. The result|
 |                                | is rounded to the nearest multiple of         |
@@ -351,7 +352,8 @@ Instance methods:
 .. method:: timedelta.total_seconds()
 
    Return the total number of seconds contained in the duration. Equivalent to
-   ``td / timedelta(seconds=1)``.
+   ``td / timedelta(seconds=1)``. For interval units other than seconds, use the
+   division form directly (e.g. ``td / timedelta(microseconds=1)``).
 
    Note that for very large time intervals (greater than 270 years on
    most platforms) this method will lose microsecond accuracy.
@@ -455,6 +457,13 @@ Other constructors, all class methods:
 
   .. versionadded:: 3.7
 
+
+.. classmethod:: date.fromisocalendar(year, week, day)
+
+   Return a :class:`date` corresponding to the ISO calendar date specified by
+   year, week and day. This is the inverse of the function :meth:`date.isocalendar`.
+
+   .. versionadded:: 3.8
 
 
 Class attributes:
@@ -851,6 +860,16 @@ Other constructors, all class methods:
     as the inverse operation of :meth:`datetime.isoformat`.
 
   .. versionadded:: 3.7
+
+
+.. classmethod:: datetime.fromisocalendar(year, week, day)
+
+   Return a :class:`datetime` corresponding to the ISO calendar date specified
+   by year, week and day. The non-date components of the datetime are populated
+   with their normal default values. This is the inverse of the function
+   :meth:`datetime.isocalendar`.
+
+   .. versionadded:: 3.8
 
 .. classmethod:: datetime.strptime(date_string, format)
 
@@ -2029,10 +2048,19 @@ For :class:`date` objects, the format codes for hours, minutes, seconds, and
 microseconds should not be used, as :class:`date` objects have no such
 values.  If they're used anyway, ``0`` is substituted for them.
 
+For the :meth:`datetime.strptime` class method, the default value is ``1900-01-01T00:00:00.000``:
+any components not specified in the format string will be pulled from the default value. [#]_
+
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :func:`strftime` function, and platform
 variations are common.  To see the full set of format codes supported on your
 platform, consult the :manpage:`strftime(3)` documentation.
+
+For the same reason, handling of format strings containing Unicode code points
+that can't be represented in the charset of the current locale is also
+platform-dependent. On some platforms such code points are preserved intact in
+the output, while on others ``strftime`` may raise :exc:`UnicodeError` or return
+an empty string instead.
 
 The following is a list of all the format codes that the C standard (1989
 version) requires, and these work on all platforms with a standard C
@@ -2257,3 +2285,4 @@ Notes:
 .. rubric:: Footnotes
 
 .. [#] If, that is, we ignore the effects of Relativity
+.. [#] Passing ``datetime.strptime('Feb 29', '%b %d')`` will fail since ``1900`` is not a leap year.

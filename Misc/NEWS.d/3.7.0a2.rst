@@ -337,10 +337,8 @@ Fixed typo in the name of Tkinter's method adderrorinfo().
 .. section: Library
 
 Improvements to path predicates in ElementTree:
-
-* Allow whitespace around predicate parts, i.e. "[a = 'text']" instead of requiring the less readable "[a='text']".
-* Add support for text comparison of the current node, like "[.='text']".
-
+Allow whitespace around predicate parts, i.e. "[a = 'text']" instead of requiring the less readable "[a='text']".
+Add support for text comparison of the current node, like "[.='text']".
 Patch by Stefan Behnel.
 
 ..
@@ -596,7 +594,6 @@ Avoid wholesale rebuild after `make regen-all` if nothing changed.
 .. section: IDLE
 
 Simplify the API of IDLE's Module Browser.
-
 Passing a widget instead of an flist with a root widget opens the option of
 creating a browser frame that is only part of a window.  Passing a full file
 name instead of pieces assumed to come from a .py file opens the possibility

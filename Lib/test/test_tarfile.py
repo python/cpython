@@ -132,49 +132,47 @@ class UstarReadTest(ReadTest, unittest.TestCase):
             data = fobj.read()
 
         tarinfo = self.tar.getmember("ustar/regtype")
-        fobj = self.tar.extractfile(tarinfo)
-
-        text = fobj.read()
-        fobj.seek(0)
-        self.assertEqual(0, fobj.tell(),
-                     "seek() to file's start failed")
-        fobj.seek(2048, 0)
-        self.assertEqual(2048, fobj.tell(),
-                     "seek() to absolute position failed")
-        fobj.seek(-1024, 1)
-        self.assertEqual(1024, fobj.tell(),
-                     "seek() to negative relative position failed")
-        fobj.seek(1024, 1)
-        self.assertEqual(2048, fobj.tell(),
-                     "seek() to positive relative position failed")
-        s = fobj.read(10)
-        self.assertEqual(s, data[2048:2058],
-                     "read() after seek failed")
-        fobj.seek(0, 2)
-        self.assertEqual(tarinfo.size, fobj.tell(),
-                     "seek() to file's end failed")
-        self.assertEqual(fobj.read(), b"",
-                     "read() at file's end did not return empty string")
-        fobj.seek(-tarinfo.size, 2)
-        self.assertEqual(0, fobj.tell(),
-                     "relative seek() to file's end failed")
-        fobj.seek(512)
-        s1 = fobj.readlines()
-        fobj.seek(512)
-        s2 = fobj.readlines()
-        self.assertEqual(s1, s2,
-                     "readlines() after seek failed")
-        fobj.seek(0)
-        self.assertEqual(len(fobj.readline()), fobj.tell(),
-                     "tell() after readline() failed")
-        fobj.seek(512)
-        self.assertEqual(len(fobj.readline()) + 512, fobj.tell(),
-                     "tell() after seek() and readline() failed")
-        fobj.seek(0)
-        line = fobj.readline()
-        self.assertEqual(fobj.read(), data[len(line):],
-                     "read() after readline() failed")
-        fobj.close()
+        with self.tar.extractfile(tarinfo) as fobj:
+            text = fobj.read()
+            fobj.seek(0)
+            self.assertEqual(0, fobj.tell(),
+                         "seek() to file's start failed")
+            fobj.seek(2048, 0)
+            self.assertEqual(2048, fobj.tell(),
+                         "seek() to absolute position failed")
+            fobj.seek(-1024, 1)
+            self.assertEqual(1024, fobj.tell(),
+                         "seek() to negative relative position failed")
+            fobj.seek(1024, 1)
+            self.assertEqual(2048, fobj.tell(),
+                         "seek() to positive relative position failed")
+            s = fobj.read(10)
+            self.assertEqual(s, data[2048:2058],
+                         "read() after seek failed")
+            fobj.seek(0, 2)
+            self.assertEqual(tarinfo.size, fobj.tell(),
+                         "seek() to file's end failed")
+            self.assertEqual(fobj.read(), b"",
+                         "read() at file's end did not return empty string")
+            fobj.seek(-tarinfo.size, 2)
+            self.assertEqual(0, fobj.tell(),
+                         "relative seek() to file's end failed")
+            fobj.seek(512)
+            s1 = fobj.readlines()
+            fobj.seek(512)
+            s2 = fobj.readlines()
+            self.assertEqual(s1, s2,
+                         "readlines() after seek failed")
+            fobj.seek(0)
+            self.assertEqual(len(fobj.readline()), fobj.tell(),
+                         "tell() after readline() failed")
+            fobj.seek(512)
+            self.assertEqual(len(fobj.readline()) + 512, fobj.tell(),
+                         "tell() after seek() and readline() failed")
+            fobj.seek(0)
+            line = fobj.readline()
+            self.assertEqual(fobj.read(), data[len(line):],
+                         "read() after readline() failed")
 
     def test_fileobj_text(self):
         with self.tar.extractfile("ustar/regtype") as fobj:
@@ -486,15 +484,14 @@ class MiscReadTestBase(CommonReadTest):
             fobj.seek(offset)
 
             # Test if the tarfile starts with the second member.
-            tar = tar.open(self.tarname, mode="r:", fileobj=fobj)
-            t = tar.next()
-            self.assertEqual(t.name, name)
-            # Read to the end of fileobj and test if seeking back to the
-            # beginning works.
-            tar.getmembers()
-            self.assertEqual(tar.extractfile(t).read(), data,
-                    "seek back did not work")
-            tar.close()
+            with tar.open(self.tarname, mode="r:", fileobj=fobj) as tar:
+                t = tar.next()
+                self.assertEqual(t.name, name)
+                # Read to the end of fileobj and test if seeking back to the
+                # beginning works.
+                tar.getmembers()
+                self.assertEqual(tar.extractfile(t).read(), data,
+                        "seek back did not work")
 
     def test_fail_comp(self):
         # For Gzip and Bz2 Tests: fail with a ReadError on an uncompressed file.
@@ -973,16 +970,21 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
     def _fs_supports_holes():
         # Return True if the platform knows the st_blocks stat attribute and
         # uses st_blocks units of 512 bytes, and if the filesystem is able to
-        # store holes in files.
+        # store holes of 4 KiB in files.
+        #
+        # The function returns False if page size is larger than 4 KiB.
+        # For example, ppc64 uses pages of 64 KiB.
         if sys.platform.startswith("linux"):
             # Linux evidentially has 512 byte st_blocks units.
             name = os.path.join(TEMPDIR, "sparse-test")
             with open(name, "wb") as fobj:
+                # Seek to "punch a hole" of 4 KiB
                 fobj.seek(4096)
+                fobj.write(b'x' * 4096)
                 fobj.truncate()
             s = os.stat(name)
             support.unlink(name)
-            return s.st_blocks == 0
+            return (s.st_blocks * 512 < s.st_size)
         else:
             return False
 
@@ -1037,9 +1039,8 @@ class WriteTestBase(TarTest):
 
     def test_fileobj_no_close(self):
         fobj = io.BytesIO()
-        tar = tarfile.open(fileobj=fobj, mode=self.mode)
-        tar.addfile(tarfile.TarInfo("foo"))
-        tar.close()
+        with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
+            tar.addfile(tarfile.TarInfo("foo"))
         self.assertFalse(fobj.closed, "external fileobjs must never closed")
         # Issue #20238: Incomplete gzip output with mode="w:gz"
         data = fobj.getvalue()
@@ -1301,19 +1302,16 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             with open(source_file,'w') as f:
                 f.write('something\n')
             os.symlink(source_file, target_file)
-            tar = tarfile.open(temparchive,'w')
-            tar.add(source_file)
-            tar.add(target_file)
-            tar.close()
+            with tarfile.open(temparchive, 'w') as tar:
+                tar.add(source_file)
+                tar.add(target_file)
             # Let's extract it to the location which contains the symlink
-            tar = tarfile.open(temparchive,'r')
-            # this should not raise OSError: [Errno 17] File exists
-            try:
-                tar.extractall(path=tempdir)
-            except OSError:
-                self.fail("extractall failed with symlinked files")
-            finally:
-                tar.close()
+            with tarfile.open(temparchive) as tar:
+                # this should not raise OSError: [Errno 17] File exists
+                try:
+                    tar.extractall(path=tempdir)
+                except OSError:
+                    self.fail("extractall failed with symlinked files")
         finally:
             support.unlink(temparchive)
             support.rmtree(tempdir)
@@ -2138,15 +2136,16 @@ class MiscTest(unittest.TestCase):
     def test_write_number_fields(self):
         self.assertEqual(tarfile.itn(1), b"0000001\x00")
         self.assertEqual(tarfile.itn(0o7777777), b"7777777\x00")
-        self.assertEqual(tarfile.itn(0o10000000),
+        self.assertEqual(tarfile.itn(0o10000000, format=tarfile.GNU_FORMAT),
                          b"\x80\x00\x00\x00\x00\x20\x00\x00")
-        self.assertEqual(tarfile.itn(0xffffffff),
+        self.assertEqual(tarfile.itn(0xffffffff, format=tarfile.GNU_FORMAT),
                          b"\x80\x00\x00\x00\xff\xff\xff\xff")
-        self.assertEqual(tarfile.itn(-1),
+        self.assertEqual(tarfile.itn(-1, format=tarfile.GNU_FORMAT),
                          b"\xff\xff\xff\xff\xff\xff\xff\xff")
-        self.assertEqual(tarfile.itn(-100),
+        self.assertEqual(tarfile.itn(-100, format=tarfile.GNU_FORMAT),
                          b"\xff\xff\xff\xff\xff\xff\xff\x9c")
-        self.assertEqual(tarfile.itn(-0x100000000000000),
+        self.assertEqual(tarfile.itn(-0x100000000000000,
+                                     format=tarfile.GNU_FORMAT),
                          b"\xff\x00\x00\x00\x00\x00\x00\x00")
 
         # Issue 32713: Test if itn() supports float values outside the

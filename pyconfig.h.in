@@ -12,6 +12,10 @@
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
+/* Alternative SOABI used in debug build to load C extensions built in release
+   mode */
+#undef ALT_SOABI
+
 /* The Android API level. */
 #undef ANDROID_API_LEVEL
 
@@ -144,8 +148,14 @@
 /* Define to 1 if you have the `copysign' function. */
 #undef HAVE_COPYSIGN
 
+/* Define to 1 if you have the `copy_file_range' function. */
+#undef HAVE_COPY_FILE_RANGE
+
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
+
+/* Define if you have the crypt_r() function. */
+#undef HAVE_CRYPT_R
 
 /* Define to 1 if you have the `ctermid' function. */
 #undef HAVE_CTERMID
@@ -294,6 +304,12 @@
 
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
+
+/* Define to 1 if you have the `explicit_bzero' function. */
+#undef HAVE_EXPLICIT_BZERO
+
+/* Define to 1 if you have the `explicit_memset' function. */
+#undef HAVE_EXPLICIT_MEMSET
 
 /* Define to 1 if you have the `expm1' function. */
 #undef HAVE_EXPM1
@@ -612,6 +628,9 @@
 /* Define to 1 if you have the <linux/can/raw.h> header file. */
 #undef HAVE_LINUX_CAN_RAW_H
 
+/* Define to 1 if you have the <linux/memfd.h> header file. */
+#undef HAVE_LINUX_MEMFD_H
+
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
 
@@ -645,11 +664,17 @@
 /* Define to 1 if you have the `lutimes' function. */
 #undef HAVE_LUTIMES
 
+/* Define to 1 if you have the `madvise' function. */
+#undef HAVE_MADVISE
+
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
 
 /* Define to 1 if you have the `mbrtowc' function. */
 #undef HAVE_MBRTOWC
+
+/* Define if you have the 'memfd_create' function. */
+#undef HAVE_MEMFD_CREATE
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -729,6 +754,9 @@
 /* Define to 1 if you have the `posix_spawn' function. */
 #undef HAVE_POSIX_SPAWN
 
+/* Define to 1 if you have the `posix_spawnp' function. */
+#undef HAVE_POSIX_SPAWNP
+
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
 
@@ -746,6 +774,9 @@
 
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
+
+/* Define to 1 if you have the `pthread_condattr_setclock' function. */
+#undef HAVE_PTHREAD_CONDATTR_SETCLOCK
 
 /* Defined for Solaris 2.6 bug in pthread header. */
 #undef HAVE_PTHREAD_DESTRUCTOR
@@ -821,6 +852,9 @@
 
 /* Define to 1 if you have the `round' function. */
 #undef HAVE_ROUND
+
+/* Define to 1 if you have the `rtpSpawn' function. */
+#undef HAVE_RTPSPAWN
 
 /* Define to 1 if you have the `sched_get_priority_max' function. */
 #undef HAVE_SCHED_GET_PRIORITY_MAX
@@ -908,6 +942,12 @@
 
 /* Define to 1 if you have the <shadow.h> header file. */
 #undef HAVE_SHADOW_H
+
+/* Define to 1 if you have the `shm_open' function. */
+#undef HAVE_SHM_OPEN
+
+/* Define to 1 if you have the `shm_unlink' function. */
+#undef HAVE_SHM_UNLINK
 
 /* Define to 1 if you have the `sigaction' function. */
 #undef HAVE_SIGACTION
@@ -1085,8 +1125,14 @@
 /* Define to 1 if you have the <sys/lock.h> header file. */
 #undef HAVE_SYS_LOCK_H
 
+/* Define to 1 if you have the <sys/memfd.h> header file. */
+#undef HAVE_SYS_MEMFD_H
+
 /* Define to 1 if you have the <sys/mkdev.h> header file. */
 #undef HAVE_SYS_MKDEV_H
+
+/* Define to 1 if you have the <sys/mman.h> header file. */
+#undef HAVE_SYS_MMAN_H
 
 /* Define to 1 if you have the <sys/modem.h> header file. */
 #undef HAVE_SYS_MODEM_H
@@ -1356,11 +1402,17 @@
    externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
+/* Define if you want to enable tracing references for debugging purpose */
+#undef Py_TRACE_REFS
+
 /* assume C89 semantics that RETSIGTYPE is always void */
 #undef RETSIGTYPE
 
 /* Define if setpgrp() must be called as setpgrp(0, 0). */
 #undef SETPGRP_HAVE_ARG
+
+/* Define to 1 if you must link with -lrt for shm_open(). */
+#undef SHM_NEEDS_LIBRT
 
 /* Define if i>>j for signed int i does not extend the sign bit when i < 0 */
 #undef SIGNED_RIGHT_SHIFT_ZERO_FILLS

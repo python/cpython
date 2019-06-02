@@ -320,6 +320,15 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image3.get(0, 0), image.get(4, 6))
         self.assertEqual(image3.get(1, 2), image.get(5, 8))
 
+    def test_transparency(self):
+        image = self.create()
+        self.assertEqual(image.transparency_get(0, 0), True)
+        self.assertEqual(image.transparency_get(4, 6), False)
+        image.transparency_set(4, 6, True)
+        self.assertEqual(image.transparency_get(4, 6), True)
+        image.transparency_set(4, 6, False)
+        self.assertEqual(image.transparency_get(4, 6), False)
+
 
 tests_gui = (MiscTest, BitmapImageTest, PhotoImageTest,)
 

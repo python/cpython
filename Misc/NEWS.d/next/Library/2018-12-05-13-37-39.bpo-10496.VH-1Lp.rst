@@ -1,5 +1,0 @@
-:func:`posixpath.expanduser` now returns the input *path* unchanged if the
-``HOME`` environment variable is not set and the current user has no home
-directory (if the current user identifier doesn't exist in the password
-database). This change fix the :mod:`site` module if the current user doesn't
-exist in the password database (if the user has no home directory).

@@ -56,7 +56,7 @@ See also the `Examples`_ subsection.
 Creating Subprocesses
 =====================
 
-.. coroutinefunction:: create_subprocess_exec(\*args, stdin=None, \
+.. coroutinefunction:: create_subprocess_exec(program, \*args, stdin=None, \
                           stdout=None, stderr=None, loop=None, \
                           limit=None, \*\*kwds)
 

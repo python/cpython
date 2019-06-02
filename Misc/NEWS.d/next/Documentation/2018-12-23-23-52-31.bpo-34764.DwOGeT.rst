@@ -1,1 +1,0 @@
-Improve example of iter() with 2nd sentinel argument.

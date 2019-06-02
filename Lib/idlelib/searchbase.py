@@ -1,7 +1,7 @@
 '''Define SearchDialogBase used by Search, Replace, and Grep dialogs.'''
 
-from tkinter import Toplevel, Frame
-from tkinter.ttk import Entry, Label, Button, Checkbutton, Radiobutton
+from tkinter import Toplevel
+from tkinter.ttk import Frame, Entry, Label, Button, Checkbutton, Radiobutton
 
 
 class SearchDialogBase:
@@ -172,7 +172,7 @@ class SearchDialogBase:
         f = self.buttonframe = Frame(self.top)
         f.grid(row=0,column=2,padx=2,pady=2,ipadx=2,ipady=2)
 
-        b = self.make_button("close", self.close)
+        b = self.make_button("Close", self.close)
         b.lower()
 
 

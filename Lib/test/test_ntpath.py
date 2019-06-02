@@ -262,20 +262,21 @@ class TestNtpath(unittest.TestCase):
             env['USERPROFILE'] = 'C:\\eric\\idle'
             tester('ntpath.expanduser("~test")', 'C:\\eric\\test')
             tester('ntpath.expanduser("~")', 'C:\\eric\\idle')
-
-            env.clear()
-            env['HOME'] = 'C:\\idle\\eric'
-            tester('ntpath.expanduser("~test")', 'C:\\idle\\test')
-            tester('ntpath.expanduser("~")', 'C:\\idle\\eric')
-
             tester('ntpath.expanduser("~test\\foo\\bar")',
-                   'C:\\idle\\test\\foo\\bar')
+                   'C:\\eric\\test\\foo\\bar')
             tester('ntpath.expanduser("~test/foo/bar")',
-                   'C:\\idle\\test/foo/bar')
+                   'C:\\eric\\test/foo/bar')
             tester('ntpath.expanduser("~\\foo\\bar")',
-                   'C:\\idle\\eric\\foo\\bar')
+                   'C:\\eric\\idle\\foo\\bar')
             tester('ntpath.expanduser("~/foo/bar")',
-                   'C:\\idle\\eric/foo/bar')
+                   'C:\\eric\\idle/foo/bar')
+
+            # bpo-36264: ignore `HOME` when set on windows
+            env.clear()
+            env['HOME'] = 'F:\\'
+            env['USERPROFILE'] = 'C:\\eric\\idle'
+            tester('ntpath.expanduser("~test")', 'C:\\eric\\test')
+            tester('ntpath.expanduser("~")', 'C:\\eric\\idle')
 
     @unittest.skipUnless(nt, "abspath requires 'nt' module")
     def test_abspath(self):

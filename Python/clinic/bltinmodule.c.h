@@ -94,10 +94,22 @@ builtin_format(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *value;
     PyObject *format_spec = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|U:format",
-        &value, &format_spec)) {
+    if (!_PyArg_CheckPositional("format", nargs, 1, 2)) {
         goto exit;
     }
+    value = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("format", 2, "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    format_spec = args[1];
+skip_optional:
     return_value = builtin_format_impl(module, value, format_spec);
 
 exit:
@@ -139,7 +151,7 @@ exit:
 
 PyDoc_STRVAR(builtin_compile__doc__,
 "compile($module, /, source, filename, mode, flags=0,\n"
-"        dont_inherit=False, optimize=-1)\n"
+"        dont_inherit=False, optimize=-1, feature_version=-1)\n"
 "--\n"
 "\n"
 "Compile source into a code object that can be executed by exec() or eval().\n"
@@ -161,26 +173,101 @@ PyDoc_STRVAR(builtin_compile__doc__,
 static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
-                     int optimize);
+                     int optimize, int feature_version);
 
 static PyObject *
 builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", NULL};
-    static _PyArg_Parser _parser = {"OO&s|iii:compile", _keywords, 0};
+    static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", "feature_version", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "compile", 0};
+    PyObject *argsbuf[7];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PyObject *source;
     PyObject *filename;
     const char *mode;
     int flags = 0;
     int dont_inherit = 0;
     int optimize = -1;
+    int feature_version = -1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &source, PyUnicode_FSDecoder, &filename, &mode, &flags, &dont_inherit, &optimize)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 7, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize);
+    source = args[0];
+    if (!PyUnicode_FSDecoder(args[1], &filename)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("compile", 3, "str", args[2]);
+        goto exit;
+    }
+    Py_ssize_t mode_length;
+    mode = PyUnicode_AsUTF8AndSize(args[2], &mode_length);
+    if (mode == NULL) {
+        goto exit;
+    }
+    if (strlen(mode) != (size_t)mode_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[3]) {
+        if (PyFloat_Check(args[3])) {
+            PyErr_SetString(PyExc_TypeError,
+                            "integer argument expected, got float" );
+            goto exit;
+        }
+        flags = _PyLong_AsInt(args[3]);
+        if (flags == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[4]) {
+        if (PyFloat_Check(args[4])) {
+            PyErr_SetString(PyExc_TypeError,
+                            "integer argument expected, got float" );
+            goto exit;
+        }
+        dont_inherit = _PyLong_AsInt(args[4]);
+        if (dont_inherit == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[5]) {
+        if (PyFloat_Check(args[5])) {
+            PyErr_SetString(PyExc_TypeError,
+                            "integer argument expected, got float" );
+            goto exit;
+        }
+        optimize = _PyLong_AsInt(args[5]);
+        if (optimize == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyFloat_Check(args[6])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    feature_version = _PyLong_AsInt(args[6]);
+    if (feature_version == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize, feature_version);
 
 exit:
     return return_value;
@@ -205,11 +292,11 @@ builtin_divmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_UnpackStack(args, nargs, "divmod",
-        2, 2,
-        &x, &y)) {
+    if (!_PyArg_CheckPositional("divmod", nargs, 2, 2)) {
         goto exit;
     }
+    x = args[0];
+    y = args[1];
     return_value = builtin_divmod_impl(module, x, y);
 
 exit:
@@ -243,11 +330,19 @@ builtin_eval(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *globals = Py_None;
     PyObject *locals = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "eval",
-        1, 3,
-        &source, &globals, &locals)) {
+    if (!_PyArg_CheckPositional("eval", nargs, 1, 3)) {
         goto exit;
     }
+    source = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    globals = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    locals = args[2];
+skip_optional:
     return_value = builtin_eval_impl(module, source, globals, locals);
 
 exit:
@@ -281,11 +376,19 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *globals = Py_None;
     PyObject *locals = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "exec",
-        1, 3,
-        &source, &globals, &locals)) {
+    if (!_PyArg_CheckPositional("exec", nargs, 1, 3)) {
         goto exit;
     }
+    source = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    globals = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    locals = args[2];
+skip_optional:
     return_value = builtin_exec_impl(module, source, globals, locals);
 
 exit:
@@ -334,11 +437,11 @@ builtin_hasattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *obj;
     PyObject *name;
 
-    if (!_PyArg_UnpackStack(args, nargs, "hasattr",
-        2, 2,
-        &obj, &name)) {
+    if (!_PyArg_CheckPositional("hasattr", nargs, 2, 2)) {
         goto exit;
     }
+    obj = args[0];
+    name = args[1];
     return_value = builtin_hasattr_impl(module, obj, name);
 
 exit:
@@ -380,11 +483,12 @@ builtin_setattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *name;
     PyObject *value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "setattr",
-        3, 3,
-        &obj, &name, &value)) {
+    if (!_PyArg_CheckPositional("setattr", nargs, 3, 3)) {
         goto exit;
     }
+    obj = args[0];
+    name = args[1];
+    value = args[2];
     return_value = builtin_setattr_impl(module, obj, name, value);
 
 exit:
@@ -412,11 +516,11 @@ builtin_delattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *obj;
     PyObject *name;
 
-    if (!_PyArg_UnpackStack(args, nargs, "delattr",
-        2, 2,
-        &obj, &name)) {
+    if (!_PyArg_CheckPositional("delattr", nargs, 2, 2)) {
         goto exit;
     }
+    obj = args[0];
+    name = args[1];
     return_value = builtin_delattr_impl(module, obj, name);
 
 exit:
@@ -522,11 +626,16 @@ builtin_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *y;
     PyObject *z = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "pow",
-        2, 3,
-        &x, &y, &z)) {
+    if (!_PyArg_CheckPositional("pow", nargs, 2, 3)) {
         goto exit;
     }
+    x = args[0];
+    y = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    z = args[2];
+skip_optional:
     return_value = builtin_pow_impl(module, x, y, z);
 
 exit:
@@ -557,11 +666,14 @@ builtin_input(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *prompt = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "input",
-        0, 1,
-        &prompt)) {
+    if (!_PyArg_CheckPositional("input", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    prompt = args[0];
+skip_optional:
     return_value = builtin_input_impl(module, prompt);
 
 exit:
@@ -599,14 +711,22 @@ builtin_round(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"number", "ndigits", NULL};
-    static _PyArg_Parser _parser = {"O|O:round", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "round", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *number;
     PyObject *ndigits = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &number, &ndigits)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    number = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    ndigits = args[1];
+skip_optional_pos:
     return_value = builtin_round_impl(module, number, ndigits);
 
 exit:
@@ -634,14 +754,22 @@ builtin_sum(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "start", NULL};
-    static _PyArg_Parser _parser = {"O|O:sum", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sum", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *iterable;
     PyObject *start = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &iterable, &start)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    iterable = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    start = args[1];
+skip_optional_pos:
     return_value = builtin_sum_impl(module, iterable, start);
 
 exit:
@@ -672,11 +800,11 @@ builtin_isinstance(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *obj;
     PyObject *class_or_tuple;
 
-    if (!_PyArg_UnpackStack(args, nargs, "isinstance",
-        2, 2,
-        &obj, &class_or_tuple)) {
+    if (!_PyArg_CheckPositional("isinstance", nargs, 2, 2)) {
         goto exit;
     }
+    obj = args[0];
+    class_or_tuple = args[1];
     return_value = builtin_isinstance_impl(module, obj, class_or_tuple);
 
 exit:
@@ -707,14 +835,14 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *cls;
     PyObject *class_or_tuple;
 
-    if (!_PyArg_UnpackStack(args, nargs, "issubclass",
-        2, 2,
-        &cls, &class_or_tuple)) {
+    if (!_PyArg_CheckPositional("issubclass", nargs, 2, 2)) {
         goto exit;
     }
+    cls = args[0];
+    class_or_tuple = args[1];
     return_value = builtin_issubclass_impl(module, cls, class_or_tuple);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ed300ebf3f6db530 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f690311ac556c31 input=a9049054013a1b77]*/

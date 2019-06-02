@@ -1,2 +1,0 @@
-Add IDLE doc subsection explaining editor windows. Topics include opening,
-title and status bar, .py* extension, and running.
