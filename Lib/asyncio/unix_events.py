@@ -1146,7 +1146,7 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
     def __enter__(self):
         return self
 
-    def __exit__(self, ecx_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
     def add_child_handler(self, pid, callback, *args):
@@ -1249,7 +1249,7 @@ class ThreadedChildWatcher(AbstractChildWatcher):
     def __enter__(self):
         return self
 
-    def __exit__(self, ecx_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
     def add_child_handler(self, pid, callback, *args):
