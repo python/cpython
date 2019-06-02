@@ -384,7 +384,7 @@ class Bdb:
         return None
 
     def _prune_breaks(self, filename, lineno):
-        """Prune breakpoints for filname:lineno.
+        """Prune breakpoints for filename:lineno.
 
         A list of breakpoints is maintained in the Bdb instance and in
         the Breakpoint class.  If a breakpoint in the Bdb instance no
