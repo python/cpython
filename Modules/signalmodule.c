@@ -21,6 +21,7 @@
 #include <process.h>
 #endif
 #endif
+#include "internal/pycore_pystate.h"
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
@@ -259,6 +260,7 @@ trip_signal(int sig_num)
     /* Notify ceval.c */
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyInterpreterState *interp = runtime->interpreters.main;
     _PyEval_SignalReceived(&runtime->ceval);
 
     /* And then write to the wakeup fd *after* setting all the globals and
@@ -299,7 +301,10 @@ trip_signal(int sig_num)
                 {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    _PyEval_AddPendingCall(tstate, &runtime->ceval,
+                    _PyEval_AddPendingCall(tstate,
+                                           &runtime->ceval,
+                                           &interp->ceval,
+                                           runtime->main_thread,
                                            report_wakeup_send_error,
                                            (void *)(intptr_t) last_error);
                 }
@@ -318,7 +323,10 @@ trip_signal(int sig_num)
                 {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    _PyEval_AddPendingCall(tstate, &runtime->ceval,
+                    _PyEval_AddPendingCall(tstate,
+                                           &runtime->ceval,
+                                           &interp->ceval,
+                                           runtime->main_thread,
                                            report_wakeup_write_error,
                                            (void *)(intptr_t)errno);
                 }

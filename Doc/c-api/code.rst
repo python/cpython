@@ -45,7 +45,7 @@ bound into a function.
       The first parameter (*argcount*) now represents the total number of positional arguments,
       including positional-only.
 
-   .. audit-event:: code.__new__ "code filename name argcount kwonlyargcount nlocals stacksize flags"
+   .. audit-event:: code.__new__ "code filename name argcount posonlyargcount kwonlyargcount nlocals stacksize flags"
 
 .. c:function:: PyCodeObject* PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 
