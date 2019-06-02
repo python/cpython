@@ -1,0 +1,5 @@
+We added a new internal _Py_AddPendingCall() that operates relative to the
+provided interpreter.  This allows us to use the existing implementation to
+ask another interpreter to do work that cannot be done in the current
+interpreter, like decref an object the other interpreter owns.  The existing
+Py_AddPendingCall() only operates relative to the main interpreter.

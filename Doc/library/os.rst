@@ -707,6 +707,28 @@ as internal buffering of data.
               pass
 
 
+.. function:: copy_file_range(src, dst, count, offset_src=None, offset_dst=None)
+
+   Copy *count* bytes from file descriptor *src*, starting from offset
+   *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
+   If *offset_src* is None, then *src* is read from the current position;
+   respectively for *offset_dst*. The files pointed by *src* and *dst*
+   must reside in the same filesystem, otherwise an :exc:`OSError` is
+   raised with :attr:`~OSError.errno` set to :data:`errno.EXDEV`.
+
+   This copy is done without the additional cost of transferring data
+   from the kernel to user space and then back into the kernel. Additionally,
+   some filesystems could implement extra optimizations. The copy is done as if
+   both files are opened as binary.
+
+   The return value is the amount of bytes copied. This could be less than the
+   amount requested.
+
+   .. availability:: Linux kernel >= 4.5 or glibc >= 2.27.
+
+   .. versionadded:: 3.8
+
+
 .. function:: device_encoding(fd)
 
    Return a string describing the encoding of the device associated with *fd*
@@ -2980,6 +3002,44 @@ features:
 
    .. versionchanged:: 3.7
       Added support for :class:`bytes` paths.
+
+
+.. function:: memfd_create(name[, flags=os.MFD_CLOEXEC])
+
+   Create an anonymous file and return a file descriptor that refers to it.
+   *flags* must be one of the ``os.MFD_*`` constants available on the system
+   (or a bitwise ORed combination of them).  By default, the new file
+   descriptor is :ref:`non-inheritable <fd_inheritance>`.
+
+   .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.
+
+   .. versionadded:: 3.8
+
+
+.. data:: MFD_CLOEXEC
+          MFD_ALLOW_SEALING
+          MFD_HUGETLB
+          MFD_HUGE_SHIFT
+          MFD_HUGE_MASK
+          MFD_HUGE_64KB
+          MFD_HUGE_512KB
+          MFD_HUGE_1MB
+          MFD_HUGE_2MB
+          MFD_HUGE_8MB
+          MFD_HUGE_16MB
+          MFD_HUGE_32MB
+          MFD_HUGE_256MB
+          MFD_HUGE_512MB
+          MFD_HUGE_1GB
+          MFD_HUGE_2GB
+          MFD_HUGE_16GB
+
+   These flags can be passed to :func:`memfd_create`.
+
+   .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.  The
+      ``MFD_HUGE*`` flags are only available since Linux 4.14.
+
+   .. versionadded:: 3.8
 
 
 Linux extended attributes

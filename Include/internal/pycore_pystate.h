@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "cpython/coreconfig.h"
+#include "cpython/initconfig.h"
 #include "fileobject.h"
 #include "pystate.h"
 #include "pythread.h"
@@ -19,10 +19,13 @@ extern "C" {
 #include "pycore_pymem.h"
 #include "pycore_warnings.h"
 
+// forward
+struct pyruntimestate;
+
 
 /* ceval state */
 
-struct _pending_calls {
+struct _ceval_pending_calls {
     int finishing;
     PyThread_type_lock lock;
     /* Request for running pending calls. */
@@ -33,6 +36,7 @@ struct _pending_calls {
     int async_exc;
 #define NPENDINGCALLS 32
     struct {
+        unsigned long thread_id;
         int (*func)(void *);
         void *arg;
     } calls[NPENDINGCALLS];
@@ -50,14 +54,20 @@ struct _ceval_runtime_state {
     int tracing_possible;
     /* This single variable consolidates all requests to break out of
        the fast path in the eval loop. */
+    // XXX This can move to _ceval_interpreter_state once all parts
+    // from COMPUTE_EVAL_BREAKER have moved under PyInterpreterState.
     _Py_atomic_int eval_breaker;
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
-    struct _pending_calls pending;
     /* Request for checking signals. */
     _Py_atomic_int signals_pending;
     struct _gil_runtime_state gil;
 };
+
+struct _ceval_interpreter_state {
+    struct _ceval_pending_calls pending;
+};
+
 
 /* interpreter state */
 
@@ -68,6 +78,7 @@ struct _is {
 
     struct _is *next;
     struct _ts *tstate_head;
+    struct pyruntimestate *runtime;
 
     int64_t id;
     int64_t id_refcount;
@@ -106,7 +117,7 @@ struct _is {
         _Py_error_handler error_handler;
     } fs_codec;
 
-    _PyCoreConfig core_config;
+    PyConfig config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
@@ -132,6 +143,7 @@ struct _is {
 
     uint64_t tstate_next_unique_id;
 
+    struct _ceval_interpreter_state ceval;
     struct _warnings_runtime_state warnings;
 
     PyObject *audit_hooks;
@@ -193,7 +205,7 @@ struct _gilstate_runtime_state {
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
-    /* Is Python pre-initialized? Set to 1 by _Py_PreInitialize() */
+    /* Is Python pre-initialized? Set to 1 by Py_PreInitialize() */
     int pre_initialized;
 
     /* Is Python core initialized? Set to 1 by _Py_InitializeCore() */
@@ -234,7 +246,7 @@ typedef struct pyruntimestate {
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 
-    _PyPreConfig preconfig;
+    PyPreConfig preconfig;
 
     Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
@@ -248,13 +260,13 @@ typedef struct pyruntimestate {
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
-PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *runtime);
+PyAPI_FUNC(PyStatus) _PyRuntimeState_Init(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime);
 
 /* Initialize _PyRuntimeState.
    Return NULL on success, or return an error message on failure. */
-PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
+PyAPI_FUNC(PyStatus) _PyRuntime_Initialize(void);
 
 PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
@@ -296,18 +308,14 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
 /* Other */
 
-PyAPI_FUNC(void) _PyThreadState_Init(
-    _PyRuntimeState *runtime,
-    PyThreadState *tstate);
-PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
-    _PyRuntimeState *runtime,
-    PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_Init(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
 
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
     struct _gilstate_runtime_state *gilstate,
     PyThreadState *newts);
 
-PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
+PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 
 PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);

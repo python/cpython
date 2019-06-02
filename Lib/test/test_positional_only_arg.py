@@ -100,14 +100,14 @@ class PositionalOnlyTestCase(unittest.TestCase):
         def f(a, b, c, /, d, e=1, *, f, g=2):
             pass
 
-        self.assertEqual(2, f.__code__.co_argcount)  # 2 "standard args"
+        self.assertEqual(5, f.__code__.co_argcount)  # 3 posonly + 2 "standard args"
         self.assertEqual(3, f.__code__.co_posonlyargcount)
         self.assertEqual((1,), f.__defaults__)
 
         def f(a, b, c=1, /, d=2, e=3, *, f, g=4):
             pass
 
-        self.assertEqual(2, f.__code__.co_argcount)  # 2 "standard args"
+        self.assertEqual(5, f.__code__.co_argcount)  # 3 posonly + 2 "standard args"
         self.assertEqual(3, f.__code__.co_posonlyargcount)
         self.assertEqual((1, 2, 3), f.__defaults__)
 
@@ -397,6 +397,20 @@ class PositionalOnlyTestCase(unittest.TestCase):
         self.assertEqual(next(gen), (1, 2))
         gen = f()
         self.assertEqual(next(gen), (1, 2))
+
+    def test_super(self):
+
+        sentinel = object()
+
+        class A:
+            def method(self):
+                return sentinel
+
+        class C(A):
+            def method(self, /):
+                return super().method()
+
+        self.assertEqual(C().method(), sentinel)
 
 
 if __name__ == "__main__":

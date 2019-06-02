@@ -182,6 +182,61 @@ Would print ``x*9 + 15=42``.
 
 (Contributed by Eric V. Smith and Larry Hastings in :issue:`36817`.)
 
+PEP 587: Python Initialization Configuration
+--------------------------------------------
+
+The :pep:`587` adds a new C API to configure the Python Initialization
+providing finer control on the whole configuration and better error reporting.
+
+New structures:
+
+* :c:type:`PyConfig`
+* :c:type:`PyPreConfig`
+* :c:type:`PyStatus`
+* :c:type:`PyWideStringList`
+
+New functions:
+
+* :c:func:`PyConfig_Clear`
+* :c:func:`PyConfig_InitIsolatedConfig`
+* :c:func:`PyConfig_InitPythonConfig`
+* :c:func:`PyConfig_Read`
+* :c:func:`PyConfig_SetArgv`
+* :c:func:`PyConfig_SetBytesArgv`
+* :c:func:`PyConfig_SetBytesString`
+* :c:func:`PyConfig_SetString`
+* :c:func:`PyPreConfig_InitIsolatedConfig`
+* :c:func:`PyPreConfig_InitPythonConfig`
+* :c:func:`PyStatus_Error`
+* :c:func:`PyStatus_Exception`
+* :c:func:`PyStatus_Exit`
+* :c:func:`PyStatus_IsError`
+* :c:func:`PyStatus_IsExit`
+* :c:func:`PyStatus_NoMemory`
+* :c:func:`PyStatus_Ok`
+* :c:func:`PyWideStringList_Append`
+* :c:func:`PyWideStringList_Insert`
+* :c:func:`Py_BytesMain`
+* :c:func:`Py_ExitStatusException`
+* :c:func:`Py_InitializeFromConfig`
+* :c:func:`Py_PreInitialize`
+* :c:func:`Py_PreInitializeFromArgs`
+* :c:func:`Py_PreInitializeFromBytesArgs`
+* :c:func:`Py_RunMain`
+
+This PEP also adds ``_PyRuntimeState.preconfig`` (:c:type:`PyPreConfig` type)
+and ``PyInterpreterState.config`` (:c:type:`PyConfig` type) fields to these
+internal structures. ``PyInterpreterState.config`` becomes the new
+reference configuration, replacing global configuration variables and
+other private variables.
+
+See :ref:`Python Initialization Configuration <init-config>` for the
+documentation.
+
+See :pep:`587` for a full description.
+
+(Contributed by Victor Stinner in :issue:`36763`.)
+
 
 Other Language Changes
 ======================
@@ -194,6 +249,12 @@ Other Language Changes
 * The :class:`int` type now has a new :meth:`~int.as_integer_ratio` method
   compatible with the existing :meth:`float.as_integer_ratio` method.
   (Contributed by Lisa Roach in :issue:`33073`.)
+
+* Constructors of :class:`int`, :class:`float` and :class:`complex` will now
+  use the :meth:`~object.__index__` special method, if available and the
+  corresponding method :meth:`~object.__int__`, :meth:`~object.__float__`
+  or :meth:`~object.__complex__` is not available.
+  (Contributed by Serhiy Storchaka in :issue:`20092`.)
 
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
@@ -242,6 +303,12 @@ Other Language Changes
 
 * Added new ``replace()`` method to the code type (:class:`types.CodeType`).
   (Contributed by Victor Stinner in :issue:`37032`.)
+
+* For integers, the three-argument form of the :func:`pow` function now permits
+  the exponent to be negative in the case where the base is relatively prime to
+  the modulus. It then computes a modular inverse to the base when the exponent
+  is ``-1``, and a suitable power of that inverse for other negative exponents.
+  (Contributed by Mark Dickinson in :issue:`36027`.)
 
 
 New Modules
@@ -405,12 +472,38 @@ numbers. (Contributed by Pablo Galindo in :issue:`35606`)
 Added new function :func:`math.isqrt` for computing integer square roots.
 (Contributed by Mark Dickinson in :issue:`36887`.)
 
+The function :func:`math.factorial` no longer accepts arguments that are not
+int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
+
+
+mmap
+----
+
+The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.madvise` method to
+access the ``madvise()`` system call.
+(Contributed by Zackery Spytz in :issue:`32941`.)
+
+
+multiprocessing
+---------------
+
+Added new :mod:`multiprocessing.shared_memory` module.
+(Contributed Davin Potts in :issue:`35813`.)
+
+On macOS, the *spawn* start method is now used by default.
+(Contributed by Victor Stinner in :issue:`33725`.)
+
+
 os
 --
 
 Added new function :func:`~os.add_dll_directory` on Windows for providing
 additional search paths for native dependencies when importing extension
 modules or loading DLLs using :mod:`ctypes`.
+
+A new :func:`os.memfd_create` function was added to wrap the
+``memfd_create()`` syscall.
+(Contributed by Zackery Spytz and Christian Heimes in :issue:`26836`.)
 
 
 os.path
@@ -463,6 +556,13 @@ NSKeyedArchiver-encoded binary plists.
 (Contributed by Jon Janzen in :issue:`26707`.)
 
 
+py_compile
+----------
+
+:func:`py_compile.compile` now supports silent mode.
+(Contributed by Joannah Nanjekye in :issue:`22640`.)
+
+
 socket
 ------
 
@@ -471,6 +571,15 @@ convenience functions to automate the necessary tasks usually involved when
 creating a server socket, including accepting both IPv4 and IPv6 connections
 on the same socket.  (Contributed by Giampaolo Rodola in :issue:`17561`.)
 
+The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
+:func:`socket.if_indextoname()` functions have been implemented on Windows.
+(Contributed by Zackery Spytz in :issue:`37007`.)
+
+shlex
+----------
+
+The new :func:`shlex.join` function acts as the inverse of :func:`shlex.split`.
+(Contributed by Bo Bayles in :issue:`32102`.)
 
 shutil
 ------
@@ -557,6 +666,15 @@ format for new archives, instead of the previous GNU-specific one.
 This improves cross-platform portability with a consistent encoding (UTF-8)
 in a standardized and extensible format, and offers several other benefits.
 (Contributed by C.A.M. Gerlach in :issue:`36268`.)
+
+
+threading
+---------
+
+Add a new :func:`threading.excepthook` function which handles uncaught
+:meth:`threading.Thread.run` exception. It can be overridden to control how
+uncaught :meth:`threading.Thread.run` exceptions are handled.
+(Contributed by Victor Stinner in :issue:`1230540`.)
 
 
 tokenize
@@ -669,7 +787,7 @@ Optimizations
 
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
-  "fast-copy" syscalls on Linux, macOS and Solaris in order to copy the file
+  "fast-copy" syscalls on Linux and macOS in order to copy the file
   more efficiently.
   "fast-copy" means that the copying operation occurs within the kernel,
   avoiding the use of userspace buffers in Python as in
@@ -766,7 +884,10 @@ Build and C API Changes
   ``__index__()`` method (like :class:`~decimal.Decimal` and
   :class:`~fractions.Fraction`).  :c:func:`PyNumber_Check` will now return
   ``1`` for objects implementing ``__index__()``.
-  (Contributed by Serhiy Storchaka in :issue:`36048`.)
+  :c:func:`PyNumber_Long`, :c:func:`PyNumber_Float` and
+  :c:func:`PyFloat_AsDouble` also now use the ``__index__()`` method if
+  available.
+  (Contributed by Serhiy Storchaka in :issue:`36048` and :issue:`20092`.)
 
 * Heap-allocated type objects will now increase their reference count
   in :c:func:`PyObject_Init` (and its parallel macro ``PyObject_INIT``)
@@ -842,8 +963,7 @@ Deprecated
     :meth:`profile.Profile.runcall`, :meth:`cProfile.Profile.runcall`,
     :meth:`bdb.Bdb.runcall`, :meth:`trace.Trace.runfunc` and
     :func:`curses.wrapper`.
-  - *function* in :func:`unittest.addModuleCleanup` and
-    :meth:`unittest.TestCase.addCleanup`.
+  - *function* in :meth:`unittest.TestCase.addCleanup`.
   - *fn* in the :meth:`~concurrent.futures.Executor.submit` method of
     :class:`concurrent.futures.ThreadPoolExecutor` and
     :class:`concurrent.futures.ProcessPoolExecutor`.
@@ -903,6 +1023,10 @@ The following features and APIs have been removed from Python 3.8:
 * The ``bufsize`` keyword argument of :func:`fileinput.input` and
   :func:`fileinput.FileInput` which was ignored and deprecated since Python 3.6
   has been removed. :issue:`36952` (Contributed by Matthias Bussonnier)
+
+* The functions :func:`sys.set_coroutine_wrapper` and
+  :func:`sys.get_coroutine_wrapper` deprecated in Python 3.7 have been removed;
+  :issue:`36933` (Contributed by Matthias Bussonnier)
 
 
 Porting to Python 3.8
@@ -1038,9 +1162,6 @@ Changes in the Python API
   success; an exception was raised on error under Unix.
   (Contributed by Berker Peksag in :issue:`2122`.)
 
-* The function :func:`math.factorial` no longer accepts arguments that are not
-  int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
-
 * :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
@@ -1075,8 +1196,10 @@ Changes in the Python API
 
 * :class:`types.CodeType` has a new parameter in the second position of the
   constructor (*posonlyargcount*) to support positional-only arguments defined
-  in :pep:`570`. A new ``replace()`` method of :class:`types.CodeType` can be
-  used to make the code future-proof.
+  in :pep:`570`. The first argument (*argcount*) now represents the total
+  number of positional arguments (including positional-only arguments). A new
+  ``replace()`` method of :class:`types.CodeType` can be used to make the code
+  future-proof.
 
 
 Changes in the C API
@@ -1156,6 +1279,27 @@ Changes in the C API
         }
 
   (Contributed by Eddie Elizondo in :issue:`35810`.)
+
+* The :c:macro:`Py_DEPRECATED()` macro has been implemented for MSVC.
+  The macro now must be placed before the symbol name.
+
+  Example::
+
+      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
+
+  (Contributed by Zackery Spytz in :issue:`33407`.)
+
+* The interpreter does not pretend to support binary compatibility of
+  extension types accross feature releases, anymore.  A :c:type:`PyTypeObject`
+  exported by a third-party extension module is supposed to have all the
+  slots expected in the current Python version, including
+  :c:member:`~PyTypeObject.tp_finalize` (:const:`Py_TPFLAGS_HAVE_FINALIZE`
+  is not checked anymore before reading :c:member:`~PyTypeObject.tp_finalize`).
+
+  (Contributed by Antoine Pitrou in :issue:`32388`.)
+
+* The :c:func:`PyCode_New` has a new parameter in the second position (*posonlyargcount*)
+  to support :pep:`570`, indicating the number of positional-only arguments.
 
 
 CPython bytecode changes

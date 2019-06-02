@@ -1045,6 +1045,32 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       ???
 
+
+   .. data:: Py_TPFLAGS_METHOD_DESCRIPTOR
+
+      This bit indicates that objects behave like unbound methods.
+
+      If this flag is set for ``type(meth)``, then:
+
+      - ``meth.__get__(obj, cls)(*args, **kwds)`` (with ``obj`` not None)
+        must be equivalent to ``meth(obj, *args, **kwds)``.
+
+      - ``meth.__get__(None, cls)(*args, **kwds)``
+        must be equivalent to ``meth(*args, **kwds)``.
+
+      This flag enables an optimization for typical method calls like
+      ``obj.meth()``: it avoids creating a temporary "bound method" object for
+      ``obj.meth``.
+
+      .. versionadded:: 3.8
+
+      **Inheritance:**
+
+      This flag is never inherited by heap types.
+      For extension types, it is inherited whenever
+      :c:member:`~PyTypeObject.tp_descr_get` is inherited.
+
+
    .. XXX Document more flags here?
 
 
@@ -1072,6 +1098,11 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       type structure.
 
       .. versionadded:: 3.4
+
+      .. deprecated:: 3.8
+         This flag isn't necessary anymore, as the interpreter assumes the
+         :c:member:`~PyTypeObject.tp_finalize` slot is always present in the
+         type structure.
 
 
 .. c:member:: const char* PyTypeObject.tp_doc

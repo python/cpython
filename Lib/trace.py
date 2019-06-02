@@ -666,7 +666,9 @@ def main():
             help='Ignore files in the given directory '
                  '(multiple directories can be joined by os.pathsep).')
 
-    parser.add_argument('filename', nargs='?',
+    parser.add_argument('--module', action='store_true', default=False,
+                        help='Trace a module. ')
+    parser.add_argument('progname', nargs='?',
             help='file to run as main program')
     parser.add_argument('arguments', nargs=argparse.REMAINDER,
             help='arguments to the program')
@@ -704,26 +706,40 @@ def main():
     if opts.summary and not opts.count:
         parser.error('--summary can only be used with --count or --report')
 
-    if opts.filename is None:
-        parser.error('filename is missing: required with the main options')
-
-    sys.argv = [opts.filename, *opts.arguments]
-    sys.path[0] = os.path.dirname(opts.filename)
+    if opts.progname is None:
+        parser.error('progname is missing: required with the main options')
 
     t = Trace(opts.count, opts.trace, countfuncs=opts.listfuncs,
               countcallers=opts.trackcalls, ignoremods=opts.ignore_module,
               ignoredirs=opts.ignore_dir, infile=opts.file,
               outfile=opts.file, timing=opts.timing)
     try:
-        with open(opts.filename) as fp:
-            code = compile(fp.read(), opts.filename, 'exec')
-        # try to emulate __main__ namespace as much as possible
-        globs = {
-            '__file__': opts.filename,
-            '__name__': '__main__',
-            '__package__': None,
-            '__cached__': None,
-        }
+        if opts.module:
+            import runpy
+            module_name = opts.progname
+            mod_name, mod_spec, code = runpy._get_module_details(module_name)
+            sys.argv = [code.co_filename, *opts.arguments]
+            globs = {
+                '__name__': '__main__',
+                '__file__': code.co_filename,
+                '__package__': mod_spec.parent,
+                '__loader__': mod_spec.loader,
+                '__spec__': mod_spec,
+                '__cached__': None,
+            }
+        else:
+            sys.argv = [opts.progname, *opts.arguments]
+            sys.path[0] = os.path.dirname(opts.progname)
+
+            with open(opts.progname) as fp:
+                code = compile(fp.read(), opts.progname, 'exec')
+            # try to emulate __main__ namespace as much as possible
+            globs = {
+                '__file__': opts.progname,
+                '__name__': '__main__',
+                '__package__': None,
+                '__cached__': None,
+            }
         t.runctx(code, globs, globs)
     except OSError as err:
         sys.exit("Cannot run file %r because: %s" % (sys.argv[0], err))

@@ -88,7 +88,7 @@ implementation as the built-in :meth:`~str.format` method.
 
    The :class:`Formatter` class has the following public methods:
 
-   .. method:: format(format_string, *args, **kwargs)
+   .. method:: format(format_string, /, *args, **kwargs)
 
       The primary API method.  It takes a format string and
       an arbitrary set of positional and keyword arguments.
@@ -720,7 +720,7 @@ these rules.  The methods of :class:`Template` are:
    The constructor takes a single argument which is the template string.
 
 
-   .. method:: substitute(mapping, **kwds)
+   .. method:: substitute(mapping={}, /, **kwds)
 
       Performs the template substitution, returning a new string.  *mapping* is
       any dictionary-like object with keys that match the placeholders in the
@@ -729,7 +729,7 @@ these rules.  The methods of :class:`Template` are:
       and there are duplicates, the placeholders from *kwds* take precedence.
 
 
-   .. method:: safe_substitute(mapping, **kwds)
+   .. method:: safe_substitute(mapping={}, /, **kwds)
 
       Like :meth:`substitute`, except that if placeholders are missing from
       *mapping* and *kwds*, instead of raising a :exc:`KeyError` exception, the

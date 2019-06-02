@@ -116,8 +116,9 @@ PyCode_New(int argcount, int posonlyargcount, int kwonlyargcount,
     Py_ssize_t i, n_cellvars, n_varnames, total_args;
 
     /* Check argument types */
-    if (argcount < 0 || posonlyargcount < 0 || kwonlyargcount < 0 ||
-        nlocals < 0 || stacksize < 0 || flags < 0 ||
+    if (argcount < posonlyargcount || posonlyargcount < 0 ||
+        kwonlyargcount < 0 || nlocals < 0 ||
+        stacksize < 0 || flags < 0 ||
         code == NULL || !PyBytes_Check(code) ||
         consts == NULL || !PyTuple_Check(consts) ||
         names == NULL || !PyTuple_Check(names) ||
@@ -154,11 +155,9 @@ PyCode_New(int argcount, int posonlyargcount, int kwonlyargcount,
     }
 
     n_varnames = PyTuple_GET_SIZE(varnames);
-    if (posonlyargcount + argcount <= n_varnames
-        && kwonlyargcount <= n_varnames) {
+    if (argcount <= n_varnames && kwonlyargcount <= n_varnames) {
         /* Never overflows. */
-        total_args = (Py_ssize_t)posonlyargcount + (Py_ssize_t)argcount
-                      + (Py_ssize_t)kwonlyargcount +
+        total_args = (Py_ssize_t)argcount + (Py_ssize_t)kwonlyargcount +
                       ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
     }
     else {
@@ -440,9 +439,9 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                           &PyTuple_Type, &cellvars))
         return NULL;
 
-    if (PySys_Audit("code.__new__", "OOOiiiii",
-                    code, filename, name, argcount, kwonlyargcount,
-                    nlocals, stacksize, flags) < 0) {
+    if (PySys_Audit("code.__new__", "OOOiiiiii",
+                    code, filename, name, argcount, posonlyargcount,
+                    kwonlyargcount, nlocals, stacksize, flags) < 0) {
         goto cleanup;
     }
 
@@ -896,10 +895,10 @@ PyTypeObject PyCode_Type = {
     sizeof(PyCodeObject),
     0,
     (destructor)code_dealloc,           /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)code_repr,                /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */

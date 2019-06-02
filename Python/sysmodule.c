@@ -17,7 +17,7 @@ Data members:
 #include "Python.h"
 #include "code.h"
 #include "frameobject.h"
-#include "pycore_coreconfig.h"
+#include "pycore_initconfig.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pathconfig.h"
@@ -120,8 +120,9 @@ should_audit(void)
     if (!ts) {
         return 0;
     }
-    PyInterpreterState *is = ts ? ts->interp : NULL;
-    return _PyRuntime.audit_hook_head
+    PyInterpreterState *is = ts->interp;
+    _PyRuntimeState *runtime = is->runtime;
+    return runtime->audit_hook_head
         || (is && is->audit_hooks)
         || PyDTrace_AUDIT_ENABLED();
 }
@@ -280,8 +281,8 @@ void _PySys_ClearAuditHooks(void) {
     PySys_Audit("cpython._PySys_ClearAuditHooks", NULL);
     PyErr_Clear();
 
-    _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head, *n;
-    _PyRuntime.audit_hook_head = NULL;
+    _Py_AuditHookEntry *e = runtime->audit_hook_head, *n;
+    runtime->audit_hook_head = NULL;
     while (e) {
         n = e->next;
         PyMem_RawFree(e);
@@ -292,6 +293,7 @@ void _PySys_ClearAuditHooks(void) {
 int
 PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
 {
+    _PyRuntimeState *runtime = &_PyRuntime;
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
     /* Cannot invoke hooks until we are initialized */
     if (Py_IsInitialized()) {
@@ -305,10 +307,10 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
         }
     }
 
-    _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head;
+    _Py_AuditHookEntry *e = runtime->audit_hook_head;
     if (!e) {
         e = (_Py_AuditHookEntry*)PyMem_RawMalloc(sizeof(_Py_AuditHookEntry));
-        _PyRuntime.audit_hook_head = e;
+        runtime->audit_hook_head = e;
     } else {
         while (e->next)
             e = e->next;
@@ -481,7 +483,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         return NULL;
     }
     PyMem_RawFree(envar);
-    PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
+    PyObject *retval = _PyObject_Vectorcall(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 
@@ -752,7 +754,7 @@ sys_getfilesystemencoding_impl(PyObject *module)
 /*[clinic end generated code: output=1dc4bdbe9be44aa7 input=8475f8649b8c7d8c]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    const _PyCoreConfig *config = &interp->core_config;
+    const PyConfig *config = &interp->config;
     return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
 }
 
@@ -767,7 +769,7 @@ sys_getfilesystemencodeerrors_impl(PyObject *module)
 /*[clinic end generated code: output=ba77b36bbf7c96f5 input=22a1e8365566f1e5]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    const _PyCoreConfig *config = &interp->core_config;
+    const PyConfig *config = &interp->config;
     return PyUnicode_FromWideChar(config->filesystem_errors, -1);
 }
 
@@ -1157,62 +1159,6 @@ sys_get_coroutine_origin_tracking_depth_impl(PyObject *module)
 {
     return _PyEval_GetCoroutineOriginTrackingDepth();
 }
-
-/*[clinic input]
-sys.set_coroutine_wrapper
-
-    wrapper: object
-    /
-
-Set a wrapper for coroutine objects.
-[clinic start generated code]*/
-
-static PyObject *
-sys_set_coroutine_wrapper(PyObject *module, PyObject *wrapper)
-/*[clinic end generated code: output=9c7db52d65f6b188 input=df6ac09a06afef34]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "set_coroutine_wrapper is deprecated", 1) < 0) {
-        return NULL;
-    }
-
-    if (wrapper != Py_None) {
-        if (!PyCallable_Check(wrapper)) {
-            PyErr_Format(PyExc_TypeError,
-                         "callable expected, got %.50s",
-                         Py_TYPE(wrapper)->tp_name);
-            return NULL;
-        }
-        _PyEval_SetCoroutineWrapper(wrapper);
-    }
-    else {
-        _PyEval_SetCoroutineWrapper(NULL);
-    }
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
-sys.get_coroutine_wrapper
-
-Return the wrapper for coroutines set by sys.set_coroutine_wrapper.
-[clinic start generated code]*/
-
-static PyObject *
-sys_get_coroutine_wrapper_impl(PyObject *module)
-/*[clinic end generated code: output=b74a7e4b14fe898e input=ef0351fb9ece0bb4]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "get_coroutine_wrapper is deprecated", 1) < 0) {
-        return NULL;
-    }
-    PyObject *wrapper = _PyEval_GetCoroutineWrapper();
-    if (wrapper == NULL) {
-        wrapper = Py_None;
-    }
-    Py_INCREF(wrapper);
-    return wrapper;
-}
-
 
 static PyTypeObject AsyncGenHooksType;
 
@@ -2002,8 +1948,6 @@ static PyMethodDef sys_methods[] = {
     SYS__DEBUGMALLOCSTATS_METHODDEF
     SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     SYS_GET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
-    SYS_SET_COROUTINE_WRAPPER_METHODDEF
-    SYS_GET_COROUTINE_WRAPPER_METHODDEF
     {"set_asyncgen_hooks", (PyCFunction)(void(*)(void))sys_set_asyncgen_hooks,
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
@@ -2471,12 +2415,13 @@ static PyStructSequence_Desc flags_desc = {
 };
 
 static PyObject*
-make_flags(_PyRuntimeState *runtime, PyInterpreterState *interp)
+make_flags(PyInterpreterState *interp)
 {
+    _PyRuntimeState *runtime = interp->runtime;
     int pos = 0;
     PyObject *seq;
-    const _PyPreConfig *preconfig = &runtime->preconfig;
-    const _PyCoreConfig *config = &interp->core_config;
+    const PyPreConfig *preconfig = &runtime->preconfig;
+    const PyConfig *config = &interp->config;
 
     seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL)
@@ -2690,9 +2635,8 @@ static struct PyModuleDef sysmodule = {
         }                                                  \
     } while (0)
 
-static _PyInitError
-_PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
-                PyObject *sysdict)
+static PyStatus
+_PySys_InitCore(PyInterpreterState *interp, PyObject *sysdict)
 {
     PyObject *version_info;
     int res;
@@ -2786,7 +2730,7 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
         }
     }
     /* Set flags to their default values (updated by _PySys_InitMain()) */
-    SET_SYS_FROM_STRING("flags", make_flags(runtime, interp));
+    SET_SYS_FROM_STRING("flags", make_flags(interp));
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
@@ -2827,13 +2771,13 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
     if (PyErr_Occurred()) {
         goto err_occurred;
     }
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 
 type_init_failed:
-    return _Py_INIT_ERR("failed to initialize a type");
+    return _PyStatus_ERR("failed to initialize a type");
 
 err_occurred:
-    return _Py_INIT_ERR("can't initialize sys module");
+    return _PyStatus_ERR("can't initialize sys module");
 }
 
 #undef SET_SYS_FROM_STRING
@@ -2885,7 +2829,7 @@ error:
 
 
 static PyObject*
-sys_create_xoptions_dict(const _PyCoreConfig *config)
+sys_create_xoptions_dict(const PyConfig *config)
 {
     Py_ssize_t nxoption = config->xoptions.length;
     wchar_t * const * xoptions = config->xoptions.items;
@@ -2907,15 +2851,15 @@ sys_create_xoptions_dict(const _PyCoreConfig *config)
 
 
 int
-_PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
+_PySys_InitMain(PyInterpreterState *interp)
 {
     PyObject *sysdict = interp->sysdict;
-    const _PyCoreConfig *config = &interp->core_config;
+    const PyConfig *config = &interp->config;
     int res;
 
 #define COPY_LIST(KEY, VALUE) \
     do { \
-        PyObject *list = _PyWstrList_AsList(&(VALUE)); \
+        PyObject *list = _PyWideStringList_AsList(&(VALUE)); \
         if (list == NULL) { \
             return -1; \
         } \
@@ -2961,7 +2905,7 @@ _PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
 #undef SET_SYS_FROM_WSTR
 
     /* Set flags to their final values */
-    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(runtime, interp));
+    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(interp));
     /* prevent user from creating new instances */
     FlagsType.tp_init = NULL;
     FlagsType.tp_new = NULL;
@@ -3003,7 +2947,7 @@ err_occurred:
    infrastructure for the io module in place.
 
    Use UTF-8/surrogateescape and ignore EAGAIN errors. */
-_PyInitError
+PyStatus
 _PySys_SetPreliminaryStderr(PyObject *sysdict)
 {
     PyObject *pstderr = PyFile_NewStdPrinter(fileno(stderr));
@@ -3017,56 +2961,55 @@ _PySys_SetPreliminaryStderr(PyObject *sysdict)
         goto error;
     }
     Py_DECREF(pstderr);
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 
 error:
     Py_XDECREF(pstderr);
-    return _Py_INIT_ERR("can't set preliminary stderr");
+    return _PyStatus_ERR("can't set preliminary stderr");
 }
 
 
 /* Create sys module without all attributes: _PySys_InitMain() should be called
    later to add remaining attributes. */
-_PyInitError
-_PySys_Create(_PyRuntimeState *runtime, PyInterpreterState *interp,
-              PyObject **sysmod_p)
+PyStatus
+_PySys_Create(PyInterpreterState *interp, PyObject **sysmod_p)
 {
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
-        return _Py_INIT_ERR("can't make modules dictionary");
+        return _PyStatus_ERR("can't make modules dictionary");
     }
     interp->modules = modules;
 
     PyObject *sysmod = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
     if (sysmod == NULL) {
-        return _Py_INIT_ERR("failed to create a module object");
+        return _PyStatus_ERR("failed to create a module object");
     }
 
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {
-        return _Py_INIT_ERR("can't initialize sys dict");
+        return _PyStatus_ERR("can't initialize sys dict");
     }
     Py_INCREF(sysdict);
     interp->sysdict = sysdict;
 
     if (PyDict_SetItemString(sysdict, "modules", interp->modules) < 0) {
-        return _Py_INIT_ERR("can't initialize sys module");
+        return _PyStatus_ERR("can't initialize sys module");
     }
 
-    _PyInitError err = _PySys_SetPreliminaryStderr(sysdict);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    PyStatus status = _PySys_SetPreliminaryStderr(sysdict);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
-    err = _PySys_InitCore(runtime, interp, sysdict);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    status = _PySys_InitCore(interp, sysdict);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     _PyImport_FixupBuiltin(sysmod, "sys", interp->modules);
 
     *sysmod_p = sysmod;
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 }
 
 
@@ -3156,7 +3099,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     if (updatepath) {
         /* If argv[0] is not '-c' nor '-m', prepend argv[0] to sys.path.
            If argv[0] is a symlink, use the real path. */
-        const _PyWstrList argv_list = {.length = argc, .items = argv};
+        const PyWideStringList argv_list = {.length = argc, .items = argv};
         PyObject *path0 = NULL;
         if (_PyPathConfig_ComputeSysPath0(&argv_list, &path0)) {
             if (path0 == NULL) {

@@ -263,17 +263,14 @@ PyAPI_FUNC(void) Py_ReprLeave(PyObject *);
 #define Py_PRINT_RAW    1       /* No string quotes etc. */
 
 /*
-`Type flags (tp_flags)
+Type flags (tp_flags)
 
-These flags are used to extend the type structure in a backwards-compatible
-fashion. Extensions can use the flags to indicate (and test) when a given
-type structure contains a new feature. The Python core will use these when
-introducing new functionality between major revisions (to avoid mid-version
-changes in the PYTHON_API_VERSION).
+These flags are used to change expected features and behavior for a
+particular type.
 
 Arbitration of the flag bit positions will need to be coordinated among
 all extension writers who publicly release their extensions (this will
-be fewer than you might expect!)..
+be fewer than you might expect!).
 
 Most flags were removed as of Python 3.0 to make room for new flags.  (Some
 flags are not for backwards compatibility but to indicate the presence of an
@@ -291,13 +288,18 @@ given type object has a specified feature.
 /* Set if the type allows subclassing */
 #define Py_TPFLAGS_BASETYPE (1UL << 10)
 
+/* Set if the type implements the vectorcall protocol (PEP 590) */
+#ifndef Py_LIMITED_API
+#define _Py_TPFLAGS_HAVE_VECTORCALL (1UL << 11)
+#endif
+
 /* Set if the type is 'ready' -- fully initialized */
 #define Py_TPFLAGS_READY (1UL << 12)
 
 /* Set while the type is being 'readied', to prevent recursive ready calls */
 #define Py_TPFLAGS_READYING (1UL << 13)
 
-/* Objects support garbage collection (see objimp.h) */
+/* Objects support garbage collection (see objimpl.h) */
 #define Py_TPFLAGS_HAVE_GC (1UL << 14)
 
 /* These two bits are preserved for Stackless Python, next after this is 17 */
@@ -306,6 +308,9 @@ given type object has a specified feature.
 #else
 #define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION 0
 #endif
+
+/* Objects behave like an unbound method */
+#define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
 
 /* Objects support type attribute cache */
 #define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
@@ -331,6 +336,11 @@ given type object has a specified feature.
 
 /* NOTE: The following flags reuse lower bits (removed as part of the
  * Python 3.0 transition). */
+
+/* The following flag is kept for compatibility.  Starting with 3.8,
+ * binary compatibility of C extensions accross feature releases of
+ * Python is not supported anymore, except when using the stable ABI.
+ */
 
 /* Type structure has tp_finalize member (3.4) */
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)

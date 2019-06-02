@@ -156,3 +156,11 @@ class DiscoveryTests(fixtures.EggInfoPkg,
             dist.metadata['Name'] == 'distinfo-pkg'
             for dist in dists
             )
+
+
+class DirectoryTest(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
+    def test(self):
+        # make an `EGG-INFO` directory that's unrelated
+        self.site_dir.joinpath('EGG-INFO').mkdir()
+        # used to crash with `IsADirectoryError`
+        self.assertIsNone(version('unknown-package'))

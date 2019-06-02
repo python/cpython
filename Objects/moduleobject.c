@@ -590,7 +590,7 @@ _PyModule_ClearDict(PyObject *d)
     Py_ssize_t pos;
     PyObject *key, *value;
 
-    int verbose = _PyInterpreterState_GET_UNSAFE()->core_config.verbose;
+    int verbose = _PyInterpreterState_GET_UNSAFE()->config.verbose;
 
     /* First, clear only names starting with a single underscore */
     pos = 0;
@@ -677,7 +677,7 @@ module___init___impl(PyModuleObject *self, PyObject *name, PyObject *doc)
 static void
 module_dealloc(PyModuleObject *m)
 {
-    int verbose = _PyInterpreterState_GET_UNSAFE()->core_config.verbose;
+    int verbose = _PyInterpreterState_GET_UNSAFE()->config.verbose;
 
     PyObject_GC_UnTrack(m);
     if (verbose && m->md_name) {
@@ -835,10 +835,10 @@ PyTypeObject PyModule_Type = {
     sizeof(PyModuleObject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)module_dealloc,                 /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)module_repr,                      /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

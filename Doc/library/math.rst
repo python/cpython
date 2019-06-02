@@ -36,6 +36,21 @@ Number-theoretic and representation functions
    :class:`~numbers.Integral` value.
 
 
+.. function:: comb(n, k)
+
+   Return the number of ways to choose *k* items from *n* items without repetition
+   and without order.
+
+   Also called the binomial coefficient. It is mathematically equal to the expression
+   ``n! / (k! (n - k)!)``. It is equivalent to the coefficient of the *k*-th term in the
+   polynomial expansion of the expression ``(1 + x) ** n``.
+
+   Raises :exc:`TypeError` if the arguments not integers.
+   Raises :exc:`ValueError` if the arguments are negative or if *k* > *n*.
+
+   .. versionadded:: 3.8
+
+
 .. function:: copysign(x, y)
 
    Return a float with the magnitude (absolute value) of *x* but the sign of
@@ -50,7 +65,7 @@ Number-theoretic and representation functions
 
 .. function:: factorial(x)
 
-   Return *x* factorial.  Raises :exc:`ValueError` if *x* is not integral or
+   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
 
 
@@ -190,6 +205,19 @@ Number-theoretic and representation functions
 
    Return the fractional and integer parts of *x*.  Both results carry the sign
    of *x* and are floats.
+
+
+.. function:: perm(n, k)
+
+   Return the number of ways to choose *k* items from *n* items
+   without repetition and with order.
+
+   It is mathematically equal to the expression ``n! / (n - k)!``.
+
+   Raises :exc:`TypeError` if the arguments not integers.
+   Raises :exc:`ValueError` if the arguments are negative or if *k* > *n*.
+
+   .. versionadded:: 3.8
 
 
 .. function:: prod(iterable, *, start=1)

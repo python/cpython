@@ -17,7 +17,8 @@
 
 --------------
 
-This module supports type hints as specified by :pep:`484` and :pep:`526`.
+This module provides runtime support for type hints as specified by
+:pep:`484`, :pep:`526`, :pep:`544`, :pep:`586`, :pep:`589`, and :pep:`591`.
 The most fundamental support consists of the types :data:`Any`, :data:`Union`,
 :data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
 :class:`Generic`.  For full specification please see :pep:`484`.  For
@@ -392,6 +393,48 @@ it as a return value) of a more specialized type is a type error. For example::
 Use :class:`object` to indicate that a value could be any type in a typesafe
 manner. Use :data:`Any` to indicate that a value is dynamically typed.
 
+
+Nominal vs structural subtyping
+-------------------------------
+
+Initially :pep:`484` defined Python static type system as using
+*nominal subtyping*. This means that a class ``A`` is allowed where
+a class ``B`` is expected if and only if ``A`` is a subclass of ``B``.
+
+This requirement previously also applied to abstract base classes, such as
+:class:`Iterable`. The problem with this approach is that a class had
+to be explicitly marked to support them, which is unpythonic and unlike
+what one would normally do in idiomatic dynamically typed Python code.
+For example, this conforms to the :pep:`484`::
+
+   from typing import Sized, Iterable, Iterator
+
+   class Bucket(Sized, Iterable[int]):
+       ...
+       def __len__(self) -> int: ...
+       def __iter__(self) -> Iterator[int]: ...
+
+:pep:`544` allows to solve this problem by allowing users to write
+the above code without explicit base classes in the class definition,
+allowing ``Bucket`` to be implicitly considered a subtype of both ``Sized``
+and ``Iterable[int]`` by static type checkers. This is known as
+*structural subtyping* (or static duck-typing)::
+
+   from typing import Iterator, Iterable
+
+   class Bucket:  # Note: no base classes
+       ...
+       def __len__(self) -> int: ...
+       def __iter__(self) -> Iterator[int]: ...
+
+   def collect(items: Iterable[int]) -> int: ...
+   result = collect(Bucket())  # Passes type check
+
+Moreover, by subclassing a special class :class:`Protocol`, a user
+can define new custom protocols to fully enjoy structural subtyping
+(see examples below).
+
+
 Classes, functions, and decorators
 ----------------------------------
 
@@ -458,6 +501,39 @@ The module defines the following classes, functions and decorators:
               return mapping[key]
           except KeyError:
               return default
+
+.. class:: Protocol(Generic)
+
+   Base class for protocol classes. Protocol classes are defined like this::
+
+      class Proto(Protocol):
+          def meth(self) -> int:
+              ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing), for example::
+
+      class C:
+          def meth(self) -> int:
+              return 0
+
+      def func(x: Proto) -> int:
+          return x.meth()
+
+      func(C())  # Passes static type check
+
+   See :pep:`544` for details. Protocol classes decorated with
+   :func:`runtime_checkable` (described later) act as simple-minded runtime
+   protocols that check only the presence of given attributes, ignoring their
+   type signatures.
+
+   Protocol classes can be generic, for example::
+
+      class GenProto(Protocol[T]):
+          def meth(self) -> T:
+              ...
+
+   .. versionadded:: 3.8
 
 .. class:: Type(Generic[CT_co])
 
@@ -561,7 +637,7 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.abc.Collection`
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.6.0
 
 .. class:: AbstractSet(Sized, Collection[T_co])
 
@@ -605,6 +681,7 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.deque`.
 
+   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
 .. class:: List(list, MutableSequence[T])
@@ -654,6 +731,8 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.abc.Awaitable`.
 
+   .. versionadded:: 3.5.2
+
 .. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
 
    A generic version of :class:`collections.abc.Coroutine`.
@@ -667,25 +746,33 @@ The module defines the following classes, functions and decorators:
       async def bar() -> None:
           x = await c # type: int
 
+   .. versionadded:: 3.5.3
+
 .. class:: AsyncIterable(Generic[T_co])
 
    A generic version of :class:`collections.abc.AsyncIterable`.
+
+   .. versionadded:: 3.5.2
 
 .. class:: AsyncIterator(AsyncIterable[T_co])
 
    A generic version of :class:`collections.abc.AsyncIterator`.
 
+   .. versionadded:: 3.5.2
+
 .. class:: ContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractContextManager`.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.0
 
 .. class:: AsyncContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractAsyncContextManager`.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.2
 
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
@@ -714,12 +801,14 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.Counter`.
 
+   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
 .. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
 
    A generic version of :class:`collections.ChainMap`.
 
+   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
@@ -784,7 +873,7 @@ The module defines the following classes, functions and decorators:
               yield start
               start = await increment(start)
 
-   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.1
 
 .. class:: Text
 
@@ -945,6 +1034,25 @@ The module defines the following classes, functions and decorators:
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
 
+.. function:: get_origin(typ)
+.. function:: get_args(typ)
+
+   Provide basic introspection for generic types and special typing forms.
+
+   For a typing object of the form ``X[Y, Z, ...]`` these functions return
+   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
+   :mod:`collections` class, it gets normalized to the original class.
+   For unsupported objects return ``None`` and ``()`` correspondingly.
+   Examples::
+
+      assert get_origin(Dict[str, int]) is dict
+      assert get_args(Dict[int, str]) == (int, str)
+
+      assert get_origin(Union[int, str]) is Union
+      assert get_args(Union[int, str]) == (int, str)
+
+   .. versionadded:: 3.8
+
 .. decorator:: overload
 
    The ``@overload`` decorator allows describing functions and methods
@@ -1033,6 +1141,26 @@ The module defines the following classes, functions and decorators:
    Note that returning instances of private classes is not recommended.
    It is usually preferable to make such classes public.
 
+.. decorator:: runtime_checkable
+
+   Mark a protocol class as a runtime protocol.
+
+   Such a protocol can be used with :func:`isinstance` and :func:`issubclass`.
+   This raises :exc:`TypeError` when applied to a non-protocol class.  This
+   allows a simple-minded structural check, very similar to "one trick ponies"
+   in :mod:`collections.abc` such as :class:`Iterable`.  For example::
+
+      @runtime_checkable
+      class Closable(Protocol):
+          def close(self): ...
+
+      assert isinstance(open('/some/file'), Closable)
+
+   **Warning:** this will check only the presence of the required methods,
+   not their type signatures!
+
+   .. versionadded:: 3.8
+
 .. data:: Any
 
    Special type indicating an unconstrained type.
@@ -1051,6 +1179,7 @@ The module defines the following classes, functions and decorators:
           raise RuntimeError('no way')
 
    .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.2
 
 .. data:: Union
 
