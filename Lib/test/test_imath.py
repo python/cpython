@@ -72,33 +72,6 @@ class IMathTests(unittest.TestCase):
         self.assertEqual(actual, expected)
         self.assertIs(type(actual), int)
 
-    def testAsIntegerRatio(self):
-        as_integer_ratio = imath.as_integer_ratio
-        self.assertEqual(as_integer_ratio(0), (0, 1))
-        self.assertEqual(as_integer_ratio(3), (3, 1))
-        self.assertEqual(as_integer_ratio(-3), (-3, 1))
-        self.assertEqual(as_integer_ratio(False), (0, 1))
-        self.assertEqual(as_integer_ratio(True), (1, 1))
-        self.assertEqual(as_integer_ratio(0.0), (0, 1))
-        self.assertEqual(as_integer_ratio(-0.0), (0, 1))
-        self.assertEqual(as_integer_ratio(0.875), (7, 8))
-        self.assertEqual(as_integer_ratio(-0.875), (-7, 8))
-        self.assertEqual(as_integer_ratio(Decimal('0')), (0, 1))
-        self.assertEqual(as_integer_ratio(Decimal('0.875')), (7, 8))
-        self.assertEqual(as_integer_ratio(Decimal('-0.875')), (-7, 8))
-        self.assertEqual(as_integer_ratio(Fraction(0)), (0, 1))
-        self.assertEqual(as_integer_ratio(Fraction(7, 8)), (7, 8))
-        self.assertEqual(as_integer_ratio(Fraction(-7, 8)), (-7, 8))
-
-        self.assertRaises(OverflowError, as_integer_ratio, float('inf'))
-        self.assertRaises(OverflowError, as_integer_ratio, float('-inf'))
-        self.assertRaises(ValueError, as_integer_ratio, float('nan'))
-        self.assertRaises(OverflowError, as_integer_ratio, Decimal('inf'))
-        self.assertRaises(OverflowError, as_integer_ratio, Decimal('-inf'))
-        self.assertRaises(ValueError, as_integer_ratio, Decimal('nan'))
-
-        self.assertRaises(TypeError, as_integer_ratio, '0')
-
     def testFactorial(self):
         factorial = imath.factorial
         self.assertEqual(factorial(0), 1)

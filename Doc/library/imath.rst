@@ -9,22 +9,13 @@
 --------------
 
 This module provides access to the mathematical functions for integer arguments.
-Most functions in this module accept integers and objects that implement the
+These functions accept integers and objects that implement the
 :meth:`__index__` method which is used to convert the object to an integer
-number.  These functions cannot be used with floating-point numbers or complex
+number.  They cannot be used with floating-point numbers or complex
 numbers.
 
-The following functions are provided by this module.  Except when explicitly
-noted otherwise, all return values are integers.
-
-
-.. function:: as_integer_ratio(number)
-
-   Return integer ratio.
-
-   This function returns ``number.as_integer_ratio()`` if the argument has
-   the ``as_integer_ratio()`` method, otherwise it returns a pair
-   ``(number.numerator, number.denominator)``.
+The following functions are provided by this module.  All return values are
+integers.
 
 
 .. function:: comb(n, k)
