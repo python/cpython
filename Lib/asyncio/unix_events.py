@@ -1149,10 +1149,6 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         pass
 
     def add_child_handler(self, pid, callback, *args):
-        if self._saved_sighandler is None:
-            raise RuntimeError(
-                "Cannot add child handler, "
-                "the child watcher is not activated (attach_loop() was not called)")
         loop = events.get_running_loop()
         self._callbacks[pid] = (loop, callback, args)
 
