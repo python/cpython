@@ -389,6 +389,8 @@ Object Protocol
    arguments.
    Currently equivalent to ``nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET``.
 
+   .. versionadded:: 3.8
+
 .. c:function:: PyObject* _PyObject_FastCallDict(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwdict)
 
    Same as :c:func:`_PyObject_Vectorcall` except that the keyword arguments
