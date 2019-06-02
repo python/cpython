@@ -1786,15 +1786,6 @@ class ChildWatcherTestsMixin:
                 if isinstance(self.watcher, asyncio.FastChildWatcher):
                     self.assertFalse(self.watcher._zombies)
 
-    @waitpid_mocks
-    def test_add_child_handler_with_no_loop_attached(self, m):
-        callback = mock.Mock()
-        with self.create_watcher() as watcher:
-            with self.assertRaisesRegex(
-                    RuntimeError,
-                    'the child watcher does not have a loop attached'):
-                watcher.add_child_handler(100, callback)
-
 
 class SafeChildWatcherTests (ChildWatcherTestsMixin, test_utils.TestCase):
     def create_watcher(self):
