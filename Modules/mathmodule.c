@@ -3141,7 +3141,7 @@ math.perm
     k: object
     /
 
-Number of ways to choose k items from n items without repetition.
+Number of ways to choose k items from n items without repetition and with order.
 
 It is mathematically equal to the expression n! / (n - k)!.
 
@@ -3151,7 +3151,7 @@ Raises ValueError if the arguments are negative or if k > n.
 
 static PyObject *
 math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=e021a25469653e23 input=bad86be85158ebfd]*/
+/*[clinic end generated code: output=e021a25469653e23 input=f71ee4f6ff26be24]*/
 {
     return perm_comb(n, k, 0);
 }
