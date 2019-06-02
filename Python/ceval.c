@@ -116,9 +116,6 @@ static size_t opcache_global_misses = 0;
 #endif
 
 
-
-#define GIL_REQUEST _Py_atomic_load_relaxed(&ceval->gil_drop_request)
-
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
    the GIL eventually anyway. */
