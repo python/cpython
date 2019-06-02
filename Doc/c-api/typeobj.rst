@@ -2365,7 +2365,7 @@ Slot Type typedefs
 
    Arguments to ``vectorcallfunc`` are the same as for :c:func:`_PyObject_Vectorcall`.
 
-   .. versionadded: 3.8
+   .. versionadded:: 3.8
 
 .. c:type:: void (*freefunc)(void *)
 
