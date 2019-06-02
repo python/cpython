@@ -748,6 +748,14 @@ weakref
   multiplication operators ``@`` and ``@=`` in addition to the other
   numeric operators. (Contributed by Mark Dickinson in :issue:`36669`.)
 
+wsgiref
+-------
+
+* Client disconnections and terminations no longer print long stack traces
+  to the terminal. This will make e.g. the Django development server less
+  noisy on Windows. (Contributed by Berker Peksag in :issue:`29183` and
+  Petter Strandmark in :issue:`27682`.)
+
 xml
 ---
 
