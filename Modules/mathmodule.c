@@ -2999,6 +2999,120 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
 
 /*[clinic input]
+math.perm
+
+    n: object
+    k: object
+    /
+
+Number of ways to choose k items from n items without repetition and with order.
+
+It is mathematically equal to the expression n! / (n - k)!.
+
+Raises TypeError if the arguments are not integers.
+Raises ValueError if the arguments are negative or if k > n.
+[clinic start generated code]*/
+
+static PyObject *
+math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=e021a25469653e23 input=f71ee4f6ff26be24]*/
+{
+    PyObject *result = NULL, *factor = NULL;
+    int overflow, cmp;
+    long long i, factors;
+
+    n = PyNumber_Index(n);
+    if (n == NULL) {
+        return NULL;
+    }
+    if (!PyLong_CheckExact(n)) {
+        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
+        if (n == NULL) {
+            return NULL;
+        }
+    }
+    k = PyNumber_Index(k);
+    if (k == NULL) {
+        Py_DECREF(n);
+        return NULL;
+    }
+    if (!PyLong_CheckExact(k)) {
+        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
+        if (k == NULL) {
+            Py_DECREF(n);
+            return NULL;
+        }
+    }
+
+    if (Py_SIZE(n) < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "n must be a non-negative integer");
+        goto error;
+    }
+    cmp = PyObject_RichCompareBool(n, k, Py_LT);
+    if (cmp != 0) {
+        if (cmp > 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "k must be an integer less than or equal to n");
+        }
+        goto error;
+    }
+
+    factors = PyLong_AsLongLongAndOverflow(k, &overflow);
+    if (overflow > 0) {
+        PyErr_Format(PyExc_OverflowError,
+                     "k must not exceed %lld",
+                     LLONG_MAX);
+        goto error;
+    }
+    else if (overflow < 0 || factors < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError,
+                            "k must be a non-negative integer");
+        }
+        goto error;
+    }
+
+    if (factors == 0) {
+        result = PyLong_FromLong(1);
+        goto done;
+    }
+
+    result = n;
+    Py_INCREF(result);
+    if (factors == 1) {
+        goto done;
+    }
+
+    factor = n;
+    Py_INCREF(factor);
+    for (i = 1; i < factors; ++i) {
+        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
+        if (factor == NULL) {
+            goto error;
+        }
+        Py_SETREF(result, PyNumber_Multiply(result, factor));
+        if (result == NULL) {
+            goto error;
+        }
+    }
+    Py_DECREF(factor);
+
+done:
+    Py_DECREF(n);
+    Py_DECREF(k);
+    return result;
+
+error:
+    Py_XDECREF(factor);
+    Py_XDECREF(result);
+    Py_DECREF(n);
+    Py_DECREF(k);
+    return NULL;
+}
+
+
+/*[clinic input]
 math.comb
 
     n: object
@@ -3028,10 +3142,23 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     if (n == NULL) {
         return NULL;
     }
+    if (!PyLong_CheckExact(n)) {
+        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
+        if (n == NULL) {
+            return NULL;
+        }
+    }
     k = PyNumber_Index(k);
     if (k == NULL) {
         Py_DECREF(n);
         return NULL;
+    }
+    if (!PyLong_CheckExact(k)) {
+        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
+        if (k == NULL) {
+            Py_DECREF(n);
+            return NULL;
+        }
     }
 
     if (Py_SIZE(n) < 0) {
@@ -3050,7 +3177,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
                         "k must be an integer less than or equal to n");
         goto error;
     }
-    cmp = PyObject_RichCompareBool(k, temp, Py_GT);
+    cmp = PyObject_RichCompareBool(temp, k, Py_LT);
     if (cmp > 0) {
         Py_SETREF(k, temp);
     }
@@ -3174,6 +3301,7 @@ static PyMethodDef math_methods[] = {
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
+    MATH_PERM_METHODDEF
     MATH_COMB_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
