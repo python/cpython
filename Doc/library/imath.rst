@@ -48,7 +48,7 @@ noted otherwise, all return values are integers.
    ``0``.
 
 
-.. function:: ilog(n)
+.. function:: ilog2(n)
 
    Return the integer base 2 logarithm of the positive integer *n*. This is the
    floor of the exact base 2 logarithm root of *n*, or equivalently the
