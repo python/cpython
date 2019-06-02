@@ -50,7 +50,7 @@ _modules = {}  # Initialize cache of modules we've seen.
 
 
 class _Object:
-    "Informaton about Python class or function."
+    "Information about Python class or function."
     def __init__(self, module, name, file, lineno, parent):
         self.module = module
         self.name = name

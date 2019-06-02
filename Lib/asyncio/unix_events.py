@@ -193,7 +193,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 # prevents subprocess execution if the watcher
                 # is not ready to handle it.
                 raise RuntimeError("asyncio.get_child_watcher() is not activated, "
-                                   "subproccess support is not installed.")
+                                   "subprocess support is not installed.")
             waiter = self.create_future()
             transp = _UnixSubprocessTransport(self, protocol, args, shell,
                                               stdin, stdout, stderr, bufsize,
