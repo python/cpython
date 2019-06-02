@@ -1,0 +1,2 @@
+Remove long-deprecated allowance for ``__int__`` and ``__index__`` methods
+to return subclasses of ``int``.
