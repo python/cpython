@@ -1140,7 +1140,11 @@ class ExceptHookTests(BaseTestCase):
                 raise ValueError("bug")
             except Exception as exc:
                 args = threading.ExceptHookArgs([*sys.exc_info(), None])
-                threading.excepthook(args)
+                try:
+                    threading.excepthook(args)
+                finally:
+                    # Explicitly break a reference cycle
+                    args = None
 
         stderr = stderr.getvalue().strip()
         self.assertIn(f'Exception in thread {threading.get_ident()}:\n', stderr)
