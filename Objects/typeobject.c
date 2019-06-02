@@ -2941,14 +2941,13 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
             PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
             goto fail;
         }
-        if (slot->slot == Py_tp_base || slot->slot == Py_tp_bases)
+        else if (slot->slot == Py_tp_base || slot->slot == Py_tp_bases) {
             /* Processed above */
             continue;
-        *(void**)(res_start + slotoffsets[slot->slot]) = slot->pfunc;
-
-        /* need to make a copy of the docstring slot, which usually
-           points to a static string literal */
-        if (slot->slot == Py_tp_doc) {
+        }
+        else if (slot->slot == Py_tp_doc) {
+            /* For the docstring slot, which usually points to a static string
+               literal, we need to make a copy */
             const char *old_doc = _PyType_DocWithoutSignature(type->tp_name, slot->pfunc);
             size_t len = strlen(old_doc)+1;
             char *tp_doc = PyObject_MALLOC(len);
@@ -2960,12 +2959,15 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
             memcpy(tp_doc, old_doc, len);
             type->tp_doc = tp_doc;
         }
-
-        /* Move the slots to the heap type itself */
-        if (slot->slot == Py_tp_members) {
+        else if (slot->slot == Py_tp_members) {
+            /* Move the slots to the heap type itself */
             size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
             memcpy(PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
             type->tp_members = PyHeapType_GET_MEMBERS(res);
+        }
+        else {
+            /* Copy other slots directly */
+            *(void**)(res_start + slotoffsets[slot->slot]) = slot->pfunc;
         }
     }
     if (type->tp_dealloc == NULL) {
