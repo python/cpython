@@ -5233,6 +5233,20 @@ PyType_Ready(PyTypeObject *type)
     _PyObject_ASSERT((PyObject *)type,
                      (type->tp_flags & Py_TPFLAGS_READYING) == 0);
 
+    /* Consistency checks for PEP 590:
+     * - Py_TPFLAGS_METHOD_DESCRIPTOR requires tp_descr_get
+     * - _Py_TPFLAGS_HAVE_VECTORCALL requires tp_call and
+     *   tp_vectorcall_offset > 0
+     * To avoid mistakes, we require this before inheriting.
+     */
+    if (type->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
+        _PyObject_ASSERT((PyObject *)type, type->tp_descr_get != NULL);
+    }
+    if (type->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) {
+        _PyObject_ASSERT((PyObject *)type, type->tp_vectorcall_offset > 0);
+        _PyObject_ASSERT((PyObject *)type, type->tp_call != NULL);
+    }
+
     type->tp_flags |= Py_TPFLAGS_READYING;
 
 #ifdef Py_TRACE_REFS
