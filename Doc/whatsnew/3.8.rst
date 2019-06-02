@@ -304,6 +304,12 @@ Other Language Changes
 * Added new ``replace()`` method to the code type (:class:`types.CodeType`).
   (Contributed by Victor Stinner in :issue:`37032`.)
 
+* For integers, the three-argument form of the :func:`pow` function now permits
+  the exponent to be negative in the case where the base is relatively prime to
+  the modulus. It then computes a modular inverse to the base when the exponent
+  is ``-1``, and a suitable power of that inverse for other negative exponents.
+  (Contributed by Mark Dickinson in :issue:`36027`.)
+
 
 New Modules
 ===========
