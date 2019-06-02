@@ -1037,15 +1037,11 @@ def getargs(co):
 
     names = co.co_varnames
     nargs = co.co_argcount
-    nposonlyargs = co.co_posonlyargcount
     nkwargs = co.co_kwonlyargcount
-    nposargs = nargs + nposonlyargs
-    posonlyargs = list(names[:nposonlyargs])
-    args = list(names[nposonlyargs:nposonlyargs+nargs])
-    kwonlyargs = list(names[nposargs:nposargs+nkwargs])
+    args = list(names[:nargs])
+    kwonlyargs = list(names[nargs:nargs+nkwargs])
     step = 0
 
-    nargs += nposonlyargs
     nargs += nkwargs
     varargs = None
     if co.co_flags & CO_VARARGS:
@@ -1054,7 +1050,7 @@ def getargs(co):
     varkw = None
     if co.co_flags & CO_VARKEYWORDS:
         varkw = co.co_varnames[nargs]
-    return Arguments(posonlyargs + args + kwonlyargs, varargs, varkw)
+    return Arguments(args + kwonlyargs, varargs, varkw)
 
 ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
 
@@ -2136,11 +2132,9 @@ def _signature_from_function(cls, func, skip_bound_arg=True):
     pos_count = func_code.co_argcount
     arg_names = func_code.co_varnames
     posonly_count = func_code.co_posonlyargcount
-    positional_count = posonly_count + pos_count
-    positional_only = tuple(arg_names[:posonly_count])
-    positional = tuple(arg_names[posonly_count:positional_count])
+    positional = arg_names[:pos_count]
     keyword_only_count = func_code.co_kwonlyargcount
-    keyword_only = arg_names[positional_count:(positional_count + keyword_only_count)]
+    keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
     annotations = func.__annotations__
     defaults = func.__defaults__
     kwdefaults = func.__kwdefaults__
@@ -2152,13 +2146,11 @@ def _signature_from_function(cls, func, skip_bound_arg=True):
 
     parameters = []
 
-    non_default_count = positional_count - pos_default_count
-    all_positional = positional_only + positional
-
+    non_default_count = pos_count - pos_default_count
     posonly_left = posonly_count
 
     # Non-keyword-only parameters w/o defaults.
-    for name in all_positional[:non_default_count]:
+    for name in positional[:non_default_count]:
         kind = _POSITIONAL_ONLY if posonly_left else _POSITIONAL_OR_KEYWORD
         annotation = annotations.get(name, _empty)
         parameters.append(Parameter(name, annotation=annotation,
@@ -2167,7 +2159,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True):
             posonly_left -= 1
 
     # ... w/ defaults.
-    for offset, name in enumerate(all_positional[non_default_count:]):
+    for offset, name in enumerate(positional[non_default_count:]):
         kind = _POSITIONAL_ONLY if posonly_left else _POSITIONAL_OR_KEYWORD
         annotation = annotations.get(name, _empty)
         parameters.append(Parameter(name, annotation=annotation,
@@ -2178,7 +2170,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True):
 
     # *args
     if func_code.co_flags & CO_VARARGS:
-        name = arg_names[positional_count + keyword_only_count]
+        name = arg_names[pos_count + keyword_only_count]
         annotation = annotations.get(name, _empty)
         parameters.append(Parameter(name, annotation=annotation,
                                     kind=_VAR_POSITIONAL))
@@ -2195,7 +2187,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True):
                                     default=default))
     # **kwargs
     if func_code.co_flags & CO_VARKEYWORDS:
-        index = positional_count + keyword_only_count
+        index = pos_count + keyword_only_count
         if func_code.co_flags & CO_VARARGS:
             index += 1
 

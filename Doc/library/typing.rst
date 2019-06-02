@@ -637,7 +637,7 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.abc.Collection`
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.6.0
 
 .. class:: AbstractSet(Sized, Collection[T_co])
 
@@ -681,6 +681,7 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.deque`.
 
+   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
 .. class:: List(list, MutableSequence[T])
@@ -730,6 +731,8 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.abc.Awaitable`.
 
+   .. versionadded:: 3.5.2
+
 .. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
 
    A generic version of :class:`collections.abc.Coroutine`.
@@ -743,25 +746,33 @@ The module defines the following classes, functions and decorators:
       async def bar() -> None:
           x = await c # type: int
 
+   .. versionadded:: 3.5.3
+
 .. class:: AsyncIterable(Generic[T_co])
 
    A generic version of :class:`collections.abc.AsyncIterable`.
+
+   .. versionadded:: 3.5.2
 
 .. class:: AsyncIterator(AsyncIterable[T_co])
 
    A generic version of :class:`collections.abc.AsyncIterator`.
 
+   .. versionadded:: 3.5.2
+
 .. class:: ContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractContextManager`.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.0
 
 .. class:: AsyncContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractAsyncContextManager`.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.2
 
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
@@ -790,12 +801,14 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.Counter`.
 
+   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
 .. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
 
    A generic version of :class:`collections.ChainMap`.
 
+   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
@@ -860,7 +873,7 @@ The module defines the following classes, functions and decorators:
               yield start
               start = await increment(start)
 
-   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.1
 
 .. class:: Text
 
@@ -1166,6 +1179,7 @@ The module defines the following classes, functions and decorators:
           raise RuntimeError('no way')
 
    .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.2
 
 .. data:: Union
 

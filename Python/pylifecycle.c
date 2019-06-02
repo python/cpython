@@ -1147,15 +1147,31 @@ Py_FinalizeEx(void)
         return status;
     }
 
+    /* Get current thread state and interpreter pointer */
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyInterpreterState *interp = tstate->interp;
+
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
 
     // Make any remaining pending calls.
-    _Py_FinishPendingCalls(runtime);
-
-    /* Get current thread state and interpreter pointer */
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    PyInterpreterState *interp = tstate->interp;
+    /* XXX For the moment we are going to ignore lingering pending calls.
+     * We've seen sporadic on some of the buildbots during finalization
+     * with the changes for per-interpreter pending calls (see bpo-33608),
+     * meaning the previous _PyEval_FinishPendincCalls() call here is
+     * a trigger, if not responsible.
+     *
+     * Ignoring pending calls at this point in the runtime lifecycle
+     * is okay (for now) for the following reasons:
+     *
+     *  * pending calls are still not a widely-used feature
+     *  * this only affects runtime finalization, where the process is
+     *    likely to end soon anyway (except for some embdding cases)
+     *
+     * See bpo-37127 about resolving the problem.  Ultimately the call
+     * here should be re-enabled.
+     */
+    //_PyEval_FinishPendingCalls(interp);
 
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
@@ -1579,6 +1595,9 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
+
+    // Make any remaining pending calls.
+    _PyEval_FinishPendingCalls(interp);
 
     call_py_exitfuncs(interp);
 

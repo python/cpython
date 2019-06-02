@@ -100,14 +100,14 @@ class PositionalOnlyTestCase(unittest.TestCase):
         def f(a, b, c, /, d, e=1, *, f, g=2):
             pass
 
-        self.assertEqual(2, f.__code__.co_argcount)  # 2 "standard args"
+        self.assertEqual(5, f.__code__.co_argcount)  # 3 posonly + 2 "standard args"
         self.assertEqual(3, f.__code__.co_posonlyargcount)
         self.assertEqual((1,), f.__defaults__)
 
         def f(a, b, c=1, /, d=2, e=3, *, f, g=4):
             pass
 
-        self.assertEqual(2, f.__code__.co_argcount)  # 2 "standard args"
+        self.assertEqual(5, f.__code__.co_argcount)  # 3 posonly + 2 "standard args"
         self.assertEqual(3, f.__code__.co_posonlyargcount)
         self.assertEqual((1, 2, 3), f.__defaults__)
 

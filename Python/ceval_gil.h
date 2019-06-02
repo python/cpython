@@ -141,9 +141,11 @@ static void recreate_gil(struct _gil_runtime_state *gil)
 }
 
 static void
-drop_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
+drop_gil(struct _ceval_runtime_state *ceval_r,
+         struct _ceval_interpreter_state *ceval_i,
+         PyThreadState *tstate)
 {
-    struct _gil_runtime_state *gil = &ceval->gil;
+    struct _gil_runtime_state *gil = &ceval_r->gil;
     if (!_Py_atomic_load_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
     }
@@ -163,12 +165,12 @@ drop_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
     MUTEX_UNLOCK(gil->mutex);
 
 #ifdef FORCE_SWITCHING
-    if (_Py_atomic_load_relaxed(&ceval->gil_drop_request) && tstate != NULL) {
+    if (_Py_atomic_load_relaxed(&ceval_r->gil_drop_request) && tstate != NULL) {
         MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
         if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
         {
-            RESET_GIL_DROP_REQUEST(ceval);
+            RESET_GIL_DROP_REQUEST(ceval_r, ceval_i);
             /* NOTE: if COND_WAIT does not atomically start waiting when
                releasing the mutex, another thread can run through, take
                the GIL and drop it again, and reset the condition
@@ -181,13 +183,19 @@ drop_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
 }
 
 static void
-take_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
+take_gil(struct _ceval_runtime_state *ceval_r,
+         PyThreadState *tstate)
 {
     if (tstate == NULL) {
         Py_FatalError("take_gil: NULL tstate");
     }
+    PyInterpreterState *interp = tstate->interp;
+    if (interp == NULL) {
+        Py_FatalError("take_gil: NULL interp");
+    }
+    struct _ceval_interpreter_state *ceval_i = &interp->ceval;
 
-    struct _gil_runtime_state *gil = &ceval->gil;
+    struct _gil_runtime_state *gil = &ceval_r->gil;
     int err = errno;
     MUTEX_LOCK(gil->mutex);
 
@@ -210,7 +218,7 @@ take_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
             _Py_atomic_load_relaxed(&gil->locked) &&
             gil->switch_number == saved_switchnum)
         {
-            SET_GIL_DROP_REQUEST(ceval);
+            SET_GIL_DROP_REQUEST(ceval_r);
         }
     }
 _ready:
@@ -232,11 +240,11 @@ _ready:
     COND_SIGNAL(gil->switch_cond);
     MUTEX_UNLOCK(gil->switch_mutex);
 #endif
-    if (_Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
-        RESET_GIL_DROP_REQUEST(ceval);
+    if (_Py_atomic_load_relaxed(&ceval_r->gil_drop_request)) {
+        RESET_GIL_DROP_REQUEST(ceval_r, ceval_i);
     }
     if (tstate->async_exc != NULL) {
-        _PyEval_SignalAsyncExc(ceval);
+        _PyEval_SignalAsyncExc(ceval_r, ceval_i);
     }
 
     MUTEX_UNLOCK(gil->mutex);
