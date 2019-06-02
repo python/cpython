@@ -708,7 +708,7 @@ iterations of the loop.
 
    Cleans up the value stack and the block stack.  If *preserve_tos* is not
    ``0`` TOS first is popped from the stack and pushed on the stack after
-   perfoming other stack operations:
+   performing other stack operations:
 
    * If TOS is ``NULL`` or an integer (pushed by :opcode:`BEGIN_FINALLY`
      or :opcode:`CALL_FINALLY`) it is popped from the stack.

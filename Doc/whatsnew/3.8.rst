@@ -1286,7 +1286,7 @@ Changes in the C API
   (Contributed by Zackery Spytz in :issue:`33407`.)
 
 * The interpreter does not pretend to support binary compatibility of
-  extension types accross feature releases, anymore.  A :c:type:`PyTypeObject`
+  extension types across feature releases, anymore.  A :c:type:`PyTypeObject`
   exported by a third-party extension module is supposed to have all the
   slots expected in the current Python version, including
   :c:member:`~PyTypeObject.tp_finalize` (:const:`Py_TPFLAGS_HAVE_FINALIZE`

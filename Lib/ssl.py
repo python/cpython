@@ -862,7 +862,7 @@ class SSLObject:
     @property
     def server_hostname(self):
         """The currently set server hostname (for SNI), or ``None`` if no
-        server hostame is set."""
+        server hostname is set."""
         return self._sslobj.server_hostname
 
     def read(self, len=1024, buffer=None):
