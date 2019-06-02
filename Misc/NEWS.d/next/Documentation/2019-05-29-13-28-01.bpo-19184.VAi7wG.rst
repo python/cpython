@@ -1,3 +1,0 @@
-Update the documentation of :mod:`dis`:
-* Explain the behavior of the number of arguments to the raise statement
-  of *RAISE_VARARGS* opcode.
