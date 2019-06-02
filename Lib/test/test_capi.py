@@ -515,9 +515,10 @@ class TestPEP590(unittest.TestCase):
 
     def test_vectorcall(self):
         # Test a bunch of different ways to call objects:
-        # 1. normal call
-        # 2. vectorcall using _PyObject_Vectorcall()
-        # 3. vectorcall using PyVectorcall_Call()
+        # 1. vectorcall using PyVectorcall_Call()
+        #   (only for objects that support vectorcall directly)
+        # 2. normal call
+        # 3. vectorcall using _PyObject_Vectorcall()
         # 4. call as bound method
         # 5. call using functools.partial
 
@@ -543,18 +544,37 @@ class TestPEP590(unittest.TestCase):
 
         for (func, args, kwargs, expected) in calls:
             with self.subTest(str(func)):
+                if not kwargs:
+                    self.assertEqual(expected, pyvectorcall_call(func, args))
+                self.assertEqual(expected, pyvectorcall_call(func, args, kwargs))
+
+        # Add derived classes (which do not support vectorcall directly,
+        # but do support all other ways of calling).
+
+        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
+            pass
+
+        class MethodDescriptorOverridden(_testcapi.MethodDescriptorBase):
+            def __call__(self, n):
+                return 'new'
+
+        calls += [
+            (MethodDescriptorHeap(), (0,), {}, True),
+            (MethodDescriptorOverridden(), (0,), {}, 'new'),
+        ]
+
+        for (func, args, kwargs, expected) in calls:
+            with self.subTest(str(func)):
                 args1 = args[1:]
                 meth = MethodType(func, args[0])
                 wrapped = partial(func)
                 if not kwargs:
                     self.assertEqual(expected, func(*args))
                     self.assertEqual(expected, pyobject_vectorcall(func, args, None))
-                    self.assertEqual(expected, pyvectorcall_call(func, args))
                     self.assertEqual(expected, meth(*args1))
                     self.assertEqual(expected, wrapped(*args))
                 self.assertEqual(expected, func(*args, **kwargs))
                 self.assertEqual(expected, vectorcall(func, args, kwargs))
-                self.assertEqual(expected, pyvectorcall_call(func, args, kwargs))
                 self.assertEqual(expected, meth(*args1, **kwargs))
                 self.assertEqual(expected, wrapped(*args, **kwargs))
 
