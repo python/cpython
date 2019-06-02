@@ -8,8 +8,8 @@ Typical use is:
 
 This iterates over the lines of all files listed in sys.argv[1:],
 defaulting to sys.stdin if the list is empty.  If a filename is '-' it
-is also replaced by sys.stdin and the optional arguments 'mode' and
-'openhook' will be ignored. To specify an alternative list of filenames,
+is also replaced by sys.stdin and the optional arguments mode and
+openhook are ignored.  To specify an alternative list of filenames,
 pass it as the argument to input().  A single file name is also allowed.
 
 Functions filename(), lineno() return the filename and cumulative line
