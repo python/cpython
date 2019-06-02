@@ -209,7 +209,7 @@ Number-theoretic and representation functions
 
 .. function:: perm(n, k)
 
-   Return the distinct number of ways to choose *k* items from *n* items
+   Return the number of ways to choose *k* items from *n* items
    without repetition and with order.
 
    It is mathematically equal to the expression ``n! / (n - k)!``.

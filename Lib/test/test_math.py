@@ -240,6 +240,9 @@ def result_check(expected, got, ulp_tol=5, abs_tol=0.0):
     else:
         return None
 
+class IntSubclass(int):
+    pass
+
 # Class providing an __index__ method.
 class MyIndexable(object):
     def __init__(self, value):
@@ -1914,8 +1917,11 @@ class IsCloseTests(unittest.TestCase):
         for n, k in (True, True), (True, False), (False, False):
             self.assertEqual(perm(n, k), 1)
             self.assertIs(type(perm(n, k)), int)
+        self.assertEqual(perm(IntSubclass(5), IntSubclass(2)), 20)
         self.assertEqual(perm(MyIndexable(5), MyIndexable(2)), 20)
-        self.assertIs(type(perm(MyIndexable(5), MyIndexable(2))), int)
+        for k in range(3):
+            self.assertIs(type(perm(IntSubclass(5), IntSubclass(k))), int)
+            self.assertIs(type(perm(MyIndexable(5), MyIndexable(k))), int)
 
     def testComb(self):
         comb = math.comb
@@ -1980,8 +1986,11 @@ class IsCloseTests(unittest.TestCase):
         for n, k in (True, True), (True, False), (False, False):
             self.assertEqual(comb(n, k), 1)
             self.assertIs(type(comb(n, k)), int)
+        self.assertEqual(comb(IntSubclass(5), IntSubclass(2)), 10)
         self.assertEqual(comb(MyIndexable(5), MyIndexable(2)), 10)
-        self.assertIs(type(comb(MyIndexable(5), MyIndexable(2))), int)
+        for k in range(3):
+            self.assertIs(type(comb(IntSubclass(5), IntSubclass(k))), int)
+            self.assertIs(type(comb(MyIndexable(5), MyIndexable(k))), int)
 
 
 def test_main():
