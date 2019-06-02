@@ -1824,6 +1824,7 @@ class PolicyTests(unittest.TestCase):
     def test_get_child_watcher_thread(self):
 
         def f():
+            policy.set_event_loop(policy.new_event_loop())
             self.assertIsInstance(policy.get_event_loop(),
                                   asyncio.AbstractEventLoop)
             watcher = policy.get_child_watcher()
@@ -1835,7 +1836,6 @@ class PolicyTests(unittest.TestCase):
 
         policy = self.create_policy()
         policy.set_child_watcher(asyncio.SafeChildWatcher())
-        policy.set_event_loop(policy.new_event_loop())
 
         th = threading.Thread(target=f)
         th.start()
