@@ -5854,7 +5854,7 @@ MethodDescriptor_vectorcall(PyObject *callable, PyObject *const *args,
 static PyObject *
 MethodDescriptor_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 {
-    MethodDescriptorObject *op = PyObject_New(MethodDescriptorObject, type);
+    MethodDescriptorObject *op = type->tp_alloc(type, 0);
     op->vectorcall = MethodDescriptor_vectorcall;
     return (PyObject *)op;
 }
