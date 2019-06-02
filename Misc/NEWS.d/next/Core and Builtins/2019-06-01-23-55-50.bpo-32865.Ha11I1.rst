@@ -1,0 +1,2 @@
+On Windows, do not use inheritable file descriptors to wrap handles in
+:func:`os.pipe`.

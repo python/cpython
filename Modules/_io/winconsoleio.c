@@ -478,9 +478,11 @@ _io__WindowsConsoleIO_fileno_impl(winconsoleio *self)
     if (self->fd < 0 && self->handle != INVALID_HANDLE_VALUE) {
         _Py_BEGIN_SUPPRESS_IPH
         if (self->writable)
-            self->fd = _open_osfhandle((intptr_t)self->handle, _O_WRONLY | _O_BINARY);
+            self->fd = _open_osfhandle((intptr_t)self->handle,
+                                       _O_WRONLY | _O_BINARY | _O_NOINHERIT);
         else
-            self->fd = _open_osfhandle((intptr_t)self->handle, _O_RDONLY | _O_BINARY);
+            self->fd = _open_osfhandle((intptr_t)self->handle,
+                                       _O_RDONLY | _O_BINARY | _O_NOINHERIT);
         _Py_END_SUPPRESS_IPH
     }
     if (self->fd < 0)
