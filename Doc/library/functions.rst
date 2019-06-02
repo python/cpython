@@ -1263,8 +1263,15 @@ are always available.  They are listed here in alphabetical order.
 
    For :class:`int` operands *x* and *y*, if *z* is present, *z* must also be
    of integer type and *z* must be nonzero. If *z* is present and *y* is
-   negative, *x* must be relatively prime to *z*. In that case, ``pow(ix, -y,
-   z)`` is returned, where *ix* is an inverse to *x* modulo *z*.
+   negative, *x* must be relatively prime to *z*. In that case, ``pow(inv_x,
+   -y, z)`` is returned, where *inv_x* is an inverse to *x* modulo *z*.
+
+   Here's an example of computing an inverse for ``38`` modulo ``97``::
+
+      >>> pow(38, -1, 97)
+      23
+      >>> 23 * 38 % 97 == 1
+      True
 
    .. versionchanged:: 3.8
       For :class:`int` operands, the three-argument form of ``pow`` now allows
