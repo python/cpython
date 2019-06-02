@@ -1091,7 +1091,7 @@ class TestShutil(unittest.TestCase):
         self.assertTrue(tarfile.is_tarfile(tarball))
         with tarfile.open(tarball, 'r:gz') as tf:
             self.assertCountEqual(tf.getnames(),
-                                  ['.', './sub', './sub2',
+                                  ['./sub', './sub2',
                                    './file1', './file2', './sub/file3'])
 
         # trying an uncompressed one
@@ -1102,7 +1102,7 @@ class TestShutil(unittest.TestCase):
         self.assertTrue(tarfile.is_tarfile(tarball))
         with tarfile.open(tarball, 'r') as tf:
             self.assertCountEqual(tf.getnames(),
-                                  ['.', './sub', './sub2',
+                                  ['./sub', './sub2',
                                   './file1', './file2', './sub/file3'])
 
     def _tarinfo(self, path):

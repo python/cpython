@@ -1969,11 +1969,13 @@ class TarFile(object):
                 self.addfile(tarinfo, f)
 
         elif tarinfo.isdir():
-            self.addfile(tarinfo)
+            if tarinfo.name != '.':
+                self.addfile(tarinfo)
             if recursive:
                 for f in sorted(os.listdir(name)):
-                    self.add(os.path.join(name, f), os.path.join(arcname, f),
-                            recursive, filter=filter)
+                    if f != '.':
+                        self.add(os.path.join(name, f), os.path.join(arcname, f),
+                                recursive, filter=filter)
 
         else:
             self.addfile(tarinfo)
