@@ -1113,9 +1113,13 @@ All of the following opcodes use their arguments.
 
 .. opcode:: RAISE_VARARGS (argc)
 
-   Raises an exception. *argc* indicates the number of arguments to the raise
-   statement, ranging from 0 to 3.  The handler will find the traceback as TOS2,
-   the parameter as TOS1, and the exception as TOS.
+   Raises an exception using one of the 3 forms of the ``raise`` statement,
+   depending on the value of *argc*:
+
+   * 0: ``raise`` (re-raise previous exception)
+   * 1: ``raise TOS`` (raise exception instance or type at ``TOS``)
+   * 2: ``raise TOS1 from TOS`` (raise exception instance or type at ``TOS1``
+     with ``__cause__`` set to ``TOS``)
 
 
 .. opcode:: CALL_FUNCTION (argc)
