@@ -1277,9 +1277,24 @@ are always available.  They are listed here in alphabetical order.
    operands, the result has the same type as the operands (after coercion)
    unless the second argument is negative; in that case, all arguments are
    converted to float and a float result is delivered.  For example, ``10**2``
-   returns ``100``, but ``10**-2`` returns ``0.01``.  If the second argument is
-   negative, the third argument must be omitted.  If *z* is present, *x* and *y*
-   must be of integer types, and *y* must be non-negative.
+   returns ``100``, but ``10**-2`` returns ``0.01``.
+
+   For :class:`int` operands *x* and *y*, if *z* is present, *z* must also be
+   of integer type and *z* must be nonzero. If *z* is present and *y* is
+   negative, *x* must be relatively prime to *z*. In that case, ``pow(inv_x,
+   -y, z)`` is returned, where *inv_x* is an inverse to *x* modulo *z*.
+
+   Here's an example of computing an inverse for ``38`` modulo ``97``::
+
+      >>> pow(38, -1, 97)
+      23
+      >>> 23 * 38 % 97 == 1
+      True
+
+   .. versionchanged:: 3.8
+      For :class:`int` operands, the three-argument form of ``pow`` now allows
+      the second argument to be negative, permitting computation of modular
+      inverses.
 
 
 .. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
