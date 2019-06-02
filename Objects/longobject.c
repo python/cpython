@@ -4243,7 +4243,7 @@ long_invmod(PyLongObject *a, PyLongObject *n)
 
     Py_DECREF(c);
     Py_DECREF(n);
-    if (long_compare(a, _PyLong_One)) {
+    if (long_compare(a, (PyObject *)_PyLong_One)) {
         /* a != 1; we don't have an inverse. */
         Py_DECREF(a);
         Py_DECREF(b);
