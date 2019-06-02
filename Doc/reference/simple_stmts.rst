@@ -329,7 +329,8 @@ Annotated assignment statements
 statement, of a variable or attribute annotation and an optional assignment statement:
 
 .. productionlist::
-   annotated_assignment_stmt: `augtarget` ":" `expression` ["=" `expression`]
+   annotated_assignment_stmt: `augtarget` ":" `expression`
+                            : ["=" (`expression_list` | `yield_expression`)]
 
 The difference from normal :ref:`assignment` is that only single target and
 only single right hand side value is allowed.
@@ -365,6 +366,11 @@ target, then the interpreter evaluates the target except for the last
       The proposal that added the :mod:`typing` module to provide a standard
       syntax for type annotations that can be used in static analysis tools and
       IDEs.
+
+.. versionchanged:: 3.8
+   Now annotated assignments allow same expressions in the right hand side as
+   the augmented assignments. Previously, some expressions (like un-parenthesized
+   tuple expressions) caused a syntax error.
 
 
 .. _assert:
