@@ -1825,6 +1825,7 @@ class PolicyTests(unittest.TestCase):
 
         def f():
             policy.set_event_loop(policy.new_event_loop())
+
             self.assertIsInstance(policy.get_event_loop(),
                                   asyncio.AbstractEventLoop)
             watcher = policy.get_child_watcher()
