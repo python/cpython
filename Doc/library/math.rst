@@ -36,21 +36,6 @@ Number-theoretic and representation functions
    :class:`~numbers.Integral` value.
 
 
-.. function:: comb(n, k)
-
-   Return the number of ways to choose *k* items from *n* items without repetition
-   and without order.
-
-   Also called the binomial coefficient. It is mathematically equal to the expression
-   ``n! / (k! (n - k)!)``. It is equivalent to the coefficient of the *k*-th term in the
-   polynomial expansion of the expression ``(1 + x) ** n``.
-
-   Raises :exc:`TypeError` if the arguments not integers.
-   Raises :exc:`ValueError` if the arguments are negative or if *k* > *n*.
-
-   .. versionadded:: 3.8
-
-
 .. function:: copysign(x, y)
 
    Return a float with the magnitude (absolute value) of *x* but the sign of
@@ -65,8 +50,8 @@ Number-theoretic and representation functions
 
 .. function:: factorial(x)
 
-   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
-   is negative.
+   Similar to :func:`imath.factorial`, but accepts also floating-point numbers
+   with integer value (like ``3.0``).
 
 
 .. function:: floor(x)
@@ -122,10 +107,7 @@ Number-theoretic and representation functions
 
 .. function:: gcd(a, b)
 
-   Return the greatest common divisor of the integers *a* and *b*.  If either
-   *a* or *b* is nonzero, then the value of ``gcd(a, b)`` is the largest
-   positive integer that divides both *a* and *b*.  ``gcd(0, 0)`` returns
-   ``0``.
+   An alias of :func:`imath.gcd`.
 
    .. versionadded:: 3.5
 
@@ -181,20 +163,6 @@ Number-theoretic and representation functions
    Return ``True`` if *x* is a NaN (not a number), and ``False`` otherwise.
 
 
-.. function:: isqrt(n)
-
-   Return the integer square root of the nonnegative integer *n*. This is the
-   floor of the exact square root of *n*, or equivalently the greatest integer
-   *a* such that *a*\ ² |nbsp| ≤ |nbsp| *n*.
-
-   For some applications, it may be more convenient to have the least integer
-   *a* such that *n* |nbsp| ≤ |nbsp| *a*\ ², or in other words the ceiling of
-   the exact square root of *n*. For positive *n*, this can be computed using
-   ``a = 1 + isqrt(n - 1)``.
-
-   .. versionadded:: 3.8
-
-
 .. function:: ldexp(x, i)
 
    Return ``x * (2**i)``.  This is essentially the inverse of function
@@ -205,19 +173,6 @@ Number-theoretic and representation functions
 
    Return the fractional and integer parts of *x*.  Both results carry the sign
    of *x* and are floats.
-
-
-.. function:: perm(n, k)
-
-   Return the number of ways to choose *k* items from *n* items
-   without repetition and with order.
-
-   It is mathematically equal to the expression ``n! / (n - k)!``.
-
-   Raises :exc:`TypeError` if the arguments not integers.
-   Raises :exc:`ValueError` if the arguments are negative or if *k* > *n*.
-
-   .. versionadded:: 3.8
 
 
 .. function:: prod(iterable, *, start=1)
@@ -580,6 +535,3 @@ Constants
 
    Module :mod:`cmath`
       Complex number versions of many of these functions.
-
-.. |nbsp| unicode:: 0xA0
-   :trim:

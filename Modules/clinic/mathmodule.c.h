@@ -6,7 +6,9 @@ PyDoc_STRVAR(math_gcd__doc__,
 "gcd($module, x, y, /)\n"
 "--\n"
 "\n"
-"greatest common divisor of x and y");
+"greatest common divisor of x and y\n"
+"\n"
+"See also imath.gcd().");
 
 #define MATH_GCD_METHODDEF    \
     {"gcd", (PyCFunction)(void(*)(void))math_gcd, METH_FASTCALL, math_gcd__doc__},
@@ -65,22 +67,15 @@ PyDoc_STRVAR(math_fsum__doc__,
 #define MATH_FSUM_METHODDEF    \
     {"fsum", (PyCFunction)math_fsum, METH_O, math_fsum__doc__},
 
-PyDoc_STRVAR(math_isqrt__doc__,
-"isqrt($module, n, /)\n"
-"--\n"
-"\n"
-"Return the integer part of the square root of the input.");
-
-#define MATH_ISQRT_METHODDEF    \
-    {"isqrt", (PyCFunction)math_isqrt, METH_O, math_isqrt__doc__},
-
 PyDoc_STRVAR(math_factorial__doc__,
 "factorial($module, x, /)\n"
 "--\n"
 "\n"
 "Find x!.\n"
 "\n"
-"Raise a ValueError if x is negative or non-integral.");
+"Raise a ValueError if x is negative or non-integral.\n"
+"\n"
+"See also imath.factorial().");
 
 #define MATH_FACTORIAL_METHODDEF    \
     {"factorial", (PyCFunction)math_factorial, METH_O, math_factorial__doc__},
@@ -637,76 +632,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-
-PyDoc_STRVAR(math_perm__doc__,
-"perm($module, n, k, /)\n"
-"--\n"
-"\n"
-"Number of ways to choose k items from n items without repetition and with order.\n"
-"\n"
-"It is mathematically equal to the expression n! / (n - k)!.\n"
-"\n"
-"Raises TypeError if the arguments are not integers.\n"
-"Raises ValueError if the arguments are negative or if k > n.");
-
-#define MATH_PERM_METHODDEF    \
-    {"perm", (PyCFunction)(void(*)(void))math_perm, METH_FASTCALL, math_perm__doc__},
-
-static PyObject *
-math_perm_impl(PyObject *module, PyObject *n, PyObject *k);
-
-static PyObject *
-math_perm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *n;
-    PyObject *k;
-
-    if (!_PyArg_CheckPositional("perm", nargs, 2, 2)) {
-        goto exit;
-    }
-    n = args[0];
-    k = args[1];
-    return_value = math_perm_impl(module, n, k);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(math_comb__doc__,
-"comb($module, n, k, /)\n"
-"--\n"
-"\n"
-"Number of ways to choose k items from n items without repetition and without order.\n"
-"\n"
-"Also called the binomial coefficient. It is mathematically equal to the expression\n"
-"n! / (k! * (n - k)!). It is equivalent to the coefficient of k-th term in\n"
-"polynomial expansion of the expression (1 + x)**n.\n"
-"\n"
-"Raises TypeError if the arguments are not integers.\n"
-"Raises ValueError if the arguments are negative or if k > n.");
-
-#define MATH_COMB_METHODDEF    \
-    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL, math_comb__doc__},
-
-static PyObject *
-math_comb_impl(PyObject *module, PyObject *n, PyObject *k);
-
-static PyObject *
-math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *n;
-    PyObject *k;
-
-    if (!_PyArg_CheckPositional("comb", nargs, 2, 2)) {
-        goto exit;
-    }
-    n = args[0];
-    k = args[1];
-    return_value = math_comb_impl(module, n, k);
-
-exit:
-    return return_value;
-}
-/*[clinic end generated code: output=a82b0e705b6d0ec0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e9a8e18bfc89e9b1 input=a9049054013a1b77]*/
