@@ -6,6 +6,8 @@
 
 .. versionadded:: 3.8
 
+**Source code:** :source:`Lib/imath.py`
+
 --------------
 
 This module provides access to the mathematical functions for integer arguments.

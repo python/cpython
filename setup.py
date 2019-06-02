@@ -692,7 +692,7 @@ class PyBuildExt(build_ext):
         self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
 
         # integer math library functions, e.g. isqrt()
-        self.add(Extension('imath',  ['imathmodule.c']))
+        self.add(Extension('_imath',  ['_imathmodule.c']))
 
         shared_math = 'Modules/_math.o'
 

@@ -2,7 +2,7 @@
 
 #include "Python.h"
 
-#include "clinic/imathmodule.c.h"
+#include "clinic/_imathmodule.c.h"
 
 /*[clinic input]
 module imath
@@ -598,8 +598,6 @@ static const unsigned long SmallFactorials[] = {
 #endif
 };
 
-PyObject *_PyLong_Factorial(PyObject *arg);
-
 /*[clinic input]
 imath.factorial
 
@@ -615,12 +613,6 @@ Raise a ValueError if x is negative integer.
 static PyObject *
 imath_factorial(PyObject *module, PyObject *arg)
 /*[clinic end generated code: output=73f1879dcbd64aea input=d5f41d496efcaf51]*/
-{
-    return _PyLong_Factorial(arg);
-}
-
-PyObject *
-_PyLong_Factorial(PyObject *arg)
 {
     long x, two_valuation;
     int overflow;
@@ -945,7 +937,7 @@ static struct PyModuleDef imathmodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_imath(void)
+PyInit__imath(void)
 {
     return PyModule_Create(&imathmodule);
 }

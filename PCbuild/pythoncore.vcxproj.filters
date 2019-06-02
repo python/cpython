@@ -635,7 +635,7 @@
     <ClCompile Include="..\Modules\gcmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\imathmodule.c">
+    <ClCompile Include="..\Modules\_imathmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\itertoolsmodule.c">

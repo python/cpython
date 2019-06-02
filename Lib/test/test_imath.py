@@ -1,8 +1,10 @@
-import imath
 from decimal import Decimal
 from fractions import Fraction
 import unittest
 from test import support
+
+py_imath = support.import_fresh_module('imath', blocked=['_imath'])
+c_imath = support.import_fresh_module('imath', fresh=['_imath'])
 
 class IntSubclass(int):
     pass
@@ -66,14 +68,14 @@ def py_factorial(n):
     return outer << (n - count_set_bits(n))
 
 
-class IMathTests(unittest.TestCase):
+class IMathTests:
 
     def assertIntEqual(self, actual, expected):
         self.assertEqual(actual, expected)
         self.assertIs(type(actual), int)
 
     def testFactorial(self):
-        factorial = imath.factorial
+        factorial = self.module.factorial
         self.assertEqual(factorial(0), 1)
         total = 1
         for i in range(1, 1000):
@@ -98,10 +100,11 @@ class IMathTests(unittest.TestCase):
         self.assertRaises(TypeError, factorial, Fraction(5, 1))
         self.assertRaises(TypeError, factorial, "5")
 
-        self.assertRaises((OverflowError, MemoryError), factorial, 10**100)
+        if self.module is c_imath:
+            self.assertRaises((OverflowError, MemoryError), factorial, 10**100)
 
     def testGcd(self):
-        gcd = imath.gcd
+        gcd = self.module.gcd
         self.assertEqual(gcd(0, 0), 0)
         self.assertEqual(gcd(1, 0), 1)
         self.assertEqual(gcd(-1, 0), 1)
@@ -145,7 +148,7 @@ class IMathTests(unittest.TestCase):
         self.assertIntEqual(gcd(MyIndexable(120), MyIndexable(84)), 12)
 
     def testIlog(self):
-        ilog2 = imath.ilog2
+        ilog2 = self.module.ilog2
         for value in range(1, 1000):
             k = ilog2(value)
             self.assertLessEqual(2**k, value)
@@ -164,7 +167,7 @@ class IMathTests(unittest.TestCase):
         self.assertRaises(TypeError, ilog2, '5')
 
     def testIsqrt(self):
-        isqrt = imath.isqrt
+        isqrt = self.module.isqrt
         # Test a variety of inputs, large and small.
         test_values = (
             list(range(1000))
@@ -199,8 +202,8 @@ class IMathTests(unittest.TestCase):
                     isqrt(value)
 
     def testPerm(self):
-        perm = imath.perm
-        factorial = imath.factorial
+        perm = self.module.perm
+        factorial = self.module.factorial
         # Test if factorial defintion is satisfied
         for n in range(100):
             for k in range(n + 1):
@@ -247,7 +250,8 @@ class IMathTests(unittest.TestCase):
         self.assertEqual(perm(n, 0), 1)
         self.assertEqual(perm(n, 1), n)
         self.assertEqual(perm(n, 2), n * (n-1))
-        self.assertRaises((OverflowError, MemoryError), perm, n, n)
+        if self.module is c_imath:
+            self.assertRaises((OverflowError, MemoryError), perm, n, n)
 
         for n, k in (True, True), (True, False), (False, False):
             self.assertIntEqual(perm(n, k), 1)
@@ -258,8 +262,8 @@ class IMathTests(unittest.TestCase):
             self.assertIs(type(perm(MyIndexable(5), MyIndexable(k))), int)
 
     def testComb(self):
-        comb = imath.comb
-        factorial = imath.factorial
+        comb = self.module.comb
+        factorial = self.module.factorial
         # Test if factorial defintion is satisfied
         for n in range(100):
             for k in range(n + 1):
@@ -316,7 +320,8 @@ class IMathTests(unittest.TestCase):
         self.assertEqual(comb(n, n), 1)
         self.assertEqual(comb(n, n-1), n)
         self.assertEqual(comb(n, n-2), n * (n-1) // 2)
-        self.assertRaises((OverflowError, MemoryError), comb, n, n//2)
+        if self.module is c_imath:
+            self.assertRaises((OverflowError, MemoryError), comb, n, n//2)
 
         for n, k in (True, True), (True, False), (False, False):
             self.assertIntEqual(comb(n, k), 1)
@@ -325,6 +330,14 @@ class IMathTests(unittest.TestCase):
         for k in range(3):
             self.assertIs(type(comb(IntSubclass(5), IntSubclass(k))), int)
             self.assertIs(type(comb(MyIndexable(5), MyIndexable(k))), int)
+
+
+class PyIMathTests(IMathTests, unittest.TestCase):
+    module = py_imath
+
+@unittest.skipUnless(c_imath, 'requires _imath')
+class CIMathTests(IMathTests, unittest.TestCase):
+    module = c_imath
 
 
 if __name__ == '__main__':
