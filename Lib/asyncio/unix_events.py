@@ -934,10 +934,6 @@ class BaseChildWatcher(AbstractChildWatcher):
                 'exception': exc,
             })
 
-    def _compute_returncode(self, status):
-        # Keep the method for backward compatibility
-        return _compute_returncode(status)
-
 
 class SafeChildWatcher(BaseChildWatcher):
     """'Safe' child watcher implementation.
@@ -996,7 +992,7 @@ class SafeChildWatcher(BaseChildWatcher):
                 # The child process is still alive.
                 return
 
-            returncode = self._compute_returncode(status)
+            returncode = _compute_returncode(status)
             if self._loop.get_debug():
                 logger.debug('process %s exited with returncode %s',
                              expected_pid, returncode)
@@ -1089,7 +1085,7 @@ class FastChildWatcher(BaseChildWatcher):
                     # A child process is still alive.
                     return
 
-                returncode = self._compute_returncode(status)
+                returncode = _compute_returncode(status)
 
             with self._lock:
                 try:
