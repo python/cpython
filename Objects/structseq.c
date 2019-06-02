@@ -77,6 +77,7 @@ structseq_dealloc(PyStructSequence *obj)
 {
     Py_ssize_t i, size;
     PyTypeObject *tp;
+    PyObject_GC_UnTrack(obj);
 
     tp = (PyTypeObject *) Py_TYPE(obj);
     size = REAL_SIZE(obj);
