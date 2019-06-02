@@ -1207,7 +1207,7 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
                            pid, exc_info=True)
         else:
             if loop.is_closed():
-                logger.warning("Loop %r that handles pid %r is gone", loop, pid)
+                logger.warning("Loop %r that handles pid %r is closed", loop, pid)
             else:
                 if debug_log and loop.get_debug():
                     logger.debug('process %s exited with returncode %s',
@@ -1280,7 +1280,7 @@ class ThreadedChildWatcher(AbstractChildWatcher):
                              expected_pid, returncode)
 
         if loop.is_closed():
-            logger.warning("Loop %r that handles pid %r is gone", loop, pid)
+            logger.warning("Loop %r that handles pid %r is closed", loop, pid)
         else:
             loop.call_soon_threadsafe(callback, pid, returncode, *args)
 
