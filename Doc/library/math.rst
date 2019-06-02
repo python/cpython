@@ -207,6 +207,19 @@ Number-theoretic and representation functions
    of *x* and are floats.
 
 
+.. function:: perm(n, k)
+
+   Return the number of ways to choose *k* items from *n* items
+   without repetition and with order.
+
+   It is mathematically equal to the expression ``n! / (n - k)!``.
+
+   Raises :exc:`TypeError` if the arguments not integers.
+   Raises :exc:`ValueError` if the arguments are negative or if *k* > *n*.
+
+   .. versionadded:: 3.8
+
+
 .. function:: prod(iterable, *, start=1)
 
    Calculate the product of all the elements in the input *iterable*.
