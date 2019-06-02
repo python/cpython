@@ -86,6 +86,7 @@ class MsiDatabaseTestCase(unittest.TestCase):
     def test_directory_start_component_keyfile(self):
         db, db_path = init_database()
         self.addCleanup(db.Close)
+        self.addCleanup(msilib._directories.clear)
         feature = msilib.Feature(db, 0, 'Feature', 'A feature', 'Python')
         cab = msilib.CAB('CAB')
         dir = msilib.Directory(db, cab, None, TESTFN, 'TARGETDIR',
