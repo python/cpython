@@ -1083,6 +1083,8 @@ class AbstractChildWatcherTests(unittest.TestCase):
         self.assertRaises(
             NotImplementedError, watcher.close)
         self.assertRaises(
+            NotImplementedError, watcher.is_active)
+        self.assertRaises(
             NotImplementedError, watcher.__enter__)
         self.assertRaises(
             NotImplementedError, watcher.__exit__, f, f, f)
@@ -1784,15 +1786,6 @@ class ChildWatcherTestsMixin:
                 if isinstance(self.watcher, asyncio.FastChildWatcher):
                     self.assertFalse(self.watcher._zombies)
 
-    @waitpid_mocks
-    def test_add_child_handler_with_no_loop_attached(self, m):
-        callback = mock.Mock()
-        with self.create_watcher() as watcher:
-            with self.assertRaisesRegex(
-                    RuntimeError,
-                    'the child watcher does not have a loop attached'):
-                watcher.add_child_handler(100, callback)
-
 
 class SafeChildWatcherTests (ChildWatcherTestsMixin, test_utils.TestCase):
     def create_watcher(self):
@@ -1809,17 +1802,16 @@ class PolicyTests(unittest.TestCase):
     def create_policy(self):
         return asyncio.DefaultEventLoopPolicy()
 
-    def test_get_child_watcher(self):
+    def test_get_default_child_watcher(self):
         policy = self.create_policy()
         self.assertIsNone(policy._watcher)
 
         watcher = policy.get_child_watcher()
-        self.assertIsInstance(watcher, asyncio.SafeChildWatcher)
+        self.assertIsInstance(watcher, asyncio.ThreadedChildWatcher)
 
         self.assertIs(policy._watcher, watcher)
 
         self.assertIs(watcher, policy.get_child_watcher())
-        self.assertIsNone(watcher._loop)
 
     def test_get_child_watcher_after_set(self):
         policy = self.create_policy()
@@ -1828,18 +1820,6 @@ class PolicyTests(unittest.TestCase):
         policy.set_child_watcher(watcher)
         self.assertIs(policy._watcher, watcher)
         self.assertIs(watcher, policy.get_child_watcher())
-
-    def test_get_child_watcher_with_mainloop_existing(self):
-        policy = self.create_policy()
-        loop = policy.get_event_loop()
-
-        self.assertIsNone(policy._watcher)
-        watcher = policy.get_child_watcher()
-
-        self.assertIsInstance(watcher, asyncio.SafeChildWatcher)
-        self.assertIs(watcher._loop, loop)
-
-        loop.close()
 
     def test_get_child_watcher_thread(self):
 
@@ -1865,7 +1845,11 @@ class PolicyTests(unittest.TestCase):
         policy = self.create_policy()
         loop = policy.get_event_loop()
 
-        watcher = policy.get_child_watcher()
+        # Explicitly setup SafeChildWatcher,
+        # default ThreadedChildWatcher has no _loop property
+        watcher = asyncio.SafeChildWatcher()
+        policy.set_child_watcher(watcher)
+        watcher.attach_loop(loop)
 
         self.assertIs(watcher._loop, loop)
 
