@@ -166,7 +166,7 @@ def _splitnetloc(url, start=0):
     return url[start:delim], url[delim:]   # return (domain, rest)
 
 def _checknetloc(netloc):
-    if not netloc or not isinstance(netloc, unicode):
+    if not netloc or not isinstance(netloc, str):
         return
     # looking for characters like \u2100 that expand to 'a/c'
     # IDNA uses NFKC equivalence, so normalize for this check
@@ -341,7 +341,7 @@ except NameError:
         return 0
 else:
     def _is_unicode(x):
-        return isinstance(x, unicode)
+        return isinstance(x, str)
 
 # unquote method for parse_qs and parse_qsl
 # Cannot use directly from urllib as it would create a circular reference
@@ -449,7 +449,7 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0, max_num_fields=None):
         nv = name_value.split('=', 1)
         if len(nv) != 2:
             if strict_parsing:
-                raise ValueError, "bad query field: %r" % (name_value,)
+                raise ValueError('bad query field: %r' % name_value)
             # Handle case of a control-name with no equal sign
             if keep_blank_values:
                 nv.append('')
