@@ -688,18 +688,31 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    Any class that sets ``_Py_TPFLAGS_HAVE_VECTORCALL`` must also set
    :c:member:`~PyTypeObject.tp_call` and make sure its behaviour is consistent
-   with the *vectorcallfunc* function. This can be done by setting *tp_call* to
-   ``PyVectorcall_Call``:
+   with the *vectorcallfunc* function.
+   This can be done by setting *tp_call* to ``PyVectorcall_Call``:
 
    .. c:function:: PyObject *PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict)
 
       Call *callable*'s *vectorcallfunc* with positional and keyword
       arguments given in a tuple and dict, respectively.
 
+      This function is intended to be used in the ``tp_call`` slot.
+      It does not fall back to ``tp_call`` and it currently does not check the
+      ``_Py_TPFLAGS_HAVE_VECTORCALL`` flag.
+      To call an object, use one of the :c:func:`PyObject_Call <PyObject_Call>`
+      functions instead.
+
    .. note::
 
-      The semantics of slot are provisional and expected to be finalized
-      in Python 3.9.
+      It is not recommended for :ref:`heap types <heap-types>` to implement
+      the vectorcall protocol.
+      When a user sets ``__call__`` in Python code, only ``tp_call`` is updated,
+      possibly making it inconsistent with the vectorcall function.
+
+   .. note::
+
+      The semantics of the ``tp_vectorcall_offset`` slot are provisional and
+      expected to be finalized in Python 3.9.
       If you use vectorcall, plan for updating your code for Python 3.9.
 
    .. versionchanged:: 3.8
@@ -709,14 +722,13 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    **Inheritance:**
 
-   This field is inherited by *static* subtypes together with
-   :c:member:`~PyTypeObject.tp_call`: a subtype inherits both
-   :c:member:`~PyTypeObject.tp_vectorcall_offset` and
-   :c:member:`~PyTypeObject.tp_call` from its base type when the subtype’s
-   :c:member:`~PyTypeObject.tp_call` and :c:member:`~PyTypeObject.tp_vectorcall_offset`
-   are both NULL.
+   This field is inherited by subtypes together with
+   :c:member:`~PyTypeObject.tp_call`: a subtype inherits
+   :c:member:`~PyTypeObject.tp_vectorcall_offset` from its base type when
+   the subtype’s :c:member:`~PyTypeObject.tp_call` is NULL.
 
-   `Heap types`_ never inherit :c:member:`~PyTypeObject.tp_vectorcall_offset`.
+   Note that `heap types`_ (including subclasses defined in Python) do not
+   inherit the :const:`_Py_TPFLAGS_HAVE_VECTORCALL` flag.
 
 
 .. c:member:: getattrfunc PyTypeObject.tp_getattr
@@ -1147,6 +1159,15 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       This bit is set when the class implements the vectorcall protocol.
       See :c:member:`~PyTypeObject.tp_vectorcall_offset` for details.
+
+      **Inheritance:**
+
+      This bit is set on *static* subtypes if ``tp_flags`` is not overridden:
+      a subtype inherits ``_Py_TPFLAGS_HAVE_VECTORCALL`` from its base type
+      when the subtype’s :c:member:`~PyTypeObject.tp_call` is NULL
+      and the subtype's ``Py_TPFLAGS_HEAPTYPE`` is not set.
+
+      `Heap types`_ do not inherit ``_Py_TPFLAGS_HAVE_VECTORCALL``.
 
       .. note::
 
