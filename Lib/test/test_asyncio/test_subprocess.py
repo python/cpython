@@ -633,6 +633,7 @@ class SubprocessMixin:
 
         self.assertIsNone(self.loop.run_until_complete(execute()))
 
+
 if sys.platform != 'win32':
     # Unix
     class SubprocessWatcherMixin(SubprocessMixin):
@@ -685,6 +686,26 @@ else:
             super().setUp()
             self.loop = asyncio.ProactorEventLoop()
             self.set_event_loop(self.loop)
+
+
+class GenericWatcherTests:
+
+    def test_create_subprocess_fails_with_inactive_watcher(self):
+
+        async def execute():
+            watcher = mock.create_authspec(asyncio.AbstractChildWatcher)
+            watcher.is_active.return_value = False
+            asyncio.set_child_watcher(watcher)
+
+            with self.assertRaises(RuntimeError):
+                await subprocess.create_subprocess_exec(
+                    support.FakePath(sys.executable), '-c', 'pass')
+
+            watcher.add_child_handler.assert_not_called()
+
+        self.assertIsNone(self.loop.run_until_complete(execute()))
+
+
 
 
 if __name__ == '__main__':
