@@ -1,3 +1,0 @@
-``func(**kwargs)`` will now raise an error when ``kwargs`` is a mapping
-containing multiple entries with the same key. An error was already raised
-when other keyword arguments are passed before ``**kwargs`` since Python 3.6.

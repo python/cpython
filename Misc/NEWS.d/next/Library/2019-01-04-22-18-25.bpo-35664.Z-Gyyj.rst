@@ -1,4 +1,0 @@
-Improve operator.itemgetter() performance by 33% with optimized argument
-handling and with adding a fast path for the common case of a single
-non-negative integer index into a tuple (which is the typical use case in
-the standard library).

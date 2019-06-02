@@ -1,3 +1,0 @@
-Format characters ``%s`` and ``%V`` in :c:func:`PyUnicode_FromFormat` and
-``%s`` in :c:func:`PyBytes_FromFormat` no longer read memory past the
-limit if *precision* is specified.

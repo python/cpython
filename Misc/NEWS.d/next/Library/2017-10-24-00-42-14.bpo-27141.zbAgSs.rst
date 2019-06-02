@@ -1,0 +1,3 @@
+Added a ``__copy__()`` to ``collections.UserList`` and
+``collections.UserDict`` in order to correctly implement shallow copying of
+the objects. Patch by Bar Harel.

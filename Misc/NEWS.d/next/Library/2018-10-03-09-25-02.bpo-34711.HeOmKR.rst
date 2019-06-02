@@ -1,3 +1,0 @@
-http.server ensures it reports HTTPStatus.NOT_FOUND when the local path ends with "/"
-and is not a directory, even if the underlying OS (e.g. AIX) accepts such paths as a
-valid file reference. Patch by Michael Felt.

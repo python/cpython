@@ -1,2 +1,0 @@
-Skip the distutils test 'test_search_cpp' when using XLC as compiler
-patch by aixtools (Michael Felt)

@@ -1,2 +1,0 @@
-Fix test_multiprocessing_main_handling: use :class:`multiprocessing.Pool` with
-a context manager and then explicitly join the pool.

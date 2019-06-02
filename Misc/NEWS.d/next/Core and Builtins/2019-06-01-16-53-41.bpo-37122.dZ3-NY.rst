@@ -1,0 +1,5 @@
+Make the *co_argcount* attribute of code objects represent the total number
+of positional arguments (including positional-only arguments). The value of
+*co_posonlyargcount* can be used to distinguish which arguments are
+positional only, and the difference (*co_argcount* - *co_posonlyargcount*)
+is the number of positional-or-keyword arguments. Patch by Pablo Galindo.

@@ -1,4 +1,0 @@
-The :option:`-I` command line option (run Python in isolated mode) is now
-also copied by the :mod:`multiprocessing` and :mod:`distutils` modules when
-spawning child processes. Previously, only :option:`-E` and :option:`-s` options
-(enabled by :option:`-I`) were copied.

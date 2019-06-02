@@ -4,20 +4,25 @@
 extern "C" {
 #endif
 
-#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN defined"
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
 #include "pycore_pystate.h"   /* _PyRuntime */
+
+PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
+PyAPI_FUNC(int) _PyUnicode_CheckConsistency(PyObject *op, int check_content);
+PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
 /* Tell the GC to track this object.
  *
  * NB: While the object is tracked by the collector, it must be safe to call the
  * ob_traverse method.
  *
- * Internal note: _PyRuntime.gc.generation0->_gc_prev doesn't have any bit flags
- * because it's not object header.  So we don't use _PyGCHead_PREV() and
- * _PyGCHead_SET_PREV() for it to avoid unnecessary bitwise operations.
+ * Internal note: _PyRuntimeState.gc.generation0->_gc_prev doesn't have
+ * any bit flags because it's not object header.  So we don't use
+ * _PyGCHead_PREV() and _PyGCHead_SET_PREV() for it to avoid unnecessary
+ * bitwise operations.
  *
  * The PyObject_GC_Track() function is the public version of this macro.
  */

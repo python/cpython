@@ -1,2 +1,0 @@
-Restore ``msilib.Win64`` to preserve backwards compatibility since it's
-already used by :mod:`distutils`' ``bdist_msi`` command.

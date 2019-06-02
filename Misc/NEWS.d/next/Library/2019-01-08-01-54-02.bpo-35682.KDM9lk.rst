@@ -1,2 +1,0 @@
-Fix ``asyncio.ProactorEventLoop.sendfile()``: don't attempt to set the result
-of an internal future if it's already done.

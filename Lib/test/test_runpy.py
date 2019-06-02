@@ -238,9 +238,8 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
                 if verbose > 1: print("  Next level in:", sub_dir)
                 if verbose > 1: print("  Created:", pkg_fname)
         mod_fname = os.path.join(sub_dir, test_fname)
-        mod_file = open(mod_fname, "w")
-        mod_file.write(source)
-        mod_file.close()
+        with open(mod_fname, "w") as mod_file:
+            mod_file.write(source)
         if verbose > 1: print("  Created:", mod_fname)
         mod_name = (pkg_name+".")*depth + mod_base
         mod_spec = importlib.util.spec_from_file_location(mod_name,

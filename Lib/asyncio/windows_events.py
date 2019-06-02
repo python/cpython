@@ -7,6 +7,7 @@ import math
 import msvcrt
 import socket
 import struct
+import time
 import weakref
 
 from . import events
@@ -387,7 +388,9 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                                              **kwargs)
         try:
             await waiter
-        except Exception:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException:
             transp.close()
             await transp._wait()
             raise
@@ -480,6 +483,44 @@ class IocpProactor:
 
         return self._register(ov, conn, finish_recv)
 
+    def recvfrom(self, conn, nbytes, flags=0):
+        self._register_with_iocp(conn)
+        ov = _overlapped.Overlapped(NULL)
+        try:
+            ov.WSARecvFrom(conn.fileno(), nbytes, flags)
+        except BrokenPipeError:
+            return self._result((b'', None))
+
+        def finish_recv(trans, key, ov):
+            try:
+                return ov.getresult()
+            except OSError as exc:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
+                    raise ConnectionResetError(*exc.args)
+                else:
+                    raise
+
+        return self._register(ov, conn, finish_recv)
+
+    def sendto(self, conn, buf, flags=0, addr=None):
+        self._register_with_iocp(conn)
+        ov = _overlapped.Overlapped(NULL)
+
+        ov.WSASendTo(conn.fileno(), buf, flags, addr)
+
+        def finish_send(trans, key, ov):
+            try:
+                return ov.getresult()
+            except OSError as exc:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
+                    raise ConnectionResetError(*exc.args)
+                else:
+                    raise
+
+        return self._register(ov, conn, finish_send)
+
     def send(self, conn, buf, flags=0):
         self._register_with_iocp(conn)
         ov = _overlapped.Overlapped(NULL)
@@ -529,6 +570,14 @@ class IocpProactor:
         return future
 
     def connect(self, conn, address):
+        if conn.type == socket.SOCK_DGRAM:
+            # WSAConnect will complete immediately for UDP sockets so we don't
+            # need to register any IOCP operation
+            _overlapped.WSAConnect(conn.fileno(), address)
+            fut = self._loop.create_future()
+            fut.set_result(None)
+            return fut
+
         self._register_with_iocp(conn)
         # The socket needs to be locally bound before we call ConnectEx().
         try:
@@ -604,7 +653,7 @@ class IocpProactor:
 
             # ConnectPipe() failed with ERROR_PIPE_BUSY: retry later
             delay = min(delay * 2, CONNECT_PIPE_MAX_DELAY)
-            await tasks.sleep(delay, loop=self._loop)
+            await tasks.sleep(delay)
 
         return windows_utils.PipeHandle(handle)
 
@@ -802,10 +851,20 @@ class IocpProactor:
                             context['source_traceback'] = fut._source_traceback
                         self._loop.call_exception_handler(context)
 
-        # wait until all cancelled overlapped future complete
+        # Wait until all cancelled overlapped complete: don't exit with running
+        # overlapped to prevent a crash. Display progress every second if the
+        # loop is still running.
+        msg_update = 1.0
+        start_time = time.monotonic()
+        next_msg = start_time + msg_update
         while self._cache:
-            if not self._poll(1):
-                logger.debug('taking long time to close proactor')
+            if next_msg <= time.monotonic():
+                logger.debug('%r is running after closing for %.1f seconds',
+                             self, time.monotonic() - start_time)
+                next_msg = time.monotonic() + msg_update
+
+            # handle a few events, or timeout
+            self._poll(msg_update)
 
         self._results = []
 
