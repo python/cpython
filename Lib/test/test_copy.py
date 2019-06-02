@@ -586,9 +586,7 @@ class TestCopy(unittest.TestCase):
         y = copy.deepcopy(x)
         self.assertIsNot(y, x)
         self.assertEqual(y, x)
-        self.assertIsNot(y.stop, x.stop)
         self.assertEqual(y.stop, x.stop)
-        self.assertIsInstance(y.stop, I)
 
     # _reconstruct()
 

@@ -488,10 +488,8 @@ class IntTestCases(unittest.TestCase):
                 return True
 
         bad_int = BadIndex()
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             n = int(bad_int)
-        self.assertEqual(n, 1)
-        self.assertIs(type(n), int)
 
         bad_int = BadIndex2()
         n = int(bad_int)
@@ -499,28 +497,22 @@ class IntTestCases(unittest.TestCase):
         self.assertIs(type(n), int)
 
         bad_int = BadInt()
-        with self.assertWarns(DeprecationWarning):
-            n = int(bad_int)
-        self.assertEqual(n, 1)
-        self.assertIs(type(n), int)
+        with self.assertRaises(TypeError):
+            int(bad_int)
 
         bad_int = BadInt2()
-        with self.assertWarns(DeprecationWarning):
-            n = int(bad_int)
-        self.assertEqual(n, 1)
-        self.assertIs(type(n), int)
+        with self.assertRaises(TypeError):
+            int(bad_int)
 
         bad_int = TruncReturnsBadIndex()
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             n = int(bad_int)
-        self.assertEqual(n, 1)
-        self.assertIs(type(n), int)
+            import pdb; pdb.set_trace()
+            print("bob")
 
         bad_int = TruncReturnsBadInt()
-        with self.assertWarns(DeprecationWarning):
-            n = int(bad_int)
-        self.assertEqual(n, 1)
-        self.assertIs(type(n), int)
+        with self.assertRaises(TypeError):
+            int(bad_int)
 
         good_int = TruncReturnsIntSubclass()
         n = int(good_int)

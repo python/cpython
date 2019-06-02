@@ -163,25 +163,16 @@ _PyLong_FromNbInt(PyObject *integral)
     /* Convert using the nb_int slot, which should return something
        of exact type int. */
     result = nb->nb_int(integral);
-    if (!result || PyLong_CheckExact(result))
+    if (!result || PyLong_CheckExact(result)) {
         return result;
-    if (!PyLong_Check(result)) {
+    }
+    else {
         PyErr_Format(PyExc_TypeError,
                      "__int__ returned non-int (type %.200s)",
                      result->ob_type->tp_name);
         Py_DECREF(result);
         return NULL;
     }
-    /* Issue #17576: warn if 'result' not of exact type int. */
-    if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-            "__int__ returned non-int (type %.200s).  "
-            "The ability to return an instance of a strict subclass of int "
-            "is deprecated, and may be removed in a future version of Python.",
-            result->ob_type->tp_name)) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    return result;
 }
 
 /* Convert the given object to a PyLongObject using the nb_index or
@@ -216,26 +207,16 @@ _PyLong_FromNbIndexOrNbInt(PyObject *integral)
     /* Convert using the nb_index slot, which should return something
        of exact type int. */
         result = nb->nb_index(integral);
-        if (!result || PyLong_CheckExact(result))
+        if (!result || PyLong_CheckExact(result)) {
             return result;
-        if (!PyLong_Check(result)) {
+        }
+        else {
             PyErr_Format(PyExc_TypeError,
                          "__index__ returned non-int (type %.200s)",
                          result->ob_type->tp_name);
             Py_DECREF(result);
             return NULL;
         }
-        /* Issue #17576: warn if 'result' not of exact type int. */
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "__index__ returned non-int (type %.200s).  "
-                "The ability to return an instance of a strict subclass of int "
-                "is deprecated, and may be removed in a future version of Python.",
-                result->ob_type->tp_name))
-        {
-            Py_DECREF(result);
-            return NULL;
-        }
-        return result;
     }
 
     result = _PyLong_FromNbInt(integral);

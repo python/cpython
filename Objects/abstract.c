@@ -1269,10 +1269,13 @@ PyNumber_Index(PyObject *item)
         return null_error();
     }
 
-    if (PyLong_Check(item)) {
+    /* Fast path for the case that we already have an int. */
+    if (PyLong_CheckExact(item)) {
         Py_INCREF(item);
         return item;
     }
+
+    /* In general, use __index__ */
     if (!PyIndex_Check(item)) {
         PyErr_Format(PyExc_TypeError,
                      "'%.200s' object cannot be interpreted "
@@ -1280,25 +1283,16 @@ PyNumber_Index(PyObject *item)
         return NULL;
     }
     result = item->ob_type->tp_as_number->nb_index(item);
-    if (!result || PyLong_CheckExact(result))
+    if (result == NULL || PyLong_CheckExact(result)) {
         return result;
-    if (!PyLong_Check(result)) {
+    }
+    else {
         PyErr_Format(PyExc_TypeError,
                      "__index__ returned non-int (type %.200s)",
                      result->ob_type->tp_name);
         Py_DECREF(result);
         return NULL;
     }
-    /* Issue #17576: warn if 'result' not of exact type int. */
-    if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-            "__index__ returned non-int (type %.200s).  "
-            "The ability to return an instance of a strict subclass of int "
-            "is deprecated, and may be removed in a future version of Python.",
-            result->ob_type->tp_name)) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    return result;
 }
 
 /* Return an error on Overflow only if err is not NULL*/

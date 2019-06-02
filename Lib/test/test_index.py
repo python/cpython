@@ -66,10 +66,10 @@ class BaseTestCase(unittest.TestCase):
         direct_index = my_int.__index__()
         operator_index = operator.index(my_int)
         self.assertEqual(direct_index, 8)
-        self.assertEqual(operator_index, 7)
+        self.assertEqual(operator_index, 8)
         # Both results should be of exact type int.
         self.assertIs(type(direct_index), int)
-        #self.assertIs(type(operator_index), int)
+        self.assertIs(type(operator_index), int)
 
     def test_index_returns_int_subclass(self):
         class BadInt:
@@ -81,13 +81,12 @@ class BaseTestCase(unittest.TestCase):
                 return True
 
         bad_int = BadInt()
-        with self.assertWarns(DeprecationWarning):
-            n = operator.index(bad_int)
-        self.assertEqual(n, 1)
+        with self.assertRaises(TypeError):
+            operator.index(bad_int)
 
         bad_int = BadInt2()
-        n = operator.index(bad_int)
-        self.assertEqual(n, 0)
+        with self.assertRaises(TypeError):
+            operator.index(bad_int)
 
 
 class SeqTestCase:
