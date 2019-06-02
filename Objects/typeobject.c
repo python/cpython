@@ -5145,17 +5145,21 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
     }
     COPYSLOT(tp_repr);
     /* tp_hash see tp_richcompare */
-    COPYSLOT(tp_call);
-    /* Inherit tp_vectorcall_offset and _Py_TPFLAGS_HAVE_VECTORCALL if tp_call
-     * was inherited, but only for extension types */
-    if ((base->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
-        !(type->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
-        !(type->tp_flags & Py_TPFLAGS_HEAPTYPE) &&
-        base->tp_call &&
-        type->tp_call == base->tp_call)
     {
-        type->tp_vectorcall_offset = base->tp_vectorcall_offset;
-        type->tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
+        /* Inherit tp_vectorcall_offset only if tp_call is not overridden */
+        if (!type->tp_call) {
+            COPYSLOT(tp_vectorcall_offset);
+        }
+        /* Inherit_Py_TPFLAGS_HAVE_VECTORCALL for non-heap types
+        * if tp_call is not overridden */
+        if (!type->tp_call &&
+            (base->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
+            !(type->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
+            !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+        {
+            type->tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
+        }
+        COPYSLOT(tp_call);
     }
     COPYSLOT(tp_str);
     {
