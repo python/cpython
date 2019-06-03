@@ -43,10 +43,6 @@ struct _pending_calls {
     int last;
 };
 
-struct _opcodecache_config {
-    int minruns;
-};
-
 struct _ceval_runtime_state {
     int recursion_limit;
     /* Records whether tracing is on for any thread.  Counts the number
@@ -64,7 +60,7 @@ struct _ceval_runtime_state {
     /* Request for checking signals. */
     _Py_atomic_int signals_pending;
     struct _gil_runtime_state gil;
-    struct _opcodecache_config opcodeconfig;
+    struct int opcode_cache_minruns;
 };
 
 /* interpreter state */
@@ -318,8 +314,7 @@ PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);
 
 PyAPI_FUNC(void) _PyEval_SetOpcodeCacheMinRuns(int minruns);
-
-PyAPI_FUNC(int) _PyEval_GetOpcodeCacheMinRuns();
+PyAPI_FUNC(int) _PyEval_GetOpcodeCacheMinRuns(void);
 
 #ifdef __cplusplus
 }

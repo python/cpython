@@ -737,7 +737,6 @@ _Py_PreInitializeFromPyArgv(const PyPreConfig *src_config, const _PyArgv *args)
         return status;
     }
 
-    // XXX: Add this properly to the commandline config
     runtime->ceval.opcodeconfig.minruns = 1024;
 
     runtime->pre_initialized = 1;

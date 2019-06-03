@@ -5636,11 +5636,11 @@ maybe_dtrace_line(PyFrameObject *frame,
 void
 _PyEval_SetOpcodeCacheMinRuns(int minruns)
 {
-    _PyRuntime.ceval.opcodeconfig.minruns = minruns;
+    _PyRuntime.ceval.opcode_cache_minruns = minruns;
 }
 
 int
 _PyEval_GetOpcodeCacheMinRuns()
 {
-     return _PyRuntime.ceval.opcodeconfig.minruns;
+     return _PyRuntime.ceval.opcode_cache_minruns;
 }
