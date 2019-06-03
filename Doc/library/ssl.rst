@@ -1959,6 +1959,19 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.7
 
+.. attribute:: SSLContext.num_tickets
+
+   Control the number of TLS 1.3 session tickets of a
+   :attr:`TLS_PROTOCOL_SERVER` context. The setting has no impact on TLS
+   1.0 to 1.2 connections.
+
+   .. note::
+
+     This attribute is not available unless the ssl module is compiled
+     with OpenSSL 1.1.1 or newer.
+
+   .. versionadded:: 3.8
+
 .. attribute:: SSLContext.options
 
    An integer representing the set of SSL options enabled on this context.
