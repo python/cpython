@@ -1117,9 +1117,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 assert(co_opt_offset <= co->co_opcache_size); \
                 co_opcache = &co->co_opcache[co_opt_offset - 1]; \
                 assert(co_opcache != NULL); \
-                if (co_opcache->optimized < 0) { \
-                    co_opcache = NULL; \
-                } \
             } \
         } \
     } while (0)
