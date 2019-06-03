@@ -206,8 +206,6 @@ def _test_module(the_module):
 def _runtest_inner2(ns, test_name):
     # Load the test function, run the test function, handle huntrleaks
     # and findleaks to detect leaks
-    minruns = sys._getopcacheminruns()
-    sys._setopcacheminruns(1)
 
     abstest = get_abs_module(ns, test_name)
 
@@ -245,7 +243,6 @@ def _runtest_inner2(ns, test_name):
         gc.garbage.clear()
 
     support.reap_children()
-    sys._setopcacheminruns(minruns)
     return refleak
 
 

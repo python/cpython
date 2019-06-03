@@ -30,6 +30,8 @@ def dash_R(ns, test_name, test_func):
     if not hasattr(sys, 'gettotalrefcount'):
         raise Exception("Tracking reference leaks requires a debug build "
                         "of Python")
+    minruns = sys._getopcacheminruns()
+    sys._setopcacheminruns(1)
 
     # Avoid false positives due to various caches
     # filling slowly with random data:
@@ -104,6 +106,7 @@ def dash_R(ns, test_name, test_func):
         rc_before = rc_after
         fd_before = fd_after
 
+    sys._setopcacheminruns(minruns)
     if not ns.quiet:
         print(file=sys.stderr)
 
