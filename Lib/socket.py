@@ -465,8 +465,6 @@ def fromfd(fd, family, type, proto=0):
     nfd = dup(fd)
     return socket(family, type, proto, nfd)
 
-_GLOBAL_DEFAULT_MAXFDS = object()
-
 if hasattr(_socket.socket, "sendmsg"):
     def send_fds(sock, buffers, fds, flags=0, address=None):
         """ send_fds(sock, buffers, fds[, flags[, address]]) -> socket object
