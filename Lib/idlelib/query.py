@@ -24,8 +24,8 @@ import os
 import shlex
 from sys import executable, platform  # Platform is set for one test.
 
-from tkinter import Toplevel, StringVar, W, E, S
-from tkinter.ttk import Frame, Button, Entry, Label
+from tkinter import Toplevel, StringVar, BooleanVar, W, E, S
+from tkinter.ttk import Frame, Button, Entry, Label, Checkbutton
 from tkinter import filedialog
 from tkinter.font import Font
 
@@ -84,7 +84,7 @@ class Query(Toplevel):
             self.deiconify()  # Unhide now that geometry set.
             self.wait_window()
 
-    def create_widgets(self):  # Call from override, if any.
+    def create_widgets(self, ok_text='OK'):  # Call from override, if any.
         # Bind to self widgets needed for entry_ok or unittest.
         self.frame = frame = Frame(self, padding=10)
         frame.grid(column=0, row=0, sticky='news')
@@ -100,7 +100,7 @@ class Query(Toplevel):
         self.entry_error = Label(frame, text=' ', foreground='red',
                                  font=self.error_font)
         self.button_ok = Button(
-                frame, text='OK', default='active', command=self.ok)
+                frame, text=ok_text, default='active', command=self.ok)
         self.button_cancel = Button(
                 frame, text='Cancel', command=self.cancel)
 
@@ -303,16 +303,36 @@ class HelpSource(Query):
         path = self.path_ok()
         return None if name is None or path is None else (name, path)
 
-class CommandLineArgs(Query):
-    "Get a list of parsed command line arguments."
-    # Used in runscript.run_module_arguments_event
+class CustomRun(Query):
+    "Get arguments for custom run module."
+    # Used in runscript.run_custom_event
 
-    def __init__(self, parent, title, message, *, _htest=False, _utest=False):
-        super().__init__(parent, title, message, _htest=_htest, _utest=_utest)
+    def __init__(self, parent, title, *, cli_args='',
+                 _htest=False, _utest=False):
+        """Get command line args for custom run environment.
 
-    def entry_ok(self):
-        "Return list of parsed arguments or None."
-        self.entry_error['text'] = ''
+        User enters the command line arugments for running the file.
+        """
+        message = 'Command Line Arguments:'
+        super().__init__(
+                parent, title, message, text0=cli_args,
+                _htest=_htest, _utest=_utest)
+
+    def create_widgets(self):
+        super().create_widgets(ok_text='Run')
+        frame = self.frame
+        self.restartvar = BooleanVar(self, value=True)
+        restart = Checkbutton(frame, variable=self.restartvar, onvalue=True,
+                              offvalue=False, text='Restart shell')
+        self.args_error = Label(frame, text=' ', foreground='red',
+                                font=self.error_font)
+
+        restart.grid(column=0, row=4, columnspan=3, padx=5, sticky='w')
+        self.args_error.grid(column=0, row=12, columnspan=3, padx=5,
+                             sticky='we')
+
+    def cli_args_ok(self):
+        "Validity check and parsing for command line arguments."
         cli_args = self.entry.get().strip()
         if not cli_args:
             self.showerror('no arguments specified.')
@@ -324,10 +344,20 @@ class CommandLineArgs(Query):
             return None
         return lex
 
+    def restart_ok(self):
+        return self.restartvar.get()
+
+    def entry_ok(self):
+        "Return apparently valid (lex, restart) or None"
+        self.entry_error['text'] = ''
+        lex = self.cli_args_ok()
+        restart = self.restart_ok()
+        return None if not lex else (lex, restart)
+
 
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_query', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
-    run(Query, HelpSource, CommandLineArgs)
+    run(Query, HelpSource, CustomRun)

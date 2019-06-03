@@ -242,11 +242,11 @@ class HelpsourceEntryokTest(unittest.TestCase):
                 self.assertEqual(dialog.entry_ok(), result)
 
 
-class CommandLineArgsTest(unittest.TestCase):
-    "Test CommandLineArgs subclass of Query."
+class CustomRunCLIargsokTest(unittest.TestCase):
+    "Test cli_ok method of the CustomRun subclass of Query."
 
-    class Dummy_CommandLineArgs:
-        entry_ok = query.CommandLineArgs.entry_ok  # Function being tested.
+    class Dummy_CustomRun:
+        cli_args_ok = query.CustomRun.cli_args_ok  # Function being tested.
         entry = Var()
         entry_error = {}
         def __init__(self, dummy_entry):
@@ -256,20 +256,41 @@ class CommandLineArgsTest(unittest.TestCase):
             self.entry_error['text'] = message
 
     def test_blank_args(self):
-        dialog = self.Dummy_CommandLineArgs(' ')
-        self.assertEqual(dialog.entry_ok(), None)
+        dialog = self.Dummy_CustomRun(' ')
+        self.assertEqual(dialog.cli_args_ok(), None)
         self.assertIn('no arguments', dialog.entry_error['text'])
 
     def test_invalid_args(self):
-        dialog = self.Dummy_CommandLineArgs("'no-closing-quote")
-        self.assertEqual(dialog.entry_ok(), None)
+        dialog = self.Dummy_CustomRun("'no-closing-quote")
+        self.assertEqual(dialog.cli_args_ok(), None)
         self.assertIn('No closing', dialog.entry_error['text'])
 
     def test_good_args(self):
-        dialog = self.Dummy_CommandLineArgs('-n 10 --verbose -p /path --name "my name"')
-        self.assertEqual(dialog.entry_ok(),
+        dialog = self.Dummy_CustomRun('-n 10 --verbose -p /path --name "my name"')
+        self.assertEqual(dialog.cli_args_ok(),
                          ['-n', '10', '--verbose', '-p', '/path', '--name', 'my name'])
         self.assertEqual(dialog.entry_error['text'], '')
+
+
+class CustomRunEntryokTest(unittest.TestCase):
+    "Test entry_ok method of the CustomRun subclass of Query."
+
+    class Dummy_CustomRun:
+        entry_ok = query.CustomRun.entry_ok
+        entry_error = {}
+        def cli_args_ok(self):
+            return self.cli_args
+        def restart_ok(self):
+            return self.restart
+
+    def test_entry_ok_customrun(self):
+        dialog = self.Dummy_CustomRun()
+        for dialog.restart in {True, False}:
+            for cli_args, result in ((None, None),
+                                     ('my arg', ('my arg', dialog.restart))):
+                with self.subTest():
+                    dialog.cli_args = cli_args
+                    self.assertEqual(dialog.entry_ok(), result)
 
 
 # GUI TESTS
@@ -378,7 +399,7 @@ class HelpsourceGuiTest(unittest.TestCase):
         del root
 
 
-class CommandLineArgsGuiTest(unittest.TestCase):
+class CustomRunGuiTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -387,11 +408,10 @@ class CommandLineArgsGuiTest(unittest.TestCase):
     def test_click_args(self):
         root = Tk()
         root.withdraw()
-        dialog =  query.CommandLineArgs(root, 'Title', 'message', _utest=True)
-        Equal = self.assertEqual
+        dialog =  query.CustomRun(root, 'Title', _utest=True)
         dialog.entry.insert(0, 'okay')
         dialog.button_ok.invoke()
-        self.assertEqual(dialog.result, ['okay'])
+        self.assertEqual(dialog.result, (['okay'], True))
         del dialog
         root.destroy()
         del root

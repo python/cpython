@@ -108,10 +108,9 @@ _color_delegator_spec = {
            "The default color scheme is in idlelib/config-highlight.def"
     }
 
-CommandLineArgs_spec = {
+CustomRun_spec = {
     'file': 'query',
-    'kwds': {'title': 'Command Line Args',
-             'message': 'Enter command line arguments',
+    'kwds': {'title': 'Custom Run Args',
              '_htest': True},
     'msg': "Enter with <Return> or [Ok].  Print valid entry to Shell\n"
            "Arguments are parsed into a list\n"

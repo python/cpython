@@ -18,7 +18,7 @@ import tkinter.messagebox as tkMessageBox
 from idlelib.config import idleConf
 from idlelib import macosx
 from idlelib import pyshell
-from idlelib.query import CommandLineArgs
+from idlelib.query import CustomRun
 
 indent_message = """Error: Inconsistent indentation detected!
 
@@ -114,16 +114,14 @@ class ScriptBinding:
         else:
             return self._run_module_event(event)
 
-    def run_module_arguments_event(self, event):
-        cli_args = CommandLineArgs(
-            event.widget, "Run with Arguments",
-            "Command line argunments:").result
+    def run_custom_event(self, event):
+        run_args = CustomRun(event.widget, "Customize Run").result
         # User cancelled.
-        if not cli_args:
+        if not run_args:
             return 'break'
-        return self._run_module_event(event, cli_args)
+        return self._run_module_event(event, cli_args=run_args[0], restart=run_args[1])
 
-    def _run_module_event(self, event, cli_args=None):
+    def _run_module_event(self, event, *, cli_args=None, restart=True):
         """Run the module after setting up the environment.
 
         First check the syntax.  If OK, make sure the shell is active and
@@ -140,21 +138,23 @@ class ScriptBinding:
         if not self.tabnanny(filename):
             return 'break'
         interp = self.shell.interp
-        if pyshell.use_subprocess:
+        if pyshell.use_subprocess and restart:
             interp.restart_subprocess(with_cwd=False, filename=
                         self.editwin._filename_to_unicode(filename))
         dirname = os.path.dirname(filename)
-        # XXX Too often this discards arguments the user just set...
         argv = [filename]
         if cli_args:
             argv += cli_args
+        # XXX Too often this discards arguments the user just set...
         interp.runcommand(f"""if 1:
             __file__ = {filename!r}
             import sys as _sys
             from os.path import basename as _basename
+            argv = {argv!r}
             if (not _sys.argv or
-                _basename(_sys.argv[0]) != _basename(__file__)):
-                _sys.argv = {argv!r}
+                _basename(_sys.argv[0]) != _basename(__file__) or
+                len(argv) > 1):
+                _sys.argv = argv
             import os as _os
             _os.chdir({dirname!r})
             del _sys, _basename, _os

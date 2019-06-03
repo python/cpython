@@ -232,12 +232,16 @@ Run Module
    This is similar to executing a file with ``python -i file`` at a command
    line.
 
-.. _run-module-with-arguments:
+.. _run-custom:
 
-Run Module with Arguments
-   Same as :ref:`Run Module <run-module>`, except allow entry of the
-   command line arguments that are passed to the module. This is similar
-   to executing a file with ``python -i file [args]`` at a command line.
+Run Custom
+   Same as :ref:`Run Module <run-module>`, except allow customization of the
+   environment used when running the module.
+
+   The *Command Line Arguments* are passed to the module like :data:`sys.argv`
+   arguments would be from the command line.  This is similar to executing a
+   file with ``python -i file [args]``.
+
 
 Shell menu (Shell window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
