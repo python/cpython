@@ -1031,6 +1031,44 @@ sys_getcheckinterval_impl(PyObject *module)
 }
 
 /*[clinic input]
+sys._setopcacheminruns
+
+    minruns: int
+    /
+
+Set the minimum value of runs to activate opcode cache.
+[clinic start generated code]*/
+
+static PyObject *
+sys__setopcacheminruns_impl(PyObject *module, int minruns)
+/*[clinic end generated code: output=e29d082b62b2aa8a input=169a982eee6595d5]*/
+{
+    if (minruns <= 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "opcache min runs must be strictly positive");
+        return NULL;
+    }
+    _PyEval_SetOpcodeCacheMinRuns(minruns);
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+sys._getopcacheminruns -> int
+
+Return the current minimum value of runs to activate opcode cache.
+[clinic start generated code]*/
+
+static int
+sys__getopcacheminruns_impl(PyObject *module)
+/*[clinic end generated code: output=f25d23b7afd8512c input=93784822a3e883c9]*/
+{
+    return _PyEval_GetOpcodeCacheMinRuns();
+}
+
+
+
+/*[clinic input]
 sys.setswitchinterval
 
     interval: double
@@ -1936,6 +1974,8 @@ static PyMethodDef sys_methods[] = {
     SYS_MDEBUG_METHODDEF
     SYS_SETCHECKINTERVAL_METHODDEF
     SYS_GETCHECKINTERVAL_METHODDEF
+    SYS__SETOPCACHEMINRUNS_METHODDEF
+    SYS__GETOPCACHEMINRUNS_METHODDEF
     SYS_SETSWITCHINTERVAL_METHODDEF
     SYS_GETSWITCHINTERVAL_METHODDEF
     SYS_SETDLOPENFLAGS_METHODDEF

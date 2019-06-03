@@ -1,0 +1,3 @@
+Added ``sys._setopcacheminruns`` and ``sys._getopcacheminruns`` to allow
+configuring the minimum number of function executions to activate the global
+opcode cache.

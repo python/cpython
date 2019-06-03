@@ -103,7 +103,6 @@ static long dxp[256];
 #endif
 
 /* per opcode cache */
-#define OPCACHE_MIN_RUNS 1024  /* create opcache when code executed this time */
 #define OPCACHE_STATS 0  /* Enable stats */
 
 #if OPCACHE_STATS
@@ -1152,9 +1151,10 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     f->f_stacktop = NULL;       /* remains NULL unless yield suspends frame */
     f->f_executing = 1;
 
-    if (co->co_opcache_flag < OPCACHE_MIN_RUNS) {
+    int opcacheminruns = _PyEval_GetOpcodeCacheMinRuns();
+    if (co->co_opcache_flag < opcacheminruns) {
         co->co_opcache_flag++;
-        if (co->co_opcache_flag == OPCACHE_MIN_RUNS) {
+        if (co->co_opcache_flag == opcacheminruns) {
             if (_PyCode_InitOpcache(co) < 0) {
                 return NULL;
             }
@@ -5631,4 +5631,16 @@ maybe_dtrace_line(PyFrameObject *frame,
         PyDTrace_LINE(co_filename, co_name, line);
     }
     *instr_prev = frame->f_lasti;
+}
+
+void
+_PyEval_SetOpcodeCacheMinRuns(int minruns)
+{
+    _PyRuntime.ceval.opcodeconfig.minruns = minruns;
+}
+
+int
+_PyEval_GetOpcodeCacheMinRuns()
+{
+     return _PyRuntime.ceval.opcodeconfig.minruns;
 }

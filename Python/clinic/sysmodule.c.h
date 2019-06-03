@@ -337,6 +337,67 @@ sys_getcheckinterval(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_getcheckinterval_impl(module);
 }
 
+PyDoc_STRVAR(sys__setopcacheminruns__doc__,
+"_setopcacheminruns($module, minruns, /)\n"
+"--\n"
+"\n"
+"Set the minimum value of runs to activate opcode cache.");
+
+#define SYS__SETOPCACHEMINRUNS_METHODDEF    \
+    {"_setopcacheminruns", (PyCFunction)sys__setopcacheminruns, METH_O, sys__setopcacheminruns__doc__},
+
+static PyObject *
+sys__setopcacheminruns_impl(PyObject *module, int minruns);
+
+static PyObject *
+sys__setopcacheminruns(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int minruns;
+
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    minruns = _PyLong_AsInt(arg);
+    if (minruns == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = sys__setopcacheminruns_impl(module, minruns);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys__getopcacheminruns__doc__,
+"_getopcacheminruns($module, /)\n"
+"--\n"
+"\n"
+"Return the current minimum value of runs to activate opcode cache.");
+
+#define SYS__GETOPCACHEMINRUNS_METHODDEF    \
+    {"_getopcacheminruns", (PyCFunction)sys__getopcacheminruns, METH_NOARGS, sys__getopcacheminruns__doc__},
+
+static int
+sys__getopcacheminruns_impl(PyObject *module);
+
+static PyObject *
+sys__getopcacheminruns(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__getopcacheminruns_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_setswitchinterval__doc__,
 "setswitchinterval($module, interval, /)\n"
 "--\n"
@@ -1082,4 +1143,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=43c4fde7b5783d8d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7cf1810bb97ca9a4 input=a9049054013a1b77]*/
