@@ -12,22 +12,19 @@ extern "C" {
 #include "pycore_pystate.h"
 #include "pythread.h"
 
+PyAPI_FUNC(void) _Py_FinishPendingCalls(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_runtime_state *);
 PyAPI_FUNC(void) _PyEval_FiniThreads(
-    struct _ceval_runtime_state *);
+    struct _ceval_runtime_state *ceval);
 PyAPI_FUNC(void) _PyEval_SignalReceived(
-    struct _ceval_runtime_state *);
+    struct _ceval_runtime_state *ceval);
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyThreadState *tstate,
-    struct _ceval_runtime_state *,
-    struct _ceval_interpreter_state *,
-    unsigned long thread_id,
+    struct _ceval_runtime_state *ceval,
     int (*func)(void *),
     void *arg);
-PyAPI_FUNC(void) _PyEval_FinishPendingCalls(PyInterpreterState *);
 PyAPI_FUNC(void) _PyEval_SignalAsyncExc(
-    struct _ceval_runtime_state *,
-    struct _ceval_interpreter_state *);
+    struct _ceval_runtime_state *ceval);
 PyAPI_FUNC(void) _PyEval_ReInitThreads(
     _PyRuntimeState *runtime);
 
