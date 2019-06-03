@@ -315,7 +315,7 @@ class EditorWindow(object):
                   self.CodeContext(self).toggle_code_context_event)
 
     def _filename_to_unicode(self, filename):
-        """Return filename as BMP unicode so diplayable in Tk."""
+        """Return filename as BMP unicode so displayable in Tk."""
         # Decode bytes to unicode.
         if isinstance(filename, bytes):
             try:
