@@ -98,6 +98,9 @@ the types that arise only incidentally during processing such as the
 Typical use of these names is for :func:`isinstance` or
 :func:`issubclass` checks.
 
+
+If you instantiate any of these types, note that signatures may vary between Python versions.
+
 Standard names are defined for the following types:
 
 .. data:: FunctionType
