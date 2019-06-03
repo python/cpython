@@ -52,12 +52,19 @@ typedef struct {
        people to go through the proper APIs. */
     void *co_extra;
 
-    /* Per opcodes just-in-time cache */
-    // To reduce cache size, we use indirect mapping from opcode index
-    // to cache object: co_opcache[co_opcache_map[next_instr/sizeof(_Py_CODEUNIT)]]
+    /* Per opcodes just-in-time cache
+     *
+     * To reduce cache size, we use indirect mapping from opcode index to
+     * cache object:
+     *   cache = co_opcache[co_opcache_map[next_instr - first_instr] - 1]
+     */
+
+    // co_opcache_map is indexed by (next_instr - first_instr).
+    //  * 0 means there is no cache for this opcode.
+    //  * n > 0 means there is cache in co_opcache[n-1].
     unsigned char *co_opcache_map;
     _PyOpcache *co_opcache;
-    int co_opcache_flag;  // used to determine when create cache
+    int co_opcache_flag;  // used to determine when create a cache.
     unsigned char co_opcache_size;  // length of co_opcache.
 } PyCodeObject;
 

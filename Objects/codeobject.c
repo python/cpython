@@ -257,7 +257,7 @@ _PyCode_InitOpcache(PyCodeObject *co)
 
     for (Py_ssize_t i = 0; i < co_size;) {
         unsigned char opcode = _Py_OPCODE(opcodes[i]);
-        i++;  // 'i' is now aligned to ceval/INSTR_OFFSET()
+        i++;  // 'i' is now aligned to (next_instr - first_instr)
 
         // TODO: LOAD_METHOD, LOAD_ATTR
         if (opcode == LOAD_GLOBAL) {
@@ -564,9 +564,9 @@ code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
     }
     if (co->co_opcache != NULL) {
         assert(co->co_opcache_map != NULL);
-        // opcodemap
+        // co_opcache_map
         res += PyBytes_GET_SIZE(co->co_code) / sizeof(_Py_CODEUNIT);
-        // opcode
+        // co_opcache
         res += co->co_opcache_size * sizeof(_PyOpcache);
     }
     return PyLong_FromSsize_t(res);
