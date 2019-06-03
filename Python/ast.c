@@ -3398,7 +3398,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         }
         else {
             ch = CHILD(ann, 3);
-            if (TYPE(ch) == testlist) {
+            if (TYPE(ch) == testlist_star_expr) {
                 expr3 = ast_for_testlist(c, ch);
             }
             else {
