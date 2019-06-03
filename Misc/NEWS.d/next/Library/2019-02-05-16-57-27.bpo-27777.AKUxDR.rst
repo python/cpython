@@ -1,2 +1,2 @@
-Fixes a bug in :mod:`cgi` when a request has a "Content-Length" header but
+Fixes a bug in :mod:`cgi` :class:`cgi.FieldStorage` when a request has a "Content-Length" header but
 without "Content-Disposition" headers.
