@@ -1,0 +1,2 @@
+What's new now mentions SSLContext.hostname_checks_common_name instead of
+SSLContext.host_flags.
