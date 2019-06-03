@@ -1,0 +1,4 @@
+:mod:`asyncio`: ``loop.close()`` now waits for the default executor to
+finish by default. Set ``loop.wait_executor_on_close`` attribute to
+``False`` to opt-in for Python 3.7 behavior (not wait for the executor to
+finish).
