@@ -564,6 +564,45 @@ def multimode(data):
     maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
     return list(map(itemgetter(0), mode_items))
 
+# Notes on methods for computing quantiles
+# ----------------------------------------
+#
+# There is no one perfect way to compute quantiles.  Here we offer
+# two methods that serve common needs.  Most other packages
+# surveyed offered at least one or both of these two, making them
+# "standard" in the sense of "widely-adopted and reproducible".
+# They are also easy to explain, easy to compute manually, and have
+# straight-forward interpretations that aren't surprising.
+
+# The default method is known as "R6", "PERCENTILE.EXC", or "expected
+# value of rank order statistics". The alternative method is known as
+# "R7", "PERCENTILE.INC", or "mode of rank order statistics".
+
+# For sample data where there is a positive probability for values
+# beyond the range of the data, the R6 exclusive method is a
+# reasonable choice.  Consider a random sample of nine values from a
+# population with a uniform distribution from 0.0 to 100.0.  The
+# distribution of the third ranked sample point is described by
+# betavariate(alpha=3, beta=7) which has mode=0.250, median=0.286, and
+# mean=0.300.  Only the latter (which corresponds with R6) gives the
+# desired cut point with 30% of the population falling below that
+# value, making it comparable to a result from an inv_cdf() function.
+
+# For describing population data where the end points are known to
+# be included in the data, the R7 inclusive method is a reasonable
+# choice.  Instead of the mean, it uses the mode of the beta
+# distribution for the interior points.  Per Hyndman & Fan, "One nice
+# property is that the vertices of Q7(p) divide the range into n - 1
+# intervals, and exactly 100p% of the intervals lie to the left of
+# Q7(p) and 100(1 - p)% of the intervals lie to the right of Q7(p)."
+
+# If the need arises, we could add method="median" for a median
+# unbiased, distribution-free alternative.  Also if needed, the
+# distribution-free approaches could be augmented by adding
+# method='normal'.  However, for now, the position is that fewer
+# options make for easier choices and that external packages can be
+# used for anything more advanced.
+
 def quantiles(dist, *, n=4, method='exclusive'):
     '''Divide *dist* into *n* continuous intervals with equal probability.
 
