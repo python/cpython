@@ -40,7 +40,7 @@ default_tip = calltip._default_callable_argspec
 get_spec = calltip.get_argspec
 
 
-class GetspecTest(unittest.TestCase):
+class Get_argspecTest(unittest.TestCase):
     # The get_spec function must return a string, even if blank.
     # Test a variety of objects to be sure that none cause it to raise
     # (quite aside from getting as correct an answer as possible).
