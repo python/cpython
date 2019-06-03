@@ -57,7 +57,7 @@ matrix:
         # The theme used by the docs is stored separately, so we need to install that as well.
         - python -m pip install sphinx==1.8.2 blurb python-docs-theme
       script:
-        - make check suspicious html SPHINXOPTS="-q -W -j4"
+        - make check suspicious html SPHINXOPTS="-W -j4"
     - name: "Documentation tests"
       os: linux
       language: c
@@ -72,7 +72,7 @@ matrix:
         - make -j4
         - make -C Doc/ PYTHON=../python venv
       script:
-        xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest
+        xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-W -j4" doctest
     - name: "Mac OS X tests"
       os: osx
       language: c
