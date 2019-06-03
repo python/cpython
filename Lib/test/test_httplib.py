@@ -323,6 +323,48 @@ class HeaderTests(TestCase):
             self.assertIn(' folded with space', folded)
             self.assertTrue(folded.endswith('folded with tab'))
 
+    def test_parse_invalid_octets(self):
+        # Ensure no valid header field octet breaks the parser
+        body = (
+            b'HTTP/1.1 200 OK\r\n'
+            b'A-Canonical: header\r\n'
+            b'sOMe-CRazY: heADers\r\n'
+            b'With-UTF-8-Values: \xe2\x9c\x94\r\n'
+            b'And-Even-\xf0\x9f\x8c\xb4: names\r\n'
+            b'and-more: after that\r\n'
+            b'Transfer-Encoding: chunked\r\n'
+            b'\r\n'  # End of headers
+            b'e\r\n'
+            b'Hello, world!\n\r\n'
+            b'0\r\n'
+            b'\r\n'
+        )
+        sock = FakeSocket(body)
+        resp = client.HTTPResponse(sock)
+        resp.begin()
+        # Even if there was a charset specified in the Content-Type, that
+        # would only apply to the actual body. Interpret the out-of-spec
+        # response headers as ISO-8859-1, which is consistent with the
+        # encoding used for header values and how one would generate such
+        # a response from a WSGI server.
+        expected = {
+            'A-Canonical': 'header',
+            'sOMe-CRazY': 'heADers',
+            'With-UTF-8-Values': '\xe2\x9c\x94',
+            'And-Even-\xf0\x9f\x8c\xb4': 'names',
+            'and-more': 'after that',
+            'Transfer-Encoding': 'chunked',
+        }
+        case_sensitive = dict(resp.getheaders())
+        for header, value in expected.items():
+            with self.subTest((header, value)):
+                self.assertEqual(resp.getheader(header), value)
+                self.assertEqual(resp.msg[header], value)
+                self.assertIn(header, case_sensitive)
+                self.assertNotIn(header.upper(), case_sensitive)
+        self.assertEqual(resp.read(), b'Hello, world!\n')
+        self.assertEqual(resp.headers.get_payload(), '')
+
     def test_invalid_headers(self):
         conn = client.HTTPConnection('example.com')
         conn.sock = FakeSocket('')

@@ -38,7 +38,7 @@ class Parser:
         self._class = _class
         self.policy = policy
 
-    def parse(self, fp, headersonly=False):
+    def parse(self, fp, headersonly=False, strictheaders=True):
         """Create a message structure from the data in a file.
 
         Reads all the data from the file and returns the root of the message
@@ -46,7 +46,8 @@ class Parser:
         parsing after reading the headers or not.  The default is False,
         meaning it parses the entire contents of the file.
         """
-        feedparser = FeedParser(self._class, policy=self.policy)
+        feedparser = FeedParser(
+            self._class, policy=self.policy, strictheaders=strictheaders)
         if headersonly:
             feedparser._set_headersonly()
         while True:
@@ -56,7 +57,7 @@ class Parser:
             feedparser.feed(data)
         return feedparser.close()
 
-    def parsestr(self, text, headersonly=False):
+    def parsestr(self, text, headersonly=False, strictheaders=True):
         """Create a message structure from a string.
 
         Returns the root of the message structure.  Optional headersonly is a
@@ -64,16 +65,19 @@ class Parser:
         not.  The default is False, meaning it parses the entire contents of
         the file.
         """
-        return self.parse(StringIO(text), headersonly=headersonly)
+        return self.parse(
+            StringIO(text),
+            headersonly=headersonly,
+            strictheaders=strictheaders)
 
 
 
 class HeaderParser(Parser):
-    def parse(self, fp, headersonly=True):
-        return Parser.parse(self, fp, True)
+    def parse(self, fp, headersonly=True, strictheaders=True):
+        return Parser.parse(self, fp, True, strictheaders=strictheaders)
 
-    def parsestr(self, text, headersonly=True):
-        return Parser.parsestr(self, text, True)
+    def parsestr(self, text, headersonly=True, strictheaders=True):
+        return Parser.parsestr(self, text, True, strictheaders=strictheaders)
 
 
 class BytesParser:
@@ -96,7 +100,7 @@ class BytesParser:
         """
         self.parser = Parser(*args, **kw)
 
-    def parse(self, fp, headersonly=False):
+    def parse(self, fp, headersonly=False, strictheaders=True):
         """Create a message structure from the data in a binary file.
 
         Reads all the data from the file and returns the root of the message
@@ -106,12 +110,12 @@ class BytesParser:
         """
         fp = TextIOWrapper(fp, encoding='ascii', errors='surrogateescape')
         try:
-            return self.parser.parse(fp, headersonly)
+            return self.parser.parse(fp, headersonly, strictheaders)
         finally:
             fp.detach()
 
 
-    def parsebytes(self, text, headersonly=False):
+    def parsebytes(self, text, headersonly=False, strictheaders=True):
         """Create a message structure from a byte string.
 
         Returns the root of the message structure.  Optional headersonly is a
@@ -120,12 +124,14 @@ class BytesParser:
         the file.
         """
         text = text.decode('ASCII', errors='surrogateescape')
-        return self.parser.parsestr(text, headersonly)
+        return self.parser.parsestr(text, headersonly, strictheaders)
 
 
 class BytesHeaderParser(BytesParser):
-    def parse(self, fp, headersonly=True):
-        return BytesParser.parse(self, fp, headersonly=True)
+    def parse(self, fp, headersonly=True, strictheaders=True):
+        return BytesParser.parse(
+            self, fp, headersonly=True, strictheaders=strictheaders)
 
-    def parsebytes(self, text, headersonly=True):
-        return BytesParser.parsebytes(self, text, headersonly=True)
+    def parsebytes(self, text, headersonly=True, strictheaders=True):
+        return BytesParser.parsebytes(
+            self, text, headersonly=True, strictheaders=strictheaders)

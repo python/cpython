@@ -136,7 +136,7 @@ class BufferedSubFile(object):
 class FeedParser:
     """A feed-style parser of email."""
 
-    def __init__(self, _factory=None, *, policy=compat32):
+    def __init__(self, _factory=None, *, policy=compat32, strictheaders=True):
         """_factory is called with no arguments to create a new message obj
 
         The policy keyword specifies a policy object that controls a number of
@@ -165,6 +165,7 @@ class FeedParser:
         self._cur = None
         self._last = None
         self._headersonly = False
+        self._strictheaders = strictheaders
 
     # Non-public interface for supporting Parser's headersonly flag
     def _set_headersonly(self):
@@ -225,14 +226,15 @@ class FeedParser:
             if line is NeedMoreData:
                 yield NeedMoreData
                 continue
-            if not headerRE.match(line):
+            if NLCRE.match(line):
+                break
+            elif not headerRE.match(line) and self._strictheaders:
                 # If we saw the RFC defined header/body separator
                 # (i.e. newline), just throw it away. Otherwise the line is
                 # part of the body so push it back.
-                if not NLCRE.match(line):
-                    defect = errors.MissingHeaderBodySeparatorDefect()
-                    self.policy.handle_defect(self._cur, defect)
-                    self._input.unreadline(line)
+                defect = errors.MissingHeaderBodySeparatorDefect()
+                self.policy.handle_defect(self._cur, defect)
+                self._input.unreadline(line)
                 break
             headers.append(line)
         # Done with the headers, so parse them and figure out what we're
