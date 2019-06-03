@@ -224,7 +224,7 @@ Check Module
 .. _run-module:
 
 Run Module
-   Do :ref:`Check Module <check-module>`.  If no error, restart the shell toclean the
+   Do :ref:`Check Module <check-module>`.  If no error, restart the shell to clean the
    environment, then execute the module.  Output is displayed in the Shell
    window.  Note that output requires use of ``print`` or ``write``.
    When execution is complete, the Shell retains focus and displays a prompt.
