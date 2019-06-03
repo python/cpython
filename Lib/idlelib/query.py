@@ -21,6 +21,7 @@ Subclass HelpSource gets menu item and path for additions to Help menu.
 
 import importlib
 import os
+import shlex
 from sys import executable, platform  # Platform is set for one test.
 
 from tkinter import Toplevel, StringVar, W, E, S
@@ -302,10 +303,31 @@ class HelpSource(Query):
         path = self.path_ok()
         return None if name is None or path is None else (name, path)
 
+class CommandLineArgs(Query):
+    "Get a list of parsed command line arguments."
+    # Used in runscript.run_module_arguments_event
+
+    def __init__(self, parent, title, message, *, _htest=False, _utest=False):
+        super().__init__(parent, title, message, _htest=_htest, _utest=_utest)
+
+    def entry_ok(self):
+        "Return list of parsed arguments or None."
+        self.entry_error['text'] = ''
+        cli_args = self.entry.get().strip()
+        if not cli_args:
+            self.showerror('no arguments specified.')
+            return None
+        try:
+            lex = shlex.split(cli_args, posix=True)
+        except ValueError as err:
+            self.showerror(str(err))
+            return None
+        return lex
+
 
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_query', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
-    run(Query, HelpSource)
+    run(Query, HelpSource, CommandLineArgs)

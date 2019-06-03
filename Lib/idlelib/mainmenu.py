@@ -76,6 +76,7 @@ menudefs = [
    ('Python Shell', '<<open-python-shell>>'),
    ('C_heck Module', '<<check-module>>'),
    ('R_un Module', '<<run-module>>'),
+   ('Run Module with _Arguments', '<<run-module-arguments>>'),
    ]),
 
  ('shell', [

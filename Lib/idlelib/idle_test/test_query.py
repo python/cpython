@@ -242,6 +242,36 @@ class HelpsourceEntryokTest(unittest.TestCase):
                 self.assertEqual(dialog.entry_ok(), result)
 
 
+class CommandLineArgsTest(unittest.TestCase):
+    "Test CommandLineArgs subclass of Query."
+
+    class Dummy_CommandLineArgs:
+        entry_ok = query.CommandLineArgs.entry_ok  # Function being tested.
+        entry = Var()
+        entry_error = {}
+        def __init__(self, dummy_entry):
+            self.entry.set(dummy_entry)
+            self.entry_error['text'] = ''
+        def showerror(self, message):
+            self.entry_error['text'] = message
+
+    def test_blank_args(self):
+        dialog = self.Dummy_CommandLineArgs(' ')
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('no arguments', dialog.entry_error['text'])
+
+    def test_invalid_args(self):
+        dialog = self.Dummy_CommandLineArgs("'no-closing-quote")
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('No closing', dialog.entry_error['text'])
+
+    def test_good_args(self):
+        dialog = self.Dummy_CommandLineArgs('-n 10 --verbose -p /path --name "my name"')
+        self.assertEqual(dialog.entry_ok(),
+                         ['-n', '10', '--verbose', '-p', '/path', '--name', 'my name'])
+        self.assertEqual(dialog.entry_error['text'], '')
+
+
 # GUI TESTS
 
 class QueryGuiTest(unittest.TestCase):
@@ -343,6 +373,25 @@ class HelpsourceGuiTest(unittest.TestCase):
         dialog.button_ok.invoke()
         prefix = "file://" if sys.platform == 'darwin' else ''
         Equal(dialog.result, ('__test__', prefix + __file__))
+        del dialog
+        root.destroy()
+        del root
+
+
+class CommandLineArgsGuiTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+
+    def test_click_args(self):
+        root = Tk()
+        root.withdraw()
+        dialog =  query.CommandLineArgs(root, 'Title', 'message', _utest=True)
+        Equal = self.assertEqual
+        dialog.entry.insert(0, 'okay')
+        dialog.button_ok.invoke()
+        self.assertEqual(dialog.result, ['okay'])
         del dialog
         root.destroy()
         del root

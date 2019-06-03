@@ -18,6 +18,7 @@ import tkinter.messagebox as tkMessageBox
 from idlelib.config import idleConf
 from idlelib import macosx
 from idlelib import pyshell
+from idlelib.query import CommandLineArgs
 
 indent_message = """Error: Inconsistent indentation detected!
 
@@ -113,7 +114,16 @@ class ScriptBinding:
         else:
             return self._run_module_event(event)
 
-    def _run_module_event(self, event):
+    def run_module_arguments_event(self, event):
+        cli_args = CommandLineArgs(
+            event.widget, "Run with Arguments",
+            "Command line argunments:").result
+        # User cancelled.
+        if not cli_args:
+            return 'break'
+        return self._run_module_event(event, cli_args)
+
+    def _run_module_event(self, event, cli_args=None):
         """Run the module after setting up the environment.
 
         First check the syntax.  If OK, make sure the shell is active and
@@ -121,7 +131,6 @@ class ScriptBinding:
         directory to the directory of the module being executed and also
         add that directory to its sys.path if not already included.
         """
-
         filename = self.getfilename()
         if not filename:
             return 'break'
@@ -136,17 +145,20 @@ class ScriptBinding:
                         self.editwin._filename_to_unicode(filename))
         dirname = os.path.dirname(filename)
         # XXX Too often this discards arguments the user just set...
-        interp.runcommand("""if 1:
+        argv = [filename]
+        if cli_args:
+            argv += cli_args
+        interp.runcommand(f"""if 1:
             __file__ = {filename!r}
             import sys as _sys
             from os.path import basename as _basename
             if (not _sys.argv or
                 _basename(_sys.argv[0]) != _basename(__file__)):
-                _sys.argv = [__file__]
+                _sys.argv = {argv!r}
             import os as _os
             _os.chdir({dirname!r})
             del _sys, _basename, _os
-            \n""".format(filename=filename, dirname=dirname))
+            \n""")
         interp.prepend_syspath(filename)
         # XXX KBK 03Jul04 When run w/o subprocess, runtime warnings still
         #         go to __stderr__.  With subprocess, they go to the shell.

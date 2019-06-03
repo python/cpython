@@ -658,6 +658,7 @@ class IdleConf:
             '<<flash-paren>>': ['<Control-Key-0>'],
             '<<format-paragraph>>': ['<Alt-Key-q>'],
             '<<run-module>>': ['<Key-F5>'],
+            '<<run-module-arguments>>': ['<Key-F7>'],
             '<<check-module>>': ['<Alt-Key-x>'],
             '<<zoom-height>>': ['<Alt-Key-2>'],
             }
