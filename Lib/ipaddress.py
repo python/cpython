@@ -1790,12 +1790,11 @@ class _BaseV6:
         """Helper function to parse IPv6 string address with scope id.
 
         See RFC 4007 for details.
-
         Arg:
             ip_str: A string, the IPv6 address.
 
         Returns:
-            [addr, scope_id] tuple.
+            (addr, scope_id) tuple.
         """
         if '%' not in ip_str:
             return ip_str, None
@@ -1820,7 +1819,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
     """Represent and manipulate single IPv6 Addresses."""
 
-    __slots__ = ('_ip', 'scope_id', '__weakref__')
+    __slots__ = ('_ip', '_scope_id', '__weakref__')
 
     def __init__(self, address):
         """Instantiate a new IPv6 address object.
@@ -1839,7 +1838,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
             AddressValueError: If address isn't a valid IPv6 address.
 
         """
-        self.scope_id = None
+        self._scope_id = None
 
         # Efficient constructor from integer.
         if isinstance(address, int):
@@ -1858,13 +1857,22 @@ class IPv6Address(_BaseV6, _BaseAddress):
         addr_str = str(address)
         if '/' in addr_str:
             raise AddressValueError("Unexpected '/' in %r" % address)
-        addr_str, self.scope_id = self._split_scope_id(addr_str)
+        addr_str, self._scope_id = self._split_scope_id(addr_str)
 
         self._ip = self._ip_int_from_string(addr_str)
 
     def __str__(self):
-        ip_str = self._string_from_ip_int(self._ip)
+        ip_str = super().__str__()
         return ip_str if self.scope_id is None else ip_str + '%' + self.scope_id
+
+    @property
+    def scope_id(self):
+        """Identifier of a particular zone of the address's scope.
+
+        Returns:
+            A string, identifying the zone of the address if specified, else None.
+        """
+        return self._scope_id
 
     @property
     def packed(self):
