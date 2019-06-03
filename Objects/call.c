@@ -626,22 +626,83 @@ exit:
 }
 
 
+/* Vectorcall functions for each of the PyCFunction calling conventions,
+ * except for METH_VARARGS (possibly combined with METH_KEYWORDS) which
+ * doesn't use vectorcall.
+ *
+ * First two macros to define common boilerplate
+ */
+#define PyCFunction_VECTORCALL_BEGIN(ALLOW_KWARGS) \
+    assert(!PyErr_Occurred()); \
+    assert(PyCFunction_Check(func)); \
+    PyCFunctionObject *f = (PyCFunctionObject *)func; \
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf); \
+    PyObject *self = f->m_self; \
+    PyMethodDef *method = f->m_ml; \
+    const char *name = method->ml_name; \
+    void(*meth)(void) = (void(*)(void))method->ml_meth; \
+    PyObject *result = NULL; \
+    \
+    if (!ALLOW_KWARGS && kwnames && PyTuple_GET_SIZE(kwnames) > 0) { \
+        PyErr_Format(PyExc_TypeError, \
+                     "%.200s() takes no keyword arguments", name); \
+        return NULL; \
+    } \
+    if (Py_EnterRecursiveCall(" while calling a Python object")) { \
+        return NULL; \
+    }
+
+#define PyCFunction_VECTORCALL_END \
+    Py_LeaveRecursiveCall(); \
+    return _Py_CheckFunctionResult(func, result, NULL);
+
+/* Now the actual vectorcall functions */
 PyObject *
-_PyCFunction_Vectorcall(PyObject *func,
-                        PyObject *const *args, size_t nargsf,
-                        PyObject *kwnames)
+_PyCFunction_Vectorcall_FASTCALL(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
-    PyObject *result;
+    PyCFunction_VECTORCALL_BEGIN(0)
+    result = ((_PyCFunctionFast)meth)(self, args, nargs);
+    PyCFunction_VECTORCALL_END
+}
 
-    assert(func != NULL);
-    assert(PyCFunction_Check(func));
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+PyObject *
+_PyCFunction_Vectorcall_FASTCALL_KEYWORDS(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    PyCFunction_VECTORCALL_BEGIN(1)
+    result = ((_PyCFunctionFastWithKeywords)meth)(self, args, nargs, kwnames);
+    PyCFunction_VECTORCALL_END
+}
 
-    result = _PyMethodDef_RawFastCallKeywords(((PyCFunctionObject*)func)->m_ml,
-                                              PyCFunction_GET_SELF(func),
-                                              args, nargs, kwnames);
-    result = _Py_CheckFunctionResult(func, result, NULL);
-    return result;
+PyObject *
+_PyCFunction_Vectorcall_NOARGS(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    PyCFunction_VECTORCALL_BEGIN(0)
+    if (nargs != 0) {
+        PyErr_Format(PyExc_TypeError,
+            "%.200s() takes no arguments (%zd given)", name, nargs);
+    }
+    else {
+        result = ((PyCFunction)meth)(self, NULL);
+    }
+    PyCFunction_VECTORCALL_END
+}
+
+PyObject *
+_PyCFunction_Vectorcall_O(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    PyCFunction_VECTORCALL_BEGIN(0)
+    if (nargs != 1) {
+        PyErr_Format(PyExc_TypeError,
+            "%.200s() takes exactly one argument (%zd given)", name, nargs);
+    }
+    else {
+        result = ((PyCFunction)meth)(self, args[0]);
+    }
+    PyCFunction_VECTORCALL_END
 }
 
 

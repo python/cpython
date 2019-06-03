@@ -28,6 +28,33 @@ PyCFunction_New(PyMethodDef *ml, PyObject *self)
 PyObject *
 PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
 {
+    /* Figure out correct vectorcall function to use */
+    vectorcallfunc vectorcall;
+    switch (ml->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O | METH_KEYWORDS))
+    {
+        case METH_VARARGS:
+        case METH_VARARGS | METH_KEYWORDS:
+            /* For METH_VARARGS functions, it's more efficient to use tp_call
+             * instead of vectorcall. */
+            vectorcall = NULL;
+            break;
+        case METH_FASTCALL:
+            vectorcall = _PyCFunction_Vectorcall_FASTCALL;
+            break;
+        case METH_FASTCALL | METH_KEYWORDS:
+            vectorcall = _PyCFunction_Vectorcall_FASTCALL_KEYWORDS;
+            break;
+        case METH_NOARGS:
+            vectorcall = _PyCFunction_Vectorcall_NOARGS;
+            break;
+        case METH_O:
+            vectorcall = _PyCFunction_Vectorcall_O;
+            break;
+        default:
+            PyErr_SetString(PyExc_SystemError, "bad call flags");
+            return NULL;
+    }
+
     PyCFunctionObject *op;
     op = free_list;
     if (op != NULL) {
@@ -46,14 +73,7 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
     op->m_self = self;
     Py_XINCREF(module);
     op->m_module = module;
-    if (ml->ml_flags & METH_VARARGS) {
-        /* For METH_VARARGS functions, it's more efficient to use tp_call
-         * instead of vectorcall. */
-        op->vectorcall = NULL;
-    }
-    else {
-        op->vectorcall = _PyCFunction_Vectorcall;
-    }
+    op->vectorcall = vectorcall;
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
 }

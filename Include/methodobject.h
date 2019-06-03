@@ -41,11 +41,15 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyCFunction_Vectorcall(PyObject *func,
-    PyObject *const *stack,
-    size_t nargsf,
-    PyObject *kwnames);
+#ifdef Py_BUILD_CORE
+extern PyObject * _PyCFunction_Vectorcall_FASTCALL(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
+extern PyObject * _PyCFunction_Vectorcall_FASTCALL_KEYWORDS(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
+extern PyObject * _PyCFunction_Vectorcall_NOARGS(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
+extern PyObject * _PyCFunction_Vectorcall_O(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 #endif
 
 struct PyMethodDef {
