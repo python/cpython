@@ -289,6 +289,12 @@ static PyObject *
 pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
 /*[clinic end generated code: output=562432a9e6af2aa1 input=4127345aa091b650]*/
 {
+	if (self == NULL) {
+		return NULL;
+	}
+	
+    static char *kwlist[] = {"factory", NULL};
+    PyObject* factory = NULL;
     PyObject* cursor;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
