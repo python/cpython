@@ -150,7 +150,8 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
     }
 }
 
-Py_ssize_t pysqlite_row_length(pysqlite_Row* self, PyObject* args, PyObject* kwargs)
+static Py_ssize_t
+pysqlite_row_length(pysqlite_Row* self)
 {
     return PyTuple_GET_SIZE(self->data);
 }
@@ -230,10 +231,10 @@ PyTypeObject pysqlite_RowType = {
         sizeof(pysqlite_Row),                           /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)pysqlite_row_dealloc,               /* tp_dealloc */
-        0,                                              /* tp_print */
+        0,                                              /* tp_vectorcall_offset */
         0,                                              /* tp_getattr */
         0,                                              /* tp_setattr */
-        0,                                              /* tp_reserved */
+        0,                                              /* tp_as_async */
         0,                                              /* tp_repr */
         0,                                              /* tp_as_number */
         0,                                              /* tp_as_sequence */

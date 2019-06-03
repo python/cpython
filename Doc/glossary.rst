@@ -13,10 +13,14 @@ Glossary
       examples which can be executed interactively in the interpreter.
 
    ``...``
-      The default Python prompt of the interactive shell when entering code for
-      an indented code block, when within a pair of matching left and right
-      delimiters (parentheses, square brackets, curly braces or triple quotes),
-      or after specifying a decorator.
+      Can refer to:
+
+      * The default Python prompt of the interactive shell when entering the
+        code for an indented code block, when within a pair of matching left and
+        right delimiters (parentheses, square brackets, curly braces or triple
+        quotes), or after specifying a decorator.
+
+      * The :const:`Ellipsis` built-in constant.
 
    2to3
       A tool that tries to convert Python 2.x code to Python 3.x code by
@@ -95,7 +99,7 @@ Glossary
       that it contains :keyword:`yield` expressions for producing a series of
       values usable in an :keyword:`async for` loop.
 
-      Usually refers to a asynchronous generator function, but may refer to an
+      Usually refers to an asynchronous generator function, but may refer to an
       *asynchronous generator iterator* in some contexts.  In cases where the
       intended meaning isn't clear, using the full terms avoids ambiguity.
 
@@ -108,8 +112,8 @@ Glossary
 
       This is an :term:`asynchronous iterator` which when called using the
       :meth:`__anext__` method returns an awaitable object which will execute
-      that the body of the asynchronous generator function until the
-      next :keyword:`yield` expression.
+      the body of the asynchronous generator function until the next
+      :keyword:`yield` expression.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
       location execution state (including local variables and pending
@@ -200,7 +204,7 @@ Glossary
       ``int(3.15)`` converts the floating point number to the integer ``3``, but
       in ``3+4.5``, each argument is of a different type (one int, one float),
       and both must be converted to the same type before they can be added or it
-      will raise a ``TypeError``.  Without coercion, all arguments of even
+      will raise a :exc:`TypeError`.  Without coercion, all arguments of even
       compatible types would have to be normalized to the same value by the
       programmer, e.g., ``float(3)+4.5`` rather than just ``3+4.5``.
 
@@ -220,6 +224,15 @@ Glossary
       An object which controls the environment seen in a :keyword:`with`
       statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
       See :pep:`343`.
+
+   context variable
+      A variable which can have different values depending on its context.
+      This is similar to Thread-Local Storage in which each execution
+      thread may have a different value for a variable. However, with context
+      variables, there may be several contexts in one execution thread and the
+      main usage for context variables is to keep track of variables in
+      concurrent asynchronous tasks.
+      See :mod:`contextvars`.
 
    contiguous
       .. index:: C-contiguous, Fortran contiguous
@@ -332,7 +345,7 @@ Glossary
       names, attribute access, operators or function calls which all return a
       value.  In contrast to many other languages, not all language constructs
       are expressions.  There are also :term:`statement`\s which cannot be used
-      as expressions, such as :keyword:`if`.  Assignments are also statements,
+      as expressions, such as :keyword:`while`.  Assignments are also statements,
       not expressions.
 
    extension module
@@ -389,7 +402,7 @@ Glossary
       An :term:`annotation` of a function parameter or return value.
 
       Function annotations are usually used for
-      :term:`type hints <type hint>`: for example this function is expected to take two
+      :term:`type hints <type hint>`: for example, this function is expected to take two
       :class:`int` arguments and is also expected to have an :class:`int`
       return value::
 
@@ -444,8 +457,8 @@ Glossary
 
    generator expression
       An expression that returns an iterator.  It looks like a normal expression
-      followed by a :keyword:`for` expression defining a loop variable, range,
-      and an optional :keyword:`if` expression.  The combined expression
+      followed by a :keyword:`!for` clause defining a loop variable, range,
+      and an optional :keyword:`!if` clause.  The combined expression
       generates values for an enclosing function::
 
          >>> sum(i*i for i in range(10))         # sum of squares 0, 1, 4, ... 81
@@ -499,8 +512,10 @@ Glossary
       Hashability makes an object usable as a dictionary key and a set member,
       because these data structures use the hash value internally.
 
-      All of Python's immutable built-in objects are hashable; mutable
-      containers (such as lists or dictionaries) are not.  Objects which are
+      Most of Python's immutable built-in objects are hashable; mutable
+      containers (such as lists or dictionaries) are not; immutable
+      containers (such as tuples and frozensets) are only hashable if
+      their elements are hashable.  Objects which are
       instances of user-defined classes are hashable by default.  They all
       compare unequal (except with themselves), and their hash value is derived
       from their :func:`id`.
@@ -658,6 +673,11 @@ Glossary
       :meth:`load_module`. A loader is typically returned by a
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+
+   magic method
+      .. index:: pair: magic; method
+
+      An informal synonym for :term:`special method`.
 
    mapping
       A container object that supports arbitrary key lookups and implements the
@@ -1000,6 +1020,8 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally.
 
    special method
+      .. index:: pair: special; method
+
       A method that is called implicitly by Python to execute a certain
       operation on a type, such as addition.  Such methods have names starting
       and ending with double underscores.  Special methods are documented in

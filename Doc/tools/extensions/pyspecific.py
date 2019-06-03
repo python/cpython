@@ -11,7 +11,7 @@
 
 import re
 import io
-from os import path
+from os import getenv, path
 from time import asctime
 from pprint import pformat
 from docutils.io import StringOutput
@@ -128,6 +128,65 @@ class ImplementationDetail(Directive):
             pnode[0].insert(1, nodes.Text(' '))
         else:
             pnode.insert(0, nodes.paragraph('', '', add_text))
+        return [pnode]
+
+
+# Support for documenting platform availability
+
+class Availability(Directive):
+
+    has_content = False
+    required_arguments = 1
+    optional_arguments = 0
+    final_argument_whitespace = True
+
+    def run(self):
+        availability_ref = ':ref:`Availability <availability>`: '
+        pnode = nodes.paragraph(availability_ref + self.arguments[0],
+                                classes=["availability"],)
+        n, m = self.state.inline_text(availability_ref, self.lineno)
+        pnode.extend(n + m)
+        n, m = self.state.inline_text(self.arguments[0], self.lineno)
+        pnode.extend(n + m)
+        return [pnode]
+
+
+# Support for documenting audit event
+
+class AuditEvent(Directive):
+
+    has_content = True
+    required_arguments = 1
+    optional_arguments = 1
+    final_argument_whitespace = True
+
+    _label = [
+        "Raises an :ref:`auditing event <auditing>` {name} with no arguments.",
+        "Raises an :ref:`auditing event <auditing>` {name} with argument {args}.",
+        "Raises an :ref:`auditing event <auditing>` {name} with arguments {args}.",
+    ]
+
+    def run(self):
+        if len(self.arguments) >= 2 and self.arguments[1]:
+            args = [
+                "``{}``".format(a.strip())
+                for a in self.arguments[1].strip("'\"").split()
+                if a.strip()
+            ]
+        else:
+            args = []
+
+        label = translators['sphinx'].gettext(self._label[min(2, len(args))])
+        text = label.format(name="``{}``".format(self.arguments[0]),
+                            args=", ".join(args))
+
+        pnode = nodes.paragraph(text, classes=["audit-hook"])
+        if self.content:
+            self.state.nested_parse(self.content, self.content_offset, pnode)
+        else:
+            n, m = self.state.inline_text(text, self.lineno)
+            pnode.extend(n + m)
+
         return [pnode]
 
 
@@ -251,7 +310,7 @@ class DeprecatedRemoved(Directive):
                                    translatable=False)
             node.append(para)
         env = self.state.document.settings.env
-        env.note_versionchange('deprecated', version[0], node, self.lineno)
+        env.get_domain('changeset').note_changeset(node)
         return [node] + messages
 
 
@@ -272,7 +331,9 @@ class MiscNews(Directive):
         fname = self.arguments[0]
         source = self.state_machine.input_lines.source(
             self.lineno - self.state_machine.input_offset - 1)
-        source_dir = path.dirname(path.abspath(source))
+        source_dir = getenv('PY_MISC_NEWS_DIR')
+        if not source_dir:
+            source_dir = path.dirname(path.abspath(source))
         fpath = path.join(source_dir, fname)
         self.state.document.settings.record_dependencies.add(fpath)
         try:
@@ -401,14 +462,14 @@ def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
+    app.add_directive('availability', Availability)
+    app.add_directive('audit-event', AuditEvent)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
-    app.add_description_unit('opcode', 'opcode', '%s (opcode)',
-                             parse_opcode_signature)
-    app.add_description_unit('pdbcommand', 'pdbcmd', '%s (pdb command)',
-                             parse_pdb_command)
-    app.add_description_unit('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
+    app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
+    app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
+    app.add_object_type('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
     app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)

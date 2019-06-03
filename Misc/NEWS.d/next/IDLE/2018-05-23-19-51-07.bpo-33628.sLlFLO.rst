@@ -1,2 +1,0 @@
-IDLE: Cleanup codecontext.py and its test.
-

@@ -506,7 +506,7 @@ class CalculationTests(unittest.TestCase):
         self.assertTrue(result.tm_year == self.time_tuple.tm_year and
                          result.tm_mon == self.time_tuple.tm_mon and
                          result.tm_mday == self.time_tuple.tm_mday,
-                        "Calculation of Gregorian date failed;"
+                        "Calculation of Gregorian date failed; "
                          "%s-%s-%s != %s-%s-%s" %
                          (result.tm_year, result.tm_mon, result.tm_mday,
                           self.time_tuple.tm_year, self.time_tuple.tm_mon,
@@ -518,7 +518,7 @@ class CalculationTests(unittest.TestCase):
         result = _strptime._strptime_time(time.strftime(format_string, self.time_tuple),
                                     format_string)
         self.assertTrue(result.tm_wday == self.time_tuple.tm_wday,
-                        "Calculation of day of the week failed;"
+                        "Calculation of day of the week failed; "
                          "%s != %s" % (result.tm_wday, self.time_tuple.tm_wday))
 
     if support.is_android:
@@ -692,7 +692,7 @@ class CacheTests(unittest.TestCase):
         finally:
             locale.setlocale(locale.LC_TIME, locale_info)
 
-    @support.run_with_tz('STD-1DST')
+    @support.run_with_tz('STD-1DST,M4.1.0,M10.1.0')
     def test_TimeRE_recreation_timezone(self):
         # The TimeRE instance should be recreated upon changing the timezone.
         oldtzname = time.tzname

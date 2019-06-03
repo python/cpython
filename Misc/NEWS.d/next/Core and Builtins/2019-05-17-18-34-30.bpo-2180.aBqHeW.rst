@@ -1,0 +1,1 @@
+Treat line continuation at EOF as a ``SyntaxError`` by Anthony Sottile.

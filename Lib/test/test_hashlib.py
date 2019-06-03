@@ -230,6 +230,19 @@ class HashLibTestCase(unittest.TestCase):
                 self.assertIsInstance(h.digest(), bytes)
                 self.assertEqual(hexstr(h.digest()), h.hexdigest())
 
+    def test_digest_length_overflow(self):
+        # See issue #34922
+        large_sizes = (2**29, 2**32-10, 2**32+10, 2**61, 2**64-10, 2**64+10)
+        for cons in self.hash_constructors:
+            h = cons()
+            if h.name not in self.shakes:
+                continue
+            for digest in h.digest, h.hexdigest:
+                self.assertRaises(ValueError, digest, -10)
+                for length in large_sizes:
+                    with self.assertRaises((ValueError, OverflowError)):
+                        digest(length)
+
     def test_name_attribute(self):
         for cons in self.hash_constructors:
             h = cons()

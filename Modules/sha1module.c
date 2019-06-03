@@ -338,12 +338,12 @@ SHA1Type_copy_impl(SHA1object *self)
 /*[clinic input]
 SHA1Type.digest
 
-Return the digest value as a string of binary data.
+Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 SHA1Type_digest_impl(SHA1object *self)
-/*[clinic end generated code: output=2f05302a7aa2b5cb input=205d47e1927fd009]*/
+/*[clinic end generated code: output=2f05302a7aa2b5cb input=13824b35407444bd]*/
 {
     unsigned char digest[SHA1_DIGESTSIZE];
     struct sha1_state temp;
@@ -446,10 +446,10 @@ static PyTypeObject SHA1type = {
     0,                  /*tp_itemsize*/
     /* methods */
     SHA1_dealloc,       /*tp_dealloc*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     0,                  /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/

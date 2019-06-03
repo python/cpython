@@ -13,7 +13,7 @@ Codec registry and support functions
 .. c:function:: int PyCodec_KnownEncoding(const char *encoding)
 
    Return ``1`` or ``0`` depending on whether there is a registered codec for
-   the given *encoding*.
+   the given *encoding*.  This function always succeeds.
 
 .. c:function:: PyObject* PyCodec_Encode(PyObject *object, const char *encoding, const char *errors)
 

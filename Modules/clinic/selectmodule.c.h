@@ -30,7 +30,7 @@ PyDoc_STRVAR(select_select__doc__,
 "descriptors can be used.");
 
 #define SELECT_SELECT_METHODDEF    \
-    {"select", (PyCFunction)select_select, METH_FASTCALL, select_select__doc__},
+    {"select", (PyCFunction)(void(*)(void))select_select, METH_FASTCALL, select_select__doc__},
 
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
@@ -45,11 +45,17 @@ select_select(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *xlist;
     PyObject *timeout_obj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "select",
-        3, 4,
-        &rlist, &wlist, &xlist, &timeout_obj)) {
+    if (!_PyArg_CheckPositional("select", nargs, 3, 4)) {
         goto exit;
     }
+    rlist = args[0];
+    wlist = args[1];
+    xlist = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    timeout_obj = args[3];
+skip_optional:
     return_value = select_select_impl(module, rlist, wlist, xlist, timeout_obj);
 
 exit:
@@ -70,7 +76,7 @@ PyDoc_STRVAR(select_poll_register__doc__,
 "    an optional bitmask describing the type of events to check for");
 
 #define SELECT_POLL_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)select_poll_register, METH_FASTCALL, select_poll_register__doc__},
+    {"register", (PyCFunction)(void(*)(void))select_poll_register, METH_FASTCALL, select_poll_register__doc__},
 
 static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask);
@@ -82,10 +88,19 @@ select_poll_register(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
-        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
+    if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
+    if (!fildes_converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
+        goto exit;
+    }
+skip_optional:
     return_value = select_poll_register_impl(self, fd, eventmask);
 
 exit:
@@ -109,7 +124,7 @@ PyDoc_STRVAR(select_poll_modify__doc__,
 "    a bitmask describing the type of events to check for");
 
 #define SELECT_POLL_MODIFY_METHODDEF    \
-    {"modify", (PyCFunction)select_poll_modify, METH_FASTCALL, select_poll_modify__doc__},
+    {"modify", (PyCFunction)(void(*)(void))select_poll_modify, METH_FASTCALL, select_poll_modify__doc__},
 
 static PyObject *
 select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask);
@@ -121,8 +136,13 @@ select_poll_modify(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     unsigned short eventmask;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&:modify",
-        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
+    if (!_PyArg_CheckPositional("modify", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!fildes_converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
         goto exit;
     }
     return_value = select_poll_modify_impl(self, fd, eventmask);
@@ -153,7 +173,7 @@ select_poll_unregister(pollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "O&:unregister", fildes_converter, &fd)) {
+    if (!fildes_converter(arg, &fd)) {
         goto exit;
     }
     return_value = select_poll_unregister_impl(self, fd);
@@ -176,7 +196,7 @@ PyDoc_STRVAR(select_poll_poll__doc__,
 "report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_POLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)select_poll_poll, METH_FASTCALL, select_poll_poll__doc__},
+    {"poll", (PyCFunction)(void(*)(void))select_poll_poll, METH_FASTCALL, select_poll_poll__doc__},
 
 static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj);
@@ -187,11 +207,14 @@ select_poll_poll(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *timeout_obj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "poll",
-        0, 1,
-        &timeout_obj)) {
+    if (!_PyArg_CheckPositional("poll", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    timeout_obj = args[0];
+skip_optional:
     return_value = select_poll_poll_impl(self, timeout_obj);
 
 exit:
@@ -215,7 +238,7 @@ PyDoc_STRVAR(select_devpoll_register__doc__,
 "    an optional bitmask describing the type of events to check for");
 
 #define SELECT_DEVPOLL_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)select_devpoll_register, METH_FASTCALL, select_devpoll_register__doc__},
+    {"register", (PyCFunction)(void(*)(void))select_devpoll_register, METH_FASTCALL, select_devpoll_register__doc__},
 
 static PyObject *
 select_devpoll_register_impl(devpollObject *self, int fd,
@@ -228,10 +251,19 @@ select_devpoll_register(devpollObject *self, PyObject *const *args, Py_ssize_t n
     int fd;
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
-        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
+    if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
+    if (!fildes_converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
+        goto exit;
+    }
+skip_optional:
     return_value = select_devpoll_register_impl(self, fd, eventmask);
 
 exit:
@@ -255,7 +287,7 @@ PyDoc_STRVAR(select_devpoll_modify__doc__,
 "    an optional bitmask describing the type of events to check for");
 
 #define SELECT_DEVPOLL_MODIFY_METHODDEF    \
-    {"modify", (PyCFunction)select_devpoll_modify, METH_FASTCALL, select_devpoll_modify__doc__},
+    {"modify", (PyCFunction)(void(*)(void))select_devpoll_modify, METH_FASTCALL, select_devpoll_modify__doc__},
 
 static PyObject *
 select_devpoll_modify_impl(devpollObject *self, int fd,
@@ -268,10 +300,19 @@ select_devpoll_modify(devpollObject *self, PyObject *const *args, Py_ssize_t nar
     int fd;
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&|O&:modify",
-        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
+    if (!_PyArg_CheckPositional("modify", nargs, 1, 2)) {
         goto exit;
     }
+    if (!fildes_converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
+        goto exit;
+    }
+skip_optional:
     return_value = select_devpoll_modify_impl(self, fd, eventmask);
 
 exit:
@@ -300,7 +341,7 @@ select_devpoll_unregister(devpollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "O&:unregister", fildes_converter, &fd)) {
+    if (!fildes_converter(arg, &fd)) {
         goto exit;
     }
     return_value = select_devpoll_unregister_impl(self, fd);
@@ -323,7 +364,7 @@ PyDoc_STRVAR(select_devpoll_poll__doc__,
 "report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_DEVPOLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)select_devpoll_poll, METH_FASTCALL, select_devpoll_poll__doc__},
+    {"poll", (PyCFunction)(void(*)(void))select_devpoll_poll, METH_FASTCALL, select_devpoll_poll__doc__},
 
 static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj);
@@ -334,11 +375,14 @@ select_devpoll_poll(devpollObject *self, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     PyObject *timeout_obj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "poll",
-        0, 1,
-        &timeout_obj)) {
+    if (!_PyArg_CheckPositional("poll", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    timeout_obj = args[0];
+skip_optional:
     return_value = select_devpoll_poll_impl(self, timeout_obj);
 
 exit:
@@ -468,14 +512,45 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sizehint", "flags", NULL};
-    static _PyArg_Parser _parser = {"|ii:epoll", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "epoll", 0};
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     int sizehint = -1;
     int flags = 0;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &sizehint, &flags)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        if (PyFloat_Check(fastargs[0])) {
+            PyErr_SetString(PyExc_TypeError,
+                            "integer argument expected, got float" );
+            goto exit;
+        }
+        sizehint = _PyLong_AsInt(fastargs[0]);
+        if (sizehint == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyFloat_Check(fastargs[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = _PyLong_AsInt(fastargs[1]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = select_epoll_impl(type, sizehint, flags);
 
 exit:
@@ -550,7 +625,13 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:fromfd", &fd)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = select_epoll_fromfd_impl(type, fd);
@@ -577,7 +658,7 @@ PyDoc_STRVAR(select_epoll_register__doc__,
 "The epoll interface supports all file descriptors that support poll.");
 
 #define SELECT_EPOLL_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)select_epoll_register, METH_FASTCALL|METH_KEYWORDS, select_epoll_register__doc__},
+    {"register", (PyCFunction)(void(*)(void))select_epoll_register, METH_FASTCALL|METH_KEYWORDS, select_epoll_register__doc__},
 
 static PyObject *
 select_epoll_register_impl(pyEpoll_Object *self, int fd,
@@ -588,14 +669,32 @@ select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
-    static _PyArg_Parser _parser = {"O&|I:register", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "register", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     int fd;
     unsigned int eventmask = EPOLLIN | EPOLLPRI | EPOLLOUT;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        fildes_converter, &fd, &eventmask)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!fildes_converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = select_epoll_register_impl(self, fd, eventmask);
 
 exit:
@@ -618,7 +717,7 @@ PyDoc_STRVAR(select_epoll_modify__doc__,
 "    a bit set composed of the various EPOLL constants");
 
 #define SELECT_EPOLL_MODIFY_METHODDEF    \
-    {"modify", (PyCFunction)select_epoll_modify, METH_FASTCALL|METH_KEYWORDS, select_epoll_modify__doc__},
+    {"modify", (PyCFunction)(void(*)(void))select_epoll_modify, METH_FASTCALL|METH_KEYWORDS, select_epoll_modify__doc__},
 
 static PyObject *
 select_epoll_modify_impl(pyEpoll_Object *self, int fd,
@@ -629,12 +728,25 @@ select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t narg
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
-    static _PyArg_Parser _parser = {"O&I:modify", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "modify", 0};
+    PyObject *argsbuf[2];
     int fd;
     unsigned int eventmask;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        fildes_converter, &fd, &eventmask)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!fildes_converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = select_epoll_modify_impl(self, fd, eventmask);
@@ -657,7 +769,7 @@ PyDoc_STRVAR(select_epoll_unregister__doc__,
 "    the target file descriptor of the operation");
 
 #define SELECT_EPOLL_UNREGISTER_METHODDEF    \
-    {"unregister", (PyCFunction)select_epoll_unregister, METH_FASTCALL|METH_KEYWORDS, select_epoll_unregister__doc__},
+    {"unregister", (PyCFunction)(void(*)(void))select_epoll_unregister, METH_FASTCALL|METH_KEYWORDS, select_epoll_unregister__doc__},
 
 static PyObject *
 select_epoll_unregister_impl(pyEpoll_Object *self, int fd);
@@ -667,11 +779,15 @@ select_epoll_unregister(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {"O&:unregister", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "unregister", 0};
+    PyObject *argsbuf[1];
     int fd;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        fildes_converter, &fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!fildes_converter(args[0], &fd)) {
         goto exit;
     }
     return_value = select_epoll_unregister_impl(self, fd);
@@ -700,7 +816,7 @@ PyDoc_STRVAR(select_epoll_poll__doc__,
 "as a list of (fd, events) 2-tuples.");
 
 #define SELECT_EPOLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)select_epoll_poll, METH_FASTCALL|METH_KEYWORDS, select_epoll_poll__doc__},
+    {"poll", (PyCFunction)(void(*)(void))select_epoll_poll, METH_FASTCALL|METH_KEYWORDS, select_epoll_poll__doc__},
 
 static PyObject *
 select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
@@ -711,14 +827,35 @@ select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"timeout", "maxevents", NULL};
-    static _PyArg_Parser _parser = {"|Oi:poll", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "poll", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *timeout_obj = Py_None;
     int maxevents = -1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &timeout_obj, &maxevents)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        timeout_obj = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    maxevents = _PyLong_AsInt(args[1]);
+    if (maxevents == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = select_epoll_poll_impl(self, timeout_obj, maxevents);
 
 exit:
@@ -756,7 +893,7 @@ PyDoc_STRVAR(select_epoll___exit____doc__,
 "\n");
 
 #define SELECT_EPOLL___EXIT___METHODDEF    \
-    {"__exit__", (PyCFunction)select_epoll___exit__, METH_FASTCALL, select_epoll___exit____doc__},
+    {"__exit__", (PyCFunction)(void(*)(void))select_epoll___exit__, METH_FASTCALL, select_epoll___exit____doc__},
 
 static PyObject *
 select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
@@ -770,11 +907,22 @@ select_epoll___exit__(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
     PyObject *exc_value = Py_None;
     PyObject *exc_tb = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "__exit__",
-        0, 3,
-        &exc_type, &exc_value, &exc_tb)) {
+    if (!_PyArg_CheckPositional("__exit__", nargs, 0, 3)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    exc_type = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    exc_value = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    exc_tb = args[2];
+skip_optional:
     return_value = select_epoll___exit___impl(self, exc_type, exc_value, exc_tb);
 
 exit:
@@ -893,7 +1041,13 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:fromfd", &fd)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = select_kqueue_fromfd_impl(type, fd);
@@ -922,7 +1076,7 @@ PyDoc_STRVAR(select_kqueue_control__doc__,
 "    This accepts floats for smaller timeouts, too.");
 
 #define SELECT_KQUEUE_CONTROL_METHODDEF    \
-    {"control", (PyCFunction)select_kqueue_control, METH_FASTCALL, select_kqueue_control__doc__},
+    {"control", (PyCFunction)(void(*)(void))select_kqueue_control, METH_FASTCALL, select_kqueue_control__doc__},
 
 static PyObject *
 select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
@@ -936,10 +1090,24 @@ select_kqueue_control(kqueue_queue_Object *self, PyObject *const *args, Py_ssize
     int maxevents;
     PyObject *otimeout = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, "Oi|O:control",
-        &changelist, &maxevents, &otimeout)) {
+    if (!_PyArg_CheckPositional("control", nargs, 2, 3)) {
         goto exit;
     }
+    changelist = args[0];
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    maxevents = _PyLong_AsInt(args[1]);
+    if (maxevents == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    otimeout = args[2];
+skip_optional:
     return_value = select_kqueue_control_impl(self, changelist, maxevents, otimeout);
 
 exit:
@@ -1047,4 +1215,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=561bec8bcb0e00c5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=03041f3d09b04a3d input=a9049054013a1b77]*/

@@ -110,7 +110,7 @@ class TracebackCases(unittest.TestCase):
         # Test that tracebacks are correctly printed for encoded source files:
         # - correct line number (Issue2384)
         # - respect file encoding (Issue3975)
-        import tempfile, sys, subprocess, os
+        import sys, subprocess
 
         # The spawned subprocess has its stdout redirected to a PIPE, and its
         # encoding may be different from the current interpreter, on Windows

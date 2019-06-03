@@ -1,5 +1,6 @@
 import math
 import unittest
+import os
 import sys
 from unittest.mock import Mock, MagicMock, _magics
 
@@ -293,10 +294,18 @@ class TestMockingMagicMethods(unittest.TestCase):
         # how to test __sizeof__ ?
 
 
+    def test_magic_methods_fspath(self):
+        mock = MagicMock()
+        expected_path = mock.__fspath__()
+        mock.reset_mock()
+
+        self.assertEqual(os.fspath(mock), expected_path)
+        mock.__fspath__.assert_called_once()
+
+
     def test_magic_methods_and_spec(self):
         class Iterable(object):
-            def __iter__(self):
-                pass
+            def __iter__(self): pass
 
         mock = Mock(spec=Iterable)
         self.assertRaises(AttributeError, lambda: mock.__iter__)
@@ -320,8 +329,7 @@ class TestMockingMagicMethods(unittest.TestCase):
 
     def test_magic_methods_and_spec_set(self):
         class Iterable(object):
-            def __iter__(self):
-                pass
+            def __iter__(self): pass
 
         mock = Mock(spec_set=Iterable)
         self.assertRaises(AttributeError, lambda: mock.__iter__)

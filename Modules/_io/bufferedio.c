@@ -9,7 +9,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 #include "pythread.h"
 #include "_iomodule.h"
@@ -606,16 +607,6 @@ buffered_isatty(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_INITIALIZED(self)
     return PyObject_CallMethodObjArgs(self->raw, _PyIO_str_isatty, NULL);
-}
-
-/* Serialization */
-
-static PyObject *
-buffered_getstate(buffered *self, PyObject *Py_UNUSED(ignored))
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot serialize '%s' object", Py_TYPE(self)->tp_name);
-    return NULL;
 }
 
 /* Forward decls */
@@ -2337,10 +2328,10 @@ PyTypeObject PyBufferedIOBase_Type = {
     0,                          /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     0,                          /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2351,8 +2342,7 @@ PyTypeObject PyBufferedIOBase_Type = {
     0,                          /*tp_getattro*/
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_FINALIZE,  /*tp_flags*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
     bufferediobase_doc,         /* tp_doc */
     0,                          /* tp_traverse */
     0,                          /* tp_clear */
@@ -2394,7 +2384,6 @@ static PyMethodDef bufferedreader_methods[] = {
     {"fileno", (PyCFunction)buffered_fileno, METH_NOARGS},
     {"isatty", (PyCFunction)buffered_isatty, METH_NOARGS},
     {"_dealloc_warn", (PyCFunction)buffered_dealloc_warn, METH_O},
-    {"__getstate__", (PyCFunction)buffered_getstate, METH_NOARGS},
 
     _IO__BUFFERED_READ_METHODDEF
     _IO__BUFFERED_PEEK_METHODDEF
@@ -2429,10 +2418,10 @@ PyTypeObject PyBufferedReader_Type = {
     sizeof(buffered),           /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     (destructor)buffered_dealloc,     /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
+    0,                          /*tp_as_async*/
     (reprfunc)buffered_repr,    /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2444,7 +2433,7 @@ PyTypeObject PyBufferedReader_Type = {
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE, /*tp_flags*/
+        | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
     _io_BufferedReader___init____doc__, /* tp_doc */
     (traverseproc)buffered_traverse, /* tp_traverse */
     (inquiry)buffered_clear,    /* tp_clear */
@@ -2485,7 +2474,6 @@ static PyMethodDef bufferedwriter_methods[] = {
     {"fileno", (PyCFunction)buffered_fileno, METH_NOARGS},
     {"isatty", (PyCFunction)buffered_isatty, METH_NOARGS},
     {"_dealloc_warn", (PyCFunction)buffered_dealloc_warn, METH_O},
-    {"__getstate__", (PyCFunction)buffered_getstate, METH_NOARGS},
 
     _IO_BUFFEREDWRITER_WRITE_METHODDEF
     _IO__BUFFERED_TRUNCATE_METHODDEF
@@ -2516,10 +2504,10 @@ PyTypeObject PyBufferedWriter_Type = {
     sizeof(buffered),           /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     (destructor)buffered_dealloc,     /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
+    0,                          /*tp_as_async*/
     (reprfunc)buffered_repr,    /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2531,7 +2519,7 @@ PyTypeObject PyBufferedWriter_Type = {
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,   /*tp_flags*/
+        | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
     _io_BufferedWriter___init____doc__, /* tp_doc */
     (traverseproc)buffered_traverse, /* tp_traverse */
     (inquiry)buffered_clear,    /* tp_clear */
@@ -2579,8 +2567,6 @@ static PyMethodDef bufferedrwpair_methods[] = {
     {"close", (PyCFunction)bufferedrwpair_close, METH_NOARGS},
     {"isatty", (PyCFunction)bufferedrwpair_isatty, METH_NOARGS},
 
-    {"__getstate__", (PyCFunction)buffered_getstate, METH_NOARGS},
-
     {NULL, NULL}
 };
 
@@ -2595,10 +2581,10 @@ PyTypeObject PyBufferedRWPair_Type = {
     sizeof(rwpair),            /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     (destructor)bufferedrwpair_dealloc,     /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2610,7 +2596,7 @@ PyTypeObject PyBufferedRWPair_Type = {
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,   /* tp_flags */
+        | Py_TPFLAGS_HAVE_GC,   /* tp_flags */
     _io_BufferedRWPair___init____doc__, /* tp_doc */
     (traverseproc)bufferedrwpair_traverse, /* tp_traverse */
     (inquiry)bufferedrwpair_clear, /* tp_clear */
@@ -2652,7 +2638,6 @@ static PyMethodDef bufferedrandom_methods[] = {
     {"fileno", (PyCFunction)buffered_fileno, METH_NOARGS},
     {"isatty", (PyCFunction)buffered_isatty, METH_NOARGS},
     {"_dealloc_warn", (PyCFunction)buffered_dealloc_warn, METH_O},
-    {"__getstate__", (PyCFunction)buffered_getstate, METH_NOARGS},
 
     {"flush", (PyCFunction)buffered_flush, METH_NOARGS},
 
@@ -2690,10 +2675,10 @@ PyTypeObject PyBufferedRandom_Type = {
     sizeof(buffered),           /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     (destructor)buffered_dealloc,     /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
+    0,                          /*tp_as_async*/
     (reprfunc)buffered_repr,    /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2705,7 +2690,7 @@ PyTypeObject PyBufferedRandom_Type = {
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,   /*tp_flags*/
+        | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
     _io_BufferedRandom___init____doc__, /* tp_doc */
     (traverseproc)buffered_traverse, /* tp_traverse */
     (inquiry)buffered_clear,    /* tp_clear */

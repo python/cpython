@@ -475,7 +475,7 @@ Document that `asyncio.wait()` does not cancel its futures on timeout.
 .. nonce: S1LGPa
 .. section: Documentation
 
-Document PEP 567 changes to asyncio.
+Document :pep:`567` changes to asyncio.
 
 ..
 

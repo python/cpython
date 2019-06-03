@@ -1,1 +1,0 @@
-Add a ``toreadonly()`` method to memoryviews.

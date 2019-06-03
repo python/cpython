@@ -70,11 +70,16 @@ Iterator                                         Arguments                  Resu
 :func:`permutations`                             p[, r]                     r-length tuples, all possible orderings, no repeated elements
 :func:`combinations`                             p, r                       r-length tuples, in sorted order, no repeated elements
 :func:`combinations_with_replacement`            p, r                       r-length tuples, in sorted order, with repeated elements
-``product('ABCD', repeat=2)``                                               ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
-``permutations('ABCD', 2)``                                                 ``AB AC AD BA BC BD CA CB CD DA DB DC``
-``combinations('ABCD', 2)``                                                 ``AB AC AD BC BD CD``
-``combinations_with_replacement('ABCD', 2)``                                ``AA AB AC AD BB BC BD CC CD DD``
 ==============================================   ====================       =============================================================
+
+==============================================   =============================================================
+Examples                                         Results
+==============================================   =============================================================
+``product('ABCD', repeat=2)``                    ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
+``permutations('ABCD', 2)``                      ``AB AC AD BA BC BD CA CB CD DA DB DC``
+``combinations('ABCD', 2)``                      ``AB AC AD BC BD CD``
+``combinations_with_replacement('ABCD', 2)``      ``AA AB AC AD BB BC BD CC CD DD``
+==============================================   =============================================================
 
 
 .. _itertools-functions:
@@ -822,7 +827,7 @@ which incur interpreter overhead.
        "List unique elements, preserving order. Remember only the element just seen."
        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
        # unique_justseen('ABBCcAD', str.lower) --> A B C A D
-       return map(next, map(itemgetter(1), groupby(iterable, key)))
+       return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
 
    def iter_except(func, exception, first=None):
        """ Call a function repeatedly until an exception is raised.

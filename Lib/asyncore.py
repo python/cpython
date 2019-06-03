@@ -262,8 +262,6 @@ class dispatcher:
                 status.append(repr(self.addr))
         return '<%s at %#x>' % (' '.join(status), id(self))
 
-    __str__ = __repr__
-
     def add_channel(self, map=None):
         #self.log_info('adding channel %s' % self)
         if map is None:
