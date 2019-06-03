@@ -245,7 +245,7 @@ def _runtest_inner2(ns, test_name):
         gc.garbage.clear()
 
     support.reap_children()
-    sys._setopcacheminruns(1)
+    sys._setopcacheminruns(minruns)
     return refleak
 
 
