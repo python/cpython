@@ -218,13 +218,6 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
-    interp->ceval.pending.lock = PyThread_allocate_lock();
-    if (interp->ceval.pending.lock == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "failed to create interpreter ceval pending mutex");
-        return NULL;
-    }
-
     interp->eval_frame = _PyEval_EvalFrameDefault;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
@@ -351,10 +344,6 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     HEAD_UNLOCK(runtime);
     if (interp->id_mutex != NULL) {
         PyThread_free_lock(interp->id_mutex);
-    }
-    if (interp->ceval.pending.lock != NULL) {
-        PyThread_free_lock(interp->ceval.pending.lock);
-        interp->ceval.pending.lock = NULL;
     }
     PyMem_RawFree(interp);
 }
@@ -1025,7 +1014,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
             p->async_exc = exc;
             HEAD_UNLOCK(runtime);
             Py_XDECREF(old_exc);
-            _PyEval_SignalAsyncExc(&runtime->ceval, &interp->ceval);
+            _PyEval_SignalAsyncExc(&runtime->ceval);
             return 1;
         }
     }
@@ -1455,7 +1444,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     return 0;
 }
 
-static int
+static void
 _release_xidata(void *arg)
 {
     _PyCrossInterpreterData *data = (_PyCrossInterpreterData *)arg;
@@ -1463,21 +1452,42 @@ _release_xidata(void *arg)
         data->free(data->data);
     }
     Py_XDECREF(data->obj);
-    PyMem_Free(data);
-    return 0;
+}
+
+static void
+_call_in_interpreter(struct _gilstate_runtime_state *gilstate,
+                     PyInterpreterState *interp,
+                     void (*func)(void *), void *arg)
+{
+    /* We would use Py_AddPendingCall() if it weren't specific to the
+     * main interpreter (see bpo-33608).  In the meantime we take a
+     * naive approach.
+     */
+    PyThreadState *save_tstate = NULL;
+    if (interp != _PyRuntimeGILState_GetThreadState(gilstate)->interp) {
+        // XXX Using the "head" thread isn't strictly correct.
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        // XXX Possible GILState issues?
+        save_tstate = _PyThreadState_Swap(gilstate, tstate);
+    }
+
+    func(arg);
+
+    // Switch back.
+    if (save_tstate != NULL) {
+        _PyThreadState_Swap(gilstate, save_tstate);
+    }
 }
 
 void
 _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-
     if (data->data == NULL && data->obj == NULL) {
         // Nothing to release!
         return;
     }
 
-    // Get the original interpreter.
+    // Switch to the original interpreter.
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(data->interp);
     if (interp == NULL) {
         // The intepreter was already destroyed.
@@ -1486,28 +1496,10 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         }
         return;
     }
-    // XXX There's an ever-so-slight race here...
-    if (interp->finalizing) {
-        // XXX Someone leaked some memory...
-        return;
-    }
 
     // "Release" the data and/or the object.
-    _PyCrossInterpreterData *copied = PyMem_Malloc(sizeof(_PyCrossInterpreterData));
-    if (copied == NULL) {
-        PyErr_SetString(PyExc_MemoryError,
-                        "Not enough memory to preserve cross-interpreter data");
-        PyErr_Print();
-        return;
-    }
-    memcpy(copied, data, sizeof(_PyCrossInterpreterData));
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    int res = _PyEval_AddPendingCall(tstate,
-                                     &runtime->ceval, &interp->ceval,
-                                     0, _release_xidata, copied);
-    if (res != 0) {
-        // XXX Queue full or couldn't get lock.  Try again somehow?
-    }
+    struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
+    _call_in_interpreter(gilstate, interp, _release_xidata, data);
 }
 
 PyObject *
