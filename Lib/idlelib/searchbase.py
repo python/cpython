@@ -36,7 +36,7 @@ class SearchDialogBase:
         text (Text searched): set in open(), only used in subclasses().
         ent (ry): created in make_entry() called from create_entry().
         row (of grid): 0 in create_widgets(), +1 in make_entry/frame().
-        default_command: set in subclasses, used in create_widgers().
+        default_command: set in subclasses, used in create_widgets().
 
         title (of dialog): class attribute, override in subclasses.
         icon (of dialog): ditto, use unclear if cannot minimize dialog.
