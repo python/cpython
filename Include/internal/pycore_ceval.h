@@ -31,6 +31,9 @@ PyAPI_FUNC(void) _PyEval_SignalAsyncExc(
 PyAPI_FUNC(void) _PyEval_ReInitThreads(
     _PyRuntimeState *runtime);
 
+/* Private function */
+void _PyEval_Fini(void);
+
 #ifdef __cplusplus
 }
 #endif
