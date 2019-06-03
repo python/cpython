@@ -590,7 +590,7 @@ def multimode(data):
 
 # For describing population data where the end points are known to
 # be included in the data, the R7 inclusive method is a reasonable
-# choice.  Instead of the mean, it uses the mode of beta
+# choice.  Instead of the mean, it uses the mode of the beta
 # distribution for the interior points.  Per Hyndman & Fan, "One nice
 # property is that the vertices of Q7(p) divide the range into n - 1
 # intervals, and exactly 100p% of the intervals lie to the left of
@@ -600,7 +600,7 @@ def multimode(data):
 # unbiased, distribution-free alternative.  Also if needed, the
 # distribution-free approaches could be augmented by adding
 # method='normal'.  However, for now, the position is that fewer
-# options make for easier choices and than external packages can be
+# options make for easier choices and that external packages can be
 # used for anything more advanced.
 
 def quantiles(dist, *, n=4, method='exclusive'):
