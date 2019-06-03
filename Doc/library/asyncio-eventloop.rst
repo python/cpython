@@ -140,11 +140,17 @@ Running and stopping the loop
    The loop must not be running when this function is called.
    Any pending callbacks will be discarded.
 
-   This method clears all queues and shuts down the executor, but does
-   not wait for the executor to finish.
+   This method clears all queues and shuts down the default executor. By
+   default, it waits for the default executor to finish. Set
+   *loop.wait_executor_on_close* to ``False`` to not wait for the executor.
 
    This method is idempotent and irreversible.  No other methods
    should be called after the event loop is closed.
+
+   .. versionchanged:: 3.8
+      The method now waits for the default executor to finish by default.
+      Added *loop.wait_executor_on_close* attribute.
+
 
 .. coroutinemethod:: loop.shutdown_asyncgens()
 
