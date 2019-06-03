@@ -1,0 +1,3 @@
+Modify test_coroutines, test_cprofile, test_generators, test_raise, test_ssl
+and test_yield_from to use :func:`test.support.catch_unraisable_exception`
+rather than :func:`test.support.captured_stderr`.
