@@ -103,7 +103,14 @@ static long dxp[256];
 #endif
 
 /* per opcode cache */
+#ifdef Py_DEBUG
+// --with-pydebug is used to find memory leak.  opcache makes it harder.
+// So we disable opcache when Py_DEBUG is defined.
+// See bpo-37146
+#define OPCACHE_MIN_RUNS 0  /* disable opcache */
+#else
 #define OPCACHE_MIN_RUNS 1024  /* create opcache when code executed this time */
+#endif
 #define OPCACHE_STATS 0  /* Enable stats */
 
 #if OPCACHE_STATS
