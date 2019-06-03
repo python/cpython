@@ -171,7 +171,7 @@ class Timer:
         to one million.  The main statement, the setup statement and
         the timer function to be used are passed to the constructor.
         """
-        if (number == 0) or number is None:
+        if number == 0 or number is None:
             return self.autorange(target_time=self.target_time)
         it = itertools.repeat(None, number)
         gcold = gc.isenabled()
@@ -203,7 +203,7 @@ class Timer:
         interested in.  After that, you should look at the entire
         vector and apply common sense rather than statistics.
         """
-        if (number == 0) or number is None:
+        if number == 0 or number is None:
             return self.autorange(target_time=self.target_time)
         r = []
         for i in range(repeat):

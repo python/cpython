@@ -171,10 +171,10 @@ class TestTimeit(unittest.TestCase):
         self.assertEqual(self.fake_timer.setup_calls, repeat if number > 0
                 else 1)
         # self.assertEqual(self.fake_timer.setup_calls, )
-        self.assertEqual(self.fake_timer.count, (repeat * number) if number
-                else 1)
-        self.assertEqual(delta_times, repeat * [float(number)] if number
-                else (1, 1.0))
+        self.assertEqual(self.fake_timer.count,
+                         (repeat * number) if number else 1)
+        self.assertEqual(delta_times,
+                         repeat * [float(number)] if number else (1, 1.0))
 
     # Takes too long to run in debug build.
     #def test_repeat_default(self):
@@ -222,7 +222,7 @@ class TestTimeit(unittest.TestCase):
 
     def test_repeat_function_with_iters(self):
         delta_times = timeit.repeat(self.fake_stmt, self.fake_setup, number=1,
-                timer=FakeTimer())
+                                    timer=FakeTimer())
         self.assertEqual(delta_times, [1.0, 1.0, 1.0, 1.0, 1.0])
 
     def assert_exc_string(self, exc_string, expected_exc_name):
@@ -370,7 +370,7 @@ class TestTimeit(unittest.TestCase):
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
     def autorange(self, seconds_per_increment=1/1024, callback=None,
-                    target_time=0.2):
+                  target_time=0.2):
         timer = FakeTimer(seconds_per_increment=seconds_per_increment)
         t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=timer)
         return t.autorange(callback, target_time)
@@ -407,28 +407,6 @@ class TestTimeit(unittest.TestCase):
                     100 0.098
                     200 0.195
                     500 0.488
-        ''')
-        self.assertEqual(s.getvalue(), expected)
-
-    def test_autorange_with_callback_and_target_time(self):
-        def callback(a, b):
-            print("{} {:.3f}".format(a, b))
-        with captured_stdout() as s:
-            num_loops, time_taken = self.autorange(callback=callback,
-                                                    target_time=0.6)
-        self.assertEqual(num_loops, 1000)
-        self.assertEqual(time_taken, 1000/1024)
-        expected = dedent('''\
-                    1 0.001
-                    2 0.002
-                    5 0.005
-                    10 0.010
-                    20 0.020
-                    50 0.049
-                    100 0.098
-                    200 0.195
-                    500 0.488
-                    1000 0.977
         ''')
         self.assertEqual(s.getvalue(), expected)
 
