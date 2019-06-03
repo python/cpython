@@ -209,7 +209,7 @@ def classify_class_attrs(object):
     return results
 
 def sort_attributes(attrs, object):
-    'Sort the attrs list in-place by _fields and then alphabetically by name'
+    'Sort the attrs list in-place by _fields and then alphabetically by name.'
     # This allows data descriptors to be ordered according
     # to a _fields attribute if present.
     fields = getattr(object, '_fields', [])
@@ -395,7 +395,7 @@ class Doc:
     def getdocloc(self, object,
                   basedir=os.path.join(sys.base_exec_prefix, "lib",
                                        "python%d.%d" %  sys.version_info[:2])):
-        """Return the location of module docs or None"""
+        """Return the location of module docs or None."""
 
         try:
             file = inspect.getabsfile(object)
@@ -997,7 +997,7 @@ class HTMLDoc(Doc):
             return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
 
     def docdata(self, object, name=None, mod=None, cl=None):
-        """Produce html documentation for a data descriptor."""
+        """Produce HTML documentation for a data descriptor."""
         results = []
         push = results.append
 
@@ -1454,7 +1454,7 @@ location listed above.
         return line
 
 class _PlainTextDoc(TextDoc):
-    """Subclass of TextDoc which overrides string styling"""
+    """Subclass of TextDoc which overrides string styling."""
     def bold(self, text):
         return text
 
@@ -2008,7 +2008,7 @@ Here is a list of the Python keywords.  Enter any keyword to get more help.
     def listsymbols(self):
         self.output.write('''
 Here is a list of the punctuation symbols which Python assigns special meaning
-to. Enter any symbol to get more help.
+to.  Enter any symbol to get more help.
 
 ''')
         self.list(self.symbols.keys())
@@ -2226,7 +2226,7 @@ def _start_server(urlhandler, hostname, port):
         #...    webbrowser.open(serverthread.url)
         #True
 
-        Let the server do its thing. We just need to monitor its status.
+        Let the server do its thing.  We just need to monitor its status.
         Use time.sleep so the loop doesn't hog the CPU.
 
         >>> starttime = time.monotonic()
@@ -2323,7 +2323,7 @@ def _start_server(urlhandler, hostname, port):
             self.url = 'http://%s:%d/' % (self.host, self.port)
 
         def stop(self):
-            """Stop the server and this thread nicely"""
+            """Stop the server and this thread nicely."""
             self.docserver.quit = True
             self.join()
             # explicitly break a reference cycle: DocServer.callback
@@ -2637,7 +2637,7 @@ def ispath(x):
     return isinstance(x, str) and x.find(os.sep) >= 0
 
 def _get_revised_path(given_path, argv0):
-    """Ensures current directory is on returned path, and argv0 directory is not
+    """Ensures current directory is on returned path, and argv0 directory is not.
 
     Exception: argv0 dir is left alone if it's also pydoc's directory.
 
@@ -2735,7 +2735,7 @@ def cli():
     Python keyword, topic, function, module, or package, or a dotted
     reference to a class or function within a module or module in a
     package.  If <name> contains a '{sep}', it is used as the path to a
-    Python source file to document. If name is 'keywords', 'topics',
+    Python source file to document.  If name is 'keywords', 'topics',
     or 'modules', a listing of these things is displayed.
 
 {cmd} -k <keyword>
