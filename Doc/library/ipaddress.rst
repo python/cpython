@@ -221,7 +221,7 @@ write code that handles both IP versions correctly.  Address objects are
    3. An integer packed into a :class:`bytes` object of length 16, big-endian.
    4. String IPv6 address may contain scope (or zone) id in format <address>%<scope_id>.
       Scope id could not be blank or negative integer.
-      See :RFC: `4007` for details. 
+      See :RFC: `4007` for details.
 
    >>> ipaddress.IPv6Address('2001:db8::1000')
    IPv6Address('2001:db8::1000')
@@ -276,7 +276,7 @@ write code that handles both IP versions correctly.  Address objects are
    .. attribute:: scope_id
 
       For addresses that appear to be scoped addresses (containing
-      ``%<scope_id>``) as defined by :RFC:`4007`, this attribute will consist
+      ``%<scope_id>``) as defined by :RFC:`4007`, this property will consist
       scope id.  For any other address, this property will be ``None``.
 
    .. attribute:: sixtofour
