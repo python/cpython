@@ -2051,15 +2051,17 @@ RuntimeError: generator ignored GeneratorExit
 
 Our ill-behaved code should be invoked during GC:
 
->>> import sys, io
->>> old, sys.stderr = sys.stderr, io.StringIO()
->>> g = f()
->>> next(g)
->>> del g
->>> "RuntimeError: generator ignored GeneratorExit" in sys.stderr.getvalue()
+>>> with support.catch_unraisable_exception() as cm:
+...     g = f()
+...     next(g)
+...     del g
+...
+...     cm.unraisable.exc_type == RuntimeError
+...     "generator ignored GeneratorExit" in str(cm.unraisable.exc_value)
+...     cm.unraisable.exc_traceback is not None
 True
->>> sys.stderr = old
-
+True
+True
 
 And errors thrown during closing should propagate:
 
