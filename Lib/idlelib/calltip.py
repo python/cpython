@@ -145,10 +145,10 @@ def get_argspec(ob):
             return _invalid_method
 
     if '/' in argspec:
-        """Using AC's positional argument should add the explain"""
+        # Using AC's positional argument should add explanation.
         argspec += _argument_positional
     if isinstance(fob, type) and argspec == '()':
-        """fob with no argument, use default callable argspec"""
+        # If fob has no argument, use default callable argspec.
         argspec = _default_callable_argspec
 
     lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
