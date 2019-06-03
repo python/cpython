@@ -1796,9 +1796,6 @@ class _BaseV6:
         Returns:
             (addr, scope_id) tuple.
         """
-        if '%' not in ip_str:
-            return ip_str, None
-
         addr, sep, scope_id = ip_str.partition('%')
         if not sep:
             scope_id = None
