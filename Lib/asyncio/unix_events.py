@@ -1230,12 +1230,15 @@ class ThreadedChildWatcher(AbstractChildWatcher):
 
     def __init__(self):
         self._pid_counter = itertools.count(0)
+        self._threads = {}
 
     def is_active(self):
         return True
 
     def close(self):
-        pass
+        threads = list(self._threads.values())
+        for thread in threads:
+            thread.join()
 
     def __enter__(self):
         return self
@@ -1249,6 +1252,7 @@ class ThreadedChildWatcher(AbstractChildWatcher):
                                   name=f"waitpid-{next(self._pid_counter)}",
                                   args=(loop, pid, callback, args),
                                   daemon=True)
+        self._threads[pid] = thread
         thread.start()
 
     def remove_child_handler(self, pid):
@@ -1283,6 +1287,8 @@ class ThreadedChildWatcher(AbstractChildWatcher):
             logger.warning("Loop %r that handles pid %r is closed", loop, pid)
         else:
             loop.call_soon_threadsafe(callback, pid, returncode, *args)
+
+        self._threads.pop(expected_pid)
 
 
 class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
