@@ -375,6 +375,17 @@ class TestTimeit(unittest.TestCase):
         t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=timer)
         return t.autorange(callback, target_time)
 
+    def autorange_with_callback(self, loop_count, expected_output,
+                                target_time=0.2):
+        def callback(a, b):
+            print("{} {:.3f}".format(a, b))
+        with captured_stdout() as s:
+            num_loops, time_taken = self.autorange(callback=callback,
+                                                   target_time=target_time)
+            self.assertEqual(num_loops, loop_count)
+            self.assertEqual(time_taken, loop_count/1024)
+            self.assertEqual(s.getvalue(), expected_output)
+
     def test_autorange(self):
         num_loops, time_taken = self.autorange()
         self.assertEqual(num_loops, 500)
@@ -391,12 +402,6 @@ class TestTimeit(unittest.TestCase):
         self.assertEqual(time_taken, 1.0)
 
     def test_autorange_with_callback(self):
-        def callback(a, b):
-            print("{} {:.3f}".format(a, b))
-        with captured_stdout() as s:
-            num_loops, time_taken = self.autorange(callback=callback)
-        self.assertEqual(num_loops, 500)
-        self.assertEqual(time_taken, 500/1024)
         expected = dedent('''\
                     1 0.001
                     2 0.002
@@ -408,7 +413,22 @@ class TestTimeit(unittest.TestCase):
                     200 0.195
                     500 0.488
         ''')
-        self.assertEqual(s.getvalue(), expected)
+        self.autorange_with_callback(500, expected)
+
+    def test_autorange_with_callback_and_target_time(self):
+        expected = dedent('''\
+                    1 0.001
+                    2 0.002
+                    5 0.005
+                    10 0.010
+                    20 0.020
+                    50 0.049
+                    100 0.098
+                    200 0.195
+                    500 0.488
+                    1000 0.977
+        ''')
+        self.autorange_with_callback(1000, expected, target_time=0.6)
 
 
 if __name__ == '__main__':
