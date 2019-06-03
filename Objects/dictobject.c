@@ -1080,20 +1080,21 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
         return 0;
     }
 
-    if (_PyDict_HasSplitTable(mp)) {
-        mp->ma_values[ix] = value;
-        if (old_value == NULL) {
-            /* pending state */
-            assert(ix == mp->ma_used);
-            mp->ma_used++;
+    if (old_value != value) {
+        if (_PyDict_HasSplitTable(mp)) {
+            mp->ma_values[ix] = value;
+            if (old_value == NULL) {
+                /* pending state */
+                assert(ix == mp->ma_used);
+                mp->ma_used++;
+            }
         }
+        else {
+            assert(old_value != NULL);
+            DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
+        }
+        mp->ma_version_tag = DICT_NEXT_VERSION();
     }
-    else {
-        assert(old_value != NULL);
-        DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
-    }
-
-    mp->ma_version_tag = DICT_NEXT_VERSION();
     Py_XDECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
     ASSERT_CONSISTENT(mp);
     Py_DECREF(key);

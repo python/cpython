@@ -860,6 +860,10 @@ Optimizations
   methods up to 20--50%.  (Contributed by Serhiy Storchaka in :issue:`23867`,
   :issue:`35582` and :issue:`36127`.)
 
+* ``LOAD_GLOBAL`` instruction now uses new "per opcode cache" mechanism.
+  It is about 40% faster now.  (Contributed by Yury Selivanov and Inada Naoki in
+  :issue:`26219`.)
+
 
 Build and C API Changes
 =======================
