@@ -2032,11 +2032,17 @@ class CoroutineTest(unittest.TestCase):
     def test_fatal_coro_warning(self):
         # Issue 27811
         async def func(): pass
-        with warnings.catch_warnings(), support.captured_stderr() as stderr:
+        with warnings.catch_warnings(), \
+             support.catch_unraisable_exception() as cm:
             warnings.filterwarnings("error")
-            func()
+            coro = func()
+            # only store repr() to avoid keeping the coroutine alive
+            coro_repr = repr(coro)
+            coro = None
             support.gc_collect()
-        self.assertIn("was never awaited", stderr.getvalue())
+
+            self.assertIn("was never awaited", str(cm.unraisable.exc_value))
+            self.assertEqual(repr(cm.unraisable.object), coro_repr)
 
     def test_for_assign_raising_stop_async_iteration(self):
         class BadTarget:
