@@ -11,6 +11,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"
+#include "pycore_code.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
@@ -100,6 +101,20 @@ static long dxpairs[257][256];
 static long dxp[256];
 #endif
 #endif
+
+/* per opcode cache */
+#define OPCACHE_MIN_RUNS 1024  /* create opcache when code executed this time */
+#define OPCACHE_STATS 0  /* Enable stats */
+
+#if OPCACHE_STATS
+static size_t opcache_code_objects = 0;
+static size_t opcache_code_objects_extra_mem = 0;
+
+static size_t opcache_global_opts = 0;
+static size_t opcache_global_hits = 0;
+static size_t opcache_global_misses = 0;
+#endif
+
 
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
@@ -223,6 +238,35 @@ exit_thread_if_finalizing(PyThreadState *tstate)
         drop_gil(&runtime->ceval, &interp->ceval, tstate);
         PyThread_exit_thread();
     }
+}
+
+void
+_PyEval_Fini(void)
+{
+#if OPCACHE_STATS
+    fprintf(stderr, "-- Opcode cache number of objects  = %zd\n",
+            opcache_code_objects);
+
+    fprintf(stderr, "-- Opcode cache total extra mem    = %zd\n",
+            opcache_code_objects_extra_mem);
+
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "-- Opcode cache LOAD_GLOBAL hits   = %zd (%d%%)\n",
+            opcache_global_hits,
+            (int) (100.0 * opcache_global_hits /
+                (opcache_global_hits + opcache_global_misses)));
+
+    fprintf(stderr, "-- Opcode cache LOAD_GLOBAL misses = %zd (%d%%)\n",
+            opcache_global_misses,
+            (int) (100.0 * opcache_global_misses /
+                (opcache_global_hits + opcache_global_misses)));
+
+    fprintf(stderr, "-- Opcode cache LOAD_GLOBAL opts   = %zd\n",
+            opcache_global_opts);
+
+    fprintf(stderr, "\n");
+#endif
 }
 
 void
@@ -799,6 +843,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     const _Py_CODEUNIT *first_instr;
     PyObject *names;
     PyObject *consts;
+    _PyOpcache *co_opcache;
 
 #ifdef LLTRACE
     _Py_IDENTIFIER(__ltrace__);
@@ -1061,6 +1106,49 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         Py_XDECREF(traceback); \
     } while(0)
 
+    /* macros for opcode cache */
+#define OPCACHE_CHECK() \
+    do { \
+        co_opcache = NULL; \
+        if (co->co_opcache != NULL) { \
+            unsigned char co_opt_offset = \
+                co->co_opcache_map[next_instr - first_instr]; \
+            if (co_opt_offset > 0) { \
+                assert(co_opt_offset <= co->co_opcache_size); \
+                co_opcache = &co->co_opcache[co_opt_offset - 1]; \
+                assert(co_opcache != NULL); \
+                if (co_opcache->optimized < 0) { \
+                    co_opcache = NULL; \
+                } \
+            } \
+        } \
+    } while (0)
+
+#if OPCACHE_STATS
+
+#define OPCACHE_STAT_GLOBAL_HIT() \
+    do { \
+        if (co->co_opcache != NULL) opcache_global_hits++; \
+    } while (0)
+
+#define OPCACHE_STAT_GLOBAL_MISS() \
+    do { \
+        if (co->co_opcache != NULL) opcache_global_misses++; \
+    } while (0)
+
+#define OPCACHE_STAT_GLOBAL_OPT() \
+    do { \
+        if (co->co_opcache != NULL) opcache_global_opts++; \
+    } while (0)
+
+#else /* OPCACHE_STATS */
+
+#define OPCACHE_STAT_GLOBAL_HIT()
+#define OPCACHE_STAT_GLOBAL_MISS()
+#define OPCACHE_STAT_GLOBAL_OPT()
+
+#endif
+
 /* Start of code */
 
     /* push frame */
@@ -1142,6 +1230,20 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     f->f_stacktop = NULL;       /* remains NULL unless yield suspends frame */
     f->f_executing = 1;
 
+    if (co->co_opcache_flag < OPCACHE_MIN_RUNS) {
+        co->co_opcache_flag++;
+        if (co->co_opcache_flag == OPCACHE_MIN_RUNS) {
+            if (_PyCode_InitOpcache(co) < 0) {
+                return NULL;
+            }
+#if OPCACHE_STATS
+            opcache_code_objects_extra_mem +=
+                PyBytes_Size(co->co_code) / sizeof(_Py_CODEUNIT) +
+                sizeof(_PyOpcache) * co->co_opcache_size;
+            opcache_code_objects++;
+#endif
+        }
+    }
 
 #ifdef LLTRACE
     lltrace = _PyDict_GetItemId(f->f_globals, &PyId___ltrace__) != NULL;
@@ -2451,11 +2553,30 @@ main_loop:
         }
 
         case TARGET(LOAD_GLOBAL): {
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name;
             PyObject *v;
             if (PyDict_CheckExact(f->f_globals)
                 && PyDict_CheckExact(f->f_builtins))
             {
+                OPCACHE_CHECK();
+                if (co_opcache != NULL && co_opcache->optimized > 0) {
+                    _PyOpcache_LoadGlobal *lg = &co_opcache->u.lg;
+
+                    if (lg->globals_ver ==
+                            ((PyDictObject *)f->f_globals)->ma_version_tag
+                        && lg->builtins_ver ==
+                           ((PyDictObject *)f->f_builtins)->ma_version_tag)
+                    {
+                        PyObject *ptr = lg->ptr;
+                        OPCACHE_STAT_GLOBAL_HIT();
+                        assert(ptr != NULL);
+                        Py_INCREF(ptr);
+                        PUSH(ptr);
+                        DISPATCH();
+                    }
+                }
+
+                name = GETITEM(names, oparg);
                 v = _PyDict_LoadGlobal((PyDictObject *)f->f_globals,
                                        (PyDictObject *)f->f_builtins,
                                        name);
@@ -2468,12 +2589,32 @@ main_loop:
                     }
                     goto error;
                 }
+
+                if (co_opcache != NULL) {
+                    _PyOpcache_LoadGlobal *lg = &co_opcache->u.lg;
+
+                    if (co_opcache->optimized == 0) {
+                        /* Wasn't optimized before. */
+                        OPCACHE_STAT_GLOBAL_OPT();
+                    } else {
+                        OPCACHE_STAT_GLOBAL_MISS();
+                    }
+
+                    co_opcache->optimized = 1;
+                    lg->globals_ver =
+                        ((PyDictObject *)f->f_globals)->ma_version_tag;
+                    lg->builtins_ver =
+                        ((PyDictObject *)f->f_builtins)->ma_version_tag;
+                    lg->ptr = v; /* borrowed */
+                }
+
                 Py_INCREF(v);
             }
             else {
                 /* Slow-path if globals or builtins is not a dict */
 
                 /* namespace 1: globals */
+                name = GETITEM(names, oparg);
                 v = PyObject_GetItem(f->f_globals, name);
                 if (v == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
