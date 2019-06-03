@@ -260,6 +260,11 @@ int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObjec
     }
     PyObject* weakref;
 
+    if (!connection->cursors) {
+        PyErr_SetString(pysqlite_ProgrammingError, "Could not get the cursors list.");
+        return 0;
+    }
+
     weakref = PyWeakref_NewRef((PyObject*)cursor, NULL);
     if (!weakref) {
         goto error;
