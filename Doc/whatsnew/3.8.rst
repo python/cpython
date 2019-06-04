@@ -760,6 +760,9 @@ unittest
   :meth:`~unittest.TestCase.setUpClass()`.
   (Contributed by Lisa Roach in :issue:`24412`.)
 
+* Several mock assert functions now also print a list of actual calls upon
+  failure. (Contributed by Petter Strandmark in :issue:`35047`.)
+
 venv
 ----
 
