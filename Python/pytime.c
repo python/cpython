@@ -401,7 +401,11 @@ static int
 _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
                    long unit_to_ns)
 {
-    if (PyFloat_Check(obj)) {
+    if (!PyFloat_Check(obj) && !PyLong_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError, "an integer or float is required.");
+        return -1;
+    }
+    else if (PyFloat_Check(obj)) {
         double d;
         d = PyFloat_AsDouble(obj);
         if (Py_IS_NAN(d)) {
