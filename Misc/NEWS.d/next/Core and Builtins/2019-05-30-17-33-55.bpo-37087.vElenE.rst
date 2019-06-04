@@ -1,1 +1,0 @@
-Add native thread ID (TID) support to OpenBSD.

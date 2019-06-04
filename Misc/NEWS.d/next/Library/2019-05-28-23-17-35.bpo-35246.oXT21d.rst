@@ -1,1 +1,0 @@
-Make :func:`asyncio.create_subprocess_exec` accept path-like arguments.

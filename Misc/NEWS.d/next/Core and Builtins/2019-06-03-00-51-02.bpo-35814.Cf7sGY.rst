@@ -1,2 +1,0 @@
-Allow unpacking in the right hand side of annotated assignments. In
-particular, ``t: Tuple[int, ...] = x, y, *z`` is now allowed.

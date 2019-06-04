@@ -1,2 +1,0 @@
-Changed :func:`unittest.mock.patch.dict` to return the patched
-dictionary when used as context manager. Patch by Vadim Tsander.
