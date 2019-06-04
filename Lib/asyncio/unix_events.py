@@ -1236,15 +1236,21 @@ class ThreadedChildWatcher(AbstractChildWatcher):
         return True
 
     def close(self):
-        threads = list(self._threads.values())
-        for thread in threads:
-            thread.join()
+        pass
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+    def __del__(self, _warn=warnings.warn):
+        threads = [thread for thread in list(self._threads.values())
+                   if thread.is_alive()]
+        if threads:
+            _warn(f"{self.__class__} has registered but not finished child processes",
+                  ResourceWarning,
+                  source=self)
 
     def add_child_handler(self, pid, callback, *args):
         loop = events.get_running_loop()
@@ -1289,6 +1295,8 @@ class ThreadedChildWatcher(AbstractChildWatcher):
             loop.call_soon_threadsafe(callback, pid, returncode, *args)
 
         self._threads.pop(expected_pid)
+        import time
+        time.sleep(0.5)
 
 
 class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
