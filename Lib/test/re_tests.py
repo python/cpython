@@ -483,7 +483,6 @@ xyz""", SUCCEED, 'found', 'abc'),
 xyzabc
 123""", SUCCEED, 'found', 'abc'),
 
-    # using the s embedded pattern modifier
 
 
     # test \w, etc. both inside and outside character classes
