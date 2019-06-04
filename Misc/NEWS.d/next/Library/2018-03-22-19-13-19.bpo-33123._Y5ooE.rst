@@ -1,2 +1,0 @@
-:class:`pathlib.Path.unlink` now accepts a *missing_ok* parameter to avoid a
-:exc:`FileNotFoundError` from being raised. Patch by Robert Buchholz.

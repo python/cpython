@@ -1,4 +1,0 @@
-:c:func:`PyErr_WriteUnraisable` now creates a traceback object if there is
-no current traceback. Moreover, call :c:func:`PyErr_NormalizeException` and
-:c:func:`PyException_SetTraceback` to normalize the exception value. Ignore any
-error.
