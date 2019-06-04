@@ -647,13 +647,14 @@ class UrlParseTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             urlparse.urlsplit(u'http://\u30d5\u309a\ufe1380')
 
-        for scheme in [u"http", u"https", u"ftp"]:
-            for c in denorm_chars:
-                url = u"{}://netloc{}false.netloc/path".format(scheme, c)
-                if test_support.verbose:
-                    print "Checking %r" % url
-                with self.assertRaises(ValueError):
-                    urlparse.urlsplit(url)
+        for scheme in ["http", "https", "ftp"]:
+            for netloc in ["netloc{}false.netloc", "n{}user@netloc"]:
+                for c in denorm_chars:
+                    url = "{}://{}/path".format(scheme, netloc.format(c))
+                    if test_support.verbose:
+                        print "Checking %r" % url
+                    with self.assertRaises(ValueError):
+                        urlparse.urlsplit(url)
 
 def test_main():
     test_support.run_unittest(UrlParseTestCase)
