@@ -1,2 +1,0 @@
-Implement :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
-:func:`socket.if_indextoname()` on Windows.

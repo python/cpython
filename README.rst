@@ -1,5 +1,5 @@
-This is Python version 3.8.0 alpha 4
-====================================
+This is Python version 3.8.0 beta 1
+===================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI

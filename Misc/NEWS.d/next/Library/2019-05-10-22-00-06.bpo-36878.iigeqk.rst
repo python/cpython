@@ -1,4 +1,0 @@
-When using `type_comments=True` in `ast.parse`, treat `# type: ignore` followed by
-a non-alphanumeric character and then arbitrary text as a type ignore, instead of
-requiring nothing but whitespace or another comment. This is to permit formations
-such as `# type: ignore[E1000]`.

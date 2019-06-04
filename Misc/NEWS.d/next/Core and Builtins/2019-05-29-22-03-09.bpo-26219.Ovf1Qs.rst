@@ -1,3 +1,0 @@
-Implemented per opcode cache mechanism and ``LOAD_GLOBAL`` instruction use
-it. ``LOAD_GLOBAL`` is now about 40% faster. Contributed by Yury Selivanov,
-and Inada Naoki.
