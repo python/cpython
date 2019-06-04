@@ -1288,13 +1288,13 @@ find and load modules.
    A specification for a module's import-system-related state.  This is
    typically exposed as the module's ``__spec__`` attribute.  In the
    descriptions below, the names in parentheses give the corresponding
-   attribute available directly on the module object.
-   E.g., ``module.__spec__.name == module.__name__``.  Note however that
-   while the *values* are usually equivalent, they can differ since there
-   is no synchronization between the two objects.  Thus it is possible
-   to update the module's ``__path__`` at runtime for instance, and this
-   will not be automatically reflected in the module's
-   ``__spec__.submodule_search_locations``.
+   attribute available directly on the module object. For example,
+   ``module.__spec__.name == module.__name__``.  Note however that while
+   the *values* are usually equivalent, they can differ since there is no
+   synchronization between the two objects.  For exemple, it is possible
+   to update the module's ``__name__`` at runtime and this will not be
+   automatically reflected in the module's  ``__spec__.name``, or the
+   other way round.
 
    .. versionadded:: 3.4
 
