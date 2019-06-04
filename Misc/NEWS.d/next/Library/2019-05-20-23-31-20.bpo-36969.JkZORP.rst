@@ -1,2 +1,0 @@
-PDB command `args` now  display keyword only arguments. Patch contributed by
-Rémi Lapeyre.

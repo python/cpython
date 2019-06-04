@@ -1,2 +1,0 @@
-Return safe to use proxy socket object from
-transport.get_extra_info('socket')
