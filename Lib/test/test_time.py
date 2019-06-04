@@ -165,9 +165,8 @@ class TimeTestCase(unittest.TestCase):
 
     def test_sleep_invalid(self):
         with self.assertRaisesRegex(
-                TypeError, 'an integer or a float is required \(got type str\)') as te:
+                TypeError, r'an integer or a float is required \(got type str\)'):
             time.sleep('foo')
-
 
     def test_strftime(self):
         tt = time.gmtime(self.t)
