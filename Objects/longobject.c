@@ -207,7 +207,7 @@ _PyLong_FromNbIndexOrNbInt(PyObject *integral)
     nb = Py_TYPE(integral)->tp_as_number;
     if (nb == NULL || (nb->nb_index == NULL && nb->nb_int == NULL)) {
         PyErr_Format(PyExc_TypeError,
-                     "an integer or a float is required (got type %.200s)",
+                     "an integer or float is required (got type %.200s)",
                      Py_TYPE(integral)->tp_name);
         return NULL;
     }
