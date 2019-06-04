@@ -41,12 +41,15 @@ Number-theoretic and representation functions
    Return the number of ways to choose *k* items from *n* items without repetition
    and without order.
 
-   Also called the binomial coefficient. It is mathematically equal to the expression
-   ``n! / (k! (n - k)!)``. It is equivalent to the coefficient of the *k*-th term in the
-   polynomial expansion of the expression ``(1 + x) ** n``.
+   Evaluates to ``n! / (k! * (n - k)!)`` when ``k <= n`` and evaluates
+   to zero when ``k > n``.
 
-   Raises :exc:`TypeError` if the arguments not integers.
-   Raises :exc:`ValueError` if the arguments are negative or if *k* > *n*.
+   Also called the binomial coefficient because it is equivalent
+   to the coefficient of k-th term in polynomial expansion of the
+   expression ``(1 + x) ** n``.
+
+   Raises :exc:`TypeError` if either of the arguments not integers.
+   Raises :exc:`ValueError` if either of the arguments are negative.
 
    .. versionadded:: 3.8
 
@@ -212,10 +215,11 @@ Number-theoretic and representation functions
    Return the number of ways to choose *k* items from *n* items
    without repetition and with order.
 
-   It is mathematically equal to the expression ``n! / (n - k)!``.
+   Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
+   to zero when ``k > n``.
 
-   Raises :exc:`TypeError` if the arguments not integers.
-   Raises :exc:`ValueError` if the arguments are negative or if *k* > *n*.
+   Raises :exc:`TypeError` if either of the arguments not integers.
+   Raises :exc:`ValueError` if either of the arguments are negative.
 
    .. versionadded:: 3.8
 
