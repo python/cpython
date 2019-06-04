@@ -380,8 +380,6 @@ class Server(events.AbstractServer):
 class BaseEventLoop(events.AbstractEventLoop):
 
     def __init__(self):
-        # If true, close() waits for the default executor to finish
-        self.wait_executor_on_close = True
         self._timer_cancelled_count = 0
         self._closed = False
         self._stopping = False
@@ -637,7 +635,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         executor = self._default_executor
         if executor is not None:
             self._default_executor = None
-            executor.shutdown(wait=self.wait_executor_on_close)
+            executor.shutdown(wait=False)
 
     def is_closed(self):
         """Returns True if the event loop was closed."""
