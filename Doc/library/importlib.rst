@@ -1291,9 +1291,9 @@ find and load modules.
    attribute available directly on the module object. For example,
    ``module.__spec__.name == module.__name__``.  Note however that while
    the *values* are usually equivalent, they can differ since there is no
-   synchronization between the two objects.  For exemple, it is possible
+   synchronization between the two objects.  For example, it is possible
    to update the module's ``__name__`` at runtime and this will not be
-   automatically reflected in the module's  ``__spec__.name``, or the
+   automatically reflected in the module's ``__spec__.name``, or the
    other way round.
 
    .. versionadded:: 3.4
