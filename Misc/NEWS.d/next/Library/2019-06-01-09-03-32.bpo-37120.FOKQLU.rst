@@ -1,1 +1,0 @@
-Add SSLContext.num_tickets to control the number of TLSv1.3 session tickets.

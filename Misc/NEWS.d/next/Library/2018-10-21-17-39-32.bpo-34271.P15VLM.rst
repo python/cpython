@@ -1,3 +1,0 @@
-Add debugging helpers to ssl module. It's now possible to dump key material
-and to trace TLS protocol. The default and stdlib contexts also support
-SSLKEYLOGFILE env var.

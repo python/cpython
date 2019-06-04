@@ -1,2 +1,0 @@
-In browser.py, remove extraneous sorting by line number since dictionary was
-created in line number order.
