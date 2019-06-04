@@ -644,10 +644,11 @@ PyDoc_STRVAR(math_perm__doc__,
 "\n"
 "Number of ways to choose k items from n items without repetition and with order.\n"
 "\n"
-"It is mathematically equal to the expression n! / (n - k)!.\n"
+"Evaluates to n! / (n - k)! when k <= n and evaluates\n"
+"to zero when k > n.\n"
 "\n"
-"Raises TypeError if the arguments are not integers.\n"
-"Raises ValueError if the arguments are negative or if k > n.");
+"Raises TypeError if either of the arguments are not integers.\n"
+"Raises ValueError if either of the arguments are negative.");
 
 #define MATH_PERM_METHODDEF    \
     {"perm", (PyCFunction)(void(*)(void))math_perm, METH_FASTCALL, math_perm__doc__},
@@ -679,12 +680,15 @@ PyDoc_STRVAR(math_comb__doc__,
 "\n"
 "Number of ways to choose k items from n items without repetition and without order.\n"
 "\n"
-"Also called the binomial coefficient. It is mathematically equal to the expression\n"
-"n! / (k! * (n - k)!). It is equivalent to the coefficient of k-th term in\n"
-"polynomial expansion of the expression (1 + x)**n.\n"
+"Evaluates to n! / (k! * (n - k)!) when k <= n and evaluates\n"
+"to zero when k > n.\n"
 "\n"
-"Raises TypeError if the arguments are not integers.\n"
-"Raises ValueError if the arguments are negative or if k > n.");
+"Also called the binomial coefficient because it is equivalent\n"
+"to the coefficient of k-th term in polynomial expansion of the\n"
+"expression (1 + x)**n.\n"
+"\n"
+"Raises TypeError if either of the arguments are not integers.\n"
+"Raises ValueError if either of the arguments are negative.");
 
 #define MATH_COMB_METHODDEF    \
     {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL, math_comb__doc__},
@@ -709,4 +713,4 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a82b0e705b6d0ec0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5004266613284dcc input=a9049054013a1b77]*/

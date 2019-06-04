@@ -3016,7 +3016,7 @@ Raises ValueError if either of the arguments are negative.
 
 static PyObject *
 math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=e021a25469653e23 input=f71ee4f6ff26be24]*/
+/*[clinic end generated code: output=e021a25469653e23 input=b2e7729d9a1949cf]*/
 {
     PyObject *result = NULL, *factor = NULL;
     int overflow, cmp;
@@ -3136,7 +3136,7 @@ Raises ValueError if either of the arguments are negative.
 
 static PyObject *
 math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=bd2cec8d854f3493 input=2f336ac9ec8242f9]*/
+/*[clinic end generated code: output=bd2cec8d854f3493 input=9a05315af2518709]*/
 {
     PyObject *result = NULL, *factor = NULL, *temp;
     int overflow, cmp;
