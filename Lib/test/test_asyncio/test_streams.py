@@ -1475,10 +1475,14 @@ os.close(fd)
 
     def test_stream_server_close(self):
         server_stream_aborted = False
-        fut = self.loop.create_future()
+        fut1 = self.loop.create_future()
+        fut2 = self.loop.create_future()
 
         async def handle_client(stream):
-            await fut
+            data = await stream.readexactly(4)
+            self.assertEqual(b'data', data)
+            fut1.set_result(None)
+            await fut2
             self.assertEqual(b'', await stream.readline())
             nonlocal server_stream_aborted
             server_stream_aborted = True
@@ -1486,7 +1490,8 @@ os.close(fd)
         async def client(srv):
             addr = srv.sockets[0].getsockname()
             stream = await asyncio.connect(*addr)
-            fut.set_result(None)
+            await stream.write(b'data')
+            await fut2
             self.assertEqual(b'', await stream.readline())
             await stream.close()
 
@@ -1494,15 +1499,17 @@ os.close(fd)
             async with asyncio.StreamServer(handle_client, '127.0.0.1', 0) as server:
                 await server.start_serving()
                 task = asyncio.create_task(client(server))
-                await fut
+                await fut1
+                fut2.set_result(None)
                 await server.close()
                 await task
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-        self.loop.run_until_complete(test())
+        self.loop.run_until_complete(asyncio.wait_for(test(), 60.0))
         self.assertEqual(messages, [])
-        self.assertTrue(fut.done())
+        self.assertTrue(fut1.done())
+        self.assertTrue(fut2.done())
         self.assertTrue(server_stream_aborted)
 
     def test_stream_server_abort(self):
@@ -1538,7 +1545,7 @@ os.close(fd)
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-        self.loop.run_until_complete(test())
+        self.loop.run_until_complete(asyncio.wait_for(test(), 60.0))
         self.assertEqual(messages, [])
         self.assertTrue(fut1.done())
         self.assertTrue(fut2.done())
@@ -1584,7 +1591,7 @@ os.close(fd)
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-        self.loop.run_until_complete(test())
+        self.loop.run_until_complete(asyncio.wait_for(test(), 60.0))
         self.assertEqual(messages, [])
         self.assertTrue(fut1.done())
         self.assertTrue(fut2.done())
@@ -1631,7 +1638,7 @@ os.close(fd)
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-        self.loop.run_until_complete(test())
+        self.loop.run_until_complete(asyncio.wait_for(test(), 60.0))
         self.assertEqual(1, len(messages))
         self.assertRegex(messages[0]['message'],
                          "<Task pending .+ ignored cancellation request")
