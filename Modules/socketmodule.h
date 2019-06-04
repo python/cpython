@@ -41,6 +41,7 @@ typedef int socklen_t;
 
 #ifdef HAVE_SYS_UN_H
 # include <sys/un.h>
+#define AF_LOCAL AF_UNIX
 #else
 # undef AF_UNIX
 #endif

@@ -7118,6 +7118,9 @@ PyInit__socket(void)
 #if defined(AF_UNIX)
     PyModule_AddIntMacro(m, AF_UNIX);
 #endif /* AF_UNIX */
+#if defined(AF_LOCAL)
+    PyModule_AddIntMacro(m, AF_LOCAL);
+#endif /* AF_UNIX */
 #ifdef AF_AX25
     /* Amateur Radio AX.25 */
     PyModule_AddIntMacro(m, AF_AX25);
