@@ -349,7 +349,7 @@ class _Stream:
             fileobj = _StreamProxy(fileobj)
             comptype = fileobj.getcomptype()
 
-        self.name     = name or ""
+        self.name     = os.path.abspath(name) if name else ""
         self.mode     = mode
         self.comptype = comptype
         self.fileobj  = fileobj
