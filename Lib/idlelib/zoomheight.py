@@ -2,6 +2,11 @@
 
 import re
 import sys
+import tkinter
+
+
+class WmInfoGatheringError(Exception):
+    pass
 
 
 class ZoomHeight:
@@ -36,7 +41,11 @@ class ZoomHeight:
             # state, e.g. maximized and full-screen windows.
             return None
 
-        maxheight, maxy = self.get_max_height_and_y_coord()
+        try:
+            maxheight, maxy = self.get_max_height_and_y_coord()
+        except WmInfoGatheringError:
+            return None
+
         if height != maxheight:
             # Maximize the window's height.
             set_window_geometry(self.top, (width, maxheight, x, maxy))
@@ -54,7 +63,14 @@ class ZoomHeight:
             orig_state = self.top.wm_state()
 
             # Get window geometry info for maximized windows.
-            self.top.wm_state('zoomed')
+            try:
+                self.top.wm_state('zoomed')
+            except tkinter.TclError:
+                # The 'zoomed' state is not supported by some esoteric WMs,
+                # such as Xvfb.
+                raise WmInfoGatheringError(
+                    'Failed getting geometry of maximized windows, because ' +
+                    'the "zoomed" window state is unavailable.')
             self.top.update()
             maxwidth, maxheight, maxx, maxy = get_window_geometry(self.top)
             if sys.platform == 'win32':
