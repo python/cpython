@@ -509,7 +509,7 @@ def func_std_string(func_name): # match what old profile produced
         return "%s:%d(%s)" % func_name
 
 #**************************************************************************
-# The following functions combine statists for pairs functions.
+# The following functions combine statistics for pairs functions.
 # The bulk of the processing involves correctly handling "call" lists,
 # such as callers and callees.
 #**************************************************************************
@@ -632,12 +632,12 @@ if __name__ == '__main__':
             print("", file=self.stream)
             return 1
         def help_EOF(self):
-            print("Leave the profile brower.", file=self.stream)
+            print("Leave the profile browser.", file=self.stream)
 
         def do_quit(self, line):
             return 1
         def help_quit(self):
-            print("Leave the profile brower.", file=self.stream)
+            print("Leave the profile browser.", file=self.stream)
 
         def do_read(self, line):
             if line:

@@ -171,7 +171,9 @@ The module defines the following:
    :func:`poll` or another interface in this module.  This doesn't apply
    to other kind of file-like objects such as sockets.
 
-   This value is guaranteed by POSIX to be at least 512.  Availability: Unix.
+   This value is guaranteed by POSIX to be at least 512.
+
+   .. availability:: Unix
 
    .. versionadded:: 3.2
 
@@ -315,6 +317,9 @@ Edge and Level Trigger Polling (epoll) Objects
    | :const:`EPOLLMSG`       | Ignored.                                      |
    +-------------------------+-----------------------------------------------+
 
+   .. versionadded:: 3.6
+      :const:`EPOLLEXCLUSIVE` was added.  It's only supported by Linux Kernel 4.5
+      or later.
 
 .. method:: epoll.close()
 

@@ -27,6 +27,7 @@ import logging, socket, os, pickle, struct, time, re
 from stat import ST_DEV, ST_INO, ST_MTIME
 import queue
 import threading
+import copy
 
 #
 # Some constants...
@@ -1374,13 +1375,16 @@ class QueueHandler(logging.Handler):
         # (if there's exception data), and also returns the formatted
         # message. We can then use this to replace the original
         # msg + args, as these might be unpickleable. We also zap the
-        # exc_info attribute, as it's no longer needed and, if not None,
-        # will typically not be pickleable.
+        # exc_info and exc_text attributes, as they are no longer
+        # needed and, if not None, will typically not be pickleable.
         msg = self.format(record)
+        # bpo-35726: make copy of record to avoid affecting other handlers in the chain.
+        record = copy.copy(record)
         record.message = msg
         record.msg = msg
         record.args = None
         record.exc_info = None
+        record.exc_text = None
         return record
 
     def emit(self, record):
@@ -1473,6 +1477,8 @@ class QueueListener(object):
             try:
                 record = self.dequeue(True)
                 if record is self._sentinel:
+                    if has_task_done:
+                        q.task_done()
                     break
                 self.handle(record)
                 if has_task_done:

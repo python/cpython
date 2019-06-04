@@ -1,0 +1,1 @@
+Improved the repr of regular expression flags.

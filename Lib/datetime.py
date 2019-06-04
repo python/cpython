@@ -379,19 +379,34 @@ def _check_utc_offset(name, offset):
 def _check_int_field(value):
     if isinstance(value, int):
         return value
-    if not isinstance(value, float):
-        try:
-            value = value.__int__()
-        except AttributeError:
-            pass
-        else:
-            if isinstance(value, int):
-                return value
+    if isinstance(value, float):
+        raise TypeError('integer argument expected, got float')
+    try:
+        value = value.__index__()
+    except AttributeError:
+        pass
+    else:
+        if not isinstance(value, int):
+            raise TypeError('__index__ returned non-int (type %s)' %
+                            type(value).__name__)
+        return value
+    orig = value
+    try:
+        value = value.__int__()
+    except AttributeError:
+        pass
+    else:
+        if not isinstance(value, int):
             raise TypeError('__int__ returned non-int (type %s)' %
                             type(value).__name__)
-        raise TypeError('an integer is required (got type %s)' %
-                        type(value).__name__)
-    raise TypeError('integer argument expected, got float')
+        import warnings
+        warnings.warn("an integer is required (got type %s)"  %
+                      type(orig).__name__,
+                      DeprecationWarning,
+                      stacklevel=2)
+        return value
+    raise TypeError('an integer is required (got type %s)' %
+                    type(value).__name__)
 
 def _check_date_fields(year, month, day):
     year = _check_int_field(year)
@@ -808,9 +823,19 @@ class date:
 
         year, month, day (required, base 1)
         """
-        if month is None and isinstance(year, bytes) and len(year) == 4 and \
-                1 <= year[2] <= 12:
+        if (month is None and
+            isinstance(year, (bytes, str)) and len(year) == 4 and
+            1 <= ord(year[2:3]) <= 12):
             # Pickle support
+            if isinstance(year, str):
+                try:
+                    year = year.encode('latin1')
+                except UnicodeEncodeError:
+                    # More informative error message.
+                    raise ValueError(
+                        "Failed to encode latin1 string when unpickling "
+                        "a date object. "
+                        "pickle.load(data, encoding='latin1') is assumed.")
             self = object.__new__(cls)
             self.__setstate(year)
             self._hashcode = -1
@@ -857,8 +882,42 @@ class date:
             assert len(date_string) == 10
             return cls(*_parse_isoformat_date(date_string))
         except Exception:
-            raise ValueError('Invalid isoformat string: %s' % date_string)
+            raise ValueError(f'Invalid isoformat string: {date_string!r}')
 
+    @classmethod
+    def fromisocalendar(cls, year, week, day):
+        """Construct a date from the ISO year, week number and weekday.
+
+        This is the inverse of the date.isocalendar() function"""
+        # Year is bounded this way because 9999-12-31 is (9999, 52, 5)
+        if not MINYEAR <= year <= MAXYEAR:
+            raise ValueError(f"Year is out of range: {year}")
+
+        if not 0 < week < 53:
+            out_of_range = True
+
+            if week == 53:
+                # ISO years have 53 weeks in them on years starting with a
+                # Thursday and leap years starting on a Wednesday
+                first_weekday = _ymd2ord(year, 1, 1) % 7
+                if (first_weekday == 4 or (first_weekday == 3 and
+                                           _is_leap(year))):
+                    out_of_range = False
+
+            if out_of_range:
+                raise ValueError(f"Invalid week: {week}")
+
+        if not 0 < day < 8:
+            raise ValueError(f"Invalid weekday: {day} (range is [1, 7])")
+
+        # Now compute the offset from (Y, 1, 1) in days:
+        day_offset = (week - 1) * 7 + (day - 1)
+
+        # Calculate the ordinal day for monday, week 1
+        day_1 = _isoweek1monday(year)
+        ord_day = day_1 + day_offset
+
+        return cls(*_ord2ymd(ord_day))
 
     # Conversions to string
 
@@ -1004,7 +1063,7 @@ class date:
         if isinstance(other, timedelta):
             o = self.toordinal() + other.days
             if 0 < o <= _MAXORDINAL:
-                return date.fromordinal(o)
+                return type(self).fromordinal(o)
             raise OverflowError("result out of range")
         return NotImplemented
 
@@ -1184,8 +1243,18 @@ class time:
         tzinfo (default to None)
         fold (keyword only, default to zero)
         """
-        if isinstance(hour, bytes) and len(hour) == 6 and hour[0]&0x7F < 24:
+        if (isinstance(hour, (bytes, str)) and len(hour) == 6 and
+            ord(hour[0:1])&0x7F < 24):
             # Pickle support
+            if isinstance(hour, str):
+                try:
+                    hour = hour.encode('latin1')
+                except UnicodeEncodeError:
+                    # More informative error message.
+                    raise ValueError(
+                        "Failed to encode latin1 string when unpickling "
+                        "a time object. "
+                        "pickle.load(data, encoding='latin1') is assumed.")
             self = object.__new__(cls)
             self.__setstate(hour, minute or None)
             self._hashcode = -1
@@ -1369,7 +1438,7 @@ class time:
         try:
             return cls(*_parse_isoformat_time(time_string))
         except Exception:
-            raise ValueError('Invalid isoformat string: %s' % time_string)
+            raise ValueError(f'Invalid isoformat string: {time_string!r}')
 
 
     def strftime(self, fmt):
@@ -1496,8 +1565,18 @@ class datetime(date):
 
     def __new__(cls, year, month=None, day=None, hour=0, minute=0, second=0,
                 microsecond=0, tzinfo=None, *, fold=0):
-        if isinstance(year, bytes) and len(year) == 10 and 1 <= year[2]&0x7F <= 12:
+        if (isinstance(year, (bytes, str)) and len(year) == 10 and
+            1 <= ord(year[2:3])&0x7F <= 12):
             # Pickle support
+            if isinstance(year, str):
+                try:
+                    year = bytes(year, 'latin1')
+                except UnicodeEncodeError:
+                    # More informative error message.
+                    raise ValueError(
+                        "Failed to encode latin1 string when unpickling "
+                        "a datetime object. "
+                        "pickle.load(data, encoding='latin1') is assumed.")
             self = object.__new__(cls)
             self.__setstate(year, month)
             self._hashcode = -1
@@ -1646,13 +1725,13 @@ class datetime(date):
         try:
             date_components = _parse_isoformat_date(dstr)
         except ValueError:
-            raise ValueError('Invalid isoformat string: %s' % date_string)
+            raise ValueError(f'Invalid isoformat string: {date_string!r}')
 
         if tstr:
             try:
                 time_components = _parse_isoformat_time(tstr)
             except ValueError:
-                raise ValueError('Invalid isoformat string: %s' % date_string)
+                raise ValueError(f'Invalid isoformat string: {date_string!r}')
         else:
             time_components = [0, 0, 0, 0, None]
 
@@ -1994,10 +2073,10 @@ class datetime(date):
         hour, rem = divmod(delta.seconds, 3600)
         minute, second = divmod(rem, 60)
         if 0 < delta.days <= _MAXORDINAL:
-            return datetime.combine(date.fromordinal(delta.days),
-                                    time(hour, minute, second,
-                                         delta.microseconds,
-                                         tzinfo=self._tzinfo))
+            return type(self).combine(date.fromordinal(delta.days),
+                                      time(hour, minute, second,
+                                           delta.microseconds,
+                                           tzinfo=self._tzinfo))
         raise OverflowError("result out of range")
 
     __radd__ = __add__
@@ -2095,6 +2174,7 @@ def _isoweek1monday(year):
     if firstweekday > THURSDAY:
         week1monday += 7
     return week1monday
+
 
 class timezone(tzinfo):
     __slots__ = '_offset', '_name'

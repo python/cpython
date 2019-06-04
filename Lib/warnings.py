@@ -33,9 +33,8 @@ def _showwarnmsg_impl(msg):
         pass
 
 def _formatwarnmsg_impl(msg):
-    s =  ("%s:%s: %s: %s\n"
-          % (msg.filename, msg.lineno, msg.category.__name__,
-             msg.message))
+    category = msg.category.__name__
+    s =  f"{msg.filename}:{msg.lineno}: {category}: {msg.message}\n"
 
     if msg.line is None:
         try:
@@ -55,11 +54,20 @@ def _formatwarnmsg_impl(msg):
     if msg.source is not None:
         try:
             import tracemalloc
-            tb = tracemalloc.get_object_traceback(msg.source)
+        # Logging a warning should not raise a new exception:
+        # catch Exception, not only ImportError and RecursionError.
         except Exception:
-            # When a warning is logged during Python shutdown, tracemalloc
-            # and the import machinery don't work anymore
+            # don't suggest to enable tracemalloc if it's not available
+            tracing = True
             tb = None
+        else:
+            tracing = tracemalloc.is_tracing()
+            try:
+                tb = tracemalloc.get_object_traceback(msg.source)
+            except Exception:
+                # When a warning is logged during Python shutdown, tracemalloc
+                # and the import machinery don't work anymore
+                tb = None
 
         if tb is not None:
             s += 'Object allocated at (most recent call last):\n'
@@ -77,6 +85,9 @@ def _formatwarnmsg_impl(msg):
                 if line:
                     line = line.strip()
                     s += '    %s\n' % line
+        elif not tracing:
+            s += (f'{category}: Enable tracemalloc to get the object '
+                  f'allocation traceback\n')
     return s
 
 # Keep a reference to check if the function was replaced
@@ -113,7 +124,7 @@ def _formatwarnmsg(msg):
         if fw is not _formatwarning_orig:
             # warnings.formatwarning() was replaced
             return fw(msg.message, msg.category,
-                      msg.filename, msg.lineno, line=msg.line)
+                      msg.filename, msg.lineno, msg.line)
     return _formatwarnmsg_impl(msg)
 
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,

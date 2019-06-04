@@ -1,0 +1,3 @@
+"python3 -m test -jN ..." now continues the execution of next tests when a
+worker process crash (CHILD_ERROR state). Previously, the test suite stopped
+immediately. Use --failfast to stop at the first error.

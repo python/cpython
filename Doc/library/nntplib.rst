@@ -232,10 +232,10 @@ tuples or objects that the method normally returns will be empty.
    .. versionadded:: 3.2
 
 
-.. method:: NNTP.starttls(ssl_context=None)
+.. method:: NNTP.starttls(context=None)
 
    Send a ``STARTTLS`` command.  This will enable encryption on the NNTP
-   connection.  The *ssl_context* argument is optional and should be a
+   connection.  The *context* argument is optional and should be a
    :class:`ssl.SSLContext` object.  Please read :ref:`ssl-security` for best
    practices.
 

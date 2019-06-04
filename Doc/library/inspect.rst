@@ -132,9 +132,6 @@ attributes:
 |           | f_locals          | local namespace seen by   |
 |           |                   | this frame                |
 +-----------+-------------------+---------------------------+
-|           | f_restricted      | 0 or 1 if frame is in     |
-|           |                   | restricted execution mode |
-+-----------+-------------------+---------------------------+
 |           | f_trace           | tracing function for this |
 |           |                   | frame, or ``None``        |
 +-----------+-------------------+---------------------------+
@@ -171,6 +168,9 @@ attributes:
 |           | co_freevars       | tuple of names of free    |
 |           |                   | variables (referenced via |
 |           |                   | a function's closure)     |
++-----------+-------------------+---------------------------+
+|           | co_posonlyargcount| number of positional only |
+|           |                   | arguments                 |
 +-----------+-------------------+---------------------------+
 |           | co_kwonlyargcount | number of keyword only    |
 |           |                   | arguments (not including  |
@@ -301,6 +301,10 @@ attributes:
 
    Return true if the object is a Python generator function.
 
+   .. versionchanged:: 3.8
+      Functions wrapped in :func:`functools.partial` now return true if the
+      wrapped function is a Python generator function.
+
 
 .. function:: isgenerator(object)
 
@@ -313,6 +317,10 @@ attributes:
    (a function defined with an :keyword:`async def` syntax).
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.8
+      Functions wrapped in :func:`functools.partial` now return true if the
+      wrapped function is a :term:`coroutine function`.
 
 
 .. function:: iscoroutine(object)
@@ -354,6 +362,10 @@ attributes:
     True
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.8
+      Functions wrapped in :func:`functools.partial` now return true if the
+      wrapped function is a :term:`asynchronous generator` function.
 
 
 .. function:: isasyncgen(object)
@@ -563,6 +575,10 @@ function.
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.
 
+   A slash(/) in the signature of a function denotes that the parameters prior
+   to it are positional-only. For more info, see
+   :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
+
    .. versionadded:: 3.5
       ``follow_wrapped`` parameter. Pass ``False`` to get a signature of
       ``callable`` specifically (``callable.__wrapped__`` will not be used to
@@ -711,13 +727,9 @@ function.
       |    Name                | Meaning                                      |
       +========================+==============================================+
       | *POSITIONAL_ONLY*      | Value must be supplied as a positional       |
-      |                        | argument.                                    |
-      |                        |                                              |
-      |                        | Python has no explicit syntax for defining   |
-      |                        | positional-only parameters, but many built-in|
-      |                        | and extension module functions (especially   |
-      |                        | those that accept only one or two parameters)|
-      |                        | accept them.                                 |
+      |                        | argument. Positional only parameters are     |
+      |                        | those which appear before a ``/`` entry (if  |
+      |                        | present) in a Python function definition.    |
       +------------------------+----------------------------------------------+
       | *POSITIONAL_OR_KEYWORD*| Value may be supplied as either a keyword or |
       |                        | positional argument (this is the standard    |
@@ -1010,7 +1022,7 @@ Classes and functions
    metatype is in use, cls will be the first element of the tuple.
 
 
-.. function:: getcallargs(func, *args, **kwds)
+.. function:: getcallargs(func, /, *args, **kwds)
 
    Bind the *args* and *kwds* to the argument names of the Python function or
    method *func*, as if it was called with them. For bound methods, bind also the

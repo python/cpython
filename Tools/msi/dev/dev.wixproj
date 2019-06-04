@@ -21,7 +21,8 @@
         <EmbeddedResource Include="*.wxl" />
     </ItemGroup>
     <ItemGroup>
-        <InstallFiles Include="$(PySourcePath)include\*.h">
+        <InstallFiles Include="$(PySourcePath)include\**\*.h"
+                      Exclude="$(PySourcePath)include\pyconfig.h">
             <SourceBase>$(PySourcePath)</SourceBase>
             <Source>!(bindpath.src)</Source>
             <TargetBase>$(PySourcePath)</TargetBase>
@@ -29,7 +30,7 @@
             <Group>dev_include</Group>
         </InstallFiles>
     </ItemGroup>
-    
+
     <Target Name="BuildMinGWLib"
             Inputs="$(BuildPath)$(PyDllName).dll"
             Outputs="$(BuildPath)lib$(PyDllName).a"

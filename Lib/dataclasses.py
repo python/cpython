@@ -5,6 +5,9 @@ import types
 import inspect
 import keyword
 import builtins
+import functools
+import _thread
+
 
 __all__ = ['dataclass',
            'field',
@@ -198,10 +201,16 @@ _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
 class _InitVarMeta(type):
     def __getitem__(self, params):
-        return self
+        return InitVar(params)
 
 class InitVar(metaclass=_InitVarMeta):
-    pass
+    __slots__ = ('type', )
+
+    def __init__(self, type):
+        self.type = type
+
+    def __repr__(self):
+        return f'dataclasses.InitVar[{self.type.__name__}]'
 
 
 # Instances of Field are only ever created from within this module,
@@ -238,7 +247,7 @@ class Field:
         self.hash = hash
         self.compare = compare
         self.metadata = (_EMPTY_METADATA
-                         if metadata is None or len(metadata) == 0 else
+                         if metadata is None else
                          types.MappingProxyType(metadata))
         self._field_type = None
 
@@ -335,6 +344,27 @@ def _tuple_str(obj_name, fields):
         return '()'
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
     return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
+
+
+# This function's logic is copied from "recursive_repr" function in
+# reprlib module to avoid dependency.
+def _recursive_repr(user_function):
+    # Decorator to make a repr function return "..." for a recursive
+    # call.
+    repr_running = set()
+
+    @functools.wraps(user_function)
+    def wrapper(self):
+        key = id(self), _thread.get_ident()
+        if key in repr_running:
+            return '...'
+        repr_running.add(key)
+        try:
+            result = user_function(self)
+        finally:
+            repr_running.discard(key)
+        return result
+    return wrapper
 
 
 def _create_fn(name, args, body, *, globals=None, locals=None,
@@ -497,12 +527,13 @@ def _init_fn(fields, frozen, has_post_init, self_name):
 
 
 def _repr_fn(fields):
-    return _create_fn('__repr__',
-                      ('self',),
-                      ['return self.__class__.__qualname__ + f"(' +
-                       ', '.join([f"{f.name}={{self.{f.name}!r}}"
-                                  for f in fields]) +
-                       ')"'])
+    fn = _create_fn('__repr__',
+                    ('self',),
+                    ['return self.__class__.__qualname__ + f"(' +
+                     ', '.join([f"{f.name}={{self.{f.name}!r}}"
+                                for f in fields]) +
+                     ')"'])
+    return _recursive_repr(fn)
 
 
 def _frozen_get_del_attr(cls, fields):
@@ -561,7 +592,8 @@ def _is_classvar(a_type, typing):
 def _is_initvar(a_type, dataclasses):
     # The module we're checking against is the module we're
     # currently in (dataclasses.py).
-    return a_type is dataclasses.InitVar
+    return (a_type is dataclasses.InitVar
+            or type(a_type) is dataclasses.InitVar)
 
 
 def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
@@ -937,10 +969,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     return cls
 
 
-# _cls should never be specified by keyword, so start it with an
-# underscore.  The presence of _cls is used to detect if this
-# decorator is being called with parameters or not.
-def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
+def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
               unsafe_hash=False, frozen=False):
     """Returns the same class as was passed in, with dunder methods
     added based on the fields defined in the class.
@@ -958,12 +987,12 @@ def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
         return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen)
 
     # See if we're being called as @dataclass or @dataclass().
-    if _cls is None:
+    if cls is None:
         # We're called with parens.
         return wrap
 
     # We're called as @dataclass without parens.
-    return wrap(_cls)
+    return wrap(cls)
 
 
 def fields(class_or_instance):

@@ -58,13 +58,14 @@ class BaseTestBufferedProtocol(func_tests.FunctionalTestCaseMixin):
             writer.close()
             await writer.wait_closed()
 
-        srv = self.loop.run_until_complete(
-            asyncio.start_server(
-                on_server_client, '127.0.0.1', 0))
+        with self.assertWarns(DeprecationWarning):
+            srv = self.loop.run_until_complete(
+                asyncio.start_server(
+                    on_server_client, '127.0.0.1', 0))
 
         addr = srv.sockets[0].getsockname()
         self.loop.run_until_complete(
-            asyncio.wait_for(client(addr), 5, loop=self.loop))
+            asyncio.wait_for(client(addr), 5))
 
         srv.close()
         self.loop.run_until_complete(srv.wait_closed())

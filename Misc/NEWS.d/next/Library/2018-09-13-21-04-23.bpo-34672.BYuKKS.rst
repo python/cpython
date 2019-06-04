@@ -1,2 +1,0 @@
-Add a workaround, so the ``'Z'`` :func:`time.strftime` specifier on the musl
-C library can work in some cases.

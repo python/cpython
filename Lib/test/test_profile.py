@@ -11,6 +11,7 @@ from contextlib import contextmanager
 
 import profile
 from test.profilee import testfunc, timer
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 
 class ProfileTest(unittest.TestCase):
@@ -97,6 +98,18 @@ class ProfileTest(unittest.TestCase):
         self.profilermodule.runctx("testfunc()", globals(), locals(),
                                   filename=TESTFN)
         self.assertTrue(os.path.exists(TESTFN))
+
+    def test_run_profile_as_module(self):
+        # Test that -m switch needs an argument
+        assert_python_failure('-m', self.profilermodule.__name__, '-m')
+
+        # Test failure for not-existent module
+        assert_python_failure('-m', self.profilermodule.__name__,
+                              '-m', 'random_module_xyz')
+
+        # Test successful run
+        assert_python_ok('-m', self.profilermodule.__name__,
+                         '-m', 'timeit', '-n', '1')
 
 
 def regenerate_expected_output(filename, cls):

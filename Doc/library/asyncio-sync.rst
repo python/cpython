@@ -10,14 +10,14 @@ asyncio synchronization primitives are designed to be similar to
 those of the :mod:`threading` module with two important caveats:
 
 * asyncio primitives are not thread-safe, therefore they should not
-  be used for OS threads synchronization (use :mod:`threading` for
+  be used for OS thread synchronization (use :mod:`threading` for
   that);
 
-* methods of synchronization primitives do not accept the *timeout*
+* methods of these synchronization primitives do not accept the *timeout*
   argument; use the :func:`asyncio.wait_for` function to perform
   operations with timeouts.
 
-asyncio has the following basic sychronization primitives:
+asyncio has the following basic synchronization primitives:
 
 * :class:`Lock`
 * :class:`Event`
@@ -65,6 +65,13 @@ Lock
 
       This method waits until the lock is *unlocked*, sets it to
       *locked* and returns ``True``.
+
+      When more than one coroutine is blocked in :meth:`acquire`
+      waiting for the lock to be unlocked, only one coroutine
+      eventually proceeds.
+
+      Acquiring a lock is *fair*: the coroutine that proceeds will be
+      the first coroutine that started waiting on the lock.
 
    .. method:: release()
 
@@ -153,12 +160,12 @@ Condition
    A Condition object.  Not thread-safe.
 
    An asyncio condition primitive can be used by a task to wait for
-   some event to happen and then get an exclusive access to a shared
+   some event to happen and then get exclusive access to a shared
    resource.
 
    In essence, a Condition object combines the functionality
-   of :class:`Event` and :class:`Lock`.  It is possible to have many
-   Condition objects sharing one Lock, which allows to coordinate
+   of an :class:`Event` and a :class:`Lock`.  It is possible to have
+   multiple Condition objects share one Lock, which allows coordinating
    exclusive access to a shared resource between different tasks
    interested in particular states of that shared resource.
 
@@ -180,11 +187,11 @@ Condition
        cond = asyncio.Condition()
 
        # ... later
-       await lock.acquire()
+       await cond.acquire()
        try:
            await cond.wait()
        finally:
-           lock.release()
+           cond.release()
 
    .. coroutinemethod:: acquire()
 
@@ -287,7 +294,7 @@ Semaphore
       Acquire a semaphore.
 
       If the internal counter is greater than zero, decrement
-      it by one and return ``True`` immediately.  If it is zero wait
+      it by one and return ``True`` immediately.  If it is zero, wait
       until a :meth:`release` is called and return ``True``.
 
    .. method:: locked()
@@ -300,7 +307,7 @@ Semaphore
       Can wake up a task waiting to acquire the semaphore.
 
       Unlike :class:`BoundedSemaphore`, :class:`Semaphore` allows
-      to make more ``release()`` calls than ``acquire()`` calls.
+      making more ``release()`` calls than ``acquire()`` calls.
 
 
 BoundedSemaphore
