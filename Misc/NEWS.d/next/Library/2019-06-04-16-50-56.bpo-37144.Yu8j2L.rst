@@ -1,0 +1,1 @@
+Now `tarfile.open(path, 'w|gz')` works for path-like objects
