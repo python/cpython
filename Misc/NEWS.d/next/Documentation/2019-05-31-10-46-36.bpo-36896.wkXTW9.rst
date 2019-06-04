@@ -1,2 +1,0 @@
-Clarify that some types have unstable constructor signature between Python
-versions.
