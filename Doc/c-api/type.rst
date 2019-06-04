@@ -191,9 +191,10 @@ The following functions and structs are used to create
       * :c:member:`~PyTypeObject.tp_cache`
       * :c:member:`~PyTypeObject.tp_subclasses`
       * :c:member:`~PyTypeObject.tp_weaklist`
-      * :c:member:`~PyTypeObject.tp_print`
       * :c:member:`~PyTypeObject.tp_weaklistoffset`
       * :c:member:`~PyTypeObject.tp_dictoffset`
+      * :c:member:`~PyTypeObject.tp_vectorcall_offset`
+      * :c:member:`~PyTypeObject.tp_vectorcall`
       * :c:member:`~PyBufferProcs.bf_getbuffer`
       * :c:member:`~PyBufferProcs.bf_releasebuffer`
 
