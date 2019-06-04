@@ -1,0 +1,2 @@
+:func:`email.charset.getaddresses` can now handle
+:class:`~email.header.Header` objects.
