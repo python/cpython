@@ -353,10 +353,10 @@ both :c:member:`~Py_buffer.shape` and :c:member:`~Py_buffer.strides` are *NULL*.
 
 If :c:member:`~Py_buffer.strides` is *NULL*, the array is interpreted as
 a standard n-dimensional C-array. Otherwise, the consumer must access an
-n-dimensional array as follows:
+n-dimensional array as follows::
 
-   ``ptr = (char *)buf + indices[0] * strides[0] + ... + indices[n-1] * strides[n-1]``
-   ``item = *((typeof(item) *)ptr);``
+   ptr = (char *)buf + indices[0] * strides[0] + ... + indices[n-1] * strides[n-1];
+   item = *((typeof(item) *)ptr);
 
 
 As noted above, :c:member:`~Py_buffer.buf` can point to any location within
