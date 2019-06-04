@@ -3007,15 +3007,16 @@ math.perm
 
 Number of ways to choose k items from n items without repetition and with order.
 
-It is mathematically equal to the expression n! / (n - k)!.
+Evaluates to n! / (n - k)! when k <= n and evaluates
+to zero when k > n.
 
-Raises TypeError if the arguments are not integers.
-Raises ValueError if the arguments are negative or if k > n.
+Raises TypeError if either of the arguments are not integers.
+Raises ValueError if either of the arguments are negative.
 [clinic start generated code]*/
 
 static PyObject *
 math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=e021a25469653e23 input=f71ee4f6ff26be24]*/
+/*[clinic end generated code: output=e021a25469653e23 input=b2e7729d9a1949cf]*/
 {
     PyObject *result = NULL, *factor = NULL;
     int overflow, cmp;
@@ -3052,8 +3053,8 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     cmp = PyObject_RichCompareBool(n, k, Py_LT);
     if (cmp != 0) {
         if (cmp > 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "k must be an integer less than or equal to n");
+            result = PyLong_FromLong(0);
+            goto done;
         }
         goto error;
     }
@@ -3121,18 +3122,21 @@ math.comb
 
 Number of ways to choose k items from n items without repetition and without order.
 
-Also called the binomial coefficient. It is mathematically equal to the expression
-n! / (k! * (n - k)!). It is equivalent to the coefficient of k-th term in
-polynomial expansion of the expression (1 + x)**n.
+Evaluates to n! / (k! * (n - k)!) when k <= n and evaluates
+to zero when k > n.
 
-Raises TypeError if the arguments are not integers.
-Raises ValueError if the arguments are negative or if k > n.
+Also called the binomial coefficient because it is equivalent
+to the coefficient of k-th term in polynomial expansion of the
+expression (1 + x)**n.
+
+Raises TypeError if either of the arguments are not integers.
+Raises ValueError if either of the arguments are negative.
 
 [clinic start generated code]*/
 
 static PyObject *
 math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=bd2cec8d854f3493 input=2f336ac9ec8242f9]*/
+/*[clinic end generated code: output=bd2cec8d854f3493 input=9a05315af2518709]*/
 {
     PyObject *result = NULL, *factor = NULL, *temp;
     int overflow, cmp;
@@ -3173,9 +3177,8 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     }
     if (Py_SIZE(temp) < 0) {
         Py_DECREF(temp);
-        PyErr_SetString(PyExc_ValueError,
-                        "k must be an integer less than or equal to n");
-        goto error;
+        result = PyLong_FromLong(0);
+        goto done;
     }
     cmp = PyObject_RichCompareBool(temp, k, Py_LT);
     if (cmp > 0) {
