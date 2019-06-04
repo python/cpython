@@ -438,6 +438,37 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
+    def test_pass_by_value_string_buffer(self):
+        dll = CDLL(_ctypes_test.__file__)
+        dll.my_strdup.restype = POINTER(c_char)
+        dll.my_free.restype = None
+
+        # This should mirror the structure in Modules/_ctypes/_ctypes_test.c
+        class X(Structure):
+            _fields_ = [
+                ('first', c_ulong),
+                ('second', c_ulong),
+                ('third', POINTER(c_char)),
+            ]
+            def __del__(self):
+                # Windows throws 'Windows fatal exception: access violation'
+                # on second call to __del__
+                # causing this test to fail
+                dll.my_free(self.third)
+
+        hello = b"Hello"
+        s = X()
+        s.first = 0xdeadbeef
+        s.second = 0xcafebabe
+        s.third = dll.my_strdup(hello)
+        func = dll._testfunc_large_struct_update_value_string_buffer
+        func.argtypes = (X,)
+        func.restype = None
+        func(s)
+        self.assertEqual(s.first, 0xdeadbeef)
+        self.assertEqual(s.second, 0xcafebabe)
+        # string is already freed by pass-by-value copy of struct 's'
+        #self.assertEqual(s.third[0], b'J')
 
 class PointerMemberTestCase(unittest.TestCase):
 

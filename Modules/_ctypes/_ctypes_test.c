@@ -58,6 +58,26 @@ _testfunc_large_struct_update_value(Test in)
 }
 
 typedef struct {
+    unsigned long first;
+    unsigned long second;
+    char *third;
+} TestStringBuffer;
+
+/*
+ * See issue 37140. Update a structure passed by value
+ * that contains a pointer to a string and a destructor;
+ * the pointer to the string should not be double-freed.
+ */
+
+EXPORT(void)
+_testfunc_large_struct_update_value_string_buffer(TestStringBuffer in)
+{
+    ((volatile TestStringBuffer *)&in)->first = 0x0badf00d;
+    ((volatile TestStringBuffer *)&in)->second = 0x0badf00d;
+    ((volatile TestStringBuffer *)&in)->third[0] = 'J';
+}
+
+typedef struct {
     unsigned int first;
     unsigned int second;
 } TestReg;
