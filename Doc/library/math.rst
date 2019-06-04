@@ -48,7 +48,7 @@ Number-theoretic and representation functions
    to the coefficient of k-th term in polynomial expansion of the
    expression ``(1 + x) ** n``.
 
-   Raises :exc:`TypeError` if either of the arguments not integers.
+   Raises :exc:`TypeError` if either of the arguments are not integers.
    Raises :exc:`ValueError` if either of the arguments are negative.
 
    .. versionadded:: 3.8
@@ -218,7 +218,7 @@ Number-theoretic and representation functions
    Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
    to zero when ``k > n``.
 
-   Raises :exc:`TypeError` if either of the arguments not integers.
+   Raises :exc:`TypeError` if either of the arguments are not integers.
    Raises :exc:`ValueError` if either of the arguments are negative.
 
    .. versionadded:: 3.8
