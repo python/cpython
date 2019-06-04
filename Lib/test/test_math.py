@@ -1904,9 +1904,9 @@ class IsCloseTests(unittest.TestCase):
         self.assertRaises(ValueError, perm, 1, -1)
         self.assertRaises(ValueError, perm, 1, -2**1000)
 
-        # Raises value error if k is greater than n
-        self.assertRaises(ValueError, perm, 1, 2)
-        self.assertRaises(ValueError, perm, 1, 2**1000)
+        # Returns zero if k is greater than n
+        self.assertEqual(perm(1, 2), 0)
+        self.assertEqual(perm(1, 2**1000), 0)
 
         n = 2**1000
         self.assertEqual(perm(n, 0), 1)
@@ -1970,9 +1970,9 @@ class IsCloseTests(unittest.TestCase):
         self.assertRaises(ValueError, comb, 1, -1)
         self.assertRaises(ValueError, comb, 1, -2**1000)
 
-        # Raises value error if k is greater than n
-        self.assertRaises(ValueError, comb, 1, 2)
-        self.assertRaises(ValueError, comb, 1, 2**1000)
+        # Returns zero if k is greater than n
+        self.assertEqual(comb(1, 2), 0)
+        self.assertEqual(comb(1, 2**1000), 0)
 
         n = 2**1000
         self.assertEqual(comb(n, 0), 1)
