@@ -2514,12 +2514,17 @@ PyDoc_STRVAR(module_doc,
 - defaultdict:  dict subclass with a default value factory\n\
 ");
 
+static struct PyMethodDef module_functions[] = {
+    _COLLECTIONS__COUNT_ELEMENTS_METHODDEF
+    {NULL,       NULL}          /* sentinel */
+};
+
 static struct PyModuleDef _collectionsmodule = {
     PyModuleDef_HEAD_INIT,
     "_collections",
     module_doc,
     -1,
-    NULL,
+    module_functions,
     NULL,
     NULL,
     NULL,
