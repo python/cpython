@@ -1180,7 +1180,8 @@ class TestAddressHeader(TestHeaderBase):
 
         'rfc2047_atom_in_quoted_string_is_decoded':
             ('"=?utf-8?q?=C3=89ric?=" <foo@example.com>',
-            [errors.InvalidHeaderDefect],
+            [errors.InvalidHeaderDefect,
+            errors.InvalidHeaderDefect],
             'Éric <foo@example.com>',
             'Éric',
             'foo@example.com',
