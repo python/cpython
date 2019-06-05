@@ -2279,6 +2279,10 @@ with the :class:`Pool` class.
       Return whether the call completed without raising an exception.  Will
       raise :exc:`AssertionError` if the result is not ready.
 
+      .. versionchanged:: 3.7
+         If the result is not ready, :exc:`ValueError` is raised instead of
+         :exc:`AssertionError`.
+
 The following example demonstrates the use of a pool::
 
    from multiprocessing import Pool
