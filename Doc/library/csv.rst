@@ -493,12 +493,18 @@ Reading a file with an alternate format::
        for row in reader:
            print(row)
 
-The corresponding simplest possible writing example is::
+The corresponding simplest possible writing example is using an 
+iterable container ``rows``::
 
    import csv
+   rows = [list(range(5)), list(range(5,10))]
    with open('some.csv', 'w', newline='') as f:
        writer = csv.writer(f)
-       writer.writerows(someiterable)
+       writer.writerows(rows)
+       
+   #produces some.csv with
+   #0,1,2,3,4
+   #5,6,7,8,9
 
 Since :func:`open` is used to open a CSV file for reading, the file
 will by default be decoded into unicode using the system default
