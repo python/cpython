@@ -894,36 +894,34 @@ class SubinterpThreadingTests(BaseTestCase):
         self.assertEqual(os.read(r, 1), b"x")
 
     def test_threads_join_2(self):
-        # Same as above, but a delay gets introduced after the thread's
-        # Python code returned but before the thread state is deleted.
-        # To achieve this, we register a thread-local object which sleeps
-        # a bit when deallocated.
-        r, w = os.pipe()
-        self.addCleanup(os.close, r)
-        self.addCleanup(os.close, w)
         code = r"""if 1:
             import os
             import threading
             import time
+            import random
+
+            def random_sleep():
+                seconds = random.random() * 0.010
+                time.sleep(seconds)
 
             class Sleeper:
                 def __del__(self):
-                    time.sleep(0.05)
+                    random_sleep()
 
             tls = threading.local()
 
             def f():
                 # Sleep a bit so that the thread is still running when
                 # Py_EndInterpreter is called.
-                time.sleep(0.05)
+                random_sleep()
                 tls.x = Sleeper()
-                os.write(%d, b"x")
+                random_sleep()
+
             threading.Thread(target=f).start()
-            """ % (w,)
+            random_sleep()
+            """
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
-        # The thread was joined properly.
-        self.assertEqual(os.read(r, 1), b"x")
 
     @cpython_only
     def test_daemon_threads_fatal_error(self):
