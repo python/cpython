@@ -1,1 +1,3 @@
-Ignore :exc:`FileNotFoundError` exceptions in :func:`shutil.rmtree` when removing a directory tree because some other process may have already deleted the directory entry for us after we started scanning directory entries (we don't care because we were going to delete it anyways).
+:func:`shutil.rmtree` no longer throws :exc:`FileNotFoundError` if another
+process or thread deletes a directory entry while it is still processing
+the directory tree. Patch by Jeffrey Kintscher.
