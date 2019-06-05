@@ -33,7 +33,7 @@
    FD_SETSIZE higher before this; e.g., via compiler /D switch.
 */
 #if defined(MS_WINDOWS) && !defined(FD_SETSIZE)
-#define FD_SETSIZE 512
+#define FD_SETSIZE 16384
 #endif
 
 #if defined(HAVE_POLL_H)
