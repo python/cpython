@@ -971,28 +971,12 @@ class ChainMap(_collections_abc.MutableMapping):
 class UserDict(_collections_abc.MutableMapping):
 
     # Start by filling-out the abstract methods
-    def __init__(*args, **kwargs):
-        if not args:
-            raise TypeError("descriptor '__init__' of 'UserDict' object "
-                            "needs an argument")
-        self, *args = args
-        if len(args) > 1:
-            raise TypeError('expected at most 1 arguments, got %d' % len(args))
-        if args:
-            dict = args[0]
-        elif 'dict' in kwargs:
-            dict = kwargs.pop('dict')
-            import warnings
-            warnings.warn("Passing 'dict' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            dict = None
+    def __init__(self, dict=None, /, **kwargs):
         self.data = {}
         if dict is not None:
             self.update(dict)
         if kwargs:
             self.update(kwargs)
-    __init__.__text_signature__ = '($self, dict=None, /, **kwargs)'
 
     def __len__(self): return len(self.data)
     def __getitem__(self, key):

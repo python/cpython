@@ -103,28 +103,12 @@ class Profile(_lsprof.Profiler):
         return self
 
     # This method is more useful to profile a single function call.
-    def runcall(*args, **kw):
-        if len(args) >= 2:
-            self, func, *args = args
-        elif not args:
-            raise TypeError("descriptor 'runcall' of 'Profile' object "
-                            "needs an argument")
-        elif 'func' in kw:
-            func = kw.pop('func')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'func' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('runcall expected at least 1 positional argument, '
-                            'got %d' % (len(args)-1))
-
+    def runcall(self, func, /, *args, **kw):
         self.enable()
         try:
             return func(*args, **kw)
         finally:
             self.disable()
-    runcall.__text_signature__ = '($self, func, /, *args, **kw)'
 
     def __enter__(self):
         self.enable()
