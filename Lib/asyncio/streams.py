@@ -626,9 +626,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
     def __init__(self, stream_reader, client_connected_cb=None, loop=None,
                  *, _asyncio_internal=False):
-        warnings.warn("The loop argument is deprecated since Python 3.8, "
-                      "and scheduled for removal in Python 3.10.",
-                      DeprecationWarning, stacklevel=2)
         super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
         self._stream_reader = stream_reader
         self._stream_writer = None
