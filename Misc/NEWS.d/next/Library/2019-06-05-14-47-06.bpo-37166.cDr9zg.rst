@@ -1,0 +1,2 @@
+inspect.findsource() no longer triggers IndexError when co_firstlineno is
+larger than the size of the linecache entry
