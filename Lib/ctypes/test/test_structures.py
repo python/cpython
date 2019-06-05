@@ -4,6 +4,7 @@ from ctypes.test import need_symbol
 from struct import calcsize
 import _ctypes_test
 import test.support
+import sys
 
 class SubclassesTest(unittest.TestCase):
     def test_subclass(self):
@@ -438,6 +439,7 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
+    @unittest.skipIf(sys.platform == "win32", "pass-by-value copy causes exception")
     def test_pass_by_value_string_buffer(self):
         dll = CDLL(_ctypes_test.__file__)
         dll.my_strdup.restype = POINTER(c_char)
