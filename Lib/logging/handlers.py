@@ -1437,7 +1437,7 @@ class QueueListener(object):
         t.daemon = True
         t.start()
 
-    def prepare(self , record):
+    def prepare(self, record):
         """
         Prepare a record for handling.
 
@@ -1477,6 +1477,8 @@ class QueueListener(object):
             try:
                 record = self.dequeue(True)
                 if record is self._sentinel:
+                    if has_task_done:
+                        q.task_done()
                     break
                 self.handle(record)
                 if has_task_done:

@@ -1856,6 +1856,7 @@ class PolicyTests(unittest.TestCase):
             policy.get_event_loop().close()
 
         policy = self.create_policy()
+        policy.set_child_watcher(asyncio.SafeChildWatcher())
 
         th = threading.Thread(target=f)
         th.start()

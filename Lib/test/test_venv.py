@@ -325,8 +325,10 @@ class BasicTest(BaseTest):
         envpy = os.path.join(os.path.realpath(self.env_dir),
                              self.bindir, self.exe)
         out, err = check_output([envpy, '-c',
-            'from multiprocessing import Pool; ' +
-            'print(Pool(1).apply_async("Python".lower).get(3))'])
+            'from multiprocessing import Pool; '
+            'pool = Pool(1); '
+            'print(pool.apply_async("Python".lower).get(3)); '
+            'pool.terminate()'])
         self.assertEqual(out.strip(), "python".encode())
 
 @requireVenvCreate

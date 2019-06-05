@@ -238,6 +238,22 @@ See :pep:`587` for a full description.
 (Contributed by Victor Stinner in :issue:`36763`.)
 
 
+Vectorcall: a fast calling protocol for CPython
+-----------------------------------------------
+
+The "vectorcall" protocol is added to the Python/C API.
+It is meant to formalize existing optimizations which were already done
+for various classes.
+Any extension type implementing a callable can use this protocol.
+
+This is currently provisional,
+the aim is to make it fully public in Python 3.9.
+
+See :pep:`590` for a full description.
+
+(Contributed by Jeroen Demeyer and Mark Shannon in :issue:`36974`.)
+
+
 Other Language Changes
 ======================
 
@@ -249,6 +265,12 @@ Other Language Changes
 * The :class:`int` type now has a new :meth:`~int.as_integer_ratio` method
   compatible with the existing :meth:`float.as_integer_ratio` method.
   (Contributed by Lisa Roach in :issue:`33073`.)
+
+* Constructors of :class:`int`, :class:`float` and :class:`complex` will now
+  use the :meth:`~object.__index__` special method, if available and the
+  corresponding method :meth:`~object.__int__`, :meth:`~object.__float__`
+  or :meth:`~object.__complex__` is not available.
+  (Contributed by Serhiy Storchaka in :issue:`20092`.)
 
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
@@ -298,6 +320,12 @@ Other Language Changes
 * Added new ``replace()`` method to the code type (:class:`types.CodeType`).
   (Contributed by Victor Stinner in :issue:`37032`.)
 
+* For integers, the three-argument form of the :func:`pow` function now permits
+  the exponent to be negative in the case where the base is relatively prime to
+  the modulus. It then computes a modular inverse to the base when the exponent
+  is ``-1``, and a suitable power of that inverse for other negative exponents.
+  (Contributed by Mark Dickinson in :issue:`36027`.)
+
 
 New Modules
 ===========
@@ -313,6 +341,15 @@ asyncio
 -------
 
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
+(Contributed by Victor Stinner in :issue:`34687`.)
+
+:class:`~asyncio.ProactorEventLoop` now also supports UDP.
+(Contributed by Adam Meily and Andrew Svetlov in :issue:`29883`.)
+
+:class:`~asyncio.ProactorEventLoop` can now be interrupted by
+:exc:`KeyboardInterrupt` ("CTRL+C").
+(Contributed by Vladimir Matveev in :issue:`23057`.)
+
 
 builtins
 --------
@@ -459,6 +496,9 @@ numbers. (Contributed by Pablo Galindo in :issue:`35606`)
 
 Added new function :func:`math.isqrt` for computing integer square roots.
 (Contributed by Mark Dickinson in :issue:`36887`.)
+
+The function :func:`math.factorial` no longer accepts arguments that are not
+int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
 
 
 mmap
@@ -641,6 +681,7 @@ how "unraisable exceptions" are handled. It is called when an exception has
 occurred but there is no way for Python to handle it. For example, when a
 destructor raises an exception or during garbage collection
 (:func:`gc.collect`).
+(Contributed by Victor Stinner in :issue:`36829`.)
 
 
 tarfile
@@ -709,7 +750,7 @@ unicodedata
 unittest
 --------
 
-* XXX Added :class:`AsyncMock` to support an asynchronous version of :class:`Mock`.
+* Added :class:`AsyncMock` to support an asynchronous version of :class:`Mock`.
   Appropriate new assert functions for testing have been added as well.
   (Contributed by Lisa Roach in :issue:`26467`).
 
@@ -718,6 +759,9 @@ unittest
   cleanups for :func:`~unittest.setUpModule()` and
   :meth:`~unittest.TestCase.setUpClass()`.
   (Contributed by Lisa Roach in :issue:`24412`.)
+
+* Several mock assert functions now also print a list of actual calls upon
+  failure. (Contributed by Petter Strandmark in :issue:`35047`.)
 
 venv
 ----
@@ -769,6 +813,8 @@ Optimizations
   * *preexec_fn*, *pass_fds*, *cwd* and *start_new_session* parameters
     are not set;
   * the *executable* path contains a directory.
+
+  (Contributed by Joannah Nanjekye and Victor Stinner in :issue:`35537`.)
 
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
@@ -829,6 +875,10 @@ Optimizations
   methods up to 20--50%.  (Contributed by Serhiy Storchaka in :issue:`23867`,
   :issue:`35582` and :issue:`36127`.)
 
+* ``LOAD_GLOBAL`` instruction now uses new "per opcode cache" mechanism.
+  It is about 40% faster now.  (Contributed by Yury Selivanov and Inada Naoki in
+  :issue:`26219`.)
+
 
 Build and C API Changes
 =======================
@@ -865,7 +915,10 @@ Build and C API Changes
   ``__index__()`` method (like :class:`~decimal.Decimal` and
   :class:`~fractions.Fraction`).  :c:func:`PyNumber_Check` will now return
   ``1`` for objects implementing ``__index__()``.
-  (Contributed by Serhiy Storchaka in :issue:`36048`.)
+  :c:func:`PyNumber_Long`, :c:func:`PyNumber_Float` and
+  :c:func:`PyFloat_AsDouble` also now use the ``__index__()`` method if
+  available.
+  (Contributed by Serhiy Storchaka in :issue:`36048` and :issue:`20092`.)
 
 * Heap-allocated type objects will now increase their reference count
   in :c:func:`PyObject_Init` (and its parallel macro ``PyObject_INIT``)
@@ -968,10 +1021,12 @@ The following features and APIs have been removed from Python 3.8:
 
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
+  (Contributed by Victor Stinner in :issue:`35345`.)
 
 * The function :func:`time.clock` has been removed, it was deprecated since Python
   3.3: use :func:`time.perf_counter` or :func:`time.process_time` instead, depending
   on your requirements, to have a well defined behavior.
+  (Contributed by Matthias Bussonnier in :issue:`36895`.)
 
 * The ``pyvenv`` script has been removed in favor of ``python3.8 -m venv``
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
@@ -1062,12 +1117,14 @@ Changes in the Python API
   Emulation, Popen constructor using :func:`os.posix_spawn` no longer raise an
   exception on errors like missing program, but the child process fails with a
   non-zero :attr:`~Popen.returncode`.
+  (Contributed by Joannah Nanjekye and Victor Stinner in :issue:`35537`.)
 
 * The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
   exceptions.
 
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
+  (Contributed by Victor Stinner in :issue:`35345`.)
 
 * The :func:`statistics.mode` function no longer raises an exception
   when given multimodal data.  Instead, it returns the first mode
@@ -1140,9 +1197,6 @@ Changes in the Python API
   success; an exception was raised on error under Unix.
   (Contributed by Berker Peksag in :issue:`2122`.)
 
-* The function :func:`math.factorial` no longer accepts arguments that are not
-  int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
-
 * :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
@@ -1177,8 +1231,10 @@ Changes in the Python API
 
 * :class:`types.CodeType` has a new parameter in the second position of the
   constructor (*posonlyargcount*) to support positional-only arguments defined
-  in :pep:`570`. A new ``replace()`` method of :class:`types.CodeType` can be
-  used to make the code future-proof.
+  in :pep:`570`. The first argument (*argcount*) now represents the total
+  number of positional arguments (including positional-only arguments). A new
+  ``replace()`` method of :class:`types.CodeType` can be used to make the code
+  future-proof.
 
 
 Changes in the C API
@@ -1195,6 +1251,7 @@ Changes in the C API
   ``RTLD_LOCAL``, it was already not possible to load C extensions which
   were not linked to ``libpython``, like C extensions of the standard
   library built by the ``*shared*`` section of ``Modules/Setup``.
+  (Contributed by Victor Stinner in :issue:`21536`.)
 
 * Use of ``#`` variants of formats in parsing or building value (e.g.
   :c:func:`PyArg_ParseTuple`, :c:func:`Py_BuildValue`, :c:func:`PyObject_CallFunction`,
@@ -1269,7 +1326,7 @@ Changes in the C API
   (Contributed by Zackery Spytz in :issue:`33407`.)
 
 * The interpreter does not pretend to support binary compatibility of
-  extension types accross feature releases, anymore.  A :c:type:`PyTypeObject`
+  extension types across feature releases, anymore.  A :c:type:`PyTypeObject`
   exported by a third-party extension module is supposed to have all the
   slots expected in the current Python version, including
   :c:member:`~PyTypeObject.tp_finalize` (:const:`Py_TPFLAGS_HAVE_FINALIZE`

@@ -1634,6 +1634,24 @@ class ContextTests(unittest.TestCase):
         obj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
         self.assertIsInstance(obj, MySSLObject)
 
+    @unittest.skipUnless(IS_OPENSSL_1_1_1, "Test requires OpenSSL 1.1.1")
+    def test_num_tickest(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        self.assertEqual(ctx.num_tickets, 2)
+        ctx.num_tickets = 1
+        self.assertEqual(ctx.num_tickets, 1)
+        ctx.num_tickets = 0
+        self.assertEqual(ctx.num_tickets, 0)
+        with self.assertRaises(ValueError):
+            ctx.num_tickets = -1
+        with self.assertRaises(TypeError):
+            ctx.num_tickets = None
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.assertEqual(ctx.num_tickets, 2)
+        with self.assertRaises(ValueError):
+            ctx.num_tickets = 1
+
 
 class SSLErrorTests(unittest.TestCase):
 
@@ -3703,7 +3721,7 @@ class ThreadedTests(unittest.TestCase):
         # client 1.0, server 1.2 (mismatch)
         server_context.minimum_version = ssl.TLSVersion.TLSv1_2
         server_context.maximum_version = ssl.TLSVersion.TLSv1_2
-        client_context.minimum_version = ssl.TLSVersion.TLSv1
+        client_context.maximum_version = ssl.TLSVersion.TLSv1
         client_context.maximum_version = ssl.TLSVersion.TLSv1
         with ThreadedEchoServer(context=server_context) as server:
             with client_context.wrap_socket(socket.socket(),
@@ -4051,13 +4069,15 @@ class ThreadedTests(unittest.TestCase):
             1/0
         server_context.set_servername_callback(cb_raising)
 
-        with self.assertRaises(ssl.SSLError) as cm, \
-             support.captured_stderr() as stderr:
-            stats = server_params_test(client_context, server_context,
-                                       chatty=False,
-                                       sni_name='supermessage')
-        self.assertEqual(cm.exception.reason, 'SSLV3_ALERT_HANDSHAKE_FAILURE')
-        self.assertIn("ZeroDivisionError", stderr.getvalue())
+        with support.catch_unraisable_exception() as catch:
+            with self.assertRaises(ssl.SSLError) as cm:
+                stats = server_params_test(client_context, server_context,
+                                           chatty=False,
+                                           sni_name='supermessage')
+
+            self.assertEqual(cm.exception.reason,
+                             'SSLV3_ALERT_HANDSHAKE_FAILURE')
+            self.assertEqual(catch.unraisable.exc_type, ZeroDivisionError)
 
     @needs_sni
     def test_sni_callback_wrong_return_type(self):
@@ -4069,13 +4089,15 @@ class ThreadedTests(unittest.TestCase):
             return "foo"
         server_context.set_servername_callback(cb_wrong_return_type)
 
-        with self.assertRaises(ssl.SSLError) as cm, \
-             support.captured_stderr() as stderr:
-            stats = server_params_test(client_context, server_context,
-                                       chatty=False,
-                                       sni_name='supermessage')
-        self.assertEqual(cm.exception.reason, 'TLSV1_ALERT_INTERNAL_ERROR')
-        self.assertIn("TypeError", stderr.getvalue())
+        with support.catch_unraisable_exception() as catch:
+            with self.assertRaises(ssl.SSLError) as cm:
+                stats = server_params_test(client_context, server_context,
+                                           chatty=False,
+                                           sni_name='supermessage')
+
+
+            self.assertEqual(cm.exception.reason, 'TLSV1_ALERT_INTERNAL_ERROR')
+            self.assertEqual(catch.unraisable.exc_type, TypeError)
 
     def test_shared_ciphers(self):
         client_context, server_context, hostname = testing_context()
@@ -4525,50 +4547,16 @@ class TestSSLDebug(unittest.TestCase):
                                             server_hostname=hostname) as s:
                 s.connect((HOST, server.port))
 
-        self.assertEqual(msg, [
-            ("write", TLSVersion.TLSv1, _TLSContentType.HEADER,
-             _TLSMessageType.CERTIFICATE_STATUS),
-            ("write", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
-             _TLSMessageType.CLIENT_HELLO),
-            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
-             _TLSMessageType.CERTIFICATE_STATUS),
-            ("read", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
-             _TLSMessageType.SERVER_HELLO),
-            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
-             _TLSMessageType.CERTIFICATE_STATUS),
-            ("read", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
-             _TLSMessageType.CERTIFICATE),
-            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
-             _TLSMessageType.CERTIFICATE_STATUS),
+        self.assertIn(
             ("read", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
              _TLSMessageType.SERVER_KEY_EXCHANGE),
-            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
-             _TLSMessageType.CERTIFICATE_STATUS),
-            ("read", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
-             _TLSMessageType.SERVER_DONE),
-            ("write", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
-             _TLSMessageType.CERTIFICATE_STATUS),
-            ("write", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
-             _TLSMessageType.CLIENT_KEY_EXCHANGE),
-            ("write", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
-             _TLSMessageType.FINISHED),
+            msg
+        )
+        self.assertIn(
             ("write", TLSVersion.TLSv1_2, _TLSContentType.CHANGE_CIPHER_SPEC,
              _TLSMessageType.CHANGE_CIPHER_SPEC),
-            ("write", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
-             _TLSMessageType.CERTIFICATE_STATUS),
-            ("write", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
-             _TLSMessageType.FINISHED),
-            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
-             _TLSMessageType.CERTIFICATE_STATUS),
-            ("read", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
-             _TLSMessageType.NEWSESSION_TICKET),
-            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
-             _TLSMessageType.FINISHED),
-            ("read", TLSVersion.TLSv1_2, _TLSContentType.HEADER,
-             _TLSMessageType.CERTIFICATE_STATUS),
-            ("read", TLSVersion.TLSv1_2, _TLSContentType.HANDSHAKE,
-             _TLSMessageType.FINISHED),
-        ])
+            msg
+        )
 
 
 def test_main(verbose=False):

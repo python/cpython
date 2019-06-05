@@ -2494,6 +2494,78 @@ class TestParser(TestParserMixin, TestEmailBase):
             ";foo", ";foo", ";foo", [errors.InvalidHeaderDefect]*3
         )
 
+    # get_msg_id
+
+    def test_get_msg_id_valid(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            "<simeple.local@example.something.com>",
+            "<simeple.local@example.something.com>",
+            "<simeple.local@example.something.com>",
+            [],
+            '',
+            )
+        self.assertEqual(msg_id.token_type, 'msg-id')
+
+    def test_get_msg_id_obsolete_local(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            '<"simeple.local"@example.com>',
+            '<"simeple.local"@example.com>',
+            '<simeple.local@example.com>',
+            [errors.ObsoleteHeaderDefect],
+            '',
+            )
+        self.assertEqual(msg_id.token_type, 'msg-id')
+
+    def test_get_msg_id_non_folding_literal_domain(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            "<simple.local@[someexamplecom.domain]>",
+            "<simple.local@[someexamplecom.domain]>",
+            "<simple.local@[someexamplecom.domain]>",
+            [],
+            "",
+            )
+        self.assertEqual(msg_id.token_type, 'msg-id')
+
+
+    def test_get_msg_id_obsolete_domain_part(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            "<simplelocal@(old)example.com>",
+            "<simplelocal@(old)example.com>",
+            "<simplelocal@ example.com>",
+            [errors.ObsoleteHeaderDefect],
+            ""
+        )
+
+    def test_get_msg_id_no_id_right_part(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            "<simplelocal>",
+            "<simplelocal>",
+            "<simplelocal>",
+            [errors.InvalidHeaderDefect],
+            ""
+        )
+        self.assertEqual(msg_id.token_type, 'msg-id')
+
+    def test_get_msg_id_no_angle_start(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id("msgwithnoankle")
+
+    def test_get_msg_id_no_angle_end(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            "<simplelocal@domain",
+            "<simplelocal@domain>",
+            "<simplelocal@domain>",
+            [errors.InvalidHeaderDefect],
+            ""
+        )
+        self.assertEqual(msg_id.token_type, 'msg-id')
+
 
 @parameterize
 class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):

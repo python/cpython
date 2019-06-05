@@ -402,9 +402,9 @@ def _checknetloc(netloc):
     # looking for characters like \u2100 that expand to 'a/c'
     # IDNA uses NFKC equivalence, so normalize for this check
     import unicodedata
-    n = netloc.rpartition('@')[2] # ignore anything to the left of '@'
-    n = n.replace(':', '')        # ignore characters already included
-    n = n.replace('#', '')        # but not the surrounding text
+    n = netloc.replace('@', '')   # ignore characters already included
+    n = n.replace(':', '')        # but not the surrounding text
+    n = n.replace('#', '')
     n = n.replace('?', '')
     netloc2 = unicodedata.normalize('NFKC', n)
     if n == netloc2:

@@ -632,12 +632,12 @@ if __name__ == '__main__':
             print("", file=self.stream)
             return 1
         def help_EOF(self):
-            print("Leave the profile brower.", file=self.stream)
+            print("Leave the profile browser.", file=self.stream)
 
         def do_quit(self, line):
             return 1
         def help_quit(self):
-            print("Leave the profile brower.", file=self.stream)
+            print("Leave the profile browser.", file=self.stream)
 
         def do_read(self, line):
             if line:
