@@ -1562,7 +1562,7 @@ are always available.  They are listed here in alphabetical order.
    about strings, see :ref:`textseq`.
 
 
-.. function:: sum(iterable[, start])
+.. function:: sum(iterable, /[, start])
 
    Sums *start* and the items of an *iterable* from left to right and returns the
    total.  *start* defaults to ``0``. The *iterable*'s items are normally numbers,
