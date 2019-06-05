@@ -3011,6 +3011,13 @@ features:
    (or a bitwise ORed combination of them).  By default, the new file
    descriptor is :ref:`non-inheritable <fd_inheritance>`.
 
+   The name supplied in *name* is used as a filename and will be displayed as
+   the target of the corresponding symbolic link in the directory
+   ``/proc/self/fd/``. The displayed name is always prefixed with ``memfd:``
+   and serves only for debugging purposes. Names do not affect the behavior of
+   the file descriptor, and as such multiple files can have the same name
+   without any side effects.
+
    .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.
 
    .. versionadded:: 3.8
