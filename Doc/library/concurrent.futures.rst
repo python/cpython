@@ -28,7 +28,7 @@ Executor Objects
    An abstract class that provides methods to execute calls asynchronously.  It
    should not be used directly, but through its concrete subclasses.
 
-    .. method:: submit(fn, *args, **kwargs)
+    .. method:: submit(fn, /, *args, **kwargs)
 
        Schedules the callable, *fn*, to be executed as ``fn(*args **kwargs)``
        and returns a :class:`Future` object representing the execution of the
