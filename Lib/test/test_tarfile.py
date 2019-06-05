@@ -1421,11 +1421,13 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
         finally:
             os.umask(original_umask)
 
-class GzipStreamWriteTest(GzipTest, StreamWriteTest):
     def test_open_by_path_object(self):
-        # Test for issue #37144: open gzip for stream write by path-like object
-        tar = tarfile.open(pathlib.Path(self.tarname), self.mode)
+        # Test for issue #37144: broken open for stream write by path-like object
+        tar = tarfile.open(pathlib.Path(tmpname), self.mode)
         tar.close()
+
+class GzipStreamWriteTest(GzipTest, StreamWriteTest):
+    pass
 
 class Bz2StreamWriteTest(Bz2Test, StreamWriteTest):
     decompressor = bz2.BZ2Decompressor if bz2 else None
