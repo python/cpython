@@ -1468,7 +1468,9 @@ class TarFile(object):
             if hasattr(fileobj, "mode"):
                 self._mode = fileobj.mode
             self._extfileobj = True
-        self.name = os.fspath(name) if name else None
+
+        name = os.fspath(name) if name else None
+        self.name = os.path.abspath(name) if name else None
         self.fileobj = fileobj
 
         # Init attributes.
@@ -1938,12 +1940,13 @@ class TarFile(object):
            excluded from the archive.
         """
         self._check("awx")
+        name = os.fspath(name)
 
         if arcname is None:
             arcname = name
 
         # Skip if somebody tries to archive the archive...
-        if self.name is not None and os.fspath(name) == self.name:
+        if self.name is not None and os.path.abspath(name) == self.name:
             self._dbg(2, "tarfile: Skipped %r" % name)
             return
 
