@@ -870,7 +870,7 @@ call fails (for example because the path doesn't exist).
       PosixPath('foo/bar/c.txt')
       PosixPath('foo/bar/spam/d.rst')
 
-   .. versionchanged:: 3.8
+   .. versionchanged:: 3.9
       The *recursive* parameter was added.
 
 .. method:: Path.lchmod(mode)
