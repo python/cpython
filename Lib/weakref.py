@@ -514,33 +514,7 @@ class finalize:
     class _Info:
         __slots__ = ("weakref", "func", "args", "kwargs", "atexit", "index")
 
-    def __init__(*args, **kwargs):
-        if len(args) >= 3:
-            self, obj, func, *args = args
-        elif not args:
-            raise TypeError("descriptor '__init__' of 'finalize' object "
-                            "needs an argument")
-        else:
-            if 'func' not in kwargs:
-                raise TypeError('finalize expected at least 2 positional '
-                                'arguments, got %d' % (len(args)-1))
-            func = kwargs.pop('func')
-            if len(args) >= 2:
-                self, obj, *args = args
-                import warnings
-                warnings.warn("Passing 'func' as keyword argument is deprecated",
-                              DeprecationWarning, stacklevel=2)
-            else:
-                if 'obj' not in kwargs:
-                    raise TypeError('finalize expected at least 2 positional '
-                                    'arguments, got %d' % (len(args)-1))
-                obj = kwargs.pop('obj')
-                self, *args = args
-                import warnings
-                warnings.warn("Passing 'obj' as keyword argument is deprecated",
-                              DeprecationWarning, stacklevel=2)
-        args = tuple(args)
-
+    def __init__(self, obj, func, /, *args, **kwargs):
         if not self._registered_with_atexit:
             # We may register the exit function more than once because
             # of a thread race, but that is harmless
@@ -556,7 +530,6 @@ class finalize:
         info.index = next(self._index_iter)
         self._registry[self] = info
         finalize._dirty = True
-    __init__.__text_signature__ = '($self, obj, func, /, *args, **kwargs)'
 
     def __call__(self, _=None):
         """If alive then mark as dead and return func(*args, **kwargs);

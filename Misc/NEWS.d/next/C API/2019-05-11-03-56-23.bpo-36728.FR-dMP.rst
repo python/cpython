@@ -1,2 +1,0 @@
-The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
-It should not be called explicitly: use :c:func:`PyOS_AfterFork_Child` instead.

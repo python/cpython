@@ -1,2 +1,0 @@
-:func:`unittest.mock.mock_open` results now respects the argument of read([size]).
-Patch contributed by Rémi Lapeyre.

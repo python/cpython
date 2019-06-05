@@ -1437,7 +1437,7 @@ class QueueListener(object):
         t.daemon = True
         t.start()
 
-    def prepare(self , record):
+    def prepare(self, record):
         """
         Prepare a record for handling.
 

@@ -1466,6 +1466,15 @@ Blah blah blah
         g.flatten(msg)
         self.assertEqual(b.getvalue(), source + b'>From R\xc3\xb6lli\n')
 
+    def test_mutltipart_with_bad_bytes_in_cte(self):
+        # bpo30835
+        source = textwrap.dedent("""\
+            From: aperson@example.com
+            Content-Type: multipart/mixed; boundary="1"
+            Content-Transfer-Encoding: \xc8
+        """).encode('utf-8')
+        msg = email.message_from_bytes(source)
+
 
 # Test the basic MIMEAudio class
 class TestMIMEAudio(unittest.TestCase):
