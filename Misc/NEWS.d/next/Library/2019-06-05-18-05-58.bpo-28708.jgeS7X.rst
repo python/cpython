@@ -1,0 +1,3 @@
+Add *setsize* keywoard-only parameter to :func:`select.select`. It becomes
+possible to configure the set size used internally by :func:`select.select`
+at runtime.

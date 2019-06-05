@@ -114,7 +114,7 @@ The module defines the following:
    :ref:`kevent-objects` below for the methods supported by kevent objects.
 
 
-.. function:: select(rlist, wlist, xlist[, timeout])
+.. function:: select(rlist, wlist, xlist[, timeout], *, setsize=FD_SETSIZE)
 
    This is a straightforward interface to the Unix :c:func:`select` system call.
    The first three arguments are sequences of 'waitable objects': either
@@ -157,12 +157,21 @@ The module defines the following:
       library, and does not handle file descriptors that don't originate from
       WinSock.
 
+   .. versionchanged:: 3.9
+      Added *setsize* parameter.
+
    .. versionchanged:: 3.5
       The function is now retried with a recomputed timeout when interrupted by
       a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
+
+.. attribute:: FD_SETSIZE
+
+   Set size used by :func:`select.select` by default.
+
+   .. versionadded:: 3.9
 
 .. attribute:: PIPE_BUF
 

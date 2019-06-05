@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(select_select__doc__,
-"select($module, rlist, wlist, xlist, timeout=None, /)\n"
+"select($module, rlist, wlist, xlist, timeout=None, /, *, setsize=-1)\n"
 "--\n"
 "\n"
 "Wait until one or more file descriptors are ready for some kind of I/O.\n"
@@ -30,33 +30,53 @@ PyDoc_STRVAR(select_select__doc__,
 "descriptors can be used.");
 
 #define SELECT_SELECT_METHODDEF    \
-    {"select", (PyCFunction)(void(*)(void))select_select, METH_FASTCALL, select_select__doc__},
+    {"select", (PyCFunction)(void(*)(void))select_select, METH_FASTCALL|METH_KEYWORDS, select_select__doc__},
 
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
-                   PyObject *xlist, PyObject *timeout_obj);
+                   PyObject *xlist, PyObject *timeout_obj, int setsize_int);
 
 static PyObject *
-select_select(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+select_select(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "", "", "setsize", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "select", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PyObject *rlist;
     PyObject *wlist;
     PyObject *xlist;
     PyObject *timeout_obj = Py_None;
+    int setsize_int = FD_SETSIZE;
 
-    if (!_PyArg_CheckPositional("select", nargs, 3, 4)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 4, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     rlist = args[0];
     wlist = args[1];
     xlist = args[2];
     if (nargs < 4) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     timeout_obj = args[3];
-skip_optional:
-    return_value = select_select_impl(module, rlist, wlist, xlist, timeout_obj);
+skip_optional_posonly:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (PyFloat_Check(args[4])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    setsize_int = _PyLong_AsInt(args[4]);
+    if (setsize_int == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = select_select_impl(module, rlist, wlist, xlist, timeout_obj, setsize_int);
 
 exit:
     return return_value;
@@ -1215,4 +1235,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=03041f3d09b04a3d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c3e31d14dbc86fd9 input=a9049054013a1b77]*/
