@@ -713,7 +713,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
     else:
         try:
             if not os.path.exists(path):
-                raise FileNotFoundError("cannot call rmtree on a missing path")
+                raise FileNotFoundError("Cannot call rmtree on a missing path")
             if os.path.islink(path):
                 # symlinks to directories are forbidden, see bug #1669
                 raise OSError("Cannot call rmtree on a symbolic link")
