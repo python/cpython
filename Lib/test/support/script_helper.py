@@ -122,11 +122,14 @@ def run_python_until_end(*args, **env_vars):
     if 'TERM' not in env_vars:
         env['TERM'] = ''
 
+    universal_newlines = env_vars.pop('__universal_newlines', False)
+
     env.update(env_vars)
     cmd_line.extend(args)
     proc = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         env=env, cwd=cwd)
+                         env=env, cwd=cwd,
+                         universal_newlines=universal_newlines)
     with proc:
         try:
             out, err = proc.communicate()
