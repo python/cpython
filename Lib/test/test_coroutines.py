@@ -2032,11 +2032,17 @@ class CoroutineTest(unittest.TestCase):
     def test_fatal_coro_warning(self):
         # Issue 27811
         async def func(): pass
-        with warnings.catch_warnings(), support.captured_stderr() as stderr:
+        with warnings.catch_warnings(), \
+             support.catch_unraisable_exception() as cm:
             warnings.filterwarnings("error")
-            func()
+            coro = func()
+            # only store repr() to avoid keeping the coroutine alive
+            coro_repr = repr(coro)
+            coro = None
             support.gc_collect()
-        self.assertIn("was never awaited", stderr.getvalue())
+
+            self.assertIn("was never awaited", str(cm.unraisable.exc_value))
+            self.assertEqual(repr(cm.unraisable.object), coro_repr)
 
     def test_for_assign_raising_stop_async_iteration(self):
         class BadTarget:
@@ -2146,99 +2152,6 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
         self.assertEqual(buffer, [1, 2, 'MyException'])
 
 
-class SysSetCoroWrapperTest(unittest.TestCase):
-
-    def test_set_wrapper_1(self):
-        async def foo():
-            return 'spam'
-
-        wrapped = None
-        def wrap(gen):
-            nonlocal wrapped
-            wrapped = gen
-            return gen
-
-        with self.assertWarns(DeprecationWarning):
-            self.assertIsNone(sys.get_coroutine_wrapper())
-
-        with self.assertWarns(DeprecationWarning):
-            sys.set_coroutine_wrapper(wrap)
-        with self.assertWarns(DeprecationWarning):
-            self.assertIs(sys.get_coroutine_wrapper(), wrap)
-        try:
-            f = foo()
-            self.assertTrue(wrapped)
-
-            self.assertEqual(run_async(f), ([], 'spam'))
-        finally:
-            with self.assertWarns(DeprecationWarning):
-                sys.set_coroutine_wrapper(None)
-            f.close()
-
-        with self.assertWarns(DeprecationWarning):
-            self.assertIsNone(sys.get_coroutine_wrapper())
-
-        wrapped = None
-        coro = foo()
-        self.assertFalse(wrapped)
-        coro.close()
-
-    def test_set_wrapper_2(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertIsNone(sys.get_coroutine_wrapper())
-        with self.assertRaisesRegex(TypeError, "callable expected, got int"):
-            with self.assertWarns(DeprecationWarning):
-                sys.set_coroutine_wrapper(1)
-        with self.assertWarns(DeprecationWarning):
-            self.assertIsNone(sys.get_coroutine_wrapper())
-
-    def test_set_wrapper_3(self):
-        async def foo():
-            return 'spam'
-
-        def wrapper(coro):
-            async def wrap(coro):
-                return await coro
-            return wrap(coro)
-
-        with self.assertWarns(DeprecationWarning):
-            sys.set_coroutine_wrapper(wrapper)
-        try:
-            with silence_coro_gc(), self.assertRaisesRegex(
-                    RuntimeError,
-                    r"coroutine wrapper.*\.wrapper at 0x.*attempted to "
-                    r"recursively wrap .* wrap .*"):
-
-                foo()
-
-        finally:
-            with self.assertWarns(DeprecationWarning):
-                sys.set_coroutine_wrapper(None)
-
-    def test_set_wrapper_4(self):
-        @types.coroutine
-        def foo():
-            return 'spam'
-
-        wrapped = None
-        def wrap(gen):
-            nonlocal wrapped
-            wrapped = gen
-            return gen
-
-        with self.assertWarns(DeprecationWarning):
-            sys.set_coroutine_wrapper(wrap)
-        try:
-            foo()
-            self.assertIs(
-                wrapped, None,
-                "generator-based coroutine was wrapped via "
-                "sys.set_coroutine_wrapper")
-        finally:
-            with self.assertWarns(DeprecationWarning):
-                sys.set_coroutine_wrapper(None)
-
-
 class OriginTrackingTest(unittest.TestCase):
     def here(self):
         info = inspect.getframeinfo(inspect.currentframe().f_back)
@@ -2342,18 +2255,25 @@ class OriginTrackingTest(unittest.TestCase):
         orig_wuc = warnings._warn_unawaited_coroutine
         try:
             warnings._warn_unawaited_coroutine = lambda coro: 1/0
-            with support.captured_stderr() as stream:
-                corofn()
+            with support.catch_unraisable_exception() as cm, \
+                 support.check_warnings((r'coroutine .* was never awaited',
+                                         RuntimeWarning)):
+                # only store repr() to avoid keeping the coroutine alive
+                coro = corofn()
+                coro_repr = repr(coro)
+
+                # clear reference to the coroutine without awaiting for it
+                del coro
                 support.gc_collect()
-            self.assertIn("Exception ignored in", stream.getvalue())
-            self.assertIn("ZeroDivisionError", stream.getvalue())
-            self.assertIn("was never awaited", stream.getvalue())
+
+                self.assertEqual(repr(cm.unraisable.object), coro_repr)
+                self.assertEqual(cm.unraisable.exc_type, ZeroDivisionError)
 
             del warnings._warn_unawaited_coroutine
-            with support.captured_stderr() as stream:
+            with support.check_warnings((r'coroutine .* was never awaited',
+                                         RuntimeWarning)):
                 corofn()
                 support.gc_collect()
-            self.assertIn("was never awaited", stream.getvalue())
 
         finally:
             warnings._warn_unawaited_coroutine = orig_wuc

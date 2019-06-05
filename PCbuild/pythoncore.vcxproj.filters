@@ -84,10 +84,13 @@
     <ClInclude Include="..\Include\cpython\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\coreconfig.h">
+    <ClInclude Include="..\Include\cpython\dictobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\dictobject.h">
+    <ClInclude Include="..\Include\cpython\fileobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\initconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\object.h">
@@ -106,6 +109,12 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\pystate.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\sysmodule.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\traceback.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\tupleobject.h">
@@ -168,6 +177,9 @@
     <ClInclude Include="..\Include\internal\pycore_atomic.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_code.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_ceval.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -175,9 +187,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_context.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_coreconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_fileutils.h">
@@ -192,10 +201,16 @@
     <ClInclude Include="..\Include\internal\pycore_hamt.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_initconfig.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pyerrors.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pyhash.h">
@@ -208,6 +223,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pystate.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_traceback.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_tupleobject.h">
@@ -268,6 +286,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\patchlevel.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\picklebufobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\py_curses.h">
@@ -803,6 +824,9 @@
     <ClCompile Include="..\Objects\obmalloc.c">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\picklebufobject.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\rangeobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
@@ -899,9 +923,6 @@
     <ClCompile Include="..\Python\compile.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\coreconfig.c">
-      <Filter>Python</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\context.h">
       <Filter>Python</Filter>
     </ClCompile>
@@ -954,6 +975,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\importdl.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\initconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\marshal.c">

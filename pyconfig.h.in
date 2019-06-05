@@ -148,6 +148,9 @@
 /* Define to 1 if you have the `copysign' function. */
 #undef HAVE_COPYSIGN
 
+/* Define to 1 if you have the `copy_file_range' function. */
+#undef HAVE_COPY_FILE_RANGE
+
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
 
@@ -301,6 +304,12 @@
 
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
+
+/* Define to 1 if you have the `explicit_bzero' function. */
+#undef HAVE_EXPLICIT_BZERO
+
+/* Define to 1 if you have the `explicit_memset' function. */
+#undef HAVE_EXPLICIT_MEMSET
 
 /* Define to 1 if you have the `expm1' function. */
 #undef HAVE_EXPM1
@@ -619,6 +628,9 @@
 /* Define to 1 if you have the <linux/can/raw.h> header file. */
 #undef HAVE_LINUX_CAN_RAW_H
 
+/* Define to 1 if you have the <linux/memfd.h> header file. */
+#undef HAVE_LINUX_MEMFD_H
+
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
 
@@ -652,11 +664,17 @@
 /* Define to 1 if you have the `lutimes' function. */
 #undef HAVE_LUTIMES
 
+/* Define to 1 if you have the `madvise' function. */
+#undef HAVE_MADVISE
+
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
 
 /* Define to 1 if you have the `mbrtowc' function. */
 #undef HAVE_MBRTOWC
+
+/* Define if you have the 'memfd_create' function. */
+#undef HAVE_MEMFD_CREATE
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -834,6 +852,9 @@
 
 /* Define to 1 if you have the `round' function. */
 #undef HAVE_ROUND
+
+/* Define to 1 if you have the `rtpSpawn' function. */
+#undef HAVE_RTPSPAWN
 
 /* Define to 1 if you have the `sched_get_priority_max' function. */
 #undef HAVE_SCHED_GET_PRIORITY_MAX
@@ -1103,6 +1124,9 @@
 
 /* Define to 1 if you have the <sys/lock.h> header file. */
 #undef HAVE_SYS_LOCK_H
+
+/* Define to 1 if you have the <sys/memfd.h> header file. */
+#undef HAVE_SYS_MEMFD_H
 
 /* Define to 1 if you have the <sys/mkdev.h> header file. */
 #undef HAVE_SYS_MKDEV_H

@@ -38,6 +38,32 @@ This module defines the following functions:
    returned.
 
 
+.. function:: excepthook(args, /)
+
+   Handle uncaught exception raised by :func:`Thread.run`.
+
+   The *args* argument has the following attributes:
+
+   * *exc_type*: Exception type.
+   * *exc_value*: Exception value, can be ``None``.
+   * *exc_traceback*: Exception traceback, can be ``None``.
+   * *thread*: Thread which raised the exception, can be ``None``.
+
+   If *exc_type* is :exc:`SystemExit`, the exception is silently ignored.
+   Otherwise, the exception is printed out on :data:`sys.stderr`.
+
+   If  this function raises an exception, :func:`sys.excepthook` is called to
+   handle it.
+
+   :func:`threading.excepthook` can be overridden to control how uncaught
+   exceptions raised by :func:`Thread.run` are handled.
+
+   .. seealso::
+      :func:`sys.excepthook` handles uncaught exceptions.
+
+   .. versionadded:: 3.8
+
+
 .. function:: get_ident()
 
    Return the 'thread identifier' of the current thread.  This is a nonzero
@@ -47,6 +73,18 @@ This module defines the following functions:
    created.
 
    .. versionadded:: 3.3
+
+
+.. function:: get_native_id()
+
+   Return the native integral Thread ID of the current thread assigned by the kernel.
+   This is a non-negative integer.
+   Its value may be used to uniquely identify this particular thread system-wide
+   (until the thread terminates, after which the value may be recycled by the OS).
+
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD.
+
+   .. versionadded:: 3.8
 
 
 .. function:: enumerate()
@@ -179,6 +217,10 @@ called is terminated.
 A thread has a name.  The name can be passed to the constructor, and read or
 changed through the :attr:`~Thread.name` attribute.
 
+If the :meth:`~Thread.run` method raises an exception,
+:func:`threading.excepthook` is called to handle it. By default,
+:func:`threading.excepthook` ignores silently :exc:`SystemExit`.
+
 A thread can be flagged as a "daemon thread".  The significance of this flag is
 that the entire Python program exits when only daemon threads are left.  The
 initial value is inherited from the creating thread.  The flag can be set
@@ -296,6 +338,26 @@ since it is impossible to detect the termination of alien threads.
       function.  Thread identifiers may be recycled when a thread exits and
       another thread is created.  The identifier is available even after the
       thread has exited.
+
+   .. attribute:: native_id
+
+      The native integral thread ID of this thread.
+      This is a non-negative integer, or ``None`` if the thread has not
+      been started. See the :func:`get_native_id` function.
+      This represents the Thread ID (``TID``) as assigned to the
+      thread by the OS (kernel).  Its value may be used to uniquely identify
+      this particular thread system-wide (until the thread terminates,
+      after which the value may be recycled by the OS).
+
+      .. note::
+
+         Similar to Process IDs, Thread IDs are only valid (guaranteed unique
+         system-wide) from the time the thread is created until the thread
+         has been terminated.
+
+      .. availability:: Require :func:`get_native_id` function.
+
+      .. versionadded:: 3.8
 
    .. method:: is_alive()
 
@@ -937,7 +999,7 @@ As an example, here is a simple way to synchronize a client and server thread::
       Return the barrier to the default, empty state.  Any threads waiting on it
       will receive the :class:`BrokenBarrierError` exception.
 
-      Note that using this function may can require some external
+      Note that using this function may require some external
       synchronization if there are other threads whose state is unknown.  If a
       barrier is broken it may be better to just leave it and create a new one.
 
@@ -945,7 +1007,7 @@ As an example, here is a simple way to synchronize a client and server thread::
 
       Put the barrier into a broken state.  This causes any active or future
       calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.  Use
-      this for example if one of the needs to abort, to avoid deadlocking the
+      this for example if one of the threads needs to abort, to avoid deadlocking the
       application.
 
       It may be preferable to simply create the barrier with a sensible

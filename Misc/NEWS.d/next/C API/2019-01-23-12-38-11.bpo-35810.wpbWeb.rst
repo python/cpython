@@ -1,4 +1,0 @@
-Modify ``PyObject_Init`` to correctly increase the refcount of heap-
-allocated Type objects. Also fix the refcounts of the heap-allocated types
-that were either doing this manually or not decreasing the type's refcount
-in tp_dealloc

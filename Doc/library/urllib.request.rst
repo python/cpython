@@ -95,6 +95,12 @@ The :mod:`urllib.request` module defines the following functions:
    parameter to ``urllib.urlopen``, can be obtained by using
    :class:`ProxyHandler` objects.
 
+   .. audit-event:: urllib.Request "fullurl data headers method"
+
+      The default opener raises an :func:`auditing event <sys.audit>`
+      ``urllib.Request`` with arguments ``fullurl``, ``data``, ``headers``,
+      ``method`` taken from the request object.
+
    .. versionchanged:: 3.2
       *cafile* and *capath* were added.
 
@@ -117,6 +123,7 @@ The :mod:`urllib.request` module defines the following functions:
        Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
+
 
 .. function:: install_opener(opener)
 

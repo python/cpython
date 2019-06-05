@@ -973,15 +973,17 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertIsInstance(_name, str)
             self.assertEqual(name, _name)
 
-    @unittest.skipUnless(hasattr(socket, 'if_nameindex'),
-                         'socket.if_nameindex() not available.')
-    def testInvalidInterfaceNameIndex(self):
-        # test nonexistent interface index/name
+    @unittest.skipUnless(hasattr(socket, 'if_indextoname'),
+                         'socket.if_indextoname() not available.')
+    def testInvalidInterfaceIndexToName(self):
         self.assertRaises(OSError, socket.if_indextoname, 0)
-        self.assertRaises(OSError, socket.if_nametoindex, '_DEADBEEF')
-        # test with invalid values
-        self.assertRaises(TypeError, socket.if_nametoindex, 0)
         self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
+
+    @unittest.skipUnless(hasattr(socket, 'if_nametoindex'),
+                         'socket.if_nametoindex() not available.')
+    def testInvalidInterfaceNameToIndex(self):
+        self.assertRaises(TypeError, socket.if_nametoindex, 0)
+        self.assertRaises(OSError, socket.if_nametoindex, '_DEADBEEF')
 
     @unittest.skipUnless(hasattr(sys, 'getrefcount'),
                          'test needs sys.getrefcount()')
@@ -1638,9 +1640,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(sockaddr, ('ff02::1de:c0:face:8d', 1234, 0, 0))
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
-    @unittest.skipUnless(
-        hasattr(socket, 'if_nameindex'),
-        'if_nameindex is not supported')
+    @unittest.skipIf(sys.platform == 'win32', 'does not work on Windows')
     @unittest.skipIf(AIX, 'Symbolic scope id does not work')
     def test_getaddrinfo_ipv6_scopeid_symbolic(self):
         # Just pick up any network interface (Linux, Mac OS X)
@@ -1672,9 +1672,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(sockaddr, ('ff02::1de:c0:face:8d', 1234, 0, ifindex))
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
-    @unittest.skipUnless(
-        hasattr(socket, 'if_nameindex'),
-        'if_nameindex is not supported')
+    @unittest.skipIf(sys.platform == 'win32', 'does not work on Windows')
     @unittest.skipIf(AIX, 'Symbolic scope id does not work')
     def test_getnameinfo_ipv6_scopeid_symbolic(self):
         # Just pick up any network interface.
@@ -1796,8 +1794,13 @@ class GeneralModuleTests(unittest.TestCase):
             self.addCleanup(shutil.rmtree, tmpdir)
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             self.addCleanup(s.close)
-            s.bind(os.path.join(tmpdir, 'socket'))
-            self._test_socket_fileno(s, socket.AF_UNIX, socket.SOCK_STREAM)
+            try:
+                s.bind(os.path.join(tmpdir, 'socket'))
+            except PermissionError:
+                pass
+            else:
+                self._test_socket_fileno(s, socket.AF_UNIX,
+                                         socket.SOCK_STREAM)
 
     def test_socket_fileno_rejects_float(self):
         with self.assertRaisesRegex(TypeError, "integer argument expected"):

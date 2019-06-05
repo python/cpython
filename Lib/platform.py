@@ -72,7 +72,7 @@
 #            type information
 #    0.4.0 - added win32_ver() and modified the platform() output for WinXX
 #    0.3.4 - fixed a bug in _follow_symlinks()
-#    0.3.3 - fixed popen() and "file" command invokation bugs
+#    0.3.3 - fixed popen() and "file" command invocation bugs
 #    0.3.2 - added architecture() API and support for it in platform()
 #    0.3.1 - fixed syscmd_ver() RE to support Windows NT
 #    0.3.0 - added system alias support

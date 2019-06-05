@@ -125,6 +125,5 @@ module Python
 
     withitem = (expr context_expr, expr? optional_vars)
 
-    type_ignore = TypeIgnore(int lineno)
+    type_ignore = TypeIgnore(int lineno, string tag)
 }
-

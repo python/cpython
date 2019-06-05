@@ -240,7 +240,7 @@ objects.
 
    .. versionadded:: 3.4
 
-.. class:: finalize(obj, func, *args, **kwargs)
+.. class:: finalize(obj, func, /, *args, **kwargs)
 
    Return a callable finalizer object which will be called when *obj*
    is garbage collected. Unlike an ordinary weak reference, a finalizer
@@ -396,7 +396,7 @@ the referent is accessed::
    import weakref
 
    class ExtendedRef(weakref.ref):
-       def __init__(self, ob, callback=None, **annotations):
+       def __init__(self, ob, callback=None, /, **annotations):
            super(ExtendedRef, self).__init__(ob, callback)
            self.__counter = 0
            for k, v in annotations.items():

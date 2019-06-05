@@ -14,8 +14,14 @@
 Objects/dict*                 @methane
 
 # Hashing
-**/*hashlib*                  @python/crypto-team
-**/*pyhash*                   @python/crypto-team
+**/*hashlib*                  @python/crypto-team @tiran
+**/*pyhash*                   @python/crypto-team @tiran
+**/*sha*                      @python/crypto-team @tiran
+**/*md5*                      @python/crypto-team @tiran
+**/*blake*                    @python/crypto-team @tiran
+/Modules/_blake2/**           @python/crypto-team @tiran
+/Modules/_sha3/**             @python/crypto-team @tiran
+
 
 # HTML
 /Lib/html/                    @ezio-melotti
@@ -26,15 +32,16 @@ Objects/dict*                 @methane
 # Ignoring importlib.h so as to not get flagged on
 # all pull requests that change the emitted
 # bytecode.
-**/*import*.c                 @python/import-team
-**/*import*.py                @python/import-team
+**/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
+**/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
 
 
 # SSL
-**/*ssl*                      @python/crypto-team
+**/*ssl*                      @python/crypto-team @tiran
+**/*.pem                      @python/crypto-team @tiran
 
 # CSPRNG
-Python/bootstrap_hash.c       @python/crypto-team
+Python/bootstrap_hash.c       @python/crypto-team @tiran
 
 # Email and related
 **/*mail*                     @python/email-team

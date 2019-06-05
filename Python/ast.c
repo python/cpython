@@ -123,7 +123,7 @@ validate_arguments(arguments_ty args)
         && !validate_expr(args->kwarg->annotation, Load)) {
             return 0;
     }
-    if (asdl_seq_LEN(args->defaults) > asdl_seq_LEN(args->args)) {
+    if (asdl_seq_LEN(args->defaults) > asdl_seq_LEN(args->posonlyargs) + asdl_seq_LEN(args->args)) {
         PyErr_SetString(PyExc_ValueError, "more positional defaults than args on arguments");
         return 0;
     }
@@ -786,7 +786,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
     /* borrowed reference */
     c.c_filename = filename;
     c.c_normalize = NULL;
-    c.c_feature_version = flags->cf_feature_version;
+    c.c_feature_version = flags ? flags->cf_feature_version : PY_MINOR_VERSION;
 
     if (TYPE(n) == encoding_decl)
         n = CHILD(n, 0);
@@ -830,7 +830,10 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                 goto out;
 
             for (i = 0; i < num; i++) {
-                type_ignore_ty ti = TypeIgnore(LINENO(CHILD(ch, i)), arena);
+                string type_comment = new_type_comment(STR(CHILD(ch, i)), &c);
+                if (!type_comment)
+                    goto out;
+                type_ignore_ty ti = TypeIgnore(LINENO(CHILD(ch, i)), type_comment, arena);
                 if (!ti)
                    goto out;
                asdl_seq_SET(type_ignores, i, ti);
@@ -2971,7 +2974,6 @@ ast_for_expr(struct compiling *c, const node *n)
                 return Compare(expression, ops, cmps, LINENO(n), n->n_col_offset,
                                n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             }
-            break;
 
         case star_expr:
             return ast_for_starred(c, n);
@@ -3396,7 +3398,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         }
         else {
             ch = CHILD(ann, 3);
-            if (TYPE(ch) == testlist) {
+            if (TYPE(ch) == testlist_star_expr) {
                 expr3 = ast_for_testlist(c, ch);
             }
             else {
@@ -3618,7 +3620,6 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                     return NULL;
                 return a;
             }
-            break;
         case dotted_name:
             if (NCH(n) == 1) {
                 node *name_node = CHILD(n, 0);
@@ -3669,7 +3670,6 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 }
                 return alias(str, NULL, c->c_arena);
             }
-            break;
         case STAR:
             str = PyUnicode_InternFromString("*");
             if (!str)
@@ -4854,7 +4854,8 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
 
     assert(expr_end >= expr_start);
     assert(*(expr_start-1) == '{');
-    assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':');
+    assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':' ||
+           *expr_end == '=');
 
     /* If the substring is all whitespace, it's an error.  We need to catch this
        here, and not when we call PyParser_SimpleParseStringFlagsFilename,
@@ -4997,18 +4998,24 @@ fstring_parse(const char **str, const char *end, int raw, int recurse_lvl,
               struct compiling *c, const node *n);
 
 /* Parse the f-string at *str, ending at end.  We know *str starts an
-   expression (so it must be a '{'). Returns the FormattedValue node,
-   which includes the expression, conversion character, and
-   format_spec expression.
+   expression (so it must be a '{'). Returns the FormattedValue node, which
+   includes the expression, conversion character, format_spec expression, and
+   optionally the text of the expression (if = is used).
 
    Note that I don't do a perfect job here: I don't make sure that a
    closing brace doesn't match an opening paren, for example. It
    doesn't need to error on all invalid expressions, just correctly
    find the end of all valid ones. Any errors inside the expression
-   will be caught when we parse it later. */
+   will be caught when we parse it later.
+
+   *expression is set to the expression.  For an '=' "debug" expression,
+   *expr_text is set to the debug text (the original text of the expression,
+   including the '=' and any whitespace around it, as a string object).  If
+   not a debug expression, *expr_text set to NULL. */
 static int
 fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
-                  expr_ty *expression, struct compiling *c, const node *n)
+                  PyObject **expr_text, expr_ty *expression,
+                  struct compiling *c, const node *n)
 {
     /* Return -1 on error, else 0. */
 
@@ -5016,7 +5023,9 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     const char *expr_end;
     expr_ty simple_expression;
     expr_ty format_spec = NULL; /* Optional format specifier. */
-    int conversion = -1; /* The conversion char. -1 if not specified. */
+    int conversion = -1; /* The conversion char.  Use default if not
+                            specified, or !r if using = and no format
+                            spec. */
 
     /* 0 if we're not in a string, else the quote char we're trying to
        match (single or double quote). */
@@ -5030,10 +5039,12 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     Py_ssize_t nested_depth = 0;
     char parenstack[MAXLEVEL];
 
+    *expr_text = NULL;
+
     /* Can only nest one level deep. */
     if (recurse_lvl >= 2) {
         ast_error(c, n, "f-string: expressions nested too deeply");
-        return -1;
+        goto error;
     }
 
     /* The first char must be a left brace, or we wouldn't have gotten
@@ -5061,7 +5072,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             ast_error(c, n,
                       "f-string expression part "
                       "cannot include a backslash");
-            return -1;
+            goto error;
         }
         if (quote_char) {
             /* We're inside a string. See if we're at the end. */
@@ -5106,7 +5117,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         } else if (ch == '[' || ch == '{' || ch == '(') {
             if (nested_depth >= MAXLEVEL) {
                 ast_error(c, n, "f-string: too many nested parenthesis");
-                return -1;
+                goto error;
             }
             parenstack[nested_depth] = ch;
             nested_depth++;
@@ -5114,22 +5125,38 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             /* Error: can't include a comment character, inside parens
                or not. */
             ast_error(c, n, "f-string expression part cannot include '#'");
-            return -1;
+            goto error;
         } else if (nested_depth == 0 &&
-                   (ch == '!' || ch == ':' || ch == '}')) {
-            /* First, test for the special case of "!=". Since '=' is
-               not an allowed conversion character, nothing is lost in
-               this test. */
-            if (ch == '!' && *str+1 < end && *(*str+1) == '=') {
-                /* This isn't a conversion character, just continue. */
-                continue;
+                   (ch == '!' || ch == ':' || ch == '}' ||
+                    ch == '=' || ch == '>' || ch == '<')) {
+            /* See if there's a next character. */
+            if (*str+1 < end) {
+                char next = *(*str+1);
+
+                /* For "!=". since '=' is not an allowed conversion character,
+                   nothing is lost in this test. */
+                if ((ch == '!' && next == '=') ||   /* != */
+                    (ch == '=' && next == '=') ||   /* == */
+                    (ch == '<' && next == '=') ||   /* <= */
+                    (ch == '>' && next == '=')      /* >= */
+                    ) {
+                    *str += 1;
+                    continue;
+                }
+                /* Don't get out of the loop for these, if they're single
+                   chars (not part of 2-char tokens). If by themselves, they
+                   don't end an expression (unlike say '!'). */
+                if (ch == '>' || ch == '<') {
+                    continue;
+                }
             }
+
             /* Normal way out of this loop. */
             break;
         } else if (ch == ']' || ch == '}' || ch == ')') {
             if (!nested_depth) {
                 ast_error(c, n, "f-string: unmatched '%c'", ch);
-                return -1;
+                goto error;
             }
             nested_depth--;
             int opening = parenstack[nested_depth];
@@ -5141,7 +5168,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
                           "f-string: closing parenthesis '%c' "
                           "does not match opening parenthesis '%c'",
                           ch, opening);
-                return -1;
+                goto error;
             }
         } else {
             /* Just consume this char and loop around. */
@@ -5154,12 +5181,12 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
        let's just do that.*/
     if (quote_char) {
         ast_error(c, n, "f-string: unterminated string");
-        return -1;
+        goto error;
     }
     if (nested_depth) {
         int opening = parenstack[nested_depth - 1];
         ast_error(c, n, "f-string: unmatched '%c'", opening);
-        return -1;
+        goto error;
     }
 
     if (*str >= end)
@@ -5170,7 +5197,26 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
        conversion or format_spec. */
     simple_expression = fstring_compile_expr(expr_start, expr_end, c, n);
     if (!simple_expression)
-        return -1;
+        goto error;
+
+    /* Check for =, which puts the text value of the expression in
+       expr_text. */
+    if (**str == '=') {
+        *str += 1;
+
+        /* Skip over ASCII whitespace.  No need to test for end of string
+           here, since we know there's at least a trailing quote somewhere
+           ahead. */
+        while (Py_ISSPACE(**str)) {
+            *str += 1;
+        }
+
+        /* Set *expr_text to the text of the expression. */
+        *expr_text = PyUnicode_FromStringAndSize(expr_start, *str-expr_start);
+        if (!*expr_text) {
+            goto error;
+        }
+    }
 
     /* Check for a conversion char, if present. */
     if (**str == '!') {
@@ -5182,13 +5228,13 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         *str += 1;
 
         /* Validate the conversion. */
-        if (!(conversion == 's' || conversion == 'r'
-              || conversion == 'a')) {
+        if (!(conversion == 's' || conversion == 'r' || conversion == 'a')) {
             ast_error(c, n,
                       "f-string: invalid conversion character: "
                       "expected 's', 'r', or 'a'");
-            return -1;
+            goto error;
         }
+
     }
 
     /* Check for the format spec, if present. */
@@ -5202,7 +5248,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         /* Parse the format spec. */
         format_spec = fstring_parse(str, end, raw, recurse_lvl+1, c, n);
         if (!format_spec)
-            return -1;
+            goto error;
     }
 
     if (*str >= end || **str != '}')
@@ -5213,20 +5259,31 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     assert(**str == '}');
     *str += 1;
 
+    /* If we're in = mode (detected by non-NULL expr_text), and have no format
+       spec and no explict conversion, set the conversion to 'r'. */
+    if (*expr_text && format_spec == NULL && conversion == -1) {
+        conversion = 'r';
+    }
+
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */
     *expression = FormattedValue(simple_expression, conversion,
-                                 format_spec, LINENO(n), n->n_col_offset,
-                                 n->n_end_lineno, n->n_end_col_offset,
-                                 c->c_arena);
+                                 format_spec, LINENO(n),
+                                 n->n_col_offset, n->n_end_lineno,
+                                 n->n_end_col_offset, c->c_arena);
     if (!*expression)
-        return -1;
+        goto error;
 
     return 0;
 
 unexpected_end_of_string:
     ast_error(c, n, "f-string: expecting '}'");
+    /* Falls through to error. */
+
+error:
+    Py_XDECREF(*expr_text);
     return -1;
+
 }
 
 /* Return -1 on error.
@@ -5255,7 +5312,7 @@ unexpected_end_of_string:
 static int
 fstring_find_literal_and_expr(const char **str, const char *end, int raw,
                               int recurse_lvl, PyObject **literal,
-                              expr_ty *expression,
+                              PyObject **expr_text, expr_ty *expression,
                               struct compiling *c, const node *n)
 {
     int result;
@@ -5283,7 +5340,8 @@ fstring_find_literal_and_expr(const char **str, const char *end, int raw,
     /* We must now be the start of an expression, on a '{'. */
     assert(**str == '{');
 
-    if (fstring_find_expr(str, end, raw, recurse_lvl, expression, c, n) < 0)
+    if (fstring_find_expr(str, end, raw, recurse_lvl, expr_text,
+                          expression, c, n) < 0)
         goto error;
 
     return 0;
@@ -5547,6 +5605,7 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
     /* Parse the f-string. */
     while (1) {
         PyObject *literal = NULL;
+        PyObject *expr_text = NULL;
         expr_ty expression = NULL;
 
         /* If there's a zero length literal in front of the
@@ -5554,31 +5613,23 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
            the f-string, expression will be NULL (unless result == 1,
            see below). */
         int result = fstring_find_literal_and_expr(str, end, raw, recurse_lvl,
-                                                   &literal, &expression,
-                                                   c, n);
+                                                   &literal, &expr_text,
+                                                   &expression, c, n);
         if (result < 0)
             return -1;
 
         /* Add the literal, if any. */
-        if (!literal) {
-            /* Do nothing. Just leave last_str alone (and possibly
-               NULL). */
-        } else if (!state->last_str) {
-            /*  Note that the literal can be zero length, if the
-                input string is "\\\n" or "\\\r", among others. */
-            state->last_str = literal;
-            literal = NULL;
-        } else {
-            /* We have a literal, concatenate it. */
-            assert(PyUnicode_GET_LENGTH(literal) != 0);
-            if (FstringParser_ConcatAndDel(state, literal) < 0)
-                return -1;
-            literal = NULL;
+        if (literal && FstringParser_ConcatAndDel(state, literal) < 0) {
+            Py_XDECREF(expr_text);
+            return -1;
+        }
+        /* Add the expr_text, if any. */
+        if (expr_text && FstringParser_ConcatAndDel(state, expr_text) < 0) {
+            return -1;
         }
 
-        /* We've dealt with the literal now. It can't be leaked on further
-           errors. */
-        assert(literal == NULL);
+        /* We've dealt with the literal and expr_text, their ownership has
+           been transferred to the state object.  Don't look at them again. */
 
         /* See if we should just loop around to get the next literal
            and expression, while ignoring the expression this

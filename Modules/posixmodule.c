@@ -25,14 +25,25 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#ifdef MS_WINDOWS
+   /* include <windows.h> early to avoid conflict with pycore_condvar.h:
+
+        #define WIN32_LEAN_AND_MEAN
+        #include <windows.h>
+
+      FSCTL_GET_REPARSE_POINT is not exported with WIN32_LEAN_AND_MEAN. */
+#  include <windows.h>
+#endif
+
+#include "pycore_ceval.h"     /* _PyEval_ReInitThreads() */
+#include "pycore_pystate.h"   /* _PyRuntime */
 #include "pythread.h"
 #include "structmember.h"
 #ifndef MS_WINDOWS
-#include "posixmodule.h"
+#  include "posixmodule.h"
 #else
-#include "winreparse.h"
+#  include "winreparse.h"
 #endif
-#include "pycore_pystate.h"
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
@@ -104,6 +115,10 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifdef HAVE_SCHED_H
 #include <sched.h>
+#endif
+
+#ifdef HAVE_COPY_FILE_RANGE
+#include <unistd.h>
 #endif
 
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
@@ -180,10 +195,12 @@ corresponding Unix manual entries for more information on calls.");
 #define fsync _commit
 #else
 /* Unix functions that the configure script doesn't check for */
+#ifndef __VXWORKS__
 #define HAVE_EXECV      1
 #define HAVE_FORK       1
 #if defined(__USLC__) && defined(__SCO_VERSION__)       /* SCO UDK Compiler */
 #define HAVE_FORK1      1
+#endif
 #endif
 #define HAVE_GETEGID    1
 #define HAVE_GETEUID    1
@@ -215,6 +232,18 @@ extern char        *ctermid_r(char *);
 #endif
 
 #endif /* !_MSC_VER */
+
+#if defined(__VXWORKS__)
+#include <vxCpuLib.h>
+#include <rtpLib.h>
+#include <wait.h>
+#include <taskLib.h>
+#ifndef _P_WAIT
+#define _P_WAIT          0
+#define _P_NOWAIT        1
+#define _P_NOWAITO       1
+#endif
+#endif /* __VXWORKS__ */
 
 #ifdef HAVE_POSIX_SPAWN
 #include <spawn.h>
@@ -364,6 +393,19 @@ extern char        *ctermid_r(char *);
 #define HAVE_STRUCT_STAT_ST_FSTYPE 1
 #endif
 
+/* memfd_create is either defined in sys/mman.h or sys/memfd.h
+ * linux/memfd.h defines additional flags
+ */
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+#ifdef HAVE_SYS_MEMFD_H
+#include <sys/memfd.h>
+#endif
+#ifdef HAVE_LINUX_MEMFD_H
+#include <linux/memfd.h>
+#endif
+
 #ifdef _Py_MEMORY_SANITIZER
 # include <sanitizer/msan_interface.h>
 #endif
@@ -423,11 +465,11 @@ PyOS_AfterFork_Child(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
     _PyGILState_Reinit(runtime);
-    _PyInterpreterState_DeleteExceptMain(runtime);
-    PyEval_ReInitThreads();
+    _PyEval_ReInitThreads(runtime);
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
     _PyRuntimeState_ReInitThreads(runtime);
+    _PyInterpreterState_DeleteExceptMain(runtime);
 
     run_at_forkers(_PyInterpreterState_Get()->after_forkers_child, 0);
 }
@@ -1259,7 +1301,8 @@ _Py_Sigset_Converter(PyObject *obj, void *addr)
     long signum;
     int overflow;
 
-    if (sigemptyset(mask)) {
+    // The extra parens suppress the unreachable-code warning with clang on MacOS
+    if (sigemptyset(mask) < (0)) {
         /* Probably only if mask == NULL. */
         PyErr_SetFromErrno(PyExc_OSError);
         return 0;
@@ -1341,7 +1384,7 @@ win32_get_reparse_tag(HANDLE reparse_point_handle, ULONG *reparse_tag)
 */
 #include <crt_externs.h>
 static char **environ;
-#elif !defined(_MSC_VER) && ( !defined(__WATCOMC__) || defined(__QNX__) )
+#elif !defined(_MSC_VER) && (!defined(__WATCOMC__) || defined(__QNX__) || defined(__VXWORKS__))
 extern char **environ;
 #endif /* !_MSC_VER */
 
@@ -4238,6 +4281,11 @@ os_system_impl(PyObject *module, const Py_UNICODE *command)
 /*[clinic end generated code: output=5b7c3599c068ca42 input=303f5ce97df606b0]*/
 {
     long result;
+
+    if (PySys_Audit("system", "(u)", command) < 0) {
+        return -1;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     result = _wsystem(command);
@@ -4260,6 +4308,11 @@ os_system_impl(PyObject *module, PyObject *command)
 {
     long result;
     const char *bytes = PyBytes_AsString(command);
+
+    if (PySys_Audit("system", "(O)", command) < 0) {
+        return -1;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     result = system(bytes);
     Py_END_ALLOW_THREADS
@@ -4858,7 +4911,7 @@ os__exit_impl(PyObject *module, int status)
 #define EXECV_CHAR char
 #endif
 
-#if defined(HAVE_EXECV) || defined(HAVE_SPAWNV)
+#if defined(HAVE_EXECV) || defined(HAVE_SPAWNV) || defined(HAVE_RTPSPAWN)
 static void
 free_string_array(EXECV_CHAR **array, Py_ssize_t count)
 {
@@ -4896,7 +4949,7 @@ fsconvert_strdup(PyObject *o, EXECV_CHAR **out)
 }
 #endif
 
-#if defined(HAVE_EXECV) || defined (HAVE_FEXECVE)
+#if defined(HAVE_EXECV) || defined (HAVE_FEXECVE) || defined(HAVE_RTPSPAWN)
 static EXECV_CHAR**
 parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 {
@@ -5464,7 +5517,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
 
-    if (file_actions != NULL) {
+    if (file_actions != NULL && file_actions != Py_None) {
         /* There is a bug in old versions of glibc that makes some of the
          * helper functions for manipulating file actions not copy the provided
          * buffers. The problem is that posix_spawn_file_actions_addopen does not
@@ -5620,8 +5673,41 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
 }
 #endif /* HAVE_POSIX_SPAWNP */
 
+#ifdef HAVE_RTPSPAWN
+static intptr_t
+_rtp_spawn(int mode, const char *rtpFileName, const char *argv[],
+               const char  *envp[])
+{
+     RTP_ID rtpid;
+     int status;
+     pid_t res;
+     int async_err = 0;
 
-#if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)
+     /* Set priority=100 and uStackSize=16 MiB (0x1000000) for new processes.
+        uStackSize=0 cannot be used, the default stack size is too small for
+        Python. */
+     if (envp) {
+         rtpid = rtpSpawn(rtpFileName, argv, envp,
+                          100, 0x1000000, 0, VX_FP_TASK);
+     }
+     else {
+         rtpid = rtpSpawn(rtpFileName, argv, (const char **)environ,
+                          100, 0x1000000, 0, VX_FP_TASK);
+     }
+     if ((rtpid != RTP_ID_ERROR) && (mode == _P_WAIT)) {
+         do {
+             res = waitpid((pid_t)rtpid, &status, 0);
+         } while (res < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+         if (res < 0)
+             return RTP_ID_ERROR;
+         return ((intptr_t)status);
+     }
+     return ((intptr_t)rtpid);
+}
+#endif
+
+#if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN)
 /*[clinic input]
 os.spawnv
 
@@ -5691,13 +5777,17 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
     }
     argvlist[argc] = NULL;
 
+#if !defined(HAVE_RTPSPAWN)
     if (mode == _OLD_P_OVERLAY)
         mode = _P_OVERLAY;
+#endif
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
     spawnval = _wspawnv(mode, path->wide, argvlist);
+#elif defined(HAVE_RTPSPAWN)
+    spawnval = _rtp_spawn(mode, path->narrow, (const char **)argvlist, NULL);
 #else
     spawnval = _spawnv(mode, path->narrow, argvlist);
 #endif
@@ -5796,13 +5886,18 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
     if (envlist == NULL)
         goto fail_1;
 
+#if !defined(HAVE_RTPSPAWN)
     if (mode == _OLD_P_OVERLAY)
         mode = _P_OVERLAY;
+#endif
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
     spawnval = _wspawnve(mode, path->wide, argvlist, envlist);
+#elif defined(HAVE_RTPSPAWN)
+    spawnval = _rtp_spawn(mode, path->narrow, (const char **)argvlist,
+                           (const char **)envlist);
 #else
     spawnval = _spawnve(mode, path->narrow, argvlist, envlist);
 #endif
@@ -8211,6 +8306,10 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
     flags |= O_CLOEXEC;
 #endif
 
+    if (PySys_Audit("open", "OOi", path->object, Py_None, flags) < 0) {
+        return -1;
+    }
+
     _Py_BEGIN_SUPPRESS_IPH
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -9360,8 +9459,74 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 }
 #endif /* HAVE_PWRITEV */
 
+#ifdef HAVE_COPY_FILE_RANGE
+/*[clinic input]
+
+os.copy_file_range
+    src: int
+        Source file descriptor.
+    dst: int
+        Destination file descriptor.
+    count: Py_ssize_t
+        Number of bytes to copy.
+    offset_src: object = None
+        Starting offset in src.
+    offset_dst: object = None
+        Starting offset in dst.
+
+Copy count bytes from one file descriptor to another.
+
+If offset_src is None, then src is read from the current position;
+respectively for offset_dst.
+[clinic start generated code]*/
+
+static PyObject *
+os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
+                        PyObject *offset_src, PyObject *offset_dst)
+/*[clinic end generated code: output=1a91713a1d99fc7a input=42fdce72681b25a9]*/
+{
+    off_t offset_src_val, offset_dst_val;
+    off_t *p_offset_src = NULL;
+    off_t *p_offset_dst = NULL;
+    Py_ssize_t ret;
+    int async_err = 0;
+    /* The flags argument is provided to allow
+     * for future extensions and currently must be to 0. */
+    int flags = 0;
 
 
+    if (count < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative value for 'count' not allowed");
+        return NULL;
+    }
+
+    if (offset_src != Py_None) {
+        if (!Py_off_t_converter(offset_src, &offset_src_val)) {
+            return NULL;
+        }
+        p_offset_src = &offset_src_val;
+    }
+
+    if (offset_dst != Py_None) {
+        if (!Py_off_t_converter(offset_dst, &offset_dst_val)) {
+            return NULL;
+        }
+        p_offset_dst = &offset_dst_val;
+    }
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        ret = copy_file_range(src, p_offset_src, dst, p_offset_dst, count, flags);
+        Py_END_ALLOW_THREADS
+    } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (ret < 0) {
+        return (!async_err) ? posix_error() : NULL;
+    }
+
+    return PyLong_FromSsize_t(ret);
+}
+#endif /* HAVE_COPY_FILE_RANGE*/
 
 #ifdef HAVE_MKFIFO
 /*[clinic input]
@@ -9530,6 +9695,10 @@ os_ftruncate_impl(PyObject *module, int fd, Py_off_t length)
     int result;
     int async_err = 0;
 
+    if (PySys_Audit("os.truncate", "in", fd, length) < 0) {
+        return NULL;
+    }
+
     do {
         Py_BEGIN_ALLOW_THREADS
         _Py_BEGIN_SUPPRESS_IPH
@@ -9572,6 +9741,10 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
 
     if (path->fd != -1)
         return os_ftruncate_impl(module, path->fd, length);
+
+    if (PySys_Audit("os.truncate", "On", path->object, length) < 0) {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
@@ -11807,6 +11980,31 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
     return bytes;
 }
 
+#ifdef HAVE_MEMFD_CREATE
+/*[clinic input]
+os.memfd_create
+
+    name: FSConverter
+    flags: unsigned_int(bitwise=True, c_default="MFD_CLOEXEC") = MFD_CLOEXEC
+
+[clinic start generated code]*/
+
+static PyObject *
+os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
+/*[clinic end generated code: output=6681ede983bdb9a6 input=a42cfc199bcd56e9]*/
+{
+    int fd;
+    const char *bytes = PyBytes_AS_STRING(name);
+    Py_BEGIN_ALLOW_THREADS
+    fd = memfd_create(bytes, flags);
+    Py_END_ALLOW_THREADS
+    if (fd == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return PyLong_FromLong(fd);
+}
+#endif
+
 /* Terminal size querying */
 
 static PyTypeObject* TerminalSizeType;
@@ -12452,10 +12650,10 @@ static PyTypeObject DirEntryType = {
     0,                                      /* tp_itemsize */
     /* methods */
     (destructor)DirEntry_dealloc,           /* tp_dealloc */
-    0,                                      /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     0,                                      /* tp_getattr */
     0,                                      /* tp_setattr */
-    0,                                      /* tp_compare */
+    0,                                      /* tp_as_async */
     (reprfunc)DirEntry_repr,                /* tp_repr */
     0,                                      /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -12890,10 +13088,10 @@ static PyTypeObject ScandirIteratorType = {
     0,                                      /* tp_itemsize */
     /* methods */
     (destructor)ScandirIterator_dealloc,    /* tp_dealloc */
-    0,                                      /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     0,                                      /* tp_getattr */
     0,                                      /* tp_setattr */
-    0,                                      /* tp_compare */
+    0,                                      /* tp_as_async */
     0,                                      /* tp_repr */
     0,                                      /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -12904,8 +13102,7 @@ static PyTypeObject ScandirIteratorType = {
     0,                                      /* tp_getattro */
     0,                                      /* tp_setattro */
     0,                                      /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT
-        | Py_TPFLAGS_HAVE_FINALIZE,         /* tp_flags */
+    Py_TPFLAGS_DEFAULT,                     /* tp_flags */
     0,                                      /* tp_doc */
     0,                                      /* tp_traverse */
     0,                                      /* tp_clear */
@@ -13305,6 +13502,7 @@ static PyMethodDef posix_methods[] = {
     OS_POSIX_SPAWN_METHODDEF
     OS_POSIX_SPAWNP_METHODDEF
     OS_READLINK_METHODDEF
+    OS_COPY_FILE_RANGE_METHODDEF
     OS_RENAME_METHODDEF
     OS_REPLACE_METHODDEF
     OS_RMDIR_METHODDEF
@@ -13464,6 +13662,7 @@ static PyMethodDef posix_methods[] = {
     OS_SCANDIR_METHODDEF
     OS_FSPATH_METHODDEF
     OS_GETRANDOM_METHODDEF
+    OS_MEMFD_CREATE_METHODDEF
 #ifdef MS_WINDOWS
     OS__ADD_DLL_DIRECTORY_METHODDEF
     OS__REMOVE_DLL_DIRECTORY_METHODDEF
@@ -13832,11 +14031,13 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_DUP2", POSIX_SPAWN_DUP2)) return -1;
 #endif
 
-#ifdef HAVE_SPAWNV
+#if defined(HAVE_SPAWNV) || defined (HAVE_RTPSPAWN)
     if (PyModule_AddIntConstant(m, "P_WAIT", _P_WAIT)) return -1;
     if (PyModule_AddIntConstant(m, "P_NOWAIT", _P_NOWAIT)) return -1;
-    if (PyModule_AddIntConstant(m, "P_OVERLAY", _OLD_P_OVERLAY)) return -1;
     if (PyModule_AddIntConstant(m, "P_NOWAITO", _P_NOWAITO)) return -1;
+#endif
+#ifdef HAVE_SPAWNV
+    if (PyModule_AddIntConstant(m, "P_OVERLAY", _OLD_P_OVERLAY)) return -1;
     if (PyModule_AddIntConstant(m, "P_DETACH", _P_DETACH)) return -1;
 #endif
 
@@ -13910,6 +14111,55 @@ all_ins(PyObject *m)
 #ifdef HAVE_GETRANDOM_SYSCALL
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
+#endif
+#ifdef HAVE_MEMFD_CREATE
+    if (PyModule_AddIntMacro(m, MFD_CLOEXEC)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_ALLOW_SEALING)) return -1;
+#ifdef MFD_HUGETLB
+    if (PyModule_AddIntMacro(m, MFD_HUGETLB)) return -1;
+#endif
+#ifdef MFD_HUGE_SHIFT
+    if (PyModule_AddIntMacro(m, MFD_HUGE_SHIFT)) return -1;
+#endif
+#ifdef MFD_HUGE_MASK
+    if (PyModule_AddIntMacro(m, MFD_HUGE_MASK)) return -1;
+#endif
+#ifdef MFD_HUGE_64KB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_64KB)) return -1;
+#endif
+#ifdef MFD_HUGE_512KB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_512KB)) return -1;
+#endif
+#ifdef MFD_HUGE_1MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_1MB)) return -1;
+#endif
+#ifdef MFD_HUGE_2MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_2MB)) return -1;
+#endif
+#ifdef MFD_HUGE_8MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_8MB)) return -1;
+#endif
+#ifdef MFD_HUGE_16MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_16MB)) return -1;
+#endif
+#ifdef MFD_HUGE_32MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_32MB)) return -1;
+#endif
+#ifdef MFD_HUGE_256MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_256MB)) return -1;
+#endif
+#ifdef MFD_HUGE_512MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_512MB)) return -1;
+#endif
+#ifdef MFD_HUGE_1GB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_1GB)) return -1;
+#endif
+#ifdef MFD_HUGE_2GB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_2GB)) return -1;
+#endif
+#ifdef MFD_HUGE_16GB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_16GB)) return -1;
+#endif
 #endif
 
 #if defined(__APPLE__)
@@ -14025,6 +14275,10 @@ static const char * const have_functions[] = {
 
 #ifdef HAVE_LUTIMES
     "HAVE_LUTIMES",
+#endif
+
+#ifdef HAVE_MEMFD_CREATE
+    "HAVE_MEMFD_CREATE",
 #endif
 
 #ifdef HAVE_MKDIRAT

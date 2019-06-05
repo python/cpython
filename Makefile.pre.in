@@ -322,7 +322,7 @@ PYTHON_OBJS=	\
 		Python/ceval.o \
 		Python/codecs.o \
 		Python/compile.o \
-		Python/coreconfig.o \
+		Python/context.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
 		Python/frozenmain.o \
@@ -333,8 +333,10 @@ PYTHON_OBJS=	\
 		Python/getplatform.o \
 		Python/getversion.o \
 		Python/graminit.o \
+		Python/hamt.o \
 		Python/import.o \
 		Python/importdl.o \
+		Python/initconfig.o \
 		Python/marshal.o \
 		Python/modsupport.o \
 		Python/mysnprintf.o \
@@ -349,8 +351,6 @@ PYTHON_OBJS=	\
 		Python/pylifecycle.o \
 		Python/pymath.o \
 		Python/pystate.o \
-		Python/context.o \
-		Python/hamt.o \
 		Python/pythonrun.o \
 		Python/pytime.o \
 		Python/bootstrap_hash.o \
@@ -382,6 +382,7 @@ OBJECT_OBJS=	\
 		Objects/bytearrayobject.o \
 		Objects/bytesobject.o \
 		Objects/call.o \
+		Objects/capsule.o \
 		Objects/cellobject.o \
 		Objects/classobject.o \
 		Objects/codeobject.o \
@@ -406,7 +407,7 @@ OBJECT_OBJS=	\
 		Objects/namespaceobject.o \
 		Objects/object.o \
 		Objects/obmalloc.o \
-		Objects/capsule.o \
+		Objects/picklebufobject.o \
 		Objects/rangeobject.o \
 		Objects/setobject.o \
 		Objects/sliceobject.o \
@@ -1009,6 +1010,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
+		$(srcdir)/Include/picklebufobject.h \
 		$(srcdir)/Include/pyarena.h \
 		$(srcdir)/Include/pycapsule.h \
 		$(srcdir)/Include/pyctype.h \
@@ -1050,8 +1052,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/Python-ast.h \
 		\
 		$(srcdir)/Include/cpython/abstract.h \
-		$(srcdir)/Include/cpython/coreconfig.h \
 		$(srcdir)/Include/cpython/dictobject.h \
+		$(srcdir)/Include/cpython/fileobject.h \
+		$(srcdir)/Include/cpython/initconfig.h \
 		$(srcdir)/Include/cpython/interpreteridobject.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
@@ -1059,25 +1062,30 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
+		$(srcdir)/Include/cpython/sysmodule.h \
+		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
 		$(srcdir)/Include/cpython/unicodeobject.h \
 		\
 		$(srcdir)/Include/internal/pycore_accu.h \
 		$(srcdir)/Include/internal/pycore_atomic.h \
 		$(srcdir)/Include/internal/pycore_ceval.h \
+		$(srcdir)/Include/internal/pycore_code.h \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
-		$(srcdir)/Include/internal/pycore_coreconfig.h \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
+		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_object.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
+		$(srcdir)/Include/internal/pycore_pyerrors.h \
 		$(srcdir)/Include/internal/pycore_pyhash.h \
 		$(srcdir)/Include/internal/pycore_pylifecycle.h \
 		$(srcdir)/Include/internal/pycore_pymem.h \
 		$(srcdir)/Include/internal/pycore_pystate.h \
+		$(srcdir)/Include/internal/pycore_traceback.h \
 		$(srcdir)/Include/internal/pycore_tupleobject.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS)
@@ -1256,11 +1264,15 @@ bininstall: altbininstall
 		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(LDVERSION)-config python$(VERSION)-config); \
 		rm -f $(DESTDIR)$(LIBPC)/python-$(LDVERSION).pc; \
 		(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION).pc python-$(LDVERSION).pc); \
+		rm -f $(DESTDIR)$(LIBPC)/python-$(LDVERSION)-embed.pc; \
+		(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION)-embed.pc python-$(LDVERSION)-embed.pc); \
 	fi
 	-rm -f $(DESTDIR)$(BINDIR)/python3-config
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python3-config)
 	-rm -f $(DESTDIR)$(LIBPC)/python3.pc
 	(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION).pc python3.pc)
+	-rm -f $(DESTDIR)$(LIBPC)/python3-embed.pc
+	(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION)-embed.pc python3-embed.pc)
 	-rm -f $(DESTDIR)$(BINDIR)/idle3
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s idle$(VERSION) idle3)
 	-rm -f $(DESTDIR)$(BINDIR)/pydoc3
@@ -1311,8 +1323,10 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
 		importlib \
+		importlib/metadata \
 		test/test_importlib \
 		test/test_importlib/builtin \
+		test/test_importlib/data \
 		test/test_importlib/data01 \
 		test/test_importlib/data01/subdirectory \
 		test/test_importlib/data02 \
@@ -1432,30 +1446,30 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 	fi
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
-		-d $(LIBDEST) -f \
+		-j0 -d $(LIBDEST) -f \
 		-x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
 		$(DESTDIR)$(LIBDEST)
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi -O $(DESTDIR)$(LIBDEST)/compileall.py \
-		-d $(LIBDEST) -f \
+		-j0 -d $(LIBDEST) -f \
 		-x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
 		$(DESTDIR)$(LIBDEST)
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi -OO $(DESTDIR)$(LIBDEST)/compileall.py \
-		-d $(LIBDEST) -f \
+		-j0 -d $(LIBDEST) -f \
 		-x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
 		$(DESTDIR)$(LIBDEST)
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
-		-d $(LIBDEST)/site-packages -f \
+		-j0 -d $(LIBDEST)/site-packages -f \
 		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi -O $(DESTDIR)$(LIBDEST)/compileall.py \
-		-d $(LIBDEST)/site-packages -f \
+		-j0 -d $(LIBDEST)/site-packages -f \
 		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi -OO $(DESTDIR)$(LIBDEST)/compileall.py \
-		-d $(LIBDEST)/site-packages -f \
+		-j0 -d $(LIBDEST)/site-packages -f \
 		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -m lib2to3.pgen2.driver $(DESTDIR)$(LIBDEST)/lib2to3/Grammar.txt
@@ -1550,6 +1564,7 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 	$(INSTALL_DATA) $(srcdir)/Modules/Setup $(DESTDIR)$(LIBPL)/Setup
 	$(INSTALL_DATA) Modules/Setup.local $(DESTDIR)$(LIBPL)/Setup.local
 	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(VERSION).pc
+	$(INSTALL_DATA) Misc/python-embed.pc $(DESTDIR)$(LIBPC)/python-$(VERSION)-embed.pc
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	$(INSTALL_SCRIPT) python-config.py $(DESTDIR)$(LIBPL)/python-config.py
@@ -1764,7 +1779,7 @@ distclean: clobber
 	done
 	-rm -f core Makefile Makefile.pre config.status Modules/Setup.local \
 		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
-		Misc/python-config.sh
+		Misc/python-embed.pc Misc/python-config.sh
 	-rm -f python*-gdb.py
 	# Issue #28258: set LC_ALL to avoid issues with Estonian locale.
 	# Expansion is performed here by shell (spawned by make) itself before

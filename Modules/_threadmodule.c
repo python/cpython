@@ -3,6 +3,7 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
+#include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"
 #include "structmember.h" /* offsetof */
 #include "pythread.h"
@@ -11,6 +12,7 @@ static PyObject *ThreadError;
 static PyObject *str_dict;
 
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(flush);
 
 /* Lock objects */
 
@@ -230,10 +232,10 @@ static PyTypeObject Locktype = {
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)lock_dealloc,           /*tp_dealloc*/
-    0,                                  /*tp_print*/
+    0,                                  /*tp_vectorcall_offset*/
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
+    0,                                  /*tp_as_async*/
     (reprfunc)lock_repr,                /*tp_repr*/
     0,                                  /*tp_as_number*/
     0,                                  /*tp_as_sequence*/
@@ -491,10 +493,10 @@ static PyTypeObject RLocktype = {
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)rlock_dealloc,          /*tp_dealloc*/
-    0,                                  /*tp_print*/
+    0,                                  /*tp_vectorcall_offset*/
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
+    0,                                  /*tp_as_async*/
     (reprfunc)rlock_repr,               /*tp_repr*/
     0,                                  /*tp_as_number*/
     0,                                  /*tp_as_sequence*/
@@ -607,10 +609,10 @@ static PyTypeObject localdummytype = {
     /* tp_basicsize      */ sizeof(localdummyobject),
     /* tp_itemsize       */ 0,
     /* tp_dealloc        */ (destructor)localdummy_dealloc,
-    /* tp_print          */ 0,
+    /* tp_vectorcall_offset */ 0,
     /* tp_getattr        */ 0,
     /* tp_setattr        */ 0,
-    /* tp_reserved       */ 0,
+    /* tp_as_async       */ 0,
     /* tp_repr           */ 0,
     /* tp_as_number      */ 0,
     /* tp_as_sequence    */ 0,
@@ -872,10 +874,10 @@ static PyTypeObject localtype = {
     /* tp_basicsize      */ sizeof(localobject),
     /* tp_itemsize       */ 0,
     /* tp_dealloc        */ (destructor)local_dealloc,
-    /* tp_print          */ 0,
+    /* tp_vectorcall_offset */ 0,
     /* tp_getattr        */ 0,
     /* tp_setattr        */ 0,
-    /* tp_reserved       */ 0,
+    /* tp_as_async       */ 0,
     /* tp_repr           */ 0,
     /* tp_as_number      */ 0,
     /* tp_as_sequence    */ 0,
@@ -1000,25 +1002,15 @@ t_bootstrap(void *boot_raw)
     res = PyObject_Call(boot->func, boot->args, boot->keyw);
     if (res == NULL) {
         if (PyErr_ExceptionMatches(PyExc_SystemExit))
+            /* SystemExit is ignored silently */
             PyErr_Clear();
         else {
-            PyObject *file;
-            PyObject *exc, *value, *tb;
-            PySys_WriteStderr(
-                "Unhandled exception in thread started by ");
-            PyErr_Fetch(&exc, &value, &tb);
-            file = _PySys_GetObjectId(&PyId_stderr);
-            if (file != NULL && file != Py_None)
-                PyFile_WriteObject(boot->func, file, 0);
-            else
-                PyObject_Print(boot->func, stderr, 0);
-            PySys_WriteStderr("\n");
-            PyErr_Restore(exc, value, tb);
-            PyErr_PrintEx(0);
+            _PyErr_WriteUnraisableMsg("in thread started by", boot->func);
         }
     }
-    else
+    else {
         Py_DECREF(res);
+    }
     Py_DECREF(boot->func);
     Py_DECREF(boot->args);
     Py_XDECREF(boot->keyw);
@@ -1159,6 +1151,22 @@ allocated consecutive numbers starting at 1, this behavior should not\n\
 be relied upon, and the number should be seen purely as a magic cookie.\n\
 A thread's identity may be reused for another thread after it exits.");
 
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+static PyObject *
+thread_get_native_id(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    unsigned long native_id = PyThread_get_thread_native_id();
+    return PyLong_FromUnsignedLong(native_id);
+}
+
+PyDoc_STRVAR(get_native_id_doc,
+"get_native_id() -> integer\n\
+\n\
+Return a non-negative integer identifying the thread as reported\n\
+by the OS (kernel). This may be used to uniquely identify a\n\
+particular thread within a system.");
+#endif
+
 static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -1293,6 +1301,147 @@ requiring allocation in multiples of the system memory page size\n\
 (4 KiB pages are common; using multiples of 4096 for the stack size is\n\
 the suggested approach in the absence of more specific information).");
 
+static int
+thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
+                       PyObject *exc_traceback, PyObject *thread)
+{
+    /* print(f"Exception in thread {thread.name}:", file=file) */
+    if (PyFile_WriteString("Exception in thread ", file) < 0) {
+        return -1;
+    }
+
+    PyObject *name = NULL;
+    if (thread != Py_None) {
+        name = PyObject_GetAttrString(thread, "name");
+    }
+    if (name != NULL) {
+        if (PyFile_WriteObject(name, file, Py_PRINT_RAW) < 0) {
+            Py_DECREF(name);
+            return -1;
+        }
+        Py_DECREF(name);
+    }
+    else {
+        PyErr_Clear();
+
+        unsigned long ident = PyThread_get_thread_ident();
+        PyObject *str = PyUnicode_FromFormat("%lu", ident);
+        if (str != NULL) {
+            if (PyFile_WriteObject(str, file, Py_PRINT_RAW) < 0) {
+                Py_DECREF(str);
+                return -1;
+            }
+            Py_DECREF(str);
+        }
+        else {
+            PyErr_Clear();
+
+            if (PyFile_WriteString("<failed to get thread name>", file) < 0) {
+                return -1;
+            }
+        }
+    }
+
+    if (PyFile_WriteString(":\n", file) < 0) {
+        return -1;
+    }
+
+    /* Display the traceback */
+    _PyErr_Display(file, exc_type, exc_value, exc_traceback);
+
+    /* Call file.flush() */
+    PyObject *res = _PyObject_CallMethodId(file, &PyId_flush, NULL);
+    if (!res) {
+        return -1;
+    }
+    Py_DECREF(res);
+
+    return 0;
+}
+
+
+PyDoc_STRVAR(ExceptHookArgs__doc__,
+"ExceptHookArgs\n\
+\n\
+Type used to pass arguments to threading.excepthook.");
+
+static PyTypeObject ExceptHookArgsType;
+
+static PyStructSequence_Field ExceptHookArgs_fields[] = {
+    {"exc_type", "Exception type"},
+    {"exc_value", "Exception value"},
+    {"exc_traceback", "Exception traceback"},
+    {"thread", "Thread"},
+    {0}
+};
+
+static PyStructSequence_Desc ExceptHookArgs_desc = {
+    .name = "_thread.ExceptHookArgs",
+    .doc = ExceptHookArgs__doc__,
+    .fields = ExceptHookArgs_fields,
+    .n_in_sequence = 4
+};
+
+
+static PyObject *
+thread_excepthook(PyObject *self, PyObject *args)
+{
+    if (Py_TYPE(args) != &ExceptHookArgsType) {
+        PyErr_SetString(PyExc_TypeError,
+                        "_thread.excepthook argument type "
+                        "must be ExceptHookArgs");
+        return NULL;
+    }
+
+    /* Borrowed reference */
+    PyObject *exc_type = PyStructSequence_GET_ITEM(args, 0);
+    if (exc_type == PyExc_SystemExit) {
+        /* silently ignore SystemExit */
+        Py_RETURN_NONE;
+    }
+
+    /* Borrowed references */
+    PyObject *exc_value = PyStructSequence_GET_ITEM(args, 1);
+    PyObject *exc_tb = PyStructSequence_GET_ITEM(args, 2);
+    PyObject *thread = PyStructSequence_GET_ITEM(args, 3);
+
+    PyObject *file = _PySys_GetObjectId(&PyId_stderr);
+    if (file == NULL || file == Py_None) {
+        if (thread == Py_None) {
+            /* do nothing if sys.stderr is None and thread is None */
+            Py_RETURN_NONE;
+        }
+
+        file = PyObject_GetAttrString(thread, "_stderr");
+        if (file == NULL) {
+            return NULL;
+        }
+        if (file == Py_None) {
+            Py_DECREF(file);
+            /* do nothing if sys.stderr is None and sys.stderr was None
+               when the thread was created */
+            Py_RETURN_NONE;
+        }
+    }
+    else {
+        Py_INCREF(file);
+    }
+
+    int res = thread_excepthook_file(file, exc_type, exc_value, exc_tb,
+                                     thread);
+    Py_DECREF(file);
+    if (res < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(excepthook_doc,
+"excepthook(exc_type, exc_value, exc_traceback, thread)\n\
+\n\
+Handle uncaught Thread.run() exception.");
+
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
@@ -1310,12 +1459,18 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, interrupt_doc},
     {"get_ident",               thread_get_ident,
      METH_NOARGS, get_ident_doc},
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+    {"get_native_id",           thread_get_native_id,
+     METH_NOARGS, get_native_id_doc},
+#endif
     {"_count",                  thread__count,
      METH_NOARGS, _count_doc},
     {"stack_size",              (PyCFunction)thread_stack_size,
      METH_VARARGS, stack_size_doc},
     {"_set_sentinel",           thread__set_sentinel,
      METH_NOARGS, _set_sentinel_doc},
+    {"_excepthook",              thread_excepthook,
+     METH_O, excepthook_doc},
     {NULL,                      NULL}           /* sentinel */
 };
 
@@ -1368,6 +1523,12 @@ PyInit__thread(void)
         return NULL;
     if (PyType_Ready(&RLocktype) < 0)
         return NULL;
+    if (ExceptHookArgsType.tp_name == NULL) {
+        if (PyStructSequence_InitType2(&ExceptHookArgsType,
+                                       &ExceptHookArgs_desc) < 0) {
+            return NULL;
+        }
+    }
 
     /* Create the module and add the functions */
     m = PyModule_Create(&threadmodule);
@@ -1402,6 +1563,11 @@ PyInit__thread(void)
 
     Py_INCREF(&localtype);
     if (PyModule_AddObject(m, "_local", (PyObject *)&localtype) < 0)
+        return NULL;
+
+    Py_INCREF(&ExceptHookArgsType);
+    if (PyModule_AddObject(m, "_ExceptHookArgs",
+                           (PyObject *)&ExceptHookArgsType) < 0)
         return NULL;
 
     interp->num_threads = 0;

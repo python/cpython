@@ -169,12 +169,12 @@ Assignment of an object to a single target is recursively defined as follows.
   .. _attr-target-note:
 
   Note: If the object is a class instance and the attribute reference occurs on
-  both sides of the assignment operator, the RHS expression, ``a.x`` can access
+  both sides of the assignment operator, the right-hand side expression, ``a.x`` can access
   either an instance attribute or (if no instance attribute exists) a class
-  attribute.  The LHS target ``a.x`` is always set as an instance attribute,
+  attribute.  The left-hand side target ``a.x`` is always set as an instance attribute,
   creating it if necessary.  Thus, the two occurrences of ``a.x`` do not
-  necessarily refer to the same attribute: if the RHS expression refers to a
-  class attribute, the LHS creates a new instance attribute as the target of the
+  necessarily refer to the same attribute: if the right-hand side expression refers to a
+  class attribute, the left-hand side creates a new instance attribute as the target of the
   assignment::
 
      class Cls:
@@ -329,10 +329,10 @@ Annotated assignment statements
 statement, of a variable or attribute annotation and an optional assignment statement:
 
 .. productionlist::
-   annotated_assignment_stmt: `augtarget` ":" `expression` ["=" `expression`]
+   annotated_assignment_stmt: `augtarget` ":" `expression`
+                            : ["=" (`starred_expression` | `yield_expression`)]
 
-The difference from normal :ref:`assignment` is that only single target and
-only single right hand side value is allowed.
+The difference from normal :ref:`assignment` is that only single target is allowed.
 
 For simple names as assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
@@ -365,6 +365,11 @@ target, then the interpreter evaluates the target except for the last
       The proposal that added the :mod:`typing` module to provide a standard
       syntax for type annotations that can be used in static analysis tools and
       IDEs.
+
+.. versionchanged:: 3.8
+   Now annotated assignments allow same expressions in the right hand side as
+   the regular assignments. Previously, some expressions (like un-parenthesized
+   tuple expressions) caused a syntax error.
 
 
 .. _assert:

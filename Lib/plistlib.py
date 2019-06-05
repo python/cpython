@@ -48,7 +48,7 @@ Parse Plist example:
 __all__ = [
     "readPlist", "writePlist", "readPlistFromBytes", "writePlistToBytes",
     "Data", "InvalidFileException", "FMT_XML", "FMT_BINARY",
-    "load", "dump", "loads", "dumps"
+    "load", "dump", "loads", "dumps", "UID"
 ]
 
 import binascii
@@ -173,6 +173,34 @@ class Data:
 # End of deprecated functionality
 #
 #
+
+
+class UID:
+    def __init__(self, data):
+        if not isinstance(data, int):
+            raise TypeError("data must be an int")
+        if data >= 1 << 64:
+            raise ValueError("UIDs cannot be >= 2**64")
+        if data < 0:
+            raise ValueError("UIDs must be positive")
+        self.data = data
+
+    def __index__(self):
+        return self.data
+
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__, repr(self.data))
+
+    def __reduce__(self):
+        return self.__class__, (self.data,)
+
+    def __eq__(self, other):
+        if not isinstance(other, UID):
+            return NotImplemented
+        return self.data == other.data
+
+    def __hash__(self):
+        return hash(self.data)
 
 
 #
@@ -649,8 +677,9 @@ class _BinaryPlistParser:
             s = self._get_size(tokenL)
             result = self._fp.read(s * 2).decode('utf-16be')
 
-        # tokenH == 0x80 is documented as 'UID' and appears to be used for
-        # keyed-archiving, not in plists.
+        elif tokenH == 0x80:  # UID
+            # used by Key-Archiver plist files
+            result = UID(int.from_bytes(self._fp.read(1 + tokenL), 'big'))
 
         elif tokenH == 0xA0:  # array
             s = self._get_size(tokenL)
@@ -873,6 +902,20 @@ class _BinaryPlistWriter (object):
                 self._write_size(0x60, len(t) // 2)
 
             self._fp.write(t)
+
+        elif isinstance(value, UID):
+            if value.data < 0:
+                raise ValueError("UIDs must be positive")
+            elif value.data < 1 << 8:
+                self._fp.write(struct.pack('>BB', 0x80, value))
+            elif value.data < 1 << 16:
+                self._fp.write(struct.pack('>BH', 0x81, value))
+            elif value.data < 1 << 32:
+                self._fp.write(struct.pack('>BL', 0x83, value))
+            elif value.data < 1 << 64:
+                self._fp.write(struct.pack('>BQ', 0x87, value))
+            else:
+                raise OverflowError(value)
 
         elif isinstance(value, (list, tuple)):
             refs = [self._getrefnum(o) for o in value]

@@ -875,95 +875,6 @@ class UTF8Test(ReadTest, unittest.TestCase):
             b"abc\xed\xa0z".decode(self.encoding, "surrogatepass")
 
 
-@unittest.skipUnless(sys.platform == 'win32',
-                     'cp65001 is a Windows-only codec')
-class CP65001Test(ReadTest, unittest.TestCase):
-    encoding = "cp65001"
-
-    def test_encode(self):
-        tests = [
-            ('abc', 'strict', b'abc'),
-            ('\xe9\u20ac', 'strict',  b'\xc3\xa9\xe2\x82\xac'),
-            ('\U0010ffff', 'strict', b'\xf4\x8f\xbf\xbf'),
-            ('\udc80', 'strict', None),
-            ('\udc80', 'ignore', b''),
-            ('\udc80', 'replace', b'?'),
-            ('\udc80', 'backslashreplace', b'\\udc80'),
-            ('\udc80', 'namereplace', b'\\udc80'),
-            ('\udc80', 'surrogatepass', b'\xed\xb2\x80'),
-        ]
-        for text, errors, expected in tests:
-            if expected is not None:
-                try:
-                    encoded = text.encode('cp65001', errors)
-                except UnicodeEncodeError as err:
-                    self.fail('Unable to encode %a to cp65001 with '
-                              'errors=%r: %s' % (text, errors, err))
-                self.assertEqual(encoded, expected,
-                    '%a.encode("cp65001", %r)=%a != %a'
-                    % (text, errors, encoded, expected))
-            else:
-                self.assertRaises(UnicodeEncodeError,
-                    text.encode, "cp65001", errors)
-
-    def test_decode(self):
-        tests = [
-            (b'abc', 'strict', 'abc'),
-            (b'\xc3\xa9\xe2\x82\xac', 'strict', '\xe9\u20ac'),
-            (b'\xf4\x8f\xbf\xbf', 'strict', '\U0010ffff'),
-            (b'\xef\xbf\xbd', 'strict', '\ufffd'),
-            (b'[\xc3\xa9]', 'strict', '[\xe9]'),
-            # invalid bytes
-            (b'[\xff]', 'strict', None),
-            (b'[\xff]', 'ignore', '[]'),
-            (b'[\xff]', 'replace', '[\ufffd]'),
-            (b'[\xff]', 'surrogateescape', '[\udcff]'),
-            (b'[\xed\xb2\x80]', 'strict', None),
-            (b'[\xed\xb2\x80]', 'ignore', '[]'),
-            (b'[\xed\xb2\x80]', 'replace', '[\ufffd\ufffd\ufffd]'),
-        ]
-        for raw, errors, expected in tests:
-            if expected is not None:
-                try:
-                    decoded = raw.decode('cp65001', errors)
-                except UnicodeDecodeError as err:
-                    self.fail('Unable to decode %a from cp65001 with '
-                              'errors=%r: %s' % (raw, errors, err))
-                self.assertEqual(decoded, expected,
-                    '%a.decode("cp65001", %r)=%a != %a'
-                    % (raw, errors, decoded, expected))
-            else:
-                self.assertRaises(UnicodeDecodeError,
-                    raw.decode, 'cp65001', errors)
-
-    def test_lone_surrogates(self):
-        self.assertRaises(UnicodeEncodeError, "\ud800".encode, "cp65001")
-        self.assertRaises(UnicodeDecodeError, b"\xed\xa0\x80".decode, "cp65001")
-        self.assertEqual("[\uDC80]".encode("cp65001", "backslashreplace"),
-                         b'[\\udc80]')
-        self.assertEqual("[\uDC80]".encode("cp65001", "namereplace"),
-                         b'[\\udc80]')
-        self.assertEqual("[\uDC80]".encode("cp65001", "xmlcharrefreplace"),
-                         b'[&#56448;]')
-        self.assertEqual("[\uDC80]".encode("cp65001", "surrogateescape"),
-                         b'[\x80]')
-        self.assertEqual("[\uDC80]".encode("cp65001", "ignore"),
-                         b'[]')
-        self.assertEqual("[\uDC80]".encode("cp65001", "replace"),
-                         b'[?]')
-
-    def test_surrogatepass_handler(self):
-        self.assertEqual("abc\ud800def".encode("cp65001", "surrogatepass"),
-                         b"abc\xed\xa0\x80def")
-        self.assertEqual(b"abc\xed\xa0\x80def".decode("cp65001", "surrogatepass"),
-                         "abc\ud800def")
-        self.assertEqual("\U00010fff\uD800".encode("cp65001", "surrogatepass"),
-                         b"\xf0\x90\xbf\xbf\xed\xa0\x80")
-        self.assertEqual(b"\xf0\x90\xbf\xbf\xed\xa0\x80".decode("cp65001", "surrogatepass"),
-                         "\U00010fff\uD800")
-        self.assertTrue(codecs.lookup_error("surrogatepass"))
-
-
 class UTF7Test(ReadTest, unittest.TestCase):
     encoding = "utf-7"
 
@@ -2959,7 +2870,6 @@ class ExceptionChainingTest(unittest.TestCase):
 @unittest.skipUnless(sys.platform == 'win32',
                      'code pages are specific to Windows')
 class CodePageTest(unittest.TestCase):
-    # CP_UTF8 is already tested by CP65001Test
     CP_UTF8 = 65001
 
     def test_invalid_code_page(self):
@@ -3233,6 +3143,52 @@ class Latin1Test(unittest.TestCase):
         ):
             with self.subTest(data=data, expected=expected):
                 self.assertEqual(data.decode('latin1'), expected)
+
+
+class StreamRecoderTest(unittest.TestCase):
+    def test_writelines(self):
+        bio = io.BytesIO()
+        codec = codecs.lookup('ascii')
+        sr = codecs.StreamRecoder(bio, codec.encode, codec.decode,
+                                  encodings.ascii.StreamReader, encodings.ascii.StreamWriter)
+        sr.writelines([b'a', b'b'])
+        self.assertEqual(bio.getvalue(), b'ab')
+
+    def test_write(self):
+        bio = io.BytesIO()
+        codec = codecs.lookup('latin1')
+        # Recode from Latin-1 to utf-8.
+        sr = codecs.StreamRecoder(bio, codec.encode, codec.decode,
+                                  encodings.utf_8.StreamReader, encodings.utf_8.StreamWriter)
+
+        text = 'àñé'
+        sr.write(text.encode('latin1'))
+        self.assertEqual(bio.getvalue(), text.encode('utf-8'))
+
+    def test_seeking_read(self):
+        bio = io.BytesIO('line1\nline2\nline3\n'.encode('utf-16-le'))
+        sr = codecs.EncodedFile(bio, 'utf-8', 'utf-16-le')
+
+        self.assertEqual(sr.readline(), b'line1\n')
+        sr.seek(0)
+        self.assertEqual(sr.readline(), b'line1\n')
+        self.assertEqual(sr.readline(), b'line2\n')
+        self.assertEqual(sr.readline(), b'line3\n')
+        self.assertEqual(sr.readline(), b'')
+
+    def test_seeking_write(self):
+        bio = io.BytesIO('123456789\n'.encode('utf-16-le'))
+        sr = codecs.EncodedFile(bio, 'utf-8', 'utf-16-le')
+
+        # Test that seek() only resets its internal buffer when offset
+        # and whence are zero.
+        sr.seek(2)
+        sr.write(b'\nabc\n')
+        self.assertEqual(sr.readline(), b'789\n')
+        sr.seek(0)
+        self.assertEqual(sr.readline(), b'1\n')
+        self.assertEqual(sr.readline(), b'abc\n')
+        self.assertEqual(sr.readline(), b'789\n')
 
 
 @unittest.skipIf(_testcapi is None, 'need _testcapi module')

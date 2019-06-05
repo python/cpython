@@ -228,10 +228,6 @@ class EditorWindow(object):
         self.indentwidth = self.tabwidth
         self.set_notabs_indentwidth()
 
-        # If context_use_ps1 is true, parsing searches back for a ps1 line;
-        # else searches for a popular (if, def, ...) Python stmt.
-        self.context_use_ps1 = False
-
         # When searching backwards for a reliable place to begin parsing,
         # first start num_context_lines[0] lines back, then
         # num_context_lines[1] lines back if that didn't work, and so on.
@@ -319,7 +315,7 @@ class EditorWindow(object):
                   self.CodeContext(self).toggle_code_context_event)
 
     def _filename_to_unicode(self, filename):
-        """Return filename as BMP unicode so diplayable in Tk."""
+        """Return filename as BMP unicode so displayable in Tk."""
         # Decode bytes to unicode.
         if isinstance(filename, bytes):
             try:
@@ -1337,14 +1333,13 @@ class EditorWindow(object):
             # open/close first need to find the last stmt
             lno = index2line(text.index('insert'))
             y = pyparse.Parser(self.indentwidth, self.tabwidth)
-            if not self.context_use_ps1:
+            if not self.prompt_last_line:
                 for context in self.num_context_lines:
                     startat = max(lno - context, 1)
                     startatindex = repr(startat) + ".0"
                     rawtext = text.get(startatindex, "insert")
                     y.set_code(rawtext)
                     bod = y.find_good_parse_start(
-                              self.context_use_ps1,
                               self._build_char_in_string_func(startatindex))
                     if bod is not None or startat == 1:
                         break

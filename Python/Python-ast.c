@@ -522,8 +522,10 @@ static char *withitem_fields[]={
 static PyTypeObject *type_ignore_type;
 static PyObject* ast2obj_type_ignore(void*);
 static PyTypeObject *TypeIgnore_type;
+_Py_IDENTIFIER(tag);
 static char *TypeIgnore_fields[]={
     "lineno",
+    "tag",
 };
 
 
@@ -638,10 +640,10 @@ static PyTypeObject AST_type = {
     sizeof(AST_object),
     0,
     (destructor)ast_dealloc, /* tp_dealloc */
-    0,                       /* tp_print */
+    0,                       /* tp_vectorcall_offset */
     0,                       /* tp_getattr */
     0,                       /* tp_setattr */
-    0,                       /* tp_reserved */
+    0,                       /* tp_as_async */
     0,                       /* tp_repr */
     0,                       /* tp_as_number */
     0,                       /* tp_as_sequence */
@@ -1162,7 +1164,7 @@ static int init_types(void)
     if (!type_ignore_type) return 0;
     if (!add_attributes(type_ignore_type, NULL, 0)) return 0;
     TypeIgnore_type = make_type("TypeIgnore", type_ignore_type,
-                                TypeIgnore_fields, 1);
+                                TypeIgnore_fields, 2);
     if (!TypeIgnore_type) return 0;
     initialized = 1;
     return 1;
@@ -2664,14 +2666,20 @@ withitem(expr_ty context_expr, expr_ty optional_vars, PyArena *arena)
 }
 
 type_ignore_ty
-TypeIgnore(int lineno, PyArena *arena)
+TypeIgnore(int lineno, string tag, PyArena *arena)
 {
     type_ignore_ty p;
+    if (!tag) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field tag is required for TypeIgnore");
+        return NULL;
+    }
     p = (type_ignore_ty)PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
     p->kind = TypeIgnore_kind;
     p->v.TypeIgnore.lineno = lineno;
+    p->v.TypeIgnore.tag = tag;
     return p;
 }
 
@@ -4148,6 +4156,11 @@ ast2obj_type_ignore(void* _o)
         value = ast2obj_int(o->v.TypeIgnore.lineno);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_lineno, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_string(o->v.TypeIgnore.tag);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_tag, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -8715,6 +8728,7 @@ obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena* arena)
     }
     if (isinstance) {
         int lineno;
+        string tag;
 
         if (_PyObject_LookupAttrId(obj, &PyId_lineno, &tmp) < 0) {
             return 1;
@@ -8729,7 +8743,20 @@ obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = TypeIgnore(lineno, arena);
+        if (_PyObject_LookupAttrId(obj, &PyId_tag, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"tag\" missing from TypeIgnore");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &tag, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = TypeIgnore(lineno, tag, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8753,6 +8780,8 @@ PyInit__ast(void)
     if (!m) return NULL;
     d = PyModule_GetDict(m);
     if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;
+    if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)
+        return NULL;
     if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)
         return NULL;
     if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)
@@ -8971,6 +9000,10 @@ mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_ver
     PyObject *req_type[3];
     char *req_name[] = {"Module", "Expression", "Interactive"};
     int isinstance;
+
+    if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
+        return NULL;
+    }
 
     req_type[0] = (PyObject*)Module_type;
     req_type[1] = (PyObject*)Expression_type;

@@ -2,6 +2,38 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(sys_addaudithook__doc__,
+"addaudithook($module, /, hook)\n"
+"--\n"
+"\n"
+"Adds a new audit hook callback.");
+
+#define SYS_ADDAUDITHOOK_METHODDEF    \
+    {"addaudithook", (PyCFunction)(void(*)(void))sys_addaudithook, METH_FASTCALL|METH_KEYWORDS, sys_addaudithook__doc__},
+
+static PyObject *
+sys_addaudithook_impl(PyObject *module, PyObject *hook);
+
+static PyObject *
+sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"hook", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "addaudithook", 0};
+    PyObject *argsbuf[1];
+    PyObject *hook;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    hook = args[0];
+    return_value = sys_addaudithook_impl(module, hook);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_displayhook__doc__,
 "displayhook($module, object, /)\n"
 "--\n"
@@ -64,6 +96,23 @@ sys_exc_info(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return sys_exc_info_impl(module);
 }
+
+PyDoc_STRVAR(sys_unraisablehook__doc__,
+"unraisablehook($module, unraisable, /)\n"
+"--\n"
+"\n"
+"Handle an unraisable exception.\n"
+"\n"
+"The unraisable argument has the following attributes:\n"
+"\n"
+"* exc_type: Exception type.\n"
+"* exc_value: Exception value, can be None.\n"
+"* exc_traceback: Exception traceback, can be None.\n"
+"* err_msg: Error message, can be None.\n"
+"* object: Object causing the exception, can be None.");
+
+#define SYS_UNRAISABLEHOOK_METHODDEF    \
+    {"unraisablehook", (PyCFunction)sys_unraisablehook, METH_O, sys_unraisablehook__doc__},
 
 PyDoc_STRVAR(sys_exit__doc__,
 "exit($module, status=None, /)\n"
@@ -459,33 +508,6 @@ sys_get_coroutine_origin_tracking_depth(PyObject *module, PyObject *Py_UNUSED(ig
 
 exit:
     return return_value;
-}
-
-PyDoc_STRVAR(sys_set_coroutine_wrapper__doc__,
-"set_coroutine_wrapper($module, wrapper, /)\n"
-"--\n"
-"\n"
-"Set a wrapper for coroutine objects.");
-
-#define SYS_SET_COROUTINE_WRAPPER_METHODDEF    \
-    {"set_coroutine_wrapper", (PyCFunction)sys_set_coroutine_wrapper, METH_O, sys_set_coroutine_wrapper__doc__},
-
-PyDoc_STRVAR(sys_get_coroutine_wrapper__doc__,
-"get_coroutine_wrapper($module, /)\n"
-"--\n"
-"\n"
-"Return the wrapper for coroutines set by sys.set_coroutine_wrapper.");
-
-#define SYS_GET_COROUTINE_WRAPPER_METHODDEF    \
-    {"get_coroutine_wrapper", (PyCFunction)sys_get_coroutine_wrapper, METH_NOARGS, sys_get_coroutine_wrapper__doc__},
-
-static PyObject *
-sys_get_coroutine_wrapper_impl(PyObject *module);
-
-static PyObject *
-sys_get_coroutine_wrapper(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_get_coroutine_wrapper_impl(module);
 }
 
 PyDoc_STRVAR(sys_get_asyncgen_hooks__doc__,
@@ -1060,4 +1082,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=3ba4c194d00f1866 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=43c4fde7b5783d8d input=a9049054013a1b77]*/

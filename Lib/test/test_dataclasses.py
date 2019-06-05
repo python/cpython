@@ -1097,6 +1097,12 @@ class TestCase(unittest.TestCase):
         c = C(init_param=10)
         self.assertEqual(c.x, 20)
 
+    def test_init_var_preserve_type(self):
+        self.assertEqual(InitVar[int].type, int)
+
+        # Make sure the repr is correct.
+        self.assertEqual(repr(InitVar[int]), 'dataclasses.InitVar[int]')
+
     def test_init_var_inheritance(self):
         # Note that this deliberately tests that a dataclass need not
         #  have a __post_init__ function if it has an InitVar field.
@@ -1458,7 +1464,7 @@ class TestCase(unittest.TestCase):
                              }
                          )
 
-        # Make sure that the returned dicts are actuall OrderedDicts.
+        # Make sure that the returned dicts are actually OrderedDicts.
         self.assertIs(type(d), OrderedDict)
         self.assertIs(type(d['y'][1]), OrderedDict)
 
