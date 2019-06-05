@@ -240,7 +240,7 @@ objects.
 
    .. versionadded:: 3.4
 
-.. class:: finalize(obj, func, *args, **kwargs)
+.. class:: finalize(obj, func, /, *args, **kwargs)
 
    Return a callable finalizer object which will be called when *obj*
    is garbage collected. Unlike an ordinary weak reference, a finalizer
