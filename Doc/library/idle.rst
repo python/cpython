@@ -50,7 +50,7 @@ default title and context menu.
 
 On macOS, there is one application menu.  It dynamically changes according
 to the window currently selected.  It has an IDLE menu, and some entries
-described below are moved around to conform to Apple guidlines.
+described below are moved around to conform to Apple guidelines.
 
 File menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -281,15 +281,15 @@ Configure IDLE
    menu. For more, see
    :ref:`Setting preferences <preferences>` under Help and preferences.
 
-Zoom/Restore Height
-   Toggles the window between normal size and maximum height. The initial size
-   defaults to 40 lines by 80 chars unless changed on the General tab of the
-   Configure IDLE dialog.
-
 Show/Hide Code Context (Editor Window only)
    Open a pane at the top of the edit window which shows the block context
    of the code which has scrolled above the top of the window.  See
    :ref:`Code Context <code-context>` in the Editing and Navigation section below.
+
+Zoom/Restore Height
+   Toggles the window between normal size and maximum height. The initial size
+   defaults to 40 lines by 80 chars unless changed on the General tab of the
+   Configure IDLE dialog.
 
 Window menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -700,6 +700,9 @@ If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
 IDLE's changes are lost and input from the keyboard and output to the screen
 will not work correctly.
 
+When user code raises SystemExit either directly or by calling sys.exit, IDLE
+returns to a Shell prompt instead of exiting.
+
 User output in Shell
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -724,11 +727,9 @@ to begin after the next tab stop. (They occur every 8 'characters').  Newline
 characters cause following text to appear on a new line.  Other control
 characters are ignored or displayed as a space, box, or something else,
 depending on the operating system and font.  (Moving the text cursor through
-such output with arrow keys may exhibit some surprising spacing behavior.)
+such output with arrow keys may exhibit some surprising spacing behavior.) ::
 
-.. code-block:: none
-
-   >>> s = 'a\tb\a<\x02><\r>\bc\nd'
+   >>> s = 'a\tb\a<\x02><\r>\bc\nd'  # Enter 22 chars.
    >>> len(s)
    14
    >>> s  # Display repr(s)
@@ -771,7 +772,7 @@ facilitate development of tkinter programs.  Enter ``import tkinter as tk;
 root = tk.Tk()`` in standard Python and nothing appears.  Enter the same
 in IDLE and a tk window appears.  In standard Python, one must also enter
 ``root.update()`` to see the window.  IDLE does the equivalent in the
-background, about 20 times a second, which is about every 50 milleseconds.
+background, about 20 times a second, which is about every 50 milliseconds.
 Next enter ``b = tk.Button(root, text='button'); b.pack()``.  Again,
 nothing visibly changes in standard Python until one enters ``root.update()``.
 

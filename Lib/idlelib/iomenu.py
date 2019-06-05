@@ -384,6 +384,8 @@ class IOBinding:
         try:
             with open(filename, "wb") as f:
                 f.write(chars)
+                f.flush()
+                os.fsync(f.fileno())
             return True
         except OSError as msg:
             tkMessageBox.showerror("I/O Error", str(msg),

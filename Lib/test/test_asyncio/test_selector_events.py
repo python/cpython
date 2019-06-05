@@ -363,14 +363,16 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock.accept.return_value = (mock.Mock(), mock.Mock())
         backlog = 100
         # Mock the coroutine generation for a connection to prevent
-        # warnings related to un-awaited coroutines.
+        # warnings related to un-awaited coroutines. _accept_connection2
+        # is an async function that is patched with AsyncMock. create_task
+        # creates a task out of coroutine returned by AsyncMock, so use
+        # asyncio.sleep(0) to ensure created tasks are complete to avoid
+        # task pending warnings.
         mock_obj = mock.patch.object
         with mock_obj(self.loop, '_accept_connection2') as accept2_mock:
-            accept2_mock.return_value = None
-            with mock_obj(self.loop, 'create_task') as task_mock:
-                task_mock.return_value = None
-                self.loop._accept_connection(
-                    mock.Mock(), sock, backlog=backlog)
+            self.loop._accept_connection(
+                mock.Mock(), sock, backlog=backlog)
+        self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(sock.accept.call_count, backlog)
 
 
@@ -448,10 +450,23 @@ class SelectorTransportTests(test_utils.TestCase):
         tr._force_close = mock.Mock()
         tr._fatal_error(exc)
 
+        m_exc.assert_not_called()
+
+        tr._force_close.assert_called_with(exc)
+
+    @mock.patch('asyncio.log.logger.error')
+    def test_fatal_error_custom_exception(self, m_exc):
+        class MyError(Exception):
+            pass
+        exc = MyError()
+        tr = self.create_transport()
+        tr._force_close = mock.Mock()
+        tr._fatal_error(exc)
+
         m_exc.assert_called_with(
             test_utils.MockPattern(
                 'Fatal error on transport\nprotocol:.*\ntransport:.*'),
-            exc_info=(OSError, MOCK_ANY, MOCK_ANY))
+            exc_info=(MyError, MOCK_ANY, MOCK_ANY))
 
         tr._force_close.assert_called_with(exc)
 
@@ -1065,6 +1080,7 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         self.sock.fileno.return_value = 7
 
     def datagram_transport(self, address=None):
+        self.sock.getpeername.side_effect = None if address else OSError
         transport = _SelectorDatagramTransport(self.loop, self.sock,
                                                self.protocol,
                                                address=address)
@@ -1337,10 +1353,20 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         err = ConnectionRefusedError()
         transport._fatal_error(err)
         self.assertFalse(self.protocol.error_received.called)
+        m_exc.assert_not_called()
+
+    @mock.patch('asyncio.base_events.logger.error')
+    def test_fatal_error_connected_custom_error(self, m_exc):
+        class MyException(Exception):
+            pass
+        transport = self.datagram_transport(address=('0.0.0.0', 1))
+        err = MyException()
+        transport._fatal_error(err)
+        self.assertFalse(self.protocol.error_received.called)
         m_exc.assert_called_with(
             test_utils.MockPattern(
                 'Fatal error on transport\nprotocol:.*\ntransport:.*'),
-            exc_info=(ConnectionRefusedError, MOCK_ANY, MOCK_ANY))
+            exc_info=(MyException, MOCK_ANY, MOCK_ANY))
 
 
 if __name__ == '__main__':

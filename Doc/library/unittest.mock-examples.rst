@@ -848,7 +848,7 @@ Here's an example implementation:
 
     >>> from copy import deepcopy
     >>> class CopyingMock(MagicMock):
-    ...     def __call__(self, *args, **kwargs):
+    ...     def __call__(self, /, *args, **kwargs):
     ...         args = deepcopy(args)
     ...         kwargs = deepcopy(kwargs)
     ...         return super(CopyingMock, self).__call__(*args, **kwargs)
@@ -1042,7 +1042,7 @@ that it takes arbitrary keyword arguments (``**kwargs``) which are then passed
 onto the mock constructor:
 
     >>> class Subclass(MagicMock):
-    ...     def _get_child_mock(self, **kwargs):
+    ...     def _get_child_mock(self, /, **kwargs):
     ...         return MagicMock(**kwargs)
     ...
     >>> mymock = Subclass()

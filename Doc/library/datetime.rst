@@ -458,6 +458,13 @@ Other constructors, all class methods:
   .. versionadded:: 3.7
 
 
+.. classmethod:: date.fromisocalendar(year, week, day)
+
+   Return a :class:`date` corresponding to the ISO calendar date specified by
+   year, week and day. This is the inverse of the function :meth:`date.isocalendar`.
+
+   .. versionadded:: 3.8
+
 
 Class attributes:
 
@@ -853,6 +860,16 @@ Other constructors, all class methods:
     as the inverse operation of :meth:`datetime.isoformat`.
 
   .. versionadded:: 3.7
+
+
+.. classmethod:: datetime.fromisocalendar(year, week, day)
+
+   Return a :class:`datetime` corresponding to the ISO calendar date specified
+   by year, week and day. The non-date components of the datetime are populated
+   with their normal default values. This is the inverse of the function
+   :meth:`datetime.isocalendar`.
+
+   .. versionadded:: 3.8
 
 .. classmethod:: datetime.strptime(date_string, format)
 
@@ -1348,56 +1365,64 @@ Examples of working with datetime objects:
 
 Using datetime with tzinfo:
 
-    >>> from datetime import timedelta, datetime, tzinfo
-    >>> class GMT1(tzinfo):
+    >>> from datetime import timedelta, datetime, tzinfo, timezone
+    >>> class KabulTz(tzinfo):
+    ...     # Kabul used +4 until 1945, when they moved to +4:30
+    ...     UTC_MOVE_DATE = datetime(1944, 12, 31, 20, tzinfo=timezone.utc)
     ...     def utcoffset(self, dt):
-    ...         return timedelta(hours=1) + self.dst(dt)
-    ...     def dst(self, dt):
-    ...         # DST starts last Sunday in March
-    ...         d = datetime(dt.year, 4, 1)   # ends last Sunday in October
-    ...         self.dston = d - timedelta(days=d.weekday() + 1)
-    ...         d = datetime(dt.year, 11, 1)
-    ...         self.dstoff = d - timedelta(days=d.weekday() + 1)
-    ...         if self.dston <=  dt.replace(tzinfo=None) < self.dstoff:
-    ...             return timedelta(hours=1)
+    ...         if dt.year < 1945:
+    ...             return timedelta(hours=4)
+    ...         elif (1945, 1, 1, 0, 0) <= dt.timetuple()[:5] < (1945, 1, 1, 0, 30):
+    ...             # If dt falls in the imaginary range, use fold to decide how
+    ...             # to resolve. See PEP495
+    ...             return timedelta(hours=4, minutes=(30 if dt.fold else 0))
     ...         else:
-    ...             return timedelta(0)
-    ...     def tzname(self,dt):
-    ...          return "GMT +1"
+    ...             return timedelta(hours=4, minutes=30)
     ...
-    >>> class GMT2(tzinfo):
-    ...     def utcoffset(self, dt):
-    ...         return timedelta(hours=2) + self.dst(dt)
-    ...     def dst(self, dt):
-    ...         d = datetime(dt.year, 4, 1)
-    ...         self.dston = d - timedelta(days=d.weekday() + 1)
-    ...         d = datetime(dt.year, 11, 1)
-    ...         self.dstoff = d - timedelta(days=d.weekday() + 1)
-    ...         if self.dston <=  dt.replace(tzinfo=None) < self.dstoff:
-    ...             return timedelta(hours=1)
+    ...     def fromutc(self, dt):
+    ...         # A custom implementation is required for fromutc as
+    ...         # the input to this function is a datetime with utc values
+    ...         # but with a tzinfo set to self
+    ...         # See datetime.astimezone or fromtimestamp
+    ...
+    ...         # Follow same validations as in datetime.tzinfo
+    ...         if not isinstance(dt, datetime):
+    ...             raise TypeError("fromutc() requires a datetime argument")
+    ...         if dt.tzinfo is not self:
+    ...             raise ValueError("dt.tzinfo is not self")
+    ...
+    ...         if dt.replace(tzinfo=timezone.utc) >= self.UTC_MOVE_DATE:
+    ...             return dt + timedelta(hours=4, minutes=30)
     ...         else:
-    ...             return timedelta(0)
-    ...     def tzname(self,dt):
-    ...         return "GMT +2"
+    ...             return dt + timedelta(hours=4)
     ...
-    >>> gmt1 = GMT1()
-    >>> # Daylight Saving Time
-    >>> dt1 = datetime(2006, 11, 21, 16, 30, tzinfo=gmt1)
-    >>> dt1.dst()
-    datetime.timedelta(0)
-    >>> dt1.utcoffset()
-    datetime.timedelta(seconds=3600)
-    >>> dt2 = datetime(2006, 6, 14, 13, 0, tzinfo=gmt1)
-    >>> dt2.dst()
-    datetime.timedelta(seconds=3600)
-    >>> dt2.utcoffset()
-    datetime.timedelta(seconds=7200)
+    ...     def dst(self, dt):
+    ...         return timedelta(0)
+    ...
+    ...     def tzname(self, dt):
+    ...         if dt >= self.UTC_MOVE_DATE:
+    ...             return "+04:30"
+    ...         else:
+    ...             return "+04"
+    ...
+    ...     def  __repr__(self):
+    ...         return f"{self.__class__.__name__}()"
+    ...
+    >>> tz1 = KabulTz()
+    >>> # Datetime before the change
+    >>> dt1 = datetime(1900, 11, 21, 16, 30, tzinfo=tz1)
+    >>> print(dt1.utcoffset())
+    4:00:00
+    >>> # Datetime after the change
+    >>> dt2 = datetime(2006, 6, 14, 13, 0, tzinfo=tz1)
+    >>> print(dt2.utcoffset())
+    4:30:00
     >>> # Convert datetime to another time zone
-    >>> dt3 = dt2.astimezone(GMT2())
-    >>> dt3     # doctest: +ELLIPSIS
-    datetime.datetime(2006, 6, 14, 14, 0, tzinfo=<GMT2 object at 0x...>)
-    >>> dt2     # doctest: +ELLIPSIS
-    datetime.datetime(2006, 6, 14, 13, 0, tzinfo=<GMT1 object at 0x...>)
+    >>> dt3 = dt2.astimezone(timezone.utc)
+    >>> dt3
+    datetime.datetime(2006, 6, 14, 8, 30, tzinfo=datetime.timezone.utc)
+    >>> dt2
+    datetime.datetime(2006, 6, 14, 13, 0, tzinfo=KabulTz())
     >>> dt2.utctimetuple() == dt3.utctimetuple()
     True
 
@@ -1639,26 +1664,27 @@ Instance methods:
 Example:
 
     >>> from datetime import time, tzinfo, timedelta
-    >>> class GMT1(tzinfo):
+    >>> class TZ1(tzinfo):
     ...     def utcoffset(self, dt):
     ...         return timedelta(hours=1)
     ...     def dst(self, dt):
     ...         return timedelta(0)
     ...     def tzname(self,dt):
-    ...         return "Europe/Prague"
+    ...         return "+01:00"
+    ...     def  __repr__(self):
+    ...         return f"{self.__class__.__name__}()"
     ...
-    >>> t = time(12, 10, 30, tzinfo=GMT1())
-    >>> t                               # doctest: +ELLIPSIS
-    datetime.time(12, 10, 30, tzinfo=<GMT1 object at 0x...>)
-    >>> gmt = GMT1()
+    >>> t = time(12, 10, 30, tzinfo=TZ1())
+    >>> t
+    datetime.time(12, 10, 30, tzinfo=TZ1())
     >>> t.isoformat()
     '12:10:30+01:00'
     >>> t.dst()
     datetime.timedelta(0)
     >>> t.tzname()
-    'Europe/Prague'
+    '+01:00'
     >>> t.strftime("%H:%M:%S %Z")
-    '12:10:30 Europe/Prague'
+    '12:10:30 +01:00'
     >>> 'The {} is {:%H:%M}.'.format("time", t)
     'The time is 12:10.'
 
@@ -2031,6 +2057,9 @@ For :class:`date` objects, the format codes for hours, minutes, seconds, and
 microseconds should not be used, as :class:`date` objects have no such
 values.  If they're used anyway, ``0`` is substituted for them.
 
+For the :meth:`datetime.strptime` class method, the default value is ``1900-01-01T00:00:00.000``:
+any components not specified in the format string will be pulled from the default value. [#]_
+
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :func:`strftime` function, and platform
 variations are common.  To see the full set of format codes supported on your
@@ -2265,3 +2294,4 @@ Notes:
 .. rubric:: Footnotes
 
 .. [#] If, that is, we ignore the effects of Relativity
+.. [#] Passing ``datetime.strptime('Feb 29', '%b %d')`` will fail since ``1900`` is not a leap year.

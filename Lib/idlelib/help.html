@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>IDLE &#8212; Python 3.8.0a1 documentation</title>
+    <title>IDLE &#8212; Python 3.8.0a4 documentation</title>
     <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
 
@@ -19,7 +19,7 @@
     <script type="text/javascript" src="../_static/sidebar.js"></script>
 
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 3.8.0a1 documentation"
+          title="Search within Python 3.8.0a4 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
@@ -72,7 +72,7 @@
 
 
     <li>
-      <a href="../index.html">3.8.0a1 Documentation</a> &#187;
+      <a href="../index.html">3.8.0a4 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -130,7 +130,7 @@ window.  They currently have the same top menu but a different
 default title and context menu.</p>
 <p>On macOS, there is one application menu.  It dynamically changes according
 to the window currently selected.  It has an IDLE menu, and some entries
-described below are moved around to conform to Apple guidlines.</p>
+described below are moved around to conform to Apple guidelines.</p>
 <div class="section" id="file-menu-shell-and-editor">
 <h3>File menu (Shell and Editor)<a class="headerlink" href="#file-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
@@ -313,14 +313,14 @@ size, additional help sources, and extensions.  On macOS,  open the
 configuration dialog by selecting Preferences in the application
 menu. For more, see
 <a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a> under Help and preferences.</dd>
-<dt>Zoom/Restore Height</dt>
-<dd>Toggles the window between normal size and maximum height. The initial size
-defaults to 40 lines by 80 chars unless changed on the General tab of the
-Configure IDLE dialog.</dd>
 <dt>Show/Hide Code Context (Editor Window only)</dt>
 <dd>Open a pane at the top of the edit window which shows the block context
 of the code which has scrolled above the top of the window.  See
 <a class="reference internal" href="#code-context"><span class="std std-ref">Code Context</span></a> in the Editing and Navigation section below.</dd>
+<dt>Zoom/Restore Height</dt>
+<dd>Toggles the window between normal size and maximum height. The initial size
+defaults to 40 lines by 80 chars unless changed on the General tab of the
+Configure IDLE dialog.</dd>
 </dl>
 </div>
 <div class="section" id="window-menu-shell-and-editor">
@@ -372,8 +372,8 @@ debugger.  Breakpoints for a file are saved in the user’s .idlerc directory.</
 <dt>Go to file/line</dt>
 <dd>Same as in Debug menu.</dd>
 </dl>
-<p>The Shell window also has an output squeezing facility explained in the
-the <em>Python Shell window</em> subsection below.</p>
+<p>The Shell window also has an output squeezing facility explained in the <em>Python
+Shell window</em> subsection below.</p>
 <dl class="docutils">
 <dt>Squeeze</dt>
 <dd>If the cursor is over an output line, squeeze all the output between
@@ -659,6 +659,8 @@ will then be attached to that window for input and output.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">sys</span></code> is reset by user code, such as with <code class="docutils literal notranslate"><span class="pre">importlib.reload(sys)</span></code>,
 IDLE’s changes are lost and input from the keyboard and output to the screen
 will not work correctly.</p>
+<p>When user code raises SystemExit either directly or by calling sys.exit, IDLE
+returns to a Shell prompt instead of exiting.</p>
 </div>
 <div class="section" id="user-output-in-shell">
 <h3>User output in Shell<a class="headerlink" href="#user-output-in-shell" title="Permalink to this headline">¶</a></h3>
@@ -673,24 +675,22 @@ output to Shell will eventually fill memory, resulting in a memory error.
 In contrast, some system text windows only keep the last n lines of output.
 A Windows console, for instance, keeps a user-settable 1 to 9999 lines,
 with 300 the default.</p>
-<p>A Tk Text widget, and hence IDLE’s Shell, displays characters (codepoints)
-in the the BMP (Basic Multilingual Plane) subset of Unicode.
-Which characters are displayed with a proper glyph and which with a
-replacement box depends on the operating system and installed fonts.
-Tab characters cause the following text to begin after
-the next tab stop. (They occur every 8 ‘characters’).
-Newline characters cause following text to appear on a new line.
-Other control characters are ignored or displayed as a space, box, or
-something else, depending on the operating system and font.
-(Moving the text cursor through such output with arrow keys may exhibit
-some surprising spacing behavior.)</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; s = &#39;a\tb\a&lt;\x02&gt;&lt;\r&gt;\bc\nd&#39;
-&gt;&gt;&gt; len(s)
-14
-&gt;&gt;&gt; s  # Display repr(s)
-&#39;a\tb\x07&lt;\x02&gt;&lt;\r&gt;\x08c\nd&#39;
-&gt;&gt;&gt; print(s, end=&#39;&#39;)  # Display s as is.
-# Result varies by OS and font.  Try it.
+<p>A Tk Text widget, and hence IDLE’s Shell, displays characters (codepoints) in
+the BMP (Basic Multilingual Plane) subset of Unicode.  Which characters are
+displayed with a proper glyph and which with a replacement box depends on the
+operating system and installed fonts.  Tab characters cause the following text
+to begin after the next tab stop. (They occur every 8 ‘characters’).  Newline
+characters cause following text to appear on a new line.  Other control
+characters are ignored or displayed as a space, box, or something else,
+depending on the operating system and font.  (Moving the text cursor through
+such output with arrow keys may exhibit some surprising spacing behavior.)</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;a</span><span class="se">\t</span><span class="s1">b</span><span class="se">\a</span><span class="s1">&lt;</span><span class="se">\x02</span><span class="s1">&gt;&lt;</span><span class="se">\r</span><span class="s1">&gt;</span><span class="se">\b</span><span class="s1">c</span><span class="se">\n</span><span class="s1">d&#39;</span>  <span class="c1"># Enter 22 chars.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">14</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span>  <span class="c1"># Display repr(s)</span>
+<span class="go">&#39;a\tb\x07&lt;\x02&gt;&lt;\r&gt;\x08c\nd&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>  <span class="c1"># Display s as is.</span>
+<span class="go"># Result varies by OS and font.  Try it.</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">repr</span></code> function is used for interactive echo of expression
@@ -723,7 +723,7 @@ facilitate development of tkinter programs.  Enter <code class="docutils literal
 <span class="pre">root</span> <span class="pre">=</span> <span class="pre">tk.Tk()</span></code> in standard Python and nothing appears.  Enter the same
 in IDLE and a tk window appears.  In standard Python, one must also enter
 <code class="docutils literal notranslate"><span class="pre">root.update()</span></code> to see the window.  IDLE does the equivalent in the
-background, about 20 times a second, which is about every 50 milleseconds.
+background, about 20 times a second, which is about every 50 milliseconds.
 Next enter <code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">=</span> <span class="pre">tk.Button(root,</span> <span class="pre">text='button');</span> <span class="pre">b.pack()</span></code>.  Again,
 nothing visibly changes in standard Python until one enters <code class="docutils literal notranslate"><span class="pre">root.update()</span></code>.</p>
 <p>Most tkinter programs run <code class="docutils literal notranslate"><span class="pre">root.mainloop()</span></code>, which usually does not
@@ -912,7 +912,7 @@ also used for testing.</p>
 
 
     <li>
-      <a href="../index.html">3.8.0a1 Documentation</a> &#187;
+      <a href="../index.html">3.8.0a4 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -943,7 +943,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Feb 23, 2019.
+    Last updated on May 25, 2019.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 

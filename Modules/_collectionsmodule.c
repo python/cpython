@@ -1620,10 +1620,10 @@ static PyTypeObject deque_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)deque_dealloc,          /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     deque_repr,                         /* tp_repr */
     &deque_as_number,                   /* tp_as_number */
     &deque_as_sequence,                 /* tp_as_sequence */
@@ -1788,10 +1788,10 @@ static PyTypeObject dequeiter_type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)dequeiter_dealloc,              /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -1910,10 +1910,10 @@ static PyTypeObject dequereviter_type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)dequeiter_dealloc,              /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -2189,10 +2189,10 @@ static PyTypeObject defdict_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)defdict_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)defdict_repr,             /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -2464,10 +2464,10 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)tuplegetter_dealloc,            /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

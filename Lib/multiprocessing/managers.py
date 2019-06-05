@@ -17,9 +17,11 @@ __all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token',
 
 import sys
 import threading
+import signal
 import array
 import queue
 import time
+import os
 from os import getpid
 
 from traceback import format_exc
@@ -419,6 +421,7 @@ class Server(object):
 
         self.incref(c, ident)
         return ident, tuple(exposed)
+    create.__text_signature__ = '($self, c, typeid, /, *args, **kwds)'
 
     def get_methods(self, c, token):
         '''
@@ -595,6 +598,9 @@ class BaseManager(object):
         '''
         Create a server, report its address and run it
         '''
+        # bpo-36368: protect server process from KeyboardInterrupt signals
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         if initializer is not None:
             initializer(*initargs)
 
@@ -609,13 +615,10 @@ class BaseManager(object):
         util.info('manager serving at %r', server.address)
         server.serve_forever()
 
-    def _create(*args, **kwds):
+    def _create(self, typeid, /, *args, **kwds):
         '''
         Create a new shared object; return the token and exposed tuple
         '''
-        self, typeid, *args = args
-        args = tuple(args)
-
         assert self._state.value == State.STARTED, 'server not yet started'
         conn = self._Client(self._address, authkey=self._authkey)
         try:
@@ -732,7 +735,7 @@ class BaseManager(object):
             )
 
         if create_method:
-            def temp(self, *args, **kwds):
+            def temp(self, /, *args, **kwds):
                 util.debug('requesting creation of a shared %r object', typeid)
                 token, exp = self._create(typeid, *args, **kwds)
                 proxy = proxytype(
@@ -972,7 +975,7 @@ def MakeProxyType(name, exposed, _cache={}):
     dic = {}
 
     for meth in exposed:
-        exec('''def %s(self, *args, **kwds):
+        exec('''def %s(self, /, *args, **kwds):
         return self._callmethod(%r, args, kwds)''' % (meth, meth), dic)
 
     ProxyType = type(name, (BaseProxy,), dic)
@@ -1011,7 +1014,7 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
 #
 
 class Namespace(object):
-    def __init__(self, **kwds):
+    def __init__(self, /, **kwds):
         self.__dict__.update(kwds)
     def __repr__(self):
         items = list(self.__dict__.items())
@@ -1309,6 +1312,7 @@ if HAS_SHMEM:
             if hasattr(self.registry[typeid][-1], "_shared_memory_proxy"):
                 kwargs['shared_memory_context'] = self.shared_memory_context
             return Server.create(*args, **kwargs)
+        create.__text_signature__ = '($self, c, typeid, /, *args, **kwargs)'
 
         def shutdown(self, c):
             "Call unlink() on all tracked shared memory, terminate the Server."
@@ -1343,6 +1347,14 @@ if HAS_SHMEM:
         _Server = SharedMemoryServer
 
         def __init__(self, *args, **kwargs):
+            if os.name == "posix":
+                # bpo-36867: Ensure the resource_tracker is running before
+                # launching the manager process, so that concurrent
+                # shared_memory manipulation both in the manager and in the
+                # current process does not create two resource_tracker
+                # processes.
+                from . import resource_tracker
+                resource_tracker.ensure_running()
             BaseManager.__init__(self, *args, **kwargs)
             util.debug(f"{self.__class__.__name__} created by pid {getpid()}")
 

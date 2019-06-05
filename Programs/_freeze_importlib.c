@@ -36,7 +36,7 @@ main(int argc, char *argv[])
     const char *name, *inpath, *outpath;
     char buf[100];
     FILE *infile = NULL, *outfile = NULL;
-    struct _Py_stat_struct status;
+    struct _Py_stat_struct stat;
     size_t text_size, data_size, i, n;
     char *text = NULL;
     unsigned char *data;
@@ -56,11 +56,11 @@ main(int argc, char *argv[])
         fprintf(stderr, "cannot open '%s' for reading\n", inpath);
         goto error;
     }
-    if (_Py_fstat_noraise(fileno(infile), &status)) {
+    if (_Py_fstat_noraise(fileno(infile), &stat)) {
         fprintf(stderr, "cannot fstat '%s'\n", inpath);
         goto error;
     }
-    text_size = (size_t)status.st_size;
+    text_size = (size_t)stat.st_size;
     text = (char *) malloc(text_size + 1);
     if (text == NULL) {
         fprintf(stderr, "could not allocate %ld bytes\n", (long) text_size);
@@ -76,21 +76,32 @@ main(int argc, char *argv[])
     }
     text[text_size] = '\0';
 
-    _PyCoreConfig config = _PyCoreConfig_INIT;
-    config.use_environment = 0;
-    config.user_site_directory = 0;
+    PyStatus status;
+    PyConfig config;
+
+    status = PyConfig_InitIsolatedConfig(&config);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+
     config.site_import = 0;
-    config.program_name = L"./_freeze_importlib";
+
+    status = PyConfig_SetString(&config, &config.program_name,
+                                  L"./_freeze_importlib");
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+
     /* Don't install importlib, since it could execute outdated bytecode. */
     config._install_importlib = 0;
-    config._frozen = 1;
     config._init_main = 0;
 
-    _PyInitError err = _Py_InitializeFromConfig(&config);
-    /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
-       memory: program_name is a constant string. */
-    if (_Py_INIT_FAILED(err)) {
-        _Py_ExitInitError(err);
+    status = Py_InitializeFromConfig(&config);
+    PyConfig_Clear(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
     }
 
     sprintf(buf, "<frozen %s>", name);
@@ -128,7 +139,7 @@ main(int argc, char *argv[])
         size_t i, end = Py_MIN(n + 16, data_size);
         fprintf(outfile, "    ");
         for (i = n; i < end; i++) {
-            fprintf(outfile, "%d,", (unsigned int) data[i]);
+            fprintf(outfile, "%u,", (unsigned int) data[i]);
         }
         fprintf(outfile, "\n");
     }

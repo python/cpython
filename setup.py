@@ -125,19 +125,57 @@ def sysroot_paths(make_vars, subdirs):
                 break
     return dirs
 
+MACOS_SDK_ROOT = None
 
 def macosx_sdk_root():
+    """Return the directory of the current macOS SDK.
+
+    If no SDK was explicitly configured, call the compiler to find which
+    include files paths are being searched by default.  Use '/' if the
+    compiler is searching /usr/include (meaning system header files are
+    installed) or use the root of an SDK if that is being searched.
+    (The SDK may be supplied via Xcode or via the Command Line Tools).
+    The SDK paths used by Apple-supplied tool chains depend on the
+    setting of various variables; see the xcrun man page for more info.
     """
-    Return the directory of the current OSX SDK,
-    or '/' if no SDK was specified.
-    """
+    global MACOS_SDK_ROOT
+
+    # If already called, return cached result.
+    if MACOS_SDK_ROOT:
+        return MACOS_SDK_ROOT
+
     cflags = sysconfig.get_config_var('CFLAGS')
     m = re.search(r'-isysroot\s+(\S+)', cflags)
-    if m is None:
-        sysroot = '/'
+    if m is not None:
+        MACOS_SDK_ROOT = m.group(1)
     else:
-        sysroot = m.group(1)
-    return sysroot
+        MACOS_SDK_ROOT = '/'
+        cc = sysconfig.get_config_var('CC')
+        tmpfile = '/tmp/setup_sdk_root.%d' % os.getpid()
+        try:
+            os.unlink(tmpfile)
+        except:
+            pass
+        ret = os.system('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
+        in_incdirs = False
+        try:
+            if ret >> 8 == 0:
+                with open(tmpfile) as fp:
+                    for line in fp.readlines():
+                        if line.startswith("#include <...>"):
+                            in_incdirs = True
+                        elif line.startswith("End of search list"):
+                            in_incdirs = False
+                        elif in_incdirs:
+                            line = line.strip()
+                            if line == '/usr/include':
+                                MACOS_SDK_ROOT = '/'
+                            elif line.endswith(".sdk/usr/include"):
+                                MACOS_SDK_ROOT = line[:-12]
+        finally:
+            os.unlink(tmpfile)
+
+    return MACOS_SDK_ROOT
 
 
 def is_macosx_sdk_path(path):
@@ -725,13 +763,13 @@ class PyBuildExt(build_ext):
         # heapq
         self.add(Extension("_heapq", ["_heapqmodule.c"]))
         # C-optimized pickle replacement
-        self.add(Extension("_pickle", ["_pickle.c"]))
+        self.add(Extension("_pickle", ["_pickle.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # atexit
         self.add(Extension("atexit", ["atexitmodule.c"]))
         # _json speedups
         self.add(Extension("_json", ["_json.c"],
-                           # pycore_accu.h requires Py_BUILD_CORE_BUILTIN
-                           extra_compile_args=['-DPy_BUILD_CORE_BUILTIN']))
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # profiler (_lsprof is for cProfile.py)
         self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
@@ -813,6 +851,10 @@ class PyBuildExt(build_ext):
         # Python C API test module
         self.add(Extension('_testcapi', ['_testcapimodule.c'],
                            depends=['testcapi_long.h']))
+
+        # Python Internal C API test module
+        self.add(Extension('_testinternalcapi', ['_testinternalcapi.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # Python PEP-3118 (buffer protocol) test module
         self.add(Extension('_testbuffer', ['_testbuffer.c']))
@@ -973,17 +1015,18 @@ class PyBuildExt(build_ext):
 
     def detect_crypt(self):
         # crypt module.
+        if VXWORKS:
+            # bpo-31904: crypt() function is not provided by VxWorks.
+            # DES_crypt() OpenSSL provides is too weak to implement
+            # the encryption.
+            return
+
         if self.compiler.find_library_file(self.lib_dirs, 'crypt'):
             libs = ['crypt']
         else:
             libs = []
 
-        if not VXWORKS:
-            self.add(Extension('_crypt', ['_cryptmodule.c'],
-                               libraries=libs))
-        elif self.compiler.find_library_file(self.lib_dirs, 'OPENSSL'):
-            libs = ['OPENSSL']
-            self.add(Extension('_crypt', ['_cryptmodule.c'],
+        self.add(Extension('_crypt', ['_cryptmodule.c'],
                                libraries=libs))
 
     def detect_socket(self):
@@ -1294,7 +1337,7 @@ class PyBuildExt(build_ext):
         sqlite_setup_debug = False   # verbose debug prints from this script?
 
         # We hunt for #define SQLITE_VERSION "n.n.n"
-        # We need to find >= sqlite version 3.0.8
+        # We need to find >= sqlite version 3.3.9, for sqlite3_prepare_v2
         sqlite_incdir = sqlite_libdir = None
         sqlite_inc_paths = [ '/usr/include',
                              '/usr/include/sqlite',
@@ -1305,7 +1348,7 @@ class PyBuildExt(build_ext):
                              ]
         if CROSS_COMPILING:
             sqlite_inc_paths = []
-        MIN_SQLITE_VERSION_NUMBER = (3, 0, 8)
+        MIN_SQLITE_VERSION_NUMBER = (3, 3, 9)
         MIN_SQLITE_VERSION = ".".join([str(x)
                                     for x in MIN_SQLITE_VERSION_NUMBER])
 
@@ -1339,7 +1382,7 @@ class PyBuildExt(build_ext):
                         break
                     else:
                         if sqlite_setup_debug:
-                            print("%s: version %d is too old, need >= %s"%(d,
+                            print("%s: version %s is too old, need >= %s"%(d,
                                         sqlite_version, MIN_SQLITE_VERSION))
                 elif sqlite_setup_debug:
                     print("sqlite: %s had no SQLITE_VERSION"%(f,))
@@ -1642,6 +1685,7 @@ class PyBuildExt(build_ext):
         self.detect_crypt()
         self.detect_socket()
         self.detect_openssl_hashlib()
+        self.detect_hash_builtins()
         self.detect_dbm_gdbm()
         self.detect_sqlite()
         self.detect_platform_specific_exts()
@@ -1881,9 +1925,6 @@ class PyBuildExt(build_ext):
         # Add the Tcl/Tk libraries
         libs.append('tk'+ version)
         libs.append('tcl'+ version)
-
-        if HOST_PLATFORM in ['aix3', 'aix4']:
-            libs.append('ld')
 
         # Finally, link with the X11 libraries (not appropriate on cygwin)
         if not CYGWIN:
@@ -2155,6 +2196,7 @@ class PyBuildExt(build_ext):
         openssl_libs = split_var('OPENSSL_LIBS', '-l')
         if not openssl_libs:
             # libssl and libcrypto not found
+            self.missing.extend(['_ssl', '_hashlib'])
             return None, None
 
         # Find OpenSSL includes
@@ -2162,6 +2204,7 @@ class PyBuildExt(build_ext):
             'openssl/ssl.h', self.inc_dirs, openssl_includes
         )
         if ssl_incs is None:
+            self.missing.extend(['_ssl', '_hashlib'])
             return None, None
 
         # OpenSSL 1.0.2 uses Kerberos for KRB5 ciphers
@@ -2173,11 +2216,13 @@ class PyBuildExt(build_ext):
             ssl_incs.extend(krb5_h)
 
         if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
-            self.add(Extension('_ssl', ['_ssl.c'],
-                               include_dirs=openssl_includes,
-                               library_dirs=openssl_libdirs,
-                               libraries=openssl_libs,
-                               depends=['socketmodule.h']))
+            self.add(Extension(
+                '_ssl', ['_ssl.c'],
+                include_dirs=openssl_includes,
+                library_dirs=openssl_libdirs,
+                libraries=openssl_libs,
+                depends=['socketmodule.h', '_ssl/debughelpers.c'])
+            )
         else:
             self.missing.append('_ssl')
 
@@ -2187,6 +2232,7 @@ class PyBuildExt(build_ext):
                            library_dirs=openssl_libdirs,
                            libraries=openssl_libs))
 
+    def detect_hash_builtins(self):
         # We always compile these even when OpenSSL is available (issue #14693).
         # It's harmless and the object code is tiny (40-50 KiB per module,
         # only loaded when actually used).
