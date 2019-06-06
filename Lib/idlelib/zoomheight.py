@@ -14,10 +14,9 @@ class ZoomHeight:
     def __init__(self, editwin):
         self.editwin = editwin
 
-        # cached values for maximized window dimensions
-        self._max_height_and_y_coord = None
-
-        # self.top.protocol("WM_DELETE_WINDOW", lambda:print(self.top.winfo_rooty()))
+        # Cached values for maximized window dimensions, one for each set
+        # of screen dimensions.
+        self._max_height_and_y_coords = {}
 
     @property
     def top(self):
@@ -59,7 +58,9 @@ class ZoomHeight:
             return False
 
     def get_max_height_and_y_coord(self):
-        if self._max_height_and_y_coord is None:
+        screen_dimensions = (self.top.winfo_screenwidth(),
+                             self.top.winfo_screenheight())
+        if screen_dimensions not in self._max_height_and_y_coords:
             orig_state = self.top.wm_state()
 
             # Get window geometry info for maximized windows.
@@ -96,12 +97,12 @@ class ZoomHeight:
             # title bar heights of non-maximized vs. maximized windows.
             maxheight += maxrooty - max_y_geom_rooty
 
-            self._max_height_and_y_coord = maxheight, maxy
+            self._max_height_and_y_coords[screen_dimensions] = maxheight, maxy
 
             set_window_geometry(self.top, orig_geom)
             self.top.wm_state(orig_state)
 
-        return self._max_height_and_y_coord
+        return self._max_height_and_y_coords[screen_dimensions]
 
 
 def get_window_geometry(top):
