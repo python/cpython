@@ -1575,7 +1575,7 @@ to sockets.
 
 .. method:: socket.recv_fds(sock, bufsize, maxfds[, flags])
 
-   Receive up to *maxfds* file descriptors. Return (msg, list(fds), flags, addr). Consult
+   Receive up to *maxfds* file descriptors. Return ``(msg, list(fds), flags, addr)``. Consult
    :meth:`recvmsg` for the documentation of these parameters.
 
    .. availability:: Unix supporting :meth:`~socket.sendmsg` and :const:`SCM_RIGHTS` mechanism.
