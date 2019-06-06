@@ -7,6 +7,11 @@
 #include "longintrepr.h"
 
 
+/* struct module */
+static PyObject *structmodule = NULL;
+static PyObject *calcsize = NULL;
+
+
 
 /* Shorthands to return certain errors */
 
@@ -493,6 +498,30 @@ _Py_add_one_to_index_C(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
             index[k] = 0;
         }
     }
+}
+
+int
+PyBuffer_SizeFromFormat(const char *format)
+{
+    PyObject *result;
+    int size;
+
+    structmodule = PyImport_ImportModule("struct");
+    if (structmodule == NULL)
+        return NULL;
+
+    calcsize = PyObject_GetAttrString(structmodule, "calcsize");
+    if (calcsize == NULL)
+        return NULL;
+
+    result = PyObject_CallFunctionObjArgs(calcsize, format, NULL);
+    Py_DECREF(calcsize);
+    if (result == NULL)
+        return -1;
+    size = _PyLong_AsInt(result);
+    Py_DECREF(result);
+
+    return size;
 }
 
 int

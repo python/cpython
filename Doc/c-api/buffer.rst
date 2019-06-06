@@ -460,10 +460,9 @@ Buffer-related functions
    :c:func:`PyObject_GetBuffer`.
 
 
-.. c:function:: Py_ssize_t PyBuffer_SizeFromFormat(const char *)
+.. c:function:: Py_ssize_t PyBuffer_SizeFromFormat(const char *format)
 
    Return the implied :c:data:`~Py_buffer.itemsize` from :c:data:`~Py_buffer.format`.
-   This function is not yet implemented.
 
 
 .. c:function:: int PyBuffer_IsContiguous(Py_buffer *view, char order)
