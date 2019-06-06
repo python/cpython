@@ -5,6 +5,8 @@ import os
 import struct
 import sys
 import unittest
+import textwrap
+import subprocess
 from test.support import (verbose, TESTFN, unlink, run_unittest, import_module,
                           cpython_only)
 
@@ -140,34 +142,36 @@ class TestFcntl(unittest.TestCase):
 
         self.f = open(TESTFN, 'wb+')
 
+        fcntl.lockf(self.f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+        code = textwrap.dedent('''
+            try:
+                fcntl.lockf(open(self.f.name, self.f.mode), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError as e:
+                if e.errno not in (errno.EACCES, errno.EAGAIN):
+                    raise
+                os.EX_OSERR
+            else:
+                os.EX_OK
+            finally:
+                os._exit()
+        ''')
+
+        args = (sys.executable, '-c', code)
+        proc = subprocess.run(args,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT)
+
+        fcntl.lockf(self.f, fcntl.LOCK_UN)
+
+    def test_lockf_errors(self):
+
+        self.f = open(TESTFN, 'wb+')
+
         self.assertRaises(TypeError, fcntl.lockf, self.f, "foo")
         self.assertRaises(TypeError, fcntl.lockf, self.f, fcntl.LOCK_UN, "foo")
         self.assertRaises(ValueError, fcntl.lockf, self.f, -256)
         self.assertRaises(ValueError, fcntl.lockf, self.f, 256)
-
-        fcntl.lockf(self.f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-
-        pid = os.fork()
-        if pid == 0:
-            rval = 2
-            try:
-                fcntl.lockf(open(self.f.name, self.f.mode), fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except IOError as e:
-                if e.errno not in (errno.EACCES, errno.EAGAIN):
-                    raise
-                rval = 0
-            else:
-                rval = 1
-            finally:
-                os._exit(rval)
-
-        assert pid > 0
-        (pid, status) = os.waitpid(pid, 0)
-        self.assertEqual(os.WIFEXITED(status), True)
-
-        fcntl.lockf(self.f, fcntl.LOCK_UN)
-
-        self.f.close()
 
     @cpython_only
     def test_flock_overflow(self):
@@ -176,8 +180,5 @@ class TestFcntl(unittest.TestCase):
                           fcntl.LOCK_SH)
 
 
-def test_main():
-    run_unittest(TestFcntl)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
