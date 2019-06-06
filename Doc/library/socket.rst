@@ -669,30 +669,6 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionadded:: 3.3
 
 
-.. function:: socket.send_fds(sock, buffers, fds[, flags[, address]])
-
-   :func:`socket.send_fds` sends the list of file descriptors *fds*
-   over an :const:`AF_UNIX` socket, on systems which support the
-   :const:`SCM_RIGHTS` mechanism.
-
-   .. availability:: most Unix platforms, possibly others.
-
-   .. versionadded:: 3.8
-
-
-.. function:: socket.recv_fds(sock, bufsize, maxfds[, flags])
-
-   On systems which support the :const:`SCM_RIGHTS` mechanism,
-   :func:`socket.recv_fds` will receive up to *maxfds* file descriptors,
-   returning the message data and a list containing the descriptors
-   (while ignoring unexpected conditions such as unrelated control
-   messages being received).
-
-   .. availability:: most Unix platforms, possibly others.
-
-   .. versionadded:: 3.8
-
-
 .. data:: SocketType
 
    This is a Python type object that represents the socket object type. It is the
@@ -1587,6 +1563,28 @@ to sockets.
    .. availability:: Linux >= 2.6.38.
 
    .. versionadded:: 3.6
+
+.. method:: socket.send_fds(sock, buffers, fds[, flags[, address]])
+
+   Send the list of file descriptors *fds* over an :const:`AF_UNIX` socket.
+   Consult :meth:`sendmsg` for the documentation of these parameters.
+
+   .. availability:: Unix supporting :meth:socket.socket.sendmsg and :const:SCM_RIGHTS mechanism.
+
+   .. versionadded:: 3.9
+
+.. method:: socket.recv_fds(sock, bufsize, maxfds[, flags])
+
+   Receive up to *maxfds* file descriptors. Return (msg, list(fds), flags, addr). Consult
+   :meth:`recvmsg` for the documentation of these parameters.
+
+   .. availability:: Unix supporting :meth:socket.socket.sendmsg and :const:SCM_RIGHTS mechanism.
+
+   .. versionadded:: 3.9
+
+   .. note::
+
+      Any truncated integers at the end are ignored.
 
 .. method:: socket.sendfile(file, offset=0, count=None)
 

@@ -489,7 +489,8 @@ if hasattr(_socket.socket, "recvmsg"):
         for cmsg_level, cmsg_type, cmsg_data in ancdata:
             if (cmsg_level == _socket.SOL_SOCKET and cmsg_type == _socket.SCM_RIGHTS):
                 # Append data, ignoring any truncated integers at the end.
-                fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+                fds.frombytes(cmsg_data[:
+                        len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
         return msg, list(fds), flags, addr
     __all__.append("recv_fds")
 

@@ -1,2 +1,2 @@
-The socket module now has the :func:`socket.send_fds()` and :func:`socket.recv.fds()` functions.
+The socket module now has the :meth:`socket.send_fds` and :meth:`socket.recv.fds` methods.
 Contributed by Joannah Nanjekye and Shinya Okano .
