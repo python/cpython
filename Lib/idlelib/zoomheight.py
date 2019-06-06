@@ -114,7 +114,7 @@ def get_window_geometry(top):
 
 
 def set_window_geometry(top, geometry):
-    top.wm_geometry("{:d}x{:d}{:+d}{:+d}".format(*geometry))
+    top.wm_geometry("{:d}x{:d}+{:d}+{:d}".format(*geometry))
 
 
 if __name__ == "__main__":
