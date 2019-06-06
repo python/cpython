@@ -1569,7 +1569,7 @@ to sockets.
    Send the list of file descriptors *fds* over an :const:`AF_UNIX` socket.
    Consult :meth:`sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix supporting :meth:socket.socket.sendmsg and :const:SCM_RIGHTS mechanism.
+   .. availability:: Unix supporting :meth:`~socket.sendmsg` and :const:`SCM_RIGHTS` mechanism.
 
    .. versionadded:: 3.9
 
@@ -1578,7 +1578,7 @@ to sockets.
    Receive up to *maxfds* file descriptors. Return (msg, list(fds), flags, addr). Consult
    :meth:`recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix supporting :meth:socket.socket.sendmsg and :const:SCM_RIGHTS mechanism.
+   .. availability:: Unix supporting :meth:`~socket.sendmsg` and :const:`SCM_RIGHTS` mechanism.
 
    .. versionadded:: 3.9
 
