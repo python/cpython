@@ -14,7 +14,7 @@ module _symtable
 /*[clinic input]
 _symtable.symtable
 
-    str:       str
+    source:    object
     filename:  object(converter='PyUnicode_FSDecoder')
     startstr:  str
     /
@@ -23,13 +23,23 @@ Return symbol and scope dictionaries used internally by compiler.
 [clinic start generated code]*/
 
 static PyObject *
-_symtable_symtable_impl(PyObject *module, const char *str,
+_symtable_symtable_impl(PyObject *module, PyObject *source,
                         PyObject *filename, const char *startstr)
-/*[clinic end generated code: output=914b369c9b785956 input=6c615e84d5f408e3]*/
+/*[clinic end generated code: output=59eb0d5fc7285ac4 input=9dd8a50c0c36a4d7]*/
 {
     struct symtable *st;
     PyObject *t;
     int start;
+    PyCompilerFlags cf;
+    PyObject *source_copy = NULL;
+
+    cf.cf_flags = PyCF_SOURCE_IS_UTF8;
+    cf.cf_feature_version = PY_MINOR_VERSION;
+
+    const char *str = _Py_SourceAsString(source, "symtable", "string or bytes", &cf, &source_copy);
+    if (str == NULL) {
+        return NULL;
+    }
 
     if (strcmp(startstr, "exec") == 0)
         start = Py_file_input;
@@ -41,12 +51,15 @@ _symtable_symtable_impl(PyObject *module, const char *str,
         PyErr_SetString(PyExc_ValueError,
            "symtable() arg 3 must be 'exec' or 'eval' or 'single'");
         Py_DECREF(filename);
+        Py_XDECREF(source_copy);
         return NULL;
     }
-    st = Py_SymtableStringObject(str, filename, start);
+    st = _Py_SymtableStringObjectFlags(str, filename, start, &cf);
     Py_DECREF(filename);
-    if (st == NULL)
+    Py_XDECREF(source_copy);
+    if (st == NULL) {
         return NULL;
+    }
     t = (PyObject *)st->st_top;
     Py_INCREF(t);
     PyMem_Free((void *)st->st_future);

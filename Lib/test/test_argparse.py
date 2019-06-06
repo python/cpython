@@ -1786,6 +1786,15 @@ class TestActionRegistration(TestCase):
         self.assertEqual(parser.parse_args(['42']), NS(badger='foo[42]'))
 
 
+class TestActionExtend(ParserTestCase):
+    argument_signatures = [
+        Sig('--foo', action="extend", nargs="+", type=str),
+    ]
+    failures = ()
+    successes = [
+        ('--foo f1 --foo f2 f3 f4', NS(foo=['f1', 'f2', 'f3', 'f4'])),
+    ]
+
 # ================
 # Subparsers tests
 # ================

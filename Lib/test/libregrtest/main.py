@@ -1,6 +1,5 @@
 import datetime
 import faulthandler
-import json
 import locale
 import os
 import platform
@@ -16,30 +15,10 @@ from test.libregrtest.runtest import (
     findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
     INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
-    PROGRESS_MIN_TIME, format_test_result)
+    PROGRESS_MIN_TIME, format_test_result, is_failed)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
-try:
-    import gc
-except ImportError:
-    gc = None
-
-
-# When tests are run from the Python build directory, it is best practice
-# to keep the test files in a subfolder.  This eases the cleanup of leftover
-# files using the "make distclean" command.
-if sysconfig.is_python_build():
-    TEMPDIR = sysconfig.get_config_var('abs_builddir')
-    if TEMPDIR is None:
-        # bpo-30284: On Windows, only srcdir is available. Using abs_builddir
-        # mostly matters on UNIX when building Python out of the source tree,
-        # especially when the source tree is read only.
-        TEMPDIR = sysconfig.get_config_var('srcdir')
-    TEMPDIR = os.path.join(TEMPDIR, 'build')
-else:
-    TEMPDIR = tempfile.gettempdir()
-TEMPDIR = os.path.abspath(TEMPDIR)
 
 
 class Regrtest:
@@ -79,8 +58,8 @@ class Regrtest:
         self.skipped = []
         self.resource_denieds = []
         self.environment_changed = []
-        self.rerun = []
         self.run_no_tests = []
+        self.rerun = []
         self.first_result = None
         self.interrupted = False
 
@@ -89,9 +68,6 @@ class Regrtest:
 
         # used by --coverage, trace.Trace instance
         self.tracer = None
-
-        # used by --findleaks, store for gc.garbage
-        self.found_garbage = []
 
         # used to display the progress bar "[ 3/100]"
         self.start_time = time.monotonic()
@@ -105,26 +81,46 @@ class Regrtest:
         # used by --junit-xml
         self.testsuite_xml = None
 
-    def accumulate_result(self, test, result):
-        ok, test_time, xml_data = result
-        if ok not in (CHILD_ERROR, INTERRUPTED):
-            self.test_times.append((test_time, test))
+        # misc
+        self.win_load_tracker = None
+        self.tmp_dir = None
+        self.worker_test_name = None
+
+    def get_executed(self):
+        return (set(self.good) | set(self.bad) | set(self.skipped)
+                | set(self.resource_denieds) | set(self.environment_changed)
+                | set(self.run_no_tests))
+
+    def accumulate_result(self, result, rerun=False):
+        test_name = result.test_name
+        ok = result.result
+
+        if ok not in (CHILD_ERROR, INTERRUPTED) and not rerun:
+            self.test_times.append((result.test_time, test_name))
+
         if ok == PASSED:
-            self.good.append(test)
+            self.good.append(test_name)
         elif ok in (FAILED, CHILD_ERROR):
-            self.bad.append(test)
+            if not rerun:
+                self.bad.append(test_name)
         elif ok == ENV_CHANGED:
-            self.environment_changed.append(test)
+            self.environment_changed.append(test_name)
         elif ok == SKIPPED:
-            self.skipped.append(test)
+            self.skipped.append(test_name)
         elif ok == RESOURCE_DENIED:
-            self.skipped.append(test)
-            self.resource_denieds.append(test)
+            self.skipped.append(test_name)
+            self.resource_denieds.append(test_name)
         elif ok == TEST_DID_NOT_RUN:
-            self.run_no_tests.append(test)
-        elif ok != INTERRUPTED:
+            self.run_no_tests.append(test_name)
+        elif ok == INTERRUPTED:
+            self.interrupted = True
+        else:
             raise ValueError("invalid test result: %r" % ok)
 
+        if rerun and ok not in {FAILED, CHILD_ERROR, INTERRUPTED}:
+            self.bad.remove(test_name)
+
+        xml_data = result.xml_data
         if xml_data:
             import xml.etree.ElementTree as ET
             for e in xml_data:
@@ -134,7 +130,7 @@ class Regrtest:
                     print(xml_data, file=sys.__stderr__)
                     raise
 
-    def display_progress(self, test_index, test):
+    def display_progress(self, test_index, text):
         if self.ns.quiet:
             return
 
@@ -143,12 +139,12 @@ class Regrtest:
         fails = len(self.bad) + len(self.environment_changed)
         if fails and not self.ns.pgo:
             line = f"{line}/{fails}"
-        line = f"[{line}] {test}"
+        line = f"[{line}] {text}"
 
         # add the system load prefix: "load avg: 1.80 "
-        if hasattr(os, 'getloadavg'):
-            load_avg_1min = os.getloadavg()[0]
-            line = f"load avg: {load_avg_1min:.2f} {line}"
+        load_avg = self.getloadavg()
+        if load_avg is not None:
+            line = f"load avg: {load_avg:.2f} {line}"
 
         # add the timestamp prefix:  "0:01:05 "
         test_time = time.monotonic() - self.start_time
@@ -164,24 +160,15 @@ class Regrtest:
                   "faulthandler.dump_traceback_later", file=sys.stderr)
             ns.timeout = None
 
-        if ns.threshold is not None and gc is None:
-            print('No GC available, ignore --threshold.', file=sys.stderr)
-            ns.threshold = None
-
-        if ns.findleaks:
-            if gc is not None:
-                # Uncomment the line below to report garbage that is not
-                # freeable by reference counting alone.  By default only
-                # garbage that is not collectable by the GC is reported.
-                pass
-                #gc.set_debug(gc.DEBUG_SAVEALL)
-            else:
-                print('No GC available, disabling --findleaks',
-                      file=sys.stderr)
-                ns.findleaks = False
-
         if ns.xmlpath:
             support.junit_xml_list = self.testsuite_xml = []
+
+        worker_args = ns.worker_args
+        if worker_args is not None:
+            from test.libregrtest.runtest_mp import parse_worker_args
+            ns, test_name = parse_worker_args(ns.worker_args)
+            ns.worker_args = worker_args
+            self.worker_test_name = test_name
 
         # Strip .py extensions.
         removepy(ns.args)
@@ -192,7 +179,7 @@ class Regrtest:
         self.tests = tests
 
         if self.ns.single:
-            self.next_single_filename = os.path.join(TEMPDIR, 'pynexttest')
+            self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
             try:
                 with open(self.next_single_filename, 'r') as fp:
                     next_test = fp.read().strip()
@@ -275,13 +262,13 @@ class Regrtest:
         support.verbose = False
         support.set_match_tests(self.ns.match_tests)
 
-        for test in self.selected:
-            abstest = get_abs_module(self.ns, test)
+        for test_name in self.selected:
+            abstest = get_abs_module(self.ns, test_name)
             try:
                 suite = unittest.defaultTestLoader.loadTestsFromName(abstest)
                 self._list_cases(suite)
             except unittest.SkipTest:
-                self.skipped.append(test)
+                self.skipped.append(test_name)
 
         if self.skipped:
             print(file=sys.stderr)
@@ -298,23 +285,19 @@ class Regrtest:
         print()
         print("Re-running failed tests in verbose mode")
         self.rerun = self.bad[:]
-        for test in self.rerun:
-            print("Re-running test %r in verbose mode" % test, flush=True)
-            try:
-                self.ns.verbose = True
-                ok = runtest(self.ns, test)
-            except KeyboardInterrupt:
-                self.interrupted = True
-                # print a newline separate from the ^C
-                print()
+        for test_name in self.rerun:
+            print(f"Re-running {test_name} in verbose mode", flush=True)
+            self.ns.verbose = True
+            result = runtest(self.ns, test_name)
+
+            self.accumulate_result(result, rerun=True)
+
+            if result.result == INTERRUPTED:
                 break
-            else:
-                if ok[0] in {PASSED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED}:
-                    self.bad.remove(test)
-        else:
-            if self.bad:
-                print(count(len(self.bad), 'test'), "failed again:")
-                printlist(self.bad)
+
+        if self.bad:
+            print(count(len(self.bad), 'test'), "failed again:")
+            printlist(self.bad)
 
         self.display_result()
 
@@ -327,11 +310,11 @@ class Regrtest:
         print("== Tests result: %s ==" % self.get_tests_result())
 
         if self.interrupted:
-            print()
-            # print a newline after ^C
             print("Test suite interrupted by signal SIGINT.")
-            executed = set(self.good) | set(self.bad) | set(self.skipped)
-            omitted = set(self.selected) - executed
+
+        omitted = set(self.selected) - self.get_executed()
+        if omitted:
+            print()
             print(count(len(omitted), "test"), "omitted:")
             printlist(omitted)
 
@@ -348,8 +331,8 @@ class Regrtest:
             self.test_times.sort(reverse=True)
             print()
             print("10 slowest tests:")
-            for time, test in self.test_times[:10]:
-                print("- %s: %s" % (test, format_duration(time)))
+            for test_time, test in self.test_times[:10]:
+                print("- %s: %s" % (test, format_duration(test_time)))
 
         if self.bad:
             print()
@@ -387,10 +370,10 @@ class Regrtest:
         print("Run tests sequentially")
 
         previous_test = None
-        for test_index, test in enumerate(self.tests, 1):
+        for test_index, test_name in enumerate(self.tests, 1):
             start_time = time.monotonic()
 
-            text = test
+            text = test_name
             if previous_test:
                 text = '%s -- %s' % (text, previous_test)
             self.display_progress(test_index, text)
@@ -398,51 +381,41 @@ class Regrtest:
             if self.tracer:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                cmd = ('result = runtest(self.ns, test); '
-                       'self.accumulate_result(test, result)')
+                cmd = ('result = runtest(self.ns, test_name); '
+                       'self.accumulate_result(result)')
                 ns = dict(locals())
                 self.tracer.runctx(cmd, globals=globals(), locals=ns)
                 result = ns['result']
             else:
-                try:
-                    result = runtest(self.ns, test)
-                except KeyboardInterrupt:
-                    self.interrupted = True
-                    self.accumulate_result(test, (INTERRUPTED, None, None))
-                    break
-                else:
-                    self.accumulate_result(test, result)
+                result = runtest(self.ns, test_name)
+                self.accumulate_result(result)
 
-            previous_test = format_test_result(test, result[0])
+            if result.result == INTERRUPTED:
+                break
+
+            previous_test = format_test_result(result)
             test_time = time.monotonic() - start_time
             if test_time >= PROGRESS_MIN_TIME:
                 previous_test = "%s in %s" % (previous_test, format_duration(test_time))
-            elif result[0] == PASSED:
+            elif result.result == PASSED:
                 # be quiet: say nothing if the test passed shortly
                 previous_test = None
-
-            if self.ns.findleaks:
-                gc.collect()
-                if gc.garbage:
-                    print("Warning: test created", len(gc.garbage), end=' ')
-                    print("uncollectable object(s).")
-                    # move the uncollectable objects somewhere so we don't see
-                    # them again
-                    self.found_garbage.extend(gc.garbage)
-                    del gc.garbage[:]
 
             # Unload the newly imported modules (best effort finalization)
             for module in sys.modules.keys():
                 if module not in save_modules and module.startswith("test."):
                     support.unload(module)
 
+            if self.ns.failfast and is_failed(result, self.ns):
+                break
+
         if previous_test:
             print(previous_test)
 
     def _test_forever(self, tests):
         while True:
-            for test in tests:
-                yield test
+            for test_name in tests:
+                yield test_name
                 if self.bad:
                     return
                 if self.ns.fail_env_changed and self.environment_changed:
@@ -515,6 +488,10 @@ class Regrtest:
             self.run_tests_sequential()
 
     def finalize(self):
+        if self.win_load_tracker is not None:
+            self.win_load_tracker.close()
+            self.win_load_tracker = None
+
         if self.next_single_filename:
             if self.next_single_test:
                 with open(self.next_single_filename, 'w') as fp:
@@ -560,30 +537,64 @@ class Regrtest:
             for s in ET.tostringlist(root):
                 f.write(s)
 
-    def main(self, tests=None, **kwargs):
-        global TEMPDIR
-        self.ns = self.parse_args(kwargs)
-
+    def create_temp_dir(self):
         if self.ns.tempdir:
-            TEMPDIR = self.ns.tempdir
-        elif self.ns.worker_args:
-            ns_dict, _ = json.loads(self.ns.worker_args)
-            TEMPDIR = ns_dict.get("tempdir") or TEMPDIR
+            self.tmp_dir = self.ns.tempdir
 
-        os.makedirs(TEMPDIR, exist_ok=True)
+        if not self.tmp_dir:
+            # When tests are run from the Python build directory, it is best practice
+            # to keep the test files in a subfolder.  This eases the cleanup of leftover
+            # files using the "make distclean" command.
+            if sysconfig.is_python_build():
+                self.tmp_dir = sysconfig.get_config_var('abs_builddir')
+                if self.tmp_dir is None:
+                    # bpo-30284: On Windows, only srcdir is available. Using
+                    # abs_builddir mostly matters on UNIX when building Python
+                    # out of the source tree, especially when the source tree
+                    # is read only.
+                    self.tmp_dir = sysconfig.get_config_var('srcdir')
+                self.tmp_dir = os.path.join(self.tmp_dir, 'build')
+            else:
+                self.tmp_dir = tempfile.gettempdir()
+
+        self.tmp_dir = os.path.abspath(self.tmp_dir)
+        os.makedirs(self.tmp_dir, exist_ok=True)
 
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
         # testing (see the -j option).
-        test_cwd = 'test_python_{}'.format(os.getpid())
-        test_cwd = os.path.join(TEMPDIR, test_cwd)
+        pid = os.getpid()
+        if self.worker_test_name is not None:
+            test_cwd = 'worker_{}'.format(pid)
+        else:
+            test_cwd = 'test_python_{}'.format(pid)
+        test_cwd = os.path.join(self.tmp_dir, test_cwd)
+        return test_cwd
 
-        # Run the tests in a context manager that temporarily changes the CWD to a
-        # temporary and writable directory.  If it's not possible to create or
-        # change the CWD, the original CWD will be used.  The original CWD is
-        # available from support.SAVEDCWD.
+    def main(self, tests=None, **kwargs):
+        self.ns = self.parse_args(kwargs)
+
+        test_cwd = self.create_temp_dir()
+
+        # Run the tests in a context manager that temporarily changes the CWD
+        # to a temporary and writable directory. If it's not possible to
+        # create or change the CWD, the original CWD will be used.
+        # The original CWD is available from support.SAVEDCWD.
         with support.temp_cwd(test_cwd, quiet=True):
+            # When using multiprocessing, worker processes will use test_cwd
+            # as their parent temporary directory. So when the main process
+            # exit, it removes also subdirectories of worker processes.
+            self.ns.tempdir = test_cwd
             self._main(tests, kwargs)
+
+    def getloadavg(self):
+        if self.win_load_tracker is not None:
+            return self.win_load_tracker.getloadavg()
+
+        if hasattr(os, 'getloadavg'):
+            return os.getloadavg()[0]
+
+        return None
 
     def _main(self, tests, kwargs):
         if self.ns.huntrleaks:
@@ -595,9 +606,9 @@ class Regrtest:
                 print(msg, file=sys.stderr, flush=True)
                 sys.exit(2)
 
-        if self.ns.worker_args is not None:
+        if self.worker_test_name is not None:
             from test.libregrtest.runtest_mp import run_tests_worker
-            run_tests_worker(self.ns.worker_args)
+            run_tests_worker(self.ns, self.worker_test_name)
 
         if self.ns.wait:
             input("Press any key to continue...")
@@ -615,6 +626,18 @@ class Regrtest:
         if self.ns.list_cases:
             self.list_cases()
             sys.exit(0)
+
+        # If we're on windows and this is the parent runner (not a worker),
+        # track the load average.
+        if sys.platform == 'win32' and self.worker_test_name is None:
+            from test.libregrtest.win_utils import WindowsLoadTracker
+
+            try:
+                self.win_load_tracker = WindowsLoadTracker()
+            except FileNotFoundError as error:
+                # Windows IoT Core and Windows Nano Server do not provide
+                # typeperf.exe for x64, x86 or ARM
+                print(f'Failed to create WindowsLoadTracker: {error}')
 
         self.run_tests()
         self.display_result()

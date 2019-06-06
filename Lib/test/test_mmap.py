@@ -13,6 +13,7 @@ mmap = import_module('mmap')
 
 PAGESIZE = mmap.PAGESIZE
 
+
 class MmapTests(unittest.TestCase):
 
     def setUp(self):
@@ -439,7 +440,7 @@ class MmapTests(unittest.TestCase):
         m = mmap.mmap(-1, len(s))
         m[:] = s
         self.assertEqual(m[:], s)
-        indices = (0, None, 1, 3, 19, 300, -1, -2, -31, -300)
+        indices = (0, None, 1, 3, 19, 300, sys.maxsize, -1, -2, -31, -300)
         for start in indices:
             for stop in indices:
                 # Skip step 0 (invalid)
@@ -451,7 +452,7 @@ class MmapTests(unittest.TestCase):
         # Test extended slicing by comparing with list slicing.
         s = bytes(reversed(range(256)))
         m = mmap.mmap(-1, len(s))
-        indices = (0, None, 1, 3, 19, 300, -1, -2, -31, -300)
+        indices = (0, None, 1, 3, 19, 300, sys.maxsize, -1, -2, -31, -300)
         for start in indices:
             for stop in indices:
                 # Skip invalid step 0
@@ -738,6 +739,25 @@ class MmapTests(unittest.TestCase):
             # 'offset' must be a multiple of mmap.PAGESIZE on Linux.
             # See bpo-34754 for details.
             self.assertRaises(OSError, mm.flush, 1, len(b'python'))
+
+    @unittest.skipUnless(hasattr(mmap.mmap, 'madvise'), 'needs madvise')
+    def test_madvise(self):
+        size = 2 * PAGESIZE
+        m = mmap.mmap(-1, size)
+
+        with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
+            m.madvise(mmap.MADV_NORMAL, size)
+        with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
+            m.madvise(mmap.MADV_NORMAL, -1)
+        with self.assertRaisesRegex(ValueError, "madvise length invalid"):
+            m.madvise(mmap.MADV_NORMAL, 0, -1)
+        with self.assertRaisesRegex(OverflowError, "madvise length too large"):
+            m.madvise(mmap.MADV_NORMAL, PAGESIZE, sys.maxsize)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE, size), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
 
 
 class LargeMmapTests(unittest.TestCase):

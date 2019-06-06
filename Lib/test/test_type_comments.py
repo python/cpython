@@ -76,6 +76,12 @@ def foo():
 
 def bar():
     x = 1  # type: ignore
+
+def baz():
+    pass  # type: ignore[excuse]
+    pass  # type: ignore=excuse
+    pass  # type: ignore [excuse]
+    x = 1  # type: ignore whatever
 """
 
 # Test for long-form type-comments in arguments.  A test function
@@ -93,6 +99,12 @@ def fa(
 ):
     pass
 
+def fa(
+    a = 1,  # type: A
+    /
+):
+    pass
+
 def fab(
     a,  # type: A
     b,  # type: B
@@ -101,7 +113,14 @@ def fab(
 
 def fab(
     a,  # type: A
-    b  # type: B
+    /,
+    b,  # type: B
+):
+    pass
+
+def fab(
+    a,  # type: A
+    b   # type: B
 ):
     pass
 
@@ -139,6 +158,13 @@ def fvk(
 
 def fav(
     a,  # type: A
+    *v,  # type: V
+):
+    pass
+
+def fav(
+    a,  # type: A
+    /,
     *v,  # type: V
 ):
     pass
@@ -151,6 +177,13 @@ def fav(
 
 def fak(
     a,  # type: A
+    **k,  # type: K
+):
+    pass
+
+def fak(
+    a,  # type: A
+    /,
     **k,  # type: K
 ):
     pass
@@ -163,6 +196,14 @@ def fak(
 
 def favk(
     a,  # type: A
+    *v,  # type: V
+    **k,  # type: K
+):
+    pass
+
+def favk(
+    a,  # type: A
+    /,
     *v,  # type: V
     **k,  # type: K
 ):
@@ -266,7 +307,16 @@ class TypeCommentTests(unittest.TestCase):
 
     def test_ignores(self):
         for tree in self.parse_all(ignores):
-            self.assertEqual([ti.lineno for ti in tree.type_ignores], [2, 5])
+            self.assertEqual(
+                [(ti.lineno, ti.tag) for ti in tree.type_ignores],
+                [
+                    (2, ''),
+                    (5, ''),
+                    (8, '[excuse]'),
+                    (9, '=excuse'),
+                    (10, ' [excuse]'),
+                    (11, ' whatever'),
+                ])
         tree = self.classic_parse(ignores)
         self.assertEqual(tree.type_ignores, [])
 
@@ -275,18 +325,21 @@ class TypeCommentTests(unittest.TestCase):
             for t in tree.body:
                 # The expected args are encoded in the function name
                 todo = set(t.name[1:])
-                self.assertEqual(len(t.args.args),
+                self.assertEqual(len(t.args.args) + len(t.args.posonlyargs),
                                  len(todo) - bool(t.args.vararg) - bool(t.args.kwarg))
                 self.assertTrue(t.name.startswith('f'), t.name)
-                for c in t.name[1:]:
+                for index, c in enumerate(t.name[1:]):
                     todo.remove(c)
                     if c == 'v':
                         arg = t.args.vararg
                     elif c == 'k':
                         arg = t.args.kwarg
                     else:
-                        assert 0 <= ord(c) - ord('a') < len(t.args.args)
-                        arg = t.args.args[ord(c) - ord('a')]
+                        assert 0 <= ord(c) - ord('a') < len(t.args.posonlyargs + t.args.args)
+                        if index < len(t.args.posonlyargs):
+                            arg = t.args.posonlyargs[ord(c) - ord('a')]
+                        else:
+                            arg = t.args.args[ord(c) - ord('a') - len(t.args.posonlyargs)]
                     self.assertEqual(arg.arg, c)  # That's the argument name
                     self.assertEqual(arg.type_comment, arg.arg.upper())
                 assert not todo
@@ -318,6 +371,8 @@ class TypeCommentTests(unittest.TestCase):
         check_both_ways("while True:\n  continue  # type: int\n")
         check_both_ways("try:  # type: int\n  pass\nfinally:\n  pass\n")
         check_both_ways("try:\n  pass\nfinally:  # type: int\n  pass\n")
+        check_both_ways("pass  # type: ignorewhatever\n")
+        check_both_ways("pass  # type: ignoreé\n")
 
     def test_func_type_input(self):
 

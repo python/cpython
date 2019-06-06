@@ -52,6 +52,10 @@ if 'Clang' in platform.python_compiler() and sys.platform == 'darwin':
     raise unittest.SkipTest("test_gdb doesn't work correctly when python is"
                             " built with LLVM clang")
 
+if ((sysconfig.get_config_var('PGO_PROF_USE_FLAG') or 'xxx') in
+    (sysconfig.get_config_var('PY_CORE_CFLAGS') or '')):
+    raise unittest.SkipTest("test_gdb is not reliable on PGO builds")
+
 # Location of custom hooks file in a repository checkout.
 checkout_hook_path = os.path.join(os.path.dirname(sys.executable),
                                   'python-gdb.py')
@@ -272,7 +276,7 @@ class DebuggerTests(unittest.TestCase):
         # gdb can insert additional '\n' and space characters in various places
         # in its output, depending on the width of the terminal it's connected
         # to (using its "wrap_here" function)
-        m = re.match(r'.*#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)\)\s+at\s+\S*Python/bltinmodule.c.*',
+        m = re.match(r'.*#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)?\)\s+at\s+\S*Python/bltinmodule.c.*',
                      gdb_output, re.DOTALL)
         if not m:
             self.fail('Unexpected gdb output: %r\n%s' % (gdb_output, gdb_output))
@@ -863,27 +867,40 @@ id(42)
     # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
     def test_pycfunction(self):
         'Verify that "py-bt" displays invocations of PyCFunction instances'
-        # Tested function must not be defined with METH_NOARGS or METH_O,
-        # otherwise call_function() doesn't call PyCFunction_Call()
-        cmd = ('from time import gmtime\n'
-               'def foo():\n'
-               '    gmtime(1)\n'
-               'def bar():\n'
-               '    foo()\n'
-               'bar()\n')
-        # Verify with "py-bt":
-        gdb_output = self.get_stack_trace(cmd,
-                                          breakpoint='time_gmtime',
-                                          cmds_after_breakpoint=['bt', 'py-bt'],
-                                          )
-        self.assertIn('<built-in method gmtime', gdb_output)
+        # Various optimizations multiply the code paths by which these are
+        # called, so test a variety of calling conventions.
+        for py_name, py_args, c_name, expected_frame_number in (
+            ('gmtime', '', 'time_gmtime', 1),  # METH_VARARGS
+            ('len', '[]', 'builtin_len', 2),  # METH_O
+            ('locals', '', 'builtin_locals', 2),  # METH_NOARGS
+            ('iter', '[]', 'builtin_iter', 2),  # METH_FASTCALL
+            ('sorted', '[]', 'builtin_sorted', 2),  # METH_FASTCALL|METH_KEYWORDS
+        ):
+            with self.subTest(c_name):
+                cmd = ('from time import gmtime\n'  # (not always needed)
+                    'def foo():\n'
+                    f'    {py_name}({py_args})\n'
+                    'def bar():\n'
+                    '    foo()\n'
+                    'bar()\n')
+                # Verify with "py-bt":
+                gdb_output = self.get_stack_trace(
+                    cmd,
+                    breakpoint=c_name,
+                    cmds_after_breakpoint=['bt', 'py-bt'],
+                )
+                self.assertIn(f'<built-in method {py_name}', gdb_output)
 
-        # Verify with "py-bt-full":
-        gdb_output = self.get_stack_trace(cmd,
-                                          breakpoint='time_gmtime',
-                                          cmds_after_breakpoint=['py-bt-full'],
-                                          )
-        self.assertIn('#2 <built-in method gmtime', gdb_output)
+                # Verify with "py-bt-full":
+                gdb_output = self.get_stack_trace(
+                    cmd,
+                    breakpoint=c_name,
+                    cmds_after_breakpoint=['py-bt-full'],
+                )
+                self.assertIn(
+                    f'#{expected_frame_number} <built-in method {py_name}',
+                    gdb_output,
+                )
 
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")

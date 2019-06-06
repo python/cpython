@@ -483,7 +483,7 @@ builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         return NULL;
     }
     Py_INCREF(hook);
-    PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
+    PyObject *retval = _PyObject_Vectorcall(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 }
@@ -611,10 +611,10 @@ PyTypeObject PyFilter_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)filter_dealloc,         /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -686,55 +686,6 @@ builtin_chr_impl(PyObject *module, int i)
     return PyUnicode_FromOrdinal(i);
 }
 
-
-static const char *
-source_as_string(PyObject *cmd, const char *funcname, const char *what, PyCompilerFlags *cf, PyObject **cmd_copy)
-{
-    const char *str;
-    Py_ssize_t size;
-    Py_buffer view;
-
-    *cmd_copy = NULL;
-    if (PyUnicode_Check(cmd)) {
-        cf->cf_flags |= PyCF_IGNORE_COOKIE;
-        str = PyUnicode_AsUTF8AndSize(cmd, &size);
-        if (str == NULL)
-            return NULL;
-    }
-    else if (PyBytes_Check(cmd)) {
-        str = PyBytes_AS_STRING(cmd);
-        size = PyBytes_GET_SIZE(cmd);
-    }
-    else if (PyByteArray_Check(cmd)) {
-        str = PyByteArray_AS_STRING(cmd);
-        size = PyByteArray_GET_SIZE(cmd);
-    }
-    else if (PyObject_GetBuffer(cmd, &view, PyBUF_SIMPLE) == 0) {
-        /* Copy to NUL-terminated buffer. */
-        *cmd_copy = PyBytes_FromStringAndSize(
-            (const char *)view.buf, view.len);
-        PyBuffer_Release(&view);
-        if (*cmd_copy == NULL) {
-            return NULL;
-        }
-        str = PyBytes_AS_STRING(*cmd_copy);
-        size = PyBytes_GET_SIZE(*cmd_copy);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-          "%s() arg 1 must be a %s object",
-          funcname, what);
-        return NULL;
-    }
-
-    if (strlen(str) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError,
-                        "source code string cannot contain null bytes");
-        Py_CLEAR(*cmd_copy);
-        return NULL;
-    }
-    return str;
-}
 
 /*[clinic input]
 compile as builtin_compile
@@ -855,7 +806,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         goto finally;
     }
 
-    str = source_as_string(source, "compile", "string, bytes or AST", &cf, &source_copy);
+    str = _Py_SourceAsString(source, "compile", "string, bytes or AST", &cf, &source_copy);
     if (str == NULL)
         goto error;
 
@@ -977,9 +928,13 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     }
 
     if (PyCode_Check(source)) {
+        if (PySys_Audit("exec", "O", source) < 0) {
+            return NULL;
+        }
+
         if (PyCode_GetNumFree((PyCodeObject *)source) > 0) {
             PyErr_SetString(PyExc_TypeError,
-        "code object passed to eval() may not contain free variables");
+                "code object passed to eval() may not contain free variables");
             return NULL;
         }
         return PyEval_EvalCode(source, globals, locals);
@@ -987,7 +942,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
 
     cf.cf_flags = PyCF_SOURCE_IS_UTF8;
     cf.cf_feature_version = PY_MINOR_VERSION;
-    str = source_as_string(source, "eval", "string, bytes or code", &cf, &source_copy);
+    str = _Py_SourceAsString(source, "eval", "string, bytes or code", &cf, &source_copy);
     if (str == NULL)
         return NULL;
 
@@ -1061,6 +1016,10 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
     }
 
     if (PyCode_Check(source)) {
+        if (PySys_Audit("exec", "O", source) < 0) {
+            return NULL;
+        }
+
         if (PyCode_GetNumFree((PyCodeObject *)source) > 0) {
             PyErr_SetString(PyExc_TypeError,
                 "code object passed to exec() may not "
@@ -1075,7 +1034,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         PyCompilerFlags cf;
         cf.cf_flags = PyCF_SOURCE_IS_UTF8;
         cf.cf_feature_version = PY_MINOR_VERSION;
-        str = source_as_string(source, "exec",
+        str = _Py_SourceAsString(source, "exec",
                                        "string, bytes or code", &cf,
                                        &source_copy);
         if (str == NULL)
@@ -1207,7 +1166,14 @@ static PyObject *
 builtin_id(PyModuleDef *self, PyObject *v)
 /*[clinic end generated code: output=0aa640785f697f65 input=5a534136419631f4]*/
 {
-    return PyLong_FromVoidPtr(v);
+    PyObject *id = PyLong_FromVoidPtr(v);
+
+    if (id && PySys_Audit("builtins.id", "O", id) < 0) {
+        Py_DECREF(id);
+        return NULL;
+    }
+
+    return id;
 }
 
 
@@ -1362,10 +1328,10 @@ PyTypeObject PyMap_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)map_dealloc,            /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1986,6 +1952,10 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         return NULL;
     }
 
+    if (PySys_Audit("builtins.input", "O", prompt ? prompt : Py_None) < 0) {
+        return NULL;
+    }
+
     /* First of all, flush stderr */
     tmp = _PyObject_CallMethodId(ferr, &PyId_flush, NULL);
     if (tmp == NULL)
@@ -2116,6 +2086,13 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         Py_DECREF(stdin_errors);
         Py_XDECREF(po);
         PyMem_FREE(s);
+
+        if (result != NULL) {
+            if (PySys_Audit("builtins.input/result", "O", result) < 0) {
+                return NULL;
+            }
+        }
+
         return result;
 
     _readline_errors:
@@ -2254,7 +2231,7 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
 
     assert(nargs >= 1);
-    v = _PyObject_FastCallKeywords(callable, args + 1, nargs - 1, kwnames);
+    v = _PyObject_Vectorcall(callable, args + 1, nargs - 1, kwnames);
     Py_DECREF(callable);
     if (v == NULL) {
         Py_DECREF(newlist);
@@ -2375,9 +2352,11 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
             if (PyLong_CheckExact(item)) {
                 long b = PyLong_AsLongAndOverflow(item, &overflow);
-                long x = i_result + b;
-                if (overflow == 0 && ((x^i_result) >= 0 || (x^b) >= 0)) {
-                    i_result = x;
+                if (overflow == 0 &&
+                    (i_result >= 0 ? (b <= LONG_MAX - i_result)
+                                   : (b >= LONG_MIN - i_result)))
+                {
+                    i_result += b;
                     Py_DECREF(item);
                     continue;
                 }
@@ -2688,10 +2667,10 @@ PyTypeObject PyZip_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)zip_dealloc,            /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -2796,7 +2775,7 @@ _PyBuiltin_Init(void)
 {
     PyObject *mod, *dict, *debug;
 
-    const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    const PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
 
     if (PyType_Ready(&PyFilter_Type) < 0 ||
         PyType_Ready(&PyMap_Type) < 0 ||
