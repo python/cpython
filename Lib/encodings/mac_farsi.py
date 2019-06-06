@@ -221,16 +221,16 @@ decoding_table = (
     '-'        #  0xAD -> HYPHEN-MINUS, right-left
     '.'        #  0xAE -> FULL STOP, right-left
     '/'        #  0xAF -> SOLIDUS, right-left
-    '\u06f0'   #  0xB0 -> EXTENDED ARABIC-INDIC DIGIT ZERO, right-left (need override)
-    '\u06f1'   #  0xB1 -> EXTENDED ARABIC-INDIC DIGIT ONE, right-left (need override)
-    '\u06f2'   #  0xB2 -> EXTENDED ARABIC-INDIC DIGIT TWO, right-left (need override)
-    '\u06f3'   #  0xB3 -> EXTENDED ARABIC-INDIC DIGIT THREE, right-left (need override)
-    '\u06f4'   #  0xB4 -> EXTENDED ARABIC-INDIC DIGIT FOUR, right-left (need override)
-    '\u06f5'   #  0xB5 -> EXTENDED ARABIC-INDIC DIGIT FIVE, right-left (need override)
-    '\u06f6'   #  0xB6 -> EXTENDED ARABIC-INDIC DIGIT SIX, right-left (need override)
-    '\u06f7'   #  0xB7 -> EXTENDED ARABIC-INDIC DIGIT SEVEN, right-left (need override)
-    '\u06f8'   #  0xB8 -> EXTENDED ARABIC-INDIC DIGIT EIGHT, right-left (need override)
-    '\u06f9'   #  0xB9 -> EXTENDED ARABIC-INDIC DIGIT NINE, right-left (need override)
+    '\u06f0'   #  0xB0 -> EXTENDED PERSIAN-INDIC DIGIT ZERO, right-left (need override)
+    '\u06f1'   #  0xB1 -> EXTENDED PERSIAN-INDIC DIGIT ONE, right-left (need override)
+    '\u06f2'   #  0xB2 -> EXTENDED PERSIAN-INDIC DIGIT TWO, right-left (need override)
+    '\u06f3'   #  0xB3 -> EXTENDED PERSIAN-INDIC DIGIT THREE, right-left (need override)
+    '\u06f4'   #  0xB4 -> EXTENDED PERSIAN-INDIC DIGIT FOUR, right-left (need override)
+    '\u06f5'   #  0xB5 -> EXTENDED PERSIAN-INDIC DIGIT FIVE, right-left (need override)
+    '\u06f6'   #  0xB6 -> EXTENDED PERSIAN-INDIC DIGIT SIX, right-left (need override)
+    '\u06f7'   #  0xB7 -> EXTENDED PERSIAN-INDIC DIGIT SEVEN, right-left (need override)
+    '\u06f8'   #  0xB8 -> EXTENDED PERSIAN-INDIC DIGIT EIGHT, right-left (need override)
+    '\u06f9'   #  0xB9 -> EXTENDED PERSIAN-INDIC DIGIT NINE, right-left (need override)
     ':'        #  0xBA -> COLON, right-left
     '\u061b'   #  0xBB -> ARABIC SEMICOLON
     '<'        #  0xBC -> LESS-THAN SIGN, right-left
@@ -272,7 +272,7 @@ decoding_table = (
     '\u0640'   #  0xE0 -> ARABIC TATWEEL
     '\u0641'   #  0xE1 -> ARABIC LETTER FEH
     '\u0642'   #  0xE2 -> ARABIC LETTER QAF
-    '\u0643'   #  0xE3 -> ARABIC LETTER KAF
+    '\u06A9'   #  0xE3 -> PERSIAN LETTER KAF
     '\u0644'   #  0xE4 -> ARABIC LETTER LAM
     '\u0645'   #  0xE5 -> ARABIC LETTER MEEM
     '\u0646'   #  0xE6 -> ARABIC LETTER NOON
