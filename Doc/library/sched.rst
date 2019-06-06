@@ -15,7 +15,7 @@
 The :mod:`sched` module defines a class which implements a general purpose event
 scheduler:
 
-.. class:: scheduler(timefunc=time.monotonic, delayfunc=time.sleep)
+.. class:: scheduler(timefunc=time.monotonic, delayfunc=None)
 
    The :class:`scheduler` class defines a generic interface to scheduling events.
    It needs two functions to actually deal with the "outside world" --- *timefunc*
@@ -24,7 +24,9 @@ scheduler:
    argument, compatible with the output of *timefunc*, and should delay that many
    time units. *delayfunc* will also be called with the argument ``0`` after each
    event is run to allow other threads an opportunity to run in multi-threaded
-   applications.
+   applications. By default the wait function of a threading.Event is used as the
+   delayfunc in order to make run() return early if the queue becomes empty during
+   its execution.
 
    .. versionchanged:: 3.3
       *timefunc* and *delayfunc* parameters are optional.
@@ -101,6 +103,9 @@ Scheduler Objects
    Remove the event from the queue. If *event* is not an event currently in the
    queue, this method will raise a :exc:`ValueError`.
 
+.. method:: schduler.cancel_all()
+
+   Removes all events from the queue. Causes run() to return immediately.
 
 .. method:: scheduler.empty()
 
