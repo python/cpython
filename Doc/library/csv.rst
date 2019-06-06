@@ -493,7 +493,7 @@ Reading a file with an alternate format::
        for row in reader:
            print(row)
 
-The corresponding simplest possible writing example is using an 
+The corresponding simplest possible writing example is using an
 iterable container ``rows``::
 
    import csv
@@ -501,7 +501,7 @@ iterable container ``rows``::
    with open('some.csv', 'w', newline='') as f:
        writer = csv.writer(f)
        writer.writerows(rows)
-       
+
    # produces some.csv with
    # 0,1,2,3,4
    # 5,6,7,8,9
