@@ -105,7 +105,7 @@ Scheduler Objects
 
 .. method:: schduler.cancel_all()
 
-   Removes all events from the queue. Causes run() to return immediately.
+   Remove all events from the queue. Cause run() to return immediately.
 
 .. method:: scheduler.empty()
 
