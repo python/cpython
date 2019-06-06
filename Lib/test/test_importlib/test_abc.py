@@ -369,16 +369,14 @@ class MetaPathFinderFindModuleTests:
         loader = object()
         spec = self.util.spec_from_loader('blah', loader)
         finder = self.finder(spec)
-        with self.assertWarns(DeprecationWarning):
-            found = finder.find_spec('blah', 'blah', None)
+        found = finder.find_spec('blah', 'blah', None)
         self.assertEqual(found, spec)
 
     def test_no_spec(self):
         finder = self.finder(None)
         path = ['a', 'b', 'c']
         name = 'blah'
-        with self.assertWarns(DeprecationWarning):
-            found = finder.find_spec(name, path, None)
+        found = finder.find_spec(name, path, None)
         self.assertIsNone(found)
         self.assertEqual(name, finder.called_for[0])
         self.assertEqual(path, finder.called_for[1])
@@ -387,8 +385,7 @@ class MetaPathFinderFindModuleTests:
         loader = object()
         spec = self.util.spec_from_loader('blah', loader)
         finder = self.finder(spec)
-        with self.assertWarns(DeprecationWarning):
-            found = finder.find_spec('blah', None)
+        found = finder.find_spec('blah', None)
         self.assertIs(found, spec)
 
 
