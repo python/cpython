@@ -502,9 +502,9 @@ iterable container ``rows``::
        writer = csv.writer(f)
        writer.writerows(rows)
        
-   #produces some.csv with
-   #0,1,2,3,4
-   #5,6,7,8,9
+   # produces some.csv with
+   # 0,1,2,3,4
+   # 5,6,7,8,9
 
 Since :func:`open` is used to open a CSV file for reading, the file
 will by default be decoded into unicode using the system default
