@@ -1022,7 +1022,7 @@ PyLong_AsUnsignedLongLongMask(PyObject *vv)
 
     if (vv == NULL || !PyLong_Check(vv)) {
         PyErr_BadInternalCall();
-        return (unsigned long) -1;
+        return (unsigned PY_LONG_LONG) -1;
     }
     v = (PyLongObject *)vv;
     i = Py_SIZE(v);
