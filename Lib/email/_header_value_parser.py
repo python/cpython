@@ -2789,6 +2789,7 @@ def _refold_parse_tree(parse_tree, *, policy):
             newline = _steal_trailing_WSP_if_exists(lines)
             if newline or part.startswith_fws():
                 lines.append(newline + tstr)
+                last_ew = None
                 continue
         if not hasattr(part, 'encode'):
             # It's not a terminal, try folding the subparts.
