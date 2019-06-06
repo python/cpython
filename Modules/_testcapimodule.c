@@ -825,6 +825,26 @@ test_long_as_size_t(PyObject *self, PyObject *Py_UNUSED(ignored))
     return Py_None;
 }
 
+static PyObject *
+test_long_as_unsigned_long_long_mask(PyObject *self,
+                                     PyObject *Py_UNUSED(ignored))
+{
+    unsigned long long res = PyLong_AsUnsignedLongLongMask(NULL);
+
+    if (res != (unsigned long long)-1 || !PyErr_Occurred()) {
+        return raiseTestError("test_long_as_unsigned_long_long_mask",
+                              "PyLong_AsUnsignedLongLongMask(NULL) didn't "
+                              "complain");
+    }
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+        return raiseTestError("test_long_as_unsigned_long_long_mask",
+                              "PyLong_AsUnsignedLongLongMask(NULL) raised "
+                              "something other than SystemError");
+    }
+    PyErr_Clear();
+    Py_RETURN_NONE;
+}
+
 /* Test the PyLong_AsDouble API. At present this just tests that
    non-integer arguments are handled correctly.
  */
@@ -5070,6 +5090,8 @@ static PyMethodDef TestMethods[] = {
     {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
     {"test_long_as_double",     test_long_as_double,             METH_NOARGS},
     {"test_long_as_size_t",     test_long_as_size_t,             METH_NOARGS},
+    {"test_long_as_unsigned_long_long_mask",
+        test_long_as_unsigned_long_long_mask, METH_NOARGS},
     {"test_long_numbits",       test_long_numbits,               METH_NOARGS},
     {"test_k_code",             test_k_code,                     METH_NOARGS},
     {"test_empty_argparse",     test_empty_argparse,             METH_NOARGS},
