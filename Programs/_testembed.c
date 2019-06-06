@@ -1,10 +1,13 @@
-/* FIXME: PEP 587 makes these functions public */
 #ifndef Py_BUILD_CORE_MODULE
 #  define Py_BUILD_CORE_MODULE
 #endif
 
+/* Always enable assertion (even in release mode) */
+#undef NDEBUG
+
 #include <Python.h>
-#include "pycore_initconfig.h"   /* FIXME: PEP 587 makes these functions public */
+#include "pycore_initconfig.h"   /* _PyConfig_InitCompatConfig() */
+#include "pycore_pystate.h"      /* _PyRuntime */
 #include <Python.h>
 #include "pythread.h"
 #include <inttypes.h>
