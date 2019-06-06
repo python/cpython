@@ -10,22 +10,20 @@ class WmInfoGatheringError(Exception):
 
 
 class ZoomHeight:
+    # Cached values for maximized window dimensions, one for each set
+    # of screen dimensions.
+    _max_height_and_y_coords = {}
 
     def __init__(self, editwin):
         self.editwin = editwin
-
-        # Cached values for maximized window dimensions, one for each set
-        # of screen dimensions.
-        self._max_height_and_y_coords = {}
-
-    @property
-    def top(self):
-        return self.editwin.top
+        self.top = self.editwin.top
 
     def zoom_height_event(self, event=None):
         zoomed = self.zoom_height()
 
-        if zoomed is not None:
+        if zoomed is None:
+            self.top.bell()
+        else:
             menu_status = 'Restore' if zoomed else 'Zoom'
             self.editwin.update_menu_label(menu='options', index='* Height',
                                            label=f'{menu_status} Height')
@@ -33,9 +31,11 @@ class ZoomHeight:
         return "break"
 
     def zoom_height(self):
-        width, height, x, y = get_window_geometry(self.top)
+        top = self.top
 
-        if self.top.wm_state() != 'normal':
+        width, height, x, y = get_window_geometry(top)
+
+        if top.wm_state() != 'normal':
             # Can't zoom/restore window height for windows not in the 'normal'
             # state, e.g. maximized and full-screen windows.
             return None
@@ -47,51 +47,53 @@ class ZoomHeight:
 
         if height != maxheight:
             # Maximize the window's height.
-            set_window_geometry(self.top, (width, maxheight, x, maxy))
+            set_window_geometry(top, (width, maxheight, x, maxy))
             return True
         else:
             # Restore the window's height.
             #
             # .wm_geometry('') makes the window revert to the size requested
             # by the widgets it contains.
-            self.top.wm_geometry('')
+            top.wm_geometry('')
             return False
 
     def get_max_height_and_y_coord(self):
-        screen_dimensions = (self.top.winfo_screenwidth(),
-                             self.top.winfo_screenheight())
+        top = self.top
+
+        screen_dimensions = (top.winfo_screenwidth(),
+                             top.winfo_screenheight())
         if screen_dimensions not in self._max_height_and_y_coords:
-            orig_state = self.top.wm_state()
+            orig_state = top.wm_state()
 
             # Get window geometry info for maximized windows.
             try:
-                self.top.wm_state('zoomed')
+                top.wm_state('zoomed')
             except tkinter.TclError:
                 # The 'zoomed' state is not supported by some esoteric WMs,
                 # such as Xvfb.
                 raise WmInfoGatheringError(
                     'Failed getting geometry of maximized windows, because ' +
                     'the "zoomed" window state is unavailable.')
-            self.top.update()
-            maxwidth, maxheight, maxx, maxy = get_window_geometry(self.top)
+            top.update()
+            maxwidth, maxheight, maxx, maxy = get_window_geometry(top)
             if sys.platform == 'win32':
                 # On Windows, the returned Y coordinate is the one before
                 # maximizing, so we use 0 which is correct unless a user puts
                 # their dock on the top of the screen (very rare).
                 maxy = 0
-            maxrooty = self.top.winfo_rooty()
+            maxrooty = top.winfo_rooty()
 
             # Get the "root y" coordinate for non-maximized windows with their
             # y coordinate set to that of maximized windows.  This is needed
             # to properly handle different title bar heights for non-maximized
             # vs. maximized windows, as seen e.g. in Windows 10.
-            self.top.wm_state('normal')
-            self.top.update()
-            orig_geom = get_window_geometry(self.top)
+            top.wm_state('normal')
+            top.update()
+            orig_geom = get_window_geometry(top)
             max_y_geom = orig_geom[:3] + (maxy,)
-            set_window_geometry(self.top, max_y_geom)
-            self.top.update()
-            max_y_geom_rooty = self.top.winfo_rooty()
+            set_window_geometry(top, max_y_geom)
+            top.update()
+            max_y_geom_rooty = top.winfo_rooty()
 
             # Adjust the maximum window height to account for the different
             # title bar heights of non-maximized vs. maximized windows.
@@ -99,8 +101,8 @@ class ZoomHeight:
 
             self._max_height_and_y_coords[screen_dimensions] = maxheight, maxy
 
-            set_window_geometry(self.top, orig_geom)
-            self.top.wm_state(orig_state)
+            set_window_geometry(top, orig_geom)
+            top.wm_state(orig_state)
 
         return self._max_height_and_y_coords[screen_dimensions]
 
@@ -108,11 +110,7 @@ class ZoomHeight:
 def get_window_geometry(top):
     geom = top.wm_geometry()
     m = re.match(r"(\d+)x(\d+)\+(-?\d+)\+(-?\d+)", geom)
-    if not m:
-        top.bell()
-        return
-    width, height, x, y = map(int, m.groups())
-    return width, height, x, y
+    return tuple(map(int, m.groups()))
 
 
 def set_window_geometry(top, geometry):
