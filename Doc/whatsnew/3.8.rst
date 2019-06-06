@@ -330,7 +330,10 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+* The new :mod:`importlib.metadata` module provides (provisional) support for
+  reading metadata from third-party packages.  For example, you can extract an
+  installed package's version number, list of entry points, and more.  See
+  :issue:`34632` for additional details.
 
 
 Improved Modules
