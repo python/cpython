@@ -1206,7 +1206,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                      unsafe_hash=unsafe_hash, frozen=frozen)
 
 
-def replace(obj, **changes):
+def replace(*args, **changes):
     """Return a new object replacing specified fields with new values.
 
     This is especially useful for frozen classes.  Example usage:
@@ -1220,6 +1220,17 @@ def replace(obj, **changes):
       c1 = replace(c, x=3)
       assert c1.x == 3 and c1.y == 2
       """
+    if len(args) > 1:
+        raise TypeError(f'replace() takes 1 positional argument but {len(args)} were given')
+    if args:
+        obj, = args
+    elif 'obj' in changes:
+        obj = changes.pop('obj')
+        import warnings
+        warnings.warn("Passing 'obj' as keyword argument is deprecated",
+                      DeprecationWarning, stacklevel=2)
+    else:
+        raise TypeError("replace() missing 1 required positional argument: 'obj'")
 
     # We're going to mutate 'changes', but that's okay because it's a
     # new dict, even if called with 'replace(obj, **my_changes)'.
@@ -1255,3 +1266,4 @@ def replace(obj, **changes):
     # changes that aren't fields, this will correctly raise a
     # TypeError.
     return obj.__class__(**changes)
+replace.__text_signature__ = '(obj, /, **kwargs)'

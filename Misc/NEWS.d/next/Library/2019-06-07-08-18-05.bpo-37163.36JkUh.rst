@@ -1,0 +1,2 @@
+Deprecated passing ``obj`` argument of :func:`dataclasses.replace` as
+keyword argument.

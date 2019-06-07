@@ -3075,6 +3075,13 @@ class TestReplace(unittest.TestCase):
         self.assertEqual(c1.x, 3)
         self.assertEqual(c1.y, 2)
 
+        self.assertRaises(TypeError, replace)
+        self.assertRaises(TypeError, replace, c, c)
+        with self.assertWarns(DeprecationWarning):
+            c1 = replace(obj=c, x=3)
+        self.assertEqual(c1.x, 3)
+        self.assertEqual(c1.y, 2)
+
     def test_frozen(self):
         @dataclass(frozen=True)
         class C:
