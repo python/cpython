@@ -213,7 +213,7 @@ class ArrayTestCase(unittest.TestCase):
             _fields_ = []
 
         obj = (EmptyStruct * 2)()  # bpo37188: Floating point exception
-        assert sizeof(obj) == 0
+        self.assertEqual(sizeof(obj), 0)
 
     def test_empty_element_array(self):
         class EmptyArray(Array):
@@ -221,7 +221,7 @@ class ArrayTestCase(unittest.TestCase):
             _length_ = 0
 
         obj = (EmptyArray * 2)()  # bpo37188: Floating point exception
-        assert sizeof(obj) == 0
+        self.assertEqual(sizeof(obj), 0)
 
     def test_bpo36504_signed_int_overflow(self):
         # The overflow check in PyCArrayType_new() could cause signed integer
