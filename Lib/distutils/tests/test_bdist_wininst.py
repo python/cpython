@@ -1,5 +1,6 @@
 """Tests for distutils.command.bdist_wininst."""
 import unittest
+import sys, platform
 from test.support import run_unittest
 
 from distutils.command.bdist_wininst import bdist_wininst
@@ -11,6 +12,8 @@ class BuildWinInstTestCase(support.TempdirManager,
                            support.LoggingSilencer,
                            unittest.TestCase):
 
+    @unittest.skipIf(sys.platform == 'win32' and platform.machine() == 'ARM64', 
+                    "No wininst-14.0-arm64.exe")
     def test_get_exe_bytes(self):
 
         # issue5731: command was broken on non-windows platforms
