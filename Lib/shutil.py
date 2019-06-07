@@ -1466,3 +1466,72 @@ def _create_or_replace(dst: str, create_temp_dest_at: typing.Callable[[str], typ
     except BaseException as e:
         os.remove(temp_path)
         raise e
+
+
+def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
+            target_is_directory=False, dst_is_dir=False, dst_is_file=False):
+    """Create symbolic links to a target (if not a list) or to list of targets
+    in `dst`. `dst` must be a directory if more than one target is given.
+
+    With `overwrite=True`, attempt to overwrite an existing destination
+
+    With `follow_symlinks=False`, create symlinks to symlinks
+
+    On Windows, a symlink represents either a file or a directory, and does not
+    morph to the target dynamically. If the target is present, the type of the
+    symlink will be created to match. Otherwise, the symlink will be created as
+    a directory if `target_is_directory` is True or a file symlink (the default)
+    otherwise. On non-Windows platforms, `target_is_directory` is ignored.
+
+    With `dst_is_file=True`, a single target, and `dst` is a:
+      directory: raise `IsADirectoryError`
+      symlink to a directory: operate on the symlink rather than the directory
+    With `dst_is_file=False`, create links inside `dst` if it is a directory or
+      a symlink to a directory.
+
+    With `dst_is_dir=True`, raise `IsADirectoryError` if `dst` not a directory,
+    ensuring a single target is linked inside `dst`.
+
+    links are created inside it, unless given
+    With `dst_is_dir=True`, raise `NotADirectoryError` if `dst` is not either a
+    directory or a symlink to a directory.
+
+    If `dst` as a directory, links are created inside it, unless given
+    `dst_is_dir=False` which will instead raise `IsADirectoryError`
+    With `dst_is_dir=True`, raise `NotADirectoryError` if `dst` is not either a
+    directory or a symlink to a directory.
+
+    """
+    if type(target_or_targets) not in [list, set, tuple]:
+        targets = [target_or_targets]
+
+    if len(targets) > 1 and not os.isdir(dst):
+        raise NotADirectoryError(f'Destination "{dst}" not a directory and multiple targets given')
+
+    if dst_is_file and dst_is_dir:
+        raise ValueError('Destination cannot be both file and directory')
+
+    if dst_is_dir and not os.isdir(dst):
+        raise NotADirectoryError(f'Destination "{dst}" not a directory as required')
+
+    if dst_is_file not os.isdir(dst):
+        raise NotADirectoryError(f'Destination "{dst}" not a file as required')
+
+    if dst_is_dir or os.isdir(dst):   ##### XXX , follow_symlinks=not dest_is_file):
+	#  want trailing slash? path.split[-1]
+	# null possible: os.basename(target)
+        #### os.path.join(dst, path.split[-1])
+        dest_prefix = dst
+    else:
+        dest_prefix = ''
+
+    for target in targets:
+        if follow_symlinks:
+            target = os.path.realpath(target)
+
+        link_name = os.path.join(dest_prefix, os.path.basename(target))
+
+        if overwrite:
+            _create_or_overwrite(link_name, lambda via: os.symlink(target, via))
+        else:
+            os.symlink(target, link_name)
