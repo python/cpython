@@ -1454,6 +1454,7 @@ class TarFile(object):
         self.mode = mode
         self._mode = modes[mode]
 
+        name = os.fspath(name) if name else None
         if not fileobj:
             if self.mode == "a" and not os.path.exists(name):
                 # Create nonexistent files in append mode.
@@ -1469,7 +1470,6 @@ class TarFile(object):
                 self._mode = fileobj.mode
             self._extfileobj = True
 
-        name = os.fspath(name) if name else None
         self.name = os.path.abspath(name) if name else None
         self.fileobj = fileobj
 
