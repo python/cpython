@@ -1,0 +1,1 @@
+script_helper.run_python_until_end support universal_newlines in popen.
