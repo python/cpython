@@ -652,6 +652,11 @@ class ThreadingMixIn:
             self.handle_error(request, client_address)
         finally:
             self.shutdown_request(request)
+            t = threading.current_thread()
+            try:
+                self._threads.remove(t)
+            except AttributeError:
+                pass
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
