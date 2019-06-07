@@ -2596,38 +2596,23 @@ static PyMemberDef PyCData_members[] = {
     { NULL },
 };
 
-/*
-  Get the StgDictObject corresponding to a single item of a multidimensional
-  array.
-  Takes and returns a borrowed reference.
-*/
-static StgDictObject *
-PyCData_item_stgdict(StgDictObject *dict)
+/* Find the innermost type of an array type, returning a borrowed reference */
+static PyObject *
+PyCData_item_type(PyObject *type)
 {
-    if (dict->ndim == 0) {
-        /* scalar is its own item */
-        return dict;
+    if (PyCArrayTypeObject_Check(type)) {
+        StgDictObject *stg_dict;
+        PyObject *elem_type;
+
+        /* asserts used here as these are all guaranteed by construction */
+        stg_dict = PyType_stgdict(type);
+        assert(stg_dict);
+        elem_type = stg_dict->proto;
+        assert(elem_type);
+        return PyCData_item_type(elem_type);
     }
     else {
-        /* follow _type_, eliminating a dimension */
-        PyObject *type_attr;
-        StgDictObject *item_dict;
-
-        type_attr = PyDict_GetItemString((PyObject *)dict, "_type_");
-        if (!type_attr) {
-            PyErr_SetString(PyExc_AttributeError,
-                            "class must define a '_type_' attribute");
-            return NULL;
-        }
-
-        item_dict = PyType_stgdict(type_attr);
-        if (!item_dict) {
-            PyErr_SetString(PyExc_TypeError,
-                            "_type_ must have storage info");
-            return NULL;
-        }
-
-        return PyCData_item_stgdict(item_dict);
+        return type;
     }
 }
 
@@ -2636,7 +2621,8 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
 {
     CDataObject *self = (CDataObject *)myself;
     StgDictObject *dict = PyObject_stgdict(myself);
-    StgDictObject *item_dict;
+    PyObject *item_type = PyCData_item_type((PyObject*)Py_TYPE(myself));
+    StgDictObject *item_dict = PyType_stgdict(item_type);
 
     if (view == NULL) return 0;
 
@@ -2649,10 +2635,6 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     view->format = dict->format ? dict->format : "B";
     view->ndim = dict->ndim;
     view->shape = dict->shape;
-    item_dict = PyCData_item_stgdict(dict);
-    if (item_dict == NULL) {
-        return -1;
-    }
     view->itemsize = item_dict->size;
     view->strides = NULL;
     view->suboffsets = NULL;
