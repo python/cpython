@@ -217,6 +217,9 @@ Long Integer Objects
    Return a C :c:type:`unsigned long` from a Python long integer, without checking
    for overflow.
 
+   Returns ``(unsigned long)-1`` on error.  Use :c:func:`PyErr_Occurred` to
+   disambiguate.
+
    .. versionadded:: 2.3
 
 
@@ -224,6 +227,9 @@ Long Integer Objects
 
    Return a C :c:type:`unsigned long long` from a Python long integer, without
    checking for overflow.
+
+   Returns ``(unsigned PY_LONG_LONG)-1`` on error.  Use
+   :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionadded:: 2.3
 

@@ -888,6 +888,26 @@ test_long_long_and_overflow(PyObject *self)
     return Py_None;
 }
 
+static PyObject *
+test_long_as_unsigned_long_long_mask(PyObject *self)
+{
+    unsigned PY_LONG_LONG res = PyLong_AsUnsignedLongLongMask(NULL);
+
+    if (res != (unsigned PY_LONG_LONG)-1 || !PyErr_Occurred()) {
+        return raiseTestError("test_long_as_unsigned_long_long_mask",
+                              "PyLong_AsUnsignedLongLongMask(NULL) didn't "
+                              "complain");
+    }
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+        return raiseTestError("test_long_as_unsigned_long_long_mask",
+                              "PyLong_AsUnsignedLongLongMask(NULL) raised "
+                              "something other than SystemError");
+    }
+    PyErr_Clear();
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 /* Test the L code for PyArg_ParseTuple.  This should deliver a PY_LONG_LONG
    for both long and int arguments.  The test may leak a little memory if
    it fails.
@@ -2715,6 +2735,8 @@ static PyMethodDef TestMethods[] = {
     {"test_longlong_api",       test_longlong_api,               METH_NOARGS},
     {"test_long_long_and_overflow",
         (PyCFunction)test_long_long_and_overflow, METH_NOARGS},
+    {"test_long_as_unsigned_long_long_mask",
+        (PyCFunction)test_long_as_unsigned_long_long_mask, METH_NOARGS},
     {"test_L_code",             (PyCFunction)test_L_code,        METH_NOARGS},
 #endif
     {"getargs_f",               getargs_f,                       METH_VARARGS},
