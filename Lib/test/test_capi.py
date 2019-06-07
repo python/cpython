@@ -705,28 +705,29 @@ class PyMemDebugTests(unittest.TestCase):
         code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
         self.check_malloc_without_gil(code)
 
-    def check_pyobject_is_freed(self, func):
-        code = textwrap.dedent('''
+    def check_pyobject_is_freed(self, func_name):
+        code = textwrap.dedent(f'''
             import gc, os, sys, _testcapi
             # Disable the GC to avoid crash on GC collection
             gc.disable()
-            obj = _testcapi.{func}()
-            error = (_testcapi.pyobject_is_freed(obj) == False)
-            # Exit immediately to avoid a crash while deallocating
-            # the invalid object
-            os._exit(int(error))
+            try:
+                _testcapi.{func_name}()
+                # Exit immediately to avoid a crash while deallocating
+                # the invalid object
+                os._exit(0)
+            except _testcapi.error:
+                os._exit(1)
         ''')
-        code = code.format(func=func)
         assert_python_ok('-c', code, PYTHONMALLOC=self.PYTHONMALLOC)
 
-    def test_pyobject_is_freed_uninitialized(self):
-        self.check_pyobject_is_freed('pyobject_uninitialized')
+    def test_pyobject_uninitialized_is_freed(self):
+        self.check_pyobject_is_freed('check_pyobject_uninitialized_is_freed')
 
-    def test_pyobject_is_freed_forbidden_bytes(self):
-        self.check_pyobject_is_freed('pyobject_forbidden_bytes')
+    def test_pyobject_forbidden_bytes_is_freed(self):
+        self.check_pyobject_is_freed('check_pyobject_forbidden_bytes_is_freed')
 
-    def test_pyobject_is_freed_free(self):
-        self.check_pyobject_is_freed('pyobject_freed')
+    def test_pyobject_freed_is_freed(self):
+        self.check_pyobject_is_freed('check_pyobject_freed_is_freed')
 
 
 class PyMemMallocDebugTests(PyMemDebugTests):
