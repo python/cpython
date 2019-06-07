@@ -6,7 +6,7 @@ testing skipping of suite when self.needwrapbutton is false.
 '''
 import unittest
 from test.test_support import requires
-from Tkinter import Tk, Toplevel, Frame ## BooleanVar, StringVar
+from Tkinter import Text, Tk, Toplevel, Frame ## BooleanVar, StringVar
 from idlelib import SearchEngine as se
 from idlelib import SearchDialogBase as sdb
 from idlelib.idle_test.mock_idle import Func
@@ -45,14 +45,15 @@ class SearchDialogBaseTest(unittest.TestCase):
         # open calls create_widgets, which needs default_command
         self.dialog.default_command = None
 
-        # Since text parameter of .open is not used in base class,
-        # pass dummy 'text' instead of tk.Text().
-        self.dialog.open('text')
+        toplevel = Toplevel(self.root)
+        self.addCleanup(toplevel.destroy)
+        text = Text(toplevel)
+        self.dialog.open(text)
         self.assertEqual(self.dialog.top.state(), 'normal')
         self.dialog.close()
         self.assertEqual(self.dialog.top.state(), 'withdrawn')
 
-        self.dialog.open('text', searchphrase="hello")
+        self.dialog.open(text, searchphrase="hello")
         self.assertEqual(self.dialog.ent.get(), 'hello')
         self.dialog.close()
 
