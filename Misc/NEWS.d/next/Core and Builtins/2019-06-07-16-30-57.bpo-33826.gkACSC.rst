@@ -1,0 +1,1 @@
+Add __filename__ attribute to classes for enhanced introspection.

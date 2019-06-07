@@ -145,7 +145,8 @@ Use a __prepare__ method that returns an instrumented dict.
 
     >>> class LoggingDict(dict):
     ...     def __setitem__(self, key, value):
-    ...         print("d[%r] = %r" % (key, value))
+    ...         if key != '__filename__':
+    ...             print("d[%r] = %r" % (key, value))
     ...         dict.__setitem__(self, key, value)
     ...
     >>> class Meta(type):
@@ -169,7 +170,7 @@ Use a metaclass that doesn't derive from type.
 
     >>> def meta(name, bases, namespace, **kwds):
     ...     print("meta:", name, bases)
-    ...     print("ns:", sorted(namespace.items()))
+    ...     print("ns:", sorted([(k, v) for k, v in namespace.items() if k != "__filename__"]))
     ...     print("kw:", sorted(kwds.items()))
     ...     return namespace
     ...
@@ -182,7 +183,7 @@ Use a metaclass that doesn't derive from type.
     kw: []
     >>> type(C) is dict
     True
-    >>> print(sorted(C.items()))
+    >>> print(sorted([(k, v) for k, v in C.items() if k != "__filename__"]))
     [('__module__', 'test.test_metaclass'), ('__qualname__', 'C'), ('a', 42), ('b', 24)]
     >>>
 

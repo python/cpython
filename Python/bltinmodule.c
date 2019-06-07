@@ -9,6 +9,7 @@
 
 _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(__filename__);
 _Py_IDENTIFIER(__prepare__);
 _Py_IDENTIFIER(__round__);
 _Py_IDENTIFIER(__mro_entries__);
@@ -104,6 +105,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *orig_bases;
     PyObject *cls = NULL, *cell = NULL;
     int isclass = 0;   /* initialize to prevent gcc warning */
+    int err = 0;
 
     if (nargs < 2) {
         PyErr_SetString(PyExc_TypeError,
@@ -222,6 +224,19 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                              NULL, 0, NULL, 0, NULL, 0, NULL,
                              PyFunction_GET_CLOSURE(func));
     if (cell != NULL) {
+        if (PyDict_CheckExact(ns)) {
+            err = _PyDict_SetItemId(ns, &PyId___filename__, ((PyCodeObject*) PyFunction_GET_CODE(func))->co_filename);
+        }
+        else {
+            PyObject *filename_str = _PyUnicode_FromId(&PyId___filename__);
+            if (filename_str == NULL) {
+                goto error;
+            }
+            err = PyObject_SetItem(ns, filename_str, ((PyCodeObject*) PyFunction_GET_CODE(func))->co_filename);
+        }
+        if (err != 0) {
+            goto error;
+        }
         if (bases != orig_bases) {
             if (PyMapping_SetItemString(ns, "__orig_bases__", orig_bases) < 0) {
                 goto error;

@@ -520,8 +520,7 @@ class TestRetrievingSourceCode(GetSourceBase):
                 raise AttributeError
         class C(metaclass=CM):
             pass
-        with self.assertRaises(TypeError):
-            inspect.getfile(C)
+        self.assertEqual(inspect.getfile(C), __file__)
 
     def test_getfile_broken_repr(self):
         class ErrorRepr:

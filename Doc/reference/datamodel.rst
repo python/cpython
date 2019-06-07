@@ -788,6 +788,7 @@ Custom classes
       single: __bases__ (class attribute)
       single: __doc__ (class attribute)
       single: __annotations__ (class attribute)
+      single: __filename__ (class attribute)
 
    Special attributes: :attr:`~definition.__name__` is the class name; :attr:`__module__` is
    the module name in which the class was defined; :attr:`~object.__dict__` is the
@@ -796,7 +797,7 @@ Custom classes
    base class list; :attr:`__doc__` is the class's documentation string,
    or ``None`` if undefined; :attr:`__annotations__` (optional) is a dictionary
    containing :term:`variable annotations <variable annotation>` collected during
-   class body execution.
+   class body execution; :attr:`__filename__` is the filename in which the class was defined. It may be missing, e.g., for built-in or C-defined classes.
 
 Class instances
    .. index::

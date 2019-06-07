@@ -658,6 +658,8 @@ def getfile(object):
             return object.__file__
         raise TypeError('{!r} is a built-in module'.format(object))
     if isclass(object):
+        if hasattr(object, '__filename__'):
+            return object.__filename__
         if hasattr(object, '__module__'):
             object = sys.modules.get(object.__module__)
             if getattr(object, '__file__', None):

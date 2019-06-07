@@ -41,9 +41,9 @@ if test.support.HAVE_DOCSTRINGS:
     expected_data_docstrings = (
         'dictionary for instance variables (if defined)',
         'list of weak references to the object (if defined)',
-        ) * 2
+        )
 else:
-    expected_data_docstrings = ('', '', '', '')
+    expected_data_docstrings = ('', '')
 
 expected_text_pattern = """
 NAME
@@ -69,6 +69,11 @@ CLASSES
      |  __dict__%s
      |\x20\x20
      |  __weakref__%s
+     |\x20\x20
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |\x20\x20
+     |  __filename__ = '%s'
 \x20\x20\x20\x20
     class B(builtins.object)
      |  Data descriptors defined here:
@@ -83,6 +88,8 @@ CLASSES
      |  NO_MEANING = 'eggs'
      |\x20\x20
      |  __annotations__ = {'NO_MEANING': <class 'str'>}
+     |\x20\x20
+     |  __filename__ = '%s'
 \x20\x20\x20\x20
     class C(builtins.object)
      |  Methods defined here:
@@ -103,6 +110,11 @@ CLASSES
      |\x20\x20
      |  __weakref__
      |      list of weak references to the object (if defined)
+     |\x20\x20
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |\x20\x20
+     |  __filename__ = '%s'
 
 FUNCTIONS
     doc_func()
@@ -177,6 +189,10 @@ Data descriptors defined here:<br>
 <dl><dt><strong>__weakref__</strong></dt>
 <dd><tt>%s</tt></dd>
 </dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__filename__</strong> = '%s'</dl>
+
 </td></tr></table> <p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ffc8d8">
@@ -196,6 +212,8 @@ Data and other attributes defined here:<br>
 <dl><dt><strong>NO_MEANING</strong> = 'eggs'</dl>
 
 <dl><dt><strong>__annotations__</strong> = {'NO_MEANING': &lt;class 'str'&gt;}</dl>
+
+<dl><dt><strong>__filename__</strong> = '%s'</dl>
 
 </td></tr></table> <p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -219,6 +237,10 @@ Data descriptors defined here:<br>
 <dl><dt><strong>__weakref__</strong></dt>
 <dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
 </dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__filename__</strong> = '%s'</dl>
+
 </td></tr></table></td></tr></table><p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#eeaa77">
@@ -278,6 +300,11 @@ class DA(builtins.object)
  |  __weakref__%s
  |\x20\x20
  |  ham
+ |\x20\x20
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes defined here:
+ |\x20\x20
+ |  __filename__ = '%s'
  |\x20\x20
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta:
@@ -430,7 +457,11 @@ class PydocDocTest(unittest.TestCase):
         mod_url = urllib.parse.quote(mod_file)
         expected_html = expected_html_pattern % (
                         (mod_url, mod_file, doc_loc) +
-                        expected_html_data_docstrings)
+                        expected_html_data_docstrings +
+                        (mod_file,) +
+                        expected_html_data_docstrings +
+                        (mod_file, mod_file)
+                        )
         self.assertEqual(result, expected_html)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
@@ -443,7 +474,9 @@ class PydocDocTest(unittest.TestCase):
         expected_text = expected_text_pattern % (
                         (doc_loc,) +
                         expected_text_data_docstrings +
-                        (inspect.getabsfile(pydoc_mod),))
+                        (inspect.getabsfile(pydoc_mod),) +
+                        expected_text_data_docstrings +
+                        3*(inspect.getabsfile(pydoc_mod),))
         self.assertEqual(expected_text, result)
 
     def test_text_enum_member_with_value_zero(self):
@@ -658,7 +691,6 @@ class PydocDocTest(unittest.TestCase):
         old_pattern = expected_text_pattern
         getpager_old = pydoc.getpager
         getpager_new = lambda: (lambda x: x)
-        self.maxDiff = None
 
         buf = StringIO()
         helper = pydoc.Helper(output=buf)
@@ -680,7 +712,9 @@ class PydocDocTest(unittest.TestCase):
                 expected_text = expected_help_pattern % (
                                 (doc_loc,) +
                                 expected_text_data_docstrings +
-                                (inspect.getabsfile(pydoc_mod),))
+                                (inspect.getabsfile(pydoc_mod),) +
+                                expected_text_data_docstrings +
+                                3*(inspect.getabsfile(pydoc_mod),))
                 self.assertEqual('', output.getvalue())
                 self.assertEqual('', err.getvalue())
                 self.assertEqual(expected_text, result)
@@ -814,6 +848,11 @@ class B(A)
  |      Configure resources of an item TAGORID.
  |\x20\x20
  |  ----------------------------------------------------------------------
+ |  Data and other attributes defined here:
+ |\x20\x20
+ |  __filename__ = '%s'
+ |\x20\x20
+ |  ----------------------------------------------------------------------
  |  Methods inherited from A:
  |\x20\x20
  |  a_size(self)
@@ -832,7 +871,7 @@ class B(A)
  |\x20\x20
  |  __weakref__
  |      list of weak references to the object (if defined)
-''' % __name__)
+''' % (__name__, __file__))
 
         doc = pydoc.render_doc(B, renderer=pydoc.HTMLDoc())
         self.assertEqual(doc, '''\
@@ -859,6 +898,10 @@ Methods defined here:<br>
 <dl><dt><a name="B-itemconfigure"><strong>itemconfigure</strong></a>(self, tagOrId, cnf=None, **kw)</dt><dd><tt>Configure&nbsp;resources&nbsp;of&nbsp;an&nbsp;item&nbsp;TAGORID.</tt></dd></dl>
 
 <hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__filename__</strong> = '%s'</dl>
+
+<hr>
 Methods inherited from A:<br>
 <dl><dt><a name="B-a_size"><strong>a_size</strong></a>(self)</dt><dd><tt>Return&nbsp;size</tt></dd></dl>
 
@@ -875,7 +918,7 @@ Data descriptors inherited from A:<br>
 <dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
 </dl>
 </td></tr></table>\
-''' % __name__)
+''' % (__name__, __file__))
 
 
 class PydocImportTest(PydocBaseTest):
@@ -1380,6 +1423,8 @@ class TestHelper(unittest.TestCase):
                          sorted(keyword.kwlist))
 
 class PydocWithMetaClasses(unittest.TestCase):
+    maxDiff = None
+
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
@@ -1400,7 +1445,7 @@ class PydocWithMetaClasses(unittest.TestCase):
         helper = pydoc.Helper(output=output)
         helper(DA)
         expected_text = expected_dynamicattribute_pattern % (
-                (__name__,) + expected_text_data_docstrings[:2])
+                (__name__,) + expected_text_data_docstrings + (__file__,))
         result = output.getvalue().strip()
         self.assertEqual(expected_text, result)
 

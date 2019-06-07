@@ -942,8 +942,8 @@ class _TypingEllipsis:
 _TYPING_INTERNALS = ['__parameters__', '__orig_bases__',  '__orig_class__',
                      '_is_protocol', '_is_runtime_protocol']
 
-_SPECIAL_NAMES = ['__abstractmethods__', '__annotations__', '__dict__', '__doc__',
-                  '__init__', '__module__', '__new__', '__slots__',
+_SPECIAL_NAMES = ['__abstractmethods__', '__annotations__', '__filename__', '__dict__',
+                  '__doc__', '__init__', '__module__', '__new__', '__slots__',
                   '__subclasshook__', '__weakref__']
 
 # These special attributes will be not collected as protocol members.
@@ -1587,7 +1587,7 @@ _prohibited = ('__new__', '__init__', '__slots__', '__getnewargs__',
                '_fields', '_field_defaults', '_field_types',
                '_make', '_replace', '_asdict', '_source')
 
-_special = ('__module__', '__name__', '__qualname__', '__annotations__')
+_special = ('__filename__', '__module__', '__name__', '__qualname__', '__annotations__')
 
 
 class NamedTupleMeta(type):
