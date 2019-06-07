@@ -1478,7 +1478,7 @@ def _create_or_replace(dst: str, create_temp_dest_at: typing.Callable[[str], typ
 # https://pubs.opengroup.org/onlinepubs/9699919799/utilities/ln.html
 
 def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
-            target_is_directory=False, dst_is_dir=False, dst_is_file=False):
+            target_is_dir=False, dst_is_dir=False, dst_is_file=False):
     """Create symbolic links to a target (if not a list) or to list of targets
     in `dst`. `dst` must be a directory if more than one target is given.
 
@@ -1489,8 +1489,8 @@ def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
     On Windows, a symlink represents either a file or a directory, and does not
     morph to the target dynamically. If the target is present, the type of the
     symlink will be created to match. Otherwise, the symlink will be created as
-    a directory if `target_is_directory` is True or a file symlink (the default)
-    otherwise. On non-Windows platforms, `target_is_directory` is ignored.
+    a directory if `target_is_dir` is True or a file symlink (the default)
+    otherwise. On non-Windows platforms, `target_is_dir` is ignored.
 
     With `dst_is_file=True`, a single target, and `dst` is a:
       directory: raise `IsADirectoryError`
@@ -1540,7 +1540,9 @@ def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
 
         link_name = os.path.join(dest_prefix, os.path.basename(target))
 
-        if overwrite:
-            _create_or_overwrite(link_name, lambda via: os.symlink(target, via))
+        fn_create_link_at = lambda here: os.symlink(target, here,
+                                           target_is_directory=target_is_dir)
+        if not overwrite:
+            create_link_at_fn(link_name)
         else:
-            os.symlink(target, link_name)
+            _create_or_overwrite(link_name, fn_create_link_at)
