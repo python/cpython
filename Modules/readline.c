@@ -867,7 +867,7 @@ on_hook(PyObject *func)
     int result = 0;
     if (func != NULL) {
         PyObject *r;
-        r = _PyObject_CallNoArg(func);
+        r = PyObject_CallNoArgs(func);
         if (r == NULL)
             goto error;
         if (r == Py_None)
