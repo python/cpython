@@ -1467,6 +1467,15 @@ def _create_or_replace(dst: str, create_temp_dest_at: typing.Callable[[str], typ
         os.remove(temp_path)
         raise e
 
+# `dst_is_file` prevents the race condition of symlink('target', 'link')
+# creating 'target/link' or 'target' in shared writeable directories.
+# See GNU's -T common option:
+# https://www.gnu.org/software/coreutils/manual/html_node/Target-directory.html
+#
+# Analogously, `dst_is_dir` allows enforcing that a link is created as
+# 'target/link' rather 'link'. (c.f. GNUs common option '-t')
+
+# https://pubs.opengroup.org/onlinepubs/9699919799/utilities/ln.html
 
 def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
             target_is_directory=False, dst_is_dir=False, dst_is_file=False):
