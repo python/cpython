@@ -1879,3 +1879,25 @@ class Popen(object):
             """Kill the process with SIGKILL
             """
             self.send_signal(signal.SIGKILL)
+ 
+        @contextlib.contextmanager
+        def kill_on_error(self):
+            """Using context manager to kill subprocess if
+            a python exception is raised   
+            """
+            try:
+                yield self
+            except:
+                if self.stdin:
+                    self.stdin.close()
+                if self.stdout:
+                    self.stdout.close()
+                if self.stderr:
+                    self.stderr.close()
+                try:
+                    self.kill()
+                except OSError:
+                    # process already terminated
+                    pass
+                self.wait()
+                raise
