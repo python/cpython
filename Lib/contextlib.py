@@ -426,26 +426,11 @@ class _BaseExitStack:
         self._push_cm_exit(cm, _exit)
         return result
 
-    def callback(*args, **kwds):
+    def callback(self, callback, /, *args, **kwds):
         """Registers an arbitrary callback and arguments.
 
         Cannot suppress exceptions.
         """
-        if len(args) >= 2:
-            self, callback, *args = args
-        elif not args:
-            raise TypeError("descriptor 'callback' of '_BaseExitStack' object "
-                            "needs an argument")
-        elif 'callback' in kwds:
-            callback = kwds.pop('callback')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'callback' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('callback expected at least 1 positional argument, '
-                            'got %d' % (len(args)-1))
-
         _exit_wrapper = self._create_cb_wrapper(callback, *args, **kwds)
 
         # We changed the signature, so using @wraps is not appropriate, but
@@ -453,7 +438,6 @@ class _BaseExitStack:
         _exit_wrapper.__wrapped__ = callback
         self._push_exit_callback(_exit_wrapper)
         return callback  # Allow use as a decorator
-    callback.__text_signature__ = '($self, callback, /, *args, **kwds)'
 
     def _push_cm_exit(self, cm, cm_exit):
         """Helper to correctly register callbacks to __exit__ methods."""
@@ -587,26 +571,11 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
             self._push_async_cm_exit(exit, exit_method)
         return exit  # Allow use as a decorator
 
-    def push_async_callback(*args, **kwds):
+    def push_async_callback(self, callback, /, *args, **kwds):
         """Registers an arbitrary coroutine function and arguments.
 
         Cannot suppress exceptions.
         """
-        if len(args) >= 2:
-            self, callback, *args = args
-        elif not args:
-            raise TypeError("descriptor 'push_async_callback' of "
-                            "'AsyncExitStack' object needs an argument")
-        elif 'callback' in kwds:
-            callback = kwds.pop('callback')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'callback' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('push_async_callback expected at least 1 '
-                            'positional argument, got %d' % (len(args)-1))
-
         _exit_wrapper = self._create_async_cb_wrapper(callback, *args, **kwds)
 
         # We changed the signature, so using @wraps is not appropriate, but
@@ -614,7 +583,6 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
         _exit_wrapper.__wrapped__ = callback
         self._push_exit_callback(_exit_wrapper, False)
         return callback  # Allow use as a decorator
-    push_async_callback.__text_signature__ = '($self, callback, /, *args, **kwds)'
 
     async def aclose(self):
         """Immediately unwind the context stack."""

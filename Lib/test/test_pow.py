@@ -1,3 +1,4 @@
+import math
 import unittest
 
 class PowTest(unittest.TestCase):
@@ -118,6 +119,31 @@ class PowTest(unittest.TestCase):
             eq(pow(a, fiveto), expected)
             eq(pow(a, -fiveto), expected)
         eq(expected, 1.0)   # else we didn't push fiveto to evenness
+
+    def test_negative_exponent(self):
+        for a in range(-50, 50):
+            for m in range(-50, 50):
+                with self.subTest(a=a, m=m):
+                    if m != 0 and math.gcd(a, m) == 1:
+                        # Exponent -1 should give an inverse, with the
+                        # same sign as m.
+                        inv = pow(a, -1, m)
+                        self.assertEqual(inv, inv % m)
+                        self.assertEqual((inv * a - 1) % m, 0)
+
+                        # Larger exponents
+                        self.assertEqual(pow(a, -2, m), pow(inv, 2, m))
+                        self.assertEqual(pow(a, -3, m), pow(inv, 3, m))
+                        self.assertEqual(pow(a, -1001, m), pow(inv, 1001, m))
+
+                    else:
+                        with self.assertRaises(ValueError):
+                            pow(a, -1, m)
+                        with self.assertRaises(ValueError):
+                            pow(a, -2, m)
+                        with self.assertRaises(ValueError):
+                            pow(a, -1001, m)
+
 
 if __name__ == "__main__":
     unittest.main()

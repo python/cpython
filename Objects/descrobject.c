@@ -300,16 +300,19 @@ _PyMethodDescr_Vectorcall(PyObject *descrobj,
     return result;
 }
 
+/* Instances of classmethod_descriptor are unlikely to be called directly.
+   For one, the analogous class "classmethod" (for Python classes) is not
+   callable. Second, users are not likely to access a classmethod_descriptor
+   directly, since it means pulling it from the class __dict__.
+
+   This is just an excuse to say that this doesn't need to be optimized:
+   we implement this simply by calling __get__ and then calling the result.
+*/
 static PyObject *
 classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
                       PyObject *kwds)
 {
-    Py_ssize_t argc;
-    PyObject *self, *result;
-
-    /* Make sure that the first argument is acceptable as 'self' */
-    assert(PyTuple_Check(args));
-    argc = PyTuple_GET_SIZE(args);
+    Py_ssize_t argc = PyTuple_GET_SIZE(args);
     if (argc < 1) {
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%V' of '%.100s' "
@@ -318,30 +321,15 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
                      PyDescr_TYPE(descr)->tp_name);
         return NULL;
     }
-    self = PyTuple_GET_ITEM(args, 0);
-    if (!PyType_Check(self)) {
-        PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' requires a type "
-                     "but received a '%.100s' instance",
-                     descr_name((PyDescrObject *)descr), "?",
-                     self->ob_type->tp_name);
+    PyObject *self = PyTuple_GET_ITEM(args, 0);
+    PyObject *bound = classmethod_get(descr, NULL, self);
+    if (bound == NULL) {
         return NULL;
     }
-    if (!PyType_IsSubtype((PyTypeObject *)self, PyDescr_TYPE(descr))) {
-        PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' requires a subtype of '%.100s' "
-                     "but received '%.100s'",
-                     descr_name((PyDescrObject *)descr), "?",
-                     PyDescr_TYPE(descr)->tp_name,
-                     ((PyTypeObject*)self)->tp_name);
-        return NULL;
-    }
-
-    result = _PyMethodDef_RawFastCallDict(descr->d_method, self,
-                                          &_PyTuple_ITEMS(args)[1], argc - 1,
-                                          kwds);
-    result = _Py_CheckFunctionResult((PyObject *)descr, result, NULL);
-    return result;
+    PyObject *res = _PyObject_FastCallDict(bound, _PyTuple_ITEMS(args)+1,
+                                           argc-1, kwds);
+    Py_DECREF(bound);
+    return res;
 }
 
 Py_LOCAL_INLINE(PyObject *)

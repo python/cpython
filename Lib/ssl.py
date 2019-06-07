@@ -658,12 +658,12 @@ class SSLContext(_SSLContext):
         def inner(conn, direction, version, content_type, msg_type, data):
             try:
                 version = TLSVersion(version)
-            except TypeError:
+            except ValueError:
                 pass
 
             try:
                 content_type = _TLSContentType(content_type)
-            except TypeError:
+            except ValueError:
                 pass
 
             if content_type == _TLSContentType.HEADER:
@@ -674,7 +674,7 @@ class SSLContext(_SSLContext):
                 msg_enum = _TLSMessageType
             try:
                 msg_type = msg_enum(msg_type)
-            except TypeError:
+            except ValueError:
                 pass
 
             return callback(conn, direction, version,
@@ -862,7 +862,7 @@ class SSLObject:
     @property
     def server_hostname(self):
         """The currently set server hostname (for SNI), or ``None`` if no
-        server hostame is set."""
+        server hostname is set."""
         return self._sslobj.server_hostname
 
     def read(self, len=1024, buffer=None):

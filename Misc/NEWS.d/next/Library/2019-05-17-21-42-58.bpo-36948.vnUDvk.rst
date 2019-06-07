@@ -1,2 +1,0 @@
-Fix :exc:`NameError` in :meth:`urllib.request.URLopener.retrieve`. Patch by
-Karthikeyan Singaravelan.

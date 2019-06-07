@@ -2163,7 +2163,7 @@ class Path:
     >>> (b / 'missing.txt').exists()
     False
 
-    Coersion to string:
+    Coercion to string:
 
     >>> str(c)
     'abcde.zip/b/c.txt'
