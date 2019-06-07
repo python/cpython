@@ -53,7 +53,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         self.dialog.close()
         self.assertEqual(self.dialog.top.state(), 'withdrawn')
 
-        self.dialog.open('text', searchphrase="hello")
+        self.dialog.open(text, searchphrase="hello")
         self.assertEqual(self.dialog.ent.get(), 'hello')
         self.dialog.close()
 
