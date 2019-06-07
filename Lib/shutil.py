@@ -1442,3 +1442,27 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
                 if _access_check(name, mode):
                     return name
     return None
+
+
+def _create_or_replace(dst: str, create_temp_dest_at: typing.Callable[[str], typing.Any]):
+    """Create or overwrite file `dst` atomically via os.replace.
+    The file to replace `dst` is created at a temporary destination.
+
+    `create_temp_dest_at` is a function (think lambda) taking a single argument:
+    the pathname where the temporary file to replace `dst` will be created.
+
+    """
+    # Attempt creation of temporary destination, try again on FileExistsError
+    while True:
+        temp_path = tempfile.mktemp(dir=os.path.dirname(dst))
+        try:
+            create_temp_dest_at(temp_path)
+            break
+        except FileExistsError:
+            pass
+
+    try:
+        os.replace(temp_path, dst)
+    except BaseException as e:
+        os.remove(temp_path)
+        raise e
