@@ -3002,7 +3002,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 math.perm
 
     n: object
-    k: object
+    k: object = None
     /
 
 Number of ways to choose k items from n items without repetition and with order.
@@ -3010,18 +3010,24 @@ Number of ways to choose k items from n items without repetition and with order.
 Evaluates to n! / (n - k)! when k <= n and evaluates
 to zero when k > n.
 
+If k is not specified or is None, then k defaults to n
+and the function returns n!.
+
 Raises TypeError if either of the arguments are not integers.
 Raises ValueError if either of the arguments are negative.
 [clinic start generated code]*/
 
 static PyObject *
 math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=e021a25469653e23 input=b2e7729d9a1949cf]*/
+/*[clinic end generated code: output=e021a25469653e23 input=5311c5a00f359b53]*/
 {
     PyObject *result = NULL, *factor = NULL;
     int overflow, cmp;
     long long i, factors;
 
+    if (k == Py_None) {
+        return math_factorial(module, n);
+    }
     n = PyNumber_Index(n);
     if (n == NULL) {
         return NULL;
