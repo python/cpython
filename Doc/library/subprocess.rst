@@ -723,6 +723,11 @@ Instances of the :class:`Popen` class have the following methods:
    On Windows :meth:`kill` is an alias for :meth:`terminate`.
 
 
+.. method:: Popen.kill_on_error()
+
+   Kills the child when a python error raised.
+
+
 The following attributes are also available:
 
 .. attribute:: Popen.args
