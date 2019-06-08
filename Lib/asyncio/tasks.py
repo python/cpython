@@ -116,10 +116,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         return _all_tasks_compat(loop)
 
     def __init__(self, coro, *, loop=None, name=None):
-        if loop:
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                           DeprecationWarning, stacklevel=2)
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                       DeprecationWarning, stacklevel=2)
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -672,10 +671,9 @@ class _GatheringFuture(futures.Future):
     """
 
     def __init__(self, children, *, loop=None):
-        if loop:
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                       DeprecationWarning, stacklevel=2)
         super().__init__(loop=loop)
         self._children = children
         self._cancel_requested = False
