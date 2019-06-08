@@ -210,13 +210,16 @@ Number-theoretic and representation functions
    of *x* and are floats.
 
 
-.. function:: perm(n, k)
+.. function:: perm(n, k=None)
 
    Return the number of ways to choose *k* items from *n* items
    without repetition and with order.
 
    Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
    to zero when ``k > n``.
+
+   If *k* is not specified or is None, then *k* defaults to *n*
+   and the function returns ``n!``.
 
    Raises :exc:`TypeError` if either of the arguments are not integers.
    Raises :exc:`ValueError` if either of the arguments are negative.
