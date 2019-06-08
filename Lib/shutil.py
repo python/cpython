@@ -1511,7 +1511,7 @@ def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
     directory or a symlink to a directory.
 
     """
-    if type(target_or_targets) not in [list, set, tuple]:
+    if not any(isinstance(target_or_targets, l) for l in [list, set, tuple]):
         targets = [target_or_targets]
 
     if len(targets) > 1 and not os.isdir(dst):
