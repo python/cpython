@@ -849,6 +849,10 @@ static int running_on_valgrind = -1;
 #define ALIGNMENT_SHIFT         3
 #endif
 
+#if ALIGNMENT != 1 << ALIGNMENT_SHIFT
+#   error "ALIGNMENT inconsistent with ALIGNMENT_SHIFT"
+#endif
+
 /* Return the number of bytes in size class I, as a uint. */
 #define INDEX2SIZE(I) (((uint)(I) + 1) << ALIGNMENT_SHIFT)
 
@@ -869,6 +873,13 @@ static int running_on_valgrind = -1;
  */
 #define SMALL_REQUEST_THRESHOLD 512
 #define NB_SMALL_SIZE_CLASSES   (SMALL_REQUEST_THRESHOLD / ALIGNMENT)
+
+#if !(ALIGNMENT <= SMALL_REQUEST_THRESHOLD && SMALL_REQUEST_THRESHOLD <= 512)
+#   error "SMALL_REQUEST_THRESHOLD out of bounds"
+#endif
+#if NB_SMALL_SIZE_CLASSES * ALIGNMENT != SMALL_REQUEST_THRESHOLD
+#   error "SMALL_REQUEST_THRESHOLD must be a multiple of ALIGNMENT"
+#endif
 
 /*
  * The system's VMM page size can be obtained on most unices with a
@@ -934,15 +945,15 @@ typedef uint8_t block;
 
 /* Pool for small blocks. */
 struct pool_header {
-    union { block *_padding;
-            uint count; } ref;          /* number of allocated blocks    */
+    uint arenaindex;                    /* index into arenas of base adr */
+    uint nalloc;                        /* number of allocated blocks    */
     block *freeblock;                   /* pool's free list head         */
     struct pool_header *nextpool;       /* next pool of this size class  */
     struct pool_header *prevpool;       /* previous pool       ""        */
-    uint arenaindex;                    /* index into arenas of base adr */
     uint szidx;                         /* block size class index        */
     uint nextoffset;                    /* bytes to virgin block         */
     uint maxnextoffset;                 /* largest valid nextoffset      */
+    uint nextpage;                      /* bytes to next page boundary   */
 };
 
 typedef struct pool_header *poolp;
@@ -1096,7 +1107,8 @@ on that C doesn't insert any padding anywhere in a pool_header at or before
 the prevpool member.
 **************************************************************************** */
 
-#define PTA(x)  ((poolp )((uint8_t *)&(usedpools[2*(x)]) - 2*sizeof(block *)))
+#define PTA(x)  ((poolp )((uint8_t *)&(usedpools[2*(x)]) - \
+                           offsetof(struct pool_header, nextpool)))
 #define PT(x)   PTA(x), PTA(x)
 
 static poolp usedpools[2 * ((NB_SMALL_SIZE_CLASSES + 7) / 8) * 8] = {
@@ -1454,7 +1466,7 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
          * There is a used pool for this size class.
          * Pick up the head block of its free list.
          */
-        ++pool->ref.count;
+        ++pool->nalloc;
         bp = pool->freeblock;
         assert(bp != NULL);
         if ((pool->freeblock = *(block **)bp) != NULL) {
@@ -1555,7 +1567,7 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
         pool->prevpool = next;
         next->nextpool = pool;
         next->prevpool = pool;
-        pool->ref.count = 1;
+        pool->nalloc = 1;
         if (pool->szidx == size) {
             /* Luckily, this pool last contained blocks
              * of the same size class, so its header
@@ -1687,7 +1699,7 @@ pymalloc_free(void *ctx, void *p)
      * was full and is in no list -- it's not in the freeblocks
      * list in any case).
      */
-    assert(pool->ref.count > 0);            /* else it was empty */
+    assert(pool->nalloc > 0);            /* else it was empty */
     *(block **)p = lastfree = pool->freeblock;
     pool->freeblock = (block *)p;
     if (!lastfree) {
@@ -1697,8 +1709,8 @@ pymalloc_free(void *ctx, void *p)
          * targets optimal filling when several pools contain
          * blocks of the same size class.
          */
-        --pool->ref.count;
-        assert(pool->ref.count > 0);            /* else the pool is empty */
+        --pool->nalloc;
+        assert(pool->nalloc > 0);            /* else the pool is empty */
         size = pool->szidx;
         next = usedpools[size + size];
         prev = next->prevpool;
@@ -1717,7 +1729,7 @@ pymalloc_free(void *ctx, void *p)
     /* freeblock wasn't NULL, so the pool wasn't full,
      * and the pool is in a usedpools[] list.
      */
-    if (--pool->ref.count != 0) {
+    if (--pool->nalloc != 0) {
         /* pool isn't empty:  leave it in usedpools */
         goto success;
     }
@@ -2664,7 +2676,7 @@ _PyObject_DebugMallocStats(FILE *out)
             const uint sz = p->szidx;
             uint freeblocks;
 
-            if (p->ref.count == 0) {
+            if (p->nalloc == 0) {
                 /* currently unused */
 #ifdef Py_DEBUG
                 assert(pool_is_in_list(p, arenas[i].freepools));
@@ -2672,8 +2684,8 @@ _PyObject_DebugMallocStats(FILE *out)
                 continue;
             }
             ++numpools[sz];
-            numblocks[sz] += p->ref.count;
-            freeblocks = NUMBLOCKS(sz) - p->ref.count;
+            numblocks[sz] += p->nalloc;
+            freeblocks = NUMBLOCKS(sz) - p->nalloc;
             numfreeblocks[sz] += freeblocks;
 #ifdef Py_DEBUG
             if (freeblocks > 0)
