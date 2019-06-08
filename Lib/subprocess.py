@@ -459,12 +459,12 @@ def run(*popenargs,
     The other arguments are the same as for the Popen constructor.
     """
     if input is not None:
-        if 'stdin' in kwargs:
+        if kwargs.get('stdin') is not None:
             raise ValueError('stdin and input arguments may not both be used.')
         kwargs['stdin'] = PIPE
 
     if capture_output:
-        if ('stdout' in kwargs) or ('stderr' in kwargs):
+        if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
             raise ValueError('stdout and stderr arguments may not be used '
                              'with capture_output.')
         kwargs['stdout'] = PIPE
