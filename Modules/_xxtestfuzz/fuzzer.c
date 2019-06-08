@@ -88,6 +88,14 @@ static int _run_fuzz(const uint8_t *data, size_t size, int(*fuzzer)(const char* 
 /* CPython generates a lot of leak warnings for whatever reason. */
 int __lsan_is_turned_off(void) { return 1; }
 
+wchar_t wide_program_name[NAME_MAX];
+
+int LLVMFuzzerInitialize(int *argc, char ***argv) {
+    wchar_t* wide_program_name = Py_DecodeLocale(*argv[0], NULL);
+    Py_SetProgramName(wide_program_name);
+    return 0;
+}
+
 /* Fuzz test interface.
    This returns the bitwise or of all fuzz test's return values.
 
