@@ -1444,11 +1444,12 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     return None
 
 
-def _create_or_replace(dst: str, create_temp_dest_at: typing.Callable[[str], typing.Any]):
+def _create_or_replace(dst, create_temp_dest):
     """Create or overwrite file `dst` atomically via os.replace.
+
     The file to replace `dst` is created at a temporary destination.
 
-    `create_temp_dest_at` is a function (think lambda) taking a single argument:
+    `create_temp_dest` is a function taking a single argument:
     the pathname where the temporary file to replace `dst` will be created.
 
     """
@@ -1456,7 +1457,7 @@ def _create_or_replace(dst: str, create_temp_dest_at: typing.Callable[[str], typ
     while True:
         temp_path = tempfile.mktemp(dir=os.path.dirname(dst))
         try:
-            create_temp_dest_at(temp_path)
+            create_temp_dest(temp_path)
             break
         except FileExistsError:
             pass
@@ -1467,6 +1468,7 @@ def _create_or_replace(dst: str, create_temp_dest_at: typing.Callable[[str], typ
         os.remove(temp_path)
         raise e
 
+
 # `dst_is_file` prevents the race condition of symlink('target', 'link')
 # creating 'target/link' or 'target' in shared writeable directories.
 # See GNU's -T common option:
@@ -1476,6 +1478,7 @@ def _create_or_replace(dst: str, create_temp_dest_at: typing.Callable[[str], typ
 # 'target/link' rather 'link'. (c.f. GNUs common option '-t')
 
 # https://pubs.opengroup.org/onlinepubs/9699919799/utilities/ln.html
+
 
 def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
             target_is_dir=False, dst_is_dir=False, dst_is_file=False):
