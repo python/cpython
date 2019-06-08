@@ -234,13 +234,18 @@ creation according to their needs, the :class:`EnvBuilder` class.
 There is also a module-level convenience function:
 
 .. function:: create(env_dir, system_site_packages=False, clear=False, \
-                     symlinks=False, with_pip=False)
+                     symlinks=False, with_pip=False, prompt=None)
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
 
+    .. versionadded:: 3.3
+
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
+
+    .. versionchanged:: 3.6
+       Added the ``prompt`` parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------

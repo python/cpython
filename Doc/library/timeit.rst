@@ -44,8 +44,12 @@ This can be achieved from the :ref:`python-interface` with::
    >>> timeit.timeit('"-".join(map(str, range(100)))', number=10000)
    0.23702679807320237
 
+A callable can also be passed from the :ref:`python-interface`::
 
-Note however that :mod:`timeit` will automatically determine the number of
+   >>> timeit.timeit(lambda: "-".join(map(str, range(100))), number=10000)
+   0.19665591977536678
+
+Note however that :func:`.timeit` will automatically determine the number of
 repetitions only when the command-line interface is used.  In the
 :ref:`timeit-examples` section you can find more advanced examples.
 
@@ -129,7 +133,7 @@ The module defines three convenience functions and a public class:
 
          By default, :meth:`.timeit` temporarily turns off :term:`garbage
          collection` during the timing.  The advantage of this approach is that
-         it makes independent timings more comparable.  This disadvantage is
+         it makes independent timings more comparable.  The disadvantage is
          that GC may be an important component of the performance of the
          function being measured.  If so, GC can be re-enabled as the first
          statement in the *setup* string.  For example::

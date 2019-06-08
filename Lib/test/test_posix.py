@@ -310,6 +310,14 @@ class PosixTester(unittest.TestCase):
             buf = [bytearray(i) for i in [5, 3, 2]]
             self.assertEqual(posix.preadv(fd, buf, 3, os.RWF_HIPRI), 10)
             self.assertEqual([b't1tt2', b't3t', b'5t'], list(buf))
+        except OSError as inst:
+            # Is possible that the macro RWF_HIPRI was defined at compilation time
+            # but the option is not supported by the kernel or the runtime libc shared
+            # library.
+            if inst.errno in {errno.EINVAL, errno.ENOTSUP}:
+                raise unittest.SkipTest("RWF_HIPRI is not supported by the current system")
+            else:
+                raise
         finally:
             os.close(fd)
 
@@ -606,8 +614,6 @@ class PosixTester(unittest.TestCase):
         finally:
             fp.close()
 
-    @unittest.skipUnless(hasattr(posix, 'stat'),
-                         'test needs posix.stat()')
     def test_stat(self):
         self.assertTrue(posix.stat(support.TESTFN))
         self.assertTrue(posix.stat(os.fsencode(support.TESTFN)))
@@ -658,7 +664,6 @@ class PosixTester(unittest.TestCase):
         except OSError as e:
             self.assertIn(e.errno, (errno.EPERM, errno.EINVAL, errno.EACCES))
 
-    @unittest.skipUnless(hasattr(posix, 'stat'), 'test needs posix.stat()')
     @unittest.skipUnless(hasattr(posix, 'makedev'), 'test needs posix.makedev()')
     def test_makedev(self):
         st = posix.stat(support.TESTFN)
@@ -755,8 +760,7 @@ class PosixTester(unittest.TestCase):
 
         # re-create the file
         support.create_empty_file(support.TESTFN)
-        self._test_all_chown_common(posix.chown, support.TESTFN,
-                                    getattr(posix, 'stat', None))
+        self._test_all_chown_common(posix.chown, support.TESTFN, posix.stat)
 
     @unittest.skipUnless(hasattr(posix, 'fchown'), "test needs os.fchown()")
     def test_fchown(self):
@@ -1545,6 +1549,15 @@ class _PosixSpawnMixin:
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
         with open(envfile) as f:
             self.assertEqual(f.read(), 'bar')
+
+    def test_none_file_actions(self):
+        pid = self.spawn_func(
+            self.NOOP_PROGRAM[0],
+            self.NOOP_PROGRAM,
+            os.environ,
+            file_actions=None
+        )
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
     def test_empty_file_actions(self):
         pid = self.spawn_func(

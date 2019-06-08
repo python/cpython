@@ -278,8 +278,7 @@ class _Database(collections.abc.MutableMapping):
     __del__ = close
 
     def _chmod(self, file):
-        if hasattr(self._os, 'chmod'):
-            self._os.chmod(file, self._mode)
+        self._os.chmod(file, self._mode)
 
     def __enter__(self):
         return self

@@ -80,14 +80,14 @@ class DictVersionTests(unittest.TestCase):
 
         # setting a key to the same value with dict.__setitem__
         # must change the version
-        self.check_version_changed(d, d.__setitem__, 'key', value)
+        self.check_version_dont_change(d, d.__setitem__, 'key', value)
 
         # setting a key to the same value with dict.update
         # must change the version
-        self.check_version_changed(d, d.update, key=value)
+        self.check_version_dont_change(d, d.update, key=value)
 
         d2 = self.new_dict(key=value)
-        self.check_version_changed(d, d.update, d2)
+        self.check_version_dont_change(d, d.update, d2)
 
     def test_setitem_equal(self):
         class AlwaysEqual:

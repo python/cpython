@@ -52,7 +52,7 @@ EXCLUDE_FROM_PACKAGED_LIB = FileNameSet("readme.txt")
 EXCLUDE_FROM_COMPILE = FileNameSet("badsyntax_*", "bad_*")
 EXCLUDE_FROM_CATALOG = FileSuffixSet(".exe", ".pyd", ".dll")
 
-REQUIRED_DLLS = FileStemSet("libcrypto*", "libssl*")
+REQUIRED_DLLS = FileStemSet("libcrypto*", "libssl*", "libffi*")
 
 LIB2TO3_GRAMMAR_FILES = FileNameSet("Grammar.txt", "PatternGrammar.txt")
 
@@ -66,6 +66,18 @@ DATA_DIRS = FileNameSet("data")
 TOOLS_DIRS = FileNameSet("scripts", "i18n", "pynche", "demo", "parser")
 TOOLS_FILES = FileSuffixSet(".py", ".pyw", ".txt")
 
+def copy_if_modified(src, dest):
+    try:
+        dest_stat = os.stat(dest)
+    except FileNotFoundError:
+        do_copy = True
+    else:
+        src_stat = os.stat(src)
+        do_copy = (src_stat.st_mtime != dest_stat.st_mtime or
+                   src_stat.st_size != dest_stat.st_size)
+
+    if do_copy:
+        shutil.copy2(src, dest)
 
 def get_lib_layout(ns):
     def _c(f):
@@ -426,7 +438,7 @@ def copy_files(files, ns):
                     need_compile.append((dest, ns.copy / dest))
                 else:
                     (ns.temp / "Lib" / dest).parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(src, ns.temp / "Lib" / dest)
+                    copy_if_modified(src, ns.temp / "Lib" / dest)
                     need_compile.append((dest, ns.temp / "Lib" / dest))
 
             if src not in EXCLUDE_FROM_CATALOG:
@@ -436,7 +448,7 @@ def copy_files(files, ns):
                 log_debug("Copy {} -> {}", src, ns.copy / dest)
                 (ns.copy / dest).parent.mkdir(parents=True, exist_ok=True)
                 try:
-                    shutil.copy2(src, ns.copy / dest)
+                    copy_if_modified(src, ns.copy / dest)
                 except shutil.SameFileError:
                     pass
 

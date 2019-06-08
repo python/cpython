@@ -42,10 +42,17 @@ from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from os import urandom as _urandom
 from _collections_abc import Set as _Set, Sequence as _Sequence
-from hashlib import sha512 as _sha512
-import itertools as _itertools
-import bisect as _bisect
+from itertools import accumulate as _accumulate, repeat as _repeat
+from bisect import bisect as _bisect
 import os as _os
+
+try:
+    # hashlib is pretty heavy to load, try lean internal module first
+    from _sha512 import sha512 as _sha512
+except ImportError:
+    # fallback to official implementation
+    from hashlib import sha512 as _sha512
+
 
 __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
@@ -93,7 +100,7 @@ class Random(_random.Random):
         self.seed(x)
         self.gauss_next = None
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, /, **kwargs):
         """Control how subclasses generate random integers.
 
         The algorithm a subclass can use depends on the random() and/or
@@ -389,17 +396,17 @@ class Random(_random.Random):
             if weights is None:
                 _int = int
                 n += 0.0    # convert to float for a small speed improvement
-                return [population[_int(random() * n)] for i in range(k)]
-            cum_weights = list(_itertools.accumulate(weights))
+                return [population[_int(random() * n)] for i in _repeat(None, k)]
+            cum_weights = list(_accumulate(weights))
         elif weights is not None:
             raise TypeError('Cannot specify both weights and cumulative weights')
         if len(cum_weights) != n:
             raise ValueError('The number of weights does not match the population')
-        bisect = _bisect.bisect
+        bisect = _bisect
         total = cum_weights[-1] + 0.0   # convert to float
         hi = n - 1
         return [population[bisect(cum_weights, random() * total, 0, hi)]
-                for i in range(k)]
+                for i in _repeat(None, k)]
 
 ## -------------------- real-valued distributions  -------------------
 
