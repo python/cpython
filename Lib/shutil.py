@@ -1541,7 +1541,7 @@ def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
         link_inside_dir = False
 
     for target in targets:
-        if follow_symlinks:
+        if follow_symlinks: # XXXXXXXXXXXXXXXXXXX XXX
             target = os.path.realpath(target)
 
         if link_inside_dir:
