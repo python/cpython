@@ -35,6 +35,15 @@ def bisect_right(a, x, lo=0, hi=None, *, key=None, reverse=False):
         hi = len(a)
 
     if key is None:
+        if reverse:
+            while lo < hi:
+                mid = (lo+hi)//2
+                if x > a[mid]:
+                    hi = mid
+                else:
+                    lo = mid+1
+            return lo
+
         while lo < hi:
             mid = (lo+hi)//2
             if x < a[mid]:
@@ -44,6 +53,15 @@ def bisect_right(a, x, lo=0, hi=None, *, key=None, reverse=False):
         return lo
 
     x_value = key(x)
+
+    if reverse:
+        while lo < hi:
+            mid = (lo+hi)//2
+            if x_value > key(a[mid]):
+                hi = mid
+            else:
+                lo = mid+1
+        return lo
 
     while lo < hi:
         mid = (lo+hi)//2
@@ -89,6 +107,15 @@ def bisect_left(a, x, lo=0, hi=None, *, key=None, reverse=False):
         hi = len(a)
 
     if key is None:
+        if reverse:
+            while lo < hi:
+                mid = (lo+hi)//2
+                if a[mid] > x:
+                    lo = mid+1
+                else:
+                    hi = mid
+            return lo
+
         while lo < hi:
             mid = (lo+hi)//2
             if a[mid] < x:
@@ -98,6 +125,15 @@ def bisect_left(a, x, lo=0, hi=None, *, key=None, reverse=False):
         return lo
 
     x_value = key(x)
+
+    if reverse:
+        while lo < hi:
+            mid = (lo+hi)//2
+            if key(a[mid]) > x_value:
+                lo = mid+1
+            else:
+                hi = mid
+        return lo
 
     while lo < hi:
         mid = (lo+hi)//2
