@@ -1540,9 +1540,9 @@ def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
 
         link_name = os.path.join(dest_prefix, os.path.basename(target))
 
-        fn_create_link_at = lambda here: os.symlink(target, here,
-                                           target_is_directory=target_is_dir)
+        def create_link_at(here):
+            os.symlink(target, here, target_is_directory=target_is_dir)
         if not overwrite:
-            create_link_at_fn(link_name)
+            create_link_at(link_name)
         else:
-            _create_or_overwrite(link_name, fn_create_link_at)
+            _create_or_replace(link_name, create_link_at)
