@@ -2814,6 +2814,11 @@ class POSIXProcessTestCase(BaseTestCase):
 
         self.assertEqual(returncode, -3)
 
+    def test_kill_on_error(self):
+        """Test Popen.kill_on_error() behavior when proc raise a Error"""
+        proc = subprocess.Popen([sys.executable, '-c', 'pass'])
+        with proc.kill_on_error() as p:
+            self.assertEqual(proc, p)
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
 class Win32ProcessTestCase(BaseTestCase):
