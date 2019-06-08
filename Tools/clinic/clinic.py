@@ -2298,7 +2298,7 @@ class Parameter:
 
     def displayname(self):
         if self.is_positional_or_keyword():
-            return f'"{self.name}"'
+            return '"{}"'.format(self.name)
         else:
             return 'NULL'
 
