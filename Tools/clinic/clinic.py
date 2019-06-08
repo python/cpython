@@ -1733,7 +1733,7 @@ class Destination:
 # "languages" maps the name of the language ("C", "Python").
 # "extensions" maps the file extension ("c", "py").
 languages = { 'C': CLanguage, 'Python': PythonLanguage }
-extensions = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx test".split() }
+extensions = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx".split() }
 extensions['py'] = PythonLanguage
 
 
