@@ -1515,13 +1515,15 @@ def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
         targets = [target_or_targets]
 
     if len(targets) > 1 and not os.isdir(dst):
-        raise NotADirectoryError(f'Destination "{dst}" not a directory and multiple targets given')
+        raise NotADirectoryError(
+            f'Destination "{dst}" not a directory and multiple targets given')
 
     if dst_is_file and dst_is_dir:
         raise ValueError('Destination cannot be both file and directory')
 
     if dst_is_dir and not os.isdir(dst):
-        raise NotADirectoryError(f'Destination "{dst}" not a directory as required')
+        raise NotADirectoryError(
+            f'Destination "{dst}" not a directory as required')
 
     if dst_is_file not os.isdir(dst):
         raise NotADirectoryError(f'Destination "{dst}" not a file as required')
