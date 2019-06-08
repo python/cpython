@@ -1879,12 +1879,11 @@ class Popen(object):
             """Kill the process with SIGKILL
             """
             self.send_signal(signal.SIGKILL)
- 
+
         @contextlib.contextmanager
         def kill_on_error(self):
             """Using context manager to kill subprocess if
-            a python exception is raised   
-            """
+            a python exception is raised."""
             try:
                 yield self
             except:
