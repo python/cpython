@@ -1525,13 +1525,10 @@ def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
         raise NotADirectoryError(
             f'Destination "{dst}" not a directory as required')
 
-    if dst_is_file not os.isdir(dst):
+    if dst_is_file and os.isdir(dst) and not os.islink(dst):
         raise NotADirectoryError(f'Destination "{dst}" not a file as required')
 
-    if dst_is_dir or os.isdir(dst):   ##### XXX , follow_symlinks=not dest_is_file):
-	#  want trailing slash? path.split[-1]
-	# null possible: os.basename(target)
-        #### os.path.join(dst, path.split[-1])
+    if dst_is_dir or os.isdir(dst):
         dest_prefix = dst
     else:
         dest_prefix = ''
