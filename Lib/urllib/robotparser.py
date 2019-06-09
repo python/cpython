@@ -188,6 +188,8 @@ class RobotFileParser:
                 return entry.delay
         if self.default_entry:
             return self.default_entry.delay
+        else:
+            return None
 
     def request_rate(self, useragent):
         if not self.mtime():
@@ -197,6 +199,8 @@ class RobotFileParser:
                 return entry.req_rate
         if self.default_entry:
             return self.default_entry.req_rate
+        else:
+            return None
 
     def site_maps(self):
         if not self.sitemaps:
