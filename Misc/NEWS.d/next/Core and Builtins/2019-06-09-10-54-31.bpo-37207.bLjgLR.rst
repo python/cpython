@@ -1,0 +1,2 @@
+Speed up calls to ``range()``, ``list()`` and ``dict()`` by about 30%, by
+using the PEP 590 ``vectorcall`` calling convention.
