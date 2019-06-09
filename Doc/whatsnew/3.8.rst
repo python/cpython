@@ -54,7 +54,6 @@ For full details, see the :ref:`changelog <changelog>`.
 
    Some notable items not yet covered here:
 
-   * :pep:`574` - Pickle protocol 5 with out-of-band data buffer support
    * :pep:`578` - Runtime audit hooks for potentially sensitive operations
    * ``python -m asyncio`` runs a natively async REPL
    * ...
@@ -259,6 +258,23 @@ the aim is to make it fully public in Python 3.9.
 See :pep:`590` for a full description.
 
 (Contributed by Jeroen Demeyer and Mark Shannon in :issue:`36974`.)
+
+
+Pickle protocol 5 with out-of-band data buffers
+-----------------------------------------------
+
+When :mod:`pickle` is used to transfer large data between Python processes
+in order to take advantage of multi-core or multi-machine processing,
+it is important to optimize the transfer by reducing memory copies, and
+possibly by applying custom techniques such as data-dependent compression.
+
+The :mod:`pickle` protocol 5 introduces support for out-of-band buffers
+where :pep:`3118`-compatible data can be transmitted separately from the
+main pickle stream, at the discretion of the communication layer.
+
+See :pep:`574` for a full description.
+
+(Contributed by Antoine Pitrou in :issue:`36785`.)
 
 
 Other Language Changes
