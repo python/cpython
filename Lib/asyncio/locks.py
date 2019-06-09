@@ -163,6 +163,7 @@ class Lock(_ContextManagerMixin):
         if loop is None:
             self._loop = events.get_event_loop()
         else:
+            self._loop = loop
             warnings.warn("The loop argument is deprecated since Python 3.8, "
                           "and scheduled for removal in Python 3.10.",
                           DeprecationWarning, stacklevel=2)
@@ -258,6 +259,7 @@ class Event:
         if loop is None:
             self._loop = events.get_event_loop()
         else:
+            self._loop = loop
             warnings.warn("The loop argument is deprecated since Python 3.8, "
                           "and scheduled for removal in Python 3.10.",
                           DeprecationWarning, stacklevel=2)
@@ -324,6 +326,7 @@ class Condition(_ContextManagerMixin):
         if loop is None:
             self._loop = events.get_event_loop()
         else:
+            self._loop = loop
             warnings.warn("The loop argument is deprecated since Python 3.8, "
                           "and scheduled for removal in Python 3.10.",
                           DeprecationWarning, stacklevel=2)
@@ -454,6 +457,7 @@ class Semaphore(_ContextManagerMixin):
         if loop is None:
             self._loop = events.get_event_loop()
         else:
+            self._loop = loop
             warnings.warn("The loop argument is deprecated since Python 3.8, "
                           "and scheduled for removal in Python 3.10.",
                           DeprecationWarning, stacklevel=2)
