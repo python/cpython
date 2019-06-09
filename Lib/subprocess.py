@@ -1881,9 +1881,17 @@ class Popen(object):
             self.send_signal(signal.SIGKILL)
 
         @contextlib.contextmanager
-        def kill_on_error(self):
-            """Using context manager to kill subprocess if
-            a python exception is raised."""
+        def kill_on_os_error(self):
+            """Using context manager to kill the hung subprocess
+            if subprocess touch off a race condition.
+            One of practical case can be found in:
+            https://bugs.python.org/issue25122
+            
+            For example:
+            proc = subprocess.Popen(...)
+            with proc.kill_on_os_error():
+                proc.communicate()
+            """
             try:
                 yield self
             except:
@@ -1893,10 +1901,6 @@ class Popen(object):
                     self.stdout.close()
                 if self.stderr:
                     self.stderr.close()
-                try:
-                    self.kill()
-                except OSError:
-                    # process already terminated
-                    pass
+                self.kill()
                 self.wait()
                 raise

@@ -1,1 +1,2 @@
-subprocess.Popen add the kill_on_error function which could kill process when a python error raised.
+subprocess.Popen add the kill_on_os_error function which could kill subprocess
+when subprocesses touch off a race condition.

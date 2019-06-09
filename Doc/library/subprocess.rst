@@ -723,9 +723,15 @@ Instances of the :class:`Popen` class have the following methods:
    On Windows :meth:`kill` is an alias for :meth:`terminate`.
 
 
-.. method:: Popen.kill_on_error()
+.. method:: Popen.kill_on_os_error()
 
-   Kills the child when a python error raised.
+   Kills the subprocess when the parent process touch off a race condition and
+   subprocess hanged. One of practical case can be found in:
+   https://bugs.python.org/issue25122::
+
+      proc = subprocess.Popen(...)
+      with proc.kill_on_os_error():
+          proc.communicate()
 
 
 The following attributes are also available:
