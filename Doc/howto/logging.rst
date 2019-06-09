@@ -134,6 +134,10 @@ interpreter, and don't just continue from the session described above::
    logging.warning('And this, too')
    logging.error('And non-ASCII stuff, too, like Øresund and Malmö')
 
+.. versionchanged:: 3.9
+   The *encoding* argument was added. In earlier Python versions, or if not
+   specified, the encoding used is the default value used by :func:`open`.
+
 And now if we open the file and look at what we have, we should find the log
 messages:
 
