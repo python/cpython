@@ -96,7 +96,7 @@ Disallow: /
     bad = ['/cyberworld/map/index.html', '/', '/tmp/']
 
 
-class InvalidFileTest(BaseRobotTest, unittest.TestCase):
+class EmptyFileTest(BaseRobotTest, unittest.TestCase):
     robots_txt = ""
 
     def test_request_rate(self):
