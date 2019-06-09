@@ -2678,7 +2678,7 @@ _PyObject_DebugMallocStats(FILE *out)
      */
     size_t page_header_bytes = 0;
     /* # of bytes in used and full pools wasted due to quantization,
-     * i.e. the necessarily leftover space at the ends of used and
+     * i.e. the necessarily leftover space at the ends of pages in used and
      * full pools.
      */
     size_t quantization = 0;
