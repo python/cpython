@@ -991,9 +991,9 @@ _textiowrapper_fix_encoder_state(textio *self)
 /*[clinic input]
 _io.TextIOWrapper.__init__
     buffer: object
-    encoding: str(accept={str, NoneType}) = NULL
+    encoding: str(accept={str, NoneType}) = None
     errors: object = None
-    newline: str(accept={str, NoneType}) = NULL
+    newline: str(accept={str, NoneType}) = None
     line_buffering: bool(accept={int}) = False
     write_through: bool(accept={int}) = False
 
@@ -1032,7 +1032,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=72267c0c01032ed2 input=1c5dd5d78bfcc675]*/
+/*[clinic end generated code: output=72267c0c01032ed2 input=77d8696d1a1f460b]*/
 {
     PyObject *raw, *codec_info = NULL;
     _PyIO_State *state = NULL;

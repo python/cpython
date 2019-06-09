@@ -3874,15 +3874,15 @@ error:
 /*[clinic input]
 _ssl._SSLContext.load_cert_chain
     certfile: object
-    keyfile: object = NULL
-    password: object = NULL
+    keyfile: object = None
+    password: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
                                       PyObject *keyfile, PyObject *password)
-/*[clinic end generated code: output=9480bc1c380e2095 input=7cf9ac673cbee6fc]*/
+/*[clinic end generated code: output=9480bc1c380e2095 input=30bc7e967ea01a58]*/
 {
     PyObject *certfile_bytes = NULL, *keyfile_bytes = NULL;
     pem_password_cb *orig_passwd_cb = SSL_CTX_get_default_passwd_cb(self->ctx);
@@ -3908,7 +3908,7 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
         }
         goto error;
     }
-    if (password && password != Py_None) {
+    if (password != Py_None) {
         if (PyCallable_Check(password)) {
             pw_info.callable = password;
         } else if (!_pwinfo_set(&pw_info, password,
@@ -4066,9 +4066,9 @@ _add_ca_certs(PySSLContext *self, void *data, Py_ssize_t len,
 
 /*[clinic input]
 _ssl._SSLContext.load_verify_locations
-    cafile: object = NULL
-    capath: object = NULL
-    cadata: object = NULL
+    cafile: object = None
+    capath: object = None
+    cadata: object = None
 
 [clinic start generated code]*/
 
@@ -4077,7 +4077,7 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
                                             PyObject *cafile,
                                             PyObject *capath,
                                             PyObject *cadata)
-/*[clinic end generated code: output=454c7e41230ca551 input=997f1fb3a784ef88]*/
+/*[clinic end generated code: output=454c7e41230ca551 input=42ecfe258233e194]*/
 {
     PyObject *cafile_bytes = NULL, *capath_bytes = NULL;
     const char *cafile_buf = NULL, *capath_buf = NULL;

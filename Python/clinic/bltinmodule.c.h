@@ -715,7 +715,7 @@ builtin_round(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *number;
-    PyObject *ndigits = NULL;
+    PyObject *ndigits = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -845,4 +845,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3f690311ac556c31 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ff268ba2a9a50142 input=a9049054013a1b77]*/

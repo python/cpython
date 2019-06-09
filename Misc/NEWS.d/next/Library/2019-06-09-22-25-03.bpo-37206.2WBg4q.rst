@@ -1,0 +1,2 @@
+Default values which cannot be represented as Python objects no longer
+improperly represented as ``None`` in function signatures.

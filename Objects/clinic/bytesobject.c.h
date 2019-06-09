@@ -688,7 +688,7 @@ exit:
 }
 
 PyDoc_STRVAR(bytes_hex__doc__,
-"hex($self, /, sep=None, bytes_per_sep=1)\n"
+"hex($self, /, sep=<unspecified>, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Create a str of hexadecimal numbers from a bytes object.\n"
@@ -755,4 +755,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2d0a3733e13e753a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=69f2d171d4e5aa7f input=a9049054013a1b77]*/

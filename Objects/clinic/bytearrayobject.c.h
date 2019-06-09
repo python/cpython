@@ -868,7 +868,7 @@ exit:
 }
 
 PyDoc_STRVAR(bytearray_hex__doc__,
-"hex($self, /, sep=None, bytes_per_sep=1)\n"
+"hex($self, /, sep=<unspecified>, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Create a str of hexadecimal numbers from a bytearray object.\n"
@@ -1011,4 +1011,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=7848247e5469ba1b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=093650e2ab980515 input=a9049054013a1b77]*/

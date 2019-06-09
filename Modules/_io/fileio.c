@@ -979,7 +979,7 @@ _io_FileIO_tell_impl(fileio *self)
 #ifdef HAVE_FTRUNCATE
 /*[clinic input]
 _io.FileIO.truncate
-    size as posobj: object = NULL
+    size as posobj: object = None
     /
 
 Truncate the file to at most size bytes and return the truncated size.
@@ -990,7 +990,7 @@ The current file position is changed to the value of size.
 
 static PyObject *
 _io_FileIO_truncate_impl(fileio *self, PyObject *posobj)
-/*[clinic end generated code: output=e49ca7a916c176fa input=9026af44686b7318]*/
+/*[clinic end generated code: output=e49ca7a916c176fa input=b0ac133939823875]*/
 {
     Py_off_t pos;
     int ret;
@@ -1002,7 +1002,7 @@ _io_FileIO_truncate_impl(fileio *self, PyObject *posobj)
     if (!self->writable)
         return err_mode("writing");
 
-    if (posobj == Py_None || posobj == NULL) {
+    if (posobj == Py_None) {
         /* Get the current position. */
         posobj = portable_lseek(self, NULL, 1);
         if (posobj == NULL)

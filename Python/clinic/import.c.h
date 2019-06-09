@@ -300,7 +300,7 @@ exit:
 #if defined(HAVE_DYNAMIC_LOADING)
 
 PyDoc_STRVAR(_imp_create_dynamic__doc__,
-"create_dynamic($module, spec, file=None, /)\n"
+"create_dynamic($module, spec, file=<unspecified>, /)\n"
 "--\n"
 "\n"
 "Create an extension module.");
@@ -454,4 +454,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=b51244770fdcf4b8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eaf058606d587d0d input=a9049054013a1b77]*/

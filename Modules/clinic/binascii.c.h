@@ -432,7 +432,7 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_b2a_hex__doc__,
-"b2a_hex($module, /, data, sep=None, bytes_per_sep=1)\n"
+"b2a_hex($module, /, data, sep=<unspecified>, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Hexadecimal representation of binary data.\n"
@@ -515,7 +515,7 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_hexlify__doc__,
-"hexlify($module, /, data, sep=None, bytes_per_sep=1)\n"
+"hexlify($module, /, data, sep=<unspecified>, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Hexadecimal representation of binary data.\n"
@@ -801,4 +801,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=f7b8049edb130c63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=86f4adfb8812be7f input=a9049054013a1b77]*/
