@@ -1901,6 +1901,10 @@ class Popen(object):
                     self.stdout.close()
                 if self.stderr:
                     self.stderr.close()
-                self.kill()
+                try:
+                    self.kill()
+                except:
+                    # catch all possible errors. 
+                    pass
                 self.wait()
                 raise
