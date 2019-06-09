@@ -884,21 +884,72 @@ static int running_on_valgrind = -1;
 #   error "SMALL_REQUEST_THRESHOLD must be a multiple of ALIGNMENT"
 #endif
 
-/*
- * The system's VMM page size can be obtained on most unices with a
- * getpagesize() call or deduced from various header files. To make
- * things simpler, we assume that it is 4K, which is OK for most systems.
- * It is probably better if this is the native page size, but it doesn't
- * have to be.  In theory, if SYSTEM_PAGE_SIZE is larger than the native page
- * size, then `POOL_ADDR(p)->arenaindex' could rarely cause a segmentation
- * violation fault.  4K is apparently OK for all the platforms that python
- * currently targets.
- */
-#define SYSTEM_PAGE_SIZE        (4 * 1024)
+/* -----------------------------------------------------------------------
+SYSTEM_PAGE_SIZE must be a power of 2 and no larger than the OS's page size.
+4K is the largest value that works on all known systems (in particular,
+@indows uses 4K pages).  obmalloc stores a uint of bookkeeping info at the
+start of every page it controls, and uses address arithmetic on pointers to
+find the page an address belongs to.  If SYSTEM_PAGE_SIZE is larger than the
+OS's page size, this can segfault.  See address_in_range() for details.
+
+POOL_SIZE must be a power of 2, and at least as large as SYSTEM_PAGE_SIZE.
+It's fine if they have the same value.  The larger it is, the more small
+objects can be obtained from a pool, maximizing the times obmalloc can stay in
+its fastest code paths.  But a pool being used for objects of a specific size
+class can't be used for objects of other size classes, so very large POOL_SIZE
+can have bad effects too.  For example, if only a single object in the size
+class of range(160, 160 + ALIGNMENT) bytes is needed, the entire pool devoted
+to the size class will be devoted to holding that single object.  POOL_SIZE
+should also be large enough so that at least several objects of the largest
+"small object" size class can be obtained from a pool.
+
+ARENA_SIZE must be a power of 2, and should be large enough to hold at least
+a few dozen pools.  Arenas are obtained from the system, and obmalloc carves
+them up itself into pools, and in turn carves up pools into blocks of memory
+for small objects.  Arenas are obtained from mmap() on systems that support it,
+by VirtualAlloc() on Windows, or from malloc() if necessary.  A "large" value
+doesn't necessarily "waste memory" - these system calls typically reserve
+virtual address space for the current process, and don't consume physical RAM
+until pages within them are accessed.  obmalloc consumes arenas from lowest
+address to highest, recycling memory whenever possible, and never accesses a
+higher-addressed byte unless there's not enough contiguous free memory to
+satisfy a request from bytes already accessed.
+----------------------------------------------------------------------- */
+
+#define SYSTEM_PAGE_SIZE        (4 * 1024)             /*   4 KiB */
+
+#if SIZEOF_VOID_P > 4
+#define POOL_SIZE               (SYSTEM_PAGE_SIZE * 4) /*  16 KiB */
+#define ARENA_SIZE              (1 << 20)              /*   1 MiB */
+#else
+#define POOL_SIZE               SYSTEM_PAGE_SIZE       /*   4 KiB */
+#define ARENA_SIZE              (1 << 18)              /* 256 KiB */
+#endif
+
 #define SYSTEM_PAGE_SIZE_MASK   (SYSTEM_PAGE_SIZE - 1)
+#define POOL_SIZE_MASK          (POOL_SIZE - 1)
 
 #if ! IS_POWEROF2(SYSTEM_PAGE_SIZE)
 #   error "SYSTEM_PAGE_SIZE must be power of 2"
+#endif
+
+#if ! IS_POWEROF2(POOL_SIZE)
+#   error "POOL_SIZE must be power of 2"
+#endif
+
+#if ! IS_POWEROF2(ARENA_SIZE)
+#   error "ARENA_SIZE must be power of 2"
+#endif
+
+#if ! (SYSTEM_PAGE_SIZE <= POOL_SIZE && POOL_SIZE < ARENA_SIZE)
+#   error "must have SYSTEM_PAGE_SIZE <= POOL_SIZE < ARENA_SIZE"
+#endif
+
+#define PAGES_PER_POOL (POOL_SIZE / SYSTEM_PAGE_SIZE)
+#define MAX_POOLS_IN_ARENA  (ARENA_SIZE / POOL_SIZE)
+
+#ifdef WITH_MEMORY_LIMITS
+#define MAX_ARENAS              (SMALL_MEMORY_LIMIT / ARENA_SIZE)
 #endif
 
 /*
@@ -908,50 +959,6 @@ static int running_on_valgrind = -1;
 #ifndef SMALL_MEMORY_LIMIT
 #define SMALL_MEMORY_LIMIT      (64 * 1024 * 1024)      /* 64 MB -- more? */
 #endif
-#endif
-
-/*
- * The allocator sub-allocates <Big> blocks of memory (called arenas) aligned
- * on a page boundary. This is a reserved virtual address space for the
- * current process (obtained through a malloc()/mmap() call). In no way this
- * means that the memory arenas will be used entirely. A malloc(<Big>) is
- * usually an address range reservation for <Big> bytes, unless all pages within
- * this space are referenced subsequently. So malloc'ing big blocks and not
- * using them does not mean "wasting memory". It's an addressable range
- * wastage...
- *
- * Arenas are allocated with mmap() on systems supporting anonymous memory
- * mappings to reduce heap fragmentation.
- */
-#define ARENA_SIZE              (1 << 20)     /* 1 MB */
-
-#if ! IS_POWEROF2(ARENA_SIZE)
-#   error "ARENA_SIZE must be power of 2"
-#endif
-
-#ifdef WITH_MEMORY_LIMITS
-#define MAX_ARENAS              (SMALL_MEMORY_LIMIT / ARENA_SIZE)
-#endif
-
-/*
- * Size of the pools used for small blocks. Should be a power of 2,
- * between 1K and SYSTEM_PAGE_SIZE, that is: 1k, 2k, 4k.
- */
-#define POOL_SIZE               (SYSTEM_PAGE_SIZE * 4)      /* must be 2^N */
-#define POOL_SIZE_MASK          (POOL_SIZE - 1)
-
-#define MAX_POOLS_IN_ARENA  (ARENA_SIZE / POOL_SIZE)
-#if MAX_POOLS_IN_ARENA * POOL_SIZE != ARENA_SIZE
-#   error "arena size not an exact multiple of pool size"
-#endif
-
-#if ! IS_POWEROF2(POOL_SIZE)
-#   error "POOL_SIZE must be power of 2"
-#endif
-
-#define PAGES_PER_POOL (POOL_SIZE / SYSTEM_PAGE_SIZE)
-#if PAGES_PER_POOL <= 0
-#   error "POOL_SIZE must be at least as large as SYSTEM_PAGE_SIZE"
 #endif
 
 /*
@@ -2671,12 +2678,10 @@ _PyObject_DebugMallocStats(FILE *out)
     uint numfreepools = 0;
     /* # of bytes for arena alignment padding */
     size_t arena_alignment = 0;
-    /* # of bytes in used and full pools used for pool_headers */
-    size_t pool_header_bytes = 0;
-    /* # of bytes in used and full pools used for page headers (storing
-     * the arena index at the start of each page).
+    /* # of bytes in used and full pools used for pool_headers, and for
+     * storing the arena index at the start of all interior pages
      */
-    size_t page_header_bytes = 0;
+    size_t pool_header_bytes = 0;
     /* # of bytes in used and full pools wasted due to quantization,
      * i.e. the necessarily leftover space at the ends of pages in used and
      * full pools.
@@ -2764,8 +2769,8 @@ _PyObject_DebugMallocStats(FILE *out)
                 i, size, p, b, f);
         allocated_bytes += b * size;
         available_bytes += f * size;
-        pool_header_bytes += p * POOL_OVERHEAD;
-        page_header_bytes += p * ALIGNMENT * (PAGES_PER_POOL - 1);
+        pool_header_bytes += p * (POOL_OVERHEAD +
+                                  ALIGNMENT * (PAGES_PER_POOL - 1));
         quantization += p * ((SYSTEM_PAGE_SIZE - POOL_OVERHEAD) % size +
             (SYSTEM_PAGE_SIZE - ALIGNMENT) % size * (PAGES_PER_POOL - 1));
     }
@@ -2795,7 +2800,6 @@ _PyObject_DebugMallocStats(FILE *out)
     total += printone(out, buf, (size_t)numfreepools * POOL_SIZE);
 
     total += printone(out, "# bytes lost to pool headers", pool_header_bytes);
-    total += printone(out, "# bytes lost to page headers", page_header_bytes);
     total += printone(out, "# bytes lost to quantization", quantization);
     total += printone(out, "# bytes lost to arena alignment", arena_alignment);
     (void)printone(out, "Total", total);
