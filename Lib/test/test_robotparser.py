@@ -108,6 +108,37 @@ class EmptyFileTest(BaseRobotTest, unittest.TestCase):
         self.assertEqual(self.parser.crawl_delay(agent), None)
 
 
+class NoDefaultUserAgentTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: figtree
+Crawl-delay: 1
+Request-rate: 3/15
+    """
+
+    def test_request_rate(self):
+        agent, url = self.get_agent_and_url("/foo")
+        self.assertEqual(self.parser.crawl_delay(agent), None)
+
+    def test_crawl_delay(self):
+        agent, url = self.get_agent_and_url("/foo")
+        self.assertEqual(self.parser.crawl_delay(agent), None)
+
+
+class NoRequestRateAndCrawlDelayTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /bar
+    """
+
+    def test_request_rate(self):
+        agent, url = self.get_agent_and_url("/foo")
+        self.assertEqual(self.parser.crawl_delay(agent), None)
+
+    def test_crawl_delay(self):
+        agent, url = self.get_agent_and_url("/foo")
+        self.assertEqual(self.parser.crawl_delay(agent), None)
+
+
 class BaseRequestRateTest(BaseRobotTest):
 
     def test_request_rate(self):
