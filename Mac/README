@@ -1,25 +1,28 @@
-=========================
-Python on Mac OS X README
-=========================
+======================
+Python on macOS README
+======================
 
 :Authors:
     Jack Jansen (2004-07),
     Ronald Oussoren (2010-04),
-    Ned Deily (2012-06)
+    Ned Deily (2012-06),
+    Carol Willing (2019-06)
 
-:Version: 3.4.0
+:Version: 3.8.0
 
-This document provides a quick overview of some Mac OS X specific features in
-the Python distribution.
+This document provides a quick overview of some macOS (previously Mac OS X
+and later OS X) specific features in the Python distribution. macOS 10.12
+Sierra was released in September 2016. The current stable release is macOS
+10.14 Mojave.
 
-OS X specific arguments to configure
-====================================
+macOS specific arguments to configure
+=====================================
 
 * ``--enable-framework[=DIR]``
 
   If this argument is specified the build will create a Python.framework rather
   than a traditional Unix install. See the section
-  _`Building and using a framework-based Python on Mac OS X` for more
+  _`Building and using a framework-based Python on macOS` for more
   information on frameworks.
 
   If the optional directory argument is specified the framework is installed
@@ -43,17 +46,18 @@ OS X specific arguments to configure
   Create a universal binary build of Python. This can be used with both
   regular and framework builds.
 
-  The optional argument specifies which OS X SDK should be used to perform the
+  The optional argument specifies which macOS SDK should be used to perform the
   build.  If xcodebuild is available and configured, this defaults to
-  the Xcode default MacOS X SDK, otherwise ``/Developer/SDKs/MacOSX.10.4u.sdk``
+  the Xcode default macOS SDK, otherwise ``/Developer/SDKs/MacOS.sdk``
   if available or ``/`` if not.  When building on OS X 10.5 or later, you can
-  specify ``/`` to use the installed system headers rather than an SDK.  As of
-  OS X 10.9, you should install the optional system headers from the Command
-  Line Tools component using ``xcode-select``::
+  specify ``/`` to use the installed system headers rather than an SDK.  For
+  macOS releases 10.12 and higher and OS X 10.9 and higher, you should
+  install the optional system headers from the Command Line Tools component
+  using ``xcode-select``::
 
      $ sudo xcode-select --install
 
-  See the section _`Building and using a universal binary of Python on Mac OS X`
+  See the section _`Building and using a universal binary of Python on macOS`
   for more information.
 
 * ``--with-universal-archs=VALUE``
@@ -64,20 +68,21 @@ OS X specific arguments to configure
   to ``intel``.
 
 
-Building and using a universal binary of Python on Mac OS X
-===========================================================
+Building and using a universal binary of Python on macOS
+========================================================
 
 1. What is a universal binary
 -----------------------------
 
 A universal binary build of Python contains object code for more than one
-CPU architecture.  A universal OS X executable file or library combines the
+CPU architecture.  A universal macOS executable file or library combines the
 architecture-specific code into one file and can therefore run at native
 speed on all supported architectures.  Universal files were introduced in
 OS X 10.4 to add support for Intel-based Macs to the existing PowerPC (PPC)
 machines.  In OS X 10.5 support was extended to 64-bit Intel and 64-bit PPC
 architectures.  It is possible to build Python with various combinations
-of architectures depending on the build tools and OS X version in use.
+of architectures depending on the build tools and OS X or macOS version in
+use.
 
 2. How do I build a universal binary
 ------------------------------------
@@ -97,8 +102,8 @@ available.
 In general, universal builds depend on specific features provided by the
 Apple-supplied compilers and other build tools included in Apple's Xcode
 development tools.  You should install Xcode and the command line tools
-component appropriate for the OS X release you are running on.  See the
-Python Developer's Guide (https://devguide.python.org/setup/)
+component appropriate for the macOS or OS X release you are running on.
+See the Python Developer's Guide (https://devguide.python.org/setup/)
 for more information.
 
 2.1 Flavors of universal binaries
@@ -125,12 +130,13 @@ values are available:
   * ``all``:      ``ppc``, ``ppc64``, ``i386``, ``x86_64``
 
 To build a universal binary that includes a 64-bit architecture, you must build
-on a system running OS X 10.5 or later.  The ``all`` and ``64-bit`` flavors can
-only be built with a 10.5 SDK because ``ppc64`` support was only included with
-OS X 10.5.  Although legacy ``ppc`` support was included with Xcode 3 on OS X
-10.6, it was removed in Xcode 4, versions of which were released on OS X 10.6
-and which is the standard for OS X 10.7.  To summarize, the
-following combinations of SDKs and universal-archs flavors are available:
+on a system running macOS 10.12 or later or OS X 10.5 to 10.11.  The ``all``
+and ``64-bit`` flavors can only be built with a 10.5 SDK because ``ppc64``
+support was only included with OS X 10.5.  Although legacy ``ppc`` support was
+included with Xcode 3 on OS X 10.6, it was removed in Xcode 4, versions of
+which were released on OS X 10.6 and which is the standard for OS X 10.7.
+To summarize, the following combinations of SDKs and universal-archs flavors
+are available:
 
   * 10.4u SDK with Xcode 2 supports ``32-bit`` only
 
@@ -144,7 +150,9 @@ following combinations of SDKs and universal-archs flavors are available:
 
   * 10.8 and 10.9 SDKs with Xcode 5 support ``intel`` only
 
-The makefile for a framework build will also install ``python3.4-32``
+  * 10.10 and later SDKs with Xcode 6 and later support ``intel`` only
+
+The makefile for a framework build will also install ``python3.8-32``
 binaries when the universal architecture includes at least one 32-bit
 architecture (that is, for all flavors but ``64-bit``).
 
@@ -168,11 +176,11 @@ Using ``arch`` is not a perfect solution as the selected architecture will
 not automatically carry through to subprocesses launched by programs and tests
 under that Python.  If you want to ensure that Python interpreters launched in
 subprocesses also run in 32-bit-mode if the main interpreter does, use
-a ``python3.4-32`` binary and use the value of ``sys.executable`` as the
+a ``python3.8-32`` binary and use the value of ``sys.executable`` as the
 ``subprocess`` ``Popen`` executable value.
 
-Building and using a framework-based Python on Mac OS X.
-========================================================
+Building and using a framework-based Python on macOS
+====================================================
 
 
 1. Why would I want a framework Python instead of a normal static Python?
@@ -180,14 +188,14 @@ Building and using a framework-based Python on Mac OS X.
 
 The main reason is because you want to create GUI programs in Python. With the
 exception of X11/XDarwin-based GUI toolkits all GUI programs need to be run
-from a Mac OS X application bundle (".app").
+from a macOS application bundle (".app").
 
 While it is technically possible to create a .app without using frameworks you
 will have to do the work yourself if you really want this.
 
 A second reason for using frameworks is that they put Python-related items in
 only two places: "/Library/Framework/Python.framework" and
-"/Applications/Python <VERSION>" where ``<VERSION>`` can be e.g. "3.4",
+"/Applications/Python <VERSION>" where ``<VERSION>`` can be e.g. "3.8",
 "2.7", etc.  This simplifies matters for users installing
 Python from a binary distribution if they want to get rid of it again. Moreover,
 due to the way frameworks work, a user without admin privileges can install a
@@ -205,14 +213,22 @@ Versions/Current and you will see the familiar bin and lib directories.
 3. Do I need extra packages?
 ----------------------------
 
-Yes, probably.  If you want Tkinter support you need to get the OS X AquaTk
-distribution, this is installed by default on Mac OS X 10.4 or later.  Be
+No, probably not. If you are using a Python from any current python.org
+Python installer for macOS (3.7.2+, 3.6.8, or 2.7.16+), no further action is
+needed to use IDLE or tkinter. A built-in version of Tcl/Tk 8.6 will be used.
+
+For older versions of Mac OS X or  OS X as well as Python versions
+(<3.7.2 except 3.6.8 or <2.7.16), you will need likely need extra packages.
+If you want Tkinter support you need to get the OS X AquaTk
+distribution, this is installed by default on Mac OS X 10.4 to 10.6.  Be
 aware, though, that the Cocoa-based AquaTk's supplied starting with OS X
 10.6 have proven to be unstable.  If possible, you should consider
 installing a newer version before building on OS X 10.6 or later, such as
-the ActiveTcl 8.5.  See http://www.python.org/download/mac/tcltk/.  If you
-are building with an SDK, ensure that the newer Tcl and Tk frameworks are
-seen in the SDK's ``Library/Frameworks`` directory; you may need to
+the ActiveTcl 8.5 or higher.  See http://www.python.org/download/mac/tcltk/.
+
+If you are building Python (<3.7.2 except 3.6.8 or <2.7.16) with an SDK,
+ensure that the newer Tcl and Tk frameworks
+are seen in the SDK's ``Library/Frameworks`` directory; you may need to
 manually create symlinks to their installed location, ``/Library/Frameworks``.
 If you want wxPython you need to get that.
 If you want Cocoa you need to get PyObjC.
@@ -221,7 +237,7 @@ If you want Cocoa you need to get PyObjC.
 -------------------------------------
 
 This directory contains a Makefile that will create a couple of python-related
-applications (full-blown OS X .app applications, that is) in
+applications (full-blown macOS .app applications, that is) in
 "/Applications/Python <VERSION>", and a hidden helper application Python.app
 inside the Python.framework, and unix tools including "python" into
 /usr/local/bin.  In addition it has a target "installmacsubtree" that installs
@@ -288,7 +304,11 @@ installer package will create links to the documentation for use by IDLE,
 pydoc, shell users, and Finder user.
 
 The script will build a universal binary so you'll therefore have to run this
-script on Mac OS X 10.4 or later and with Xcode 2.1 or later installed.
+script on Mac OS X 10.4 to 10.1 (with Xcode 2.1 or later) or macOS 10.10 and
+later SDKs with Xcode 6 or later installed.
+
+It is safest to build the distribution on a system running the
+minimum macOS version supported.
 However, the Python build process itself has several build dependencies not
 available out of the box with OS X 10.4 so you may have to install
 additional software beyond what is provided with Xcode 2.  OS X 10.5
@@ -298,8 +318,7 @@ versions of Xcode to build installers that are compatible with older systems
 on a newer system but this may not be completely foolproof so the resulting
 executables, shared libraries, and ``.so`` bundles should be carefully
 examined and tested on all supported systems for proper dynamic linking
-dependencies.  It is safest to build the distribution on a system running the
-minimum OS X version supported.
+dependencies.
 
 All of this is normally done completely isolated in /tmp/_py, so it does not
 use your normal build directory nor does it install into /.
