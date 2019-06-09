@@ -856,6 +856,9 @@ static int running_on_valgrind = -1;
 /* Return the number of bytes in size class I, as a uint. */
 #define INDEX2SIZE(I) (((uint)(I) + 1) << ALIGNMENT_SHIFT)
 
+/* true iff integer N is > 0 and a power of 2 */
+#define IS_POWEROF2(N) ((N) > 0 && ((N) & (N-1)) == 0)
+
 /*
  * Max size threshold below which malloc requests are considered to be
  * small enough in order to use preallocated memory pools. You can tune
@@ -894,6 +897,10 @@ static int running_on_valgrind = -1;
 #define SYSTEM_PAGE_SIZE        (4 * 1024)
 #define SYSTEM_PAGE_SIZE_MASK   (SYSTEM_PAGE_SIZE - 1)
 
+#if ! IS_POWEROF2(SYSTEM_PAGE_SIZE)
+#   error "SYSTEM_PAGE_SIZE must be power of 2"
+#endif
+
 /*
  * Maximum amount of memory managed by the allocator for small requests.
  */
@@ -916,7 +923,11 @@ static int running_on_valgrind = -1;
  * Arenas are allocated with mmap() on systems supporting anonymous memory
  * mappings to reduce heap fragmentation.
  */
-#define ARENA_SIZE              (256 << 10)     /* 256KB */
+#define ARENA_SIZE              (1 << 20)     /* 1 MB */
+
+#if ! IS_POWEROF2(ARENA_SIZE)
+#   error "ARENA_SIZE must be power of 2"
+#endif
 
 #ifdef WITH_MEMORY_LIMITS
 #define MAX_ARENAS              (SMALL_MEMORY_LIMIT / ARENA_SIZE)
@@ -926,12 +937,21 @@ static int running_on_valgrind = -1;
  * Size of the pools used for small blocks. Should be a power of 2,
  * between 1K and SYSTEM_PAGE_SIZE, that is: 1k, 2k, 4k.
  */
-#define POOL_SIZE               SYSTEM_PAGE_SIZE        /* must be 2^N */
-#define POOL_SIZE_MASK          SYSTEM_PAGE_SIZE_MASK
+#define POOL_SIZE               (SYSTEM_PAGE_SIZE * 4)      /* must be 2^N */
+#define POOL_SIZE_MASK          (POOL_SIZE - 1)
 
 #define MAX_POOLS_IN_ARENA  (ARENA_SIZE / POOL_SIZE)
 #if MAX_POOLS_IN_ARENA * POOL_SIZE != ARENA_SIZE
 #   error "arena size not an exact multiple of pool size"
+#endif
+
+#if ! IS_POWEROF2(POOL_SIZE)
+#   error "POOL_SIZE must be power of 2"
+#endif
+
+#define PAGES_PER_POOL (POOL_SIZE / SYSTEM_PAGE_SIZE)
+#if PAGES_PER_POOL <= 0
+#   error "POOL_SIZE must be at least as large as SYSTEM_PAGE_SIZE"
 #endif
 
 /*
@@ -1006,8 +1026,22 @@ struct arena_object {
 /* Round pointer P down to the closest pool-aligned address <= P, as a poolp */
 #define POOL_ADDR(P) ((poolp)_Py_ALIGN_DOWN((P), POOL_SIZE))
 
-/* Return total number of blocks in pool of size index I, as a uint. */
-#define NUMBLOCKS(I) ((uint)(POOL_SIZE - POOL_OVERHEAD) / INDEX2SIZE(I))
+/* Round pointer P down to the closest page-aligned address <= P, as a void* */
+#define PAGE_ADDR(P) _Py_ALIGN_DOWN((P), SYSTEM_PAGE_SIZE)
+
+/* Return total number of blocks in pool of size index `i`, as a uint. */
+static uint
+NUMBLOCKS(int i)
+{
+    assert(0 <= i && i < NB_SMALL_SIZE_CLASSES);
+    /* The first page burns space for a pool header, and remaining pages
+     * burn ALIGNMENT bytes for the arena index.
+     */
+    const uint size = INDEX2SIZE(i);
+    uint usable1 = SYSTEM_PAGE_SIZE - POOL_OVERHEAD;
+    uint usable2 = SYSTEM_PAGE_SIZE - ALIGNMENT;
+    return usable1 / size + (usable2 / size) * (PAGES_PER_POOL - 1);
+}
 
 /*==========================================================================*/
 
@@ -1326,14 +1360,9 @@ new_arena(void)
 
 
 /*
-address_in_range(P, POOL)
+address_in_range(P)
 
 Return true if and only if P is an address that was allocated by pymalloc.
-POOL must be the pool address associated with P, i.e., POOL = POOL_ADDR(P)
-(the caller is asked to compute this because the macro expands POOL more than
-once, and for efficiency it's best for the caller to assign POOL_ADDR(P) to a
-variable and pass the latter to the macro; because address_in_range is
-called on every alloc/realloc/free, micro-efficiency is important here).
 
 Tricky:  Let B be the arena base address associated with the pool, B =
 arenas[(POOL)->arenaindex].address.  Then P belongs to the arena if and only if
@@ -1403,17 +1432,18 @@ extremely desirable that it be this fast.
 static bool _Py_NO_ADDRESS_SAFETY_ANALYSIS
             _Py_NO_SANITIZE_THREAD
             _Py_NO_SANITIZE_MEMORY
-address_in_range(void *p, poolp pool)
+address_in_range(void *p)
 {
-    // Since address_in_range may be reading from memory which was not allocated
-    // by Python, it is important that pool->arenaindex is read only once, as
+    // An arenaindex is stored at the start of every page obmalloc controls.
+    // Since address_in_range may be reading from memory not under obmalloc's
+    // control, it is important that the arenaindex is read only once, as
     // another thread may be concurrently modifying the value without holding
-    // the GIL. The following dance forces the compiler to read pool->arenaindex
-    // only once.
-    uint arenaindex = *((volatile uint *)&pool->arenaindex);
+    // the GIL.  Ensuring it's read only once is the purpose of "volatile".
+    uint arenaindex = *((volatile uint *)PAGE_ADDR(p));
+    uintptr_t base;
     return arenaindex < maxarenas &&
-        (uintptr_t)p - arenas[arenaindex].address < ARENA_SIZE &&
-        arenas[arenaindex].address != 0;
+        (uintptr_t)p - (base = arenas[arenaindex].address) < ARENA_SIZE &&
+        base != 0;
 }
 
 
@@ -1476,16 +1506,29 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
         /*
          * Reached the end of the free list, try to extend it.
          */
-        if (pool->nextoffset <= pool->maxnextoffset) {
-            /* There is room for another block. */
-            pool->freeblock = (block*)pool +
-                              pool->nextoffset;
+        if (pool->nextoffset < POOL_SIZE) {
+            /* There's probably room for another block. */
+            if (pool->nextoffset > pool->maxnextoffset) {
+                /* Need to move to next page. */
+                pool->nextoffset = pool->nextpage + ALIGNMENT;
+                if (pool->nextoffset >= POOL_SIZE) {
+                    /* Nope!  There are no more blocks in this pool. */
+                    assert(pool->nextpage == POOL_SIZE);
+                    goto cant_extend;
+                }
+                *(uint *)((block *)pool + pool->nextpage) = pool->arenaindex;
+                pool->nextpage += SYSTEM_PAGE_SIZE;
+                pool->maxnextoffset = pool->nextpage - INDEX2SIZE(size);
+                assert(pool->nextoffset <= pool->maxnextoffset);
+            }
+            pool->freeblock = (block *)pool + pool->nextoffset;
             pool->nextoffset += INDEX2SIZE(size);
             *(block **)(pool->freeblock) = NULL;
             goto success;
         }
 
         /* Pool is full, unlink from used pools. */
+cant_extend:
         next = pool->nextpool;
         pool = pool->prevpool;
         next->prevpool = pool;
@@ -1587,9 +1630,10 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
         size = INDEX2SIZE(size);
         bp = (block *)pool + POOL_OVERHEAD;
         pool->nextoffset = POOL_OVERHEAD + (size << 1);
-        pool->maxnextoffset = POOL_SIZE - size;
+        pool->maxnextoffset = SYSTEM_PAGE_SIZE - size;
         pool->freeblock = bp + size;
         *(block **)(pool->freeblock) = NULL;
+        pool->nextpage = SYSTEM_PAGE_SIZE;
         goto success;
     }
 
@@ -1687,12 +1731,12 @@ pymalloc_free(void *ctx, void *p)
     }
 #endif
 
-    pool = POOL_ADDR(p);
-    if (!address_in_range(p, pool)) {
+    if (!address_in_range(p)) {
         return 0;
     }
     /* We allocated this address. */
 
+    pool = POOL_ADDR(p);
     /* Link p to the start of the pool's freeblock list.  Since
      * the pool had at least the p block outstanding, the pool
      * wasn't empty (so it's already in a usedpools[] list, or
@@ -1944,8 +1988,7 @@ pymalloc_realloc(void *ctx, void **newptr_p, void *p, size_t nbytes)
     }
 #endif
 
-    pool = POOL_ADDR(p);
-    if (!address_in_range(p, pool)) {
+    if (!address_in_range(p)) {
         /* pymalloc is not managing this block.
 
            If nbytes <= SMALL_REQUEST_THRESHOLD, it's tempting to try to take
@@ -1962,6 +2005,7 @@ pymalloc_realloc(void *ctx, void **newptr_p, void *p, size_t nbytes)
     }
 
     /* pymalloc is in charge of this block */
+    pool = POOL_ADDR(p);
     size = INDEX2SIZE(pool->szidx);
     if (nbytes <= size) {
         /* The block is staying the same or shrinking.
@@ -2629,6 +2673,10 @@ _PyObject_DebugMallocStats(FILE *out)
     size_t arena_alignment = 0;
     /* # of bytes in used and full pools used for pool_headers */
     size_t pool_header_bytes = 0;
+    /* # of bytes in used and full pools used for page headers (storing
+     * the arena index at the start of each page).
+     */
+    size_t page_header_bytes = 0;
     /* # of bytes in used and full pools wasted due to quantization,
      * i.e. the necessarily leftover space at the ends of used and
      * full pools.
@@ -2717,7 +2765,9 @@ _PyObject_DebugMallocStats(FILE *out)
         allocated_bytes += b * size;
         available_bytes += f * size;
         pool_header_bytes += p * POOL_OVERHEAD;
-        quantization += p * ((POOL_SIZE - POOL_OVERHEAD) % size);
+        page_header_bytes += p * ALIGNMENT * (PAGES_PER_POOL - 1);
+        quantization += p * ((SYSTEM_PAGE_SIZE - POOL_OVERHEAD) % size +
+            (SYSTEM_PAGE_SIZE - ALIGNMENT) % size * (PAGES_PER_POOL - 1));
     }
     fputc('\n', out);
 #ifdef PYMEM_DEBUG_SERIALNO
@@ -2745,6 +2795,7 @@ _PyObject_DebugMallocStats(FILE *out)
     total += printone(out, buf, (size_t)numfreepools * POOL_SIZE);
 
     total += printone(out, "# bytes lost to pool headers", pool_header_bytes);
+    total += printone(out, "# bytes lost to page headers", page_header_bytes);
     total += printone(out, "# bytes lost to quantization", quantization);
     total += printone(out, "# bytes lost to arena alignment", arena_alignment);
     (void)printone(out, "Total", total);
