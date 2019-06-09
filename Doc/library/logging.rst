@@ -1196,6 +1196,11 @@ functions.
    |              | carrying out the configuration as specified |
    |              | by the other arguments.                     |
    +--------------+---------------------------------------------+
+   | *encoding*   | If this keyword argument is specified along |
+   |              | with *filename*, its value is used when the |
+   |              | FileHandler is created, and thus used when  |
+   |              | opening the output file.                    |
+   +--------------+---------------------------------------------+
 
    .. versionchanged:: 3.2
       The *style* argument was added.
@@ -1208,6 +1213,9 @@ functions.
 
    .. versionchanged:: 3.8
       The *force* argument was added.
+
+   .. versionchanged:: 3.9
+      The *encoding* argument was added.
 
 .. function:: shutdown()
 
