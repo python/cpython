@@ -260,5 +260,34 @@ class PseudeOutputFilesTest(unittest.TestCase):
         self.assertRaises(TypeError, f.close, 1)
 
 
+class TestExecutive(unittest.TestCase):
+    def setUp(self):
+        patcher1 = mock.patch('idlelib.run.autocomplete')
+        patcher1.start()
+        self.addCleanup(patcher1.stop)
+
+        patcher2 = mock.patch('idlelib.run.calltip')
+        patcher2.start()
+        self.addCleanup(patcher2.stop)
+
+    def test_sys_recursionlimit(self):
+        rpchandler = mock.Mock()
+        executor = run.Executive(rpchandler)
+
+        if 'sys' not in executor.locals:
+            exec('import sys', executor.locals)
+            self.addCleanup(exec, 'del sys', executor.locals)
+        executor_sys = executor.locals['sys']
+
+        # check that setting the recursion limit works
+        orig_reclimit = executor_sys.getrecursionlimit()
+        self.addCleanup(executor_sys.setrecursionlimit, orig_reclimit)
+        executor_sys.setrecursionlimit(orig_reclimit + 3)
+
+        # check that the new limit is returned by sys.getrecursionlimit()
+        new_reclimit = executor_sys.getrecursionlimit()
+        self.assertEqual(new_reclimit, orig_reclimit + 3)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

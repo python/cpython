@@ -500,13 +500,17 @@ class Executive(object):
                     raise ValueError(
                         "recursion limit must be greater or equal than 1")
 
-                return setrecursionlimit.__wrapped__(limit + 25)
+                import sys
+                return sys.setrecursionlimit.__wrapped__(limit + 25)
             sys.setrecursionlimit = setrecursionlimit
+            del setrecursionlimit
 
             @wraps(sys.getrecursionlimit)
             def getrecursionlimit():
-                return getrecursionlimit.__wrapped__() - 25
+                import sys
+                return sys.getrecursionlimit.__wrapped__() - 25
             sys.getrecursionlimit = getrecursionlimit
+            del getrecursionlimit
 
             del sys
             del wraps
