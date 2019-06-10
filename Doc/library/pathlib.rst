@@ -381,11 +381,10 @@ Pure paths provide the following methods and properties:
       >>> PureWindowsPath('//some/share').name
       ''
 
-   Trailing dots are not considered as filenames::
+   Special directories ``'.'`` and ``'..'`` are considered to be unnamed::
 
       >>> PurePosixPath('..').name
       ''
-
 
 
 .. data:: PurePath.suffix
