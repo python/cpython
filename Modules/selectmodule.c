@@ -58,10 +58,12 @@ extern void bzero(void *, int);
 #  define SOCKET int
 #endif
 
-#define FD_SET_PRIV(fd, set, setsize) do { \
+#if defined(MS_WINDOWS)
+#define FD_SET_WIN(fd, set, setsize) do { \
     if (((fd_set FAR *)(set))->fd_count < setsize) \
         ((fd_set FAR *)(set))->fd_array[((fd_set FAR *)(set))->fd_count++]=(fd);\
 } while(0)
+#endif
 
 /*[clinic input]
 module select
@@ -163,7 +165,7 @@ seq2set(PyObject *seq, fd_set *set, pylist *fd2obj, size_t setsize)
         if (v > max)
             max = v;
 #endif /* _MSC_VER */
-        FD_SET_PRIV(v, set, setsize);
+        FD_SET_WIN(v, set, setsize);
 
         /* add object and its file descriptor to the list */
         if (index >= setsize) {
