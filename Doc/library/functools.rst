@@ -275,7 +275,7 @@ The :mod:`functools` module defines the following functions:
 
    Example::
 
-      >>> class Cell(object):
+      >>> class Cell:
       ...     def __init__(self):
       ...         self._alive = False
       ...     @property
