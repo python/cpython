@@ -888,8 +888,10 @@ class SubinterpThreadingTests(BaseTestCase):
                 os.write(%d, b"x")
             threading.Thread(target=f).start()
             """ % (w,)
-        ret = test.support.run_in_subinterp(code)
-        self.assertEqual(ret, 0)
+        import subprocess
+        proc = subprocess.run([sys.executable, "-c", code], stderr=subprocess.PIPE, pass_fds=[w])
+        self.assertEqual(proc.stderr, b'', proc)
+        self.assertEqual(proc.returncode, 0, proc)
         # The thread was joined properly.
         self.assertEqual(os.read(r, 1), b"x")
 

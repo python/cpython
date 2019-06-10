@@ -1,0 +1,2 @@
+Fix ``test_threading.test_threads_join_2()``: run the test into a
+subprocess, rather than in a subinterpreter, to avoid a race condition.
