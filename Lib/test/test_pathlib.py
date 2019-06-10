@@ -483,6 +483,7 @@ class _BasePurePathTest(object):
         P = self.cls
         self.assertEqual(P('').name, '')
         self.assertEqual(P('.').name, '')
+        self.assertEqual(P('..').name, '')
         self.assertEqual(P('/').name, '')
         self.assertEqual(P('a/b').name, 'b')
         self.assertEqual(P('/a/b').name, 'b')
@@ -514,6 +515,7 @@ class _BasePurePathTest(object):
         P = self.cls
         self.assertEqual(P('').suffixes, [])
         self.assertEqual(P('.').suffixes, [])
+        self.assertEqual(P('..').suffixes, [])
         self.assertEqual(P('/').suffixes, [])
         self.assertEqual(P('a/b').suffixes, [])
         self.assertEqual(P('/a/b').suffixes, [])
@@ -553,6 +555,7 @@ class _BasePurePathTest(object):
         self.assertEqual(P('/a/Dot ending.').with_name('d.xml'), P('/a/d.xml'))
         self.assertRaises(ValueError, P('').with_name, 'd.xml')
         self.assertRaises(ValueError, P('.').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('..').with_name, 'd.xml')
         self.assertRaises(ValueError, P('/').with_name, 'd.xml')
         self.assertRaises(ValueError, P('a/b').with_name, '')
         self.assertRaises(ValueError, P('a/b').with_name, '/c')
@@ -571,6 +574,7 @@ class _BasePurePathTest(object):
         # Path doesn't have a "filename" component.
         self.assertRaises(ValueError, P('').with_suffix, '.gz')
         self.assertRaises(ValueError, P('.').with_suffix, '.gz')
+        self.assertRaises(ValueError, P('..').with_suffix, '.gz')
         self.assertRaises(ValueError, P('/').with_suffix, '.gz')
         # Invalid suffix.
         self.assertRaises(ValueError, P('a/b').with_suffix, 'gz')
@@ -989,6 +993,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         # Path doesn't have a "filename" component.
         self.assertRaises(ValueError, P('').with_suffix, '.gz')
         self.assertRaises(ValueError, P('.').with_suffix, '.gz')
+        self.assertRaises(ValueError, P('..').with_suffix, '.gz')
         self.assertRaises(ValueError, P('/').with_suffix, '.gz')
         self.assertRaises(ValueError, P('//My/Share').with_suffix, '.gz')
         # Invalid suffix.

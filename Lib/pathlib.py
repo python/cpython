@@ -789,7 +789,8 @@ class PurePath(object):
     def name(self):
         """The final path component, if any."""
         parts = self._parts
-        if len(parts) == (1 if (self._drv or self._root) else 0):
+        if (len(parts) == (1 if (self._drv or self._root) else 0)
+            or parts[-1] == '..'):
             return ''
         return parts[-1]
 
@@ -816,11 +817,16 @@ class PurePath(object):
     def stem(self):
         """The final path component, minus its last suffix."""
         name = self.name
-        i = name.rfind('.')
-        if 0 < i < len(name) - 1:
-            return name[:i]
-        else:
-            return name
+        if name:
+            i = name.rfind('.')
+            if 0 < i < len(name) - 1:
+                return name[:i]
+            else:
+                return name
+        elif self._parts:
+            if self._parts[-1] == '..':
+                return '..'
+        return ''
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
