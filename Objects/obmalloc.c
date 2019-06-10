@@ -2,7 +2,7 @@
 #include "pycore_pymem.h"
 
 #include <stdbool.h>
-
+#include <stddef.h>
 
 /* Defined in tracemalloc.c */
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
