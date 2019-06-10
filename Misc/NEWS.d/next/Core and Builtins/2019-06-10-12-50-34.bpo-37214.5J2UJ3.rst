@@ -1,0 +1,3 @@
+Add a new :exc:`EncodingWarning` warning category. :func:`open`
+(:func:`io.open`) now emits an :exc:`EncodingWarning` if called with
+``encoding=None``.

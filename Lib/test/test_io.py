@@ -3642,6 +3642,11 @@ class TextIOWrapperTest(unittest.TestCase):
         t.write('x')
         t.tell()
 
+    def test_encoding_warning(self):
+        with support.check_warnings(('encoding=None', EncodingWarning)):
+            t = self.TextIOWrapper(self.BytesIO(b'test'), encoding=None)
+            t.close()
+
 
 class MemviewBytesIO(io.BytesIO):
     '''A BytesIO object whose read method returns memoryviews

@@ -1986,6 +1986,12 @@ class TextIOWrapper(TextIOBase):
                  line_buffering=False, write_through=False):
         self._check_newline(newline)
         if encoding is None:
+            import warnings
+            stack_level = 2
+            if sys._getframe(1).f_code.co_name == "open":
+                # open(encoding=None): report the caller frame
+                stack_level += 1
+            warnings.warn("encoding=None", EncodingWarning, stack_level)
             try:
                 encoding = os.device_encoding(buffer.fileno())
             except (AttributeError, UnsupportedOperation):

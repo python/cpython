@@ -1109,6 +1109,10 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         }
     }
     if (encoding == NULL && self->encoding == NULL) {
+        if (PyErr_WarnEx(PyExc_EncodingWarning, "encoding=None", 0)) {
+            goto error;
+        }
+
         PyObject *locale_module = _PyIO_get_locale_module(state);
         if (locale_module == NULL)
             goto catch_ImportError;
