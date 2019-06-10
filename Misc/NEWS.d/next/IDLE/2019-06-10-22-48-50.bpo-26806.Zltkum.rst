@@ -1,0 +1,2 @@
+Transparently add 25 to the recursion limit in IDLE's shell to compensate
+for stack frames added by IDLE.  Patch by Tal Einat.

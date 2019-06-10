@@ -8,6 +8,7 @@ import io
 import linecache
 import queue
 import sys
+import textwrap
 import time
 import traceback
 import _thread as thread
@@ -473,6 +474,44 @@ class Executive(object):
         self.locals = __main__.__dict__
         self.calltip = calltip.Calltip()
         self.autocomplete = autocomplete.AutoComplete()
+
+        self._wrap_sys_setrecursionlimit()
+
+    def _wrap_sys_setrecursionlimit(self):
+        code = textwrap.dedent("""\
+            import sys
+            from functools import wraps
+
+            # add the delta to the default recursion limit, to compensate
+            sys.setrecursionlimit(sys.getrecursionlimit() + 25)
+
+            @wraps(sys.setrecursionlimit)
+            def setrecursionlimit(*args, **kwargs):
+                # mimic the original sys.setrecursionlimit()'s input handling
+                if kwargs:
+                    raise TypeError(
+                        "setrecursionlimit() takes no keyword arguments")
+                try:
+                    limit, = args
+                except ValueError:
+                    raise TypeError("setrecursionlimit() takes exactly one "
+                                    "argument ({} given)".format(len(args)))
+                if not limit > 0:
+                    raise ValueError(
+                        "recursion limit must be greater or equal than 1")
+
+                return setrecursionlimit.__wrapped__(limit + 25)
+            sys.setrecursionlimit = setrecursionlimit
+
+            @wraps(sys.getrecursionlimit)
+            def getrecursionlimit():
+                return getrecursionlimit.__wrapped__() - 25
+            sys.getrecursionlimit = getrecursionlimit
+
+            del sys
+            del wraps
+            """)
+        exec(code, self.locals)
 
     def runcode(self, code):
         global interruptable
