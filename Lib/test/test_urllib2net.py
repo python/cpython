@@ -104,7 +104,9 @@ class OtherNetworkTests(unittest.TestCase):
 
     @skip_ftp_test_on_travis
     def test_ftp(self):
+        # Testing the same URL twice exercises the caching in CacheFTPHandler
         urls = [
+            'ftp://www.pythontest.net/README',
             'ftp://www.pythontest.net/README',
             ('ftp://www.pythontest.net/non-existent-file',
              None, urllib.error.URLError),
