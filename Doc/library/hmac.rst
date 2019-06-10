@@ -106,7 +106,7 @@ A hash object has the following attributes:
 
 .. attribute:: HMAC.name
 
-   The canonical name of this HMAC, always lowercase, e.g. ``hmac-md5``.
+   The canonical name of this HMAC, always lowercase, e.g. ``hmac-sha256``.
 
    .. versionadded:: 3.4
 
