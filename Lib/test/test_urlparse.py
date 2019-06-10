@@ -649,7 +649,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                          "netloc u'\u30d7:80' contains invalid characters "
                          "under NFKC normalization")
-        self.assertIsInstance(cm.exception.message, str)
+        self.assertIsInstance(cm.exception.args[0], str)
 
         for scheme in [u"http", u"https", u"ftp"]:
             for netloc in [u"netloc{}false.netloc", u"n{}user@netloc"]:
