@@ -138,8 +138,8 @@ interpreter, and don't just continue from the session described above::
    The *encoding* argument was added. In earlier Python versions, or if not
    specified, the encoding used is the default value used by :func:`open`. While
    not shown in the above example, an *errors* argument can also now be passed,
-   which determines how encoding or decoding errors are handled. For available
-   values and the default, see the documentation for :func:`open`.
+   which determines how encoding errors are handled. For available values and
+   the default, see the documentation for :func:`open`.
 
 And now if we open the file and look at what we have, we should find the log
 messages:

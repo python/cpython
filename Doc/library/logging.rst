@@ -1220,7 +1220,7 @@ functions.
       The *force* argument was added.
 
    .. versionchanged:: 3.9
-      The *encoding* and *errors* argument were added.
+      The *encoding* and *errors* arguments were added.
 
 .. function:: shutdown()
 
