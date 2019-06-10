@@ -644,8 +644,12 @@ class UrlParseTestCase(unittest.TestCase):
         # bpo-36742: Verify port separators are ignored when they
         # existed prior to decomposition
         urlparse.urlsplit(u'http://\u30d5\u309a:80')
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as cm:
             urlparse.urlsplit(u'http://\u30d5\u309a\ufe1380')
+        self.assertEqual(str(cm.exception),
+                         "netloc u'\u30d7:80' contains invalid characters "
+                         "under NFKC normalization")
+        self.assertIsInstance(cm.exception.message, str)
 
         for scheme in [u"http", u"https", u"ftp"]:
             for netloc in [u"netloc{}false.netloc", u"n{}user@netloc"]:
