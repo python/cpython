@@ -438,7 +438,7 @@ LIBRARY_OBJS=	\
 # On some systems, object files that reference DTrace probes need to be modified
 # in-place by dtrace(1).
 DTRACE_DEPS = \
-	Python/ceval.o Python/import.o Modules/gcmodule.o
+	Python/ceval.o Python/import.o Python/sysmodule.o Modules/gcmodule.o
 
 #########################################################################
 # Rules
@@ -780,7 +780,7 @@ Python/dynload_hpux.o: $(srcdir)/Python/dynload_hpux.c Makefile
 		-DSHLIB_EXT='"$(EXT_SUFFIX)"' \
 		-o $@ $(srcdir)/Python/dynload_hpux.c
 
-Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile
+Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydtrace.h
 	$(CC) -c $(PY_CORE_CFLAGS) \
 		-DABIFLAGS='"$(ABIFLAGS)"' \
 		$(MULTIARCH_CPPFLAGS) \
@@ -938,9 +938,9 @@ Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
 	sed 's/PYTHON_/PyDTrace_/' $@ > $@.tmp
 	mv $@.tmp $@
 
-Python/ceval.o: Include/pydtrace.h
-Python/import.o: Include/pydtrace.h
-Modules/gcmodule.o: Include/pydtrace.h
+Python/ceval.o: $(srcdir)/Include/pydtrace.h
+Python/import.o: $(srcdir)/Include/pydtrace.h
+Modules/gcmodule.o: $(srcdir)/Include/pydtrace.h
 
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
 	$(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
