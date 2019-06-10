@@ -1669,6 +1669,7 @@ cant_extend:
 
 success:
     assert(bp != NULL);
+    assert(_Py_IS_ALIGNED(bp, ALIGNMENT));
     *ptr_p = (void *)bp;
     return 1;
 
@@ -1728,6 +1729,7 @@ pymalloc_free(void *ctx, void *p)
     uint size;
 
     assert(p != NULL);
+    assert(_Py_IS_ALIGNED(p, ALIGNMENT));
 
 #ifdef WITH_VALGRIND
     if (UNLIKELY(running_on_valgrind > 0)) {
@@ -1984,6 +1986,7 @@ pymalloc_realloc(void *ctx, void **newptr_p, void *p, size_t nbytes)
     size_t size;
 
     assert(p != NULL);
+    assert(_Py_IS_ALIGNED(p, ALIGNMENT));
 
 #ifdef WITH_VALGRIND
     /* Treat running_on_valgrind == -1 the same as 0 */
@@ -2032,6 +2035,7 @@ pymalloc_realloc(void *ctx, void **newptr_p, void *p, size_t nbytes)
         memcpy(bp, p, size);
         _PyObject_Free(ctx, p);
     }
+    assert(_Py_IS_ALIGNED(bp, ALIGNMENT));
     *newptr_p = bp;
     return 1;
 }
