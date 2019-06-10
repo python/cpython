@@ -21,7 +21,7 @@ from test import support
 import regrtest as utils
 
 
-Py_DEBUG = hasattr(sys, 'getobjects')
+Py_DEBUG = hasattr(sys, getobjects)
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 
