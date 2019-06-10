@@ -165,7 +165,11 @@ seq2set(PyObject *seq, fd_set *set, pylist *fd2obj, size_t setsize)
         if (v > max)
             max = v;
 #endif /* _MSC_VER */
+#if defined(MS_WINDOWS)
         FD_SET_WIN(v, set, setsize);
+#else
+        FD_SET(v, set);
+#endif
 
         /* add object and its file descriptor to the list */
         if (index >= setsize) {
@@ -270,12 +274,13 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     pylist rfd2obj_stack[FD_SETSIZE + 1];
     pylist wfd2obj_stack[FD_SETSIZE + 1];
     pylist efd2obj_stack[FD_SETSIZE + 1];
+#else
+    Py_ssize_t rsize, wsize, xsize;
 #endif
     struct timeval tv, *tvp;
     int imax, omax, emax, max;
     int n;
     _PyTime_t timeout, deadline = 0;
-    Py_ssize_t rsize, wsize, xsize;
 
     setsize = FD_SETSIZE;
 #if defined(MS_WINDOWS)
@@ -323,9 +328,9 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         return PyErr_NoMemory();
     }
 #else
-    rfd2obj = &rfd2obj_stack;
-    wfd2obj = &wfd2obj_stack;
-    efd2obj = &efd2obj_stack;
+    rfd2obj = (pylist*)&rfd2obj_stack;
+    wfd2obj = (pylist*)&wfd2obj_stack;
+    efd2obj = (pylist*)&efd2obj_stack;
 #endif
 
 #if defined(MS_WINDOWS)
