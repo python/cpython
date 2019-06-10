@@ -438,7 +438,7 @@ LIBRARY_OBJS=	\
 # On some systems, object files that reference DTrace probes need to be modified
 # in-place by dtrace(1).
 DTRACE_DEPS = \
-	Python/ceval.o Python/import.o Modules/gcmodule.o
+	Python/ceval.o Python/import.o Python/sysmodule.o Modules/gcmodule.o
 
 #########################################################################
 # Rules
@@ -940,6 +940,7 @@ Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
 
 Python/ceval.o: Include/pydtrace.h
 Python/import.o: Include/pydtrace.h
+Python/sysmodule.o: Include/pydtrace.h
 Modules/gcmodule.o: Include/pydtrace.h
 
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
