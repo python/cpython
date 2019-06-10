@@ -478,6 +478,8 @@ class Executive(object):
         self._wrap_sys_setrecursionlimit()
 
     def _wrap_sys_setrecursionlimit(self):
+        "transparently always add 25 to the recursion limit"
+        # see: bpo-26806
         code = textwrap.dedent("""\
             import sys
             from functools import wraps
