@@ -739,6 +739,11 @@ _active_limbo_lock = _allocate_lock()
 _active = {}    # maps thread id to Thread object
 _limbo = {}
 _dangling = WeakSet()
+# Set of Thread._tstate_lock locks of non-daemon threads used by _shutdown()
+# to wait until all Python thread states get deleted:
+# see Thread._set_tstate_lock().
+_shutdown_locks_lock = _allocate_lock()
+_shutdown_locks = set()
 
 # Main class for threads
 
@@ -903,6 +908,10 @@ class Thread:
         self._tstate_lock = _set_sentinel()
         self._tstate_lock.acquire()
 
+        if not self.daemon:
+            with _shutdown_locks_lock:
+                _shutdown_locks.add(self._tstate_lock)
+
     def _bootstrap_inner(self):
         try:
             self._set_ident()
@@ -954,6 +963,9 @@ class Thread:
             assert not lock.locked()
         self._is_stopped = True
         self._tstate_lock = None
+        if not self.daemon:
+            with _shutdown_locks_lock:
+                _shutdown_locks.discard(self._tstate_lock)
 
     def _delete(self):
         "Remove current thread from the dict of currently running threads."
@@ -1342,6 +1354,9 @@ from _thread import stack_size
 _main_thread = _MainThread()
 
 def _shutdown():
+    """
+    Wait until the Python thread state of all non-daemon threads get deleted.
+    """
     # Obscure:  other threads may be waiting to join _main_thread.  That's
     # dubious, but some code does it.  We can't wait for C code to release
     # the main thread's tstate_lock - that won't happen until the interpreter
@@ -1350,6 +1365,8 @@ def _shutdown():
     if _main_thread._is_stopped:
         # _shutdown() was already called
         return
+
+    # Main thread
     tlock = _main_thread._tstate_lock
     # The main thread isn't finished yet, so its thread state lock can't have
     # been released.
@@ -1357,16 +1374,24 @@ def _shutdown():
     assert tlock.locked()
     tlock.release()
     _main_thread._stop()
-    t = _pickSomeNonDaemonThread()
-    while t:
-        t.join()
-        t = _pickSomeNonDaemonThread()
 
-def _pickSomeNonDaemonThread():
-    for t in enumerate():
-        if not t.daemon and t.is_alive():
-            return t
-    return None
+    # Join all non-deamon threads
+    while True:
+        with _shutdown_locks_lock:
+            locks = list(_shutdown_locks)
+            _shutdown_locks.clear()
+
+        if not locks:
+            break
+
+        for lock in locks:
+            # mimick Thread.join()
+            lock.acquire()
+            lock.release()
+
+        # new threads can be spawned while we were waiting for the other
+        # threads to complete
+
 
 def main_thread():
     """Return the main thread object.
@@ -1392,12 +1417,18 @@ def _after_fork():
     # Reset _active_limbo_lock, in case we forked while the lock was held
     # by another (non-forked) thread.  http://bugs.python.org/issue874900
     global _active_limbo_lock, _main_thread
+    global _shutdown_locks_lock, _shutdown_locks
     _active_limbo_lock = _allocate_lock()
 
     # fork() only copied the current thread; clear references to others.
     new_active = {}
     current = current_thread()
     _main_thread = current
+
+    # reset _shutdown() locks: threads re-register their _tstate_lock below
+    _shutdown_locks_lock = _allocate_lock()
+    _shutdown_locks = set()
+
     with _active_limbo_lock:
         # Dangling thread instances must still have their locks reset,
         # because someone may join() them.
