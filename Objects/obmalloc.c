@@ -887,7 +887,7 @@ static int running_on_valgrind = -1;
 /* -----------------------------------------------------------------------
 SYSTEM_PAGE_SIZE must be a power of 2 and no larger than the OS's page size.
 4K is the largest value that works on all known systems (in particular,
-@indows uses 4K pages).  obmalloc stores a uint of bookkeeping info at the
+Windows uses 4K pages).  obmalloc stores a uint of bookkeeping info at the
 start of every page it controls, and uses address arithmetic on pointers to
 find the page an address belongs to.  If SYSTEM_PAGE_SIZE is larger than the
 OS's page size, this can segfault.  See address_in_range() for details.
@@ -909,7 +909,7 @@ them up itself into pools, and in turn carves up pools into blocks of memory
 for small objects.  Arenas are obtained from mmap() on systems that support it,
 by VirtualAlloc() on Windows, or from malloc() if necessary.  A "large" value
 doesn't necessarily "waste memory" - these system calls typically reserve
-virtual address space for the current process, and don't consume physical RAM
+virtual address space for the current process, but don't consume physical RAM
 until pages within them are accessed.  obmalloc consumes arenas from lowest
 address to highest, recycling memory whenever possible, and never accesses a
 higher-addressed byte unless there's not enough contiguous free memory to
@@ -972,6 +972,9 @@ typedef uint8_t block;
 
 /* Pool for small blocks. */
 struct pool_header {
+    /* NOTE:  arenaindex must come first!  The arena index is copied into the
+     * start of every page, not just pages that start with a pool header.
+     */
     uint arenaindex;                    /* index into arenas of base adr */
     uint nalloc;                        /* number of allocated blocks    */
     block *freeblock;                   /* pool's free list head         */
@@ -1115,8 +1118,8 @@ blocks.  The offset from the pool_header to the start of "the next" virgin
 block is stored in the pool_header nextoffset member, and the largest value
 of nextoffset that makes sense is stored in the maxnextoffset member when a
 pool is initialized.  All the blocks in a pool have been passed out at least
-once when and only when nextoffset > maxnextoffset.
-
+once when and only when nextoffset > maxnextoffset (although this later got
+complicated a bit to account for that pools can span multiple pages now).
 
 Major obscurity:  While the usedpools vector is declared to have poolp
 entries, it doesn't really.  It really contains two pointers per (conceptual)
@@ -1126,26 +1129,16 @@ excruciating initialization code below fools C so that
     usedpool[i+i]
 
 "acts like" a genuine poolp, but only so long as you only reference its
-nextpool and prevpool members.  The "- 2*sizeof(block *)" gibberish is
-compensating for that a pool_header's nextpool and prevpool members
-immediately follow a pool_header's first two members:
-
-    union { block *_padding;
-            uint count; } ref;
-    block *freeblock;
-
-each of which consume sizeof(block *) bytes.  So what usedpools[i+i] really
-contains is a fudged-up pointer p such that *if* C believes it's a poolp
-pointer, then p->nextpool and p->prevpool are both p (meaning that the headed
-circular list is empty).
+nextpool and prevpool members.  What usedpools[i+i] really contains is a
+fudged-up pointer p such that *if* C believes it's a poolp pointer, then
+p->nextpool and p->prevpool are both p (meaning that the headed circular list
+is empty).
 
 It's unclear why the usedpools setup is so convoluted.  It could be to
 minimize the amount of cache required to hold this heavily-referenced table
 (which only *needs* the two interpool pointer members of a pool_header). OTOH,
 referencing code has to remember to "double the index" and doing so isn't
-free, usedpools[0] isn't a strictly legal pointer, and we're crucially relying
-on that C doesn't insert any padding anywhere in a pool_header at or before
-the prevpool member.
+free, and usedpools[0] isn't a strictly legal pointer.
 **************************************************************************** */
 
 #define PTA(x)  ((poolp )((uint8_t *)&(usedpools[2*(x)]) - \
@@ -1369,10 +1362,13 @@ new_arena(void)
 /*
 address_in_range(P)
 
-Return true if and only if P is an address that was allocated by pymalloc.
+P must be an address that was previously returned by a call to an obmalloc
+malloc or realloc spelling.  Return true if and only if P is an address
+that was obtained from an obmalloc pool (so false if and only if P was obtained
+from the system malloc/realloc instead).
 
-Tricky:  Let B be the arena base address associated with the pool, B =
-arenas[(POOL)->arenaindex].address.  Then P belongs to the arena if and only if
+Tricky:  Let B be the arena base address of the page associated with P.  Then
+P belongs to the arena if and only if
 
     B <= P < B + ARENA_SIZE
 
@@ -1388,36 +1384,37 @@ case.  We're relying on that maxarenas is also 0 in that case, so that
 (POOL)->arenaindex < maxarenas  must be false, saving us from trying to index
 into a NULL arenas.
 
-Details:  given P and POOL, the arena_object corresponding to P is AO =
-arenas[(POOL)->arenaindex].  Suppose obmalloc controls P.  Then (barring wild
-stores, etc), POOL is the correct address of P's pool, AO.address is the
-correct base address of the pool's arena, and P must be within ARENA_SIZE of
-AO.address.  In addition, AO.address is not 0 (no arena can start at address 0
-(NULL)).  Therefore address_in_range correctly reports that obmalloc
-controls P.
+Details:  obmalloc stores the arena index at the start of every page in every
+pool.  So, assuming P did come from an obmalloc pool, its correct arena index
+AI is read from the start of the page P belongs to, and the arena_object
+corresponding to P is AO = arenas[AI].  Suppose obmalloc controls P.  Then
+(barring wild stores, etc), AO.address is the correct base address of P's
+arena, and P must be within ARENA_SIZE of AO.address.  In addition, AO.address
+is not 0 (no arena can start at address 0 (NULL)).  Therefore address_in_range
+correctly reports that obmalloc controls P.
 
-Now suppose obmalloc does not control P (e.g., P was obtained via a direct
-call to the system malloc() or realloc()).  (POOL)->arenaindex may be anything
-in this case -- it may even be uninitialized trash.  If the trash arenaindex
-is >= maxarenas, the macro correctly concludes at once that obmalloc doesn't
-control P.
+Now suppose obmalloc does not control P (e.g., P was obtained via a call to
+the system malloc() or realloc()).  The arena index read up from the start of
+P's page may be anything in this case -- it may even be uninitialized trash.
+If the trash arenaindex >= maxarenas, the function correctly concludes at once
+that obmalloc doesn't control P.
 
 Else arenaindex is < maxarena, and AO is read up.  If AO corresponds to an
 allocated arena, obmalloc controls all the memory in slice AO.address :
 AO.address+ARENA_SIZE.  By case assumption, P is not controlled by obmalloc,
-so P doesn't lie in that slice, so the macro correctly reports that P is not
+so P doesn't lie in that slice, so the function correctly reports that P is not
 controlled by obmalloc.
 
 Finally, if P is not controlled by obmalloc and AO corresponds to an unused
 arena_object (one not currently associated with an allocated arena),
-AO.address is 0, and the second test in the macro reduces to:
+AO.address is 0, and the second test in the function reduces to:
 
     P < ARENA_SIZE
 
-If P >= ARENA_SIZE (extremely likely), the macro again correctly concludes
+If P >= ARENA_SIZE (extremely likely), the function again correctly concludes
 that P is not controlled by obmalloc.  However, if P < ARENA_SIZE, this part
 of the test still passes, and the third clause (AO.address != 0) is necessary
-to get the correct result:  AO.address is 0 in this case, so the macro
+to get the correct result:  AO.address is 0 in this case, so the function
 correctly reports that P is not controlled by obmalloc (despite that P lies in
 slice AO.address : AO.address + ARENA_SIZE).
 
@@ -1428,11 +1425,11 @@ obmalloc, AO corresponds to an unused arena_object, and P < ARENA_SIZE" case
 was impossible.
 
 Note that the logic is excruciating, and reading up possibly uninitialized
-memory when P is not controlled by obmalloc (to get at (POOL)->arenaindex)
+memory when P is not controlled by obmalloc (to get at the arena index)
 creates problems for some memory debuggers.  The overwhelming advantage is
 that this test determines whether an arbitrary address is controlled by
 obmalloc in a small constant time, independent of the number of arenas
-obmalloc controls.  Since this test is needed at every entry point, it's
+obmalloc controls.  Since this test is needed in every free/realloc, it's
 extremely desirable that it be this fast.
 */
 
