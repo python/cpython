@@ -182,7 +182,7 @@ def _checknetloc(netloc):
         if c in netloc2:
             raise ValueError("netloc %r contains invalid characters "
                              "under NFKC normalization"
-                             % netloc2)
+                             % netloc)
 
 def urlsplit(url, scheme='', allow_fragments=True):
     """Parse a URL into 5 components:
