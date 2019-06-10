@@ -32,6 +32,10 @@ Queue
    the queue is always known and can be returned by calling the
    :meth:`qsize` method.
 
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
+
+
    This class is :ref:`not thread safe <asyncio-multithreading>`.
 
    .. attribute:: maxsize
