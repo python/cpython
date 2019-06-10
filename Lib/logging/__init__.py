@@ -1122,7 +1122,7 @@ class FileHandler(StreamHandler):
     """
     A handler class which writes formatted logging records to disk files.
     """
-    def __init__(self, filename, mode='a', encoding=None, delay=False):
+    def __init__(self, filename, mode='a', encoding=None, delay=False, errors=None):
         """
         Open the specified file and use it as the stream for logging.
         """
@@ -1133,6 +1133,7 @@ class FileHandler(StreamHandler):
         self.baseFilename = os.path.abspath(filename)
         self.mode = mode
         self.encoding = encoding
+        self.errors = errors
         self.delay = delay
         if delay:
             #We don't open the stream, but we still need to call the
@@ -1169,7 +1170,8 @@ class FileHandler(StreamHandler):
         Open the current base file with the (original) mode and encoding.
         Return the resulting stream.
         """
-        return open(self.baseFilename, self.mode, encoding=self.encoding)
+        return open(self.baseFilename, self.mode, encoding=self.encoding,
+                    errors=self.errors)
 
     def emit(self, record):
         """
@@ -1931,6 +1933,9 @@ def basicConfig(**kwargs):
     encoding  If specified together with a filename, this encoding is passed to
               the created FileHandler, causing it to be used when the file is
               opened.
+    errors    If specified together with a filename, this value is passed to the
+              created FileHandler, causing it to be used when the file is
+              opened.
 
     Note that you could specify a stream created using open(filename, mode)
     rather than passing the filename and mode in. However, it should be
@@ -1952,7 +1957,7 @@ def basicConfig(**kwargs):
        Added the ``force`` parameter.
 
     .. versionchanged:: 3.9
-       Added the ``encoding`` parameter.
+       Added the ``encoding`` and ``errors`` parameters.
     """
     # Add thread safety in case someone mistakenly calls
     # basicConfig() from multiple threads
@@ -1960,6 +1965,7 @@ def basicConfig(**kwargs):
     try:
         force = kwargs.pop('force', False)
         encoding = kwargs.pop('encoding', None)
+        errors = kwargs.pop('errors', None)
         if force:
             for h in root.handlers[:]:
                 root.removeHandler(h)
@@ -1978,7 +1984,8 @@ def basicConfig(**kwargs):
                 filename = kwargs.pop("filename", None)
                 mode = kwargs.pop("filemode", 'a')
                 if filename:
-                    h = FileHandler(filename, mode, encoding=encoding)
+                    h = FileHandler(filename, mode,
+                                    encoding=encoding, errors=errors)
                 else:
                     stream = kwargs.pop("stream", None)
                     h = StreamHandler(stream)

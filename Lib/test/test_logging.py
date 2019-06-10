@@ -4449,6 +4449,7 @@ class BasicConfigTest(unittest.TestCase):
         try:
             encoding = 'utf-8'
             logging.basicConfig(filename='test.log', encoding=encoding,
+                                errors='strict',
                                 format='%(message)s', level=logging.DEBUG)
 
             self.assertEqual(len(logging.root.handlers), 1)
@@ -4463,6 +4464,25 @@ class BasicConfigTest(unittest.TestCase):
             os.remove('test.log')
             self.assertEqual(data,
                              'The Øresund Bridge joins Copenhagen to Malmö')
+
+    def test_encoding_errors(self):
+        try:
+            encoding = 'ascii'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                errors='ignore',
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            logging.debug('The Øresund Bridge joins Copenhagen to Malmö')
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            self.assertEqual(data, 'The resund Bridge joins Copenhagen to Malm')
 
     def _test_log(self, method, level=None):
         # logging.root has no handlers so basicConfig should be called

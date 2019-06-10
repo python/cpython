@@ -1201,6 +1201,11 @@ functions.
    |              | FileHandler is created, and thus used when  |
    |              | opening the output file.                    |
    +--------------+---------------------------------------------+
+   | *errors*     | If this keyword argument is specified along |
+   |              | with *filename*, its value is used when the |
+   |              | FileHandler is created, and thus used when  |
+   |              | opening the output file.                    |
+   +--------------+---------------------------------------------+
 
    .. versionchanged:: 3.2
       The *style* argument was added.
@@ -1215,7 +1220,7 @@ functions.
       The *force* argument was added.
 
    .. versionchanged:: 3.9
-      The *encoding* argument was added.
+      The *encoding* and *errors* argument were added.
 
 .. function:: shutdown()
 
