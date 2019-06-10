@@ -67,7 +67,6 @@ class QueueBasicTests(_QueueTestBase):
 
         with self.assertWarns(DeprecationWarning):
             loop.run_until_complete(add_putter())
-
             q = asyncio.Queue(loop=loop)
         q.put_nowait(1)
         self.assertTrue('_queue=[1]' in fn(q))
@@ -532,7 +531,7 @@ class QueuePutTests(_QueueTestBase):
 
     def test_put_with_waiting_getters(self):
         with self.assertWarns(DeprecationWarning):
-           q = asyncio.Queue(loop=self.loop)
+            q = asyncio.Queue(loop=self.loop)
         t = asyncio.Task(q.get(), loop=self.loop)
         test_utils.run_briefly(self.loop)
         self.loop.run_until_complete(q.put('a'))
