@@ -33,7 +33,7 @@
    FD_SETSIZE higher before this; e.g., via compiler /D switch.
 */
 #if defined(MS_WINDOWS) && !defined(FD_SETSIZE)
-#define FD_SETSIZE 16384
+#define FD_SETSIZE 512
 #endif
 
 #if defined(HAVE_POLL_H)
@@ -57,6 +57,11 @@ extern void bzero(void *, int);
 #else
 #  define SOCKET int
 #endif
+
+#define FD_SET_PRIV(fd, set, setsize) do { \
+    if (((fd_set FAR *)(set))->fd_count < setsize) \
+        ((fd_set FAR *)(set))->fd_array[((fd_set FAR *)(set))->fd_count++]=(fd);\
+} while(0)
 
 /*[clinic input]
 module select
@@ -94,24 +99,37 @@ typedef struct {
 } pylist;
 
 static void
-reap_obj(pylist fd2obj[FD_SETSIZE + 1])
+reap_obj(pylist *fd2obj, size_t setsize)
 {
-    unsigned int i;
-    for (i = 0; i < (unsigned int)FD_SETSIZE + 1 && fd2obj[i].sentinel >= 0; i++) {
+    size_t i;
+    for (i = 0; i < setsize + 1 && fd2obj[i].sentinel >= 0; i++) {
         Py_CLEAR(fd2obj[i].obj);
     }
     fd2obj[0].sentinel = -1;
 }
 
 
+/* returns the size of a given Python sequence
+   returns -1 if the input is not a sequence
+*/
+static Py_ssize_t
+seqsize(PyObject *seq)
+{
+    PyObject* fast_seq = PySequence_Fast(seq, "argument 1 must be sequence");
+    if (!fast_seq)
+        return -1;
+
+    return PySequence_Fast_GET_SIZE(fast_seq);
+}
+
 /* returns -1 and sets the Python exception if an error occurred, otherwise
    returns a number >= 0
 */
 static int
-seq2set(PyObject *seq, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
+seq2set(PyObject *seq, fd_set *set, pylist *fd2obj, size_t setsize)
 {
     int max = -1;
-    unsigned int index = 0;
+    size_t index = 0;
     Py_ssize_t i;
     PyObject* fast_seq = NULL;
     PyObject* o = NULL;
@@ -145,10 +163,10 @@ seq2set(PyObject *seq, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
         if (v > max)
             max = v;
 #endif /* _MSC_VER */
-        FD_SET(v, set);
+        FD_SET_PRIV(v, set, setsize);
 
         /* add object and its file descriptor to the list */
-        if (index >= (unsigned int)FD_SETSIZE) {
+        if (index >= setsize) {
             PyErr_SetString(PyExc_ValueError,
                           "too many file descriptors in select()");
             goto finally;
@@ -169,13 +187,13 @@ seq2set(PyObject *seq, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
 
 /* returns NULL and sets the Python exception if an error occurred */
 static PyObject *
-set2list(fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
+set2list(fd_set *set, pylist *fd2obj, size_t setsize)
 {
-    int i, j, count=0;
+    size_t i, j, count=0;
     PyObject *list, *o;
     SOCKET fd;
 
-    for (j = 0; fd2obj[j].sentinel >= 0; j++) {
+    for (j = 0; j < setsize && fd2obj[j].sentinel >= 0; j++) {
         if (FD_ISSET(fd2obj[j].fd, set))
             count++;
     }
@@ -184,7 +202,7 @@ set2list(fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
         return NULL;
 
     i = 0;
-    for (j = 0; fd2obj[j].sentinel >= 0; j++) {
+    for (j = 0; j < setsize && fd2obj[j].sentinel >= 0; j++) {
         fd = fd2obj[j].fd;
         if (FD_ISSET(fd, set)) {
             o = fd2obj[j].obj;
@@ -202,10 +220,6 @@ set2list(fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
     return NULL;
 }
 
-#undef SELECT_USES_HEAP
-#if FD_SETSIZE > 1024
-#define SELECT_USES_HEAP
-#endif /* FD_SETSIZE > 1024 */
 
 /*[clinic input]
 select.select
@@ -245,25 +259,34 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
 /*[clinic end generated code: output=2b3cfa824f7ae4cf input=177e72184352df25]*/
 {
-#ifdef SELECT_USES_HEAP
+    size_t setsize;
     pylist *rfd2obj, *wfd2obj, *efd2obj;
-#else  /* !SELECT_USES_HEAP */
-    /* XXX: All this should probably be implemented as follows:
-     * - find the highest descriptor we're interested in
-     * - add one
-     * - that's the size
-     * See: Stevens, APitUE, $12.5.1
-     */
-    pylist rfd2obj[FD_SETSIZE + 1];
-    pylist wfd2obj[FD_SETSIZE + 1];
-    pylist efd2obj[FD_SETSIZE + 1];
-#endif /* SELECT_USES_HEAP */
     PyObject *ret = NULL;
-    fd_set ifdset, ofdset, efdset;
+    fd_set *ifdset, *ofdset, *efdset;
+#if !defined(MS_WINDOWS)
+    fd_set ifdset_stack, ofdset_stack, efdset_stack;
+    pylist rfd2obj_stack[FD_SETSIZE + 1];
+    pylist wfd2obj_stack[FD_SETSIZE + 1];
+    pylist efd2obj_stack[FD_SETSIZE + 1];
+#endif
     struct timeval tv, *tvp;
     int imax, omax, emax, max;
     int n;
     _PyTime_t timeout, deadline = 0;
+    Py_ssize_t rsize, wsize, xsize;
+
+    setsize = FD_SETSIZE;
+#if defined(MS_WINDOWS)
+    /* On windows we allocated the fd sets dynamically
+    based on the inputs size */
+    rsize = seqsize(rlist);
+    wsize = seqsize(wlist);
+    xsize = seqsize(xlist);
+
+    if (rsize > (Py_ssize_t)setsize) setsize = (size_t)rsize;
+    if (wsize > (Py_ssize_t)setsize) setsize = (size_t)wsize;
+    if (xsize > (Py_ssize_t)setsize) setsize = (size_t)xsize;
+#endif
 
     if (timeout_obj == Py_None)
         tvp = (struct timeval *)NULL;
@@ -286,18 +309,43 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         tvp = &tv;
     }
 
-#ifdef SELECT_USES_HEAP
+#if defined(MS_WINDOWS)
     /* Allocate memory for the lists */
-    rfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 1);
-    wfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 1);
-    efd2obj = PyMem_NEW(pylist, FD_SETSIZE + 1);
+    rfd2obj = PyMem_NEW(pylist, setsize + 1);
+    wfd2obj = PyMem_NEW(pylist, setsize + 1);
+    efd2obj = PyMem_NEW(pylist, setsize + 1);
     if (rfd2obj == NULL || wfd2obj == NULL || efd2obj == NULL) {
         if (rfd2obj) PyMem_DEL(rfd2obj);
         if (wfd2obj) PyMem_DEL(wfd2obj);
         if (efd2obj) PyMem_DEL(efd2obj);
         return PyErr_NoMemory();
     }
-#endif /* SELECT_USES_HEAP */
+#else
+    rfd2obj = &rfd2obj_stack;
+    wfd2obj = &wfd2obj_stack;
+    efd2obj = &efd2obj_stack;
+#endif
+
+#if defined(MS_WINDOWS)
+    /* Allocate memory for the sets */
+    /* We ought to allocate setsize * sizeof(SOCKET) +
+    sizeof(int) bytes. With this approach on 64-bit we
+    allocate 4 additional unused bytes but the allocation
+    code looks a lot simpler.*/
+    ifdset = (fd_set*) PyMem_NEW(SOCKET, setsize + 1);
+    ofdset = (fd_set*) PyMem_NEW(SOCKET, setsize + 1);
+    efdset = (fd_set*) PyMem_NEW(SOCKET, setsize + 1);
+    if (ifdset->fd_array == NULL || ofdset->fd_array == NULL || efdset->fd_array == NULL) {
+        if (ifdset->fd_array) PyMem_DEL(ifdset->fd_array);
+        if (ofdset->fd_array) PyMem_DEL(ofdset->fd_array);
+        if (efdset->fd_array) PyMem_DEL(efdset->fd_array);
+        return PyErr_NoMemory();
+    }
+#else
+    ifdset = &ifdset_stack;
+    ofdset = &ofdset_stack;
+    efdset = &efdset_stack;
+#endif
 
     /* Convert sequences to fd_sets, and get maximum fd number
      * propagates the Python exception set in seq2set()
@@ -305,11 +353,11 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     rfd2obj[0].sentinel = -1;
     wfd2obj[0].sentinel = -1;
     efd2obj[0].sentinel = -1;
-    if ((imax = seq2set(rlist, &ifdset, rfd2obj)) < 0)
+    if ((imax = seq2set(rlist, ifdset, rfd2obj, setsize)) < 0)
         goto finally;
-    if ((omax = seq2set(wlist, &ofdset, wfd2obj)) < 0)
+    if ((omax = seq2set(wlist, ofdset, wfd2obj, setsize)) < 0)
         goto finally;
-    if ((emax = seq2set(xlist, &efdset, efd2obj)) < 0)
+    if ((emax = seq2set(xlist, efdset, efd2obj, setsize)) < 0)
         goto finally;
 
     max = imax;
@@ -322,7 +370,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     do {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
-        n = select(max, &ifdset, &ofdset, &efdset, tvp);
+        n = select(max, ifdset, ofdset, efdset, tvp);
         Py_END_ALLOW_THREADS
 
         if (errno != EINTR)
@@ -336,9 +384,9 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
             timeout = deadline - _PyTime_GetMonotonicClock();
             if (timeout < 0) {
                 /* bpo-35310: lists were unmodified -- clear them explicitly */
-                FD_ZERO(&ifdset);
-                FD_ZERO(&ofdset);
-                FD_ZERO(&efdset);
+                FD_ZERO(ifdset);
+                FD_ZERO(ofdset);
+                FD_ZERO(efdset);
                 n = 0;
                 break;
             }
@@ -361,9 +409,9 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
            convenient to test for this after all three calls... but
            is that acceptable?
         */
-        rlist = set2list(&ifdset, rfd2obj);
-        wlist = set2list(&ofdset, wfd2obj);
-        xlist = set2list(&efdset, efd2obj);
+        rlist = set2list(ifdset, rfd2obj, setsize);
+        wlist = set2list(ofdset, wfd2obj, setsize);
+        xlist = set2list(efdset, efd2obj, setsize);
         if (PyErr_Occurred())
             ret = NULL;
         else
@@ -375,14 +423,17 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     }
 
   finally:
-    reap_obj(rfd2obj);
-    reap_obj(wfd2obj);
-    reap_obj(efd2obj);
-#ifdef SELECT_USES_HEAP
+    reap_obj(rfd2obj, setsize);
+    reap_obj(wfd2obj, setsize);
+    reap_obj(efd2obj, setsize);
+#if defined(MS_WINDOWS)
     PyMem_DEL(rfd2obj);
     PyMem_DEL(wfd2obj);
     PyMem_DEL(efd2obj);
-#endif /* SELECT_USES_HEAP */
+    PyMem_DEL(ifdset);
+    PyMem_DEL(ofdset);
+    PyMem_DEL(efdset);
+#endif
     return ret;
 }
 
