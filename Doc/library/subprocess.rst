@@ -1159,8 +1159,8 @@ In the following examples, we assume that the relevant functions have already
 been imported from the :mod:`subprocess` module.
 
 
-Replacing /bin/sh shell command substitution
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing :program:`/bin/sh` shell command substitution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
