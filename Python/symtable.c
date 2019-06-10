@@ -140,10 +140,10 @@ PyTypeObject PySTEntry_Type = {
     sizeof(PySTEntryObject),
     0,
     (destructor)ste_dealloc,                /* tp_dealloc */
-    0,                                      /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     0,                                         /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)ste_repr,                         /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -1653,6 +1653,8 @@ symtable_visit_arguments(struct symtable *st, arguments_ty a)
     /* skip default arguments inside function block
        XXX should ast be different?
     */
+    if (a->posonlyargs && !symtable_visit_params(st, a->posonlyargs))
+        return 0;
     if (a->args && !symtable_visit_params(st, a->args))
         return 0;
     if (a->kwonlyargs && !symtable_visit_params(st, a->kwonlyargs))

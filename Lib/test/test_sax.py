@@ -21,7 +21,7 @@ import os.path
 import shutil
 from urllib.error import URLError
 from test import support
-from test.support import findfile, run_unittest, TESTFN
+from test.support import findfile, run_unittest, FakePath, TESTFN
 
 TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
 TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")
@@ -181,6 +181,10 @@ class ParseTest(unittest.TestCase):
         with open(TESTFN, 'rb') as f:
             with self.assertRaises(SAXException):
                 self.check_parse(f)
+
+    def test_parse_path_object(self):
+        make_xml_file(self.data, 'utf-8', None)
+        self.check_parse(FakePath(TESTFN))
 
     def test_parse_InputSource(self):
         # accept data without declared but with explicitly specified encoding
@@ -393,6 +397,13 @@ class PrepareInputSourceTest(unittest.TestCase):
     def test_string(self):
         # If the source is a string, use it as a system ID and open it.
         prep = prepare_input_source(self.file)
+        self.assertIsNone(prep.getCharacterStream())
+        self.checkContent(prep.getByteStream(),
+                          b"This was read from a file.")
+
+    def test_path_objects(self):
+        # If the source is a Path object, use it as a system ID and open it.
+        prep = prepare_input_source(FakePath(self.file))
         self.assertIsNone(prep.getCharacterStream())
         self.checkContent(prep.getByteStream(),
                           b"This was read from a file.")

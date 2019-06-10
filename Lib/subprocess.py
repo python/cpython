@@ -203,7 +203,6 @@ if _mswindows:
             return "%s(%d)" % (self.__class__.__name__, int(self))
 
         __del__ = Close
-        __str__ = __repr__
 else:
     # When select or poll has indicated that the file is writable,
     # we can write up to _PIPE_BUF bytes without risk of blocking.
@@ -460,12 +459,12 @@ def run(*popenargs,
     The other arguments are the same as for the Popen constructor.
     """
     if input is not None:
-        if 'stdin' in kwargs:
+        if kwargs.get('stdin') is not None:
             raise ValueError('stdin and input arguments may not both be used.')
         kwargs['stdin'] = PIPE
 
     if capture_output:
-        if ('stdout' in kwargs) or ('stderr' in kwargs):
+        if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
             raise ValueError('stdout and stderr arguments may not be used '
                              'with capture_output.')
         kwargs['stdout'] = PIPE
@@ -522,7 +521,7 @@ def list2cmdline(seq):
     # "Parsing C++ Command-Line Arguments"
     result = []
     needquote = False
-    for arg in seq:
+    for arg in map(os.fsdecode, seq):
         bs_buf = []
 
         # Add a space to separate this argument from the others
@@ -1204,8 +1203,22 @@ class Popen(object):
 
             assert not pass_fds, "pass_fds not supported on Windows."
 
-            if not isinstance(args, str):
+            if isinstance(args, str):
+                pass
+            elif isinstance(args, bytes):
+                if shell:
+                    raise TypeError('bytes args is not allowed on Windows')
+                args = list2cmdline([args])
+            elif isinstance(args, os.PathLike):
+                if shell:
+                    raise TypeError('path-like args is not allowed when '
+                                    'shell is true')
+                args = list2cmdline([args])
+            else:
                 args = list2cmdline(args)
+
+            if executable is not None:
+                executable = os.fsdecode(executable)
 
             # Process startup details
             if startupinfo is None:
@@ -1263,7 +1276,7 @@ class Popen(object):
                                          int(not close_fds),
                                          creationflags,
                                          env,
-                                         os.fspath(cwd) if cwd is not None else None,
+                                         os.fsdecode(cwd) if cwd is not None else None,
                                          startupinfo)
             finally:
                 # Child is launched. Close the parent's copy of those pipe
@@ -1510,6 +1523,11 @@ class Popen(object):
             """Execute program (POSIX version)"""
 
             if isinstance(args, (str, bytes)):
+                args = [args]
+            elif isinstance(args, os.PathLike):
+                if shell:
+                    raise TypeError('path-like args is not allowed when '
+                                    'shell is true')
                 args = [args]
             else:
                 args = list(args)
