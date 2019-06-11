@@ -618,16 +618,23 @@ void
 _PyArg_BadArgument(const char *fname, int iarg, const char *argname,
                    const char *expected, PyObject *arg)
 {
-    if (argname) {
-        PyErr_Format(PyExc_TypeError,
-                        "%.200s() argument '%.200s' must be %.50s, not %.50s",
-                        fname, argname, expected,
-                        arg == Py_None ? "None" : arg->ob_type->tp_name);
+    if (iarg) {
+        if (argname) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s() argument '%.200s' must be %.50s, not %.50s",
+                         fname, argname, expected,
+                         arg == Py_None ? "None" : arg->ob_type->tp_name);
+        } else {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s() argument %d must be %.50s, not %.50s",
+                         fname, iarg, expected,
+                         arg == Py_None ? "None" : arg->ob_type->tp_name);
+        }
     } else {
         PyErr_Format(PyExc_TypeError,
-                        "%.200s() argument %d must be %.50s, not %.50s",
-                        fname, iarg, expected,
-                        arg == Py_None ? "None" : arg->ob_type->tp_name);
+                     "%.200s() argument must be %.50s, not %.50s",
+                     fname, expected,
+                     arg == Py_None ? "None" : arg->ob_type->tp_name);
     }
 }
 
