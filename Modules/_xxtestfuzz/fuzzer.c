@@ -151,13 +151,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
            with no separate initialization phase, sadly, so we need to
            initialize CPython ourselves on the first run. */
         Py_InitializeEx(0);
-
-#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_json_loads)
-        PyObject* json_module = PyImport_ImportModule("json");
-
-        json_loads_method = PyObject_GetAttrString(json_module, "loads");
-#endif
     }
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_json_loads)
+    if (json_loads_method == NULL) {
+        PyObject* json_module = PyImport_ImportModule("json");
+        json_loads_method = PyObject_GetAttrString(json_module, "loads");
+    }
+#endif
 
     int rv = 0;
 
