@@ -656,6 +656,15 @@ class UrlParseTestCase(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         urlparse.urlsplit(url)
 
+        # check error message: invalid netloc must be formated with repr()
+        # to get an ASCII error message
+        with self.assertRaises(ValueError) as cm:
+            urlparse.urlsplit(u'http://example.com\uFF03@bing.com')
+        self.assertEqual(str(cm.exception),
+                         "netloc u'example.com\\uff03@bing.com' contains invalid characters "
+                         "under NFKC normalization")
+        self.assertIsInstance(cm.exception.args[0], str)
+
 def test_main():
     test_support.run_unittest(UrlParseTestCase)
 
