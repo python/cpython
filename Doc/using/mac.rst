@@ -93,7 +93,7 @@ aware of: programs that talk to the Aqua window manager (in other words,
 anything that has a GUI) need to be run in a special way. Use :program:`pythonw`
 instead of :program:`python` to start such scripts.
 
-With Python 3.6, you can use either :program:`python` or :program:`pythonw`.
+With Python 3.7, you can use either :program:`python` or :program:`pythonw`.
 
 
 Configuration
