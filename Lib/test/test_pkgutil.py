@@ -1,4 +1,4 @@
-from test.support import run_unittest, unload, check_warnings, CleanImport
+from test.support import forget, run_unittest, unload, check_warnings, CleanImport
 import unittest
 import sys
 import importlib
@@ -204,13 +204,12 @@ class PkgutilTests(unittest.TestCase):
             'same_name',
             'same_name.mod'
         ]
-        actual = [e[1] for e in pkgutil.walk_packages([os.path.join(self.dirname, pkg1)])]
-        self.assertEqual(actual, expected)
 
         for pkg in expected:
-            if pkg.endswith('mod'):
-                continue
-            del sys.modules[pkg]
+            self.addCleanup(forget, pkg)
+
+        actual = [e[1] for e in pkgutil.walk_packages([os.path.join(self.dirname, pkg1)])]
+        self.assertEqual(actual, expected)
 
     def test_walk_packages_raises_on_string_or_bytes_input(self):
 
