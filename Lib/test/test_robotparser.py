@@ -99,44 +99,12 @@ Disallow: /
 class EmptyFileTest(BaseRobotTest, unittest.TestCase):
     robots_txt = ""
 
-    def test_request_rate(self):
-        agent, url = self.get_agent_and_url("/foo")
-        self.assertEqual(self.parser.crawl_delay(agent), None)
-
-    def test_crawl_delay(self):
-        agent, url = self.get_agent_and_url("/foo")
-        self.assertEqual(self.parser.crawl_delay(agent), None)
-
-
-class NoDefaultUserAgentTest(BaseRobotTest, unittest.TestCase):
-    robots_txt = """\
-User-agent: figtree
-Crawl-delay: 1
-Request-rate: 3/15
-    """
-
-    def test_request_rate(self):
-        agent, url = self.get_agent_and_url("/foo")
-        self.assertEqual(self.parser.crawl_delay(agent), None)
-
-    def test_crawl_delay(self):
-        agent, url = self.get_agent_and_url("/foo")
-        self.assertEqual(self.parser.crawl_delay(agent), None)
-
 
 class NoRequestRateAndCrawlDelayTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
 User-agent: *
 Disallow: /bar
     """
-
-    def test_request_rate(self):
-        agent, url = self.get_agent_and_url("/foo")
-        self.assertEqual(self.parser.crawl_delay(agent), None)
-
-    def test_crawl_delay(self):
-        agent, url = self.get_agent_and_url("/foo")
-        self.assertEqual(self.parser.crawl_delay(agent), None)
 
 
 class BaseRequestRateTest(BaseRobotTest):
@@ -145,11 +113,14 @@ class BaseRequestRateTest(BaseRobotTest):
         for url in self.good + self.bad:
             agent, url = self.get_agent_and_url(url)
             with self.subTest(url=url, agent=agent):
-                if self.crawl_delay:
-                    self.assertEqual(
-                        self.parser.crawl_delay(agent), self.crawl_delay
-                    )
-                if self.request_rate:
+                self.assertEqual(
+                    self.parser.crawl_delay(agent), self.crawl_delay
+                )
+                self.assertEqual(
+                    self.parser.request_rate(agent),
+                    self.request_rate
+                )
+                if self.request_rate is not None:
                     self.assertIsInstance(
                         self.parser.request_rate(agent),
                         urllib.robotparser.RequestRate
@@ -184,10 +155,8 @@ Disallow: /%7ejoe/index.html
 
 class DifferentAgentTest(CrawlDelayAndRequestRateTest):
     agent = 'FigTree Robot libwww-perl/5.04'
-    # these are not actually tested, but we still need to parse it
-    # in order to accommodate the input parameters
-    request_rate = None
-    crawl_delay = None
+    request_rate = urllib.robotparser.RequestRate(9, 30)
+    crawl_delay = 3
 
 
 class InvalidRequestRateTest(BaseRobotTest, unittest.TestCase):
