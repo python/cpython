@@ -148,8 +148,6 @@ Disallow: /%7ejoe/index.html
 
 class DifferentAgentTest(CrawlDelayAndRequestRateTest):
     agent = 'FigTree Robot libwww-perl/5.04'
-    request_rate = urllib.robotparser.RequestRate(9, 30)
-    crawl_delay = 3
 
 
 class InvalidRequestRateTest(BaseRobotTest, unittest.TestCase):
