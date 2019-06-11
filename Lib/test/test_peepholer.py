@@ -1,5 +1,7 @@
 import dis
 import unittest
+import types
+import textwrap
 
 from test.bytecode_helper import BytecodeTestCase
 
@@ -14,6 +16,17 @@ def count_instr_recursively(f, opname):
         if hasattr(c, 'co_code'):
             count += count_instr_recursively(c, opname)
     return count
+
+JUMP_OPS = {'JUMP_FORWARD', 'JUMP_IF_FALSE_OR_POP', 'JUMP_IF_TRUE_OR_POP', 
+            'JUMP_ABSOLUTE', 'POP_JUMP_IF_FALSE', 'POP_JUMP_IF_TRUE'}
+
+def has_continuous_jumps(code):
+    instructions = {ins.offset: ins for ins in dis.get_instructions(code)}
+    jumps = {ins for ins in instructions.values() if ins.opname in JUMP_OPS}
+    targets = {instructions[ins.argval] for ins in jumps}
+    if jumps & targets:
+        return True
+    return False
 
 
 class TestTranforms(BytecodeTestCase):
@@ -334,7 +347,49 @@ class TestTranforms(BytecodeTestCase):
             for x in [a, b]:
                 pass
         self.assertEqual(count_instr_recursively(forloop, 'BUILD_LIST'), 0)
+    
+    def test_multiline_statements_are_optimized(self):
+        code1 = compile("[x for x in a if x]", "", 'single').co_consts[0]
+        code2 = compile("[x \n for x in a if x]", "", 'single').co_consts[0]
+        self.assertEqual(type(code1), types.CodeType)
+        self.assertEqual(type(code2), types.CodeType)
+        self.assertNotEqual(list(code1.co_lnotab), list(code2.co_lnotab))
+        self.assertEqual(list(code1.co_code), list(code2.co_code))
 
+        code1 = compile(textwrap.dedent("""\
+        if x:
+            if (y and z):
+                foo()
+        else:
+            bar()
+        """), "", 'exec')
+        code2 = compile(textwrap.dedent("""\
+        if x:
+            if (y and
+                z):
+                foo()
+        else:
+            bar()
+        """), "", 'exec')
+        
+        self.assertNotEqual(list(code1.co_lnotab), list(code2.co_lnotab))
+        self.assertEqual(list(code1.co_code), list(code2.co_code))
+    
+    def test_continuous_jumps_are_optimized(self):
+        code1 = compile("[x for x in a if x]", "", 'single').co_consts[0]
+        self.assertEqual(type(code1), types.CodeType)
+        self.assertFalse(has_continuous_jumps(code1))
+
+        code2 = compile(textwrap.dedent("""\
+        if x:
+            if (y and z):
+                foo()
+        else:
+            bar()
+        """), "", 'exec')
+
+        self.assertFalse(has_continuous_jumps(code2))
+ 
 
 class TestBuglets(unittest.TestCase):
 

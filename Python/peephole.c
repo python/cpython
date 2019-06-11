@@ -251,18 +251,15 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     tabsiz = PyBytes_GET_SIZE(lnotab_obj);
     assert(tabsiz == 0 || Py_REFCNT(lnotab_obj) == 1);
 
-    /* 255 values in the instruction pointer are used for multibyte
-    bytecode instructions. When searching for these, we need to exclude
-    the line number deltas that can be 255 (representing -1 line delta).
+    /* Don't optimize if lnotab contains instruction pointer delta larger
+    than +255 (encoded as multiple bytes), just to keep the peephole optimizer
+    simple. The optimizer leaves line number deltas unchanged. */
 
-    Note: -128 and 127 special values for line number delta are ok,
-    the peephole optimizer doesn't modify line numbers. */
     for (j = 0; j < tabsiz; j += 2) {
         if (lnotab[j] == 255) {
             goto exitUnchanged;
         }
     }
-
 
     assert(PyBytes_Check(code));
     Py_ssize_t codesize = PyBytes_GET_SIZE(code);
