@@ -6,6 +6,8 @@ from unittest import mock
 from test.support import captured_stderr
 
 import io
+import sys
+
 
 class RunTest(unittest.TestCase):
 
@@ -260,33 +262,26 @@ class PseudeOutputFilesTest(unittest.TestCase):
         self.assertRaises(TypeError, f.close, 1)
 
 
-class TestExecutive(unittest.TestCase):
-    def setUp(self):
-        patcher1 = mock.patch('idlelib.run.autocomplete')
-        patcher1.start()
-        self.addCleanup(patcher1.stop)
-
-        patcher2 = mock.patch('idlelib.run.calltip')
-        patcher2.start()
-        self.addCleanup(patcher2.stop)
-
-    def test_sys_recursionlimit(self):
-        rpchandler = mock.Mock()
-        executor = run.Executive(rpchandler)
-
-        if 'sys' not in executor.locals:
-            exec('import sys', executor.locals)
-            self.addCleanup(exec, 'del sys', executor.locals)
-        executor_sys = executor.locals['sys']
+class TestSysRecursionLimitWrappers(unittest.TestCase):
+    def test_roundtrip(self):
+        run.install_recursionlimit_wrappers()
+        self.addCleanup(run.uninstall_recursionlimit_wrappers)
 
         # check that setting the recursion limit works
-        orig_reclimit = executor_sys.getrecursionlimit()
-        self.addCleanup(executor_sys.setrecursionlimit, orig_reclimit)
-        executor_sys.setrecursionlimit(orig_reclimit + 3)
+        orig_reclimit = sys.getrecursionlimit()
+        self.addCleanup(sys.setrecursionlimit, orig_reclimit)
+        sys.setrecursionlimit(orig_reclimit + 3)
 
         # check that the new limit is returned by sys.getrecursionlimit()
-        new_reclimit = executor_sys.getrecursionlimit()
+        new_reclimit = sys.getrecursionlimit()
         self.assertEqual(new_reclimit, orig_reclimit + 3)
+
+    def test_default_recursion_limit_preserved(self):
+        orig_reclimit = sys.getrecursionlimit()
+        run.install_recursionlimit_wrappers()
+        self.addCleanup(run.uninstall_recursionlimit_wrappers)
+        new_reclimit = sys.getrecursionlimit()
+        self.assertEqual(new_reclimit, orig_reclimit)
 
 
 if __name__ == '__main__':

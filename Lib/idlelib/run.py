@@ -4,6 +4,7 @@ Simplified, pyshell.ModifiedInterpreter spawns a subprocess with
 f'''{sys.executable} -c "__import__('idlelib.run').run.main()"'''
 '.run' is needed because __import__ returns idlelib, not idlelib.run.
 """
+import functools
 import io
 import linecache
 import queue
@@ -304,6 +305,60 @@ def fix_scaling(root):
                 font['size'] = round(-0.75*size)
 
 
+RECURSIONLIMIT_DELTA = 30
+def install_recursionlimit_wrappers():
+    """Install wrappers to always add 30 to the recursion limit."""
+    # see: bpo-26806
+
+    @functools.wraps(sys.setrecursionlimit)
+    def setrecursionlimit(*args, **kwargs):
+        # mimic the original sys.setrecursionlimit()'s input handling
+        if kwargs:
+            raise TypeError(
+                "setrecursionlimit() takes no keyword arguments")
+        try:
+            limit, = args
+        except ValueError:
+            raise TypeError("setrecursionlimit() takes exactly one "
+                            "argument ({} given)".format(len(args)))
+        if not limit > 0:
+            raise ValueError(
+                "recursion limit must be greater or equal than 1")
+
+        return setrecursionlimit.__wrapped__(limit + RECURSIONLIMIT_DELTA)
+
+    setrecursionlimit.__doc__ += "\n\n" + textwrap.fill(textwrap.dedent(f"""\
+        This IDLE wrapper adds {RECURSIONLIMIT_DELTA} to prevent possible
+        uninterruptible loops.
+        """).strip())
+
+    @functools.wraps(sys.getrecursionlimit)
+    def getrecursionlimit():
+        return getrecursionlimit.__wrapped__() - RECURSIONLIMIT_DELTA
+
+    getrecursionlimit.__doc__ += "\n\n" + textwrap.fill(textwrap.dedent(f"""\
+        This IDLE wrapper subtracts {RECURSIONLIMIT_DELTA} to compensate for
+        the {RECURSIONLIMIT_DELTA} IDLE adds when setting the limit.
+        """).strip())
+
+    # add the delta to the default recursion limit, to compensate
+    sys.setrecursionlimit(sys.getrecursionlimit() + RECURSIONLIMIT_DELTA)
+
+    sys.setrecursionlimit = setrecursionlimit
+    sys.getrecursionlimit = getrecursionlimit
+
+
+def uninstall_recursionlimit_wrappers():
+    """Uninstall the recursion limit wrappers from the sys module."""
+    if (
+            getattr(sys.setrecursionlimit, '__wrapped__') and
+            getattr(sys.getrecursionlimit, '__wrapped__')
+    ):
+        sys.setrecursionlimit = sys.setrecursionlimit.__wrapped__
+        sys.getrecursionlimit = sys.getrecursionlimit.__wrapped__
+        sys.setrecursionlimit(sys.getrecursionlimit() - RECURSIONLIMIT_DELTA)
+
+
 class MyRPCServer(rpc.RPCServer):
 
     def handle_error(self, request, client_address):
@@ -447,6 +502,8 @@ class MyHandler(rpc.RPCHandler):
         # sys.stdin gets changed from within IDLE's shell. See issue17838.
         self._keep_stdin = sys.stdin
 
+        install_recursionlimit_wrappers()
+
         self.interp = self.get_remote_proxy("interp")
         rpc.RPCHandler.getresponse(self, myseq=None, wait=0.05)
 
@@ -474,50 +531,6 @@ class Executive(object):
         self.locals = __main__.__dict__
         self.calltip = calltip.Calltip()
         self.autocomplete = autocomplete.AutoComplete()
-
-        self._wrap_sys_setrecursionlimit()
-
-    def _wrap_sys_setrecursionlimit(self):
-        "transparently always add 25 to the recursion limit"
-        # see: bpo-26806
-        code = textwrap.dedent("""\
-            import sys
-            from functools import wraps
-
-            # add the delta to the default recursion limit, to compensate
-            sys.setrecursionlimit(sys.getrecursionlimit() + 25)
-
-            @wraps(sys.setrecursionlimit)
-            def setrecursionlimit(*args, **kwargs):
-                # mimic the original sys.setrecursionlimit()'s input handling
-                if kwargs:
-                    raise TypeError(
-                        "setrecursionlimit() takes no keyword arguments")
-                try:
-                    limit, = args
-                except ValueError:
-                    raise TypeError("setrecursionlimit() takes exactly one "
-                                    "argument ({} given)".format(len(args)))
-                if not limit > 0:
-                    raise ValueError(
-                        "recursion limit must be greater or equal than 1")
-
-                import sys
-                return sys.setrecursionlimit.__wrapped__(limit + 25)
-            sys.setrecursionlimit = setrecursionlimit
-            del setrecursionlimit
-
-            @wraps(sys.getrecursionlimit)
-            def getrecursionlimit():
-                import sys
-                return sys.getrecursionlimit.__wrapped__() - 25
-            sys.getrecursionlimit = getrecursionlimit
-            del getrecursionlimit
-
-            del sys
-            del wraps
-            """)
-        exec(code, self.locals)
 
     def runcode(self, code):
         global interruptable
