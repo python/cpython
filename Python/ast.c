@@ -123,7 +123,7 @@ validate_arguments(arguments_ty args)
         && !validate_expr(args->kwarg->annotation, Load)) {
             return 0;
     }
-    if (asdl_seq_LEN(args->defaults) > asdl_seq_LEN(args->args)) {
+    if (asdl_seq_LEN(args->defaults) > asdl_seq_LEN(args->posonlyargs) + asdl_seq_LEN(args->args)) {
         PyErr_SetString(PyExc_ValueError, "more positional defaults than args on arguments");
         return 0;
     }
@@ -3398,7 +3398,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         }
         else {
             ch = CHILD(ann, 3);
-            if (TYPE(ch) == testlist) {
+            if (TYPE(ch) == testlist_star_expr) {
                 expr3 = ast_for_testlist(c, ch);
             }
             else {

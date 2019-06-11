@@ -2998,6 +2998,269 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 }
 
 
+/*[clinic input]
+math.perm
+
+    n: object
+    k: object = None
+    /
+
+Number of ways to choose k items from n items without repetition and with order.
+
+Evaluates to n! / (n - k)! when k <= n and evaluates
+to zero when k > n.
+
+If k is not specified or is None, then k defaults to n
+and the function returns n!.
+
+Raises TypeError if either of the arguments are not integers.
+Raises ValueError if either of the arguments are negative.
+[clinic start generated code]*/
+
+static PyObject *
+math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=e021a25469653e23 input=5311c5a00f359b53]*/
+{
+    PyObject *result = NULL, *factor = NULL;
+    int overflow, cmp;
+    long long i, factors;
+
+    if (k == Py_None) {
+        return math_factorial(module, n);
+    }
+    n = PyNumber_Index(n);
+    if (n == NULL) {
+        return NULL;
+    }
+    if (!PyLong_CheckExact(n)) {
+        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
+        if (n == NULL) {
+            return NULL;
+        }
+    }
+    k = PyNumber_Index(k);
+    if (k == NULL) {
+        Py_DECREF(n);
+        return NULL;
+    }
+    if (!PyLong_CheckExact(k)) {
+        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
+        if (k == NULL) {
+            Py_DECREF(n);
+            return NULL;
+        }
+    }
+
+    if (Py_SIZE(n) < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "n must be a non-negative integer");
+        goto error;
+    }
+    cmp = PyObject_RichCompareBool(n, k, Py_LT);
+    if (cmp != 0) {
+        if (cmp > 0) {
+            result = PyLong_FromLong(0);
+            goto done;
+        }
+        goto error;
+    }
+
+    factors = PyLong_AsLongLongAndOverflow(k, &overflow);
+    if (overflow > 0) {
+        PyErr_Format(PyExc_OverflowError,
+                     "k must not exceed %lld",
+                     LLONG_MAX);
+        goto error;
+    }
+    else if (overflow < 0 || factors < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError,
+                            "k must be a non-negative integer");
+        }
+        goto error;
+    }
+
+    if (factors == 0) {
+        result = PyLong_FromLong(1);
+        goto done;
+    }
+
+    result = n;
+    Py_INCREF(result);
+    if (factors == 1) {
+        goto done;
+    }
+
+    factor = n;
+    Py_INCREF(factor);
+    for (i = 1; i < factors; ++i) {
+        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
+        if (factor == NULL) {
+            goto error;
+        }
+        Py_SETREF(result, PyNumber_Multiply(result, factor));
+        if (result == NULL) {
+            goto error;
+        }
+    }
+    Py_DECREF(factor);
+
+done:
+    Py_DECREF(n);
+    Py_DECREF(k);
+    return result;
+
+error:
+    Py_XDECREF(factor);
+    Py_XDECREF(result);
+    Py_DECREF(n);
+    Py_DECREF(k);
+    return NULL;
+}
+
+
+/*[clinic input]
+math.comb
+
+    n: object
+    k: object
+    /
+
+Number of ways to choose k items from n items without repetition and without order.
+
+Evaluates to n! / (k! * (n - k)!) when k <= n and evaluates
+to zero when k > n.
+
+Also called the binomial coefficient because it is equivalent
+to the coefficient of k-th term in polynomial expansion of the
+expression (1 + x)**n.
+
+Raises TypeError if either of the arguments are not integers.
+Raises ValueError if either of the arguments are negative.
+
+[clinic start generated code]*/
+
+static PyObject *
+math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=bd2cec8d854f3493 input=9a05315af2518709]*/
+{
+    PyObject *result = NULL, *factor = NULL, *temp;
+    int overflow, cmp;
+    long long i, factors;
+
+    n = PyNumber_Index(n);
+    if (n == NULL) {
+        return NULL;
+    }
+    if (!PyLong_CheckExact(n)) {
+        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
+        if (n == NULL) {
+            return NULL;
+        }
+    }
+    k = PyNumber_Index(k);
+    if (k == NULL) {
+        Py_DECREF(n);
+        return NULL;
+    }
+    if (!PyLong_CheckExact(k)) {
+        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
+        if (k == NULL) {
+            Py_DECREF(n);
+            return NULL;
+        }
+    }
+
+    if (Py_SIZE(n) < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "n must be a non-negative integer");
+        goto error;
+    }
+    /* k = min(k, n - k) */
+    temp = PyNumber_Subtract(n, k);
+    if (temp == NULL) {
+        goto error;
+    }
+    if (Py_SIZE(temp) < 0) {
+        Py_DECREF(temp);
+        result = PyLong_FromLong(0);
+        goto done;
+    }
+    cmp = PyObject_RichCompareBool(temp, k, Py_LT);
+    if (cmp > 0) {
+        Py_SETREF(k, temp);
+    }
+    else {
+        Py_DECREF(temp);
+        if (cmp < 0) {
+            goto error;
+        }
+    }
+
+    factors = PyLong_AsLongLongAndOverflow(k, &overflow);
+    if (overflow > 0) {
+        PyErr_Format(PyExc_OverflowError,
+                     "min(n - k, k) must not exceed %lld",
+                     LLONG_MAX);
+        goto error;
+    }
+    else if (overflow < 0 || factors < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError,
+                            "k must be a non-negative integer");
+        }
+        goto error;
+    }
+
+    if (factors == 0) {
+        result = PyLong_FromLong(1);
+        goto done;
+    }
+
+    result = n;
+    Py_INCREF(result);
+    if (factors == 1) {
+        goto done;
+    }
+
+    factor = n;
+    Py_INCREF(factor);
+    for (i = 1; i < factors; ++i) {
+        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
+        if (factor == NULL) {
+            goto error;
+        }
+        Py_SETREF(result, PyNumber_Multiply(result, factor));
+        if (result == NULL) {
+            goto error;
+        }
+
+        temp = PyLong_FromUnsignedLongLong((unsigned long long)i + 1);
+        if (temp == NULL) {
+            goto error;
+        }
+        Py_SETREF(result, PyNumber_FloorDivide(result, temp));
+        Py_DECREF(temp);
+        if (result == NULL) {
+            goto error;
+        }
+    }
+    Py_DECREF(factor);
+
+done:
+    Py_DECREF(n);
+    Py_DECREF(k);
+    return result;
+
+error:
+    Py_XDECREF(factor);
+    Py_XDECREF(result);
+    Py_DECREF(n);
+    Py_DECREF(k);
+    return NULL;
+}
+
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
@@ -3047,6 +3310,8 @@ static PyMethodDef math_methods[] = {
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
+    MATH_PERM_METHODDEF
+    MATH_COMB_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

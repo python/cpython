@@ -89,6 +89,8 @@ class EntryPoint(collections.namedtuple('EntryPointBase', 'name value group')):
     @classmethod
     def _from_text(cls, text):
         config = ConfigParser()
+        # case sensitive: https://stackoverflow.com/q/1611799/812183
+        config.optionxform = str
         try:
             config.read_string(text)
         except AttributeError:  # pragma: nocover
@@ -320,7 +322,8 @@ class PathDistribution(Distribution):
         self._path = path
 
     def read_text(self, filename):
-        with suppress(FileNotFoundError, NotADirectoryError, KeyError):
+        with suppress(FileNotFoundError, IsADirectoryError, KeyError,
+                      NotADirectoryError, PermissionError):
             return self._path.joinpath(filename).read_text(encoding='utf-8')
     read_text.__doc__ = Distribution.read_text.__doc__
 

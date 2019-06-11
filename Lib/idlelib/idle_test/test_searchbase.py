@@ -4,7 +4,7 @@
 
 import unittest
 from test.support import requires
-from tkinter import Tk
+from tkinter import Text, Tk, Toplevel
 from tkinter.ttk import Frame
 from idlelib import searchengine as se
 from idlelib import searchbase as sdb
@@ -32,6 +32,7 @@ class SearchDialogBaseTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
 
@@ -46,14 +47,15 @@ class SearchDialogBaseTest(unittest.TestCase):
         # open calls create_widgets, which needs default_command
         self.dialog.default_command = None
 
-        # Since text parameter of .open is not used in base class,
-        # pass dummy 'text' instead of tk.Text().
-        self.dialog.open('text')
+        toplevel = Toplevel(self.root)
+        self.addCleanup(toplevel.destroy)
+        text = Text(toplevel)
+        self.dialog.open(text)
         self.assertEqual(self.dialog.top.state(), 'normal')
         self.dialog.close()
         self.assertEqual(self.dialog.top.state(), 'withdrawn')
 
-        self.dialog.open('text', searchphrase="hello")
+        self.dialog.open(text, searchphrase="hello")
         self.assertEqual(self.dialog.ent.get(), 'hello')
         self.dialog.close()
 
@@ -149,7 +151,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         # Look for close button command in buttonframe
         closebuttoncommand = ''
         for child in self.dialog.buttonframe.winfo_children():
-            if child['text'] == 'close':
+            if child['text'] == 'Close':
                 closebuttoncommand = child['command']
         self.assertIn('close', closebuttoncommand)
 

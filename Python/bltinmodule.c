@@ -483,7 +483,7 @@ builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         return NULL;
     }
     Py_INCREF(hook);
-    PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
+    PyObject *retval = _PyObject_Vectorcall(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 }
@@ -611,10 +611,10 @@ PyTypeObject PyFilter_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)filter_dealloc,         /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1328,10 +1328,10 @@ PyTypeObject PyMap_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)map_dealloc,            /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -2231,7 +2231,7 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
 
     assert(nargs >= 1);
-    v = _PyObject_FastCallKeywords(callable, args + 1, nargs - 1, kwnames);
+    v = _PyObject_Vectorcall(callable, args + 1, nargs - 1, kwnames);
     Py_DECREF(callable);
     if (v == NULL) {
         Py_DECREF(newlist);
@@ -2667,10 +2667,10 @@ PyTypeObject PyZip_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)zip_dealloc,            /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */

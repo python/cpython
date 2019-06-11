@@ -16,6 +16,8 @@
 #   include <sys/syscall.h>     /* syscall(SYS_gettid) */
 #elif defined(__FreeBSD__)
 #   include <pthread_np.h>      /* pthread_getthreadid_np() */
+#elif defined(__OpenBSD__)
+#   include <unistd.h>          /* getthrid() */
 #endif
 
 /* The POSIX spec requires that use of pthread_attr_setstacksize
@@ -323,6 +325,9 @@ PyThread_get_thread_native_id(void)
 #elif defined(__FreeBSD__)
     int native_id;
     native_id = pthread_getthreadid_np();
+#elif defined(__OpenBSD__)
+    pid_t native_id;
+    native_id = getthrid();
 #endif
     return (unsigned long) native_id;
 }

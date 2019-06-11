@@ -298,10 +298,7 @@ PyObject_CallFinalizer(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
-    /* The former could happen on heaptypes created from the C API, e.g.
-       PyType_FromSpec(). */
-    if (!PyType_HasFeature(tp, Py_TPFLAGS_HAVE_FINALIZE) ||
-        tp->tp_finalize == NULL)
+    if (tp->tp_finalize == NULL)
         return;
     /* tp_finalize should only be called once. */
     if (PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
@@ -669,7 +666,7 @@ PyObject_Bytes(PyObject *v)
 /* For Python 3.0.1 and later, the old three-way comparison has been
    completely removed in favour of rich comparisons.  PyObject_Compare() and
    PyObject_Cmp() are gone, and the builtin cmp function no longer exists.
-   The old tp_compare slot has been renamed to tp_reserved, and should no
+   The old tp_compare slot has been renamed to tp_as_async, and should no
    longer be used.  Use tp_richcompare instead.
 
    See (*) below for practical amendments.
@@ -1641,10 +1638,10 @@ PyTypeObject _PyNone_Type = {
     0,
     0,
     none_dealloc,       /*tp_dealloc*/ /*never called*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     none_repr,          /*tp_repr*/
     &none_as_number,    /*tp_as_number*/
     0,                  /*tp_as_sequence*/
@@ -1726,10 +1723,10 @@ PyTypeObject _PyNotImplemented_Type = {
     0,
     0,
     notimplemented_dealloc,       /*tp_dealloc*/ /*never called*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     NotImplemented_repr, /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/

@@ -1991,6 +1991,8 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
     if (!compiler_visit_argannotations(c, args->args, names))
         goto error;
+    if (!compiler_visit_argannotations(c, args->posonlyargs, names))
+        goto error;
     if (args->vararg && args->vararg->annotation &&
         !compiler_visit_argannotation(c, args->vararg->arg,
                                      args->vararg->annotation, names))
@@ -5762,7 +5764,7 @@ makecode(struct compiler *c, struct assembler *a)
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
-    int argcount, posonlyargcount, kwonlyargcount, maxdepth;
+    int posorkeywordargcount, posonlyargcount, kwonlyargcount, maxdepth;
 
     consts = consts_dict_keys_inorder(c->u->u_consts);
     names = dict_keys_inorder(c->u->u_names, 0);
@@ -5806,15 +5808,15 @@ makecode(struct compiler *c, struct assembler *a)
         goto error;
     }
 
-    argcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
     posonlyargcount = Py_SAFE_DOWNCAST(c->u->u_posonlyargcount, Py_ssize_t, int);
+    posorkeywordargcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
     maxdepth = stackdepth(c);
     if (maxdepth < 0) {
         goto error;
     }
-    co = PyCode_New(argcount, posonlyargcount, kwonlyargcount,
-                    nlocals_int, maxdepth, flags,
+    co = PyCode_New(posonlyargcount+posorkeywordargcount, posonlyargcount,
+                    kwonlyargcount, nlocals_int, maxdepth, flags,
                     bytecode, consts, names, varnames,
                     freevars, cellvars,
                     c->c_filename, c->u->u_name,

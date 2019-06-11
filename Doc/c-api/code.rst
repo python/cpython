@@ -40,7 +40,12 @@ bound into a function.
    :c:func:`PyCode_New` directly can bind you to a precise Python
    version since the definition of the bytecode changes often.
 
-   .. audit-event:: code.__new__ "code filename name argcount kwonlyargcount nlocals stacksize flags"
+   .. versionchanged:: 3.8
+      An extra parameter is required (*posonlyargcount*) to support :PEP:`570`.
+      The first parameter (*argcount*) now represents the total number of positional arguments,
+      including positional-only.
+
+   .. audit-event:: code.__new__ "code filename name argcount posonlyargcount kwonlyargcount nlocals stacksize flags"
 
 .. c:function:: PyCodeObject* PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 

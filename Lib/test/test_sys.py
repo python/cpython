@@ -822,6 +822,22 @@ class SysModuleTest(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok('-c', code)
         self.assertEqual(stdout.rstrip(), b'True')
 
+    @test.support.requires_type_collecting
+    def test_issue20602(self):
+        # sys.flags and sys.float_info were wiped during shutdown.
+        code = """if 1:
+            import sys
+            class A:
+                def __del__(self, sys=sys):
+                    print(sys.flags)
+                    print(sys.float_info)
+            a = A()
+            """
+        rc, out, err = assert_python_ok('-c', code)
+        out = out.splitlines()
+        self.assertIn(b'sys.flags', out[0])
+        self.assertIn(b'sys.float_info', out[1])
+
     @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
                          'need sys.getandroidapilevel()')
     def test_getandroidapilevel(self):
@@ -1064,7 +1080,7 @@ class SizeofTest(unittest.TestCase):
         # buffer
         # XXX
         # builtin_function_or_method
-        check(len, size('4P')) # XXX check layout
+        check(len, size('5P'))
         # bytearray
         samples = [b'', b'u'*100000]
         for sample in samples:
@@ -1095,7 +1111,7 @@ class SizeofTest(unittest.TestCase):
         # complex
         check(complex(0,1), size('2d'))
         # method_descriptor (descriptor object)
-        check(str.lower, size('3PP'))
+        check(str.lower, size('3PPP'))
         # classmethod_descriptor (descriptor object)
         # XXX
         # member_descriptor (descriptor object)
@@ -1164,7 +1180,7 @@ class SizeofTest(unittest.TestCase):
         check(x, vsize('5P2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
         # function
         def func(): pass
-        check(func, size('12P'))
+        check(func, size('13P'))
         class c():
             @staticmethod
             def foo():
@@ -1259,7 +1275,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2n15Pl4Pn9Pn11PIP'
+        fmt = 'P2nPI13Pl4Pn9Pn11PIPP'
         if hasattr(sys, 'getcounts'):
             fmt += '3n2P'
         s = vsize(fmt)

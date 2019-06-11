@@ -117,6 +117,10 @@ corresponding Unix manual entries for more information on calls.");
 #include <sched.h>
 #endif
 
+#ifdef HAVE_COPY_FILE_RANGE
+#include <unistd.h>
+#endif
+
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
 #undef HAVE_SCHED_SETAFFINITY
 #endif
@@ -387,6 +391,19 @@ extern char        *ctermid_r(char *);
 #if defined(__sun)
 /* Something to implement in autoconf, not present in autoconf 2.69 */
 #define HAVE_STRUCT_STAT_ST_FSTYPE 1
+#endif
+
+/* memfd_create is either defined in sys/mman.h or sys/memfd.h
+ * linux/memfd.h defines additional flags
+ */
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+#ifdef HAVE_SYS_MEMFD_H
+#include <sys/memfd.h>
+#endif
+#ifdef HAVE_LINUX_MEMFD_H
+#include <linux/memfd.h>
 #endif
 
 #ifdef _Py_MEMORY_SANITIZER
@@ -9442,8 +9459,74 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 }
 #endif /* HAVE_PWRITEV */
 
+#ifdef HAVE_COPY_FILE_RANGE
+/*[clinic input]
+
+os.copy_file_range
+    src: int
+        Source file descriptor.
+    dst: int
+        Destination file descriptor.
+    count: Py_ssize_t
+        Number of bytes to copy.
+    offset_src: object = None
+        Starting offset in src.
+    offset_dst: object = None
+        Starting offset in dst.
+
+Copy count bytes from one file descriptor to another.
+
+If offset_src is None, then src is read from the current position;
+respectively for offset_dst.
+[clinic start generated code]*/
+
+static PyObject *
+os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
+                        PyObject *offset_src, PyObject *offset_dst)
+/*[clinic end generated code: output=1a91713a1d99fc7a input=42fdce72681b25a9]*/
+{
+    off_t offset_src_val, offset_dst_val;
+    off_t *p_offset_src = NULL;
+    off_t *p_offset_dst = NULL;
+    Py_ssize_t ret;
+    int async_err = 0;
+    /* The flags argument is provided to allow
+     * for future extensions and currently must be to 0. */
+    int flags = 0;
 
 
+    if (count < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative value for 'count' not allowed");
+        return NULL;
+    }
+
+    if (offset_src != Py_None) {
+        if (!Py_off_t_converter(offset_src, &offset_src_val)) {
+            return NULL;
+        }
+        p_offset_src = &offset_src_val;
+    }
+
+    if (offset_dst != Py_None) {
+        if (!Py_off_t_converter(offset_dst, &offset_dst_val)) {
+            return NULL;
+        }
+        p_offset_dst = &offset_dst_val;
+    }
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        ret = copy_file_range(src, p_offset_src, dst, p_offset_dst, count, flags);
+        Py_END_ALLOW_THREADS
+    } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (ret < 0) {
+        return (!async_err) ? posix_error() : NULL;
+    }
+
+    return PyLong_FromSsize_t(ret);
+}
+#endif /* HAVE_COPY_FILE_RANGE*/
 
 #ifdef HAVE_MKFIFO
 /*[clinic input]
@@ -11897,6 +11980,31 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
     return bytes;
 }
 
+#ifdef HAVE_MEMFD_CREATE
+/*[clinic input]
+os.memfd_create
+
+    name: FSConverter
+    flags: unsigned_int(bitwise=True, c_default="MFD_CLOEXEC") = MFD_CLOEXEC
+
+[clinic start generated code]*/
+
+static PyObject *
+os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
+/*[clinic end generated code: output=6681ede983bdb9a6 input=a42cfc199bcd56e9]*/
+{
+    int fd;
+    const char *bytes = PyBytes_AS_STRING(name);
+    Py_BEGIN_ALLOW_THREADS
+    fd = memfd_create(bytes, flags);
+    Py_END_ALLOW_THREADS
+    if (fd == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return PyLong_FromLong(fd);
+}
+#endif
+
 /* Terminal size querying */
 
 static PyTypeObject* TerminalSizeType;
@@ -12542,10 +12650,10 @@ static PyTypeObject DirEntryType = {
     0,                                      /* tp_itemsize */
     /* methods */
     (destructor)DirEntry_dealloc,           /* tp_dealloc */
-    0,                                      /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     0,                                      /* tp_getattr */
     0,                                      /* tp_setattr */
-    0,                                      /* tp_compare */
+    0,                                      /* tp_as_async */
     (reprfunc)DirEntry_repr,                /* tp_repr */
     0,                                      /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -12980,10 +13088,10 @@ static PyTypeObject ScandirIteratorType = {
     0,                                      /* tp_itemsize */
     /* methods */
     (destructor)ScandirIterator_dealloc,    /* tp_dealloc */
-    0,                                      /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     0,                                      /* tp_getattr */
     0,                                      /* tp_setattr */
-    0,                                      /* tp_compare */
+    0,                                      /* tp_as_async */
     0,                                      /* tp_repr */
     0,                                      /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -12994,8 +13102,7 @@ static PyTypeObject ScandirIteratorType = {
     0,                                      /* tp_getattro */
     0,                                      /* tp_setattro */
     0,                                      /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT
-        | Py_TPFLAGS_HAVE_FINALIZE,         /* tp_flags */
+    Py_TPFLAGS_DEFAULT,                     /* tp_flags */
     0,                                      /* tp_doc */
     0,                                      /* tp_traverse */
     0,                                      /* tp_clear */
@@ -13395,6 +13502,7 @@ static PyMethodDef posix_methods[] = {
     OS_POSIX_SPAWN_METHODDEF
     OS_POSIX_SPAWNP_METHODDEF
     OS_READLINK_METHODDEF
+    OS_COPY_FILE_RANGE_METHODDEF
     OS_RENAME_METHODDEF
     OS_REPLACE_METHODDEF
     OS_RMDIR_METHODDEF
@@ -13554,6 +13662,7 @@ static PyMethodDef posix_methods[] = {
     OS_SCANDIR_METHODDEF
     OS_FSPATH_METHODDEF
     OS_GETRANDOM_METHODDEF
+    OS_MEMFD_CREATE_METHODDEF
 #ifdef MS_WINDOWS
     OS__ADD_DLL_DIRECTORY_METHODDEF
     OS__REMOVE_DLL_DIRECTORY_METHODDEF
@@ -14003,6 +14112,55 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
 #endif
+#ifdef HAVE_MEMFD_CREATE
+    if (PyModule_AddIntMacro(m, MFD_CLOEXEC)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_ALLOW_SEALING)) return -1;
+#ifdef MFD_HUGETLB
+    if (PyModule_AddIntMacro(m, MFD_HUGETLB)) return -1;
+#endif
+#ifdef MFD_HUGE_SHIFT
+    if (PyModule_AddIntMacro(m, MFD_HUGE_SHIFT)) return -1;
+#endif
+#ifdef MFD_HUGE_MASK
+    if (PyModule_AddIntMacro(m, MFD_HUGE_MASK)) return -1;
+#endif
+#ifdef MFD_HUGE_64KB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_64KB)) return -1;
+#endif
+#ifdef MFD_HUGE_512KB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_512KB)) return -1;
+#endif
+#ifdef MFD_HUGE_1MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_1MB)) return -1;
+#endif
+#ifdef MFD_HUGE_2MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_2MB)) return -1;
+#endif
+#ifdef MFD_HUGE_8MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_8MB)) return -1;
+#endif
+#ifdef MFD_HUGE_16MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_16MB)) return -1;
+#endif
+#ifdef MFD_HUGE_32MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_32MB)) return -1;
+#endif
+#ifdef MFD_HUGE_256MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_256MB)) return -1;
+#endif
+#ifdef MFD_HUGE_512MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_512MB)) return -1;
+#endif
+#ifdef MFD_HUGE_1GB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_1GB)) return -1;
+#endif
+#ifdef MFD_HUGE_2GB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_2GB)) return -1;
+#endif
+#ifdef MFD_HUGE_16GB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_16GB)) return -1;
+#endif
+#endif
 
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
@@ -14117,6 +14275,10 @@ static const char * const have_functions[] = {
 
 #ifdef HAVE_LUTIMES
     "HAVE_LUTIMES",
+#endif
+
+#ifdef HAVE_MEMFD_CREATE
+    "HAVE_MEMFD_CREATE",
 #endif
 
 #ifdef HAVE_MKDIRAT

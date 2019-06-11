@@ -363,14 +363,16 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock.accept.return_value = (mock.Mock(), mock.Mock())
         backlog = 100
         # Mock the coroutine generation for a connection to prevent
-        # warnings related to un-awaited coroutines.
+        # warnings related to un-awaited coroutines. _accept_connection2
+        # is an async function that is patched with AsyncMock. create_task
+        # creates a task out of coroutine returned by AsyncMock, so use
+        # asyncio.sleep(0) to ensure created tasks are complete to avoid
+        # task pending warnings.
         mock_obj = mock.patch.object
         with mock_obj(self.loop, '_accept_connection2') as accept2_mock:
-            accept2_mock.return_value = None
-            with mock_obj(self.loop, 'create_task') as task_mock:
-                task_mock.return_value = None
-                self.loop._accept_connection(
-                    mock.Mock(), sock, backlog=backlog)
+            self.loop._accept_connection(
+                mock.Mock(), sock, backlog=backlog)
+        self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(sock.accept.call_count, backlog)
 
 

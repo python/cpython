@@ -26,6 +26,8 @@ class TestZip(unittest.TestCase):
         scripts = dict(entry_points()['console_scripts'])
         entry_point = scripts['example']
         self.assertEqual(entry_point.value, 'example:main')
+        entry_point = scripts['Example']
+        self.assertEqual(entry_point.value, 'example:main')
 
     def test_missing_metadata(self):
         self.assertIsNone(distribution('example').read_text('does not exist'))

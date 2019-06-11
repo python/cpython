@@ -310,10 +310,10 @@ PyTypeObject OverlappedType = {
     /* tp_basicsize      */ sizeof(OverlappedObject),
     /* tp_itemsize       */ 0,
     /* tp_dealloc        */ (destructor) overlapped_dealloc,
-    /* tp_print          */ 0,
+    /* tp_vectorcall_offset */ 0,
     /* tp_getattr        */ 0,
     /* tp_setattr        */ 0,
-    /* tp_reserved       */ 0,
+    /* tp_as_async       */ 0,
     /* tp_repr           */ 0,
     /* tp_as_number      */ 0,
     /* tp_as_sequence    */ 0,
@@ -508,7 +508,9 @@ _winapi_CreateFileMapping_impl(PyObject *module, HANDLE file_handle,
     Py_END_ALLOW_THREADS
 
     if (handle == NULL) {
-        PyErr_SetFromWindowsErrWithUnicodeFilename(0, name);
+        PyObject *temp = PyUnicode_FromWideChar(name, -1);
+        PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError, 0, temp);
+        Py_XDECREF(temp);
         handle = INVALID_HANDLE_VALUE;
     }
 
@@ -1405,7 +1407,9 @@ _winapi_OpenFileMapping_impl(PyObject *module, DWORD desired_access,
     Py_END_ALLOW_THREADS
 
     if (handle == NULL) {
-        PyErr_SetFromWindowsErrWithUnicodeFilename(0, name);
+        PyObject *temp = PyUnicode_FromWideChar(name, -1);
+        PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError, 0, temp);
+        Py_XDECREF(temp);
         handle = INVALID_HANDLE_VALUE;
     }
 

@@ -483,7 +483,7 @@ A function definition defines a user-defined function object (see section
    decorators: `decorator`+
    decorator: "@" `dotted_name` ["(" [`argument_list` [","]] ")"] NEWLINE
    dotted_name: `identifier` ("." `identifier`)*
-   parameter_list: `defparameter` ("," `defparameter`)* ',' '/' [',' [`parameter_list_no_posonly`]]
+   parameter_list: `defparameter` ("," `defparameter`)* "," "/" ["," [`parameter_list_no_posonly`]]
                  :   | `parameter_list_no_posonly`
    parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                             : | `parameter_list_starargs`

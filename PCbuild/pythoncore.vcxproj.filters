@@ -177,6 +177,9 @@
     <ClInclude Include="..\Include\internal\pycore_atomic.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_code.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_ceval.h">
       <Filter>Include</Filter>
     </ClInclude>
