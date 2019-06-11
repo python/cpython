@@ -311,7 +311,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCodeObject *co = NULL;
     PyCompilerFlags local_flags;
     int merged;
-    _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
 
     if (!__doc__) {
         __doc__ = PyUnicode_InternFromString("__doc__");
@@ -1990,6 +1990,8 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
         return 0;
 
     if (!compiler_visit_argannotations(c, args->args, names))
+        goto error;
+    if (!compiler_visit_argannotations(c, args->posonlyargs, names))
         goto error;
     if (args->vararg && args->vararg->annotation &&
         !compiler_visit_argannotation(c, args->vararg->arg,
@@ -3963,12 +3965,6 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     int conversion = e->v.FormattedValue.conversion;
     int oparg;
 
-    if (e->v.FormattedValue.expr_text) {
-        /* Push the text of the expression (which already has the '=' in
-           it. */
-        ADDOP_LOAD_CONST(c, e->v.FormattedValue.expr_text);
-    }
-
     /* The expression to be formatted. */
     VISIT(c, expr, e->v.FormattedValue.value);
 
@@ -3990,11 +3986,6 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
 
     /* And push our opcode and oparg */
     ADDOP_I(c, FORMAT_VALUE, oparg);
-
-    /* If we have expr_text, join the 2 strings on the stack. */
-    if (e->v.FormattedValue.expr_text) {
-        ADDOP_I(c, BUILD_STRING, 2);
-    }
 
     return 1;
 }
@@ -4782,7 +4773,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
                 return compiler_error(c, "'await' outside function");
             }
 
-            if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION && 
+            if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
                     c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION){
                 return compiler_error(c, "'await' outside async function");
             }
@@ -5773,7 +5764,7 @@ makecode(struct compiler *c, struct assembler *a)
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
-    int argcount, posonlyargcount, kwonlyargcount, maxdepth;
+    int posorkeywordargcount, posonlyargcount, kwonlyargcount, maxdepth;
 
     consts = consts_dict_keys_inorder(c->u->u_consts);
     names = dict_keys_inorder(c->u->u_names, 0);
@@ -5817,15 +5808,15 @@ makecode(struct compiler *c, struct assembler *a)
         goto error;
     }
 
-    argcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
     posonlyargcount = Py_SAFE_DOWNCAST(c->u->u_posonlyargcount, Py_ssize_t, int);
+    posorkeywordargcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
     maxdepth = stackdepth(c);
     if (maxdepth < 0) {
         goto error;
     }
-    co = PyCode_New(argcount, posonlyargcount, kwonlyargcount,
-                    nlocals_int, maxdepth, flags,
+    co = PyCode_New(posonlyargcount+posorkeywordargcount, posonlyargcount,
+                    kwonlyargcount, nlocals_int, maxdepth, flags,
                     bytecode, consts, names, varnames,
                     freevars, cellvars,
                     c->c_filename, c->u->u_name,

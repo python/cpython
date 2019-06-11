@@ -318,6 +318,11 @@ are always available.  They are listed here in alphabetical order.
    :class:`int` and :class:`float`.  If both arguments are omitted, returns
    ``0j``.
 
+   For a general Python object ``x``, ``complex(x)`` delegates to
+   ``x.__complex__()``.  If ``__complex__()`` is not defined then it falls back
+   to :meth:`__float__`.  If ``__float__()`` is not defined then it falls back
+   to :meth:`__index__`.
+
    .. note::
 
       When converting from a string, the string must not contain whitespace
@@ -329,6 +334,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
+
+   .. versionchanged:: 3.8
+      Falls back to :meth:`__index__` if :meth:`__complex__` and
+      :meth:`__float__` are not defined.
 
 
 .. function:: delattr(object, name)
@@ -499,7 +508,8 @@ are always available.  They are listed here in alphabetical order.
    :func:`exec` function. The return value is ``None``.
 
    In all cases, if the optional parts are omitted, the code is executed in the
-   current scope.  If only *globals* is provided, it must be a dictionary, which
+   current scope.  If only *globals* is provided, it must be a dictionary
+   (and not a subclass of dictionary), which
    will be used for both the global and the local variables.  If *globals* and
    *locals* are given, they are used for the global and local variables,
    respectively.  If provided, *locals* can be any mapping object.  Remember
@@ -583,7 +593,8 @@ are always available.  They are listed here in alphabetical order.
    float, an :exc:`OverflowError` will be raised.
 
    For a general Python object ``x``, ``float(x)`` delegates to
-   ``x.__float__()``.
+   ``x.__float__()``.  If ``__float__()`` is not defined then it falls back
+   to :meth:`__index__`.
 
    If no argument is given, ``0.0`` is returned.
 
@@ -607,6 +618,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.7
       *x* is now a positional-only parameter.
+
+   .. versionchanged:: 3.8
+      Falls back to :meth:`__index__` if :meth:`__float__` is not defined.
 
 
 .. index::
@@ -779,7 +793,8 @@ are always available.  They are listed here in alphabetical order.
 
    Return an integer object constructed from a number or string *x*, or return
    ``0`` if no arguments are given.  If *x* defines :meth:`__int__`,
-   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__trunc__`,
+   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__index__`,
+   it returns ``x.__index__()``.  If *x* defines :meth:`__trunc__`,
    it returns ``x.__trunc__()``.
    For floating point numbers, this truncates towards zero.
 
@@ -810,6 +825,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.7
       *x* is now a positional-only parameter.
+
+   .. versionchanged:: 3.8
+      Falls back to :meth:`__index__` if :meth:`__int__` is not defined.
 
 
 .. function:: isinstance(object, classinfo)
@@ -1259,9 +1277,24 @@ are always available.  They are listed here in alphabetical order.
    operands, the result has the same type as the operands (after coercion)
    unless the second argument is negative; in that case, all arguments are
    converted to float and a float result is delivered.  For example, ``10**2``
-   returns ``100``, but ``10**-2`` returns ``0.01``.  If the second argument is
-   negative, the third argument must be omitted.  If *z* is present, *x* and *y*
-   must be of integer types, and *y* must be non-negative.
+   returns ``100``, but ``10**-2`` returns ``0.01``.
+
+   For :class:`int` operands *x* and *y*, if *z* is present, *z* must also be
+   of integer type and *z* must be nonzero. If *z* is present and *y* is
+   negative, *x* must be relatively prime to *z*. In that case, ``pow(inv_x,
+   -y, z)`` is returned, where *inv_x* is an inverse to *x* modulo *z*.
+
+   Here's an example of computing an inverse for ``38`` modulo ``97``::
+
+      >>> pow(38, -1, 97)
+      23
+      >>> 23 * 38 % 97 == 1
+      True
+
+   .. versionchanged:: 3.8
+      For :class:`int` operands, the three-argument form of ``pow`` now allows
+      the second argument to be negative, permitting computation of modular
+      inverses.
 
 
 .. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
@@ -1529,11 +1562,11 @@ are always available.  They are listed here in alphabetical order.
    about strings, see :ref:`textseq`.
 
 
-.. function:: sum(iterable[, start])
+.. function:: sum(iterable, /, start=0)
 
    Sums *start* and the items of an *iterable* from left to right and returns the
-   total.  *start* defaults to ``0``. The *iterable*'s items are normally numbers,
-   and the start value is not allowed to be a string.
+   total.  The *iterable*'s items are normally numbers, and the start value is not
+   allowed to be a string.
 
    For some use cases, there are good alternatives to :func:`sum`.
    The preferred, fast way to concatenate a sequence of strings is by calling

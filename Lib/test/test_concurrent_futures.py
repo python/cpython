@@ -668,9 +668,8 @@ class ExecutorTest:
         self.assertEqual(16, future.result())
         future = self.executor.submit(capture, 1, self=2, fn=3)
         self.assertEqual(future.result(), ((1,), {'self': 2, 'fn': 3}))
-        with self.assertWarns(DeprecationWarning):
-            future = self.executor.submit(fn=capture, arg=1)
-        self.assertEqual(future.result(), ((), {'arg': 1}))
+        with self.assertRaises(TypeError):
+            self.executor.submit(fn=capture, arg=1)
         with self.assertRaises(TypeError):
             self.executor.submit(arg=1)
 
@@ -755,8 +754,8 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
 
     def test_default_workers(self):
         executor = self.executor_type()
-        self.assertEqual(executor._max_workers,
-                         (os.cpu_count() or 1) * 5)
+        expected = min(32, (os.cpu_count() or 1) + 4)
+        self.assertEqual(executor._max_workers, expected)
 
     def test_saturation(self):
         executor = self.executor_type(4)

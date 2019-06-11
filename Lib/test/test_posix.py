@@ -310,6 +310,8 @@ class PosixTester(unittest.TestCase):
             buf = [bytearray(i) for i in [5, 3, 2]]
             self.assertEqual(posix.preadv(fd, buf, 3, os.RWF_HIPRI), 10)
             self.assertEqual([b't1tt2', b't3t', b'5t'], list(buf))
+        except NotImplementedError:
+            self.skipTest("preadv2 not available")
         except OSError as inst:
             # Is possible that the macro RWF_HIPRI was defined at compilation time
             # but the option is not supported by the kernel or the runtime libc shared

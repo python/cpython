@@ -26,6 +26,7 @@ __all__ = (
 __version__ = '1.0'
 
 import asyncio
+import contextlib
 import io
 import inspect
 import pprint
@@ -47,6 +48,13 @@ _safe_super = super
 def _is_async_obj(obj):
     if getattr(obj, '__code__', None):
         return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
+    else:
+        return False
+
+
+def _is_async_func(func):
+    if getattr(func, '__code__', None):
+        return asyncio.iscoroutinefunction(func)
     else:
         return False
 
@@ -98,7 +106,7 @@ def _check_signature(func, mock, skipfirst, instance=False):
     if sig is None:
         return
     func, sig = sig
-    def checksig(_mock_self, *args, **kwargs):
+    def checksig(self, /, *args, **kwargs):
         sig.bind(*args, **kwargs)
     _copy_func_details(func, checksig)
     type(mock)._mock_check_sig = checksig
@@ -223,6 +231,34 @@ def _setup_func(funcopy, mock, sig):
     funcopy.__signature__ = sig
 
     mock._mock_delegate = funcopy
+
+
+def _setup_async_mock(mock):
+    mock._is_coroutine = asyncio.coroutines._is_coroutine
+    mock.await_count = 0
+    mock.await_args = None
+    mock.await_args_list = _CallList()
+    mock.awaited = _AwaitEvent(mock)
+
+    # Mock is not configured yet so the attributes are set
+    # to a function and then the corresponding mock helper function
+    # is called when the helper is accessed similar to _setup_func.
+    def wrapper(attr, /, *args, **kwargs):
+        return getattr(mock.mock, attr)(*args, **kwargs)
+
+    for attribute in ('assert_awaited',
+                      'assert_awaited_once',
+                      'assert_awaited_with',
+                      'assert_awaited_once_with',
+                      'assert_any_await',
+                      'assert_has_awaits',
+                      'assert_not_awaited'):
+
+        # setattr(mock, attribute, wrapper) causes late binding
+        # hence attribute will always be the last value in the loop
+        # Use partial(wrapper, attribute) to ensure the attribute is bound
+        # correctly.
+        setattr(mock, attribute, partial(wrapper, attribute))
 
 
 def _is_magic(name):
@@ -351,7 +387,7 @@ class _MockIter(object):
 class Base(object):
     _mock_return_value = DEFAULT
     _mock_side_effect = None
-    def __init__(self, *args, **kwargs):
+    def __init__(self, /, *args, **kwargs):
         pass
 
 
@@ -359,7 +395,7 @@ class Base(object):
 class NonCallableMock(Base):
     """A non-callable version of `Mock`"""
 
-    def __new__(cls, *args, **kw):
+    def __new__(cls, /, *args, **kw):
         # every instance has its own class
         # so we can create magic methods on the
         # class without stomping on other mocks
@@ -566,7 +602,7 @@ class NonCallableMock(Base):
             ret.reset_mock(visited)
 
 
-    def configure_mock(self, **kwargs):
+    def configure_mock(self, /, **kwargs):
         """Set attributes on the mock through keyword arguments.
 
         Attributes plus return values and side effects can be set on child
@@ -755,12 +791,12 @@ class NonCallableMock(Base):
         return _format_call_signature(name, args, kwargs)
 
 
-    def _format_mock_failure_message(self, args, kwargs):
-        message = 'expected call not found.\nExpected: %s\nActual: %s'
+    def _format_mock_failure_message(self, args, kwargs, action='call'):
+        message = 'expected %s not found.\nExpected: %s\nActual: %s'
         expected_string = self._format_mock_call_signature(args, kwargs)
         call_args = self.call_args
         actual_string = self._format_mock_call_signature(*call_args)
-        return message % (expected_string, actual_string)
+        return message % (action, expected_string, actual_string)
 
 
     def _call_matcher(self, _call):
@@ -784,10 +820,9 @@ class NonCallableMock(Base):
         else:
             return _call
 
-    def assert_not_called(_mock_self):
+    def assert_not_called(self):
         """assert that the mock was never called.
         """
-        self = _mock_self
         if self.call_count != 0:
             msg = ("Expected '%s' to not have been called. Called %s times.%s"
                    % (self._mock_name or 'mock',
@@ -795,19 +830,17 @@ class NonCallableMock(Base):
                       self._calls_repr()))
             raise AssertionError(msg)
 
-    def assert_called(_mock_self):
+    def assert_called(self):
         """assert that the mock was called at least once
         """
-        self = _mock_self
         if self.call_count == 0:
             msg = ("Expected '%s' to have been called." %
                    self._mock_name or 'mock')
             raise AssertionError(msg)
 
-    def assert_called_once(_mock_self):
+    def assert_called_once(self):
         """assert that the mock was called only once.
         """
-        self = _mock_self
         if not self.call_count == 1:
             msg = ("Expected '%s' to have been called once. Called %s times.%s"
                    % (self._mock_name or 'mock',
@@ -815,12 +848,11 @@ class NonCallableMock(Base):
                       self._calls_repr()))
             raise AssertionError(msg)
 
-    def assert_called_with(_mock_self, *args, **kwargs):
+    def assert_called_with(self, /, *args, **kwargs):
         """assert that the mock was called with the specified arguments.
 
         Raises an AssertionError if the args and keyword args passed in are
         different to the last call to the mock."""
-        self = _mock_self
         if self.call_args is None:
             expected = self._format_mock_call_signature(args, kwargs)
             actual = 'not called.'
@@ -838,10 +870,9 @@ class NonCallableMock(Base):
             raise AssertionError(_error_message()) from cause
 
 
-    def assert_called_once_with(_mock_self, *args, **kwargs):
+    def assert_called_once_with(self, /, *args, **kwargs):
         """assert that the mock was called exactly once and that that call was
         with the specified arguments."""
-        self = _mock_self
         if not self.call_count == 1:
             msg = ("Expected '%s' to be called once. Called %s times.%s"
                    % (self._mock_name or 'mock',
@@ -888,7 +919,7 @@ class NonCallableMock(Base):
             ) from cause
 
 
-    def assert_any_call(self, *args, **kwargs):
+    def assert_any_call(self, /, *args, **kwargs):
         """assert the mock has been called with the specified arguments.
 
         The assert passes if the mock has *ever* been called, unlike
@@ -904,7 +935,7 @@ class NonCallableMock(Base):
             ) from cause
 
 
-    def _get_child_mock(self, **kw):
+    def _get_child_mock(self, /, **kw):
         """Create the child mocks for attributes and return value.
         By default child mocks will be the same type as the parent.
         Subclasses of Mock may want to override this to customize the way
@@ -980,20 +1011,19 @@ class CallableMixin(Base):
         self.side_effect = side_effect
 
 
-    def _mock_check_sig(self, *args, **kwargs):
+    def _mock_check_sig(self, /, *args, **kwargs):
         # stub method that can be replaced with one with a specific signature
         pass
 
 
-    def __call__(_mock_self, *args, **kwargs):
+    def __call__(self, /, *args, **kwargs):
         # can't use self in-case a function / method we are mocking uses self
         # in the signature
-        _mock_self._mock_check_sig(*args, **kwargs)
-        return _mock_self._mock_call(*args, **kwargs)
+        self._mock_check_sig(*args, **kwargs)
+        return self._mock_call(*args, **kwargs)
 
 
-    def _mock_call(_mock_self, *args, **kwargs):
-        self = _mock_self
+    def _mock_call(self, /, *args, **kwargs):
         self.called = True
         self.call_count += 1
 
@@ -1185,6 +1215,8 @@ class _patch(object):
     def __call__(self, func):
         if isinstance(func, type):
             return self.decorate_class(func)
+        if inspect.iscoroutinefunction(func):
+            return self.decorate_async_callable(func)
         return self.decorate_callable(func)
 
 
@@ -1202,41 +1234,68 @@ class _patch(object):
         return klass
 
 
+    @contextlib.contextmanager
+    def decoration_helper(self, patched, args, keywargs):
+        extra_args = []
+        entered_patchers = []
+        patching = None
+
+        exc_info = tuple()
+        try:
+            for patching in patched.patchings:
+                arg = patching.__enter__()
+                entered_patchers.append(patching)
+                if patching.attribute_name is not None:
+                    keywargs.update(arg)
+                elif patching.new is DEFAULT:
+                    extra_args.append(arg)
+
+            args += tuple(extra_args)
+            yield (args, keywargs)
+        except:
+            if (patching not in entered_patchers and
+                _is_started(patching)):
+                # the patcher may have been started, but an exception
+                # raised whilst entering one of its additional_patchers
+                entered_patchers.append(patching)
+            # Pass the exception to __exit__
+            exc_info = sys.exc_info()
+            # re-raise the exception
+            raise
+        finally:
+            for patching in reversed(entered_patchers):
+                patching.__exit__(*exc_info)
+
+
     def decorate_callable(self, func):
+        # NB. Keep the method in sync with decorate_async_callable()
         if hasattr(func, 'patchings'):
             func.patchings.append(self)
             return func
 
         @wraps(func)
         def patched(*args, **keywargs):
-            extra_args = []
-            entered_patchers = []
+            with self.decoration_helper(patched,
+                                        args,
+                                        keywargs) as (newargs, newkeywargs):
+                return func(*newargs, **newkeywargs)
 
-            exc_info = tuple()
-            try:
-                for patching in patched.patchings:
-                    arg = patching.__enter__()
-                    entered_patchers.append(patching)
-                    if patching.attribute_name is not None:
-                        keywargs.update(arg)
-                    elif patching.new is DEFAULT:
-                        extra_args.append(arg)
+        patched.patchings = [self]
+        return patched
 
-                args += tuple(extra_args)
-                return func(*args, **keywargs)
-            except:
-                if (patching not in entered_patchers and
-                    _is_started(patching)):
-                    # the patcher may have been started, but an exception
-                    # raised whilst entering one of its additional_patchers
-                    entered_patchers.append(patching)
-                # Pass the exception to __exit__
-                exc_info = sys.exc_info()
-                # re-raise the exception
-                raise
-            finally:
-                for patching in reversed(entered_patchers):
-                    patching.__exit__(*exc_info)
+
+    def decorate_async_callable(self, func):
+        # NB. Keep the method in sync with decorate_callable()
+        if hasattr(func, 'patchings'):
+            func.patchings.append(self)
+            return func
+
+        @wraps(func)
+        async def patched(*args, **keywargs):
+            with self.decoration_helper(patched,
+                                        args,
+                                        keywargs) as (newargs, newkeywargs):
+                return await func(*newargs, **newkeywargs)
 
         patched.patchings = [self]
         return patched
@@ -1665,6 +1724,7 @@ class _patch_dict(object):
     def __enter__(self):
         """Patch the dict."""
         self._patch_dict()
+        return self.in_dict
 
 
     def _patch_dict(self):
@@ -1774,7 +1834,7 @@ _non_defaults = {
 
 def _get_method(name, func):
     "Turns a callable object (like a mock) into a real function"
-    def method(self, *args, **kw):
+    def method(self, /, *args, **kw):
         return func(self, *args, **kw)
     method.__name__ = name
     return method
@@ -1888,7 +1948,7 @@ def _set_return_value(mock, method, name):
 
 
 class MagicMixin(object):
-    def __init__(self, *args, **kw):
+    def __init__(self, /, *args, **kw):
         self._mock_set_magics()  # make magic work for kwargs in init
         _safe_super(MagicMixin, self).__init__(*args, **kw)
         self._mock_set_magics()  # fix magic broken by upper level init
@@ -1930,7 +1990,7 @@ class NonCallableMagicMock(MagicMixin, NonCallableMock):
 
 
 class AsyncMagicMixin:
-    def __init__(self, *args, **kw):
+    def __init__(self, /, *args, **kw):
         self._mock_set_async_magics()  # make magic work for kwargs in init
         _safe_super(AsyncMagicMixin, self).__init__(*args, **kw)
         self._mock_set_async_magics()  # fix magic broken by upper level init
@@ -2001,7 +2061,7 @@ class AsyncMockMixin(Base):
     await_args = _delegating_property('await_args')
     await_args_list = _delegating_property('await_args_list')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, /, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # asyncio.iscoroutinefunction() checks _is_coroutine property to say if an
         # object is a coroutine. Without this check it looks to see if it is a
@@ -2018,8 +2078,7 @@ class AsyncMockMixin(Base):
         code_mock.co_flags = inspect.CO_COROUTINE
         self.__dict__['__code__'] = code_mock
 
-    async def _mock_call(_mock_self, *args, **kwargs):
-        self = _mock_self
+    async def _mock_call(self, /, *args, **kwargs):
         try:
             result = super()._mock_call(*args, **kwargs)
         except (BaseException, StopIteration) as e:
@@ -2044,36 +2103,33 @@ class AsyncMockMixin(Base):
 
         return await proxy()
 
-    def assert_awaited(_mock_self):
+    def assert_awaited(self):
         """
         Assert that the mock was awaited at least once.
         """
-        self = _mock_self
         if self.await_count == 0:
             msg = f"Expected {self._mock_name or 'mock'} to have been awaited."
             raise AssertionError(msg)
 
-    def assert_awaited_once(_mock_self):
+    def assert_awaited_once(self):
         """
         Assert that the mock was awaited exactly once.
         """
-        self = _mock_self
         if not self.await_count == 1:
             msg = (f"Expected {self._mock_name or 'mock'} to have been awaited once."
                    f" Awaited {self.await_count} times.")
             raise AssertionError(msg)
 
-    def assert_awaited_with(_mock_self, *args, **kwargs):
+    def assert_awaited_with(self, /, *args, **kwargs):
         """
         Assert that the last await was with the specified arguments.
         """
-        self = _mock_self
         if self.await_args is None:
             expected = self._format_mock_call_signature(args, kwargs)
             raise AssertionError(f'Expected await: {expected}\nNot awaited')
 
         def _error_message():
-            msg = self._format_mock_failure_message(args, kwargs)
+            msg = self._format_mock_failure_message(args, kwargs, action='await')
             return msg
 
         expected = self._call_matcher((args, kwargs))
@@ -2082,23 +2138,21 @@ class AsyncMockMixin(Base):
             cause = expected if isinstance(expected, Exception) else None
             raise AssertionError(_error_message()) from cause
 
-    def assert_awaited_once_with(_mock_self, *args, **kwargs):
+    def assert_awaited_once_with(self, /, *args, **kwargs):
         """
         Assert that the mock was awaited exactly once and with the specified
         arguments.
         """
-        self = _mock_self
         if not self.await_count == 1:
             msg = (f"Expected {self._mock_name or 'mock'} to have been awaited once."
                    f" Awaited {self.await_count} times.")
             raise AssertionError(msg)
         return self.assert_awaited_with(*args, **kwargs)
 
-    def assert_any_await(_mock_self, *args, **kwargs):
+    def assert_any_await(self, /, *args, **kwargs):
         """
         Assert the mock has ever been awaited with the specified arguments.
         """
-        self = _mock_self
         expected = self._call_matcher((args, kwargs))
         actual = [self._call_matcher(c) for c in self.await_args_list]
         if expected not in actual:
@@ -2108,7 +2162,7 @@ class AsyncMockMixin(Base):
                 '%s await not found' % expected_string
             ) from cause
 
-    def assert_has_awaits(_mock_self, calls, any_order=False):
+    def assert_has_awaits(self, calls, any_order=False):
         """
         Assert the mock has been awaited with the specified calls.
         The :attr:`await_args_list` list is checked for the awaits.
@@ -2120,14 +2174,13 @@ class AsyncMockMixin(Base):
         If `any_order` is True then the awaits can be in any order, but
         they must all appear in :attr:`await_args_list`.
         """
-        self = _mock_self
         expected = [self._call_matcher(c) for c in calls]
         cause = expected if isinstance(expected, Exception) else None
         all_awaits = _CallList(self._call_matcher(c) for c in self.await_args_list)
         if not any_order:
             if expected not in all_awaits:
                 raise AssertionError(
-                    f'Awaits not found.\nExpected: {_CallList(calls)}\n',
+                    f'Awaits not found.\nExpected: {_CallList(calls)}\n'
                     f'Actual: {self.await_args_list}'
                 ) from cause
             return
@@ -2145,17 +2198,16 @@ class AsyncMockMixin(Base):
                 '%r not all found in await list' % (tuple(not_found),)
             ) from cause
 
-    def assert_not_awaited(_mock_self):
+    def assert_not_awaited(self):
         """
         Assert that the mock was never awaited.
         """
-        self = _mock_self
         if self.await_count != 0:
-            msg = (f"Expected {self._mock_name or 'mock'} to have been awaited once."
+            msg = (f"Expected {self._mock_name or 'mock'} to not have been awaited."
                    f" Awaited {self.await_count} times.")
             raise AssertionError(msg)
 
-    def reset_mock(self, *args, **kwargs):
+    def reset_mock(self, /, *args, **kwargs):
         """
         See :func:`.Mock.reset_mock()`
         """
@@ -2358,7 +2410,7 @@ class _Call(tuple):
     __ne__ = object.__ne__
 
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, /, *args, **kwargs):
         if self._mock_name is None:
             return _Call(('', args, kwargs), name='()')
 
@@ -2373,10 +2425,10 @@ class _Call(tuple):
         return _Call(name=name, parent=self, from_kall=False)
 
 
-    def count(self, *args, **kwargs):
+    def count(self, /, *args, **kwargs):
         return self.__getattr__('count')(*args, **kwargs)
 
-    def index(self, *args, **kwargs):
+    def index(self, /, *args, **kwargs):
         return self.__getattr__('index')(*args, **kwargs)
 
     def _get_call_arguments(self):
@@ -2457,10 +2509,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         spec = type(spec)
 
     is_type = isinstance(spec, type)
-    if getattr(spec, '__code__', None):
-        is_async_func = asyncio.iscoroutinefunction(spec)
-    else:
-        is_async_func = False
+    is_async_func = _is_async_func(spec)
     _kwargs = {'spec': spec}
     if spec_set:
         _kwargs = {'spec_set': spec}
@@ -2498,26 +2547,11 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                  name=_name, **_kwargs)
 
     if isinstance(spec, FunctionTypes):
-        wrapped_mock = mock
         # should only happen at the top level because we don't
         # recurse for functions
         mock = _set_signature(mock, spec)
         if is_async_func:
-            mock._is_coroutine = asyncio.coroutines._is_coroutine
-            mock.await_count = 0
-            mock.await_args = None
-            mock.await_args_list = _CallList()
-
-            for a in ('assert_awaited',
-                      'assert_awaited_once',
-                      'assert_awaited_with',
-                      'assert_awaited_once_with',
-                      'assert_any_await',
-                      'assert_has_awaits',
-                      'assert_not_awaited'):
-                def f(*args, **kwargs):
-                    return getattr(wrapped_mock, a)(*args, **kwargs)
-                setattr(mock, a, f)
+            _setup_async_mock(mock)
     else:
         _check_signature(spec, mock, is_type, instance)
 
@@ -2730,7 +2764,7 @@ class PropertyMock(Mock):
     Fetching a `PropertyMock` instance from an object calls the mock, with
     no args. Setting it calls the mock with the value being set.
     """
-    def _get_child_mock(self, **kwargs):
+    def _get_child_mock(self, /, **kwargs):
         return MagicMock(**kwargs)
 
     def __get__(self, obj, obj_type):

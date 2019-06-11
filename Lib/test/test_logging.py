@@ -3633,6 +3633,16 @@ if hasattr(logging.handlers, 'QueueListener'):
                                     [m.msg if isinstance(m, logging.LogRecord)
                                      else m for m in items]))
 
+        def test_calls_task_done_after_stop(self):
+            # Issue 36813: Make sure queue.join does not deadlock.
+            log_queue = queue.Queue()
+            listener = logging.handlers.QueueListener(log_queue)
+            listener.start()
+            listener.stop()
+            with self.assertRaises(ValueError):
+                # Make sure all tasks are done and .join won't block.
+                log_queue.task_done()
+
 
 ZERO = datetime.timedelta(0)
 

@@ -9,6 +9,7 @@ set arm32_ssh=
 
 :CheckOpts
 if "%1"=="-x64" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
+if "%1"=="-arm64" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
 if "%1"=="-arm32" (set rt_opts=%rt_opts% %1) & (set arm32_ssh=true) & shift & goto CheckOpts
 if "%1"=="-d" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
 if "%1"=="-O" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
