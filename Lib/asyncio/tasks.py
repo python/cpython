@@ -42,9 +42,19 @@ def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
         loop = events.get_running_loop()
-    # NB: set(_all_tasks) is required to protect
+    # NB: list(_all_tasks) is required to protect
     # from https://bugs.python.org/issue34970 bug
-    return {t for t in list(_all_tasks)
+    # NB: Have to repeat on RuntimeError, other thread
+    # can modify _all_tasks during list(_all_tasks) call
+    # https://bugs.python.org/issue36607
+    while True:
+        try:
+            tasks = list(_all_tasks)
+        except RuntimeError:
+            pass
+        else:
+            break
+    return {t for t in tasks
             if futures._get_loop(t) is loop and not t.done()}
 
 
@@ -54,9 +64,19 @@ def _all_tasks_compat(loop=None):
     # method.
     if loop is None:
         loop = events.get_event_loop()
-    # NB: set(_all_tasks) is required to protect
+    # NB: list(_all_tasks) is required to protect
     # from https://bugs.python.org/issue34970 bug
-    return {t for t in list(_all_tasks) if futures._get_loop(t) is loop}
+    # NB: Have to repeat on RuntimeError, other thread
+    # can modify _all_tasks during list(_all_tasks) call
+    # https://bugs.python.org/issue36607
+    while True:
+        try:
+            tasks = list(_all_tasks)
+        except RuntimeError:
+            pass
+        else:
+            break
+    return {t for t in tasks if futures._get_loop(t) is loop}
 
 
 def _set_task_name(task, name):
