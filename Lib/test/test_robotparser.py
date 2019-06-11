@@ -98,6 +98,7 @@ Disallow: /
 
 class EmptyFileTest(BaseRobotTest, unittest.TestCase):
     robots_txt = ""
+    good = ['/foo']
 
 
 class BaseRequestRateTest(BaseRobotTest):
