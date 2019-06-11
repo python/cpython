@@ -807,7 +807,7 @@ class CLanguage(Language):
                     """ % argname)
 
                 displayname = parameters[0].get_displayname(0)
-                parsearg = converters[0].parse_arg(argname, 0, displayname)
+                parsearg = converters[0].parse_arg(argname, displayname)
                 if parsearg is None:
                     parsearg = """
                         if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments})) {{
@@ -853,7 +853,7 @@ class CLanguage(Language):
             has_optional = False
             for i, p in enumerate(parameters):
                 displayname = p.get_displayname(i+1)
-                parsearg = p.converter.parse_arg(argname_fmt % i, i + 1, displayname)
+                parsearg = p.converter.parse_arg(argname_fmt % i, displayname)
                 if parsearg is None:
                     #print('Cannot convert %s %r for %s' % (p.converter.__class__.__name__, p.converter.format_unit, p.converter.name), file=sys.stderr)
                     parser_code = None
@@ -930,7 +930,7 @@ class CLanguage(Language):
             add_label = None
             for i, p in enumerate(parameters):
                 displayname = p.get_displayname(i+1)
-                parsearg = p.converter.parse_arg(argname_fmt % i, i + 1, displayname)
+                parsearg = p.converter.parse_arg(argname_fmt % i, displayname)
                 if parsearg is None:
                     #print('Cannot convert %s %r for %s' % (p.converter.__class__.__name__, p.converter.format_unit, p.converter.name), file=sys.stderr)
                     parser_code = None
@@ -2650,7 +2650,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         pass
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'O&':
             return """
                 if (!{converter}({argname}, &{paramname})) {{{{
@@ -2664,20 +2664,20 @@ class CConverter(metaclass=CConverterAutoRegister):
                 typecheck, typename = type_checks[self.subclass_of]
                 return """
                     if (!{typecheck}({argname})) {{{{
-                        _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "{typename}", {argname});
+                        _PyArg_BadArgument("{{name}}", {displayname}, "{typename}", {argname});
                         goto exit;
                     }}}}
                     {paramname} = {cast}{argname};
                     """.format(argname=argname, paramname=self.name,
-                               argnum=argnum, displayname=displayname,
-                               typecheck=typecheck, typename=typename, cast=cast)
+                               displayname=displayname, typecheck=typecheck,
+                               typename=typename, cast=cast)
             return """
                 if (!PyObject_TypeCheck({argname}, {subclass_of})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, ({subclass_of})->tp_name, {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, ({subclass_of})->tp_name, {argname});
                     goto exit;
                 }}}}
                 {paramname} = {cast}{argname};
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            subclass_of=self.subclass_of, cast=cast,
                            displayname=displayname)
         if self.format_unit == 'O':
@@ -2715,7 +2715,7 @@ class bool_converter(CConverter):
             self.default = bool(self.default)
             self.c_default = str(int(self.default))
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'i':
             # XXX PyFloat_Check can be removed after the end of the
             # deprecation in _PyLong_FromNbIndexOrNbInt.
@@ -2737,7 +2737,7 @@ class bool_converter(CConverter):
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 class char_converter(CConverter):
     type = 'char'
@@ -2754,7 +2754,7 @@ class char_converter(CConverter):
             if self.c_default == '"\'"':
                 self.c_default = r"'\''"
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'c':
             return """
                 if (PyBytes_Check({argname}) && PyBytes_GET_SIZE({argname}) == 1) {{{{
@@ -2764,12 +2764,12 @@ class char_converter(CConverter):
                     {paramname} = PyByteArray_AS_STRING({argname})[0];
                 }}}}
                 else {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "a byte string of length 1", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "a byte string of length 1", {argname});
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            displayname=displayname)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 
 @add_legacy_c_converter('B', bitwise=True)
@@ -2783,7 +2783,7 @@ class unsigned_char_converter(CConverter):
         if bitwise:
             self.format_unit = 'B'
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'b':
             return """
                 if (PyFloat_Check({argname})) {{{{
@@ -2828,7 +2828,7 @@ class unsigned_char_converter(CConverter):
                     }}}}
                 }}}}
                 """.format(argname=argname, paramname=self.name)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 class byte_converter(unsigned_char_converter): pass
 
@@ -2838,7 +2838,7 @@ class short_converter(CConverter):
     format_unit = 'h'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'h':
             return """
                 if (PyFloat_Check({argname})) {{{{
@@ -2866,7 +2866,7 @@ class short_converter(CConverter):
                     }}}}
                 }}}}
                 """.format(argname=argname, paramname=self.name)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 class unsigned_short_converter(CConverter):
     type = 'unsigned short'
@@ -2879,7 +2879,7 @@ class unsigned_short_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedShort_Converter'
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'H':
             return """
                 if (PyFloat_Check({argname})) {{{{
@@ -2892,7 +2892,7 @@ class unsigned_short_converter(CConverter):
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 @add_legacy_c_converter('C', accept={str})
 class int_converter(CConverter):
@@ -2909,7 +2909,7 @@ class int_converter(CConverter):
         if type != None:
             self.type = type
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'i':
             return """
                 if (PyFloat_Check({argname})) {{{{
@@ -2925,20 +2925,20 @@ class int_converter(CConverter):
         elif self.format_unit == 'C':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "a unicode character", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "a unicode character", {argname});
                     goto exit;
                 }}}}
                 if (PyUnicode_READY({argname})) {{{{
                     goto exit;
                 }}}}
                 if (PyUnicode_GET_LENGTH({argname}) != 1) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "a unicode character", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "a unicode character", {argname});
                     goto exit;
                 }}}}
                 {paramname} = PyUnicode_READ_CHAR({argname}, 0);
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            displayname=displayname)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 class unsigned_int_converter(CConverter):
     type = 'unsigned int'
@@ -2951,7 +2951,7 @@ class unsigned_int_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedInt_Converter'
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'I':
             return """
                 if (PyFloat_Check({argname})) {{{{
@@ -2964,7 +2964,7 @@ class unsigned_int_converter(CConverter):
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 class long_converter(CConverter):
     type = 'long'
@@ -2972,7 +2972,7 @@ class long_converter(CConverter):
     format_unit = 'l'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'l':
             return """
                 if (PyFloat_Check({argname})) {{{{
@@ -2985,7 +2985,7 @@ class long_converter(CConverter):
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 class unsigned_long_converter(CConverter):
     type = 'unsigned long'
@@ -2998,17 +2998,17 @@ class unsigned_long_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedLong_Converter'
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'k':
             return """
                 if (!PyLong_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "int", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "int", {argname});
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsUnsignedLongMask({argname});
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            displayname=displayname)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 class long_long_converter(CConverter):
     type = 'long long'
@@ -3016,7 +3016,7 @@ class long_long_converter(CConverter):
     format_unit = 'L'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'L':
             return """
                 if (PyFloat_Check({argname})) {{{{
@@ -3029,7 +3029,7 @@ class long_long_converter(CConverter):
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 class unsigned_long_long_converter(CConverter):
     type = 'unsigned long long'
@@ -3042,17 +3042,17 @@ class unsigned_long_long_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedLongLong_Converter'
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'K':
             return """
                 if (!PyLong_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "int", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "int", {argname});
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsUnsignedLongLongMask({argname});
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            displayname=displayname)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
@@ -3067,7 +3067,7 @@ class Py_ssize_t_converter(CConverter):
         else:
             fail("Py_ssize_t_converter: illegal 'accept' argument " + repr(accept))
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'n':
             return """
                 if (PyFloat_Check({argname})) {{{{
@@ -3088,7 +3088,7 @@ class Py_ssize_t_converter(CConverter):
                     {paramname} = ival;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 
 class slice_index_converter(CConverter):
@@ -3107,7 +3107,7 @@ class size_t_converter(CConverter):
     converter = '_PyLong_Size_t_Converter'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'n':
             return """
                 {paramname} = PyNumber_AsSsize_t({argname}, PyExc_OverflowError);
@@ -3115,7 +3115,7 @@ class size_t_converter(CConverter):
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 
 class float_converter(CConverter):
@@ -3124,7 +3124,7 @@ class float_converter(CConverter):
     format_unit = 'f'
     c_ignored_default = "0.0"
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'f':
             return """
                 {paramname} = (float) PyFloat_AsDouble({argname});
@@ -3132,7 +3132,7 @@ class float_converter(CConverter):
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 class double_converter(CConverter):
     type = 'double'
@@ -3140,7 +3140,7 @@ class double_converter(CConverter):
     format_unit = 'd'
     c_ignored_default = "0.0"
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'd':
             return """
                 {paramname} = PyFloat_AsDouble({argname});
@@ -3148,7 +3148,7 @@ class double_converter(CConverter):
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 
 class Py_complex_converter(CConverter):
@@ -3157,7 +3157,7 @@ class Py_complex_converter(CConverter):
     format_unit = 'D'
     c_ignored_default = "{0.0, 0.0}"
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'D':
             return """
                 {paramname} = PyComplex_AsCComplex({argname});
@@ -3165,7 +3165,7 @@ class Py_complex_converter(CConverter):
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 
 class object_converter(CConverter):
@@ -3231,11 +3231,11 @@ class str_converter(CConverter):
             name = self.name
             return "".join(["if (", name, ") {\n   PyMem_FREE(", name, ");\n}\n"])
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 's':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "str", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "str", {argname});
                     goto exit;
                 }}}}
                 Py_ssize_t {paramname}_length;
@@ -3247,7 +3247,7 @@ class str_converter(CConverter):
                     PyErr_SetString(PyExc_ValueError, "embedded null character");
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            displayname=displayname)
         if self.format_unit == 'z':
             return """
@@ -3266,12 +3266,12 @@ class str_converter(CConverter):
                     }}}}
                 }}}}
                 else {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "str or None", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "str or None", {argname});
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            displayname=displayname)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 #
 # This is the fourth or fifth rewrite of registering all the
@@ -3326,54 +3326,54 @@ class PyBytesObject_converter(CConverter):
     format_unit = 'S'
     # accept = {bytes}
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'S':
             return """
                 if (!PyBytes_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "bytes", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "bytes", {argname});
                     goto exit;
                 }}}}
                 {paramname} = ({type}){argname};
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            type=self.type, displayname=displayname)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 class PyByteArrayObject_converter(CConverter):
     type = 'PyByteArrayObject *'
     format_unit = 'Y'
     # accept = {bytearray}
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'Y':
             return """
                 if (!PyByteArray_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "bytearray", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "bytearray", {argname});
                     goto exit;
                 }}}}
                 {paramname} = ({type}){argname};
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            type=self.type, displayname=displayname)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 class unicode_converter(CConverter):
     type = 'PyObject *'
     default_type = (str, Null, NoneType)
     format_unit = 'U'
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'U':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "str", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "str", {argname});
                     goto exit;
                 }}}}
                 if (PyUnicode_READY({argname}) == -1) {{{{
                     goto exit;
                 }}}}
                 {paramname} = {argname};
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            displayname=displayname)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 @add_legacy_c_converter('u#', zeroes=True)
 @add_legacy_c_converter('Z', accept={str, NoneType})
@@ -3422,17 +3422,17 @@ class Py_buffer_converter(CConverter):
         name = self.name
         return "".join(["if (", name, ".obj) {\n   PyBuffer_Release(&", name, ");\n}\n"])
 
-    def parse_arg(self, argname, argnum, displayname):
+    def parse_arg(self, argname, displayname):
         if self.format_unit == 'y*':
             return """
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
                     goto exit;
                 }}}}
                 if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "contiguous buffer", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "contiguous buffer", {argname});
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            displayname=displayname)
         elif self.format_unit == 's*':
             return """
@@ -3449,26 +3449,26 @@ class Py_buffer_converter(CConverter):
                         goto exit;
                     }}}}
                     if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                        _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "contiguous buffer", {argname});
+                        _PyArg_BadArgument("{{name}}", {displayname}, "contiguous buffer", {argname});
                         goto exit;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            displayname=displayname)
         elif self.format_unit == 'w*':
             return """
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_WRITABLE) < 0) {{{{
                     PyErr_Clear();
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "read-write bytes-like object", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "read-write bytes-like object", {argname});
                     goto exit;
                 }}}}
                 if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                    _PyArg_BadArgument("{{name}}", {argnum}, {displayname}, "contiguous buffer", {argname});
+                    _PyArg_BadArgument("{{name}}", {displayname}, "contiguous buffer", {argname});
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name, argnum=argnum,
+                """.format(argname=argname, paramname=self.name,
                            displayname=displayname)
-        return super().parse_arg(argname, argnum, displayname)
+        return super().parse_arg(argname, displayname)
 
 
 def correct_name_for_self(f):

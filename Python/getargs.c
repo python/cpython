@@ -615,7 +615,7 @@ convertitem(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 */
 
 void
-_PyArg_BadArgument(const char *fname, int iarg, const char *displayname,
+_PyArg_BadArgument(const char *fname, const char *displayname,
                    const char *expected, PyObject *arg)
 {
     PyErr_Format(PyExc_TypeError,

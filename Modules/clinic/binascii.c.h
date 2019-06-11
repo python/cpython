@@ -64,7 +64,7 @@ binascii_b2a_uu(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_uu", 1, "argument 1", "contiguous buffer", args[0]);
+        _PyArg_BadArgument("b2a_uu", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -153,7 +153,7 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_base64", 1, "argument 1", "contiguous buffer", args[0]);
+        _PyArg_BadArgument("b2a_base64", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -233,7 +233,7 @@ binascii_rlecode_hqx(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("rlecode_hqx", 0, "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("rlecode_hqx", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_rlecode_hqx_impl(module, &data);
@@ -269,7 +269,7 @@ binascii_b2a_hqx(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_hqx", 0, "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("b2a_hqx", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_b2a_hqx_impl(module, &data);
@@ -305,7 +305,7 @@ binascii_rledecode_hqx(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("rledecode_hqx", 0, "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("rledecode_hqx", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_rledecode_hqx_impl(module, &data);
@@ -346,7 +346,7 @@ binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("crc_hqx", 1, "argument 1", "contiguous buffer", args[0]);
+        _PyArg_BadArgument("crc_hqx", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -400,7 +400,7 @@ binascii_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("crc32", 1, "argument 1", "contiguous buffer", args[0]);
+        _PyArg_BadArgument("crc32", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -456,7 +456,7 @@ binascii_b2a_hex(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_hex", 0, "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("b2a_hex", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_b2a_hex_impl(module, &data);
@@ -494,7 +494,7 @@ binascii_hexlify(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("hexlify", 0, "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("hexlify", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_hexlify_impl(module, &data);
@@ -666,7 +666,7 @@ binascii_b2a_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_qp", 1, "argument 'data'", "contiguous buffer", args[0]);
+        _PyArg_BadArgument("b2a_qp", "argument 'data'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -720,4 +720,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=99ed5c6db16d8d46 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dea4ee349cf8d071 input=a9049054013a1b77]*/
