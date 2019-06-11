@@ -1,1 +1,1 @@
-Add new :func: `unquote_to_bytes_plus` to the urllib.parse module. Patch contributed by Andrew Gates.
+Add :func:`urllib.parse.unquote_to_bytes_plus`. Patch contributed by Andrew Gates.
