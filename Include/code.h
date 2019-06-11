@@ -126,7 +126,7 @@ PyAPI_FUNC(PyCodeObject *) PyCode_New(
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, int, PyObject *);
 
-PyAPI_FUNC(PyCodeObject *) PyCode_NewEx(
+PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
         int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, int, PyObject *);
