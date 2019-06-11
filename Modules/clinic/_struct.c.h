@@ -65,7 +65,7 @@ Struct_unpack(PyStructObject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack", 0, NULL, "contiguous buffer", arg);
+        _PyArg_BadArgument("unpack", 0, "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = Struct_unpack_impl(self, &buffer);
@@ -118,7 +118,7 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack_from", 1, "buffer", "contiguous buffer", args[0]);
+        _PyArg_BadArgument("unpack_from", 1, "argument 'buffer'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -253,7 +253,7 @@ unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack", 2, NULL, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("unpack", 2, "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = unpack_impl(module, s_object, &buffer);
@@ -309,7 +309,7 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack_from", 2, "buffer", "contiguous buffer", args[1]);
+        _PyArg_BadArgument("unpack_from", 2, "argument 'buffer'", "contiguous buffer", args[1]);
         goto exit;
     }
     if (!noptargs) {
@@ -386,4 +386,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=e1a3a392ad2e2784 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7c2cf3525d53e012 input=a9049054013a1b77]*/

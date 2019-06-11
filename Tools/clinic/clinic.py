@@ -806,7 +806,7 @@ class CLanguage(Language):
                     {c_basename}({self_type}{self_name}, PyObject *%s)
                     """ % argname)
 
-                displayname = parameters[0].displayname()
+                displayname = parameters[0].get_displayname(0)
                 parsearg = converters[0].parse_arg(argname, 0, displayname)
                 if parsearg is None:
                     parsearg = """
@@ -852,7 +852,7 @@ class CLanguage(Language):
                 """ % (nargs, min_pos, max_pos), indent=4)]
             has_optional = False
             for i, p in enumerate(parameters):
-                displayname = p.displayname()
+                displayname = p.get_displayname(i+1)
                 parsearg = p.converter.parse_arg(argname_fmt % i, i + 1, displayname)
                 if parsearg is None:
                     #print('Cannot convert %s %r for %s' % (p.converter.__class__.__name__, p.converter.format_unit, p.converter.name), file=sys.stderr)
@@ -929,7 +929,7 @@ class CLanguage(Language):
 
             add_label = None
             for i, p in enumerate(parameters):
-                displayname = p.displayname()
+                displayname = p.get_displayname(i+1)
                 parsearg = p.converter.parse_arg(argname_fmt % i, i + 1, displayname)
                 if parsearg is None:
                     #print('Cannot convert %s %r for %s' % (p.converter.__class__.__name__, p.converter.format_unit, p.converter.name), file=sys.stderr)
@@ -2296,11 +2296,13 @@ class Parameter:
             kwargs['converter'] = converter
         return Parameter(**kwargs)
 
-    def displayname(self):
+    def get_displayname(self, i):
+        if i == 0:
+            return '"argument"'
         if self.is_positional_or_keyword():
-            return '"{}"'.format(self.name)
+            return '''"argument '{}'"'''.format(self.name)
         else:
-            return 'NULL'
+            return '"argument {}"'.format(i)
 
 
 class LandMine:
