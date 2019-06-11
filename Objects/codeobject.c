@@ -102,14 +102,26 @@ intern_string_constants(PyObject *tuple)
     return modified;
 }
 
-
 PyCodeObject *
-PyCode_New(int argcount, int posonlyargcount, int kwonlyargcount,
+PyCode_New(int argcount, int kwonlyargcount,
            int nlocals, int stacksize, int flags,
            PyObject *code, PyObject *consts, PyObject *names,
            PyObject *varnames, PyObject *freevars, PyObject *cellvars,
            PyObject *filename, PyObject *name, int firstlineno,
            PyObject *lnotab)
+{
+    return PyCode_NewEx(argcount, 0, kwonlyargcount, nlocals, stacksize,
+                        flags, code, consts, names, varnames, freevars,
+                        cellvars, filename, name, firstlineno, lnotab);
+}
+
+PyCodeObject *
+PyCode_NewEx(int argcount, int posonlyargcount, int kwonlyargcount,
+             int nlocals, int stacksize, int flags,
+             PyObject *code, PyObject *consts, PyObject *names,
+             PyObject *varnames, PyObject *freevars, PyObject *cellvars,
+             PyObject *filename, PyObject *name, int firstlineno,
+             PyObject *lnotab)
 {
     PyCodeObject *co;
     Py_ssize_t *cell2arg = NULL;
@@ -311,7 +323,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL)
         goto failed;
 
-    result = PyCode_New(0,                      /* argcount */
+    result = PyCode_NewEx(0,                    /* argcount */
                 0,                              /* posonlyargcount */
                 0,                              /* kwonlyargcount */
                 0,                              /* nlocals */
@@ -492,11 +504,11 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (ourcellvars == NULL)
         goto cleanup;
 
-    co = (PyObject *)PyCode_New(argcount, posonlyargcount, kwonlyargcount,
-                                nlocals, stacksize, flags,
-                                code, consts, ournames, ourvarnames,
-                                ourfreevars, ourcellvars, filename,
-                                name, firstlineno, lnotab);
+    co = (PyObject *)PyCode_NewEx(argcount, posonlyargcount, kwonlyargcount,
+                                  nlocals, stacksize, flags,
+                                  code, consts, ournames, ourvarnames,
+                                  ourfreevars, ourcellvars, filename,
+                                  name, firstlineno, lnotab);
   cleanup:
     Py_XDECREF(ournames);
     Py_XDECREF(ourvarnames);
@@ -625,7 +637,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 
 #undef CHECK_INT_ARG
 
-    return (PyObject *)PyCode_New(
+    return (PyObject *)PyCode_NewEx(
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
         co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
         co_varnames, co_freevars, co_cellvars, co_filename, co_name,

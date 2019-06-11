@@ -119,7 +119,14 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 #define PyCode_GetNumFree(op) (PyTuple_GET_SIZE((op)->co_freevars))
 
 /* Public interface */
+
+/* For backwards compatibility after adding posonlyargcount */
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
+        int, int, int, int, int, PyObject *, PyObject *,
+        PyObject *, PyObject *, PyObject *, PyObject *,
+        PyObject *, PyObject *, int, PyObject *);
+
+PyAPI_FUNC(PyCodeObject *) PyCode_NewEx(
         int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, int, PyObject *);
