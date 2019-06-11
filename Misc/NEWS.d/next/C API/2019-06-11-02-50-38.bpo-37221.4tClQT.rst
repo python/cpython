@@ -1,0 +1,5 @@
+The new function :c:func:`PyCode_NewEx` substitutes :c:func:`PyCode_New` as
+the prefered way to create code objects, having an extra parameter
+representing the number of positional only parameters (**posonlyargcount**).
+The old function is kept for backward compatibility reasons and will set the
+number os positional only parameters to 0.

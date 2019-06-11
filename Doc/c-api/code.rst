@@ -41,9 +41,6 @@ bound into a function.
    version since the definition of the bytecode changes often.
 
    .. versionadded:: 3.8
-      An extra parameter is required (*posonlyargcount*) to support :PEP:`570`.
-      The first parameter (*argcount*) now represents the total number of positional arguments,
-      including positional-only.
 
    .. audit-event:: code.__new__ "code filename name argcount posonlyargcount kwonlyargcount nlocals stacksize flags"
 
