@@ -4412,6 +4412,22 @@ class TestBufferProtocol(unittest.TestCase):
         x = ndarray([1,2,3], shape=[3], flags=ND_GETBUF_FAIL)
         self.assertRaises(BufferError, memoryview, x)
 
+    # Test PyBuffer_SizeFromFormat()
+    @support.cpython_only
+    def test_pybuffer_size_from_format(self):
+        from ctypes import pythonapi
+        PyBuffer_SizeFromFormat = pythonapi.PyBuffer_SizeFromFormat
+
+        # basic tests
+        self.assertIs(PyBuffer_SizeFromFormat("abc") > 0 , True)
+
+        #invalid input
+        self.assertRaises(struct.error, PyBuffer_SizeFromFormat, b'gg')
+
+        #Empty strings
+        self.assertIs(PyBuffer_SizeFromFormat('') > 0 , True)
+        self.assertIs(PyBuffer_SizeFromFormat('%s') > 0 , True)
+
 
 if __name__ == "__main__":
     unittest.main()

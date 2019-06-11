@@ -7,12 +7,6 @@
 #include "longintrepr.h"
 
 
-/* struct module */
-static PyObject *structmodule = NULL;
-static PyObject *calcsize = NULL;
-
-
-
 /* Shorthands to return certain errors */
 
 static PyObject *
@@ -503,25 +497,42 @@ _Py_add_one_to_index_C(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
 int
 PyBuffer_SizeFromFormat(const char *format)
 {
-    PyObject *result;
-    int size;
+    PyObject *structmodule;
+    PyObject *Struct = NULL;
+    PyObject *structobj = NULL;
+    PyObject *fmt = NULL;
+    int itemsize;
 
     structmodule = PyImport_ImportModule("struct");
     if (structmodule == NULL)
-        return NULL;
+        goto error;
 
-    calcsize = PyObject_GetAttrString(structmodule, "calcsize");
-    if (calcsize == NULL)
-        return NULL;
+    Struct = PyObject_GetAttrString(structmodule, "calcsize");
+    Py_DECREF(structmodule);
+    if (Struct == NULL)
+        goto error;
 
-    result = PyObject_CallFunctionObjArgs(calcsize, format, NULL);
-    Py_DECREF(calcsize);
-    if (result == NULL)
-        return -1;
-    size = _PyLong_AsInt(result);
-    Py_DECREF(result);
+    fmt = PyBytes_FromString(format);
+    if (fmt == NULL)
+        goto error;
 
-    return size;
+    structobj = PyObject_CallFunctionObjArgs(Struct, fmt, NULL);
+    if (structobj == NULL)
+        goto error;
+
+    itemsize = (intptr_t)structobj;
+    if (itemsize < 0)
+        goto error;
+
+out:
+    Py_XDECREF(Struct);
+    Py_XDECREF(fmt);
+    Py_XDECREF(structobj);
+    return itemsize;
+
+error:
+    itemsize = -1;
+    goto out;
 }
 
 int
