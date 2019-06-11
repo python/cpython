@@ -363,6 +363,29 @@ Improved Modules
 ================
 
 
+ast
+---
+
+AST nodes now have ``end_lineno`` and ``end_col_offset`` attributes,
+which give the precise location of the end of the node.  (This only
+applies to nodes that have ``lineno`` and ``col_offset`` attributes.)
+
+The :func:`ast.parse` function has some new flags:
+
+* ``type_comments=True`` causes it to return the text of :pep:`484` and
+  :pep:`526` type comments associated with certain AST nodes;
+
+* ``mode='func_type'`` can be used to parse :pep:`484` "signature type
+  comments" (returned for function definition AST nodes);
+
+* ``feature_version=N`` allows specifying the minor version of an
+  earlier Python 3 version.  (For example, ``feature_version=4`` will
+  treat ``async`` and ``await`` as non-reserved words.)
+
+New function :func:`ast.get_source_segment` returns the source code
+for a specific AST node.
+
+
 asyncio
 -------
 
@@ -761,6 +784,29 @@ time
 
 Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
 (Contributed by Joannah Nanjekye in :issue:`35702`.)
+
+
+typing
+------
+
+The :mod:`typing` module incorporates several new features:
+
+* Protocol definitions.  See :pep:`544`, :class:`typing.Protocol` and
+  :func:`typing.runtime_checkable`.  Simple ABCs like
+  :class:`typing.SupportsInt` are now ``Protocol`` subclasses.
+
+* A dictionary type with per-key types.  See :pep:`589` and
+  :class:`typing.TypedDict`.
+
+* Literal types.  See :pep:`586` and :class:`typing.Literal`.
+
+* "Final" variables, functions, methods and classes.  See :pep:`591`,
+  :class:`typing.Final` and :func:`typing.final`.
+
+* New protocol class :class:`typing.SupportsIndex`.
+
+* New functions :func:`typing.get_origin` and :func:`typing.get_args`.
+
 
 unicodedata
 -----------
