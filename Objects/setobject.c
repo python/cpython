@@ -1478,10 +1478,6 @@ PyDoc_STRVAR(isdisjoint_doc,
 static int
 set_difference_update_internal(PySetObject *so, PyObject *other)
 {
-    if (PySet_GET_SIZE(so) == 0) {
-        return 0;
-    }
-
     if ((PyObject *)so == other)
         return set_clear_internal(so);
 
@@ -1555,10 +1551,6 @@ set_difference(PySetObject *so, PyObject *other)
     setentry *entry;
     Py_ssize_t pos = 0, other_size;
     int rv;
-
-    if (PySet_GET_SIZE(so) == 0) {
-        return set_copy(so);
-    }
 
     if (PyAnySet_Check(other)) {
         other_size = PySet_GET_SIZE(other);
