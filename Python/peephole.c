@@ -257,7 +257,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
     Note: -128 and 127 special values for line number delta are ok,
     the peephole optimizer doesn't modify line numbers. */
-    for (j=0; j < tabsiz; j+=2) {
+    for (j = 0; j < tabsiz; j += 2) {
         if (lnotab[j] == 255) {
             goto exitUnchanged;
         }
