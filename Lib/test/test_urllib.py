@@ -90,6 +90,12 @@ def fakehttp(fakedata):
         def connect(self):
             self.sock = FakeSocket(self.fakedata)
             type(self).fakesock = self.sock
+
+        def close(self):
+            # bpo-36918: Don't bother to track exactly I/O references
+            # of FakeSocket: do nothing to silence finalizer exception
+            pass
+
     FakeHTTPConnection.fakedata = fakedata
 
     return FakeHTTPConnection
