@@ -46,7 +46,7 @@ analysis.
    :attr:`sys.excepthook`.
 
    The optional argument *display* defaults to ``1`` and can be set to ``0``
-   to suppress sending the traceback to the browser. A message single line
+   to suppress sending the traceback to the browser.  A message single line
    message declaring that "A problem has occurred ..." will continue to be
    generated.
 
@@ -59,7 +59,7 @@ analysis.
    defaults to ``5``.
 
    If the optional argument *format* is ``"html"``, the output is formatted as
-   HTML.  Any other value forces plain text output. The default value is
+   HTML.  Any other value forces plain text output.  The default value is
    ``"html"``.
 
 
