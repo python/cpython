@@ -9,11 +9,12 @@ Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 _Py_IDENTIFIER(insert);
 
 static inline Py_ssize_t
-internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
+internal_bisect_right(PyObject *list, PyObject *item, PyObject *func, Py_ssize_t lo, Py_ssize_t hi)
 {
     PyObject *litem;
     Py_ssize_t mid;
-    int res;
+    int res = -1;
+    PyObject *callback_res;
 
     if (lo < 0) {
         PyErr_SetString(PyExc_ValueError, "lo must be non-negative");
@@ -32,7 +33,16 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
         litem = PySequence_GetItem(list, mid);
         if (litem == NULL)
             return -1;
-        res = PyObject_RichCompareBool(item, litem, Py_LT);
+        if (NULL != func && NULL != func->ob_type && NULL!= func->ob_type->tp_call &&  PyCallable_Check(func)) {
+            callback_res = PyObject_CallFunctionObjArgs(func, item, litem, NULL);
+            if (NULL != callback_res) {
+                PyArg_Parse(callback_res, "p", &res);
+            } else {
+                res = -1;
+            }
+        } else {
+            res = PyObject_RichCompareBool(item, litem, Py_LT);
+        }
         Py_DECREF(litem);
         if (res < 0)
             return -1;
@@ -47,29 +57,29 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
 static PyObject *
 bisect_right(PyObject *self, PyObject *args, PyObject *kw)
 {
-    PyObject *list, *item;
+    PyObject *list, *item, *func = NULL;
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+    static char *keywords[] = {"a", "x", "lo", "hi", "compare_function", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
     }
     else {
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_right",
-                                         keywords, &list, &item, &lo, &hi))
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nnO:bisect_right",
+                                         keywords, &list, &item, &lo, &hi, &func))
             return NULL;
     }
-    index = internal_bisect_right(list, item, lo, hi);
+    index = internal_bisect_right(list, item, func, lo, hi);
     if (index < 0)
         return NULL;
     return PyLong_FromSsize_t(index);
 }
 
 PyDoc_STRVAR(bisect_right_doc,
-"bisect_right(a, x[, lo[, hi]]) -> index\n\
+"bisect_right(a, x[, lo[, hi[, compare_function]]]) -> index\n\
 \n\
 Return the index where to insert item x in list a, assuming a is sorted.\n\
 \n\
@@ -78,27 +88,30 @@ a[i:] have e > x.  So if x already appears in the list, i points just\n\
 beyond the rightmost x already there\n\
 \n\
 Optional args lo (default 0) and hi (default len(a)) bound the\n\
-slice of a to be searched.\n");
+slice of a to be searched.\n\
+By default, comparison is done via __lt__ (such as a < b).\
+\n\
+compare_function can be supplied to provide an alternative boolean comparison of the same order.");
 
 static PyObject *
 insort_right(PyObject *self, PyObject *args, PyObject *kw)
 {
-    PyObject *list, *item, *result;
+    PyObject *list, *item, *result, *func = NULL;
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+    static char *keywords[] = {"a", "x", "lo", "hi", "compare_function", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
     }
     else {
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_right",
-                                         keywords, &list, &item, &lo, &hi))
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nnO:insort_right",
+                                         keywords, &list, &item, &lo, &hi, &func))
             return NULL;
     }
-    index = internal_bisect_right(list, item, lo, hi);
+    index = internal_bisect_right(list, item, func, lo, hi);
     if (index < 0)
         return NULL;
     if (PyList_CheckExact(list)) {
@@ -116,21 +129,25 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
 }
 
 PyDoc_STRVAR(insort_right_doc,
-"insort_right(a, x[, lo[, hi]])\n\
+"insort_right(a, x[, lo[, hi, [compare_function]]])\n\
 \n\
 Insert item x in list a, and keep it sorted assuming a is sorted.\n\
 \n\
 If x is already in a, insert it to the right of the rightmost x.\n\
 \n\
 Optional args lo (default 0) and hi (default len(a)) bound the\n\
-slice of a to be searched.\n");
+slice of a to be searched.\n\
+By default, comparison is done via __lt__ (such as a < b).\
+\n\
+compare_function can be supplied to provide an alternative boolean comparison of the same order.");
 
 static inline Py_ssize_t
-internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
+internal_bisect_left(PyObject *list, PyObject *item, PyObject *func, Py_ssize_t lo, Py_ssize_t hi)
 {
     PyObject *litem;
     Py_ssize_t mid;
-    int res;
+    int res = -1;
+    PyObject *callback_res;
 
     if (lo < 0) {
         PyErr_SetString(PyExc_ValueError, "lo must be non-negative");
@@ -149,7 +166,16 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
         litem = PySequence_GetItem(list, mid);
         if (litem == NULL)
             return -1;
-        res = PyObject_RichCompareBool(litem, item, Py_LT);
+        if (NULL != func && NULL != func->ob_type && NULL != func->ob_type->tp_call &&  PyCallable_Check(func)) {
+            callback_res = PyObject_CallFunctionObjArgs(func, litem, item, NULL);
+            if (NULL != callback_res) {
+                PyArg_Parse(callback_res, "p", &res);
+            } else {
+                res = -1;
+            }
+        } else {
+            res = PyObject_RichCompareBool(litem, item, Py_LT);
+        }
         Py_DECREF(litem);
         if (res < 0)
             return -1;
@@ -164,22 +190,22 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
 static PyObject *
 bisect_left(PyObject *self, PyObject *args, PyObject *kw)
 {
-    PyObject *list, *item;
+    PyObject *list, *item, *func = NULL;
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+    static char *keywords[] = {"a", "x", "lo", "hi", "compare_function", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
     }
     else {
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_left",
-                                         keywords, &list, &item, &lo, &hi))
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nnO:bisect_left",
+                                         keywords, &list, &item, &lo, &hi, &func))
             return NULL;
     }
-    index = internal_bisect_left(list, item, lo, hi);
+    index = internal_bisect_left(list, item, func, lo, hi);
     if (index < 0)
         return NULL;
     return PyLong_FromSsize_t(index);
@@ -195,26 +221,29 @@ a[i:] have e >= x.  So if x already appears in the list, i points just\n\
 before the leftmost x already there.\n\
 \n\
 Optional args lo (default 0) and hi (default len(a)) bound the\n\
-slice of a to be searched.\n");
+slice of a to be searched.\n\
+By default, comparison is done via __lt__ (such as a < b).\
+\n\
+compare_function can be supplied to provide an alternative boolean comparison of the same order.");
 
 static PyObject *
 insort_left(PyObject *self, PyObject *args, PyObject *kw)
 {
-    PyObject *list, *item, *result;
+    PyObject *list, *item, *result, *func = NULL;
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+    static char *keywords[] = {"a", "x", "lo", "hi", "compare_function", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
     } else {
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_left",
-                                         keywords, &list, &item, &lo, &hi))
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nnO:insort_left",
+                                         keywords, &list, &item, &lo, &hi, &func))
             return NULL;
     }
-    index = internal_bisect_left(list, item, lo, hi);
+    index = internal_bisect_left(list, item, func, lo, hi);
     if (index < 0)
         return NULL;
     if (PyList_CheckExact(list)) {
@@ -238,7 +267,10 @@ Insert item x in list a, and keep it sorted assuming a is sorted.\n\
 If x is already in a, insert it to the left of the leftmost x.\n\
 \n\
 Optional args lo (default 0) and hi (default len(a)) bound the\n\
-slice of a to be searched.\n");
+slice of a to be searched.\n\
+By default, comparison is done via __lt__ (such as a < b).\
+\n\
+compare_function can be supplied to provide an alternative boolean comparison of the same order.");
 
 static PyMethodDef bisect_methods[] = {
     {"bisect_right", (PyCFunction)(void(*)(void))bisect_right,

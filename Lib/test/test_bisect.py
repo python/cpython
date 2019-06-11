@@ -199,6 +199,26 @@ class TestBisect:
         self.module.insort(a=data, x=25, lo=1, hi=3)
         self.assertEqual(data, [10, 20, 25, 25, 25, 30, 40, 50])
 
+    def test_compare_function(self):
+        def compare_function(c1, c2):
+            return c1.n < c2.n
+
+        class CustomClass:
+            def __init__(self, n):
+                self.n = n
+
+            def __eq__(self, other):
+                return self.n == other.n
+
+        data = [CustomClass(n) for n in (10, 20, 30, 40, 50)]
+        self.assertEqual(self.module.bisect_left(a=data, x=CustomClass(25), lo=1, hi=3, compare_function=compare_function), 2)
+        self.assertEqual(self.module.bisect_right(a=data, x=CustomClass(25), lo=1, hi=3, compare_function=compare_function), 2)
+        self.assertEqual(self.module.bisect(a=data, x=CustomClass(25), lo=1, hi=3, compare_function=compare_function), 2)
+        self.module.insort_left(a=data, x=CustomClass(25), lo=1, hi=3, compare_function=compare_function)
+        self.module.insort_right(a=data, x=CustomClass(25), lo=1, hi=3, compare_function=compare_function)
+        self.module.insort(a=data, x=CustomClass(25), lo=1, hi=3, compare_function=compare_function)
+        self.assertEqual(data, [CustomClass(10), CustomClass(20), CustomClass(25), CustomClass(25), CustomClass(25), CustomClass(30), CustomClass(40), CustomClass(50)])
+
 class TestBisectPython(TestBisect, unittest.TestCase):
     module = py_bisect
 
