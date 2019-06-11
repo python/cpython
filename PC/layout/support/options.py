@@ -67,6 +67,21 @@ PRESETS = {
         "help": "Windows IoT Core",
         "options": ["stable", "pip"],
     },
+    "headless": {
+        "help": "headless development kit package",
+        "options": [
+            "stable",
+            "pip",
+            "distutils",
+            "tests",
+            "tools",
+            "venv",
+            "dev",
+            "symbols",
+            "bdist-wininst",
+            "chm",
+        ],
+    },
     "default": {
         "help": "development kit package",
         "options": [
