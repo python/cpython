@@ -351,8 +351,8 @@ def install_recursionlimit_wrappers():
 def uninstall_recursionlimit_wrappers():
     """Uninstall the recursion limit wrappers from the sys module."""
     if (
-            getattr(sys.setrecursionlimit, '__wrapped__') and
-            getattr(sys.getrecursionlimit, '__wrapped__')
+            getattr(sys.setrecursionlimit, '__wrapped__', None) and
+            getattr(sys.getrecursionlimit, '__wrapped__', None)
     ):
         sys.setrecursionlimit = sys.setrecursionlimit.__wrapped__
         sys.getrecursionlimit = sys.getrecursionlimit.__wrapped__
