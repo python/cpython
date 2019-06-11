@@ -25,7 +25,7 @@ there.
 
 What you get after installing is a number of things:
 
-* A :file:`MacPython 3.6` folder in your :file:`Applications` folder. In here
+* A :file:`Python 3.7` folder in your :file:`Applications` folder. In here
   you find IDLE, the development environment that is a standard part of official
   Python distributions; PythonLauncher, which handles double-clicking Python
   scripts from the Finder; and the "Build Applet" tool, which allows you to
