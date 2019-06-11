@@ -33,21 +33,23 @@ bound into a function.
 
    Return the number of free variables in *co*.
 
+.. c:function:: PyCodeObject* PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
+
+   Return a new code object.  If you need a dummy code object to create a frame,
+   use :c:func:`PyCode_NewEmpty` instead.  Calling :c:func:`PyCode_New` directly
+   can bind you to a precise Python version since the definition of the bytecode
+   changes often.
+
+   .. audit-event:: code.__new__ "code filename name argcount kwonlyargcount nlocals stacksize flags"
+
 .. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
 
-   Return a new code object.  If you need a dummy code object to
-   create a frame, use :c:func:`PyCode_NewEmpty` instead.  Calling
-   :c:func:`PyCode_New` directly can bind you to a precise Python
-   version since the definition of the bytecode changes often.
+   Similar to :c:func:`PyCode_New`, but with an extra "posonlyargcount" for positonal-only arguments.
 
    .. versionadded:: 3.8
 
    .. audit-event:: code.__new__ "code filename name argcount posonlyargcount kwonlyargcount nlocals stacksize flags"
 
-.. c:function:: PyCodeObject* PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
-
-   Same as :c:func:`PyCode_NewWithPosOnlyArgs` but kept for backward compatibility reasons. Calling :c:func:`PyCode_New` will call
-   :c:func:`PyCode_NewWithPosOnlyArgs` with the value of **posonlyargcount** set to 0.
 
 .. c:function:: PyCodeObject* PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 

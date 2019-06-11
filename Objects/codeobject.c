@@ -103,20 +103,6 @@ intern_string_constants(PyObject *tuple)
 }
 
 PyCodeObject *
-PyCode_New(int argcount, int kwonlyargcount,
-           int nlocals, int stacksize, int flags,
-           PyObject *code, PyObject *consts, PyObject *names,
-           PyObject *varnames, PyObject *freevars, PyObject *cellvars,
-           PyObject *filename, PyObject *name, int firstlineno,
-           PyObject *lnotab)
-{
-    return PyCode_NewWithPosOnlyArgs(argcount, 0, kwonlyargcount, nlocals,
-                                     stacksize, flags, code, consts, names,
-                                     varnames, freevars, cellvars, filename,
-                                     name, firstlineno, lnotab);
-}
-
-PyCodeObject *
 PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
                           int nlocals, int stacksize, int flags,
                           PyObject *code, PyObject *consts, PyObject *names,
@@ -254,6 +240,20 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_opcache_flag = 0;
     co->co_opcache_size = 0;
     return co;
+}
+
+PyCodeObject *
+PyCode_New(int argcount, int kwonlyargcount,
+           int nlocals, int stacksize, int flags,
+           PyObject *code, PyObject *consts, PyObject *names,
+           PyObject *varnames, PyObject *freevars, PyObject *cellvars,
+           PyObject *filename, PyObject *name, int firstlineno,
+           PyObject *lnotab)
+{
+    return PyCode_NewWithPosOnlyArgs(argcount, 0, kwonlyargcount, nlocals,
+                                     stacksize, flags, code, consts, names,
+                                     varnames, freevars, cellvars, filename,
+                                     name, firstlineno, lnotab);
 }
 
 int
