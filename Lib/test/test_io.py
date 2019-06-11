@@ -277,6 +277,10 @@ class MockNonBlockWriterIO:
     def seekable(self):
         return True
 
+    def seek(self, pos, whence=0):
+        # naive implementation, enough for tests
+        return 0
+
     def writable(self):
         return True
 
@@ -1486,6 +1490,9 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertRaises(OSError, bufio.seek, 0)
         self.assertRaises(OSError, bufio.tell)
 
+        # Silence destructor error
+        bufio.close = lambda: None
+
     def test_no_extraneous_read(self):
         # Issue #9550; when the raw IO object has satisfied the read request,
         # we should not issue any additional reads, otherwise it may block
@@ -1833,6 +1840,9 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertRaises(OSError, bufio.seek, 0)
         self.assertRaises(OSError, bufio.tell)
         self.assertRaises(OSError, bufio.write, b"abcdef")
+
+        # Silence destructor error
+        bufio.close = lambda: None
 
     def test_max_buffer_size_removal(self):
         with self.assertRaises(TypeError):
