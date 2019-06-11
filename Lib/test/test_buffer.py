@@ -4419,7 +4419,9 @@ class TestBufferProtocol(unittest.TestCase):
         PyBuffer_SizeFromFormat = pythonapi.PyBuffer_SizeFromFormat
 
         # basic tests
-        self.assertIs(PyBuffer_SizeFromFormat("abc") > 0 , True)
+        self.assertIs(PyBuffer_SizeFromFormat("3si") > 0 , True)
+        self.assertIs(PyBuffer_SizeFromFormat("3s") > 0 , True)
+        self.assertIs(PyBuffer_SizeFromFormat("0i") > 0 , True)
 
         #invalid input
         self.assertRaises(struct.error, PyBuffer_SizeFromFormat, b'gg')
