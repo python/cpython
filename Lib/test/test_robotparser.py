@@ -100,13 +100,6 @@ class EmptyFileTest(BaseRobotTest, unittest.TestCase):
     robots_txt = ""
 
 
-class NoRequestRateAndCrawlDelayTest(BaseRobotTest, unittest.TestCase):
-    robots_txt = """\
-User-agent: *
-Disallow: /bar
-    """
-
-
 class BaseRequestRateTest(BaseRobotTest):
 
     def test_request_rate(self):
