@@ -1440,16 +1440,19 @@ lookup_method(PyObject *self, _Py_Identifier *attrid, int *unbound)
     return res;
 }
 
-static PyObject*
-call_unbound(int unbound, PyObject *func, PyObject *self,
-             PyObject **args, Py_ssize_t nargs)
+
+static inline PyObject*
+vectorcall_unbound(int unbound, PyObject *func,
+                   PyObject *const *args, Py_ssize_t nargs)
 {
-    if (unbound) {
-        return _PyObject_FastCall_Prepend(func, self, args, nargs);
+    size_t nargsf = nargs;
+    if (!unbound) {
+        /* Skip self argument, freeing up args[0] to use for
+         * PY_VECTORCALL_ARGUMENTS_OFFSET */
+        args++;
+        nargsf = nargsf - 1 + PY_VECTORCALL_ARGUMENTS_OFFSET;
     }
-    else {
-        return _PyObject_FastCall(func, args, nargs);
-    }
+    return _PyObject_Vectorcall(func, args, nargsf, NULL);
 }
 
 static PyObject*
@@ -1464,41 +1467,43 @@ call_unbound_noarg(int unbound, PyObject *func, PyObject *self)
     }
 }
 
-/* A variation of PyObject_CallMethod* that uses lookup_maybe_method()
-   instead of PyObject_GetAttrString(). */
-static PyObject *
-call_method(PyObject *obj, _Py_Identifier *name,
-            PyObject **args, Py_ssize_t nargs)
-{
-    int unbound;
-    PyObject *func, *retval;
+/* A variation of PyObject_CallMethod* that uses lookup_method()
+   instead of PyObject_GetAttrString().
 
-    func = lookup_method(obj, name, &unbound);
+   args is an argument vector of length nargs. The first element in this
+   vector is the special object "self" which is used for the method lookup */
+static PyObject *
+vectorcall_method(_Py_Identifier *name,
+                  PyObject *const *args, Py_ssize_t nargs)
+{
+    assert(nargs >= 1);
+    int unbound;
+    PyObject *self = args[0];
+    PyObject *func = lookup_method(self, name, &unbound);
     if (func == NULL) {
         return NULL;
     }
-    retval = call_unbound(unbound, func, obj, args, nargs);
+    PyObject *retval = vectorcall_unbound(unbound, func, args, nargs);
     Py_DECREF(func);
     return retval;
 }
 
-/* Clone of call_method() that returns NotImplemented when the lookup fails. */
-
+/* Clone of vectorcall_method() that returns NotImplemented
+ * when the lookup fails. */
 static PyObject *
-call_maybe(PyObject *obj, _Py_Identifier *name,
-           PyObject **args, Py_ssize_t nargs)
+vectorcall_maybe(_Py_Identifier *name,
+                 PyObject *const *args, Py_ssize_t nargs)
 {
+    assert(nargs >= 1);
     int unbound;
-    PyObject *func, *retval;
-
-    func = lookup_maybe_method(obj, name, &unbound);
+    PyObject *self = args[0];
+    PyObject *func = lookup_maybe_method(self, name, &unbound);
     if (func == NULL) {
         if (!PyErr_Occurred())
             Py_RETURN_NOTIMPLEMENTED;
         return NULL;
     }
-
-    retval = call_unbound(unbound, func, obj, args, nargs);
+    PyObject *retval = vectorcall_unbound(unbound, func, args, nargs);
     Py_DECREF(func);
     return retval;
 }
@@ -6084,17 +6089,18 @@ add_tp_new_wrapper(PyTypeObject *type)
 static PyObject * \
 FUNCNAME(PyObject *self) \
 { \
+    PyObject* stack[1] = {self}; \
     _Py_static_string(id, OPSTR); \
-    return call_method(self, &id, NULL, 0); \
+    return vectorcall_method(&id, stack, 1); \
 }
 
 #define SLOT1(FUNCNAME, OPSTR, ARG1TYPE) \
 static PyObject * \
 FUNCNAME(PyObject *self, ARG1TYPE arg1) \
 { \
-    PyObject* stack[1] = {arg1}; \
+    PyObject* stack[2] = {self, arg1}; \
     _Py_static_string(id, OPSTR); \
-    return call_method(self, &id, stack, 1); \
+    return vectorcall_method(&id, stack, 2); \
 }
 
 /* Boolean helper for SLOT1BINFULL().
@@ -6136,7 +6142,7 @@ method_is_overloaded(PyObject *left, PyObject *right, struct _Py_Identifier *nam
 static PyObject * \
 FUNCNAME(PyObject *self, PyObject *other) \
 { \
-    PyObject* stack[1]; \
+    PyObject* stack[2]; \
     _Py_static_string(op_id, OPSTR); \
     _Py_static_string(rop_id, ROPSTR); \
     int do_other = Py_TYPE(self) != Py_TYPE(other) && \
@@ -6148,23 +6154,26 @@ FUNCNAME(PyObject *self, PyObject *other) \
         if (do_other && \
             PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self)) && \
             method_is_overloaded(self, other, &rop_id)) { \
-            stack[0] = self; \
-            r = call_maybe(other, &rop_id, stack, 1); \
+            stack[0] = other; \
+            stack[1] = self; \
+            r = vectorcall_maybe(&rop_id, stack, 2); \
             if (r != Py_NotImplemented) \
                 return r; \
             Py_DECREF(r); \
             do_other = 0; \
         } \
-        stack[0] = other; \
-        r = call_maybe(self, &op_id, stack, 1); \
+        stack[0] = self; \
+        stack[1] = other; \
+        r = vectorcall_maybe(&op_id, stack, 2); \
         if (r != Py_NotImplemented || \
             Py_TYPE(other) == Py_TYPE(self)) \
             return r; \
         Py_DECREF(r); \
     } \
     if (do_other) { \
-        stack[0] = self; \
-        return call_maybe(other, &rop_id, stack, 1); \
+        stack[0] = other; \
+        stack[1] = self; \
+        return vectorcall_maybe(&rop_id, stack, 2); \
     } \
     Py_RETURN_NOTIMPLEMENTED; \
 }
@@ -6175,7 +6184,8 @@ FUNCNAME(PyObject *self, PyObject *other) \
 static Py_ssize_t
 slot_sq_length(PyObject *self)
 {
-    PyObject *res = call_method(self, &PyId___len__, NULL, 0);
+    PyObject* stack[1] = {self};
+    PyObject *res = vectorcall_method(&PyId___len__, stack, 1);
     Py_ssize_t len;
 
     if (res == NULL)
@@ -6202,14 +6212,12 @@ slot_sq_length(PyObject *self)
 static PyObject *
 slot_sq_item(PyObject *self, Py_ssize_t i)
 {
-    PyObject *retval;
-    PyObject *args[1];
     PyObject *ival = PyLong_FromSsize_t(i);
     if (ival == NULL) {
         return NULL;
     }
-    args[0] = ival;
-    retval = call_method(self, &PyId___getitem__, args, 1);
+    PyObject *stack[2] = {self, ival};
+    PyObject *retval = vectorcall_method(&PyId___getitem__, stack, 2);
     Py_DECREF(ival);
     return retval;
 }
@@ -6217,7 +6225,7 @@ slot_sq_item(PyObject *self, Py_ssize_t i)
 static int
 slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
 {
-    PyObject *stack[2];
+    PyObject *stack[3];
     PyObject *res;
     PyObject *index_obj;
 
@@ -6226,13 +6234,14 @@ slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
         return -1;
     }
 
-    stack[0] = index_obj;
+    stack[0] = self;
+    stack[1] = index_obj;
     if (value == NULL) {
-        res = call_method(self, &PyId___delitem__, stack, 1);
+        res = vectorcall_method(&PyId___delitem__, stack, 2);
     }
     else {
-        stack[1] = value;
-        res = call_method(self, &PyId___setitem__, stack, 2);
+        stack[2] = value;
+        res = vectorcall_method(&PyId___setitem__, stack, 3);
     }
     Py_DECREF(index_obj);
 
@@ -6259,8 +6268,8 @@ slot_sq_contains(PyObject *self, PyObject *value)
         return -1;
     }
     if (func != NULL) {
-        PyObject *args[1] = {value};
-        res = call_unbound(unbound, func, self, args, 1);
+        PyObject *args[2] = {self, value};
+        res = vectorcall_unbound(unbound, func, args, 2);
         Py_DECREF(func);
         if (res != NULL) {
             result = PyObject_IsTrue(res);
@@ -6282,16 +6291,17 @@ SLOT1(slot_mp_subscript, "__getitem__", PyObject *)
 static int
 slot_mp_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
 {
-    PyObject *stack[2];
+    PyObject *stack[3];
     PyObject *res;
 
-    stack[0] = key;
+    stack[0] = self;
+    stack[1] = key;
     if (value == NULL) {
-        res = call_method(self, &PyId___delitem__, stack, 1);
+        res = vectorcall_method(&PyId___delitem__, stack, 2);
     }
     else {
-        stack[1] = value;
-        res = call_method(self, &PyId___setitem__, stack, 2);
+        stack[2] = value;
+        res = vectorcall_method(&PyId___setitem__, stack, 3);
     }
 
     if (res == NULL)
@@ -6324,8 +6334,8 @@ slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
        slot_nb_power, so check before calling self.__pow__. */
     if (Py_TYPE(self)->tp_as_number != NULL &&
         Py_TYPE(self)->tp_as_number->nb_power == slot_nb_power) {
-        PyObject* stack[2] = {other, modulus};
-        return call_method(self, &PyId___pow__, stack, 2);
+        PyObject* stack[3] = {self, other, modulus};
+        return vectorcall_method(&PyId___pow__, stack, 3);
     }
     Py_RETURN_NOTIMPLEMENTED;
 }
@@ -6392,7 +6402,8 @@ static PyObject *
 slot_nb_index(PyObject *self)
 {
     _Py_IDENTIFIER(__index__);
-    return call_method(self, &PyId___index__, NULL, 0);
+    PyObject *stack[1] = {self};
+    return vectorcall_method(&PyId___index__, stack, 1);
 }
 
 
@@ -6414,9 +6425,9 @@ SLOT1(slot_nb_inplace_remainder, "__imod__", PyObject *)
 static PyObject *
 slot_nb_inplace_power(PyObject *self, PyObject * arg1, PyObject *arg2)
 {
-    PyObject *stack[1] = {arg1};
+    PyObject *stack[2] = {self, arg1};
     _Py_IDENTIFIER(__ipow__);
-    return call_method(self, &PyId___ipow__, stack, 1);
+    return vectorcall_method(&PyId___ipow__, stack, 2);
 }
 SLOT1(slot_nb_inplace_lshift, "__ilshift__", PyObject *)
 SLOT1(slot_nb_inplace_rshift, "__irshift__", PyObject *)
@@ -6533,8 +6544,8 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 slot_tp_getattro(PyObject *self, PyObject *name)
 {
-    PyObject *stack[1] = {name};
-    return call_method(self, &PyId___getattribute__, stack, 1);
+    PyObject *stack[2] = {self, name};
+    return vectorcall_method(&PyId___getattribute__, stack, 2);
 }
 
 static PyObject *
@@ -6601,18 +6612,19 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 static int
 slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 {
-    PyObject *stack[2];
+    PyObject *stack[3];
     PyObject *res;
     _Py_IDENTIFIER(__delattr__);
     _Py_IDENTIFIER(__setattr__);
 
-    stack[0] = name;
+    stack[0] = self;
+    stack[1] = name;
     if (value == NULL) {
-        res = call_method(self, &PyId___delattr__, stack, 1);
+        res = vectorcall_method(&PyId___delattr__, stack, 2);
     }
     else {
-        stack[1] = value;
-        res = call_method(self, &PyId___setattr__, stack, 2);
+        stack[2] = value;
+        res = vectorcall_method(&PyId___setattr__, stack, 3);
     }
     if (res == NULL)
         return -1;
@@ -6641,8 +6653,8 @@ slot_tp_richcompare(PyObject *self, PyObject *other, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    PyObject *args[1] = {other};
-    res = call_unbound(unbound, func, self, args, 1);
+    PyObject *stack[2] = {self, other};
+    res = vectorcall_unbound(unbound, func, stack, 2);
     Py_DECREF(func);
     return res;
 }
@@ -6685,7 +6697,8 @@ static PyObject *
 slot_tp_iternext(PyObject *self)
 {
     _Py_IDENTIFIER(__next__);
-    return call_method(self, &PyId___next__, NULL, 0);
+    PyObject *stack[1] = {self};
+    return vectorcall_method(&PyId___next__, stack, 1);
 }
 
 static PyObject *
@@ -6713,18 +6726,19 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 static int
 slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
 {
-    PyObject* stack[2];
+    PyObject* stack[3];
     PyObject *res;
     _Py_IDENTIFIER(__delete__);
     _Py_IDENTIFIER(__set__);
 
-    stack[0] = target;
+    stack[0] = self;
+    stack[1] = target;
     if (value == NULL) {
-        res = call_method(self, &PyId___delete__, stack, 1);
+        res = vectorcall_method(&PyId___delete__, stack, 2);
     }
     else {
-        stack[1] = value;
-        res = call_method(self, &PyId___set__, stack, 2);
+        stack[2] = value;
+        res = vectorcall_method(&PyId___set__, stack, 3);
     }
     if (res == NULL)
         return -1;
