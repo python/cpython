@@ -52,6 +52,13 @@ For full details, see the :ref:`changelog <changelog>`.
    form. It will be updated substantially as Python 3.8 moves towards release,
    so it's worth checking back even after reading earlier versions.
 
+   Some notable items not yet covered here:
+
+   * :pep:`574` - Pickle protocol 5 with out-of-band data buffer support
+   * :pep:`578` - Runtime audit hooks for potentially sensitive operations
+   * ``python -m asyncio`` runs a natively async REPL
+   * ...
+
 
 Summary -- Release highlights
 =============================
