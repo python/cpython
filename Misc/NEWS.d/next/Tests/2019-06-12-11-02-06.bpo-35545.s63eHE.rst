@@ -1,0 +1,4 @@
+Skip `test_asyncio.test_create_connection_ipv6_scope` on AIX 
+because "getaddrinfo()" behaves different on AIX
+
+Patch by M. Felt
