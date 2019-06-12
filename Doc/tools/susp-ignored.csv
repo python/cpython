@@ -81,6 +81,7 @@ howto/ipaddress,,::,IPv6Address('2001:db8::ffff:ffff')
 howto/ipaddress,,:ffff,IPv6Address('2001:db8::ffff:ffff')
 howto/logging,,:And,"WARNING:And this, too"
 howto/logging,,:And,"WARNING:root:And this, too"
+howto/logging,,:And,"ERROR:root:And non-ASCII stuff, too, like "
 howto/logging,,:Doing,INFO:root:Doing something
 howto/logging,,:Finished,INFO:root:Finished
 howto/logging,,:logger,severity:logger name:message
@@ -90,6 +91,7 @@ howto/logging,,:root,DEBUG:root:This message should go to the log file
 howto/logging,,:root,INFO:root:Doing something
 howto/logging,,:root,INFO:root:Finished
 howto/logging,,:root,INFO:root:So should this
+howto/logging,,:root,"ERROR:root:And non-ASCII stuff, too, like "
 howto/logging,,:root,INFO:root:Started
 howto/logging,,:root,"WARNING:root:And this, too"
 howto/logging,,:root,WARNING:root:Look before you leap!
