@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _type-structs:
 
@@ -36,115 +36,115 @@ Quick Reference
 .. table::
    :widths: 18,18,18,1,1,1,1
 
-   +---------------------------------------------+-----------------------------------+-------------------+---------------+
-   | PyTypeObject Slot [#slots]_                 | :ref:`Type <slot-typedefs-table>` | special           | Info [#cols]_ |
-   |                                             |                                   | methods/attrs     +---+---+---+---+
-   |                                             |                                   |                   | O | T | D | I |
-   +=============================================+===================================+===================+===+===+===+===+
-   | <R> :c:member:`~PyTypeObject.tp_name`       | const char *                      | __name__          | X | X |   |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_basicsize`      | Py_ssize_t                        |                   | X | X |   | X |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_itemsize`       | Py_ssize_t                        |                   |   | X |   | X |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_dealloc`        | :c:type:`destructor`              |                   | X | X |   | X |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | (:c:member:`~PyTypeObject.tp_print`)        |                                                                       |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | (:c:member:`~PyTypeObject.tp_getattr`)      | :c:type:`getattrfunc`             | __getattribute__, |   |   |   | G |
-   |                                             |                                   | __getattr__       |   |   |   |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | (:c:member:`~PyTypeObject.tp_setattr`)      | :c:type:`setattrfunc`             | __setattr__,      |   |   |   | G |
-   |                                             |                                   | __delattr__       |   |   |   |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_as_async`       | :c:type:`PyAsyncMethods` *        | :ref:`sub-slots`  |   |   |   | % |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_repr`           | :c:type:`reprfunc`                | __repr__          | X | X |   | X |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_as_number`      | :c:type:`PyNumberMethods` *       | :ref:`sub-slots`  |   |   |   | % |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_as_sequence`    | :c:type:`PySequenceMethods` *     | :ref:`sub-slots`  |   |   |   | % |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_as_mapping`     | :c:type:`PyMappingMethods` *      | :ref:`sub-slots`  |   |   |   | % |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_hash`           | :c:type:`hashfunc`                | __hash__          | X |   |   | G |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_call`           | :c:type:`ternaryfunc`             | __call__          |   | X |   | X |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_str`            | :c:type:`reprfunc`                | __str__           | X |   |   | X |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_getattro`       | :c:type:`getattrofunc`            | __getattribute__, | X | X |   | G |
-   |                                             |                                   | __getattr__       |   |   |   |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_setattro`       | :c:type:`setattrofunc`            | __setattr__,      | X | X |   | G |
-   |                                             |                                   | __delattr__       |   |   |   |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_as_buffer`      | :c:type:`PyBufferProcs` *         |                   |   |   |   | % |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_flags`          | unsigned long                     |                   | X | X |   | ? |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_doc`            | const char *                      | __doc__           | X | X |   |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_traverse`       | :c:type:`traverseproc`            |                   |   | X |   | G |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_clear`          | :c:type:`inquiry`                 |                   |   | X |   | G |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_richcompare`    | :c:type:`richcmpfunc`             | __lt__,           | X |   |   | G |
-   |                                             |                                   | __le__,           |   |   |   |   |
-   |                                             |                                   | __eq__,           |   |   |   |   |
-   |                                             |                                   | __ne__,           |   |   |   |   |
-   |                                             |                                   | __gt__,           |   |   |   |   |
-   |                                             |                                   | __ge__            |   |   |   |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_weaklistoffset` | Py_ssize_t                        |                   |   | X |   | ? |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_iter`           | :c:type:`getiterfunc`             | __iter__          |   |   |   | X |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_iternext`       | :c:type:`iternextfunc`            | __next__          |   |   |   | X |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_methods`        | :c:type:`PyMethodDef` []          |                   | X | X |   |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_members`        | :c:type:`PyMemberDef` []          |                   |   | X |   |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_getset`         | :c:type:`PyGetSetDef` []          |                   | X | X |   |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_base`           | :c:type:`PyTypeObject` *          | __base__          |   |   | X |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_dict`           | :c:type:`PyObject` *              | __dict__          |   |   | ? |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_descr_get`      | :c:type:`descrgetfunc`            | __get__           |   |   |   | X |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_descr_set`      | :c:type:`descrsetfunc`            | __set__,          |   |   |   | X |
-   |                                             |                                   | __delete__        |   |   |   |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_dictoffset`     | Py_ssize_t                        |                   |   | X |   | ? |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_init`           | :c:type:`initproc`                | __init__          | X | X |   | X |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_alloc`          | :c:type:`allocfunc`               |                   | X |   | ? | ? |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_new`            | :c:type:`newfunc`                 | __new__           | X | X | ? | ? |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_free`           | :c:type:`freefunc`                |                   | X | X | ? | ? |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_is_gc`          | :c:type:`inquiry`                 |                   |   | X |   | X |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | <:c:member:`~PyTypeObject.tp_bases`>        | :c:type:`PyObject` *              | __bases__         |   |   | ~ |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | <:c:member:`~PyTypeObject.tp_mro`>          | :c:type:`PyObject` *              | __mro__           |   |   | ~ |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | [:c:member:`~PyTypeObject.tp_cache`]        | :c:type:`PyObject` *              |                   |   |   |       |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | [:c:member:`~PyTypeObject.tp_subclasses`]   | :c:type:`PyObject` *              | __subclasses__    |   |   |       |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | [:c:member:`~PyTypeObject.tp_weaklist`]     | :c:type:`PyObject` *              |                   |   |   |       |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | (:c:member:`~PyTypeObject.tp_del`)          | :c:type:`destructor`              |                   |   |   |   |   |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | [:c:member:`~PyTypeObject.tp_version_tag`]  | unsigned int                      |                   |   |   |       |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_finalize`       | :c:type:`destructor`              | __del__           |   |   |   | X |
-   +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   +------------------------------------------------+-----------------------------------+-------------------+---------------+
+   | PyTypeObject Slot [#slots]_                    | :ref:`Type <slot-typedefs-table>` | special           | Info [#cols]_ |
+   |                                                |                                   | methods/attrs     +---+---+---+---+
+   |                                                |                                   |                   | O | T | D | I |
+   +================================================+===================================+===================+===+===+===+===+
+   | <R> :c:member:`~PyTypeObject.tp_name`          | const char *                      | __name__          | X | X |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_basicsize`         | Py_ssize_t                        |                   | X | X |   | X |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_itemsize`          | Py_ssize_t                        |                   |   | X |   | X |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_dealloc`           | :c:type:`destructor`              |                   | X | X |   | X |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_vectorcall_offset` | Py_ssize_t                        |                   |   |   |   | ? |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | (:c:member:`~PyTypeObject.tp_getattr`)         | :c:type:`getattrfunc`             | __getattribute__, |   |   |   | G |
+   |                                                |                                   | __getattr__       |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | (:c:member:`~PyTypeObject.tp_setattr`)         | :c:type:`setattrfunc`             | __setattr__,      |   |   |   | G |
+   |                                                |                                   | __delattr__       |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_as_async`          | :c:type:`PyAsyncMethods` *        | :ref:`sub-slots`  |   |   |   | % |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_repr`              | :c:type:`reprfunc`                | __repr__          | X | X |   | X |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_as_number`         | :c:type:`PyNumberMethods` *       | :ref:`sub-slots`  |   |   |   | % |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_as_sequence`       | :c:type:`PySequenceMethods` *     | :ref:`sub-slots`  |   |   |   | % |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_as_mapping`        | :c:type:`PyMappingMethods` *      | :ref:`sub-slots`  |   |   |   | % |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_hash`              | :c:type:`hashfunc`                | __hash__          | X |   |   | G |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_call`              | :c:type:`ternaryfunc`             | __call__          |   | X |   | X |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_str`               | :c:type:`reprfunc`                | __str__           | X |   |   | X |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_getattro`          | :c:type:`getattrofunc`            | __getattribute__, | X | X |   | G |
+   |                                                |                                   | __getattr__       |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_setattro`          | :c:type:`setattrofunc`            | __setattr__,      | X | X |   | G |
+   |                                                |                                   | __delattr__       |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_as_buffer`         | :c:type:`PyBufferProcs` *         |                   |   |   |   | % |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_flags`             | unsigned long                     |                   | X | X |   | ? |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_doc`               | const char *                      | __doc__           | X | X |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_traverse`          | :c:type:`traverseproc`            |                   |   | X |   | G |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_clear`             | :c:type:`inquiry`                 |                   |   | X |   | G |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_richcompare`       | :c:type:`richcmpfunc`             | __lt__,           | X |   |   | G |
+   |                                                |                                   | __le__,           |   |   |   |   |
+   |                                                |                                   | __eq__,           |   |   |   |   |
+   |                                                |                                   | __ne__,           |   |   |   |   |
+   |                                                |                                   | __gt__,           |   |   |   |   |
+   |                                                |                                   | __ge__            |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_weaklistoffset`    | Py_ssize_t                        |                   |   | X |   | ? |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_iter`              | :c:type:`getiterfunc`             | __iter__          |   |   |   | X |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_iternext`          | :c:type:`iternextfunc`            | __next__          |   |   |   | X |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_methods`           | :c:type:`PyMethodDef` []          |                   | X | X |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_members`           | :c:type:`PyMemberDef` []          |                   |   | X |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_getset`            | :c:type:`PyGetSetDef` []          |                   | X | X |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_base`              | :c:type:`PyTypeObject` *          | __base__          |   |   | X |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_dict`              | :c:type:`PyObject` *              | __dict__          |   |   | ? |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_descr_get`         | :c:type:`descrgetfunc`            | __get__           |   |   |   | X |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_descr_set`         | :c:type:`descrsetfunc`            | __set__,          |   |   |   | X |
+   |                                                |                                   | __delete__        |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_dictoffset`        | Py_ssize_t                        |                   |   | X |   | ? |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_init`              | :c:type:`initproc`                | __init__          | X | X |   | X |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_alloc`             | :c:type:`allocfunc`               |                   | X |   | ? | ? |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_new`               | :c:type:`newfunc`                 | __new__           | X | X | ? | ? |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_free`              | :c:type:`freefunc`                |                   | X | X | ? | ? |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_is_gc`             | :c:type:`inquiry`                 |                   |   | X |   | X |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | <:c:member:`~PyTypeObject.tp_bases`>           | :c:type:`PyObject` *              | __bases__         |   |   | ~ |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | <:c:member:`~PyTypeObject.tp_mro`>             | :c:type:`PyObject` *              | __mro__           |   |   | ~ |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | [:c:member:`~PyTypeObject.tp_cache`]           | :c:type:`PyObject` *              |                   |   |   |       |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | [:c:member:`~PyTypeObject.tp_subclasses`]      | :c:type:`PyObject` *              | __subclasses__    |   |   |       |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | [:c:member:`~PyTypeObject.tp_weaklist`]        | :c:type:`PyObject` *              |                   |   |   |       |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | (:c:member:`~PyTypeObject.tp_del`)             | :c:type:`destructor`              |                   |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | [:c:member:`~PyTypeObject.tp_version_tag`]     | unsigned int                      |                   |   |   |       |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_finalize`          | :c:type:`destructor`              | __del__           |   |   |   | X |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
 If :const:`COUNT_ALLOCS` is defined then the following (internal-only)
 fields exist as well:
@@ -363,12 +363,6 @@ slot typedefs
 |                             |    :c:type:`PyObject` *     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`reprfunc`          | :c:type:`PyObject` *        | :c:type:`PyObject` * |
-+-----------------------------+-----------------------------+----------------------+
-| :c:type:`printfunc`         | .. line-block::             | int                  |
-|                             |                             |                      |
-|                             |    :c:type:`PyObject` *     |                      |
-|                             |    FILE *                   |                      |
-|                             |    int                      |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`getattrfunc`       | .. line-block::             | :c:type:`PyObject` * |
 |                             |                             |                      |
@@ -675,9 +669,66 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is inherited by subtypes.
 
 
-.. c:member:: printfunc PyTypeObject.tp_print
+.. c:member:: Py_ssize_t PyTypeObject.tp_vectorcall_offset
 
-   Reserved slot, formerly used for print formatting in Python 2.x.
+   An optional offset to a per-instance function that implements calling
+   the object using the *vectorcall* protocol, a more efficient alternative
+   of the simpler :c:member:`~PyTypeObject.tp_call`.
+
+   This field is only used if the flag :const:`_Py_TPFLAGS_HAVE_VECTORCALL`
+   is set. If so, this must be a positive integer containing the offset in the
+   instance of a :c:type:`vectorcallfunc` pointer.
+   The signature is the same as for :c:func:`_PyObject_Vectorcall`::
+
+        PyObject *vectorcallfunc(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+
+   The *vectorcallfunc* pointer may be zero, in which case the instance behaves
+   as if :const:`_Py_TPFLAGS_HAVE_VECTORCALL` was not set: calling the instance
+   falls back to :c:member:`~PyTypeObject.tp_call`.
+
+   Any class that sets ``_Py_TPFLAGS_HAVE_VECTORCALL`` must also set
+   :c:member:`~PyTypeObject.tp_call` and make sure its behaviour is consistent
+   with the *vectorcallfunc* function.
+   This can be done by setting *tp_call* to ``PyVectorcall_Call``:
+
+   .. c:function:: PyObject *PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict)
+
+      Call *callable*'s *vectorcallfunc* with positional and keyword
+      arguments given in a tuple and dict, respectively.
+
+      This function is intended to be used in the ``tp_call`` slot.
+      It does not fall back to ``tp_call`` and it currently does not check the
+      ``_Py_TPFLAGS_HAVE_VECTORCALL`` flag.
+      To call an object, use one of the :c:func:`PyObject_Call <PyObject_Call>`
+      functions instead.
+
+   .. note::
+
+      It is not recommended for :ref:`heap types <heap-types>` to implement
+      the vectorcall protocol.
+      When a user sets ``__call__`` in Python code, only ``tp_call`` is updated,
+      possibly making it inconsistent with the vectorcall function.
+
+   .. note::
+
+      The semantics of the ``tp_vectorcall_offset`` slot are provisional and
+      expected to be finalized in Python 3.9.
+      If you use vectorcall, plan for updating your code for Python 3.9.
+
+   .. versionchanged:: 3.8
+
+      This slot was used for print formatting in Python 2.x.
+      In Python 3.0 to 3.7, it was reserved and named ``tp_print``.
+
+   **Inheritance:**
+
+   This field is inherited by subtypes together with
+   :c:member:`~PyTypeObject.tp_call`: a subtype inherits
+   :c:member:`~PyTypeObject.tp_vectorcall_offset` from its base type when
+   the subtype’s :c:member:`~PyTypeObject.tp_call` is NULL.
+
+   Note that `heap types`_ (including subclasses defined in Python) do not
+   inherit the :const:`_Py_TPFLAGS_HAVE_VECTORCALL` flag.
 
 
 .. c:member:: getattrfunc PyTypeObject.tp_getattr
@@ -1045,6 +1096,32 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       ???
 
+
+   .. data:: Py_TPFLAGS_METHOD_DESCRIPTOR
+
+      This bit indicates that objects behave like unbound methods.
+
+      If this flag is set for ``type(meth)``, then:
+
+      - ``meth.__get__(obj, cls)(*args, **kwds)`` (with ``obj`` not None)
+        must be equivalent to ``meth(obj, *args, **kwds)``.
+
+      - ``meth.__get__(None, cls)(*args, **kwds)``
+        must be equivalent to ``meth(*args, **kwds)``.
+
+      This flag enables an optimization for typical method calls like
+      ``obj.meth()``: it avoids creating a temporary "bound method" object for
+      ``obj.meth``.
+
+      .. versionadded:: 3.8
+
+      **Inheritance:**
+
+      This flag is never inherited by heap types.
+      For extension types, it is inherited whenever
+      :c:member:`~PyTypeObject.tp_descr_get` is inherited.
+
+
    .. XXX Document more flags here?
 
 
@@ -1072,6 +1149,33 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       type structure.
 
       .. versionadded:: 3.4
+
+      .. deprecated:: 3.8
+         This flag isn't necessary anymore, as the interpreter assumes the
+         :c:member:`~PyTypeObject.tp_finalize` slot is always present in the
+         type structure.
+
+   .. data:: _Py_TPFLAGS_HAVE_VECTORCALL
+
+      This bit is set when the class implements the vectorcall protocol.
+      See :c:member:`~PyTypeObject.tp_vectorcall_offset` for details.
+
+      **Inheritance:**
+
+      This bit is set on *static* subtypes if ``tp_flags`` is not overridden:
+      a subtype inherits ``_Py_TPFLAGS_HAVE_VECTORCALL`` from its base type
+      when the subtype’s :c:member:`~PyTypeObject.tp_call` is NULL
+      and the subtype's ``Py_TPFLAGS_HEAPTYPE`` is not set.
+
+      `Heap types`_ do not inherit ``_Py_TPFLAGS_HAVE_VECTORCALL``.
+
+      .. note::
+
+         This flag is provisional and expected to become public in Python 3.9,
+         with a different name and, possibly, changed semantics.
+         If you use vectorcall, plan for updating your code for Python 3.9.
+
+      .. versionadded:: 3.8
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -1822,16 +1926,35 @@ objects on the thread which called tp_dealloc will not violate any assumptions
 of the library.
 
 
+.. _heap-types:
+
 Heap Types
 ----------
 
-In addition to defining Python types statically, you can define them
-dynamically (i.e. to the heap) using  :c:func:`PyType_FromSpec` and
+Traditionally, types defined in C code are *static*, that is,
+a static :c:type:`PyTypeObject` structure is defined directly in code
+and initialized using :c:func:`PyType_Ready`.
+
+This results in types that are limited relative to types defined in Python:
+
+* Static types are limited to one base, i.e. they cannot use multiple
+  inheritance.
+* Static type objects (but not necessarily their instances) are immutable.
+  It is not possible to add or modify the type object's attributes from Python.
+* Static type objects are shared across
+  :ref:`sub-interpreters <sub-interpreter-support>`, so they should not
+  include any subinterpreter-specific state.
+
+Also, since *PyTypeObject* is not part of the :ref:`stable ABI <stable>`,
+any extension modules using static types must be compiled for a specific
+Python minor version.
+
+An alternative to static types is *heap-allocated types*, or *heap types*
+for short, which correspond closely to classes created by Python's
+``class`` statement.
+
+This is done by filling a :c:type:`PyType_Spec` structure and calling
 :c:func:`PyType_FromSpecWithBases`.
-
-.. XXX Explain how to use PyType_FromSpec().
-
-.. XXX Document PyType_Spec.
 
 
 .. _number-structs:
@@ -2236,6 +2359,14 @@ Slot Type typedefs
 
 .. c:type:: void (*destructor)(PyObject *)
 
+.. c:type:: PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+
+   See :c:member:`~PyTypeObject.tp_vectorcall_offset`.
+
+   Arguments to ``vectorcallfunc`` are the same as for :c:func:`_PyObject_Vectorcall`.
+
+   .. versionadded:: 3.8
+
 .. c:type:: void (*freefunc)(void *)
 
    See :c:member:`~PyTypeObject.tp_free`.
@@ -2251,10 +2382,6 @@ Slot Type typedefs
 .. c:type:: PyObject *(*reprfunc)(PyObject *)
 
    See :c:member:`~PyTypeObject.tp_repr`.
-
-.. c:type:: int (*printfunc)(PyObject *, FILE *, int)
-
-   This is hidden if :const:`PY_LIMITED_API` is set.
 
 .. c:type:: PyObject *(*getattrfunc)(PyObject *self, char *attr)
 
@@ -2359,7 +2486,7 @@ with a more verbose initializer::
        sizeof(MyObject),               /* tp_basicsize */
        0,                              /* tp_itemsize */
        (destructor)myobj_dealloc,      /* tp_dealloc */
-       0,                              /* tp_print */
+       0,                              /* tp_vectorcall_offset */
        0,                              /* tp_getattr */
        0,                              /* tp_setattr */
        0,                              /* tp_as_async */

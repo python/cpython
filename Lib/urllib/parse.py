@@ -402,13 +402,16 @@ def _checknetloc(netloc):
     # looking for characters like \u2100 that expand to 'a/c'
     # IDNA uses NFKC equivalence, so normalize for this check
     import unicodedata
-    netloc2 = unicodedata.normalize('NFKC', netloc)
-    if netloc == netloc2:
+    n = netloc.replace('@', '')   # ignore characters already included
+    n = n.replace(':', '')        # but not the surrounding text
+    n = n.replace('#', '')
+    n = n.replace('?', '')
+    netloc2 = unicodedata.normalize('NFKC', n)
+    if n == netloc2:
         return
-    _, _, netloc = netloc.rpartition('@') # anything to the left of '@' is okay
     for c in '/?#@:':
         if c in netloc2:
-            raise ValueError("netloc '" + netloc2 + "' contains invalid " +
+            raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
 
 def urlsplit(url, scheme='', allow_fragments=True):
@@ -976,17 +979,15 @@ def _to_bytes(url):
 
 
 def unwrap(url):
-    warnings.warn("urllib.parse.unwrap() is deprecated as of 3.8",
-                  DeprecationWarning, stacklevel=2)
-    return _unwrap(url)
+    """Transform a string like '<URL:scheme://host/path>' into 'scheme://host/path'.
 
-
-def _unwrap(url):
-    """unwrap('<URL:type://host/path>') --> 'type://host/path'."""
+    The string is returned unchanged if it's not a wrapped URL.
+    """
     url = str(url).strip()
     if url[:1] == '<' and url[-1:] == '>':
         url = url[1:-1].strip()
-    if url[:4] == 'URL:': url = url[4:].strip()
+    if url[:4] == 'URL:':
+        url = url[4:].strip()
     return url
 
 

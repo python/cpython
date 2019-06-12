@@ -120,6 +120,27 @@ High-level Module Interface
 
    This is an alias for the builtin :func:`open` function.
 
+   .. audit-event:: open "path mode flags"
+
+      This function raises an :func:`auditing event <sys.audit>` ``open`` with
+      arguments ``path``, ``mode`` and ``flags``. The ``mode`` and ``flags``
+      arguments may have been modified or inferred from the original call.
+
+
+.. function:: open_code(path)
+
+   Opens the provided file with mode ``'rb'``. This function should be used
+   when the intent is to treat the contents as executable code.
+
+   ``path`` should be an absolute path.
+
+   The behavior of this function may be overridden by an earlier call to the
+   :c:func:`PyFile_SetOpenCodeHook`, however, it should always be considered
+   interchangeable with ``open(path, 'rb')``. Overriding the behavior is
+   intended for additional validation or preprocessing of the file.
+
+   .. versionadded:: 3.8
+
 
 .. exception:: BlockingIOError
 
@@ -719,15 +740,15 @@ than raw I/O does.
 .. class:: BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered interface to random access streams.  It inherits
-   :class:`BufferedReader` and :class:`BufferedWriter`, and further supports
-   :meth:`seek` and :meth:`tell` functionality.
+   :class:`BufferedReader` and :class:`BufferedWriter`.
 
    The constructor creates a reader and writer for a seekable raw stream, given
    in the first argument.  If the *buffer_size* is omitted it defaults to
    :data:`DEFAULT_BUFFER_SIZE`.
 
    :class:`BufferedRandom` is capable of anything :class:`BufferedReader` or
-   :class:`BufferedWriter` can do.
+   :class:`BufferedWriter` can do.  In addition, :meth:`seek` and :meth:`tell`
+   are guaranteed to be implemented.
 
 
 .. class:: BufferedRWPair(reader, writer, buffer_size=DEFAULT_BUFFER_SIZE)

@@ -224,10 +224,10 @@ PyTypeObject PyST_Type = {
     (int) sizeof(PyST_Object),          /* tp_basicsize         */
     0,                                  /* tp_itemsize          */
     (destructor)parser_free,            /* tp_dealloc           */
-    0,                                  /* tp_print             */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr           */
     0,                                  /* tp_setattr           */
-    0,                                  /* tp_reserved          */
+    0,                                  /* tp_as_async          */
     0,                                  /* tp_repr              */
     0,                                  /* tp_as_number         */
     0,                                  /* tp_as_sequence       */
@@ -644,7 +644,6 @@ validate_node(node *tree)
 {
     int type = TYPE(tree);
     int nch = NCH(tree);
-    dfa *nt_dfa;
     state *dfa_state;
     int pos, arc;
 
@@ -654,7 +653,7 @@ validate_node(node *tree)
         PyErr_Format(parser_error, "Unrecognized node type %d.", TYPE(tree));
         return 0;
     }
-    nt_dfa = &_PyParser_Grammar.g_dfa[type];
+    const dfa *nt_dfa = &_PyParser_Grammar.g_dfa[type];
     REQ(tree, nt_dfa->d_type);
 
     /* Run the DFA for this nonterminal. */

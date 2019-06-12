@@ -24,6 +24,7 @@
 #include "Python.h"
 
 #include "Python-ast.h"
+#include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "ast.h"
 #include "code.h"
 #include "symtable.h"
@@ -122,6 +123,7 @@ struct compiler_unit {
     PyObject *u_private;        /* for private name mangling */
 
     Py_ssize_t u_argcount;        /* number of arguments for block */
+    Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
     Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
     /* Pointer to the most recently allocated block.  By following b_list
        members, you can reach all early allocated blocks. */
@@ -309,6 +311,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCodeObject *co = NULL;
     PyCompilerFlags local_flags;
     int merged;
+    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
 
     if (!__doc__) {
         __doc__ = PyUnicode_InternFromString("__doc__");
@@ -337,7 +340,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_future->ff_features = merged;
     flags->cf_flags = merged;
     c.c_flags = flags;
-    c.c_optimize = (optimize == -1) ? Py_OptimizeFlag : optimize;
+    c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
     c.c_nestlevel = 0;
 
     if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
@@ -552,6 +555,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     memset(u, 0, sizeof(struct compiler_unit));
     u->u_scope_type = scope_type;
     u->u_argcount = 0;
+    u->u_posonlyargcount = 0;
     u->u_kwonlyargcount = 0;
     u->u_ste = PySymtable_Lookup(c->c_st, key);
     if (!u->u_ste) {
@@ -1987,6 +1991,8 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
     if (!compiler_visit_argannotations(c, args->args, names))
         goto error;
+    if (!compiler_visit_argannotations(c, args->posonlyargs, names))
+        goto error;
     if (args->vararg && args->vararg->annotation &&
         !compiler_visit_argannotation(c, args->vararg->arg,
                                      args->vararg->annotation, names))
@@ -2127,6 +2133,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
+    c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     VISIT_SEQ_IN_SCOPE(c, stmt, body);
     co = assemble(c, 1);
@@ -2507,6 +2514,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return 0;
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
+    c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (c->u->u_ste->ste_generator) {
@@ -2540,13 +2548,12 @@ compiler_if(struct compiler *c, stmt_ty s)
         return 0;
 
     constant = expr_constant(s->v.If.test);
-    /* constant = 0: "if 0"
+    /* constant = 0: "if 0" Leave the optimizations to
+     * the pephole optimizer to check for syntax errors
+     * in the block.
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
-    if (constant == 0) {
-        if (s->v.If.orelse)
-            VISIT_SEQ(c, stmt, s->v.If.orelse);
-    } else if (constant == 1) {
+    if (constant == 1) {
         VISIT_SEQ(c, stmt, s->v.If.body);
     } else {
         if (asdl_seq_LEN(s->v.If.orelse)) {
@@ -2604,7 +2611,9 @@ static int
 compiler_async_for(struct compiler *c, stmt_ty s)
 {
     basicblock *start, *except, *end;
-    if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
+    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
+        c->u->u_ste->ste_coroutine = 1;
+    } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
         return compiler_error(c, "'async for' outside async function");
     }
 
@@ -2926,7 +2935,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
                   try:
                       # body
                   finally:
-                      name = None
+                      name = None # in case body contains "del name"
                       del name
             */
 
@@ -3942,8 +3951,8 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     /* Our oparg encodes 2 pieces of information: the conversion
        character, and whether or not a format_spec was provided.
 
-       Convert the conversion char to 2 bits:
-       None: 000  0x0  FVC_NONE
+       Convert the conversion char to 3 bits:
+           : 000  0x0  FVC_NONE   The default if nothing specified.
        !s  : 001  0x1  FVC_STR
        !r  : 010  0x2  FVC_REPR
        !a  : 011  0x3  FVC_ASCII
@@ -3953,19 +3962,20 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
        no  : 000  0x0
     */
 
+    int conversion = e->v.FormattedValue.conversion;
     int oparg;
 
-    /* Evaluate the expression to be formatted. */
+    /* The expression to be formatted. */
     VISIT(c, expr, e->v.FormattedValue.value);
 
-    switch (e->v.FormattedValue.conversion) {
+    switch (conversion) {
     case 's': oparg = FVC_STR;   break;
     case 'r': oparg = FVC_REPR;  break;
     case 'a': oparg = FVC_ASCII; break;
     case -1:  oparg = FVC_NONE;  break;
     default:
-        PyErr_SetString(PyExc_SystemError,
-                        "Unrecognized conversion character");
+        PyErr_Format(PyExc_SystemError,
+                     "Unrecognized conversion character %d", conversion);
         return 0;
     }
     if (e->v.FormattedValue.format_spec) {
@@ -3976,6 +3986,7 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
 
     /* And push our opcode and oparg */
     ADDOP_I(c, FORMAT_VALUE, oparg);
+
     return 1;
 }
 
@@ -4546,7 +4557,9 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
-    if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
+    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
+        c->u->u_ste->ste_coroutine = 1;
+    } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION){
         return compiler_error(c, "'async with' outside async function");
     }
 
@@ -4755,12 +4768,16 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         ADDOP(c, YIELD_FROM);
         break;
     case Await_kind:
-        if (c->u->u_ste->ste_type != FunctionBlock)
-            return compiler_error(c, "'await' outside function");
+        if (!(c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT)){
+            if (c->u->u_ste->ste_type != FunctionBlock){
+                return compiler_error(c, "'await' outside function");
+            }
 
-        if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
-                c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION)
-            return compiler_error(c, "'await' outside async function");
+            if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
+                    c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION){
+                return compiler_error(c, "'await' outside async function");
+            }
+        }
 
         VISIT(c, expr, e->v.Await.value);
         ADDOP(c, GET_AWAITABLE);
@@ -4850,7 +4867,6 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             return compiler_error(c,
                 "can't use starred expression here");
         }
-        break;
     case Name_kind:
         return compiler_nameop(c, e->v.Name.id, e->v.Name.ctx);
     /* child nodes of List and Tuple will have expr_context set */
@@ -5695,6 +5711,12 @@ compute_code_flags(struct compiler *c)
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
 
+    if ((c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
+         ste->ste_coroutine &&
+         !ste->ste_generator) {
+        flags |= CO_COROUTINE;
+    }
+
     return flags;
 }
 
@@ -5742,7 +5764,7 @@ makecode(struct compiler *c, struct assembler *a)
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
-    int argcount, kwonlyargcount, maxdepth;
+    int posorkeywordargcount, posonlyargcount, kwonlyargcount, maxdepth;
 
     consts = consts_dict_keys_inorder(c->u->u_consts);
     names = dict_keys_inorder(c->u->u_names, 0);
@@ -5786,14 +5808,15 @@ makecode(struct compiler *c, struct assembler *a)
         goto error;
     }
 
-    argcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
+    posonlyargcount = Py_SAFE_DOWNCAST(c->u->u_posonlyargcount, Py_ssize_t, int);
+    posorkeywordargcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
     maxdepth = stackdepth(c);
     if (maxdepth < 0) {
         goto error;
     }
-    co = PyCode_New(argcount, kwonlyargcount,
-                    nlocals_int, maxdepth, flags,
+    co = PyCode_New(posonlyargcount+posorkeywordargcount, posonlyargcount,
+                    kwonlyargcount, nlocals_int, maxdepth, flags,
                     bytecode, consts, names, varnames,
                     freevars, cellvars,
                     c->c_filename, c->u->u_name,

@@ -556,11 +556,9 @@ class TestPartialMethod(unittest.TestCase):
         with self.assertRaises(TypeError):
             class B:
                 method = functools.partialmethod()
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             class B:
                 method = functools.partialmethod(func=capture, a=1)
-        b = B()
-        self.assertEqual(b.method(2, x=3), ((b, 2), {'a': 1, 'x': 3}))
 
     def test_repr(self):
         self.assertEqual(repr(vars(self.A)['both']),
@@ -580,6 +578,13 @@ class TestPartialMethod(unittest.TestCase):
 
         for func in [self.A.static, self.A.cls, self.A.over_partial, self.A.nested, self.A.both]:
             self.assertFalse(getattr(func, '__isabstractmethod__', False))
+
+    def test_positional_only(self):
+        def f(a, b, /):
+            return a + b
+
+        p = functools.partial(f, 1)
+        self.assertEqual(p(2), f(1, 2))
 
 
 class TestUpdateWrapper(unittest.TestCase):
@@ -1244,6 +1249,18 @@ class TestLRU:
         self.assertEqual(misses, 4)
         self.assertEqual(currsize, 2)
 
+    def test_lru_no_args(self):
+        @self.module.lru_cache
+        def square(x):
+            return x ** 2
+
+        self.assertEqual(list(map(square, [10, 20, 10])),
+                         [100, 400, 100])
+        self.assertEqual(square.cache_info().hits, 1)
+        self.assertEqual(square.cache_info().misses, 2)
+        self.assertEqual(square.cache_info().maxsize, 128)
+        self.assertEqual(square.cache_info().currsize, 2)
+
     def test_lru_bug_35780(self):
         # C version of the lru_cache was not checking to see if
         # the user function call has already modified the cache
@@ -1270,6 +1287,20 @@ class TestLRU:
         # Make a recursive call and make sure the cache remains full
         self.assertEqual(f(20), '.20.')
         self.assertEqual(f.cache_info().currsize, 10)
+
+    def test_lru_bug_36650(self):
+        # C version of lru_cache was treating a call with an empty **kwargs
+        # dictionary as being distinct from a call with no keywords at all.
+        # This did not result in an incorrect answer, but it did trigger
+        # an unexpected cache miss.
+
+        @self.module.lru_cache()
+        def f(x):
+            pass
+
+        f(0)
+        f(0, **{})
+        self.assertEqual(f.cache_info().hits, 1)
 
     def test_lru_hash_only_once(self):
         # To protect against weird reentrancy bugs and to improve
@@ -1560,13 +1591,6 @@ class TestLRU:
         test_func(DoubleEq(2))                      # Load the cache
         self.assertEqual(test_func(DoubleEq(2)),    # Trigger a re-entrant __eq__ call
                          DoubleEq(2))               # Verify the correct return value
-
-    def test_early_detection_of_bad_call(self):
-        # Issue #22184
-        with self.assertRaises(TypeError):
-            @functools.lru_cache
-            def f():
-                pass
 
     def test_lru_method(self):
         class X(int):
@@ -2334,9 +2358,6 @@ class TestSingleDispatch(unittest.TestCase):
         ))
         self.assertTrue(str(exc.exception).endswith(msg_suffix))
 
-        # FIXME: The following will only work after PEP 560 is implemented.
-        return
-
         with self.assertRaises(TypeError) as exc:
             @i.register
             def _(arg: typing.Iterable[str]):
@@ -2345,10 +2366,12 @@ class TestSingleDispatch(unittest.TestCase):
                 # types from `typing`. Instead, annotate with regular types
                 # or ABCs.
                 return "I annotated with a generic collection"
-        self.assertTrue(str(exc.exception).startswith(msg_prefix +
-            "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
+        self.assertTrue(str(exc.exception).startswith(
+            "Invalid annotation for 'arg'."
         ))
-        self.assertTrue(str(exc.exception).endswith(msg_suffix))
+        self.assertTrue(str(exc.exception).endswith(
+            'typing.Iterable[str] is not a class.'
+        ))
 
     def test_invalid_positional_argument(self):
         @functools.singledispatch

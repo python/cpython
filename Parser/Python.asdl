@@ -111,8 +111,8 @@ module Python
     excepthandler = ExceptHandler(expr? type, identifier? name, stmt* body)
                     attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 
-    arguments = (arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults,
-                 arg? kwarg, expr* defaults)
+    arguments = (arg* args, arg* posonlyargs, arg? vararg, arg* kwonlyargs,
+                 expr* kw_defaults, arg? kwarg, expr* defaults)
 
     arg = (identifier arg, expr? annotation, string? type_comment)
            attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
@@ -125,6 +125,5 @@ module Python
 
     withitem = (expr context_expr, expr? optional_vars)
 
-    type_ignore = TypeIgnore(int lineno)
+    type_ignore = TypeIgnore(int lineno, string tag)
 }
-

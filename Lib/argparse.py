@@ -1154,6 +1154,12 @@ class _SubParsersAction(Action):
             vars(namespace).setdefault(_UNRECOGNIZED_ARGS_ATTR, [])
             getattr(namespace, _UNRECOGNIZED_ARGS_ATTR).extend(arg_strings)
 
+class _ExtendAction(_AppendAction):
+    def __call__(self, parser, namespace, values, option_string=None):
+        items = getattr(namespace, self.dest, None)
+        items = _copy_items(items)
+        items.extend(values)
+        setattr(namespace, self.dest, items)
 
 # ==============
 # Type classes
@@ -1262,6 +1268,7 @@ class _ActionsContainer(object):
         self.register('action', 'help', _HelpAction)
         self.register('action', 'version', _VersionAction)
         self.register('action', 'parsers', _SubParsersAction)
+        self.register('action', 'extend', _ExtendAction)
 
         # raise an exception if the conflict handler is invalid
         self._get_handler()
@@ -1353,6 +1360,10 @@ class _ActionsContainer(object):
         type_func = self._registry_get('type', action.type, action.type)
         if not callable(type_func):
             raise ValueError('%r is not callable' % (type_func,))
+
+        if type_func is FileType:
+            raise ValueError('%r is a FileType class object, instance of it'
+                             ' must be passed' % (type_func,))
 
         # raise an error if the metavar does not match the type
         if hasattr(self, "_get_formatter"):

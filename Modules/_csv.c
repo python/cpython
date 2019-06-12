@@ -111,7 +111,7 @@ static PyTypeObject Reader_Type;
 typedef struct {
     PyObject_HEAD
 
-    PyObject *writeline;    /* write output lines to this file */
+    PyObject *write;    /* write output lines to this file */
 
     DialectObj *dialect;    /* parsing dialect */
 
@@ -469,10 +469,10 @@ static PyTypeObject Dialect_Type = {
     0,                                      /* tp_itemsize */
     /*  methods  */
     (destructor)Dialect_dealloc,            /* tp_dealloc */
-    (printfunc)0,                           /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     (getattrfunc)0,                         /* tp_getattr */
     (setattrfunc)0,                         /* tp_setattr */
-    0,                                      /* tp_reserved */
+    0,                                      /* tp_as_async */
     (reprfunc)0,                            /* tp_repr */
     0,                                      /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -902,10 +902,10 @@ static PyTypeObject Reader_Type = {
     0,                                      /*tp_itemsize*/
     /* methods */
     (destructor)Reader_dealloc,             /*tp_dealloc*/
-    (printfunc)0,                           /*tp_print*/
+    0,                                      /*tp_vectorcall_offset*/
     (getattrfunc)0,                         /*tp_getattr*/
     (setattrfunc)0,                         /*tp_setattr*/
-    0,                                     /*tp_reserved*/
+    0,                                      /*tp_as_async*/
     (reprfunc)0,                            /*tp_repr*/
     0,                                      /*tp_as_number*/
     0,                                      /*tp_as_sequence*/
@@ -1231,14 +1231,16 @@ csv_writerow(WriterObj *self, PyObject *seq)
 
     /* Add line terminator.
      */
-    if (!join_append_lineterminator(self))
+    if (!join_append_lineterminator(self)) {
         return NULL;
+    }
 
     line = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
                                      (void *) self->rec, self->rec_len);
-    if (line == NULL)
+    if (line == NULL) {
         return NULL;
-    result = PyObject_CallFunctionObjArgs(self->writeline, line, NULL);
+    }
+    result = PyObject_CallFunctionObjArgs(self->write, line, NULL);
     Py_DECREF(line);
     return result;
 }
@@ -1294,7 +1296,7 @@ Writer_dealloc(WriterObj *self)
 {
     PyObject_GC_UnTrack(self);
     Py_XDECREF(self->dialect);
-    Py_XDECREF(self->writeline);
+    Py_XDECREF(self->write);
     if (self->rec != NULL)
         PyMem_Free(self->rec);
     PyObject_GC_Del(self);
@@ -1304,7 +1306,7 @@ static int
 Writer_traverse(WriterObj *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->dialect);
-    Py_VISIT(self->writeline);
+    Py_VISIT(self->write);
     return 0;
 }
 
@@ -1312,7 +1314,7 @@ static int
 Writer_clear(WriterObj *self)
 {
     Py_CLEAR(self->dialect);
-    Py_CLEAR(self->writeline);
+    Py_CLEAR(self->write);
     return 0;
 }
 
@@ -1330,10 +1332,10 @@ static PyTypeObject Writer_Type = {
     0,                                      /*tp_itemsize*/
     /* methods */
     (destructor)Writer_dealloc,             /*tp_dealloc*/
-    (printfunc)0,                           /*tp_print*/
+    0,                                      /*tp_vectorcall_offset*/
     (getattrfunc)0,                         /*tp_getattr*/
     (setattrfunc)0,                         /*tp_setattr*/
-    0,                                      /*tp_reserved*/
+    0,                                      /*tp_as_async*/
     (reprfunc)0,                            /*tp_repr*/
     0,                                      /*tp_as_number*/
     0,                                      /*tp_as_sequence*/
@@ -1369,7 +1371,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         return NULL;
 
     self->dialect = NULL;
-    self->writeline = NULL;
+    self->write = NULL;
 
     self->rec = NULL;
     self->rec_size = 0;
@@ -1380,8 +1382,8 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    self->writeline = _PyObject_GetAttrId(output_file, &PyId_write);
-    if (self->writeline == NULL || !PyCallable_Check(self->writeline)) {
+    self->write = _PyObject_GetAttrId(output_file, &PyId_write);
+    if (self->write == NULL || !PyCallable_Check(self->write)) {
         PyErr_SetString(PyExc_TypeError,
                         "argument 1 must have a \"write\" method");
         Py_DECREF(self);

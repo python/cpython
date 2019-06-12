@@ -226,8 +226,9 @@ def _create_parser():
                             '(instead of the Python stdlib test suite)')
 
     group = parser.add_argument_group('Special runs')
-    group.add_argument('-l', '--findleaks', action='store_true',
-                       help='if GC is available detect tests that leak memory')
+    group.add_argument('-l', '--findleaks', action='store_const', const=2,
+                       default=1,
+                       help='deprecated alias to --fail-env-changed')
     group.add_argument('-L', '--runleaks', action='store_true',
                        help='run the leaks(1) command just before exit.' +
                             more_details)
@@ -255,7 +256,7 @@ def _create_parser():
                        help='suppress error message boxes on Windows')
     group.add_argument('-F', '--forever', action='store_true',
                        help='run the specified tests in a loop, until an '
-                            'error happens')
+                            'error happens; imply --failfast')
     group.add_argument('--list-tests', action='store_true',
                        help="only write the name of tests that will be run, "
                             "don't execute them")
@@ -309,7 +310,7 @@ def _parse_args(args, **kwargs):
     # Defaults
     ns = argparse.Namespace(testdir=None, verbose=0, quiet=False,
          exclude=False, single=False, randomize=False, fromfile=None,
-         findleaks=False, use_resources=None, trace=False, coverdir='coverage',
+         findleaks=1, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
          header=False, failfast=False, match_tests=None, pgo=False)
@@ -330,12 +331,13 @@ def _parse_args(args, **kwargs):
             parser.error("unrecognized arguments: %s" % arg)
             sys.exit(1)
 
+    if ns.findleaks > 1:
+        # --findleaks implies --fail-env-changed
+        ns.fail_env_changed = True
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
     if ns.use_mp is not None and ns.trace:
         parser.error("-T and -j don't go together!")
-    if ns.use_mp is not None and ns.findleaks:
-        parser.error("-l and -j don't go together!")
     if ns.failfast and not (ns.verbose or ns.verbose3):
         parser.error("-G/--failfast needs either -v or -W")
     if ns.pgo and (ns.verbose or ns.verbose2 or ns.verbose3):
@@ -387,5 +389,8 @@ def _parse_args(args, **kwargs):
         with open(ns.match_filename) as fp:
             for line in fp:
                 ns.match_tests.append(line.strip())
+    if ns.forever:
+        # --forever implies --failfast
+        ns.failfast = True
 
     return ns

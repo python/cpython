@@ -186,8 +186,7 @@ INTERNAL_ERROR        = -32603
 
 class Error(Exception):
     """Base class for client errors."""
-    def __str__(self):
-        return repr(self)
+    __str__ = object.__str__
 
 ##
 # Indicates an HTTP-level protocol error.  This is raised by the HTTP
@@ -869,8 +868,6 @@ class MultiCall:
     def __repr__(self):
         return "<%s at %#x>" % (self.__class__.__name__, id(self))
 
-    __str__ = __repr__
-
     def __getattr__(self, name):
         return _MultiCallMethod(self.__call_list, name)
 
@@ -1467,8 +1464,6 @@ class ServerProxy:
             "<%s for %s%s>" %
             (self.__class__.__name__, self.__host, self.__handler)
             )
-
-    __str__ = __repr__
 
     def __getattr__(self, name):
         # magic method dispatcher

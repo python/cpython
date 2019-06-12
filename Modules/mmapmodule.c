@@ -708,11 +708,54 @@ mmap__sizeof__method(mmap_object *self, void *unused)
 }
 #endif
 
+#ifdef HAVE_MADVISE
+static PyObject *
+mmap_madvise_method(mmap_object *self, PyObject *args)
+{
+    int option;
+    Py_ssize_t start = 0, length;
+
+    CHECK_VALID(NULL);
+    length = self->size;
+
+    if (!PyArg_ParseTuple(args, "i|nn:madvise", &option, &start, &length)) {
+        return NULL;
+    }
+
+    if (start < 0 || start >= self->size) {
+        PyErr_SetString(PyExc_ValueError, "madvise start out of bounds");
+        return NULL;
+    }
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError, "madvise length invalid");
+        return NULL;
+    }
+    if (PY_SSIZE_T_MAX - start < length) {
+        PyErr_SetString(PyExc_OverflowError, "madvise length too large");
+        return NULL;
+    }
+
+    if (start + length > self->size) {
+        length = self->size - start;
+    }
+
+    if (madvise(self->data + start, length, option) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+#endif // HAVE_MADVISE
+
 static struct PyMethodDef mmap_object_methods[] = {
     {"close",           (PyCFunction) mmap_close_method,        METH_NOARGS},
     {"find",            (PyCFunction) mmap_find_method,         METH_VARARGS},
     {"rfind",           (PyCFunction) mmap_rfind_method,        METH_VARARGS},
     {"flush",           (PyCFunction) mmap_flush_method,        METH_VARARGS},
+#ifdef HAVE_MADVISE
+    {"madvise",         (PyCFunction) mmap_madvise_method,      METH_VARARGS},
+#endif
     {"move",            (PyCFunction) mmap_move_method,         METH_VARARGS},
     {"read",            (PyCFunction) mmap_read_method,         METH_VARARGS},
     {"read_byte",       (PyCFunction) mmap_read_byte_method,    METH_NOARGS},
@@ -806,7 +849,8 @@ mmap_subscript(mmap_object *self, PyObject *item)
                                               slicelen);
         else {
             char *result_buf = (char *)PyMem_Malloc(slicelen);
-            Py_ssize_t cur, i;
+            size_t cur;
+            Py_ssize_t i;
             PyObject *result;
 
             if (result_buf == NULL)
@@ -926,7 +970,8 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
             memcpy(self->data + start, vbuf.buf, slicelen);
         }
         else {
-            Py_ssize_t cur, i;
+            size_t cur;
+            Py_ssize_t i;
 
             for (cur = start, i = 0;
                  i < slicelen;
@@ -1000,10 +1045,10 @@ static PyTypeObject mmap_object_type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor) mmap_object_dealloc,           /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     &mmap_as_sequence,                          /*tp_as_sequence*/
@@ -1108,6 +1153,11 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                             "mmap invalid access parameter.");
     }
 
+    if (PySys_Audit("mmap.__new__", "ini" _Py_PARSE_OFF_T,
+                    fileno, map_size, access, offset) < 0) {
+        return NULL;
+    }
+
 #ifdef __APPLE__
     /* Issue #11277: fsync(2) is not enough on OS X - a special, OS X specific
        fcntl(2) is necessary to force DISKSYNC and get around mmap(2) bug */
@@ -1162,6 +1212,13 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 #ifdef MAP_ANONYMOUS
         /* BSD way to map anonymous memory */
         flags |= MAP_ANONYMOUS;
+
+        /* VxWorks only supports MAP_ANONYMOUS with MAP_PRIVATE flag */
+#ifdef __VXWORKS__
+        flags &= ~MAP_SHARED;
+        flags |= MAP_PRIVATE;
+#endif
+
 #else
         /* SVR4 method to map anonymous memory is to open /dev/zero */
         fd = devzero = _Py_open("/dev/zero", O_RDWR);
@@ -1228,6 +1285,11 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|ziL", keywords,
                                      &fileno, &map_size,
                                      &tagname, &access, &offset)) {
+        return NULL;
+    }
+
+    if (PySys_Audit("mmap.__new__", "iniL",
+                    fileno, map_size, access, offset) < 0) {
         return NULL;
     }
 
@@ -1475,5 +1537,80 @@ PyInit_mmap(void)
     setint(dict, "ACCESS_READ", ACCESS_READ);
     setint(dict, "ACCESS_WRITE", ACCESS_WRITE);
     setint(dict, "ACCESS_COPY", ACCESS_COPY);
+
+#ifdef HAVE_MADVISE
+    // Conventional advice values
+#ifdef MADV_NORMAL
+    setint(dict, "MADV_NORMAL", MADV_NORMAL);
+#endif
+#ifdef MADV_RANDOM
+    setint(dict, "MADV_RANDOM", MADV_RANDOM);
+#endif
+#ifdef MADV_SEQUENTIAL
+    setint(dict, "MADV_SEQUENTIAL", MADV_SEQUENTIAL);
+#endif
+#ifdef MADV_WILLNEED
+    setint(dict, "MADV_WILLNEED", MADV_WILLNEED);
+#endif
+#ifdef MADV_DONTNEED
+    setint(dict, "MADV_DONTNEED", MADV_DONTNEED);
+#endif
+
+    // Linux-specific advice values
+#ifdef MADV_REMOVE
+    setint(dict, "MADV_REMOVE", MADV_REMOVE);
+#endif
+#ifdef MADV_DONTFORK
+    setint(dict, "MADV_DONTFORK", MADV_DONTFORK);
+#endif
+#ifdef MADV_DOFORK
+    setint(dict, "MADV_DOFORK", MADV_DOFORK);
+#endif
+#ifdef MADV_HWPOISON
+    setint(dict, "MADV_HWPOISON", MADV_HWPOISON);
+#endif
+#ifdef MADV_MERGEABLE
+    setint(dict, "MADV_MERGEABLE", MADV_MERGEABLE);
+#endif
+#ifdef MADV_UNMERGEABLE
+    setint(dict, "MADV_UNMERGEABLE", MADV_UNMERGEABLE);
+#endif
+#ifdef MADV_SOFT_OFFLINE
+    setint(dict, "MADV_SOFT_OFFLINE", MADV_SOFT_OFFLINE);
+#endif
+#ifdef MADV_HUGEPAGE
+    setint(dict, "MADV_HUGEPAGE", MADV_HUGEPAGE);
+#endif
+#ifdef MADV_NOHUGEPAGE
+    setint(dict, "MADV_NOHUGEPAGE", MADV_NOHUGEPAGE);
+#endif
+#ifdef MADV_DONTDUMP
+    setint(dict, "MADV_DONTDUMP", MADV_DONTDUMP);
+#endif
+#ifdef MADV_DODUMP
+    setint(dict, "MADV_DODUMP", MADV_DODUMP);
+#endif
+#ifdef MADV_FREE // (Also present on FreeBSD and macOS.)
+    setint(dict, "MADV_FREE", MADV_FREE);
+#endif
+
+    // FreeBSD-specific
+#ifdef MADV_NOSYNC
+    setint(dict, "MADV_NOSYNC", MADV_NOSYNC);
+#endif
+#ifdef MADV_AUTOSYNC
+    setint(dict, "MADV_AUTOSYNC", MADV_AUTOSYNC);
+#endif
+#ifdef MADV_NOCORE
+    setint(dict, "MADV_NOCORE", MADV_NOCORE);
+#endif
+#ifdef MADV_CORE
+    setint(dict, "MADV_CORE", MADV_CORE);
+#endif
+#ifdef MADV_PROTECT
+    setint(dict, "MADV_PROTECT", MADV_PROTECT);
+#endif
+#endif // HAVE_MADVISE
+
     return module;
 }

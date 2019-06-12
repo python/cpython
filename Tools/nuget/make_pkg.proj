@@ -4,6 +4,7 @@
         <ProjectGuid>{10487945-15D1-4092-A214-338395C4116B}</ProjectGuid>
         <OutputName>python</OutputName>
         <OutputName Condition="$(Platform) == 'x86'">$(OutputName)x86</OutputName>
+        <OutputName Condition="$(Platform) == 'ARM'">$(OutputName)arm32</OutputName>
         <OutputName Condition="$(BuildForDaily) == 'true'">$(OutputName)daily</OutputName>
         <OutputSuffix></OutputSuffix>
         <SupportSigning>false</SupportSigning>

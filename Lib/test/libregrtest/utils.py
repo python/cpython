@@ -1,5 +1,6 @@
-import os.path
 import math
+import os.path
+import sys
 import textwrap
 
 
@@ -54,3 +55,7 @@ def printlist(x, width=70, indent=4, file=None):
     print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
                         initial_indent=blanks, subsequent_indent=blanks),
           file=file)
+
+
+def print_warning(msg):
+    print(f"Warning -- {msg}", file=sys.stderr, flush=True)

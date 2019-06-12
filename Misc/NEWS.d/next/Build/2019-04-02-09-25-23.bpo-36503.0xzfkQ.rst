@@ -1,2 +1,0 @@
-Remove references to "aix3" and "aix4".
-Patch by M. Felt.
