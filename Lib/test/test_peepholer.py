@@ -422,7 +422,7 @@ class TestTranforms(BytecodeTestCase):
                 pass
         self.assertEqual(count_instr_recursively(forloop, 'BUILD_LIST'), 0)
 
-    def test_multiline_statements_are_optimized(self):
+    def test_multiline_statements_are_not_treated_differently(self):
         code1 = compile("[x for x in a if x]", "", 'single').co_consts[0]
         code2 = compile("[x \n for x in a if x]", "", 'single').co_consts[0]
         self.assertEqual(type(code1), types.CodeType)
