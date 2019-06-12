@@ -3,6 +3,7 @@ import unittest
 from test.support import requires
 import tkinter as tk
 
+from idlelib.delegator import Delegator
 from idlelib.percolator import Percolator
 from idlelib.linenumbers import LineNumbers
 
@@ -11,6 +12,8 @@ class Dummy_editwin:
     def __init__(self, text):
         self.text = text
         self.per = Percolator(text)
+        self.undo = Delegator()
+        self.per.insertfilter(self.undo)
 
     def setvar(self, name, value):
         pass

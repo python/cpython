@@ -114,8 +114,14 @@ class LineNumbers(BaseSideBar):
         end_line_delegator = EndLineDelegator(self.update_sidebar_text)
         # Insert the delegator after the undo delegator, so that line numbers
         # are properly updated after undo and redo actions.
-        end_line_delegator.delegate = self.editwin.undo.delegate
-        self.editwin.undo.delegate = end_line_delegator
+        end_line_delegator.setdelegate(self.editwin.undo.delegate)
+        self.editwin.undo.setdelegate(end_line_delegator)
+        # Reset the delegator caches of the delegators "above" the
+        # end line delegator we just inserted.
+        delegator = self.editwin.per.top
+        while delegator is not end_line_delegator:
+            delegator.resetcache()
+            delegator = delegator.delegate
 
         # self.state = idleConf.GetOption('extensions', 'LineNumber', 'visible',
         #                                 type='bool')
