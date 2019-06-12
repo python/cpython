@@ -1,0 +1,2 @@
+Ensure ``time.tzname`` is correct on Windows when the active code page is
+set to CP_UTF7 or CP_UTF8.
