@@ -45,7 +45,7 @@ def parse(source, filename='<unknown>', mode='exec', *,
         feature_version = -1
     # Else it should be an int giving the minor version for 3.x.
     return compile(source, filename, mode, flags,
-                   feature_version=feature_version)
+                   _feature_version=feature_version)
 
 
 def literal_eval(node_or_string):
