@@ -1869,6 +1869,33 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertTrue(bufio.closed)
         t.join()
 
+    def test_close_dont_call_flush(self):
+        # bpo-37223: This test is specific to the C implementation (_io).
+        raw = self.MockRawIO()
+        def bad_flush():
+            raise OSError()
+        orig_flush = raw.flush
+        raw.flush = bad_flush
+        def bad_close():
+            raw.flush()
+        orig_close = raw.close
+        raw.close = bad_close
+
+        b = self.tp(raw)
+        b.write(b'spam')
+        self.assertRaises(OSError, b.close) # exception not swallowed
+        self.assertFalse(b.closed)
+        self.assertFalse(raw.closed)
+
+        def bad_flush2():
+            raise AssertionError
+
+        b.flush = bad_flush2
+        raw.close = orig_close
+        raw.flush = orig_flush
+
+        # if b is already closed, b.flush() must not be called
+        b.close()
 
 
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):

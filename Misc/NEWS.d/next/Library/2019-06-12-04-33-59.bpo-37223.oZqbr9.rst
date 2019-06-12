@@ -1,0 +1,3 @@
+:class:`io.BufferedWrite.close` no longer call its
+:meth:`~io.BufferedWrite.flush` method if :class:`~io.BufferedWrite.close` has
+already been closed.

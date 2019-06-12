@@ -1279,7 +1279,7 @@ class BufferedWriter(_BufferedIOMixin):
             self._flush_unlocked()
 
     def _flush_unlocked(self):
-        if self.closed:
+        if self.closed or self._write_buf is None:
             raise ValueError("flush on closed file")
         while self._write_buf:
             try:
@@ -1314,9 +1314,15 @@ class BufferedWriter(_BufferedIOMixin):
         # a subclass or the user set self.flush to something. This is the same
         # behavior as the C implementation.
         try:
-            # may raise BlockingIOError or BrokenPipeError etc
-            self.flush()
+            # bpo-37223: If close() has already been called, _write_buf is set
+            # to None. In this case, flush() would raise
+            # ValueError("flush on closed file").
+            if self._write_buf is not None:
+                # may raise BlockingIOError or BrokenPipeError etc
+                self.flush()
         finally:
+            self._write_buf = None
+
             with self._write_lock:
                 self.raw.close()
 

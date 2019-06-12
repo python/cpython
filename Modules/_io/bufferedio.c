@@ -511,15 +511,26 @@ buffered_close(buffered *self, PyObject *args)
         else
             PyErr_Clear();
     }
-    /* flush() will most probably re-take the lock, so drop it first */
-    LEAVE_BUFFERED(self)
-    res = PyObject_CallMethodObjArgs((PyObject *)self, _PyIO_str_flush, NULL);
-    if (!ENTER_BUFFERED(self))
-        return NULL;
-    if (res == NULL)
-        PyErr_Fetch(&exc, &val, &tb);
-    else
-        Py_DECREF(res);
+
+    /* bpo-37223: If buffered_close() has already been called, self->buffer is set
+       to NULL. In this case, calling buffered_flush() would raise
+       ValueError("flush of closed file"). */
+    if (self->buffer != NULL) {
+        /* flush() will most probably re-take the lock, so drop it first */
+        LEAVE_BUFFERED(self)
+
+        res = PyObject_CallMethodObjArgs((PyObject *)self, _PyIO_str_flush, NULL);
+
+        if (!ENTER_BUFFERED(self)) {
+            return NULL;
+        }
+        if (res == NULL) {
+            PyErr_Fetch(&exc, &val, &tb);
+        }
+        else {
+            Py_DECREF(res);
+        }
+    }
 
     res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_close, NULL);
 
