@@ -291,6 +291,10 @@ Zoom/Restore Height
    defaults to 40 lines by 80 chars unless changed on the General tab of the
    Configure IDLE dialog.
 
+Line Numbers (Editor Window only)
+   Open a column to the left of the edit window which shows the linenumber
+   of each line of text.
+
 Window menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
