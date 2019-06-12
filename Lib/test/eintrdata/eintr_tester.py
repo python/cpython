@@ -16,12 +16,12 @@ import platform
 import select
 import signal
 import socket
-import subprocess
 import sys
 import time
 import unittest
 
 from test import support
+from test.support.script_helper import spawn_python
 
 @contextlib.contextmanager
 def kill_on_error(proc):
@@ -71,10 +71,6 @@ class EINTRBaseTest(unittest.TestCase):
         if hasattr(faulthandler, 'cancel_dump_traceback_later'):
             faulthandler.cancel_dump_traceback_later()
 
-    def subprocess(self, *args, **kw):
-        cmd_args = (sys.executable, '-c') + args
-        return subprocess.Popen(cmd_args, **kw)
-
 
 @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
 class OSEINTRTest(EINTRBaseTest):
@@ -82,7 +78,7 @@ class OSEINTRTest(EINTRBaseTest):
 
     def new_sleep_process(self):
         code = 'import time; time.sleep(%r)' % self.sleep_time
-        return self.subprocess(code)
+        return spawn_python('-c', code)
 
     def _test_wait_multiple(self, wait_func):
         num = 3
@@ -135,7 +131,7 @@ class OSEINTRTest(EINTRBaseTest):
             '    os.write(wr, data)',
         ))
 
-        proc = self.subprocess(code, str(wr), pass_fds=[wr])
+        proc = spawn_python('-c', code, str(wr), pass_fds=[wr])
         with kill_on_error(proc):
             os.close(wr)
             for data in datas:
@@ -172,7 +168,7 @@ class OSEINTRTest(EINTRBaseTest):
             '                    % (len(value), data_len))',
         ))
 
-        proc = self.subprocess(code, str(rd), pass_fds=[rd])
+        proc = spawn_python('-c', code, str(rd), pass_fds=[rd])
         with kill_on_error(proc):
             os.close(rd)
             written = 0
@@ -214,7 +210,7 @@ class SocketEINTRTest(EINTRBaseTest):
         ))
 
         fd = wr.fileno()
-        proc = self.subprocess(code, str(fd), pass_fds=[fd])
+        proc = spawn_python('-c', code, str(fd), pass_fds=[fd])
         with kill_on_error(proc):
             wr.close()
             for data in datas:
@@ -264,7 +260,7 @@ class SocketEINTRTest(EINTRBaseTest):
         ))
 
         fd = rd.fileno()
-        proc = self.subprocess(code, str(fd), pass_fds=[fd])
+        proc = spawn_python('-c', code, str(fd), pass_fds=[fd])
         with kill_on_error(proc):
             rd.close()
             written = 0
@@ -302,7 +298,7 @@ class SocketEINTRTest(EINTRBaseTest):
             '    time.sleep(sleep_time)',
         ))
 
-        proc = self.subprocess(code)
+        proc = spawn_python('-c', code)
         with kill_on_error(proc):
             client_sock, _ = sock.accept()
             client_sock.close()
@@ -338,7 +334,7 @@ class SocketEINTRTest(EINTRBaseTest):
             do_open_close_reader,
         ))
 
-        proc = self.subprocess(code)
+        proc = spawn_python('-c', code)
         with kill_on_error(proc):
             do_open_close_writer(filename)
             self.assertEqual(proc.wait(), 0)
@@ -404,7 +400,7 @@ class SignalEINTRTest(EINTRBaseTest):
         self.addCleanup(signal.pthread_sigmask, signal.SIG_UNBLOCK, [signum])
 
         t0 = time.monotonic()
-        proc = self.subprocess(code)
+        proc = spawn_python('-c', code)
         with kill_on_error(proc):
             wait_func(signum)
             dt = time.monotonic() - t0
@@ -494,7 +490,7 @@ class FNTLEINTRTest(EINTRBaseTest):
             "   fcntl.%s(f, fcntl.LOCK_EX)" % lock_name,
             "   time.sleep(%s)" % self.sleep_time))
         start_time = time.monotonic()
-        proc = self.subprocess(code)
+        proc = spawn_python('-c', code)
         with kill_on_error(proc):
             with open(support.TESTFN, 'wb') as f:
                 while True:  # synchronize the subprocess
