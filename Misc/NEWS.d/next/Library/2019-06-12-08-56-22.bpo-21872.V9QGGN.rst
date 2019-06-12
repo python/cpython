@@ -1,0 +1,2 @@
+Fix :mod:`lzma`: library decompresses data incompletely, sometimes the last
+one to dozens bytes can't be output. Patch by Ma Lin.
