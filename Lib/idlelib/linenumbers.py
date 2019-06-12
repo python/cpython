@@ -7,9 +7,6 @@ import tkinter as tk
 from idlelib.config import idleConf
 from idlelib.delegator import Delegator
 
-DISABLED = False
-ENABLED = True
-
 
 def get_end_linenumber(text):
     """Utility to get the last line's number in a Tk text widget."""
@@ -30,25 +27,34 @@ class BaseSideBar:
         self.text['yscrollcommand'] = self.vbar_set
         self.sidebar_text['yscrollcommand'] = self.vbar_set
 
+        self.side = None
+
     def update_sidebar_text_font(self, event=''):
         """
         Implement in subclass to update font config values of sidebar_text
         when font config values of editwin.text changes
         """
 
-    def show_sidebar(self, side=tk.LEFT):
+    def show_sidebar(self, side):
         """
-        side - Valid values are tk.LEFT, tk.RIGHT, tk.TOP, tk.BOTTOM
+        side - Valid values are tk.LEFT, tk.RIGHT
         """
-        try:
-            self.sidebar_text.pack(side=tk.LEFT, fill=tk.Y, before=self.text)
-        except tk.TclError:
-            self.sidebar_text.pack(side=tk.LEFT, fill=tk.Y)
-        self.state = ENABLED
+        if side not in {tk.LEFT, tk.RIGHT}:
+            raise ValueError(
+                'side must be one of: '
+                'tk.LEFT = {tk.LEFT!r}; '
+                'tk.RIGHT = {tk.RIGHT!r}')
+        if side != self.side:
+            try:
+                self.sidebar_text.pack(side=side, fill=tk.Y, before=self.text)
+            except tk.TclError:
+                self.sidebar_text.pack(side=side, fill=tk.Y)
+            self.side = side
 
     def hide_sidebar(self):
-        self.sidebar_text.pack_forget()
-        self.state = DISABLED
+        if self.side is not None:
+            self.sidebar_text.pack_forget()
+            self.side = None
 
     def vbar_set(self, *args, **kwargs):
         """Redirect scrollbar's set command to editwin.text and sidebar_text
@@ -123,13 +129,21 @@ class LineNumbers(BaseSideBar):
             delegator.resetcache()
             delegator = delegator.delegate
 
-        # self.state = idleConf.GetOption('extensions', 'LineNumber', 'visible',
-        #                                 type='bool')
-        self.state = True  # TODO: Read config
+        self.is_shown = True  # TODO: Read config
         # Note : We invert state here, and call toggle_line_numbers_event
         # to get our desired state
-        self.state = not self.state
+        self.is_shown = not self.is_shown
         self.toggle_line_numbers_event('')
+
+    @property
+    def is_shown(self):
+        return self.side is not None
+
+    @is_shown.setter
+    def is_shown(self, value):
+        if not isinstance(value, bool):
+            raise TypeError('is_shown value must be boolean')
+        self.side = tk.LEFT if value else None
 
     def update_sidebar_text_font(self, event=''):
         """Update the font when the editor window's font changes."""
@@ -154,8 +168,8 @@ class LineNumbers(BaseSideBar):
         self.sidebar_text.update_idletasks()
 
     def toggle_line_numbers_event(self, event):
-        self.show_sidebar() if self.state == DISABLED else self.hide_sidebar()
-        self.editwin.setvar('<<toggle-line-numbers>>', self.state)
+        self.show_sidebar(tk.LEFT) if not self.is_shown else self.hide_sidebar()
+        self.editwin.setvar('<<toggle-line-numbers>>', self.is_shown)
         # idleConf.SetOption('extensions', 'LineNumber', 'visible',
         #                    str(self.state))
         # idleConf.SaveUserCfgFiles()

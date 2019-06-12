@@ -53,16 +53,13 @@ class LineNumberTest(unittest.TestCase):
         self.assertEqual(get('1.0', 'end'), '1\n2\n3\n4\n')
 
     def test_toggle_linenumbering(self):
-        ENABLED = True
-        DISABLED = False
-
-        self.linenumber.state = ENABLED
+        self.linenumber.side = tk.LEFT
         self.linenumber.toggle_line_numbers_event('')
-        self.assertEqual(self.linenumber.state, DISABLED)
+        self.assertEqual(self.linenumber.side, None)
 
-        self.linenumber.state = DISABLED
+        self.linenumber.side = None
         self.linenumber.toggle_line_numbers_event('')
-        self.assertEqual(self.linenumber.state, ENABLED)
+        self.assertEqual(self.linenumber.side, tk.LEFT)
 
     def test_insert(self):
         text = self.editwin.text
