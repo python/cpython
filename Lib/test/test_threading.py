@@ -583,6 +583,41 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(data.splitlines(),
                          ["GC: True True True"] * 2)
 
+    def test_finalization_shutdown(self):
+        # bpo-36402: Py_Finalize() calls threading._shutdown() which must wait
+        # until Python thread states of all non-daemon threads get deleted.
+        #
+        # Test similar to SubinterpThreadingTests.test_threads_join_2(), but
+        # test the finalization of the main interpreter.
+        code = """if 1:
+            import os
+            import threading
+            import time
+            import random
+
+            def random_sleep():
+                seconds = random.random() * 0.010
+                time.sleep(seconds)
+
+            class Sleeper:
+                def __del__(self):
+                    random_sleep()
+
+            tls = threading.local()
+
+            def f():
+                # Sleep a bit so that the thread is still running when
+                # Py_Finalize() is called.
+                random_sleep()
+                tls.x = Sleeper()
+                random_sleep()
+
+            threading.Thread(target=f).start()
+            random_sleep()
+        """
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(err, b"")
+
     def test_tstate_lock(self):
         # Test an implementation detail of Thread objects.
         started = _thread.allocate_lock()
@@ -878,15 +913,22 @@ class SubinterpThreadingTests(BaseTestCase):
         self.addCleanup(os.close, w)
         code = r"""if 1:
             import os
+            import random
             import threading
             import time
+
+            def random_sleep():
+                seconds = random.random() * 0.010
+                time.sleep(seconds)
 
             def f():
                 # Sleep a bit so that the thread is still running when
                 # Py_EndInterpreter is called.
-                time.sleep(0.05)
+                random_sleep()
                 os.write(%d, b"x")
+
             threading.Thread(target=f).start()
+            random_sleep()
             """ % (w,)
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
@@ -903,22 +945,29 @@ class SubinterpThreadingTests(BaseTestCase):
         self.addCleanup(os.close, w)
         code = r"""if 1:
             import os
+            import random
             import threading
             import time
 
+            def random_sleep():
+                seconds = random.random() * 0.010
+                time.sleep(seconds)
+
             class Sleeper:
                 def __del__(self):
-                    time.sleep(0.05)
+                    random_sleep()
 
             tls = threading.local()
 
             def f():
                 # Sleep a bit so that the thread is still running when
                 # Py_EndInterpreter is called.
-                time.sleep(0.05)
+                random_sleep()
                 tls.x = Sleeper()
                 os.write(%d, b"x")
+
             threading.Thread(target=f).start()
+            random_sleep()
             """ % (w,)
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
