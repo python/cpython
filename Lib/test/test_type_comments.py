@@ -228,8 +228,9 @@ class TypeCommentTests(unittest.TestCase):
                          feature_version=feature_version)
 
     def parse_all(self, source, minver=lowest, maxver=highest, expected_regex=""):
-        for feature_version in range(self.lowest, self.highest + 1):
-            if minver <= feature_version <= maxver:
+        for version in range(self.lowest, self.highest + 1):
+            feature_version = (3, version)
+            if minver <= version <= maxver:
                 try:
                     yield self.parse(source, feature_version)
                 except SyntaxError as err:
