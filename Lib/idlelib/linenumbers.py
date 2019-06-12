@@ -1,6 +1,8 @@
 """Line numbering implementation for IDLE as an extension.
 Includes BaseSideBar which can be extended for other sidebar based extensions
 """
+import itertools
+
 import tkinter as tk
 from idlelib.config import idleConf
 from idlelib.delegator import Delegator
@@ -65,15 +67,14 @@ class BaseSideBar:
 class EndLineDelegator(Delegator):
     """Generate callbacks with the current end line number after
        insert or delete operations"""
-    def __init__(self, changed_callback, end=1):
+    def __init__(self, changed_callback):
         """
         changed_callback - Callable, will be called after insert
                            or delete operations with the current
                            end line number.
-        end - int, inital value of the end line number"""
+        """
         Delegator.__init__(self)
         self.changed_callback = changed_callback
-        self.changed_callback(end)
 
     def insert(self, index, chars, tags=None):
         self.delegate.insert(index, chars, tags)
@@ -89,7 +90,6 @@ class LineNumbers(BaseSideBar):
     def __init__(self, editwin):
         BaseSideBar.__init__(self, editwin)
         self.prev_end = 1
-        end = get_end(self.text)
         self.update_sidebar_text_font()
         self._sidebar_width_type = type(self.sidebar_text['width'])
         self.sidebar_text.config(state=tk.NORMAL)
@@ -105,8 +105,9 @@ class LineNumbers(BaseSideBar):
             self.sidebar_text.bind(event_name,
                                    lambda event, event_name=event_name:
                                    self.redirect_event(event, event_name))
-        self.end_line_delegator = EndLineDelegator(self.update_sidebar_text,
-                                                   end)
+        self.end_line_delegator = EndLineDelegator(self.update_sidebar_text)
+        end = get_end(self.text)
+        self.update_sidebar_text(end)
         self.editwin.per.insertfilter(self.end_line_delegator)
         # self.state = idleConf.GetOption('extensions', 'LineNumber', 'visible',
         #                                 type='bool')
@@ -153,17 +154,24 @@ class LineNumbers(BaseSideBar):
         editwin.text contain the same number of lines"""
         if end == self.prev_end:
             return
+
         width_difference = len(str(end)) - len(str(self.prev_end))
-        new_width = int(float(self.sidebar_text['width'])) + width_difference
-        self.sidebar_text['width'] = self._sidebar_width_type(new_width)
+        if width_difference:
+            cur_width = int(float(self.sidebar_text['width']))
+            new_width = cur_width + width_difference
+            self.sidebar_text['width'] = self._sidebar_width_type(new_width)
+
         self.sidebar_text.config(state=tk.NORMAL)
         if end > self.prev_end:
-            for i in range(self.prev_end + 1, end + 1):
-                self.sidebar_text.insert('{}.0'.format(i), '\n{}'.format(i),
-                                         'linenumber')
+            new_text = '\n'.join(itertools.chain(
+                [''],
+                map(str, range(self.prev_end + 1, end + 1)),
+            ))
+            self.sidebar_text.insert(f'{end+1:d}.0', new_text, 'linenumber')
         else:
-            self.sidebar_text.delete('{}.0'.format(end+1), 'end')
+            self.sidebar_text.delete(f'{end+1:d}.0', 'end')
         self.sidebar_text.config(state=tk.DISABLED)
+
         self.prev_end = end
 
 
