@@ -1,9 +1,9 @@
-"""Linenumbering implementation for IDLE as an extension.
+"""Line numbering implementation for IDLE as an extension.
 Includes BaseSideBar which can be extended for other sidebar based extensions
 """
 import tkinter as tk
-from idlelib.Delegator import Delegator
-from idlelib.configHandler import idleConf
+from idlelib.config import idleConf
+from idlelib.delegator import Delegator
 
 DISABLED = False
 ENABLED = True
@@ -56,11 +56,10 @@ class BaseSideBar:
         """Set focus to editwin.text and redirect 'event' to editwin.text.
         """
         self.text.focus_set()
+        kwargs = dict(x=event.x, y=event.y)
         if event_name == '<MouseWheel>':
-            self.text.event_generate(event_name, x=event.x, y=event.y,
-                                     delta=event.delta)
-        else:
-            self.text.event_generate(event_name, x=event.x, y=event.y)
+            kwargs.update(delta=event.delta)
+        self.text.event_generate(event_name, **kwargs)
 
 
 class EndLineDelegator(Delegator):
@@ -85,14 +84,8 @@ class EndLineDelegator(Delegator):
         self.changed_callback(get_end(self.delegate))
 
 
-class LineNumber(BaseSideBar):
-
-    menudefs = [
-        ('options', [
-            ("!Line Numbers", "<<toggle-linenumbering>>"),
-        ])
-    ]
-
+class LineNumbers(BaseSideBar):
+    """Line numbers support for editor windows."""
     def __init__(self, editwin):
         BaseSideBar.__init__(self, editwin)
         self.prev_end = 1
@@ -115,19 +108,19 @@ class LineNumber(BaseSideBar):
         self.end_line_delegator = EndLineDelegator(self.update_sidebar_text,
                                                    end)
         self.editwin.per.insertfilter(self.end_line_delegator)
-        self.state = idleConf.GetOption('extensions', 'LineNumber', 'visible',
-                                        type='bool')
-        # Note : We invert state here, and call toggle_linenumbering_event
+        # self.state = idleConf.GetOption('extensions', 'LineNumber', 'visible',
+        #                                 type='bool')
+        self.state = True  # TODO: Read config
+        # Note : We invert state here, and call toggle_line_numbers_event
         # to get our desired state
         self.state = not self.state
-        self.toggle_linenumbering_event('')
+        self.toggle_line_numbers_event('')
 
     def update_sidebar_text_font(self, event=''):
-        """Update the font of sidebar_text when font of editwin.font
-        changes
-        """
-        bg = idleConf.GetOption('extensions', 'LineNumber', 'bgcolor')
-        fg = idleConf.GetOption('extensions', 'LineNumber', 'fgcolor')
+        """Update the font when the editor window's font changes."""
+        colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'context')
+        bg = colors['background']
+        fg = colors['foreground']
         self.sidebar_text.tag_config('linenumber', justify=tk.RIGHT)
         config = {'fg': fg, 'bg': bg, 'font': self.text['font'],
                   'relief': tk.FLAT, 'selectforeground': fg,
@@ -138,18 +131,19 @@ class LineNumber(BaseSideBar):
         # The below lines below are required to allow tk to "catch up" with
         # changes in font to the main text widget
         #
+        # TODO: validate the assertion above
         sidebar_text = self.sidebar_text.get('1.0', 'end')
         self.sidebar_text.delete('1.0', 'end')
         self.sidebar_text.insert('1.0', sidebar_text)
         self.text.update_idletasks()
         self.sidebar_text.update_idletasks()
 
-    def toggle_linenumbering_event(self, event):
+    def toggle_line_numbers_event(self, event):
         self.show_sidebar() if self.state == DISABLED else self.hide_sidebar()
-        self.editwin.setvar('<<toggle-linenumbering>>', self.state)
-        idleConf.SetOption('extensions', 'LineNumber', 'visible',
-                           str(self.state))
-        idleConf.SaveUserCfgFiles()
+        self.editwin.setvar('<<toggle-line-numbers>>', self.state)
+        # idleConf.SetOption('extensions', 'LineNumber', 'visible',
+        #                    str(self.state))
+        # idleConf.SaveUserCfgFiles()
 
     def update_sidebar_text(self, end):
         """
@@ -172,6 +166,7 @@ class LineNumber(BaseSideBar):
         self.sidebar_text.config(state=tk.DISABLED)
         self.prev_end = end
 
+
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_linenumber', verbosity=2)
+    main('idlelib.idle_test.test_linenumbers', verbosity=2)

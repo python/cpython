@@ -99,6 +99,7 @@ menudefs = [
    ('Configure _IDLE', '<<open-config-dialog>>'),
    None,
    ('Show _Code Context', '<<toggle-code-context>>'),
+   ("!Line Numbers", "<<toggle-line-numbers>>"),
    ('Zoom Height', '<<zoom-height>>'),
    ]),
 

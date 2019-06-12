@@ -54,6 +54,7 @@ class EditorWindow(object):
     from idlelib.calltip import Calltip
     from idlelib.codecontext import CodeContext
     from idlelib.paragraph import FormatParagraph
+    from idlelib.linenumbers import LineNumbers
     from idlelib.parenmatch import ParenMatch
     from idlelib.rstrip import Rstrip
     from idlelib.squeezer import Squeezer
@@ -61,6 +62,9 @@ class EditorWindow(object):
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
     help_url = None
+
+    allow_code_context = True
+    allow_line_numbers = True
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
         # Delay import: runscript imports pyshell imports EditorWindow.
@@ -311,8 +315,18 @@ class EditorWindow(object):
         text.bind("<<refresh-calltip>>", ctip.refresh_calltip_event)
         text.bind("<<force-open-calltip>>", ctip.force_open_calltip_event)
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
-        text.bind("<<toggle-code-context>>",
-                  self.CodeContext(self).toggle_code_context_event)
+        if self.allow_code_context:
+            code_context = self.CodeContext(self)
+            text.bind("<<toggle-code-context>>",
+                      code_context.toggle_code_context_event)
+        else:
+            self.update_menu_state('options', '*Code Context', 'disabled')
+        if self.allow_line_numbers:
+            line_numbers = self.LineNumbers(self)
+            text.bind("<<toggle-line-numbers>>",
+                      line_numbers.toggle_line_numbers_event)
+        else:
+            self.update_menu_state('options', '*Line Numbers', 'disabled')
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so displayable in Tk."""
