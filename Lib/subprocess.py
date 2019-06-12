@@ -1886,7 +1886,7 @@ class Popen(object):
             if subprocess touch off a race condition.
             One of practical case can be found in:
             https://bugs.python.org/issue25122
-            
+
             For example:
             proc = subprocess.Popen(...)
             with proc.kill_on_os_error():
@@ -1904,7 +1904,7 @@ class Popen(object):
                 try:
                     self.kill()
                 except:
-                    # catch all possible errors. 
+                    # catch all possible errors.
                     pass
                 self.wait()
                 raise
