@@ -681,22 +681,22 @@ def _random_getnode():
 
 
 if _LINUX:
-    _GETTERS = [_ifconfig_getnode, _ip_getnode, _arp_getnode, _lanscan_getnode]
+    _OS_GETTERS = [_ifconfig_getnode, _ip_getnode, _arp_getnode, _lanscan_getnode]
 elif _DARWIN:
-    _GETTERS = [_arp_getnode, _ifconfig_getnode, _netstat_getnode]
+    _OS_GETTERS = [_arp_getnode, _ifconfig_getnode, _netstat_getnode]
 elif _WINDOWS:
-    _GETTERS = [_netbios_getnode, _ipconfig_getnode]
+    _OS_GETTERS = [_netbios_getnode, _ipconfig_getnode]
 elif _AIX:
-    _GETTERS = [_netstat_getnode]
+    _OS_GETTERS = [_netstat_getnode]
 else:
-    _GETTERS = [_ifconfig_getnode, _arp_getnode, _netstat_getnode,
+    _OS_GETTERS = [_ifconfig_getnode, _arp_getnode, _netstat_getnode,
                    _lanscan_getnode, _ip_getnode]
 if os.name == 'posix':
-    _NODE_GETTERS = [_unix_getnode] + _GETTERS
+    _GETTERS = [_unix_getnode] + _OS_GETTERS
 elif os.name == 'nt':
-    _NODE_GETTERS = [_windll_getnode] + _GETTERS
+    _GETTERS = [_windll_getnode] + _OS_GETTERS
 else:
-    _NODE_GETTERS = _GETTERS
+    _GETTERS = _OS_GETTERS
 
 _node = None
 
@@ -712,7 +712,7 @@ def getnode(*, getters=None):
     if _node is not None:
         return _node
 
-    for getter in _NODE_GETTERS + [_random_getnode]:
+    for getter in _GETTERS + [_random_getnode]:
         try:
             _node = getter()
         except:
