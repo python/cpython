@@ -2070,6 +2070,11 @@ class BufferedRWPairTest(unittest.TestCase):
 
         # Silence destructor error
         writer.close = lambda: None
+        writer = None
+
+        with support.catch_unraisable_exception():
+            pair = None
+            support.gc_collect()
 
     def test_reader_writer_close_error_on_close(self):
         def reader_close():
