@@ -76,6 +76,9 @@ functions should be good enough; otherwise, you should use an instance of
    Note that tabs and spaces are both treated as whitespace, but they are not
    equal: the lines ``"  hello"`` and ``"\thello"`` are considered to have no
    common leading whitespace.
+  
+   Lines containing only whitespace are ignored in the input and normalized to a 
+   single newline character in the ouput.
 
    For example::
 
