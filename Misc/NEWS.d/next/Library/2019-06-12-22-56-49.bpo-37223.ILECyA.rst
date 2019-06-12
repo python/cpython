@@ -1,0 +1,5 @@
+When :meth:`io.BufferedReader.close` or :meth:`io.BufferedWrite.close` is
+called twice, the second call now does nothing. Previously, the ``flush()``
+method and ``raw.close()`` were called at the second call. Moreover, even if
+``close()`` raises an exception, the file is now considered as closed (even if
+the raw file is not considered as closed).

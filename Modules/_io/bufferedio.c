@@ -482,7 +482,11 @@ static PyObject *
 buffered_closed_get(buffered *self, void *context)
 {
     CHECK_INITIALIZED(self)
-    return PyObject_GetAttr(self->raw, _PyIO_str_closed);
+    int closed = IS_CLOSED(self);
+    if (closed < 0) {
+        return NULL;
+    }
+    return PyBool_FromLong(closed);
 }
 
 static PyObject *
@@ -495,7 +499,7 @@ buffered_close(buffered *self, PyObject *args)
     if (!ENTER_BUFFERED(self))
         return NULL;
 
-    r = buffered_closed(self);
+    r = IS_CLOSED(self);
     if (r < 0)
         goto end;
     if (r > 0) {

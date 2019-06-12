@@ -995,7 +995,7 @@ class IOTest(unittest.TestCase):
         # This would cause an assertion failure.
         self.assertRaises(OSError, f.close)
 
-        # Silence destructor error
+        # Silence f destructor error
         R.flush = lambda self: None
 
 
@@ -1137,7 +1137,7 @@ class CommonBufferedTests:
         raw = self.MockRawIO()
         closed = []
         def bad_flush():
-            closed[:] = [b.closed, raw.closed]
+            closed.extend([b.closed, raw.closed])
             raise OSError()
         raw.flush = bad_flush
         b = self.tp(raw)
@@ -1163,11 +1163,10 @@ class CommonBufferedTests:
         self.assertEqual(err.exception.args, ('close',))
         self.assertIsInstance(err.exception.__context__, OSError)
         self.assertEqual(err.exception.__context__.args, ('flush',))
-        self.assertFalse(b.closed)
+        self.assertTrue(b.closed)
 
-        # Silence destructor error
+        # Silence raw destructor error
         raw.close = lambda: None
-        b.flush = lambda: None
 
     def test_nonnormalized_close_error_on_close(self):
         # Issue #21677
@@ -1184,10 +1183,9 @@ class CommonBufferedTests:
         self.assertIn('non_existing_close', str(err.exception))
         self.assertIsInstance(err.exception.__context__, NameError)
         self.assertIn('non_existing_flush', str(err.exception.__context__))
-        self.assertFalse(b.closed)
+        self.assertTrue(b.closed)
 
-        # Silence destructor error
-        b.flush = lambda: None
+        # Silence raw destructor error
         raw.close = lambda: None
 
     def test_multi_close(self):
@@ -1196,7 +1194,7 @@ class CommonBufferedTests:
         b.close()
         b.close()
         b.close()
-        self.assertRaises(ValueError, b.flush)
+        self.assertRaisesRegex(ValueError, 'closed', b.flush)
 
     def test_unseekable(self):
         bufio = self.tp(self.MockUnseekableIO(b"A" * 10))
@@ -1490,7 +1488,7 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertRaises(OSError, bufio.seek, 0)
         self.assertRaises(OSError, bufio.tell)
 
-        # Silence destructor error
+        # Silence bufio destructor error
         bufio.close = lambda: None
 
     def test_no_extraneous_read(self):
@@ -1841,7 +1839,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertRaises(OSError, bufio.tell)
         self.assertRaises(OSError, bufio.write, b"abcdef")
 
-        # Silence destructor error
+        # Silence bufio destructor error
         bufio.close = lambda: None
 
     def test_max_buffer_size_removal(self):
@@ -1869,6 +1867,39 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertTrue(bufio.closed)
         t.join()
 
+    def test_close_dont_call_flush(self):
+        # bpo-37223: This test is specific to the C implementation (_io).
+        raw = self.MockRawIO()
+        def bad_flush():
+            raise OSError()
+        orig_flush = raw.flush
+        raw.flush = bad_flush
+        def bad_close():
+            raw.flush()
+        orig_close = raw.close
+        raw.close = bad_close
+
+        b = self.tp(raw)
+        b.write(b'spam')
+        self.assertRaises(OSError, b.close) # exception not swallowed
+        self.assertTrue(b.closed)
+        self.assertFalse(raw.closed)
+
+        def bad_flush2():
+            raise AssertionError
+
+        b.flush = bad_flush2
+        raw.close = orig_close
+        raw.flush = orig_flush
+
+        # if b is already closed, b.flush() must not be called
+        b.close()
+
+    def test_closed_write(self):
+        raw = self.MockRawIO()
+        b = self.tp(raw)
+        b.close()
+        self.assertRaisesRegex(ValueError, 'closed', b.write, b'abc')
 
 
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
@@ -2051,7 +2082,7 @@ class BufferedRWPairTest(unittest.TestCase):
         self.assertFalse(reader.closed)
         self.assertTrue(writer.closed)
 
-        # Silence destructor error
+        # Silence reader destructor error
         reader.close = lambda: None
 
     def test_writer_close_error_on_close(self):
@@ -2064,11 +2095,11 @@ class BufferedRWPairTest(unittest.TestCase):
         with self.assertRaises(NameError) as err:
             pair.close()
         self.assertIn('writer_non_existing', str(err.exception))
-        self.assertFalse(pair.closed)
+        self.assertTrue(pair.closed)
         self.assertTrue(reader.closed)
         self.assertFalse(writer.closed)
 
-        # Silence destructor error
+        # Silence writer destructor error
         writer.close = lambda: None
 
     def test_reader_writer_close_error_on_close(self):
@@ -2086,11 +2117,11 @@ class BufferedRWPairTest(unittest.TestCase):
         self.assertIn('reader_non_existing', str(err.exception))
         self.assertIsInstance(err.exception.__context__, NameError)
         self.assertIn('writer_non_existing', str(err.exception.__context__))
-        self.assertFalse(pair.closed)
+        self.assertTrue(pair.closed)
         self.assertFalse(reader.closed)
         self.assertFalse(writer.closed)
 
-        # Silence destructor error
+        # Silence reader and writer destructor error
         reader.close = lambda: None
         writer.close = lambda: None
 

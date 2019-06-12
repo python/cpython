@@ -786,6 +786,7 @@ class _BufferedIOMixin(BufferedIOBase):
 
     def __init__(self, raw):
         self._raw = raw
+        self._closed = False
 
     ### Positioning ###
 
@@ -821,12 +822,17 @@ class _BufferedIOMixin(BufferedIOBase):
         self.raw.flush()
 
     def close(self):
-        if self.raw is not None and not self.closed:
+        if self.raw is None or self.closed:
+            return
+
+        try:
+            # may raise BlockingIOError or BrokenPipeError etc
+            self.flush()
+        finally:
             try:
-                # may raise BlockingIOError or BrokenPipeError etc
-                self.flush()
-            finally:
                 self.raw.close()
+            finally:
+                self._closed = True
 
     def detach(self):
         if self.raw is None:
@@ -847,7 +853,7 @@ class _BufferedIOMixin(BufferedIOBase):
 
     @property
     def closed(self):
-        return self.raw.closed
+        return self._closed or self.raw.closed
 
     @property
     def name(self):
@@ -1045,6 +1051,7 @@ class BufferedReader(_BufferedIOMixin):
         self.buffer_size = buffer_size
         self._reset_read_buf()
         self._read_lock = Lock()
+        self._closed = False
 
     def readable(self):
         return self.raw.readable()
@@ -1235,6 +1242,7 @@ class BufferedWriter(_BufferedIOMixin):
         self.buffer_size = buffer_size
         self._write_buf = bytearray()
         self._write_lock = Lock()
+        self._closed = False
 
     def writable(self):
         return self.raw.writable()
@@ -1309,6 +1317,7 @@ class BufferedWriter(_BufferedIOMixin):
         with self._write_lock:
             if self.raw is None or self.closed:
                 return
+
         # We have to release the lock and call self.flush() (which will
         # probably just re-take the lock) in case flush has been overridden in
         # a subclass or the user set self.flush to something. This is the same
@@ -1317,8 +1326,11 @@ class BufferedWriter(_BufferedIOMixin):
             # may raise BlockingIOError or BrokenPipeError etc
             self.flush()
         finally:
-            with self._write_lock:
-                self.raw.close()
+            try:
+                with self._write_lock:
+                    self.raw.close()
+            finally:
+                self._closed = True
 
 
 class BufferedRWPair(BufferedIOBase):
