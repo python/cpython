@@ -252,8 +252,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     assert(tabsiz == 0 || Py_REFCNT(lnotab_obj) == 1);
 
     /* Don't optimize if lnotab contains instruction pointer delta larger
-    than +255 (encoded as multiple bytes), just to keep the peephole optimizer
-    simple. The optimizer leaves line number deltas unchanged. */
+       than +255 (encoded as multiple bytes), just to keep the peephole optimizer
+       simple. The optimizer leaves line number deltas unchanged. */
 
     for (j = 0; j < tabsiz; j += 2) {
         if (lnotab[j] == 255) {
