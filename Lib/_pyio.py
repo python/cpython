@@ -10,8 +10,13 @@ import stat
 import sys
 # Import _thread instead of threading to reduce startup cost
 from _thread import allocate_lock as Lock
-if sys.platform in {'win32', 'cygwin'}:
+if sys.platform == 'win32':
     from msvcrt import setmode as _setmode
+elif sys.platform == 'cygwin':
+    import ctypes
+    _cygwin1 = ctypes.CDLL('cygwin1.dll')
+    def _setmode(fd, mode):
+        return _cygwin1._setmode(ctypes.c_int(fd), ctypes.c_int(mode))
 else:
     _setmode = None
 
