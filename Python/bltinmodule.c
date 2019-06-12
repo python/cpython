@@ -696,7 +696,8 @@ compile as builtin_compile
     flags: int = 0
     dont_inherit: bool(accept={int}) = False
     optimize: int = -1
-    feature_version: int = -1
+    *
+    _feature_version as feature_version: int = -1
 
 Compile source into a code object that can be executed by exec() or eval().
 
@@ -716,7 +717,7 @@ static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
                      int optimize, int feature_version)
-/*[clinic end generated code: output=b0c09c84f116d3d7 input=5fcc30651a6acaa9]*/
+/*[clinic end generated code: output=b0c09c84f116d3d7 input=40171fb92c1d580d]*/
 {
     PyObject *source_copy;
     const char *str;
