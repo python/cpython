@@ -1,0 +1,3 @@
+Fix pure Python implementation of :mod:`pickle`: it failed with
+:exc:`ModuleNotFoundError` on importing ``_pickle.PickleBuffer``. If
+``_pickle.PickleBuffer`` is missing, disable ``PickleBuffer`` support.
