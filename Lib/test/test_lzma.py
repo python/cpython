@@ -1203,8 +1203,8 @@ class FileTestCase(unittest.TestCase):
         # ---------------------
         d1 = LZMADecompressor()
         entire = d1.decompress(ISSUE_21872_DAT, max_length=-1)
-        self.assertEqual(len(entire), 13149) # wrong behavior before fix
-        self.assertFalse(d1.eof) # wrong behavior before fix
+        self.assertEqual(len(entire), 13160)
+        self.assertTrue(d1.eof)
 
         # ---------------------
         # when max_length > 0

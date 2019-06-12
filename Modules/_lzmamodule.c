@@ -899,15 +899,19 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
         if (lzret == LZMA_STREAM_END) {
             d->eof = 1;
             break;
-        } else if (lzs->avail_in == 0) {
-            break;
         } else if (lzs->avail_out == 0) {
+            /* Need to check lzs->avail_out before lzs->avail_in.
+               Maybe lzs's internal state still have a few bytes
+               can be output, grow the output buffer and continue
+               if max_lengh < 0. */
             if (data_size == max_length)
                 break;
             if (grow_buffer(&result, max_length) == -1)
                 goto error;
             lzs->next_out = (uint8_t *)PyBytes_AS_STRING(result) + data_size;
             lzs->avail_out = PyBytes_GET_SIZE(result) - data_size;
+        } else if (lzs->avail_in == 0) {
+            break;
         }
     }
     if (data_size != PyBytes_GET_SIZE(result))
