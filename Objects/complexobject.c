@@ -55,6 +55,7 @@ _Py_c_prod(Py_complex a, Py_complex b)
     return r;
 }
 
+/* Avoid bad optimization on Windows ARM64 until the compiler is fixed */
 #ifdef _M_ARM64
 #pragma optimize("", off)
 #endif
