@@ -1646,6 +1646,7 @@ os.close(fd)
         self.assertTrue(fut2.done())
         self.assertTrue(cancelled.done())
 
+    @unittest.skipUnless(hasattr(os, 'sendfile'), 'test needs os.sendfile()')
     def test_sendfile(self):
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))

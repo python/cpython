@@ -1,0 +1,2 @@
+Skip test_asyncio.test_streams.StreamTests.test_sendfile unless hasattr(os, 'sendfile')
+Patch by M. Felt
