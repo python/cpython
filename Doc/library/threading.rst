@@ -82,7 +82,7 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD.
 
    .. versionadded:: 3.8
 
