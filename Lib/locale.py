@@ -490,6 +490,8 @@ def _parse_localename(localename):
 
     if '.' in code:
         return tuple(code.split('.')[:2])
+    if '_' in code:
+        return code, None
     elif code == 'C':
         return None, None
     raise ValueError('unknown locale: %s' % localename)
