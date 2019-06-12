@@ -150,8 +150,8 @@ class build(Command):
         return self.distribution.has_scripts()
 
 
-    sub_commands = [('build_py',      has_pure_modules),
-                    ('build_clib',    has_c_libraries),
+    sub_commands = [('build_clib',    has_c_libraries),
                     ('build_ext',     has_ext_modules),
+                    ('build_py',      has_pure_modules),
                     ('build_scripts', has_scripts),
                    ]
