@@ -994,7 +994,19 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     }
     else if (lzs->avail_in == 0) {
         lzs->next_in = NULL;
-        d->needs_input = 1;
+
+        if (lzs->avail_out == 0) {
+            /* (avail_in==0 && avail_out==0)
+               Maybe lzs's internal state still have a few bytes can
+               be output, try to output them next time. */
+            d->needs_input = 0;
+
+            /* if max_length < 0, lzs->avail_out always > 0 */
+            assert(max_length >= 0);
+        } else {
+            /* Input buffer exhausted, output buffer has space. */
+            d->needs_input = 1;
+        }
     }
     else {
         d->needs_input = 0;

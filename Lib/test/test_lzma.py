@@ -1215,7 +1215,7 @@ class FileTestCase(unittest.TestCase):
         # buffers are exhausted at the same time, and lzs's
         # internal state still have 11 bytes can be output.
         out1 = d2.decompress(ISSUE_21872_DAT, max_length=13149)
-        self.assertTrue(d2.needs_input) # wrong behavior before fix
+        self.assertFalse(d2.needs_input) # ensure needs_input mechanism works
 
         # simulate needs_input mechanism
         # output internal state's 11 bytes
