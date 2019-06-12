@@ -105,10 +105,15 @@ class LineNumbers(BaseSideBar):
             self.sidebar_text.bind(event_name,
                                    lambda event, event_name=event_name:
                                    self.redirect_event(event, event_name))
-        self.end_line_delegator = EndLineDelegator(self.update_sidebar_text)
         end = get_end(self.text)
         self.update_sidebar_text(end)
-        self.editwin.per.insertfilter(self.end_line_delegator)
+
+        end_line_delegator = EndLineDelegator(self.update_sidebar_text)
+        # Insert the delegator after the undo delegator, so that line numbers
+        # are properly updated after undo and redo actions.
+        end_line_delegator.delegate = self.editwin.undo.delegate
+        self.editwin.undo.delegate = end_line_delegator
+
         # self.state = idleConf.GetOption('extensions', 'LineNumber', 'visible',
         #                                 type='bool')
         self.state = True  # TODO: Read config
