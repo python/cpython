@@ -1,0 +1,2 @@
+Fix assertions in ``test_close`` and ``test_events_mask_overflow`` devpoll
+tests.
