@@ -28,7 +28,7 @@ from _ast import *
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
-          type_comments=False, feature_version=-1):
+          type_comments=False, feature_version=None):
     """
     Parse the source into an AST node.
     Equivalent to compile(source, filename, mode, PyCF_ONLY_AST).
@@ -37,6 +37,13 @@ def parse(source, filename='<unknown>', mode='exec', *,
     flags = PyCF_ONLY_AST
     if type_comments:
         flags |= PyCF_TYPE_COMMENTS
+    if isinstance(feature_version, tuple):
+        major, minor = feature_version  # Should be a 2-tuple.
+        assert major == 3
+        feature_version = minor
+    elif feature_version is None:
+        feature_version = -1
+    # Else it should be an int giving the minor version for 3.x.
     return compile(source, filename, mode, flags,
                    feature_version=feature_version)
 
