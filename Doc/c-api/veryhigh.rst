@@ -400,7 +400,7 @@ the same library that the Python runtime is using.
       initialized to ``PY_MINOR_VERSION``.
 
       The field is ignored by default, it is used if and only if
-      ```PyCF_ONLY_AST`` flag is set in *cf_flags*.
+      ``PyCF_ONLY_AST`` flag is set in *cf_flags*.
 
    .. versionchanged:: 3.8
       Added *cf_feature_version* field.
