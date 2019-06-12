@@ -174,6 +174,10 @@ typedef struct {
  * backwards-compatibility */
 typedef Py_ssize_t printfunc;
 
+/* Define tp_print as alias of tp_vectorcall to allow for code accessing
+ * this field (hopefully not actually doing anything with it). */
+#define tp_print tp_vectorcall
+
 typedef struct _typeobject {
     PyObject_VAR_HEAD
     const char *tp_name; /* For printing, in format "<module>.<name>" */
