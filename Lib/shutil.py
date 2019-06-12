@@ -1535,16 +1535,11 @@ def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
         raise NotADirectoryError(
             f'Destination "{dst}" not a directory as required')
 
-    if dst_is_dir or (os.isdir(dst) and not dst_is_file):
-        link_inside_dir = True
-    else:
-        link_inside_dir = False
-
     for target in targets:
         if follow_symlinks: # XXXXXXXXXXXXXXXXXXX XXX
             target = os.path.realpath(target)
 
-        if link_inside_dir:
+        if dst_is_dir or os.isdir(dst):
             link_name = os.path.join(dst, os.path.basename(target))
         else:
             link_name = dst
