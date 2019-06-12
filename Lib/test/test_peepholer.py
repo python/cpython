@@ -297,13 +297,10 @@ class TestTranforms(BytecodeTestCase):
         # JUMP_FORWARD to JUMP_FORWARD --> JUMP_FORWARD to non-jump
         def f():
             if a:
-                if b:
-                    # Intentionally use two-line expression to test issue37213.
-                    if (c
-                        or d):
-                        foo()
-                else:
-                    bar()
+                # Intentionally use two-line expression to test issue37213.
+                if (c
+                    or d):
+                    foo()
             else:
                 baz()
         self.check_jump_targets(f)
@@ -313,13 +310,10 @@ class TestTranforms(BytecodeTestCase):
         # JUMP_FORWARD to JUMP_ABSOLUTE --> JUMP_FORWARD to non-jump
         def f():
             while a:
-                if b:
-                    # Intentionally use two-line expression to test issue37213.
-                    if (c
-                        or d):
-                        a = foo()
-                else:
-                    a = bar()
+                # Intentionally use two-line expression to test issue37213.
+                if (c
+                    or d):
+                    a = foo()
         self.check_jump_targets(f)
 
     def test_elim_jump_to_uncond_jump3(self):
@@ -421,33 +415,6 @@ class TestTranforms(BytecodeTestCase):
             for x in [a, b]:
                 pass
         self.assertEqual(count_instr_recursively(forloop, 'BUILD_LIST'), 0)
-
-    def test_multiline_statements_are_not_treated_differently(self):
-        code1 = compile("[x for x in a if x]", "", 'single').co_consts[0]
-        code2 = compile("[x \n for x in a if x]", "", 'single').co_consts[0]
-        self.assertEqual(type(code1), types.CodeType)
-        self.assertEqual(type(code2), types.CodeType)
-        self.assertNotEqual(list(code1.co_lnotab), list(code2.co_lnotab))
-        self.assertEqual(list(code1.co_code), list(code2.co_code))
-
-        code1 = compile(textwrap.dedent("""\
-        if x:
-            if (y and z):
-                foo()
-        else:
-            bar()
-        """), "", 'exec')
-        code2 = compile(textwrap.dedent("""\
-        if x:
-            if (y and
-                z):
-                foo()
-        else:
-            bar()
-        """), "", 'exec')
-
-        self.assertNotEqual(list(code1.co_lnotab), list(code2.co_lnotab))
-        self.assertEqual(list(code1.co_code), list(code2.co_code))
 
 
 class TestBuglets(unittest.TestCase):
