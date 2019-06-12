@@ -125,7 +125,7 @@ class BaseRequestRateTest(BaseRobotTest):
 
 
 class EmptyFileTest(BaseRequestRateTest, unittest.TestCase):
-    robots_txt = ""
+    robots_txt = ''
     good = ['/foo']
 
 
