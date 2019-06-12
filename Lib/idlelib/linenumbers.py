@@ -10,7 +10,10 @@ from idlelib.delegator import Delegator
 DISABLED = False
 ENABLED = True
 
-get_end = lambda text: int(float(text.index('end-1c')))
+
+def get_end_linenumber(text):
+    """Utility to get the last line's number in a Tk text widget."""
+    return int(float(text.index('end-1c')))
 
 
 class BaseSideBar:
@@ -78,11 +81,11 @@ class EndLineDelegator(Delegator):
 
     def insert(self, index, chars, tags=None):
         self.delegate.insert(index, chars, tags)
-        self.changed_callback(get_end(self.delegate))
+        self.changed_callback(get_end_linenumber(self.delegate))
 
     def delete(self, index1, index2=None):
         self.delegate.delete(index1, index2)
-        self.changed_callback(get_end(self.delegate))
+        self.changed_callback(get_end_linenumber(self.delegate))
 
 
 class LineNumbers(BaseSideBar):
@@ -105,7 +108,7 @@ class LineNumbers(BaseSideBar):
             self.sidebar_text.bind(event_name,
                                    lambda event, event_name=event_name:
                                    self.redirect_event(event, event_name))
-        end = get_end(self.text)
+        end = get_end_linenumber(self.text)
         self.update_sidebar_text(end)
 
         end_line_delegator = EndLineDelegator(self.update_sidebar_text)
