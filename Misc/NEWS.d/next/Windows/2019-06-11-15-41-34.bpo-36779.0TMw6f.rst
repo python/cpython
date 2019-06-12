@@ -1,4 +1,2 @@
-If the default ANSI code page on Windows is CP_UTF7, or CP_UTF8 tzset()
-initializes tzname[0] and tzname[1] to empty strings.  By getting the time
-zone name information directly from GetTimeZoneInformation Python can set
-the value of time.tzname correctly.
+Ensure ``time.tzname`` is correct on Windows when the active code page is
+set to CP_UTF7 or CP_UTF8.
