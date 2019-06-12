@@ -256,6 +256,9 @@ typedef struct _typeobject {
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
 
+    /* Unused, kept for backwards compatibility in CPython 3.8 only */
+    int (*tp_print)(PyObject *, FILE *, int);
+
 #ifdef COUNT_ALLOCS
     /* these must be last and never explicitly initialized */
     Py_ssize_t tp_allocs;
