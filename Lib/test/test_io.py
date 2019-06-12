@@ -1196,7 +1196,7 @@ class CommonBufferedTests:
         b.close()
         b.close()
         b.close()
-        self.assertRaises(ValueError, b.flush)
+        self.assertRaisesRegex(ValueError, 'closed', b.flush)
 
     def test_unseekable(self):
         bufio = self.tp(self.MockUnseekableIO(b"A" * 10))
@@ -1896,6 +1896,12 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
 
         # if b is already closed, b.flush() must not be called
         b.close()
+
+    def test_closed_write(self):
+        raw = self.MockRawIO()
+        b = self.tp(raw)
+        b.close()
+        self.assertRaisesRegex(ValueError, 'closed', b.write, b'abc')
 
 
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):

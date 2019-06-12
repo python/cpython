@@ -1239,12 +1239,15 @@ class BufferedWriter(_BufferedIOMixin):
     def writable(self):
         return self.raw.writable()
 
+    def _check_closed(self, err_msg):
+        if self.closed or self._write_buf is None:
+            raise ValueError(err_msg)
+
     def write(self, b):
         if isinstance(b, str):
             raise TypeError("can't write str to binary stream")
         with self._write_lock:
-            if self.closed:
-                raise ValueError("write to closed file")
+            self._check_closed("write to closed file")
             # XXX we can implement some more tricks to try and avoid
             # partial writes
             if len(self._write_buf) > self.buffer_size:
@@ -1279,8 +1282,7 @@ class BufferedWriter(_BufferedIOMixin):
             self._flush_unlocked()
 
     def _flush_unlocked(self):
-        if self.closed or self._write_buf is None:
-            raise ValueError("flush on closed file")
+        self._check_closed("flush on closed file")
         while self._write_buf:
             try:
                 n = self.raw.write(self._write_buf)
@@ -1296,7 +1298,10 @@ class BufferedWriter(_BufferedIOMixin):
             del self._write_buf[:n]
 
     def tell(self):
-        return _BufferedIOMixin.tell(self) + len(self._write_buf)
+        pos = _BufferedIOMixin.tell(self)
+        if self._write_buf is not None:
+            pos += len(self._write_buf)
+        return pos
 
     def seek(self, pos, whence=0):
         if whence not in valid_seek_flags:
@@ -1309,6 +1314,8 @@ class BufferedWriter(_BufferedIOMixin):
         with self._write_lock:
             if self.raw is None or self.closed:
                 return
+            has_write_buf = (self._write_buf is not None)
+
         # We have to release the lock and call self.flush() (which will
         # probably just re-take the lock) in case flush has been overridden in
         # a subclass or the user set self.flush to something. This is the same
@@ -1317,13 +1324,12 @@ class BufferedWriter(_BufferedIOMixin):
             # bpo-37223: If close() has already been called, _write_buf is set
             # to None. In this case, flush() would raise
             # ValueError("flush on closed file").
-            if self._write_buf is not None:
+            if has_write_buf:
                 # may raise BlockingIOError or BrokenPipeError etc
                 self.flush()
         finally:
-            self._write_buf = None
-
             with self._write_lock:
+                self._write_buf = None
                 self.raw.close()
 
 
