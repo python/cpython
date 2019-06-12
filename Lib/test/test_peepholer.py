@@ -17,19 +17,29 @@ def count_instr_recursively(f, opname):
             count += count_instr_recursively(c, opname)
     return count
 
-JUMP_OPS = {'JUMP_FORWARD', 'JUMP_IF_FALSE_OR_POP', 'JUMP_IF_TRUE_OR_POP',
-            'JUMP_ABSOLUTE', 'POP_JUMP_IF_FALSE', 'POP_JUMP_IF_TRUE'}
-
-def has_continuous_jumps(code):
-    instructions = {ins.offset: ins for ins in dis.get_instructions(code)}
-    jumps = {ins for ins in instructions.values() if ins.opname in JUMP_OPS}
-    targets = {instructions[ins.argval] for ins in jumps}
-    if jumps & targets:
-        return True
-    return False
-
 
 class TestTranforms(BytecodeTestCase):
+
+    def check_jump_targets(self, code):
+        instructions = list(dis.get_instructions(code))
+        targets = {instr.offset: instr for instr in instructions}
+        for instr in instructions:
+            if 'JUMP_' not in instr.opname:
+                continue
+            tgt = targets[instr.argval]
+            # jump to unconditional jump
+            if tgt.opname in ('JUMP_ABSOLUTE', 'JUMP_FORWARD'):
+                self.fail(f'{instr.opname} at {instr.offset} '
+                          f'jumps to {tgt.opname} at {tgt.offset}')
+            # unconditional jump to RETURN_VALUE
+            if (instr.opname in ('JUMP_ABSOLUTE', 'JUMP_FORWARD') and
+                tgt.opname == 'RETURN_VALUE'):
+                self.fail(f'{instr.opname} at {instr.offset} '
+                          f'jumps to {tgt.opname} at {tgt.offset}')
+            # JUMP_IF_*_OR_POP jump to conditional jump
+            if '_OR_POP' in instr.opname and 'JUMP_IF_' in tgt.opname:
+                self.fail(f'{instr.opname} at {instr.offset} '
+                          f'jumps to {tgt.opname} at {tgt.offset}')
 
     def test_unot(self):
         # UNARY_NOT POP_JUMP_IF_FALSE  -->  POP_JUMP_IF_TRUE'
@@ -272,12 +282,76 @@ class TestTranforms(BytecodeTestCase):
     def test_elim_jump_to_return(self):
         # JUMP_FORWARD to RETURN -->  RETURN
         def f(cond, true_value, false_value):
-            return true_value if cond else false_value
+            # Intentionally use two-line expression to test issue37213.
+            return (true_value if cond
+                    else false_value)
+        self.check_jump_targets(f)
         self.assertNotInBytecode(f, 'JUMP_FORWARD')
         self.assertNotInBytecode(f, 'JUMP_ABSOLUTE')
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
         self.assertEqual(len(returns), 2)
+
+    def test_elim_jump_to_uncond_jump(self):
+        # POP_JUMP_IF_FALSE to JUMP_FORWARD --> POP_JUMP_IF_FALSE to non-jump
+        # JUMP_FORWARD to JUMP_FORWARD --> JUMP_FORWARD to non-jump
+        def f():
+            if a:
+                if b:
+                    # Intentionally use two-line expression to test issue37213.
+                    if (c
+                        or d):
+                        foo()
+                else:
+                    bar()
+            else:
+                baz()
+        self.check_jump_targets(f)
+
+    def test_elim_jump_to_uncond_jump2(self):
+        # POP_JUMP_IF_FALSE to JUMP_ABSOLUTE --> POP_JUMP_IF_FALSE to non-jump
+        # JUMP_FORWARD to JUMP_ABSOLUTE --> JUMP_FORWARD to non-jump
+        def f():
+            while a:
+                if b:
+                    # Intentionally use two-line expression to test issue37213.
+                    if (c
+                        or d):
+                        a = foo()
+                else:
+                    a = bar()
+        self.check_jump_targets(f)
+
+    def test_elim_jump_to_uncond_jump3(self):
+        # Intentionally use two-line expressions to test issue37213.
+        # JUMP_IF_FALSE_OR_POP to JUMP_IF_FALSE_OR_POP --> JUMP_IF_FALSE_OR_POP to non-jump
+        def f(a, b, c):
+            return ((a and b)
+                    and c)
+        self.check_jump_targets(f)
+        self.assertEqual(count_instr_recursively(f, 'JUMP_IF_FALSE_OR_POP'), 2)
+        # JUMP_IF_TRUE_OR_POP to JUMP_IF_TRUE_OR_POP --> JUMP_IF_TRUE_OR_POP to non-jump
+        def f(a, b, c):
+            return ((a or b)
+                    or c)
+        self.check_jump_targets(f)
+        self.assertEqual(count_instr_recursively(f, 'JUMP_IF_TRUE_OR_POP'), 2)
+        # JUMP_IF_FALSE_OR_POP to JUMP_IF_TRUE_OR_POP --> POP_JUMP_IF_FALSE to non-jump
+        def f(a, b, c):
+            return ((a and b)
+                    or c)
+        self.check_jump_targets(f)
+        self.assertNotInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
+        self.assertInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
+        self.assertInBytecode(f, 'POP_JUMP_IF_FALSE')
+        # JUMP_IF_TRUE_OR_POP to JUMP_IF_FALSE_OR_POP --> POP_JUMP_IF_TRUE to non-jump
+        def f(a, b, c):
+            return ((a or b)
+                    and c)
+        self.check_jump_targets(f)
+        self.assertNotInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
+        self.assertInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
+        self.assertInBytecode(f, 'POP_JUMP_IF_TRUE')
 
     def test_elim_jump_after_return1(self):
         # Eliminate dead code: jumps immediately after returns can't be reached
@@ -374,21 +448,6 @@ class TestTranforms(BytecodeTestCase):
 
         self.assertNotEqual(list(code1.co_lnotab), list(code2.co_lnotab))
         self.assertEqual(list(code1.co_code), list(code2.co_code))
-
-    def test_continuous_jumps_are_optimized(self):
-        code1 = compile("[x for x in a if x]", "", 'single').co_consts[0]
-        self.assertEqual(type(code1), types.CodeType)
-        self.assertFalse(has_continuous_jumps(code1))
-
-        code2 = compile(textwrap.dedent("""\
-        if x:
-            if (y and z):
-                foo()
-        else:
-            bar()
-        """), "", 'exec')
-
-        self.assertFalse(has_continuous_jumps(code2))
 
 
 class TestBuglets(unittest.TestCase):
