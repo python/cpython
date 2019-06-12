@@ -1220,8 +1220,8 @@ class FileTestCase(unittest.TestCase):
         # simulate needs_input mechanism
         # output internal state's 11 bytes
         out2 = d2.decompress(b'')
-        self.assertEqual(len(out2), 0) # wrong behavior before fix
-        self.assertFalse(d2.eof) # wrong behavior before fix
+        self.assertEqual(len(out2), 11)
+        self.assertTrue(d2.eof)
 
 
 class OpenTestCase(unittest.TestCase):
