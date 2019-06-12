@@ -96,12 +96,9 @@ Disallow: /
     bad = ['/cyberworld/map/index.html', '/', '/tmp/']
 
 
-class EmptyFileTest(BaseRobotTest, unittest.TestCase):
-    robots_txt = ""
-    good = ['/foo']
-
-
 class BaseRequestRateTest(BaseRobotTest):
+    request_rate = None
+    crawl_delay = None
 
     def test_request_rate(self):
         parser = self.parser
@@ -125,6 +122,11 @@ class BaseRequestRateTest(BaseRobotTest):
                         parsed_request_rate.seconds,
                         self.request_rate.seconds
                     )
+
+
+class EmptyFileTest(BaseRequestRateTest, unittest.TestCase):
+    robots_txt = ""
+    good = ['/foo']
 
 
 class CrawlDelayAndRequestRateTest(BaseRequestRateTest, unittest.TestCase):
