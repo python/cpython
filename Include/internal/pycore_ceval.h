@@ -27,6 +27,9 @@ PyAPI_FUNC(void) _PyEval_SignalAsyncExc(
     struct _ceval_runtime_state *ceval);
 PyAPI_FUNC(void) _PyEval_ReInitThreads(
     _PyRuntimeState *runtime);
+PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
+    PyThreadState *tstate,
+    int new_depth);
 
 /* Private function */
 void _PyEval_Fini(void);

@@ -4728,10 +4728,9 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 }
 
 void
-_PyEval_SetCoroutineOriginTrackingDepth(int new_depth)
+_PyEval_SetCoroutineOriginTrackingDepth(PyThreadState *tstate, int new_depth)
 {
     assert(new_depth >= 0);
-    PyThreadState *tstate = _PyThreadState_GET();
     tstate->coroutine_origin_tracking_depth = new_depth;
 }
 
