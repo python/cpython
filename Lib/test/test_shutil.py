@@ -336,6 +336,105 @@ class TestShutil(unittest.TestCase):
         finally:
             os.lstat = orig_lstat
 
+    def test_rmtree_deleted_file_race_condition(self):
+        # bpo-37260
+        #
+        # Test that a file deleted after it is enumerated
+        # by scandir() but before unlink() is called
+        # doesn't generate any errors.
+        def _onerror(fn, path, exc_info):
+            if path == paths[0]:
+                os.chmod(paths[0], mode)
+                os.rmdir(paths[0])
+                os.unlink(paths[1])
+            else:
+                raise
+
+        paths = [TESTFN + '/foo', TESTFN + '/bar']
+        os.mkdir(TESTFN)
+        os.mkdir(paths[0])
+        write_file((TESTFN, 'bar'), 'bar')
+        mode = os.stat(paths[0]).st_mode
+        os.chmod(paths[0], 0)
+
+        try:
+            shutil.rmtree(TESTFN, onerror=_onerror)
+        except:
+            # test failed, so cleanup artifacts
+            try:
+                os.chmod(paths[0], mode)
+            except:
+                pass
+
+            shutil.rmtree(TESTFN)
+            raise
+
+    def test_rmtree_deleted_dir_race_condition(self):
+        # bpo-37260
+        #
+        # Test that a directory deleted after it is enumerated
+        # by scandir() but before rmdr() is called
+        # doesn't generate any errors.
+        def _onerror(fn, path, exc_info):
+            if path == paths[0]:
+                os.chmod(paths[0], mode)
+                os.rmdir(paths[0])
+                os.rmdir(paths[1])
+            else:
+                raise
+
+        paths = [TESTFN + '/foo', TESTFN + '/bar']
+        os.mkdir(TESTFN)
+        os.mkdir(paths[0])
+        os.mkdir(paths[1])
+        mode = os.stat(paths[0]).st_mode
+        os.chmod(paths[0], 0)
+
+        try:
+            shutil.rmtree(TESTFN, onerror=_onerror)
+        except:
+            # test failed, so cleanup artifacts
+            try:
+                os.chmod(paths[0], mode)
+            except:
+                pass
+
+            shutil.rmtree(TESTFN)
+            raise
+
+    def test_rmtree_deleted_symlink_race_condition(self):
+        # bpo-37260
+        #
+        # Test that a symlink deleted after it is enumerated
+        # by scandir() but before unlink() is called
+        # doesn't generate any errors.
+        def _onerror(fn, path, exc_info):
+            if path == paths[0]:
+                os.chmod(paths[0], mode)
+                os.rmdir(paths[0])
+                os.unlink(paths[1])
+            else:
+                raise
+
+        paths = [TESTFN + '/foo', TESTFN + '/bar']
+        os.mkdir(TESTFN)
+        os.mkdir(paths[0])
+        os.symlink('foo', paths[1])
+        mode = os.stat(paths[0]).st_mode
+        os.chmod(paths[0], 0)
+
+        try:
+            shutil.rmtree(TESTFN, onerror=_onerror)
+        except:
+            # test failed, so cleanup artifacts
+            try:
+                os.chmod(paths[0], mode)
+            except:
+                pass
+
+            shutil.rmtree(TESTFN)
+            raise
+
     @support.skip_unless_symlink
     def test_copymode_follow_symlinks(self):
         tmp_dir = self.mkdtemp()
