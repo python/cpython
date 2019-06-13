@@ -6296,6 +6296,7 @@ class SendRecvFdsTests(unittest.TestCase):
         for index, fd in enumerate(fds2):
             data = os.read(fd, 100)
             self.assertEqual(data,  str(index).encode())
+            
 
 if __name__ == "__main__":
     test_main()
