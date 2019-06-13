@@ -1772,7 +1772,7 @@ pymalloc_free(void *ctx, void *p)
      *    nfreepools.
      * 4. Else there's nothing more to do.
      */
-    if (nf == ao->ntotalpools && ao->nextarena!= NULL) {
+    if (nf == ao->ntotalpools && ao->nextarena != NULL) {
         /* Case 1.  First unlink ao from usable_arenas.
          */
         assert(ao->prevarena == NULL ||
