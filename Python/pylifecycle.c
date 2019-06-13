@@ -899,6 +899,7 @@ pyinit_main(_PyRuntimeState *runtime, PyInterpreterState *interp)
     }
 
     /* Configure the main interpreter */
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     PyConfig *config = &interp->config;
 
     if (runtime->initialized) {
@@ -919,7 +920,7 @@ pyinit_main(_PyRuntimeState *runtime, PyInterpreterState *interp)
         return _PyStatus_ERR("can't initialize time");
     }
 
-    if (_PySys_InitMain(runtime, interp) < 0) {
+    if (_PySys_InitMain(runtime, tstate) < 0) {
         return _PyStatus_ERR("can't finish initializing sys");
     }
 
@@ -1456,7 +1457,7 @@ new_interpreter(PyThreadState **tstate_p)
         }
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        if (_PySys_InitMain(runtime, interp) < 0) {
+        if (_PySys_InitMain(runtime, tstate) < 0) {
             return _PyStatus_ERR("can't finish initializing sys");
         }
     }

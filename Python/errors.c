@@ -547,9 +547,8 @@ PyErr_BadArgument(void)
 }
 
 PyObject *
-PyErr_NoMemory(void)
+_PyErr_NoMemory(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     if (Py_TYPE(PyExc_MemoryError) == NULL) {
         /* PyErr_NoMemory() has been called before PyExc_MemoryError has been
            initialized by _PyExc_Init() */
@@ -558,6 +557,13 @@ PyErr_NoMemory(void)
     }
     _PyErr_SetNone(tstate, PyExc_MemoryError);
     return NULL;
+}
+
+PyObject *
+PyErr_NoMemory(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyErr_NoMemory(tstate);
 }
 
 PyObject *
