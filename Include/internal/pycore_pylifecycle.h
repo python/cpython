@@ -45,7 +45,7 @@ extern PyStatus _PySys_Create(
 extern PyStatus _PySys_SetPreliminaryStderr(PyObject *sysdict);
 extern int _PySys_InitMain(
     _PyRuntimeState *runtime,
-    PyInterpreterState *interp);
+    PyThreadState *tstate);
 extern PyStatus _PyImport_Init(PyInterpreterState *interp);
 extern PyStatus _PyExc_Init(void);
 extern PyStatus _PyErr_Init(void);
