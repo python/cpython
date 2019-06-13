@@ -2737,7 +2737,7 @@ list_vectorcall(
     }
     size_t nargs = PyVectorcall_NARGS(nargsf);
     if (nargs > 1) {
-        PyErr_Format(PyExc_TypeError, "list() expected at most one argument, got %zd", nargs);
+        PyErr_Format(PyExc_TypeError, "list() expected at most 1 argument, got %zu", nargs);
         return NULL;
     }
 

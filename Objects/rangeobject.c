@@ -136,7 +136,7 @@ range_vectorcall(
     }
     switch(nargs) {
         case 0:
-            PyErr_Format(PyExc_TypeError, "range()range expected 1 arguments, got 0");
+            PyErr_Format(PyExc_TypeError, "range() expected 1 arguments, got 0");
             return NULL;
         case 1:
             stop = PyNumber_Index(args[0]);
@@ -168,7 +168,7 @@ range_vectorcall(
             }
             break;
         default:
-            PyErr_Format(PyExc_TypeError, "range() expected at most 3 arguments, got %zd", nargs);
+            PyErr_Format(PyExc_TypeError, "range() expected at most 3 arguments, got %zu", nargs);
             return NULL;
     }
     obj = make_range_object(type, start, stop, step);
