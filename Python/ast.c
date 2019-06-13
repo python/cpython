@@ -4845,7 +4845,6 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
                      struct compiling *c, const node *n)
 
 {
-    PyCompilerFlags cf;
     node *mod_n;
     mod_ty mod;
     char *str;
@@ -4887,8 +4886,8 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     str[len+1] = ')';
     str[len+2] = 0;
 
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags = PyCF_ONLY_AST;
-    cf.cf_feature_version = PY_MINOR_VERSION;
     mod_n = PyParser_SimpleParseStringFlagsFilename(str, "<fstring>",
                                                     Py_eval_input, 0);
     if (!mod_n) {

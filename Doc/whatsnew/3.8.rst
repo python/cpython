@@ -52,6 +52,12 @@ For full details, see the :ref:`changelog <changelog>`.
    form. It will be updated substantially as Python 3.8 moves towards release,
    so it's worth checking back even after reading earlier versions.
 
+   Some notable items not yet covered here:
+
+   * :pep:`578` - Runtime audit hooks for potentially sensitive operations
+   * ``python -m asyncio`` runs a natively async REPL
+   * ...
+
 
 Summary -- Release highlights
 =============================
@@ -254,6 +260,23 @@ See :pep:`590` for a full description.
 (Contributed by Jeroen Demeyer and Mark Shannon in :issue:`36974`.)
 
 
+Pickle protocol 5 with out-of-band data buffers
+-----------------------------------------------
+
+When :mod:`pickle` is used to transfer large data between Python processes
+in order to take advantage of multi-core or multi-machine processing,
+it is important to optimize the transfer by reducing memory copies, and
+possibly by applying custom techniques such as data-dependent compression.
+
+The :mod:`pickle` protocol 5 introduces support for out-of-band buffers
+where :pep:`3118`-compatible data can be transmitted separately from the
+main pickle stream, at the discretion of the communication layer.
+
+See :pep:`574` for a full description.
+
+(Contributed by Antoine Pitrou in :issue:`36785`.)
+
+
 Other Language Changes
 ======================
 
@@ -330,11 +353,37 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+* The new :mod:`importlib.metadata` module provides (provisional) support for
+  reading metadata from third-party packages.  For example, you can extract an
+  installed package's version number, list of entry points, and more.  See
+  :issue:`34632` for additional details.
 
 
 Improved Modules
 ================
+
+
+ast
+---
+
+AST nodes now have ``end_lineno`` and ``end_col_offset`` attributes,
+which give the precise location of the end of the node.  (This only
+applies to nodes that have ``lineno`` and ``col_offset`` attributes.)
+
+The :func:`ast.parse` function has some new flags:
+
+* ``type_comments=True`` causes it to return the text of :pep:`484` and
+  :pep:`526` type comments associated with certain AST nodes;
+
+* ``mode='func_type'`` can be used to parse :pep:`484` "signature type
+  comments" (returned for function definition AST nodes);
+
+* ``feature_version=(3, N)`` allows specifying an earlier Python 3
+  version.  (For example, ``feature_version=(3, 4)`` will treat
+  ``async`` and ``await`` as non-reserved words.)
+
+New function :func:`ast.get_source_segment` returns the source code
+for a specific AST node.
 
 
 asyncio
@@ -735,6 +784,29 @@ time
 
 Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
 (Contributed by Joannah Nanjekye in :issue:`35702`.)
+
+
+typing
+------
+
+The :mod:`typing` module incorporates several new features:
+
+* Protocol definitions.  See :pep:`544`, :class:`typing.Protocol` and
+  :func:`typing.runtime_checkable`.  Simple ABCs like
+  :class:`typing.SupportsInt` are now ``Protocol`` subclasses.
+
+* A dictionary type with per-key types.  See :pep:`589` and
+  :class:`typing.TypedDict`.
+
+* Literal types.  See :pep:`586` and :class:`typing.Literal`.
+
+* "Final" variables, functions, methods and classes.  See :pep:`591`,
+  :class:`typing.Final` and :func:`typing.final`.
+
+* New protocol class :class:`typing.SupportsIndex`.
+
+* New functions :func:`typing.get_origin` and :func:`typing.get_args`.
+
 
 unicodedata
 -----------
@@ -1239,6 +1311,11 @@ Changes in the Python API
 
 Changes in the C API
 --------------------
+
+* The :c:type:`PyCompilerFlags` structure gets a new *cf_feature_version*
+  field. It should be initialized to ``PY_MINOR_VERSION``. The field is ignored
+  by default, it is used if and only if ``PyCF_ONLY_AST`` flag is set in
+  *cf_flags*.
 
 * The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
   It should not be called explicitly: use :c:func:`PyOS_AfterFork_Child`

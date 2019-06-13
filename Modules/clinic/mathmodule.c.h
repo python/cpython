@@ -639,13 +639,16 @@ exit:
 }
 
 PyDoc_STRVAR(math_perm__doc__,
-"perm($module, n, k, /)\n"
+"perm($module, n, k=None, /)\n"
 "--\n"
 "\n"
 "Number of ways to choose k items from n items without repetition and with order.\n"
 "\n"
 "Evaluates to n! / (n - k)! when k <= n and evaluates\n"
 "to zero when k > n.\n"
+"\n"
+"If k is not specified or is None, then k defaults to n\n"
+"and the function returns n!.\n"
 "\n"
 "Raises TypeError if either of the arguments are not integers.\n"
 "Raises ValueError if either of the arguments are negative.");
@@ -661,13 +664,17 @@ math_perm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *n;
-    PyObject *k;
+    PyObject *k = Py_None;
 
-    if (!_PyArg_CheckPositional("perm", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("perm", nargs, 1, 2)) {
         goto exit;
     }
     n = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
     k = args[1];
+skip_optional:
     return_value = math_perm_impl(module, n, k);
 
 exit:
@@ -713,4 +720,4 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5004266613284dcc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0eb1e76a769cdd30 input=a9049054013a1b77]*/

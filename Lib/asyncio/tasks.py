@@ -42,9 +42,22 @@ def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
         loop = events.get_running_loop()
-    # NB: set(_all_tasks) is required to protect
-    # from https://bugs.python.org/issue34970 bug
-    return {t for t in list(_all_tasks)
+    # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
+    # thread while we do so. Therefore we cast it to list prior to filtering. The list
+    # cast itself requires iteration, so we repeat it several times ignoring
+    # RuntimeErrors (which are not very likely to occur). See issues 34970 and 36607 for
+    # details.
+    i = 0
+    while True:
+        try:
+            tasks = list(_all_tasks)
+        except RuntimeError:
+            i += 1
+            if i >= 1000:
+                raise
+        else:
+            break
+    return {t for t in tasks
             if futures._get_loop(t) is loop and not t.done()}
 
 
@@ -54,9 +67,22 @@ def _all_tasks_compat(loop=None):
     # method.
     if loop is None:
         loop = events.get_event_loop()
-    # NB: set(_all_tasks) is required to protect
-    # from https://bugs.python.org/issue34970 bug
-    return {t for t in list(_all_tasks) if futures._get_loop(t) is loop}
+    # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
+    # thread while we do so. Therefore we cast it to list prior to filtering. The list
+    # cast itself requires iteration, so we repeat it several times ignoring
+    # RuntimeErrors (which are not very likely to occur). See issues 34970 and 36607 for
+    # details.
+    i = 0
+    while True:
+        try:
+            tasks = list(_all_tasks)
+        except RuntimeError:
+            i += 1
+            if i >= 1000:
+                raise
+        else:
+            break
+    return {t for t in tasks if futures._get_loop(t) is loop}
 
 
 def _set_task_name(task, name):
