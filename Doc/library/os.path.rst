@@ -87,9 +87,9 @@ the :mod:`glob` module.)
 .. function:: commonpath(paths)
 
    Return the longest common sub-path of each pathname in the sequence
-   *paths*. Raise :exc:`ValueError` if *paths* contain both absolute 
-   and relative pathnames, the *paths* are on the different drives, or 
-   if *paths* is empty. Unlike :func:`commonprefix`, this returns a 
+   *paths*.  Raise :exc:`ValueError` if *paths* contain both absolute
+   and relative pathnames, the *paths* are on the different drives or
+   if *paths* is empty.  Unlike :func:`commonprefix`, this returns a
    valid path.
 
    .. availability:: Unix, Windows.
