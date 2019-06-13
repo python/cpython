@@ -707,7 +707,6 @@ type_ignore_ty _Py_TypeIgnore(int lineno, string tag, PyArena *arena);
 
 PyObject* PyAST_mod2obj(mod_ty t);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
-mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_version);
 int PyAST_Check(PyObject* obj);
 
 #ifdef __cplusplus
