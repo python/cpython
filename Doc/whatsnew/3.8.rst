@@ -560,10 +560,6 @@ The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
 :func:`socket.if_indextoname()` functions have been implemented on Windows.
 (Contributed by Zackery Spytz in :issue:`37007`.)
 
-Added :func:`socket.send_fds()` and :func:`socket.recv_fds` to send and
-receive a file descriptor from the socket.
-(Contributed by Joannah Nanjekye in :issue:`28724`.)
-
 
 shlex
 ----------
