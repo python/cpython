@@ -58,6 +58,14 @@ This module defines the following functions:
    :func:`threading.excepthook` can be overridden to control how uncaught
    exceptions raised by :func:`Thread.run` are handled.
 
+   Storing *exc_value* using a custom hook can create a reference cycle. It
+   should be cleared explicitly to break the reference cycle when the
+   exception is no longer needed.
+
+   Storing *object* using a custom hook can resurrect it if it is set to an
+   object which is being finalized. Avoid storing *object* after the custom
+   hook completes to avoid resurrecting objects.
+
    .. seealso::
       :func:`sys.excepthook` handles uncaught exceptions.
 
