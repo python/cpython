@@ -17,6 +17,7 @@ import weakref
 import os
 import subprocess
 import signal
+import textwrap
 
 from test import lock_tests
 from test import support
@@ -935,7 +936,7 @@ class SubinterpThreadingTests(BaseTestCase):
         r, w = os.pipe()
         self.addCleanup(os.close, r)
         self.addCleanup(os.close, w)
-        code = r"""if 1:
+        code = textwrap.dedent(r"""
             import os
             import random
             import threading
@@ -953,7 +954,7 @@ class SubinterpThreadingTests(BaseTestCase):
 
             threading.Thread(target=f).start()
             random_sleep()
-            """ % (w,)
+        """ % (w,))
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         # The thread was joined properly.
@@ -967,7 +968,7 @@ class SubinterpThreadingTests(BaseTestCase):
         r, w = os.pipe()
         self.addCleanup(os.close, r)
         self.addCleanup(os.close, w)
-        code = r"""if 1:
+        code = textwrap.dedent(r"""
             import os
             import random
             import threading
@@ -992,34 +993,30 @@ class SubinterpThreadingTests(BaseTestCase):
 
             threading.Thread(target=f).start()
             random_sleep()
-            """ % (w,)
+        """ % (w,))
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         # The thread was joined properly.
         self.assertEqual(os.read(r, 1), b"x")
 
-    @cpython_only
-    def test_daemon_threads_fatal_error(self):
-        subinterp_code = r"""if 1:
-            import os
+    def test_daemon_thread(self):
+        code = textwrap.dedent("""
             import threading
-            import time
 
-            def f():
-                # Make sure the daemon thread is still running when
-                # Py_EndInterpreter is called.
-                time.sleep(10)
-            threading.Thread(target=f, daemon=True).start()
-            """
-        script = r"""if 1:
-            import _testcapi
+            def func():
+                pass
 
-            _testcapi.run_in_subinterp(%r)
-            """ % (subinterp_code,)
-        with test.support.SuppressCrashReport():
-            rc, out, err = assert_python_failure("-c", script)
-        self.assertIn("Fatal Python error: Py_EndInterpreter: "
-                      "not the last thread", err.decode())
+            thread = threading.Thread(target=func, daemon=True)
+            try:
+                thread.start()
+            except RuntimeError as exc:
+                pass
+            else:
+                thread.join()
+                raise Exception("RuntimeError not raised")
+        """)
+        ret = test.support.run_in_subinterp(code)
+        self.assertEqual(ret, 0)
 
 
 class ThreadingExceptionTests(BaseTestCase):
