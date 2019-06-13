@@ -1,0 +1,6 @@
+Ensure that all of the memory needed by a type created with
+:c:func:`PyType_FromSpec` or :c:func:`PyType_FromSpecWithBases` is managed by
+Python. Previously, the memory referred to by ``Py_tp_methods``,
+``Py_tp_getset``, ``Py_tp_members`` and the various ``char*`` fields they
+contained needed to outlive the type. Now, these arrays and strings are copied
+and managed by the type itself.

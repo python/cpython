@@ -4880,7 +4880,7 @@ PyEval_GetFuncName(PyObject *func)
     else if (PyFunction_Check(func))
         return PyUnicode_AsUTF8(((PyFunctionObject*)func)->func_name);
     else if (PyCFunction_Check(func))
-        return ((PyCFunctionObject*)func)->m_ml->ml_name;
+        return PyUnicode_AsUTF8(((PyCFunctionObject*)func)->m_base.name);
     else
         return func->ob_type->tp_name;
 }

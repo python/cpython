@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include "structmember.h" /* we need the offsetof() macro from there */
 #include "longintrepr.h"
+#include "bltinmodule.h"
 
 
 
@@ -840,7 +841,7 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
 
         if (op_slot == NB_SLOT(nb_rshift) &&
             PyCFunction_Check(v) &&
-            strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
+            PyCFunction_GET_FUNCTION(v) == (PyCFunction)_PyBuiltin_Print)
         {
             PyErr_Format(PyExc_TypeError,
                 "unsupported operand type(s) for %.100s: "

@@ -32,12 +32,12 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
    done, so use with care. */
 #ifndef Py_LIMITED_API
 #define PyCFunction_GET_FUNCTION(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_meth)
+        (((PyCFunctionObject *)func) -> m_base.meth)
 #define PyCFunction_GET_SELF(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_flags & METH_STATIC ? \
+        (((PyCFunctionObject *)func) -> m_base.flags & METH_STATIC ? \
          NULL : ((PyCFunctionObject *)func) -> m_self)
 #define PyCFunction_GET_FLAGS(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_flags)
+        (((PyCFunctionObject *)func) -> m_base.flags)
 #endif
 PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
@@ -100,23 +100,35 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 
 #ifndef Py_LIMITED_API
 typedef struct {
+    PyObject   *name;
+    PyCFunction meth;
+    PyObject    *doc;
+    PyObject    *signature;
+    int         flags;
+} PyCFunctionBase;
+
+typedef struct {
     PyObject_HEAD
-    PyMethodDef *m_ml; /* Description of the C function to call */
-    PyObject    *m_self; /* Passed as 'self' arg to the C func, can be NULL */
-    PyObject    *m_module; /* The __module__ attribute, can be anything */
-    PyObject    *m_weakreflist; /* List of weak references */
+    PyCFunctionBase m_base;
+    PyObject       *m_self; /* Passed as 'self' arg to the C func, can be NULL */
+    PyObject       *m_module; /* The __module__ attribute, can be anything */
+    PyObject       *m_weakreflist; /* List of weak references */
     vectorcallfunc vectorcall;
 } PyCFunctionObject;
 
-PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallDict(
-    PyMethodDef *method,
+PyAPI_FUNC(int) _PyCFunctionBase_FromMethodDef(PyCFunctionBase *, PyMethodDef *);
+PyAPI_FUNC(void) _PyCFunctionBase_Clear(PyCFunctionBase *);
+
+PyAPI_FUNC(PyObject *) _PyCFunction_NewFromBase(PyCFunctionBase *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyCFunctionBase_RawFastCallDict(
+    PyCFunctionBase *func,
     PyObject *self,
     PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwargs);
 
-PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallKeywords(
-    PyMethodDef *method,
+PyAPI_FUNC(PyObject *) _PyCFunctionBase_RawFastCallKeywords(
+    PyCFunctionBase *func,
     PyObject *self,
     PyObject *const *args,
     Py_ssize_t nargs,

@@ -128,6 +128,9 @@ The following functions and structs are used to create
 
    This function calls :c:func:`PyType_Ready` on the new type.
 
+   Until Python 3.9, the memory backing the ``Py_tp_methods``, ``Py_tp_getset``,
+   and :c:member:`PyType_Spec.name` must outlive the returned type.
+
    .. versionadded:: 3.3
 
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)

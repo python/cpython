@@ -453,22 +453,23 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
 /* --- PyCFunction call functions --------------------------------- */
 
 PyObject *
-_PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
-                             PyObject *const *args, Py_ssize_t nargs,
-                             PyObject *kwargs)
+_PyCFunctionBase_RawFastCallDict(PyCFunctionBase *func,
+                                 PyObject *self,
+                                 PyObject *const *args, Py_ssize_t nargs,
+                                 PyObject *kwargs)
 {
     /* _PyMethodDef_RawFastCallDict() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
 
-    assert(method != NULL);
+    assert(func != NULL);
     assert(nargs >= 0);
     assert(nargs == 0 || args != NULL);
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
-    PyCFunction meth = method->ml_meth;
-    int flags = method->ml_flags & ~(METH_CLASS | METH_STATIC | METH_COEXIST);
+    PyCFunction meth = func->meth;
+    int flags = func->flags & ~(METH_CLASS | METH_STATIC | METH_COEXIST);
     PyObject *result = NULL;
 
     if (Py_EnterRecursiveCall(" while calling a Python object")) {
@@ -484,8 +485,8 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
 
         if (nargs != 0) {
             PyErr_Format(PyExc_TypeError,
-                "%.200s() takes no arguments (%zd given)",
-                method->ml_name, nargs);
+                "%S() takes no arguments (%zd given)",
+                func->name, nargs);
             goto exit;
         }
 
@@ -499,8 +500,8 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
 
         if (nargs != 1) {
             PyErr_Format(PyExc_TypeError,
-                "%.200s() takes exactly one argument (%zd given)",
-                method->ml_name, nargs);
+                "%S() takes exactly one argument (%zd given)",
+                func->name, nargs);
             goto exit;
         }
 
@@ -565,7 +566,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
 
     default:
         PyErr_SetString(PyExc_SystemError,
-                        "Bad call flags in _PyMethodDef_RawFastCallDict. "
+                        "Bad call flags in _PyCFunctionBase_RawFastCallDict. "
                         "METH_OLDARGS is no longer supported!");
         goto exit;
     }
@@ -574,14 +575,13 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
 
 no_keyword_error:
     PyErr_Format(PyExc_TypeError,
-                 "%.200s() takes no keyword arguments",
-                 method->ml_name);
+                 "%S() takes no keyword arguments",
+                 func->name);
 
 exit:
     Py_LeaveRecursiveCall();
     return result;
 }
-
 
 PyObject *
 _PyCFunction_FastCallDict(PyObject *func,
@@ -593,32 +593,32 @@ _PyCFunction_FastCallDict(PyObject *func,
     assert(func != NULL);
     assert(PyCFunction_Check(func));
 
-    result = _PyMethodDef_RawFastCallDict(((PyCFunctionObject*)func)->m_ml,
-                                          PyCFunction_GET_SELF(func),
-                                          args, nargs, kwargs);
+    result = _PyCFunctionBase_RawFastCallDict(&((PyCFunctionObject *)func)->m_base,
+                                              PyCFunction_GET_SELF(func),
+                                              args, nargs, kwargs);
     result = _Py_CheckFunctionResult(func, result, NULL);
     return result;
 }
 
-
 PyObject *
-_PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
-                                 PyObject *const *args, Py_ssize_t nargs,
-                                 PyObject *kwnames)
+_PyCFunctionBase_RawFastCallKeywords(PyCFunctionBase *func,
+                                     PyObject* self,
+                                     PyObject *const *args, Py_ssize_t nargs,
+                                     PyObject *kwnames)
 {
     /* _PyMethodDef_RawFastCallKeywords() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
 
-    assert(method != NULL);
+    assert(func != NULL);
     assert(nargs >= 0);
     assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
     /* kwnames must only contains str strings, no subclass, and all keys must
        be unique */
 
-    PyCFunction meth = method->ml_meth;
-    int flags = method->ml_flags & ~(METH_CLASS | METH_STATIC | METH_COEXIST);
+    PyCFunction meth = func->meth;
+    int flags = func->flags & ~(METH_CLASS | METH_STATIC | METH_COEXIST);
     Py_ssize_t nkwargs = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
     PyObject *result = NULL;
 
@@ -635,8 +635,8 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
 
         if (nargs != 0) {
             PyErr_Format(PyExc_TypeError,
-                "%.200s() takes no arguments (%zd given)",
-                method->ml_name, nargs);
+                "%S() takes no arguments (%zd given)",
+                func->name, nargs);
             goto exit;
         }
 
@@ -650,8 +650,8 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
 
         if (nargs != 1) {
             PyErr_Format(PyExc_TypeError,
-                "%.200s() takes exactly one argument (%zd given)",
-                method->ml_name, nargs);
+                "%S() takes exactly one argument (%zd given)",
+                func->name, nargs);
             goto exit;
         }
 
@@ -713,7 +713,7 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
 
     default:
         PyErr_SetString(PyExc_SystemError,
-                        "Bad call flags in _PyMethodDef_RawFastCallKeywords. "
+                        "Bad call flags in _PyCFunctionBase_RawFastCallKeywords. "
                         "METH_OLDARGS is no longer supported!");
         goto exit;
     }
@@ -722,14 +722,13 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
 
 no_keyword_error:
     PyErr_Format(PyExc_TypeError,
-                 "%.200s() takes no keyword arguments",
-                 method->ml_name);
+                 "%S() takes no keyword arguments",
+                 func->name);
 
 exit:
     Py_LeaveRecursiveCall();
     return result;
 }
-
 
 PyObject *
 _PyCFunction_Vectorcall(PyObject *func,
@@ -742,9 +741,9 @@ _PyCFunction_Vectorcall(PyObject *func,
     assert(PyCFunction_Check(func));
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
-    result = _PyMethodDef_RawFastCallKeywords(((PyCFunctionObject*)func)->m_ml,
-                                              PyCFunction_GET_SELF(func),
-                                              args, nargs, kwnames);
+    result = _PyCFunctionBase_RawFastCallKeywords(&((PyCFunctionObject*)func)->m_base,
+                                                  PyCFunction_GET_SELF(func),
+                                                  args, nargs, kwnames);
     result = _Py_CheckFunctionResult(func, result, NULL);
     return result;
 }
@@ -772,8 +771,8 @@ cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
     }
     else {
         if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
-            PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
-                         ((PyCFunctionObject*)func)->m_ml->ml_name);
+            PyErr_Format(PyExc_TypeError, "%S() takes no keyword arguments",
+                         ((PyCFunctionObject*)func)->m_base.name);
             return NULL;
         }
 

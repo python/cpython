@@ -5,13 +5,13 @@
 
 #include "structmember.h"
 
-PyObject *
-PyMember_GetOne(const char *addr, PyMemberDef *l)
+static PyObject *
+member_getone(const char *addr, Py_ssize_t offset, int type, const char *name)
 {
     PyObject *v;
 
-    addr += l->offset;
-    switch (l->type) {
+    addr += offset;
+    switch (type) {
     case T_BOOL:
         v = PyBool_FromLong(*(char*)addr);
         break;
@@ -71,7 +71,7 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
     case T_OBJECT_EX:
         v = *(PyObject **)addr;
         if (v == NULL)
-            PyErr_SetString(PyExc_AttributeError, l->name);
+            PyErr_SetString(PyExc_AttributeError, name);
         Py_XINCREF(v);
         break;
     case T_LONGLONG:
@@ -91,39 +91,60 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
     return v;
 }
 
+PyObject *
+PyMember_GetOne(const char *addr, struct PyMemberDef *memb)
+{
+    return member_getone(addr, memb->offset, memb->type, memb->name);
+}
+
+PyObject *
+_PyMemberDescr_GetOne(const char *addr, PyMemberDescrObject *memb)
+{
+    const char *name = PyUnicode_AsUTF8(memb->d_common.d_name);
+    if (name == NULL) {
+        return NULL;
+    }
+    return member_getone(addr, memb->d_offset, memb->d_member_type, name);
+}
+
 #define WARN(msg)                                               \
     do {                                                        \
     if (PyErr_WarnEx(PyExc_RuntimeWarning, msg, 1) < 0)         \
         return -1;                                              \
     } while (0)
 
-int
-PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
+static int
+member_setone(char *addr,
+              Py_ssize_t offset,
+              int flags,
+              int type,
+              const char *name,
+              PyObject *v)
 {
     PyObject *oldv;
 
-    addr += l->offset;
+    addr += offset;
 
-    if ((l->flags & READONLY))
+    if ((flags & READONLY))
     {
         PyErr_SetString(PyExc_AttributeError, "readonly attribute");
         return -1;
     }
     if (v == NULL) {
-        if (l->type == T_OBJECT_EX) {
+        if (type == T_OBJECT_EX) {
             /* Check if the attribute is set. */
             if (*(PyObject **)addr == NULL) {
-                PyErr_SetString(PyExc_AttributeError, l->name);
+                PyErr_SetString(PyExc_AttributeError, name);
                 return -1;
             }
         }
-        else if (l->type != T_OBJECT) {
+        else if (type != T_OBJECT) {
             PyErr_SetString(PyExc_TypeError,
                             "can't delete numeric/char attribute");
             return -1;
         }
     }
-    switch (l->type) {
+    switch (type) {
     case T_BOOL:{
         if (!PyBool_Check(v)) {
             PyErr_SetString(PyExc_TypeError,
@@ -285,8 +306,29 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         }
     default:
         PyErr_Format(PyExc_SystemError,
-                     "bad memberdescr type for %s", l->name);
+                     "bad memberdescr type for %s", name);
         return -1;
     }
     return 0;
+}
+
+int
+PyMember_SetOne(char *addr, struct PyMemberDef *memb, PyObject *v)
+{
+    return member_setone(addr, memb->offset, memb->flags, memb->type, memb->name, v);
+}
+
+int
+_PyMemberDescr_SetOne(char *addr, PyMemberDescrObject *memb, PyObject *v)
+{
+    const char *name = PyUnicode_AsUTF8(memb->d_common.d_name);
+    if (name == NULL) {
+        return -1;
+    }
+    return member_setone(addr,
+                         memb->d_offset,
+                         memb->d_flags,
+                         memb->d_member_type,
+                         name,
+                         v);
 }

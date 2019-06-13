@@ -1812,8 +1812,8 @@ builtin_pow_impl(PyObject *module, PyObject *x, PyObject *y, PyObject *z)
 
 
 /* AC: cannot convert yet, waiting for *args support */
-static PyObject *
-builtin_print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+PyObject *
+_PyBuiltin_Print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     static const char * const _keywords[] = {"sep", "end", "file", "flush", 0};
     static struct _PyArg_Parser _parser = {"|OOOO:print", _keywords, 0};
@@ -2740,7 +2740,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
-    {"print",           (PyCFunction)(void(*)(void))builtin_print,      METH_FASTCALL | METH_KEYWORDS, print_doc},
+    {"print",           (PyCFunction)(void(*)(void))_PyBuiltin_Print,      METH_FASTCALL | METH_KEYWORDS, print_doc},
     BUILTIN_REPR_METHODDEF
     BUILTIN_ROUND_METHODDEF
     BUILTIN_SETATTR_METHODDEF

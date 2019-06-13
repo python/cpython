@@ -282,12 +282,20 @@ typedef struct _heaptypeobject {
     PyBufferProcs as_buffer;
     PyObject *ht_name, *ht_slots, *ht_qualname;
     struct _dictkeysobject *ht_cached_keys;
-    /* here are optional user slots, followed by the members. */
+    /* here are optional user slots, followed by the offsets of the object members. */
 } PyHeapTypeObject;
 
-/* access macro to the members which are floating "behind" the object */
-#define PyHeapType_GET_MEMBERS(etype) \
-    ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
+#ifdef Py_BUILD_CORE
+typedef struct {
+    Py_ssize_t offset;
+    int flags;
+} _PyObject_MemberSlot;
+
+/* access macro to the offsets of the object type members which are floating
+   "behind" the object */
+#define _PyHeapType_GET_OBJECT_MEMBER_OFFSETS(etype)                     \
+    ((_PyObject_MemberSlot *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
+#endif
 
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
