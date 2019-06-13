@@ -965,7 +965,7 @@ class Thread:
         self._tstate_lock = None
         if not self.daemon:
             with _shutdown_locks_lock:
-                _shutdown_locks.discard(self._tstate_lock)
+                _shutdown_locks.discard(lock)
 
     def _delete(self):
         "Remove current thread from the dict of currently running threads."
