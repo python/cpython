@@ -1086,6 +1086,18 @@ The :mod:`test.support` module defines the following functions:
    Context manager catching unraisable exception using
    :func:`sys.unraisablehook`.
 
+   If the *object* attribute of the unraisable hook is set and the object is
+   being finalized, the object is resurrected because the context manager
+   stores a strong reference to it (``cm.unraisable.object``).
+
+   Storing the exception value (``cm.unraisable.exc_value``) creates a
+   reference cycle. The reference cycle is broken explicitly when the context
+   manager exits.
+
+   Exiting the context manager clears the stored unraisable exception. It can
+   trigger a new unraisable exception (ex: the resurrected object is finalized
+   again and raises the same exception): it is silently ignored in this case.
+
    Usage::
 
        with support.catch_unraisable_exception() as cm:
