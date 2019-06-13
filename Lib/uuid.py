@@ -680,17 +680,23 @@ def _random_getnode():
     return random.getrandbits(48) | (1 << 40)
 
 
+# _OS_GETTERS, when known, are targetted for a specific OS or platform.
+# The order is by 'common practice' on the specified platform.
+# Note: 'posix' and 'windows' _OS_GETTERS are prefixed by a dll/dlload() method
+# which, when successful, means none of these "external" methods are called.
+# _GETTERS is (also) used by test_uuid.py to SkipUnless(), e.g.,
+#     @unittest.skipUnless(_uuid._ifconfig_getnode in _uuid._GETTERS, ...)
 if _LINUX:
-    _OS_GETTERS = [_ifconfig_getnode, _ip_getnode, _arp_getnode, _lanscan_getnode]
+    _OS_GETTERS = [_ip_getnode, _ifconfig_getnode]
 elif _DARWIN:
-    _OS_GETTERS = [_arp_getnode, _ifconfig_getnode, _netstat_getnode]
+    _OS_GETTERS = [_ifconfig_getnode, _arp_getnode, _netstat_getnode]
 elif _WINDOWS:
     _OS_GETTERS = [_netbios_getnode, _ipconfig_getnode]
 elif _AIX:
     _OS_GETTERS = [_netstat_getnode]
 else:
-    _OS_GETTERS = [_ifconfig_getnode, _arp_getnode, _netstat_getnode,
-                   _lanscan_getnode, _ip_getnode]
+    _OS_GETTERS = [_ifconfig_getnode, _ip_getnode, _arp_getnode,
+                   _netstat_getnode, _lanscan_getnode]
 if os.name == 'posix':
     _GETTERS = [_unix_getnode] + _OS_GETTERS
 elif os.name == 'nt':
