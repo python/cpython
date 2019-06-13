@@ -1,3 +1,1 @@
-Fix pure Python implementation of :mod:`pickle`: it failed with
-:exc:`ModuleNotFoundError` on importing ``_pickle.PickleBuffer``. If
-``_pickle.PickleBuffer`` is missing, disable ``PickleBuffer`` support.
+Allow pure Python implementation of :mod:`pickle` to work even when the C :mod:`_pickle` module is unavailable.
