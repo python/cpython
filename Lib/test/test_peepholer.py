@@ -294,7 +294,6 @@ class TestTranforms(BytecodeTestCase):
 
     def test_elim_jump_to_uncond_jump(self):
         # POP_JUMP_IF_FALSE to JUMP_FORWARD --> POP_JUMP_IF_FALSE to non-jump
-        # JUMP_FORWARD to JUMP_FORWARD --> JUMP_FORWARD to non-jump
         def f():
             if a:
                 # Intentionally use two-line expression to test issue37213.
@@ -307,7 +306,6 @@ class TestTranforms(BytecodeTestCase):
 
     def test_elim_jump_to_uncond_jump2(self):
         # POP_JUMP_IF_FALSE to JUMP_ABSOLUTE --> POP_JUMP_IF_FALSE to non-jump
-        # JUMP_FORWARD to JUMP_ABSOLUTE --> JUMP_FORWARD to non-jump
         def f():
             while a:
                 # Intentionally use two-line expression to test issue37213.
