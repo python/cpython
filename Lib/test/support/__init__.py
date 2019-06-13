@@ -3070,7 +3070,7 @@ class catch_unraisable_exception:
         self._old_hook = None
 
     def _hook(self, unraisable):
-        # Storing unraisable.object can resurect an object which is being
+        # Storing unraisable.object can resurrect an object which is being
         # finalized. Storing unraisable.exc_value creates a reference cycle.
         self.unraisable = unraisable
 
