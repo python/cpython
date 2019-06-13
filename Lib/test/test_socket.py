@@ -2274,7 +2274,7 @@ class BasicTCPTest(SocketConnectedTest):
 
     def _testFromFd(self):
         self.serv_conn.send(MSG)
-    
+
     def testDup(self):
         # Testing dup()
         sock = self.cli_conn.dup()
@@ -6296,7 +6296,7 @@ class SendRecvFdsTests(unittest.TestCase):
         for index, fd in enumerate(fds2):
             data = os.read(fd, 100)
             self.assertEqual(data,  str(index).encode())
-            
+
 
 if __name__ == "__main__":
     test_main()
