@@ -560,7 +560,6 @@ The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
 :func:`socket.if_indextoname()` functions have been implemented on Windows.
 (Contributed by Zackery Spytz in :issue:`37007`.)
 
-
 shlex
 ----------
 
