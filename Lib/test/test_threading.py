@@ -740,19 +740,27 @@ class ThreadTests(BaseTestCase):
 
     @cpython_only
     def test_shutdown_locks(self):
-        # test a non-daemon threads
-        event = threading.Event()
-        thread = threading.Thread(target=event.wait)
+        for daemon in (False, True):
+            with self.subTest(daemon=daemon):
+                event = threading.Event()
+                thread = threading.Thread(target=event.wait, daemon=daemon)
 
-        # start() must add lock to _shutdown_locks
-        thread.start()
-        tstate_lock = thread._tstate_lock
-        self.assertIn(tstate_lock, threading._shutdown_locks)
+                # Thread.start() must add lock to _shutdown_locks,
+                # but only for non-daemon thread
+                thread.start()
+                tstate_lock = thread._tstate_lock
+                if not daemon:
+                    self.assertIn(tstate_lock, threading._shutdown_locks)
+                else:
+                    self.assertNotIn(tstate_lock, threading._shutdown_locks)
 
-        # _stop() must remove tstate_lock from _shutdown_locks
-        event.set()
-        thread.join()
-        self.assertNotIn(tstate_lock, threading._shutdown_locks)
+                # unblock the thread and join it
+                event.set()
+                thread.join()
+
+                # Thread._stop() must remove tstate_lock from _shutdown_locks.
+                # Daemon threads must never add it to _shutdown_locks.
+                self.assertNotIn(tstate_lock, threading._shutdown_locks)
 
 
 class ThreadJoinOnShutdown(BaseTestCase):
