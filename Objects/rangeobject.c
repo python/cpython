@@ -151,7 +151,6 @@ range_vectorcall(
             step = args[2];
             //Intentional fall through
         case 2:
-            step = validate_step(step);  /* Caution, this can clear exceptions */
             /* Convert borrowed refs to owned refs */
             start = PyNumber_Index(args[0]);
             if (!start)
@@ -161,6 +160,7 @@ range_vectorcall(
                 Py_DECREF(start);
                 return NULL;
             }
+            step = validate_step(step);  /* Caution, this can clear exceptions */
             if (!step) {
                 Py_DECREF(start);
                 Py_DECREF(stop);
