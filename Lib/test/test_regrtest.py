@@ -499,7 +499,7 @@ class BaseTestCase(unittest.TestCase):
         if not input:
             input = ''
         if 'stderr' not in kw:
-            kw['stderr'] = subprocess.PIPE
+            kw['stderr'] = subprocess.STDOUT
         proc = subprocess.run(args,
                               universal_newlines=True,
                               input=input,
@@ -1123,6 +1123,34 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname],
                                   env_changed=[testname],
                                   fail_env_changed=True)
+
+    def test_unraisable_exc(self):
+        # --fail-env-changed must catch unraisable exception
+        code = textwrap.dedent(r"""
+            import unittest
+            import weakref
+
+            class MyObject:
+                pass
+
+            def weakref_callback(obj):
+                raise Exception("weakref callback bug")
+
+            class Tests(unittest.TestCase):
+                def test_unraisable_exc(self):
+                    obj = MyObject()
+                    ref = weakref.ref(obj, weakref_callback)
+                    # call weakref_callback() which logs
+                    # an unraisable exception
+                    obj = None
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("--fail-env-changed", "-v", testname, exitcode=3)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=[testname],
+                                  fail_env_changed=True)
+        self.assertIn("Warning -- Unraisable exception", output)
 
 
 class TestUtils(unittest.TestCase):

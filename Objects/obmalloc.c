@@ -1758,7 +1758,12 @@ pymalloc_free(void *ctx, void *p)
     /* All the rest is arena management.  We just freed
      * a pool, and there are 4 cases for arena mgmt:
      * 1. If all the pools are free, return the arena to
-     *    the system free().
+     *    the system free().  Except if this is the last
+     *    arena in the list, keep it to avoid thrashing:
+     *    keeping one wholly free arena in the list avoids
+     *    pathological cases where a simple loop would
+     *    otherwise provoke needing to allocate and free an
+     *    arena on every iteration.  See bpo-37257.
      * 2. If this is the only free pool in the arena,
      *    add the arena back to the `usable_arenas` list.
      * 3. If the "next" arena has a smaller count of free
@@ -1767,7 +1772,7 @@ pymalloc_free(void *ctx, void *p)
      *    nfreepools.
      * 4. Else there's nothing more to do.
      */
-    if (nf == ao->ntotalpools) {
+    if (nf == ao->ntotalpools && ao->nextarena != NULL) {
         /* Case 1.  First unlink ao from usable_arenas.
          */
         assert(ao->prevarena == NULL ||
