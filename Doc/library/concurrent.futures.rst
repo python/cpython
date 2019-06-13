@@ -306,9 +306,10 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
 
     .. method:: cancel()
 
-       Attempt to cancel the call.  If the call is currently being executed and
-       cannot be cancelled then the method will return ``False``, otherwise the
-       call will be cancelled and the method will return ``True``.
+       Attempt to cancel the call.  If the call is currently being executed or
+       finished running and cannot be cancelled then the method will return
+       ``False``, otherwise the call will be cancelled and the method will
+       return ``True``.
 
     .. method:: cancelled()
 
