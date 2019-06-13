@@ -1759,7 +1759,7 @@ pymalloc_free(void *ctx, void *p)
      * a pool, and there are 4 cases for arena mgmt:
      * 1. If all the pools are free, return the arena to
      *    the system free().  Except if this is the last
-     *    arena in the list, keep it to avoid trashing:
+     *    arena in the list, keep it to avoid thrashing:
      *    keeping one wholly free arena in the list avoids
      *    pathological cases where a simple loop would
      *    otherwise provoke needing to allocate and free an
