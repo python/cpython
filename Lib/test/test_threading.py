@@ -738,6 +738,22 @@ class ThreadTests(BaseTestCase):
         finally:
             sys.settrace(old_trace)
 
+    @cpython_only
+    def test_shutdown_locks(self):
+        # test a non-daemon threads
+        event = threading.Event()
+        thread = threading.Thread(target=event.wait)
+
+        # start() must add lock to _shutdown_locks
+        thread.start()
+        tstate_lock = thread._tstate_lock
+        self.assertIn(tstate_lock, threading._shutdown_locks)
+
+        # _stop() must remove tstate_lock from _shutdown_locks
+        event.set()
+        thread.join()
+        self.assertNotIn(tstate_lock, threading._shutdown_locks)
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
