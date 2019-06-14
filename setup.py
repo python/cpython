@@ -55,13 +55,13 @@ def macosx_sdk_root():
         sysroot = m.group(1)
     return sysroot
 
-def is_macosx_sdk_path(path):
+def is_macosx_sdk_path(path, sysroot=macosx_sdk_root()):
     """
     Returns True if 'path' can be located in an OSX SDK
     """
     return ( (path.startswith('/usr/') and not path.startswith('/usr/local'))
                 or path.startswith('/System/')
-                or path.startswith('/Library/') )
+                or (path.startswith('/Library/') and not path.startswith(sysroot)) )
 
 def find_file(filename, std_dirs, paths):
     """Searches for the directory where a given file is located,
