@@ -1514,7 +1514,7 @@ def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
     if not any(isinstance(target_or_targets, l) for l in [list, set, tuple]):
         targets = [target_or_targets]
 
-    if len(targets) > 1 and not os.isdir(dst):
+    if len(targets) > 1 and not os.is_dir(dst):
         raise NotADirectoryError(
             f'Destination "{dst}" not a directory and multiple targets given')
 
@@ -1525,10 +1525,10 @@ def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
     if dst_is_file and dst_is_dir:
         raise ValueError('Destination cannot be both file and directory')
 
-    if dst_is_file and os.isdir(dst) and not os.islink(dst):
+    if dst_is_file and os.is_dir(dst) and not os.is_link(dst):
         raise NotADirectoryError(f'Destination "{dst}" not a file as required')
 
-    if dst_is_dir and not os.isdir(dst):
+    if dst_is_dir and not os.is_dir(dst):
         raise NotADirectoryError(
             f'Destination "{dst}" not a directory as required')
 
@@ -1536,7 +1536,7 @@ def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
         if follow_symlinks: # XXXXXXXXXXXXXXXXXXX XXX
             target = os.path.realpath(target)
 
-        if dst_is_dir or os.isdir(dst):
+        if dst_is_dir or os.is_dir(dst):
             link_name = os.path.join(dst, os.path.basename(target))
         else:
             link_name = dst
