@@ -95,6 +95,9 @@ jobs:
   displayName: Python PGO build
   condition: and(succeeded(), eq(variables['DoPGO'], 'true'))
 
+  # Allow up to five hours for PGO
+  timeoutInMinutes: 300
+
   pool:
     name: 'Windows Release'
 
