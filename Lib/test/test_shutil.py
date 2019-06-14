@@ -360,7 +360,7 @@ class TestShutil(unittest.TestCase):
         os.chmod(paths[0], 0)
 
         try:
-           shutil.rmtree(TESTFN, onerror=_onerror)
+            shutil.rmtree(TESTFN, onerror=_onerror)
         except:
             # test failed, so cleanup artifacts
             try:
@@ -375,7 +375,7 @@ class TestShutil(unittest.TestCase):
         #
         # Test that a directory deleted after it is enumerated
         # by scandir() but before rmdr() is called
-        # doesn't generate any errors. 
+        # doesn't generate any errors.
         def _onerror(fn, path, exc_info):
             if path == paths[0]:
                 os.chmod(paths[0], mode)
