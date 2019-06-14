@@ -94,8 +94,8 @@ steps:
       Py_OutDir: $(Build.BinariesDirectory)
 
   - script: |
-      %MSBUILD% Tools\msi\bundle\releaselocal.wixproj /t:Rebuild /p:RebuildAll=true /p:BuildForRelease=true
-      %MSBUILD% Tools\msi\bundle\releaseweb.wixproj /t:Rebuild /p:RebuildAll=false /p:BuildForRelease=true
+      %MSBUILD% Tools\msi\bundle\releaselocal.wixproj /t:Rebuild /p:RebuildAll=true
+      %MSBUILD% Tools\msi\bundle\releaseweb.wixproj /t:Rebuild /p:RebuildAll=false
     displayName: 'Build win32 installer'
     env:
       Platform: x86
@@ -103,10 +103,12 @@ steps:
       PYTHON: $(Build.BinariesDirectory)\win32\python.exe
       PYTHONHOME: $(Build.SourcesDirectory)
       TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_win32
+      BuildForRelease: true
+      SuppressMinGWLib: true
 
   - script: |
-      %MSBUILD% Tools\msi\bundle\releaselocal.wixproj /t:Rebuild /p:RebuildAll=true /p:BuildForRelease=true
-      %MSBUILD% Tools\msi\bundle\releaseweb.wixproj /t:Rebuild /p:RebuildAll=false /p:BuildForRelease=true
+      %MSBUILD% Tools\msi\bundle\releaselocal.wixproj /t:Rebuild /p:RebuildAll=true
+      %MSBUILD% Tools\msi\bundle\releaseweb.wixproj /t:Rebuild /p:RebuildAll=false
     displayName: 'Build amd64 installer'
     env:
       Platform: x64
@@ -114,6 +116,8 @@ steps:
       PYTHON: $(Build.BinariesDirectory)\amd64\python.exe
       PYTHONHOME: $(Build.SourcesDirectory)
       TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_amd64
+      BuildForRelease: true
+      SuppressMinGWLib: true
 
   - task: CopyFiles@2
     displayName: 'Assemble artifact: msi (1/2)'
