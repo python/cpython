@@ -8,7 +8,7 @@
     </PropertyGroup>
     <Import Project="..\msi.props" />
     <PropertyGroup>
-        <DefineConstants Condition="$(BuildForRelease)">
+        <DefineConstants Condition="$(BuildForRelease) and $(SuppressMinGWLib) == ''">
             $(DefineConstants);
             IncludeMinGWLib=1;
         </DefineConstants>
@@ -35,7 +35,7 @@
             Inputs="$(BuildPath)$(PyDllName).dll"
             Outputs="$(BuildPath)lib$(PyDllName).a"
             AfterTargets="PrepareForBuild"
-            Condition="$(BuildForRelease)">
+            Condition="$(BuildForRelease) and $(SuppressMinGWLib) == ''">
         <!-- Build libpython##.a as part of this project. This requires gendef and dlltool on the path. -->
         <PropertyGroup>
             <_DllToolOpts>-m i386 --as-flags=--32</_DllToolOpts>
