@@ -161,3 +161,7 @@ def interrupt_main():
     else:
         global _interrupt
         _interrupt = True
+
+
+def _is_main_interpreter():
+    return True
