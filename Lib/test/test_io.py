@@ -2072,8 +2072,12 @@ class BufferedRWPairTest(unittest.TestCase):
         writer.close = lambda: None
         writer = None
 
+        # Ignore BufferedWriter (of the BufferedRWPair) unraisable exception
         with support.catch_unraisable_exception():
-            pair = None
+            # Ignore BufferedRWPair unraisable exception
+            with support.catch_unraisable_exception():
+                pair = None
+                support.gc_collect()
             support.gc_collect()
 
     def test_reader_writer_close_error_on_close(self):
