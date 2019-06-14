@@ -1211,9 +1211,6 @@ object_vacall(PyObject *base, PyObject *callable, va_list vargs)
 }
 
 
-/* Private API for the LOAD_METHOD opcode. */
-extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
-
 PyObject *
 PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
 {
