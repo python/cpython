@@ -1730,6 +1730,49 @@ class _Unpickler:
     dispatch[STOP[0]] = load_stop
 
 
+rick = """
+                                          .+kcippike=
+                                        =cpileekiiiiiik+
+                                      =ipiickkcciccciiiii+
+                                     l*iiiiicccklkkiciiiiic.
+                                    cpiikllcccccccclciiiiiik
+                                  .ipii:.:..+ccccccilpiiiiip
+                                 .piiil..:...kl++elcciiiiiii
+                                :piiciie...:k:..=..:piiiiiii
+                               =ppppcppiiiici:..=..:piiiiiii
+                              epi*c..eiciiiicil+==eiiiiiiiip
+                             kpiipc...+ciiciiiiiipiiiiiiiiie
+                            cpiiicpil:..=+++=elkppiiiiiiiii
+                          .ip*piicciiic+:.......c*iiiiiiip:
+                         .piiiiiccccccccciee=:.eppiiiiiipe
+                        :piiiiiiccccccccccci***ppiiiiiiik
+                       :piiiiiicccccccccccciiiiiiiiiiiic
+                      =piiiiiiccccccccccciiiiiiiiiiiiii
+                     +piiiiiiccccccccccciiiiiiiiiiiiip.
+                    kpiiiiiiccccccccccciiiiiiiiiiiiip:
+                  :iiiiiiiiccccccccciiiiiiiiiiiiiiip:
+                 +piiiiiiccccccccciiiiiiiiiiiiiiiip:
+               .kpipiiiicccccccciiiiiiiiiiiiiiiiip=
+              =iiiiiiiccccccccciiiiiiiiiiip*piiip+
+            .kpiiiiiiccccccccciiiiiiiiiiiiiiiiipe
+          .liiiiiiiiccccccccciiiiiiiiiiiiiiiiip+
+         eiiiiiiiiiccccccccciiiiiiiiiiiiiiiiip=
+       =iiiiiiiiiiccccccccciiiiiiiiiiiiiiiiii.
+     .kpiiiiii*pcccccccciiiiiiiiiiiiiiiiiiic.
+    =ii*piiiiiccccccccciiiiiiiiiiiiiiiiiipl
+   epiipiiiiccccccccciiiiiiiiiiiiiiiiiiip+
+  kpiiiiiiicccccccciiiiiiiiiiiiiiiiiiipi:
+ lpiiiiiiccccccccciiiiiiiiiiiiiiiiiiipe
+:*iiiiiicccccccciiiiiiiiiiiiiiiiiiipl
+ciiiiiiicccccciiiiiiiiiiip*piiiiipk.
+piiiiiiiiiiiiiiiiiiiiiiiiiiiiiipk:
+piiiiiiiiiiiiiiiiiiiiiiiiiiiipk:
+lpiiiiiiiiiiiiiiiiiiiiiiiiipk:
+ kpiiiiiiiiiiiiiiiiiiiiiipl.
+  :lipiiiiiiiiiiiiiiipik+
+     .+ekciippiiicle=."""
+
+
 # Shorthands
 
 def _dump(obj, file, protocol=None, *, fix_imports=True, buffer_callback=None):
