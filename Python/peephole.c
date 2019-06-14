@@ -545,27 +545,26 @@ PyObject *
 PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 PyObject *lnotab_obj)
 {
-    PyObject* bytecode = code;
-    PyObject* old_bytecode = NULL;
-    PyObject* tmp = NULL;
+    PyObject* bytecode = NULL;
+    PyObject* old_bytecode = code;
     int compare_bytecode;
     do {
-        old_bytecode = PyBytes_FromStringAndSize(PyBytes_AsString(bytecode),
-                                                 PyBytes_GET_SIZE(bytecode));
-        tmp = bytecode;
+        bytecode = old_bytecode;
         bytecode = optimize_bytecode_once(bytecode, consts, names, lnotab_obj);
-        if (tmp != code) {
-            Py_DECREF(tmp);
-        }
         if (!bytecode) {
-            Py_DECREF(old_bytecode);
+            if (old_bytecode != code) {
+                Py_DECREF(old_bytecode);
+            }
             return NULL;
         }
         compare_bytecode = PyObject_RichCompareBool(old_bytecode, bytecode, Py_NE);
-        Py_DECREF(old_bytecode);
+        if (old_bytecode != code) {
+            Py_DECREF(old_bytecode);
+        }
         if (compare_bytecode == -1) {
             break;
         }
+        old_bytecode = bytecode;
     } while (compare_bytecode);
 
     return bytecode;
