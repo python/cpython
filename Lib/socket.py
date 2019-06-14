@@ -496,11 +496,14 @@ if hasattr(_socket, "socketpair"):
 else:
 
     # Origin: https://gist.github.com/4325783, by Geert Jansen.  Public domain.
-    def socketpair(family=AF_INET, type=SOCK_STREAM, proto=0):
+    def socketpair(family=AF_UNIX, type=SOCK_STREAM, proto=0):
         if family == AF_INET:
             host = _LOCALHOST
         elif family == AF_INET6:
             host = _LOCALHOST_V6
+        elif family == AF_UNIX:
+            from uuid import uuid4
+            host = os.path.join(os.environ['TEMP'],  str(uuid4()))
         else:
             raise ValueError("Only AF_INET and AF_INET6 socket address families "
                              "are supported")
@@ -513,7 +516,10 @@ else:
         # setblocking(False) that prevents us from having to create a thread.
         lsock = socket(family, type, proto)
         try:
-            lsock.bind((host, 0))
+            if family == AF_UNIX:
+                lsock.bind(host)
+            else:
+                lsock.bind((host, 0))
             lsock.listen()
             # On IPv6, ignore flow_info and scope_id
             addr, port = lsock.getsockname()[:2]
@@ -521,7 +527,10 @@ else:
             try:
                 csock.setblocking(False)
                 try:
-                    csock.connect((addr, port))
+                    if family == AF_UNIX:
+                        csock.connect(host)
+                    else:
+                        csock.connect((addr, port))
                 except (BlockingIOError, InterruptedError):
                     pass
                 csock.setblocking(True)
@@ -531,6 +540,8 @@ else:
                 raise
         finally:
             lsock.close()
+            if family == AF_UNIX:
+                os.unlink(host)
         return (ssock, csock)
     __all__.append("socketpair")
 
