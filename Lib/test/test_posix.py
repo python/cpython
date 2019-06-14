@@ -1639,23 +1639,35 @@ class _PosixSpawnMixin:
                             os.environ, setsigmask=[signal.NSIG,
                                                     signal.NSIG+1])
 
-    @unittest.skipIf(True,
-                     "FIXME: bpo-35537: test fails is setsid is supported")
-    def test_start_new_session(self):
-        # For code coverage of calling setsid().  We don't care if we get an
-        # EPERM error from it depending on the test execution environment, that
-        # still indicates that it was called.
-        code = "import os; print(os.getpgid(os.getpid()))"
+    def test_setsid(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
         try:
-            self.spawn_func(sys.executable,
-                            [sys.executable, "-c", code],
-                            os.environ, setsid=True)
-        except NotImplementedError as exc:
-            self.skipTest("setsid is not supported: %s" % exc)
-        else:
-            parent_pgid = os.getpgid(os.getpid())
-            child_pgid = int(output)
-            self.assertNotEqual(parent_pgid, child_pgid)
+            os.set_inheritable(wfd, True)
+
+            code = textwrap.dedent(f"""
+                import os
+                fd = {wfd}
+                sid = os.getsid(0)
+                os.write(fd, str(sid).encode())
+            """)
+
+            try:
+                pid = self.spawn_func(sys.executable,
+                                      [sys.executable, "-c", code],
+                                      os.environ, setsid=True)
+            except NotImplementedError as exc:
+                self.skipTest(f"setsid is not supported: {exc!r}")
+            except PermissionError as exc:
+                self.skipTest(f"setsid failed with: {exc!r}")
+        finally:
+            os.close(wfd)
+
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        output = os.read(rfd, 100)
+        child_sid = int(output)
+        parent_sid = os.getsid(os.getpid())
+        self.assertNotEqual(parent_sid, child_sid)
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
