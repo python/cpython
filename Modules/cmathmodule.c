@@ -1232,8 +1232,8 @@ cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
 }
 
 PyDoc_STRVAR(module_doc,
-"This module is always available. It provides access to mathematical\n"
-"functions for complex numbers.");
+"This module provides access to mathematical functions for complex\n"
+"numbers.");
 
 static PyMethodDef cmath_methods[] = {
     CMATH_ACOS_METHODDEF

@@ -48,10 +48,10 @@ PyTypeObject PyCThunk_Type = {
     sizeof(CThunkObject),                       /* tp_basicsize */
     sizeof(ffi_type),                           /* tp_itemsize */
     CThunkObject_dealloc,                       /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -165,14 +165,14 @@ static void _CallPythonObject(void *mem,
         if (cnv)
             dict = PyType_stgdict(cnv);
         else {
-            PrintError("Getting argument converter %d\n", i);
+            PrintError("Getting argument converter %zd\n", i);
             goto Done;
         }
 
         if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
             PyObject *v = dict->getfunc(*pArgs, dict->size);
             if (!v) {
-                PrintError("create argument %d:\n", i);
+                PrintError("create argument %zd:\n", i);
                 Py_DECREF(cnv);
                 goto Done;
             }
@@ -186,14 +186,14 @@ static void _CallPythonObject(void *mem,
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
             CDataObject *obj = (CDataObject *)_PyObject_CallNoArg(cnv);
             if (!obj) {
-                PrintError("create argument %d:\n", i);
+                PrintError("create argument %zd:\n", i);
                 Py_DECREF(cnv);
                 goto Done;
             }
             if (!CDataObject_Check(obj)) {
                 Py_DECREF(obj);
                 Py_DECREF(cnv);
-                PrintError("unexpected result of create argument %d:\n", i);
+                PrintError("unexpected result of create argument %zd:\n", i);
                 goto Done;
             }
             memcpy(obj->b_ptr, *pArgs, dict->size);
@@ -204,7 +204,7 @@ static void _CallPythonObject(void *mem,
         } else {
             PyErr_SetString(PyExc_TypeError,
                             "cannot build parameter");
-            PrintError("Parsing argument %d\n", i);
+            PrintError("Parsing argument %zd\n", i);
             Py_DECREF(cnv);
             goto Done;
         }
@@ -380,7 +380,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     }
 
     cc = FFI_DEFAULT_ABI;
-#if defined(MS_WIN32) && !defined(_WIN32_WCE) && !defined(MS_WIN64)
+#if defined(MS_WIN32) && !defined(_WIN32_WCE) && !defined(MS_WIN64) && !defined(_M_ARM)
     if ((flags & FUNCFLAG_CDECL) == 0)
         cc = FFI_STDCALL;
 #endif

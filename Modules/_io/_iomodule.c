@@ -9,6 +9,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "structmember.h"
 #include "_iomodule.h"
 
@@ -324,7 +325,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     if (universal) {
         if (creating || writing || appending || updating) {
             PyErr_SetString(PyExc_ValueError,
-                            "mode U cannot be combined with x', 'w', 'a', or '+'");
+                            "mode U cannot be combined with 'x', 'w', 'a', or '+'");
             goto error;
         }
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -376,7 +377,8 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     {
         PyObject *RawIO_class = (PyObject *)&PyFileIO_Type;
 #ifdef MS_WINDOWS
-        if (!Py_LegacyWindowsStdioFlag && _PyIO_get_console_type(path_or_fd) != '\0') {
+        PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
+        if (!config->legacy_windows_stdio && _PyIO_get_console_type(path_or_fd) != '\0') {
             RawIO_class = (PyObject *)&PyWindowsConsoleIO_Type;
             encoding = "utf-8";
         }
@@ -500,6 +502,25 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     Py_XDECREF(path_or_fd);
     Py_XDECREF(modeobj);
     return NULL;
+}
+
+/*[clinic input]
+_io.open_code
+
+    path : unicode
+
+Opens the provided file with the intent to import the contents.
+
+This may perform extra validation beyond open(), but is otherwise interchangeable
+with calling open(path, 'rb').
+
+[clinic start generated code]*/
+
+static PyObject *
+_io_open_code_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=2fe4ecbd6f3d6844 input=f5c18e23f4b2ed9f]*/
+{
+    return PyFile_OpenCodeObject(path);
 }
 
 /*
@@ -628,6 +649,7 @@ iomodule_free(PyObject *mod) {
 
 static PyMethodDef module_methods[] = {
     _IO_OPEN_METHODDEF
+    _IO_OPEN_CODE_METHODDEF
     {NULL, NULL}
 };
 

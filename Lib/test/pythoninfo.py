@@ -571,10 +571,17 @@ def collect_cc(info_add):
     except ImportError:
         args = CC.split()
     args.append('--version')
-    proc = subprocess.Popen(args,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            universal_newlines=True)
+    try:
+        proc = subprocess.Popen(args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                universal_newlines=True)
+    except OSError:
+        # Cannot run the compiler, for example when Python has been
+        # cross-compiled and installed on the target platform where the
+        # compiler is missing.
+        return
+
     stdout = proc.communicate()[0]
     if proc.returncode:
         # CC --version failed: ignore error
@@ -595,21 +602,17 @@ def collect_gdbm(info_add):
 
 
 def collect_get_config(info_add):
-    # Dump global configuration variables, _PyCoreConfig
-    # and _PyMainInterpreterConfig
+    # Get global configuration variables, _PyPreConfig and _PyCoreConfig
     try:
-        from _testcapi import get_global_config, get_core_config, get_main_config
+        from _testinternalcapi import get_configs
     except ImportError:
         return
 
-    for prefix, get_config_func in (
-        ('global_config', get_global_config),
-        ('core_config', get_core_config),
-        ('main_config', get_main_config),
-    ):
-        config = get_config_func()
+    all_configs = get_configs()
+    for config_type in sorted(all_configs):
+        config = all_configs[config_type]
         for key in sorted(config):
-            info_add('%s[%s]' % (prefix, key), repr(config[key]))
+            info_add('%s[%s]' % (config_type, key), repr(config[key]))
 
 
 def collect_subprocess(info_add):

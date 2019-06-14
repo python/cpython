@@ -872,7 +872,6 @@ the link targets for :func:`bytes` and :func:`bytearray` are now their
 respective type definitions, rather than the corresponding builtin function
 entries. Use :ref:`bytes <func-bytes>` and :ref:`bytearray <func-bytearray>`
 to reference the latter.
-
 In order to ensure this and future cross-reference updates are applied
 automatically, the daily documentation builds now disable the default output
 caching features in Sphinx.

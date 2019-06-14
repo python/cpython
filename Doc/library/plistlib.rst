@@ -36,6 +36,10 @@ or :class:`datetime.datetime` objects.
 .. versionchanged:: 3.4
    New API, old API deprecated.  Support for binary format plists added.
 
+.. versionchanged:: 3.8
+   Support added for reading and writing :class:`UID` tokens in binary plists as used
+   by NSKeyedArchiver and NSKeyedUnarchiver.
+
 .. seealso::
 
    `PList manual page <https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/PropertyLists/>`_
@@ -178,6 +182,16 @@ The following classes are available:
    bytes object stored in it.
 
    .. deprecated:: 3.4 Use a :class:`bytes` object instead.
+
+.. class:: UID(data)
+
+   Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
+   encoded data, which contains UID (see PList manual).
+
+   It has one attribute, :attr:`data` which can be used to retrieve the int value
+   of the UID.  :attr:`data` must be in the range `0 <= data <= 2**64`.
+
+   .. versionadded:: 3.8
 
 
 The following constants are available:
