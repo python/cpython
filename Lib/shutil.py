@@ -1501,12 +1501,9 @@ def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
     With `dst_is_file=False`, create links inside `dst` if it is a directory or
       a symlink to a directory.
 
-    With `dst_is_dir=True`, raise `IsADirectoryError` if `dst` not a directory,
-    ensuring a single target is linked inside `dst`.
-
-    links are created inside it, unless given
     With `dst_is_dir=True`, raise `NotADirectoryError` if `dst` is not either a
-    directory or a symlink to a directory.
+    directory or a symlink to a directory. Allows ensuring a single target is
+    linked inside `dst`, not as `dst` itself.
 
     If `dst` as a directory, links are created inside it, unless given
     `dst_is_dir=False` which will instead raise `IsADirectoryError`
