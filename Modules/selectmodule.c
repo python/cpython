@@ -59,11 +59,15 @@ extern void bzero(void *, int);
 #endif
 
 #if defined(MS_WINDOWS)
-#define FD_SET_WIN(fd, set, setsize) do { \
-    if (((fd_set FAR *)(set))->fd_count < setsize) \
-        ((fd_set FAR *)(set))->fd_array[((fd_set FAR *)(set))->fd_count++]=(fd);\
-} while(0)
-#endif
+
+void fd_set_win(SOCKET fd, fd_set *set, size_t setsize) {
+    do {
+        if (((fd_set FAR *)(set))->fd_count < setsize)
+            ((fd_set FAR *)(set))->fd_array[((fd_set FAR *)(set))->fd_count++]=(fd);
+    } while(0);
+}
+
+#endif /* defined(MS_WINDOWS) */
 
 /*[clinic input]
 module select
@@ -110,20 +114,6 @@ reap_obj(pylist *fd2obj, size_t setsize)
     fd2obj[0].sentinel = -1;
 }
 
-
-/* returns the size of a given Python sequence
-   returns -1 if the input is not a sequence
-*/
-static Py_ssize_t
-seqsize(PyObject *seq)
-{
-    PyObject* fast_seq = PySequence_Fast(seq, "argument 1 must be sequence");
-    if (!fast_seq)
-        return -1;
-
-    return PySequence_Fast_GET_SIZE(fast_seq);
-}
-
 /* returns -1 and sets the Python exception if an error occurred, otherwise
    returns a number >= 0
 */
@@ -166,10 +156,10 @@ seq2set(PyObject *seq, fd_set *set, pylist *fd2obj, size_t setsize)
             max = v;
 #endif /* _MSC_VER */
 #if defined(MS_WINDOWS)
-        FD_SET_WIN(v, set, setsize);
+        fd_set_win(v, set, setsize);
 #else
         FD_SET(v, set);
-#endif
+#endif /* defined(MS_WINDOWS) */
 
         /* add object and its file descriptor to the list */
         if (index >= setsize) {
@@ -226,6 +216,10 @@ set2list(fd_set *set, pylist *fd2obj, size_t setsize)
     return NULL;
 }
 
+#undef SELECT_USES_HEAP
+#if FD_SETSIZE > 1024
+#define SELECT_USES_HEAP
+#endif /* FD_SETSIZE > 1024 */
 
 /*[clinic input]
 select.select
@@ -271,12 +265,14 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     fd_set *ifdset, *ofdset, *efdset;
 #if !defined(MS_WINDOWS)
     fd_set ifdset_stack, ofdset_stack, efdset_stack;
+#if !defined(SELECT_USES_HEAP)
     pylist rfd2obj_stack[FD_SETSIZE + 1];
     pylist wfd2obj_stack[FD_SETSIZE + 1];
     pylist efd2obj_stack[FD_SETSIZE + 1];
+#endif /* !defined(SELECT_USES_HEAP) */
 #else
     Py_ssize_t rsize, wsize, xsize;
-#endif
+#endif /* !defined(MS_WINDOWS) */
     struct timeval tv, *tvp;
     int imax, omax, emax, max;
     int n;
@@ -286,14 +282,19 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
 #if defined(MS_WINDOWS)
     /* On windows we allocated the fd sets dynamically
     based on the inputs size */
-    rsize = seqsize(rlist);
-    wsize = seqsize(wlist);
-    xsize = seqsize(xlist);
+    rsize = PySequence_Length(rlist);
+    wsize = PySequence_Length(wlist);
+    xsize = PySequence_Length(xlist);
 
-    if (rsize > (Py_ssize_t)setsize) setsize = (size_t)rsize;
-    if (wsize > (Py_ssize_t)setsize) setsize = (size_t)wsize;
-    if (xsize > (Py_ssize_t)setsize) setsize = (size_t)xsize;
-#endif
+    if (rsize < 0 || wsize < 0 || xsize < 0) {
+        PyErr_SetString(PyExc_ValueError, "arguments 1-3 must be sequences");
+        return NULL;
+    }
+
+    if ((size_t)rsize > setsize) setsize = (size_t)rsize;
+    if ((size_t)wsize > setsize) setsize = (size_t)wsize;
+    if ((size_t)xsize > setsize) setsize = (size_t)xsize;
+#endif /* defined(MS_WINDOWS) */
 
     if (timeout_obj == Py_None)
         tvp = (struct timeval *)NULL;
@@ -316,7 +317,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         tvp = &tv;
     }
 
-#if defined(MS_WINDOWS)
+#if defined(MS_WINDOWS) || defined(SELECT_USES_HEAP)
     /* Allocate memory for the lists */
     rfd2obj = PyMem_NEW(pylist, setsize + 1);
     wfd2obj = PyMem_NEW(pylist, setsize + 1);
@@ -327,11 +328,11 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         if (efd2obj) PyMem_DEL(efd2obj);
         return PyErr_NoMemory();
     }
-#else
+#else /* !defined(MS_WINDOWS) && !defined(SELECT_USES_HEAP) */
     rfd2obj = (pylist*)&rfd2obj_stack;
     wfd2obj = (pylist*)&wfd2obj_stack;
     efd2obj = (pylist*)&efd2obj_stack;
-#endif
+#endif /* defined(MS_WINDOWS) || defined(SELECT_USES_HEAP) */
 
 #if defined(MS_WINDOWS)
     /* Allocate memory for the sets */
@@ -352,7 +353,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     ifdset = &ifdset_stack;
     ofdset = &ofdset_stack;
     efdset = &efdset_stack;
-#endif
+#endif /* defined(MS_WINDOWS) */
 
     /* Convert sequences to fd_sets, and get maximum fd number
      * propagates the Python exception set in seq2set()
@@ -433,14 +434,16 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     reap_obj(rfd2obj, setsize);
     reap_obj(wfd2obj, setsize);
     reap_obj(efd2obj, setsize);
-#if defined(MS_WINDOWS)
+#if defined(MS_WINDOWS) || defined(SELECT_USES_HEAP)
     PyMem_DEL(rfd2obj);
     PyMem_DEL(wfd2obj);
     PyMem_DEL(efd2obj);
+#endif /* defined(MS_WINDOWS) || defined(SELECT_USES_HEAP) */
+#if defined(MS_WINDOWS)
     PyMem_DEL(ifdset);
     PyMem_DEL(ofdset);
     PyMem_DEL(efdset);
-#endif
+#endif /* MS_WINDOWS */
     return ret;
 }
 
