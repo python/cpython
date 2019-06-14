@@ -2538,6 +2538,65 @@ class TestGetTerminalSize(unittest.TestCase):
             self.assertEqual(size.lines, 40)
 
 
+class Symlink(unittest.TestCase):
+
+    def setUp(self):
+        print("In setUp")
+        self.tmp_dir = tempfile.mkdtemp()
+        extant_files = {'src_file1': 'sf1', 'src_file2': 'sf2',
+                        'dst_file1': 'df1'}
+        extant_dirs = {'dst_dir1': 'dd1'}
+        extant_links = {'link_broken': 'non-extant', 'link_dir': 'dd1',
+                        'link_file': 'df1'}
+
+        # Create extant items
+        for name, value in extant_files.items():
+            path = os.path.join(self.tmp_dir, value)
+            os.mknod(path)
+            setattr(self, name, path)
+        for name, value in extant_dirs.items():
+            path = os.path.join(self.tmp_dir, value)
+            os.mkdir(path)
+            setattr(self, name, path)
+        for link_name, target in extant_links.items():
+            dst = os.path.join(self.tmp_dir, link_name)
+            src = os.path.join(self.tmp_dir, target)
+            os.symlink(src, dst)
+            setattr(self, target, link_name)
+
+    def tearDown(self):
+        print("In tearDown")
+        try:
+            shutil.rmtree(self.tmp_dir)
+        except BaseException:
+            pass
+
+# bool_args = set(('overwrite', 'follow_symlinks', 'target_is_dir',
+#                 'dst_is_dir', 'dst_is_file'))
+#
+# # Set each bool arg to be non-bool one by one:
+# for arg in bool_args:
+#     kwargs = {k:'X' if k == arg else True for k in bool_args }
+#     print(kwargs)
+
+    def test_bool_argument_type_checking(self):
+        bool_args = ['overwrite', 'follow_symlinks', 'target_is_dir',
+                     'dst_is_file', 'dst_is_dir']
+
+        # Set each bool arg to be non-bool ('X'), one after another
+        for arg in bool_args:
+            kwargs = {k:'X' if k == arg else True for k in bool_args}
+            print(kwargs)
+            with self.assertRaises(TypeError):
+                print(f"testing: {arg}")
+                shutil.symlink(self.src_file1, self.dst_file1, kwargs)
+
+    def test_dst_is_file_and_dst_is_dir(self):
+        with self.assertRaises(ValueError):
+            shutil.symlink(self.src_file1, self.dst_dir1,
+                           dst_is_file=True, dst_is_dir=True)
+
+
 class PublicAPITests(unittest.TestCase):
     """Ensures that the correct values are exposed in the public API."""
 
