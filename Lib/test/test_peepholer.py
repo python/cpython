@@ -414,7 +414,7 @@ class TestTranforms(BytecodeTestCase):
                 pass
         self.assertEqual(count_instr_recursively(forloop, 'BUILD_LIST'), 0)
 
-    def test_constant_bool_in_compose_if(self):
+    def test_condition_with_binop_with_bools(self):
         def f():
             if True or False:
                 return 1
