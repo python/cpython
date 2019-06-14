@@ -60,5 +60,13 @@ class StringBufferTestCase(unittest.TestCase):
         self.assertEqual(b[::2], "ac")
         self.assertEqual(b[::5], "a")
 
+    @need_symbol('c_wchar')
+    def test_create_unicode_buffer_non_bmp(self):
+        b = create_unicode_buffer('\U00010000\U00100000')
+        expected = 5 if sizeof(c_wchar) == 2 else 3
+        self.assertEqual(len(b), expected)
+        self.assertEqual(b[-1], '\0')
+
+
 if __name__ == "__main__":
     unittest.main()

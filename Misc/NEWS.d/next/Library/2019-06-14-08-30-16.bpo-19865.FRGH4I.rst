@@ -1,0 +1,2 @@
+:func:`ctypes.create_unicode_buffer()` no longer fails on non-BMP strings on
+Windows.

@@ -275,6 +275,10 @@ def create_unicode_buffer(init, size=None):
     if isinstance(init, str):
         if size is None:
             size = len(init)+1
+            if sizeof(c_wchar) == 2:
+                for c in init:
+                    if ord(c) > 0xFFFF:
+                        size += 1
         buftype = c_wchar * size
         buf = buftype()
         buf.value = init
