@@ -965,7 +965,9 @@ Build and C API Changes
   * Only ``python3.8-config`` script is installed, no ``python3.8m-config`` is
     gone.
   * The ``m`` flag has been removed from the suffix of dynamic library
-    filenames. On Linux, for example, the Python 3.7 suffix
+    filenames: extension modules in the standard library as well as those
+    produced and installed by third-party packages, like those downloaded from
+    PyPI. On Linux, for example, the Python 3.7 suffix
     ``.cpython-37m-x86_64-linux-gnu.so`` became
     ``.cpython-38-x86_64-linux-gnu.so`` in Python 3.8.
 
