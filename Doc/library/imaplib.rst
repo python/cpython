@@ -327,6 +327,9 @@ An :class:`IMAP4` instance has the following methods:
 
    Shutdown connection to server. Returns server ``BYE`` response.
 
+   .. versionchanged:: 3.8
+      The method no longer ignores silently arbitrary exceptions.
+
 
 .. method:: IMAP4.lsub(directory='""', pattern='*')
 

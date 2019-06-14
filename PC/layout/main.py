@@ -46,13 +46,13 @@ TCLTK_FILES_ONLY = FileNameSet("turtle.py")
 
 VENV_DIRS_ONLY = FileNameSet("venv", "ensurepip")
 
-EXCLUDE_FROM_PYDS = FileStemSet("python*", "pyshellext")
+EXCLUDE_FROM_PYDS = FileStemSet("python*", "pyshellext", "vcruntime*")
 EXCLUDE_FROM_LIB = FileNameSet("*.pyc", "__pycache__", "*.pickle")
 EXCLUDE_FROM_PACKAGED_LIB = FileNameSet("readme.txt")
 EXCLUDE_FROM_COMPILE = FileNameSet("badsyntax_*", "bad_*")
 EXCLUDE_FROM_CATALOG = FileSuffixSet(".exe", ".pyd", ".dll")
 
-REQUIRED_DLLS = FileStemSet("libcrypto*", "libssl*")
+REQUIRED_DLLS = FileStemSet("libcrypto*", "libssl*", "libffi*")
 
 LIB2TO3_GRAMMAR_FILES = FileNameSet("Grammar.txt", "PatternGrammar.txt")
 
@@ -66,6 +66,18 @@ DATA_DIRS = FileNameSet("data")
 TOOLS_DIRS = FileNameSet("scripts", "i18n", "pynche", "demo", "parser")
 TOOLS_FILES = FileSuffixSet(".py", ".pyw", ".txt")
 
+def copy_if_modified(src, dest):
+    try:
+        dest_stat = os.stat(dest)
+    except FileNotFoundError:
+        do_copy = True
+    else:
+        src_stat = os.stat(src)
+        do_copy = (src_stat.st_mtime != dest_stat.st_mtime or
+                   src_stat.st_size != dest_stat.st_size)
+
+    if do_copy:
+        shutil.copy2(src, dest)
 
 def get_lib_layout(ns):
     def _c(f):
@@ -156,6 +168,8 @@ def get_layout(ns):
     for dest, src in rglob(ns.build, "vcruntime*.dll"):
         yield dest, src
 
+    yield "LICENSE.txt", ns.source / "LICENSE"
+
     for dest, src in rglob(ns.build, ("*.pyd", "*.dll")):
         if src.stem.endswith("_d") != bool(ns.debug) and src not in REQUIRED_DLLS:
             continue
@@ -240,11 +254,17 @@ def get_layout(ns):
             yield "DLLs/{}".format(ns.include_cat.name), ns.include_cat
 
 
-def _compile_one_py(src, dest, name, optimize):
+def _compile_one_py(src, dest, name, optimize, checked=True):
     import py_compile
 
     if dest is not None:
         dest = str(dest)
+
+    mode = (
+        py_compile.PycInvalidationMode.CHECKED_HASH
+        if checked
+        else py_compile.PycInvalidationMode.UNCHECKED_HASH
+    )
 
     try:
         return Path(
@@ -254,7 +274,7 @@ def _compile_one_py(src, dest, name, optimize):
                 str(name),
                 doraise=True,
                 optimize=optimize,
-                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
+                invalidation_mode=mode,
             )
         )
     except py_compile.PyCompileError:
@@ -262,16 +282,16 @@ def _compile_one_py(src, dest, name, optimize):
         return None
 
 
-def _py_temp_compile(src, ns, dest_dir=None):
+def _py_temp_compile(src, ns, dest_dir=None, checked=True):
     if not ns.precompile or src not in PY_FILES or src.parent in DATA_DIRS:
         return None
 
     dest = (dest_dir or ns.temp) / (src.stem + ".py")
-    return _compile_one_py(src, dest.with_suffix(".pyc"), dest, optimize=2)
+    return _compile_one_py(src, dest.with_suffix(".pyc"), dest, optimize=2, checked=checked)
 
 
-def _write_to_zip(zf, dest, src, ns):
-    pyc = _py_temp_compile(src, ns)
+def _write_to_zip(zf, dest, src, ns, checked=True):
+    pyc = _py_temp_compile(src, ns, checked=checked)
     if pyc:
         try:
             zf.write(str(pyc), dest.with_suffix(".pyc"))
@@ -321,7 +341,7 @@ def generate_source_files(ns):
         ns.temp.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
             for dest, src in get_lib_layout(ns):
-                _write_to_zip(zf, dest, src, ns)
+                _write_to_zip(zf, dest, src, ns, checked=False)
 
     if ns.include_underpth:
         log_info("Generating {} in {}", PYTHON_PTH_NAME, ns.temp)
@@ -418,7 +438,7 @@ def copy_files(files, ns):
                     need_compile.append((dest, ns.copy / dest))
                 else:
                     (ns.temp / "Lib" / dest).parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(src, ns.temp / "Lib" / dest)
+                    copy_if_modified(src, ns.temp / "Lib" / dest)
                     need_compile.append((dest, ns.temp / "Lib" / dest))
 
             if src not in EXCLUDE_FROM_CATALOG:
@@ -428,7 +448,7 @@ def copy_files(files, ns):
                 log_debug("Copy {} -> {}", src, ns.copy / dest)
                 (ns.copy / dest).parent.mkdir(parents=True, exist_ok=True)
                 try:
-                    shutil.copy2(src, ns.copy / dest)
+                    copy_if_modified(src, ns.copy / dest)
                 except shutil.SameFileError:
                     pass
 

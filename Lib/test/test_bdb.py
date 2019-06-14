@@ -730,6 +730,13 @@ class StateTestCase(BaseTestCase):
             with TracerRun(self, skip=skip) as tracer:
                 tracer.runcall(tfunc_import)
 
+    def test_skip_with_no_name_module(self):
+        # some frames have `globals` with no `__name__`
+        # for instance the second frame in this traceback
+        # exec(compile('raise ValueError()', '', 'exec'), {})
+        bdb = Bdb(skip=['anything*'])
+        self.assertIs(bdb.is_skipped_module(None), False)
+
     def test_down(self):
         # Check that set_down() raises BdbError at the newest frame.
         self.expect_set = [

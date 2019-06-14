@@ -1,2 +1,0 @@
-Changed standard error message for non-pickleable and non-copyable types. It
-now says "cannot pickle" instead of "can't pickle" or "cannot serialize".

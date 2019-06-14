@@ -1178,7 +1178,7 @@ class PyUnicodeObjectPtr(PyObjectPtr):
     def proxyval(self, visited):
         global _is_pep393
         if _is_pep393 is None:
-            fields = gdb.lookup_type('PyUnicodeObject').target().fields()
+            fields = gdb.lookup_type('PyUnicodeObject').fields()
             _is_pep393 = 'data' in [f.name for f in fields]
         if _is_pep393:
             # Python 3.3 and newer
@@ -1564,7 +1564,8 @@ class Frame(object):
             return False
 
         if caller in ('_PyCFunction_FastCallDict',
-                      '_PyCFunction_FastCallKeywords'):
+                      '_PyCFunction_Vectorcall',
+                      'cfunction_call_varargs'):
             arg_name = 'func'
             # Within that frame:
             #   "func" is the local containing the PyObject* of the

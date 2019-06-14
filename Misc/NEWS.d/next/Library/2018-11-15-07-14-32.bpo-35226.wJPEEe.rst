@@ -1,3 +1,0 @@
-Recursively check arguments when testing for equality of
-:class:`unittest.mock.call` objects and add note that tracking of parameters
-used to create ancestors of mocks in ``mock_calls`` is not possible.

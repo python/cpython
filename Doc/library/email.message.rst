@@ -487,7 +487,6 @@ message objects.
          from email import message_from_binary_file
          with open('../Lib/test/test_email/data/msg_16.txt', 'rb') as f:
              msg = message_from_binary_file(f)
-         from email.iterators import _structure
 
       .. doctest::
 
@@ -509,6 +508,7 @@ message objects.
 
       .. doctest::
 
+         >>> from email.iterators import _structure
          >>> for part in msg.walk():
          ...     print(part.get_content_maintype() == 'multipart',
          ...           part.is_multipart())

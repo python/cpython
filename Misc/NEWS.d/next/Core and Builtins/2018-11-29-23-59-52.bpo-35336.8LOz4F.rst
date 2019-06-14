@@ -1,2 +1,0 @@
-Fix PYTHONCOERCECLOCALE=1 environment variable: only coerce the C locale
-if the LC_CTYPE locale is "C".

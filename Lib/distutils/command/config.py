@@ -328,7 +328,6 @@ class config(Command):
         return self.try_cpp(body="/* No body */", headers=[header],
                             include_dirs=include_dirs)
 
-
 def dump_file(filename, head=None):
     """Dumps a file content into log.info.
 

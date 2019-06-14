@@ -1,1 +1,0 @@
-Delaying the 'joke' of barry_as_FLUFL.mandatory to Python version 4.0

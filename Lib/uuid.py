@@ -122,7 +122,7 @@ class UUID:
                     uuid_generate_time_safe(3).
     """
 
-    __slots__ = ('int', 'is_safe')
+    __slots__ = ('int', 'is_safe', '__weakref__')
 
     def __init__(self, hex=None, bytes=None, bytes_le=None, fields=None,
                        int=None, version=None,
@@ -696,14 +696,12 @@ def _random_getnode():
     return random.getrandbits(48) | (1 << 40)
 
 
-if _AIX:
-    _NODE_GETTERS = [_unix_getnode, _netstat_getnode]
-elif _WIN32:
-    _NODE_GETTERS = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
-else:
-    _NODE_GETTERS = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
-                          _arp_getnode, _lanscan_getnode, _netstat_getnode]
 _node = None
+
+_NODE_GETTERS_WIN32 = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
+
+_NODE_GETTERS_UNIX = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
+                      _arp_getnode, _lanscan_getnode, _netstat_getnode]
 
 def getnode(*, getters=None):
     """Get the hardware address as a 48-bit positive integer.
@@ -717,7 +715,12 @@ def getnode(*, getters=None):
     if _node is not None:
         return _node
 
-    for getter in _NODE_GETTERS + [_random_getnode]:
+    if sys.platform == 'win32':
+        getters = _NODE_GETTERS_WIN32
+    else:
+        getters = _NODE_GETTERS_UNIX
+
+    for getter in getters + [_random_getnode]:
         try:
             _node = getter()
         except:
@@ -725,6 +728,7 @@ def getnode(*, getters=None):
         if (_node is not None) and (0 <= _node < (1 << 48)):
             return _node
     assert False, '_random_getnode() returned invalid value: {}'.format(_node)
+
 
 _last_timestamp = None
 

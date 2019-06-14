@@ -136,28 +136,6 @@ Functions
       Unlike the C function of the same name, :func:`asctime` does not add a
       trailing newline.
 
-
-.. function:: clock()
-
-   .. index::
-      single: CPU time
-      single: processor time
-      single: benchmarking
-
-   On Unix, return the current processor time as a floating point number expressed
-   in seconds.  The precision, and in fact the very definition of the meaning of
-   "processor time", depends on that of the C function of the same name.
-
-   On Windows, this function returns wall-clock seconds elapsed since the first
-   call to this function, as a floating point number, based on the Win32 function
-   :c:func:`QueryPerformanceCounter`. The resolution is typically better than one
-   microsecond.
-
-   .. deprecated:: 3.3
-      The behaviour of this function depends on the platform: use
-      :func:`perf_counter` or :func:`process_time` instead, depending on your
-      requirements, to have a well defined behaviour.
-
 .. function:: pthread_getcpuclockid(thread_id)
 
    Return the *clk_id* of the thread-specific CPU-time clock for the specified *thread_id*.
@@ -772,7 +750,7 @@ These constants are used as parameters for :func:`clock_getres` and
    Similar to :data:`CLOCK_MONOTONIC`, but provides access to a raw
    hardware-based time that is not subject to NTP adjustments.
 
-   Availability: Linux 2.6.28 or later.
+   .. availability:: Linux 2.6.28 and newer, macOS 10.12 and newer.
 
    .. versionadded:: 3.3
 
@@ -799,7 +777,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    Thread-specific CPU-time clock.
 
-   Availability: Unix.
+   .. availability::  Unix.
 
    .. versionadded:: 3.3
 
@@ -815,8 +793,20 @@ These constants are used as parameters for :func:`clock_getres` and
    .. versionadded:: 3.7
 
 
+.. data:: CLOCK_UPTIME_RAW
+
+   Clock that increments monotonically, tracking the time since an arbitrary
+   point, unaffected by frequency or time adjustments and not incremented while
+   the system is asleep.
+
+   .. availability:: macOS 10.12 and newer.
+
+   .. versionadded:: 3.8
+
+
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.
+
 
 .. data:: CLOCK_REALTIME
 

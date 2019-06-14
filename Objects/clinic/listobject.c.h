@@ -21,10 +21,27 @@ list_insert(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t index;
     PyObject *object;
 
-    if (!_PyArg_ParseStack(args, nargs, "nO:insert",
-        &index, &object)) {
+    if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        index = ival;
+    }
+    object = args[1];
     return_value = list_insert_impl(self, index, object);
 
 exit:
@@ -105,10 +122,30 @@ list_pop(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t index = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:pop",
-        &index)) {
+    if (!_PyArg_CheckPositional("pop", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        index = ival;
+    }
+skip_optional:
     return_value = list_pop_impl(self, index);
 
 exit:
@@ -119,7 +156,15 @@ PyDoc_STRVAR(list_sort__doc__,
 "sort($self, /, *, key=None, reverse=False)\n"
 "--\n"
 "\n"
-"Stable sort *IN PLACE*.");
+"Sort the list in ascending order and return None.\n"
+"\n"
+"The sort is in-place (i.e. the list itself is modified) and stable (i.e. the\n"
+"order of two equal elements is maintained).\n"
+"\n"
+"If a key function is given, apply it once to each list item and sort them,\n"
+"ascending or descending, according to their function values.\n"
+"\n"
+"The reverse flag can be set to sort in descending order.");
 
 #define LIST_SORT_METHODDEF    \
     {"sort", (PyCFunction)(void(*)(void))list_sort, METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},
@@ -132,14 +177,35 @@ list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "reverse", NULL};
-    static _PyArg_Parser _parser = {"|$Oi:sort", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sort", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *keyfunc = Py_None;
     int reverse = 0;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &keyfunc, &reverse)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[0]) {
+        keyfunc = args[0];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    reverse = _PyLong_AsInt(args[1]);
+    if (reverse == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = list_sort_impl(self, keyfunc, reverse);
 
 exit:
@@ -187,10 +253,23 @@ list_index(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t start = 0;
     Py_ssize_t stop = PY_SSIZE_T_MAX;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index",
-        &value, _PyEval_SliceIndexNotNone, &start, _PyEval_SliceIndexNotNone, &stop)) {
+    if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
         goto exit;
     }
+    value = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[2], &stop)) {
+        goto exit;
+    }
+skip_optional:
     return_value = list_index_impl(self, value, start, stop);
 
 exit:
@@ -239,11 +318,14 @@ list___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("list", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "list",
-        0, 1,
-        &iterable)) {
+    if (!_PyArg_CheckPositional("list", PyTuple_GET_SIZE(args), 0, 1)) {
         goto exit;
     }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    iterable = PyTuple_GET_ITEM(args, 0);
+skip_optional:
     return_value = list___init___impl((PyListObject *)self, iterable);
 
 exit:
@@ -285,4 +367,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=652ae4ee63a9de71 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=73718c0c33798c62 input=a9049054013a1b77]*/

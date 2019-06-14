@@ -1,3 +1,0 @@
-On HP-UX with C or POSIX locale, sys.getfilesystemencoding() now returns
-"ascii" instead of "roman8" (when the UTF-8 Mode is disabled and the C locale
-is not coerced).

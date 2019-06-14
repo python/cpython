@@ -666,7 +666,7 @@ run_child(wchar_t * cmdline)
     if (!ok)
         error(RC_CREATE_PROCESS, L"Job information setting failed");
     memset(&si, 0, sizeof(si));
-    si.cb = sizeof(si);
+    GetStartupInfoW(&si);
     ok = safe_duplicate_handle(GetStdHandle(STD_INPUT_HANDLE), &si.hStdInput);
     if (!ok)
         error(RC_NO_STD_HANDLES, L"stdin duplication failed");
@@ -718,7 +718,7 @@ invoke_child(wchar_t * executable, wchar_t * suffix, wchar_t * cmdline)
         }
         child_command = calloc(child_command_size, sizeof(wchar_t));
         if (child_command == NULL)
-            error(RC_CREATE_PROCESS, L"unable to allocate %d bytes for child command.",
+            error(RC_CREATE_PROCESS, L"unable to allocate %zd bytes for child command.",
                   child_command_size);
         if (no_suffix)
             _snwprintf_s(child_command, child_command_size,
@@ -1139,7 +1139,7 @@ static PYC_MAGIC magic_values[] = {
     { 3320, 3351, L"3.5" },
     { 3360, 3379, L"3.6" },
     { 3390, 3399, L"3.7" },
-    { 3400, 3409, L"3.8" },
+    { 3400, 3410, L"3.8" },
     { 0 }
 };
 
@@ -1189,7 +1189,7 @@ maybe_handle_shebang(wchar_t ** argv, wchar_t * cmdline)
 
     if (rc == 0) {
         read = fread(buffer, sizeof(char), BUFSIZE, fp);
-        debug(L"maybe_handle_shebang: read %d bytes\n", read);
+        debug(L"maybe_handle_shebang: read %zd bytes\n", read);
         fclose(fp);
 
         if ((read >= 4) && (buffer[3] == '\n') && (buffer[2] == '\r')) {
@@ -1209,7 +1209,7 @@ maybe_handle_shebang(wchar_t ** argv, wchar_t * cmdline)
             bom = BOMs; /* points to UTF-8 entry - the default */
         }
         else {
-            debug(L"maybe_handle_shebang: BOM found, code page %d\n",
+            debug(L"maybe_handle_shebang: BOM found, code page %u\n",
                   bom->code_page);
             start = &buffer[bom->length];
         }
@@ -1706,6 +1706,17 @@ process(int argc, wchar_t ** argv)
 
     command = skip_me(GetCommandLineW());
     debug(L"Called with command line: %ls\n", command);
+
+#if !defined(VENV_REDIRECT)
+    /* bpo-35811: The __PYVENV_LAUNCHER__ variable is used to
+     * override sys.executable and locate the original prefix path. 
+     * However, if it is silently inherited by a non-venv Python
+     * process, that process will believe it is running in the venv
+     * still. This is the only place where *we* can clear it (that is,
+     * when py.exe is being used to launch Python), so we do.
+     */
+    SetEnvironmentVariableW(L"__PYVENV_LAUNCHER__", NULL);
+#endif
 
 #if defined(SCRIPT_WRAPPER)
     /* The launcher is being used in "script wrapper" mode.

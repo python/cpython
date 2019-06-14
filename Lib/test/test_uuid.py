@@ -9,6 +9,8 @@ import pickle
 import shutil
 import subprocess
 import sys
+import weakref
+from unittest import mock
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
@@ -457,7 +459,7 @@ class BaseTestUUID:
         # uuid.getnode to fall back on uuid._random_getnode, which will
         # generate a valid value.
         too_large_getter = lambda: 1 << 48
-        with unittest.mock.patch.multiple(
+        with mock.patch.multiple(
             self.uuid,
             _node=None,  # Ignore any cached node value.
             _NODE_GETTERS=[too_large_getter],
@@ -536,7 +538,7 @@ class BaseTestUUID:
         f = self.uuid._generate_time_safe
         if f is None:
             self.skipTest('need uuid._generate_time_safe')
-        with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
+        with mock.patch.object(self.uuid, '_generate_time_safe',
                                         lambda: (f()[0], safe_value)):
             yield
 
@@ -567,19 +569,19 @@ class BaseTestUUID:
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
     def test_uuid1_time(self):
-        with unittest.mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
-             unittest.mock.patch.object(self.uuid, '_generate_time_safe', None), \
-             unittest.mock.patch.object(self.uuid, '_last_timestamp', None), \
-             unittest.mock.patch.object(self.uuid, 'getnode', return_value=93328246233727), \
-             unittest.mock.patch('time.time_ns', return_value=1545052026752910643), \
-             unittest.mock.patch('random.getrandbits', return_value=5317): # guaranteed to be random
+        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
+             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+             mock.patch.object(self.uuid, '_last_timestamp', None), \
+             mock.patch.object(self.uuid, 'getnode', return_value=93328246233727), \
+             mock.patch('time.time_ns', return_value=1545052026752910643), \
+             mock.patch('random.getrandbits', return_value=5317): # guaranteed to be random
             u = self.uuid.uuid1()
             self.assertEqual(u, self.uuid.UUID('a7a55b92-01fc-11e9-94c5-54e1acf6da7f'))
 
-        with unittest.mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
-             unittest.mock.patch.object(self.uuid, '_generate_time_safe', None), \
-             unittest.mock.patch.object(self.uuid, '_last_timestamp', None), \
-             unittest.mock.patch('time.time_ns', return_value=1545052026752910643):
+        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
+             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+             mock.patch.object(self.uuid, '_last_timestamp', None), \
+             mock.patch('time.time_ns', return_value=1545052026752910643):
             u = self.uuid.uuid1(node=93328246233727, clock_seq=5317)
             self.assertEqual(u, self.uuid.UUID('a7a55b92-01fc-11e9-94c5-54e1acf6da7f'))
 
@@ -655,6 +657,11 @@ class BaseTestUUID:
 
             self.assertNotEqual(parent_value, child_value)
 
+    def test_uuid_weakref(self):
+        # bpo-35701: check that weak referencing to a UUID object can be created
+        strong = self.uuid.uuid4()
+        weak = weakref.ref(strong)
+        self.assertIs(strong, weak())
 
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
@@ -678,12 +685,12 @@ en0   1500  192.168.129 x071             1714807956     0 711348489     0     0
 en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
                         224.0.0.1
 '''
-        popen = unittest.mock.MagicMock()
+        popen = mock.MagicMock()
         popen.stdout = io.BytesIO(data.encode())
 
-        with unittest.mock.patch.object(shutil, 'which',
+        with mock.patch.object(shutil, 'which',
                                         return_value='/usr/bin/netstat'):
-            with unittest.mock.patch.object(subprocess, 'Popen',
+            with mock.patch.object(subprocess, 'Popen',
                                             return_value=popen):
                 mac = self.uuid._find_mac_netstat(
                     command='netstat',
@@ -695,19 +702,18 @@ en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
         self.assertEqual(mac, 0xfead0c012304)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(_AIX, 'AIX "ifconfig" does not provide macaddr')
     def test_find_mac(self):
         data = '''
 fake      Link encap:UNSPEC  hwaddr 00-00
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 '''
-        popen = unittest.mock.MagicMock()
+        popen = mock.MagicMock()
         popen.stdout = io.BytesIO(data.encode())
 
-        with unittest.mock.patch.object(shutil, 'which',
+        with mock.patch.object(shutil, 'which',
                                         return_value='/sbin/ifconfig'):
-            with unittest.mock.patch.object(subprocess, 'Popen',
+            with mock.patch.object(subprocess, 'Popen',
                                             return_value=popen):
                 mac = self.uuid._find_mac(
                     command='ifconfig',
@@ -728,25 +734,21 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
                         "%s is not an RFC 4122 node ID" % hex)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(_AIX, 'AIX "ifconfig" does not provide macaddr')
     def test_ifconfig_getnode(self):
         node = self.uuid._ifconfig_getnode()
         self.check_node(node, 'ifconfig')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(_AIX, 'requires command "ip"')
     def test_ip_getnode(self):
         node = self.uuid._ip_getnode()
         self.check_node(node, 'ip')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(_AIX, 'AIX "arp" does not provide macaddr')
     def test_arp_getnode(self):
         node = self.uuid._arp_getnode()
         self.check_node(node, 'arp')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(_AIX, 'requires command "lanscan"')
     def test_lanscan_getnode(self):
         node = self.uuid._lanscan_getnode()
         self.check_node(node, 'lanscan')

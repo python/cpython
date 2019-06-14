@@ -1,1 +1,0 @@
-Replace PEP XYZ by the pep role and allow to use the direct links to the PEPs.

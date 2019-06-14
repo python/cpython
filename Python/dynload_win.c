@@ -215,11 +215,15 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 #if HAVE_SXS
         cookie = _Py_ActivateActCtx();
 #endif
-        /* We use LoadLibraryEx so Windows looks for dependent DLLs
-            in directory of pathname first. */
-        /* XXX This call doesn't exist in Windows CE */
+        /* bpo-36085: We use LoadLibraryEx with restricted search paths
+           to avoid DLL preloading attacks and enable use of the
+           AddDllDirectory function. We add SEARCH_DLL_LOAD_DIR to
+           ensure DLLs adjacent to the PYD are preferred. */
+        Py_BEGIN_ALLOW_THREADS
         hDLL = LoadLibraryExW(wpathname, NULL,
-                              LOAD_WITH_ALTERED_SEARCH_PATH);
+                              LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
+                              LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+        Py_END_ALLOW_THREADS
 #if HAVE_SXS
         _Py_DeactivateActCtx(cookie);
 #endif
@@ -254,7 +258,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                This should not happen if called correctly. */
             if (theLength == 0) {
                 message = PyUnicode_FromFormat(
-                    "DLL load failed with error code %d",
+                    "DLL load failed with error code %u",
                     errorCode);
             } else {
                 /* For some reason a \r\n
@@ -298,11 +302,15 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                              "Module use of %.150s conflicts "
                              "with this version of Python.",
                              import_python);
+                Py_BEGIN_ALLOW_THREADS
                 FreeLibrary(hDLL);
+                Py_END_ALLOW_THREADS
                 return NULL;
             }
         }
+        Py_BEGIN_ALLOW_THREADS
         p = GetProcAddress(hDLL, funcname);
+        Py_END_ALLOW_THREADS
     }
 
     return p;

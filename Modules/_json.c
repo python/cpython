@@ -1,8 +1,11 @@
+/* JSON accelerator C extensor: _json module.
+ *
+ * It is built as a built-in module (Py_BUILD_CORE_BUILTIN define) on Windows
+ * and as an extension module (Py_BUILD_CORE_MODULE define) on other
+ * platforms. */
 
-/* Core extension modules are built-in on some platforms (e.g. Windows). */
-#ifdef Py_BUILD_CORE
-#define Py_BUILD_CORE_BUILTIN
-#undef Py_BUILD_CORE
+#if !defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE_MODULE)
+#  error "Py_BUILD_CORE_BUILTIN or Py_BUILD_CORE_MODULE must be defined"
 #endif
 
 #include "Python.h"
@@ -746,11 +749,14 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
             key = scanstring_unicode(pystr, idx + 1, s->strict, &next_idx);
             if (key == NULL)
                 goto bail;
-            memokey = PyDict_GetItem(s->memo, key);
+            memokey = PyDict_GetItemWithError(s->memo, key);
             if (memokey != NULL) {
                 Py_INCREF(memokey);
                 Py_DECREF(key);
                 key = memokey;
+            }
+            else if (PyErr_Occurred()) {
+                goto bail;
             }
             else {
                 if (PyDict_SetItem(s->memo, key, key) < 0)
@@ -1251,10 +1257,10 @@ PyTypeObject PyScannerType = {
     sizeof(PyScannerObject), /* tp_basicsize */
     0,                    /* tp_itemsize */
     scanner_dealloc, /* tp_dealloc */
-    0,                    /* tp_print */
+    0,                    /* tp_vectorcall_offset */
     0,                    /* tp_getattr */
     0,                    /* tp_setattr */
-    0,                    /* tp_compare */
+    0,                    /* tp_as_async */
     0,                    /* tp_repr */
     0,                    /* tp_as_number */
     0,                    /* tp_as_sequence */
@@ -1476,7 +1482,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
         return _steal_accumulate(acc, encoded);
     }
     else if (PyLong_Check(obj)) {
-        PyObject *encoded = PyLong_Type.tp_str(obj);
+        PyObject *encoded = PyLong_Type.tp_repr(obj);
         if (encoded == NULL)
             return -1;
         return _steal_accumulate(acc, encoded);
@@ -1640,7 +1646,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                 goto bail;
         }
         else if (PyLong_Check(key)) {
-            kstr = PyLong_Type.tp_str(key);
+            kstr = PyLong_Type.tp_repr(key);
             if (kstr == NULL) {
                 goto bail;
             }
@@ -1843,10 +1849,10 @@ PyTypeObject PyEncoderType = {
     sizeof(PyEncoderObject), /* tp_basicsize */
     0,                    /* tp_itemsize */
     encoder_dealloc, /* tp_dealloc */
-    0,                    /* tp_print */
+    0,                    /* tp_vectorcall_offset */
     0,                    /* tp_getattr */
     0,                    /* tp_setattr */
-    0,                    /* tp_compare */
+    0,                    /* tp_as_async */
     0,                    /* tp_repr */
     0,                    /* tp_as_number */
     0,                    /* tp_as_sequence */

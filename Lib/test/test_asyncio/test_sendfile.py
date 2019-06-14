@@ -18,6 +18,10 @@ except ImportError:
     ssl = None
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class MySendfileProto(asyncio.Protocol):
 
     def __init__(self, loop=None, close_after=0):
