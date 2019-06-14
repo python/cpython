@@ -26,7 +26,8 @@ jobs:
       downloadPath: $(Build.BinariesDirectory)
 
   - powershell: |
-      Expand-Archive -Path "$(Build.BinariesDirectory)\embed\embed-$(Name).zip" -DestinationPath "$(Build.BinariesDirectory)\Python"
+      $p = gi "$(Build.BinariesDirectory)\embed\python*embed-$(Name).zip"
+      Expand-Archive -Path $p -DestinationPath "$(Build.BinariesDirectory)\Python"
       $p = gi "$(Build.BinariesDirectory)\Python\python.exe"
       Write-Host "##vso[task.prependpath]$(Split-Path -Parent $p)"
     displayName: 'Install Python and add to PATH'

@@ -39,7 +39,7 @@ jobs:
   - powershell: >
       $(LayoutCmd)
       --copy "$(Build.ArtifactStagingDirectory)\layout"
-      --zip "$(Build.ArtifactStagingDirectory)\embed\$(VersionText)-embed-$(Name).zip"
+      --zip "$(Build.ArtifactStagingDirectory)\embed\python-$(VersionText)-embed-$(Name).zip"
       --preset-embed
     displayName: 'Generate embeddable layout'
 
