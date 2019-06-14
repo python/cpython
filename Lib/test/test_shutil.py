@@ -347,10 +347,12 @@ class TestShutil(unittest.TestCase):
                 os.chmod(paths[0], mode)
                 os.rmdir(paths[0])
                 os.unlink(paths[1])
+                pass
             else:
                 raise
 
-        paths = [TESTFN + '/foo', TESTFN + '/bar']
+        paths = [os.path.join(TESTFN, 'foo'),
+                 os.path.join(TESTFN, 'bar')]
         os.mkdir(TESTFN)
         os.mkdir(paths[0])
         write_file((TESTFN, 'bar'), 'bar')
@@ -358,7 +360,7 @@ class TestShutil(unittest.TestCase):
         os.chmod(paths[0], 0)
 
         try:
-            shutil.rmtree(TESTFN, onerror=_onerror)
+           shutil.rmtree(TESTFN, onerror=_onerror)
         except:
             # test failed, so cleanup artifacts
             try:
@@ -367,7 +369,6 @@ class TestShutil(unittest.TestCase):
                 pass
 
             shutil.rmtree(TESTFN)
-            raise
 
     def test_rmtree_deleted_dir_race_condition(self):
         # bpo-37260
@@ -380,10 +381,12 @@ class TestShutil(unittest.TestCase):
                 os.chmod(paths[0], mode)
                 os.rmdir(paths[0])
                 os.rmdir(paths[1])
+                pass
             else:
                 raise
 
-        paths = [TESTFN + '/foo', TESTFN + '/bar']
+        paths = [os.path.join(TESTFN, 'foo'),
+                 os.path.join(TESTFN, 'bar')]
         os.mkdir(TESTFN)
         os.mkdir(paths[0])
         os.mkdir(paths[1])
@@ -400,8 +403,8 @@ class TestShutil(unittest.TestCase):
                 pass
 
             shutil.rmtree(TESTFN)
-            raise
 
+    @support.skip_unless_symlink
     def test_rmtree_deleted_symlink_race_condition(self):
         # bpo-37260
         #
@@ -413,10 +416,12 @@ class TestShutil(unittest.TestCase):
                 os.chmod(paths[0], mode)
                 os.rmdir(paths[0])
                 os.unlink(paths[1])
+                pass
             else:
                 raise
 
-        paths = [TESTFN + '/foo', TESTFN + '/bar']
+        paths = [os.path.join(TESTFN, 'foo'),
+                 os.path.join(TESTFN, 'bar')]
         os.mkdir(TESTFN)
         os.mkdir(paths[0])
         os.symlink('foo', paths[1])
@@ -433,7 +438,6 @@ class TestShutil(unittest.TestCase):
                 pass
 
             shutil.rmtree(TESTFN)
-            raise
 
     @support.skip_unless_symlink
     def test_copymode_follow_symlinks(self):
