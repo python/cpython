@@ -469,7 +469,12 @@ class BaseServer(asyncore.dispatcher):
     def __init__(self, family, addr, handler=BaseTestHandler):
         asyncore.dispatcher.__init__(self)
         self.create_socket(family)
-        self.set_reuse_addr()
+        if sys.platform == 'win32' and family == socket.AF_UNIX:
+            # calling set_reuse_addr() on Windows with family AF_UNIX results in:
+            # OSError: [WinError 10045] The attempted operation is not supported for the type of object referenced
+            pass
+        else:
+            self.set_reuse_addr()
         bind_af_aware(self.socket, addr)
         self.listen(5)
         self.handler = handler

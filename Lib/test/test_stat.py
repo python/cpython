@@ -194,6 +194,7 @@ class TestFilemode:
                 break
 
     @skip_unless_bind_unix_socket
+    @unittest.skipIf(sys.platform == 'win32', "stat and lstat don't detect sockets")
     def test_socket(self):
         with socket.socket(socket.AF_UNIX) as s:
             s.bind(TESTFN)

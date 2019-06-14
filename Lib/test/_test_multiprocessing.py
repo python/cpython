@@ -4631,7 +4631,7 @@ class TestInvalidFamily(unittest.TestCase):
 
     @unittest.skipUnless(WIN32, "skipped on non-Windows platforms")
     def test_invalid_family_win32(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(OSError):
             multiprocessing.connection.Listener('/var/test.pipe')
 
 #

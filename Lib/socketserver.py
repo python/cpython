@@ -447,6 +447,10 @@ class TCPServer(BaseServer):
         BaseServer.__init__(self, server_address, RequestHandlerClass)
         self.socket = socket.socket(self.address_family,
                                     self.socket_type)
+
+        if sys.platform == 'win32' and self.address_family == socket.AF_UNIX:
+            self.allow_reuse_address = False
+
         if bind_and_activate:
             try:
                 self.server_bind()

@@ -8,6 +8,7 @@ import os
 import select
 import signal
 import socket
+import sys
 import tempfile
 import threading
 import unittest
@@ -232,12 +233,14 @@ class SocketServerTest(unittest.TestCase):
                             self.dgram_examine)
 
     @requires_unix_sockets
+    @unittest.skipIf(sys.platform == 'win32', "no datagram support")
     def test_UnixDatagramServer(self):
         self.run_server(socketserver.UnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
     @requires_unix_sockets
+    @unittest.skipIf(sys.platform == 'win32', "no datagram support")
     def test_ThreadingUnixDatagramServer(self):
         self.run_server(socketserver.ThreadingUnixDatagramServer,
                         socketserver.DatagramRequestHandler,

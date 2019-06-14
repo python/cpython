@@ -1978,6 +1978,7 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\x00').is_socket(), False)
 
     @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
+    @unittest.skipIf(sys.platform == 'win32', "stat doesn't detect sockets")
     def test_is_socket_true(self):
         P = self.cls(BASE, 'mysock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

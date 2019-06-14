@@ -1687,6 +1687,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertEqual('CLOSED', protocol.state)
 
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @unittest.skipIf(sys.platform == 'win32', 'datagrams not supported')
     def test_create_datagram_endpoint_sock_unix(self):
         fut = self.loop.create_datagram_endpoint(
             lambda: MyDatagramProto(create_future=True, loop=self.loop),
@@ -1698,6 +1699,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertEqual('CLOSED', protocol.state)
 
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @unittest.skipIf(sys.platform == 'win32', 'datagrams not supported')
     def test_create_datagram_endpoint_existing_sock_unix(self):
         with test_utils.unix_socket_path() as path:
             sock = socket.socket(socket.AF_UNIX, type=socket.SOCK_DGRAM)

@@ -5276,8 +5276,14 @@ class TestUnixDomain(unittest.TestCase):
                 raise
 
     def testUnbound(self):
-        # Issue #30205 (note getsockname() can return None on OS X)
-        self.assertIn(self.sock.getsockname(), ('', None))
+        if sys.platform == 'win32':
+            # Getting the name of unbound socket on Windows
+            # raises an exception
+            self.assertRaises(OSError, self.sock.getsockname)
+        else:
+            # Issue #30205 (note getsockname() can return None on OS X)
+            name = self.sock.getsockname()
+            self.assertIn(name, ('', None))
 
     def testStrAddr(self):
         # Test binding to and retrieving a normal string pathname.
@@ -5293,6 +5299,7 @@ class TestUnixDomain(unittest.TestCase):
         self.addCleanup(support.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
+    @unittest.skipIf(sys.platform == 'win32', "ASCII path name required on Windows")
     def testSurrogateescapeBind(self):
         # Test binding to a valid non-ASCII pathname, with the
         # non-ASCII bytes supplied using surrogateescape encoding.
