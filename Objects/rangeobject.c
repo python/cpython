@@ -123,9 +123,8 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
 
 static PyObject *
-range_vectorcall(
-    PyTypeObject *type, PyObject *const *args,
-    size_t nargsf, PyObject *kwnames)
+range_vectorcall(PyTypeObject *type, PyObject *const *args,
+                 size_t nargsf, PyObject *kwnames)
 {
     rangeobject *obj;
     size_t nargs = PyVectorcall_NARGS(nargsf);

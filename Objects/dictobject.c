@@ -3287,9 +3287,8 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-dict_vectorcall(
-    PyObject *type, PyObject * const*args,
-    size_t nargsf, PyObject *kwnames)
+dict_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
 {
     size_t nargs = PyVectorcall_NARGS(nargsf);
     if (nargs > 1) {

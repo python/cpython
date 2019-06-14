@@ -2727,9 +2727,8 @@ list___init___impl(PyListObject *self, PyObject *iterable)
 }
 
 static PyObject *
-list_vectorcall(
-    PyObject *type, PyObject * const*args,
-    size_t nargsf, PyObject *kwnames)
+list_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
 {
     if (kwnames && PyTuple_GET_SIZE(kwnames) != 0) {
         PyErr_Format(PyExc_TypeError, "list() takes no keyword arguments");
