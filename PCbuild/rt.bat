@@ -39,6 +39,8 @@ if "%1"=="-O" (set dashO=-O)     & shift & goto CheckOpts
 if "%1"=="-q" (set qmode=yes)    & shift & goto CheckOpts
 if "%1"=="-d" (set suffix=_d)    & shift & goto CheckOpts
 if "%1"=="-x64" (set prefix=%pcbuild%amd64) & shift & goto CheckOpts
+if "%1"=="-arm64" (set prefix=%pcbuild%arm64) & shift & goto CheckOpts
+if "%1"=="-arm32" (set prefix=%pcbuild%arm32) & shift & goto CheckOpts
 if NOT "%1"=="" (set regrtestargs=%regrtestargs% %1) & shift & goto CheckOpts
 
 if not defined prefix set prefix=%pcbuild%win32

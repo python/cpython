@@ -12,7 +12,7 @@ database keys are tuples (config-type, section, item).  As implemented,
 there are  separate dicts for default and user values.  Each has
 config-type keys 'main', 'extensions', 'highlight', and 'keys'.  The
 value for each key is a ConfigParser instance that maps section and item
-to values.  For 'main' and 'extenstons', user values override
+to values.  For 'main' and 'extensions', user values override
 default values.  For 'highlight' and 'keys', user sections augment the
 default sections (and must, therefore, have distinct names).
 

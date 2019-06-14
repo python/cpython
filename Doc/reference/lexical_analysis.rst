@@ -70,7 +70,7 @@ Comments
 A comment starts with a hash character (``#``) that is not part of a string
 literal, and ends at the end of the physical line.  A comment signifies the end
 of the logical line unless the implicit line joining rules are invoked. Comments
-are ignored by the syntax; they are not tokens.
+are ignored by the syntax.
 
 
 .. _encodings:
@@ -316,7 +316,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <http://www.unicode.org/Public/12.0.0/ucd/PropList.txt>`_ to support backwards
+  <http://www.unicode.org/Public/12.1.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 

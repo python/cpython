@@ -3,6 +3,19 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-35610: Replace now redundant editor.context_use_ps1 with
+.prompt_last_line.  This finishes change started in bpo-31858.
+
+bpo-32411: Stop sorting dict created with desired line order.
+
+bpo-37038: Make idlelib.run runnable; add test clause.
+
+bpo-36958: Print any argument other than None or int passed to
+SystemExit or sys.exit().
+
+bpo-36807: When saving a file, call file.flush() and os.fsync()
+so bits are flushed to e.g. a USB drive.
+
 bpo-36429: Fix starting IDLE with pyshell.
 Add idlelib.pyshell alias at top; remove pyshell alias at bottom.
 Remove obsolete __name__=='__main__' command.

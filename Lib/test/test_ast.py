@@ -137,6 +137,18 @@ exec_tests = [
     "@deco(a for a in b)\ndef f(): pass",
     # Simple assignment expression
     "(a := 1)",
+    # Positional-only arguments
+    "def f(a, /,): pass",
+    "def f(a, /, c, d, e): pass",
+    "def f(a, /, c, *, d, e): pass",
+    "def f(a, /, c, *, d, e, **kwargs): pass",
+    # Positional-only arguments with defaults
+    "def f(a=1, /,): pass",
+    "def f(a=1, /, b=2, c=4): pass",
+    "def f(a=1, /, b=2, *, c=4): pass",
+    "def f(a=1, /, b=2, *, c): pass",
+    "def f(a=1, /, b=2, *, c=4, **kwargs): pass",
+    "def f(a=1, /, b=2, *, c, **kwargs): pass",
 
 ]
 
@@ -1691,6 +1703,16 @@ exec_results = [
 ('Module', [('ClassDef', (3, 0), 'C', [], [], [('Pass', (3, 9))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 0), ('Name', (2, 1), 'deco2', ('Load',)), [], [])])], []),
 ('Module', [('FunctionDef', (2, 0), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (2, 9))], [('Call', (1, 1), ('Name', (1, 1), 'deco', ('Load',)), [('GeneratorExp', (1, 5), ('Name', (1, 6), 'a', ('Load',)), [('comprehension', ('Name', (1, 12), 'a', ('Store',)), ('Name', (1, 17), 'b', ('Load',)), [], 0)])], [])], None, None)], []),
 ('Module', [('Expr', (1, 0), ('NamedExpr', (1, 1), ('Name', (1, 1), 'a', ('Store',)), ('Constant', (1, 6), 1, None)))], []),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], [('arg', (1, 6), 'a', None, None)], None, [], [], None, []), [('Pass', (1, 14))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 12), 'c', None, None), ('arg', (1, 15), 'd', None, None), ('arg', (1, 18), 'e', None, None)], [('arg', (1, 6), 'a', None, None)], None, [], [], None, []), [('Pass', (1, 22))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 12), 'c', None, None)], [('arg', (1, 6), 'a', None, None)], None, [('arg', (1, 18), 'd', None, None), ('arg', (1, 21), 'e', None, None)], [None, None], None, []), [('Pass', (1, 25))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 12), 'c', None, None)], [('arg', (1, 6), 'a', None, None)], None, [('arg', (1, 18), 'd', None, None), ('arg', (1, 21), 'e', None, None)], [None, None], ('arg', (1, 26), 'kwargs', None, None), []), [('Pass', (1, 35))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], [('arg', (1, 6), 'a', None, None)], None, [], [], None, [('Constant', (1, 8), 1, None)]), [('Pass', (1, 16))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 14), 'b', None, None), ('arg', (1, 19), 'c', None, None)], [('arg', (1, 6), 'a', None, None)], None, [], [], None, [('Constant', (1, 8), 1, None), ('Constant', (1, 16), 2, None), ('Constant', (1, 21), 4, None)]), [('Pass', (1, 25))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 14), 'b', None, None)], [('arg', (1, 6), 'a', None, None)], None, [('arg', (1, 22), 'c', None, None)], [('Constant', (1, 24), 4, None)], None, [('Constant', (1, 8), 1, None), ('Constant', (1, 16), 2, None)]), [('Pass', (1, 28))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 14), 'b', None, None)], [('arg', (1, 6), 'a', None, None)], None, [('arg', (1, 22), 'c', None, None)], [None], None, [('Constant', (1, 8), 1, None), ('Constant', (1, 16), 2, None)]), [('Pass', (1, 26))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 14), 'b', None, None)], [('arg', (1, 6), 'a', None, None)], None, [('arg', (1, 22), 'c', None, None)], [('Constant', (1, 24), 4, None)], ('arg', (1, 29), 'kwargs', None, None), [('Constant', (1, 8), 1, None), ('Constant', (1, 16), 2, None)]), [('Pass', (1, 38))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 14), 'b', None, None)], [('arg', (1, 6), 'a', None, None)], None, [('arg', (1, 22), 'c', None, None)], [None], ('arg', (1, 27), 'kwargs', None, None), [('Constant', (1, 8), 1, None), ('Constant', (1, 16), 2, None)]), [('Pass', (1, 36))], [], None, None)], []),
 ]
 single_results = [
 ('Interactive', [('Expr', (1, 0), ('BinOp', (1, 0), ('Constant', (1, 0), 1, None), ('Add',), ('Constant', (1, 2), 2, None)))]),

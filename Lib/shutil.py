@@ -50,7 +50,7 @@ elif _WINDOWS:
     import nt
 
 COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
-_HAS_SENDFILE = posix and hasattr(os, "sendfile")
+_USE_CP_SENDFILE = hasattr(os, "sendfile") and sys.platform.startswith("linux")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
@@ -111,7 +111,7 @@ def _fastcopy_fcopyfile(fsrc, fdst, flags):
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
     high-performance sendfile(2) syscall.
-    This should work on Linux >= 2.6.33 and Solaris only.
+    This should work on Linux >= 2.6.33 only.
     """
     # Note: copyfileobj() is left alone in order to not introduce any
     # unexpected breakage. Possible risks by using zero-copy calls
@@ -122,7 +122,7 @@ def _fastcopy_sendfile(fsrc, fdst):
     #   GzipFile (which decompresses data), HTTPResponse (which decodes
     #   chunks).
     # - possibly others (e.g. encrypted fs/partition?)
-    global _HAS_SENDFILE
+    global _USE_CP_SENDFILE
     try:
         infd = fsrc.fileno()
         outfd = fdst.fileno()
@@ -152,7 +152,7 @@ def _fastcopy_sendfile(fsrc, fdst):
                 # sendfile() on this platform (probably Linux < 2.6.33)
                 # does not support copies between regular files (only
                 # sockets).
-                _HAS_SENDFILE = False
+                _USE_CP_SENDFILE = False
                 raise _GiveupOnFastCopy(err)
 
             if err.errno == errno.ENOSPC:  # filesystem is full
@@ -260,8 +260,8 @@ def copyfile(src, dst, *, follow_symlinks=True):
                     return dst
                 except _GiveupOnFastCopy:
                     pass
-            # Linux / Solaris
-            elif _HAS_SENDFILE:
+            # Linux
+            elif _USE_CP_SENDFILE:
                 try:
                     _fastcopy_sendfile(fsrc, fdst)
                     return dst
@@ -309,7 +309,7 @@ if hasattr(os, 'listxattr'):
         try:
             names = os.listxattr(src, follow_symlinks=follow_symlinks)
         except OSError as e:
-            if e.errno not in (errno.ENOTSUP, errno.ENODATA):
+            if e.errno not in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
                 raise
             return
         for name in names:
@@ -317,7 +317,8 @@ if hasattr(os, 'listxattr'):
                 value = os.getxattr(src, name, follow_symlinks=follow_symlinks)
                 os.setxattr(dst, name, value, follow_symlinks=follow_symlinks)
             except OSError as e:
-                if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA):
+                if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA,
+                                   errno.EINVAL):
                     raise
 else:
     def _copyxattr(*args, **kwargs):
@@ -359,6 +360,9 @@ def copystat(src, dst, *, follow_symlinks=True):
     mode = stat.S_IMODE(st.st_mode)
     lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
         follow_symlinks=follow)
+    # We must copy extended attributes before the file is (potentially)
+    # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
+    _copyxattr(src, dst, follow_symlinks=follow)
     try:
         lookup("chmod")(dst, mode, follow_symlinks=follow)
     except NotImplementedError:
@@ -382,7 +386,6 @@ def copystat(src, dst, *, follow_symlinks=True):
                     break
             else:
                 raise
-    _copyxattr(src, dst, follow_symlinks=follow)
 
 def copy(src, dst, *, follow_symlinks=True):
     """Copy data and mode bits ("cp src dst"). Return the file's destination.
@@ -581,11 +584,16 @@ def _rmtree_safe_fd(topfd, path, onerror):
         fullname = os.path.join(path, entry.name)
         try:
             is_dir = entry.is_dir(follow_symlinks=False)
-            if is_dir:
-                orig_st = entry.stat(follow_symlinks=False)
-                is_dir = stat.S_ISDIR(orig_st.st_mode)
         except OSError:
             is_dir = False
+        else:
+            if is_dir:
+                try:
+                    orig_st = entry.stat(follow_symlinks=False)
+                    is_dir = stat.S_ISDIR(orig_st.st_mode)
+                except OSError:
+                    onerror(os.lstat, fullname, sys.exc_info())
+                    continue
         if is_dir:
             try:
                 dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)

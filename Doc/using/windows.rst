@@ -1,4 +1,4 @@
-.. highlightlang:: none
+.. highlight:: none
 
 .. _using-on-windows:
 
@@ -214,13 +214,13 @@ of available options is shown below.
 For example, to silently install a default, system-wide Python installation,
 you could use the following command (from an elevated command prompt)::
 
-    python-3.6.0.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
+    python-3.8.0.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
 
 To allow users to easily install a personal copy of Python without the test
 suite, you could provide a shortcut with the following command. This will
 display a simplified initial page and disallow customization::
 
-    python-3.6.0.exe InstallAllUsers=0 Include_launcher=0 Include_test=0
+    python-3.8.0.exe InstallAllUsers=0 Include_launcher=0 Include_test=0
         SimpleInstall=1 SimpleInstallDescription="Just for me, no test suite."
 
 (Note that omitting the launcher also omits file associations, and is only
@@ -257,13 +257,13 @@ where a large number of installations are going to be performed it is very
 useful to have a locally cached copy.
 
 Execute the following command from Command Prompt to download all possible
-required files.  Remember to substitute ``python-3.6.0.exe`` for the actual
+required files.  Remember to substitute ``python-3.8.0.exe`` for the actual
 name of your installer, and to create layouts in their own directories to
 avoid collisions between files with the same name.
 
 ::
 
-    python-3.6.0.exe /layout [optional target directory]
+    python-3.8.0.exe /layout [optional target directory]
 
 You may also specify the ``/quiet`` option to hide the progress display.
 
@@ -530,7 +530,7 @@ To temporarily set environment variables, open Command Prompt and use the
 
 .. code-block:: doscon
 
-    C:\>set PATH=C:\Program Files\Python 3.6;%PATH%
+    C:\>set PATH=C:\Program Files\Python 3.8;%PATH%
     C:\>set PYTHONPATH=%PYTHONPATH%;C:\My_python_lib
     C:\>python
 
@@ -603,7 +603,7 @@ of your Python installation, delimited by a semicolon from other entries.  An
 example variable could look like this (assuming the first two entries already
 existed)::
 
-    C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Python 3.6
+    C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Python 3.8
 
 .. _launcher:
 
@@ -815,7 +815,7 @@ Customizing default Python versions
 In some cases, a version qualifier can be included in a command to dictate
 which version of Python will be used by the command. A version qualifier
 starts with a major version number and can optionally be followed by a period
-('.') and a minor version specifier. Furthermore it is possible to specifiy
+('.') and a minor version specifier. Furthermore it is possible to specify
 if a 32 or 64 bit implementation shall be requested by adding "-32" or "-64".
 
 For example, a shebang line of ``#!python`` has no version qualifier, while
@@ -1043,7 +1043,9 @@ The `PyWin32 <https://pypi.org/project/pywin32>`_ module by Mark Hammond
 is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 
-* `Component Object Model <https://www.microsoft.com/com/>`_ (COM)
+* `Component Object Model
+  <https://docs.microsoft.com/en-us/windows/desktop/com/component-object-model--com--portal>`_
+  (COM)
 * Win32 API calls
 * Registry
 * Event log
@@ -1109,8 +1111,7 @@ For extension modules, consult :ref:`building-on-windows`.
       MinGW gcc under Windows" or "Installing Python extension with distutils
       and without Microsoft Visual C++" by Sébastien Sauvage, 2003
 
-   `MingW -- Python extensions <http://oldwiki.mingw.org/index.php/Python%20extensions>`_
-      by Trent Apted et al, 2007
+   `MingW -- Python extensions <http://www.mingw.org/wiki/FAQ#toc14>`_
 
 
 Other Platforms

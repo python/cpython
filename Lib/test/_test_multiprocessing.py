@@ -17,6 +17,7 @@ import array
 import socket
 import random
 import logging
+import subprocess
 import struct
 import operator
 import pickle
@@ -86,6 +87,13 @@ def join_process(process):
     # Since multiprocessing.Process has the same API than threading.Thread
     # (join() and is_alive(), the support function can be reused
     support.join_thread(process, timeout=TIMEOUT)
+
+
+if os.name == "posix":
+    from multiprocessing import resource_tracker
+
+    def _resource_unlink(name, rtype):
+        resource_tracker._CLEANUP_FUNCS[rtype](name)
 
 
 #
@@ -260,6 +268,64 @@ class _TestProcess(BaseTestCase):
         if cls.TYPE != 'threads':
             q.put(bytes(current.authkey))
             q.put(current.pid)
+
+    def test_parent_process_attributes(self):
+        if self.TYPE == "threads":
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        self.assertIsNone(self.parent_process())
+
+        rconn, wconn = self.Pipe(duplex=False)
+        p = self.Process(target=self._test_send_parent_process, args=(wconn,))
+        p.start()
+        p.join()
+        parent_pid, parent_name = rconn.recv()
+        self.assertEqual(parent_pid, self.current_process().pid)
+        self.assertEqual(parent_pid, os.getpid())
+        self.assertEqual(parent_name, self.current_process().name)
+
+    @classmethod
+    def _test_send_parent_process(cls, wconn):
+        from multiprocessing.process import parent_process
+        wconn.send([parent_process().pid, parent_process().name])
+
+    def test_parent_process(self):
+        if self.TYPE == "threads":
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        # Launch a child process. Make it launch a grandchild process. Kill the
+        # child process and make sure that the grandchild notices the death of
+        # its parent (a.k.a the child process).
+        rconn, wconn = self.Pipe(duplex=False)
+        p = self.Process(
+            target=self._test_create_grandchild_process, args=(wconn, ))
+        p.start()
+
+        if not rconn.poll(timeout=5):
+            raise AssertionError("Could not communicate with child process")
+        parent_process_status = rconn.recv()
+        self.assertEqual(parent_process_status, "alive")
+
+        p.terminate()
+        p.join()
+
+        if not rconn.poll(timeout=5):
+            raise AssertionError("Could not communicate with child process")
+        parent_process_status = rconn.recv()
+        self.assertEqual(parent_process_status, "not alive")
+
+    @classmethod
+    def _test_create_grandchild_process(cls, wconn):
+        p = cls.Process(target=cls._test_report_parent_status, args=(wconn, ))
+        p.start()
+        time.sleep(100)
+
+    @classmethod
+    def _test_report_parent_status(cls, wconn):
+        from multiprocessing.process import parent_process
+        wconn.send("alive" if parent_process().is_alive() else "not alive")
+        parent_process().join(timeout=5)
+        wconn.send("alive" if parent_process().is_alive() else "not alive")
 
     def test_process(self):
         q = self.Queue(1)
@@ -3734,6 +3800,51 @@ class _TestSharedMemory(BaseTestCase):
 
         sms.close()
 
+    @unittest.skipIf(os.name != "posix", "not feasible in non-posix platforms")
+    def test_shared_memory_SharedMemoryServer_ignores_sigint(self):
+        # bpo-36368: protect SharedMemoryManager server process from
+        # KeyboardInterrupt signals.
+        smm = multiprocessing.managers.SharedMemoryManager()
+        smm.start()
+
+        # make sure the manager works properly at the beginning
+        sl = smm.ShareableList(range(10))
+
+        # the manager's server should ignore KeyboardInterrupt signals, and
+        # maintain its connection with the current process, and success when
+        # asked to deliver memory segments.
+        os.kill(smm._process.pid, signal.SIGINT)
+
+        sl2 = smm.ShareableList(range(10))
+
+        # test that the custom signal handler registered in the Manager does
+        # not affect signal handling in the parent process.
+        with self.assertRaises(KeyboardInterrupt):
+            os.kill(os.getpid(), signal.SIGINT)
+
+        smm.shutdown()
+
+    @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    def test_shared_memory_SharedMemoryManager_reuses_resource_tracker(self):
+        # bpo-36867: test that a SharedMemoryManager uses the
+        # same resource_tracker process as its parent.
+        cmd = '''if 1:
+            from multiprocessing.managers import SharedMemoryManager
+
+
+            smm = SharedMemoryManager()
+            smm.start()
+            sl = smm.ShareableList(range(10))
+            smm.shutdown()
+        '''
+        rc, out, err = test.support.script_helper.assert_python_ok('-c', cmd)
+
+        # Before bpo-36867 was fixed, a SharedMemoryManager not using the same
+        # resource_tracker process as its parent would make the parent's
+        # tracker complain about sl being leaked even though smm.shutdown()
+        # properly released sl.
+        self.assertFalse(err)
+
     def test_shared_memory_SharedMemoryManager_basics(self):
         smm1 = multiprocessing.managers.SharedMemoryManager()
         with self.assertRaises(ValueError):
@@ -3871,6 +3982,49 @@ class _TestSharedMemory(BaseTestCase):
 
         deserialized_sl.shm.close()
         sl.shm.close()
+
+    def test_shared_memory_cleaned_after_process_termination(self):
+        cmd = '''if 1:
+            import os, time, sys
+            from multiprocessing import shared_memory
+
+            # Create a shared_memory segment, and send the segment name
+            sm = shared_memory.SharedMemory(create=True, size=10)
+            sys.stdout.write(sm._name + '\\n')
+            sys.stdout.flush()
+            time.sleep(100)
+        '''
+        with subprocess.Popen([sys.executable, '-E', '-c', cmd],
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as p:
+            name = p.stdout.readline().strip().decode()
+
+            # killing abruptly processes holding reference to a shared memory
+            # segment should not leak the given memory segment.
+            p.terminate()
+            p.wait()
+
+            deadline = time.monotonic() + 60
+            t = 0.1
+            while time.monotonic() < deadline:
+                time.sleep(t)
+                t = min(t*2, 5)
+                try:
+                    smm = shared_memory.SharedMemory(name, create=False)
+                except FileNotFoundError:
+                    break
+            else:
+                raise AssertionError("A SharedMemory segment was leaked after"
+                                     " a process was abruptly terminated.")
+
+            if os.name == 'posix':
+                # A warning was emitted by the subprocess' own
+                # resource_tracker (on Windows, shared memory segments
+                # are released automatically by the OS).
+                err = p.stderr.read().decode()
+                self.assertIn(
+                    "resource_tracker: There appear to be 1 leaked "
+                    "shared_memory objects to clean up at shutdown", err)
 
 #
 #
@@ -4503,7 +4657,7 @@ class TestFlags(unittest.TestCase):
         print(json.dumps(flags))
 
     def test_flags(self):
-        import json, subprocess
+        import json
         # start child process using unusual flags
         prog = ('from test._test_multiprocessing import TestFlags; ' +
                 'TestFlags.run_in_child()')
@@ -4803,57 +4957,85 @@ class TestStartMethod(unittest.TestCase):
 
 @unittest.skipIf(sys.platform == "win32",
                  "test semantics don't make sense on Windows")
-class TestSemaphoreTracker(unittest.TestCase):
+class TestResourceTracker(unittest.TestCase):
 
-    def test_semaphore_tracker(self):
+    def test_resource_tracker(self):
         #
         # Check that killing process does not leak named semaphores
         #
-        import subprocess
         cmd = '''if 1:
-            import multiprocessing as mp, time, os
+            import time, os, tempfile
+            import multiprocessing as mp
+            from multiprocessing import resource_tracker
+            from multiprocessing.shared_memory import SharedMemory
+
             mp.set_start_method("spawn")
-            lock1 = mp.Lock()
-            lock2 = mp.Lock()
-            os.write(%d, lock1._semlock.name.encode("ascii") + b"\\n")
-            os.write(%d, lock2._semlock.name.encode("ascii") + b"\\n")
+            rand = tempfile._RandomNameSequence()
+
+
+            def create_and_register_resource(rtype):
+                if rtype == "semaphore":
+                    lock = mp.Lock()
+                    return lock, lock._semlock.name
+                elif rtype == "shared_memory":
+                    sm = SharedMemory(create=True, size=10)
+                    return sm, sm._name
+                else:
+                    raise ValueError(
+                        "Resource type {{}} not understood".format(rtype))
+
+
+            resource1, rname1 = create_and_register_resource("{rtype}")
+            resource2, rname2 = create_and_register_resource("{rtype}")
+
+            os.write({w}, rname1.encode("ascii") + b"\\n")
+            os.write({w}, rname2.encode("ascii") + b"\\n")
+
             time.sleep(10)
         '''
-        r, w = os.pipe()
-        p = subprocess.Popen([sys.executable,
-                             '-E', '-c', cmd % (w, w)],
-                             pass_fds=[w],
-                             stderr=subprocess.PIPE)
-        os.close(w)
-        with open(r, 'rb', closefd=True) as f:
-            name1 = f.readline().rstrip().decode('ascii')
-            name2 = f.readline().rstrip().decode('ascii')
-        _multiprocessing.sem_unlink(name1)
-        p.terminate()
-        p.wait()
-        time.sleep(2.0)
-        with self.assertRaises(OSError) as ctx:
-            _multiprocessing.sem_unlink(name2)
-        # docs say it should be ENOENT, but OSX seems to give EINVAL
-        self.assertIn(ctx.exception.errno, (errno.ENOENT, errno.EINVAL))
-        err = p.stderr.read().decode('utf-8')
-        p.stderr.close()
-        expected = 'semaphore_tracker: There appear to be 2 leaked semaphores'
-        self.assertRegex(err, expected)
-        self.assertRegex(err, r'semaphore_tracker: %r: \[Errno' % name1)
+        for rtype in resource_tracker._CLEANUP_FUNCS:
+            with self.subTest(rtype=rtype):
+                if rtype == "noop":
+                    # Artefact resource type used by the resource_tracker
+                    continue
+                r, w = os.pipe()
+                p = subprocess.Popen([sys.executable,
+                                     '-E', '-c', cmd.format(w=w, rtype=rtype)],
+                                     pass_fds=[w],
+                                     stderr=subprocess.PIPE)
+                os.close(w)
+                with open(r, 'rb', closefd=True) as f:
+                    name1 = f.readline().rstrip().decode('ascii')
+                    name2 = f.readline().rstrip().decode('ascii')
+                _resource_unlink(name1, rtype)
+                p.terminate()
+                p.wait()
+                time.sleep(2.0)
+                with self.assertRaises(OSError) as ctx:
+                    _resource_unlink(name2, rtype)
+                # docs say it should be ENOENT, but OSX seems to give EINVAL
+                self.assertIn(
+                    ctx.exception.errno, (errno.ENOENT, errno.EINVAL))
+                err = p.stderr.read().decode('utf-8')
+                p.stderr.close()
+                expected = ('resource_tracker: There appear to be 2 leaked {} '
+                            'objects'.format(
+                            rtype))
+                self.assertRegex(err, expected)
+                self.assertRegex(err, r'resource_tracker: %r: \[Errno' % name1)
 
-    def check_semaphore_tracker_death(self, signum, should_die):
+    def check_resource_tracker_death(self, signum, should_die):
         # bpo-31310: if the semaphore tracker process has died, it should
         # be restarted implicitly.
-        from multiprocessing.semaphore_tracker import _semaphore_tracker
-        pid = _semaphore_tracker._pid
+        from multiprocessing.resource_tracker import _resource_tracker
+        pid = _resource_tracker._pid
         if pid is not None:
             os.kill(pid, signal.SIGKILL)
             os.waitpid(pid, 0)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            _semaphore_tracker.ensure_running()
-        pid = _semaphore_tracker._pid
+            _resource_tracker.ensure_running()
+        pid = _resource_tracker._pid
 
         os.kill(pid, signum)
         time.sleep(1.0)  # give it time to die
@@ -4874,50 +5056,50 @@ class TestSemaphoreTracker(unittest.TestCase):
                 self.assertEqual(len(all_warn), 1)
                 the_warn = all_warn[0]
                 self.assertTrue(issubclass(the_warn.category, UserWarning))
-                self.assertTrue("semaphore_tracker: process died"
+                self.assertTrue("resource_tracker: process died"
                                 in str(the_warn.message))
             else:
                 self.assertEqual(len(all_warn), 0)
 
-    def test_semaphore_tracker_sigint(self):
+    def test_resource_tracker_sigint(self):
         # Catchable signal (ignored by semaphore tracker)
-        self.check_semaphore_tracker_death(signal.SIGINT, False)
+        self.check_resource_tracker_death(signal.SIGINT, False)
 
-    def test_semaphore_tracker_sigterm(self):
+    def test_resource_tracker_sigterm(self):
         # Catchable signal (ignored by semaphore tracker)
-        self.check_semaphore_tracker_death(signal.SIGTERM, False)
+        self.check_resource_tracker_death(signal.SIGTERM, False)
 
-    def test_semaphore_tracker_sigkill(self):
+    def test_resource_tracker_sigkill(self):
         # Uncatchable signal.
-        self.check_semaphore_tracker_death(signal.SIGKILL, True)
+        self.check_resource_tracker_death(signal.SIGKILL, True)
 
     @staticmethod
-    def _is_semaphore_tracker_reused(conn, pid):
-        from multiprocessing.semaphore_tracker import _semaphore_tracker
-        _semaphore_tracker.ensure_running()
+    def _is_resource_tracker_reused(conn, pid):
+        from multiprocessing.resource_tracker import _resource_tracker
+        _resource_tracker.ensure_running()
         # The pid should be None in the child process, expect for the fork
         # context. It should not be a new value.
-        reused = _semaphore_tracker._pid in (None, pid)
-        reused &= _semaphore_tracker._check_alive()
+        reused = _resource_tracker._pid in (None, pid)
+        reused &= _resource_tracker._check_alive()
         conn.send(reused)
 
-    def test_semaphore_tracker_reused(self):
-        from multiprocessing.semaphore_tracker import _semaphore_tracker
-        _semaphore_tracker.ensure_running()
-        pid = _semaphore_tracker._pid
+    def test_resource_tracker_reused(self):
+        from multiprocessing.resource_tracker import _resource_tracker
+        _resource_tracker.ensure_running()
+        pid = _resource_tracker._pid
 
         r, w = multiprocessing.Pipe(duplex=False)
-        p = multiprocessing.Process(target=self._is_semaphore_tracker_reused,
+        p = multiprocessing.Process(target=self._is_resource_tracker_reused,
                                     args=(w, pid))
         p.start()
-        is_semaphore_tracker_reused = r.recv()
+        is_resource_tracker_reused = r.recv()
 
         # Clean up
         p.join()
         w.close()
         r.close()
 
-        self.assertTrue(is_semaphore_tracker_reused)
+        self.assertTrue(is_resource_tracker_reused)
 
 
 class TestSimpleQueue(unittest.TestCase):
@@ -5274,6 +5456,7 @@ class ProcessesMixin(BaseMixin):
     Process = multiprocessing.Process
     connection = multiprocessing.connection
     current_process = staticmethod(multiprocessing.current_process)
+    parent_process = staticmethod(multiprocessing.parent_process)
     active_children = staticmethod(multiprocessing.active_children)
     Pool = staticmethod(multiprocessing.Pool)
     Pipe = staticmethod(multiprocessing.Pipe)

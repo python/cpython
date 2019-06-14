@@ -274,7 +274,15 @@ def create_unicode_buffer(init, size=None):
     """
     if isinstance(init, str):
         if size is None:
-            size = len(init)+1
+            if sizeof(c_wchar) == 2:
+                # UTF-16 requires a surrogate pair (2 wchar_t) for non-BMP
+                # characters (outside [U+0000; U+FFFF] range). +1 for trailing
+                # NUL character.
+                size = sum(2 if ord(c) > 0xFFFF else 1 for c in init) + 1
+            else:
+                # 32-bit wchar_t (1 wchar_t per Unicode character). +1 for
+                # trailing NUL character.
+                size = len(init) + 1
         buftype = c_wchar * size
         buf = buftype()
         buf.value = init

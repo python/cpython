@@ -2481,6 +2481,14 @@ class TestPath(unittest.TestCase):
             assert a.read_text() == "content of a"
             assert a.read_bytes() == b"content of a"
 
+    def test_joinpath(self):
+        for zipfile_abcde in self.zipfile_abcde():
+            root = zipfile.Path(zipfile_abcde)
+            a = root.joinpath("a")
+            assert a.is_file()
+            e = root.joinpath("b").joinpath("d").joinpath("e.txt")
+            assert e.read_text() == "content of e"
+
     def test_traverse_truediv(self):
         for zipfile_abcde in self.zipfile_abcde():
             root = zipfile.Path(zipfile_abcde)
@@ -2501,6 +2509,12 @@ class TestPath(unittest.TestCase):
         for zipfile_abcde in self.zipfile_abcde():
             root = zipfile.Path(zipfile_abcde)
             root / pathlib.Path("a")
+
+    def test_parent(self):
+        for zipfile_abcde in self.zipfile_abcde():
+            root = zipfile.Path(zipfile_abcde)
+            assert (root / 'a').parent.at == ''
+            assert (root / 'a' / 'b').parent.at == 'a/'
 
 if __name__ == "__main__":
     unittest.main()

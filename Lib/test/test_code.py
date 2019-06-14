@@ -112,7 +112,7 @@ consts: ('None',)
 
 >>> dump(posonly_args.__code__)
 name: posonly_args
-argcount: 1
+argcount: 3
 posonlyargcount: 2
 kwonlyargcount: 0
 names: ()
@@ -130,6 +130,7 @@ import sys
 import threading
 import unittest
 import weakref
+import opcode
 try:
     import ctypes
 except ImportError:
@@ -173,18 +174,14 @@ class CodeTest(unittest.TestCase):
     @cpython_only
     def test_closure_injection(self):
         # From https://bugs.python.org/issue32176
-        from types import FunctionType, CodeType
+        from types import FunctionType
 
         def create_closure(__class__):
             return (lambda: __class__).__closure__
 
         def new_code(c):
             '''A new code object with a __class__ cell added to freevars'''
-            return CodeType(
-                c.co_argcount, c.co_posonlyargcount, c.co_kwonlyargcount, c.co_nlocals,
-                c.co_stacksize, c.co_flags, c.co_code, c.co_consts, c.co_names,
-                c.co_varnames, c.co_filename, c.co_name, c.co_firstlineno,
-                c.co_lnotab, c.co_freevars + ('__class__',), c.co_cellvars)
+            return c.replace(co_freevars=c.co_freevars + ('__class__',))
 
         def add_foreign_method(cls, name, f):
             code = new_code(f.__code__)
@@ -210,6 +207,64 @@ class CodeTest(unittest.TestCase):
         # Ensure the zero-arg super() call in the injected method works
         obj = List([1, 2, 3])
         self.assertEqual(obj[0], "Foreign getitem: 1")
+
+    def test_constructor(self):
+        def func(): pass
+        co = func.__code__
+        CodeType = type(co)
+
+        # test code constructor
+        return CodeType(co.co_argcount,
+                        co.co_posonlyargcount,
+                        co.co_kwonlyargcount,
+                        co.co_nlocals,
+                        co.co_stacksize,
+                        co.co_flags,
+                        co.co_code,
+                        co.co_consts,
+                        co.co_names,
+                        co.co_varnames,
+                        co.co_filename,
+                        co.co_name,
+                        co.co_firstlineno,
+                        co.co_lnotab,
+                        co.co_freevars,
+                        co.co_cellvars)
+
+    def test_replace(self):
+        def func():
+            x = 1
+            return x
+        code = func.__code__
+
+        # different co_name, co_varnames, co_consts
+        def func2():
+            y = 2
+            return y
+        code2 = func.__code__
+
+        for attr, value in (
+            ("co_argcount", 0),
+            ("co_posonlyargcount", 0),
+            ("co_kwonlyargcount", 0),
+            ("co_nlocals", 0),
+            ("co_stacksize", 0),
+            ("co_flags", code.co_flags | inspect.CO_COROUTINE),
+            ("co_firstlineno", 100),
+            ("co_code", code2.co_code),
+            ("co_consts", code2.co_consts),
+            ("co_names", ("myname",)),
+            ("co_varnames", code2.co_varnames),
+            ("co_freevars", ("freevar",)),
+            ("co_cellvars", ("cellvar",)),
+            ("co_filename", "newfilename"),
+            ("co_name", "newname"),
+            ("co_lnotab", code2.co_lnotab),
+        ):
+            with self.subTest(attr=attr, value=value):
+                new_code = code.replace(**{attr: value})
+                self.assertEqual(getattr(new_code, attr), value)
+
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
@@ -378,6 +433,43 @@ if check_impl_detail(cpython=True) and ctypes is not None:
             tt.start()
             tt.join()
             self.assertEqual(LAST_FREED, 500)
+
+        @cpython_only
+        def test_clean_stack_on_return(self):
+
+            def f(x):
+                return x
+
+            code = f.__code__
+            ct = type(f.__code__)
+
+            # Insert an extra LOAD_FAST, this duplicates the value of
+            # 'x' in the stack, leaking it if the frame is not properly
+            # cleaned up upon exit.
+
+            bytecode = list(code.co_code)
+            bytecode.insert(-2, opcode.opmap['LOAD_FAST'])
+            bytecode.insert(-2, 0)
+
+            c = ct(code.co_argcount, code.co_posonlyargcount,
+                   code.co_kwonlyargcount, code.co_nlocals, code.co_stacksize+1,
+                   code.co_flags, bytes(bytecode),
+                   code.co_consts, code.co_names, code.co_varnames,
+                   code.co_filename, code.co_name, code.co_firstlineno,
+                   code.co_lnotab, code.co_freevars, code.co_cellvars)
+            new_function = type(f)(c, f.__globals__, 'nf', f.__defaults__, f.__closure__)
+
+            class Var:
+                pass
+            the_object = Var()
+            var = weakref.ref(the_object)
+
+            new_function(the_object)
+
+            # Check if the_object is leaked
+            del the_object
+            assert var() is None
+
 
 def test_main(verbose=None):
     from test import test_code

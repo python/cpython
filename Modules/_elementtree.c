@@ -669,7 +669,7 @@ element_dealloc(ElementObject* self)
 {
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_SAFE_BEGIN(self)
+    Py_TRASHCAN_BEGIN(self, element_dealloc)
 
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
@@ -680,7 +680,7 @@ element_dealloc(ElementObject* self)
 
     RELEASE(sizeof(ElementObject), "destroy element");
     Py_TYPE(self)->tp_free((PyObject *)self);
-    Py_TRASHCAN_SAFE_END(self)
+    Py_TRASHCAN_END
 }
 
 /* -------------------------------------------------------------------- */
@@ -1809,7 +1809,8 @@ element_subscr(PyObject* self_, PyObject* item)
         return element_getitem(self_, i);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelen, cur, i;
+        Py_ssize_t start, stop, step, slicelen, i;
+        size_t cur;
         PyObject* list;
 
         if (!self->extra)
@@ -1861,7 +1862,8 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         return element_setitem(self_, i, value);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelen, newlen, cur, i;
+        Py_ssize_t start, stop, step, slicelen, newlen, i;
+        size_t cur;
 
         PyObject* recycle = NULL;
         PyObject* seq;
@@ -2320,10 +2322,10 @@ static PyTypeObject ElementIter_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)elementiter_dealloc,            /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -4226,10 +4228,10 @@ static PyTypeObject Element_Type = {
     "xml.etree.ElementTree.Element", sizeof(ElementObject), 0,
     /* methods */
     (destructor)element_dealloc,                    /* tp_dealloc */
-    0,                                              /* tp_print */
+    0,                                              /* tp_vectorcall_offset */
     0,                                              /* tp_getattr */
     0,                                              /* tp_setattr */
-    0,                                              /* tp_reserved */
+    0,                                              /* tp_as_async */
     (reprfunc)element_repr,                         /* tp_repr */
     0,                                              /* tp_as_number */
     &element_as_sequence,                           /* tp_as_sequence */
@@ -4278,10 +4280,10 @@ static PyTypeObject TreeBuilder_Type = {
     "xml.etree.ElementTree.TreeBuilder", sizeof(TreeBuilderObject), 0,
     /* methods */
     (destructor)treebuilder_dealloc,                /* tp_dealloc */
-    0,                                              /* tp_print */
+    0,                                              /* tp_vectorcall_offset */
     0,                                              /* tp_getattr */
     0,                                              /* tp_setattr */
-    0,                                              /* tp_reserved */
+    0,                                              /* tp_as_async */
     0,                                              /* tp_repr */
     0,                                              /* tp_as_number */
     0,                                              /* tp_as_sequence */
@@ -4328,10 +4330,10 @@ static PyTypeObject XMLParser_Type = {
     "xml.etree.ElementTree.XMLParser", sizeof(XMLParserObject), 0,
     /* methods */
     (destructor)xmlparser_dealloc,                  /* tp_dealloc */
-    0,                                              /* tp_print */
+    0,                                              /* tp_vectorcall_offset */
     0,                                              /* tp_getattr */
     0,                                              /* tp_setattr */
-    0,                                              /* tp_reserved */
+    0,                                              /* tp_as_async */
     0,                                              /* tp_repr */
     0,                                              /* tp_as_number */
     0,                                              /* tp_as_sequence */
