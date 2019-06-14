@@ -958,6 +958,7 @@ class SubinterpThreadingTests(BaseTestCase):
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         # The thread was joined properly.
+        os.set_blocking(r, False)
         self.assertEqual(os.read(r, 1), b"x")
 
     def test_threads_join_2(self):
@@ -997,6 +998,7 @@ class SubinterpThreadingTests(BaseTestCase):
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         # The thread was joined properly.
+        os.set_blocking(r, False)
         self.assertEqual(os.read(r, 1), b"x")
 
     def test_daemon_thread(self):
@@ -1016,12 +1018,15 @@ class SubinterpThreadingTests(BaseTestCase):
             try:
                 thread.start()
             except RuntimeError as exc:
-                print("ok: %s" % exc, file=channel)
+                print("ok: %s" % exc, file=channel, flush=True)
             else:
                 thread.join()
-                print("fail: RuntimeError not raised", file=channel)
+                print("fail: RuntimeError not raised", file=channel, flush=True)
         """)
         ret = test.support.run_in_subinterp(code)
+        self.assertEqual(ret, 0)
+
+        os.set_blocking(r, False)
         msg = os.read(r, 100).decode().rstrip()
         self.assertEqual("ok: daemon thread are not supported "
                          "in subinterpreters", msg)
