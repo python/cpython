@@ -213,24 +213,11 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
     return blocks;
 }
 
-/* Perform basic peephole optimizations to components of a code object.
-   The consts object should still be in list form to allow new constants
-   to be appended.
-
-   To keep the optimizer simple, it bails when the lineno table has complex
-   encoding for gaps >= 255.
-
-   Optimizations are restricted to simple transformations occurring within a
-   single basic block.  All transformations keep the code size the same or
-   smaller.  For those that reduce size, the gaps are initially filled with
-   NOPs.  Later those NOPs are removed and the jump addresses retargeted in
-   a single pass. */
-
-PyObject *
-PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
-                PyObject *lnotab_obj)
+static PyObject *
+optimize_bytecode_once(PyObject *code, PyObject* consts, PyObject *names,
+                       PyObject *lnotab_obj)
 {
-    Py_ssize_t h, i, nexti, op_start, tgt;
+    Py_ssize_t h, i, nexti, op_start, tgt, index;
     unsigned int j, nops;
     unsigned char opcode, nextop;
     _Py_CODEUNIT *codestr = NULL;
@@ -474,10 +461,14 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         unsigned int offset_delta, new_offset;
         cum_orig_offset += lnotab[i];
         assert(cum_orig_offset % sizeof(_Py_CODEUNIT) == 0);
-        new_offset = blocks[cum_orig_offset / sizeof(_Py_CODEUNIT)] *
-                sizeof(_Py_CODEUNIT);
-        offset_delta = new_offset - last_offset;
-        assert(offset_delta <= 255);
+        index = cum_orig_offset / sizeof(_Py_CODEUNIT);
+        if (index >= codelen) {
+            continue;
+        } else {
+            new_offset = blocks[index] * sizeof(_Py_CODEUNIT);
+            offset_delta = new_offset - last_offset;
+            assert(offset_delta < 255);
+        }
         lnotab[i] = (unsigned char)offset_delta;
         last_offset = new_offset;
     }
@@ -535,4 +526,47 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     PyMem_Free(blocks);
     PyMem_Free(codestr);
     return code;
+}
+
+/* Perform basic peephole optimizations to components of a code object.
+   The consts object should still be in list form to allow new constants
+   to be appended.
+
+   To keep the optimizer simple, it bails when the lineno table has complex
+   encoding for gaps >= 255.
+
+   Optimizations are restricted to simple transformations occurring within a
+   single basic block.  All transformations keep the code size the same or
+   smaller.  For those that reduce size, the gaps are initially filled with
+   NOPs.  Later those NOPs are removed and the jump addresses retargeted in
+   a single pass. */
+
+PyObject *
+PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
+                PyObject *lnotab_obj)
+{
+    PyObject* bytecode = code;
+    PyObject* old_bytecode = NULL;
+    PyObject* tmp = NULL;
+    int compare_bytecode;
+    do {
+        old_bytecode = PyBytes_FromStringAndSize(PyBytes_AsString(bytecode),
+                                                 PyBytes_GET_SIZE(bytecode));
+        tmp = bytecode;
+        bytecode = optimize_bytecode_once(bytecode, consts, names, lnotab_obj);
+        if (tmp != code) {
+            Py_DECREF(tmp);
+        }
+        if (!bytecode) {
+            Py_DECREF(old_bytecode);
+            return NULL;
+        }
+        compare_bytecode = PyObject_RichCompareBool(old_bytecode, bytecode, Py_NE);
+        Py_DECREF(old_bytecode);
+        if (compare_bytecode == -1) {
+            break;
+        }
+    } while (compare_bytecode);
+
+    return bytecode;
 }

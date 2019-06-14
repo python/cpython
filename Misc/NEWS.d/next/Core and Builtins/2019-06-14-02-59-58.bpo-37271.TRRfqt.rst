@@ -1,0 +1,2 @@
+The peephole optimizer now does multiple runs until the resulting bytecode
+cannot be optimized further. Patch by Pablo Galindo.

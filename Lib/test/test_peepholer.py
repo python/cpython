@@ -295,10 +295,13 @@ class TestTranforms(BytecodeTestCase):
         # POP_JUMP_IF_FALSE to JUMP_FORWARD --> POP_JUMP_IF_FALSE to non-jump
         def f():
             if a:
-                # Intentionally use two-line expression to test issue37213.
-                if (c
-                    or d):
-                    foo()
+                if b:
+                    # Intentionally use two-line expression to test issue37213.
+                    if (c
+                        or d):
+                        foo()
+                else:
+                    bar()
             else:
                 baz()
         self.check_jump_targets(f)
@@ -307,10 +310,13 @@ class TestTranforms(BytecodeTestCase):
         # POP_JUMP_IF_FALSE to JUMP_ABSOLUTE --> POP_JUMP_IF_FALSE to non-jump
         def f():
             while a:
-                # Intentionally use two-line expression to test issue37213.
-                if (c
-                    or d):
-                    a = foo()
+                if b:
+                    # Intentionally use two-line expression to test issue37213.
+                    if (c
+                        or d):
+                        a = foo()
+                else:
+                    a = bar()
         self.check_jump_targets(f)
 
     def test_elim_jump_to_uncond_jump3(self):
@@ -370,7 +376,7 @@ class TestTranforms(BytecodeTestCase):
         # There should be one jump for the while loop.
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'JUMP_ABSOLUTE']
-        self.assertEqual(len(returns), 1)
+        self.assertEqual(len(returns), 0)
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
         self.assertLessEqual(len(returns), 2)
