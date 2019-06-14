@@ -462,7 +462,8 @@ class BaseTestUUID:
         with mock.patch.multiple(
             self.uuid,
             _node=None,  # Ignore any cached node value.
-            _NODE_GETTERS=[too_large_getter],
+            _NODE_GETTERS_WIN32=[too_large_getter],
+            _NODE_GETTERS_UNIX=[too_large_getter],
         ):
             node = self.uuid.getnode()
         self.assertTrue(0 < node < (1 << 48), '%012x' % node)
@@ -705,6 +706,7 @@ en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
         self.assertEqual(mac, 0xfead0c012304)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipIf(_AIX, 'AIX has different DELIM')
     # key and value are on the same line aka 'inline'
     def test_find_mac_inline(self):
         data = '''

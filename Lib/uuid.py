@@ -381,7 +381,8 @@ def _popen(command, *args):
 def _is_universal(mac):
     return not (mac & (1 << 41))
 
-def _find_mac(command, args, hw_identifiers, get_index):
+# keyword and value are on the same line aka 'inline'
+def _find_mac_inline(command, args, hw_identifiers, get_index):
     first_local_mac = None
     try:
         proc = _popen(command, *args.split())
@@ -409,7 +410,8 @@ def _find_mac(command, args, hw_identifiers, get_index):
         pass
     return first_local_mac or None
 
-def _find_mac_netstat(command, args, hw_identifiers, get_index):
+# value is on the line following the keyword - aka 'nextline'
+def _find_mac_nextline(command, args, hw_identifiers, get_index):
     first_local_mac = None
     mac = None
     try:
@@ -456,7 +458,7 @@ def _ifconfig_getnode():
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
     keywords = (b'hwaddr', b'ether', b'address:', b'lladdr')
     for args in ('', '-a', '-av'):
-        mac = _find_mac('ifconfig', args, keywords, lambda i: i+1)
+        mac = _find_mac_inline('ifconfig', args, keywords, lambda i: i+1)
         if mac:
             return mac
         return None
@@ -464,7 +466,7 @@ def _ifconfig_getnode():
 def _ip_getnode():
     """Get the hardware address on Unix by running ip."""
     # This works on Linux with iproute2.
-    mac = _find_mac('ip', 'link', [b'link/ether'], lambda i: i+1)
+    mac = _find_mac_inline('ip', 'link', [b'link/ether'], lambda i: i+1)
     if mac:
         return mac
     return None
@@ -478,17 +480,17 @@ def _arp_getnode():
         return None
 
     # Try getting the MAC addr from arp based on our IP address (Solaris).
-    mac = _find_mac('arp', '-an', [os.fsencode(ip_addr)], lambda i: -1)
+    mac = _find_mac_inline('arp', '-an', [os.fsencode(ip_addr)], lambda i: -1)
     if mac:
         return mac
 
     # This works on OpenBSD
-    mac = _find_mac('arp', '-an', [os.fsencode(ip_addr)], lambda i: i+1)
+    mac = _find_mac_inline('arp', '-an', [os.fsencode(ip_addr)], lambda i: i+1)
     if mac:
         return mac
 
     # This works on Linux, FreeBSD and NetBSD
-    mac = _find_mac('arp', '-an', [os.fsencode('(%s)' % ip_addr)],
+    mac = _find_mac_inline('arp', '-an', [os.fsencode('(%s)' % ip_addr)],
                     lambda i: i+2)
     # Return None instead of 0.
     if mac:
@@ -498,12 +500,12 @@ def _arp_getnode():
 def _lanscan_getnode():
     """Get the hardware address on Unix by running lanscan."""
     # This might work on HP-UX.
-    return _find_mac('lanscan', '-ai', [b'lan0'], lambda i: 0)
+    return _find_mac_inline('lanscan', '-ai', [b'lan0'], lambda i: 0)
 
 def _netstat_getnode():
     """Get the hardware address on Unix by running netstat."""
     # This works on AIX and might work on Tru64 UNIX.
-    mac = _find_mac_netstat('netstat', '-ia', b'Address', lambda i: i)
+    mac = _find_mac_nextline('netstat', '-ia', b'Address', lambda i: i)
     return mac or None
 
 def _ipconfig_getnode():
