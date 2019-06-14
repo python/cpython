@@ -414,6 +414,13 @@ class TestTranforms(BytecodeTestCase):
                 pass
         self.assertEqual(count_instr_recursively(forloop, 'BUILD_LIST'), 0)
 
+    def test_condition_with_binop_with_bools(self):
+        def f():
+            if True or False:
+                return 1
+            return 0
+        self.assertEqual(f(), 1)
+
 
 class TestBuglets(unittest.TestCase):
 
