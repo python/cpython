@@ -1,0 +1,1 @@
+Fixed a race condition in shutil.rmtree() in which directory entries removed by another process or thread while shutil.rmtree() is running can cause shutil.rmtree() to raise FileNotFoundError.  Patch by Jeffrey Kintscher.
