@@ -8,7 +8,7 @@
     </PropertyGroup>
     <Import Project="..\msi.props" />
     <PropertyGroup>
-        <DefineConstants Condition="$(BuildForRelease)">
+        <DefineConstants Condition="$(BuildForRelease) and $(SuppressMinGWLib) == ''">
             $(DefineConstants);
             IncludeMinGWLib=1;
         </DefineConstants>
