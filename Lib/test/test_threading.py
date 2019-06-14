@@ -929,13 +929,18 @@ class ThreadJoinOnShutdown(BaseTestCase):
 
 
 class SubinterpThreadingTests(BaseTestCase):
+    def pipe(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        if hasattr(os, 'set_blocking'):
+            os.set_blocking(r, False)
+        return (r, w)
 
     def test_threads_join(self):
         # Non-daemon threads should be joined at subinterpreter shutdown
         # (issue #18808)
-        r, w = os.pipe()
-        self.addCleanup(os.close, r)
-        self.addCleanup(os.close, w)
+        r, w = self.pipe()
         code = textwrap.dedent(r"""
             import os
             import random
@@ -958,7 +963,6 @@ class SubinterpThreadingTests(BaseTestCase):
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         # The thread was joined properly.
-        os.set_blocking(r, False)
         self.assertEqual(os.read(r, 1), b"x")
 
     def test_threads_join_2(self):
@@ -966,9 +970,7 @@ class SubinterpThreadingTests(BaseTestCase):
         # Python code returned but before the thread state is deleted.
         # To achieve this, we register a thread-local object which sleeps
         # a bit when deallocated.
-        r, w = os.pipe()
-        self.addCleanup(os.close, r)
-        self.addCleanup(os.close, w)
+        r, w = self.pipe()
         code = textwrap.dedent(r"""
             import os
             import random
@@ -998,13 +1000,10 @@ class SubinterpThreadingTests(BaseTestCase):
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         # The thread was joined properly.
-        os.set_blocking(r, False)
         self.assertEqual(os.read(r, 1), b"x")
 
     def test_daemon_thread(self):
-        r, w = os.pipe()
-        self.addCleanup(os.close, r)
-        self.addCleanup(os.close, w)
+        r, w = self.pipe()
         code = textwrap.dedent(f"""
             import threading
             import sys
@@ -1026,7 +1025,6 @@ class SubinterpThreadingTests(BaseTestCase):
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
 
-        os.set_blocking(r, False)
         msg = os.read(r, 100).decode().rstrip()
         self.assertEqual("ok: daemon thread are not supported "
                          "in subinterpreters", msg)
