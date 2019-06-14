@@ -182,9 +182,9 @@ wmain(int argc, wchar_t **argv)
             if (*p++ == L'\\') {
                 if (wcsnicmp(p, L"pip", 3) == 0) {
                     moduleName = L"pip";
+                    /* No longer required when pip 19.1 is added */
                     _wputenv_s(L"PIP_USER", L"true");
-                }
-                else if (wcsnicmp(p, L"idle", 4) == 0) {
+                } else if (wcsnicmp(p, L"idle", 4) == 0) {
                     moduleName = L"idlelib";
                 }
             }
