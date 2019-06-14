@@ -1,0 +1,34 @@
+jobs:
+- job: Publish_Python
+  displayName: Publish python.org packages
+  condition: and(succeeded(), and(eq(variables['DoMSI'], 'true'), eq(variables['DoEmbed'], 'true')))
+
+  pool:
+    vmName: win2016-vs2017
+
+  workspace:
+    clean: all
+
+  steps:
+  - checkout: none
+
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download artifact: Doc'
+    inputs:
+      artifactName: Doc
+      downloadPath: $(Build.BinariesDirectory)
+
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download artifact: msi'
+    inputs:
+      artifactName: msi
+      downloadPath: $(Build.BinariesDirectory)
+
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download artifact: embed'
+    inputs:
+      artifactName: embed
+      downloadPath: $(Build.BinariesDirectory)
+
+  # TODO: eq(variables['SigningCertificate'], 'Python Software Foundation')
+  # If we are not real-signed, DO NOT PUBLISH
