@@ -566,7 +566,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             addr = server.sockets[0].getsockname()
 
             with self.tcp_client(lambda sock: client(sock, addr),
-                                 timeout=self.TIMEOUT) as threaded_client:
+                                 timeout=self.TIMEOUT):
                 await asyncio.wait_for(
                     main(proto, on_con, on_con_lost),
                     timeout=self.TIMEOUT)
