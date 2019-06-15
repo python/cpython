@@ -223,8 +223,7 @@ loop. Let's add a bit more error handling:
                     yield json.loads(message)
                 except json.decoder.JSONDecodeError:
                     continue
-        except (IncompleteReadError, ConnectionAbortedError,
-                ConnectionResetError, CancelledError):
+        except (OSError, IncompleteReadError, CancelledError):
             # The connection is dead, leave.
             return
 
@@ -240,6 +239,16 @@ choose to terminate a connection if a particular payload fails to
 deserialise properly. It seems unlikely that a client would send
 through only a few invalid JSON messages, but the rest valid. For
 simplicity, we'll keep what we have for now, and move onto
+
+.. note::
+    There are several different kinds of connection-related errors,
+    like ``ConnectionError``, and ``ConnectionAbortedError`` and so on.
+    Unless you specifically want to know which kind of exception
+    occurred, it is safe to use ``OSError`` because all the connection-related
+    exceptions are subclasses of the built-in ``OSError``. The other
+    exception type to keep an eye on is ``IncompleteReadError`` which is
+    provided by the ``asyncio`` module, and is *not* a subclass of
+    ``OSError``.
 
 Sending A Message
 ^^^^^^^^^^^^^^^^^
@@ -281,7 +290,7 @@ and ``send_message()``, into their own module called ``utils.py``
 (Since we'll be using these function in both our server code and
 our client code!).
 
-For completeness, here is the utils module:
+For completeness, here is that final utils module:
 
 .. literalinclude:: utils01.py
     :caption: utils.py
