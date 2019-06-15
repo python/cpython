@@ -2629,19 +2629,13 @@ class Symlink(unittest.TestCase):
         pass
 
     def test_bool_argument_type_checking(self):
-        bool_args = ['overwrite', 'follow_symlinks', 'target_is_dir',
-                     'dst_is_file', 'dst_is_dir']
+        bool_args = ['overwrite', 'follow_symlinks', 'target_is_dir']
 
         # Set each bool arg to be non-bool ('X'), one after another
         for arg in bool_args:
             kwargs = {k: 'X' if k == arg else True for k in bool_args}
             with self.assertRaises(TypeError):
                 shutil.symlink(self.src_file1, self.dst_file1, **kwargs)
-
-    def test_dst_is_file_and_dst_is_dir(self):
-        with self.assertRaises(ValueError):
-            shutil.symlink(self.src_file1, self.dst_dir1,
-                           dst_is_file=True, dst_is_dir=True)
 
 
 class PublicAPITests(unittest.TestCase):

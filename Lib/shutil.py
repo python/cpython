@@ -1482,14 +1482,12 @@ def _create_or_replace(dst, create_temp_dest):
 def _link_or_symlink_parse_args(src_or_srcs, dst, overwrite,
                                 follow_symlinks, *, target_is_dir=False):
     """Check that the arguments to link or symlink are valid."""
-
     if not any(isinstance(src_or_srcs, typ) for typ in [list, set, tuple]):
         sources = [src_or_srcs]
     else:  # src_or_srcs is already something list-y
         sources = src_or_srcs
 
-    for bool_arg in ['overwrite', 'follow_symlinks', 'target_is_dir',
-                     'dst_is_file', 'dst_is_dir']:
+    for bool_arg in ['overwrite', 'follow_symlinks', 'target_is_dir']:
         if not isinstance(locals()[bool_arg], bool):
             raise TypeError(f"{bool_arg} not a bool")
 
@@ -1500,67 +1498,30 @@ def _link_or_symlink_parse_args(src_or_srcs, dst, overwrite,
     return sources
 
 
-def symlink(target_or_targets, dst, *, overwrite=False, follow_symlinks=True,
-            target_is_dir=False, dst_is_file=False, dst_is_dir=False):
-    """Create symbolic links to a target (if not a list) or to list of targets
-    in `dst`. `dst` must be a directory if more than one target is given.
+def symlink(src_or_srcs, dst, *, overwrite=False, follow_symlinks=True,
+            target_is_dir=False):
+    """Symbolic link(s) to a single source or a list of multiple sources.
 
-    With `overwrite=True`, attempt to overwrite an existing destination
+    Given a single source, `dst` is assumed to be a file, even if it is a
+    symlink to a directory. This allows for replacing symlinks and ensuring
+    that a link is created as `dst` rather than `dst`/src.
 
-    With `follow_symlinks=False`, create symlinks to symlinks
+    Given a list of sources, `dst` must be a directory and links to each
+    source are created inside `dst`.
+
+    With `overwrite=True`, attempt to overwrite an existing destination.
+
+    With `follow_symlinks=False`, create symlinks to symlinks XXXXXXXXX
 
     On Windows, a symlink represents either a file or a directory, and does not
     morph to the target dynamically. If the target is present, the type of the
     symlink will be created to match. Otherwise, the symlink will be created as
     a directory if `target_is_dir` is True or a file symlink (the default)
     otherwise. On non-Windows platforms, `target_is_dir` is ignored.
-
-    With `dst_is_file=True`, a single target, and `dst` is a:
-      directory: raise `IsADirectoryError`
-      symlink to a directory: operate on the symlink rather than the directory
-    With `dst_is_file=False`, create links inside `dst` if it is a directory or
-      a symlink to a directory.
-
-    With `dst_is_dir=True`, raise `NotADirectoryError` if `dst` is not either a
-    directory or a symlink to a directory. Allows ensuring a single target is
-    linked inside `dst`, not as `dst` itself.
-
-    If `dst` as a directory, links are created inside it, unless given
-    `dst_is_dir=False` which will instead raise `IsADirectoryError`
-    With `dst_is_dir=True`, raise `NotADirectoryError` if `dst` is not either a
-    directory or a symlink to a directory.
-
     """
 
     targets = _link_or_symlink_parse_args(src_or_srcs, dst, overwrite,
                                           follow_symlinks, target_is_dir)
-    if not any(isinstance(target_or_targets, l) for l in [list, set, tuple]):
-        targets = [target_or_targets]
-    else:
-        targets = target_or_targets
-
-    for bool_arg in ['overwrite', 'follow_symlinks', 'target_is_dir',
-                     'dst_is_file', 'dst_is_dir']:
-        if not isinstance(locals()[bool_arg], bool):
-            raise TypeError(f"{bool_arg} not a bool")
-
-    if len(targets) > 1 and not os.path.isdir(dst):
-        raise NotADirectoryError(
-            f'Destination "{dst}" not a directory and multiple targets given')
-
-    if len(targets) > 1 and dst_is_file:
-        raise ValueError(
-            f'Destination must be a directory with multiple targets')
-
-    if dst_is_file and dst_is_dir:
-        raise ValueError('Destination cannot be both file and directory')
-
-    if dst_is_file and os.path.isdir(dst) and not os.is_link(dst):
-        raise NotADirectoryError(f'Destination "{dst}" not a file as required')
-
-    if dst_is_dir and not os.path.isdir(dst):
-        raise NotADirectoryError(
-            f'Destination "{dst}" not a directory as required')
 
     for target in targets:
         if follow_symlinks: # XXXXXXXXXXXXXXXXXXX XXX
