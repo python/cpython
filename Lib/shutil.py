@@ -1517,7 +1517,12 @@ def symlink(target_or_targets, dst, *, overwrite=False, follow_symlinks=True,
     else:
         targets = target_or_targets
 
-    if len(targets) > 1 and not os.is_dir(dst):
+    for bool_arg in ['overwrite', 'follow_symlinks', 'target_is_dir',
+                     'dst_is_file', 'dst_is_dir']:
+        if not isinstance(locals()[bool_arg], bool):
+            raise TypeError(f"{bool_arg} not a bool")
+
+    if len(targets) > 1 and not os.path.isdir(dst):
         raise NotADirectoryError(
             f'Destination "{dst}" not a directory and multiple targets given')
 
