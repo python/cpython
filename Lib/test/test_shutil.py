@@ -2541,22 +2541,21 @@ class TestGetTerminalSize(unittest.TestCase):
 class Symlink(unittest.TestCase):
 
     def setUp(self):
-        print("In setUp")
-        self.tmp_dir = tempfile.mkdtemp()
+        # Create extant directories, files and symlinks
         extant_files = {'src_file1': 'sf1', 'src_file2': 'sf2',
-                        'dst_file1': 'df1'}
+                        'dst_file1': 'df1',
+                        'dst_file2': os.path.join('dd1', 'df2')}
         extant_dirs = {'dst_dir1': 'dd1'}
         extant_links = {'link_broken': 'non-extant', 'link_dir': 'dd1',
-                        'link_file': 'df1'}
-
-        # Create extant items
-        for name, value in extant_files.items():
-            path = os.path.join(self.tmp_dir, value)
-            os.mknod(path)
-            setattr(self, name, path)
+                        'link_file': 'dd1/df2'}
+        self.tmp_dir = tempfile.mkdtemp()
         for name, value in extant_dirs.items():
             path = os.path.join(self.tmp_dir, value)
             os.mkdir(path)
+            setattr(self, name, path)
+        for name, value in extant_files.items():
+            path = os.path.join(self.tmp_dir, value)
+            open(path, 'w').close()  # os.mknod needs root on MacOS
             setattr(self, name, path)
         for link_name, target in extant_links.items():
             dst = os.path.join(self.tmp_dir, link_name)
@@ -2564,20 +2563,70 @@ class Symlink(unittest.TestCase):
             os.symlink(src, dst)
             setattr(self, target, link_name)
 
+        # Create pathnames for new directories, files and symlinks XXX dirs
+        new_files = {'nf1': 'nf1', 'nf2': os.path.join('dd1', 'nf2')}
+        # Add relative links
+        for name, value in new_files.items():
+            path = os.path.join(self.tmp_dir, value)
+            setattr(self, name, path)
+
     def tearDown(self):
-        print("In tearDown")
         try:
             shutil.rmtree(self.tmp_dir)
         except BaseException:
             pass
 
-# bool_args = set(('overwrite', 'follow_symlinks', 'target_is_dir',
-#                 'dst_is_dir', 'dst_is_file'))
-#
-# # Set each bool arg to be non-bool one by one:
-# for arg in bool_args:
-#     kwargs = {k:'X' if k == arg else True for k in bool_args }
-#     print(kwargs)
+    def test_1src_dst_file(self):
+        shutil.symlink(self.src_file1, self.nf1)
+        self.assertEqual(self.src_file1, os.readlink(self.nf1))
+        describe(os.readlink(self.nf1))
+
+    def test_2src_dst_file(self):
+        with self.assertRaises(NotADirectoryError):
+            shutil.symlink([self.src_file1, self.src_file2], self.dst_file1)
+
+    def test_2src_dst_not_exist(self):
+        with self.assertRaises(NotADirectoryError):
+            shutil.symlink([self.src_file1, self.src_file2], self.nf1)
+
+    def test_dst_file_exists(self):
+        with self.assertRaises(FileExistsError):
+            shutil.symlink(self.src_file1, self.dst_file1)
+
+    def test_dst_exists_as_dir(self):
+        with self.assertRaises(IsADirectoryError):
+            shutil.symlink(self.src_file1, self.dst_dir1)
+
+    def test_overwrite(self):
+        shutil.symlink(self.src_file1, self.dst_file1, overwrite=True)
+        self.assertEqual(self.src_file1, os.readlink(self.dst_file1))
+
+
+        # shutil.symlink(self.src_file1, self.nf1, overwrite=true)
+        # self.assertEqual(self.src_file1, os.readlink(self.nf1))
+        # describe(os.readlink(self.nf1))
+
+    def test_dst_dir(self):
+        link_path = os.path.join(self.dst_dir1, os.path.basename(self.src_file1))
+        shutil.symlink(self.src_file1, self.dst_dir1)
+        self.assertEqual(self.src_file1, os.readlink(link_path))
+        describe(os.readlink(link_path))
+
+    def test_dst_dir_relative(self):
+        pass
+
+    def test_only_two_positional_args(self):
+        with self.assertRaises(TypeError):
+            shutil.symlink(self.src_file1, self.dst_file1, True)
+
+    def test_(self):
+        pass
+
+    def test_(self):
+        pass
+
+    def test_(self):
+        pass
 
     def test_bool_argument_type_checking(self):
         bool_args = ['overwrite', 'follow_symlinks', 'target_is_dir',
@@ -2585,11 +2634,9 @@ class Symlink(unittest.TestCase):
 
         # Set each bool arg to be non-bool ('X'), one after another
         for arg in bool_args:
-            kwargs = {k:'X' if k == arg else True for k in bool_args}
-            print(kwargs)
+            kwargs = {k: 'X' if k == arg else True for k in bool_args}
             with self.assertRaises(TypeError):
-                print(f"testing: {arg}")
-                shutil.symlink(self.src_file1, self.dst_file1, kwargs)
+                shutil.symlink(self.src_file1, self.dst_file1, **kwargs)
 
     def test_dst_is_file_and_dst_is_dir(self):
         with self.assertRaises(ValueError):
