@@ -18,14 +18,14 @@ Let's make a function that communicates over the network:
 This function will:
 
 #. make a socket connection to a host,
-#. send a greeting, and
-#. wait for a reply.
+#. send ``b'Hello, world```, and
+#. **wait** for a reply.
 
-The key point here is about the word *wait*: execution proceeds line-by-line
-until the line ``reply = s.recv(1024)``. We call this behaviour
-*synchronous*. At this point, execution pauses
-until we get a reply from the host. This is as we expect:
-Python only ever executes one line at a time.
+The key point here is about the word *wait*: in the code, execution proceeds line-by-line
+until the line ``reply = s.recv(1024)``. While these lines
+of code are executing, no other code (in the same thread) can run. We call this behaviour
+*synchronous*. At the point where we wait, execution pauses
+until we get a reply from the host.
 
 Now the question comes up: what if you need to send a greeting to
 *multiple* hosts? You could just call it twice, right?
@@ -58,22 +58,23 @@ Preemptive Concurrency
 ----------------------
 
 Operating systems like Windows, Mac and Linux, and others, understand
-this problem deeply. If you're reading this on a computer or even your
+this problem deeply. If you're reading this on a computer or even on your
 mobile, there will be tens or hundreds of processes running at the same
 time on your device. At least, they will appear to be running
 concurrently.  What is really happening is that the operating system
 is sharing little slices of processor (CPU) time among all the
-processes.  If we started two copies of our ``greet`` program at the
-same time, they *would* run (and therefore wait) concurrently which is
-exactly what we want.
+processes.  If we started two completely separate instances of our ``greet`` program at the same time, they *would* run (and therefore wait)
+concurrently which is exactly what we want.
 
-However, there is a price for that: each new process consumes resources
-from the operating system.  But more than that, there is another tricky
+However, there is a price for that: each new process consumes extra resources
+from the operating system; it's not just that we wait in parallel, but
+*everything* is now in parallel, a full copy of our program.
+But more than that, there is another tricky
 problem about *how* the operating system knows when to allocate
-execution time between each process. The answer: it doesn't! This means
-that the operating system can decide when to give processor time to each
-process. Your code, and therefore you, will not know when these switches
-occur. This is called "preemption". From
+execution time between each copy of our process. The answer: it doesn't!
+This means that the operating system can decide when to give processor
+time to each process. Your code, and therefore you, will not know when
+these switches occur. This is called "preemption". From
 `Wikipedia <https://en.wikipedia.org/wiki/Preemption_(computing)>`_:
 *In computing, preemption is the act of temporarily interrupting a
 task being carried out by a computer system, without requiring
@@ -87,7 +88,7 @@ threads share all the memory in their parent process.
 
 Because of this preemptive switching, you will never be sure of
 when each of your processes and threads is *actually* executing on
-a CPU. For processes, this is quite safe because
+a CPU *relative to each other*. For processes, this is quite safe because
 their memory spaces are isolated from each other; however,
 **threads** are not isolated from each other (within the same process).
 In fact, the primary feature of threads over processes is that
@@ -98,8 +99,8 @@ Jumping back to our code sample further up: we may also choose to run the
 ``greet()`` function in multiple threads; and then
 they will also wait for replies concurrently. However, now you have
 two threads that are allowed to access the same objects in memory,
-with no control over
-how execution will be transferred between the two threads (unless you
+with little control over
+how execution will switch between the two threads (unless you
 use the synchronization primitives in the ``threading`` module) . This
 situation can result in *race conditions* in how objects are modified,
 and these bugs can be very difficult to fix.
@@ -129,7 +130,6 @@ pseudocode:
         print('Reply:', repr(reply))
 
     async def main():
-
         # Both calls run at the same time
         await asyncio.gather(
             greet(host1, port1),
@@ -138,11 +138,24 @@ pseudocode:
 
     asyncio.run(main())
 
+In this code, the two instances of the ``greet()`` function will
+run concurrently.
+
 There are a couple of new things here, but I want you to focus
 on the new keyword ``await``. Unlike threads, execution is allowed to
 switch between the two ``greet()`` invocations **only** where the
 ``await`` keyword appears. On all other lines, execution is exactly the
-same as normal Python.  These ``async def`` functions are called
+same as normal Python, and will not be preempt by thread switching (there's
+typically only a single thread in most ``asyncio`` programs).
+These ``async def`` functions are called
 "asynchronous" because execution does not pass through the function
 top-down, but instead can suspend in the middle of a function at the
-``await`` keyword, and allow another function to execute.
+``await`` keyword, and allow another function to execute while
+*this function* is waiting for network data.
+
+An additional advantage of the *async* style above is that it lets us
+manage several thousand concurrent long-lived socket connections in a simple way.
+One can also use threads to manage concurrent long-lived socket connections,
+but it gets difficult to go past a few thousand because the creation
+of operating system threads, just like processes, consumes additional
+resources from the operating system.
