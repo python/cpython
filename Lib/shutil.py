@@ -1502,14 +1502,20 @@ def symlink(src_or_srcs, dst, *, overwrite=False, follow_symlinks=True,
             target_is_dir=False):
     """Symbolic link(s) to a single source or a list of multiple sources.
 
-    Given a single source, `dst` is assumed to be a file, even if it is a
-    symlink to a directory. This allows for replacing symlinks and ensuring
-    that a link is created as `dst` rather than `dst`/src.
-
     Given a list of sources, `dst` must be a directory and links to each
     source are created inside `dst`.
 
+    Given a single source, `dst` is assumed to be a file, even if it is a
+    symlink to a directory. This allows for:
+     * Replacing symlinks (with `overwrite=True`)
+     * Enforcing that a link is created as `dst` rather than `dst`/src
+
+    With `overwrite=False`, FileExistsError is raised if the pathname `dst`
+    already exists.
+
     With `overwrite=True`, attempt to overwrite an existing destination.
+     * Raises IsADirectoryError if `dst` is a directory.
+     * Symlinks to directories can be overwritten.
 
     With `follow_symlinks=False`, create symlinks to symlinks XXXXXXXXX
 
