@@ -321,6 +321,13 @@ class AsyncSpecSetTest(unittest.TestCase):
         self.assertIsInstance(mock.normal_method, MagicMock)
         self.assertIsInstance(mock, MagicMock)
 
+    def test_magicmock_lambda_spec(self):
+        mock_obj = MagicMock()
+        mock_obj.mock_func = MagicMock(spec=lambda x: x)
+
+        with patch.object(mock_obj, "mock_func") as cm:
+            self.assertIsInstance(cm, MagicMock)
+
 
 class AsyncArguments(unittest.TestCase):
     def test_add_return_value(self):

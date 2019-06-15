@@ -46,7 +46,8 @@ FILTER_DIR = True
 _safe_super = super
 
 def _is_async_obj(obj):
-    if getattr(obj, '__code__', None):
+    code = getattr(obj, '__code__', None)
+    if isinstance(code, CodeType):
         return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
     else:
         return False
