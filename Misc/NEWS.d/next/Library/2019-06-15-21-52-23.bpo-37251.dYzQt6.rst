@@ -1,0 +1,3 @@
+:class:`unittest.mock.MagicMock` with function as spec used as a spec to
+:func:`unittest.mock.patch` should return a
+:class:`unittest.mock.MagicMock`. Patch by Karthikeyan Singaravelan.
