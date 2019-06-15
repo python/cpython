@@ -1236,9 +1236,11 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         }
     }
 
+    Py_BEGIN_ALLOW_THREADS
     m_obj->data = mmap(NULL, map_size,
                        prot, flags,
                        fd, offset);
+    Py_END_ALLOW_THREADS
 
     if (devzero != -1) {
         close(devzero);
@@ -1437,12 +1439,14 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     off_lo = (DWORD)(offset & 0xFFFFFFFF);
     /* For files, it would be sufficient to pass 0 as size.
        For anonymous maps, we have to pass the size explicitly. */
+    Py_BEGIN_ALLOW_THREADS
     m_obj->map_handle = CreateFileMapping(m_obj->file_handle,
                                           NULL,
                                           flProtect,
                                           size_hi,
                                           size_lo,
                                           m_obj->tagname);
+    Py_END_ALLOW_THREADS
     if (m_obj->map_handle != NULL) {
         m_obj->data = (char *) MapViewOfFile(m_obj->map_handle,
                                              dwDesiredAccess,
