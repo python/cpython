@@ -1533,10 +1533,10 @@ def symlink(target_or_targets, dst, *, overwrite=False, follow_symlinks=True,
     if dst_is_file and dst_is_dir:
         raise ValueError('Destination cannot be both file and directory')
 
-    if dst_is_file and os.is_dir(dst) and not os.is_link(dst):
+    if dst_is_file and os.path.isdir(dst) and not os.is_link(dst):
         raise NotADirectoryError(f'Destination "{dst}" not a file as required')
 
-    if dst_is_dir and not os.is_dir(dst):
+    if dst_is_dir and not os.path.isdir(dst):
         raise NotADirectoryError(
             f'Destination "{dst}" not a directory as required')
 
@@ -1544,7 +1544,7 @@ def symlink(target_or_targets, dst, *, overwrite=False, follow_symlinks=True,
         if follow_symlinks: # XXXXXXXXXXXXXXXXXXX XXX
             target = os.path.realpath(target)
 
-        if dst_is_dir or os.is_dir(dst):
+        if dst_is_dir or os.path.isdir(dst):
             link_name = os.path.join(dst, os.path.basename(target))
         else:
             link_name = dst
