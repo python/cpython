@@ -1,1 +1,1 @@
-Make C-API docs  clear about what the "main" interpreter is.
+Make C-API docs clear about what the "main" interpreter is.
