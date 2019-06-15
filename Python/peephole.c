@@ -311,18 +311,12 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 }
                 PyObject* cnt = PyList_GET_ITEM(consts, get_arg(codestr, i));
                 int is_true = PyObject_IsTrue(cnt);
+                if (is_true == -1) {
+                    goto exitError;
+                }
                 if (is_true == 1) {
                     fill_nops(codestr, op_start, nexti + 1);
                     cumlc = 0;
-                } else if (is_true == 0) {
-                    if (i > 1 &&
-                        (_Py_OPCODE(codestr[i - 1]) == POP_JUMP_IF_TRUE ||
-                         _Py_OPCODE(codestr[i - 1]) == POP_JUMP_IF_FALSE)) {
-                        break;
-                    }
-                    h = get_arg(codestr, nexti) / sizeof(_Py_CODEUNIT);
-                    tgt = find_op(codestr, codelen, h);
-                    fill_nops(codestr, op_start, tgt);
                 }
                 break;
 
