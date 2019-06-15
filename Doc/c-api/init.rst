@@ -1115,7 +1115,7 @@ are cases where you need to create several independent interpreters in the
 same process and perhaps even in the same thread. Sub-interpreters allow
 you to do that.
 
-The main interpreter is the first one created when runtime initializes.
+The "main" interpreter is the first one created when the runtime initializes.
 The :c:func:`PyInterpreterState_Main` funtion returns a pointer to this main
 interpreter's state. It is usually the only Python interpreter in a process.
 The main interpreter also has other responsibilities like signal and public
