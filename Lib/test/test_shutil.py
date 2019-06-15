@@ -2548,8 +2548,12 @@ class Symlink(unittest.TestCase):
                         'dst_file1': 'df1',
                         'dst_file2': os.path.join('dd1', 'df2')}
         extant_dirs = {'dst_dir1': 'dd1'}
-        extant_links = {'link_broken': 'non-extant', 'link_dir': 'dd1',
-                        'link_file': 'dd1/df2'}
+
+        # Keys are link filenames, values are link targets
+        extant_links = {'link_to_file': 'df1', 'link_to_dir': 'dd1',
+                        'link_to_link': 'link_to_file',
+                        'broken_link': 'non-extant',
+                        'link_to_broken_link': 'broken_link'}
         self.tmp_dir = tempfile.mkdtemp()
         for name, value in extant_dirs.items():
             path = os.path.join(self.tmp_dir, value)
