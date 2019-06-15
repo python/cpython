@@ -388,11 +388,22 @@ the same library that the Python runtime is using.
 
    Whenever ``PyCompilerFlags *flags`` is *NULL*, :attr:`cf_flags` is treated as
    equal to ``0``, and any modification due to ``from __future__ import`` is
-   discarded.  ::
+   discarded.
 
-      struct PyCompilerFlags {
-          int cf_flags;
-      }
+   .. c:member:: int cf_flags
+
+      Compiler flags.
+
+   .. c:member:: int cf_feature_version
+
+      *cf_feature_version* is the minor Python version. It should be
+      initialized to ``PY_MINOR_VERSION``.
+
+      The field is ignored by default, it is used if and only if
+      ``PyCF_ONLY_AST`` flag is set in *cf_flags*.
+
+   .. versionchanged:: 3.8
+      Added *cf_feature_version* field.
 
 
 .. c:var:: int CO_FUTURE_DIVISION

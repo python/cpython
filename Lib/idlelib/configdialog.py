@@ -199,7 +199,7 @@ class ConfigDialog(Toplevel):
     def help(self):
         """Create textview for config dialog help.
 
-        Attrbutes accessed:
+        Attributes accessed:
             note
 
         Methods:

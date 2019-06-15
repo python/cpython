@@ -1,4 +1,0 @@
-Update :c:func:`PyObject_CallMethodObjArgs` and ``_PyObject_CallMethodIdObjArgs``
-to use ``_PyObject_GetMethod`` to avoid creating a bound method object in many
-cases.
-Patch by Michael J. Sullivan.

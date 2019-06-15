@@ -1,3 +1,0 @@
-Optimized write buffering in C implementation of ``TextIOWrapper``. Writing
-ASCII string to ``TextIOWrapper`` with ascii, latin1, or utf-8 encoding is
-about 20% faster.  Patch by Inada Naoki.

@@ -545,7 +545,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     _PyEval_FiniThreads(&runtime->ceval);
 
     /* Auto-thread-state API */
-    _PyGILState_Init(tstate);
+    _PyGILState_Init(runtime, interp, tstate);
 
     /* Create the GIL */
     PyEval_InitThreads();
@@ -683,7 +683,7 @@ pyinit_config(_PyRuntimeState *runtime,
     }
 
     PyObject *sysmod;
-    status = _PySys_Create(interp, &sysmod);
+    status = _PySys_Create(runtime, interp, &sysmod);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -892,14 +892,14 @@ _Py_ReconfigureMainInterpreter(PyInterpreterState *interp)
  * non-zero return code.
  */
 static PyStatus
-pyinit_main(PyInterpreterState *interp)
+pyinit_main(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
-    _PyRuntimeState *runtime = interp->runtime;
     if (!runtime->core_initialized) {
         return _PyStatus_ERR("runtime core not initialized");
     }
 
     /* Configure the main interpreter */
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     PyConfig *config = &interp->config;
 
     if (runtime->initialized) {
@@ -920,7 +920,7 @@ pyinit_main(PyInterpreterState *interp)
         return _PyStatus_ERR("can't initialize time");
     }
 
-    if (_PySys_InitMain(interp) < 0) {
+    if (_PySys_InitMain(runtime, tstate) < 0) {
         return _PyStatus_ERR("can't finish initializing sys");
     }
 
@@ -1000,7 +1000,7 @@ _Py_InitializeMain(void)
     _PyRuntimeState *runtime = &_PyRuntime;
     PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
 
-    return pyinit_main(interp);
+    return pyinit_main(runtime, interp);
 }
 
 
@@ -1027,7 +1027,7 @@ Py_InitializeFromConfig(const PyConfig *config)
     config = &interp->config;
 
     if (config->_init_main) {
-        status = pyinit_main(interp);
+        status = pyinit_main(runtime, interp);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -1147,31 +1147,15 @@ Py_FinalizeEx(void)
         return status;
     }
 
-    /* Get current thread state and interpreter pointer */
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    PyInterpreterState *interp = tstate->interp;
-
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
 
     // Make any remaining pending calls.
-    /* XXX For the moment we are going to ignore lingering pending calls.
-     * We've seen sporadic on some of the buildbots during finalization
-     * with the changes for per-interpreter pending calls (see bpo-33608),
-     * meaning the previous _PyEval_FinishPendincCalls() call here is
-     * a trigger, if not responsible.
-     *
-     * Ignoring pending calls at this point in the runtime lifecycle
-     * is okay (for now) for the following reasons:
-     *
-     *  * pending calls are still not a widely-used feature
-     *  * this only affects runtime finalization, where the process is
-     *    likely to end soon anyway (except for some embdding cases)
-     *
-     * See bpo-37127 about resolving the problem.  Ultimately the call
-     * here should be re-enabled.
-     */
-    //_PyEval_FinishPendingCalls(interp);
+    _Py_FinishPendingCalls(runtime);
+
+    /* Get current thread state and interpreter pointer */
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyInterpreterState *interp = tstate->interp;
 
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
@@ -1241,6 +1225,9 @@ Py_FinalizeEx(void)
 
     /* Destroy all modules */
     PyImport_Cleanup();
+
+    /* Print debug stats if any */
+    _PyEval_Fini();
 
     /* Flush sys.stdout and sys.stderr (again, in case more was printed) */
     if (flush_std_files() < 0) {
@@ -1470,7 +1457,7 @@ new_interpreter(PyThreadState **tstate_p)
         }
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        if (_PySys_InitMain(interp) < 0) {
+        if (_PySys_InitMain(runtime, tstate) < 0) {
             return _PyStatus_ERR("can't finish initializing sys");
         }
     }
@@ -1595,9 +1582,6 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
-
-    // Make any remaining pending calls.
-    _PyEval_FinishPendingCalls(interp);
 
     call_py_exitfuncs(interp);
 

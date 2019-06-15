@@ -1885,8 +1885,13 @@ class IsCloseTests(unittest.TestCase):
             self.assertEqual(perm(n, 1), n)
             self.assertEqual(perm(n, n), factorial(n))
 
+        # Test one argument form
+        for n in range(20):
+            self.assertEqual(perm(n), factorial(n))
+            self.assertEqual(perm(n, None), factorial(n))
+
         # Raises TypeError if any argument is non-integer or argument count is
-        # not 2
+        # not 1 or 2
         self.assertRaises(TypeError, perm, 10, 1.0)
         self.assertRaises(TypeError, perm, 10, decimal.Decimal(1.0))
         self.assertRaises(TypeError, perm, 10, "1")
@@ -1894,7 +1899,7 @@ class IsCloseTests(unittest.TestCase):
         self.assertRaises(TypeError, perm, decimal.Decimal(10.0), 1)
         self.assertRaises(TypeError, perm, "10", 1)
 
-        self.assertRaises(TypeError, perm, 10)
+        self.assertRaises(TypeError, perm)
         self.assertRaises(TypeError, perm, 10, 1, 3)
         self.assertRaises(TypeError, perm)
 
@@ -1904,9 +1909,9 @@ class IsCloseTests(unittest.TestCase):
         self.assertRaises(ValueError, perm, 1, -1)
         self.assertRaises(ValueError, perm, 1, -2**1000)
 
-        # Raises value error if k is greater than n
-        self.assertRaises(ValueError, perm, 1, 2)
-        self.assertRaises(ValueError, perm, 1, 2**1000)
+        # Returns zero if k is greater than n
+        self.assertEqual(perm(1, 2), 0)
+        self.assertEqual(perm(1, 2**1000), 0)
 
         n = 2**1000
         self.assertEqual(perm(n, 0), 1)
@@ -1970,9 +1975,9 @@ class IsCloseTests(unittest.TestCase):
         self.assertRaises(ValueError, comb, 1, -1)
         self.assertRaises(ValueError, comb, 1, -2**1000)
 
-        # Raises value error if k is greater than n
-        self.assertRaises(ValueError, comb, 1, 2)
-        self.assertRaises(ValueError, comb, 1, 2**1000)
+        # Returns zero if k is greater than n
+        self.assertEqual(comb(1, 2), 0)
+        self.assertEqual(comb(1, 2**1000), 0)
 
         n = 2**1000
         self.assertEqual(comb(n, 0), 1)
