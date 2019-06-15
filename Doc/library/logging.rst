@@ -1204,7 +1204,12 @@ functions.
    | *errors*     | If this keyword argument is specified along |
    |              | with *filename*, its value is used when the |
    |              | FileHandler is created, and thus used when  |
-   |              | opening the output file.                    |
+   |              | opening the output file. If not specified,  |
+   |              | the value 'backslashreplace' is used. Note  |
+   |              | that if ``None`` is specified, it will be   |
+   |              | passed as such to func:`open`, which means  |
+   |              | that it will be treated the same as passing |
+   |              | 'errors'.                                   |
    +--------------+---------------------------------------------+
 
    .. versionchanged:: 3.2

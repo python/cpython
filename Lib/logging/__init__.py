@@ -1935,7 +1935,8 @@ def basicConfig(**kwargs):
               opened.
     errors    If specified together with a filename, this value is passed to the
               created FileHandler, causing it to be used when the file is
-              opened.
+              opened in text mode. If not specified, the default value is
+              `backslashreplace`.
 
     Note that you could specify a stream created using open(filename, mode)
     rather than passing the filename and mode in. However, it should be
@@ -1965,7 +1966,7 @@ def basicConfig(**kwargs):
     try:
         force = kwargs.pop('force', False)
         encoding = kwargs.pop('encoding', None)
-        errors = kwargs.pop('errors', None)
+        errors = kwargs.pop('errors', 'backslashreplace')
         if force:
             for h in root.handlers[:]:
                 root.removeHandler(h)
@@ -1984,6 +1985,8 @@ def basicConfig(**kwargs):
                 filename = kwargs.pop("filename", None)
                 mode = kwargs.pop("filemode", 'a')
                 if filename:
+                    if 'b'in mode:
+                        errors = None
                     h = FileHandler(filename, mode,
                                     encoding=encoding, errors=errors)
                 else:
