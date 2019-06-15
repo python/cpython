@@ -469,6 +469,14 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
             self.assertEqual(C.__class__, abc_ABCMeta)
 
+        def test_module_of_dynamically_defined_ABC_is_caller_module(self):
+            ABC = abc_ABCMeta('ABC', (), {})
+            self.assertEqual(ABC.__module__, __name__)
+
+            # user-defined __module__ is honored over the value set via caller inspection
+            ABC = abc_ABCMeta('ABC', (), {'__module__': 'some.module'})
+            self.assertEqual(ABC.__module__, 'some.module')
+
 
     class TestABCWithInitSubclass(unittest.TestCase):
         def test_works_with_init_subclass(self):
@@ -479,9 +487,11 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 def __init_subclass__(cls, **kwargs):
                     super().__init_subclass__()
                     saved_kwargs.update(kwargs)
-            class Receiver(ReceivesClassKwargs, abc_ABC, x=1, y=2, z=3):
+            class Receiver(ReceivesClassKwargs, abc_ABC, x=1, y=2, __module__='some.module'):
                 pass
-            self.assertEqual(saved_kwargs, dict(x=1, y=2, z=3))
+            # __module__ passed via __init_subclass__ is honored over
+            # the value set via caller inspection
+            self.assertEqual(saved_kwargs, dict(x=1, y=2, __module__='some.module'))
     return TestLegacyAPI, TestABC, TestABCWithInitSubclass
 
 TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(abc.ABCMeta,
