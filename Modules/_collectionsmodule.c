@@ -412,7 +412,7 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
-        if (deque_append_internal(deque, item, maxlen) == -1) {
+        if (deque_append_internal(deque, item, maxlen) < 0) {
             Py_DECREF(item);
             Py_DECREF(it);
             return NULL;
@@ -459,7 +459,7 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
-        if (deque_appendleft_internal(deque, item, maxlen) == -1) {
+        if (deque_appendleft_internal(deque, item, maxlen) < 0) {
             Py_DECREF(item);
             Py_DECREF(it);
             return NULL;
@@ -492,21 +492,25 @@ deque_copy(PyObject *deque, PyObject *Py_UNUSED(ignored))
     if (Py_IS_TYPE(deque, &deque_type)) {
         dequeobject *new_deque;
         PyObject *rv;
+        int rvi;
 
         new_deque = (dequeobject *)deque_new(&deque_type, (PyObject *)NULL, (PyObject *)NULL);
         if (new_deque == NULL)
             return NULL;
         new_deque->maxlen = old_deque->maxlen;
-        /* Fast path for the deque_repeat() common case where len(deque) == 1 */
         if (Py_SIZE(deque) == 1) {
+            /* Fast path for deque_repeat's common case where len(deque) == 1 */
             PyObject *item = old_deque->leftblock->data[old_deque->leftindex];
-            rv = deque_append(new_deque, item);
+            rvi = deque_append_internal(new_deque, item, new_deque->maxlen);
+            if (rvi == 0) {
+                return (PyObject *)new_deque;
+            }
         } else {
             rv = deque_extend(new_deque, deque);
-        }
-        if (rv != NULL) {
-            Py_DECREF(rv);
-            return (PyObject *)new_deque;
+            if (rv != NULL) {
+                Py_DECREF(rv);
+                return (PyObject *)new_deque;
+            }
         }
         Py_DECREF(new_deque);
         return NULL;
