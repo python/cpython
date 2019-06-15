@@ -35,7 +35,8 @@ Executing Async Functions
 The ``run`` function is only good for executing an async function
 from "synchronous" code; and this is usually only used to execute
 a "main" async function, from which others can be called in a simpler
-way.
+way. You will not see ``asyncio.run()`` being called from inside an
+``async def`` function.
 
 That means the following:
 
@@ -54,7 +55,7 @@ That means the following:
 
 The execution of the the async function ``main()`` is performed
 with ``run()``, but once you're inside an ``async def`` function, then
-all you need to execute another async function is the ``await`` keyword.
+calling another async function is done with the ``await`` keyword.
 
 Ordinary (Sync) Functions Cannot Await Async Functions
 ------------------------------------------------------
@@ -104,7 +105,7 @@ is also illegal:
 
 So ``asyncio.run()`` is really intended only for launching your *first*
 async function; after that, every other async function should be
-executed using the ``await`` keyword, and the task-based methods which
+executed using the ``await`` keyword, and the task-based strategies which
 we've not yet discussed.
 
 Async Functions Can Call Sync Functions
@@ -122,6 +123,42 @@ from inside ``async def`` functions. Here's an example:
     ...
     >>> asyncio.run(f())
     Sun Nov  4 15:04:45 2018
+
+One of the benefits of ``asyncio`` is that you can see at a glance
+which code inside a function is subject to a context switch. In the
+following code example, we have two kinds of ``sleep()``: a blocking
+version from the ``time`` module, and an async version from ``asyncio``:
+
+.. code-block:: python3
+
+    >>> import time, asyncio
+    >>> def func1():
+    ...    time.sleep(0)
+    ...
+    >>> async def func2():
+    ...    await asyncio.sleep(0)
+    ...
+    >>> async def main():
+    ...     await func2()  # (1)
+    ...     func1()
+    ...     func1()
+    ...     func1()
+    ...     func1()
+    ...     func1()
+    ...     func1()
+    ...     await func2()  # (2)
+    ...
+    >>> asyncio.run(main())
+
+At (1), the underlying event loop is given the opportunity to switch from
+``main()`` to any other tasks that are waiting to run, and after line (1)
+returns, a series of calls to the sync function ``func1()`` occurs before
+the next allowable context switch on the event loop at (2). While the
+series of sync calls are running, *no other code* will execute in the
+current thread, until you get to the next ``await``. This guarantee applies
+a dramatic simplifying effect on your code, because now you can modify
+data shared between multiple async tasks without fear of introducing
+a race condition.
 
 Accurate Terminology For Async Functions
 ----------------------------------------
