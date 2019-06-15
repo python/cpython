@@ -1480,7 +1480,7 @@ def _create_or_replace(dst, create_temp_dest):
 # https://pubs.opengroup.org/onlinepubs/9699919799/utilities/ln.html
 
 
-def symlink(target_or_targets, dst, overwrite=False, follow_symlinks=True,
+def symlink(target_or_targets, dst, *, overwrite=False, follow_symlinks=True,
             target_is_dir=False, dst_is_file=False, dst_is_dir=False):
     """Create symbolic links to a target (if not a list) or to list of targets
     in `dst`. `dst` must be a directory if more than one target is given.
