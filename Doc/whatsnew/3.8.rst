@@ -955,6 +955,22 @@ Optimizations
 Build and C API Changes
 =======================
 
+* Default :data:`sys.abiflags` became an empty string: the ``m`` flag for
+  pymalloc became useless (builds with and without pymalloc are ABI compatible)
+  and so has been removed. (Contributed by Victor Stinner in :issue:`36707`.)
+
+  Example of changes:
+
+  * Only ``python3.8`` program is installed, ``python3.8m`` program is gone.
+  * Only ``python3.8-config`` script is installed, ``python3.8m-config`` script
+    is gone.
+  * The ``m`` flag has been removed from the suffix of dynamic library
+    filenames: extension modules in the standard library as well as those
+    produced and installed by third-party packages, like those downloaded from
+    PyPI. On Linux, for example, the Python 3.7 suffix
+    ``.cpython-37m-x86_64-linux-gnu.so`` became
+    ``.cpython-38-x86_64-linux-gnu.so`` in Python 3.8.
+
 * The header files have been reorganized to better separate the different kinds
   of APIs:
 
