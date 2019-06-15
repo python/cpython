@@ -46,7 +46,7 @@ the actual server.
 Server
 ------
 
-We can use the *Streams API* (ref:TODO) to create a TCP server very
+We can use the *Streams API* to create a TCP server very
 easily:
 
 .. literalinclude:: server02.py

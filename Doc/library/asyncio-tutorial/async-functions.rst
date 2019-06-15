@@ -351,14 +351,3 @@ Let's have a close look at the function `ag`:
     True
 
     # ...and when evaluated, it returns an "async generator"
-
-
-
-
-
-TODO:
-- which kind of functions can be called from which other kind
-- use the "inspect" module to verify the formal names of functions,
-coroutine functions, coroutines, etc.
-
-
