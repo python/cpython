@@ -125,7 +125,7 @@ class ThreadPoolExecutor(_base.Executor):
             max_workers: The maximum number of threads that can be used to
                 execute the given calls.
             thread_name_prefix: An optional name prefix to give our threads.
-            initializer: An callable used to initialize worker threads.
+            initializer: A callable used to initialize worker threads.
             initargs: A tuple of arguments to pass to the initializer.
         """
         if max_workers is None:
