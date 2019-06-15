@@ -18,7 +18,7 @@ Let's make a function that communicates over the network:
 This function will:
 
 #. make a socket connection to a host,
-#. send ``b'Hello, world```, and
+#. send ``b'Hello, world'``, and
 #. **wait** for a reply.
 
 The key point here is about the word *wait*: in the code, execution proceeds line-by-line
