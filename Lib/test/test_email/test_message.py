@@ -929,6 +929,15 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
         m.set_content(content_manager=cm)
         self.assertNotIn('MIME-Version', m)
 
+    def test_string_payload_with_multipart_content_type(self):
+        msg = message_from_string(textwrap.dedent("""\
+        Content-Type: multipart/mixed; charset="utf-8"
+
+        sample text
+        """), policy=policy.default)
+        attachments = msg.iter_attachments()
+        self.assertEqual(list(attachments), [])
+
 
 if __name__ == '__main__':
     unittest.main()
