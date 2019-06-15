@@ -1525,9 +1525,9 @@ def symlink(src_or_srcs, dst, *, overwrite=False, follow_symlinks=True,
     a directory if `target_is_dir` is True or a file symlink (the default)
     otherwise. On non-Windows platforms, `target_is_dir` is ignored.
     """
-
     targets = _link_or_symlink_parse_args(src_or_srcs, dst, overwrite,
-                                          follow_symlinks, target_is_dir)
+                                          follow_symlinks,
+                                          target_is_dir=target_is_dir)
 
     for target in targets:
         if follow_symlinks: # XXXXXXXXXXXXXXXXXXX XXX
