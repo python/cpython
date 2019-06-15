@@ -80,9 +80,10 @@ support weak references but can add support through subclassing::
 
    obj = Dict(red=1, green=2, blue=3)   # this object is weak referenceable
 
-Other built-in types such as :class:`tuple` and :class:`int` do not support weak
-references even when subclassed (This is an implementation detail and may be
-different across various Python implementations.).
+.. impl-detail::
+
+   Other built-in types such as :class:`tuple` and :class:`int` do not support weak
+   references even when subclassed.
 
 Extension types can easily be made to support weak references; see
 :ref:`weakref-support`.
