@@ -571,7 +571,7 @@ def _rmtree_unsafe(path, onerror):
             try:
                 os.unlink(fullname)
             except FileNotFoundError:
-                pass
+                continue
             except OSError:
                 onerror(os.unlink, fullname, sys.exc_info())
     try:
@@ -642,7 +642,7 @@ def _rmtree_safe_fd(topfd, path, onerror):
             try:
                 os.unlink(entry.name, dir_fd=topfd)
             except FileNotFoundError:
-                pass
+                continue
             except OSError:
                 onerror(os.unlink, fullname, sys.exc_info())
 
