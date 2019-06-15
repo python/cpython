@@ -140,22 +140,22 @@ dis_bug708901 = """\
 
 
 def bug1333982(x=[]):
-    assert 0, ([s for s in x] +
+    assert x, ([s for s in x] +
               1)
     pass
 
 dis_bug1333982 = """\
-%3d           0 LOAD_CONST               1 (0)
+%3d           0 LOAD_FAST                0 (x)
               2 POP_JUMP_IF_TRUE        26
               4 LOAD_GLOBAL              0 (AssertionError)
-              6 LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
-              8 LOAD_CONST               3 ('bug1333982.<locals>.<listcomp>')
+              6 LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
+              8 LOAD_CONST               2 ('bug1333982.<locals>.<listcomp>')
              10 MAKE_FUNCTION            0
              12 LOAD_FAST                0 (x)
              14 GET_ITER
              16 CALL_FUNCTION            1
 
-%3d          18 LOAD_CONST               4 (1)
+%3d          18 LOAD_CONST               3 (1)
 
 %3d          20 BINARY_ADD
              22 CALL_FUNCTION            1

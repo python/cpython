@@ -256,8 +256,8 @@ Add NamedExpression kind support to ast_unparse.c
 .. nonce: 9oxXFX
 .. section: Core and Builtins
 
-A :exc:`SyntaxError` is now raised if a code blocks that will be optimized
-away (e.g. if conditions that are always false) contains syntax errors.
+A :exc:`SyntaxError` is now raised if the "if" code blocks that will be optimized
+away (if the conditions is always false) contains syntax errors.
 Patch by Pablo Galindo.
 
 ..

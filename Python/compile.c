@@ -190,7 +190,6 @@ static int compiler_visit_slice(struct compiler *, slice_ty,
                                 expr_context_ty);
 
 static int inplace_binop(struct compiler *, operator_ty);
-static int expr_constant(expr_ty);
 
 static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_async_with(struct compiler *, stmt_ty, int);
@@ -2448,9 +2447,21 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
         /* fallback to general implementation */
         break;
     }
-    default:
+    default: {
+        if (e->kind == Constant_kind) {
+            int is_true = PyObject_IsTrue(e->v.Constant.value);
+            if (is_true < 0) {
+                return 0;
+            }
+            if (is_true == cond) {
+                ADDOP_JABS(c, JUMP_ABSOLUTE, next);
+                NEXT_BLOCK(c);
+            }
+            return 1;
+        }
         /* fallback to general implementation */
         break;
+    }
     }
 
     /* general implementation */
@@ -2539,36 +2550,23 @@ static int
 compiler_if(struct compiler *c, stmt_ty s)
 {
     basicblock *end, *next;
-    int constant;
     assert(s->kind == If_kind);
-    end = compiler_new_block(c);
+    next = end = compiler_new_block(c);
     if (end == NULL)
         return 0;
 
-    constant = expr_constant(s->v.If.test);
-    /* constant = 0: "if 0" Leave the optimizations to
-     * the pephole optimizer to check for syntax errors
-     * in the block.
-     * constant = 1: "if 1", "if 2", ...
-     * constant = -1: rest */
-    if (constant == 1) {
-        VISIT_SEQ(c, stmt, s->v.If.body);
-    } else {
-        if (asdl_seq_LEN(s->v.If.orelse)) {
-            next = compiler_new_block(c);
-            if (next == NULL)
-                return 0;
-        }
-        else
-            next = end;
-        if (!compiler_jump_if(c, s->v.If.test, next, 0))
+    if (asdl_seq_LEN(s->v.If.orelse)) {
+        next = compiler_new_block(c);
+        if (next == NULL)
             return 0;
-        VISIT_SEQ(c, stmt, s->v.If.body);
-        if (asdl_seq_LEN(s->v.If.orelse)) {
-            ADDOP_JREL(c, JUMP_FORWARD, end);
-            compiler_use_next_block(c, next);
-            VISIT_SEQ(c, stmt, s->v.If.orelse);
-        }
+    }
+    if (!compiler_jump_if(c, s->v.If.test, next, 0))
+        return 0;
+    VISIT_SEQ(c, stmt, s->v.If.body);
+    if (asdl_seq_LEN(s->v.If.orelse)) {
+        ADDOP_JREL(c, JUMP_FORWARD, end);
+        compiler_use_next_block(c, next);
+        VISIT_SEQ(c, stmt, s->v.If.orelse);
     }
     compiler_use_next_block(c, end);
     return 1;
@@ -2658,38 +2656,24 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
-    basicblock *loop, *orelse, *end, *anchor = NULL;
-    int constant = expr_constant(s->v.While.test);
+    basicblock *loop, *orelse = NULL, *end, *anchor;
 
-    if (constant == 0) {
-        if (s->v.While.orelse)
-            VISIT_SEQ(c, stmt, s->v.While.orelse);
-        return 1;
-    }
     loop = compiler_new_block(c);
     end = compiler_new_block(c);
-    if (constant == -1) {
-        anchor = compiler_new_block(c);
-        if (anchor == NULL)
-            return 0;
-    }
-    if (loop == NULL || end == NULL)
+    anchor = compiler_new_block(c);
+    if (loop == NULL || end == NULL || anchor == NULL)
         return 0;
     if (s->v.While.orelse) {
         orelse = compiler_new_block(c);
         if (orelse == NULL)
             return 0;
     }
-    else
-        orelse = NULL;
 
     compiler_use_next_block(c, loop);
     if (!compiler_push_fblock(c, WHILE_LOOP, loop, end))
         return 0;
-    if (constant == -1) {
-        if (!compiler_jump_if(c, s->v.While.test, anchor, 0))
-            return 0;
-    }
+    if (!compiler_jump_if(c, s->v.While.test, anchor, 0))
+        return 0;
     VISIT_SEQ(c, stmt, s->v.While.body);
     ADDOP_JABS(c, JUMP_ABSOLUTE, loop);
 
@@ -2697,8 +2681,7 @@ compiler_while(struct compiler *c, stmt_ty s)
        if there is no else clause ?
     */
 
-    if (constant == -1)
-        compiler_use_next_block(c, anchor);
+    compiler_use_next_block(c, anchor);
     compiler_pop_fblock(c, WHILE_LOOP, loop);
 
     if (orelse != NULL) /* what if orelse is just pass? */
@@ -4507,22 +4490,6 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
     VISIT(c, expr, k->value);
     return 1;
 }
-
-/* Test whether expression is constant.  For constants, report
-   whether they are true or false.
-
-   Return values: 1 for true, 0 for false, -1 for non-constant.
- */
-
-static int
-expr_constant(expr_ty e)
-{
-    if (e->kind == Constant_kind) {
-        return PyObject_IsTrue(e->v.Constant.value);
-    }
-    return -1;
-}
-
 
 /*
    Implements the async with statement.

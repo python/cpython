@@ -300,24 +300,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         cumlc = 0;
 
         switch (opcode) {
-                /* Skip over LOAD_CONST trueconst
-                   POP_JUMP_IF_FALSE xx.  This improves
-                   "while 1" performance.  */
             case LOAD_CONST:
                 cumlc = lastlc + 1;
-                if (nextop != POP_JUMP_IF_FALSE  ||
-                    !ISBASICBLOCK(blocks, op_start, i + 1)) {
-                    break;
-                }
-                PyObject* cnt = PyList_GET_ITEM(consts, get_arg(codestr, i));
-                int is_true = PyObject_IsTrue(cnt);
-                if (is_true == -1) {
-                    goto exitError;
-                }
-                if (is_true == 1) {
-                    fill_nops(codestr, op_start, nexti + 1);
-                    cumlc = 0;
-                }
                 break;
 
                 /* Try to fold tuples of constants.
