@@ -494,45 +494,45 @@ _Py_add_one_to_index_C(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
     }
 }
 
-int
+Py_ssize_t
 PyBuffer_SizeFromFormat(const char *format)
 {
-    PyObject *structmodule;
+    PyObject *structmodule = NULL;
     PyObject *Struct = NULL;
-    PyObject *structobj = NULL;
+    PyObject *res = NULL;
     PyObject *fmt = NULL;
-    int itemsize;
+    Py_ssize_t itemsize = -1;
 
     structmodule = PyImport_ImportModule("struct");
     if (structmodule == NULL)
-        goto error;
+        goto done;
 
     Struct = PyObject_GetAttrString(structmodule, "calcsize");
     Py_DECREF(structmodule);
-    if (Struct == NULL)
-        goto error;
+    if (Struct == NULL) {
+        goto done;
+    }
 
     fmt = PyBytes_FromString(format);
-    if (fmt == NULL)
-        goto error;
+    if (fmt == NULL) {
+        goto done;
+    }
 
-    structobj = PyObject_CallFunctionObjArgs(Struct, fmt, NULL);
-    if (structobj == NULL)
-        goto error;
+    res = PyObject_CallFunctionObjArgs(Struct, fmt, NULL);
+    if (res == NULL) {
+        goto done;
+    }
 
-    itemsize = (intptr_t)structobj;
-    if (itemsize < 0)
-        goto error;
+    itemsize = PyLong_AsSsize_t(res);
+    if (itemsize < 0) {
+        goto done;
+    }
 
-out:
+done:
     Py_XDECREF(Struct);
     Py_XDECREF(fmt);
-    Py_XDECREF(structobj);
+    Py_XDECREF(res);
     return itemsize;
-
-error:
-    itemsize = -1;
-    goto out;
 }
 
 int

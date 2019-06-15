@@ -3301,6 +3301,19 @@ getbuffer_with_null_view(PyObject* self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+/* test PyBuffer_SizeFromFormat() */
+static Py_ssize_t
+pybuffer_size_from_format(PyObject* self, PyObject *args)
+{
+    const char *format;
+
+    if (!PyArg_ParseTuple(args, "s:pybuffer_size_from_format",
+                          &format))
+        return -1;
+
+    return PyBuffer_SizeFromFormat(format);
+}
+
 /* Test that the fatal error from not having a current thread doesn't
    cause an infinite loop.  Run via Lib/test/test_capi.py */
 static PyObject *
@@ -5087,6 +5100,7 @@ static PyMethodDef TestMethods[] = {
     {"test_pep3118_obsolete_write_locks", (PyCFunction)test_pep3118_obsolete_write_locks, METH_NOARGS},
 #endif
     {"getbuffer_with_null_view", getbuffer_with_null_view, METH_O},
+    {"pybuffer_size_from_format", (PyCFunction)pybuffer_size_from_format, METH_VARARGS},
     {"test_buildvalue_N",       test_buildvalue_N,               METH_NOARGS},
     {"get_args", get_args, METH_VARARGS},
     {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs, METH_VARARGS|METH_KEYWORDS},
