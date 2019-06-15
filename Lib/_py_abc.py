@@ -1,3 +1,4 @@
+import sys
 from _weakrefset import WeakSet
 
 
@@ -33,6 +34,18 @@ class ABCMeta(type):
     _abc_invalidation_counter = 0
 
     def __new__(mcls, name, bases, namespace, /, **kwargs):
+
+        if '__module__' not in namespace:
+            try:
+                # Set __module__ to the frame where the class is created
+                module = sys._getframe(1).f_globals.get('__name__', '__main__')
+            except (AttributeError, ValueError):
+                # Bypass for environments where sys._getframe is not defined (e.g. Jython)
+                # or sys._getframe is not defined for arguments greater than 0 (IronPython)
+                pass
+            else:
+                namespace['__module__'] = module
+
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)
         # Compute set of abstract method names
         abstracts = {name
