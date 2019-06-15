@@ -1479,6 +1479,26 @@ def _create_or_replace(dst, create_temp_dest):
 
 # https://pubs.opengroup.org/onlinepubs/9699919799/utilities/ln.html
 
+def _link_or_symlink_parse_args(src_or_srcs, dst, overwrite,
+                                follow_symlinks, *, target_is_dir=False):
+    """Check that the arguments to link or symlink are valid."""
+
+    if not any(isinstance(src_or_srcs, typ) for typ in [list, set, tuple]):
+        sources = [src_or_srcs]
+    else:  # src_or_srcs is already something list-y
+        sources = src_or_srcs
+
+    for bool_arg in ['overwrite', 'follow_symlinks', 'target_is_dir',
+                     'dst_is_file', 'dst_is_dir']:
+        if not isinstance(locals()[bool_arg], bool):
+            raise TypeError(f"{bool_arg} not a bool")
+
+    if len(sources) > 1 and not os.path.isdir(dst):
+        raise NotADirectoryError(
+            f'Destination "{dst}" not a directory and multiple sources given')
+
+    return sources
+
 
 def symlink(target_or_targets, dst, *, overwrite=False, follow_symlinks=True,
             target_is_dir=False, dst_is_file=False, dst_is_dir=False):
@@ -1512,6 +1532,8 @@ def symlink(target_or_targets, dst, *, overwrite=False, follow_symlinks=True,
 
     """
 
+    targets = _link_or_symlink_parse_args(src_or_srcs, dst, overwrite,
+                                          follow_symlinks, target_is_dir)
     if not any(isinstance(target_or_targets, l) for l in [list, set, tuple]):
         targets = [target_or_targets]
     else:
@@ -1544,7 +1566,7 @@ def symlink(target_or_targets, dst, *, overwrite=False, follow_symlinks=True,
         if follow_symlinks: # XXXXXXXXXXXXXXXXXXX XXX
             target = os.path.realpath(target)
 
-        if dst_is_dir or os.path.isdir(dst):
+        if len(targets) > 1:
             link_name = os.path.join(dst, os.path.basename(target))
         else:
             link_name = dst
