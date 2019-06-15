@@ -283,8 +283,8 @@ values and these values are obtained by iterating over the
 generator.
 
 The difference now is of course the presence of those "async"
-words. The code sample doesn't a good reason *why* an async
-generator is being used here. That will come later in the
+words. The code sample doesn't show a good reason *why* an async
+generator is being used here: that will come later in the
 cookbook. All we want to discuss here is what these kinds of
 functions and objects should be called.
 
