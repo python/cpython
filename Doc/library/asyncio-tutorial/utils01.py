@@ -15,8 +15,7 @@ async def new_messages(reader: StreamReader) -> AsyncGenerator[Dict, None]:
                 yield json.loads(message)
             except json.decoder.JSONDecodeError:
                 continue
-    except (IncompleteReadError, ConnectionAbortedError,
-            ConnectionResetError, CancelledError):
+    except (OSError, IncompleteReadError, CancelledError):
         # The connection is dead, leave.
         return
 
@@ -24,6 +23,4 @@ async def new_messages(reader: StreamReader) -> AsyncGenerator[Dict, None]:
 async def send_message(writer: StreamWriter, message: Dict):
     payload = json.dumps(message).encode()
     size_prefix = len(payload).to_bytes(3, byteorder='little')
-    writer.write(size_prefix)
-    writer.write(payload)
-    await writer.drain()
+    await writer.writelines([size_prefix, payload])

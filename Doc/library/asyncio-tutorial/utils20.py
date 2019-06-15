@@ -1,6 +1,6 @@
 import sys
 from asyncio import (StreamReader, StreamWriter, IncompleteReadError, Future,
-    get_running_loop)
+    get_running_loop, CancelledError)
 
 if sys.platform == 'win32':
     from signal import signal, SIGBREAK, SIGTERM, SIGINT
@@ -19,20 +19,17 @@ async def messages(reader: StreamReader) -> AsyncGenerator[bytes, None]:
             size = int.from_bytes(size_prefix, byteorder='little')
             message = await reader.readexactly(size)
             yield message
-    except (IncompleteReadError, ConnectionAbortedError, ConnectionResetError):
+    except (OSError, IncompleteReadError, CancelledError):
         return
 
 
 async def send_message(writer: StreamWriter, message: bytes):
     """To close the connection, use an empty message."""
     if not message:
-        writer.close()
-        await writer.wait_closed()
+        await writer.close()
         return
     size_prefix = len(message).to_bytes(4, byteorder='little')
-    writer.write(size_prefix)
-    writer.write(message)
-    await writer.drain()
+    await writer.writelines([size_prefix, message])
 
 
 def install_signal_handling(fut: Future):

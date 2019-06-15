@@ -16,7 +16,7 @@ async def sender(addr, writer, room, msg):
             writer,
             json.dumps(dict(room=room, msg=msg)).encode()
         )
-    except (ConnectionAbortedError, ConnectionResetError):
+    except OSError:
         """ Connection is dead, remove it."""
         if addr in WRITERS:
             del WRITERS[addr]

@@ -1,5 +1,5 @@
-Asyncio Case Study: Chat Application
-====================================
+Asyncio Case Study: Chat Application (Client)
+=============================================
 
 TODO
 

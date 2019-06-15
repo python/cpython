@@ -141,14 +141,14 @@ to all clients in a room. That message might look something like this:
 The message is similar to the one received by a client, but on line 5
 we now need to indicate from whom the message was sent.
 
-Message-based Protocol
-----------------------
+Message Structure
+-----------------
 
 Now we have a rough idea about what messages between client and
-server will look like. Unfortunately, the Streams API, like the
+server will look like. The Streams API, like the
 underlying TCP protocol it wraps, does not give us message-handling
 built-in. All we get is a stream of bytes. It is up to us to
-know how to break up the stream of bytes into recognizable messages.
+decide how to break up the stream of bytes into recognizable messages.
 
 The most common raw message structure is based on the idea of a
 *size prefix*:
@@ -267,9 +267,7 @@ very similar to what we saw in the receiver:
     async def send_message(writer: StreamWriter, message: Dict):
         payload = json.dumps(message).encode()
         size_prefix = len(payload).to_bytes(3, byteorder='little')
-        writer.write(size_prefix)
-        writer.write(payload)
-        await writer.drain()
+        await writer.writelines([size_prefix, payload])
 
 Let's step through the lines:
 
@@ -278,12 +276,10 @@ Let's step through the lines:
 - line 6: Serialize the message to bytes.
 - line 7: Build the size header; remember, this needs to be sent
   before the payload itself.
-- line 8: Write the header to the stream
-- line 9: Write the payload to the stream. Note that because there
-  is no ``await`` keyword between sending the header and the payload,
-  we can be sure that there will be no "context switch" between
-  different async function calls trying to write data to this stream.
-- line 10: Finally, wait for all the bytes to be sent.
+- line 8: Write both the size header and the payload to the stream; we
+  could have concatenated the bytes and simply used ``await writer.write()``,
+  that would make a full copy of the bytes in ``payload``, and for large
+  messages those extra copies will add up very quickly!
 
 We can place the two async functions above, ``new_messages()``
 and ``send_message()``, into their own module called ``utils.py``
@@ -335,9 +331,55 @@ able to see print output for each different kind of action received.
 The next thing we'll have to do is set up chat rooms. There's no point
 receiving messages if there's nowhere to put them!
 
-TODO
+Server: Room Handling
+---------------------
 
-Notes:
+We need collections to store which connections are active, and which
+rooms each user has joined. We'll manage these events inside the callback
+function ``client_connected_cb()``. Here's a snippet of just that, and
+the global collections we'll use to track connections and room
+membership:
 
-- then show the server
-- spend some time on clean shutdown.
+.. code-block:: python3
+    :caption: Joining and leaving rooms
+    :linenos:
+
+    from collections import defaultdict
+    from weakref import WeakValueDictionary
+
+    WRITERS: Dict[str, StreamWriter] = WeakValueDictionary()
+    ROOMS: Dict[str, WeakSet[StreamWriter]] = defaultdict(WeakSet)
+
+    async def client_connected(reader: StreamReader, writer: StreamWriter):
+        addr = writer.get_extra_info('peername')
+        WRITERS[addr] = writer
+
+        def connect(msg):
+            print(f"User connected: {msg.get('username')}")
+
+        def joinroom(msg):
+            room_name = msg["room"]
+            print('joining room:', room_name)
+            room = ROOMS[room_name]
+            room.add(writer)
+
+        def leaveroom(msg):
+            room_name = msg["room"]
+            print('leaving room:', msg.get('room'))
+            room = ROOMS[room_name]
+            room.discard(writer)
+
+        def chat(msg):
+            print(f'chat sent to room {msg.get("room")}: {msg.get("message")}')
+            # TODO: distribute the message
+
+        <snip>
+
+- Using ``WeakValueDictionary`` and ``WeakSet`` means that when the
+  writer object goes out of scope, any entries in the collection of
+  writers and rooms will automatically be cleaned up.
+
+The room management is quite simple. When we receive a request to join
+a room is received, that room is looked up by name (or created automatically
+by the ``defaultdict``) and that connection is added to that room. The
+inverse happens when a request is received to leave a room.

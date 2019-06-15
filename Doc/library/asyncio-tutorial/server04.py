@@ -1,7 +1,12 @@
 import asyncio
 from asyncio import StreamReader, StreamWriter
-from typing import Dict, Callable
+from collections import defaultdict
+from weakref import WeakValueDictionary, WeakSet
+from typing import Dict, Callable, Set
 from utils import new_messages
+
+WRITERS: Dict[str, StreamWriter] = WeakValueDictionary()
+ROOMS: Dict[str, Set[StreamWriter]] = defaultdict(WeakSet)
 
 
 async def main():
@@ -15,18 +20,27 @@ async def main():
 
 
 async def client_connected(reader: StreamReader, writer: StreamWriter):
+    addr = writer.get_extra_info('peername')
+    WRITERS[addr] = writer
 
     def connect(msg):
-        print(msg.get('username'))
+        print(f"User connected: {msg.get('username')}")
 
     def joinroom(msg):
-        print('joining room:', msg.get('room'))
+        room_name = msg["room"]
+        print('joining room:', room_name)
+        room = ROOMS[room_name]
+        room.add(writer)
 
     def leaveroom(msg):
+        room_name = msg["room"]
         print('leaving room:', msg.get('room'))
+        room = ROOMS[room_name]
+        room.discard(writer)
 
     def chat(msg):
         print(f'chat sent to room {msg.get("room")}: {msg.get("message")}')
+        # TODO: distribute the message
 
     handlers: Dict[str, Callable] = dict(
         connect=connect,
