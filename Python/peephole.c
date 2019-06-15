@@ -311,6 +311,9 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 }
                 PyObject* cnt = PyList_GET_ITEM(consts, get_arg(codestr, i));
                 int is_true = PyObject_IsTrue(cnt);
+                if (is_true == -1) {
+                    goto exitError;
+                }
                 if (is_true == 1) {
                     fill_nops(codestr, op_start, nexti + 1);
                     cumlc = 0;
