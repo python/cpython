@@ -2622,19 +2622,19 @@ class Symlink(unittest.TestCase):
     #
     # Overwrite=True
     #
-    def test_1src_dst_overwrite_not_exist(self):
+    def test_overwrite_not_exist(self):
         src = self.src_file1
         dst = self.nf1
         shutil.symlink(src, dst, overwrite=True)
         self.assertEqual(os.readlink(dst), src)
 
-    def test_1src_dst_overwrite_existing_file(self):
+    def test_overwrite_existing_file(self):
         src = self.src_file1
         dst = self.dst_file1
         shutil.symlink(src, dst, overwrite=True)
         self.assertEqual(os.readlink(dst), src)
 
-    def test_1src_dst_overwrite_existing_dir(self):
+    def test_overwrite_existing_dir(self):
         with self.assertRaises(IsADirectoryError):
             shutil.symlink(self.src_file1, self.dst_dir1, overwrite=True)
 
