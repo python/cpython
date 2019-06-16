@@ -2593,9 +2593,9 @@ class Symlink(unittest.TestCase):
         # Set each bool arg to be non-bool ('X'), one after another
         for arg in bool_args:
             kwargs = {k: 'X' if k == arg else True for k in bool_args}
-            with self.assertRaises(TypeError):
-                shutil.symlink(self.src_file1, self.dst_file1, **kwargs)
-
+            with self.subTest(bool_arg=arg):
+                with self.assertRaises(TypeError):
+                    shutil.symlink(self.src_file1, self.dst_file1, **kwargs)
 
     #
     # Single source
@@ -2615,9 +2615,11 @@ class Symlink(unittest.TestCase):
             shutil.symlink(self.src_file1, self.dst_dir1)
 
     def test_1src_dst_existing_symlink(self):
-        for dst in self.extant_symlinks:
-            with self.assertRaises(FileExistsError):
-                shutil.symlink(self.src_file1, dst)
+        for name in self.symlink_names:
+            dst = getattr(self, name)
+            with self.subTest(symlink_type=name):
+                with self.assertRaises(FileExistsError):
+                    shutil.symlink(self.src_file1, dst)
 
     #
     # Overwrite=True
@@ -2644,9 +2646,11 @@ class Symlink(unittest.TestCase):
 
     def test_overwrite_existing_symlink(self):
         src = self.src_file1
-        for dst in self.extant_symlinks:
-            shutil.symlink(src, dst, overwrite=True)
-            self.assertEqual(os.readlink(dst), src)
+        for name in self.symlink_names:
+            dst = getattr(self, name)
+            with self.subTest(symlink_type=name):
+                shutil.symlink(src, dst, overwrite=True)
+                self.assertEqual(os.readlink(dst), src)
 
     #
     # List with single element
