@@ -304,16 +304,17 @@ class HelpSource(Query):
         return None if name is None or path is None else (name, path)
 
 class CustomRun(Query):
-    "Get arguments for custom run module."
+    """Get settings for custom run of module.
+
+    1. Command line arguments to extend sys.argv.
+    2. Whether to restart Shell or not.
+    """
     # Used in runscript.run_custom_event
 
     def __init__(self, parent, title, *, cli_args='',
                  _htest=False, _utest=False):
-        """Get command line args for custom run environment.
-
-        User enters the command line arugments for running the file.
-        """
-        message = 'Command Line Arguments:'
+        # TODO Use cli_args to pre-populate entry.
+        message = 'Command Line Arguments for sys.argv:'
         super().__init__(
                 parent, title, message, text0=cli_args,
                 _htest=_htest, _utest=_utest)
@@ -333,26 +334,20 @@ class CustomRun(Query):
 
     def cli_args_ok(self):
         "Validity check and parsing for command line arguments."
-        cli_args = self.entry.get().strip()
-        if not cli_args:
-            self.showerror('no arguments specified.')
-            return None
+        cli_string = self.entry.get().strip()
         try:
-            lex = shlex.split(cli_args, posix=True)
+            cli_args = shlex.split(cli_string, posix=True)
         except ValueError as err:
             self.showerror(str(err))
             return None
-        return lex
-
-    def restart_ok(self):
-        return self.restartvar.get()
+        return cli_args
 
     def entry_ok(self):
-        "Return apparently valid (lex, restart) or None"
+        "Return apparently valid (cli_args, restart) or None"
         self.entry_error['text'] = ''
-        lex = self.cli_args_ok()
-        restart = self.restart_ok()
-        return None if not lex else (lex, restart)
+        cli_args = self.cli_args_ok()
+        restart = self.restartvar.get()
+        return None if cli_args is None else (cli_args, restart)
 
 
 if __name__ == '__main__':

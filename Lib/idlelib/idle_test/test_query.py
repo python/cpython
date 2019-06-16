@@ -257,8 +257,7 @@ class CustomRunCLIargsokTest(unittest.TestCase):
 
     def test_blank_args(self):
         dialog = self.Dummy_CustomRun(' ')
-        self.assertEqual(dialog.cli_args_ok(), None)
-        self.assertIn('no arguments', dialog.entry_error['text'])
+        self.assertEqual(dialog.cli_args_ok(), [])
 
     def test_invalid_args(self):
         dialog = self.Dummy_CustomRun("'no-closing-quote")
@@ -266,9 +265,9 @@ class CustomRunCLIargsokTest(unittest.TestCase):
         self.assertIn('No closing', dialog.entry_error['text'])
 
     def test_good_args(self):
-        dialog = self.Dummy_CustomRun('-n 10 --verbose -p /path --name "my name"')
-        self.assertEqual(dialog.cli_args_ok(),
-                         ['-n', '10', '--verbose', '-p', '/path', '--name', 'my name'])
+        args = ['-n', '10', '--verbose', '-p', '/path', '--name']
+        dialog = self.Dummy_CustomRun(' '.join(args) + ' "my name"')
+        self.assertEqual(dialog.cli_args_ok(), args + ["my name"])
         self.assertEqual(dialog.entry_error['text'], '')
 
 
@@ -278,17 +277,17 @@ class CustomRunEntryokTest(unittest.TestCase):
     class Dummy_CustomRun:
         entry_ok = query.CustomRun.entry_ok
         entry_error = {}
+        restartvar = Var()
         def cli_args_ok(self):
             return self.cli_args
-        def restart_ok(self):
-            return self.restart
 
     def test_entry_ok_customrun(self):
         dialog = self.Dummy_CustomRun()
-        for dialog.restart in {True, False}:
+        for restart in {True, False}:
+            dialog.restartvar.set(restart)
             for cli_args, result in ((None, None),
-                                     ('my arg', ('my arg', dialog.restart))):
-                with self.subTest():
+                                     (['my arg'], (['my arg'], restart))):
+                with self.subTest(restart=restart, cli_args=cli_args):
                     dialog.cli_args = cli_args
                     self.assertEqual(dialog.entry_ok(), result)
 
@@ -353,9 +352,7 @@ class SectionnameGuiTest(unittest.TestCase):
         dialog.entry.insert(0, 'okay')
         dialog.button_ok.invoke()
         self.assertEqual(dialog.result, 'okay')
-        del dialog
         root.destroy()
-        del root
 
 
 class ModulenameGuiTest(unittest.TestCase):
@@ -372,9 +369,7 @@ class ModulenameGuiTest(unittest.TestCase):
         self.assertEqual(dialog.entry.get(), 'idlelib')
         dialog.button_ok.invoke()
         self.assertTrue(dialog.result.endswith('__init__.py'))
-        del dialog
         root.destroy()
-        del root
 
 
 class HelpsourceGuiTest(unittest.TestCase):
@@ -394,9 +389,7 @@ class HelpsourceGuiTest(unittest.TestCase):
         dialog.button_ok.invoke()
         prefix = "file://" if sys.platform == 'darwin' else ''
         Equal(dialog.result, ('__test__', prefix + __file__))
-        del dialog
         root.destroy()
-        del root
 
 
 class CustomRunGuiTest(unittest.TestCase):
@@ -412,9 +405,7 @@ class CustomRunGuiTest(unittest.TestCase):
         dialog.entry.insert(0, 'okay')
         dialog.button_ok.invoke()
         self.assertEqual(dialog.result, (['okay'], True))
-        del dialog
         root.destroy()
-        del root
 
 
 if __name__ == '__main__':
