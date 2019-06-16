@@ -33,10 +33,9 @@ async def client_connected(reader: StreamReader, writer: StreamWriter):
 
     def chat(msg):
         print(f'chat sent to room {msg.get("room")}: {msg.get("message")}')
-        payload = json.dumps(msg).encode()
         room = ROOMS[msg["room"]]
         for friend in room:
-            asyncio.create_task(send_message(friend, payload))
+            asyncio.create_task(send_message(friend, msg))
 
     handlers: Dict[str, Callable[[Dict], None]] = dict(
         connect=connect,

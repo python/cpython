@@ -342,7 +342,7 @@ membership:
 
 .. literalinclude:: server05.py
     :caption: Joining and leaving rooms
-    :lines: 9-10,18-40
+    :lines: 9-10,18-39
     :language: python3
 
 When we receive a request to join
