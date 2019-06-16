@@ -198,7 +198,7 @@ process more convenient:
 .. function:: dump(obj, file, protocol=None, \*, fix_imports=True, buffer_callback=None)
 
    Write the pickled representation of the object *obj* to the open
-   :term:`file object` *file*. This is equivalent to
+   :term:`file object` *file*.  This is equivalent to
    ``Pickler(file, protocol).dump(obj)``.
 
    Arguments *file*, *protocol*, *fix_imports* and *buffer_callback* have
