@@ -2598,6 +2598,17 @@ class Symlink(unittest.TestCase):
                     shutil.symlink(self.src_file1, self.dst_file1, **kwargs)
 
     #
+    # Calling of helper functions
+    #
+    @unittest.expectedFailure
+    def test_target_is_dir_passed_for_each_src(self):
+        srcs = self.extant_symlinks
+
+    @unittest.expectedFailure
+    def test_overwrite_passed_for_each_src(self):
+        srcs = self.extant_symlinks
+
+    #
     # Single source
     #
     def test_1src_dst_not_exist(self):
@@ -2624,9 +2635,6 @@ class Symlink(unittest.TestCase):
     #
     # Overwrite=True
     #
-
-    def test_overwrite_passed_for_each_src(self):
-        srcs = self.symlinks
 
     def test_overwrite_not_exist(self):
         src = self.src_file1
