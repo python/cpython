@@ -129,6 +129,7 @@ class ScriptBinding:
         directory to the directory of the module being executed and also
         add that directory to its sys.path if not already included.
         """
+        cli_args, restart = run_args if run_args is not None else ([], True)
         filename = self.getfilename()
         if not filename:
             return 'break'
@@ -137,14 +138,13 @@ class ScriptBinding:
             return 'break'
         if not self.tabnanny(filename):
             return 'break'
-        cli_args, restart = run_args
         interp = self.shell.interp
         if pyshell.use_subprocess and restart:
             interp.restart_subprocess(with_cwd=False, filename=
                         self.editwin._filename_to_unicode(filename))
         dirname = os.path.dirname(filename)
         argv = [filename]
-        if cli_args is not None:
+        if cli_args:
             argv += cli_args
         interp.runcommand(f"""if 1:
             __file__ = {filename!r}
