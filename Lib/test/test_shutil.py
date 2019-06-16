@@ -2567,7 +2567,7 @@ class Symlink(unittest.TestCase):
             dst = os.path.join(self.tmp_dir, link_name)
             src = os.path.join(self.tmp_dir, target)
             os.symlink(src, dst)
-            setattr(self, link_name, target)
+            setattr(self, link_name, dst)
 
         # Create pathnames for new directories, files and symlinks XXX dirs
         new_files = {'nf1': 'nf1', 'nf2': os.path.join('dd1', 'nf2')}
