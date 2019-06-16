@@ -2550,10 +2550,10 @@ class Symlink(unittest.TestCase):
         extant_dirs = {'dst_dir1': 'dd1'}
 
         # Keys are link filenames, values are link targets
-        extant_symlinks = {'link_to_file': 'df1', 'link_to_dir': 'dd1',
-                           'link_to_link': 'link_to_file',
-                           'broken_link': 'non-extant',
-                           'link_to_broken_link': 'broken_link'}
+        self.symlink_names = {'link_to_file': 'df1', 'link_to_dir': 'dd1',
+                              'link_to_link': 'link_to_file',
+                              'broken_link': 'non-extant',
+                              'link_to_broken_link': 'broken_link'}
         self.tmp_dir = tempfile.mkdtemp()
         for name, value in extant_dirs.items():
             path = os.path.join(self.tmp_dir, value)
@@ -2564,7 +2564,7 @@ class Symlink(unittest.TestCase):
             open(path, 'w').close()  # os.mknod needs root on MacOS
             setattr(self, name, path)
         self.extant_symlinks = []  # One of each type of symlink
-        for link_name, target in extant_symlinks.items():
+        for link_name, target in self.symlink_names.items():
             dst = os.path.join(self.tmp_dir, link_name)
             src = os.path.join(self.tmp_dir, target)
             os.symlink(src, dst)
