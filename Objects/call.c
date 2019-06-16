@@ -9,22 +9,6 @@ static PyObject *
 cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs);
 
 
-int
-_PyObject_HasFastCall(PyObject *callable)
-{
-    if (PyFunction_Check(callable)) {
-        return 1;
-    }
-    else if (PyCFunction_Check(callable)) {
-        return !(PyCFunction_GET_FLAGS(callable) & METH_VARARGS);
-    }
-    else {
-        assert (PyCallable_Check(callable));
-        return 0;
-    }
-}
-
-
 static PyObject *
 null_error(void)
 {
@@ -189,12 +173,22 @@ _PyObject_MakeTpCall(PyObject *callable, PyObject *const *args, Py_ssize_t nargs
 PyObject *
 PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
 {
-    vectorcallfunc func = _PyVectorcall_Function(callable);
+    /* get vectorcallfunc as in _PyVectorcall_Function, but without
+     * the _Py_TPFLAGS_HAVE_VECTORCALL check */
+    Py_ssize_t offset = Py_TYPE(callable)->tp_vectorcall_offset;
+    if ((offset <= 0) || (!Py_TYPE(callable)->tp_call)) {
+        PyErr_Format(PyExc_TypeError, "'%.200s' object does not support vectorcall",
+                     Py_TYPE(callable)->tp_name);
+        return NULL;
+    }
+    vectorcallfunc func = *(vectorcallfunc *)(((char *)callable) + offset);
     if (func == NULL) {
         PyErr_Format(PyExc_TypeError, "'%.200s' object does not support vectorcall",
                      Py_TYPE(callable)->tp_name);
         return NULL;
     }
+
+    /* Convert arguments & call */
     PyObject *const *args;
     Py_ssize_t nargs = PyTuple_GET_SIZE(tuple);
     PyObject *kwnames;
@@ -324,11 +318,11 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         /* Fast paths */
-        if (argdefs == NULL && co->co_argcount + co->co_posonlyargcount == nargs) {
+        if (argdefs == NULL && co->co_argcount == nargs) {
             return function_code_fastcall(co, args, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount + co->co_posonlyargcount == PyTuple_GET_SIZE(argdefs)) {
+                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             args = _PyTuple_ITEMS(argdefs);
@@ -390,8 +384,8 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
 
 
 PyObject *
-_PyFunction_FastCallKeywords(PyObject *func, PyObject* const* stack,
-                             size_t nargsf, PyObject *kwnames)
+_PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
+                       size_t nargsf, PyObject *kwnames)
 {
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
     PyObject *globals = PyFunction_GET_GLOBALS(func);
@@ -412,11 +406,11 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject* const* stack,
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
-        if (argdefs == NULL && co->co_argcount + co->co_posonlyargcount== nargs) {
+        if (argdefs == NULL && co->co_argcount == nargs) {
             return function_code_fastcall(co, stack, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount + co->co_posonlyargcount == PyTuple_GET_SIZE(argdefs)) {
+                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             stack = _PyTuple_ITEMS(argdefs);
@@ -730,9 +724,9 @@ exit:
 
 
 PyObject *
-_PyCFunction_FastCallKeywords(PyObject *func,
-                              PyObject *const *args, size_t nargsf,
-                              PyObject *kwnames)
+_PyCFunction_Vectorcall(PyObject *func,
+                        PyObject *const *args, size_t nargsf,
+                        PyObject *kwnames)
 {
     PyObject *result;
 
@@ -1216,9 +1210,6 @@ object_vacall(PyObject *base, PyObject *callable, va_list vargs)
     return result;
 }
 
-
-/* Private API for the LOAD_METHOD opcode. */
-extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
 
 PyObject *
 PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)

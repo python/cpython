@@ -1361,6 +1361,10 @@ class _ActionsContainer(object):
         if not callable(type_func):
             raise ValueError('%r is not callable' % (type_func,))
 
+        if type_func is FileType:
+            raise ValueError('%r is a FileType class object, instance of it'
+                             ' must be passed' % (type_func,))
+
         # raise an error if the metavar does not match the type
         if hasattr(self, "_get_formatter"):
             try:

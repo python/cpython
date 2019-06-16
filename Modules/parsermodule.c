@@ -224,10 +224,10 @@ PyTypeObject PyST_Type = {
     (int) sizeof(PyST_Object),          /* tp_basicsize         */
     0,                                  /* tp_itemsize          */
     (destructor)parser_free,            /* tp_dealloc           */
-    0,                                  /* tp_print             */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr           */
     0,                                  /* tp_setattr           */
-    0,                                  /* tp_reserved          */
+    0,                                  /* tp_as_async          */
     0,                                  /* tp_repr              */
     0,                                  /* tp_as_number         */
     0,                                  /* tp_as_sequence       */
@@ -336,8 +336,7 @@ parser_newstobject(node *st, int type)
     if (o != 0) {
         o->st_node = st;
         o->st_type = type;
-        o->st_flags.cf_flags = 0;
-        o->st_flags.cf_feature_version = PY_MINOR_VERSION;
+        o->st_flags = _PyCompilerFlags_INIT;
     }
     else {
         PyNode_Free(st);

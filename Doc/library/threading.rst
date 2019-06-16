@@ -58,6 +58,14 @@ This module defines the following functions:
    :func:`threading.excepthook` can be overridden to control how uncaught
    exceptions raised by :func:`Thread.run` are handled.
 
+   Storing *exc_value* using a custom hook can create a reference cycle. It
+   should be cleared explicitly to break the reference cycle when the
+   exception is no longer needed.
+
+   Storing *object* using a custom hook can resurrect it if it is set to an
+   object which is being finalized. Avoid storing *object* after the custom
+   hook completes to avoid resurrecting objects.
+
    .. seealso::
       :func:`sys.excepthook` handles uncaught exceptions.
 
@@ -82,7 +90,7 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX.
 
    .. versionadded:: 3.8
 
@@ -272,6 +280,8 @@ since it is impossible to detect the termination of alien threads.
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
 
+   Daemon threads must not be used in subinterpreters.
+
    .. versionchanged:: 3.3
       Added the *daemon* argument.
 
@@ -285,6 +295,12 @@ since it is impossible to detect the termination of alien threads.
 
       This method will raise a :exc:`RuntimeError` if called more than once
       on the same thread object.
+
+      Raise a :exc:`RuntimeError` if the thread is a daemon thread and the
+      method is called from a subinterpreter.
+
+      .. versionchanged:: 3.9
+         In a subinterpreter, spawning a daemon thread now raises an exception.
 
    .. method:: run()
 
@@ -355,7 +371,7 @@ since it is impossible to detect the termination of alien threads.
          system-wide) from the time the thread is created until the thread
          has been terminated.
 
-      .. availability:: Windows, FreeBSD, Linux, macOS.
+      .. availability:: Require :func:`get_native_id` function.
 
       .. versionadded:: 3.8
 

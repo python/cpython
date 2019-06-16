@@ -71,7 +71,11 @@ method_vectorcall(PyObject *method, PyObject *const *args,
         }
         /* use borrowed references */
         newargs[0] = self;
-        memcpy(newargs + 1, args, totalargs * sizeof(PyObject *));
+        if (totalargs) { /* bpo-37138: if totalargs == 0, then args may be
+                          * NULL and calling memcpy() with a NULL pointer
+                          * is undefined behaviour. */
+            memcpy(newargs + 1, args, totalargs * sizeof(PyObject *));
+        }
         result = _PyObject_Vectorcall(func, newargs, nargs+1, kwnames);
         PyMem_Free(newargs);
     }
@@ -106,7 +110,7 @@ PyMethod_New(PyObject *func, PyObject *self)
     im->im_weakreflist = NULL;
     Py_INCREF(func);
     im->im_func = func;
-    Py_XINCREF(self);
+    Py_INCREF(self);
     im->im_self = self;
     im->vectorcall = method_vectorcall;
     _PyObject_GC_TRACK(im);
@@ -352,7 +356,7 @@ PyTypeObject PyMethod_Type = {
     offsetof(PyMethodObject, vectorcall),       /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)method_repr,                      /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -621,10 +625,10 @@ PyTypeObject PyInstanceMethod_Type = {
     sizeof(PyInstanceMethodObject),             /* tp_basicsize */
     0,                                          /* tp_itemsize */
     instancemethod_dealloc,                     /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)instancemethod_repr,              /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

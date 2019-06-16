@@ -288,10 +288,10 @@ static PyTypeObject _HashInheritanceTester_Type = {
     sizeof(PyObject),           /* Basic object size */
     0,                          /* Item size for varobject */
     (destructor)PyObject_Del, /* tp_dealloc */
-    0,                          /* tp_print */
+    0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
-    0,                          /* tp_reserved */
+    0,                          /* tp_as_async */
     0,                          /* tp_repr */
     0,                          /* tp_as_number */
     0,                          /* tp_as_sequence */
@@ -823,6 +823,26 @@ test_long_as_size_t(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     /* Py_INCREF(Py_None) omitted - we already have a reference to it. */
     return Py_None;
+}
+
+static PyObject *
+test_long_as_unsigned_long_long_mask(PyObject *self,
+                                     PyObject *Py_UNUSED(ignored))
+{
+    unsigned long long res = PyLong_AsUnsignedLongLongMask(NULL);
+
+    if (res != (unsigned long long)-1 || !PyErr_Occurred()) {
+        return raiseTestError("test_long_as_unsigned_long_long_mask",
+                              "PyLong_AsUnsignedLongLongMask(NULL) didn't "
+                              "complain");
+    }
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+        return raiseTestError("test_long_as_unsigned_long_long_mask",
+                              "PyLong_AsUnsignedLongLongMask(NULL) raised "
+                              "something other than SystemError");
+    }
+    PyErr_Clear();
+    Py_RETURN_NONE;
 }
 
 /* Test the PyLong_AsDouble API. At present this just tests that
@@ -4469,15 +4489,17 @@ test_pymem_getallocatorsname(PyObject *self, PyObject *args)
 
 
 static PyObject*
-pyobject_is_freed(PyObject *self, PyObject *op)
+test_pyobject_is_freed(const char *test_name, PyObject *op)
 {
-    int res = _PyObject_IsFreed(op);
-    return PyBool_FromLong(res);
+    if (!_PyObject_IsFreed(op)) {
+        return raiseTestError(test_name, "object is not seen as freed");
+    }
+    Py_RETURN_NONE;
 }
 
 
 static PyObject*
-pyobject_uninitialized(PyObject *self, PyObject *args)
+check_pyobject_uninitialized_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject));
     if (op == NULL) {
@@ -4486,12 +4508,12 @@ pyobject_uninitialized(PyObject *self, PyObject *args)
     /* Initialize reference count to avoid early crash in ceval or GC */
     Py_REFCNT(op) = 1;
     /* object fields like ob_type are uninitialized! */
-    return op;
+    return test_pyobject_is_freed("check_pyobject_uninitialized_is_freed", op);
 }
 
 
 static PyObject*
-pyobject_forbidden_bytes(PyObject *self, PyObject *args)
+check_pyobject_forbidden_bytes_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
     /* Allocate an incomplete PyObject structure: truncate 'ob_type' field */
     PyObject *op = (PyObject *)PyObject_Malloc(offsetof(PyObject, ob_type));
@@ -4502,12 +4524,12 @@ pyobject_forbidden_bytes(PyObject *self, PyObject *args)
     Py_REFCNT(op) = 1;
     /* ob_type field is after the memory block: part of "forbidden bytes"
        when using debug hooks on memory allocatrs! */
-    return op;
+    return test_pyobject_is_freed("check_pyobject_forbidden_bytes_is_freed", op);
 }
 
 
 static PyObject*
-pyobject_freed(PyObject *self, PyObject *args)
+check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyObject *op = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
     if (op == NULL) {
@@ -4517,7 +4539,7 @@ pyobject_freed(PyObject *self, PyObject *args)
     /* Reset reference count to avoid early crash in ceval or GC */
     Py_REFCNT(op) = 1;
     /* object memory is freed! */
-    return op;
+    return test_pyobject_is_freed("check_pyobject_freed_is_freed", op);
 }
 
 
@@ -5070,6 +5092,8 @@ static PyMethodDef TestMethods[] = {
     {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
     {"test_long_as_double",     test_long_as_double,             METH_NOARGS},
     {"test_long_as_size_t",     test_long_as_size_t,             METH_NOARGS},
+    {"test_long_as_unsigned_long_long_mask",
+        test_long_as_unsigned_long_long_mask, METH_NOARGS},
     {"test_long_numbits",       test_long_numbits,               METH_NOARGS},
     {"test_k_code",             test_k_code,                     METH_NOARGS},
     {"test_empty_argparse",     test_empty_argparse,             METH_NOARGS},
@@ -5242,10 +5266,9 @@ static PyMethodDef TestMethods[] = {
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
-    {"pyobject_is_freed", (PyCFunction)(void(*)(void))pyobject_is_freed, METH_O},
-    {"pyobject_uninitialized", pyobject_uninitialized, METH_NOARGS},
-    {"pyobject_forbidden_bytes", pyobject_forbidden_bytes, METH_NOARGS},
-    {"pyobject_freed", pyobject_freed, METH_NOARGS},
+    {"check_pyobject_uninitialized_is_freed", check_pyobject_uninitialized_is_freed, METH_NOARGS},
+    {"check_pyobject_forbidden_bytes_is_freed", check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
+    {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},
     {"pyobject_malloc_without_gil", pyobject_malloc_without_gil, METH_NOARGS},
     {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
@@ -5383,10 +5406,10 @@ static PyTypeObject test_structmembersType = {
     sizeof(test_structmembers),         /* tp_basicsize */
     0,                                  /* tp_itemsize */
     test_structmembers_free,            /* destructor tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -5486,10 +5509,10 @@ static PyTypeObject matmulType = {
     sizeof(matmulObject),               /* tp_basicsize */
     0,                                  /* tp_itemsize */
     matmulType_dealloc,                 /* destructor tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     &matmulType_as_number,              /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -5522,6 +5545,27 @@ static PyTypeObject matmulType = {
     PyObject_Del,                       /* tp_free */
 };
 
+typedef struct {
+    PyObject_HEAD
+} ipowObject;
+
+static PyObject *
+ipowType_ipow(PyObject *self, PyObject *other, PyObject *mod)
+{
+    return Py_BuildValue("OO", other, mod);
+}
+
+static PyNumberMethods ipowType_as_number = {
+    .nb_inplace_power = ipowType_ipow
+};
+
+static PyTypeObject ipowType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "ipowType",
+    .tp_basicsize = sizeof(ipowObject),
+    .tp_as_number = &ipowType_as_number,
+    .tp_new = PyType_GenericNew
+};
 
 typedef struct {
     PyObject_HEAD
@@ -5578,7 +5622,7 @@ static PyTypeObject awaitType = {
     sizeof(awaitObject),                /* tp_basicsize */
     0,                                  /* tp_itemsize */
     (destructor)awaitObject_dealloc,    /* destructor tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
     &awaitType_as_async,                /* tp_as_async */
@@ -5623,10 +5667,10 @@ static PyTypeObject PyRecursingInfinitelyError_Type = {
     sizeof(PyBaseExceptionObject), /* tp_basicsize */
     0,                          /* tp_itemsize */
     0,                          /* tp_dealloc */
-    0,                          /* tp_print */
+    0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
-    0,                          /* tp_reserved */
+    0,                          /* tp_as_async */
     0,                          /* tp_repr */
     0,                          /* tp_as_number */
     0,                          /* tp_as_sequence */
@@ -5704,10 +5748,10 @@ static PyTypeObject MyList_Type = {
     sizeof(MyListObject),
     0,
     (destructor)MyList_dealloc,                 /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -5814,6 +5858,29 @@ static PyTypeObject Generic_Type = {
 
 /* Test PEP 590 */
 
+typedef struct {
+    PyObject_HEAD
+    vectorcallfunc vectorcall;
+} MethodDescriptorObject;
+
+static PyObject *
+MethodDescriptor_vectorcall(PyObject *callable, PyObject *const *args,
+                            size_t nargsf, PyObject *kwnames)
+{
+    /* True if using the vectorcall function in MethodDescriptorObject
+     * but False for MethodDescriptor2Object */
+    MethodDescriptorObject *md = (MethodDescriptorObject *)callable;
+    return PyBool_FromLong(md->vectorcall != NULL);
+}
+
+static PyObject *
+MethodDescriptor_new(PyTypeObject* type, PyObject* args, PyObject *kw)
+{
+    MethodDescriptorObject *op = (MethodDescriptorObject *)type->tp_alloc(type, 0);
+    op->vectorcall = MethodDescriptor_vectorcall;
+    return (PyObject *)op;
+}
+
 static PyObject *
 func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 {
@@ -5831,10 +5898,22 @@ nop_descr_get(PyObject *func, PyObject *obj, PyObject *type)
     return func;
 }
 
+static PyObject *
+call_return_args(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    Py_INCREF(args);
+    return args;
+}
+
 static PyTypeObject MethodDescriptorBase_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "MethodDescriptorBase",
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_METHOD_DESCRIPTOR,
+    sizeof(MethodDescriptorObject),
+    .tp_new = MethodDescriptor_new,
+    .tp_call = PyVectorcall_Call,
+    .tp_vectorcall_offset = offsetof(MethodDescriptorObject, vectorcall),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+                Py_TPFLAGS_METHOD_DESCRIPTOR | _Py_TPFLAGS_HAVE_VECTORCALL,
     .tp_descr_get = func_descr_get,
 };
 
@@ -5848,7 +5927,32 @@ static PyTypeObject MethodDescriptorNopGet_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "MethodDescriptorNopGet",
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_call = call_return_args,
     .tp_descr_get = nop_descr_get,
+};
+
+typedef struct {
+    MethodDescriptorObject base;
+    vectorcallfunc vectorcall;
+} MethodDescriptor2Object;
+
+static PyObject *
+MethodDescriptor2_new(PyTypeObject* type, PyObject* args, PyObject *kw)
+{
+    MethodDescriptor2Object *op = PyObject_New(MethodDescriptor2Object, type);
+    op->base.vectorcall = NULL;
+    op->vectorcall = MethodDescriptor_vectorcall;
+    return (PyObject *)op;
+}
+
+static PyTypeObject MethodDescriptor2_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MethodDescriptor2",
+    sizeof(MethodDescriptor2Object),
+    .tp_new = MethodDescriptor2_new,
+    .tp_call = PyVectorcall_Call,
+    .tp_vectorcall_offset = offsetof(MethodDescriptor2Object, vectorcall),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_HAVE_VECTORCALL,
 };
 
 
@@ -5887,6 +5991,11 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&matmulType);
     PyModule_AddObject(m, "matmulType", (PyObject *)&matmulType);
+    if (PyType_Ready(&ipowType) < 0) {
+        return NULL;
+    }
+    Py_INCREF(&ipowType);
+    PyModule_AddObject(m, "ipowType", (PyObject *)&ipowType);
 
     if (PyType_Ready(&awaitType) < 0)
         return NULL;
@@ -5915,6 +6024,12 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&MethodDescriptorNopGet_Type);
     PyModule_AddObject(m, "MethodDescriptorNopGet", (PyObject *)&MethodDescriptorNopGet_Type);
+
+    MethodDescriptor2_Type.tp_base = &MethodDescriptorBase_Type;
+    if (PyType_Ready(&MethodDescriptor2_Type) < 0)
+        return NULL;
+    Py_INCREF(&MethodDescriptor2_Type);
+    PyModule_AddObject(m, "MethodDescriptor2", (PyObject *)&MethodDescriptor2_Type);
 
     if (PyType_Ready(&GenericAlias_Type) < 0)
         return NULL;

@@ -579,7 +579,7 @@ information. When you call one of the logging methods on an instance of
 information in the delegated call. Here's a snippet from the code of
 :class:`LoggerAdapter`::
 
-    def debug(self, msg, *args, **kwargs):
+    def debug(self, msg, /, *args, **kwargs):
         """
         Delegate a debug call to the underlying logger, after adding
         contextual information from this adapter instance.
@@ -1079,7 +1079,7 @@ call ``str()`` on that object to get the actual format string. Consider the
 following two classes::
 
     class BraceMessage:
-        def __init__(self, fmt, *args, **kwargs):
+        def __init__(self, fmt, /, *args, **kwargs):
             self.fmt = fmt
             self.args = args
             self.kwargs = kwargs
@@ -1088,7 +1088,7 @@ following two classes::
             return self.fmt.format(*self.args, **self.kwargs)
 
     class DollarMessage:
-        def __init__(self, fmt, **kwargs):
+        def __init__(self, fmt, /, **kwargs):
             self.fmt = fmt
             self.kwargs = kwargs
 
@@ -1143,7 +1143,7 @@ to the above, as in the following example::
 
     import logging
 
-    class Message(object):
+    class Message:
         def __init__(self, fmt, args):
             self.fmt = fmt
             self.args = args
@@ -1155,7 +1155,7 @@ to the above, as in the following example::
         def __init__(self, logger, extra=None):
             super(StyleAdapter, self).__init__(logger, extra or {})
 
-        def log(self, level, msg, *args, **kwargs):
+        def log(self, level, msg, /, *args, **kwargs):
             if self.isEnabledFor(level):
                 msg, kwargs = self.process(msg, kwargs)
                 self.logger._log(level, Message(msg, args), (), **kwargs)
@@ -1301,7 +1301,7 @@ You can also subclass :class:`QueueListener` to get messages from other kinds
 of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
 
     class ZeroMQSocketListener(QueueListener):
-        def __init__(self, uri, *handlers, **kwargs):
+        def __init__(self, uri, /, *handlers, **kwargs):
             self.ctx = kwargs.get('ctx') or zmq.Context()
             socket = zmq.Socket(self.ctx, zmq.SUB)
             socket.setsockopt_string(zmq.SUBSCRIBE, '')  # subscribe to everything
@@ -1706,8 +1706,8 @@ which uses JSON to serialise the event in a machine-parseable manner::
     import json
     import logging
 
-    class StructuredMessage(object):
-        def __init__(self, message, **kwargs):
+    class StructuredMessage:
+        def __init__(self, message, /, **kwargs):
             self.message = message
             self.kwargs = kwargs
 
@@ -1750,8 +1750,8 @@ as in the following complete example::
                 return o.encode('unicode_escape').decode('ascii')
             return super(Encoder, self).default(o)
 
-    class StructuredMessage(object):
-        def __init__(self, message, **kwargs):
+    class StructuredMessage:
+        def __init__(self, message, /, **kwargs):
             self.message = message
             self.kwargs = kwargs
 
@@ -1982,8 +1982,8 @@ object as a message format string, and that the logging package will call
 :func:`str` on that object to get the actual format string. Consider the
 following two classes::
 
-    class BraceMessage(object):
-        def __init__(self, fmt, *args, **kwargs):
+    class BraceMessage:
+        def __init__(self, fmt, /, *args, **kwargs):
             self.fmt = fmt
             self.args = args
             self.kwargs = kwargs
@@ -1991,8 +1991,8 @@ following two classes::
         def __str__(self):
             return self.fmt.format(*self.args, **self.kwargs)
 
-    class DollarMessage(object):
-        def __init__(self, fmt, **kwargs):
+    class DollarMessage:
+        def __init__(self, fmt, /, **kwargs):
             self.fmt = fmt
             self.kwargs = kwargs
 
@@ -2457,7 +2457,7 @@ scope of the context manager::
     import logging
     import sys
 
-    class LoggingContext(object):
+    class LoggingContext:
         def __init__(self, logger, level=None, handler=None, close=True):
             self.logger = logger
             self.level = level
