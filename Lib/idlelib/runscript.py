@@ -109,15 +109,15 @@ class ScriptBinding:
             # tries to run a module using the keyboard shortcut
             # (the menu item works fine).
             self.editwin.text_frame.after(200,
-                lambda: self.editwin.text_frame.event_generate('<<run-module-event-2>>'))
+                lambda: self.editwin.text_frame.event_generate(
+                        '<<run-module-event-2>>'))
             return 'break'
         else:
             return self._run_module_event(event)
 
     def run_custom_event(self, event):
         run_args = CustomRun(event.widget, "Customize Run").result
-        # User cancelled.
-        if not run_args:
+        if not run_args:  # User cancelled.
             return 'break'
         return self._run_module_event(event, cli_args=run_args[0], restart=run_args[1])
 
@@ -143,9 +143,8 @@ class ScriptBinding:
                         self.editwin._filename_to_unicode(filename))
         dirname = os.path.dirname(filename)
         argv = [filename]
-        if cli_args:
+        if cli_args is not None:
             argv += cli_args
-        # XXX Too often this discards arguments the user just set...
         interp.runcommand(f"""if 1:
             __file__ = {filename!r}
             import sys as _sys
