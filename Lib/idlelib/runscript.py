@@ -119,9 +119,9 @@ class ScriptBinding:
         run_args = CustomRun(event.widget, "Customize Run").result
         if not run_args:  # User cancelled.
             return 'break'
-        return self._run_module_event(event, cli_args=run_args[0], restart=run_args[1])
+        return self._run_module_event(event, run_args)
 
-    def _run_module_event(self, event, *, cli_args=None, restart=True):
+    def _run_module_event(self, event, *, run_args=None):
         """Run the module after setting up the environment.
 
         First check the syntax.  If OK, make sure the shell is active and
@@ -137,6 +137,7 @@ class ScriptBinding:
             return 'break'
         if not self.tabnanny(filename):
             return 'break'
+        cli_args, restart = run_args
         interp = self.shell.interp
         if pyshell.use_subprocess and restart:
             interp.restart_subprocess(with_cwd=False, filename=
