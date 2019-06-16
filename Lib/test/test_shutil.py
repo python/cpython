@@ -2564,12 +2564,14 @@ class Symlink(unittest.TestCase):
             open(path, 'w').close()  # os.mknod needs root on MacOS
             setattr(self, name, path)
         self.extant_symlinks = []  # One of each type of symlink
+        self.symlink_to_path = {}  # One of each type of symlink
         for link_name, target in self.symlink_names.items():
             dst = os.path.join(self.tmp_dir, link_name)
             src = os.path.join(self.tmp_dir, target)
             os.symlink(src, dst)
             setattr(self, link_name, dst)
             self.extant_symlinks.append(dst)
+            self.symlink_to_path[link_name] = dst
 
         # Create pathnames for new directories, files and symlinks XXX dirs
         new_paths = {'np1': 'np1', 'np2': os.path.join('dd1', 'np2')}
@@ -2665,8 +2667,29 @@ class Symlink(unittest.TestCase):
     #
 
     #
-    # List with more than one element
+    # List of sources
     #
+    def test_list_dst_is_directory(self):
+        srcs = [self.src_file1, self.src_file2]
+        dirs = {'directory': self.dst_dir1,
+                'symlink_to_dir': self.link_to_dir}
+        for description, dir_path in dirs.items():
+            with self.subTest(type=description):
+                shutil.symlink(srcs, dir_path)
+                for src in srcs:
+                    link_path = os.path.join(dir_path, os.path.basename(src))
+                    self.assertEqual(os.readlink(link_path), src)
+
+    def test_list_dst_not_directory(self):
+        srcs = [self.src_file1, self.src_file2]
+        links_not_dir = {k: v for k, v in self.symlink_to_path.items()
+                         if k != 'link_to_dir'}
+        dsts = {'non-existant': self.np1, 'file': self.dst_file1,
+                **links_not_dir}
+        for description, dst_path in dsts.items():
+            with self.subTest(type=description):
+                with self.assertRaises(NotADirectoryError):
+                    shutil.symlink(srcs, dst_path)
 
     #
     # OLD TESTS
