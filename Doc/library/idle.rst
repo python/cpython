@@ -234,13 +234,10 @@ Run Module
 
 .. _run-custom:
 
-Run Custom
-   Same as :ref:`Run Module <run-module>`, except allow customization of the
-   environment used when running the module.
-
-   The *Command Line Arguments* are passed to the module like :data:`sys.argv`
-   arguments would be from the command line.  This is similar to executing a
-   file with ``python -i file [args]``.
+Run... Customized
+   Same as :ref:`Run Module <run-module>`, but run the module with customized
+   settings.  *Command Line Arguments* extend :data:`sys.argv` as if passed
+   on a command line. The module can be run in the Shell without restarting.
 
 
 Shell menu (Shell window only)
