@@ -719,13 +719,13 @@ alphanumeric characters (for protocol 0) [#]_ or just an arbitrary object (for
 any newer protocol).
 
 The resolution of such persistent IDs is not defined by the :mod:`pickle`
-module; it will delegate this resolution to the user defined methods on the
+module; it will delegate this resolution to the user-defined methods on the
 pickler and unpickler, :meth:`~Pickler.persistent_id` and
 :meth:`~Unpickler.persistent_load` respectively.
 
-To pickle objects that have an external persistent id, the pickler must have a
+To pickle objects that have an external persistent ID, the pickler must have a
 custom :meth:`~Pickler.persistent_id` method that takes an object as an
-argument and returns either ``None`` or the persistent id for that object.
+argument and returns either ``None`` or the persistent ID for that object.
 When ``None`` is returned, the pickler simply pickles the object as normal.
 When a persistent ID string is returned, the pickler will pickle that object,
 along with a marker so that the unpickler will recognize it as a persistent ID.
