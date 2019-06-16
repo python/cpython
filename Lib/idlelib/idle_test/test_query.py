@@ -83,7 +83,7 @@ class SectionNameTest(unittest.TestCase):
         entry = Var()
         entry_error = {}
         def __init__(self, dummy_entry):
-            self.entry.set(dummy_entry)
+            self.entry = Var(value=dummy_entry)
             self.entry_error['text'] = ''
         def showerror(self, message):
             self.entry_error['text'] = message
@@ -115,11 +115,9 @@ class ModuleNameTest(unittest.TestCase):
     class Dummy_ModuleName:
         entry_ok = query.ModuleName.entry_ok  # Function being tested.
         text0 = ''
-        entry = Var()
-        entry_error = {}
         def __init__(self, dummy_entry):
-            self.entry.set(dummy_entry)
-            self.entry_error['text'] = ''
+            self.entry = Var(value=dummy_entry)
+            self.entry_error = {'text': ''}
         def showerror(self, message):
             self.entry_error['text'] = message
 
@@ -144,9 +142,7 @@ class ModuleNameTest(unittest.TestCase):
         self.assertEqual(dialog.entry_error['text'], '')
 
 
-# 3 HelpSource test classes each test one function.
-
-orig_platform = query.platform
+# 3 HelpSource test classes each test one method.
 
 class HelpsourceBrowsefileTest(unittest.TestCase):
     "Test browse_file method of ModuleName subclass of Query."
@@ -178,17 +174,16 @@ class HelpsourcePathokTest(unittest.TestCase):
 
     class Dummy_HelpSource:
         path_ok = query.HelpSource.path_ok
-        path = Var()
-        path_error = {}
         def __init__(self, dummy_path):
-            self.path.set(dummy_path)
-            self.path_error['text'] = ''
+            self.path = Var(value=dummy_path)
+            self.path_error = {'text': ''}
         def showerror(self, message, widget=None):
             self.path_error['text'] = message
 
+    orig_platform = query.platform  # Set in test_path_ok_file.
     @classmethod
     def tearDownClass(cls):
-        query.platform = orig_platform
+        query.platform = cls.orig_platform
 
     def test_path_ok_blank(self):
         dialog = self.Dummy_HelpSource(' ')
@@ -242,16 +237,16 @@ class HelpsourceEntryokTest(unittest.TestCase):
                 self.assertEqual(dialog.entry_ok(), result)
 
 
+# 2 CustomRun test classes each test one method.
+
 class CustomRunCLIargsokTest(unittest.TestCase):
     "Test cli_ok method of the CustomRun subclass of Query."
 
     class Dummy_CustomRun:
-        cli_args_ok = query.CustomRun.cli_args_ok  # Function being tested.
-        entry = Var()
-        entry_error = {}
+        cli_args_ok = query.CustomRun.cli_args_ok
         def __init__(self, dummy_entry):
-            self.entry.set(dummy_entry)
-            self.entry_error['text'] = ''
+            self.entry = Var(value=dummy_entry)
+            self.entry_error = {'text': ''}
         def showerror(self, message):
             self.entry_error['text'] = message
 
