@@ -2550,10 +2550,10 @@ class Symlink(unittest.TestCase):
         extant_dirs = {'dst_dir1': 'dd1'}
 
         # Keys are link filenames, values are link targets
-        extant_links = {'link_to_file': 'df1', 'link_to_dir': 'dd1',
-                        'link_to_link': 'link_to_file',
-                        'broken_link': 'non-extant',
-                        'link_to_broken_link': 'broken_link'}
+        extant_symlinks = {'link_to_file': 'df1', 'link_to_dir': 'dd1',
+                           'link_to_link': 'link_to_file',
+                           'broken_link': 'non-extant',
+                           'link_to_broken_link': 'broken_link'}
         self.tmp_dir = tempfile.mkdtemp()
         for name, value in extant_dirs.items():
             path = os.path.join(self.tmp_dir, value)
@@ -2563,13 +2563,13 @@ class Symlink(unittest.TestCase):
             path = os.path.join(self.tmp_dir, value)
             open(path, 'w').close()  # os.mknod needs root on MacOS
             setattr(self, name, path)
-        self.extant_links = []  # One of each type of symlink
-        for link_name, target in extant_links.items():
+        self.extant_symlinks = []  # One of each type of symlink
+        for link_name, target in extant_symlinks.items():
             dst = os.path.join(self.tmp_dir, link_name)
             src = os.path.join(self.tmp_dir, target)
             os.symlink(src, dst)
             setattr(self, link_name, dst)
-            self.extant_links.append(dst)
+            self.extant_symlinks.append(dst)
 
         # Create pathnames for new directories, files and symlinks XXX dirs
         new_files = {'nf1': 'nf1', 'nf2': os.path.join('dd1', 'nf2')}
@@ -2615,13 +2615,17 @@ class Symlink(unittest.TestCase):
             shutil.symlink(self.src_file1, self.dst_dir1)
 
     def test_1src_dst_existing_symlink(self):
-        for dst in self.extant_links:
+        for dst in self.extant_symlinks:
             with self.assertRaises(FileExistsError):
                 shutil.symlink(self.src_file1, dst)
 
     #
     # Overwrite=True
     #
+
+    def test_overwrite_passed_for_each_src(self):
+        srcs = self.symlinks
+
     def test_overwrite_not_exist(self):
         src = self.src_file1
         dst = self.nf1
@@ -2640,7 +2644,7 @@ class Symlink(unittest.TestCase):
 
     def test_overwrite_existing_symlink(self):
         src = self.src_file1
-        for dst in self.extant_links:
+        for dst in self.extant_symlinks:
             shutil.symlink(src, dst, overwrite=True)
             self.assertEqual(os.readlink(dst), src)
 
