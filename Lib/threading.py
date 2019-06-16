@@ -34,6 +34,7 @@ _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
+_is_main_interpreter = _thread._is_main_interpreter
 try:
     get_native_id = _thread.get_native_id
     _HAVE_THREAD_NATIVE_ID = True
@@ -846,6 +847,11 @@ class Thread:
 
         if self._started.is_set():
             raise RuntimeError("threads can only be started once")
+
+        if self.daemon and not _is_main_interpreter():
+            raise RuntimeError("daemon thread are not supported "
+                               "in subinterpreters")
+
         with _active_limbo_lock:
             _limbo[self] = self
         try:

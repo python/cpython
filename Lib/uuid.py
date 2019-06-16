@@ -45,6 +45,7 @@ Typical usage:
 """
 
 import os
+import platform
 import sys
 
 from enum import Enum
@@ -52,8 +53,12 @@ from enum import Enum
 
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
-_WIN32 = sys.platform == 'win32'
-_AIX = sys.platform.startswith("aix")
+=======
+# The recognized platforms - known behaviors
+_AIX     = platform.system() == 'AIX'
+_DARWIN  = platform.system() == 'Darwin'
+_LINUX   = platform.system() == 'Linux'
+_WINDOWS = platform.system() == 'Windows'
 _MAC_DELIM =  b':' if not _AIX else b'.'
 
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
@@ -698,12 +703,31 @@ def _random_getnode():
     return random.getrandbits(48) | (1 << 40)
 
 
+# _OS_GETTERS, when known, are targetted for a specific OS or platform.
+# The order is by 'common practice' on the specified platform.
+# Note: 'posix' and 'windows' _OS_GETTERS are prefixed by a dll/dlload() method
+# which, when successful, means none of these "external" methods are called.
+# _GETTERS is (also) used by test_uuid.py to SkipUnless(), e.g.,
+#     @unittest.skipUnless(_uuid._ifconfig_getnode in _uuid._GETTERS, ...)
+if _LINUX:
+    _OS_GETTERS = [_ip_getnode, _ifconfig_getnode]
+elif _DARWIN:
+    _OS_GETTERS = [_ifconfig_getnode, _arp_getnode, _netstat_getnode]
+elif _WINDOWS:
+    _OS_GETTERS = [_netbios_getnode, _ipconfig_getnode]
+elif _AIX:
+    _OS_GETTERS = [_netstat_getnode]
+else:
+    _OS_GETTERS = [_ifconfig_getnode, _ip_getnode, _arp_getnode,
+                   _netstat_getnode, _lanscan_getnode]
+if os.name == 'posix':
+    _GETTERS = [_unix_getnode] + _OS_GETTERS
+elif os.name == 'nt':
+    _GETTERS = [_windll_getnode] + _OS_GETTERS
+else:
+    _GETTERS = _OS_GETTERS
+
 _node = None
-
-_NODE_GETTERS_WIN32 = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
-
-_NODE_GETTERS_UNIX = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
-                      _arp_getnode, _lanscan_getnode, _netstat_getnode]
 
 def getnode(*, getters=None):
     """Get the hardware address as a 48-bit positive integer.
@@ -717,12 +741,7 @@ def getnode(*, getters=None):
     if _node is not None:
         return _node
 
-    if sys.platform == 'win32':
-        getters = _NODE_GETTERS_WIN32
-    else:
-        getters = _NODE_GETTERS_UNIX
-
-    for getter in getters + [_random_getnode]:
+    for getter in _GETTERS + [_random_getnode]:
         try:
             _node = getter()
         except:
