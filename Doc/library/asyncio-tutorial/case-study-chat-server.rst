@@ -340,46 +340,33 @@ function ``client_connected_cb()``. Here's a snippet of just that, and
 the global collections we'll use to track connections and room
 membership:
 
-.. code-block:: python3
+.. literalinclude:: server05.py
     :caption: Joining and leaving rooms
-    :linenos:
+    :lines: 9-10,18-40
+    :language: python3
 
-    from collections import defaultdict
-    from weakref import WeakValueDictionary
-
-    WRITERS: Dict[str, StreamWriter] = WeakValueDictionary()
-    ROOMS: Dict[str, WeakSet[StreamWriter]] = defaultdict(WeakSet)
-
-    async def client_connected(reader: StreamReader, writer: StreamWriter):
-        addr = writer.get_extra_info('peername')
-        WRITERS[addr] = writer
-
-        def connect(msg):
-            print(f"User connected: {msg.get('username')}")
-
-        def joinroom(msg):
-            room_name = msg["room"]
-            print('joining room:', room_name)
-            room = ROOMS[room_name]
-            room.add(writer)
-
-        def leaveroom(msg):
-            room_name = msg["room"]
-            print('leaving room:', msg.get('room'))
-            room = ROOMS[room_name]
-            room.discard(writer)
-
-        def chat(msg):
-            print(f'chat sent to room {msg.get("room")}: {msg.get("message")}')
-            # TODO: distribute the message
-
-        <snip>
-
-- Using ``WeakValueDictionary`` and ``WeakSet`` means that when the
-  writer object goes out of scope, any entries in the collection of
-  writers and rooms will automatically be cleaned up.
-
-The room management is quite simple. When we receive a request to join
+When we receive a request to join
 a room is received, that room is looked up by name (or created automatically
 by the ``defaultdict``) and that connection is added to that room. The
-inverse happens when a request is received to leave a room.
+inverse happens when a request is received to leave a room. When a new chat
+message is received, it must be sent to all the other connections in that
+room. The ``send_message()`` function is from our ``utils`` module shown
+earlier.
+
+Note how we don't call ``await send_message()``, but instead we create
+a separate task for sending to each connection. This is because we don't
+want to delay any of these messages. If we used the ``await`` keyword,
+then each send call would hold up the next one in the iteration. Using
+``create_task()`` in this way allows us to run a coroutine
+"in the background", without waiting for it to return before proceeding
+with the next lines of code.
+
+Server: Final Version
+---------------------
+
+At this point the server part of our project is complete and we can show
+the final server module:
+
+.. literalinclude:: server05.py
+    :caption: server.py
+    :language: python3
