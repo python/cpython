@@ -30,11 +30,9 @@ class QueryTest(unittest.TestCase):
         ok = query.Query.ok
         cancel = query.Query.cancel
         # Add attributes and initialization needed for tests.
-        entry = Var()
-        entry_error = {}
         def __init__(self, dummy_entry):
-            self.entry.set(dummy_entry)
-            self.entry_error['text'] = ''
+            self.entry = Var(value=dummy_entry)
+            self.entry_error = {'text': ''}
             self.result = None
             self.destroyed = False
         def showerror(self, message):
@@ -80,11 +78,9 @@ class SectionNameTest(unittest.TestCase):
     class Dummy_SectionName:
         entry_ok = query.SectionName.entry_ok  # Function being tested.
         used_names = ['used']
-        entry = Var()
-        entry_error = {}
         def __init__(self, dummy_entry):
             self.entry = Var(value=dummy_entry)
-            self.entry_error['text'] = ''
+            self.entry_error = {'text': ''}
         def showerror(self, message):
             self.entry_error['text'] = message
 
