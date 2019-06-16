@@ -1,6 +1,13 @@
 Asyncio Case Study: Chat Application (Client)
 =============================================
 
+WIP
+
+.. literalinclude:: client05.py
+    :caption: client.py
+    :language: python3
+
+
 TODO
 
 Notes:
