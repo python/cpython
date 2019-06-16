@@ -67,7 +67,7 @@ PyMethod_New(PyObject *func, PyObject *self)
     im->im_weakreflist = NULL;
     Py_INCREF(func);
     im->im_func = func;
-    Py_XINCREF(self);
+    Py_INCREF(self);
     im->im_self = self;
     _PyObject_GC_TRACK(im);
     return (PyObject *)im;
