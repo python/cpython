@@ -1,1 +1,1 @@
-a Py_XINCREF in classobject.c are not necessary
+Remove an unnecssary Py_XINCREF in classobject.c.
