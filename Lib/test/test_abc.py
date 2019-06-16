@@ -9,10 +9,11 @@
 import unittest
 
 import abc
+import pickle
 import _py_abc
 from inspect import isabstract
 
-def test_factory(abc_ABCMeta, abc_get_cache_token):
+def test_factory(abc_ABCMeta, abc_get_cache_token, abc_to_pickle):
     class TestLegacyAPI(unittest.TestCase):
 
         def test_abstractproperty_basics(self):
@@ -477,6 +478,12 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             ABC = abc_ABCMeta('ABC', (), {'__module__': 'some.module'})
             self.assertEqual(ABC.__module__, 'some.module')
 
+        def test_pickling_instance_of_dynamically_defined_ABC(self):
+            obj = abc_to_pickle()
+            obj_unpickled = pickle.loads(pickle.dumps(obj))
+            self.assertEqual(type(obj_unpickled), type(obj))
+            self.assertDictEqual(obj_unpickled.__dict__, obj.__dict__)
+
 
     class TestABCWithInitSubclass(unittest.TestCase):
         def test_works_with_init_subclass(self):
@@ -494,10 +501,16 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertEqual(saved_kwargs, dict(x=1, y=2, __module__='some.module'))
     return TestLegacyAPI, TestABC, TestABCWithInitSubclass
 
+# types used for pickle test
+ABCToPickle_C = abc.ABCMeta('ABCToPickle_C', (), {'data': 123})
+ABCToPickle_Py = _py_abc.ABCMeta('ABCToPickle_Py', (), {'data': 123})
+
 TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(abc.ABCMeta,
-                                                                        abc.get_cache_token)
+                                                                        abc.get_cache_token,
+                                                                        ABCToPickle_C)
 TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C = test_factory(_py_abc.ABCMeta,
-                                                                     _py_abc.get_cache_token)
+                                                                     _py_abc.get_cache_token,
+                                                                     ABCToPickle_Py)
 
 if __name__ == "__main__":
     unittest.main()
