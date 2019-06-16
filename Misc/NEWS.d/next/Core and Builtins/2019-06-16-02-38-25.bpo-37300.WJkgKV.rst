@@ -1,0 +1,1 @@
+a Py_XINCREF in classobject.c are not necessary
