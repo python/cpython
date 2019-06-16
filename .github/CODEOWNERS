@@ -43,6 +43,15 @@ Objects/dict*                 @methane
 # CSPRNG
 Python/bootstrap_hash.c       @python/crypto-team @tiran
 
+# Dates and times
+**/*datetime*                 @pganssle
+**/*str*time*                 @pganssle
+Doc/library/time.rst          @pganssle
+Lib/test/test_time.py         @pganssle
+Modules/timemodule.c          @pganssle
+Python/pytime.c               @pganssle
+Include/pytime.h              @pganssle
+
 # Email and related
 **/*mail*                     @python/email-team
 **/*smtp*                     @python/email-team
