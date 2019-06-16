@@ -2563,11 +2563,13 @@ class Symlink(unittest.TestCase):
             path = os.path.join(self.tmp_dir, value)
             open(path, 'w').close()  # os.mknod needs root on MacOS
             setattr(self, name, path)
+        self.extant_links = []  # One of each type of symlink
         for link_name, target in extant_links.items():
             dst = os.path.join(self.tmp_dir, link_name)
             src = os.path.join(self.tmp_dir, target)
             os.symlink(src, dst)
             setattr(self, link_name, dst)
+            self.extant_links.append(dst)
 
         # Create pathnames for new directories, files and symlinks XXX dirs
         new_files = {'nf1': 'nf1', 'nf2': os.path.join('dd1', 'nf2')}
@@ -2611,25 +2613,10 @@ class Symlink(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             shutil.symlink(self.src_file1, self.dst_dir1)
 
-    def test_1src_dst_existing_link_to_file(self):
-        with self.assertRaises(FileExistsError):
-            shutil.symlink(self.src_file1, self.link_to_file)
-
-    def test_1src_dst_existing_link_to_dir(self):
-        with self.assertRaises(FileExistsError):
-            shutil.symlink(self.src_file1, self.link_to_dir)
-
-    def test_1src_dst_existing_link_to_link(self):
-        with self.assertRaises(FileExistsError):
-            shutil.symlink(self.src_file1, self.link_to_link)
-
-    def test_1src_dst_existing_link_to_broken_link(self):
-        with self.assertRaises(FileExistsError):
-            shutil.symlink(self.src_file1, self.link_to_broken_link)
-
-    def test_1src_dst_existing_broken_link(self):
-        with self.assertRaises(FileExistsError):
-            shutil.symlink(self.src_file1, self.broken_link)
+    def test_1src_dst_existing_symlink(self):
+        for dst in self.extant_links:
+            with self.assertRaises(FileExistsError):
+                shutil.symlink(self.src_file1, dst)
 
     #
     # Single source, overwrite=True
@@ -2650,35 +2637,13 @@ class Symlink(unittest.TestCase):
         with self.assertRaises(IsADirectoryError):
             shutil.symlink(self.src_file1, self.dst_dir1, overwrite=True)
 
-    def test_1src_dst_overwrite_existing_link_to_file(self):
+    def test_overwrite_existing_symlink(self):
         src = self.src_file1
-        dst = self.link_to_file
-        shutil.symlink(src, dst, overwrite=True)
-        self.assertEqual(os.readlink(dst), src)
+        for dst in self.extant_links:
+            shutil.symlink(src, dst, overwrite=True)
+            self.assertEqual(os.readlink(dst), src)
 
-    def test_1src_dst_overwrite_existing_link_to_dir(self):
-        src = self.src_file1
-        dst = self.link_to_dir
-        shutil.symlink(src, dst, overwrite=True)
-        self.assertEqual(os.readlink(dst), src)
 
-    def test_1src_dst_overwrite_existing_link_to_link(self):
-        src = self.src_file1
-        dst = self.link_to_link
-        shutil.symlink(src, dst, overwrite=True)
-        self.assertEqual(os.readlink(dst), src)
-
-    def test_1src_dst_overwrite_existing_link_to_broken_link(self):
-        src = self.src_file1
-        dst = self.link_to_broken_link
-        shutil.symlink(src, dst, overwrite=True)
-        self.assertEqual(os.readlink(dst), src)
-
-    def test_1src_dst_overwrite_existing_broken_link(self):
-        src = self.src_file1
-        dst = self.broken_link
-        shutil.symlink(src, dst, overwrite=True)
-        self.assertEqual(os.readlink(dst), src)
 
     #
     # OLD TESTS
