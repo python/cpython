@@ -119,7 +119,7 @@ class ScriptBinding:
         run_args = CustomRun(event.widget, "Customize Run").result
         if not run_args:  # User cancelled.
             return 'break'
-        return self._run_module_event(event, run_args)
+        return self._run_module_event(event, run_args=run_args)
 
     def _run_module_event(self, event, *, run_args=None):
         """Run the module after setting up the environment.
