@@ -53,19 +53,19 @@ steps:
   env:
     CAT: $(Build.BinariesDirectory)\bin\$(Arch)\python
 
-- task: PublishBuildArtifacts@1
+- task: PublishPipelineArtifact@0
   displayName: 'Publish binaries'
   condition: and(succeeded(), not(and(eq(variables['Configuration'], 'Release'), variables['SigningCertificate'])))
   inputs:
-    PathtoPublish: '$(Build.BinariesDirectory)\bin\$(Arch)'
-    ArtifactName: bin_$(Name)
+    targetPath: '$(Build.BinariesDirectory)\bin\$(Arch)'
+    artifactName: bin_$(Name)
 
-- task: PublishBuildArtifacts@1
+- task: PublishPipelineArtifact@0
   displayName: 'Publish binaries for signing'
   condition: and(succeeded(), and(eq(variables['Configuration'], 'Release'), variables['SigningCertificate']))
   inputs:
-    PathtoPublish: '$(Build.BinariesDirectory)\bin\$(Arch)'
-    ArtifactName: unsigned_bin_$(Name)
+    targetPath: '$(Build.BinariesDirectory)\bin\$(Arch)'
+    artifactName: unsigned_bin_$(Name)
 
 - task: CopyFiles@2
   displayName: 'Layout Artifact: symbols'
