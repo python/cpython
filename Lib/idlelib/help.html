@@ -331,7 +331,10 @@ of the code which has scrolled above the top of the window.  See
 <dt>Zoom/Restore Height</dt>
 <dd>Toggles the window between normal size and maximum height. The initial size
 defaults to 40 lines by 80 chars unless changed on the General tab of the
-Configure IDLE dialog.</dd>
+Configure IDLE dialog.  The maximum height for a screen is determined by
+momentarily maximizing a window the first time one is zoomed on the screen.
+Changing screen settings may invalidate the saved height.  This toogle has
+no effect when a window is maximized.</dd>
 </dl>
 </div>
 <div class="section" id="window-menu-shell-and-editor">
@@ -954,7 +957,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Jun 15, 2019.
+    Last updated on Jun 17, 2019.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 

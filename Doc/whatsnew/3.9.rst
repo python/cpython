@@ -102,16 +102,34 @@ Optimizations
 Build and C API Changes
 =======================
 
+* Add a new public :c:func:`PyObject_CallNoArgs` function to the C API:
+  call a callable Python object without any arguments. It is the most efficient
+  way to call a callable Python object without any argument.
+  (Contributed by Victor Stinner in :issue:`37194`.)
+
 
 
 Deprecated
 ==========
 
+* Currently :func:`math.factorial` accepts :class:`float` instances with
+  non-negative integer values (like ``5.0``).  It raises a :exc:`ValueError`
+  for non-integral and negative floats.  It is deprecated now.  In future
+  Python versions it will raise a :exc:`TypeError` for all floats.
+  (Contributed by Serhiy Storchaka in :issue:`37315`.)
 
 
 Removed
 =======
 
+* ``_dummy_thread`` and ``dummy_threading`` modules have been removed. These
+  modules were deprecated since Python 3.7 which requires threading support.
+  (Contributed by Victor Stinner in :issue:`37312`.)
+
+* ``aifc.openfp()`` alias to ``aifc.open()``, ``sunau.openfp()`` alias to
+  ``sunau.open()``, and ``wave.openfp()`` alias to ``wave.open()`` have been
+  removed. They were deprecated since Python 3.7.
+  (Contributed by Victor Stinner in :issue:`37320`.)
 
 
 Porting to Python 3.9
