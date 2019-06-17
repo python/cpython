@@ -1,4 +1,4 @@
-# Copyright 2001-2017 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2017 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -4444,6 +4444,99 @@ class BasicConfigTest(unittest.TestCase):
                          'WARNING:root:warn')
         self.assertEqual(new_string_io.getvalue().strip(),
                          'WARNING:root:warn\nINFO:root:info')
+
+    def test_encoding(self):
+        try:
+            encoding = 'utf-8'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                errors='strict',
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            logging.debug('The Øresund Bridge joins Copenhagen to Malmö')
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            self.assertEqual(data,
+                             'The Øresund Bridge joins Copenhagen to Malmö')
+
+    def test_encoding_errors(self):
+        try:
+            encoding = 'ascii'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                errors='ignore',
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            logging.debug('The Øresund Bridge joins Copenhagen to Malmö')
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            self.assertEqual(data, 'The resund Bridge joins Copenhagen to Malm')
+
+    def test_encoding_errors_default(self):
+        try:
+            encoding = 'ascii'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            self.assertEqual(handler.errors, 'backslashreplace')
+            logging.debug('😂: ☃️: The Øresund Bridge joins Copenhagen to Malmö')
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            self.assertEqual(data, r'\U0001f602: \u2603\ufe0f: The \xd8resund '
+                                   r'Bridge joins Copenhagen to Malm\xf6')
+
+    def test_encoding_errors_none(self):
+        # Specifying None should behave as 'strict'
+        try:
+            encoding = 'ascii'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                errors=None,
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            self.assertIsNone(handler.errors)
+
+            message = []
+
+            def dummy_handle_error(record):
+                _, v, _ = sys.exc_info()
+                message.append(str(v))
+
+            handler.handleError = dummy_handle_error
+            logging.debug('The Øresund Bridge joins Copenhagen to Malmö')
+            self.assertTrue(message)
+            self.assertIn("'ascii' codec can't encode "
+                          "character '\\xd8' in position 4:", message[0])
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            # didn't write anything due to the encoding error
+            self.assertEqual(data, r'')
+
 
     def _test_log(self, method, level=None):
         # logging.root has no handlers so basicConfig should be called
