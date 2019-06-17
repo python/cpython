@@ -33,11 +33,11 @@ jobs:
         html\**\*
         htmlhelp\*.chm
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: 'Publish artifact: doc'
     inputs:
-      PathtoPublish: $(Build.ArtifactStagingDirectory)\Doc
-      ArtifactName: doc
+      targetPath: $(Build.ArtifactStagingDirectory)\Doc
+      artifactName: doc
 
 - job: Build_Python
   displayName: Python build
@@ -147,14 +147,14 @@ jobs:
       platform: x64
       msbuildArguments: /t:CopyTclTkLib /p:OutDir="$(Build.ArtifactStagingDirectory)\tcl_amd64"
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: 'Publish artifact: tcltk_lib_win32'
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)\tcl_win32'
-      ArtifactName: tcltk_lib_win32
+      targetPath: '$(Build.ArtifactStagingDirectory)\tcl_win32'
+      artifactName: tcltk_lib_win32
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: 'Publish artifact: tcltk_lib_amd64'
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)\tcl_amd64'
-      ArtifactName: tcltk_lib_amd64
+      targetPath: '$(Build.ArtifactStagingDirectory)\tcl_amd64'
+      artifactName: tcltk_lib_amd64

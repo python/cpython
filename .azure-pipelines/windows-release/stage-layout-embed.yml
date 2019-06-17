@@ -13,21 +13,21 @@ jobs:
     matrix:
       win32:
         Name: win32
-        Python: $(Build.BinariesDirectory)\bin_$(Name)\python.exe
+        Python: $(Build.BinariesDirectory)\bin\python.exe
         PYTHONHOME: $(Build.SourcesDirectory)
       amd64:
         Name: amd64
-        Python: $(Build.BinariesDirectory)\bin_$(Name)\python.exe
+        Python: $(Build.BinariesDirectory)\bin\python.exe
         PYTHONHOME: $(Build.SourcesDirectory)
 
   steps:
   - template: ./checkout.yml
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_$(Name)'
     inputs:
       artifactName: bin_$(Name)
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\bin
 
   - template: ./layout-command.yml
 
@@ -43,11 +43,11 @@ jobs:
       --preset-embed
     displayName: 'Generate embeddable layout'
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: 'Publish Artifact: layout_embed_$(Name)'
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)\layout'
-      ArtifactName: layout_embed_$(Name)
+      targetPath: '$(Build.ArtifactStagingDirectory)\layout'
+      artifactName: layout_embed_$(Name)
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Artifact: embed'
