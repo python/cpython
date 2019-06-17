@@ -81,6 +81,12 @@ clear_slotdefs(void);
 static PyObject *
 lookup_maybe_method(PyObject *self, _Py_Identifier *attrid, int *unbound);
 
+static PyObject *
+type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds);
+
+static PyObject *
+type_new_ex(PyTypeObject *metatype, PyObject *args, PyObject *kwds, int setmodule);
+
 /*
  * finds the beginning of the docstring's introspection signature.
  * if present, returns a pointer pointing to the first '('.
@@ -952,13 +958,6 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *obj;
 
-    if (type->tp_new == NULL) {
-        PyErr_Format(PyExc_TypeError,
-                     "cannot create '%.100s' instances",
-                     type->tp_name);
-        return NULL;
-    }
-
 #ifdef Py_DEBUG
     /* type_call() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
@@ -966,18 +965,46 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
     assert(!PyErr_Occurred());
 #endif
 
-    obj = type->tp_new(type, args, kwds);
+    /* Special case: type(x) should return x->ob_type */
+    /* We only want type itself to accept the one-argument form (#27157). */
+    if (type == &PyType_Type) {
+        assert(args != NULL && PyTuple_Check(args));
+        assert(kwds == NULL || PyDict_Check(kwds));
+        Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+
+        if (nargs == 1 && (kwds == NULL || PyDict_GET_SIZE(kwds))) {
+            obj = (PyObject *) Py_TYPE(PyTuple_GET_ITEM(args, 0));
+            Py_INCREF(obj);
+            return obj;
+        }
+
+        /* SF bug 475327 -- if that didn't trigger, we need 3
+           arguments. But PyArg_ParseTuple in type_new() may give
+           a msg saying type() needs exactly 3. */
+        if (nargs != 3) {
+            PyErr_SetString(PyExc_TypeError,
+                            "type() takes 1 or 3 arguments");
+            return NULL;
+        }
+        assert (type->tp_new == type_new);
+    }
+
+    if (type->tp_new == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                    "cannot create '%.100s' instances",
+                    type->tp_name);
+        return NULL;
+    }
+
+    if (type->tp_new == type_new) {
+        obj = type_new_ex(type, args, kwds, 1);
+    }
+    else {
+        obj = type->tp_new(type, args, kwds);
+    }
     obj = _Py_CheckFunctionResult((PyObject*)type, obj, NULL);
     if (obj == NULL)
         return NULL;
-
-    /* Ugly exception: when the call was type(something),
-       don't call tp_init on the result. */
-    if (type == &PyType_Type &&
-        PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1 &&
-        (kwds == NULL ||
-         (PyDict_Check(kwds) && PyDict_GET_SIZE(kwds) == 0)))
-        return obj;
 
     /* If the returned object is not an instance of type,
        it won't be initialized. */
@@ -2320,7 +2347,7 @@ _PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
 }
 
 static PyObject *
-type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
+type_new_ex(PyTypeObject *metatype, PyObject *args, PyObject *kwds, int setmodule)
 {
     PyObject *name, *bases = NULL, *orig_dict, *dict = NULL;
     PyObject *qualname, *slots = NULL, *tmp, *newslots, *cell;
@@ -2335,29 +2362,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
     assert(args != NULL && PyTuple_Check(args));
     assert(kwds == NULL || PyDict_Check(kwds));
-
-    /* Special case: type(x) should return x->ob_type */
-    /* We only want type itself to accept the one-argument form (#27157)
-       Note: We don't call PyType_CheckExact as that also allows subclasses */
-    if (metatype == &PyType_Type) {
-        const Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-        const Py_ssize_t nkwds = kwds == NULL ? 0 : PyDict_GET_SIZE(kwds);
-
-        if (nargs == 1 && nkwds == 0) {
-            PyObject *x = PyTuple_GET_ITEM(args, 0);
-            Py_INCREF(Py_TYPE(x));
-            return (PyObject *) Py_TYPE(x);
-        }
-
-        /* SF bug 475327 -- if that didn't trigger, we need 3
-           arguments. but PyArg_ParseTuple below may give
-           a msg saying type() needs exactly 3. */
-        if (nargs != 3) {
-            PyErr_SetString(PyExc_TypeError,
-                            "type() takes 1 or 3 arguments");
-            return NULL;
-        }
-    }
 
     /* Check arguments: (name, bases, dict) */
     if (!PyArg_ParseTuple(args, "UO!O!:type.__new__", &name, &PyTuple_Type,
@@ -2606,7 +2610,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     type->tp_dict = dict;
 
     /* Set __module__ in the dict */
-    if (_PyDict_GetItemIdWithError(dict, &PyId___module__) == NULL) {
+    if (setmodule && _PyDict_GetItemIdWithError(dict, &PyId___module__) == NULL) {
         if (PyErr_Occurred()) {
             goto error;
         }
@@ -2842,6 +2846,12 @@ static const short slotoffsets[] = {
     -1, /* invalid slot */
 #include "typeslots.inc"
 };
+
+static PyObject *
+type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
+{
+    return type_new_ex(metatype, args, kwds, 0);
+}
 
 PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
