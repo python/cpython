@@ -365,7 +365,7 @@ Let's have a close look at the function `ag`:
 
 Hopefully you're comfortable now with how async generators look. Let's
 briefly discuss why you might want to use them. In the examples given
-above, there was no good read to make our generator an ``async def``
+above, there was no good reason to make our generator an ``async def``
 function; an ordinary generator function would have been fine. Async
 generators are useful when you need to ``await`` on another coroutine
 either before, or after, each ``yield``.
