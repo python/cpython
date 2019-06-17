@@ -1,7 +1,6 @@
 from test.support import findfile, TESTFN, unlink
 import array
 import io
-from unittest import mock
 import pickle
 
 
