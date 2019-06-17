@@ -3,6 +3,14 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-37039: Adjust "Zoom Height" to individual screens by momemtarily
+maximizing the window on first use with a particular screen.  Changing
+screen settings may invalidate the saved height.  While a window is
+maximized, "Zoom Height" has no effect.
+
+bpo-35763: Make calltip reminder about '/' meaning positional-only less
+obtrusive by only adding it when there is room on the first line.
+
 bpo-35610: Replace now redundant editor.context_use_ps1 with
 .prompt_last_line.  This finishes change started in bpo-31858.
 
