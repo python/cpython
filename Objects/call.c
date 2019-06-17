@@ -837,42 +837,6 @@ PyObject_CallObject(PyObject *callable, PyObject *args)
 }
 
 
-/* Positional arguments are obj followed by args:
-   call callable(obj, *args, **kwargs) */
-PyObject *
-_PyObject_FastCall_Prepend(PyObject *callable, PyObject *obj,
-                           PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
-    PyObject **args2;
-    PyObject *result;
-
-    nargs++;
-    if (nargs <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
-        args2 = small_stack;
-    }
-    else {
-        args2 = PyMem_Malloc(nargs * sizeof(PyObject *));
-        if (args2 == NULL) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-    }
-
-    /* use borrowed references */
-    args2[0] = obj;
-    if (nargs > 1) {
-        memcpy(&args2[1], args, (nargs - 1) * sizeof(PyObject *));
-    }
-
-    result = _PyObject_FastCall(callable, args2, nargs);
-    if (args2 != small_stack) {
-        PyMem_Free(args2);
-    }
-    return result;
-}
-
-
 /* Call callable(obj, *args, **kwargs). */
 PyObject *
 _PyObject_Call_Prepend(PyObject *callable,

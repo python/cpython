@@ -156,12 +156,6 @@ PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(
     PyObject *args,
     PyObject *kwargs);
 
-PyAPI_FUNC(PyObject *) _PyObject_FastCall_Prepend(
-    PyObject *callable,
-    PyObject *obj,
-    PyObject *const *args,
-    Py_ssize_t nargs);
-
 /* Like PyObject_CallMethod(), but expect a _Py_Identifier*
    as the method name. */
 PyAPI_FUNC(PyObject *) _PyObject_CallMethodId(PyObject *obj,
