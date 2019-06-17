@@ -102,6 +102,24 @@ class LockTests(unittest.TestCase):
         self.assertIn("unlocked", repr(self.lock))
 
 
+class RLockTests(unittest.TestCase):
+    """Test dummy RLock objects."""
+
+    def setUp(self):
+        self.rlock = _thread.RLock()
+
+    def test_multiple_acquire(self):
+        self.assertIn("unlocked", repr(self.rlock))
+        self.rlock.acquire()
+        self.rlock.acquire()
+        self.assertIn("locked", repr(self.rlock))
+        self.rlock.release()
+        self.assertIn("locked", repr(self.rlock))
+        self.rlock.release()
+        self.assertIn("unlocked", repr(self.rlock))
+        self.assertRaises(RuntimeError, self.rlock.release)
+
+
 class MiscTests(unittest.TestCase):
     """Miscellaneous tests."""
 
@@ -253,3 +271,6 @@ class ThreadTests(unittest.TestCase):
         func = mock.Mock(side_effect=Exception)
         _thread.start_new_thread(func, tuple())
         self.assertTrue(mock_print_exc.called)
+
+if __name__ == '__main__':
+    unittest.main()
