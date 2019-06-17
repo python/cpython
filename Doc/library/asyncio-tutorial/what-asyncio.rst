@@ -143,7 +143,7 @@ run concurrently.
 
 There are a couple of new things here, but I want you to focus
 on the new keyword ``await``. Unlike threads, execution is allowed to
-switch between the two ``greet()`` invocations **only** where the
+switch between concurrent tasks **only** at places where the
 ``await`` keyword appears. On all other lines, execution is exactly the
 same as normal Python, and will not be preempted by thread switching (there's
 typically only a single thread in most ``asyncio`` programs).
@@ -151,11 +151,11 @@ These ``async def`` functions are called
 "asynchronous" because execution does not pass through the function
 top-down, but instead can suspend in the middle of a function at the
 ``await`` keyword, and allow another function to execute while
-*this function* is waiting for network data.
+*this function* is waiting for I/O (usually network) data.
 
 An additional advantage of the *async* style above is that it lets us
-manage several thousand concurrent long-lived socket connections in a simple way.
-One can also use threads to manage concurrent long-lived socket connections,
+manage many thousands of concurrent, long-lived socket connections in a simple way.
+One *can* also use threads to manage concurrent long-lived socket connections,
 but it gets difficult to go past a few thousand because the creation
 of operating system threads, just like processes, consumes additional
 resources from the operating system.
