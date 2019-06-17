@@ -26,6 +26,15 @@ API_PYTHON = 2
 API_ISOLATED = 3
 
 
+def remove_python_envvars():
+    env = dict(os.environ)
+    # Remove PYTHON* environment variables to get deterministic environment
+    for key in list(env):
+        if key.startswith('PYTHON'):
+            del env[key]
+    return env
+
+
 class EmbeddingTestsMixin:
     def setUp(self):
         here = os.path.abspath(__file__)
@@ -232,7 +241,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         Checks that sys.warnoptions and sys._xoptions can be set before the
         runtime is initialized (otherwise they won't be effective).
         """
-        env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
+        env = remove_python_envvars()
+        env['PYTHONPATH'] = os.pathsep.join(sys.path)
         out, err = self.run_embedded_interpreter(
                         "test_pre_initialization_sys_options", env=env)
         expected_output = (
@@ -591,11 +601,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def check_all_configs(self, testname, expected_config=None,
                      expected_preconfig=None, add_path=None, stderr=None,
                      *, api):
-        env = dict(os.environ)
-        # Remove PYTHON* environment variables to get deterministic environment
-        for key in list(env):
-            if key.startswith('PYTHON'):
-                del env[key]
+        env = remove_python_envvars()
 
         if api == API_ISOLATED:
             default_preconfig = self.PRE_CONFIG_ISOLATED
