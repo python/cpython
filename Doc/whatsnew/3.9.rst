@@ -122,9 +122,13 @@ Deprecated
 Removed
 =======
 
-``_dummy_thread`` and ``dummy_threading`` modules have been removed. These
-modules were deprecated since Python 3.7 which requires threading support.
-(Contributed by Victor Stinner in :issue:`37312`.)
+* ``_dummy_thread`` and ``dummy_threading`` modules have been removed. These
+   modules were deprecated since Python 3.7 which requires threading support.
+   (Contributed by Victor Stinner in :issue:`37312`.)
+
+* Remove deprecated aliases to :ref:`collections-abstract-base-classes` from
+  the :mod:`collections` module.
+  (Contributed by Victor Stinner in :issue:`37324`.)
 
 
 Porting to Python 3.9
