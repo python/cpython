@@ -2112,7 +2112,7 @@ class PathTest(_BasePathTest, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
             list(p.glob(''))
 
-    def test_kwargs(self):
+    def test_user_subclass_kwargs(self):
         class MyPath(type(pathlib.Path())):
             def __init__(self, *args, foo):
                 self.foo = foo
