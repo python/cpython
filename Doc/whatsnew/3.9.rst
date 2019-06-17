@@ -102,6 +102,8 @@ Optimizations
 Build and C API Changes
 =======================
 
+* Add a new public :c:func:`PyObject_CallNoArgs` function to the C API:
+  call a callable Python object without any arguments.
 
 
 Deprecated
