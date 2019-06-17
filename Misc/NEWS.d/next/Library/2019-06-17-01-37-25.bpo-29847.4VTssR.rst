@@ -1,1 +1,1 @@
-Subclasses of `pathlib.Path` now raise a `TypeError` when `kwargs` are provided to the constructor.
+Subclasses of `pathlib.Path` in the standard library now raise a `TypeError` when `kwargs` are provided to the constructor. User-defined subclasses can still use `kwargs` without issue.
