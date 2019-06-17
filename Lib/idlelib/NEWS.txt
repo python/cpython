@@ -3,6 +3,9 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-37321: Both subprocess connection error messages now refer to
+the 'Startup failure' section of the IDLE doc.
+
 bpo-37039: Adjust "Zoom Height" to individual screens by momemtarily
 maximizing the window on first use with a particular screen.  Changing
 screen settings may invalidate the saved height.  While a window is
