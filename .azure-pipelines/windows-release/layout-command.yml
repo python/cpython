@@ -2,19 +2,14 @@ steps:
 - powershell: >
     Write-Host (
     '##vso[task.setvariable variable=LayoutCmd]&
-    "{0}"
+    "{0}\bin\python.exe"
     "{1}\PC\layout"
     -vv
     --source "{1}"
-    --build "{2}"
-    --temp "{3}"
-    --include-cat "{2}\python.cat"
-    --doc-build "{4}"'
-    -f (
-    "$(PYTHON)",
-    "$(Build.SourcesDirectory)",
-    (Split-Path -Parent "$(PYTHON)"),
-    "$(Build.BinariesDirectory)\layout-temp",
-    "$(Build.BinariesDirectory)\doc"
-    ))
+    --build "{0}\bin"
+    --temp "{0}\layout-temp"
+    --include-cat "{0}\bin\python.cat"
+    --doc-build "{0}\doc"'
+    -f ("$(Build.BinariesDirectory)", "$(Build.SourcesDirectory)")
+    )
   displayName: 'Set LayoutCmd'
