@@ -1154,7 +1154,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     }
 
     if (PySys_Audit("mmap.__new__", "ini" _Py_PARSE_OFF_T,
-                    fileno, map_size, access, offset) < 0) {
+                    fd, map_size, access, offset) < 0) {
         return NULL;
     }
 
