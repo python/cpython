@@ -16,9 +16,9 @@ import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
                           can_symlink, EnvironmentVarGuard, rmtree,
                           import_module)
-import threading
 import unittest
 import venv
+from unittest.mock import patch
 
 try:
     import ctypes
@@ -130,6 +130,28 @@ class BasicTest(BaseTest):
         data = self.get_text_file_contents('pyvenv.cfg')
         self.assertEqual(context.prompt, '(My prompt) ')
         self.assertIn("prompt = 'My prompt'\n", data)
+
+    def test_upgrade_dependencies(self):
+        builder = venv.EnvBuilder()
+        bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'
+        pip_exe = 'pip.exe' if sys.platform == 'win32' else 'pip'
+        with tempfile.TemporaryDirectory() as fake_env_dir:
+
+            def pip_cmd_checker(cmd):
+                self.assertEqual(
+                    cmd,
+                    [
+                        os.path.join(fake_env_dir, bin_path, pip_exe),
+                        'install',
+                        '-U',
+                        'pip',
+                        'setuptools'
+                    ]
+                )
+
+            fake_context = builder.ensure_directories(fake_env_dir)
+            with patch('venv.subprocess.check_call', pip_cmd_checker):
+                builder.upgrade_dependencies(fake_context)
 
     @requireVenvCreate
     def test_prefixes(self):
