@@ -1,0 +1,1 @@
+Subclasses of `pathlib.Path` now raise a `TypeError` when `kwargs` are provided to the constructor.
