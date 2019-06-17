@@ -678,7 +678,7 @@ class BaseTestInternals:
     # and strings shorter than 17 bytes (no leading 0)
     @unittest.skipUnless(_AIX, 'requires AIX')
     # key is on lineX, value is on lineX+1 aka 'nextline'
-    def test_find_mac_nextline(self):
+    def test_find_mac_nextlines(self):
         data = '''\
 Name  Mtu   Network     Address           Ipkts Ierrs    Opkts Oerrs  Coll
 en0   1500  link#2      fe.ad.c.1.23.4   1714807956     0 711348489     0     0
@@ -695,11 +695,11 @@ en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
                                         return_value='/usr/bin/netstat'):
             with mock.patch.object(subprocess, 'Popen',
                                             return_value=popen):
-                mac = self.uuid._find_mac_nextline(
+                mac = self.uuid._find_mac_nextlines(
                     command='netstat',
                     args='-ia',
                     hw_identifiers=b'Address',
-                    get_index=lambda x: x,
+                    f_index=lambda x: x,
                 )
 
         self.assertEqual(mac, 0xfead0c012304)
@@ -724,7 +724,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
                     command='ifconfig',
                     args='',
                     hw_identifiers=[b'hwaddr'],
-                    get_index=lambda x: x + 1,
+                    f_index=lambda x: x + 1,
                 )
 
         self.assertEqual(mac, 0x1234567890ab)

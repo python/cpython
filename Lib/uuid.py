@@ -53,7 +53,6 @@ from enum import Enum
 
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
-=======
 # The recognized platforms - known behaviors
 _AIX     = platform.system() == 'AIX'
 _DARWIN  = platform.system() == 'Darwin'
@@ -386,8 +385,14 @@ def _popen(command, *args):
 def _is_universal(mac):
     return not (mac & (1 << 41))
 
+
+# In the next two fucnctions:
+# command: name of command to run
+# args:    arguments passed to command
+# hw_identifers: keywords used to locate a value
+# f_index: lambda function to modify, if needed, an index value
 # keyword and value are on the same line aka 'inline'
-def _find_mac_inline(command, args, hw_identifiers, get_index):
+def _find_mac_inline(command, args, hw_identifiers, f_index):
     first_local_mac = None
     try:
         proc = _popen(command, *args.split())
@@ -399,7 +404,7 @@ def _find_mac_inline(command, args, hw_identifiers, get_index):
                 for i in range(len(words)):
                     if words[i] in hw_identifiers:
                         try:
-                            word = words[get_index(i)]
+                            word = words[f_index(i)]
                             mac = int(word.replace(_MAC_DELIM, b''), 16)
                             if _is_universal(mac):
                                 return mac
@@ -415,8 +420,8 @@ def _find_mac_inline(command, args, hw_identifiers, get_index):
         pass
     return first_local_mac or None
 
-# value is on the line following the keyword - aka 'nextline'
-def _find_mac_nextline(command, args, hw_identifiers, get_index):
+# Keyword is only on firstline - values on remaining lines
+def _find_mac_nextlines(command, args, hw_identifiers, f_index):
     first_local_mac = None
     mac = None
     try:
@@ -424,23 +429,28 @@ def _find_mac_nextline(command, args, hw_identifiers, get_index):
         if not proc:
             return None
         with proc:
-            words = proc.stdout.readline().rstrip().split()
+            keywords = proc.stdout.readline().rstrip().split()
             try:
-                i = words.index(hw_identifiers)
+                i = keywords.index(hw_identifiers)
             except ValueError:
                 return None
+            # we have the index (i) into the data that follows
             for line in proc.stdout:
                 try:
-                    words = line.rstrip().split()
-                    word = words[get_index(i)]
-                    if len(word) == 17 and word.count(_MAC_DELIM) == 5:
-                        mac = int(word.replace(_MAC_DELIM, b''), 16)
-                    elif _AIX and  word.count(_MAC_DELIM) == 5:
+                    values = line.rstrip().split()
+                    value = values[f_index(i)]
+                    if len(value) == 17 and value.count(_MAC_DELIM) == 5:
+                        mac = int(value.replace(_MAC_DELIM, b''), 16)
+                    # (Only) on AIX the macaddr value given is not prefixed by 0, e.g.
+                    # en0   1500  link#2      fa.bc.de.f7.62.4 110854824     0 160133733     0     0
+                    # not
+                    # en0   1500  link#2      fa.bc.de.f7.62.04 110854824     0 160133733     0     0
+                    elif _AIX and  value.count(_MAC_DELIM) == 5:
                         # the extracted hex string is not a 12 hex digit
                         # string, so add the fields piece by piece
-                        if len(word) < 17 and len(word) >= 11:
+                        if len(value) < 17 and len(value) >= 11:
                             mac = 0
-                            fields = word.split(_MAC_DELIM)
+                            fields = value.split(_MAC_DELIM)
                             for hex in fields:
                                 mac <<= 8
                                 mac += int(hex, 16)
@@ -458,6 +468,9 @@ def _find_mac_nextline(command, args, hw_identifiers, get_index):
         pass
     return first_local_mac or None
 
+
+# The following functions call external programs to 'get' a macaddr value to
+# be used as basis for an uuid
 def _ifconfig_getnode():
     """Get the hardware address on Unix by running ifconfig."""
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
@@ -510,7 +523,7 @@ def _lanscan_getnode():
 def _netstat_getnode():
     """Get the hardware address on Unix by running netstat."""
     # This works on AIX and might work on Tru64 UNIX.
-    mac = _find_mac_nextline('netstat', '-ia', b'Address', lambda i: i)
+    mac = _find_mac_nextlines('netstat', '-ia', b'Address', lambda i: i)
     return mac or None
 
 def _ipconfig_getnode():
