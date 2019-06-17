@@ -145,7 +145,7 @@ There are a couple of new things here, but I want you to focus
 on the new keyword ``await``. Unlike threads, execution is allowed to
 switch between the two ``greet()`` invocations **only** where the
 ``await`` keyword appears. On all other lines, execution is exactly the
-same as normal Python, and will not be preempt by thread switching (there's
+same as normal Python, and will not be preempted by thread switching (there's
 typically only a single thread in most ``asyncio`` programs).
 These ``async def`` functions are called
 "asynchronous" because execution does not pass through the function
