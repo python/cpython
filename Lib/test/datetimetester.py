@@ -2504,7 +2504,7 @@ class TestDateTime(TestDate):
 
         # bpo-34903: Check that single digit dates and times are allowed.
         with self.assertRaises(ValueError):
-            # %y does require two digits
+            # %y does require two digits.
             newdate = strptime('01/02/3 04:05:06', '%d/%m/%y %H:%M:%S')
         inputs = [
             ('%d',
