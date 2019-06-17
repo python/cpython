@@ -2093,7 +2093,7 @@ format codes.
 |           | where 0 is Sunday and 6 is     |                        |       |
 |           | Saturday.                      |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%d``    | Day of the month as a          | 01, 02, ..., 31        |       |
+| ``%d``    | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%b``    | Month as locale's abbreviated  || Jan, Feb, ..., Dec    | \(1)  |
@@ -2106,29 +2106,29 @@ format codes.
 |           |                                || Januar, Februar, ..., |       |
 |           |                                |  Dezember (de_DE)      |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%m``    | Month as a zero-padded         | 01, 02, ..., 12        |       |
+| ``%m``    | Month as a zero-padded         | 01, 02, ..., 12        | \(9)  |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%y``    | Year without century as a      | 00, 01, ..., 99        |       |
+| ``%y``    | Year without century as a      | 00, 01, ..., 99        | \(9)  |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%Y``    | Year with century as a decimal | 0001, 0002, ..., 2013, | \(2)  |
 |           | number.                        | 2014, ..., 9998, 9999  |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%H``    | Hour (24-hour clock) as a      | 00, 01, ..., 23        |       |
+| ``%H``    | Hour (24-hour clock) as a      | 00, 01, ..., 23        | \(9)  |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%I``    | Hour (12-hour clock) as a      | 01, 02, ..., 12        |       |
+| ``%I``    | Hour (12-hour clock) as a      | 01, 02, ..., 12        | \(9)  |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%p``    | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
 |           | AM or PM.                      || am, pm (de_DE)        | \(3)  |
 +-----------+--------------------------------+------------------------+-------+
-| ``%M``    | Minute as a zero-padded        | 00, 01, ..., 59        |       |
+| ``%M``    | Minute as a zero-padded        | 00, 01, ..., 59        | \(9)  |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%S``    | Second as a zero-padded        | 00, 01, ..., 59        | \(4)  |
-|           | decimal number.                |                        |       |
+| ``%S``    | Second as a zero-padded        | 00, 01, ..., 59        | \(4), |
+|           | decimal number.                |                        | \(9)  |
 +-----------+--------------------------------+------------------------+-------+
 | ``%f``    | Microsecond as a decimal       | 000000, 000001, ...,   | \(5)  |
 |           | number, zero-padded on the     | 999999                 |       |
@@ -2142,19 +2142,19 @@ format codes.
 | ``%Z``    | Time zone name (empty string   | (empty), UTC, EST, CST |       |
 |           | if the object is naive).       |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%j``    | Day of the year as a           | 001, 002, ..., 366     |       |
+| ``%j``    | Day of the year as a           | 001, 002, ..., 366     | \(9)  |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%U``    | Week number of the year        | 00, 01, ..., 53        | \(7)  |
-|           | (Sunday as the first day of    |                        |       |
+| ``%U``    | Week number of the year        | 00, 01, ..., 53        | \(7), |
+|           | (Sunday as the first day of    |                        | \(9)  |
 |           | the week) as a zero padded     |                        |       |
 |           | decimal number. All days in a  |                        |       |
 |           | new year preceding the first   |                        |       |
 |           | Sunday are considered to be in |                        |       |
 |           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%W``    | Week number of the year        | 00, 01, ..., 53        | \(7)  |
-|           | (Monday as the first day of    |                        |       |
+| ``%W``    | Week number of the year        | 00, 01, ..., 53        | \(7), |
+|           | (Monday as the first day of    |                        | \(9)  |
 |           | the week) as a decimal number. |                        |       |
 |           | All days in a new year         |                        |       |
 |           | preceding the first Monday     |                        |       |
@@ -2194,8 +2194,8 @@ incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
 | ``%u``    | ISO 8601 weekday as a decimal  | 1, 2, ..., 7           |       |
 |           | number where 1 is Monday.      |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%V``    | ISO 8601 week as a decimal     | 01, 02, ..., 53        | \(8)  |
-|           | number with Monday as          |                        |       |
+| ``%V``    | ISO 8601 week as a decimal     | 01, 02, ..., 53        | \(8), |
+|           | number with Monday as          |                        | \(9)  |
 |           | the first day of the week.     |                        |       |
 |           | Week 01 is the week containing |                        |       |
 |           | Jan 4.                         |                        |       |
@@ -2290,6 +2290,11 @@ Notes:
    day of the week and the ISO year (``%G``) are specified in a
    :meth:`strptime` format string. Also note that ``%G`` and ``%Y`` are not
    interchangeable.
+
+(9)
+   When used with the :meth:`strptime` method, the leading zero is optional
+   for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%J``, ``%U``,
+   ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
 
 .. rubric:: Footnotes
 
