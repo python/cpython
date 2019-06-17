@@ -438,7 +438,7 @@ a *context manager* that can be used with ``asyncio``.
     async context managers in ``asyncio`` applications.  This is not the
     case. Async context managers are needed only if you need to ``await``
     a coroutine in the *enter* or *exit* parts of the context manager.
-    You do *not* required to use an async context manager if there are ``await``
+    You are *not* required to use an async context manager if there are ``await``
     statements inside only the *body* of the context manager.
 
 Just as the ``contextlib`` library provides the ``@contextmanager``
