@@ -140,6 +140,8 @@ class LockType(object):
     def locked(self):
         return self.locked_status
 
+    _is_owned = locked
+
     def __repr__(self):
         return "<%s %s.%s object at %s>" % (
             "locked" if self.locked_status else "unlocked",
