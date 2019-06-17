@@ -2,9 +2,11 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
-#include "pycore_coreconfig.h"
+#include "pycore_ceval.h"
+#include "pycore_initconfig.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
+#include "pycore_pylifecycle.h"
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -38,17 +40,27 @@ extern "C" {
 /* Forward declarations */
 static PyThreadState *_PyGILState_GetThisThreadState(struct _gilstate_runtime_state *gilstate);
 static void _PyThreadState_Delete(_PyRuntimeState *runtime, PyThreadState *tstate);
-static PyThreadState *_PyThreadState_Swap(struct _gilstate_runtime_state *gilstate, PyThreadState *newts);
 
 
-static _PyInitError
+static PyStatus
 _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
 {
+    /* We preserve the hook across init, because there is
+       currently no public API to set it between runtime
+       initialization and interpreter initialization. */
+    void *open_code_hook = runtime->open_code_hook;
+    void *open_code_userdata = runtime->open_code_userdata;
+    _Py_AuditHookEntry *audit_hook_head = runtime->audit_hook_head;
+
     memset(runtime, 0, sizeof(*runtime));
+
+    runtime->open_code_hook = open_code_hook;
+    runtime->open_code_userdata = open_code_userdata;
+    runtime->audit_hook_head = audit_hook_head;
 
     _PyGC_Initialize(&runtime->gc);
     _PyEval_Initialize(&runtime->ceval);
-    runtime->preconfig = _PyPreConfig_INIT;
+    PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
     runtime->gilstate.check_enabled = 1;
 
@@ -59,22 +71,22 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
 
     runtime->interpreters.mutex = PyThread_allocate_lock();
     if (runtime->interpreters.mutex == NULL) {
-        return _Py_INIT_ERR("Can't initialize threads for interpreter");
+        return _PyStatus_ERR("Can't initialize threads for interpreter");
     }
     runtime->interpreters.next_id = -1;
 
     runtime->xidregistry.mutex = PyThread_allocate_lock();
     if (runtime->xidregistry.mutex == NULL) {
-        return _Py_INIT_ERR("Can't initialize threads for cross-interpreter data registry");
+        return _PyStatus_ERR("Can't initialize threads for cross-interpreter data registry");
     }
 
     // Set it to the ID of the main thread of the main interpreter.
     runtime->main_thread = PyThread_get_thread_ident();
 
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 }
 
-_PyInitError
+PyStatus
 _PyRuntimeState_Init(_PyRuntimeState *runtime)
 {
     /* Force default allocator, since _PyRuntimeState_Fini() must
@@ -82,10 +94,10 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    _PyInitError err = _PyRuntimeState_Init_impl(runtime);
+    PyStatus status = _PyRuntimeState_Init_impl(runtime);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    return err;
+    return status;
 }
 
 void
@@ -104,8 +116,6 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
         PyThread_free_lock(runtime->xidregistry.mutex);
         runtime->xidregistry.mutex = NULL;
     }
-
-    _PyPreConfig_Clear(&runtime->preconfig);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -153,7 +163,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 static void _PyGILState_NoteThreadState(
     struct _gilstate_runtime_state *gilstate, PyThreadState* tstate);
 
-_PyInitError
+PyStatus
 _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 {
     struct pyinterpreters *interpreters = &runtime->interpreters;
@@ -172,16 +182,20 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
         PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
         if (interpreters->mutex == NULL) {
-            return _Py_INIT_ERR("Can't initialize threads for interpreter");
+            return _PyStatus_ERR("Can't initialize threads for interpreter");
         }
     }
 
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 }
 
 PyInterpreterState *
 PyInterpreterState_New(void)
 {
+    if (PySys_Audit("cpython.PyInterpreterState_New", NULL) < 0) {
+        return NULL;
+    }
+
     PyInterpreterState *interp = PyMem_RawMalloc(sizeof(PyInterpreterState));
     if (interp == NULL) {
         return NULL;
@@ -190,7 +204,16 @@ PyInterpreterState_New(void)
     memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
     interp->check_interval = 100;
-    interp->core_config = _PyCoreConfig_INIT;
+
+    PyStatus status = PyConfig_InitPythonConfig(&interp->config);
+    if (_PyStatus_EXCEPTION(status)) {
+        /* Don't report status to caller: PyConfig_InitPythonConfig()
+           can only fail with a memory allocation error. */
+        PyConfig_Clear(&interp->config);
+        PyMem_RawFree(interp);
+        return NULL;
+    }
+
     interp->eval_frame = _PyEval_EvalFrameDefault;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
@@ -228,6 +251,8 @@ PyInterpreterState_New(void)
 
     interp->tstate_next_unique_id = 0;
 
+    interp->audit_hooks = NULL;
+
     return interp;
 }
 
@@ -235,12 +260,19 @@ PyInterpreterState_New(void)
 static void
 _PyInterpreterState_Clear(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
+    if (PySys_Audit("cpython.PyInterpreterState_Clear", NULL) < 0) {
+        PyErr_Clear();
+    }
+
     HEAD_LOCK(runtime);
     for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
         PyThreadState_Clear(p);
     }
     HEAD_UNLOCK(runtime);
-    _PyCoreConfig_Clear(&interp->core_config);
+
+    Py_CLEAR(interp->audit_hooks);
+
+    PyConfig_Clear(&interp->config);
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
     Py_CLEAR(interp->codec_error_registry);
@@ -257,6 +289,9 @@ _PyInterpreterState_Clear(_PyRuntimeState *runtime, PyInterpreterState *interp)
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
+    if (runtime->finalizing == NULL) {
+        _PyWarnings_Fini(interp);
+    }
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
@@ -491,12 +526,6 @@ _PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
     interp->requires_idref = required ? 1 : 0;
 }
 
-_PyCoreConfig *
-_PyInterpreterState_GetCoreConfig(PyInterpreterState *interp)
-{
-    return &interp->core_config;
-}
-
 PyObject *
 _PyInterpreterState_GetMainModule(PyInterpreterState *interp)
 {
@@ -576,9 +605,6 @@ new_threadstate(PyInterpreterState *interp, int init)
     tstate->on_delete_data = NULL;
 
     tstate->coroutine_origin_tracking_depth = 0;
-
-    tstate->coroutine_wrapper = NULL;
-    tstate->in_coroutine_wrapper = 0;
 
     tstate->async_gen_firstiter = NULL;
     tstate->async_gen_finalizer = NULL;
@@ -743,7 +769,7 @@ _PyState_ClearModules(void)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
-    int verbose = tstate->interp->core_config.verbose;
+    int verbose = tstate->interp->config.verbose;
 
     if (verbose && tstate->frame != NULL)
         fprintf(stderr,
@@ -773,7 +799,6 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->c_profileobj);
     Py_CLEAR(tstate->c_traceobj);
 
-    Py_CLEAR(tstate->coroutine_wrapper);
     Py_CLEAR(tstate->async_gen_firstiter);
     Py_CLEAR(tstate->async_gen_finalizer);
 
@@ -863,9 +888,8 @@ PyThreadState_DeleteCurrent()
  * be kept in those other interpreteres.
  */
 void
-_PyThreadState_DeleteExcept(PyThreadState *tstate)
+_PyThreadState_DeleteExcept(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
     PyInterpreterState *interp = tstate->interp;
     PyThreadState *p, *next, *garbage;
     HEAD_LOCK(runtime);
@@ -911,7 +935,7 @@ PyThreadState_Get(void)
 }
 
 
-static PyThreadState *
+PyThreadState *
 _PyThreadState_Swap(struct _gilstate_runtime_state *gilstate, PyThreadState *newts)
 {
     PyThreadState *oldts = _PyRuntimeGILState_GetThreadState(gilstate);
@@ -976,8 +1000,8 @@ PyThreadState_GetDict(void)
 int
 PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    PyThreadState *p;
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
 
     /* Although the GIL is held, a few C API functions can be called
      * without the GIL held, and in particular some that create and
@@ -985,9 +1009,8 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
      * list of thread states we're traversing, so to prevent that we lock
      * head_mutex for the duration.
      */
-    _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
-    for (p = interp->tstate_head; p != NULL; p = p->next) {
+    for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
         if (p->thread_id == id) {
             /* Tricky:  we need to decref the current value
              * (if any) in p->async_exc, but that can in turn
@@ -1001,7 +1024,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
             p->async_exc = exc;
             HEAD_UNLOCK(runtime);
             Py_XDECREF(old_exc);
-            _PyEval_SignalAsyncExc();
+            _PyEval_SignalAsyncExc(&runtime->ceval);
             return 1;
         }
     }
@@ -1050,6 +1073,10 @@ _PyThread_CurrentFrames(void)
 {
     PyObject *result;
     PyInterpreterState *i;
+
+    if (PySys_Audit("sys._current_frames", NULL) < 0) {
+        return NULL;
+    }
 
     result = PyDict_New();
     if (result == NULL)

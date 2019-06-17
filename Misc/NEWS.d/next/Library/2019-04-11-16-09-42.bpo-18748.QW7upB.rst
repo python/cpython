@@ -1,3 +1,0 @@
-In development mode (:option:`-X` ``dev``) and in debug build, the
-:class:`io.IOBase` destructor now logs ``close()`` exceptions. These exceptions
-are silent by default in release mode.

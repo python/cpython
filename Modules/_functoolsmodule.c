@@ -107,7 +107,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    pto->use_fastcall = _PyObject_HasFastCall(func);
+    pto->use_fastcall = (_PyVectorcall_Function(func) != NULL);
 
     return (PyObject *)pto;
 }
@@ -365,7 +365,7 @@ partial_setstate(partialobject *pto, PyObject *state)
         Py_INCREF(dict);
 
     Py_INCREF(fn);
-    pto->use_fastcall = _PyObject_HasFastCall(fn);
+    pto->use_fastcall = (_PyVectorcall_Function(fn) != NULL);
     Py_SETREF(pto->fn, fn);
     Py_SETREF(pto->args, fnargs);
     Py_SETREF(pto->kw, kw);
@@ -386,10 +386,10 @@ static PyTypeObject partial_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)partial_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)partial_repr,             /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -478,10 +478,10 @@ static PyTypeObject keyobject_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)keyobject_dealloc,      /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -626,10 +626,13 @@ functools_reduce(PyObject *self, PyObject *args)
         if (result == NULL)
             result = op2;
         else {
-            PyTuple_SetItem(args, 0, result);
-            PyTuple_SetItem(args, 1, op2);
-            if ((result = PyEval_CallObject(func, args)) == NULL)
+            /* Update the args tuple in-place */
+            assert(args->ob_refcnt == 1);
+            Py_XSETREF(_PyTuple_ITEMS(args)[0], result);
+            Py_XSETREF(_PyTuple_ITEMS(args)[1], op2);
+            if ((result = PyObject_Call(func, args, NULL)) == NULL) {
                 goto Fail;
+            }
         }
     }
 
@@ -709,10 +712,10 @@ static PyTypeObject lru_list_elem_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)lru_list_elem_dealloc,  /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1319,10 +1322,10 @@ static PyTypeObject lru_cache_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)lru_cache_dealloc,      /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1333,7 +1336,8 @@ static PyTypeObject lru_cache_type = {
     0,                                  /* tp_getattro */
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+    Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_METHOD_DESCRIPTOR,
                                         /* tp_flags */
     lru_cache_doc,                      /* tp_doc */
     (traverseproc)lru_cache_tp_traverse,/* tp_traverse */

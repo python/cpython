@@ -1,3 +1,0 @@
-Change test_time.test_monotonic() to test only the lower bound of elapsed time
-after a sleep command rather than the upper bound. This prevents unnecessary
-test failures on slow buildbots. Patch by Victor Stinner.

@@ -31,6 +31,7 @@ from .support.logging import *
 from .support.options import *
 from .support.pip import *
 from .support.props import *
+from .support.nuspec import *
 
 BDIST_WININST_FILES_ONLY = FileNameSet("wininst-*", "bdist_wininst.py")
 BDIST_WININST_STUB = "PC/layout/support/distutils.command.bdist_wininst.py"
@@ -66,6 +67,7 @@ DATA_DIRS = FileNameSet("data")
 TOOLS_DIRS = FileNameSet("scripts", "i18n", "pynche", "demo", "parser")
 TOOLS_FILES = FileSuffixSet(".py", ".pyw", ".txt")
 
+
 def copy_if_modified(src, dest):
     try:
         dest_stat = os.stat(dest)
@@ -73,11 +75,14 @@ def copy_if_modified(src, dest):
         do_copy = True
     else:
         src_stat = os.stat(src)
-        do_copy = (src_stat.st_mtime != dest_stat.st_mtime or
-                   src_stat.st_size != dest_stat.st_size)
+        do_copy = (
+            src_stat.st_mtime != dest_stat.st_mtime
+            or src_stat.st_size != dest_stat.st_size
+        )
 
     if do_copy:
         shutil.copy2(src, dest)
+
 
 def get_lib_layout(ns):
     def _c(f):
@@ -119,7 +124,7 @@ def get_tcltk_lib(ns):
         except FileNotFoundError:
             pass
         if not tcl_lib or not os.path.isdir(tcl_lib):
-            warn("Failed to find TCL_LIBRARY")
+            log_warning("Failed to find TCL_LIBRARY")
             return
 
     for dest, src in rglob(Path(tcl_lib).parent, "**/*"):
@@ -168,7 +173,7 @@ def get_layout(ns):
     for dest, src in rglob(ns.build, "vcruntime*.dll"):
         yield dest, src
 
-    yield "LICENSE.txt", ns.source / "LICENSE"
+    yield "LICENSE.txt", ns.build / "LICENSE.txt"
 
     for dest, src in rglob(ns.build, ("*.pyd", "*.dll")):
         if src.stem.endswith("_d") != bool(ns.debug) and src not in REQUIRED_DLLS:
@@ -222,15 +227,12 @@ def get_layout(ns):
         yield dest, src
 
     if ns.include_pip:
-        pip_dir = get_pip_dir(ns)
-        if not pip_dir.is_dir():
-            log_warning("Failed to find {} - pip will not be included", pip_dir)
-        else:
-            pkg_root = "packages/{}" if ns.zip_lib else "Lib/site-packages/{}"
-            for dest, src in rglob(pip_dir, "**/*"):
-                if src in EXCLUDE_FROM_LIB or src in EXCLUDE_FROM_PACKAGED_LIB:
-                    continue
-                yield pkg_root.format(dest), src
+        for dest, src in get_pip_layout(ns):
+            if isinstance(src, tuple) or not (
+                src in EXCLUDE_FROM_LIB or src in EXCLUDE_FROM_PACKAGED_LIB
+            ):
+                continue
+            yield dest, src
 
     if ns.include_chm:
         for dest, src in rglob(ns.doc_build / "htmlhelp", PYTHON_CHM_NAME):
@@ -242,6 +244,10 @@ def get_layout(ns):
 
     if ns.include_props:
         for dest, src in get_props_layout(ns):
+            yield dest, src
+
+    if ns.include_nuspec:
+        for dest, src in get_nuspec_layout(ns):
             yield dest, src
 
     for dest, src in get_appx_layout(ns):
@@ -287,7 +293,9 @@ def _py_temp_compile(src, ns, dest_dir=None, checked=True):
         return None
 
     dest = (dest_dir or ns.temp) / (src.stem + ".py")
-    return _compile_one_py(src, dest.with_suffix(".pyc"), dest, optimize=2, checked=checked)
+    return _compile_one_py(
+        src, dest.with_suffix(".pyc"), dest, optimize=2, checked=checked
+    )
 
 
 def _write_to_zip(zf, dest, src, ns, checked=True):
@@ -361,28 +369,9 @@ def generate_source_files(ns):
             print("# Uncomment to run site.main() automatically", file=f)
             print("#import site", file=f)
 
-    if ns.include_appxmanifest:
-        log_info("Generating AppxManifest.xml in {}", ns.temp)
-        ns.temp.mkdir(parents=True, exist_ok=True)
-
-        with open(ns.temp / "AppxManifest.xml", "wb") as f:
-            f.write(get_appxmanifest(ns))
-
-        with open(ns.temp / "_resources.xml", "wb") as f:
-            f.write(get_resources_xml(ns))
-
     if ns.include_pip:
-        pip_dir = get_pip_dir(ns)
-        if not (pip_dir / "pip").is_dir():
-            log_info("Extracting pip to {}", pip_dir)
-            pip_dir.mkdir(parents=True, exist_ok=True)
-            extract_pip_files(ns)
-
-    if ns.include_props:
-        log_info("Generating {} in {}", PYTHON_PROPS_NAME, ns.temp)
-        ns.temp.mkdir(parents=True, exist_ok=True)
-        with open(ns.temp / PYTHON_PROPS_NAME, "wb") as f:
-            f.write(get_props(ns))
+        log_info("Extracting pip")
+        extract_pip_files(ns)
 
 
 def _create_zip_file(ns):
@@ -426,6 +415,18 @@ def copy_files(files, ns):
                 else:
                     log_info("Processed {} files", count)
             log_debug("Processing {!s}", src)
+
+            if isinstance(src, tuple):
+                src, content = src
+                if ns.copy:
+                    log_debug("Copy {} -> {}", src, ns.copy / dest)
+                    (ns.copy / dest).parent.mkdir(parents=True, exist_ok=True)
+                    with open(ns.copy / dest, "wb") as f:
+                        f.write(content)
+                if ns.zip:
+                    log_debug("Zip {} into {}", src, ns.zip)
+                    zip_file.writestr(str(dest), content)
+                continue
 
             if (
                 ns.precompile

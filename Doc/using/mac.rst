@@ -25,7 +25,7 @@ there.
 
 What you get after installing is a number of things:
 
-* A :file:`MacPython 3.6` folder in your :file:`Applications` folder. In here
+* A :file:`Python 3.9` folder in your :file:`Applications` folder. In here
   you find IDLE, the development environment that is a standard part of official
   Python distributions; PythonLauncher, which handles double-clicking Python
   scripts from the Finder; and the "Build Applet" tool, which allows you to
@@ -93,7 +93,7 @@ aware of: programs that talk to the Aqua window manager (in other words,
 anything that has a GUI) need to be run in a special way. Use :program:`pythonw`
 instead of :program:`python` to start such scripts.
 
-With Python 3.6, you can use either :program:`python` or :program:`pythonw`.
+With Python 3.9, you can use either :program:`python` or :program:`pythonw`.
 
 
 Configuration
@@ -141,7 +141,7 @@ There are several options for building GUI applications on the Mac with Python.
 
 *PyObjC* is a Python binding to Apple's Objective-C/Cocoa framework, which is
 the foundation of most modern Mac development. Information on PyObjC is
-available from https://pythonhosted.org/pyobjc/.
+available from https://pypi.org/project/pyobjc/.
 
 The standard Python GUI toolkit is :mod:`tkinter`, based on the cross-platform
 Tk toolkit (https://www.tcl.tk). An Aqua-native version of Tk is bundled with OS

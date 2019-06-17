@@ -8,6 +8,7 @@ except ImportError:
 import struct
 import collections
 import itertools
+import gc
 
 
 class FunctionCalls(unittest.TestCase):
@@ -401,7 +402,7 @@ class FastCallTests(unittest.TestCase):
                     result = _testcapi.pyobject_fastcall(func, None)
                     self.check_result(result, expected)
 
-    def test_fastcall_dict(self):
+    def test_vectorcall_dict(self):
         # Test _PyObject_FastCallDict()
 
         for func, args, expected in self.CALLS_POSARGS:
@@ -428,34 +429,173 @@ class FastCallTests(unittest.TestCase):
                 result = _testcapi.pyobject_fastcalldict(func, args, kwargs)
                 self.check_result(result, expected)
 
-    def test_fastcall_keywords(self):
-        # Test _PyObject_FastCallKeywords()
+    def test_vectorcall(self):
+        # Test _PyObject_Vectorcall()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
                 # kwnames=NULL
-                result = _testcapi.pyobject_fastcallkeywords(func, args, None)
+                result = _testcapi.pyobject_vectorcall(func, args, None)
                 self.check_result(result, expected)
 
                 # kwnames=()
-                result = _testcapi.pyobject_fastcallkeywords(func, args, ())
+                result = _testcapi.pyobject_vectorcall(func, args, ())
                 self.check_result(result, expected)
 
                 if not args:
                     # kwnames=NULL
-                    result = _testcapi.pyobject_fastcallkeywords(func, None, None)
+                    result = _testcapi.pyobject_vectorcall(func, None, None)
                     self.check_result(result, expected)
 
                     # kwnames=()
-                    result = _testcapi.pyobject_fastcallkeywords(func, None, ())
+                    result = _testcapi.pyobject_vectorcall(func, None, ())
                     self.check_result(result, expected)
 
         for func, args, kwargs, expected in self.CALLS_KWARGS:
             with self.subTest(func=func, args=args, kwargs=kwargs):
                 kwnames = tuple(kwargs.keys())
                 args = args + tuple(kwargs.values())
-                result = _testcapi.pyobject_fastcallkeywords(func, args, kwnames)
+                result = _testcapi.pyobject_vectorcall(func, args, kwnames)
                 self.check_result(result, expected)
+
+    def test_fastcall_clearing_dict(self):
+        # Test bpo-36907: the point of the test is just checking that this
+        # does not crash.
+        class IntWithDict:
+            __slots__ = ["kwargs"]
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+            def __index__(self):
+                self.kwargs.clear()
+                gc.collect()
+                return 0
+        x = IntWithDict(dont_inherit=IntWithDict())
+        # We test the argument handling of "compile" here, the compilation
+        # itself is not relevant. When we pass flags=x below, x.__index__() is
+        # called, which changes the keywords dict.
+        compile("pass", "", "exec", x, **x.kwargs)
+
+
+Py_TPFLAGS_HAVE_VECTORCALL = 1 << 11
+Py_TPFLAGS_METHOD_DESCRIPTOR = 1 << 17
+
+
+def testfunction(self):
+    """some doc"""
+    return self
+
+
+def testfunction_kw(self, *, kw):
+    """some doc"""
+    return self
+
+
+class TestPEP590(unittest.TestCase):
+
+    def test_method_descriptor_flag(self):
+        import functools
+        cached = functools.lru_cache(1)(testfunction)
+
+        self.assertFalse(type(repr).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(list.append).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(list.__add__).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(testfunction).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(type(cached).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+
+        self.assertTrue(_testcapi.MethodDescriptorBase.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertTrue(_testcapi.MethodDescriptorDerived.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+        self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+
+        # Heap type should not inherit Py_TPFLAGS_METHOD_DESCRIPTOR
+        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
+            pass
+        self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
+
+    def test_vectorcall_flag(self):
+        self.assertTrue(_testcapi.MethodDescriptorBase.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        self.assertTrue(_testcapi.MethodDescriptorDerived.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        self.assertTrue(_testcapi.MethodDescriptor2.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+
+        # Heap type should not inherit Py_TPFLAGS_HAVE_VECTORCALL
+        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
+            pass
+        self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+
+    def test_vectorcall_override(self):
+        # Check that tp_call can correctly override vectorcall.
+        # MethodDescriptorNopGet implements tp_call but it inherits from
+        # MethodDescriptorBase, which implements vectorcall. Since
+        # MethodDescriptorNopGet returns the args tuple when called, we check
+        # additionally that no new tuple is created for this call.
+        args = tuple(range(5))
+        f = _testcapi.MethodDescriptorNopGet()
+        self.assertIs(f(*args), args)
+
+    def test_vectorcall(self):
+        # Test a bunch of different ways to call objects:
+        # 1. vectorcall using PyVectorcall_Call()
+        #   (only for objects that support vectorcall directly)
+        # 2. normal call
+        # 3. vectorcall using _PyObject_Vectorcall()
+        # 4. call as bound method
+        # 5. call using functools.partial
+
+        # A list of (function, args, kwargs, result) calls to test
+        calls = [(len, (range(42),), {}, 42),
+                 (list.append, ([], 0), {}, None),
+                 ([].append, (0,), {}, None),
+                 (sum, ([36],), {"start":6}, 42),
+                 (testfunction, (42,), {}, 42),
+                 (testfunction_kw, (42,), {"kw":None}, 42),
+                 (_testcapi.MethodDescriptorBase(), (0,), {}, True),
+                 (_testcapi.MethodDescriptorDerived(), (0,), {}, True),
+                 (_testcapi.MethodDescriptor2(), (0,), {}, False)]
+
+        from _testcapi import pyobject_vectorcall, pyvectorcall_call
+        from types import MethodType
+        from functools import partial
+
+        def vectorcall(func, args, kwargs):
+            args = *args, *kwargs.values()
+            kwnames = tuple(kwargs)
+            return pyobject_vectorcall(func, args, kwnames)
+
+        for (func, args, kwargs, expected) in calls:
+            with self.subTest(str(func)):
+                if not kwargs:
+                    self.assertEqual(expected, pyvectorcall_call(func, args))
+                self.assertEqual(expected, pyvectorcall_call(func, args, kwargs))
+
+        # Add derived classes (which do not support vectorcall directly,
+        # but do support all other ways of calling).
+
+        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
+            pass
+
+        class MethodDescriptorOverridden(_testcapi.MethodDescriptorBase):
+            def __call__(self, n):
+                return 'new'
+
+        calls += [
+            (MethodDescriptorHeap(), (0,), {}, True),
+            (MethodDescriptorOverridden(), (0,), {}, 'new'),
+        ]
+
+        for (func, args, kwargs, expected) in calls:
+            with self.subTest(str(func)):
+                args1 = args[1:]
+                meth = MethodType(func, args[0])
+                wrapped = partial(func)
+                if not kwargs:
+                    self.assertEqual(expected, func(*args))
+                    self.assertEqual(expected, pyobject_vectorcall(func, args, None))
+                    self.assertEqual(expected, meth(*args1))
+                    self.assertEqual(expected, wrapped(*args))
+                self.assertEqual(expected, func(*args, **kwargs))
+                self.assertEqual(expected, vectorcall(func, args, kwargs))
+                self.assertEqual(expected, meth(*args1, **kwargs))
+                self.assertEqual(expected, wrapped(*args, **kwargs))
 
 
 if __name__ == "__main__":

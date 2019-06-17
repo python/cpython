@@ -169,6 +169,9 @@ attributes:
 |           |                   | variables (referenced via |
 |           |                   | a function's closure)     |
 +-----------+-------------------+---------------------------+
+|           | co_posonlyargcount| number of positional only |
+|           |                   | arguments                 |
++-----------+-------------------+---------------------------+
 |           | co_kwonlyargcount | number of keyword only    |
 |           |                   | arguments (not including  |
 |           |                   | \*\* arg)                 |
@@ -724,13 +727,9 @@ function.
       |    Name                | Meaning                                      |
       +========================+==============================================+
       | *POSITIONAL_ONLY*      | Value must be supplied as a positional       |
-      |                        | argument.                                    |
-      |                        |                                              |
-      |                        | Python has no explicit syntax for defining   |
-      |                        | positional-only parameters, but many built-in|
-      |                        | and extension module functions (especially   |
-      |                        | those that accept only one or two parameters)|
-      |                        | accept them.                                 |
+      |                        | argument. Positional only parameters are     |
+      |                        | those which appear before a ``/`` entry (if  |
+      |                        | present) in a Python function definition.    |
       +------------------------+----------------------------------------------+
       | *POSITIONAL_OR_KEYWORD*| Value may be supplied as either a keyword or |
       |                        | positional argument (this is the standard    |
@@ -948,11 +947,6 @@ Classes and functions
    APIs. This function is retained primarily for use in code that needs to
    maintain compatibility with the Python 2 ``inspect`` module API.
 
-   .. deprecated:: 3.8
-      Use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      better introspecting API for callables.
-
    .. versionchanged:: 3.4
       This function is now based on :func:`signature`, but still ignores
       ``__wrapped__`` attributes and includes the already bound first
@@ -1028,7 +1022,7 @@ Classes and functions
    metatype is in use, cls will be the first element of the tuple.
 
 
-.. function:: getcallargs(func, *args, **kwds)
+.. function:: getcallargs(func, /, *args, **kwds)
 
    Bind the *args* and *kwds* to the argument names of the Python function or
    method *func*, as if it was called with them. For bound methods, bind also the

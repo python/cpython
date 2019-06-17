@@ -250,12 +250,16 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     lnotab = (unsigned char*)PyBytes_AS_STRING(lnotab_obj);
     tabsiz = PyBytes_GET_SIZE(lnotab_obj);
     assert(tabsiz == 0 || Py_REFCNT(lnotab_obj) == 1);
-    if (memchr(lnotab, 255, tabsiz) != NULL) {
-        /* 255 value are used for multibyte bytecode instructions */
-        goto exitUnchanged;
+
+    /* Don't optimize if lnotab contains instruction pointer delta larger
+       than +255 (encoded as multiple bytes), just to keep the peephole optimizer
+       simple. The optimizer leaves line number deltas unchanged. */
+
+    for (j = 0; j < tabsiz; j += 2) {
+        if (lnotab[j] == 255) {
+            goto exitUnchanged;
+        }
     }
-    /* Note: -128 and 127 special values for line number delta are ok,
-       the peephole optimizer doesn't modify line numbers. */
 
     assert(PyBytes_Check(code));
     Py_ssize_t codesize = PyBytes_GET_SIZE(code);
@@ -302,11 +306,18 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case LOAD_CONST:
                 cumlc = lastlc + 1;
                 if (nextop != POP_JUMP_IF_FALSE  ||
-                    !ISBASICBLOCK(blocks, op_start, i + 1)  ||
-                    !PyObject_IsTrue(PyList_GET_ITEM(consts, get_arg(codestr, i))))
+                    !ISBASICBLOCK(blocks, op_start, i + 1)) {
                     break;
-                fill_nops(codestr, op_start, nexti + 1);
-                cumlc = 0;
+                }
+                PyObject* cnt = PyList_GET_ITEM(consts, get_arg(codestr, i));
+                int is_true = PyObject_IsTrue(cnt);
+                if (is_true == -1) {
+                    goto exitError;
+                }
+                if (is_true == 1) {
+                    fill_nops(codestr, op_start, nexti + 1);
+                    cumlc = 0;
+                }
                 break;
 
                 /* Try to fold tuples of constants.

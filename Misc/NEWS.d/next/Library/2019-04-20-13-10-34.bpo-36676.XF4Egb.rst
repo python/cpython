@@ -1,3 +1,0 @@
-The XMLParser() in xml.etree.ElementTree provides namespace prefix context to the
-parser target if it defines the callback methods "start_ns()" and/or "end_ns()".
-Patch by Stefan Behnel.

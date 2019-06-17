@@ -1,2 +1,0 @@
-Fix typo in test_cyclic_gc() test for xml.etree.ElementTree. Patch by Gordon
-P. Hemsley.

@@ -199,7 +199,7 @@ class ConfigDialog(Toplevel):
     def help(self):
         """Create textview for config dialog help.
 
-        Attrbutes accessed:
+        Attributes accessed:
             note
 
         Methods:
@@ -2225,7 +2225,7 @@ key set, with a different name.
      'General': '''
 General:
 
-AutoComplete: Popupwait is milleseconds to wait after key char, without
+AutoComplete: Popupwait is milliseconds to wait after key char, without
 cursor movement, before popping up completion box.  Key char is '.' after
 identifier or a '/' (or '\\' on Windows) within a string.
 
