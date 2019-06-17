@@ -1,5 +1,5 @@
-Functions: Sync vs Async
-========================
+Async Functions, And Other Syntax Features
+==========================================
 
 Regular Python functions are created with the keyword ``def``,
 and look like this:
@@ -160,6 +160,13 @@ a dramatic simplifying effect on your code, because now you can modify
 data shared between multiple async tasks without fear of introducing
 a race condition.
 
+.. note:: In programs using ``asyncio``, you should never use ``time.sleep()``.
+    The correct way to "sleep" is with ``await asyncio.sleep()``. This is
+    because ``time.sleep()`` is a *blocking* call that will prevent the
+    ``asyncio`` event loop from processing events. The only safe way to
+    use ``time.sleep()`` is within a thread, or a subprocess, or with a
+    value of zero!
+
 Accurate Terminology For Async Functions
 ----------------------------------------
 
@@ -303,14 +310,18 @@ really is, so let's jump directly to some examples:
 
     >>> import asyncio
     >>> async def ag():
-    ...     yield 123
+    ...     yield 1
+    ...     yield 2
+    ...     yield 3
     ...
     >>> async def main():
     ...     async for value in ag():
     ...         print(value)
     ...
     >>> asyncio.run(main())
-    123
+    1
+    2
+    3
 
 If you pretend for a second that the word "async" is temporarily
 removed from the code above, the behaviour of the generator
@@ -321,8 +332,8 @@ generator.
 
 The difference now is of course the presence of those "async"
 words. The code sample doesn't show a good reason *why* an async
-generator is being used here: that will come later in the
-cookbook. All we want to discuss here is what these kinds of
+generator is being used here: that comes a bit further down.
+All we want to discuss here is what these kinds of
 functions and objects should be called.
 
 Let's have a close look at the function `ag`:
@@ -330,7 +341,7 @@ Let's have a close look at the function `ag`:
 .. code-block:: python3
 
     >>> async def ag():
-    ...     yield 123
+    ...     yield 1
     ...
     >>> inspect.isfunction(ag)
     True
@@ -351,3 +362,124 @@ Let's have a close look at the function `ag`:
     True
 
     # ...and when evaluated, it returns an "async generator"
+
+Hopefully you're comfortable now with how async generators look. Let's
+briefly discuss why you might want to use them. In the examples given
+above, there was no good read to make our generator an ``async def``
+function; an ordinary generator function would have been fine. Async
+generators are useful when you need to ``await`` on another coroutine
+either before, or after, each ``yield``.
+
+One example might be receiving network data from a ``StreamReader``
+instance:
+
+.. code-block:: python3
+
+    async def new_messages(reader: StreamReader):
+        while True:
+            data = await reader.read(1024)
+            yield data
+
+This pattern makes for a very clean consumer of the received data:
+
+.. code-block:: python3
+
+    async def get_data():
+        reader, writer = await asyncio.open_connection(...)
+        async for data in new_messages(reader):
+            do_something_with(data)
+
+Async generators allow you to improve your abstractions: for
+example, you can go one level higher and handle reconnection
+while still propagating received data out to a consumer:
+
+.. code-block:: python3
+
+    async def new_messages(reader: StreamReader):
+        while True:
+            data = await reader.read(1024)
+            yield data  # (1)
+
+    async def get_data(host, port):
+        while True:
+            try:
+                reader, writer = await asyncio.open_connection(host, port)
+                async for data in new_messages(reader):
+                    if not data:
+                        continue
+                    yield data  # (2)
+            except OSError:
+                continue
+            except asyncio.CancelledError:
+                return
+
+    async def main(host, port):
+        async for data in get_data(host, port):
+            do_something_with(data)  # (3)
+
+    if __name__ == '__main__':
+        asyncio.run(main(host, port))
+
+The async generator at ``(1)`` provides results back to an intermediate
+async generator at ``(2)``, which does *the same thing* but also handles
+reconnection events in its local scope. Finally, at ``(3)``, The async
+iterator elegantly produces the received data, and internal reconnection
+events (and any other lower level state management) are hidden from the
+high-level logic of the application.
+
+Async Context Managers
+----------------------
+
+In the previous section we showed how async generators can be driven
+with the new ``async for`` syntax. There is also a version of
+a *context manager* that can be used with ``asyncio``.
+
+.. note:: There is a common misconception that one **must** use
+    async context managers in ``asyncio`` applications.  This is not the
+    case. Async context managers are needed only if you need to ``await``
+    a coroutine in the *enter* or *exit* parts of the context manager.
+    You do *not* required to use an async context manager if there are ``await``
+    statements inside only the *body* of the context manager.
+
+Just as the ``contextlib`` library provides the ``@contextmanager``
+decorator to let us easily make context managers, so does the
+``@asynccontextmanager`` let us do that for async context managers.
+
+Imagine a very simple example where we might want to have a
+connection closed during cancellation, and how about adding some
+logging around the connection lifecycle events:
+
+.. code-block:: python3
+
+    import asyncio
+    import logging
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def open_conn_logged(*args, **kwargs):
+        logging.info('Opening connection...')
+        reader, writer = await asyncio.open_connection(*args, **kwargs)
+        logging.info('Connection opened.')
+        try:
+            yield reader, writer  # (1)
+        finally:
+            logging.info('Cleaning up connection...')
+            if not writer.is_closing():
+                await writer.close()
+            logging.info('Connection closed.')
+
+    async def echo():
+        async with open_conn_logged('localhost', 8000) as (reader, writer):
+            data = await reader.read(1024)
+            await writer.write(data)
+
+    if __name__ == '__main__':
+        asyncio.run(echo())
+
+At line marked ``(1)``, data is provided to the context inside the ``echo()``
+function. You can see how the ``async with`` keywords are required to
+work with the async context manager.
+
+Async context managers are likely to appear in projects using
+``asyncio`` because the need to safely close or dispose of resources is
+very common in network programming.
