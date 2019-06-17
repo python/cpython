@@ -289,7 +289,10 @@ Show/Hide Code Context (Editor Window only)
 Zoom/Restore Height
    Toggles the window between normal size and maximum height. The initial size
    defaults to 40 lines by 80 chars unless changed on the General tab of the
-   Configure IDLE dialog.
+   Configure IDLE dialog.  The maximum height for a screen is determined by
+   momentarily maximizing a window the first time one is zoomed on the screen.
+   Changing screen settings may invalidate the saved height.  This toogle has
+   no effect when a window is maximized.
 
 Window menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
