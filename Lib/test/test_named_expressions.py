@@ -212,6 +212,11 @@ class NamedExpressionAssignmentTest(unittest.TestCase):
 
         self.assertEqual(a, False)
 
+    def test_named_expression_assignment_16(self):
+        a, b = 1, 2
+        fib = {(c := a): (a := b) + (b := a + c) - b for __ in range(6)}
+        self.assertEqual(fib, {1: 2, 2: 3, 3: 5, 5: 8, 8: 13, 13: 21})
+
 
 class NamedExpressionScopeTest(unittest.TestCase):
 

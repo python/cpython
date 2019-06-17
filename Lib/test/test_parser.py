@@ -473,6 +473,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("foo(b := 2, a=1)")
         self.check_suite("foo((b := 2), a=1)")
         self.check_suite("foo(c=(b := 2), a=1)")
+        self.check_suite("{(x := C(i)).q: x for i in y}")
+
 
 #
 #  Second, we take *invalid* trees and make sure we get ParserError
