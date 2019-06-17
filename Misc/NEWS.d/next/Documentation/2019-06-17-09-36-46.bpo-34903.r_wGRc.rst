@@ -1,3 +1,1 @@
-For datetime.datetime.strptime(), the leading zero for some two-digit formats is optional.
-
-Add a footnote to that effect and add tests to datetimetester.py
+Documented that in :meth:datetime.datetime.strptime(), the leading zero in some two-digit formats is optional. Patch by Mike Gleen.
