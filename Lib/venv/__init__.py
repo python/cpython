@@ -12,6 +12,8 @@ import sys
 import sysconfig
 import types
 
+
+CORE_VENV_DEPS = ('pip', 'setuptools')
 logger = logging.getLogger(__name__)
 
 
@@ -38,16 +40,19 @@ class EnvBuilder:
     :param with_pip: If True, ensure pip is installed in the virtual
                      environment
     :param prompt: Alternative terminal prefix for the environment.
+    :param upgrade_deps: Update the base venv modules to the latest on PyPI
     """
 
     def __init__(self, system_site_packages=False, clear=False,
-                 symlinks=False, upgrade=False, with_pip=False, prompt=None):
+                 symlinks=False, upgrade=False, with_pip=False, prompt=None,
+                 upgrade_deps=False):
         self.system_site_packages = system_site_packages
         self.clear = clear
         self.symlinks = symlinks
         self.upgrade = upgrade
         self.with_pip = with_pip
         self.prompt = prompt
+        self.upgrade_deps = upgrade_deps
 
     def create(self, env_dir):
         """
@@ -74,6 +79,8 @@ class EnvBuilder:
             # restore it and rewrite the configuration
             self.system_site_packages = True
             self.create_configuration(context)
+        if self.upgrade_deps:
+            self.upgrade_dependencies(context)
 
     def clear_directory(self, path):
         for fn in os.listdir(path):
@@ -105,7 +112,6 @@ class EnvBuilder:
         prompt = self.prompt if self.prompt is not None else context.env_name
         context.prompt = '(%s) ' % prompt
         create_if_needed(env_dir)
-        env = os.environ
         executable = getattr(sys, '_base_executable', sys.executable)
         dirname, exename = os.path.split(os.path.abspath(executable))
         context.executable = executable
@@ -363,13 +369,25 @@ class EnvBuilder:
                         f.write(data)
                     shutil.copymode(srcfile, dstfile)
 
+    def upgrade_dependencies(self, context):
+        logger.debug(
+            f'Upgrading {CORE_VENV_DEPS} packages in {context.bin_path}'
+        )
+        if sys.platform == 'win32':
+            pip_exe = os.path.join(context.bin_path, 'pip.exe')
+        else:
+            pip_exe = os.path.join(context.bin_path, 'pip')
+        cmd = [pip_exe, 'install', '-U']
+        cmd.extend(CORE_VENV_DEPS)
+        subprocess.check_call(cmd)
+
 
 def create(env_dir, system_site_packages=False, clear=False,
-                    symlinks=False, with_pip=False, prompt=None):
+           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
                          clear=clear, symlinks=symlinks, with_pip=with_pip,
-                         prompt=prompt)
+                         prompt=prompt, upgrade_deps=upgrade_deps)
     builder.create(env_dir)
 
 def main(args=None):
@@ -432,6 +450,11 @@ def main(args=None):
         parser.add_argument('--prompt',
                             help='Provides an alternative prompt prefix for '
                                  'this environment.')
+        parser.add_argument('--upgrade-deps', default=False, action='store_true',
+                            dest='upgrade_deps',
+                            help='Upgrade core dependencies: {} to the latest '
+                                 'version in PyPI'.format(
+                                 ' '.join(CORE_VENV_DEPS)))
         options = parser.parse_args(args)
         if options.upgrade and options.clear:
             raise ValueError('you cannot supply --upgrade and --clear together.')
@@ -440,7 +463,8 @@ def main(args=None):
                              symlinks=options.symlinks,
                              upgrade=options.upgrade,
                              with_pip=options.with_pip,
-                             prompt=options.prompt)
+                             prompt=options.prompt,
+                             upgrade_deps=options.upgrade_deps)
         for d in options.dirs:
             builder.create(d)
 
