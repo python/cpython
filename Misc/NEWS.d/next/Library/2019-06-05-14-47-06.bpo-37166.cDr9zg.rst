@@ -1,2 +1,4 @@
-inspect.findsource() no longer triggers IndexError when co_firstlineno is
-larger than the size of the linecache entry
+:func:`inspect.findsource` no longer triggers :exc:`IndexError` when
+`co_firstlineno` is larger than the size of the :mod:`linecache` entry.
+This used to be possible when the source file was modified after the
+code object creation.
