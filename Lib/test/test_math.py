@@ -501,21 +501,25 @@ class MathTests(unittest.TestCase):
 
     def testFactorial(self):
         self.assertEqual(math.factorial(0), 1)
-        self.assertEqual(math.factorial(0.0), 1)
         total = 1
         for i in range(1, 1000):
             total *= i
             self.assertEqual(math.factorial(i), total)
-            self.assertEqual(math.factorial(float(i)), total)
             self.assertEqual(math.factorial(i), py_factorial(i))
         self.assertRaises(ValueError, math.factorial, -1)
-        self.assertRaises(ValueError, math.factorial, -1.0)
         self.assertRaises(ValueError, math.factorial, -10**100)
-        self.assertRaises(ValueError, math.factorial, -1e100)
-        self.assertRaises(ValueError, math.factorial, math.pi)
 
     def testFactorialNonIntegers(self):
-        self.assertRaises(TypeError, math.factorial, decimal.Decimal(5.2))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(math.factorial(5.0), 120)
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(ValueError, math.factorial, 5.2)
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(ValueError, math.factorial, -1.0)
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(ValueError, math.factorial, -1e100)
+        self.assertRaises(TypeError, math.factorial, decimal.Decimal('5'))
+        self.assertRaises(TypeError, math.factorial, decimal.Decimal('5.2'))
         self.assertRaises(TypeError, math.factorial, "5")
 
     # Other implementations may place different upper bounds.
@@ -524,7 +528,8 @@ class MathTests(unittest.TestCase):
         # Currently raises ValueError for inputs that are too large
         # to fit into a C long.
         self.assertRaises(OverflowError, math.factorial, 10**100)
-        self.assertRaises(OverflowError, math.factorial, 1e100)
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(OverflowError, math.factorial, 1e100)
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)

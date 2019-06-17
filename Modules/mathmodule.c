@@ -1981,6 +1981,12 @@ math_factorial(PyObject *module, PyObject *arg)
     PyObject *result, *odd_part, *pyint_form;
 
     if (PyFloat_Check(arg)) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Using factorial() with floats is deprecated",
+                         1) < 0)
+        {
+            return NULL;
+        }
         PyObject *lx;
         double dx = PyFloat_AS_DOUBLE((PyFloatObject *)arg);
         if (!(Py_IS_FINITE(dx) && dx == floor(dx))) {
