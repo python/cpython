@@ -1,11 +1,11 @@
-Executing Async Functions
-=========================
+Three Ways To Execute Async Functions
+=====================================
 
 In a previous section we looked at the difference between sync functions
-and async functions. Here we focus specifically on async functions, and
-how to call them.
+and async functions, and other async language syntax features.
+Here we focus specifically on how to execute async functions.
 
-Imagine we have an async function, called ``my_coro_fn``, and we want to
+Imagine we have an async function, called ``my_coro_fn()``, and we want to
 run it. There are three ways:
 
 1. ``asyncio.run(my_coro_fn())``
@@ -53,7 +53,8 @@ passed to ``create_task()``, and immediately after, async function ``g()``
 is called with ``await g()``.
 
 Even though ``f()`` is called first, async function ``g()`` will finish
-first, and you'll see "g is done" printed before "f is done". This is because
+first (5 seconds is shorter than 10 seconds), and you'll see "g is done"
+printed before "f is done". This is because
 although ``create_task()`` does schedule the given async function to be
 executed, it does not wait for the call to complete, unlike when the
 ``await`` keyword is used.
@@ -117,3 +118,94 @@ will be wrapped in a ``Task`` object, similar to what we're doing with
 ``f()`` and ``g()`` have completed (and in fact, it wasn't necessary to
 wrap ``f()`` in a task at all here, but it was included just to show that
 it works).
+
+.. note:: The ``create_task()`` API is useful to understand concurrency
+    features in Modern JavaScript, or *vice-versa* if you're coming to
+    Python from the context of JavaScript. JS also has ``async``
+    and ``await`` keywords, and they work *almost* exactly the same as
+    described in this Python tutorial! There is however one big
+    difference: In JavaScript, all async functions, when called, behave
+    like ``asyncio.create_task()`` calls. Consider the following
+    JavaScript code:
+
+    .. code-block:: javascript
+
+        async func1 () {
+            return await http.get('http://example.com/1')
+        }
+        async func2 () {
+            return await http.get('http://example.com/2')
+        }
+        async main () {
+            task1 = func1()  // In Python: `task1 = create_task(func1())`
+            task2 = func2()  // In Python: `task2 = create_task(func2())`
+            [result1, result2] = [await task1, await task2]
+        }
+
+    In Python, when you see two ``await`` keywords in series, it usually
+    reads as "first the one, then the other". This is because the ``await``
+    keyword suspends the calling context until the coroutine returns.
+    In the JavaScript shown above, that is not the case, both ``task1``
+    *and* ``task2`` will run concurrently, although ``result1`` and
+    ``result2`` will only be set when both tasks have completed.
+
+    A naive translation of the JavaScript code to Python might look
+    like this:
+
+    .. code-block:: python3
+
+        async def func1():
+            return await http.get('http://example.com/1')
+
+        async func2():
+            return await http.get('http://example.com/2')
+
+        async def main():
+            coro1 = func1()
+            coro2 = func2()
+            [result1, result2] = [await coro1, await coro2]
+        }
+
+    However, this will *not* behave the same: ``coro2`` will begin
+    running only after ``coro1`` has completed! Instead, one can use
+    Python's ``create_task()`` to more closely mimic the JavaScript
+    behaviour:
+
+    .. code-block:: python3
+
+        async def func1():
+            return await http.get('http://example.com/1')
+
+        async func2():
+            return await http.get('http://example.com/2')
+
+        async def main():
+            task1 = asyncio.create_task(func1())
+            task2 = asyncio.create_task(func2())
+            [result1, result2] = [await task1, await task2]
+        }
+
+    Now ``task1`` and ``task2`` will run concurrently, and the results
+    will be assigned only after both tasks are complete. Of course, this is
+    not idiomatic in Python: the more common pattern for waiting on
+    several coroutines concurrently is with the ``gather`` API, which
+    includes a highly-recommended error-handling feature:
+
+    .. code-block:: python3
+
+        async def main():
+            [result1, result2] = await asyncio.gather(
+                func1(), func2(), return_exceptions=True
+            )
+
+    Setting ``return_exceptions=True`` makes raised exceptions from
+    any of the given coroutines become "returned" values instead, and
+    then it is up to you to check whether either of ``result1`` or
+    ``result2`` is an ``Exception`` type.
+
+    The documentation for ``asyncio.gather()`` has an important warning:
+    if ``return_exceptions=False``, any exception raised from one of the
+    coroutines will bubble up into your calling code. This will cause
+    the ``gather`` call to terminate, but the *other* coroutines supplied
+    to the ``gather()`` call will **not** be affected, and will continue
+    to run.
