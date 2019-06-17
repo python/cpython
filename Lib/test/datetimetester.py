@@ -2506,39 +2506,31 @@ class TestDateTime(TestDate):
         with self.assertRaises(ValueError):
             # %y does require two digits.
             newdate = strptime('01/02/3 04:05:06', '%d/%m/%y %H:%M:%S')
+        dt1 = self.theclass(2003, 2, 1, 4, 5, 6)
+        dt2 = self.theclass(2003, 1, 2, 4, 5, 6)
+        dt3 = self.theclass(2003, 2, 1, 0, 0, 0)
+        dt4 = self.theclass(2003, 1, 25, 0, 0, 0)
         inputs = [
-            ('%d',
-             '1/02/03 4:5:6', '%d/%m/%y %H:%M:%S', '2003-02-01T04:05:06'),
-            ('%m',
-             '01/2/03 4:5:6', '%d/%m/%y %H:%M:%S', '2003-02-01T04:05:06'),
-            ('%H',
-             '01/02/03 4:05:06', '%d/%m/%y %H:%M:%S', '2003-02-01T04:05:06'),
-            ('%M',
-             '01/02/03 04:5:06', '%d/%m/%y %H:%M:%S', '2003-02-01T04:05:06'),
-            ('%S',
-             '01/02/03 04:05:6', '%d/%m/%y %H:%M:%S', '2003-02-01T04:05:06'),
-            ('%j',
-             '2/03 04am:05:06', '%j/%y %I%p:%M:%S','2003-01-02T04:05:06'),
-            ('%I',
-             '02/03 4am:05:06', '%j/%y %I%p:%M:%S','2003-01-02T04:05:06'),
-            ('%w',
-             '6/04/03', '%w/%U/%y', '2003-02-01T00:00:00'),
-            ('%W',  # %u requires a single digit.
-             '6/4/2003', '%u/%W/%Y', '2003-02-01T00:00:00'),
-            ('%V',
-             '6/4/2003', '%u/%V/%G', '2003-01-25T00:00:00'),
+            ('%d', '1/02/03 4:5:6', '%d/%m/%y %H:%M:%S', dt1),
+            ('%m', '01/2/03 4:5:6', '%d/%m/%y %H:%M:%S', dt1),
+            ('%H', '01/02/03 4:05:06', '%d/%m/%y %H:%M:%S', dt1),
+            ('%M', '01/02/03 04:5:06', '%d/%m/%y %H:%M:%S', dt1),
+            ('%S', '01/02/03 04:05:6', '%d/%m/%y %H:%M:%S', dt1),
+            ('%j', '2/03 04am:05:06', '%j/%y %I%p:%M:%S',dt2),
+            ('%I', '02/03 4am:05:06', '%j/%y %I%p:%M:%S',dt2),
+            ('%w', '6/04/03', '%w/%U/%y', dt3),
+            # %u requires a single digit.
+            ('%W', '6/4/2003', '%u/%W/%Y', dt3),
+            ('%V', '6/4/2003', '%u/%V/%G', dt4),
         ]
-        def time_helper(reason, string, format, target):
+        for reason, string, format, target in inputs:
             reason = 'test single digit ' + reason
             with self.subTest(reason=reason,
                               string=string,
                               format=format,
                               target=target):
                 newdate = strptime(string, format)
-                self.assertEqual(newdate.isoformat(timespec='seconds'), target,
-                                 msg=reason)
-        for testcase in inputs:
-            time_helper(*testcase)
+                self.assertEqual(newdate, target, msg=reason)
 
         # end bpo-34903
 
