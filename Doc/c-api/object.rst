@@ -255,7 +255,8 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_CallNoArgs(PyObject *callable)
 
-   Call a callable Python object *callable* without any arguments.
+   Call a callable Python object *callable* without any arguments. It is the
+   most efficient way to call a callable Python object without any argument.
 
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.

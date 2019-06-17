@@ -103,7 +103,10 @@ Build and C API Changes
 =======================
 
 * Add a new public :c:func:`PyObject_CallNoArgs` function to the C API:
-  call a callable Python object without any arguments.
+  call a callable Python object without any arguments. It is the most efficient
+  way to call a callable Python object without any argument.
+  (Contributed by Victor Stinner in :issue:`37194`.)
+
 
 
 Deprecated
