@@ -109,6 +109,11 @@ Build and C API Changes
 Deprecated
 ==========
 
+* Currently :func:`math.factorial` accepts :class:`float` instances with
+  non-negative integer values (like ``5.0``).  It raises a :exc:`ValueError`
+  for non-integral and negative floats.  It is deprecated now.  In future
+  Python versions it will raise a :exc:`TypeError` for all floats.
+  (Contributed by Serhiy Storchaka in :issue:`37315`.)
 
 
 Removed
