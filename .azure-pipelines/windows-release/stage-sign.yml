@@ -24,17 +24,17 @@ jobs:
       Write-Host "##vso[build.addbuildtag]signed"
     displayName: 'Add build tags'
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: unsigned_bin_$(Name)'
     inputs:
       artifactName: unsigned_bin_$(Name)
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\bin
 
   - powershell: |
       $files = (gi *.exe, *.dll, *.pyd, *.cat -Exclude vcruntime*, libffi*, libcrypto*, libssl*)
       signtool sign /a /n "$(SigningCertificate)" /fd sha256 /d "$(SigningDescription)" $files
     displayName: 'Sign binaries'
-    workingDirectory: $(Build.BinariesDirectory)\unsigned_bin_$(Name)
+    workingDirectory: $(Build.BinariesDirectory)\bin
 
   - powershell: |
       $files = (gi *.exe, *.dll, *.pyd, *.cat -Exclude vcruntime*, libffi*, libcrypto*, libssl*)
@@ -51,14 +51,14 @@ jobs:
           Write-Host "##vso[task.logissue type=error]Failed to timestamp files"
       }
     displayName: 'Timestamp binaries'
-    workingDirectory: $(Build.BinariesDirectory)\unsigned_bin_$(Name)
+    workingDirectory: $(Build.BinariesDirectory)\bin
     continueOnError: true
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: 'Publish artifact: bin_$(Name)'
     inputs:
-      PathtoPublish: '$(Build.BinariesDirectory)\unsigned_bin_$(Name)'
-      ArtifactName: bin_$(Name)
+      targetPath: '$(Build.BinariesDirectory)\bin'
+      artifactName: bin_$(Name)
 
 
 - job: Dump_CertInfo
@@ -91,11 +91,11 @@ jobs:
       $info | ConvertTo-JSON -Compress | Out-File -Encoding utf8 "$d\certinfo.json"
     displayName: "Extract certificate info"
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: 'Publish artifact: cert'
     inputs:
-      PathtoPublish: '$(Build.BinariesDirectory)\cert'
-      ArtifactName: cert
+      targetPath: '$(Build.BinariesDirectory)\cert'
+      artifactName: cert
 
 
 - job: Mark_Unsigned
