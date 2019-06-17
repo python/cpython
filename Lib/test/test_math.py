@@ -521,7 +521,7 @@ class MathTests(unittest.TestCase):
     # Other implementations may place different upper bounds.
     @support.cpython_only
     def testFactorialHugeInputs(self):
-        # Currently raises ValueError for inputs that are too large
+        # Currently raises OverflowError for inputs that are too large
         # to fit into a C long.
         self.assertRaises(OverflowError, math.factorial, 10**100)
         self.assertRaises(OverflowError, math.factorial, 1e100)
@@ -1917,7 +1917,8 @@ class IsCloseTests(unittest.TestCase):
         self.assertEqual(perm(n, 0), 1)
         self.assertEqual(perm(n, 1), n)
         self.assertEqual(perm(n, 2), n * (n-1))
-        self.assertRaises((OverflowError, MemoryError), perm, n, n)
+        if support.check_impl_detail(cpython=True):
+            self.assertRaises(OverflowError, perm, n, n)
 
         for n, k in (True, True), (True, False), (False, False):
             self.assertEqual(perm(n, k), 1)
@@ -1986,7 +1987,8 @@ class IsCloseTests(unittest.TestCase):
         self.assertEqual(comb(n, n), 1)
         self.assertEqual(comb(n, n-1), n)
         self.assertEqual(comb(n, n-2), n * (n-1) // 2)
-        self.assertRaises((OverflowError, MemoryError), comb, n, n//2)
+        if support.check_impl_detail(cpython=True):
+            self.assertRaises(OverflowError, comb, n, n//2)
 
         for n, k in (True, True), (True, False), (False, False):
             self.assertEqual(comb(n, k), 1)
