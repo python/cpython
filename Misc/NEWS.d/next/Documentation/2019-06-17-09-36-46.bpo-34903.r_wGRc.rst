@@ -1,0 +1,3 @@
+For datetime.datetime.strptime(), the leading zero for some two-digit formats is optional.
+
+Add a footnote to that effect and add tests to datetimetester.py
