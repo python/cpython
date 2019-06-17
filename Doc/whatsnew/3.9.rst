@@ -122,9 +122,14 @@ Deprecated
 Removed
 =======
 
-``_dummy_thread`` and ``dummy_threading`` modules have been removed. These
-modules were deprecated since Python 3.7 which requires threading support.
-(Contributed by Victor Stinner in :issue:`37312`.)
+* ``_dummy_thread`` and ``dummy_threading`` modules have been removed. These
+  modules were deprecated since Python 3.7 which requires threading support.
+  (Contributed by Victor Stinner in :issue:`37312`.)
+
+* ``aifc.openfp()`` alias to ``aifc.open()``, ``sunau.openfp()`` alias to
+  ``sunau.open()``, and ``wave.openfp()`` alias to ``wave.open()`` have been
+  removed. They were deprecated since Python 3.7.
+  (Contributed by Victor Stinner in :issue:`37320`.)
 
 
 Porting to Python 3.9
