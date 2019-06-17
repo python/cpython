@@ -2501,6 +2501,47 @@ class TestDateTime(TestDate):
                 self.assertEqual(expected, got)
 
         strptime = self.theclass.strptime
+
+        # bpo-34903: Check that single digit dates and times are allowed.
+        with self.assertRaises(ValueError):
+            # %y does require two digits
+            newdate = strptime('01/02/3 04:05:06', '%d/%m/%y %H:%M:%S')
+        inputs = [
+            ('%d',
+             '1/02/03 4:5:6', '%d/%m/%y %H:%M:%S', '2003-02-01T04:05:06'),
+            ('%m',
+             '01/2/03 4:5:6', '%d/%m/%y %H:%M:%S', '2003-02-01T04:05:06'),
+            ('%H',
+             '01/02/03 4:05:06', '%d/%m/%y %H:%M:%S', '2003-02-01T04:05:06'),
+            ('%M',
+             '01/02/03 04:5:06', '%d/%m/%y %H:%M:%S', '2003-02-01T04:05:06'),
+            ('%S',
+             '01/02/03 04:05:6', '%d/%m/%y %H:%M:%S', '2003-02-01T04:05:06'),
+            ('%j',
+             '2/03 04am:05:06', '%j/%y %I%p:%M:%S','2003-01-02T04:05:06'),
+            ('%I',
+             '02/03 4am:05:06', '%j/%y %I%p:%M:%S','2003-01-02T04:05:06'),
+            ('%w',
+             '6/04/03', '%w/%U/%y', '2003-02-01T00:00:00'),
+            ('%W',
+             '6/4/2003', '%u/%W/%Y', '2003-02-01T00:00:00'),
+            ('%V',
+             '6/4/2003', '%u/%V/%G', '2003-01-25T00:00:00'),
+        ]
+        def time_helper(reason, string, format, target):
+            reason = 'test single digit ' + reason
+            with self.subTest(reason=reason,
+                              string=string,
+                              format=format,
+                              target=target):
+                newdate = strptime(string, format)
+                self.assertEqual(newdate.isoformat(timespec='seconds'), target,
+                                 msg=reason)
+        for testcase in inputs:
+            time_helper(*testcase)
+
+        # end bpo-34903
+
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
         self.assertEqual(
