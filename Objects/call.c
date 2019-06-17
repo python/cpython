@@ -70,6 +70,14 @@ _Py_CheckFunctionResult(PyObject *callable, PyObject *result, const char *where)
 
 /* --- Core PyObject call functions ------------------------------- */
 
+/* Call a callable Python object without any arguments */
+PyObject *
+PyObject_CallNoArgs(PyObject *func)
+{
+    return _PyObject_CallNoArg(func);
+}
+
+
 PyObject *
 _PyObject_FastCallDict(PyObject *callable, PyObject *const *args,
                        size_t nargsf, PyObject *kwargs)

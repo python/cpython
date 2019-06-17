@@ -253,6 +253,16 @@ Object Protocol
    and ``0`` otherwise.  This function always succeeds.
 
 
+.. c:function:: PyObject* PyObject_CallNoArgs(PyObject *callable)
+
+   Call a callable Python object *callable* without any arguments.
+
+   Returns the result of the call on success, or raise an exception and return
+   *NULL* on failure.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: PyObject* PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 
    Call a callable Python object *callable*, with arguments given by the
