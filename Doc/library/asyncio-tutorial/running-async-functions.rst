@@ -120,7 +120,7 @@ wrap ``f()`` in a task at all here, but it was included just to show that
 it works).
 
 .. note:: The ``create_task()`` API is useful to understand concurrency
-    features in Modern JavaScript, or *vice-versa* if you're coming to
+    features in modern JavaScript, or *vice-versa* if you're coming to
     Python from the context of JavaScript. JS also has ``async``
     and ``await`` keywords, and they work *almost* exactly the same as
     described in this Python tutorial! There is however one big
