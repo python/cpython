@@ -3382,6 +3382,15 @@ class FDInheritanceTests(unittest.TestCase):
         self.addCleanup(os.close, fd2)
         self.assertEqual(os.get_inheritable(fd2), False)
 
+    @unittest.skipUnless(sys.platform == 'win32', 'win32-specific test')
+    def test_dup_nul(self):
+        # os.dup() was creating inheritable fds for character files.
+        fd1 = os.open('NUL', os.O_RDONLY)
+        self.addCleanup(os.close, fd1)
+        fd2 = os.dup(fd1)
+        self.addCleanup(os.close, fd2)
+        self.assertFalse(os.get_inheritable(fd2))
+
     @unittest.skipUnless(hasattr(os, 'dup2'), "need os.dup2()")
     def test_dup2(self):
         fd = os.open(__file__, os.O_RDONLY)
