@@ -2112,6 +2112,12 @@ class PathTest(_BasePathTest, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
             list(p.glob(''))
 
+    def test_kwargs(self):
+        class MyPath(type(pathlib.Path())):
+            def __init__(self, *args, foo):
+                self.foo = foo
+        path = MyPath('bar', foo=42)
+        assert path.foo == 42
 
 @only_posix
 class PosixPathTest(_BasePathTest, unittest.TestCase):

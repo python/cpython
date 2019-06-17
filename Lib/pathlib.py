@@ -1009,6 +1009,8 @@ class Path(PurePath):
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
+        if cls in (WindowsPath, PosixPath) and kwargs:
+            raise TypeError("keyword arguments provided but ignored")
         self = cls._from_parts(args, init=False)
         if not self._flavour.is_supported:
             raise NotImplementedError("cannot instantiate %r on your system"
@@ -1519,22 +1521,12 @@ class PosixPath(Path, PurePosixPath):
     """
     __slots__ = ()
 
-    def __new__(cls, *args, **kwargs):
-        if kwargs:
-            raise TypeError("keyword arguments provided but ignored")
-        return super().__new__(cls, *args, **kwargs)
-
 class WindowsPath(Path, PureWindowsPath):
     """Path subclass for Windows systems.
 
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
-
-    def __new__(cls, *args, **kwargs):
-        if kwargs:
-            raise TypeError("keyword arguments provided but ignored")
-        return super().__new__(cls, *args, **kwargs)
 
     def owner(self):
         raise NotImplementedError("Path.owner() is unsupported on this system")
