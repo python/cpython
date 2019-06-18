@@ -2574,7 +2574,7 @@ class Symlink(unittest.TestCase):
             self.symlink_to_path[link_name] = dst
 
         # Create pathnames for new directories, files and symlinks XXX dirs
-        new_paths = {'np1': 'np1', 'np2': os.path.join('dd1', 'np2')}
+        new_paths = {'new1': 'new1', 'new2': os.path.join('dd1', 'new2')}
         # Add relative links
         for name, value in new_paths.items():
             path = os.path.join(self.tmp_dir, value)
@@ -2615,7 +2615,7 @@ class Symlink(unittest.TestCase):
     #
     def test_1src_dst_not_exist(self):
         src = self.src_file1
-        dst = self.np1
+        dst = self.new1
         shutil.symlink(src, dst)
         self.assertEqual(os.readlink(dst), src)
 
@@ -2640,7 +2640,7 @@ class Symlink(unittest.TestCase):
 
     def test_overwrite_not_exist(self):
         src = self.src_file1
-        dst = self.np1
+        dst = self.new1
         shutil.symlink(src, dst, overwrite=True)
         self.assertEqual(os.readlink(dst), src)
 
