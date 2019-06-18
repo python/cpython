@@ -48,15 +48,17 @@ class Query(Toplevel):
         _htest - bool, change box location when running htest
         _utest - bool, leave window hidden and not modal
         """
-        Toplevel.__init__(self, parent)
-        self.withdraw()  # Hide while configuring, especially geometry.
-        self.parent = parent
-        self.title(title)
+        self.parent = parent  # Needed for Font call.
         self.message = message
         self.text0 = text0
         self.used_names = used_names
+
+        Toplevel.__init__(self, parent)
+        self.withdraw()  # Hide while configuring, especially geometry.
+        self.title(title)
         self.transient(parent)
         self.grab_set()
+
         windowingsystem = self.tk.call('tk', 'windowingsystem')
         if windowingsystem == 'aqua':
             try:
@@ -69,9 +71,9 @@ class Query(Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.bind('<Key-Return>', self.ok)
         self.bind("<KP_Enter>", self.ok)
-        self.resizable(height=False, width=False)
+
         self.create_widgets()
-        self.update_idletasks()  # Needed here for winfo_reqwidth below.
+        self.update_idletasks()  # Need here for winfo_reqwidth below.
         self.geometry(  # Center dialog over parent (or below htest box).
                 "+%d+%d" % (
                     parent.winfo_rootx() +
@@ -80,12 +82,14 @@ class Query(Toplevel):
                     ((parent.winfo_height()/2 - self.winfo_reqheight()/2)
                     if not _htest else 150)
                 ) )
+        self.resizable(height=False, width=False)
+
         if not _utest:
             self.deiconify()  # Unhide now that geometry set.
             self.wait_window()
 
-    def create_widgets(self, ok_text='OK'):  # Call from override, if any.
-        # Bind to self widgets needed for entry_ok or unittest.
+    def create_widgets(self, ok_text='OK'):
+        # Bind widgets needed for entry_ok or unittest to self.
         self.frame = frame = Frame(self, padding=10)
         frame.grid(column=0, row=0, sticky='news')
         frame.grid_columnconfigure(0, weight=1)
@@ -99,18 +103,21 @@ class Query(Toplevel):
                                exists=True, root=self.parent)
         self.entry_error = Label(frame, text=' ', foreground='red',
                                  font=self.error_font)
-        self.button_ok = Button(
-                frame, text=ok_text, default='active', command=self.ok)
-        self.button_cancel = Button(
-                frame, text='Cancel', command=self.cancel)
-
         entrylabel.grid(column=0, row=0, columnspan=3, padx=5, sticky=W)
         self.entry.grid(column=0, row=1, columnspan=3, padx=5, sticky=W+E,
                         pady=[10,0])
         self.entry_error.grid(column=0, row=2, columnspan=3, padx=5,
                               sticky=W+E)
+
+        self.button_ok = Button(
+                frame, text=ok_text, default='active', command=self.ok)
+        self.button_cancel = Button(
+                frame, text='Cancel', command=self.cancel)
+
         self.button_ok.grid(column=1, row=99, padx=5)
         self.button_cancel.grid(column=2, row=99, padx=5)
+
+    def create_extra(self): pass  # Override to add widgets.
 
     def showerror(self, message, widget=None):
         #self.bell(displayof=self)
