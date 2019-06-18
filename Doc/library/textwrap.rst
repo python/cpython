@@ -78,7 +78,7 @@ functions should be good enough; otherwise, you should use an instance of
    common leading whitespace.
   
    Lines containing only whitespace are ignored in the input and normalized to a 
-   single newline character in the ouput.
+   single newline character in the output.
 
    For example::
 
