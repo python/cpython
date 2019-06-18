@@ -41,6 +41,18 @@ The following top-level asyncio functions can be used to create
 and work with streams:
 
 
+.. coroutinefunction:: connect(host=None, port=None, \*, \
+                               loop=None, limit=None, ssl=None, family=0, \
+                               proto=0, flags=0, sock=None, local_addr=None, \
+                               server_hostname=None, ssl_handshake_timeout=None, \
+                               happy_eyeballs_delay=None, interleave=None)
+
+   This function internally uses :meth:`loop.create_connection` to return a
+   :class:`Stream` object of the mode `READWRITE` that can be used as a reader
+   and a writer.
+
+   .. versionadded:: 3.8
+
 .. coroutinefunction:: open_connection(host=None, port=None, \*, \
                           loop=None, limit=None, ssl=None, family=0, \
                           proto=0, flags=0, sock=None, local_addr=None, \
@@ -68,7 +80,7 @@ and work with streams:
 
    .. deprecated-removed:: 3.8 3.10
 
-      `open_connection()` is deprecated in favor of `connect()`.
+      `open_connection()` is deprecated in favor of :func:`connect`.
 
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
                           port=None, \*, loop=None, limit=None, \
@@ -105,10 +117,23 @@ and work with streams:
 
    .. deprecated-removed:: 3.8 3.10
 
-      `start_server()` is deprecated if favor of `StreamServer()`
+      `start_server()` is deprecated if favor of :class:`StreamServer`
 
 
 .. rubric:: Unix Sockets
+
+.. function:: connect_unix(path=None, *, limit=2**16, ssl=None, \
+                           sock=None, server_hostname=None, \
+                           ssl_handshake_timeout=None)
+
+   Establish a Unix socket connection and return a :class:`Stream` object of
+   the mode `READWRITE` that can be used as a reader and a writer.
+
+   Similar to :func:`connect` but operates on Unix sockets.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.8
 
 .. coroutinefunction:: open_unix_connection(path=None, \*, loop=None, \
                         limit=None, ssl=None, sock=None, \
@@ -133,7 +158,7 @@ and work with streams:
 
    .. deprecated-removed:: 3.8 3.10
 
-      `open_unix_connection()` is deprecated if favor of `connect_unix()`.
+      `open_unix_connection()` is deprecated if favor of :func:`connect_unix`.
 
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
@@ -159,10 +184,86 @@ and work with streams:
 
    .. deprecated-removed:: 3.8 3.10
 
-      `start_unix_server()` is deprecated in favor of `UnixStreamServer()`.
+      `start_unix_server()` is deprecated in favor of :class:`UnixStreamServer`.
 
 
 ---------
+
+StreamServer
+============
+
+.. class:: StreamServer(client_connected_cb, /, host=None, port=None, *, \
+                        limit=2**16, family=socket.AF_UNSPEC, \
+                        flags=socket.AI_PASSIVE, sock=None, backlog=100, \
+                        ssl=None, reuse_address=None, reuse_port=None, \
+                        ssl_handshake_timeout=None, shutdown_timeout=60)
+
+   .. coroutinefunction:: start_serving
+
+      Binds to the given host and port to start the server. This method is
+      automatically called during `__enter__` when :class:`Stream` is
+      used as a context manager.
+
+   .. coroutinefunction:: close
+
+      Closes the connection. This method is automatically called during
+      `__exit__` when :class:`StreamServer` is used as a context manager.
+
+   .. method:: is_serving
+
+      Returns ``True`` if the server is bound and currently serving.
+
+   .. attribute:: sockets
+
+      Returns a tuple of sockets the server is bound to.
+
+   .. versionadded:: 3.8
+
+
+UnixStreamServer
+================
+
+.. class:: UnixStreamServer(client_connected_cb, /, path=None, *, \
+	                    limit=2**16, sock=None, backlog=100, \
+			    ssl=None, ssl_handshake_timeout=None, shutdown_timeout=60)
+
+   .. coroutinefunction:: start_serving
+
+      Binds to the given host and port to start the server. This method is
+      automatically called during `__enter__` when :class:`Stream` is
+      used as a context manager.
+
+   .. coroutinefunction:: close
+
+      Closes the connection. This method is automatically called during
+      `__exit__` when :class:`UnixStreamServer` is used as a context manager.
+
+   .. method:: is_serving
+
+      Returns ``True`` if the server is bound and currently serving.
+
+   .. attribute:: sockets
+
+      Returns a tuple of sockets the server is bound to.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.8
+
+Stream
+============
+
+.. class:: Stream
+
+   Represents a Stream object that provides APIs to read and write data
+   to the IO stream . It includes the API provided by :class:`StreamReader`
+   and :class:`StreamWriter`.
+
+   It is not recommended to instantiate *Stream* objects
+   directly; use :func:`connect` and :func:`StreamServer`
+   instead.
+
+   .. versionadded:: 3.8
 
 
 StreamReader
