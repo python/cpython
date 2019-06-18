@@ -226,9 +226,11 @@ class FileInputTests(BaseTests, unittest.TestCase):
         self.assertEqual(fi.fileno(), -1)
 
     def test_opening_mode(self):
-        with self.assertRaises(ValueError):
-            # invalid mode
-            fi = FileInput(mode="w")
+        # invalid modes
+        for mode in ('w', 'rU', 'U'):
+            with self.subTest(mode=mode):
+                with self.assertRaises(ValueError):
+                    FileInput(mode=mode)
 
     def test_stdin_binary_mode(self):
         with mock.patch('sys.stdin') as m_stdin:
