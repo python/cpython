@@ -18,17 +18,16 @@ streams::
     import asyncio
 
     async def tcp_echo_client(message):
-        reader, writer = await asyncio.open_connection(
-            '127.0.0.1', 8888)
+        stream = await asyncio.connect('127.0.0.1', 8888)
 
         print(f'Send: {message!r}')
-        await writer.write(message.encode())
+        stream.write(message.encode())
 
-        data = await reader.read(100)
+        data = await stream.read(100)
         print(f'Received: {data.decode()!r}')
 
         print('Close the connection')
-        await writer.close()
+        await stream.close()
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -366,22 +365,21 @@ Examples
 TCP echo client using streams
 -----------------------------
 
-TCP echo client using the :func:`asyncio.open_connection` function::
+TCP echo client using the :func:`asyncio.connect` function::
 
     import asyncio
 
     async def tcp_echo_client(message):
-        reader, writer = await asyncio.open_connection(
-            '127.0.0.1', 8888)
+        stream = await asyncio.connect('127.0.0.1', 8888)
 
         print(f'Send: {message!r}')
-        writer.write(message.encode())
+        stream.write(message.encode())
 
-        data = await reader.read(100)
+        data = await stream.read(100)
         print(f'Received: {data.decode()!r}')
 
         print('Close the connection')
-        writer.close()
+        await stream.close()
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -397,28 +395,28 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 TCP echo server using streams
 -----------------------------
 
-TCP echo server using the :func:`asyncio.start_server` function::
+TCP echo server using the :class:`asyncio.StreamServer` class::
 
     import asyncio
 
-    async def handle_echo(reader, writer):
-        data = await reader.read(100)
+    async def handle_echo(stream):
+        data = await stream.read(100)
         message = data.decode()
-        addr = writer.get_extra_info('peername')
+        addr = stream.get_extra_info('peername')
 
         print(f"Received {message!r} from {addr!r}")
 
         print(f"Send: {message!r}")
-        writer.write(data)
-        await writer.drain()
+        stream.write(data)
+        await stream.drain()
 
         print("Close the connection")
-        writer.close()
+        await stream.close()
 
     async def main():
-        server = await asyncio.start_server(
-            handle_echo, '127.0.0.1', 8888)
+        server = asyncio.StreamServer(handle_echo, '127.0.0.1', 8888)
 
+        await server.start_serving()
         addr = server.sockets[0].getsockname()
         print(f'Serving on {addr}')
 
@@ -446,11 +444,9 @@ Simple example querying HTTP headers of the URL passed on the command line::
     async def print_http_headers(url):
         url = urllib.parse.urlsplit(url)
         if url.scheme == 'https':
-            reader, writer = await asyncio.open_connection(
-                url.hostname, 443, ssl=True)
+            stream = await asyncio.connect(url.hostname, 443, ssl=True)
         else:
-            reader, writer = await asyncio.open_connection(
-                url.hostname, 80)
+            stream = await asyncio.connect(url.hostname, 80)
 
         query = (
             f"HEAD {url.path or '/'} HTTP/1.0\r\n"
@@ -458,9 +454,9 @@ Simple example querying HTTP headers of the URL passed on the command line::
             f"\r\n"
         )
 
-        writer.write(query.encode('latin-1'))
+        stream.write(query.encode('latin-1'))
         while True:
-            line = await reader.readline()
+            line = await stream.readline()
             if not line:
                 break
 
@@ -469,7 +465,7 @@ Simple example querying HTTP headers of the URL passed on the command line::
                 print(f'HTTP header> {line}')
 
         # Ignore the body, close the socket
-        writer.close()
+        await stream.close()
 
     url = sys.argv[1]
     asyncio.run(print_http_headers(url))
@@ -490,7 +486,7 @@ Register an open socket to wait for data using streams
 ------------------------------------------------------
 
 Coroutine waiting until a socket receives data using the
-:func:`open_connection` function::
+:func:`asyncio.connect` function::
 
     import asyncio
     import socket
@@ -504,17 +500,17 @@ Coroutine waiting until a socket receives data using the
         rsock, wsock = socket.socketpair()
 
         # Register the open socket to wait for data.
-        reader, writer = await asyncio.open_connection(sock=rsock)
+        stream = await asyncio.connect(sock=rsock)
 
         # Simulate the reception of data from the network
         loop.call_soon(wsock.send, 'abc'.encode())
 
         # Wait for data
-        data = await reader.read(100)
+        data = await stream.read(100)
 
         # Got data, we are done: close the socket
         print("Received:", data.decode())
-        writer.close()
+        await stream.close()
 
         # Close the second socket
         wsock.close()
