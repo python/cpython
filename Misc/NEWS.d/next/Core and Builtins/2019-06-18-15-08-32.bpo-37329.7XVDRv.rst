@@ -1,0 +1,3 @@
+valgrind: suppress a false alarm in memory leak checks. _PyWarnings_Init()
+only allocates memory once at startup but it is not released at exit. Ignore
+this issue to be able to catch other bugs more easily.
