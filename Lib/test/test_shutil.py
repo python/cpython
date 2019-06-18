@@ -2632,7 +2632,7 @@ class Symlink(unittest.TestCase):
                     shutil.symlink(src, dst_path)
 
     def test_1src_dst_existing_dir(self):
-        with self.assertRaises(FileExistsError):
+        with self.assertRaises(FileExistsError):  # As per os.symlink behavior
             shutil.symlink(self.src_file1, self.dst_dir1)
 
     def test_1src_dst_existing_symlink(self):
