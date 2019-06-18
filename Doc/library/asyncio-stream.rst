@@ -48,7 +48,7 @@ and work with streams:
                                happy_eyeballs_delay=None, interleave=None)
 
    This function internally uses :meth:`loop.create_connection` to return a
-   :class:`Stream` object of the mode `READWRITE` that can be used as a reader
+   :class:`Stream` object of the mode ``READWRITE`` that can be used as a reader
    and a writer.
 
    .. versionadded:: 3.8
@@ -127,7 +127,7 @@ and work with streams:
                            ssl_handshake_timeout=None)
 
    Establish a Unix socket connection and return a :class:`Stream` object of
-   the mode `READWRITE` that can be used as a reader and a writer.
+   the mode ``READWRITE`` that can be used as a reader and a writer.
 
    Similar to :func:`connect` but operates on Unix sockets.
 
@@ -201,13 +201,13 @@ StreamServer
    .. coroutinefunction:: start_serving
 
       Binds to the given host and port to start the server. This method is
-      automatically called during `__enter__` when :class:`Stream` is
+      automatically called during ``__enter__`` when :class:`Stream` is
       used as a context manager.
 
    .. coroutinefunction:: close
 
       Closes the connection. This method is automatically called during
-      `__exit__` when :class:`StreamServer` is used as a context manager.
+      ``__exit__`` when :class:`StreamServer` is used as a context manager.
 
    .. method:: is_serving
 
@@ -224,19 +224,19 @@ UnixStreamServer
 ================
 
 .. class:: UnixStreamServer(client_connected_cb, /, path=None, *, \
-	                    limit=2**16, sock=None, backlog=100, \
-			    ssl=None, ssl_handshake_timeout=None, shutdown_timeout=60)
+                            limit=2**16, sock=None, backlog=100, \
+                            ssl=None, ssl_handshake_timeout=None, shutdown_timeout=60)
 
    .. coroutinefunction:: start_serving
 
       Binds to the given host and port to start the server. This method is
-      automatically called during `__enter__` when :class:`Stream` is
+      automatically called during ``__enter__`` when :class:`Stream` is
       used as a context manager.
 
    .. coroutinefunction:: close
 
       Closes the connection. This method is automatically called during
-      `__exit__` when :class:`UnixStreamServer` is used as a context manager.
+      ``__exit__`` when :class:`UnixStreamServer` is used as a context manager.
 
    .. method:: is_serving
 
