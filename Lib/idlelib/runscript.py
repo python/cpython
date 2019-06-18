@@ -121,10 +121,11 @@ class ScriptBinding:
     def _run_module_event(self, event, *, customize=False):
         """Run the module after setting up the environment.
 
-        First check the syntax.  If OK, make sure the shell is active and
-        then transfer the arguments, set the run environment's working
-        directory to the directory of the module being executed and also
-        add that directory to its sys.path if not already included.
+        First check the syntax.  Next get customization.  If OK, make
+        sure the shell is active and then transfer the arguments, set
+        the run environment's working directory to the directory of the
+        module being executed and also add that directory to its
+        sys.path if not already included.
         """
         filename = self.getfilename()
         if not filename:
@@ -134,16 +135,17 @@ class ScriptBinding:
             return 'break'
         if not self.tabnanny(filename):
             return 'break'
-        interp = self.shell.interp
         if customize:
             title = f"Customize {self.editwin.short_title()} Run"
             run_args = CustomRun(self.shell.text, title).result
             if not run_args:  # User cancelled.
                 return 'break'
         cli_args, restart = run_args if customize else ([], True)
+        interp = self.shell.interp
         if pyshell.use_subprocess and restart:
-            interp.restart_subprocess(with_cwd=False, filename=
-                        self.editwin._filename_to_unicode(filename))
+            interp.restart_subprocess(
+                    with_cwd=False, filename=
+                    self.editwin._filename_to_unicode(filename))
         dirname = os.path.dirname(filename)
         argv = [filename]
         if cli_args:
