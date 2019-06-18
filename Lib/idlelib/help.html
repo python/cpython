@@ -248,23 +248,33 @@ including lines within multiline strings.</dd>
 </div>
 <div class="section" id="run-menu-editor-window-only">
 <span id="index-2"></span><h3>Run menu (Editor window only)<a class="headerlink" href="#run-menu-editor-window-only" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
+<dl class="docutils" id="python-shell">
 <dt>Python Shell</dt>
 <dd>Open or wake up the Python Shell window.</dd>
+</dl>
+<dl class="docutils" id="check-module">
 <dt>Check Module</dt>
 <dd>Check the syntax of the module currently open in the Editor window. If the
 module has not been saved IDLE will either prompt the user to save or
 autosave, as selected in the General tab of the Idle Settings dialog.  If
 there is a syntax error, the approximate location is indicated in the
 Editor window.</dd>
+</dl>
+<dl class="docutils" id="run-module">
 <dt>Run Module</dt>
-<dd>Do Check Module (above).  If no error, restart the shell to clean the
+<dd>Do <a class="reference internal" href="#check-module"><span class="std std-ref">Check Module</span></a>.  If no error, restart the shell to clean the
 environment, then execute the module.  Output is displayed in the Shell
 window.  Note that output requires use of <code class="docutils literal notranslate"><span class="pre">print</span></code> or <code class="docutils literal notranslate"><span class="pre">write</span></code>.
 When execution is complete, the Shell retains focus and displays a prompt.
 At this point, one may interactively explore the result of execution.
 This is similar to executing a file with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-i</span> <span class="pre">file</span></code> at a command
 line.</dd>
+</dl>
+<dl class="docutils" id="run-custom">
+<dt>Run… Customized</dt>
+<dd>Same as <a class="reference internal" href="#run-module"><span class="std std-ref">Run Module</span></a>, but run the module with customized
+settings.  <em>Command Line Arguments</em> extend <a class="reference internal" href="sys.html#sys.argv" title="sys.argv"><code class="xref py py-data docutils literal notranslate"><span class="pre">sys.argv</span></code></a> as if passed
+on a command line. The module can be run in the Shell without restarting.</dd>
 </dl>
 </div>
 <div class="section" id="shell-menu-shell-window-only">
