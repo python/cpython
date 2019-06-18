@@ -330,17 +330,6 @@ method_traverse(PyMethodObject *im, visitproc visit, void *arg)
 }
 
 static PyObject *
-method_call(PyObject *method, PyObject *args, PyObject *kwargs)
-{
-    PyObject *self, *func;
-
-    self = PyMethod_GET_SELF(method);
-    func = PyMethod_GET_FUNCTION(method);
-
-    return _PyObject_Call_Prepend(func, self, args, kwargs);
-}
-
-static PyObject *
 method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
 {
     Py_INCREF(meth);
@@ -362,7 +351,7 @@ PyTypeObject PyMethod_Type = {
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     (hashfunc)method_hash,                      /* tp_hash */
-    method_call,                                /* tp_call */
+    PyVectorcall_Call,                          /* tp_call */
     0,                                          /* tp_str */
     method_getattro,                            /* tp_getattro */
     PyObject_GenericSetAttr,                    /* tp_setattro */
