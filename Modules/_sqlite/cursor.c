@@ -106,7 +106,7 @@ _pysqlite_get_converter(const char *keystr, Py_ssize_t keylen)
     if (!key) {
         return NULL;
     }
-    upcase_key = _PyObject_CallMethodId(key, &PyId_upper, NULL);
+    upcase_key = _PyObject_CallMethodIdNoArgs(key, &PyId_upper);
     Py_DECREF(key);
     if (!upcase_key) {
         return NULL;

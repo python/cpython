@@ -61,7 +61,7 @@ PyFile_GetLine(PyObject *f, int n)
     }
 
     if (n <= 0) {
-        result = _PyObject_CallMethodIdObjArgs(f, &PyId_readline, NULL);
+        result = _PyObject_CallMethodIdNoArgs(f, &PyId_readline);
     }
     else {
         result = _PyObject_CallMethodId(f, &PyId_readline, "i", n);

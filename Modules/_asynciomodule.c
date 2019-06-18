@@ -333,7 +333,7 @@ get_event_loop(void)
         return NULL;
     }
 
-    loop = _PyObject_CallMethodId(policy, &PyId_get_event_loop, NULL);
+    loop = _PyObject_CallMethodIdNoArgs(policy, &PyId_get_event_loop);
     Py_DECREF(policy);
     return loop;
 }
@@ -494,7 +494,7 @@ future_init(FutureObj *fut, PyObject *loop)
     }
     fut->fut_loop = loop;
 
-    res = _PyObject_CallMethodId(fut->fut_loop, &PyId_get_debug, NULL);
+    res = _PyObject_CallMethodIdNoArgs(fut->fut_loop, &PyId_get_debug);
     if (res == NULL) {
         return -1;
     }
@@ -1297,9 +1297,8 @@ FutureObj_repr(FutureObj *fut)
 
     ENSURE_FUTURE_ALIVE(fut)
 
-    PyObject *rinfo = _PyObject_CallMethodIdObjArgs((PyObject*)fut,
-                                                    &PyId__repr_info,
-                                                    NULL);
+    PyObject *rinfo = _PyObject_CallMethodIdNoArgs((PyObject*)fut,
+                                                   &PyId__repr_info);
     if (rinfo == NULL) {
         return NULL;
     }
@@ -2200,8 +2199,7 @@ _asyncio_Task_cancel_impl(TaskObj *self)
         PyObject *res;
         int is_true;
 
-        res = _PyObject_CallMethodId(
-            self->task_fut_waiter, &PyId_cancel, NULL);
+        res = _PyObject_CallMethodIdNoArgs(self->task_fut_waiter, &PyId_cancel);
         if (res == NULL) {
             return NULL;
         }
@@ -2738,7 +2736,7 @@ set_exception:
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
-            r = _PyObject_CallMethodId(result, &PyId_cancel, NULL);
+            r = _PyObject_CallMethodIdNoArgs(result, &PyId_cancel);
             if (r == NULL) {
                 return NULL;
             }
@@ -2829,7 +2827,7 @@ set_exception:
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
-            r = _PyObject_CallMethodId(result, &PyId_cancel, NULL);
+            r = _PyObject_CallMethodIdNoArgs(result, &PyId_cancel);
             if (r == NULL) {
                 return NULL;
             }
