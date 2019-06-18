@@ -1462,15 +1462,31 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
     const char *name = "main";
     int rc;
     int callback_error = 0;
-    double sleep_secs = 0.250;
+    PyObject *sleep_obj = NULL;
+    int sleep_ms = 250;
     sqlite3 *bck_conn;
     sqlite3_backup *bck_handle;
     static char *keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|$iOsd:backup", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|$iOsO:backup", keywords,
                                      &pysqlite_ConnectionType, &target,
-                                     &pages, &progress, &name, &sleep_secs)) {
+                                     &pages, &progress, &name, &sleep_obj)) {
         return NULL;
+    }
+
+    if (sleep_obj != NULL) {
+        _PyTime_t sleep_secs;
+        if (_PyTime_FromSecondsObject(&sleep_secs, sleep_obj,
+                                      _PyTime_ROUND_TIMEOUT)) {
+            return NULL;
+        }
+        _PyTime_t ms = _PyTime_AsMilliseconds(sleep_secs,
+                                              _PyTime_ROUND_TIMEOUT);
+        if (ms < INT_MIN || ms > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError, "sleep is too large");
+            return NULL;
+        }
+        sleep_ms = (int)ms;
     }
 
     if (!pysqlite_check_connection((pysqlite_Connection *)target)) {
@@ -1532,7 +1548,7 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
                the engine could not make any progress */
             if (rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
                 Py_BEGIN_ALLOW_THREADS
-                sqlite3_sleep(sleep_secs * 1000.0);
+                sqlite3_sleep(sleep_ms);
                 Py_END_ALLOW_THREADS
             }
         } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);

@@ -1180,7 +1180,8 @@ class TestAddressHeader(TestHeaderBase):
 
         'rfc2047_atom_in_quoted_string_is_decoded':
             ('"=?utf-8?q?=C3=89ric?=" <foo@example.com>',
-            [errors.InvalidHeaderDefect],
+            [errors.InvalidHeaderDefect,
+            errors.InvalidHeaderDefect],
             'Éric <foo@example.com>',
             'Éric',
             'foo@example.com',
@@ -1643,10 +1644,10 @@ class TestFolding(TestHeaderBase):
         self.assertEqual(
             h.fold(policy=policy.default),
             'X-Report-Abuse: =?utf-8?q?=3Chttps=3A//www=2Emailitapp=2E'
-                'com/report=5F?=\n'
-            ' =?utf-8?q?abuse=2Ephp=3Fmid=3Dxxx-xxx-xxxx'
-                'xxxxxxxxxxxxxxxxxxxx=3D=3D-xxx-?=\n'
-            ' =?utf-8?q?xx-xx=3E?=\n')
+                'com/report=5Fabuse?=\n'
+            ' =?utf-8?q?=2Ephp=3Fmid=3Dxxx-xxx-xxxx'
+                'xxxxxxxxxxxxxxxxxxxx=3D=3D-xxx-xx-xx?=\n'
+            ' =?utf-8?q?=3E?=\n')
 
 
 if __name__ == '__main__':

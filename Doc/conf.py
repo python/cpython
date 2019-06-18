@@ -46,6 +46,8 @@ smartquotes_excludes = {
     'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
 }
 
+# Avoid a warning with Sphinx >= 2.0
+master_doc = 'contents'
 
 # Options for HTML output
 # -----------------------

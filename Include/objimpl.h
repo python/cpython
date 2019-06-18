@@ -255,7 +255,11 @@ typedef union _gc_head {
         union _gc_head *gc_prev;
         Py_ssize_t gc_refs;
     } gc;
-    double dummy;  /* force worst-case alignment */
+    long double dummy;  /* force worst-case alignment */
+    // malloc returns memory block aligned for any built-in types and
+    // long double is the largest standard C type.
+    // On amd64 linux, long double requires 16 byte alignment.
+    // See bpo-27987 for more discussion.
 } PyGC_Head;
 
 extern PyGC_Head *_PyGC_generation0;

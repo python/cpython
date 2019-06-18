@@ -1659,7 +1659,6 @@ _Py_dup(int fd)
 {
 #ifdef MS_WINDOWS
     HANDLE handle;
-    DWORD ftype;
 #endif
 
     assert(PyGILState_Check());
@@ -1673,9 +1672,6 @@ _Py_dup(int fd)
         return -1;
     }
 
-    /* get the file type, ignore the error if it failed */
-    ftype = GetFileType(handle);
-
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     fd = dup(fd);
@@ -1686,14 +1682,11 @@ _Py_dup(int fd)
         return -1;
     }
 
-    /* Character files like console cannot be make non-inheritable */
-    if (ftype != FILE_TYPE_CHAR) {
-        if (_Py_set_inheritable(fd, 0, NULL) < 0) {
-            _Py_BEGIN_SUPPRESS_IPH
-            close(fd);
-            _Py_END_SUPPRESS_IPH
-            return -1;
-        }
+    if (_Py_set_inheritable(fd, 0, NULL) < 0) {
+        _Py_BEGIN_SUPPRESS_IPH
+        close(fd);
+        _Py_END_SUPPRESS_IPH
+        return -1;
     }
 #elif defined(HAVE_FCNTL_H) && defined(F_DUPFD_CLOEXEC)
     Py_BEGIN_ALLOW_THREADS

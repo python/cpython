@@ -1120,13 +1120,26 @@ faulthandler_stack_overflow(PyObject *self)
 {
     size_t depth, size;
     uintptr_t sp = (uintptr_t)&depth;
-    uintptr_t stop;
+    uintptr_t stop, lower_limit, upper_limit;
 
     faulthandler_suppress_crash_report();
     depth = 0;
-    stop = stack_overflow(sp - STACK_OVERFLOW_MAX_SIZE,
-                          sp + STACK_OVERFLOW_MAX_SIZE,
-                          &depth);
+
+    if (STACK_OVERFLOW_MAX_SIZE <= sp) {
+        lower_limit = sp - STACK_OVERFLOW_MAX_SIZE;
+    }
+    else {
+        lower_limit = 0;
+    }
+
+    if (UINTPTR_MAX - STACK_OVERFLOW_MAX_SIZE >= sp) {
+        upper_limit = sp + STACK_OVERFLOW_MAX_SIZE;
+    }
+    else {
+        upper_limit = UINTPTR_MAX;
+    }
+
+    stop = stack_overflow(lower_limit, upper_limit, &depth);
     if (sp < stop)
         size = stop - sp;
     else
@@ -1369,7 +1382,8 @@ void _PyFaulthandler_Fini(void)
 #ifdef HAVE_SIGALTSTACK
     if (stack.ss_sp != NULL) {
         /* Fetch the current alt stack */
-        stack_t current_stack = {};
+        stack_t current_stack;
+        memset(&current_stack, 0, sizeof(current_stack));
         if (sigaltstack(NULL, &current_stack) == 0) {
             if (current_stack.ss_sp == stack.ss_sp) {
                 /* The current alt stack is the one that we installed.

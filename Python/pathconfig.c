@@ -278,8 +278,8 @@ Py_GetProgramName(void)
 }
 
 /* Compute argv[0] which will be prepended to sys.argv */
-PyObject*
-_PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
+int
+_PyPathConfig_ComputeArgv0(int argc, wchar_t **argv, PyObject **argv0_p)
 {
     wchar_t *argv0;
     wchar_t *p = NULL;
@@ -297,6 +297,8 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
     wchar_t fullpath[MAX_PATH];
 #endif
 
+    assert(*argv0_p == NULL);
+
     argv0 = argv[0];
     if (argc > 0 && argv0 != NULL) {
         have_module_arg = (wcscmp(argv0, L"-m") == 0);
@@ -305,7 +307,9 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
 
     if (have_module_arg) {
         #if defined(HAVE_REALPATH) || defined(MS_WINDOWS)
-            _Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath));
+            if (!_Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath))) {
+                return 0;
+            }
             argv0 = fullpath;
             n = wcslen(argv0);
         #else
@@ -384,7 +388,8 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
     }
 #endif /* All others */
 
-    return PyUnicode_FromWideChar(argv0, n);
+    *argv0_p = PyUnicode_FromWideChar(argv0, n);
+    return 1;
 }
 
 

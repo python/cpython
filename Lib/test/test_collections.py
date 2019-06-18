@@ -38,6 +38,20 @@ class TestUserObjects(unittest.TestCase):
                 b=b.__name__,
             ),
         )
+
+    def _copy_test(self, obj):
+        # Test internal copy
+        obj_copy = obj.copy()
+        self.assertIsNot(obj.data, obj_copy.data)
+        self.assertEqual(obj.data, obj_copy.data)
+
+        # Test copy.copy
+        obj.test = [1234]  # Make sure instance vars are also copied.
+        obj_copy = copy.copy(obj)
+        self.assertIsNot(obj.data, obj_copy.data)
+        self.assertEqual(obj.data, obj_copy.data)
+        self.assertIs(obj.test, obj_copy.test)
+
     def test_str_protocol(self):
         self._superset_test(UserString, str)
 
@@ -46,6 +60,16 @@ class TestUserObjects(unittest.TestCase):
 
     def test_dict_protocol(self):
         self._superset_test(UserDict, dict)
+
+    def test_list_copy(self):
+        obj = UserList()
+        obj.append(123)
+        self._copy_test(obj)
+
+    def test_dict_copy(self):
+        obj = UserDict()
+        obj[123] = "abc"
+        self._copy_test(obj)
 
 
 ################################################################################
@@ -249,18 +273,18 @@ class TestNamedTuple(unittest.TestCase):
 
     def test_defaults(self):
         Point = namedtuple('Point', 'x y', defaults=(10, 20))              # 2 defaults
-        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point._field_defaults, {'x': 10, 'y': 20})
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
         self.assertEqual(Point(), (10, 20))
 
         Point = namedtuple('Point', 'x y', defaults=(20,))                 # 1 default
-        self.assertEqual(Point._fields_defaults, {'y': 20})
+        self.assertEqual(Point._field_defaults, {'y': 20})
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
 
         Point = namedtuple('Point', 'x y', defaults=())                     # 0 defaults
-        self.assertEqual(Point._fields_defaults, {})
+        self.assertEqual(Point._field_defaults, {})
         self.assertEqual(Point(1, 2), (1, 2))
         with self.assertRaises(TypeError):
             Point(1)
@@ -277,21 +301,21 @@ class TestNamedTuple(unittest.TestCase):
             Point = namedtuple('Point', 'x y', defaults=False)
 
         Point = namedtuple('Point', 'x y', defaults=None)                   # default is None
-        self.assertEqual(Point._fields_defaults, {})
+        self.assertEqual(Point._field_defaults, {})
         self.assertIsNone(Point.__new__.__defaults__, None)
         self.assertEqual(Point(10, 20), (10, 20))
         with self.assertRaises(TypeError):                                  # catch too few args
             Point(10)
 
         Point = namedtuple('Point', 'x y', defaults=[10, 20])               # allow non-tuple iterable
-        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point._field_defaults, {'x': 10, 'y': 20})
         self.assertEqual(Point.__new__.__defaults__, (10, 20))
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
         self.assertEqual(Point(), (10, 20))
 
         Point = namedtuple('Point', 'x y', defaults=iter([10, 20]))         # allow plain iterator
-        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point._field_defaults, {'x': 10, 'y': 20})
         self.assertEqual(Point.__new__.__defaults__, (10, 20))
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))

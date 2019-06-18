@@ -1538,7 +1538,7 @@ def buildDMG():
         print(" -- retrying hdiutil create")
         time.sleep(5)
     else:
-        raise RuntimeError("command failed: %s"%(commandline,))
+        raise RuntimeError("command failed: %s"%(cmd,))
 
     if not os.path.exists(os.path.join(WORKDIR, "mnt")):
         os.mkdir(os.path.join(WORKDIR, "mnt"))

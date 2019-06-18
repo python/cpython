@@ -723,6 +723,12 @@ be overridden by subclasses or by attribute assignment.
      >>> list(custom['Section2'].keys())
      ['AnotherKey']
 
+  .. note::
+     The optionxform function transforms option names to a canonical form.
+     This should be an idempotent function: if the name is already in
+     canonical form, it should be returned unchanged.
+
+
 .. attribute:: ConfigParser.SECTCRE
 
   A compiled regular expression used to parse section headers.  The default

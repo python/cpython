@@ -1,2 +1,0 @@
-Correctly handle string length in ``msilib.SummaryInfo.GetProperty()`` to
-prevent it from truncating the last character.

@@ -1,1 +1,0 @@
-Use ttk Frame for ttk widgets.

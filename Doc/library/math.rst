@@ -10,8 +10,8 @@
 
 --------------
 
-This module is always available.  It provides access to the mathematical
-functions defined by the C standard.
+This module provides access to the mathematical functions defined by the C
+standard.
 
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
@@ -50,7 +50,7 @@ Number-theoretic and representation functions
 
 .. function:: factorial(x)
 
-   Return *x* factorial.  Raises :exc:`ValueError` if *x* is not integral or
+   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
 
 

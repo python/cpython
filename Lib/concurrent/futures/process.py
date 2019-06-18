@@ -57,6 +57,7 @@ import threading
 import weakref
 from functools import partial
 import itertools
+import sys
 import traceback
 
 # Workers are created as daemon threads and processes. This is done to allow the
@@ -108,6 +109,12 @@ def _python_exit():
 # (Futures in the call queue cannot be cancelled).
 EXTRA_QUEUED_CALLS = 1
 
+
+# On Windows, WaitForMultipleObjects is used to wait for processes to finish.
+# It can wait on, at most, 63 objects. There is an overhead of two objects:
+# - the result queue reader
+# - the thread wakeup reader
+_MAX_WINDOWS_WORKERS = 63 - 2
 
 # Hack to embed stringification of remote traceback in local traceback
 
@@ -497,16 +504,23 @@ class ProcessPoolExecutor(_base.Executor):
                 worker processes will be created as the machine has processors.
             mp_context: A multiprocessing context to launch the workers. This
                 object should provide SimpleQueue, Queue and Process.
-            initializer: An callable used to initialize worker processes.
+            initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
         """
         _check_system_limits()
 
         if max_workers is None:
             self._max_workers = os.cpu_count() or 1
+            if sys.platform == 'win32':
+                self._max_workers = min(_MAX_WINDOWS_WORKERS,
+                                        self._max_workers)
         else:
             if max_workers <= 0:
                 raise ValueError("max_workers must be greater than 0")
+            elif (sys.platform == 'win32' and
+                max_workers > _MAX_WINDOWS_WORKERS):
+                raise ValueError(
+                    f"max_workers must be <= {_MAX_WINDOWS_WORKERS}")
 
             self._max_workers = max_workers
 
@@ -593,7 +607,19 @@ class ProcessPoolExecutor(_base.Executor):
             p.start()
             self._processes[p.pid] = p
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(*args, **kwargs):
+        if len(args) >= 2:
+            self, fn, *args = args
+        elif not args:
+            raise TypeError("descriptor 'submit' of 'ProcessPoolExecutor' object "
+                            "needs an argument")
+        elif 'fn' in kwargs:
+            fn = kwargs.pop('fn')
+            self, *args = args
+        else:
+            raise TypeError('submit expected at least 1 positional argument, '
+                            'got %d' % (len(args)-1))
+
         with self._shutdown_lock:
             if self._broken:
                 raise BrokenProcessPool(self._broken)

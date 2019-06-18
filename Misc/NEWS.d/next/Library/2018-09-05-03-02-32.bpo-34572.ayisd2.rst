@@ -1,3 +1,0 @@
-Fix C implementation of pickle.loads to use importlib's locking
-mechanisms, and thereby avoid using partially-loaded modules.
-Patch by Tim Burgess.

@@ -1,0 +1,2 @@
+``PyGC_Head`` structure is aligned to ``long double``.  This is needed to
+ensure GC-ed objects are aligned properly.  Patch by Inada Naoki.

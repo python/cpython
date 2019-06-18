@@ -351,10 +351,30 @@ class Server(object):
         finally:
             self.stop_event.set()
 
-    def create(self, c, typeid, *args, **kwds):
+    def create(*args, **kwds):
         '''
         Create a new shared object and return its id
         '''
+        if len(args) >= 3:
+            self, c, typeid, *args = args
+        elif not args:
+            raise TypeError("descriptor 'create' of 'Server' object "
+                            "needs an argument")
+        else:
+            if 'typeid' not in kwds:
+                raise TypeError('create expected at least 2 positional '
+                                'arguments, got %d' % (len(args)-1))
+            typeid = kwds.pop('typeid')
+            if len(args) >= 2:
+                self, c, *args = args
+            else:
+                if 'c' not in kwds:
+                    raise TypeError('create expected at least 2 positional '
+                                    'arguments, got %d' % (len(args)-1))
+                c = kwds.pop('c')
+                self, *args = args
+        args = tuple(args)
+
         with self.mutex:
             callable, exposed, method_to_typeid, proxytype = \
                       self.registry[typeid]
@@ -576,10 +596,13 @@ class BaseManager(object):
         util.info('manager serving at %r', server.address)
         server.serve_forever()
 
-    def _create(self, typeid, *args, **kwds):
+    def _create(*args, **kwds):
         '''
         Create a new shared object; return the token and exposed tuple
         '''
+        self, typeid, *args = args
+        args = tuple(args)
+
         assert self._state.value == State.STARTED, 'server not yet started'
         conn = self._Client(self._address, authkey=self._authkey)
         try:

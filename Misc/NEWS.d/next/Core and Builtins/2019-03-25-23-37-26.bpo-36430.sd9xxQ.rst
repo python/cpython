@@ -1,0 +1,1 @@
+Fix a possible reference leak in :func:`itertools.count`.

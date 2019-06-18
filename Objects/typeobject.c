@@ -77,6 +77,9 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static void
 clear_slotdefs(void);
 
+static PyObject *
+lookup_maybe_method(PyObject *self, _Py_Identifier *attrid, int *unbound);
+
 /*
  * finds the beginning of the docstring's introspection signature.
  * if present, returns a pointer pointing to the first '('.
@@ -281,17 +284,35 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 
        Unset HAVE_VERSION_TAG and VALID_VERSION_TAG if the type
        has a custom MRO that includes a type which is not officially
-       super type.
+       super type, or if the type implements its own mro() method.
 
        Called from mro_internal, which will subsequently be called on
        each subclass when their mro is recursively updated.
      */
     Py_ssize_t i, n;
-    int clear = 0;
+    int custom = (Py_TYPE(type) != &PyType_Type);
+    int unbound;
+    PyObject *mro_meth = NULL;
+    PyObject *type_mro_meth = NULL;
 
     if (!PyType_HasFeature(type, Py_TPFLAGS_HAVE_VERSION_TAG))
         return;
 
+    if (custom) {
+        _Py_IDENTIFIER(mro);
+        mro_meth = lookup_maybe_method(
+            (PyObject *)type, &PyId_mro, &unbound);
+        if (mro_meth == NULL)
+            goto clear;
+        type_mro_meth = lookup_maybe_method(
+            (PyObject *)&PyType_Type, &PyId_mro, &unbound);
+        if (type_mro_meth == NULL)
+            goto clear;
+        if (mro_meth != type_mro_meth)
+            goto clear;
+        Py_XDECREF(mro_meth);
+        Py_XDECREF(type_mro_meth);
+    }
     n = PyTuple_GET_SIZE(bases);
     for (i = 0; i < n; i++) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
@@ -302,14 +323,15 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 
         if (!PyType_HasFeature(cls, Py_TPFLAGS_HAVE_VERSION_TAG) ||
             !PyType_IsSubtype(type, cls)) {
-            clear = 1;
-            break;
+            goto clear;
         }
     }
-
-    if (clear)
-        type->tp_flags &= ~(Py_TPFLAGS_HAVE_VERSION_TAG|
-                            Py_TPFLAGS_VALID_VERSION_TAG);
+    return;
+ clear:
+    Py_XDECREF(mro_meth);
+    Py_XDECREF(type_mro_meth);
+    type->tp_flags &= ~(Py_TPFLAGS_HAVE_VERSION_TAG|
+                        Py_TPFLAGS_VALID_VERSION_TAG);
 }
 
 static int
@@ -363,11 +385,11 @@ assign_version_tag(PyTypeObject *type)
 static PyMemberDef type_members[] = {
     {"__basicsize__", T_PYSSIZET, offsetof(PyTypeObject,tp_basicsize),READONLY},
     {"__itemsize__", T_PYSSIZET, offsetof(PyTypeObject, tp_itemsize), READONLY},
-    {"__flags__", T_LONG, offsetof(PyTypeObject, tp_flags), READONLY},
-    {"__weakrefoffset__", T_LONG,
+    {"__flags__", T_ULONG, offsetof(PyTypeObject, tp_flags), READONLY},
+    {"__weakrefoffset__", T_PYSSIZET,
      offsetof(PyTypeObject, tp_weaklistoffset), READONLY},
     {"__base__", T_OBJECT, offsetof(PyTypeObject, tp_base), READONLY},
-    {"__dictoffset__", T_LONG,
+    {"__dictoffset__", T_PYSSIZET,
      offsetof(PyTypeObject, tp_dictoffset), READONLY},
     {"__mro__", T_OBJECT, offsetof(PyTypeObject, tp_mro), READONLY},
     {0}
@@ -2938,6 +2960,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
             size_t len = strlen(old_doc)+1;
             char *tp_doc = PyObject_MALLOC(len);
             if (tp_doc == NULL) {
+                type->tp_doc = NULL;
                 PyErr_NoMemory();
                 goto fail;
             }
@@ -5432,7 +5455,7 @@ wrap_lenfunc(PyObject *self, PyObject *args, void *wrapped)
     res = (*func)(self);
     if (res == -1 && PyErr_Occurred())
         return NULL;
-    return PyLong_FromLong((long)res);
+    return PyLong_FromSsize_t(res);
 }
 
 static PyObject *

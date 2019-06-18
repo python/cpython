@@ -184,7 +184,7 @@ to be using :class:`BytesGenerator`, and not :class:`Generator`.
       (This is required because strings cannot represent non-ASCII bytes.)
       Convert any bytes with the high bit set as needed using an
       ASCII-compatible :mailheader:`Content-Transfer-Encoding`.  That is,
-      transform parts with non-ASCII :mailheader:`Cotnent-Transfer-Encoding`
+      transform parts with non-ASCII :mailheader:`Content-Transfer-Encoding`
       (:mailheader:`Content-Transfer-Encoding: 8bit`) to an ASCII compatible
       :mailheader:`Content-Transfer-Encoding`, and encode RFC-invalid non-ASCII
       bytes in headers using the MIME ``unknown-8bit`` character set, thus

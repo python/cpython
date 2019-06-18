@@ -4282,7 +4282,7 @@ fstring_fix_node_location(const node *parent, node *n, char *expr_str)
                     break;
                 start--;
             }
-            cols += substr - start;
+            cols += (int)(substr - start);
             /* Fix lineno in mulitline strings. */
             while ((substr = strchr(substr + 1, '\n')))
                 lines--;

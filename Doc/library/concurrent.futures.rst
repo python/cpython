@@ -216,6 +216,10 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    given, it will default to the number of processors on the machine.
    If *max_workers* is lower or equal to ``0``, then a :exc:`ValueError`
    will be raised.
+   On Windows, *max_workers* must be equal or lower than ``61``. If it is not
+   then :exc:`ValueError` will be raised. If *max_workers* is ``None``, then
+   the default chosen will be at most ``61``, even if more processors are
+   available.
    *mp_context* can be a multiprocessing context or None. It will be used to
    launch the workers. If *mp_context* is ``None`` or not given, the default
    multiprocessing context is used.
@@ -289,9 +293,10 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
 
     .. method:: cancel()
 
-       Attempt to cancel the call.  If the call is currently being executed and
-       cannot be cancelled then the method will return ``False``, otherwise the
-       call will be cancelled and the method will return ``True``.
+       Attempt to cancel the call.  If the call is currently being executed or
+       finished running and cannot be cancelled then the method will return
+       ``False``, otherwise the call will be cancelled and the method will
+       return ``True``.
 
     .. method:: cancelled()
 
@@ -397,8 +402,9 @@ Module Functions
    Wait for the :class:`Future` instances (possibly created by different
    :class:`Executor` instances) given by *fs* to complete.  Returns a named
    2-tuple of sets.  The first set, named ``done``, contains the futures that
-   completed (finished or were cancelled) before the wait completed.  The second
-   set, named ``not_done``, contains uncompleted futures.
+   completed (finished or cancelled futures) before the wait completed.  The
+   second set, named ``not_done``, contains the futures that did not complete
+   (pending or running futures).
 
    *timeout* can be used to control the maximum number of seconds to wait before
    returning.  *timeout* can be an int or float.  If *timeout* is not specified
@@ -429,7 +435,7 @@ Module Functions
 
    Returns an iterator over the :class:`Future` instances (possibly created by
    different :class:`Executor` instances) given by *fs* that yields futures as
-   they complete (finished or were cancelled). Any futures given by *fs* that
+   they complete (finished or cancelled futures). Any futures given by *fs* that
    are duplicated will be returned once. Any futures that completed before
    :func:`as_completed` is called will be yielded first.  The returned iterator
    raises a :exc:`concurrent.futures.TimeoutError` if :meth:`~iterator.__next__`

@@ -542,10 +542,14 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
         }
 
         result = (*fastmeth) (self, stack, nargs, kwnames);
-        if (stack != args) {
+        if (kwnames != NULL) {
+            Py_ssize_t i, n = nargs + PyTuple_GET_SIZE(kwnames);
+            for (i = 0; i < n; i++) {
+                Py_DECREF(stack[i]);
+            }
             PyMem_Free((PyObject **)stack);
+            Py_DECREF(kwnames);
         }
-        Py_XDECREF(kwnames);
         break;
     }
 
@@ -699,7 +703,7 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
 
     default:
         PyErr_SetString(PyExc_SystemError,
-                        "Bad call flags in _PyCFunction_FastCallKeywords. "
+                        "Bad call flags in _PyMethodDef_RawFastCallKeywords. "
                         "METH_OLDARGS is no longer supported!");
         goto exit;
     }
@@ -1379,8 +1383,11 @@ _PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
         return -1;
     }
 
-    /* Copy position arguments (borrowed references) */
-    memcpy(stack, args, nargs * sizeof(stack[0]));
+    /* Copy positional arguments */
+    for (i = 0; i < nargs; i++) {
+        Py_INCREF(args[i]);
+        stack[i] = args[i];
+    }
 
     kwstack = stack + nargs;
     pos = i = 0;
@@ -1389,8 +1396,8 @@ _PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
        called in the performance critical hot code. */
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
         Py_INCREF(key);
+        Py_INCREF(value);
         PyTuple_SET_ITEM(kwnames, i, key);
-        /* The stack contains borrowed references */
         kwstack[i] = value;
         i++;
     }

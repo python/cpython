@@ -829,7 +829,8 @@ exists. Two dots means up one package level. Three dots is up two levels, etc.
 So if you execute ``from . import mod`` from a module in the ``pkg`` package
 then you will end up importing ``pkg.mod``. If you execute ``from ..subpkg2
 import mod`` from within ``pkg.subpkg1`` you will import ``pkg.subpkg2.mod``.
-The specification for relative imports is contained within :pep:`328`.
+The specification for relative imports is contained in
+the :ref:`relativeimports` section.
 
 :func:`importlib.import_module` is provided to support applications that
 determine dynamically the modules to be loaded.

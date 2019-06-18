@@ -118,6 +118,9 @@ PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
    Return NULL on success, or return an error message on failure. */
 PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 
+PyAPI_FUNC(void) _PyRuntime_Finalize(void);
+
+
 #define _Py_CURRENTLY_FINALIZING(tstate) \
     (_PyRuntime.finalizing == tstate)
 

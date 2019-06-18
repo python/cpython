@@ -1,9 +1,58 @@
-What's New in IDLE 3.7.3
-Released on 2019-??-??
+What's New in IDLE 3.7.4
+Released on 2019-06-24?
 ======================================
 
 
-bpl-36152: Remove colorizer.ColorDelegator.close_when_done and the
+bpo-37321: Both subprocess connection error messages now refer to
+the 'Startup failure' section of the IDLE doc.
+
+bpo-37039: Adjust "Zoom Height" to individual screens by momemtarily
+maximizing the window on first use with a particular screen.  Changing
+screen settings may invalidate the saved height.  While a window is
+maximized, "Zoom Height" has no effect.
+
+bpo-35763: Make calltip reminder about '/' meaning positional-only less
+obtrusive by only adding it when there is room on the first line.
+
+bpo-35610: Replace now redundant editor.context_use_ps1 with
+.prompt_last_line.  This finishes change started in bpo-31858.
+
+bpo-32411: Stop sorting dict created with desired line order.
+
+bpo-37038: Make idlelib.run runnable; add test clause.
+
+bpo-36958: Print any argument other than None or int passed to
+SystemExit or sys.exit().
+
+bpo-36807: When saving a file, call file.flush() and os.fsync()
+so bits are flushed to e.g. a USB drive.
+
+bpo-36429: Fix starting IDLE with pyshell.
+Add idlelib.pyshell alias at top; remove pyshell alias at bottom.
+Remove obsolete __name__=='__main__' command.
+
+bpo-30348: Increase test coverage of idlelib.autocomplete by 30%.
+Patch by Louie Lu.
+
+bpo-23205: Add tests and refactor grep's findfiles.
+
+bpo-36405: Use dict unpacking in idlelib.
+
+bpo-36396: Remove fgBg param of idlelib.config.GetHighlight().
+This param was only used twice and changed the return type.
+
+bpo-23216: IDLE: Add docstrings to search modules.
+
+
+What's New in IDLE 3.7.3
+Released on 2019-03-25
+======================================
+
+bpo-36176: Fix IDLE autocomplete & calltip popup colors.
+Prevent conflicts with Linux dark themes
+(and slightly darken calltip background).
+
+bpo-36152: Remove colorizer.ColorDelegator.close_when_done and the
 corresponding argument of .close().  In IDLE, both have always been
 None or False since 2007.
 
@@ -54,7 +103,7 @@ Add some internal references within the IDLE doc.
 
 
 What's New in IDLE 3.7.2
-Released on 2018-12-21?
+Released on 2018-12-24
 ======================================
 
 bpo-34864: When starting IDLE on MacOS, warn if the system setting
@@ -97,7 +146,7 @@ The main change is the elimination of chapter-section numbers.
 
 
 What's New in IDLE 3.7.1
-Released on 2018-07-31?
+Released on 2018-10-20
 ======================================
 
 bpo-1529353: Output over N lines (50 by default) is squeezed down to a button.

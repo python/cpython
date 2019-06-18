@@ -28,7 +28,12 @@ BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 if "_PYTHON_PROJECT_BASE" in os.environ:
     project_base = os.path.abspath(os.environ["_PYTHON_PROJECT_BASE"])
 else:
-    project_base = os.path.dirname(os.path.abspath(sys.executable))
+    if sys.executable:
+        project_base = os.path.dirname(os.path.abspath(sys.executable))
+    else:
+        # sys.executable can be empty if argv[0] has been changed and Python is
+        # unable to retrieve the real program name
+        project_base = os.getcwd()
 
 
 # python_build: (Boolean) if true, we're either building Python or
@@ -183,8 +188,8 @@ def customize_compiler(compiler):
                 _osx_support.customize_compiler(_config_vars)
                 _config_vars['CUSTOMIZED_OSX_COMPILER'] = 'True'
 
-        (cc, cxx, opt, cflags, ccshared, ldshared, shlib_suffix, ar, ar_flags) = \
-            get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS',
+        (cc, cxx, cflags, ccshared, ldshared, shlib_suffix, ar, ar_flags) = \
+            get_config_vars('CC', 'CXX', 'CFLAGS',
                             'CCSHARED', 'LDSHARED', 'SHLIB_SUFFIX', 'AR', 'ARFLAGS')
 
         if 'CC' in os.environ:
@@ -207,7 +212,7 @@ def customize_compiler(compiler):
         if 'LDFLAGS' in os.environ:
             ldshared = ldshared + ' ' + os.environ['LDFLAGS']
         if 'CFLAGS' in os.environ:
-            cflags = opt + ' ' + os.environ['CFLAGS']
+            cflags = cflags + ' ' + os.environ['CFLAGS']
             ldshared = ldshared + ' ' + os.environ['CFLAGS']
         if 'CPPFLAGS' in os.environ:
             cpp = cpp + ' ' + os.environ['CPPFLAGS']

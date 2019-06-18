@@ -724,7 +724,7 @@ readinto(winconsoleio *self, char *buf, Py_ssize_t len)
 
     if (u8n) {
         PyErr_Format(PyExc_SystemError,
-            "Buffer had room for %d bytes but %d bytes required",
+            "Buffer had room for %zd bytes but %u bytes required",
             len, u8n);
         return -1;
     }

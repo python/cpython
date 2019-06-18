@@ -279,9 +279,11 @@ variables of the function.  More precisely, all variable assignments in a
 function store the value in the local symbol table; whereas variable references
 first look in the local symbol table, then in the local symbol tables of
 enclosing functions, then in the global symbol table, and finally in the table
-of built-in names. Thus, global variables cannot be directly assigned a value
-within a function (unless named in a :keyword:`global` statement), although they
-may be referenced.
+of built-in names. Thus, global variables and variables of enclosing functions
+cannot be directly assigned a value within a function (unless, for global
+variables, named in a :keyword:`global` statement, or, for variables of enclosing
+functions, named in a :keyword:`nonlocal` statement), although they may be
+referenced.
 
 The actual parameters (arguments) to a function call are introduced in the local
 symbol table of the called function when it is called; thus, arguments are
@@ -482,9 +484,9 @@ When a final formal parameter of the form ``**name`` is present, it receives a
 dictionary (see :ref:`typesmapping`) containing all keyword arguments except for
 those corresponding to a formal parameter.  This may be combined with a formal
 parameter of the form ``*name`` (described in the next subsection) which
-receives a tuple containing the positional arguments beyond the formal parameter
-list.  (``*name`` must occur before ``**name``.) For example, if we define a
-function like this::
+receives a :ref:`tuple <tut-tuples>` containing the positional
+arguments beyond the formal parameter list.  (``*name`` must occur
+before ``**name``.) For example, if we define a function like this::
 
    def cheeseshop(kind, *arguments, **keywords):
        print("-- Do you have any", kind, "?")
@@ -560,7 +562,7 @@ The reverse situation occurs when the arguments are already in a list or tuple
 but need to be unpacked for a function call requiring separate positional
 arguments.  For instance, the built-in :func:`range` function expects separate
 *start* and *stop* arguments.  If they are not available separately, write the
-function call with the  ``*``\ -operator to unpack the arguments out of a list
+function call with the  ``*`` operator to unpack the arguments out of a list
 or tuple::
 
    >>> list(range(3, 6))            # normal call with separate arguments
@@ -573,7 +575,7 @@ or tuple::
    single: **; in function calls
 
 In the same fashion, dictionaries can deliver keyword arguments with the
-``**``\ -operator::
+``**`` operator::
 
    >>> def parrot(voltage, state='a stiff', action='voom'):
    ...     print("-- This parrot wouldn't", action, end=' ')

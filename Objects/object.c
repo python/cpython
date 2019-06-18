@@ -411,28 +411,26 @@ _Py_BreakPoint(void)
 }
 
 
-/* Heuristic checking if the object memory has been deallocated.
-   Rely on the debug hooks on Python memory allocators which fills the memory
-   with DEADBYTE (0xDB) when memory is deallocated.
+/* Heuristic checking if the object memory is uninitialized or deallocated.
+   Rely on the debug hooks on Python memory allocators:
+   see _PyMem_IsPtrFreed().
 
    The function can be used to prevent segmentation fault on dereferencing
-   pointers like 0xdbdbdbdbdbdbdbdb. Such pointer is very unlikely to be mapped
-   in memory. */
+   pointers like 0xDDDDDDDDDDDDDDDD. */
 int
 _PyObject_IsFreed(PyObject *op)
 {
-    uintptr_t ptr = (uintptr_t)op;
-    if (_PyMem_IsFreed(&ptr, sizeof(ptr))) {
+    if (_PyMem_IsPtrFreed(op) || _PyMem_IsPtrFreed(op->ob_type)) {
         return 1;
     }
-    int freed = _PyMem_IsFreed(&op->ob_type, sizeof(op->ob_type));
-    /* ignore op->ob_ref: the value can have be modified
+    /* ignore op->ob_ref: its value can have be modified
        by Py_INCREF() and Py_DECREF(). */
 #ifdef Py_TRACE_REFS
-    freed &= _PyMem_IsFreed(&op->_ob_next, sizeof(op->_ob_next));
-    freed &= _PyMem_IsFreed(&op->_ob_prev, sizeof(op->_ob_prev));
+    if (_PyMem_IsPtrFreed(op->_ob_next) || _PyMem_IsPtrFreed(op->_ob_prev)) {
+        return 1;
+    }
 #endif
-    return freed;
+    return 0;
 }
 
 
@@ -449,7 +447,7 @@ _PyObject_Dump(PyObject* op)
     if (_PyObject_IsFreed(op)) {
         /* It seems like the object memory has been freed:
            don't access it to prevent a segmentation fault. */
-        fprintf(stderr, "<freed object>\n");
+        fprintf(stderr, "<Freed object>\n");
         return;
     }
 
@@ -1019,8 +1017,10 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
     }
     if (tp->tp_setattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
-        if (name_str == NULL)
+        if (name_str == NULL) {
+            Py_DECREF(name);
             return -1;
+        }
         err = (*tp->tp_setattr)(v, (char *)name_str, value);
         Py_DECREF(name);
         return err;

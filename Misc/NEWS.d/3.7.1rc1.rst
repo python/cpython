@@ -1515,7 +1515,7 @@ instantiate classes, and check coverage. Check existing files.
 .. nonce: Q3Dwns
 .. section: Tools/Demos
 
-python-gdb now catchs ``UnicodeDecodeError`` exceptions when calling
+python-gdb now catches ``UnicodeDecodeError`` exceptions when calling
 ``string()``.
 
 ..
@@ -1525,7 +1525,7 @@ python-gdb now catchs ``UnicodeDecodeError`` exceptions when calling
 .. nonce: 2YfdwI
 .. section: Tools/Demos
 
-python-gdb now catchs ValueError on read_var(): when Python has no debug
+python-gdb now catches ValueError on read_var(): when Python has no debug
 symbols for example.
 
 ..

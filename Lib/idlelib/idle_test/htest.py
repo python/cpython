@@ -12,7 +12,7 @@ or function) whose .__name__ attribute is also X (the usual situation).
 The first parameter of X must be 'parent'.  When called, the parent
 argument will be the root window.  X must create a child Toplevel
 window (or subclass thereof).  The Toplevel may be a test widget or
-dialog, in which case the callable is the corresonding class.  Or the
+dialog, in which case the callable is the corresponding class.  Or the
 Toplevel may contain the widget to be tested or set up a context in
 which a test widget is invoked.  In this latter case, the callable is a
 wrapper function that sets up the Toplevel and other objects.  Wrapper
@@ -106,6 +106,15 @@ _color_delegator_spec = {
            "Ensure components like comments, keywords, builtins,\n"
            "string, definitions, and break are correctly colored.\n"
            "The default color scheme is in idlelib/config-highlight.def"
+    }
+
+CustomRun_spec = {
+    'file': 'query',
+    'kwds': {'title': 'Custom Run Args',
+             '_htest': True},
+    'msg': "Enter with <Return> or [Ok].  Print valid entry to Shell\n"
+           "Arguments are parsed into a list\n"
+           "Close dialog with valid entry, <Escape>, [Cancel], [X]"
     }
 
 ConfigDialog_spec = {

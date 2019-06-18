@@ -1771,7 +1771,8 @@ element_subscr(PyObject* self_, PyObject* item)
         return element_getitem(self_, i);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelen, cur, i;
+        Py_ssize_t start, stop, step, slicelen, i;
+        size_t cur;
         PyObject* list;
 
         if (!self->extra)
@@ -1823,7 +1824,8 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         return element_setitem(self_, i, value);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelen, newlen, cur, i;
+        Py_ssize_t start, stop, step, slicelen, newlen, i;
+        size_t cur;
 
         PyObject* recycle = NULL;
         PyObject* seq;

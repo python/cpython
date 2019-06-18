@@ -70,6 +70,9 @@ def traced_func_calling_generator():
 def traced_doubler(num):
     return num * 2
 
+def traced_capturer(*args, **kwargs):
+    return args, kwargs
+
 def traced_caller_list_comprehension():
     k = 10
     mylist = [traced_doubler(i) for i in range(k)]
@@ -237,6 +240,14 @@ class TestFuncs(unittest.TestCase):
             self.filemod + ('traced_func_linear',): 1,
         }
         self.assertEqual(self.tracer.results().calledfuncs, expected)
+
+    def test_arg_errors(self):
+        res = self.tracer.runfunc(traced_capturer, 1, 2, self=3, func=4)
+        self.assertEqual(res, ((1, 2), {'self': 3, 'func': 4}))
+        res = self.tracer.runfunc(func=traced_capturer, arg=1)
+        self.assertEqual(res, ((), {'arg': 1}))
+        with self.assertRaises(TypeError):
+            self.tracer.runfunc()
 
     def test_loop_caller_importing(self):
         self.tracer.runfunc(traced_func_importing_caller, 1)

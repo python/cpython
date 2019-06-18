@@ -788,8 +788,14 @@ static int running_on_valgrind = -1;
  *
  * You shouldn't change this unless you know what you are doing.
  */
+
+#if SIZEOF_VOID_P > 4
+#define ALIGNMENT              16               /* must be 2^N */
+#define ALIGNMENT_SHIFT         4
+#else
 #define ALIGNMENT               8               /* must be 2^N */
 #define ALIGNMENT_SHIFT         3
+#endif
 
 /* Return the number of bytes in size class I, as a uint. */
 #define INDEX2SIZE(I) (((uint)(I) + 1) << ALIGNMENT_SHIFT)
@@ -1946,14 +1952,17 @@ _Py_GetAllocatedBlocks(void)
 
 /* Special bytes broadcast into debug memory blocks at appropriate times.
  * Strings of these are unlikely to be valid addresses, floats, ints or
- * 7-bit ASCII.
+ * 7-bit ASCII. If modified, _PyMem_IsPtrFreed() should be updated as well.
+ *
+ * Byte patterns 0xCB, 0xBB and 0xFB have been replaced with 0xCD, 0xDD and
+ * 0xFD to use the same values than Windows CRT debug malloc() and free().
  */
 #undef CLEANBYTE
 #undef DEADBYTE
 #undef FORBIDDENBYTE
-#define CLEANBYTE      0xCB    /* clean (newly allocated) memory */
-#define DEADBYTE       0xDB    /* dead (newly freed) memory */
-#define FORBIDDENBYTE  0xFB    /* untouchable bytes at each end of a block */
+#define CLEANBYTE      0xCD    /* clean (newly allocated) memory */
+#define DEADBYTE       0xDD    /* dead (newly freed) memory */
+#define FORBIDDENBYTE  0xFD    /* untouchable bytes at each end of a block */
 
 static size_t serialno = 0;     /* incremented on each debug {m,re}alloc */
 
@@ -2088,22 +2097,6 @@ _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize)
     assert(elsize == 0 || nelem <= (size_t)PY_SSIZE_T_MAX / elsize);
     nbytes = nelem * elsize;
     return _PyMem_DebugRawAlloc(1, ctx, nbytes);
-}
-
-
-/* Heuristic checking if the memory has been freed. Rely on the debug hooks on
-   Python memory allocators which fills the memory with DEADBYTE (0xDB) when
-   memory is deallocated. */
-int
-_PyMem_IsFreed(void *ptr, size_t size)
-{
-    unsigned char *bytes = ptr;
-    for (size_t i=0; i < size; i++) {
-        if (bytes[i] != DEADBYTE) {
-            return 0;
-        }
-    }
-    return 1;
 }
 
 

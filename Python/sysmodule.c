@@ -274,7 +274,9 @@ sys_displayhook(PyObject *self, PyObject *o)
 
     builtins = _PyImport_GetModuleId(&PyId_builtins);
     if (builtins == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
+        }
         return NULL;
     }
     Py_DECREF(builtins);
@@ -2615,7 +2617,10 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     if (updatepath) {
         /* If argv[0] is not '-c' nor '-m', prepend argv[0] to sys.path.
            If argv[0] is a symlink, use the real path. */
-        PyObject *argv0 = _PyPathConfig_ComputeArgv0(argc, argv);
+        PyObject *argv0 = NULL;
+        if (!_PyPathConfig_ComputeArgv0(argc, argv, &argv0)) {
+            return;
+        }
         if (argv0 == NULL) {
             Py_FatalError("can't compute path0 from argv");
         }

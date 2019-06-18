@@ -470,8 +470,9 @@ class TimeTestCase(unittest.TestCase):
         t2 = time.monotonic()
         dt = t2 - t1
         self.assertGreater(t2, t1)
-        # Issue #20101: On some Windows machines, dt may be slightly low
-        self.assertTrue(0.45 <= dt <= 1.0, dt)
+        # bpo-20101: tolerate a difference of 50 ms because of bad timer
+        # resolution on Windows
+        self.assertTrue(0.450 <= dt)
 
         # monotonic() is a monotonic but non adjustable clock
         info = time.get_clock_info('monotonic')

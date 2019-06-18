@@ -4890,6 +4890,9 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
         case 2:
         case 3:
         case 4:
+            if (s == end || consumed) {
+                goto End;
+            }
             errmsg = "invalid continuation byte";
             startinpos = s - starts;
             endinpos = startinpos + ch - 1;
@@ -7123,15 +7126,21 @@ decode_code_page_strict(UINT code_page,
                         const char *in,
                         int insize)
 {
-    const DWORD flags = decode_code_page_flags(code_page);
+    DWORD flags = MB_ERR_INVALID_CHARS;
     wchar_t *out;
     DWORD outsize;
 
     /* First get the size of the result */
     assert(insize > 0);
-    outsize = MultiByteToWideChar(code_page, flags, in, insize, NULL, 0);
-    if (outsize <= 0)
-        goto error;
+    while ((outsize = MultiByteToWideChar(code_page, flags,
+                                          in, insize, NULL, 0)) <= 0)
+    {
+        if (!flags || GetLastError() != ERROR_INVALID_FLAGS) {
+            goto error;
+        }
+        /* For some code pages (e.g. UTF-7) flags must be set to 0. */
+        flags = 0;
+    }
 
     if (*v == NULL) {
         /* Create unicode object */
@@ -7177,7 +7186,7 @@ decode_code_page_errors(UINT code_page,
 {
     const char *startin = in;
     const char *endin = in + size;
-    const DWORD flags = decode_code_page_flags(code_page);
+    DWORD flags = MB_ERR_INVALID_CHARS;
     /* Ideally, we should get reason from FormatMessage. This is the Windows
        2000 English version of the message. */
     const char *reason = "No mapping for the Unicode character exists "
@@ -7248,6 +7257,11 @@ decode_code_page_errors(UINT code_page,
             if (outsize > 0)
                 break;
             err = GetLastError();
+            if (err == ERROR_INVALID_FLAGS && flags) {
+                /* For some code pages (e.g. UTF-7) flags must be set to 0. */
+                flags = 0;
+                continue;
+            }
             if (err != ERROR_NO_UNICODE_TRANSLATION
                 && err != ERROR_INSUFFICIENT_BUFFER)
             {
@@ -13975,7 +13989,8 @@ unicode_subscript(PyObject* self, PyObject* item)
             i += PyUnicode_GET_LENGTH(self);
         return unicode_getitem(self, i);
     } else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelength, cur, i;
+        Py_ssize_t start, stop, step, slicelength, i;
+        size_t cur;
         PyObject *result;
         void *src_data, *dest_data;
         int src_kind, dest_kind;

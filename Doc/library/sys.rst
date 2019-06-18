@@ -30,6 +30,12 @@ always available.
    To loop over the standard input, or the list of files given on the
    command line, see the :mod:`fileinput` module.
 
+   .. note::
+      On Unix, command line arguments are passed by bytes from OS.  Python decodes
+      them with filesystem encoding and "surrogateescape" error handler.
+      When you need original bytes, you can get it by
+      ``[os.fsencode(arg) for arg in sys.argv]``.
+
 
 .. data:: base_exec_prefix
 
@@ -1165,8 +1171,8 @@ always available.
 
    Set the system's trace function, which allows you to implement a Python
    source code debugger in Python.  The function is thread-specific; for a
-   debugger to support multiple threads, it must be registered using
-   :func:`settrace` for each thread being debugged.
+   debugger to support multiple threads, it must register a trace function using
+   :func:`settrace` for each thread being debugged or use :func:`threading.settrace`.
 
    Trace functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,

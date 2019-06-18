@@ -56,11 +56,6 @@ _MIN_SCHEDULED_TIMER_HANDLES = 100
 # before cleanup of cancelled handles is performed.
 _MIN_CANCELLED_TIMER_HANDLES_FRACTION = 0.5
 
-# Exceptions which must not call the exception handler in fatal error
-# methods (_fatal_error())
-_FATAL_ERROR_IGNORE = (BrokenPipeError,
-                       ConnectionResetError, ConnectionAbortedError)
-
 _HAS_IPv6 = hasattr(socket, 'AF_INET6')
 
 # Maximum timeout passed to select to avoid OS limitations
@@ -96,7 +91,7 @@ def _set_reuseport(sock):
                              'SO_REUSEPORT defined but not implemented.')
 
 
-def _ipaddr_info(host, port, family, type, proto):
+def _ipaddr_info(host, port, family, type, proto, flowinfo=0, scopeid=0):
     # Try to skip getaddrinfo if "host" is already an IP. Users might have
     # handled name resolution in their own code and pass in resolved IPs.
     if not hasattr(socket, 'inet_pton'):
@@ -145,7 +140,7 @@ def _ipaddr_info(host, port, family, type, proto):
             socket.inet_pton(af, host)
             # The host has already been resolved.
             if _HAS_IPv6 and af == socket.AF_INET6:
-                return af, type, proto, '', (host, port, 0, 0)
+                return af, type, proto, '', (host, port, flowinfo, scopeid)
             else:
                 return af, type, proto, '', (host, port)
         except OSError:
@@ -832,7 +827,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 read = await self.run_in_executor(None, file.readinto, view)
                 if not read:
                     break  # EOF
-                await self.sock_sendall(sock, view)
+                await self.sock_sendall(sock, view[:read])
                 total_sent += read
             return total_sent
         finally:
@@ -1083,11 +1078,11 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if blocksize <= 0:
                         return total_sent
                 view = memoryview(buf)[:blocksize]
-                read = file.readinto(view)
+                read = await self.run_in_executor(None, file.readinto, view)
                 if not read:
                     return total_sent  # EOF
                 await proto.drain()
-                transp.write(view)
+                transp.write(view[:read])
                 total_sent += read
         finally:
             if total_sent > 0 and hasattr(file, 'seek'):
@@ -1229,7 +1224,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if local_addr:
                         sock.bind(local_address)
                     if remote_addr:
-                        await self.sock_connect(sock, remote_address)
+                        if not allow_broadcast:
+                            await self.sock_connect(sock, remote_address)
                         r_addr = remote_address
                 except OSError as exc:
                     if sock is not None:
@@ -1270,7 +1266,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                family=0, type=socket.SOCK_STREAM,
                                proto=0, flags=0, loop):
         host, port = address[:2]
-        info = _ipaddr_info(host, port, family, type, proto)
+        info = _ipaddr_info(host, port, family, type, proto, *address[2:])
         if info is not None:
             # "host" is already a resolved IP.
             return [info]

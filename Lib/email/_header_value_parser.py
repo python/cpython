@@ -68,6 +68,7 @@ XXX: provide complete list of token types.
 """
 
 import re
+import sys
 import urllib   # For urllib.parse.unquote
 from string import hexdigits
 from collections import OrderedDict
@@ -95,6 +96,18 @@ EXTENDED_ATTRIBUTE_ENDS = ATTRIBUTE_ENDS - set('%')
 
 def quote_string(value):
     return '"'+str(value).replace('\\', '\\\\').replace('"', r'\"')+'"'
+
+# Match a RFC 2047 word, looks like =?utf-8?q?someword?=
+rfc2047_matcher = re.compile(r'''
+   =\?            # literal =?
+   [^?]*          # charset
+   \?             # literal ?
+   [qQbB]         # literal 'q' or 'b', case insensitive
+   \?             # literal ?
+  .*?             # encoded word
+  \?=             # literal ?=
+''', re.VERBOSE | re.MULTILINE)
+
 
 #
 # TokenList and its subclasses
@@ -1049,6 +1062,10 @@ def get_encoded_word(value):
         _validate_xtext(vtext)
         ew.append(vtext)
         text = ''.join(remainder)
+    # Encoded words should be followed by a WS
+    if value and value[0] not in WSP:
+        ew.defects.append(errors.InvalidHeaderDefect(
+            "missing trailing whitespace after encoded-word"))
     return ew, value
 
 def get_unstructured(value):
@@ -1101,6 +1118,11 @@ def get_unstructured(value):
                 unstructured.append(token)
                 continue
         tok, *remainder = _wsp_splitter(value, 1)
+        # Split in the middle of an atom if there is a rfc2047 encoded word
+        # which does not have WSP on both sides. The defect will be registered
+        # the next time through the loop.
+        if rfc2047_matcher.search(tok):
+            tok, *remainder = value.partition('=?')
         vtext = ValueTerminal(tok, 'vtext')
         _validate_xtext(vtext)
         unstructured.append(vtext)
@@ -2591,7 +2613,7 @@ def _refold_parse_tree(parse_tree, *, policy):
 
     """
     # max_line_length 0/None means no limit, ie: infinitely long.
-    maxlen = policy.max_line_length or float("+inf")
+    maxlen = policy.max_line_length or sys.maxsize
     encoding = 'utf-8' if policy.utf8 else 'us-ascii'
     lines = ['']
     last_ew = None
@@ -2626,7 +2648,7 @@ def _refold_parse_tree(parse_tree, *, policy):
                 want_encoding = False
                 last_ew = None
                 if part.syntactic_break:
-                    encoded_part = part.fold(policy=policy)[:-1] # strip nl
+                    encoded_part = part.fold(policy=policy)[:-len(policy.linesep)]
                     if policy.linesep not in encoded_part:
                         # It fits on a single line
                         if len(encoded_part) > maxlen - len(lines[-1]):
@@ -2661,6 +2683,7 @@ def _refold_parse_tree(parse_tree, *, policy):
             newline = _steal_trailing_WSP_if_exists(lines)
             if newline or part.startswith_fws():
                 lines.append(newline + tstr)
+                last_ew = None
                 continue
         if not hasattr(part, 'encode'):
             # It's not a terminal, try folding the subparts.
@@ -2724,16 +2747,19 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
             lines.append(' ')
             # XXX We'll get an infinite loop here if maxlen is <= 7
             continue
-        first_part = to_encode[:text_space]
-        ew = _ew.encode(first_part, charset=encode_as)
-        excess = len(ew) - remaining_space
-        if excess > 0:
-            # encode always chooses the shortest encoding, so this
-            # is guaranteed to fit at this point.
-            first_part = first_part[:-excess]
-            ew = _ew.encode(first_part)
-        lines[-1] += ew
-        to_encode = to_encode[len(first_part):]
+
+        to_encode_word = to_encode[:text_space]
+        encoded_word = _ew.encode(to_encode_word, charset=encode_as)
+        excess = len(encoded_word) - remaining_space
+        while excess > 0:
+            # Since the chunk to encode is guaranteed to fit into less than 100 characters,
+            # shrinking it by one at a time shouldn't take long.
+            to_encode_word = to_encode_word[:-1]
+            encoded_word = _ew.encode(to_encode_word, charset=encode_as)
+            excess = len(encoded_word) - remaining_space
+        lines[-1] += encoded_word
+        to_encode = to_encode[len(to_encode_word):]
+
         if to_encode:
             lines.append(' ')
             new_last_ew = len(lines[-1])

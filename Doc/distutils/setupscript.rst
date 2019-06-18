@@ -523,7 +523,7 @@ following way::
 
     setup(...,
           data_files=[('bitmaps', ['bm/b1.gif', 'bm/b2.gif']),
-                      ('config', ['cfg/data.cfg']),
+                      ('config', ['cfg/data.cfg'])],
          )
 
 Each (*directory*, *files*) pair in the sequence specifies the installation
@@ -612,9 +612,8 @@ Notes:
     provided, distutils lists it as the author in :file:`PKG-INFO`.
 
 (4)
-    The ``long_description`` field is used by PyPI when you are
-    :ref:`registering <package-register>` a package, to
-    :ref:`build its home page <package-display>`.
+    The ``long_description`` field is used by PyPI when you publish a package,
+    to build its project page.
 
 (5)
     The ``license`` field is a text indicating the license covering the

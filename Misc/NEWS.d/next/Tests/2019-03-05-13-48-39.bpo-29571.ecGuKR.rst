@@ -1,6 +1,0 @@
-Fix ``test_re.test_locale_flag()``:  use ``locale.getpreferredencoding()``
-rather than ``locale.getlocale()`` to get the locale encoding. With some
-locales, ``locale.getlocale()`` returns the wrong encoding. On Windows, set
-temporarily the ``LC_CTYPE`` locale to the user preferred encoding to ensure
-that it uses the ANSI code page, to be consistent with
-``locale.getpreferredencoding()``.

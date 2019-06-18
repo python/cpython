@@ -1,0 +1,5 @@
+Arbitrary keyword arguments (even with names "self" and "func") can now be
+passed to some functions which should accept arbitrary keyword arguments and
+pass them to other function (for example partialmethod(), TestCase.addCleanup()
+and Profile.runcall()) if the required arguments are passed as positional
+arguments.

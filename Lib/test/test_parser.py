@@ -318,6 +318,10 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("try: pass\nexcept: pass\nelse: pass\n"
                          "finally: pass\n")
 
+    def test_if_stmt(self):
+        self.check_suite("if True:\n  pass\nelse:\n  pass\n")
+        self.check_suite("if True:\n  pass\nelif True:\n  pass\nelse:\n  pass\n")
+
     def test_position(self):
         # An absolutely minimal test of position information.  Better
         # tests would be a big project.
@@ -708,6 +712,22 @@ class IllegalSyntaxTestCase(unittest.TestCase):
               '\udcff')
         with self.assertRaises(UnicodeEncodeError):
             parser.sequence2st(tree)
+
+    def test_invalid_node_id(self):
+        tree = (257, (269, (-7, '')))
+        self.check_bad_tree(tree, "negative node id")
+        tree = (257, (269, (99, '')))
+        self.check_bad_tree(tree, "invalid token id")
+        tree = (257, (269, (9999, (0, ''))))
+        self.check_bad_tree(tree, "invalid symbol id")
+
+    def test_ParserError_message(self):
+        try:
+            parser.sequence2st((257,(269,(257,(0,'')))))
+        except parser.ParserError as why:
+            self.assertIn("simple_stmt", str(why))  # Expected
+            self.assertIn("file_input", str(why))     # Got
+
 
 
 class CompileTestCase(unittest.TestCase):

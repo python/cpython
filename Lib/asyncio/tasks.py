@@ -35,9 +35,22 @@ def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
         loop = events.get_running_loop()
-    # NB: set(_all_tasks) is required to protect
-    # from https://bugs.python.org/issue34970 bug
-    return {t for t in list(_all_tasks)
+    # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
+    # thread while we do so. Therefore we cast it to list prior to filtering. The list
+    # cast itself requires iteration, so we repeat it several times ignoring
+    # RuntimeErrors (which are not very likely to occur). See issues 34970 and 36607 for
+    # details.
+    i = 0
+    while True:
+        try:
+            tasks = list(_all_tasks)
+        except RuntimeError:
+            i += 1
+            if i >= 1000:
+                raise
+        else:
+            break
+    return {t for t in tasks
             if futures._get_loop(t) is loop and not t.done()}
 
 
@@ -47,9 +60,22 @@ def _all_tasks_compat(loop=None):
     # method.
     if loop is None:
         loop = events.get_event_loop()
-    # NB: set(_all_tasks) is required to protect
-    # from https://bugs.python.org/issue34970 bug
-    return {t for t in list(_all_tasks) if futures._get_loop(t) is loop}
+    # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
+    # thread while we do so. Therefore we cast it to list prior to filtering. The list
+    # cast itself requires iteration, so we repeat it several times ignoring
+    # RuntimeErrors (which are not very likely to occur). See issues 34970 and 36607 for
+    # details.
+    i = 0
+    while True:
+        try:
+            tasks = list(_all_tasks)
+        except RuntimeError:
+            i += 1
+            if i >= 1000:
+                raise
+        else:
+            break
+    return {t for t in tasks if futures._get_loop(t) is loop}
 
 
 class Task(futures._PyFuture):  # Inherit Python Task implementation
@@ -457,10 +483,11 @@ async def _wait(fs, timeout, return_when, loop):
     finally:
         if timeout_handle is not None:
             timeout_handle.cancel()
+        for f in fs:
+            f.remove_done_callback(_on_completion)
 
     done, pending = set(), set()
     for f in fs:
-        f.remove_done_callback(_on_completion)
         if f.done():
             done.add(f)
         else:
@@ -773,7 +800,7 @@ def shield(arg, *, loop=None):
     loop = futures._get_loop(inner)
     outer = loop.create_future()
 
-    def _done_callback(inner):
+    def _inner_done_callback(inner):
         if outer.cancelled():
             if not inner.cancelled():
                 # Mark inner's result as retrieved.
@@ -789,7 +816,13 @@ def shield(arg, *, loop=None):
             else:
                 outer.set_result(inner.result())
 
-    inner.add_done_callback(_done_callback)
+
+    def _outer_done_callback(outer):
+        if not inner.done():
+            inner.remove_done_callback(_inner_done_callback)
+
+    inner.add_done_callback(_inner_done_callback)
+    outer.add_done_callback(_outer_done_callback)
     return outer
 
 

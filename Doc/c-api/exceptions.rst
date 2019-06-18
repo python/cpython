@@ -81,6 +81,8 @@ Printing and clearing
    in which the unraisable exception occurred. If possible,
    the repr of *obj* will be printed in the warning message.
 
+   An exception must be set when calling this function.
+
 
 Raising exceptions
 ==================
@@ -514,13 +516,13 @@ Signal Handling
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   This function simulates the effect of a :const:`SIGINT` signal arriving --- the
-   next time :c:func:`PyErr_CheckSignals` is called,  :exc:`KeyboardInterrupt` will
-   be raised.  It may be called without holding the interpreter lock.
+   Simulate the effect of a :const:`SIGINT` signal arriving. The next time
+   :c:func:`PyErr_CheckSignals` is called,  the Python signal handler for
+   :const:`SIGINT` will be called.
 
-   .. % XXX This was described as obsolete, but is used in
-   .. % _thread.interrupt_main() (used from IDLE), so it's still needed.
-
+   If :const:`SIGINT` isn't handled by Python (it was set to
+   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
+   nothing.
 
 .. c:function:: int PySignal_SetWakeupFd(int fd)
 

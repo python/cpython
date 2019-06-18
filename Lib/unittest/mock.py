@@ -25,11 +25,12 @@ __all__ = (
 __version__ = '1.0'
 
 
+import io
 import inspect
 import pprint
 import sys
 import builtins
-from types import ModuleType
+from types import ModuleType, MethodType
 from functools import wraps, partial
 
 
@@ -121,6 +122,8 @@ def _copy_func_details(func, funcopy):
 def _callable(obj):
     if isinstance(obj, type):
         return True
+    if isinstance(obj, (staticmethod, classmethod, MethodType)):
+        return _callable(obj.__func__)
     if getattr(obj, '__call__', None) is not None:
         return True
     return False
@@ -681,12 +684,14 @@ class NonCallableMock(Base):
         extras = self._mock_methods or []
         from_type = dir(type(self))
         from_dict = list(self.__dict__)
+        from_child_mocks = [
+            m_name for m_name, m_value in self._mock_children.items()
+            if m_value is not _deleted]
 
         from_type = [e for e in from_type if not e.startswith('_')]
         from_dict = [e for e in from_dict if not e.startswith('_') or
                      _is_magic(e)]
-        return sorted(set(extras + from_type + from_dict +
-                          list(self._mock_children)))
+        return sorted(set(extras + from_type + from_dict + from_child_mocks))
 
 
     def __setattr__(self, name, value):
@@ -738,7 +743,7 @@ class NonCallableMock(Base):
 
         obj = self._mock_children.get(name, _missing)
         if name in self.__dict__:
-            super().__delattr__(name)
+            _safe_super(NonCallableMock, self).__delattr__(name)
         elif obj is _deleted:
             raise AttributeError(name)
         if obj is not _missing:
@@ -2329,25 +2334,12 @@ MethodWrapperTypes = (
 
 file_spec = None
 
-def _iterate_read_data(read_data):
-    # Helper for mock_open:
-    # Retrieve lines from read_data via a generator so that separate calls to
-    # readline, read, and readlines are properly interleaved
-    sep = b'\n' if isinstance(read_data, bytes) else '\n'
-    data_as_list = [l + sep for l in read_data.split(sep)]
 
-    if data_as_list[-1] == sep:
-        # If the last line ended in a newline, the list comprehension will have an
-        # extra entry that's just a newline.  Remove this.
-        data_as_list = data_as_list[:-1]
+def _to_stream(read_data):
+    if isinstance(read_data, bytes):
+        return io.BytesIO(read_data)
     else:
-        # If there wasn't an extra newline by itself, then the file being
-        # emulated doesn't have a newline to end the last line  remove the
-        # newline that our naive format() added
-        data_as_list[-1] = data_as_list[-1][:-1]
-
-    for line in data_as_list:
-        yield line
+        return io.StringIO(read_data)
 
 
 def mock_open(mock=None, read_data=''):
@@ -2362,20 +2354,23 @@ def mock_open(mock=None, read_data=''):
     `read_data` is a string for the `read`, `readline` and `readlines` of the
     file handle to return.  This is an empty string by default.
     """
+    _read_data = _to_stream(read_data)
+    _state = [_read_data, None]
+
     def _readlines_side_effect(*args, **kwargs):
         if handle.readlines.return_value is not None:
             return handle.readlines.return_value
-        return list(_state[0])
+        return _state[0].readlines(*args, **kwargs)
 
     def _read_side_effect(*args, **kwargs):
         if handle.read.return_value is not None:
             return handle.read.return_value
-        return type(read_data)().join(_state[0])
+        return _state[0].read(*args, **kwargs)
 
-    def _readline_side_effect():
+    def _readline_side_effect(*args, **kwargs):
         yield from _iter_side_effect()
         while True:
-            yield type(read_data)()
+            yield _state[0].readline(*args, **kwargs)
 
     def _iter_side_effect():
         if handle.readline.return_value is not None:
@@ -2383,6 +2378,11 @@ def mock_open(mock=None, read_data=''):
                 yield handle.readline.return_value
         for line in _state[0]:
             yield line
+
+    def _next_side_effect():
+        if handle.readline.return_value is not None:
+            return handle.readline.return_value
+        return next(_state[0])
 
     global file_spec
     if file_spec is None:
@@ -2395,8 +2395,6 @@ def mock_open(mock=None, read_data=''):
     handle = MagicMock(spec=file_spec)
     handle.__enter__.return_value = handle
 
-    _state = [_iterate_read_data(read_data), None]
-
     handle.write.return_value = None
     handle.read.return_value = None
     handle.readline.return_value = None
@@ -2407,9 +2405,10 @@ def mock_open(mock=None, read_data=''):
     handle.readline.side_effect = _state[1]
     handle.readlines.side_effect = _readlines_side_effect
     handle.__iter__.side_effect = _iter_side_effect
+    handle.__next__.side_effect = _next_side_effect
 
     def reset_data(*args, **kwargs):
-        _state[0] = _iterate_read_data(read_data)
+        _state[0] = _to_stream(read_data)
         if handle.readline.side_effect == _state[1]:
             # Only reset the side effect if the user hasn't overridden it.
             _state[1] = _readline_side_effect()

@@ -4027,6 +4027,7 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     lz = (countobject *)type->tp_alloc(type, 0);
     if (lz == NULL) {
         Py_XDECREF(long_cnt);
+        Py_DECREF(long_step);
         return NULL;
     }
     lz->cnt = cnt;

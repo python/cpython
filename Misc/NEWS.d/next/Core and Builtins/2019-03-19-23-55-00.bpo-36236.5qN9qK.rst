@@ -1,0 +1,2 @@
+At Python initialization, the current directory is no longer prepended to
+:data:`sys.path` if it has been removed.

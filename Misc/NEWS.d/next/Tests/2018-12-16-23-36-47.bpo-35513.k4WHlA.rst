@@ -1,2 +1,0 @@
-Replace :func:`time.time` with :func:`time.monotonic` in tests to measure
-time delta.

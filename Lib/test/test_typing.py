@@ -3,7 +3,7 @@ import collections
 import pickle
 import re
 import sys
-from unittest import TestCase, main, skipUnless, SkipTest, expectedFailure
+from unittest import TestCase, main, skipUnless, SkipTest, skip
 from copy import copy, deepcopy
 
 from typing import Any, NoReturn
@@ -1804,7 +1804,7 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
 
-    @expectedFailure
+    @skip("known bug")
     def test_get_type_hints_modules_forwardref(self):
         # FIXME: This currently exposes a bug in typing. Cached forward references
         # don't account for the case where there are multiple types of the same
@@ -2664,6 +2664,30 @@ class AllTests(BaseTestCase):
         # Check previously missing classes.
         self.assertIn('SupportsBytes', a)
         self.assertIn('SupportsComplex', a)
+
+    def test_all_exported_names(self):
+        import typing
+
+        actual_all = set(typing.__all__)
+        computed_all = {
+            k for k, v in vars(typing).items()
+            # explicitly exported, not a thing with __module__
+            if k in actual_all or (
+                # avoid private names
+                not k.startswith('_') and
+                # avoid things in the io / re typing submodules
+                k not in typing.io.__all__ and
+                k not in typing.re.__all__ and
+                k not in {'io', 're'} and
+                # there's a few types and metaclasses that aren't exported
+                not k.endswith(('Meta', '_contra', '_co')) and
+                not k.upper() == k and
+                # but export all things that have __module__ == 'typing'
+                getattr(v, '__module__', None) == typing.__name__
+            )
+        }
+        self.assertSetEqual(computed_all, actual_all)
+
 
 
 if __name__ == '__main__':

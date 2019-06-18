@@ -735,7 +735,7 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(out[:2], b"\x1f\x8b")
 
     @create_and_remove_directory(TEMPDIR)
-    def test_compress_infile_outfile(self):
+    def test_compress_infile_outfile_default(self):
         local_testgzip = os.path.join(TEMPDIR, 'testgzip')
         gzipname = local_testgzip + '.gz'
         self.assertFalse(os.path.exists(gzipname))

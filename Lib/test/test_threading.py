@@ -16,6 +16,7 @@ import unittest
 import weakref
 import os
 import subprocess
+import signal
 
 from test import lock_tests
 from test import support
@@ -577,6 +578,41 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(data.splitlines(),
                          ["GC: True True True"] * 2)
 
+    def test_finalization_shutdown(self):
+        # bpo-36402: Py_Finalize() calls threading._shutdown() which must wait
+        # until Python thread states of all non-daemon threads get deleted.
+        #
+        # Test similar to SubinterpThreadingTests.test_threads_join_2(), but
+        # test the finalization of the main interpreter.
+        code = """if 1:
+            import os
+            import threading
+            import time
+            import random
+
+            def random_sleep():
+                seconds = random.random() * 0.010
+                time.sleep(seconds)
+
+            class Sleeper:
+                def __del__(self):
+                    random_sleep()
+
+            tls = threading.local()
+
+            def f():
+                # Sleep a bit so that the thread is still running when
+                # Py_Finalize() is called.
+                random_sleep()
+                tls.x = Sleeper()
+                random_sleep()
+
+            threading.Thread(target=f).start()
+            random_sleep()
+        """
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(err, b"")
+
     def test_tstate_lock(self):
         # Test an implementation detail of Thread objects.
         started = _thread.allocate_lock()
@@ -696,6 +732,30 @@ class ThreadTests(BaseTestCase):
                 callback()
         finally:
             sys.settrace(old_trace)
+
+    @cpython_only
+    def test_shutdown_locks(self):
+        for daemon in (False, True):
+            with self.subTest(daemon=daemon):
+                event = threading.Event()
+                thread = threading.Thread(target=event.wait, daemon=daemon)
+
+                # Thread.start() must add lock to _shutdown_locks,
+                # but only for non-daemon thread
+                thread.start()
+                tstate_lock = thread._tstate_lock
+                if not daemon:
+                    self.assertIn(tstate_lock, threading._shutdown_locks)
+                else:
+                    self.assertNotIn(tstate_lock, threading._shutdown_locks)
+
+                # unblock the thread and join it
+                event.set()
+                thread.join()
+
+                # Thread._stop() must remove tstate_lock from _shutdown_locks.
+                # Daemon threads must never add it to _shutdown_locks.
+                self.assertNotIn(tstate_lock, threading._shutdown_locks)
 
 
 class ThreadJoinOnShutdown(BaseTestCase):
@@ -874,15 +934,22 @@ class SubinterpThreadingTests(BaseTestCase):
         self.addCleanup(os.close, w)
         code = r"""if 1:
             import os
+            import random
             import threading
             import time
+
+            def random_sleep():
+                seconds = random.random() * 0.010
+                time.sleep(seconds)
 
             def f():
                 # Sleep a bit so that the thread is still running when
                 # Py_EndInterpreter is called.
-                time.sleep(0.05)
+                random_sleep()
                 os.write(%d, b"x")
+
             threading.Thread(target=f).start()
+            random_sleep()
             """ % (w,)
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
@@ -899,22 +966,29 @@ class SubinterpThreadingTests(BaseTestCase):
         self.addCleanup(os.close, w)
         code = r"""if 1:
             import os
+            import random
             import threading
             import time
 
+            def random_sleep():
+                seconds = random.random() * 0.010
+                time.sleep(seconds)
+
             class Sleeper:
                 def __del__(self):
-                    time.sleep(0.05)
+                    random_sleep()
 
             tls = threading.local()
 
             def f():
                 # Sleep a bit so that the thread is still running when
                 # Py_EndInterpreter is called.
-                time.sleep(0.05)
+                random_sleep()
                 tls.x = Sleeper()
                 os.write(%d, b"x")
+
             threading.Thread(target=f).start()
+            random_sleep()
             """ % (w,)
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
@@ -1165,12 +1239,46 @@ class BoundedSemaphoreTests(lock_tests.BoundedSemaphoreTests):
 class BarrierTests(lock_tests.BarrierTests):
     barriertype = staticmethod(threading.Barrier)
 
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         extra = {"ThreadError"}
         blacklist = {'currentThread', 'activeCount'}
         support.check__all__(self, threading, ('threading', '_thread'),
                              extra=extra, blacklist=blacklist)
+
+
+class InterruptMainTests(unittest.TestCase):
+    def test_interrupt_main_subthread(self):
+        # Calling start_new_thread with a function that executes interrupt_main
+        # should raise KeyboardInterrupt upon completion.
+        def call_interrupt():
+            _thread.interrupt_main()
+        t = threading.Thread(target=call_interrupt)
+        with self.assertRaises(KeyboardInterrupt):
+            t.start()
+            t.join()
+        t.join()
+
+    def test_interrupt_main_mainthread(self):
+        # Make sure that if interrupt_main is called in main thread that
+        # KeyboardInterrupt is raised instantly.
+        with self.assertRaises(KeyboardInterrupt):
+            _thread.interrupt_main()
+
+    def test_interrupt_main_noerror(self):
+        handler = signal.getsignal(signal.SIGINT)
+        try:
+            # No exception should arise.
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
+            _thread.interrupt_main()
+
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            _thread.interrupt_main()
+        finally:
+            # Restore original handler
+            signal.signal(signal.SIGINT, handler)
+
 
 if __name__ == "__main__":
     unittest.main()

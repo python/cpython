@@ -1458,7 +1458,7 @@ class TestCase(unittest.TestCase):
                              }
                          )
 
-        # Make sure that the returned dicts are actuall OrderedDicts.
+        # Make sure that the returned dicts are actually OrderedDicts.
         self.assertIs(type(d), OrderedDict)
         self.assertIs(type(d['y'][1]), OrderedDict)
 

@@ -2371,8 +2371,8 @@ static PyMethodDef math_methods[] = {
 
 
 PyDoc_STRVAR(module_doc,
-"This module is always available.  It provides access to the\n"
-"mathematical functions defined by the C standard.");
+"This module provides access to the mathematical functions\n"
+"defined by the C standard.");
 
 
 static struct PyModuleDef mathmodule = {

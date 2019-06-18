@@ -1114,6 +1114,8 @@ _Pickler_New(void)
         Py_DECREF(self);
         return NULL;
     }
+
+    PyObject_GC_Track(self);
     return self;
 }
 
@@ -1491,6 +1493,7 @@ _Unpickler_New(void)
         return NULL;
     }
 
+    PyObject_GC_Track(self);
     return self;
 }
 
@@ -2334,7 +2337,10 @@ raw_unicode_escape(PyObject *obj)
             *p++ = Py_hexdigits[ch & 15];
         }
         /* Map 16-bit characters, '\\' and '\n' to '\uxxxx' */
-        else if (ch >= 256 || ch == '\\' || ch == '\n') {
+        else if (ch >= 256 ||
+                 ch == '\\' || ch == 0 || ch == '\n' || ch == '\r' ||
+                 ch == 0x1a)
+        {
             /* -1: subtract 1 preallocated byte */
             p = _PyBytesWriter_Prepare(&writer, p, 6-1);
             if (p == NULL)

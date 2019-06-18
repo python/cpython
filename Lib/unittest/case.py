@@ -442,12 +442,25 @@ class TestCase(object):
         """
         self._type_equality_funcs[typeobj] = function
 
-    def addCleanup(self, function, *args, **kwargs):
+    def addCleanup(*args, **kwargs):
         """Add a function, with arguments, to be called when the test is
         completed. Functions added are called on a LIFO basis and are
         called after tearDown on test failure or success.
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
+        if len(args) >= 2:
+            self, function, *args = args
+        elif not args:
+            raise TypeError("descriptor 'addCleanup' of 'TestCase' object "
+                            "needs an argument")
+        elif 'function' in kwargs:
+            function = kwargs.pop('function')
+            self, *args = args
+        else:
+            raise TypeError('addCleanup expected at least 1 positional '
+                            'argument, got %d' % (len(args)-1))
+        args = tuple(args)
+
         self._cleanups.append((function, args, kwargs))
 
     def setUp(self):

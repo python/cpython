@@ -224,7 +224,7 @@ def _EndRecData64(fpin, offset, endrec):
     if sig != stringEndArchive64Locator:
         return endrec
 
-    if diskno != 0 or disks != 1:
+    if diskno != 0 or disks > 1:
         raise BadZipFile("zipfiles that span multiple disks are not supported")
 
     # Assume no 'zip64 extensible data'
@@ -875,7 +875,7 @@ class ZipExtFile(io.BufferedIOBase):
 
     def read(self, n=-1):
         """Read and return up to n bytes.
-        If the argument is omitted, None, or negative, data is read and returned until EOF is reached..
+        If the argument is omitted, None, or negative, data is read and returned until EOF is reached.
         """
         if n is None or n < 0:
             buf = self._readbuffer[self._offset:]
@@ -1101,47 +1101,50 @@ class _ZipWriteFile(io.BufferedIOBase):
     def close(self):
         if self.closed:
             return
-        super().close()
-        # Flush any data from the compressor, and update header info
-        if self._compressor:
-            buf = self._compressor.flush()
-            self._compress_size += len(buf)
-            self._fileobj.write(buf)
-            self._zinfo.compress_size = self._compress_size
-        else:
-            self._zinfo.compress_size = self._file_size
-        self._zinfo.CRC = self._crc
-        self._zinfo.file_size = self._file_size
+        try:
+            super().close()
+            # Flush any data from the compressor, and update header info
+            if self._compressor:
+                buf = self._compressor.flush()
+                self._compress_size += len(buf)
+                self._fileobj.write(buf)
+                self._zinfo.compress_size = self._compress_size
+            else:
+                self._zinfo.compress_size = self._file_size
+            self._zinfo.CRC = self._crc
+            self._zinfo.file_size = self._file_size
 
-        # Write updated header info
-        if self._zinfo.flag_bits & 0x08:
-            # Write CRC and file sizes after the file data
-            fmt = '<LLQQ' if self._zip64 else '<LLLL'
-            self._fileobj.write(struct.pack(fmt, _DD_SIGNATURE, self._zinfo.CRC,
-                self._zinfo.compress_size, self._zinfo.file_size))
-            self._zipfile.start_dir = self._fileobj.tell()
-        else:
-            if not self._zip64:
-                if self._file_size > ZIP64_LIMIT:
-                    raise RuntimeError('File size unexpectedly exceeded ZIP64 '
-                                       'limit')
-                if self._compress_size > ZIP64_LIMIT:
-                    raise RuntimeError('Compressed size unexpectedly exceeded '
-                                       'ZIP64 limit')
-            # Seek backwards and write file header (which will now include
-            # correct CRC and file sizes)
+            # Write updated header info
+            if self._zinfo.flag_bits & 0x08:
+                # Write CRC and file sizes after the file data
+                fmt = '<LLQQ' if self._zip64 else '<LLLL'
+                self._fileobj.write(struct.pack(fmt, _DD_SIGNATURE, self._zinfo.CRC,
+                    self._zinfo.compress_size, self._zinfo.file_size))
+                self._zipfile.start_dir = self._fileobj.tell()
+            else:
+                if not self._zip64:
+                    if self._file_size > ZIP64_LIMIT:
+                        raise RuntimeError(
+                            'File size unexpectedly exceeded ZIP64 limit')
+                    if self._compress_size > ZIP64_LIMIT:
+                        raise RuntimeError(
+                            'Compressed size unexpectedly exceeded ZIP64 limit')
+                # Seek backwards and write file header (which will now include
+                # correct CRC and file sizes)
 
-            # Preserve current position in file
-            self._zipfile.start_dir = self._fileobj.tell()
-            self._fileobj.seek(self._zinfo.header_offset)
-            self._fileobj.write(self._zinfo.FileHeader(self._zip64))
-            self._fileobj.seek(self._zipfile.start_dir)
+                # Preserve current position in file
+                self._zipfile.start_dir = self._fileobj.tell()
+                self._fileobj.seek(self._zinfo.header_offset)
+                self._fileobj.write(self._zinfo.FileHeader(self._zip64))
+                self._fileobj.seek(self._zipfile.start_dir)
 
-        self._zipfile._writing = False
+            # Successfully written: Add file to our caches
+            self._zipfile.filelist.append(self._zinfo)
+            self._zipfile.NameToInfo[self._zinfo.filename] = self._zinfo
+        finally:
+            self._zipfile._writing = False
 
-        # Successfully written: Add file to our caches
-        self._zipfile.filelist.append(self._zinfo)
-        self._zipfile.NameToInfo[self._zinfo.filename] = self._zinfo
+
 
 class ZipFile:
     """ Class with methods to open, read, write, close, list zip files.

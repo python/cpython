@@ -578,7 +578,10 @@ class _SelectorTransport(transports._FlowControlMixin,
     def __init__(self, loop, sock, protocol, extra=None, server=None):
         super().__init__(extra, loop)
         self._extra['socket'] = sock
-        self._extra['sockname'] = sock.getsockname()
+        try:
+            self._extra['sockname'] = sock.getsockname()
+        except OSError:
+            self._extra['sockname'] = None
         if 'peername' not in self._extra:
             try:
                 self._extra['peername'] = sock.getpeername()
@@ -657,7 +660,7 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
         # Should be called from exception handler only.
-        if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
+        if isinstance(exc, OSError):
             if self._loop.get_debug():
                 logger.debug("%r: %s", self, message, exc_info=True)
         else:
@@ -968,9 +971,11 @@ class _SelectorDatagramTransport(_SelectorTransport):
         if not data:
             return
 
-        if self._address and addr not in (None, self._address):
-            raise ValueError(
-                f'Invalid address: must be None or {self._address}')
+        if self._address:
+            if addr not in (None, self._address):
+                raise ValueError(
+                    f'Invalid address: must be None or {self._address}')
+            addr = self._address
 
         if self._conn_lost and self._address:
             if self._conn_lost >= constants.LOG_THRESHOLD_FOR_CONNLOST_WRITES:
@@ -981,7 +986,7 @@ class _SelectorDatagramTransport(_SelectorTransport):
         if not self._buffer:
             # Attempt to send it right away first.
             try:
-                if self._address:
+                if self._extra['peername']:
                     self._sock.send(data)
                 else:
                     self._sock.sendto(data, addr)
@@ -1004,7 +1009,7 @@ class _SelectorDatagramTransport(_SelectorTransport):
         while self._buffer:
             data, addr = self._buffer.popleft()
             try:
-                if self._address:
+                if self._extra['peername']:
                     self._sock.send(data)
                 else:
                     self._sock.sendto(data, addr)

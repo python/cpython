@@ -1059,9 +1059,13 @@ All of the following opcodes use their arguments.
 
 .. opcode:: RAISE_VARARGS (argc)
 
-   Raises an exception. *argc* indicates the number of arguments to the raise
-   statement, ranging from 0 to 3.  The handler will find the traceback as TOS2,
-   the parameter as TOS1, and the exception as TOS.
+   Raises an exception using one of the 3 forms of the ``raise`` statement,
+   depending on the value of *argc*:
+
+   * 0: ``raise`` (re-raise previous exception)
+   * 1: ``raise TOS`` (raise exception instance or type at ``TOS``)
+   * 2: ``raise TOS1 from TOS`` (raise exception instance or type at ``TOS1``
+     with ``__cause__`` set to ``TOS``)
 
 
 .. opcode:: CALL_FUNCTION (argc)
@@ -1161,10 +1165,10 @@ All of the following opcodes use their arguments.
 
 .. opcode:: EXTENDED_ARG (ext)
 
-   Prefixes any opcode which has an argument too big to fit into the default two
-   bytes.  *ext* holds two additional bytes which, taken together with the
-   subsequent opcode's argument, comprise a four-byte argument, *ext* being the
-   two most-significant bytes.
+   Prefixes any opcode which has an argument too big to fit into the default one
+   byte. *ext* holds an additional byte which act as higher bits in the argument.
+   For each opcode, at most three prefixal ``EXTENDED_ARG`` are allowed, forming
+   an argument from two-byte to four-byte.
 
 
 .. opcode:: FORMAT_VALUE (flags)

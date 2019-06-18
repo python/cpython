@@ -2301,13 +2301,12 @@ compiler_if(struct compiler *c, stmt_ty s)
         return 0;
 
     constant = expr_constant(s->v.If.test);
-    /* constant = 0: "if 0"
+    /* constant = 0: "if 0" Leave the optimizations to
+     * the pephole optimizer to check for syntax errors
+     * in the block.
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
-    if (constant == 0) {
-        if (s->v.If.orelse)
-            VISIT_SEQ(c, stmt, s->v.If.orelse);
-    } else if (constant == 1) {
+    if (constant == 1) {
         VISIT_SEQ(c, stmt, s->v.If.body);
     } else {
         if (asdl_seq_LEN(s->v.If.orelse)) {
@@ -3536,6 +3535,7 @@ compiler_compare(struct compiler *c, expr_ty e)
     return 1;
 }
 
+// Return 1 if the method call was optimized, -1 if not, and 0 on error.
 static int
 maybe_optimize_method_call(struct compiler *c, expr_ty e)
 {
@@ -3569,9 +3569,10 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 static int
 compiler_call(struct compiler *c, expr_ty e)
 {
-    if (maybe_optimize_method_call(c, e) > 0)
-        return 1;
-
+    int ret = maybe_optimize_method_call(c, e);
+    if (ret >= 0) {
+        return ret;
+    }
     VISIT(c, expr, e->v.Call.func);
     return compiler_call_helper(c, 0,
                                 e->v.Call.args,

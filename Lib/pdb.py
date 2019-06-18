@@ -1093,16 +1093,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         sys.settrace(None)
         globals = self.curframe.f_globals
         locals = self.curframe_locals
-        try:
-            code = compile(arg, "<string>", "exec")
-        except SyntaxError:
-            exc_info = sys.exc_info()[:2]
-            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
-            return
         p = Pdb(self.completekey, self.stdin, self.stdout)
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
-        sys.call_tracing(p.run, (code, globals, locals))
+        try:
+            sys.call_tracing(p.run, (arg, globals, locals))
+        except Exception:
+            exc_info = sys.exc_info()[:2]
+            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
         self.message("LEAVING RECURSIVE DEBUGGER")
         sys.settrace(self.trace_dispatch)
         self.lastcmd = p.lastcmd
@@ -1135,9 +1133,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         co = self.curframe.f_code
         dict = self.curframe_locals
-        n = co.co_argcount
-        if co.co_flags & 4: n = n+1
-        if co.co_flags & 8: n = n+1
+        n = co.co_argcount + co.co_kwonlyargcount
+        if co.co_flags & inspect.CO_VARARGS: n = n+1
+        if co.co_flags & inspect.CO_VARKEYWORDS: n = n+1
         for i in range(n):
             name = co.co_varnames[i]
             if name in dict:
