@@ -3684,9 +3684,6 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                          "unexpected import name: %d", TYPE(n));
             return NULL;
     }
-
-    PyErr_SetString(PyExc_SystemError, "unhandled import name condition");
-    return NULL;
 }
 
 static stmt_ty
