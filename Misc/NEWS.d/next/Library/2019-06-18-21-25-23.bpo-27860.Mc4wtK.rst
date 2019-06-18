@@ -1,0 +1,2 @@
+Fix ``IPv4Interface`` and ``IPv6Interface`` didn't accept string mask when
+the argument is tuple.
