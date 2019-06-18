@@ -2690,13 +2690,21 @@ class Symlink(unittest.TestCase):
 
     def test_list_dst_not_directory(self):
         srcs = [self.src_file1, self.src_file2]
-        links_not_dir = {k: v for k, v in self.symlink_to_path.items()
-                         if k != 'link_to_dir'}
-        dsts = {'non-existant': self.np1, 'file': self.dst_file1,
-                **links_not_dir}
-        for description, dst_path in dsts.items():
+        exist = {'file': self.dst_file1, 'link_to_file': self.link_to_file,
+                 'link_to_link': self.link_to_link}
+        absent = {'absent': self.absent, 'broken_link': self.broken_link,
+                  'link_to_broken_link': self.link_to_broken_link}
+
+        for description, dst_path in exist.items():
+            self.assertTrue(os.path.exists(dst_path))
             with self.subTest(type=description):
                 with self.assertRaises(NotADirectoryError):
+                    shutil.symlink(srcs, dst_path)
+
+        for description, dst_path in absent.items():
+            self.assertFalse(os.path.exists(dst_path))
+            with self.subTest(type=description):
+                with self.assertRaises(FileNotFoundError):
                     shutil.symlink(srcs, dst_path)
 
     #
