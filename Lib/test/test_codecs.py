@@ -712,9 +712,8 @@ class UTF16Test(ReadTest, unittest.TestCase):
         self.addCleanup(support.unlink, support.TESTFN)
         with open(support.TESTFN, 'wb') as fp:
             fp.write(s)
-        with support.check_warnings(('', DeprecationWarning)):
-            reader = codecs.open(support.TESTFN, 'U', encoding=self.encoding)
-        with reader:
+        with codecs.open(support.TESTFN, 'r',
+                         encoding=self.encoding) as reader:
             self.assertEqual(reader.read(), s1)
 
 class UTF16LETest(ReadTest, unittest.TestCase):
