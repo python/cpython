@@ -1491,10 +1491,6 @@ def _link_or_symlink_parse_args(src_or_srcs, dst, overwrite,
         if not isinstance(locals()[bool_arg], bool):
             raise TypeError(f"{bool_arg} not a bool")
 
-    if len(sources) > 1 and not os.path.isdir(dst):
-        raise NotADirectoryError(
-            f'Destination "{dst}" not a directory and multiple sources given')
-
     return sources
 
 
