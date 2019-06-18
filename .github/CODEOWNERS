@@ -44,13 +44,13 @@ Objects/dict*                 @methane
 Python/bootstrap_hash.c       @python/crypto-team @tiran
 
 # Dates and times
-**/*datetime*                 @pganssle
-**/*str*time*                 @pganssle
-Doc/library/time.rst          @pganssle
-Lib/test/test_time.py         @pganssle
-Modules/timemodule.c          @pganssle
-Python/pytime.c               @pganssle
-Include/pytime.h              @pganssle
+**/*datetime*                 @pganssle @abalkin
+**/*str*time*                 @pganssle @abalkin
+Doc/library/time.rst          @pganssle @abalkin
+Lib/test/test_time.py         @pganssle @abalkin
+Modules/timemodule.c          @pganssle @abalkin
+Python/pytime.c               @pganssle @abalkin
+Include/pytime.h              @pganssle @abalkin
 
 # Email and related
 **/*mail*                     @python/email-team
