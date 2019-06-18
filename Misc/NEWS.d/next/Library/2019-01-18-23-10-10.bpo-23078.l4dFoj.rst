@@ -1,2 +1,0 @@
-Add support for :func:`classmethod` and :func:`staticmethod` to
-:func:`unittest.mock.create_autospec`.  Initial patch by Felipe Ochoa.

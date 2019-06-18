@@ -1,1 +1,0 @@
-Improve version added references in ``typing`` module - by Anthony Sottile.
