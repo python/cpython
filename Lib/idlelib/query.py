@@ -36,10 +36,10 @@ class Query(Toplevel):
     """
     def __init__(self, parent, title, message, *, text0='', used_names={},
                  _htest=False, _utest=False):
-        """Create popup, do not return until tk widget destroyed.
+        """Create modal popup, return when destroyed.
 
-        Additional subclass init must be done before calling this
-        unless  _utest=True is passed to suppress wait_window().
+        Additional subclass init must be done before this unless
+        _utest=True is passed to suppress wait_window().
 
         title - string, title of popup dialog
         message - string, informational message to display
@@ -88,8 +88,13 @@ class Query(Toplevel):
             self.deiconify()  # Unhide now that geometry set.
             self.wait_window()
 
-    def create_widgets(self, ok_text='OK'):
-        # Bind widgets needed for entry_ok or unittest to self.
+    def create_widgets(self, ok_text='OK'):  # Do not replace.
+        """Create entry (rows, extras, buttons.
+
+        Entry stuff on rows 0-2, spanning cols 0-2.
+        Buttons on row 99, cols 1, 2.
+        """
+        # Bind to self the widgets needed for entry_ok or unittest.
         self.frame = frame = Frame(self, padding=10)
         frame.grid(column=0, row=0, sticky='news')
         frame.grid_columnconfigure(0, weight=1)
@@ -108,6 +113,8 @@ class Query(Toplevel):
                         pady=[10,0])
         self.entry_error.grid(column=0, row=2, columnspan=3, padx=5,
                               sticky=W+E)
+
+        self.create_extra()
 
         self.button_ok = Button(
                 frame, text=ok_text, default='active', command=self.ok)
