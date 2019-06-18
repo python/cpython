@@ -40,7 +40,7 @@ yet integrated into ``build-installer.py``.
 
         * libcrypto and libssl from OpenSSL 1.0.1
         * NCurses 5.9
-        * SQLite 3.7.13
+        * SQLite 3.28.0
         * Oracle Sleepycat DB 4.8 (Python 2.x only)
 
     - uses system-supplied versions of third-party libraries
