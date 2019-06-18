@@ -241,8 +241,8 @@ class HelpSource(Query):
                 parent, title, message, text0=menuitem,
                 used_names=used_names, _htest=_htest, _utest=_utest)
 
-    def create_widgets(self):
-        super().create_widgets()
+    def create_extra(self):
+        "Add path widjets to rows 10-12."
         frame = self.frame
         pathlabel = Label(frame, anchor='w', justify='left',
                           text='Help File Path: Enter URL or browse for file')
@@ -333,8 +333,8 @@ class CustomRun(Query):
                 parent, title, message, text0=cli_args,
                 _htest=_htest, _utest=_utest)
 
-    def create_widgets(self):
-        super().create_widgets(ok_text='Run')
+    def create_extra(self):
+        "Add run mode on rows 10-12."
         frame = self.frame
         self.restartvar = BooleanVar(self, value=True)
         restart = Checkbutton(frame, variable=self.restartvar, onvalue=True,
@@ -342,7 +342,7 @@ class CustomRun(Query):
         self.args_error = Label(frame, text=' ', foreground='red',
                                 font=self.error_font)
 
-        restart.grid(column=0, row=4, columnspan=3, padx=5, sticky='w')
+        restart.grid(column=0, row=10, columnspan=3, padx=5, sticky='w')
         self.args_error.grid(column=0, row=12, columnspan=3, padx=5,
                              sticky='we')
 
