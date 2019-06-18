@@ -622,17 +622,6 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
     return 0;
 }
 
-static PyObject *
-function_call(PyObject *func, PyObject *args, PyObject *kwargs)
-{
-    PyObject **stack;
-    Py_ssize_t nargs;
-
-    stack = _PyTuple_ITEMS(args);
-    nargs = PyTuple_GET_SIZE(args);
-    return _PyFunction_FastCallDict(func, stack, nargs, kwargs);
-}
-
 /* Bind a function to an object */
 static PyObject *
 func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
@@ -659,7 +648,7 @@ PyTypeObject PyFunction_Type = {
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
-    function_call,                              /* tp_call */
+    PyVectorcall_Call,                          /* tp_call */
     0,                                          /* tp_str */
     0,                                          /* tp_getattro */
     0,                                          /* tp_setattro */
