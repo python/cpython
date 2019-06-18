@@ -1497,7 +1497,7 @@ class ZipFile:
             if fheader[_FH_SIGNATURE] != stringFileHeader:
                 raise BadZipFile("Bad magic number for file header")
 
-            fname = zef_file.read(fheader[_FH_FILENAME_LENGTH])
+            zef_file.read(fheader[_FH_FILENAME_LENGTH])
             if fheader[_FH_EXTRA_FIELD_LENGTH]:
                 zef_file.read(fheader[_FH_EXTRA_FIELD_LENGTH])
 
@@ -1508,17 +1508,6 @@ class ZipFile:
             if zinfo.flag_bits & 0x40:
                 # strong encryption
                 raise NotImplementedError("strong encryption (flag bit 6)")
-
-            if zinfo.flag_bits & 0x800:
-                # UTF-8 filename
-                fname_str = fname.decode("utf-8")
-            else:
-                fname_str = fname.decode("cp437")
-
-            if fname_str != zinfo.orig_filename:
-                raise BadZipFile(
-                    'File name in directory %r and header %r differ.'
-                    % (zinfo.orig_filename, fname))
 
             # check for encrypted flag & handle password
             is_encrypted = zinfo.flag_bits & 0x1
