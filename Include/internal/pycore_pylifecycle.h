@@ -55,7 +55,7 @@ extern int _PyFloat_Init(void);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
 extern PyStatus _PyTypes_Init(void);
-extern PyStatus _PyImportZip_Init(PyInterpreterState *interp);
+extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
 
 
 /* Various internal finalizers */
