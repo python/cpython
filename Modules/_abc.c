@@ -480,6 +480,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
 /*[clinic end generated code: output=b8b5148f63b6b56f input=a4f4525679261084]*/
 {
     PyObject *subtype, *result = NULL, *subclass = NULL;
+    PyObject *margs[2];
     _abc_data *impl = _get_impl(self);
     if (impl == NULL) {
         return NULL;
@@ -514,12 +515,16 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
             }
         }
         /* Fall back to the subclass check. */
-        result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
-                                               subclass, NULL);
+        margs[0] = self;
+        margs[1] = subclass;
+        result = _PyObject_VectorcallMethodId(&PyId___subclasscheck__, margs,
+            2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
         goto end;
     }
-    result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
-                                           subclass, NULL);
+    margs[0] = self;
+    margs[1] = subclass;
+    result = _PyObject_VectorcallMethodId(&PyId___subclasscheck__, margs,
+        2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
     if (result == NULL) {
         goto end;
     }
@@ -531,8 +536,10 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         break;
     case 0:
         Py_DECREF(result);
-        result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
-                                               subtype, NULL);
+        margs[0] = self;
+        margs[1] = subtype;
+        result = _PyObject_VectorcallMethodId(&PyId___subclasscheck__, margs,
+            2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
         break;
     case 1:  // Nothing to do.
         break;
