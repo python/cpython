@@ -2623,8 +2623,13 @@ class Symlink(unittest.TestCase):
         self.assertEqual(os.readlink(dst), src)
 
     def test_1src_dst_existing_file(self):
-        with self.assertRaises(FileExistsError):
-            shutil.symlink(self.src_file1, self.dst_file1)
+        src = self.src_file1
+        dst_existing = {k: v for k, v in self.dst_types.items()
+                        if k != 'absent'}
+        for description, dst_path in dst_existing.items():
+            with self.subTest(type=description):
+                with self.assertRaises(FileExistsError):
+                    shutil.symlink(src, dst_path)
 
     def test_1src_dst_existing_dir(self):
         with self.assertRaises(FileExistsError):
