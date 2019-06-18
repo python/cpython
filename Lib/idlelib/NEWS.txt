@@ -3,6 +3,9 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-37325: Fix tab focus traversal order for help source and custom
+run dialogs.
+
 bpo-37321: Both subprocess connection error messages now refer to
 the 'Startup failure' section of the IDLE doc.
 
