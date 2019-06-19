@@ -1,0 +1,1 @@
+:func:`dataclasses.replace` now supports the field named "obj".
