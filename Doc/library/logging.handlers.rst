@@ -488,7 +488,12 @@ sends logging output to a network socket. The base class uses a TCP socket.
    .. method:: makePickle(record)
 
       Pickles the record's attribute dictionary in binary format with a length
-      prefix, and returns it ready for transmission across the socket.
+      prefix, and returns it ready for transmission across the socket. The
+      details of this operation are equivalent to::
+
+          data = pickle.dumps(record_attr_dict, 1)
+          datalen = struct.pack('>L', len(data))
+          return datalen + data
 
       Note that pickles aren't completely secure. If you are concerned about
       security, you may want to override this method to implement a more secure
@@ -499,8 +504,12 @@ sends logging output to a network socket. The base class uses a TCP socket.
 
    .. method:: send(packet)
 
-      Send a pickled string *packet* to the socket. This function allows for
-      partial sends which can happen when the network is busy.
+      Send a pickled byte-string *packet* to the socket. The format of the sent
+      byte-string is as described in the documentation for
+      :meth:`~SocketHandler.makePickle`.
+
+      This function allows for partial sends, which can happen when the network
+      is busy.
 
 
    .. method:: createSocket()
@@ -561,7 +570,8 @@ over UDP sockets.
 
    .. method:: send(s)
 
-      Send a pickled string to a socket.
+      Send a pickled byte-string to a socket. The format of the sent byte-string
+      is as described in the documentation for :meth:`SocketHandler.makePickle`.
 
 
 .. _syslog-handler:
