@@ -1410,11 +1410,8 @@ class IPv4Interface(IPv4Address):
         IPv4Address.__init__(self, addr)
         self.network = IPv4Network((addr, mask), strict=False)
         self.netmask = self.network.netmask
+        self.hostmask = self.network.hostmask
         self._prefixlen = self.network._prefixlen
-
-    @functools.cached_property
-    def hostmask(self):
-        return self.network.hostmask
 
     def __str__(self):
         return '%s/%d' % (self._string_from_ip_int(self._ip),
@@ -2058,11 +2055,8 @@ class IPv6Interface(IPv6Address):
         IPv6Address.__init__(self, addr)
         self.network = IPv6Network((addr, mask), strict=False)
         self.netmask = self.network.netmask
+        self.hostmask = self.network.hostmask
         self._prefixlen = self.network._prefixlen
-
-    @functools.cached_property
-    def hostmask(self):
-        return self.network.hostmask
 
     def __str__(self):
         return '%s/%d' % (self._string_from_ip_int(self._ip),
