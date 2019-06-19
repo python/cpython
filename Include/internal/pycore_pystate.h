@@ -310,7 +310,7 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
 PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 
-/* Used by PyImport_Cleanup() */
+/* Used by _PyImport_Cleanup() */
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 
 PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);

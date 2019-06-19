@@ -48,8 +48,9 @@ module _imp
 /* Initialize things */
 
 PyStatus
-_PyImport_Init(PyInterpreterState *interp)
+_PyImport_Init(PyThreadState *tstate)
 {
+    PyInterpreterState *interp = tstate->interp;
     interp->builtins_copy = PyDict_Copy(interp->builtins);
     if (interp->builtins_copy == NULL) {
         return _PyStatus_ERR("Can't backup builtins dict");
@@ -58,7 +59,7 @@ _PyImport_Init(PyInterpreterState *interp)
 }
 
 PyStatus
-_PyImportHooks_Init(void)
+_PyImportHooks_Init(PyThreadState *tstate)
 {
     PyObject *v, *path_hooks = NULL;
     int err = 0;
@@ -89,7 +90,7 @@ _PyImportHooks_Init(void)
     return _PyStatus_OK();
 
   error:
-    PyErr_Print();
+    _PyErr_Print(tstate);
     return _PyStatus_ERR("initializing sys.meta_path, sys.path_hooks, "
                         "or path_importer_cache failed");
 }
@@ -554,7 +555,7 @@ _PyImport_Cleanup(PyThreadState *tstate)
     }
     Py_XDECREF(dict);
     /* Clear module dict copies stored in the interpreter state */
-    _PyInterpreterState_ClearModules(tstate->interp);
+    _PyInterpreterState_ClearModules(interp);
     /* Collect references */
     _PyGC_CollectNoFail();
     /* Dump GC stats before it's too late, since it uses the warnings
