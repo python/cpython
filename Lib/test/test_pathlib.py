@@ -1534,7 +1534,6 @@ class _BasePathTest(object):
             self.assertEqual(paths, { P(join('dirF'), *q) for q in expected })
         finally:
             support.rmtree(join('dirF'))
-        assert not P(join('dirF')).exists()  # TODO: remove
 
     @support.skip_unless_symlink
     def test_iterdir_symlink(self):
