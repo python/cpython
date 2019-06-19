@@ -6,6 +6,7 @@ Licensed to the PSF under a contributor agreement.
 """
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -43,7 +44,8 @@ class EnvBuilder:
     :param upgrade_deps: Update the base venv modules to the latest on PyPI
     :param environmental_variables: Custom environmental variables to be set
                                     on activate. Variables are reset to their
-                                    initial state on deactivate.
+                                    initial state on deactivate. Only available
+                                    on POSIX.
     """
 
     def __init__(self, system_site_packages=False, clear=False,
@@ -479,16 +481,43 @@ def main(args=None):
                             help='Upgrade core dependencies: {} to the latest '
                                  'version in PyPI'.format(
                                  ' '.join(CORE_VENV_DEPS)))
+        parser.add_argument('--env-vars', nargs='*', dest='env_vars',
+                            metavar='KEY=VALUE',
+                            help='environmental variables to be set on '
+                                 'activate.')
         options = parser.parse_args(args)
         if options.upgrade and options.clear:
             raise ValueError('you cannot supply --upgrade and --clear together.')
+
+        env_vars = {}
+        if os.name == 'posix':
+            key_re = re.compile(r'[A-Z_][A-Z0-9_]*')
+        elif os.name == 'nt':
+            key_re = re.compile(r'[^=]+')
+        else:
+            key_re = re.compile(r'.+')
+
+        for opt in options.env_vars:
+            pair = opt.split('=')
+            if len(pair) == 2 and pair[0] and pair[1]:
+                key, value = pair
+            else:
+                raise ValueError('env-vars must be provided as KEY=VALUE')
+
+            if not key_re.fullmatch(key):
+                raise ValueError(f'{key} is not a valid environmental '
+                                 f'variable name')
+            else:
+                env_vars[key] = value
+
         builder = EnvBuilder(system_site_packages=options.system_site,
                              clear=options.clear,
                              symlinks=options.symlinks,
                              upgrade=options.upgrade,
                              with_pip=options.with_pip,
                              prompt=options.prompt,
-                             upgrade_deps=options.upgrade_deps)
+                             upgrade_deps=options.upgrade_deps,
+                             environmental_variables=env_vars)
         for d in options.dirs:
             builder.create(d)
 
