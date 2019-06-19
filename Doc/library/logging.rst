@@ -50,8 +50,8 @@ listed below.
 Logger Objects
 --------------
 
-Loggers have the following attributes and methods.  Note that Loggers are never
-instantiated directly, but always through the module-level function
+Loggers have the following attributes and methods.  Note that Loggers should
+*NEVER* be instantiated directly, but always through the module-level function
 ``logging.getLogger(name)``.  Multiple calls to :func:`getLogger` with the same
 name will always return a reference to the same Logger object.
 
@@ -1226,7 +1226,9 @@ functions.
    The class should define :meth:`__init__` such that only a name argument is
    required, and the :meth:`__init__` should call :meth:`Logger.__init__`. This
    function is typically called before any loggers are instantiated by applications
-   which need to use custom logger behavior.
+   which need to use custom logger behavior. After this call, as at any other
+   time, do not instantiate loggers directly using the subclass: continue to use
+   the :func:`logging.getLogger` API to get your loggers.
 
 
 .. function:: setLogRecordFactory(factory)
