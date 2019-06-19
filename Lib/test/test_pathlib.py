@@ -1507,6 +1507,21 @@ class _BasePathTest(object):
         open(join('dirF', 'dirH', 'fileH'), 'w').close()
         os.symlink(os.path.join('..', 'dirG'), join('dirF', 'dirH', 'linkG'))
         os.symlink(os.path.join('..', 'dirH'), join('dirF', 'dirG', 'linkH'))
+        # Now have structure
+        # (BASE)
+        #  |
+        #  ...
+        #  |
+        #  |-- dirF
+        #  |   |-- dirG
+        #  |   |   |-- fileG
+        #  |   |   `-- linkH -> ../dirH
+        #  |   |-- dirH
+        #  |   |   |-- fileH
+        #  |   |   `-- linkG -> ../dirG
+        #  |   `-- fileF
+        #  |
+        #  ...
         try:
             P = self.cls
             p = P(join('dirF'))
