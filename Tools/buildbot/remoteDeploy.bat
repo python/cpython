@@ -2,6 +2,7 @@
 rem Used by the buildbot "remotedeploy" step.
 setlocal
 
+set PATH=%PATH%;%SystemRoot%\SysNative\OpenSSH
 set here=%~dp0
 set arm32_ssh=
 
@@ -14,15 +15,8 @@ if "%arm32_ssh%"=="true" goto :Arm32Ssh
 :Arm32Ssh
 if "%SSH_SERVER%"=="" goto :Arm32SshHelp
 
-rem Make sure we have SSH and SCP
-if "%SSH%"=="" if EXIST %WINDIR%\System32\OpenSSH\ssh.exe (set SSH=%WINDIR%\System32\OpenSSH\ssh.exe)
-if "%SCP%"=="" if EXIST %WINDIR%\System32\OpenSSH\scp.exe (set SCP=%WINDIR%\System32\OpenSSH\scp.exe)
-echo SSH = %SSH%
-echo SCP = %SCP%
-if not EXIST "%SSH%" (echo ERROR: SSH not found) & exit /b 1
-if not EXIST "%SCP%" (echo ERROR: SCP not found) & exit /b 1
-%SSH% %SSH_SERVER% echo Testing SSH...
-if %ERRORLEVEL% NEQ 0 echo SSH does not work
+ssh %SSH_SERVER% echo Make sure we can find SSH and SSH_SERVER variable is valid
+if %ERRORLEVEL% NEQ 0 (echo SSH does not work) & exit /b 1
 
 if "%PYTHON_SOURCE%"=="" (set PYTHON_SOURCE=%here%..\..\)
 if "%REMOTE_PYTHON_DIR%"=="" (set REMOTE_PYTHON_DIR=C:\python\)
@@ -30,21 +24,21 @@ if NOT "%REMOTE_PYTHON_DIR:~-1,1%"=="\" (set REMOTE_PYTHON_DIR=%REMOTE_PYTHON_DI
 echo PYTHON_SOURCE = %PYTHON_SOURCE%
 echo REMOTE_PYTHON_DIR = %REMOTE_PYTHON_DIR%
 
-%SSH% %SSH_SERVER% "if EXIST %REMOTE_PYTHON_DIR% (rd %REMOTE_PYTHON_DIR% /s/q)"
-%SSH% %SSH_SERVER% "md %REMOTE_PYTHON_DIR%PCBuild\arm32"
-%SSH% %SSH_SERVER% "md %REMOTE_PYTHON_DIR%temp"
-%SSH% %SSH_SERVER% "md %REMOTE_PYTHON_DIR%Modules"
-%SSH% %SSH_SERVER% "md %REMOTE_PYTHON_DIR%PC"
-for /f "USEBACKQ" %%i in (`dir PCbuild\*.bat /b`) do @%SCP% PCBuild\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild"
-for /f "USEBACKQ" %%i in (`dir PCbuild\*.py /b`) do @%SCP% PCBuild\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild"
-for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.exe /b`) do @%SCP% PCBuild\arm32\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild\arm32"
-for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.pyd /b`) do @%SCP% PCBuild\arm32\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild\arm32"
-for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.dll /b`) do @%SCP% PCBuild\arm32\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild\arm32"
-%SCP% -r "%PYTHON_SOURCE%Include" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Include"
-%SCP% -r "%PYTHON_SOURCE%Lib" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Lib"
-%SCP% -r "%PYTHON_SOURCE%Tools" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Tools"
-%SCP% "%PYTHON_SOURCE%Modules\Setup" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Modules"
-%SCP% "%PYTHON_SOURCE%PC\pyconfig.h" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PC"
+ssh %SSH_SERVER% "if EXIST %REMOTE_PYTHON_DIR% (rd %REMOTE_PYTHON_DIR% /s/q)"
+ssh %SSH_SERVER% "md %REMOTE_PYTHON_DIR%PCBuild\arm32"
+ssh %SSH_SERVER% "md %REMOTE_PYTHON_DIR%temp"
+ssh %SSH_SERVER% "md %REMOTE_PYTHON_DIR%Modules"
+ssh %SSH_SERVER% "md %REMOTE_PYTHON_DIR%PC"
+for /f "USEBACKQ" %%i in (`dir PCbuild\*.bat /b`) do @scp PCBuild\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild"
+for /f "USEBACKQ" %%i in (`dir PCbuild\*.py /b`) do @scp PCBuild\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild"
+for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.exe /b`) do @scp PCBuild\arm32\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild\arm32"
+for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.pyd /b`) do @scp PCBuild\arm32\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild\arm32"
+for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.dll /b`) do @scp PCBuild\arm32\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild\arm32"
+scp -r "%PYTHON_SOURCE%Include" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Include"
+scp -r "%PYTHON_SOURCE%Lib" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Lib"
+scp -r "%PYTHON_SOURCE%Tools" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Tools"
+scp "%PYTHON_SOURCE%Modules\Setup" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Modules"
+scp "%PYTHON_SOURCE%PC\pyconfig.h" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PC"
 
 exit /b %ERRORLEVEL%
 
