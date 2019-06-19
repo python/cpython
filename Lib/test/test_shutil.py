@@ -2629,7 +2629,7 @@ class Symlink(unittest.TestCase):
         shutil.symlink(src, dst)
         self.assertEqual(os.readlink(dst), src)
 
-    def test_1src_dst_existing_file(self):
+    def test_1src_dst_existing_path(self):
         src = self.src_file1
         dst_existing = {k: v for k, v in self.dst_types.items()
                         if k != 'absent'}
