@@ -413,9 +413,8 @@ static const char * const sys_files[] = {
 /* Un-initialize things, as good as we can */
 
 void
-PyImport_Cleanup(void)
+_PyImport_Cleanup(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     PyInterpreterState *interp = tstate->interp;
     PyObject *modules = interp->modules;
     if (modules == NULL) {
