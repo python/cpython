@@ -976,7 +976,7 @@ Build and C API Changes
 
   * ``Include/*.h`` should be the portable public stable C API.
   * ``Include/cpython/*.h`` should be the unstable C API specific to CPython;
-     public API, with some private API prefixed by ``_Py`` or ``_PY``.
+    public API, with some private API prefixed by ``_Py`` or ``_PY``.
   * ``Include/internal/*.h`` is the private internal C API very specific to
     CPython. This API comes with no backward compatibility warranty and should
     not be used outside CPython. It is only exposed for very specific needs
@@ -1001,6 +1001,7 @@ Build and C API Changes
 * The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
   been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
   excluded from the limited API (stable ABI), and were not documented.
+  (Contributed by Victor Stinner in :issue:`32980`.)
 
 * The result of :c:func:`PyExceptionClass_Name` is now of type
   ``const char *`` rather of ``char *``.
