@@ -1143,19 +1143,18 @@ PyThreadState_IsCurrent(PyThreadState *tstate)
    Py_Initialize/Py_FinalizeEx
 */
 void
-_PyGILState_Init(_PyRuntimeState *runtime,
-                 PyInterpreterState *interp, PyThreadState *tstate)
+_PyGILState_Init(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
     /* must init with valid states */
-    assert(interp != NULL);
     assert(tstate != NULL);
+    assert(tstate->interp != NULL);
 
     struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
 
     if (PyThread_tss_create(&gilstate->autoTSSkey) != 0) {
         Py_FatalError("Could not allocate TSS entry");
     }
-    gilstate->autoInterpreterState = interp;
+    gilstate->autoInterpreterState = tstate->interp;
     assert(PyThread_tss_get(&gilstate->autoTSSkey) == NULL);
     assert(tstate->gilstate_counter == 0);
 
