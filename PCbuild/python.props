@@ -81,6 +81,9 @@
     
     <!-- Full path of the resulting python.exe binary -->
     <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)python$(PyDebugExt).exe</PythonExe>
+
+    <!-- Include Tkinter by default -->
+    <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Platform)'=='ARM'" Label="ArmConfiguration">
