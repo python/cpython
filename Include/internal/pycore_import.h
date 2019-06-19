@@ -11,6 +11,7 @@ PyAPI_FUNC(PyObject *) _PyImport_FindBuiltin(
     );
 
 extern void _PyImport_ReInitLock(void);
+extern void _PyImport_Cleanup(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

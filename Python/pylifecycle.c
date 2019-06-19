@@ -1225,7 +1225,7 @@ Py_FinalizeEx(void)
     _PySys_ClearAuditHooks();
 
     /* Destroy all modules */
-    PyImport_Cleanup();
+    _PyImport_Cleanup(tstate);
 
     /* Print debug stats if any */
     _PyEval_Fini();
@@ -1589,7 +1589,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != interp->tstate_head || tstate->next != NULL)
         Py_FatalError("Py_EndInterpreter: not the last thread");
 
-    PyImport_Cleanup();
+    _PyImport_Cleanup(tstate);
     PyInterpreterState_Clear(interp);
     PyThreadState_Swap(NULL);
     PyInterpreterState_Delete(interp);
