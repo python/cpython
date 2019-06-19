@@ -8,14 +8,8 @@
 
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
 
-/* Free list for method objects to safe malloc/free overhead
- * The im_self element is used to chain the elements.
- */
-static PyMethodObject *free_list;
-static int numfree = 0;
-#ifndef PyMethod_MAXFREELIST
-#define PyMethod_MAXFREELIST 256
-#endif
+// Free one method object to safe malloc/free overhead
+static PyMethodObject *free_obj;
 
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__qualname__);
@@ -108,11 +102,10 @@ PyMethod_New(PyObject *func, PyObject *self)
         PyErr_BadInternalCall();
         return NULL;
     }
-    im = free_list;
+    im = free_obj;
     if (im != NULL) {
-        free_list = (PyMethodObject *)(im->im_self);
+        free_obj = NULL;
         (void)PyObject_INIT(im, &PyMethod_Type);
-        numfree--;
     }
     else {
         im = PyObject_GC_New(PyMethodObject, &PyMethod_Type);
@@ -252,10 +245,8 @@ method_dealloc(PyMethodObject *im)
         PyObject_ClearWeakRefs((PyObject *)im);
     Py_DECREF(im->im_func);
     Py_XDECREF(im->im_self);
-    if (numfree < PyMethod_MAXFREELIST) {
-        im->im_self = (PyObject *)free_list;
-        free_list = im;
-        numfree++;
+    if (free_obj == NULL) {
+        free_obj = im;
     }
     else {
         PyObject_GC_Del(im);
@@ -395,16 +386,12 @@ PyTypeObject PyMethod_Type = {
 int
 PyMethod_ClearFreeList(void)
 {
-    int freelist_size = numfree;
-
-    while (free_list) {
-        PyMethodObject *im = free_list;
-        free_list = (PyMethodObject *)(im->im_self);
-        PyObject_GC_Del(im);
-        numfree--;
+    if (free_obj) {
+        PyObject_GC_Del(free_obj);
+        free_obj = NULL;
+        return 1;
     }
-    assert(numfree == 0);
-    return freelist_size;
+    return 0;
 }
 
 void
@@ -419,7 +406,7 @@ _PyMethod_DebugMallocStats(FILE *out)
 {
     _PyDebugAllocatorStats(out,
                            "free PyMethodObject",
-                           numfree, sizeof(PyMethodObject));
+                           free_obj != NULL, sizeof(PyMethodObject));
 }
 
 /* ------------------------------------------------------------------------
