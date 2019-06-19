@@ -144,7 +144,9 @@ _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
     return _PyObject_Vectorcall(func, args, (size_t)nargs, NULL);
 }
 
-/* Call a callable without any arguments */
+/* Call a callable without any arguments
+   Private static inline function variant of public function
+   PyObject_CallNoArgs(). */
 static inline PyObject *
 _PyObject_CallNoArg(PyObject *func) {
     return _PyObject_Vectorcall(func, NULL, 0, NULL);
@@ -155,12 +157,6 @@ PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(
     PyObject *obj,
     PyObject *args,
     PyObject *kwargs);
-
-PyAPI_FUNC(PyObject *) _PyObject_FastCall_Prepend(
-    PyObject *callable,
-    PyObject *obj,
-    PyObject *const *args,
-    Py_ssize_t nargs);
 
 /* Like PyObject_CallMethod(), but expect a _Py_Identifier*
    as the method name. */

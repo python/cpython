@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|ARM">
@@ -82,6 +82,7 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="pyproject.props" />
+    <Import Project="tcltk.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -143,5 +144,23 @@ $(_PGOPath)
       <_ExistingContent Condition="Exists('$(PySourcePath)python.bat')">$([System.IO.File]::ReadAllText('$(PySourcePath)python.bat'))</_ExistingContent>
     </PropertyGroup>
     <WriteLinesToFile File="$(PySourcePath)python.bat" Lines="$(_Content)" Overwrite="true" Condition="'$(_Content)' != '$(_ExistingContent)'" />
+  </Target>
+  <Target Name="GenerateLicense" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <LicenseFiles Include="$(PySourcePath)LICENSE;
+                             $(PySourcePath)PC\crtlicense.txt;
+                             $(bz2Dir)LICENSE;
+                             $(opensslOutDir)LICENSE;" />
+      <LicenseFiles Include="$(tcltkDir)tcllicense.terms;
+                             $(tcltkDir)tklicense.terms;
+                             $(tcltkDir)tixlicense.terms" Condition="$(IncludeTkinter)" />
+      <_LicenseFiles Include="@(LicenseFiles)">
+        <Content>$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
+      </_LicenseFiles>
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(OutDir)LICENSE.txt"
+                      Overwrite="true"
+                      Lines="@(_LicenseFiles->'%(Content)')" />
   </Target>
 </Project>

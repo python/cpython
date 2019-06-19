@@ -378,9 +378,9 @@ The :func:`ast.parse` function has some new flags:
 * ``mode='func_type'`` can be used to parse :pep:`484` "signature type
   comments" (returned for function definition AST nodes);
 
-* ``feature_version=N`` allows specifying the minor version of an
-  earlier Python 3 version.  (For example, ``feature_version=4`` will
-  treat ``async`` and ``await`` as non-reserved words.)
+* ``feature_version=(3, N)`` allows specifying an earlier Python 3
+  version.  (For example, ``feature_version=(3, 4)`` will treat
+  ``async`` and ``await`` as non-reserved words.)
 
 New function :func:`ast.get_source_segment` returns the source code
 for a specific AST node.
@@ -955,6 +955,49 @@ Optimizations
 Build and C API Changes
 =======================
 
+* Default :data:`sys.abiflags` became an empty string: the ``m`` flag for
+  pymalloc became useless (builds with and without pymalloc are ABI compatible)
+  and so has been removed. (Contributed by Victor Stinner in :issue:`36707`.)
+
+  Example of changes:
+
+  * Only ``python3.8`` program is installed, ``python3.8m`` program is gone.
+  * Only ``python3.8-config`` script is installed, ``python3.8m-config`` script
+    is gone.
+  * The ``m`` flag has been removed from the suffix of dynamic library
+    filenames: extension modules in the standard library as well as those
+    produced and installed by third-party packages, like those downloaded from
+    PyPI. On Linux, for example, the Python 3.7 suffix
+    ``.cpython-37m-x86_64-linux-gnu.so`` became
+    ``.cpython-38-x86_64-linux-gnu.so`` in Python 3.8.
+
+* The header files have been reorganized to better separate the different kinds
+  of APIs:
+
+  * ``Include/*.h`` should be the portable public stable C API.
+  * ``Include/cpython/*.h`` should be the unstable C API specific to CPython;
+     public API, with some private API prefixed by ``_Py`` or ``_PY``.
+  * ``Include/internal/*.h`` is the private internal C API very specific to
+    CPython. This API comes with no backward compatibility warranty and should
+    not be used outside CPython. It is only exposed for very specific needs
+    like debuggers and profiles which has to access to CPython internals
+    without calling functions. This API is now installed by ``make install``.
+
+  (Contributed by Victor Stinner in :issue:`35134` and :issue:`35081`,
+  work initiated by Eric Snow in Python 3.7)
+
+* Some macros have been converted to static inline functions: parameter types
+  and return type are well defined, they don't have issues specific to macros,
+  variables have a local scopes. Examples:
+
+  * :c:func:`Py_INCREF`, :c:func:`Py_DECREF`
+  * :c:func:`Py_XINCREF`, :c:func:`Py_XDECREF`
+  * :c:func:`PyObject_INIT`, :c:func:`PyObject_INIT_VAR`
+  * Private functions: :c:func:`_PyObject_GC_TRACK`,
+    :c:func:`_PyObject_GC_UNTRACK`, :c:func:`_Py_Dealloc`
+
+  (Contributed by Victor Stinner in :issue:`35059`.)
+
 * The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
   been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
   excluded from the limited API (stable ABI), and were not documented.
@@ -1312,6 +1355,11 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
+* The :c:type:`PyCompilerFlags` structure gets a new *cf_feature_version*
+  field. It should be initialized to ``PY_MINOR_VERSION``. The field is ignored
+  by default, it is used if and only if ``PyCF_ONLY_AST`` flag is set in
+  *cf_flags*.
+
 * The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
   It should not be called explicitly: use :c:func:`PyOS_AfterFork_Child`
   instead.
@@ -1409,6 +1457,8 @@ Changes in the C API
 * The :c:func:`PyCode_New` has a new parameter in the second position (*posonlyargcount*)
   to support :pep:`570`, indicating the number of positional-only arguments.
 
+* The functions :c:func:`PyNode_AddChild` and :c:func:`PyParser_AddToken` now accept
+  two additional ``int`` arguments *end_lineno* and *end_col_offset*.
 
 CPython bytecode changes
 ------------------------

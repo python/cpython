@@ -39,6 +39,8 @@ PyAPI_FUNC(void) _PyErr_Clear(PyThreadState *tstate);
 
 PyAPI_FUNC(void) _PyErr_SetNone(PyThreadState *tstate, PyObject *exception);
 
+PyAPI_FUNC(PyObject *) _PyErr_NoMemory(PyThreadState *tstate);
+
 PyAPI_FUNC(void) _PyErr_SetString(
     PyThreadState *tstate,
     PyObject *exception,

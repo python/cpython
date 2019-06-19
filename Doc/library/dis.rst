@@ -1219,10 +1219,10 @@ All of the following opcodes use their arguments.
 
 .. opcode:: EXTENDED_ARG (ext)
 
-   Prefixes any opcode which has an argument too big to fit into the default two
-   bytes.  *ext* holds two additional bytes which, taken together with the
-   subsequent opcode's argument, comprise a four-byte argument, *ext* being the
-   two most-significant bytes.
+   Prefixes any opcode which has an argument too big to fit into the default one
+   byte. *ext* holds an additional byte which act as higher bits in the argument.
+   For each opcode, at most three prefixal ``EXTENDED_ARG`` are allowed, forming
+   an argument from two-byte to four-byte.
 
 
 .. opcode:: FORMAT_VALUE (flags)

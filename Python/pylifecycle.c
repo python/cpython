@@ -6,6 +6,7 @@
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_ceval.h"
 #include "pycore_context.h"
+#include "pycore_import.h"   /* _PyImport_FindBuiltin */
 #include "pycore_initconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_hamt.h"
@@ -197,17 +198,17 @@ init_importlib(PyInterpreterState *interp, PyObject *sysmod)
 }
 
 static PyStatus
-init_importlib_external(PyInterpreterState *interp)
+init_importlib_external(PyThreadState *tstate)
 {
     PyObject *value;
-    value = PyObject_CallMethod(interp->importlib,
+    value = PyObject_CallMethod(tstate->interp->importlib,
                                 "_install_external_importers", "");
     if (value == NULL) {
         PyErr_Print();
         return _PyStatus_ERR("external importer setup failed");
     }
     Py_DECREF(value);
-    return _PyImportZip_Init(interp);
+    return _PyImportZip_Init(tstate);
 }
 
 /* Helper functions to better handle the legacy C locale
@@ -899,6 +900,7 @@ pyinit_main(_PyRuntimeState *runtime, PyInterpreterState *interp)
     }
 
     /* Configure the main interpreter */
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     PyConfig *config = &interp->config;
 
     if (runtime->initialized) {
@@ -919,11 +921,11 @@ pyinit_main(_PyRuntimeState *runtime, PyInterpreterState *interp)
         return _PyStatus_ERR("can't initialize time");
     }
 
-    if (_PySys_InitMain(runtime, interp) < 0) {
+    if (_PySys_InitMain(runtime, tstate) < 0) {
         return _PyStatus_ERR("can't finish initializing sys");
     }
 
-    PyStatus status = init_importlib_external(interp);
+    PyStatus status = init_importlib_external(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1223,7 +1225,7 @@ Py_FinalizeEx(void)
     _PySys_ClearAuditHooks();
 
     /* Destroy all modules */
-    PyImport_Cleanup();
+    _PyImport_Cleanup(tstate);
 
     /* Print debug stats if any */
     _PyEval_Fini();
@@ -1448,7 +1450,7 @@ new_interpreter(PyThreadState **tstate_p)
     }
     interp->modules = modules;
 
-    PyObject *sysmod = _PyImport_FindBuiltin("sys", modules);
+    PyObject *sysmod = _PyImport_FindBuiltin(tstate, "sys");
     if (sysmod != NULL) {
         interp->sysdict = PyModule_GetDict(sysmod);
         if (interp->sysdict == NULL) {
@@ -1456,7 +1458,7 @@ new_interpreter(PyThreadState **tstate_p)
         }
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        if (_PySys_InitMain(runtime, interp) < 0) {
+        if (_PySys_InitMain(runtime, tstate) < 0) {
             return _PyStatus_ERR("can't finish initializing sys");
         }
     }
@@ -1464,7 +1466,7 @@ new_interpreter(PyThreadState **tstate_p)
         goto handle_error;
     }
 
-    PyObject *bimod = _PyImport_FindBuiltin("builtins", modules);
+    PyObject *bimod = _PyImport_FindBuiltin(tstate, "builtins");
     if (bimod != NULL) {
         interp->builtins = PyModule_GetDict(bimod);
         if (interp->builtins == NULL)
@@ -1496,7 +1498,7 @@ new_interpreter(PyThreadState **tstate_p)
             return status;
         }
 
-        status = init_importlib_external(interp);
+        status = init_importlib_external(tstate);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -1587,7 +1589,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != interp->tstate_head || tstate->next != NULL)
         Py_FatalError("Py_EndInterpreter: not the last thread");
 
-    PyImport_Cleanup();
+    _PyImport_Cleanup(tstate);
     PyInterpreterState_Clear(interp);
     PyThreadState_Swap(NULL);
     PyInterpreterState_Delete(interp);

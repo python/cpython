@@ -3042,6 +3042,14 @@ class catch_unraisable_exception:
     """
     Context manager catching unraisable exception using sys.unraisablehook.
 
+    Storing the exception value (cm.unraisable.exc_value) creates a reference
+    cycle. The reference cycle is broken explicitly when the context manager
+    exits.
+
+    Storing the object (cm.unraisable.object) can resurrect it if it is set to
+    an object which is being finalized. Exiting the context manager clears the
+    stored object.
+
     Usage:
 
         with support.catch_unraisable_exception() as cm:
@@ -3060,6 +3068,8 @@ class catch_unraisable_exception:
         self._old_hook = None
 
     def _hook(self, unraisable):
+        # Storing unraisable.object can resurrect an object which is being
+        # finalized. Storing unraisable.exc_value creates a reference cycle.
         self.unraisable = unraisable
 
     def __enter__(self):
@@ -3068,6 +3078,5 @@ class catch_unraisable_exception:
         return self
 
     def __exit__(self, *exc_info):
-        # Clear the unraisable exception to explicitly break a reference cycle
-        del self.unraisable
         sys.unraisablehook = self._old_hook
+        del self.unraisable

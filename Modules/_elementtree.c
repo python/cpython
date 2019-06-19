@@ -3892,7 +3892,7 @@ _elementtree_XMLParser_close_impl(XMLParserObject *self)
     }
     else if (self->handle_close) {
         Py_DECREF(res);
-        return _PyObject_CallNoArg(self->handle_close);
+        return PyObject_CallNoArgs(self->handle_close);
     }
     else {
         return res;

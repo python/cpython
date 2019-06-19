@@ -17,10 +17,12 @@ Data members:
 #include "Python.h"
 #include "code.h"
 #include "frameobject.h"
+#include "pycore_ceval.h"
 #include "pycore_initconfig.h"
+#include "pycore_pathconfig.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
-#include "pycore_pathconfig.h"
 #include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
 #include "pythread.h"
@@ -59,10 +61,10 @@ _Py_IDENTIFIER(stderr);
 _Py_IDENTIFIER(warnoptions);
 _Py_IDENTIFIER(write);
 
-PyObject *
-_PySys_GetObjectId(_Py_Identifier *key)
+static PyObject *
+sys_get_object_id(PyThreadState *tstate, _Py_Identifier *key)
 {
-    PyObject *sd = _PyInterpreterState_GET_UNSAFE()->sysdict;
+    PyObject *sd = tstate->interp->sysdict;
     if (sd == NULL) {
         return NULL;
     }
@@ -70,19 +72,27 @@ _PySys_GetObjectId(_Py_Identifier *key)
 }
 
 PyObject *
+_PySys_GetObjectId(_Py_Identifier *key)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return sys_get_object_id(tstate, key);
+}
+
+PyObject *
 PySys_GetObject(const char *name)
 {
-    PyObject *sd = _PyInterpreterState_GET_UNSAFE()->sysdict;
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *sd = tstate->interp->sysdict;
     if (sd == NULL) {
         return NULL;
     }
     return PyDict_GetItemString(sd, name);
 }
 
-int
-_PySys_SetObjectId(_Py_Identifier *key, PyObject *v)
+static int
+sys_set_object_id(PyThreadState *tstate, _Py_Identifier *key, PyObject *v)
 {
-    PyObject *sd = _PyInterpreterState_GET_UNSAFE()->sysdict;
+    PyObject *sd = tstate->interp->sysdict;
     if (v == NULL) {
         if (_PyDict_GetItemId(sd, key) == NULL) {
             return 0;
@@ -97,9 +107,16 @@ _PySys_SetObjectId(_Py_Identifier *key, PyObject *v)
 }
 
 int
-PySys_SetObject(const char *name, PyObject *v)
+_PySys_SetObjectId(_Py_Identifier *key, PyObject *v)
 {
-    PyObject *sd = _PyInterpreterState_GET_UNSAFE()->sysdict;
+    PyThreadState *tstate = _PyThreadState_GET();
+    return sys_set_object_id(tstate, key, v);
+}
+
+static int
+sys_set_object(PyThreadState *tstate, const char *name, PyObject *v)
+{
+    PyObject *sd = tstate->interp->sysdict;
     if (v == NULL) {
         if (PyDict_GetItemString(sd, name) == NULL) {
             return 0;
@@ -113,10 +130,16 @@ PySys_SetObject(const char *name, PyObject *v)
     }
 }
 
-static int
-should_audit(void)
+int
+PySys_SetObject(const char *name, PyObject *v)
 {
-    PyThreadState *ts = _PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
+    return sys_set_object(tstate, name, v);
+}
+
+static int
+should_audit(PyThreadState *ts)
+{
     if (!ts) {
         return 0;
     }
@@ -134,6 +157,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     PyObject *hooks = NULL;
     PyObject *hook = NULL;
     int res = -1;
+    PyThreadState *ts = _PyThreadState_GET();
 
     /* N format is inappropriate, because you do not know
        whether the reference is consumed by the call.
@@ -141,18 +165,16 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     assert(!argFormat || !strchr(argFormat, 'N'));
 
     /* Early exit when no hooks are registered */
-    if (!should_audit()) {
+    if (!should_audit(ts)) {
         return 0;
     }
 
     _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head;
-    PyThreadState *ts = _PyThreadState_GET();
-    PyInterpreterState *is = ts ? ts->interp : NULL;
     int dtrace = PyDTrace_AUDIT_ENABLED();
 
     PyObject *exc_type, *exc_value, *exc_tb;
     if (ts) {
-        PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
+        _PyErr_Fetch(ts, &exc_type, &exc_value, &exc_tb);
     }
 
     /* Initialize event args now */
@@ -185,6 +207,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     }
 
     /* Call interpreter hooks */
+    PyInterpreterState *is = ts ? ts->interp : NULL;
     if (is && is->audit_hooks) {
         eventName = PyUnicode_FromString(event);
         if (!eventName) {
@@ -206,9 +229,9 @@ PySys_Audit(const char *event, const char *argFormat, ...)
             if (o) {
                 canTrace = PyObject_IsTrue(o);
                 Py_DECREF(o);
-            } else if (PyErr_Occurred() &&
-                       PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                PyErr_Clear();
+            } else if (_PyErr_Occurred(ts) &&
+                       _PyErr_ExceptionMatches(ts, PyExc_AttributeError)) {
+                _PyErr_Clear(ts);
                 canTrace = 0;
             }
             if (canTrace < 0) {
@@ -232,7 +255,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
         }
         ts->use_tracing = (ts->c_tracefunc || ts->c_profilefunc);
         ts->tracing--;
-        if (PyErr_Occurred()) {
+        if (_PyErr_Occurred(ts)) {
             goto exit;
         }
     }
@@ -247,9 +270,9 @@ exit:
 
     if (ts) {
         if (!res) {
-            PyErr_Restore(exc_type, exc_value, exc_tb);
+            _PyErr_Restore(ts, exc_type, exc_value, exc_tb);
         } else {
-            assert(PyErr_Occurred());
+            assert(_PyErr_Occurred(ts));
             Py_XDECREF(exc_type);
             Py_XDECREF(exc_value);
             Py_XDECREF(exc_tb);
@@ -263,22 +286,26 @@ exit:
  * finalization. In general, it should not need to be called,
  * and as such it is not defined in any header files.
  */
-void _PySys_ClearAuditHooks(void) {
+void
+_PySys_ClearAuditHooks(void)
+{
     /* Must be finalizing to clear hooks */
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *ts = _PyRuntimeState_GetThreadState(runtime);
     assert(!ts || _Py_CURRENTLY_FINALIZING(runtime, ts));
-    if (!ts || !_Py_CURRENTLY_FINALIZING(runtime, ts))
+    if (!ts || !_Py_CURRENTLY_FINALIZING(runtime, ts)) {
         return;
+    }
 
-    if (Py_VerboseFlag) {
+    const PyConfig *config = &ts->interp->config;
+    if (config->verbose) {
         PySys_WriteStderr("# clear sys.audit hooks\n");
     }
 
     /* Hooks can abort later hooks for this event, but cannot
        abort the clear operation itself. */
     PySys_Audit("cpython._PySys_ClearAuditHooks", NULL);
-    PyErr_Clear();
+    _PyErr_Clear(ts);
 
     _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head, *n;
     _PyRuntime.audit_hook_head = NULL;
@@ -292,13 +319,16 @@ void _PySys_ClearAuditHooks(void) {
 int
 PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
 {
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
     /* Cannot invoke hooks until we are initialized */
-    if (Py_IsInitialized()) {
+    if (runtime->initialized) {
         if (PySys_Audit("sys.addaudithook", NULL) < 0) {
-            if (PyErr_ExceptionMatches(PyExc_Exception)) {
+            if (_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
                 /* We do not report errors derived from Exception */
-                PyErr_Clear();
+                _PyErr_Clear(tstate);
                 return 0;
             }
             return -1;
@@ -310,15 +340,17 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
         e = (_Py_AuditHookEntry*)PyMem_RawMalloc(sizeof(_Py_AuditHookEntry));
         _PyRuntime.audit_hook_head = e;
     } else {
-        while (e->next)
+        while (e->next) {
             e = e->next;
+        }
         e = e->next = (_Py_AuditHookEntry*)PyMem_RawMalloc(
             sizeof(_Py_AuditHookEntry));
     }
 
     if (!e) {
-        if (Py_IsInitialized())
-            PyErr_NoMemory();
+        if (runtime->initialized) {
+            _PyErr_NoMemory(tstate);
+        }
         return -1;
     }
 
@@ -341,17 +373,19 @@ static PyObject *
 sys_addaudithook_impl(PyObject *module, PyObject *hook)
 /*[clinic end generated code: output=4f9c17aaeb02f44e input=0f3e191217a45e34]*/
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
     if (PySys_Audit("sys.addaudithook", NULL) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_Exception)) {
+        if (_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
             /* We do not report errors derived from Exception */
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
             Py_RETURN_NONE;
         }
         return NULL;
     }
 
-    PyInterpreterState *is = _PyInterpreterState_Get();
+    PyInterpreterState *is = tstate->interp;
 
     if (is->audit_hooks == NULL) {
         is->audit_hooks = PyList_New(0);
@@ -375,23 +409,29 @@ Passes the event to any audit hooks that are attached.");
 static PyObject *
 sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+
     if (argc == 0) {
-        PyErr_SetString(PyExc_TypeError, "audit() missing 1 required positional argument: 'event'");
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "audit() missing 1 required positional argument: "
+                         "'event'");
         return NULL;
     }
 
-    if (!should_audit()) {
+    if (!should_audit(tstate)) {
         Py_RETURN_NONE;
     }
 
     PyObject *auditEvent = args[0];
     if (!auditEvent) {
-        PyErr_SetString(PyExc_TypeError, "expected str for argument 'event'");
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "expected str for argument 'event'");
         return NULL;
     }
     if (!PyUnicode_Check(auditEvent)) {
-        PyErr_Format(PyExc_TypeError, "expected str for argument 'event', not %.200s",
-            Py_TYPE(auditEvent)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "expected str for argument 'event', not %.200s",
+                      Py_TYPE(auditEvent)->tp_name);
         return NULL;
     }
     const char *event = PyUnicode_AsUTF8(auditEvent);
@@ -418,7 +458,8 @@ sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
 static PyObject *
 sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
-    assert(!PyErr_Occurred());
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(!_PyErr_Occurred(tstate));
     char *envar = Py_GETENV("PYTHONBREAKPOINT");
 
     if (envar == NULL || strlen(envar) == 0) {
@@ -434,7 +475,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
      * we need to save a copy of envar. */
     envar = _PyMem_RawStrdup(envar);
     if (envar == NULL) {
-        PyErr_NoMemory();
+        _PyErr_NoMemory(tstate);
         return NULL;
     }
     const char *last_dot = strrchr(envar, '.');
@@ -463,7 +504,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_DECREF(modulepath);
 
     if (module == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_ImportError)) {
+        if (_PyErr_ExceptionMatches(tstate, PyExc_ImportError)) {
             goto warn;
         }
         PyMem_RawFree(envar);
@@ -474,7 +515,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_DECREF(module);
 
     if (hook == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
             goto warn;
         }
         PyMem_RawFree(envar);
@@ -487,7 +528,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 
   warn:
     /* If any of the imports went wrong, then warn and ignore. */
-    PyErr_Clear();
+    _PyErr_Clear(tstate);
     int status = PyErr_WarnFormat(
         PyExc_RuntimeWarning, 0,
         "Ignoring unimportable $PYTHONBREAKPOINT: \"%s\"", envar);
@@ -513,7 +554,7 @@ PyDoc_STRVAR(breakpointhook_doc,
 
    Helper function for sys_displayhook(). */
 static int
-sys_displayhook_unencodable(PyObject *outf, PyObject *o)
+sys_displayhook_unencodable(PyThreadState *tstate, PyObject *outf, PyObject *o)
 {
     PyObject *stdout_encoding = NULL;
     PyObject *encoded, *escaped_str, *repr_str, *buffer, *result;
@@ -547,7 +588,7 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
         Py_DECREF(result);
     }
     else {
-        PyErr_Clear();
+        _PyErr_Clear(tstate);
         escaped_str = PyUnicode_FromEncodedObject(encoded,
                                                   stdout_encoding_str,
                                                   "strict");
@@ -585,11 +626,13 @@ sys_displayhook(PyObject *module, PyObject *o)
     PyObject *builtins;
     static PyObject *newline = NULL;
     int err;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     builtins = _PyImport_GetModuleId(&PyId_builtins);
     if (builtins == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
+        if (!_PyErr_Occurred(tstate)) {
+            _PyErr_SetString(tstate, PyExc_RuntimeError,
+                             "lost builtins module");
         }
         return NULL;
     }
@@ -603,19 +646,20 @@ sys_displayhook(PyObject *module, PyObject *o)
     }
     if (_PyObject_SetAttrId(builtins, &PyId__, Py_None) != 0)
         return NULL;
-    outf = _PySys_GetObjectId(&PyId_stdout);
+    outf = sys_get_object_id(tstate, &PyId_stdout);
     if (outf == NULL || outf == Py_None) {
-        PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+        _PyErr_SetString(tstate, PyExc_RuntimeError, "lost sys.stdout");
         return NULL;
     }
     if (PyFile_WriteObject(o, outf, 0) != 0) {
-        if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+        if (_PyErr_ExceptionMatches(tstate, PyExc_UnicodeEncodeError)) {
             /* repr(o) is not encodable to sys.stdout.encoding with
              * sys.stdout.errors error handler (which is probably 'strict') */
-            PyErr_Clear();
-            err = sys_displayhook_unencodable(outf, o);
-            if (err)
+            _PyErr_Clear(tstate);
+            err = sys_displayhook_unencodable(tstate, outf, o);
+            if (err) {
                 return NULL;
+            }
         }
         else {
             return NULL;
@@ -722,7 +766,8 @@ sys_exit_impl(PyObject *module, PyObject *status)
 /*[clinic end generated code: output=13870986c1ab2ec0 input=a737351f86685e9c]*/
 {
     /* Raise SystemExit so callers may catch it or clean up. */
-    PyErr_SetObject(PyExc_SystemExit, status);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_SetObject(tstate, PyExc_SystemExit, status);
     return NULL;
 }
 
@@ -751,8 +796,8 @@ static PyObject *
 sys_getfilesystemencoding_impl(PyObject *module)
 /*[clinic end generated code: output=1dc4bdbe9be44aa7 input=8475f8649b8c7d8c]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    const PyConfig *config = &interp->config;
+    PyThreadState *tstate = _PyThreadState_GET();
+    const PyConfig *config = &tstate->interp->config;
     return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
 }
 
@@ -766,8 +811,8 @@ static PyObject *
 sys_getfilesystemencodeerrors_impl(PyObject *module)
 /*[clinic end generated code: output=ba77b36bbf7c96f5 input=22a1e8365566f1e5]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    const PyConfig *config = &interp->config;
+    PyThreadState *tstate = _PyThreadState_GET();
+    const PyConfig *config = &tstate->interp->config;
     return PyUnicode_FromWideChar(config->filesystem_errors, -1);
 }
 
@@ -788,14 +833,15 @@ static PyObject *
 sys_intern_impl(PyObject *module, PyObject *s)
 /*[clinic end generated code: output=be680c24f5c9e5d6 input=849483c006924e2f]*/
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     if (PyUnicode_CheckExact(s)) {
         Py_INCREF(s);
         PyUnicode_InternInPlace(&s);
         return s;
     }
     else {
-        PyErr_Format(PyExc_TypeError,
-                     "can't intern %.400s", s->ob_type->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "can't intern %.400s", s->ob_type->tp_name);
         return NULL;
     }
 }
@@ -833,19 +879,17 @@ static PyObject *
 call_trampoline(PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
-    PyObject *result;
-    PyObject *stack[3];
-
     if (PyFrame_FastToLocalsWithError(frame) < 0) {
         return NULL;
     }
 
+    PyObject *stack[3];
     stack[0] = (PyObject *)frame;
     stack[1] = whatstrings[what];
     stack[2] = (arg != NULL) ? arg : Py_None;
 
     /* call the Python-level function */
-    result = _PyObject_FastCall(callback, stack, 3);
+    PyObject *result = _PyObject_FastCall(callback, stack, 3);
 
     PyFrame_LocalsToFast(frame, 1);
     if (result == NULL) {
@@ -1001,11 +1045,12 @@ sys_setcheckinterval_impl(PyObject *module, int n)
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "sys.getcheckinterval() and sys.setcheckinterval() "
                      "are deprecated.  Use sys.setswitchinterval() "
-                     "instead.", 1) < 0)
+                     "instead.", 1) < 0) {
         return NULL;
+    }
 
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    interp->check_interval = n;
+    PyThreadState *tstate = _PyThreadState_GET();
+    tstate->interp->check_interval = n;
     Py_RETURN_NONE;
 }
 
@@ -1022,10 +1067,12 @@ sys_getcheckinterval_impl(PyObject *module)
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "sys.getcheckinterval() and sys.setcheckinterval() "
                      "are deprecated.  Use sys.getswitchinterval() "
-                     "instead.", 1) < 0)
+                     "instead.", 1) < 0) {
         return NULL;
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    return PyLong_FromLong(interp->check_interval);
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    return PyLong_FromLong(tstate->interp->check_interval);
 }
 
 /*[clinic input]
@@ -1048,9 +1095,10 @@ static PyObject *
 sys_setswitchinterval_impl(PyObject *module, double interval)
 /*[clinic end generated code: output=65a19629e5153983 input=561b477134df91d9]*/
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     if (interval <= 0.0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "switch interval must be strictly positive");
+        _PyErr_SetString(tstate, PyExc_ValueError,
+                         "switch interval must be strictly positive");
         return NULL;
     }
     _PyEval_SetSwitchInterval((unsigned long) (1e6 * interval));
@@ -1089,11 +1137,11 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
 /*[clinic end generated code: output=35e1c64754800ace input=b0f7a23393924af3]*/
 {
     int mark;
-    PyThreadState *tstate;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     if (new_limit < 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "recursion limit must be greater or equal than 1");
+        _PyErr_SetString(tstate, PyExc_ValueError,
+                         "recursion limit must be greater or equal than 1");
         return NULL;
     }
 
@@ -1107,12 +1155,11 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
        the new low-water mark. Otherwise it may not be possible anymore to
        reset the overflowed flag to 0. */
     mark = _Py_RecursionLimitLowerWaterMark(new_limit);
-    tstate = _PyThreadState_GET();
     if (tstate->recursion_depth >= mark) {
-        PyErr_Format(PyExc_RecursionError,
-                     "cannot set the recursion limit to %i at "
-                     "the recursion depth %i: the limit is too low",
-                     new_limit, tstate->recursion_depth);
+        _PyErr_Format(tstate, PyExc_RecursionError,
+                      "cannot set the recursion limit to %i at "
+                      "the recursion depth %i: the limit is too low",
+                      new_limit, tstate->recursion_depth);
         return NULL;
     }
 
@@ -1137,11 +1184,12 @@ static PyObject *
 sys_set_coroutine_origin_tracking_depth_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=0a2123c1cc6759c5 input=a1d0a05f89d2c426]*/
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     if (depth < 0) {
-        PyErr_SetString(PyExc_ValueError, "depth must be >= 0");
+        _PyErr_SetString(tstate, PyExc_ValueError, "depth must be >= 0");
         return NULL;
     }
-    _PyEval_SetCoroutineOriginTrackingDepth(depth);
+    _PyEval_SetCoroutineOriginTrackingDepth(tstate, depth);
     Py_RETURN_NONE;
 }
 
@@ -1185,6 +1233,7 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
     static char *keywords[] = {"firstiter", "finalizer", NULL};
     PyObject *firstiter = NULL;
     PyObject *finalizer = NULL;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     if (!PyArg_ParseTupleAndKeywords(
             args, kw, "|OO", keywords,
@@ -1194,9 +1243,9 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 
     if (finalizer && finalizer != Py_None) {
         if (!PyCallable_Check(finalizer)) {
-            PyErr_Format(PyExc_TypeError,
-                         "callable finalizer expected, got %.50s",
-                         Py_TYPE(finalizer)->tp_name);
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "callable finalizer expected, got %.50s",
+                          Py_TYPE(finalizer)->tp_name);
             return NULL;
         }
         _PyEval_SetAsyncGenFinalizer(finalizer);
@@ -1207,9 +1256,9 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 
     if (firstiter && firstiter != Py_None) {
         if (!PyCallable_Check(firstiter)) {
-            PyErr_Format(PyExc_TypeError,
-                         "callable firstiter expected, got %.50s",
-                         Py_TYPE(firstiter)->tp_name);
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "callable firstiter expected, got %.50s",
+                          Py_TYPE(firstiter)->tp_name);
             return NULL;
         }
         _PyEval_SetAsyncGenFirstiter(firstiter);
@@ -1297,7 +1346,7 @@ static PyStructSequence_Desc hash_info_desc = {
 };
 
 static PyObject *
-get_hash_info(void)
+get_hash_info(PyThreadState *tstate)
 {
     PyObject *hash_info;
     int field = 0;
@@ -1324,7 +1373,7 @@ get_hash_info(void)
                               PyLong_FromLong(hashfunc->seed_bits));
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(Py_HASH_CUTOFF));
-    if (PyErr_Occurred()) {
+    if (_PyErr_Occurred(tstate)) {
         Py_CLEAR(hash_info);
         return NULL;
     }
@@ -1408,6 +1457,7 @@ sys_getwindowsversion_impl(PyObject *module)
     wchar_t kernel32_path[MAX_PATH];
     LPVOID verblock;
     DWORD verblock_size;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionExW((OSVERSIONINFOW*) &ver))
@@ -1458,7 +1508,7 @@ sys_getwindowsversion_impl(PyObject *module)
         realBuild
     ));
 
-    if (PyErr_Occurred()) {
+    if (_PyErr_Occurred(tstate)) {
         Py_DECREF(version);
         return NULL;
     }
@@ -1515,8 +1565,8 @@ static PyObject *
 sys_setdlopenflags_impl(PyObject *module, int new_val)
 /*[clinic end generated code: output=ec918b7fe0a37281 input=4c838211e857a77f]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    interp->dlopenflags = new_val;
+    PyThreadState *tstate = _PyThreadState_GET();
+    tstate->interp->dlopenflags = new_val;
     Py_RETURN_NONE;
 }
 
@@ -1533,8 +1583,8 @@ static PyObject *
 sys_getdlopenflags_impl(PyObject *module)
 /*[clinic end generated code: output=e92cd1bc5005da6e input=dc4ea0899c53b4b6]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    return PyLong_FromLong(interp->dlopenflags);
+    PyThreadState *tstate = _PyThreadState_GET();
+    return PyLong_FromLong(tstate->interp->dlopenflags);
 }
 
 #endif  /* HAVE_DLOPEN */
@@ -1566,17 +1616,20 @@ _PySys_GetSizeOf(PyObject *o)
     PyObject *res = NULL;
     PyObject *method;
     Py_ssize_t size;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     /* Make sure the type is initialized. float gets initialized late */
-    if (PyType_Ready(Py_TYPE(o)) < 0)
+    if (PyType_Ready(Py_TYPE(o)) < 0) {
         return (size_t)-1;
+    }
 
     method = _PyObject_LookupSpecial(o, &PyId___sizeof__);
     if (method == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_Format(PyExc_TypeError,
-                         "Type %.100s doesn't define __sizeof__",
-                         Py_TYPE(o)->tp_name);
+        if (!_PyErr_Occurred(tstate)) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "Type %.100s doesn't define __sizeof__",
+                          Py_TYPE(o)->tp_name);
+        }
     }
     else {
         res = _PyObject_CallNoArg(method);
@@ -1588,11 +1641,12 @@ _PySys_GetSizeOf(PyObject *o)
 
     size = PyLong_AsSsize_t(res);
     Py_DECREF(res);
-    if (size == -1 && PyErr_Occurred())
+    if (size == -1 && _PyErr_Occurred(tstate))
         return (size_t)-1;
 
     if (size < 0) {
-        PyErr_SetString(PyExc_ValueError, "__sizeof__() should return >= 0");
+        _PyErr_SetString(tstate, PyExc_ValueError,
+                          "__sizeof__() should return >= 0");
         return (size_t)-1;
     }
 
@@ -1608,17 +1662,19 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"object", "default", 0};
     size_t size;
     PyObject *o, *dflt = NULL;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:getsizeof",
-                                     kwlist, &o, &dflt))
+                                     kwlist, &o, &dflt)) {
         return NULL;
+    }
 
     size = _PySys_GetSizeOf(o);
 
-    if (size == (size_t)-1 && PyErr_Occurred()) {
+    if (size == (size_t)-1 && _PyErr_Occurred(tstate)) {
         /* Has a default value been given */
-        if (dflt != NULL && PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_Clear();
+        if (dflt != NULL && _PyErr_ExceptionMatches(tstate, PyExc_TypeError)) {
+            _PyErr_Clear(tstate);
             Py_INCREF(dflt);
             return dflt;
         }
@@ -1716,7 +1772,8 @@ static PyObject *
 sys__getframe_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
-    PyFrameObject *f = _PyThreadState_GET()->frame;
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyFrameObject *f = tstate->frame;
 
     if (PySys_Audit("sys._getframe", "O", f) < 0) {
         return NULL;
@@ -1727,8 +1784,8 @@ sys__getframe_impl(PyObject *module, int depth)
         --depth;
     }
     if (f == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "call stack is not deep enough");
+        _PyErr_SetString(tstate, PyExc_ValueError,
+                         "call stack is not deep enough");
         return NULL;
     }
     Py_INCREF(f);
@@ -2078,10 +2135,9 @@ _clear_all_preinit_options(void)
 }
 
 static int
-_PySys_ReadPreInitOptions(void)
+sys_read_preinit_options(PyThreadState *tstate)
 {
     /* Rerun the add commands with the actual sys module available */
-    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
         /* Still don't have a thread state, so something is wrong! */
         return -1;
@@ -2102,9 +2158,9 @@ _PySys_ReadPreInitOptions(void)
 }
 
 static PyObject *
-get_warnoptions(void)
+get_warnoptions(PyThreadState *tstate)
 {
-    PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
+    PyObject *warnoptions = sys_get_object_id(tstate, &PyId_warnoptions);
     if (warnoptions == NULL || !PyList_Check(warnoptions)) {
         /* PEP432 TODO: we can reach this if warnoptions is NULL in the main
         *  interpreter config. When that happens, we need to properly set
@@ -2117,9 +2173,10 @@ get_warnoptions(void)
          * reachable again.
          */
         warnoptions = PyList_New(0);
-        if (warnoptions == NULL)
+        if (warnoptions == NULL) {
             return NULL;
-        if (_PySys_SetObjectId(&PyId_warnoptions, warnoptions)) {
+        }
+        if (sys_set_object_id(tstate, &PyId_warnoptions, warnoptions)) {
             Py_DECREF(warnoptions);
             return NULL;
         }
@@ -2137,16 +2194,16 @@ PySys_ResetWarnOptions(void)
         return;
     }
 
-    PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
+    PyObject *warnoptions = sys_get_object_id(tstate, &PyId_warnoptions);
     if (warnoptions == NULL || !PyList_Check(warnoptions))
         return;
     PyList_SetSlice(warnoptions, 0, PyList_GET_SIZE(warnoptions), NULL);
 }
 
 static int
-_PySys_AddWarnOptionWithError(PyObject *option)
+_PySys_AddWarnOptionWithError(PyThreadState *tstate, PyObject *option)
 {
-    PyObject *warnoptions = get_warnoptions();
+    PyObject *warnoptions = get_warnoptions(tstate);
     if (warnoptions == NULL) {
         return -1;
     }
@@ -2159,10 +2216,11 @@ _PySys_AddWarnOptionWithError(PyObject *option)
 void
 PySys_AddWarnOptionUnicode(PyObject *option)
 {
-    if (_PySys_AddWarnOptionWithError(option) < 0) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_PySys_AddWarnOptionWithError(tstate, option) < 0) {
         /* No return value, therefore clear error state if possible */
-        if (_PyThreadState_UncheckedGet()) {
-            PyErr_Clear();
+        if (tstate) {
+            _PyErr_Clear(tstate);
         }
     }
 }
@@ -2186,15 +2244,16 @@ PySys_AddWarnOption(const wchar_t *s)
 int
 PySys_HasWarnOptions(void)
 {
-    PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *warnoptions = sys_get_object_id(tstate, &PyId_warnoptions);
     return (warnoptions != NULL && PyList_Check(warnoptions)
             && PyList_GET_SIZE(warnoptions) > 0);
 }
 
 static PyObject *
-get_xoptions(void)
+get_xoptions(PyThreadState *tstate)
 {
-    PyObject *xoptions = _PySys_GetObjectId(&PyId__xoptions);
+    PyObject *xoptions = sys_get_object_id(tstate, &PyId__xoptions);
     if (xoptions == NULL || !PyDict_Check(xoptions)) {
         /* PEP432 TODO: we can reach this if xoptions is NULL in the main
         *  interpreter config. When that happens, we need to properly set
@@ -2207,9 +2266,10 @@ get_xoptions(void)
          * reachable again.
          */
         xoptions = PyDict_New();
-        if (xoptions == NULL)
+        if (xoptions == NULL) {
             return NULL;
-        if (_PySys_SetObjectId(&PyId__xoptions, xoptions)) {
+        }
+        if (sys_set_object_id(tstate, &PyId__xoptions, xoptions)) {
             Py_DECREF(xoptions);
             return NULL;
         }
@@ -2223,7 +2283,8 @@ _PySys_AddXOptionWithError(const wchar_t *s)
 {
     PyObject *name = NULL, *value = NULL;
 
-    PyObject *opts = get_xoptions();
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *opts = get_xoptions(tstate);
     if (opts == NULL) {
         goto error;
     }
@@ -2264,8 +2325,8 @@ PySys_AddXOption(const wchar_t *s)
     }
     if (_PySys_AddXOptionWithError(s) < 0) {
         /* No return value, therefore clear error state if possible */
-        if (_PyThreadState_UncheckedGet()) {
-            PyErr_Clear();
+        if (tstate) {
+            _PyErr_Clear(tstate);
         }
     }
 }
@@ -2273,7 +2334,8 @@ PySys_AddXOption(const wchar_t *s)
 PyObject *
 PySys_GetXOptions(void)
 {
-    return get_xoptions();
+    PyThreadState *tstate = _PyThreadState_GET();
+    return get_xoptions(tstate);
 }
 
 /* XXX This doc string is too long to be a single string literal in VC++ 5.0.
@@ -2413,12 +2475,12 @@ static PyStructSequence_Desc flags_desc = {
 };
 
 static PyObject*
-make_flags(_PyRuntimeState *runtime, PyInterpreterState *interp)
+make_flags(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
     int pos = 0;
     PyObject *seq;
     const PyPreConfig *preconfig = &runtime->preconfig;
-    const PyConfig *config = &interp->config;
+    const PyConfig *config = &tstate->interp->config;
 
     seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL)
@@ -2446,7 +2508,7 @@ make_flags(_PyRuntimeState *runtime, PyInterpreterState *interp)
     SetFlag(preconfig->utf8_mode);
 #undef SetFlag
 
-    if (PyErr_Occurred()) {
+    if (_PyErr_Occurred(tstate)) {
         Py_DECREF(seq);
         return NULL;
     }
@@ -2477,7 +2539,7 @@ static PyStructSequence_Desc version_info_desc = {
 };
 
 static PyObject *
-make_version_info(void)
+make_version_info(PyThreadState *tstate)
 {
     PyObject *version_info;
     char *s;
@@ -2515,7 +2577,7 @@ make_version_info(void)
 #undef SetIntItem
 #undef SetStrItem
 
-    if (PyErr_Occurred()) {
+    if (_PyErr_Occurred(tstate)) {
         Py_CLEAR(version_info);
         return NULL;
     }
@@ -2633,7 +2695,7 @@ static struct PyModuleDef sysmodule = {
     } while (0)
 
 static PyStatus
-_PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
+_PySys_InitCore(_PyRuntimeState *runtime, PyThreadState *tstate,
                 PyObject *sysdict)
 {
     PyObject *version_info;
@@ -2678,7 +2740,7 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
         }
     }
     SET_SYS_FROM_STRING("hash_info",
-                        get_hash_info());
+                        get_hash_info(tstate));
     SET_SYS_FROM_STRING("maxunicode",
                         PyLong_FromLong(0x10FFFF));
     SET_SYS_FROM_STRING("builtin_module_names",
@@ -2709,14 +2771,15 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
             goto type_init_failed;
         }
     }
-    version_info = make_version_info();
+    version_info = make_version_info(tstate);
     SET_SYS_FROM_STRING("version_info", version_info);
     /* prevent user from creating new instances */
     VersionInfoType.tp_init = NULL;
     VersionInfoType.tp_new = NULL;
     res = PyDict_DelItemString(VersionInfoType.tp_dict, "__new__");
-    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
-        PyErr_Clear();
+    if (res < 0 && _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+        _PyErr_Clear(tstate);
+    }
 
     /* implementation */
     SET_SYS_FROM_STRING("implementation", make_impl_info(version_info));
@@ -2728,7 +2791,7 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
         }
     }
     /* Set flags to their default values (updated by _PySys_InitMain()) */
-    SET_SYS_FROM_STRING("flags", make_flags(runtime, interp));
+    SET_SYS_FROM_STRING("flags", make_flags(runtime, tstate));
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
@@ -2740,10 +2803,10 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
     /* prevent user from creating new instances */
     WindowsVersionType.tp_init = NULL;
     WindowsVersionType.tp_new = NULL;
-    assert(!PyErr_Occurred());
+    assert(!_PyErr_Occurred(tstate));
     res = PyDict_DelItemString(WindowsVersionType.tp_dict, "__new__");
-    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
-        PyErr_Clear();
+    if (res < 0 && _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+        _PyErr_Clear(tstate);
     }
 #endif
 
@@ -2766,7 +2829,7 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
         }
     }
 
-    if (PyErr_Occurred()) {
+    if (_PyErr_Occurred(tstate)) {
         goto err_occurred;
     }
     return _PyStatus_OK();
@@ -2849,10 +2912,10 @@ sys_create_xoptions_dict(const PyConfig *config)
 
 
 int
-_PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
+_PySys_InitMain(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
-    PyObject *sysdict = interp->sysdict;
-    const PyConfig *config = &interp->config;
+    PyObject *sysdict = tstate->interp->sysdict;
+    const PyConfig *config = &tstate->interp->config;
     int res;
 
 #define COPY_LIST(KEY, VALUE) \
@@ -2903,34 +2966,37 @@ _PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
 #undef SET_SYS_FROM_WSTR
 
     /* Set flags to their final values */
-    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(runtime, interp));
+    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(runtime, tstate));
     /* prevent user from creating new instances */
     FlagsType.tp_init = NULL;
     FlagsType.tp_new = NULL;
     res = PyDict_DelItemString(FlagsType.tp_dict, "__new__");
     if (res < 0) {
-        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+        if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
             return res;
         }
-        PyErr_Clear();
+        _PyErr_Clear(tstate);
     }
 
     SET_SYS_FROM_STRING_INT_RESULT("dont_write_bytecode",
                          PyBool_FromLong(!config->write_bytecode));
 
-    if (get_warnoptions() == NULL)
+    if (get_warnoptions(tstate) == NULL) {
         return -1;
+    }
 
-    if (get_xoptions() == NULL)
+    if (get_xoptions(tstate) == NULL)
         return -1;
 
     /* Transfer any sys.warnoptions and sys._xoptions set directly
      * by an embedding application from the linked list to the module. */
-    if (_PySys_ReadPreInitOptions() != 0)
+    if (sys_read_preinit_options(tstate) != 0)
         return -1;
 
-    if (PyErr_Occurred())
-        return -1;
+    if (_PyErr_Occurred(tstate)) {
+        goto err_occurred;
+    }
+
     return 0;
 
 err_occurred:
@@ -2973,6 +3039,8 @@ PyStatus
 _PySys_Create(_PyRuntimeState *runtime, PyInterpreterState *interp,
               PyObject **sysmod_p)
 {
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
         return _PyStatus_ERR("can't make modules dictionary");
@@ -3000,7 +3068,7 @@ _PySys_Create(_PyRuntimeState *runtime, PyInterpreterState *interp,
         return status;
     }
 
-    status = _PySys_InitCore(runtime, interp, sysdict);
+    status = _PySys_InitCore(runtime, tstate, sysdict);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -3051,8 +3119,10 @@ PySys_SetPath(const wchar_t *path)
     PyObject *v;
     if ((v = makepathobject(path, DELIM)) == NULL)
         Py_FatalError("can't create sys.path");
-    if (_PySys_SetObjectId(&PyId_path, v) != 0)
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (sys_set_object_id(tstate, &PyId_path, v) != 0) {
         Py_FatalError("can't assign sys.path");
+    }
     Py_DECREF(v);
 }
 
@@ -3078,6 +3148,8 @@ make_sys_argv(int argc, wchar_t * const * argv)
 void
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+
     if (argc < 1 || argv == NULL) {
         /* Ensure at least one (empty) argument is seen */
         wchar_t* empty_argv[1] = {L""};
@@ -3089,7 +3161,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     if (av == NULL) {
         Py_FatalError("no mem for sys.argv");
     }
-    if (PySys_SetObject("argv", av) != 0) {
+    if (sys_set_object(tstate, "argv", av) != 0) {
         Py_DECREF(av);
         Py_FatalError("can't assign sys.argv");
     }
@@ -3105,7 +3177,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
                 Py_FatalError("can't compute path0 from argv");
             }
 
-            PyObject *sys_path = _PySys_GetObjectId(&PyId_path);
+            PyObject *sys_path = sys_get_object_id(tstate, &PyId_path);
             if (sys_path != NULL) {
                 if (PyList_Insert(sys_path, 0, path0) < 0) {
                     Py_DECREF(path0);
@@ -3208,12 +3280,13 @@ sys_write(_Py_Identifier *key, FILE *fp, const char *format, va_list va)
     PyObject *error_type, *error_value, *error_traceback;
     char buffer[1001];
     int written;
+    PyThreadState *tstate = _PyThreadState_GET();
 
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
-    file = _PySys_GetObjectId(key);
+    _PyErr_Fetch(tstate, &error_type, &error_value, &error_traceback);
+    file = sys_get_object_id(tstate, key);
     written = PyOS_vsnprintf(buffer, sizeof(buffer), format, va);
     if (sys_pyfile_write(buffer, file) != 0) {
-        PyErr_Clear();
+        _PyErr_Clear(tstate);
         fputs(buffer, fp);
     }
     if (written < 0 || (size_t)written >= sizeof(buffer)) {
@@ -3221,7 +3294,7 @@ sys_write(_Py_Identifier *key, FILE *fp, const char *format, va_list va)
         if (sys_pyfile_write(truncated, file) != 0)
             fputs(truncated, fp);
     }
-    PyErr_Restore(error_type, error_value, error_traceback);
+    _PyErr_Restore(tstate, error_type, error_value, error_traceback);
 }
 
 void
@@ -3250,20 +3323,21 @@ sys_format(_Py_Identifier *key, FILE *fp, const char *format, va_list va)
     PyObject *file, *message;
     PyObject *error_type, *error_value, *error_traceback;
     const char *utf8;
+    PyThreadState *tstate = _PyThreadState_GET();
 
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
-    file = _PySys_GetObjectId(key);
+    _PyErr_Fetch(tstate, &error_type, &error_value, &error_traceback);
+    file = sys_get_object_id(tstate, key);
     message = PyUnicode_FromFormatV(format, va);
     if (message != NULL) {
         if (sys_pyfile_write_unicode(message, file) != 0) {
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
             utf8 = PyUnicode_AsUTF8(message);
             if (utf8 != NULL)
                 fputs(utf8, fp);
         }
         Py_DECREF(message);
     }
-    PyErr_Restore(error_type, error_value, error_traceback);
+    _PyErr_Restore(tstate, error_type, error_value, error_traceback);
 }
 
 void
