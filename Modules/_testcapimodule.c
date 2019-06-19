@@ -12,6 +12,10 @@
 
 #define PY_SSIZE_T_CLEAN
 
+/* We test deprecated functionality on purpose,
+ * so we disable the Py_DEPRECATED macro. */
+#define Py_DEPRECATED(VERSION_UNUSED)
+
 #include "Python.h"
 #include "datetime.h"
 #include "marshal.h"
@@ -6008,7 +6012,7 @@ PyInit__testcapi(void)
     Py_INCREF(&MyList_Type);
     PyModule_AddObject(m, "MyList", (PyObject *)&MyList_Type);
 
-    /* Old Cython code sets tp_print to 0, we check that
+    /* bpo-37250: old Cython code sets tp_print to 0, we check that
      * this doesn't break anything. */
     MyList_Type.tp_print = 0;
 

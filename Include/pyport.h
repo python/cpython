@@ -510,6 +510,7 @@ extern "C" {
  *    Py_DEPRECATED(3.4) typedef int T1;
  *    Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
  */
+#ifndef Py_DEPRECATED
 #if defined(__GNUC__) \
     && ((__GNUC__ >= 4) || (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1))
 #define Py_DEPRECATED(VERSION_UNUSED) __attribute__((__deprecated__))
@@ -518,6 +519,7 @@ extern "C" {
                                           "deprecated in " #VERSION))
 #else
 #define Py_DEPRECATED(VERSION_UNUSED)
+#endif
 #endif
 
 
