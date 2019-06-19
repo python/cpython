@@ -2554,11 +2554,13 @@ class Symlink(unittest.TestCase):
                               'link_to_link': 'link_to_file',
                               'broken_link': 'non-extant',
                               'link_to_broken_link': 'broken_link'}
+
         self.tmp_dir = tempfile.mkdtemp()
         for name, value in extant_dirs.items():
             path = os.path.join(self.tmp_dir, value)
             os.mkdir(path)
             setattr(self, name, path)
+
         for name, value in extant_files.items():
             path = os.path.join(self.tmp_dir, value)
             open(path, 'w').close()  # os.mknod needs root on MacOS
@@ -2573,7 +2575,9 @@ class Symlink(unittest.TestCase):
             self.extant_symlinks.append(dst)
             self.symlink_to_path[link_name] = dst
 
-        # Create pathnames for new directories, files and symlinks XXX dirs
+        self.srcs = [self.src_file1, self.src_file2, '../x/y/relative']
+
+        # Create pathnames for new directories, files and symlinks
         new_paths = {'new1': 'new1', 'new2': os.path.join('dd1', 'new2')}
         # Add relative links
         for name, value in new_paths.items():
@@ -2611,7 +2615,7 @@ class Symlink(unittest.TestCase):
 
     @unittest.expectedFailure
     def test_overwrite_passed_for_each_src(self):
-        srcs = self.extant_symlinks
+        srcs = self.srcs
 
     #
     # Single source
@@ -2678,18 +2682,16 @@ class Symlink(unittest.TestCase):
     # List of sources
     #
     def test_list_dst_is_directory(self):
-        srcs = [self.src_file1, self.src_file2]
         dirs = {'directory': self.dst_dir1,
                 'symlink_to_dir': self.link_to_dir}
         for description, dir_path in dirs.items():
             with self.subTest(type=description):
-                shutil.symlink(srcs, dir_path)
-                for src in srcs:
+                shutil.symlink(self.srcs, dir_path)
+                for src in self.srcs:
                     link_path = os.path.join(dir_path, os.path.basename(src))
                     self.assertEqual(os.readlink(link_path), src)
 
     def test_list_dst_not_directory(self):
-        srcs = [self.src_file1, self.src_file2]
         exist = {'file': self.dst_file1, 'link_to_file': self.link_to_file,
                  'link_to_link': self.link_to_link}
         absent = {'absent': self.absent, 'broken_link': self.broken_link,
@@ -2699,13 +2701,13 @@ class Symlink(unittest.TestCase):
             self.assertTrue(os.path.exists(dst_path))
             with self.subTest(type=description):
                 with self.assertRaises(NotADirectoryError):
-                    shutil.symlink(srcs, dst_path)
+                    shutil.symlink(self.srcs, dst_path)
 
         for description, dst_path in absent.items():
             self.assertFalse(os.path.exists(dst_path))
             with self.subTest(type=description):
                 with self.assertRaises(FileNotFoundError):
-                    shutil.symlink(srcs, dst_path)
+                    shutil.symlink(self.srcs, dst_path)
 
     #
     # OLD TESTS
