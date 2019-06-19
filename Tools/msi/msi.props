@@ -87,15 +87,16 @@
             PyArchExt=$(PyArchExt);
             PyTestExt=$(PyTestExt);
             OptionalFeatureName=$(OutputName);
+            ssltag=-1_1;
         </DefineConstants>
         <DefineConstants Condition="'$(CRTRedist)' != ''">
             $(DefineConstants);CRTRedist=$(CRTRedist);
         </DefineConstants>
         <DefineConstants Condition="$(Platform) != 'x64'">
-            $(DefineConstants);Suffix32=-32;ssltag=-1_1;
+            $(DefineConstants);Suffix32=-32;
         </DefineConstants>
         <DefineConstants Condition="$(Platform) == 'x64'">
-            $(DefineConstants);Suffix32=;ssltag=-1_1-x64;
+            $(DefineConstants);Suffix32=;
         </DefineConstants>
     </PropertyGroup>
 
