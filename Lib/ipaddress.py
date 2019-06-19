@@ -1517,6 +1517,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
             ValueError: If strict is True and a network address is not
               supplied.
         """
+        _BaseNetwork.__init__(self, address)
         addr, mask = self._split_addr_prefix(address)
 
         self.network_address = IPv4Address(addr)
@@ -2165,8 +2166,8 @@ class IPv6Network(_BaseV6, _BaseNetwork):
               an IPv6 address.
             ValueError: If strict was True and a network address was not
               supplied.
-
         """
+        _BaseNetwork.__init__(self, address)
         addr, mask = self._split_addr_prefix(address)
 
         self.network_address = IPv6Address(addr)
