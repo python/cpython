@@ -2638,17 +2638,6 @@ class Symlink(unittest.TestCase):
                 with self.assertRaises(FileExistsError):
                     shutil.symlink(src, dst_path)
 
-    def test_1src_dst_existing_dir(self):
-        with self.assertRaises(FileExistsError):  # As per os.symlink behavior
-            shutil.symlink(self.src_file1, self.dst_dir1)
-
-    def test_1src_dst_existing_symlink(self):
-        for name in self.symlink_names:
-            dst = getattr(self, name)
-            with self.subTest(symlink_type=name):
-                with self.assertRaises(FileExistsError):
-                    shutil.symlink(self.src_file1, dst)
-
     # Overwrite=True
 
     def test_overwrite_not_exist(self):
@@ -2709,36 +2698,6 @@ class Symlink(unittest.TestCase):
             with self.subTest(type=description):
                 with self.assertRaises(FileNotFoundError):
                     shutil.symlink(self.srcs, dst_path)
-
-    #
-    # OLD TESTS
-    #
-        # print(subprocess.run(['ls', '-l', self.tmp_dir], stdout=subprocess.PIPE).stdout) XXX
-
-        # link_path = os.path.join(self.dst_dir1, os.path.basename(self.src_file1))
-    def test_2src_dst_file(self):
-        with self.assertRaises(NotADirectoryError):
-            shutil.symlink([self.src_file1, self.src_file2], self.dst_file1)
-
-    def test_2src_dst_not_exist(self):
-        with self.assertRaises(NotADirectoryError):
-            shutil.symlink([self.src_file1, self.src_file2], self.np1)
-
-    def test_dst_file_exists(self):
-        with self.assertRaises(FileExistsError):
-            shutil.symlink(self.src_file1, self.dst_file1)
-
-    def test_overwrite(self):
-        shutil.symlink(self.src_file1, self.dst_file1, overwrite=True)
-        self.assertEqual(self.src_file1, os.readlink(self.dst_file1))
-
-
-    def test_dst_dir_relative(self):
-        pass
-
-    def test_only_two_positional_args(self):
-        with self.assertRaises(TypeError):
-            shutil.symlink(self.src_file1, self.dst_file1, True)
 
 
 class PublicAPITests(unittest.TestCase):
