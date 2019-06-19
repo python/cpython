@@ -1001,6 +1001,13 @@ The module defines the following classes, functions and decorators:
 
    .. versionadded:: 3.8
 
+.. class:: ForwardRef
+
+   A class used for internal typing representation of string forward references.
+   For example, ``List["SomeClass"]`` is implicitly transformed into
+   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   a user, but may be used by introspection tools.
+
 .. function:: NewType(typ)
 
    A helper function to indicate a distinct types to a typechecker,
