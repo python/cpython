@@ -4172,6 +4172,37 @@ class ModuleLevelMiscTest(BaseTest):
         logging.setLoggerClass(logging.Logger)
         self.assertEqual(logging.getLoggerClass(), logging.Logger)
 
+    def test_subclass_logger_cache(self):
+        # bpo-37258
+        message = []
+
+        class MyLogger(logging.getLoggerClass()):
+            def __init__(self, name='MyLogger', level=logging.NOTSET):
+                super().__init__(name, level)
+                message.append('initialized')
+
+        logging.setLoggerClass(MyLogger)
+        logger = logging.getLogger('just_some_logger')
+        self.assertEqual(message, ['initialized'])
+        stream = io.StringIO()
+        h = logging.StreamHandler(stream)
+        logger.addHandler(h)
+        try:
+            logger.setLevel(logging.DEBUG)
+            logger.debug("hello")
+            self.assertEqual(stream.getvalue().strip(), "hello")
+
+            stream.truncate(0)
+            stream.seek(0)
+
+            logger.setLevel(logging.INFO)
+            logger.debug("hello")
+            self.assertEqual(stream.getvalue(), "")
+        finally:
+            logger.removeHandler(h)
+            h.close()
+            logging.setLoggerClass(logging.Logger)
+
     @support.requires_type_collecting
     def test_logging_at_shutdown(self):
         # Issue #20037
