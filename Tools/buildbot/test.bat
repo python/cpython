@@ -2,7 +2,7 @@
 rem Used by the buildbot "test" step.
 setlocal
 
-set PATH=%PATH%;%SystemRoot%\SysNative\OpenSSH
+set PATH=%PATH%;%SystemRoot%\SysNative\OpenSSH;%SystemRoot%\System32\OpenSSH
 set here=%~dp0
 set rt_opts=-q -d
 set regrtest_args=-j1
@@ -32,9 +32,6 @@ if "%SSH_SERVER%"=="" goto :Arm32SshHelp
 if "%PYTHON_SOURCE%"=="" (set PYTHON_SOURCE=%here%..\..\)
 if "%REMOTE_PYTHON_DIR%"=="" (set REMOTE_PYTHON_DIR=C:\python\)
 if NOT "%REMOTE_PYTHON_DIR:~-1,1%"=="\" (set REMOTE_PYTHON_DIR=%REMOTE_PYTHON_DIR%\)
-
-ssh %SSH_SERVER% echo Make sure we can find SSH and SSH_SERVER variable is valid
-if %ERRORLEVEL% NEQ 0 (echo SSH does not work) & exit /b 1
 
 set TEMP_ARGS=--temp %REMOTE_PYTHON_DIR%temp
 
