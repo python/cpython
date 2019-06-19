@@ -29,7 +29,7 @@ ssl = support.import_module("ssl")
 from ssl import TLSVersion, _TLSContentType, _TLSMessageType, _TLSAlertType
 
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
-Py_DEBUG_Win32 = Py_DEBUG and sys.platform=='win32'
+Py_DEBUG_WIN32 = Py_DEBUG and sys.platform == 'win32'
 
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = support.HOST
