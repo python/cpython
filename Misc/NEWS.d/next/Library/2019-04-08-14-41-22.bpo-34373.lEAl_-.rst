@@ -1,0 +1,2 @@
+Fix :func:`time.mktime` error handling on AIX for year before 1970.
+Fix `test_time.test_pthread_getcpuclockid` for AIX in 32-bit mode.

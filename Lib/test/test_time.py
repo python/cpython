@@ -120,7 +120,13 @@ class TimeTestCase(unittest.TestCase):
     def test_pthread_getcpuclockid(self):
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)
-        self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        # when in 32-bit mode AIX only returns the predefined constant
+        if not platform.system() == "AIX":
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        elif (sys.maxsize.bit_length() > 32):
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        else:
+            self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
         t1 = time.clock_gettime(clk_id)
         t2 = time.clock_gettime(clk_id)
         self.assertLessEqual(t1, t2)

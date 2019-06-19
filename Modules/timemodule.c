@@ -960,44 +960,68 @@ not present, current time as returned by localtime() is used.");
 
 #ifdef HAVE_MKTIME
 static PyObject *
-time_mktime(PyObject *self, PyObject *tup)
+time_mktime(PyObject *self, PyObject *tm_tuple)
 {
-    struct tm buf;
+    struct tm tm;
     time_t tt;
-    if (!gettmarg(tup, &buf,
+
+    if (!gettmarg(tm_tuple, &tm,
                   "iiiiiiiii;mktime(): illegal time tuple argument"))
     {
         return NULL;
     }
+
 #ifdef _AIX
-    /* year < 1902 or year > 2037 */
-    if (buf.tm_year < 2 || buf.tm_year > 137) {
+    /* bpo-19748: AIX mktime() valid range is 00:00:00 UTC, January 1, 1970
+       to 03:14:07 UTC, January 19, 2038. Thanks to the workaround below,
+       it is possible to support years in range [1902; 2037] */
+    if (tm.tm_year < 2 || tm.tm_year > 137) {
         /* Issue #19748: On AIX, mktime() doesn't report overflow error for
          * timestamp < -2^31 or timestamp > 2**31-1. */
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
         return NULL;
     }
-#else
-    buf.tm_wday = -1;  /* sentinel; original value ignored */
+
+    /* bpo-34373: AIX mktime() has an integer overflow for years in range
+       [1902; 1969]. Workaround the issue by using a year greater or equal than
+       1970 (tm_year >= 70): mktime() behaves correctly in that case
+       (ex: properly report errors). tm_year and tm_wday are adjusted after
+       mktime() call. */
+    int orig_tm_year = tm.tm_year;
+    int delta_days = 0;
+    while (tm.tm_year < 70) {
+        /* Use 4 years to account properly leap years */
+        tm.tm_year += 4;
+        delta_days -= (366 + (365 * 3));
+    }
 #endif
-    tt = mktime(&buf);
+
+    tm.tm_wday = -1;  /* sentinel; original value ignored */
+    tt = mktime(&tm);
+
     /* Return value of -1 does not necessarily mean an error, but tm_wday
      * cannot remain set to -1 if mktime succeeded. */
     if (tt == (time_t)(-1)
-#ifndef _AIX
         /* Return value of -1 does not necessarily mean an error, but
          * tm_wday cannot remain set to -1 if mktime succeeded. */
-        && buf.tm_wday == -1
-#else
-        /* on AIX, tm_wday is always sets, even on error */
-#endif
-       )
+        && tm.tm_wday == -1)
     {
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
         return NULL;
     }
+
+#ifdef _AIX
+    if (delta_days != 0) {
+        tm.tm_year = orig_tm_year;
+        if (tm.tm_wday != -1) {
+            tm.tm_wday = (tm.tm_wday + delta_days) % 7;
+        }
+        tt += delta_days * (24 * 3600);
+    }
+#endif
+
     return PyFloat_FromDouble((double)tt);
 }
 
