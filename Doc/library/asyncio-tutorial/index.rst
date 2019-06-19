@@ -22,4 +22,3 @@ primarily on the "high-level" API, as described in the
    asyncio-cookbook.rst
    case-study-chat-server.rst
    case-study-chat-client-cli.rst
-   case-study-chat-client-gui.rst
