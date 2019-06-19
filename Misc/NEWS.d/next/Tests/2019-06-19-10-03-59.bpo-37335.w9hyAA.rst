@@ -1,0 +1,1 @@
+Fix locale coercion tests on Solaris by adding 646 ASCII alias.
