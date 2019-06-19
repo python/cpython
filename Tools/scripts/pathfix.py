@@ -10,7 +10,7 @@
 # arguments).
 # The original file is kept as a back-up (with a "~" attached to its name),
 # -n flag can be used to disable this.
-# For keeping flags use -f option. For adding flags pass argument to -f option
+# For keeping flags use -f option with. For adding flags pass argument to -f option
 # Undoubtedly you can do this using find and sed or perl, but this is
 # a nice example of Python code that recurses down a directory tree
 # and uses regular expressions.  Also note several subtleties like
@@ -33,7 +33,7 @@ rep = sys.stdout.write
 new_interpreter = None
 preserve_timestamps = False
 create_backup = True
-add_flag = ''
+add_flag = None
 
 
 
@@ -42,7 +42,7 @@ def main():
     global preserve_timestamps
     global create_backup
     global add_flag
-    usage = ('usage: %s -i /interpreter -p -n file-or-directory ...\n' %
+    usage = ('usage: %s -i /interpreter -p -n -f flags-to-add file-or-directory ...\n' %
              sys.argv[0])
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'i:f:pn')
@@ -195,7 +195,7 @@ def fixline(line):
         return line
 
     fixedline = b'#! ' + new_interpreter
-    if not add_flag:
+    if add_flag is None:
         return fixedline + b'\n'
 
     flags, args = parse_shebang(line)
