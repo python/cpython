@@ -72,7 +72,6 @@ PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevelObject(
 PyAPI_FUNC(PyObject *) PyImport_GetImporter(PyObject *path);
 PyAPI_FUNC(PyObject *) PyImport_Import(PyObject *name);
 PyAPI_FUNC(PyObject *) PyImport_ReloadModule(PyObject *m);
-PyAPI_FUNC(void) PyImport_Cleanup(void);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(int) PyImport_ImportFrozenModuleObject(
     PyObject *name
