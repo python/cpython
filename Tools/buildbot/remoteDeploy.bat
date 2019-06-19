@@ -13,13 +13,23 @@ if "%arm32_ssh%"=="true" goto :Arm32Ssh
 
 :Arm32Ssh
 if "%SSH_SERVER%"=="" goto :Arm32SshHelp
+
+rem Make sure we have SSH and SCP
 if "%SSH%"=="" if EXIST %WINDIR%\System32\OpenSSH\ssh.exe (set SSH=%WINDIR%\System32\OpenSSH\ssh.exe)
 if "%SCP%"=="" if EXIST %WINDIR%\System32\OpenSSH\scp.exe (set SCP=%WINDIR%\System32\OpenSSH\scp.exe)
 echo SSH = %SSH%
 echo SCP = %SCP%
+if not EXIST "%SSH%" (echo ERROR: SSH not found) & exit /b 1
+if not EXIST "%SCP%" (echo ERROR: SCP not found) & exit /b 1
+%SSH% %SSH_SERVER% echo Testing SSH...
+if %ERRORLEVEL% NEQ 0 echo SSH does not work
+
 if "%PYTHON_SOURCE%"=="" (set PYTHON_SOURCE=%here%..\..\)
 if "%REMOTE_PYTHON_DIR%"=="" (set REMOTE_PYTHON_DIR=C:\python\)
 if NOT "%REMOTE_PYTHON_DIR:~-1,1%"=="\" (set REMOTE_PYTHON_DIR=%REMOTE_PYTHON_DIR%\)
+echo PYTHON_SOURCE = %PYTHON_SOURCE%
+echo REMOTE_PYTHON_DIR = %REMOTE_PYTHON_DIR%
+
 %SSH% %SSH_SERVER% "if EXIST %REMOTE_PYTHON_DIR% (rd %REMOTE_PYTHON_DIR% /s/q)"
 %SSH% %SSH_SERVER% "md %REMOTE_PYTHON_DIR%PCBuild\arm32"
 %SSH% %SSH_SERVER% "md %REMOTE_PYTHON_DIR%temp"
