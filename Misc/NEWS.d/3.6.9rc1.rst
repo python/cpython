@@ -1,0 +1,165 @@
+.. bpo: 35907
+.. date: 2019-05-21-23-20-18
+.. nonce: NC_zNK
+.. release date: 2019-06-18
+.. section: Security
+
+CVE-2019-9948: Avoid file reading by disallowing ``local-file://`` and
+``local_file://`` URL schemes in ``URLopener().open()`` and
+``URLopener().retrieve()`` of :mod:`urllib.request`.
+
+..
+
+.. bpo: 36742
+.. date: 2019-04-29-15-34-59
+.. nonce: QCUY0i
+.. section: Security
+
+Fixes mishandling of pre-normalization characters in urlsplit().
+
+..
+
+.. bpo: 30458
+.. date: 2019-04-10-08-53-30
+.. nonce: 51E-DA
+.. section: Security
+
+Address CVE-2019-9740 by disallowing URL paths with embedded whitespace or
+control characters through into the underlying http client request.  Such
+potentially malicious header injection URLs now cause an
+http.client.InvalidURL exception to be raised.
+
+..
+
+.. bpo: 36216
+.. date: 2019-03-06-09-38-40
+.. nonce: 6q1m4a
+.. section: Security
+
+Changes urlsplit() to raise ValueError when the URL contains characters that
+decompose under IDNA encoding (NFKC-normalization) into characters that
+affect how the URL is parsed.
+
+..
+
+.. bpo: 33529
+.. date: 2019-02-24-18-48-16
+.. nonce: wpNNBD
+.. section: Security
+
+Prevent fold function used in email header encoding from entering infinite
+loop when there are too many non-ASCII characters in a header.
+
+..
+
+.. bpo: 35746
+.. date: 2019-01-15-18-16-05
+.. nonce: nMSd0j
+.. section: Security
+
+[CVE-2019-5010] Fix a NULL pointer deref in ssl module. The cert parser did
+not handle CRL distribution points with empty DP or URI correctly. A
+malicious or buggy certificate can result into segfault. Vulnerability
+(TALOS-2018-0758) reported by Colin Read and Nicolas Edet of Cisco.
+
+..
+
+.. bpo: 35121
+.. date: 2018-10-31-15-39-17
+.. nonce: EgHv9k
+.. section: Security
+
+Don't send cookies of domain A without Domain attribute to domain B when
+domain A is a suffix match of domain B while using a cookiejar with
+:class:`http.cookiejar.DefaultCookiePolicy` policy. Patch by Karthikeyan
+Singaravelan.
+
+..
+
+.. bpo: 35643
+.. date: 2019-01-02-20-04-49
+.. nonce: DaMiaV
+.. section: Library
+
+Fixed a SyntaxWarning: invalid escape sequence in Modules/_sha3/cleanup.py.
+Patch by Mickaël Schoentgen.
+
+..
+
+.. bpo: 35121
+.. date: 2018-12-30-14-35-19
+.. nonce: oWmiGU
+.. section: Library
+
+Don't set cookie for a request when the request path is a prefix match of
+the cookie's path attribute but doesn't end with "/". Patch by Karthikeyan
+Singaravelan.
+
+..
+
+.. bpo: 35605
+.. date: 2018-12-30-09-56-13
+.. nonce: gAWt32
+.. section: Documentation
+
+Fix documentation build for sphinx<1.6.  Patch by Anthony Sottile.
+
+..
+
+.. bpo: 35564
+.. date: 2018-12-22-22-52-05
+.. nonce: TuEU_D
+.. section: Documentation
+
+Explicitly set master_doc variable in conf.py for compliance with Sphinx 2.0
+
+..
+
+.. bpo: 36816
+.. date: 2019-05-08-15-55-46
+.. nonce: WBKRGZ
+.. section: Tests
+
+Update Lib/test/selfsigned_pythontestdotnet.pem to match
+self-signed.pythontest.net's new TLS certificate.
+
+..
+
+.. bpo: 35925
+.. date: 2019-05-06-18-29-54
+.. nonce: gwQPuC
+.. section: Tests
+
+Skip specific nntplib and ssl networking tests when they would otherwise
+fail due to a modern OS or distro with a default OpenSSL policy of rejecting
+connections to servers with weak certificates or disabling TLS below
+TLSv1.2.
+
+..
+
+.. bpo: 27313
+.. date: 2019-02-24-01-58-38
+.. nonce: Sj9veH
+.. section: Tests
+
+Avoid test_ttk_guionly ComboboxTest failure with macOS Cocoa Tk.
+
+..
+
+.. bpo: 32947
+.. date: 2019-01-18-17-46-10
+.. nonce: Hk0KnM
+.. section: Tests
+
+test_ssl fixes for TLS 1.3 and OpenSSL 1.1.1.
+
+..
+
+.. bpo: 34602
+.. date: 2019-04-29-10-54-14
+.. nonce: Lrl2zU
+.. section: macOS
+
+Avoid failures setting macOS stack resource limit with resource.setrlimit.
+This reverts an earlier fix for bpo-18075 which forced a non-default stack
+size when building the interpreter executable on macOS.
