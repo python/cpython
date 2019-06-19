@@ -215,6 +215,13 @@ class Queue(mixins._LoopBoundMixin):
         if self._unfinished_tasks > 0:
             await self._finished.wait()
 
+    def cancel(self):
+        """Cancel all getters and putters currently waiting"""
+        for fut in self._putters:
+            fut.cancel()
+        for fut in self._getters:
+            fut.cancel()
+
 
 class PriorityQueue(Queue):
     """A subclass of Queue; retrieves entries in priority order (lowest first).
