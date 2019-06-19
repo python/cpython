@@ -89,6 +89,11 @@ Queue
 
       Return the number of items in the queue.
 
+   .. method:: cancel()
+
+      Cancel all currently waiting :meth:`get` or :meth:`put`
+      coroutines.
+
    .. method:: task_done()
 
       Indicate that a formerly enqueued task is complete.
