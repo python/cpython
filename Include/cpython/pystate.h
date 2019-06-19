@@ -148,7 +148,6 @@ struct _ts {
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
 
 PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
-PyAPI_FUNC(void) _PyState_ClearModules(void);
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
