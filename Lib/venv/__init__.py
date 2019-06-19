@@ -41,11 +41,14 @@ class EnvBuilder:
                      environment
     :param prompt: Alternative terminal prefix for the environment.
     :param upgrade_deps: Update the base venv modules to the latest on PyPI
+    :param environmental_variables: Custom environmental variables to be set
+                                    on activate. Variables are reset to their
+                                    initial state on deactivate.
     """
 
     def __init__(self, system_site_packages=False, clear=False,
                  symlinks=False, upgrade=False, with_pip=False, prompt=None,
-                 upgrade_deps=False):
+                 upgrade_deps=False, environmental_variables=None):
         self.system_site_packages = system_site_packages
         self.clear = clear
         self.symlinks = symlinks
@@ -53,6 +56,9 @@ class EnvBuilder:
         self.with_pip = with_pip
         self.prompt = prompt
         self.upgrade_deps = upgrade_deps
+        if os.name != 'posix' and environmental_variables:
+            raise ValueError('environmental variables only supported in POSIX')
+        self.environmental_variables = environmental_variables
 
     def create(self, env_dir):
         """
@@ -317,6 +323,24 @@ class EnvBuilder:
         text = text.replace('__VENV_PROMPT__', context.prompt)
         text = text.replace('__VENV_BIN_NAME__', context.bin_name)
         text = text.replace('__VENV_PYTHON__', context.env_exe)
+
+        if self.environmental_variables is None:
+            activate_extras = ''
+            deactivate_extras = ''
+        else:
+            activate_extras = '\n'.join(
+                f'_OLD_VIRTUAL_{key}="${{{key}}}"\n'
+                f'{key}="{value}"\n'
+                f'export {key}\n'
+                for key, value in self.environmental_variables.items())
+            deactivate_extras = ''.join(
+                # first line is already indented
+                f'{key}="${{_OLD_VIRTUAL_{key}:-}}"\n'
+                f'    export {key}\n'
+                f'    unset _OLD_VIRTUAL_{key}\n'
+                for key in self.environmental_variables)
+        text = text.replace('__VENV_ACTIVATE_EXTRAS__', activate_extras)
+        text = text.replace('__VENV_DEACTIVATE_EXTRAS__', deactivate_extras)
         return text
 
     def install_scripts(self, context, path):
