@@ -14,6 +14,8 @@ deactivate () {
         unset _OLD_VIRTUAL_PYTHONHOME
     fi
 
+    __VENV_DEACTIVATE_EXTRAS__
+
     # This should detect bash and zsh, which have a hash command that must
     # be called to get it to forget past commands.  Without forgetting
     # past commands the $PATH changes we made may not be respected
@@ -43,6 +45,8 @@ export VIRTUAL_ENV
 _OLD_VIRTUAL_PATH="$PATH"
 PATH="$VIRTUAL_ENV/__VENV_BIN_NAME__:$PATH"
 export PATH
+
+__VENV_ACTIVATE_EXTRAS__
 
 # unset PYTHONHOME if set
 # this will fail if PYTHONHOME is set to the empty string (which is bad anyway)
