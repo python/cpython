@@ -2565,14 +2565,13 @@ class Symlink(unittest.TestCase):
             path = os.path.join(self.tmp_dir, value)
             open(path, 'w').close()  # os.mknod needs root on MacOS
             setattr(self, name, path)
-        self.extant_symlinks = []  # One of each type of symlink
+
         self.symlink_to_path = {}  # One of each type of symlink
         for link_name, target in self.symlink_names.items():
             dst = os.path.join(self.tmp_dir, link_name)
             src = os.path.join(self.tmp_dir, target)
             os.symlink(src, dst)
             setattr(self, link_name, dst)
-            self.extant_symlinks.append(dst)
             self.symlink_to_path[link_name] = dst
 
         self.srcs = [self.src_file1, self.src_file2, '../x/y/relative']
