@@ -124,6 +124,7 @@ Removed
 
 * The C function ``PyImport_Cleanup()`` has been removed. It was documented as:
   "Empty the module table.  For internal use only."
+  (Contributed by Victor Stinner in :issue:`36710`.)
 
 * ``_dummy_thread`` and ``dummy_threading`` modules have been removed. These
   modules were deprecated since Python 3.7 which requires threading support.
