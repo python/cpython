@@ -1502,12 +1502,9 @@ class _BasePathTest(object):
         os.mkdir(join('dirF'))
         os.mkdir(join('dirF', 'dirG'))
         os.mkdir(join('dirF', 'dirH'))
-        with open(join('dirF', 'fileF'), 'wb') as f:
-            f.write(b"this is file F\n")
-        with open(join('dirF', 'dirG', 'fileG'), 'wb') as f:
-            f.write(b"this is file G\n")
-        with open(join('dirF', 'dirH', 'fileH'), 'wb') as f:
-            f.write(b"this is file H\n")
+        open(join('dirF', 'fileF'), 'w').close()
+        open(join('dirF', 'dirG', 'fileG'), 'w').close()
+        open(join('dirF', 'dirH', 'fileH'), 'w').close()
         os.symlink(os.path.join('..', 'dirG'), join('dirF', 'dirH', 'linkG'))
         os.symlink(os.path.join('..', 'dirH'), join('dirF', 'dirG', 'linkH'))
         try:
