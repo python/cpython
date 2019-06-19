@@ -5,6 +5,11 @@
 extern "C" {
 #endif
 
+PyAPI_FUNC(PyObject *) _PyImport_FindBuiltin(
+    PyThreadState *tstate,
+    const char *name             /* UTF-8 encoded string */
+    );
+
 extern void _PyImport_ReInitLock(void);
 
 #ifdef __cplusplus
