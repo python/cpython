@@ -12,10 +12,6 @@
 
 #define PY_SSIZE_T_CLEAN
 
-/* We test deprecated functionality on purpose,
- * so we disable the Py_DEPRECATED macro. */
-#define Py_DEPRECATED(VERSION_UNUSED)
-
 #include "Python.h"
 #include "datetime.h"
 #include "marshal.h"
