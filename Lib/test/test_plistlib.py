@@ -486,6 +486,11 @@ class TestPlistlib(unittest.TestCase):
         self.assertRaises(ValueError, plistlib.loads,
                           b"<plist><integer>not real</integer></plist>")
 
+    def test_leadingwhitspaces(self):
+        self.assertEqual(plistlib.loads(b"   <plist><integer>1</integer></plist>"), 1)
+        data = plistlib.dumps(1, fmt=plistlib.FMT_XML)
+        self.assertEqual(plistlib.loads(b"  " + data), 1)
+
     def test_xml_encodings(self):
         base = TESTDATA[plistlib.FMT_XML]
 

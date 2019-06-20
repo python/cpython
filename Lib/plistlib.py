@@ -996,7 +996,7 @@ def loads(value, *, fmt=None, use_builtin_types=True, dict_type=dict):
     """Read a .plist file from a bytes object.
     Return the unpacked root object (which usually is a dictionary).
     """
-    fp = BytesIO(value)
+    fp = BytesIO(value.lstrip())
     return load(
         fp, fmt=fmt, use_builtin_types=use_builtin_types, dict_type=dict_type)
 
