@@ -3005,7 +3005,7 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     }
     if (match) {
         PyObject *msg = _PyUnicode_FROM_ASCII("Missing parentheses in call "
-                                             "to 'exec'");
+                                              "to 'exec'");
         if (msg == NULL) {
             return -1;
         }
