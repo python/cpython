@@ -125,7 +125,7 @@ _Warnings_InitState(WarningsState *st)
     }
 
     if (st->default_action == NULL) {
-        st->default_action = PyUnicode_FromString("default");
+        st->default_action = _PyUnicode_FROM_ASCII("default");
         if (st->default_action == NULL) {
             goto error;
         }
@@ -438,7 +438,7 @@ normalize_module(PyObject *filename)
         return NULL;
 
     if (len == 0)
-        return PyUnicode_FromString("<unknown>");
+        return _PyUnicode_FROM_ASCII("<unknown>");
 
     kind = PyUnicode_KIND(filename);
     data = PyUnicode_DATA(filename);
@@ -760,12 +760,12 @@ is_internal_frame(PyFrameObject *frame)
     int contains;
 
     if (importlib_string == NULL) {
-        importlib_string = PyUnicode_FromString("importlib");
+        importlib_string = _PyUnicode_FROM_ASCII("importlib");
         if (importlib_string == NULL) {
             return 0;
         }
 
-        bootstrap_string = PyUnicode_FromString("_bootstrap");
+        bootstrap_string = _PyUnicode_FROM_ASCII("_bootstrap");
         if (bootstrap_string == NULL) {
             Py_DECREF(importlib_string);
             return 0;
@@ -836,7 +836,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
 
     if (f == NULL) {
         globals = _PyInterpreterState_GET_UNSAFE()->sysdict;
-        *filename = PyUnicode_FromString("sys");
+        *filename = _PyUnicode_FROM_ASCII("sys");
         *lineno = 1;
     }
     else {
@@ -878,7 +878,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         goto handle_error;
     }
     else {
-        *module = PyUnicode_FromString("<string>");
+        *module = _PyUnicode_FROM_ASCII("<string>");
         if (*module == NULL)
             goto handle_error;
     }

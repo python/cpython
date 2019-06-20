@@ -1218,7 +1218,7 @@ typedef struct {
 static PyObject *
 context_token_missing_tp_repr(PyObject *self)
 {
-    return PyUnicode_FromString("<Token.MISSING>");
+    return _PyUnicode_FROM_ASCII("<Token.MISSING>");
 }
 
 

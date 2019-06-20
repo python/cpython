@@ -414,27 +414,27 @@ SHA3_get_name(SHA3object *self, void *closure)
 {
     PyTypeObject *type = Py_TYPE(self);
     if (type == &SHA3_224type) {
-        return PyUnicode_FromString("sha3_224");
+        return _PyUnicode_FROM_ASCII("sha3_224");
     } else if (type == &SHA3_256type) {
-        return PyUnicode_FromString("sha3_256");
+        return _PyUnicode_FROM_ASCII("sha3_256");
     } else if (type == &SHA3_384type) {
-        return PyUnicode_FromString("sha3_384");
+        return _PyUnicode_FROM_ASCII("sha3_384");
     } else if (type == &SHA3_512type) {
-        return PyUnicode_FromString("sha3_512");
+        return _PyUnicode_FROM_ASCII("sha3_512");
 #ifdef PY_WITH_KECCAK
     } else if (type == &Keccak_224type) {
-        return PyUnicode_FromString("keccak_224");
+        return _PyUnicode_FROM_ASCII("keccak_224");
     } else if (type == &Keccak_256type) {
-        return PyUnicode_FromString("keccak_256");
+        return _PyUnicode_FROM_ASCII("keccak_256");
     } else if (type == &Keccak_384type) {
-        return PyUnicode_FromString("keccak_384");
+        return _PyUnicode_FROM_ASCII("keccak_384");
     } else if (type == &Keccak_512type) {
-        return PyUnicode_FromString("keccak_512");
+        return _PyUnicode_FROM_ASCII("keccak_512");
 #endif
     } else if (type == &SHAKE128type) {
-        return PyUnicode_FromString("shake_128");
+        return _PyUnicode_FROM_ASCII("shake_128");
     } else if (type == &SHAKE256type) {
-        return PyUnicode_FromString("shake_256");
+        return _PyUnicode_FROM_ASCII("shake_256");
     } else {
         PyErr_BadInternalCall();
         return NULL;

@@ -2011,12 +2011,12 @@ dict_repr(PyDictObject *mp)
 
     i = Py_ReprEnter((PyObject *)mp);
     if (i != 0) {
-        return i > 0 ? PyUnicode_FromString("{...}") : NULL;
+        return i > 0 ? _PyUnicode_FROM_ASCII("{...}") : NULL;
     }
 
     if (mp->ma_used == 0) {
         Py_ReprLeave((PyObject *)mp);
-        return PyUnicode_FromString("{}");
+        return _PyUnicode_FROM_ASCII("{}");
     }
 
     _PyUnicodeWriter_Init(&writer);
@@ -4106,7 +4106,7 @@ dictview_repr(_PyDictViewObject *dv)
 
     rc = Py_ReprEnter((PyObject *)dv);
     if (rc != 0) {
-        return rc > 0 ? PyUnicode_FromString("...") : NULL;
+        return rc > 0 ? _PyUnicode_FROM_ASCII("...") : NULL;
     }
     seq = PySequence_List((PyObject *)dv);
     if (seq == NULL) {

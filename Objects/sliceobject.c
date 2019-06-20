@@ -33,13 +33,13 @@ ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static PyObject *
 ellipsis_repr(PyObject *op)
 {
-    return PyUnicode_FromString("Ellipsis");
+    return _PyUnicode_FROM_ASCII("Ellipsis");
 }
 
 static PyObject *
 ellipsis_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    return PyUnicode_FromString("Ellipsis");
+    return _PyUnicode_FROM_ASCII("Ellipsis");
 }
 
 static PyMethodDef ellipsis_methods[] = {

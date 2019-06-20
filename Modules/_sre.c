@@ -1281,7 +1281,7 @@ pattern_repr(PatternObject *obj)
 
     if (PyList_Size(flag_items) > 0) {
         PyObject *flags_result;
-        PyObject *sep = PyUnicode_FromString("|");
+        PyObject *sep = _PyUnicode_FROM_ASCII("|");
         if (!sep)
             goto done;
         flags_result = PyUnicode_Join(sep, flag_items);

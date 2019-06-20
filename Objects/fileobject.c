@@ -456,7 +456,7 @@ get_closed(PyStdPrinter_Object *self, void *closure)
 static PyObject *
 get_mode(PyStdPrinter_Object *self, void *closure)
 {
-    return PyUnicode_FromString("w");
+    return _PyUnicode_FROM_ASCII("w");
 }
 
 static PyObject *

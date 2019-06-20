@@ -348,7 +348,7 @@ static PyMethodDef py_blake2s_methods[] = {
 static PyObject *
 py_blake2s_get_name(BLAKE2sObject *self, void *closure)
 {
-    return PyUnicode_FromString("blake2s");
+    return _PyUnicode_FROM_ASCII("blake2s");
 }
 
 

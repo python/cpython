@@ -117,7 +117,7 @@ _get_tcl_lib_path()
         }
 
         /* Check expected location for an installed Python first */
-        tcl_library_path = PyUnicode_FromString("\\tcl\\tcl" TCL_VERSION);
+        tcl_library_path = _PyUnicode_FROM_ASCII("\\tcl\\tcl" TCL_VERSION);
         if (tcl_library_path == NULL) {
             return NULL;
         }
@@ -431,7 +431,7 @@ Split(const char *list)
     }
 
     if (argc == 0)
-        v = PyUnicode_FromString("");
+        v = _PyUnicode_FROM_ASCII("");
     else if (argc == 1)
         v = unicodeFromTclString(argv[0]);
     else if ((v = PyTuple_New(argc)) != NULL) {
@@ -2278,7 +2278,7 @@ _tkinter_tkapp_split(TkappObject *self, PyObject *arg)
             return FromObj((PyObject*)self, value);
         }
         if (objc == 0)
-            return PyUnicode_FromString("");
+            return _PyUnicode_FROM_ASCII("");
         if (objc == 1)
             return FromObj((PyObject*)self, objv[0]);
         if (!(v = PyTuple_New(objc)))

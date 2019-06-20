@@ -466,7 +466,7 @@ parser_compilest(PyST_Object *self, PyObject *args, PyObject *kw)
         goto error;
 
     if (filename == NULL) {
-        filename = PyUnicode_FromString("<syntax-tree>");
+        filename = _PyUnicode_FROM_ASCII("<syntax-tree>");
         if (filename == NULL)
             goto error;
     }

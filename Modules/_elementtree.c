@@ -341,7 +341,7 @@ element_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject*
 get_attrib_from_keywords(PyObject *kwds)
 {
-    PyObject *attrib_str = PyUnicode_FromString("attrib");
+    PyObject *attrib_str = _PyUnicode_FROM_ASCII("attrib");
     if (attrib_str == NULL) {
         return NULL;
     }
@@ -4073,7 +4073,7 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
 
     if (events_to_report == Py_None) {
         /* default is "end" only */
-        target->end_event_obj = PyUnicode_FromString("end");
+        target->end_event_obj = _PyUnicode_FROM_ASCII("end");
         Py_RETURN_NONE;
     }
 

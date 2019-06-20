@@ -2537,7 +2537,7 @@ delta_bool(PyDateTime_Delta *self)
 static PyObject *
 delta_repr(PyDateTime_Delta *self)
 {
-    PyObject *args = PyUnicode_FromString("");
+    PyObject *args = _PyUnicode_FROM_ASCII("");
 
     if (args == NULL) {
         return NULL;
@@ -2571,7 +2571,7 @@ delta_repr(PyDateTime_Delta *self)
     }
 
     if (PyUnicode_GET_LENGTH(args) == 0) {
-        Py_SETREF(args, PyUnicode_FromString("0"));
+        Py_SETREF(args, _PyUnicode_FROM_ASCII("0"));
         if (args == NULL) {
             return NULL;
         }
@@ -3806,7 +3806,7 @@ timezone_str(PyDateTime_TimeZone *self)
            (GET_TD_DAYS(self->offset) == 0 &&
             GET_TD_SECONDS(self->offset) == 0 &&
             GET_TD_MICROSECONDS(self->offset) == 0))
-        return PyUnicode_FromString("UTC");
+        return _PyUnicode_FROM_ASCII("UTC");
     /* Offset is normalized, so it is negative if days < 0 */
     if (GET_TD_DAYS(self->offset) < 0) {
         sign = '-';

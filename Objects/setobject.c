@@ -2391,7 +2391,7 @@ test_c_api(PySetObject *so, PyObject *Py_UNUSED(ignored))
     assert(!PyFrozenSet_CheckExact(ob));
 
     /* so.clear(); so |= set("abc"); */
-    str = PyUnicode_FromString("abc");
+    str = _PyUnicode_FROM_ASCII("abc");
     if (str == NULL)
         return NULL;
     set_clear_internal(so);
@@ -2509,7 +2509,7 @@ test_c_api(PySetObject *so, PyObject *Py_UNUSED(ignored))
 static PyObject *
 dummy_repr(PyObject *op)
 {
-    return PyUnicode_FromString("<dummy key>");
+    return _PyUnicode_FROM_ASCII("<dummy key>");
 }
 
 static void

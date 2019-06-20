@@ -473,7 +473,7 @@ _hamt_dump_ident(_PyUnicodeWriter *writer, int level)
     PyObject *res = NULL;
     int ret = -1;
 
-    str = PyUnicode_FromString("    ");
+    str = _PyUnicode_FROM_ASCII("    ");
     if (str == NULL) {
         goto error;
     }

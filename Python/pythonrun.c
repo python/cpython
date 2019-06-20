@@ -108,12 +108,12 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     }
     v = _PySys_GetObjectId(&PyId_ps1);
     if (v == NULL) {
-        _PySys_SetObjectId(&PyId_ps1, v = PyUnicode_FromString(">>> "));
+        _PySys_SetObjectId(&PyId_ps1, v = _PyUnicode_FROM_ASCII(">>> "));
         Py_XDECREF(v);
     }
     v = _PySys_GetObjectId(&PyId_ps2);
     if (v == NULL) {
-        _PySys_SetObjectId(&PyId_ps2, v = PyUnicode_FromString("... "));
+        _PySys_SetObjectId(&PyId_ps2, v = _PyUnicode_FROM_ASCII("... "));
         Py_XDECREF(v);
     }
     err = 0;

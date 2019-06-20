@@ -1310,7 +1310,7 @@ _get_peer_alt_names (X509 *certificate) {
                     goto fail;
                 }
 
-                v = PyUnicode_FromString("DirName");
+                v = _PyUnicode_FROM_ASCII("DirName");
                 if (v == NULL) {
                     Py_DECREF(t);
                     goto fail;
@@ -1335,15 +1335,15 @@ _get_peer_alt_names (X509 *certificate) {
                     goto fail;
                 switch (gntype) {
                 case GEN_EMAIL:
-                    v = PyUnicode_FromString("email");
+                    v = _PyUnicode_FROM_ASCII("email");
                     as = name->d.rfc822Name;
                     break;
                 case GEN_DNS:
-                    v = PyUnicode_FromString("DNS");
+                    v = _PyUnicode_FROM_ASCII("DNS");
                     as = name->d.dNSName;
                     break;
                 case GEN_URI:
-                    v = PyUnicode_FromString("URI");
+                    v = _PyUnicode_FROM_ASCII("URI");
                     as = name->d.uniformResourceIdentifier;
                     break;
                 }
@@ -1366,7 +1366,7 @@ _get_peer_alt_names (X509 *certificate) {
                 if (t == NULL)
                     goto fail;
 
-                v = PyUnicode_FromString("Registered ID");
+                v = _PyUnicode_FROM_ASCII("Registered ID");
                 if (v == NULL) {
                     Py_DECREF(t);
                     goto fail;
@@ -1379,7 +1379,7 @@ _get_peer_alt_names (X509 *certificate) {
                     _setSSLError(NULL, 0, __FILE__, __LINE__);
                     goto fail;
                 } else if (len >= (int)sizeof(buf)) {
-                    v = PyUnicode_FromString("<INVALID>");
+                    v = _PyUnicode_FROM_ASCII("<INVALID>");
                 } else {
                     v = PyUnicode_FromStringAndSize(buf, len);
                 }

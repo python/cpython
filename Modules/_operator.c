@@ -1345,7 +1345,7 @@ dotjoinattr(PyObject *attr, PyObject **attrsep)
 {
     if (PyTuple_CheckExact(attr)) {
         if (*attrsep == NULL) {
-            *attrsep = PyUnicode_FromString(".");
+            *attrsep = _PyUnicode_FROM_ASCII(".");
             if (*attrsep == NULL)
                 return NULL;
         }
@@ -1627,7 +1627,7 @@ methodcaller_repr(methodcallerobject *mc)
         }
     }
 
-    sep = PyUnicode_FromString(", ");
+    sep = _PyUnicode_FROM_ASCII(", ");
     if (sep == NULL)
         goto done;
 

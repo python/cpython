@@ -2073,7 +2073,7 @@ _common_reduce(PyByteArrayObject *self, int proto)
         if (Py_SIZE(self))
             latin1 = PyUnicode_DecodeLatin1(buf, Py_SIZE(self), NULL);
         else
-            latin1 = PyUnicode_FromString("");
+            latin1 = _PyUnicode_FROM_ASCII("");
         return Py_BuildValue("(O(Ns)N)", Py_TYPE(self), latin1, "latin-1", dict);
     }
     else {

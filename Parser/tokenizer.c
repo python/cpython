@@ -1805,7 +1805,7 @@ PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
         tok->filename = filename;
     }
     else {
-        tok->filename = PyUnicode_FromString("<string>");
+        tok->filename = _PyUnicode_FROM_ASCII("<string>");
         if (tok->filename == NULL) {
             fclose(fp);
             PyTokenizer_Free(tok);

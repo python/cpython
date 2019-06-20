@@ -123,7 +123,7 @@ namespace_repr(PyObject *ns)
             goto error;
     }
 
-    separator = PyUnicode_FromString(", ");
+    separator = _PyUnicode_FROM_ASCII(", ");
     if (separator == NULL)
         goto error;
 

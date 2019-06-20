@@ -3848,7 +3848,7 @@ format_missing(PyThreadState *tstate, const char *kind,
             return;
         }
         /* Stitch everything up into a nice comma-separated list. */
-        comma = PyUnicode_FromString(", ");
+        comma = _PyUnicode_FROM_ASCII(", ");
         if (comma == NULL) {
             Py_DECREF(tail);
             return;
@@ -3957,7 +3957,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     }
     else {
         /* This will not fail. */
-        kwonly_sig = PyUnicode_FromString("");
+        kwonly_sig = _PyUnicode_FROM_ASCII("");
         assert(kwonly_sig != NULL);
     }
     _PyErr_Format(tstate, PyExc_TypeError,
@@ -4007,7 +4007,7 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
         }
     }
     if (posonly_conflicts) {
-        PyObject* comma = PyUnicode_FromString(", ");
+        PyObject* comma = _PyUnicode_FROM_ASCII(", ");
         if (comma == NULL) {
             goto fail;
         }
@@ -5212,7 +5212,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
  error:
     pkgpath = PyModule_GetFilenameObject(v);
     if (pkgname == NULL) {
-        pkgname_or_unknown = PyUnicode_FromString("<unknown module name>");
+        pkgname_or_unknown = _PyUnicode_FROM_ASCII("<unknown module name>");
         if (pkgname_or_unknown == NULL) {
             Py_XDECREF(pkgpath);
             return NULL;

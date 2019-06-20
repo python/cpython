@@ -3455,10 +3455,10 @@ PyDec_AsFloat(PyObject *dec)
             return NULL;
         }
         if (mpd_isnegative(MPD(dec))) {
-            s = PyUnicode_FromString("-nan");
+            s = _PyUnicode_FROM_ASCII("-nan");
         }
         else {
-            s = PyUnicode_FromString("nan");
+            s = _PyUnicode_FROM_ASCII("nan");
         }
     }
     else {
@@ -3550,7 +3550,7 @@ PyDec_AsTuple(PyObject *dec, PyObject *dummy UNUSED)
     }
 
     if (mpd_isinfinite(x)) {
-        expt = PyUnicode_FromString("F");
+        expt = _PyUnicode_FROM_ASCII("F");
         if (expt == NULL) {
             goto out;
         }
@@ -5565,7 +5565,7 @@ PyInit__decimal(void)
     CHECK_INT(PyType_Ready(&PyDecSignalDictMixin_Type));
     CHECK_INT(PyType_Ready(&PyDecContextManager_Type));
 
-    ASSIGN_PTR(obj, PyUnicode_FromString("decimal"));
+    ASSIGN_PTR(obj, _PyUnicode_FROM_ASCII("decimal"));
     CHECK_INT(PyDict_SetItemString(PyDec_Type.tp_dict, "__module__", obj));
     CHECK_INT(PyDict_SetItemString(PyDecContext_Type.tp_dict,
                                    "__module__", obj));
@@ -5591,7 +5591,7 @@ PyInit__decimal(void)
                                  "namedtuple", "(ss)", "DecimalTuple",
                                  "sign digits exponent"));
 
-    ASSIGN_PTR(obj, PyUnicode_FromString("decimal"));
+    ASSIGN_PTR(obj, _PyUnicode_FROM_ASCII("decimal"));
     CHECK_INT(PyDict_SetItemString(DecimalTuple->tp_dict, "__module__", obj));
     Py_CLEAR(obj);
 

@@ -952,7 +952,7 @@ void _ctypes_extend_error(PyObject *exc_class, const char *fmt, ...)
     cls_str = PyObject_Str(tp);
     if (cls_str) {
         PyUnicode_AppendAndDel(&s, cls_str);
-        PyUnicode_AppendAndDel(&s, PyUnicode_FromString(": "));
+        PyUnicode_AppendAndDel(&s, _PyUnicode_FROM_ASCII(": "));
         if (s == NULL)
             goto error;
     } else
@@ -962,7 +962,7 @@ void _ctypes_extend_error(PyObject *exc_class, const char *fmt, ...)
         PyUnicode_AppendAndDel(&s, msg_str);
     else {
         PyErr_Clear();
-        PyUnicode_AppendAndDel(&s, PyUnicode_FromString("???"));
+        PyUnicode_AppendAndDel(&s, _PyUnicode_FROM_ASCII("???"));
     }
     if (s == NULL)
         goto error;
@@ -1250,7 +1250,7 @@ static PyObject *format_error(PyObject *self, PyObject *args)
         result = PyUnicode_FromWideChar(lpMsgBuf, wcslen(lpMsgBuf));
         LocalFree(lpMsgBuf);
     } else {
-        result = PyUnicode_FromString("<no description>");
+        result = _PyUnicode_FROM_ASCII("<no description>");
     }
     return result;
 }

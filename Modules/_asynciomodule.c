@@ -2390,7 +2390,7 @@ TaskObj_finalize(TaskObj *task)
         goto finally;
     }
 
-    message = PyUnicode_FromString("Task was destroyed but it is pending!");
+    message = _PyUnicode_FROM_ASCII("Task was destroyed but it is pending!");
     if (message == NULL) {
         goto finally;
     }

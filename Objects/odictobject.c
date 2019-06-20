@@ -1383,7 +1383,7 @@ odict_repr(PyODictObject *self)
 
     i = Py_ReprEnter((PyObject *)self);
     if (i != 0) {
-        return i > 0 ? PyUnicode_FromString("...") : NULL;
+        return i > 0 ? _PyUnicode_FROM_ASCII("...") : NULL;
     }
 
     if (PyODict_CheckExact(self)) {

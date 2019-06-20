@@ -139,7 +139,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     }
 
     if (!isolation_level) {
-        isolation_level = PyUnicode_FromString("");
+        isolation_level = _PyUnicode_FROM_ASCII("");
         if (!isolation_level) {
             return -1;
         }

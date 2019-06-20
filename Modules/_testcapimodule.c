@@ -1719,7 +1719,7 @@ test_Z_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (tuple == NULL)
         return NULL;
 
-    obj = PyUnicode_FromString("test");
+    obj = _PyUnicode_FROM_ASCII("test");
     PyTuple_SET_ITEM(tuple, 0, obj);
     Py_INCREF(Py_None);
     PyTuple_SET_ITEM(tuple, 1, Py_None);
@@ -2304,7 +2304,7 @@ datetime_check_tzinfo(PyObject *self, PyObject *args) {
 static PyObject *
 make_timezones_capi(PyObject *self, PyObject *args) {
     PyObject *offset = PyDelta_FromDSU(0, -18000, 0);
-    PyObject *name = PyUnicode_FromString("EST");
+    PyObject *name = _PyUnicode_FROM_ASCII("EST");
 
     PyObject *est_zone_capi = PyDateTimeAPI->TimeZone_FromTimeZone(offset, name);
     PyObject *est_zone_macro = PyTimeZone_FromOffsetAndName(offset, name);
@@ -2325,7 +2325,7 @@ make_timezones_capi(PyObject *self, PyObject *args) {
 static PyObject *
 get_timezones_offset_zero(PyObject *self, PyObject *args) {
     PyObject *offset = PyDelta_FromDSU(0, 0, 0);
-    PyObject *name = PyUnicode_FromString("");
+    PyObject *name = _PyUnicode_FROM_ASCII("");
 
     // These two should return the UTC singleton
     PyObject *utc_singleton_0 = PyTimeZone_FromOffset(offset);
@@ -5013,7 +5013,7 @@ decode_locale_ex(PyObject *self, PyObject *args)
 static PyObject *
 negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyObject *obj = PyUnicode_FromString("negative_refcount");
+    PyObject *obj = _PyUnicode_FROM_ASCII("negative_refcount");
     if (obj == NULL) {
         return NULL;
     }

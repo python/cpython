@@ -1419,13 +1419,13 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
             return NULL;
         }
         if (i > 0) {
-            return PyUnicode_FromString("Infinity");
+            return _PyUnicode_FROM_ASCII("Infinity");
         }
         else if (i < 0) {
-            return PyUnicode_FromString("-Infinity");
+            return _PyUnicode_FROM_ASCII("-Infinity");
         }
         else {
-            return PyUnicode_FromString("NaN");
+            return _PyUnicode_FROM_ASCII("NaN");
         }
     }
     return PyFloat_Type.tp_repr(obj);

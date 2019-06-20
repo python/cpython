@@ -388,12 +388,12 @@ list_repr(PyListObject *v)
     _PyUnicodeWriter writer;
 
     if (Py_SIZE(v) == 0) {
-        return PyUnicode_FromString("[]");
+        return _PyUnicode_FROM_ASCII("[]");
     }
 
     i = Py_ReprEnter((PyObject*)v);
     if (i != 0) {
-        return i > 0 ? PyUnicode_FromString("[...]") : NULL;
+        return i > 0 ? _PyUnicode_FROM_ASCII("[...]") : NULL;
     }
 
     _PyUnicodeWriter_Init(&writer);

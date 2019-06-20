@@ -561,6 +561,9 @@ PyAPI_FUNC(PyObject*) _PyUnicode_FromASCII(
     const char *buffer,
     Py_ssize_t size);
 
+/* Convenient wrapper for _PyUnicode_FromASCII */
+#define _PyUnicode_FROM_ASCII(s) _PyUnicode_FromASCII((s), strlen(s))
+
 /* Compute the maximum character of the substring unicode[start:end].
    Return 127 for an empty string. */
 PyAPI_FUNC(Py_UCS4) _PyUnicode_FindMaxChar (

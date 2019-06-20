@@ -611,11 +611,11 @@ incrementalnewlinedecoder_newlines_get(nldecoder_object *self, void *context)
 {
     switch (self->seennl) {
     case SEEN_CR:
-        return PyUnicode_FromString("\r");
+        return _PyUnicode_FROM_ASCII("\r");
     case SEEN_LF:
-        return PyUnicode_FromString("\n");
+        return _PyUnicode_FROM_ASCII("\n");
     case SEEN_CRLF:
-        return PyUnicode_FromString("\r\n");
+        return _PyUnicode_FROM_ASCII("\r\n");
     case SEEN_CR | SEEN_LF:
         return Py_BuildValue("ss", "\r", "\n");
     case SEEN_CR | SEEN_CRLF:
@@ -1125,7 +1125,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
             */
             if (PyErr_ExceptionMatches(PyExc_ImportError)) {
                 PyErr_Clear();
-                self->encoding = PyUnicode_FromString("ascii");
+                self->encoding = _PyUnicode_FROM_ASCII("ascii");
             }
             else
                 goto error;
@@ -2847,7 +2847,7 @@ textiowrapper_repr(textio *self)
 
     CHECK_INITIALIZED(self);
 
-    res = PyUnicode_FromString("<_io.TextIOWrapper");
+    res = _PyUnicode_FROM_ASCII("<_io.TextIOWrapper");
     if (res == NULL)
         return NULL;
 

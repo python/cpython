@@ -107,7 +107,7 @@ BaseException_str(PyBaseExceptionObject *self)
 {
     switch (PyTuple_GET_SIZE(self->args)) {
     case 0:
-        return PyUnicode_FromString("");
+        return _PyUnicode_FROM_ASCII("");
     case 1:
         return PyObject_Str(PyTuple_GET_ITEM(self->args, 0));
     default:
@@ -1923,7 +1923,7 @@ UnicodeEncodeError_str(PyObject *self)
 
     if (!uself->object)
         /* Not properly initialized. */
-        return PyUnicode_FromString("");
+        return _PyUnicode_FROM_ASCII("");
 
     /* Get reason and encoding as strings, which they might not be if
        they've been modified after we were constructed. */
@@ -2045,7 +2045,7 @@ UnicodeDecodeError_str(PyObject *self)
 
     if (!uself->object)
         /* Not properly initialized. */
-        return PyUnicode_FromString("");
+        return _PyUnicode_FROM_ASCII("");
 
     /* Get reason and encoding as strings, which they might not be if
        they've been modified after we were constructed. */
@@ -2141,7 +2141,7 @@ UnicodeTranslateError_str(PyObject *self)
 
     if (!uself->object)
         /* Not properly initialized. */
-        return PyUnicode_FromString("");
+        return _PyUnicode_FROM_ASCII("");
 
     /* Get reason as a string, which it might not be if it's been
        modified after we were constructed. */
@@ -2920,7 +2920,7 @@ _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
         return -1;
     }
 
-    PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
+    PyObject *strip_sep_obj = _PyUnicode_FROM_ASCII(" \t\r\n");
     if (strip_sep_obj == NULL) {
         Py_DECREF(data);
         return -1;
@@ -3004,7 +3004,7 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
         return -1;
     }
     if (match) {
-        PyObject *msg = PyUnicode_FromString("Missing parentheses in call "
+        PyObject *msg = _PyUnicode_FROM_ASCII("Missing parentheses in call "
                                              "to 'exec'");
         if (msg == NULL) {
             return -1;

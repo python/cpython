@@ -595,11 +595,11 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
     }
     else {
         /* Sometimes errno didn't get set */
-        message = PyUnicode_FromString("Error");
+        message = _PyUnicode_FROM_ASCII("Error");
     }
 #else
     if (i == 0)
-        message = PyUnicode_FromString("Error"); /* Sometimes errno didn't get set */
+        message = _PyUnicode_FROM_ASCII("Error"); /* Sometimes errno didn't get set */
     else
     {
         /* Note that the Win32 errors do not lineup with the

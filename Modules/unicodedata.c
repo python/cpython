@@ -414,7 +414,7 @@ unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
     if (self && UCD_Check(self)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
-            return PyUnicode_FromString(""); /* unassigned */
+            return _PyUnicode_FROM_ASCII(""); /* unassigned */
     }
 
     if (code < 0 || code >= 0x110000)

@@ -1134,7 +1134,7 @@ collect(struct _gc_runtime_state *state, int generation,
         }
         else {
             if (gc_str == NULL)
-                gc_str = PyUnicode_FromString("garbage collection");
+                gc_str = _PyUnicode_FROM_ASCII("garbage collection");
             PyErr_WriteUnraisable(gc_str);
             Py_FatalError("unexpected exception during garbage collection");
         }

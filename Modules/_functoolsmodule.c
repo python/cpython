@@ -276,10 +276,10 @@ partial_repr(partialobject *pto)
     if (status != 0) {
         if (status < 0)
             return NULL;
-        return PyUnicode_FromString("...");
+        return _PyUnicode_FROM_ASCII("...");
     }
 
-    arglist = PyUnicode_FromString("");
+    arglist = _PyUnicode_FROM_ASCII("");
     if (arglist == NULL)
         goto done;
     /* Pack positional arguments */

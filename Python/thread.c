@@ -194,9 +194,9 @@ PyThread_GetInfo(void)
 
 #ifdef _POSIX_THREADS
 #ifdef USE_SEMAPHORES
-    value = PyUnicode_FromString("semaphore");
+    value = _PyUnicode_FROM_ASCII("semaphore");
 #else
-    value = PyUnicode_FromString("mutex+cond");
+    value = _PyUnicode_FROM_ASCII("mutex+cond");
 #endif
     if (value == NULL) {
         Py_DECREF(threadinfo);

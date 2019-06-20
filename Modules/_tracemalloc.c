@@ -995,7 +995,7 @@ tracemalloc_init(void)
         return -1;
     }
 
-    unknown_filename = PyUnicode_FromString("<unknown>");
+    unknown_filename = _PyUnicode_FROM_ASCII("<unknown>");
     if (unknown_filename == NULL)
         return -1;
     PyUnicode_InternInPlace(&unknown_filename);

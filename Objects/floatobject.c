@@ -1226,9 +1226,9 @@ float_hex_impl(PyObject *self)
 
     if (x == 0.0) {
         if (copysign(1.0, x) == -1.0)
-            return PyUnicode_FromString("-0x0.0p+0");
+            return _PyUnicode_FROM_ASCII("-0x0.0p+0");
         else
-            return PyUnicode_FromString("0x0.0p+0");
+            return _PyUnicode_FROM_ASCII("0x0.0p+0");
     }
 
     m = frexp(fabs(x), &e);
@@ -1720,11 +1720,11 @@ float___getformat___impl(PyTypeObject *type, const char *typestr)
 
     switch (r) {
     case unknown_format:
-        return PyUnicode_FromString("unknown");
+        return _PyUnicode_FROM_ASCII("unknown");
     case ieee_little_endian_format:
-        return PyUnicode_FromString("IEEE, little-endian");
+        return _PyUnicode_FROM_ASCII("IEEE, little-endian");
     case ieee_big_endian_format:
-        return PyUnicode_FromString("IEEE, big-endian");
+        return _PyUnicode_FROM_ASCII("IEEE, big-endian");
     default:
         Py_FatalError("insane float_format or double_format");
         return NULL;

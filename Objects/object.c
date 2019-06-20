@@ -514,7 +514,7 @@ PyObject_Repr(PyObject *v)
     }
 #endif
     if (v == NULL)
-        return PyUnicode_FromString("<NULL>");
+        return _PyUnicode_FROM_ASCII("<NULL>");
     if (Py_TYPE(v)->tp_repr == NULL)
         return PyUnicode_FromFormat("<%s object at %p>",
                                     v->ob_type->tp_name, v);
@@ -561,7 +561,7 @@ PyObject_Str(PyObject *v)
     }
 #endif
     if (v == NULL)
-        return PyUnicode_FromString("<NULL>");
+        return _PyUnicode_FROM_ASCII("<NULL>");
     if (PyUnicode_CheckExact(v)) {
 #ifndef Py_DEBUG
         if (PyUnicode_READY(v) < 0)
@@ -1566,7 +1566,7 @@ so there is exactly one (which is indestructible, by the way).
 static PyObject *
 none_repr(PyObject *op)
 {
-    return PyUnicode_FromString("None");
+    return _PyUnicode_FROM_ASCII("None");
 }
 
 /* ARGUSED */
@@ -1684,13 +1684,13 @@ PyObject _Py_NoneStruct = {
 static PyObject *
 NotImplemented_repr(PyObject *op)
 {
-    return PyUnicode_FromString("NotImplemented");
+    return _PyUnicode_FROM_ASCII("NotImplemented");
 }
 
 static PyObject *
 NotImplemented_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    return PyUnicode_FromString("NotImplemented");
+    return _PyUnicode_FROM_ASCII("NotImplemented");
 }
 
 static PyMethodDef notimplemented_methods[] = {

@@ -3091,7 +3091,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
     static PyObject *empty_string;
 
     if (!empty_string) {
-        empty_string = PyUnicode_FromString("");
+        empty_string = _PyUnicode_FROM_ASCII("");
         if (!empty_string)
             return 0;
     }

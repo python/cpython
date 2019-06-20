@@ -1358,7 +1358,7 @@ deque_repr(PyObject *deque)
     if (i != 0) {
         if (i < 0)
             return NULL;
-        return PyUnicode_FromString("[...]");
+        return _PyUnicode_FROM_ASCII("[...]");
     }
 
     aslist = PySequence_List(deque);
@@ -2097,7 +2097,7 @@ defdict_repr(defdictobject *dd)
     if (baserepr == NULL)
         return NULL;
     if (dd->default_factory == NULL)
-        defrepr = PyUnicode_FromString("None");
+        defrepr = _PyUnicode_FROM_ASCII("None");
     else
     {
         int status = Py_ReprEnter(dd->default_factory);
@@ -2106,7 +2106,7 @@ defdict_repr(defdictobject *dd)
                 Py_DECREF(baserepr);
                 return NULL;
             }
-            defrepr = PyUnicode_FromString("...");
+            defrepr = _PyUnicode_FROM_ASCII("...");
         }
         else
             defrepr = PyObject_Repr(dd->default_factory);

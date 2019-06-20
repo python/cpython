@@ -1980,7 +1980,7 @@ PyImport_ReloadModule(PyObject *m)
    done using whatever import hooks are installed in the current
    environment.
    A dummy list ["__doc__"] is passed as the 4th argument so that
-   e.g. PyImport_Import(PyUnicode_FromString("win32com.client.gencache"))
+   e.g. PyImport_Import(_PyUnicode_FROM_ASCII("win32com.client.gencache"))
    will return <module "gencache"> instead of <module "win32com">. */
 
 PyObject *

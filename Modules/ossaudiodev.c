@@ -937,13 +937,13 @@ oss_mode_getter(oss_audio_t *self, void *closure)
 {
     switch(self->mode) {
         case O_RDONLY:
-            return PyUnicode_FromString("r");
+            return _PyUnicode_FROM_ASCII("r");
             break;
         case O_RDWR:
-            return PyUnicode_FromString("rw");
+            return _PyUnicode_FROM_ASCII("rw");
             break;
         case O_WRONLY:
-            return PyUnicode_FromString("w");
+            return _PyUnicode_FROM_ASCII("w");
             break;
         default:
             /* From newossobject(), self->mode can only be one

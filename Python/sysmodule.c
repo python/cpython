@@ -484,7 +484,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 
     if (last_dot == NULL) {
         /* The breakpoint is a built-in, e.g. PYTHONBREAKPOINT=int */
-        modulepath = PyUnicode_FromString("builtins");
+        modulepath = _PyUnicode_FROM_ASCII("builtins");
         attrname = envar;
     }
     else if (last_dot != envar) {
@@ -666,7 +666,7 @@ sys_displayhook(PyObject *module, PyObject *o)
         }
     }
     if (newline == NULL) {
-        newline = PyUnicode_FromString("\n");
+        newline = _PyUnicode_FROM_ASCII("\n");
         if (newline == NULL)
             return NULL;
     }
@@ -2747,10 +2747,10 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyThreadState *tstate,
                         list_builtin_module_names());
 #if PY_BIG_ENDIAN
     SET_SYS_FROM_STRING("byteorder",
-                        PyUnicode_FromString("big"));
+                        _PyUnicode_FROM_ASCII("big"));
 #else
     SET_SYS_FROM_STRING("byteorder",
-                        PyUnicode_FromString("little"));
+                        _PyUnicode_FROM_ASCII("little"));
 #endif
 
 #ifdef MS_COREDLL
@@ -2813,10 +2813,10 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyThreadState *tstate,
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
 #ifndef PY_NO_SHORT_FLOAT_REPR
     SET_SYS_FROM_STRING("float_repr_style",
-                        PyUnicode_FromString("short"));
+                        _PyUnicode_FROM_ASCII("short"));
 #else
     SET_SYS_FROM_STRING("float_repr_style",
-                        PyUnicode_FromString("legacy"));
+                        _PyUnicode_FROM_ASCII("legacy"));
 #endif
 
     SET_SYS_FROM_STRING("thread_info", PyThread_GetInfo());

@@ -485,7 +485,7 @@ initerr(perrdetail *err_ret, PyObject *filename)
         err_ret->filename = filename;
     }
     else {
-        err_ret->filename = PyUnicode_FromString("<string>");
+        err_ret->filename = _PyUnicode_FROM_ASCII("<string>");
         if (err_ret->filename == NULL) {
             err_ret->error = E_ERROR;
             return -1;
