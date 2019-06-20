@@ -2,6 +2,7 @@
 rem Used by the buildbot "test" step.
 setlocal
 
+set PATH=%PATH%;%SystemRoot%\SysNative\OpenSSH;%SystemRoot%\System32\OpenSSH
 set here=%~dp0
 set rt_opts=-q -d
 set regrtest_args=-j1
@@ -31,11 +32,11 @@ if "%SSH_SERVER%"=="" goto :Arm32SshHelp
 if "%PYTHON_SOURCE%"=="" (set PYTHON_SOURCE=%here%..\..\)
 if "%REMOTE_PYTHON_DIR%"=="" (set REMOTE_PYTHON_DIR=C:\python\)
 if NOT "%REMOTE_PYTHON_DIR:~-1,1%"=="\" (set REMOTE_PYTHON_DIR=%REMOTE_PYTHON_DIR%\)
-if "%SSH%"=="" if EXIST %WINDIR%\System32\OpenSSH\ssh.exe (set SSH=%WINDIR%\System32\OpenSSH\ssh.exe)
+
 set TEMP_ARGS=--temp %REMOTE_PYTHON_DIR%temp
 
 set rt_args=%rt_opts% %dashU% -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args% %TEMP_ARGS%
-%SSH% %SSH_SERVER% "set TEMP=%REMOTE_PYTHON_DIR%temp& %REMOTE_PYTHON_DIR%PCbuild\rt.bat" %rt_args%
+ssh %SSH_SERVER% "set TEMP=%REMOTE_PYTHON_DIR%temp& %REMOTE_PYTHON_DIR%PCbuild\rt.bat" %rt_args%
 exit /b %ERRORLEVEL%
 
 :Arm32SshHelp
