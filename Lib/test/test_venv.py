@@ -355,6 +355,8 @@ class BasicTest(BaseTest):
 
     @requireVenvCreate
     @unittest.skipUnless(os.name == 'posix', 'only works on POSIX')
+    @unittest.skipUnless(os.environ.get('SHELL') is not None,
+                         'only works if SHELL is set')
     def test_custom_env(self):
         rmtree(self.env_dir)
         builder = venv.EnvBuilder(environmental_variables={'FOO' : 'BAR'})
