@@ -193,10 +193,10 @@ The :mod:`signal` module defines the following functions:
    canceled (only one alarm can be scheduled at any time).  The returned value is
    then the number of seconds before any previously set alarm was to have been
    delivered. If *time* is zero, no alarm is scheduled, and any scheduled alarm is
-   canceled.  If the return value is zero, no alarm is currently scheduled.  (See
-   the Unix man page :manpage:`alarm(2)`.)
+   canceled.  If the return value is zero, no alarm is currently scheduled.
 
-   .. availability:: Unix.
+   .. availability:: Unix (see the man page :manpage:`alarm(2)` for further
+   information).
 
 
 .. function:: getsignal(signalnum)
@@ -231,8 +231,10 @@ The :mod:`signal` module defines the following functions:
 .. function:: pause()
 
    Cause the process to sleep until a signal is received; the appropriate handler
-   will then be called.  Returns nothing.  Not on Windows. (See the Unix man page
-   :manpage:`signal(2)`.)
+   will then be called.  Returns nothing.
+
+   .. availability:: Unix (see the man page :manpage:`signal(2)` for further
+      information).
 
    See also :func:`sigwait`, :func:`sigwaitinfo`, :func:`sigtimedwait` and
    :func:`sigpending`.
@@ -293,8 +295,8 @@ The :mod:`signal` module defines the following functions:
    For example, ``signal.pthread_sigmask(signal.SIG_BLOCK, [])`` reads the
    signal mask of the calling thread.
 
-   .. availability:: Unix. See the man page :manpage:`sigprocmask(3)` and
-      :manpage:`pthread_sigmask(3)` for further information.
+   .. availability:: Unix (see the man page :manpage:`sigprocmask(3)` and
+      :manpage:`pthread_sigmask(3)` for further information).
 
    See also :func:`pause`, :func:`sigpending` and :func:`sigwait`.
 
@@ -394,7 +396,7 @@ The :mod:`signal` module defines the following functions:
    be a callable Python object taking two arguments (see below), or one of the
    special values :const:`signal.SIG_IGN` or :const:`signal.SIG_DFL`.  The previous
    signal handler will be returned (see the description of :func:`getsignal`
-   above).  (See the Unix man page :manpage:`signal(2)`.)
+   above).  (See the Unix man page :manpage:`signal(2)` for further information.)
 
    When threads are enabled, this function can only be called from the main thread;
    attempting to call it from other threads will cause a :exc:`ValueError`
