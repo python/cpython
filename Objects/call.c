@@ -496,24 +496,6 @@ exit:
 
 
 PyObject *
-_PyCFunction_FastCallDict(PyObject *func,
-                          PyObject *const *args, Py_ssize_t nargs,
-                          PyObject *kwargs)
-{
-    PyObject *result;
-
-    assert(func != NULL);
-    assert(PyCFunction_Check(func));
-
-    result = _PyMethodDef_RawFastCallDict(((PyCFunctionObject*)func)->m_ml,
-                                          PyCFunction_GET_SELF(func),
-                                          args, nargs, kwargs);
-    result = _Py_CheckFunctionResult(func, result, NULL);
-    return result;
-}
-
-
-PyObject *
 _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
                                  PyObject *const *args, Py_ssize_t nargs,
                                  PyObject *kwnames)
