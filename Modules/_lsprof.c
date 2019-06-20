@@ -132,42 +132,40 @@ normalizeUserObj(PyObject *obj)
         if (modname != NULL) {
             if (!_PyUnicode_EqualToASCIIString(modname, "builtins")) {
                 PyObject *result;
-                result = PyUnicode_FromFormat("<%U.%s>", modname,
-                                              fn->m_ml->ml_name);
+                result = PyUnicode_FromFormat("<%U.%S>", modname,
+                                              fn->m_base.name);
                 Py_DECREF(modname);
                 return result;
             }
             Py_DECREF(modname);
         }
-        return PyUnicode_FromFormat("<%s>", fn->m_ml->ml_name);
+        return PyUnicode_FromFormat("<%S>", fn->m_base.name);
     }
     else {
         /* built-in method: try to return
             repr(getattr(type(__self__), __name__))
         */
         PyObject *self = fn->m_self;
-        PyObject *name = PyUnicode_FromString(fn->m_ml->ml_name);
+        PyObject *name = fn->m_base.name;
         PyObject *modname = fn->m_module;
 
-        if (name != NULL) {
-            PyObject *mo = _PyType_Lookup(Py_TYPE(self), name);
-            Py_XINCREF(mo);
-            Py_DECREF(name);
-            if (mo != NULL) {
-                PyObject *res = PyObject_Repr(mo);
-                Py_DECREF(mo);
-                if (res != NULL)
-                    return res;
-            }
+        PyObject *mo = _PyType_Lookup(Py_TYPE(self), name);
+        Py_XINCREF(mo);
+        if (mo != NULL) {
+            PyObject *res = PyObject_Repr(mo);
+            Py_DECREF(mo);
+            if (res != NULL)
+                return res;
         }
+
         /* Otherwise, use __module__ */
         PyErr_Clear();
         if (modname != NULL && PyUnicode_Check(modname))
-            return PyUnicode_FromFormat("<built-in method %S.%s>",
-                                        modname,  fn->m_ml->ml_name);
+            return PyUnicode_FromFormat("<built-in method %S.%S>",
+                                        modname,  fn->m_base.name);
         else
-            return PyUnicode_FromFormat("<built-in method %s>",
-                                        fn->m_ml->ml_name);
+            return PyUnicode_FromFormat("<built-in method %S>",
+                                        fn->m_base.name);
     }
 }
 
@@ -409,7 +407,7 @@ profiler_callback(PyObject *self, PyFrameObject *frame, int what,
         if ((((ProfilerObject *)self)->flags & POF_BUILTINS)
             && PyCFunction_Check(arg)) {
             ptrace_enter_call(self,
-                              ((PyCFunctionObject *)arg)->m_ml,
+                              &((PyCFunctionObject *)arg)->m_base,
                               arg);
         }
         break;
@@ -421,7 +419,7 @@ profiler_callback(PyObject *self, PyFrameObject *frame, int what,
         if ((((ProfilerObject *)self)->flags & POF_BUILTINS)
             && PyCFunction_Check(arg)) {
             ptrace_leave_call(self,
-                              ((PyCFunctionObject *)arg)->m_ml);
+                              &((PyCFunctionObject *)arg)->m_base);
         }
         break;
 

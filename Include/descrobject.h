@@ -52,18 +52,24 @@ typedef struct {
 
 typedef struct {
     PyDescr_COMMON;
-    PyMethodDef *d_method;
+    PyCFunctionBase d_base;
     vectorcallfunc vectorcall;
 } PyMethodDescrObject;
 
 typedef struct {
     PyDescr_COMMON;
-    struct PyMemberDef *d_member;
+    int d_member_type;
+    Py_ssize_t d_offset;
+    int d_flags;
+    PyObject *d_doc;
 } PyMemberDescrObject;
 
 typedef struct {
     PyDescr_COMMON;
-    PyGetSetDef *d_getset;
+    getter d_get;
+    setter d_set;
+    PyObject *d_doc;
+    void *d_closure;
 } PyGetSetDescrObject;
 
 typedef struct {

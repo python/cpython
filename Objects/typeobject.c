@@ -1037,20 +1037,14 @@ PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 traverse_slots(PyTypeObject *type, PyObject *self, visitproc visit, void *arg)
 {
-    Py_ssize_t i, n;
-    PyMemberDef *mp;
-
-    n = Py_SIZE(type);
-    mp = PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
-    for (i = 0; i < n; i++, mp++) {
-        if (mp->type == T_OBJECT_EX) {
-            char *addr = (char *)self + mp->offset;
-            PyObject *obj = *(PyObject **)addr;
-            if (obj != NULL) {
-                int err = visit(obj, arg);
-                if (err)
-                    return err;
-            }
+    _PyObject_MemberSlot *mp = _PyHeapType_GET_OBJECT_MEMBER_OFFSETS(type);
+    for (; mp->offset > 0; ++mp) {
+        char *addr = (char *)self + mp->offset;
+        PyObject *obj = *(PyObject **)addr;
+        if (obj != NULL) {
+            int err = visit(obj, arg);
+            if (err)
+                return err;
         }
     }
     return 0;
@@ -1096,13 +1090,9 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
 static void
 clear_slots(PyTypeObject *type, PyObject *self)
 {
-    Py_ssize_t i, n;
-    PyMemberDef *mp;
-
-    n = Py_SIZE(type);
-    mp = PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
-    for (i = 0; i < n; i++, mp++) {
-        if (mp->type == T_OBJECT_EX && !(mp->flags & READONLY)) {
+    _PyObject_MemberSlot *mp = _PyHeapType_GET_OBJECT_MEMBER_OFFSETS(type);
+    for (; mp->offset > 0; ++mp) {
+        if (!(mp->flags & READONLY)) {
             char *addr = (char *)self + mp->offset;
             PyObject *obj = *(PyObject **)addr;
             if (obj != NULL) {
@@ -2326,7 +2316,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     PyObject *qualname, *slots = NULL, *tmp, *newslots, *cell;
     PyTypeObject *type = NULL, *base, *tmptype, *winner;
     PyHeapTypeObject *et;
-    PyMemberDef *mp;
+    PyMemberDef *tmp_members = NULL;
     Py_ssize_t i, nbases, nslots, slotoffset, name_size;
     int j, may_add_dict, may_add_weak, add_dict, add_weak;
     _Py_IDENTIFIER(__qualname__);
@@ -2723,10 +2713,18 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     }
 
     /* Add descriptors for custom slots from __slots__, or for __dict__ */
-    mp = PyHeapType_GET_MEMBERS(et);
+    _PyObject_MemberSlot *offsets = _PyHeapType_GET_OBJECT_MEMBER_OFFSETS(et);
     slotoffset = base->tp_basicsize;
-    if (et->ht_slots != NULL) {
-        for (i = 0; i < nslots; i++, mp++) {
+    if (et->ht_slots != NULL && nslots > 0) {
+        tmp_members = PyMem_RawCalloc(nslots + 1, sizeof(PyMemberDef));
+        if (tmp_members == NULL) {
+            PyErr_NoMemory();
+            goto error;
+        }
+        type->tp_members = tmp_members;
+
+        for (i = 0; i < nslots; i++) {
+            PyMemberDef *mp = tmp_members + i;
             mp->name = PyUnicode_AsUTF8(
                 PyTuple_GET_ITEM(et->ht_slots, i));
             if (mp->name == NULL)
@@ -2738,6 +2736,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             assert(strcmp(mp->name, "__dict__") != 0);
             assert(strcmp(mp->name, "__weakref__") != 0);
 
+            (offsets + i)->offset = slotoffset;
             slotoffset += sizeof(PyObject *);
         }
     }
@@ -2755,7 +2754,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     }
     type->tp_basicsize = slotoffset;
     type->tp_itemsize = base->tp_itemsize;
-    type->tp_members = PyHeapType_GET_MEMBERS(et);
 
     if (type->tp_weaklistoffset && type->tp_dictoffset)
         type->tp_getset = subtype_getsets_full;
@@ -2814,6 +2812,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     if (PyType_Ready(type) < 0)
         goto error;
 
+    type->tp_members = NULL;
+    PyMem_RawFree(tmp_members);
+    tmp_members = NULL;
+
     /* Put the proper slots in place */
     fixup_slot_dispatchers(type);
 
@@ -2835,6 +2837,7 @@ error:
     Py_XDECREF(bases);
     Py_XDECREF(slots);
     Py_XDECREF(type);
+    PyMem_RawFree(tmp_members);
     return NULL;
 }
 
@@ -2860,7 +2863,9 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
         if (slot->slot == Py_tp_members) {
             nmembers = 0;
             for (memb = slot->pfunc; memb->name != NULL; memb++) {
-                nmembers++;
+                if (memb->type == T_OBJECT || memb->type == T_OBJECT_EX) {
+                    nmembers++;
+                }
             }
         }
     }
@@ -2891,7 +2896,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
         goto fail;
     res->ht_qualname = res->ht_name;
     Py_INCREF(res->ht_qualname);
-    type->tp_name = spec->name;
+    type->tp_name = PyUnicode_AsUTF8(res->ht_name);
 
     /* Adjust for empty tuple bases */
     if (!bases) {
@@ -2964,12 +2969,6 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
             memcpy(tp_doc, old_doc, len);
             type->tp_doc = tp_doc;
         }
-        else if (slot->slot == Py_tp_members) {
-            /* Move the slots to the heap type itself */
-            size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
-            memcpy(PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
-            type->tp_members = PyHeapType_GET_MEMBERS(res);
-        }
         else {
             /* Copy other slots directly */
             *(void**)(res_start + slotoffsets[slot->slot]) = slot->pfunc;
@@ -2984,6 +2983,13 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
     if (PyType_Ready(type) < 0)
         goto fail;
+
+
+    /* The memory behind these pointers might be reclaimed, don't leave
+       dangling pointers around. */
+    type->tp_methods = NULL;
+    type->tp_getset = NULL;
+    type->tp_members = NULL;
 
     if (type->tp_dictoffset) {
         res->ht_cached_keys = _PyDict_NewKeysForClass();
@@ -3613,7 +3619,7 @@ PyTypeObject PyType_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "type",                                     /* tp_name */
     sizeof(PyHeapTypeObject),                   /* tp_basicsize */
-    sizeof(PyMemberDef),                        /* tp_itemsize */
+    sizeof(_PyObject_MemberSlot),               /* tp_itemsize */
     (destructor)type_dealloc,                   /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */

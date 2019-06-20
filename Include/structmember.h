@@ -67,6 +67,11 @@ typedef struct PyMemberDef {
 PyAPI_FUNC(PyObject *) PyMember_GetOne(const char *, struct PyMemberDef *);
 PyAPI_FUNC(int) PyMember_SetOne(char *, struct PyMemberDef *, PyObject *);
 
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(PyObject *) _PyMemberDescr_GetOne(const char *, PyMemberDescrObject *);
+PyAPI_FUNC(int) _PyMemberDescr_SetOne(char *, PyMemberDescrObject *, PyObject *);
+#endif
+
 
 #ifdef __cplusplus
 }

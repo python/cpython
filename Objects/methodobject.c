@@ -16,6 +16,49 @@ static int numfree = 0;
 #define PyCFunction_MAXFREELIST 256
 #endif
 
+int
+_PyCFunctionBase_FromMethodDef(PyCFunctionBase *base, PyMethodDef *ml)
+{
+    base->name = PyUnicode_InternFromString(ml->ml_name);
+    if (base->name == NULL) {
+        goto error;
+    }
+    if (ml->ml_doc == NULL) {
+        Py_INCREF(Py_None);
+        base->doc = Py_None;
+
+        Py_INCREF(Py_None);
+        base->signature = Py_None;
+    }
+    else {
+        base->doc = _PyType_GetDocFromInternalDoc(ml->ml_name, ml->ml_doc);
+        if (base->doc == NULL) {
+            goto error;
+        }
+
+        base->signature = _PyType_GetTextSignatureFromInternalDoc(ml->ml_name,
+                                                                 ml->ml_doc);
+        if (base->signature == NULL) {
+            goto error;
+        }
+    }
+    base->meth = ml->ml_meth;
+    base->flags = ml->ml_flags;
+
+    return 0;
+
+error:
+    _PyCFunctionBase_Clear(base);
+    return -1;
+}
+
+void _PyCFunctionBase_Clear(PyCFunctionBase *base)
+{
+    Py_CLEAR(base->name);
+    Py_CLEAR(base->doc);
+    Py_CLEAR(base->signature);
+}
+
 /* undefine macro trampoline to PyCFunction_NewEx */
 #undef PyCFunction_New
 
@@ -28,6 +71,19 @@ PyCFunction_New(PyMethodDef *ml, PyObject *self)
 PyObject *
 PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
 {
+    PyCFunctionBase base = {0};
+
+    if (_PyCFunctionBase_FromMethodDef(&base, ml)) {
+        return NULL;
+    }
+    PyObject *out = _PyCFunction_NewFromBase(&base, self, module);
+
+    _PyCFunctionBase_Clear(&base);
+    return out;
+}
+
+PyObject *
+_PyCFunction_NewFromBase(PyCFunctionBase *base, PyObject *self, PyObject *module) {
     PyCFunctionObject *op;
     op = free_list;
     if (op != NULL) {
@@ -41,12 +97,14 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
             return NULL;
     }
     op->m_weakreflist = NULL;
-    op->m_ml = ml;
-    Py_XINCREF(self);
-    op->m_self = self;
-    Py_XINCREF(module);
-    op->m_module = module;
-    if (ml->ml_flags & METH_VARARGS) {
+
+    /* Take ownership of the objects on the given base. */
+    Py_INCREF(base->name);
+    Py_INCREF(base->doc);
+    Py_INCREF(base->signature);
+    op->m_base = *base;
+
+    if (base->flags & METH_VARARGS) {
         /* For METH_VARARGS functions, it's more efficient to use tp_call
          * instead of vectorcall. */
         op->vectorcall = NULL;
@@ -54,6 +112,12 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
     else {
         op->vectorcall = _PyCFunction_Vectorcall;
     }
+
+    Py_XINCREF(self);
+    op->m_self = self;
+    Py_XINCREF(module);
+    op->m_module = module;
+
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
 }
@@ -97,6 +161,7 @@ meth_dealloc(PyCFunctionObject *m)
     if (m->m_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*) m);
     }
+    _PyCFunctionBase_Clear(&m->m_base);
     Py_XDECREF(m->m_self);
     Py_XDECREF(m->m_module);
     if (numfree < PyCFunction_MAXFREELIST) {
@@ -114,35 +179,19 @@ meth_reduce(PyCFunctionObject *m, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(getattr);
 
-    if (m->m_self == NULL || PyModule_Check(m->m_self))
-        return PyUnicode_FromString(m->m_ml->ml_name);
+    if (m->m_self == NULL || PyModule_Check(m->m_self)) {
+        Py_INCREF(m->m_base.name);
+        return m->m_base.name;
+    }
 
-    return Py_BuildValue("N(Os)", _PyEval_GetBuiltinId(&PyId_getattr),
-                         m->m_self, m->m_ml->ml_name);
+    return Py_BuildValue("N(OS)", _PyEval_GetBuiltinId(&PyId_getattr),
+                         m->m_self, m->m_base.name);
 }
 
 static PyMethodDef meth_methods[] = {
     {"__reduce__", (PyCFunction)meth_reduce, METH_NOARGS, NULL},
     {NULL, NULL}
 };
-
-static PyObject *
-meth_get__text_signature__(PyCFunctionObject *m, void *closure)
-{
-    return _PyType_GetTextSignatureFromInternalDoc(m->m_ml->ml_name, m->m_ml->ml_doc);
-}
-
-static PyObject *
-meth_get__doc__(PyCFunctionObject *m, void *closure)
-{
-    return _PyType_GetDocFromInternalDoc(m->m_ml->ml_name, m->m_ml->ml_doc);
-}
-
-static PyObject *
-meth_get__name__(PyCFunctionObject *m, void *closure)
-{
-    return PyUnicode_FromString(m->m_ml->ml_name);
-}
 
 static PyObject *
 meth_get__qualname__(PyCFunctionObject *m, void *closure)
@@ -158,8 +207,10 @@ meth_get__qualname__(PyCFunctionObject *m, void *closure)
     PyObject *type, *type_qualname, *res;
     _Py_IDENTIFIER(__qualname__);
 
-    if (m->m_self == NULL || PyModule_Check(m->m_self))
-        return PyUnicode_FromString(m->m_ml->ml_name);
+    if (m->m_self == NULL || PyModule_Check(m->m_self)) {
+        Py_INCREF(m->m_base.name);
+        return m->m_base.name;
+    }
 
     type = PyType_Check(m->m_self) ? m->m_self : (PyObject*)Py_TYPE(m->m_self);
 
@@ -174,7 +225,7 @@ meth_get__qualname__(PyCFunctionObject *m, void *closure)
         return NULL;
     }
 
-    res = PyUnicode_FromFormat("%S.%s", type_qualname, m->m_ml->ml_name);
+    res = PyUnicode_FromFormat("%S.%S", type_qualname, m->m_base.name);
     Py_DECREF(type_qualname);
     return res;
 }
@@ -200,18 +251,18 @@ meth_get__self__(PyCFunctionObject *m, void *closure)
 }
 
 static PyGetSetDef meth_getsets [] = {
-    {"__doc__",  (getter)meth_get__doc__,  NULL, NULL},
-    {"__name__", (getter)meth_get__name__, NULL, NULL},
     {"__qualname__", (getter)meth_get__qualname__, NULL, NULL},
     {"__self__", (getter)meth_get__self__, NULL, NULL},
-    {"__text_signature__", (getter)meth_get__text_signature__, NULL, NULL},
     {0}
 };
 
 #define OFF(x) offsetof(PyCFunctionObject, x)
 
 static PyMemberDef meth_members[] = {
-    {"__module__",    T_OBJECT,     OFF(m_module), PY_WRITE_RESTRICTED},
+    {"__module__",         T_OBJECT, OFF(m_module),         PY_WRITE_RESTRICTED},
+    {"__name__",           T_OBJECT, OFF(m_base.name),      READONLY},
+    {"__doc__",            T_OBJECT, OFF(m_base.doc),       READONLY},
+    {"__text_signature__", T_OBJECT, OFF(m_base.signature), READONLY},
     {NULL}
 };
 
@@ -219,10 +270,10 @@ static PyObject *
 meth_repr(PyCFunctionObject *m)
 {
     if (m->m_self == NULL || PyModule_Check(m->m_self))
-        return PyUnicode_FromFormat("<built-in function %s>",
-                                   m->m_ml->ml_name);
-    return PyUnicode_FromFormat("<built-in method %s of %s object at %p>",
-                               m->m_ml->ml_name,
+        return PyUnicode_FromFormat("<built-in function %S>",
+                                   m->m_base.name);
+    return PyUnicode_FromFormat("<built-in method %S of %s object at %p>",
+                               m->m_base.name,
                                m->m_self->ob_type->tp_name,
                                m->m_self);
 }
@@ -244,7 +295,7 @@ meth_richcompare(PyObject *self, PyObject *other, int op)
     b = (PyCFunctionObject *)other;
     eq = a->m_self == b->m_self;
     if (eq)
-        eq = a->m_ml->ml_meth == b->m_ml->ml_meth;
+        eq = PyCFunction_GET_FUNCTION(a) == PyCFunction_GET_FUNCTION(b);
     if (op == Py_EQ)
         res = eq ? Py_True : Py_False;
     else
@@ -258,7 +309,7 @@ meth_hash(PyCFunctionObject *a)
 {
     Py_hash_t x, y;
     x = _Py_HashPointer(a->m_self);
-    y = _Py_HashPointer((void*)(a->m_ml->ml_meth));
+    y = _Py_HashPointer((void*)PyCFunction_GET_FUNCTION(a));
     x ^= y;
     if (x == -1)
         x = -2;

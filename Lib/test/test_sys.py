@@ -1080,7 +1080,7 @@ class SizeofTest(unittest.TestCase):
         # buffer
         # XXX
         # builtin_function_or_method
-        check(len, size('5P'))
+        check(len, size('8Pi'))
         # bytearray
         samples = [b'', b'u'*100000]
         for sample in samples:
@@ -1111,15 +1111,15 @@ class SizeofTest(unittest.TestCase):
         # complex
         check(complex(0,1), size('2d'))
         # method_descriptor (descriptor object)
-        check(str.lower, size('3PPP'))
+        check(str.lower, size('3P4PiP'))
         # classmethod_descriptor (descriptor object)
         # XXX
         # member_descriptor (descriptor object)
         import datetime
-        check(datetime.timedelta.days, size('3PP'))
+        check(datetime.timedelta.days, size('3PiniP'))
         # getset_descriptor (descriptor object)
         import collections
-        check(collections.defaultdict.default_factory, size('3PP'))
+        check(collections.defaultdict.default_factory, size('3P4P'))
         # wrapper_descriptor (descriptor object)
         check(int.__add__, size('3P2P'))
         # method-wrapper (descriptor object)
