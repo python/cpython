@@ -89,17 +89,21 @@ sends logging output to a disk file.  It inherits the output functionality from
 :class:`StreamHandler`.
 
 
-.. class:: FileHandler(filename, mode='a', encoding=None, delay=False)
+.. class:: FileHandler(filename, mode='a', encoding=None, delay=False, errors=None)
 
    Returns a new instance of the :class:`FileHandler` class. The specified file is
    opened and used as the stream for logging. If *mode* is not specified,
    :const:`'a'` is used.  If *encoding* is not ``None``, it is used to open the file
    with that encoding.  If *delay* is true, then file opening is deferred until the
-   first call to :meth:`emit`. By default, the file grows indefinitely.
+   first call to :meth:`emit`. By default, the file grows indefinitely. If
+   *errors* is specified, it's used to determine how encoding errors are handled.
 
    .. versionchanged:: 3.6
       As well as string values, :class:`~pathlib.Path` objects are also accepted
       for the *filename* argument.
+
+   .. versionchanged:: 3.9
+      The *errors* parameter was added.
 
    .. method:: close()
 
@@ -168,17 +172,21 @@ exclusive locks - and so there is no need for such a handler. Furthermore,
 for this value.
 
 
-.. class:: WatchedFileHandler(filename, mode='a', encoding=None, delay=False)
+.. class:: WatchedFileHandler(filename, mode='a', encoding=None, delay=False, errors=None)
 
    Returns a new instance of the :class:`WatchedFileHandler` class. The specified
    file is opened and used as the stream for logging. If *mode* is not specified,
    :const:`'a'` is used.  If *encoding* is not ``None``, it is used to open the file
    with that encoding.  If *delay* is true, then file opening is deferred until the
-   first call to :meth:`emit`.  By default, the file grows indefinitely.
+   first call to :meth:`emit`.  By default, the file grows indefinitely. If
+   *errors* is provided, it determines how encoding errors are handled.
 
    .. versionchanged:: 3.6
       As well as string values, :class:`~pathlib.Path` objects are also accepted
       for the *filename* argument.
+
+   .. versionchanged:: 3.9
+      The *errors* parameter was added.
 
    .. method:: reopenIfNeeded()
 
@@ -205,7 +213,7 @@ module, is the base class for the rotating file handlers,
 not need to instantiate this class, but it has attributes and methods you may
 need to override.
 
-.. class:: BaseRotatingHandler(filename, mode, encoding=None, delay=False)
+.. class:: BaseRotatingHandler(filename, mode, encoding=None, delay=False, errors=None)
 
    The parameters are as for :class:`FileHandler`. The attributes are:
 
@@ -284,13 +292,14 @@ The :class:`RotatingFileHandler` class, located in the :mod:`logging.handlers`
 module, supports rotation of disk log files.
 
 
-.. class:: RotatingFileHandler(filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False)
+.. class:: RotatingFileHandler(filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False, errors=None)
 
    Returns a new instance of the :class:`RotatingFileHandler` class. The specified
    file is opened and used as the stream for logging. If *mode* is not specified,
    ``'a'`` is used.  If *encoding* is not ``None``, it is used to open the file
    with that encoding.  If *delay* is true, then file opening is deferred until the
-   first call to :meth:`emit`.  By default, the file grows indefinitely.
+   first call to :meth:`emit`.  By default, the file grows indefinitely. If
+   *errors* is provided, it determines how encoding errors are handled.
 
    You can use the *maxBytes* and *backupCount* values to allow the file to
    :dfn:`rollover` at a predetermined size. When the size is about to be exceeded,
@@ -310,6 +319,9 @@ module, supports rotation of disk log files.
    .. versionchanged:: 3.6
       As well as string values, :class:`~pathlib.Path` objects are also accepted
       for the *filename* argument.
+
+   .. versionchanged:: 3.9
+      The *errors* parameter was added.
 
    .. method:: doRollover()
 
@@ -331,7 +343,7 @@ The :class:`TimedRotatingFileHandler` class, located in the
 timed intervals.
 
 
-.. class:: TimedRotatingFileHandler(filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False, atTime=None)
+.. class:: TimedRotatingFileHandler(filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False, atTime=None, errors=None)
 
    Returns a new instance of the :class:`TimedRotatingFileHandler` class. The
    specified file is opened and used as the stream for logging. On rotating it also
@@ -391,6 +403,9 @@ timed intervals.
    rollover, and subsequent rollovers would be calculated via the normal
    interval calculation.
 
+   If *errors* is specified, it's used to determine how encoding errors are
+   handled.
+
    .. note:: Calculation of the initial rollover time is done when the handler
       is initialised. Calculation of subsequent rollover times is done only
       when rollover occurs, and rollover occurs only when emitting output. If
@@ -410,6 +425,9 @@ timed intervals.
    .. versionchanged:: 3.6
       As well as string values, :class:`~pathlib.Path` objects are also accepted
       for the *filename* argument.
+
+   .. versionchanged:: 3.9
+      The *errors* parameter was added.
 
    .. method:: doRollover()
 
@@ -470,7 +488,12 @@ sends logging output to a network socket. The base class uses a TCP socket.
    .. method:: makePickle(record)
 
       Pickles the record's attribute dictionary in binary format with a length
-      prefix, and returns it ready for transmission across the socket.
+      prefix, and returns it ready for transmission across the socket. The
+      details of this operation are equivalent to::
+
+          data = pickle.dumps(record_attr_dict, 1)
+          datalen = struct.pack('>L', len(data))
+          return datalen + data
 
       Note that pickles aren't completely secure. If you are concerned about
       security, you may want to override this method to implement a more secure
@@ -481,8 +504,12 @@ sends logging output to a network socket. The base class uses a TCP socket.
 
    .. method:: send(packet)
 
-      Send a pickled string *packet* to the socket. This function allows for
-      partial sends which can happen when the network is busy.
+      Send a pickled byte-string *packet* to the socket. The format of the sent
+      byte-string is as described in the documentation for
+      :meth:`~SocketHandler.makePickle`.
+
+      This function allows for partial sends, which can happen when the network
+      is busy.
 
 
    .. method:: createSocket()
@@ -543,7 +570,8 @@ over UDP sockets.
 
    .. method:: send(s)
 
-      Send a pickled string to a socket.
+      Send a pickled byte-string to a socket. The format of the sent byte-string
+      is as described in the documentation for :meth:`SocketHandler.makePickle`.
 
 
 .. _syslog-handler:

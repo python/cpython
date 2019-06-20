@@ -2988,14 +2988,52 @@ _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"term", "fd", NULL};
-    static _PyArg_Parser _parser = {"|zi:setupterm", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "setupterm", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *term = NULL;
     int fd = -1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &term, &fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        if (args[0] == Py_None) {
+            term = NULL;
+        }
+        else if (PyUnicode_Check(args[0])) {
+            Py_ssize_t term_length;
+            term = PyUnicode_AsUTF8AndSize(args[0], &term_length);
+            if (term == NULL) {
+                goto exit;
+            }
+            if (strlen(term) != (size_t)term_length) {
+                PyErr_SetString(PyExc_ValueError, "embedded null character");
+                goto exit;
+            }
+        }
+        else {
+            _PyArg_BadArgument("setupterm", 1, "str or None", args[0]);
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[1]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = _curses_setupterm_impl(module, term, fd);
 
 exit:
@@ -4531,4 +4569,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=5305982cb312a911 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1350eeb0c1e06af6 input=a9049054013a1b77]*/

@@ -151,6 +151,45 @@ class Availability(Directive):
         return [pnode]
 
 
+# Support for documenting audit event
+
+class AuditEvent(Directive):
+
+    has_content = True
+    required_arguments = 1
+    optional_arguments = 1
+    final_argument_whitespace = True
+
+    _label = [
+        "Raises an :ref:`auditing event <auditing>` {name} with no arguments.",
+        "Raises an :ref:`auditing event <auditing>` {name} with argument {args}.",
+        "Raises an :ref:`auditing event <auditing>` {name} with arguments {args}.",
+    ]
+
+    def run(self):
+        if len(self.arguments) >= 2 and self.arguments[1]:
+            args = [
+                "``{}``".format(a.strip())
+                for a in self.arguments[1].strip("'\"").split()
+                if a.strip()
+            ]
+        else:
+            args = []
+
+        label = translators['sphinx'].gettext(self._label[min(2, len(args))])
+        text = label.format(name="``{}``".format(self.arguments[0]),
+                            args=", ".join(args))
+
+        pnode = nodes.paragraph(text, classes=["audit-hook"])
+        if self.content:
+            self.state.nested_parse(self.content, self.content_offset, pnode)
+        else:
+            n, m = self.state.inline_text(text, self.lineno)
+            pnode.extend(n + m)
+
+        return [pnode]
+
+
 # Support for documenting decorators
 
 class PyDecoratorMixin(object):
@@ -271,7 +310,7 @@ class DeprecatedRemoved(Directive):
                                    translatable=False)
             node.append(para)
         env = self.state.document.settings.env
-        env.note_versionchange('deprecated', version[0], node, self.lineno)
+        env.get_domain('changeset').note_changeset(node)
         return [node] + messages
 
 
@@ -424,6 +463,7 @@ def setup(app):
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_directive('availability', Availability)
+    app.add_directive('audit-event', AuditEvent)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)

@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _importing:
 
@@ -221,21 +221,6 @@ Importing Modules
    this tells our caller that the :term:`path based finder` could not find a
    finder for this path item. Cache the result in :data:`sys.path_importer_cache`.
    Return a new reference to the finder object.
-
-
-.. c:function:: void _PyImport_Init()
-
-   Initialize the import mechanism.  For internal use only.
-
-
-.. c:function:: void PyImport_Cleanup()
-
-   Empty the module table.  For internal use only.
-
-
-.. c:function:: void _PyImport_Fini()
-
-   Finalize the import mechanism.  For internal use only.
 
 
 .. c:function:: int PyImport_ImportFrozenModuleObject(PyObject *name)
