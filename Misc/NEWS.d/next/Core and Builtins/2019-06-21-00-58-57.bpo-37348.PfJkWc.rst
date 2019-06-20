@@ -1,0 +1,1 @@
+Optimized ``PyUnicode_GetString`` for short ASCII strings.
