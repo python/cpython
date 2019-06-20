@@ -497,18 +497,19 @@ def main(args=None):
         else:
             key_re = re.compile(r'.+')
 
-        for opt in options.env_vars:
-            pair = opt.split('=')
-            if len(pair) == 2 and pair[0] and pair[1]:
-                key, value = pair
-            else:
-                raise ValueError('env-vars must be provided as KEY=VALUE')
+        if options.env_vars:
+            for opt in options.env_vars:
+                pair = opt.split('=')
+                if len(pair) == 2 and pair[0] and pair[1]:
+                    key, value = pair
+                else:
+                    raise ValueError('env-vars must be provided as KEY=VALUE')
 
-            if not key_re.fullmatch(key):
-                raise ValueError(f'{key} is not a valid environmental '
-                                 f'variable name')
-            else:
-                env_vars[key] = value
+                if not key_re.fullmatch(key):
+                    raise ValueError(f'{key} is not a valid environmental '
+                                     f'variable name')
+                else:
+                    env_vars[key] = value
 
         builder = EnvBuilder(system_site_packages=options.system_site,
                              clear=options.clear,
