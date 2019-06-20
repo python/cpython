@@ -196,7 +196,7 @@ The :mod:`signal` module defines the following functions:
    canceled.  If the return value is zero, no alarm is currently scheduled.
 
    .. availability:: Unix (see the man page :manpage:`alarm(2)` for further
-   information).
+      information).
 
 
 .. function:: getsignal(signalnum)
