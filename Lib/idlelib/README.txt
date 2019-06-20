@@ -80,7 +80,7 @@ stackviewer.py    # View stack after exception.
 statusbar.py      # Define status bar for windows (nim).
 tabbedpages.py    # Define tabbed pages widget (nim).
 textview.py       # Define read-only text widget (nim).
-tree.py           # Define tree widger, used in browsers (nim).
+tree.py           # Define tree widget, used in browsers (nim).
 undo.py           # Manage undo stack.
 windows.py        # Manage window list and define listed top level.
 zoomheight.py     # Zoom window to full height of screen.
