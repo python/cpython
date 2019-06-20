@@ -39,8 +39,15 @@ def add_dir_to_list(dirlist, dir):
     """Add the directory 'dir' to the list 'dirlist' (at the front) if
     1) 'dir' is not already in 'dirlist'
     2) 'dir' actually exists, and is a directory."""
-    if dir is not None and os.path.isdir(dir) and dir not in dirlist:
-        dirlist.insert(0, dir)
+    if dir is not None and dir not in dirlist:
+        if host_platform == 'darwin' and is_macosx_sdk_path(dir):
+            # If in a macOS SDK path, check relative to the SDK root
+            dir_exists = os.path.isdir(
+                os.path.join(macosx_sdk_root(), dir[1:]))
+        else:
+            dir_exists = os.path.isdir(dir)
+        if dir_exists:
+            dirlist.insert(0, dir)
 
 MACOS_SDK_ROOT = None
 

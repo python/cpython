@@ -1,0 +1,4 @@
+When building 2.7 on macOS without system header files installed in
+``/usr/include``, a few extension modules dependent on system-supplied
+third-party libraries were not being built, most notably zlib.
+
