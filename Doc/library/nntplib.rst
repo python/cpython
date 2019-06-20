@@ -232,10 +232,10 @@ tuples or objects that the method normally returns will be empty.
    .. versionadded:: 3.2
 
 
-.. method:: NNTP.starttls(ssl_context=None)
+.. method:: NNTP.starttls(context=None)
 
    Send a ``STARTTLS`` command.  This will enable encryption on the NNTP
-   connection.  The *ssl_context* argument is optional and should be a
+   connection.  The *context* argument is optional and should be a
    :class:`ssl.SSLContext` object.  Please read :ref:`ssl-security` for best
    practices.
 
@@ -542,7 +542,7 @@ them have been superseded by newer commands in :rfc:`3977`.
       is supplied, then the returned *list* is an empty list. This is an optional NNTP
       extension, and may not be supported by all servers.
 
-      RFC2980 says "It is suggested that this extension be deprecated".  Use
+      :rfc:`2980` says "It is suggested that this extension be deprecated".  Use
       :meth:`descriptions` or :meth:`description` instead.
 
 

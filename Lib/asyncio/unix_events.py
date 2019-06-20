@@ -18,8 +18,10 @@ from . import base_subprocess
 from . import constants
 from . import coroutines
 from . import events
+from . import exceptions
 from . import futures
 from . import selector_events
+from . import tasks
 from . import transports
 from .log import logger
 
@@ -167,8 +169,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         if not isinstance(sig, int):
             raise TypeError(f'sig must be an int, not {sig!r}')
 
-        if not (1 <= sig < signal.NSIG):
-            raise ValueError(f'sig {sig} out of range(1, {signal.NSIG})')
+        if sig not in signal.valid_signals():
+            raise ValueError(f'invalid signal number {sig}')
 
     def _make_read_pipe_transport(self, pipe, protocol, waiter=None,
                                   extra=None):
@@ -192,7 +194,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                       self._child_watcher_callback, transp)
             try:
                 await waiter
-            except Exception:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException:
                 transp.close()
                 await transp._wait()
                 raise
@@ -308,6 +312,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                     ssl, backlog, ssl_handshake_timeout)
         if start_serving:
             server._start_serving()
+            # Skip one loop iteration so that all 'loop.add_reader'
+            # go through.
+            await tasks.sleep(0, loop=self)
 
         return server
 
@@ -315,16 +322,16 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         try:
             os.sendfile
         except AttributeError as exc:
-            raise events.SendfileNotAvailableError(
+            raise exceptions.SendfileNotAvailableError(
                 "os.sendfile() is not available")
         try:
             fileno = file.fileno()
         except (AttributeError, io.UnsupportedOperation) as err:
-            raise events.SendfileNotAvailableError("not a regular file")
+            raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
         except OSError as err:
-            raise events.SendfileNotAvailableError("not a regular file")
+            raise exceptions.SendfileNotAvailableError("not a regular file")
         blocksize = count if count else fsize
         if not blocksize:
             return 0  # empty file
@@ -378,14 +385,16 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 # one being 'file' is not a regular mmap(2)-like
                 # file, in which case we'll fall back on using
                 # plain send().
-                err = events.SendfileNotAvailableError(
+                err = exceptions.SendfileNotAvailableError(
                     "os.sendfile call failed")
                 self._sock_sendfile_update_filepos(fileno, offset, total_sent)
                 fut.set_exception(err)
             else:
                 self._sock_sendfile_update_filepos(fileno, offset, total_sent)
                 fut.set_exception(exc)
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             self._sock_sendfile_update_filepos(fileno, offset, total_sent)
             fut.set_exception(exc)
         else:
@@ -506,10 +515,9 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         if not self._closing:
             self._close(None)
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         if self._pipe is not None:
-            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
-                          source=self)
+            _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self._pipe.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
@@ -637,7 +645,9 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
                 n = os.write(self._fileno, data)
             except (BlockingIOError, InterruptedError):
                 n = 0
-            except Exception as exc:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
                 self._conn_lost += 1
                 self._fatal_error(exc, 'Fatal write error on pipe transport')
                 return
@@ -657,7 +667,9 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             n = os.write(self._fileno, self._buffer)
         except (BlockingIOError, InterruptedError):
             pass
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             self._buffer.clear()
             self._conn_lost += 1
             # Remove writer here, _fatal_error() doesn't it
@@ -702,10 +714,9 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             # write_eof is all what we needed to close the write pipe
             self.write_eof()
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         if self._pipe is not None:
-            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
-                          source=self)
+            _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self._pipe.close()
 
     def abort(self):
@@ -713,7 +724,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         # should be called by exception handler only
-        if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
+        if isinstance(exc, OSError):
             if self._loop.get_debug():
                 logger.debug("%r: %s", self, message, exc_info=True)
         else:
@@ -754,12 +765,18 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
             # other end).  Notably this is needed on AIX, and works
             # just fine on other platforms.
             stdin, stdin_w = socket.socketpair()
-        self._proc = subprocess.Popen(
-            args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
-            universal_newlines=False, bufsize=bufsize, **kwargs)
-        if stdin_w is not None:
-            stdin.close()
-            self._proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)
+        try:
+            self._proc = subprocess.Popen(
+                args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
+                universal_newlines=False, bufsize=bufsize, **kwargs)
+            if stdin_w is not None:
+                stdin.close()
+                self._proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)
+                stdin_w = None
+        finally:
+            if stdin_w is not None:
+                stdin.close()
+                stdin_w.close()
 
 
 class AbstractChildWatcher:
@@ -870,7 +887,9 @@ class BaseChildWatcher(AbstractChildWatcher):
     def _sig_chld(self):
         try:
             self._do_waitpid_all()
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             # self._loop should always be available here
             # as '_sig_chld' is added as a signal handler
             # in 'attach_loop'

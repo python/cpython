@@ -406,7 +406,7 @@ class InvalidateCacheTests:
         # There should be no issues if the method is not defined.
         key = 'gobbledeegook'
         sys.path_importer_cache[key] = None
-        self.addCleanup(lambda: sys.path_importer_cache.__delitem__(key))
+        self.addCleanup(lambda: sys.path_importer_cache.pop(key, None))
         self.init.invalidate_caches()  # Shouldn't trigger an exception.
 
 

@@ -1,3 +1,9 @@
+""" idlelib.run
+
+Simplified, pyshell.ModifiedInterpreter spawns a subprocess with
+f'''{sys.executable} -c "__import__('idlelib.run').run.main()"'''
+'.run' is needed because __import__ returns idlelib, not idlelib.run.
+"""
 import io
 import linecache
 import queue
@@ -8,10 +14,8 @@ import _thread as thread
 import threading
 import warnings
 
-import tkinter  # Tcl, deletions, messagebox if startup fails
-
 from idlelib import autocomplete  # AutoComplete, fetch_encodings
-from idlelib import calltips  # CallTips
+from idlelib import calltip  # Calltip
 from idlelib import debugger_r  # start_debugger
 from idlelib import debugobj_r  # remote_object_tree_item
 from idlelib import iomenu  # encoding
@@ -19,11 +23,16 @@ from idlelib import rpc  # multiple objects
 from idlelib import stackviewer  # StackTreeItem
 import __main__
 
-for mod in ('simpledialog', 'messagebox', 'font',
-            'dialog', 'filedialog', 'commondialog',
-            'ttk'):
-    delattr(tkinter, mod)
-    del sys.modules['tkinter.' + mod]
+import tkinter  # Use tcl and, if startup fails, messagebox.
+if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
+    # Undo modifications of tkinter by idlelib imports; see bpo-25507.
+    for mod in ('simpledialog', 'messagebox', 'font',
+                'dialog', 'filedialog', 'commondialog',
+                'ttk'):
+        delattr(tkinter, mod)
+        del sys.modules['tkinter.' + mod]
+    # Avoid AttributeError if run again; see bpo-37038.
+    sys.modules['idlelib.run'].firstrun = False
 
 LOCALHOST = '127.0.0.1'
 
@@ -190,11 +199,13 @@ def show_socket_error(err, address):
     root = tkinter.Tk()
     fix_scaling(root)
     root.withdraw()
-    msg = f"IDLE's subprocess can't connect to {address[0]}:{address[1]}.\n"\
-          f"Fatal OSError #{err.errno}: {err.strerror}.\n"\
-          f"See the 'Startup failure' section of the IDLE doc, online at\n"\
-          f"https://docs.python.org/3/library/idle.html#startup-failure"
-    showerror("IDLE Subprocess Error", msg, parent=root)
+    showerror(
+            "Subprocess Connection Error",
+            f"IDLE's subprocess can't connect to {address[0]}:{address[1]}.\n"
+            f"Fatal OSError #{err.errno}: {err.strerror}.\n"
+            "See the 'Startup failure' section of the IDLE doc, online at\n"
+            "https://docs.python.org/3/library/idle.html#startup-failure",
+            parent=root)
     root.destroy()
 
 def print_exception():
@@ -462,7 +473,7 @@ class Executive(object):
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
         self.locals = __main__.__dict__
-        self.calltip = calltips.CallTips()
+        self.calltip = calltip.Calltip()
         self.autocomplete = autocomplete.AutoComplete()
 
     def runcode(self, code):
@@ -474,15 +485,16 @@ class Executive(object):
                 exec(code, self.locals)
             finally:
                 interruptable = False
-        except SystemExit:
-            # Scripts that raise SystemExit should just
-            # return to the interactive prompt
-            pass
+        except SystemExit as e:
+            if e.args:  # SystemExit called with an argument.
+                ob = e.args[0]
+                if not isinstance(ob, (type(None), int)):
+                    print('SystemExit: ' + str(ob), file=sys.stderr)
+            # Return to the interactive prompt.
         except:
             self.usr_exc_info = sys.exc_info()
             if quitting:
                 exit()
-            # even print a user code SystemExit exception, continue
             print_exception()
             jit = self.rpchandler.console.getvar("<<toggle-jit-stack-viewer>>")
             if jit:
@@ -522,4 +534,9 @@ class Executive(object):
         item = stackviewer.StackTreeItem(flist, tb)
         return debugobj_r.remote_object_tree_item(item)
 
-capture_warnings(False)  # Make sure turned off; see issue 18081
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_run', verbosity=2)
+
+capture_warnings(False)  # Make sure turned off; see bpo-18081.

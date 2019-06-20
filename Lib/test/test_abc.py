@@ -410,6 +410,36 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             with self.assertRaises(TypeError):
                 issubclass(C(), A)
 
+            # bpo-34441: Check that issubclass() doesn't crash on bogus
+            # classes.
+            bogus_subclasses = [
+                None,
+                lambda x: [],
+                lambda: 42,
+                lambda: [42],
+            ]
+
+            for i, func in enumerate(bogus_subclasses):
+                class S(metaclass=abc_ABCMeta):
+                    __subclasses__ = func
+
+                with self.subTest(i=i):
+                    with self.assertRaises(TypeError):
+                        issubclass(int, S)
+
+            # Also check that issubclass() propagates exceptions raised by
+            # __subclasses__.
+            exc_msg = "exception from __subclasses__"
+
+            def raise_exc():
+                raise Exception(exc_msg)
+
+            class S(metaclass=abc_ABCMeta):
+                __subclasses__ = raise_exc
+
+            with self.assertRaisesRegex(Exception, exc_msg):
+                issubclass(int, S)
+
         def test_all_new_methods_are_called(self):
             class A(metaclass=abc_ABCMeta):
                 pass

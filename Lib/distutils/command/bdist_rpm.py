@@ -58,7 +58,7 @@ class bdist_rpm(Command):
          "RPM \"vendor\" (eg. \"Joe Blow <joe@example.com>\") "
          "[default: maintainer or author from setup script]"),
         ('packager=', None,
-         "RPM packager (eg. \"Jane Doe <jane@example.net>\")"
+         "RPM packager (eg. \"Jane Doe <jane@example.net>\") "
          "[default: vendor]"),
         ('doc-files=', None,
          "list of documentation files (space or comma-separated)"),
@@ -309,10 +309,7 @@ class bdist_rpm(Command):
 
         # build package
         log.info("building RPMs")
-        rpm_cmd = ['rpm']
-        if os.path.exists('/usr/bin/rpmbuild') or \
-           os.path.exists('/bin/rpmbuild'):
-            rpm_cmd = ['rpmbuild']
+        rpm_cmd = ['rpmbuild']
 
         if self.source_only: # what kind of RPMs?
             rpm_cmd.append('-bs')
@@ -537,7 +534,8 @@ class bdist_rpm(Command):
                     '',
                     '%' + rpm_opt,])
                 if val:
-                    spec_file.extend(open(val, 'r').read().split('\n'))
+                    with open(val) as f:
+                        spec_file.extend(f.read().split('\n'))
                 else:
                     spec_file.append(default)
 

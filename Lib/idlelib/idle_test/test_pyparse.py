@@ -1,11 +1,8 @@
-"""Unittest for idlelib.pyparse.py.
+"Test pyparse, coverage 96%."
 
-Coverage: 97%
-"""
-
-from collections import namedtuple
-import unittest
 from idlelib import pyparse
+import unittest
+from collections import namedtuple
 
 
 class ParseMapTest(unittest.TestCase):
@@ -163,7 +160,7 @@ class PyParseTest(unittest.TestCase):
             TestInfo('\n   def function1(self, a,\n', [0, 1, 2], BRACKET),
             TestInfo('())\n', [0, 1], NONE),                    # Extra closer.
             TestInfo(')(\n', [0, 1], BRACKET),                  # Extra closer.
-            # For the mismatched example, it doesn't look like contination.
+            # For the mismatched example, it doesn't look like continuation.
             TestInfo('{)(]\n', [0, 1], NONE),                   # Mismatched.
             )
 

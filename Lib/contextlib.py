@@ -4,6 +4,7 @@ import sys
 import _collections_abc
 from collections import deque
 from functools import wraps
+from types import MethodType
 
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
            "AbstractContextManager", "AbstractAsyncContextManager",
@@ -186,7 +187,7 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
             # in this implementation
             try:
                 await self.gen.athrow(typ, value, traceback)
-                raise RuntimeError("generator didn't stop after throw()")
+                raise RuntimeError("generator didn't stop after athrow()")
             except StopAsyncIteration as exc:
                 return exc is not value
             except RuntimeError as exc:
@@ -373,12 +374,10 @@ class _BaseExitStack:
 
     @staticmethod
     def _create_exit_wrapper(cm, cm_exit):
-        def _exit_wrapper(exc_type, exc, tb):
-            return cm_exit(cm, exc_type, exc, tb)
-        return _exit_wrapper
+        return MethodType(cm_exit, cm)
 
     @staticmethod
-    def _create_cb_wrapper(callback, *args, **kwds):
+    def _create_cb_wrapper(callback, /, *args, **kwds):
         def _exit_wrapper(exc_type, exc, tb):
             callback(*args, **kwds)
         return _exit_wrapper
@@ -427,7 +426,7 @@ class _BaseExitStack:
         self._push_cm_exit(cm, _exit)
         return result
 
-    def callback(self, callback, *args, **kwds):
+    def callback(self, callback, /, *args, **kwds):
         """Registers an arbitrary callback and arguments.
 
         Cannot suppress exceptions.
@@ -443,7 +442,6 @@ class _BaseExitStack:
     def _push_cm_exit(self, cm, cm_exit):
         """Helper to correctly register callbacks to __exit__ methods."""
         _exit_wrapper = self._create_exit_wrapper(cm, cm_exit)
-        _exit_wrapper.__self__ = cm
         self._push_exit_callback(_exit_wrapper, True)
 
     def _push_exit_callback(self, callback, is_sync=True):
@@ -535,12 +533,10 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
 
     @staticmethod
     def _create_async_exit_wrapper(cm, cm_exit):
-        async def _exit_wrapper(exc_type, exc, tb):
-            return await cm_exit(cm, exc_type, exc, tb)
-        return _exit_wrapper
+        return MethodType(cm_exit, cm)
 
     @staticmethod
-    def _create_async_cb_wrapper(callback, *args, **kwds):
+    def _create_async_cb_wrapper(callback, /, *args, **kwds):
         async def _exit_wrapper(exc_type, exc, tb):
             await callback(*args, **kwds)
         return _exit_wrapper
@@ -575,7 +571,7 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
             self._push_async_cm_exit(exit, exit_method)
         return exit  # Allow use as a decorator
 
-    def push_async_callback(self, callback, *args, **kwds):
+    def push_async_callback(self, callback, /, *args, **kwds):
         """Registers an arbitrary coroutine function and arguments.
 
         Cannot suppress exceptions.
@@ -596,7 +592,6 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
         """Helper to correctly register coroutine function to __aexit__
         method."""
         _exit_wrapper = self._create_async_exit_wrapper(cm, cm_exit)
-        _exit_wrapper.__self__ = cm
         self._push_exit_callback(_exit_wrapper, False)
 
     async def __aenter__(self):

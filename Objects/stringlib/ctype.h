@@ -5,49 +5,49 @@
 #include "bytes_methods.h"
 
 static PyObject*
-stringlib_isspace(PyObject *self)
+stringlib_isspace(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _Py_bytes_isspace(STRINGLIB_STR(self), STRINGLIB_LEN(self));
 }
 
 static PyObject*
-stringlib_isalpha(PyObject *self)
+stringlib_isalpha(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _Py_bytes_isalpha(STRINGLIB_STR(self), STRINGLIB_LEN(self));
 }
 
 static PyObject*
-stringlib_isalnum(PyObject *self)
+stringlib_isalnum(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _Py_bytes_isalnum(STRINGLIB_STR(self), STRINGLIB_LEN(self));
 }
 
 static PyObject*
-stringlib_isascii(PyObject *self)
+stringlib_isascii(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _Py_bytes_isascii(STRINGLIB_STR(self), STRINGLIB_LEN(self));
 }
 
 static PyObject*
-stringlib_isdigit(PyObject *self)
+stringlib_isdigit(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _Py_bytes_isdigit(STRINGLIB_STR(self), STRINGLIB_LEN(self));
 }
 
 static PyObject*
-stringlib_islower(PyObject *self)
+stringlib_islower(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _Py_bytes_islower(STRINGLIB_STR(self), STRINGLIB_LEN(self));
 }
 
 static PyObject*
-stringlib_isupper(PyObject *self)
+stringlib_isupper(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _Py_bytes_isupper(STRINGLIB_STR(self), STRINGLIB_LEN(self));
 }
 
 static PyObject*
-stringlib_istitle(PyObject *self)
+stringlib_istitle(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _Py_bytes_istitle(STRINGLIB_STR(self), STRINGLIB_LEN(self));
 }
@@ -56,7 +56,7 @@ stringlib_istitle(PyObject *self)
 /* functions that return a new object partially translated by ctype funcs: */
 
 static PyObject*
-stringlib_lower(PyObject *self)
+stringlib_lower(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* newobj;
     newobj = STRINGLIB_NEW(NULL, STRINGLIB_LEN(self));
@@ -68,7 +68,7 @@ stringlib_lower(PyObject *self)
 }
 
 static PyObject*
-stringlib_upper(PyObject *self)
+stringlib_upper(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* newobj;
     newobj = STRINGLIB_NEW(NULL, STRINGLIB_LEN(self));
@@ -80,7 +80,7 @@ stringlib_upper(PyObject *self)
 }
 
 static PyObject*
-stringlib_title(PyObject *self)
+stringlib_title(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* newobj;
     newobj = STRINGLIB_NEW(NULL, STRINGLIB_LEN(self));
@@ -92,7 +92,7 @@ stringlib_title(PyObject *self)
 }
 
 static PyObject*
-stringlib_capitalize(PyObject *self)
+stringlib_capitalize(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* newobj;
     newobj = STRINGLIB_NEW(NULL, STRINGLIB_LEN(self));
@@ -104,7 +104,7 @@ stringlib_capitalize(PyObject *self)
 }
 
 static PyObject*
-stringlib_swapcase(PyObject *self)
+stringlib_swapcase(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* newobj;
     newobj = STRINGLIB_NEW(NULL, STRINGLIB_LEN(self));

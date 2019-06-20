@@ -161,7 +161,7 @@ class ConnectionTests(unittest.TestCase):
             self.cx.in_transaction = True
 
     def CheckOpenWithPathLikeObject(self):
-        """ Checks that we can succesfully connect to a database using an object that
+        """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
         self.addCleanup(unlink, TESTFN)
         class Path:

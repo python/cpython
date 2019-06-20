@@ -46,16 +46,10 @@ def normcase(s):
 
     Makes all characters lowercase and all slashes into backslashes."""
     s = os.fspath(s)
-    try:
-        if isinstance(s, bytes):
-            return s.replace(b'/', b'\\').lower()
-        else:
-            return s.replace('/', '\\').lower()
-    except (TypeError, AttributeError):
-        if not isinstance(s, (bytes, str)):
-            raise TypeError("normcase() argument must be str or bytes, "
-                            "not %r" % s.__class__.__name__) from None
-        raise
+    if isinstance(s, bytes):
+        return s.replace(b'/', b'\\').lower()
+    else:
+        return s.replace('/', '\\').lower()
 
 
 # Return whether a path is absolute.
@@ -229,7 +223,7 @@ def islink(path):
     """
     try:
         st = os.lstat(path)
-    except (OSError, AttributeError):
+    except (OSError, ValueError, AttributeError):
         return False
     return stat.S_ISLNK(st.st_mode)
 
@@ -239,7 +233,7 @@ def lexists(path):
     """Test whether a path exists.  Returns True for broken symbolic links"""
     try:
         st = os.lstat(path)
-    except OSError:
+    except (OSError, ValueError):
         return False
     return True
 
@@ -299,9 +293,7 @@ def expanduser(path):
     while i < n and path[i] not in _get_bothseps(path):
         i += 1
 
-    if 'HOME' in os.environ:
-        userhome = os.environ['HOME']
-    elif 'USERPROFILE' in os.environ:
+    if 'USERPROFILE' in os.environ:
         userhome = os.environ['USERPROFILE']
     elif not 'HOMEPATH' in os.environ:
         return path
@@ -496,38 +488,36 @@ def normpath(path):
         comps.append(curdir)
     return prefix + sep.join(comps)
 
+def _abspath_fallback(path):
+    """Return the absolute version of a path as a fallback function in case
+    `nt._getfullpathname` is not available or raises OSError. See bpo-31047 for
+    more.
+
+    """
+
+    path = os.fspath(path)
+    if not isabs(path):
+        if isinstance(path, bytes):
+            cwd = os.getcwdb()
+        else:
+            cwd = os.getcwd()
+        path = join(cwd, path)
+    return normpath(path)
 
 # Return an absolute path.
 try:
     from nt import _getfullpathname
 
 except ImportError: # not running on Windows - mock up something sensible
-    def abspath(path):
-        """Return the absolute version of a path."""
-        path = os.fspath(path)
-        if not isabs(path):
-            if isinstance(path, bytes):
-                cwd = os.getcwdb()
-            else:
-                cwd = os.getcwd()
-            path = join(cwd, path)
-        return normpath(path)
+    abspath = _abspath_fallback
 
 else:  # use native Windows method on Windows
     def abspath(path):
         """Return the absolute version of a path."""
-
-        if path: # Empty path must return current working directory.
-            path = os.fspath(path)
-            try:
-                path = _getfullpathname(path)
-            except OSError:
-                pass # Bad path - return unchanged.
-        elif isinstance(path, bytes):
-            path = os.getcwdb()
-        else:
-            path = os.getcwd()
-        return normpath(path)
+        try:
+            return normpath(_getfullpathname(path))
+        except (OSError, ValueError):
+            return _abspath_fallback(path)
 
 # realpath is a no-op on systems without islink support
 realpath = abspath
