@@ -2544,13 +2544,12 @@ class Symlink(unittest.TestCase):
 
     def setUp(self):
         # Create extant directories, files and symlinks
-        extant_files = {'src_file1': 'sf1', 'src_file2': 'sf2',
-                        'dst_file1': 'df1',
-                        'dst_file2': os.path.join('dd1', 'df2')}
-        extant_dirs = {'dst_dir1': 'dd1', 'dst_dir2': 'dd2'}
-
-        # Keys are link filenames, values are link targets
-        self.symlink_names = {'link_to_file': 'df1', 'link_to_dir': 'dd2',
+        extant_dirs = {'src_dir1': 'sd1', 'dst_dir1': 'dd1'}
+        extant_files = {'src_file1': 'sf1',
+                        'src_file2': os.path.join('sd1', 'sf2'),
+                        'dst_file1': 'df1'}
+        # Keys are link filenames, values are link targets:
+        self.symlink_names = {'link_to_file': 'df1', 'link_to_dir': 'dd1',
                               'link_to_link': 'link_to_file',
                               'broken_link': 'non-extant',
                               'link_to_broken_link': 'broken_link'}
