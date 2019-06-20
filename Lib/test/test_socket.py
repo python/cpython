@@ -136,6 +136,8 @@ HAVE_SOCKET_QIPCRTR = _have_socket_qipcrtr()
 
 HAVE_SOCKET_VSOCK = _have_socket_vsock()
 
+HAVE_SOCKET_UDPLITE = hasattr(socket, IPPROTO_UDPLITE)
+
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
 
@@ -397,6 +399,8 @@ class ThreadedUDPSocketTest(SocketUDPTest, ThreadableTest):
         self.cli = None
         ThreadableTest.clientTearDown(self)
 
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 class ThreadedUDPLITESocketTest(SocketUDPLITETest, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
@@ -2392,6 +2396,8 @@ class BasicUDPTest(ThreadedUDPSocketTest):
         self.cli.sendto(MSG, 0, (HOST, self.port))
 
 
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 class BasicUDPLITETest(ThreadedUDPLITESocketTest):
 
     def __init__(self, methodName='runTest'):
@@ -4053,24 +4059,34 @@ class RecvmsgIntoRFC3542AncillaryUDP6Test(RecvmsgIntoMixin,
     pass
 
 
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 class SendrecvmsgUDPLITETestBase(SendrecvmsgDgramFlagsBase,
                              SendrecvmsgConnectionlessBase,
                              ThreadedSocketTestMixin, UDPLITETestBase):
     pass
 
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 @requireAttrs(socket.socket, "sendmsg")
 class SendmsgUDPLITETest(SendmsgConnectionlessTests, SendrecvmsgUDPLITETestBase):
     pass
 
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 @requireAttrs(socket.socket, "recvmsg")
 class RecvmsgUDPLITETest(RecvmsgTests, SendrecvmsgUDPLITETestBase):
     pass
 
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 @requireAttrs(socket.socket, "recvmsg_into")
 class RecvmsgIntoUDPLITETest(RecvmsgIntoTests, SendrecvmsgUDPLITETestBase):
     pass
 
 
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 class SendrecvmsgUDPLITE6TestBase(SendrecvmsgDgramFlagsBase,
                               SendrecvmsgConnectionlessBase,
                               ThreadedSocketTestMixin, UDPLITE6TestBase):
@@ -4082,24 +4098,32 @@ class SendrecvmsgUDPLITE6TestBase(SendrecvmsgDgramFlagsBase,
 
 @requireAttrs(socket.socket, "sendmsg")
 @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 @requireSocket("AF_INET6", "SOCK_DGRAM")
 class SendmsgUDPLITE6Test(SendmsgConnectionlessTests, SendrecvmsgUDPLITE6TestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg")
 @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 @requireSocket("AF_INET6", "SOCK_DGRAM")
 class RecvmsgUDPLITE6Test(RecvmsgTests, SendrecvmsgUDPLITE6TestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg_into")
 @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 @requireSocket("AF_INET6", "SOCK_DGRAM")
 class RecvmsgIntoUDPLITE6Test(RecvmsgIntoTests, SendrecvmsgUDPLITE6TestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg")
 @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 @requireAttrs(socket, "IPPROTO_IPV6")
 @requireSocket("AF_INET6", "SOCK_DGRAM")
 class RecvmsgRFC3542AncillaryUDPLITE6Test(RFC3542AncillaryTest,
@@ -4108,6 +4132,8 @@ class RecvmsgRFC3542AncillaryUDPLITE6Test(RFC3542AncillaryTest,
 
 @requireAttrs(socket.socket, "recvmsg_into")
 @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 @requireAttrs(socket, "IPPROTO_IPV6")
 @requireSocket("AF_INET6", "SOCK_DGRAM")
 class RecvmsgIntoRFC3542AncillaryUDPLITE6Test(RecvmsgIntoMixin,
@@ -5122,6 +5148,8 @@ class UDPTimeoutTest(SocketUDPTest):
         if not ok:
             self.fail("recv() returned success when we did not expect it")
 
+@unittest.skipUnless(HAVE_SOCKET_UDPLITE,
+          'UDPLITE sockets required for this test.')
 class UDPLITETimeoutTest(SocketUDPLITETest):
 
     def testUDPLITETimeout(self):
