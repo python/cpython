@@ -652,9 +652,9 @@ class ThreadingMixIn:
             self.handle_error(request, client_address)
         finally:
             self.shutdown_request(request)
-            t = threading.current_thread()
+            thread = threading.current_thread()
             try:
-                self._threads.remove(t)
+                self._threads.remove(thread)
             except AttributeError:
                 pass
 
