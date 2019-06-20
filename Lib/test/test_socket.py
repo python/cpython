@@ -136,7 +136,7 @@ HAVE_SOCKET_QIPCRTR = _have_socket_qipcrtr()
 
 HAVE_SOCKET_VSOCK = _have_socket_vsock()
 
-HAVE_SOCKET_UDPLITE = hasattr(socket, IPPROTO_UDPLITE)
+HAVE_SOCKET_UDPLITE = hasattr(socket, "IPPROTO_UDPLITE")
 
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
