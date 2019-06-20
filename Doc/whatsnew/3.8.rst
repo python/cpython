@@ -1461,6 +1461,25 @@ Changes in the C API
 * The functions :c:func:`PyNode_AddChild` and :c:func:`PyParser_AddToken` now accept
   two additional ``int`` arguments *end_lineno* and *end_col_offset*.
 
+.. highlight:: shell
+
+* The :file:`libpython38.a` file to allow MinGW tools to link directly against
+  :file:`python38.dll` is no longer included in the regular Windows distribution.
+  If you require this file, it may be generated with the ``gendef`` and
+  ``dlltool`` tools, which are part of the MinGW binutils package::
+
+      gendef python38.dll > tmp.def
+      dlltool --dllname python38.dll --def tmp.def --output-lib libpython38.a
+
+  The location of an installed :file:`pythonXY.dll` will depend on the
+  installation options and the version and language of Windows. See
+  :ref:`using-on-windows` for more information. The resulting library should be
+  placed in the same directory as :file:`pythonXY.lib`, which is generally the
+  :file:`libs` directory under your Python installation.
+
+.. highlight:: python3
+
+
 CPython bytecode changes
 ------------------------
 
