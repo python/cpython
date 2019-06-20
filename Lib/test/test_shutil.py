@@ -2601,7 +2601,7 @@ class Symlink(unittest.TestCase):
         for arg in bool_args:
             kwargs = {k: 'X' if k == arg else True for k in bool_args}
             with self.subTest(bool_arg=arg):
-                with self.assertRaises(TypeError):
+                with self.assertRaisesRegexp(TypeError, arg):
                     shutil.symlink(self.src_file1, self.dst_file1, **kwargs)
 
     def test_only_two_positional_args(self):
@@ -2634,7 +2634,7 @@ class Symlink(unittest.TestCase):
                         if k != 'absent'}
         for description, dst_path in dst_existing.items():
             with self.subTest(type=description):
-                with self.assertRaises(FileExistsError):
+                with self.assertRaisesRegexp(FileExistsError, dst_path):
                     shutil.symlink(src, dst_path)
 
     # Overwrite=True
@@ -2652,7 +2652,7 @@ class Symlink(unittest.TestCase):
         self.assertEqual(os.readlink(dst), src)
 
     def test_overwrite_existing_dir(self):
-        with self.assertRaises(IsADirectoryError):
+        with self.assertRaisesRegexp(IsADirectoryError, self.dst_dir1):
             shutil.symlink(self.src_file1, self.dst_dir1, overwrite=True)
 
     def test_overwrite_existing_symlink(self):
@@ -2689,13 +2689,13 @@ class Symlink(unittest.TestCase):
         for description, dst_path in exist.items():
             self.assertTrue(os.path.exists(dst_path))
             with self.subTest(type=description):
-                with self.assertRaises(NotADirectoryError):
+                with self.assertRaisesRegexp(NotADirectoryError, dst_path):
                     shutil.symlink(self.srcs, dst_path)
 
         for description, dst_path in absent.items():
             self.assertFalse(os.path.exists(dst_path))
             with self.subTest(type=description):
-                with self.assertRaises(FileNotFoundError):
+                with self.assertRaisesRegexp(FileNotFoundError, dst_path):
                     shutil.symlink(self.srcs, dst_path)
 
 
