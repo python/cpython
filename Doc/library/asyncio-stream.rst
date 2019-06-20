@@ -646,17 +646,15 @@ Coroutine waiting until a socket receives data using the
         rsock, wsock = socket.socketpair()
 
         # Register the open socket to wait for data.
-        stream = await asyncio.connect(sock=rsock)
+        async with asyncio.connect(sock=rsock) as stream:
+            # Simulate the reception of data from the network
+            loop.call_soon(wsock.send, 'abc'.encode())
 
-        # Simulate the reception of data from the network
-        loop.call_soon(wsock.send, 'abc'.encode())
+            # Wait for data
+            data = await stream.read(100)
 
-        # Wait for data
-        data = await stream.read(100)
-
-        # Got data, we are done: close the socket
-        print("Received:", data.decode())
-        await stream.close()
+            # Got data, we are done: close the socket
+            print("Received:", data.decode())
 
         # Close the second socket
         wsock.close()
