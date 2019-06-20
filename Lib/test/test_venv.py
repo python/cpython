@@ -353,6 +353,22 @@ class BasicTest(BaseTest):
             'pool.terminate()'])
         self.assertEqual(out.strip(), "python".encode())
 
+    @requireVenvCreate
+    @unittest.skipUnless(os.name == 'posix', 'only works on POSIX')
+    def test_custom_env(self):
+        rmtree(self.env_dir)
+        builder = venv.EnvBuilder(environmental_variables={'FOO' : 'BAR'})
+        builder.create(self.env_dir)
+        with EnvironmentVarGuard() as envvars:
+            echo_foo = (envvars.get('FOO', '')+'\n').encode()
+            activate = os.path.join(self.env_dir, self.bindir, 'activate')
+            out, err = check_output([envvars['SHELL'], '-c',
+                f'echo "$FOO" '
+                f'&& source {activate} && echo "$FOO" '
+                f'&& deactivate && echo "$FOO"'])
+            self.assertEqual(out, b''.join((echo_foo, b'BAR\n', echo_foo)))
+
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
