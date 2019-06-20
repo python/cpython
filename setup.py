@@ -913,7 +913,7 @@ class PyBuildExt(build_ext):
             curses_library = 'ncursesw'
         # Issue 36210: OSS provided ncurses does not link on AIX
         # Use IBM supplied 'curses' for successful build of _curses
-        elif HOST_PLATFORM.startswith("aix") and 
+        elif HOST_PLATFORM.startswith("aix") and \
             self.compiler.find_library_file(self.lib_dirs, 'curses'):
             curses_library = 'curses'
         elif self.compiler.find_library_file(self.lib_dirs, 'ncurses'):
