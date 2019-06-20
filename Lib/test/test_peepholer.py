@@ -421,6 +421,14 @@ class TestTranforms(BytecodeTestCase):
             return 0
         self.assertEqual(f(), 1)
 
+    def test_if_with_if_expression(self):
+        # Check bpo-37289
+        def f(x):
+            if (True if x else False):
+                return True
+            return False
+        self.assertTrue(f(True))
+
 
 class TestBuglets(unittest.TestCase):
 
