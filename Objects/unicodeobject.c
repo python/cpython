@@ -2163,12 +2163,27 @@ PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
 PyObject *
 PyUnicode_FromString(const char *u)
 {
-    size_t size = strlen(u);
-    if (size > PY_SSIZE_T_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "input too long");
-        return NULL;
+    /* Most calls of PyUnicode_FromString is for short ASCII string.
+     * So we optimize this function for them.
+     */
+    size_t len = 0;
+    int is_ascii = 1;
+
+    while (u[len] != '\0') {
+        if (u[len] > 127) {
+            is_ascii = 0;
+        }
+        len++;
+        if (len > PY_SSIZE_T_MAX) {
+            PyErr_SetString(PyExc_OverflowError, "input too long");
+            return NULL;
+        }
     }
-    return PyUnicode_DecodeUTF8Stateful(u, (Py_ssize_t)size, NULL, NULL);
+
+    if (is_ascii) {
+        return _PyUnicode_FromASCII(u, (Py_ssize_t)len);
+    }
+    return PyUnicode_DecodeUTF8Stateful(u, (Py_ssize_t)len, NULL, NULL);
 }
 
 PyObject *
@@ -15303,8 +15318,9 @@ PyObject *
 PyUnicode_InternFromString(const char *cp)
 {
     PyObject *s = PyUnicode_FromString(cp);
-    if (s == NULL)
+    if (s == NULL) {
         return NULL;
+    }
     PyUnicode_InternInPlace(&s);
     return s;
 }
