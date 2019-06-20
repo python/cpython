@@ -27,7 +27,7 @@ call "%here%..\..\PCbuild\rt.bat" %rt_opts% -uall -rwW --slowest --timeout=1200 
 exit /b %ERRORLEVEL%
 
 :Arm32Ssh
-set dashU=-unetwork,decimal,subprocess,urlfetch,tzdata
+set dashU=-unetwork -udecimal -usubprocess -uurlfetch -utzdata
 if "%SSH_SERVER%"=="" goto :Arm32SshHelp
 if "%PYTHON_SOURCE%"=="" (set PYTHON_SOURCE=%here%..\..\)
 if "%REMOTE_PYTHON_DIR%"=="" (set REMOTE_PYTHON_DIR=C:\python\)
