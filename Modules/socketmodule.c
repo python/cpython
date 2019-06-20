@@ -7737,6 +7737,11 @@ PyInit__socket(void)
 #else
     PyModule_AddIntConstant(m, "IPPROTO_UDP", 17);
 #endif
+#ifdef  IPPROTO_UDPLITE
+    PyModule_AddIntMacro(m, IPPROTO_UDPLITE);
+    PyModule_AddIntMacro(m, UDPLITE_SEND_CSCOV);
+    PyModule_AddIntMacro(m, UDPLITE_RECV_CSCOV);
+#endif
 #ifdef  IPPROTO_IDP
     PyModule_AddIntMacro(m, IPPROTO_IDP);
 #endif
