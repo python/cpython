@@ -1,0 +1,2 @@
+New ``_PyUnicode_FROM_ASCII`` macro is added.  It wraps
+``_PyUnicode_FromASCII`` with ``strlen``.
