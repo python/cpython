@@ -18,16 +18,14 @@ streams::
     import asyncio
 
     async def tcp_echo_client(message):
-        stream = await asyncio.connect('127.0.0.1', 8888)
+        async with asyncio.connect('127.0.0.1', 8888) as stream:
+            print(f'Send: {message!r}')
+            await stream.write(message.encode())
 
-        print(f'Send: {message!r}')
-        stream.write(message.encode())
+            data = await stream.read(100)
+            print(f'Received: {data.decode()!r}')
 
-        data = await stream.read(100)
-        print(f'Received: {data.decode()!r}')
-
-        print('Close the connection')
-        await stream.close()
+            print('Close the connection')
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -42,14 +40,15 @@ and work with streams:
 
 
 .. coroutinefunction:: connect(host=None, port=None, \*, \
-                               loop=None, limit=None, ssl=None, family=0, \
+                               loop=None, limit=2**16, ssl=None, family=0, \
                                proto=0, flags=0, sock=None, local_addr=None, \
                                server_hostname=None, ssl_handshake_timeout=None, \
                                happy_eyeballs_delay=None, interleave=None)
 
-   This function internally uses :meth:`loop.create_connection` to return a
+   This function internally uses :meth:`loop.create_connection` to return an awaitable
    :class:`Stream` object of the mode ``READWRITE`` that can be used as a reader
-   and a writer.
+   and a writer. The function can also be used as an async context manager where it's
+   automatically awaited.
 
    .. versionadded:: 3.8
 
@@ -83,7 +82,7 @@ and work with streams:
       `open_connection()` is deprecated in favor of :func:`connect`.
 
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
-                          port=None, \*, loop=None, limit=None, \
+                          port=None, \*, loop=None, limit=2**16, \
                           family=socket.AF_UNSPEC, \
                           flags=socket.AI_PASSIVE, sock=None, \
                           backlog=100, ssl=None, reuse_address=None, \
@@ -119,6 +118,21 @@ and work with streams:
 
       `start_server()` is deprecated if favor of :class:`StreamServer`
 
+.. coroutinefunction:: connect_read_pipe(pipe, *, limit=2**16)
+
+   Takes a :term:`file-like object <file object>` to return a
+   :class:`Stream` object of the mode ``READ`` that has similar API of
+   :class:`StreamReader`. It can also be used as an async context manager.
+
+   .. versionadded:: 3.8
+
+.. coroutinefunction:: connect_write_pipe(pipe, *, limit=2**16)
+
+   Takes a a :term:`file-like object <file object>` to return a
+   :class:`Stream` object of the mode ``WRITE`` that has similar API of
+   :class:`StreamWriter`. It can also be used as an async context manager.
+
+   .. versionadded:: 3.8
 
 .. rubric:: Unix Sockets
 
@@ -126,8 +140,10 @@ and work with streams:
                            sock=None, server_hostname=None, \
                            ssl_handshake_timeout=None)
 
-   Establish a Unix socket connection and return a :class:`Stream` object of
-   the mode ``READWRITE`` that can be used as a reader and a writer.
+   Establish a Unix socket connection and return an awaitable :class:`Stream`
+   object of the mode ``READWRITE`` that can be used as a reader and a writer.
+   The function can also be used as an async context manager where it's
+   automatically awaited.
 
    Similar to :func:`connect` but operates on Unix sockets.
 
@@ -198,24 +214,47 @@ StreamServer
                         ssl=None, reuse_address=None, reuse_port=None, \
                         ssl_handshake_timeout=None, shutdown_timeout=60)
 
-   .. coroutinefunction:: start_serving
+   .. coroutinemethod:: start_serving()
 
-      Binds to the given host and port to start the server. This method is
-      automatically called during ``__enter__`` when :class:`Stream` is
-      used as a context manager.
+      Binds to the given host and port to start the server.
 
-   .. coroutinefunction:: close
+   .. coroutinemethod:: serve_forever()
 
-      Closes the connection. This method is automatically called during
-      ``__exit__`` when :class:`StreamServer` is used as a context manager.
+      Start accepting connections until the coroutine is cancelled.
+      Cancellation of ``serve_forever`` task causes the server
+      to be closed.
 
-   .. method:: is_serving
+      This method can be called if the server is already accepting
+      connections.  Only one ``serve_forever`` task can exist per
+      one *Server* object.
+
+   .. method:: is_serving()
 
       Returns ``True`` if the server is bound and currently serving.
 
+   .. method:: bind()
+
+      Bind the server to the given *host* and *port*. This method is
+      automatically called during ``__aenter__`` when :class:`StreamServer` is
+      used as an async context manager.
+
+   .. method:: is_bound()
+
+      Return ``True`` if the server is bound.
+
+   .. coroutinemethod:: abort()
+
+      Closes the connection and cancels all pending tasks.
+
+   .. coroutinemethod:: close()
+
+      Closes the connection. This method is automatically called during
+      ``__aexit__`` when :class:`StreamServer` is used as an async context
+      manager.
+
    .. attribute:: sockets
 
-      Returns a tuple of sockets the server is bound to.
+      Returns a tuple of socket objects the server is bound to.
 
    .. versionadded:: 3.8
 
@@ -227,31 +266,44 @@ UnixStreamServer
                             limit=2**16, sock=None, backlog=100, \
                             ssl=None, ssl_handshake_timeout=None, shutdown_timeout=60)
 
-   .. coroutinefunction:: start_serving
+   .. coroutinemethod:: start_serving()
 
-      Binds to the given host and port to start the server. This method is
-      automatically called during ``__enter__`` when :class:`Stream` is
-      used as a context manager.
+      Binds to the given host and port to start the server.
 
-   .. coroutinefunction:: close
-
-      Closes the connection. This method is automatically called during
-      ``__exit__`` when :class:`UnixStreamServer` is used as a context manager.
-
-   .. method:: is_serving
+   .. method:: is_serving()
 
       Returns ``True`` if the server is bound and currently serving.
 
+   .. method:: bind()
+
+      Bind the server to the given *host* and *port*. This method is
+      automatically called during ``__aenter__`` when :class:`UnixStreamServer` is
+      used as an async context manager.
+
+   .. method:: is_bound()
+
+      Return ``True`` if the server is bound.
+
+   .. coroutinemethod:: abort()
+
+      Closes the connection and cancels all pending tasks.
+
+   .. coroutinemethod:: close()
+
+      Closes the connection. This method is automatically called during
+      ``__aexit__`` when :class:`UnixStreamServer` is used as an async context
+      manager.
+
    .. attribute:: sockets
 
-      Returns a tuple of sockets the server is bound to.
+      Returns a tuple of socket objects the server is bound to.
 
    .. availability:: Unix.
 
    .. versionadded:: 3.8
 
 Stream
-============
+======
 
 .. class:: Stream
 
@@ -259,9 +311,8 @@ Stream
    to the IO stream . It includes the API provided by :class:`StreamReader`
    and :class:`StreamWriter`.
 
-   It is not recommended to instantiate *Stream* objects
-   directly; use :func:`connect` and :func:`StreamServer`
-   instead.
+   Do not instantiate *Stream* objects directly; use API like :func:`connect`
+   and :class:`StreamServer` instead.
 
    .. versionadded:: 3.8
 
@@ -471,16 +522,14 @@ TCP echo client using the :func:`asyncio.connect` function::
     import asyncio
 
     async def tcp_echo_client(message):
-        stream = await asyncio.connect('127.0.0.1', 8888)
+        async with asyncio.connect('127.0.0.1', 8888) as stream:
+            print(f'Send: {message!r}')
+            await stream.write(message.encode())
 
-        print(f'Send: {message!r}')
-        stream.write(message.encode())
+            data = await stream.read(100)
+            print(f'Received: {data.decode()!r}')
 
-        data = await stream.read(100)
-        print(f'Received: {data.decode()!r}')
-
-        print('Close the connection')
-        await stream.close()
+            print('Close the connection')
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -508,20 +557,16 @@ TCP echo server using the :class:`asyncio.StreamServer` class::
         print(f"Received {message!r} from {addr!r}")
 
         print(f"Send: {message!r}")
-        stream.write(data)
-        await stream.drain()
+        await stream.write(data)
 
         print("Close the connection")
         await stream.close()
 
     async def main():
-        server = asyncio.StreamServer(handle_echo, '127.0.0.1', 8888)
-
-        await server.start_serving()
-        addr = server.sockets[0].getsockname()
-        print(f'Serving on {addr}')
-
-        async with server:
+        async with asyncio.StreamServer(
+                handle_echo, '127.0.0.1', 8888) as server:
+            addr = server.sockets[0].getsockname()
+            print(f'Serving on {addr}')
             await server.serve_forever()
 
     asyncio.run(main())
