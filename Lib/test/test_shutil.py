@@ -2671,9 +2671,9 @@ class Symlink(unittest.TestCase):
     # List of sources
     #
     def test_list_dst_is_directory(self):
-        dirs = {'directory': self.dst_dir1,
+        dsts = {'directory': self.dst_dir1,
                 'symlink_to_dir': self.link_to_dir}
-        for description, dir_path in dirs.items():
+        for description, dir_path in dsts.items():
             with self.subTest(type=description):
                 shutil.symlink(self.srcs, dir_path)
                 for src in self.srcs:
