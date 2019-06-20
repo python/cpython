@@ -1016,10 +1016,10 @@ class PyBuildExt(build_ext):
         # _curses_panel needs some form of ncurses
         if (curses_enabled and ncurses_enabled and
                 self.compiler.find_library_file(self.lib_dirs, panel_library)):
-                self.add(Extension('_curses_panel', ['_curses_panel.c'],
-                               include_dirs=curses_includes,
-                               define_macros=curses_defines,
-                               libraries=[panel_library, *curses_libs]))
+            self.add(Extension('_curses_panel', ['_curses_panel.c'],
+                           include_dirs=curses_includes,
+                           define_macros=curses_defines,
+                           libraries=[panel_library, *curses_libs]))
         else:
             self.missing.append('_curses_panel')
 
