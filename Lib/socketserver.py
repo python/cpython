@@ -654,7 +654,8 @@ class ThreadingMixIn:
             self.shutdown_request(request)
             thread = threading.current_thread()
             try:
-                self._threads.remove(thread)
+                if not thread.daemon:
+                    self._threads.remove(thread)
             except AttributeError:
                 pass
 
