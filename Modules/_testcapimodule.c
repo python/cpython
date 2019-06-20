@@ -3301,17 +3301,18 @@ getbuffer_with_null_view(PyObject* self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
-/* test PyBuffer_SizeFromFormat() */
-static Py_ssize_t
-pybuffer_size_from_format(PyObject* self, PyObject *args)
+/* PyBuffer_SizeFromFormat() */
+static PyObject *
+pybuffer_size_from_format(PyObject *self, PyObject *args)
 {
     const char *format;
 
     if (!PyArg_ParseTuple(args, "s:pybuffer_size_from_format",
-                          &format))
-        return -1;
+                          &format)) {
+        return NULL;
+    }
 
-    return PyBuffer_SizeFromFormat(format);
+    return PyLong_FromSsize_t(PyBuffer_SizeFromFormat(format));
 }
 
 /* Test that the fatal error from not having a current thread doesn't

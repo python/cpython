@@ -498,18 +498,18 @@ Py_ssize_t
 PyBuffer_SizeFromFormat(const char *format)
 {
     PyObject *structmodule = NULL;
-    PyObject *Struct = NULL;
+    PyObject *calcsize = NULL;
     PyObject *res = NULL;
     PyObject *fmt = NULL;
     Py_ssize_t itemsize = -1;
 
     structmodule = PyImport_ImportModule("struct");
-    if (structmodule == NULL)
+    if (structmodule == NULL) {
         goto done;
+    }
 
-    Struct = PyObject_GetAttrString(structmodule, "calcsize");
-    Py_DECREF(structmodule);
-    if (Struct == NULL) {
+    calcsize = PyObject_GetAttrString(structmodule, "calcsize");
+    if (calcsize == NULL) {
         goto done;
     }
 
@@ -518,7 +518,7 @@ PyBuffer_SizeFromFormat(const char *format)
         goto done;
     }
 
-    res = PyObject_CallFunctionObjArgs(Struct, fmt, NULL);
+    res = PyObject_CallFunctionObjArgs(calcsize, fmt, NULL);
     if (res == NULL) {
         goto done;
     }
@@ -529,7 +529,8 @@ PyBuffer_SizeFromFormat(const char *format)
     }
 
 done:
-    Py_XDECREF(Struct);
+    Py_DECREF(structmodule);
+    Py_XDECREF(calcsize);
     Py_XDECREF(fmt);
     Py_XDECREF(res);
     return itemsize;

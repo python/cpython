@@ -43,6 +43,11 @@ try:
 except ImportError:
     numpy_array = None
 
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
 
 SHORT_TEST = True
 
@@ -4412,21 +4417,13 @@ class TestBufferProtocol(unittest.TestCase):
         x = ndarray([1,2,3], shape=[3], flags=ND_GETBUF_FAIL)
         self.assertRaises(BufferError, memoryview, x)
 
-    # Test PyBuffer_SizeFromFormat()
     @support.cpython_only
+    @unittest.skipUnless(_testcapi, 'requires _testcapi')
     def test_pybuffer_size_from_format(self):
-        from _testcapi import pybuffer_size_from_format
-
         # basic tests
         for format in ("i", "3s", "0i", " "):
-            self.assertEqual(pybuffer_size_from_format(format.encode()),
+            self.assertEqual(_testcapi.pybuffer_size_from_format(format),
                 struct.calcsize(format))
-
-        # invalid tests
-        for format in ("nn", "xxx", "xx"):
-            self.assertEqual(pybuffer_size_from_format(format.encode()),
-                struct.calcsize(format))
-
 
 if __name__ == "__main__":
     unittest.main()
