@@ -285,7 +285,7 @@ sub-slots
    +---------------------------------------------------------+-----------------------------------+--------------+
    | :c:member:`~PyNumberMethods.nb_inplace_true_divide`     | :c:type:`binaryfunc`              | __truediv__  |
    +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_index`                   | :c:type:`binaryfunc`              | __index__    |
+   | :c:member:`~PyNumberMethods.nb_index`                   | :c:type:`unaryfunc`               | __index__    |
    +---------------------------------------------------------+-----------------------------------+--------------+
    | :c:member:`~PyNumberMethods.nb_matrix_multiply`         | :c:type:`binaryfunc`              | __matmul__   |
    |                                                         |                                   | __rmatmul__  |
