@@ -200,6 +200,16 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.8
 
+- :const:`IPPROTO_UDPLITE` is a variant on UDP which allows you to specify
+  what portion of a packet to cover with the checksum. It adds the methods
+  :meth:`socket.set_send_checksum_coverage` to change what portion of
+  outgoing packets are covered and :meth:`socket.set_recv_checksum_coverage`
+  to filter out packets which cover too little of their data.
+
+  ..availability:: Linux >= 2.6.20
+
+  .. versionadded:: 3.8
+
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
 returned from the DNS resolution.  The socket address will be resolved
