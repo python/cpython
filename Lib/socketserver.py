@@ -652,11 +652,13 @@ class ThreadingMixIn:
         except Exception:
             self.handle_error(request, client_address)
         finally:
-            self.shutdown_request(request)
-            thread = threading.current_thread()
-            with self._threads_lock:
-                if self._threads and not thread.daemon:
-                    self._threads.remove(thread)
+            try:
+                self.shutdown_request(request)
+            finally:
+                thread = threading.current_thread()
+                with self._threads_lock:
+                    if self._threads and not thread.daemon:
+                        self._threads.remove(thread)
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
