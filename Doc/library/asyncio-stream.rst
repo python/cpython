@@ -25,8 +25,6 @@ streams::
             data = await stream.read(100)
             print(f'Received: {data.decode()!r}')
 
-            print('Close the connection')
-
     asyncio.run(tcp_echo_client('Hello World!'))
 
 
@@ -40,15 +38,28 @@ and work with streams:
 
 
 .. coroutinefunction:: connect(host=None, port=None, \*, \
-                               loop=None, limit=2**16, ssl=None, family=0, \
+                               limit=2**16, ssl=None, family=0, \
                                proto=0, flags=0, sock=None, local_addr=None, \
                                server_hostname=None, ssl_handshake_timeout=None, \
                                happy_eyeballs_delay=None, interleave=None)
 
-   This function internally uses :meth:`loop.create_connection` to return an awaitable
-   :class:`Stream` object of the mode ``READWRITE`` that can be used as a reader
-   and a writer. The function can also be used as an async context manager where it's
-   automatically awaited.
+   Connect to TCP socket on *host* : *port* address and return a :class:`Stream`
+   object of mode :attr:`StreamMode.READWRITE`.
+
+
+   *limit* determines the buffer size limit used by the returned :class:`Stream`
+   instance. By default the *limit* is set to 64 KiB.
+
+   The rest of the arguments are passed directly to :meth:`loop.create_connection`.
+
+   The function can be used with ``await`` to get a connected stream::
+
+       stream = await asyncio.connect('127.0.0.1', 8888)
+
+   The function can also be used as an async context manager::
+
+       async with asyncio.connect('127.0.0.1', 8888) as stream:
+           ...
 
    .. versionadded:: 3.8
 
@@ -120,17 +131,23 @@ and work with streams:
 
 .. coroutinefunction:: connect_read_pipe(pipe, *, limit=2**16)
 
-   Takes a :term:`file-like object <file object>` to return a
-   :class:`Stream` object of the mode ``READ`` that has similar API of
-   :class:`StreamReader`. It can also be used as an async context manager.
+   Takes a :term:`file-like object <file object>` *pipe* to return a
+   :class:`Stream` object of the mode :attr:`StreamMode.READ` that has
+   similar API of :class:`StreamReader`. It can also be used as an async context manager.
+
+   *limit* determines the buffer size limit used by the returned :class:`Stream`
+   instance. By default the limit is set to 64 KiB.
 
    .. versionadded:: 3.8
 
 .. coroutinefunction:: connect_write_pipe(pipe, *, limit=2**16)
 
-   Takes a a :term:`file-like object <file object>` to return a
-   :class:`Stream` object of the mode ``WRITE`` that has similar API of
-   :class:`StreamWriter`. It can also be used as an async context manager.
+   Takes a :term:`file-like object <file object>` *pipe* to return a
+   :class:`Stream` object of the mode :attr:`StreamMode.WRITE` that has
+   similar API of :class:`StreamWriter`. It can also be used as an async context manager.
+
+   *limit* determines the buffer size limit used by the returned :class:`Stream`
+   instance. By default the limit is set to 64 KiB.
 
    .. versionadded:: 3.8
 
@@ -140,12 +157,23 @@ and work with streams:
                            sock=None, server_hostname=None, \
                            ssl_handshake_timeout=None)
 
-   Establish a Unix socket connection and return an awaitable :class:`Stream`
-   object of the mode ``READWRITE`` that can be used as a reader and a writer.
-   The function can also be used as an async context manager where it's
-   automatically awaited.
+   Establish a Unix socket connection to socket with *path* address and
+   return an awaitable :class:`Stream` object of the mode :attr:`StreamMode.READWRITE`
+   that can be used as a reader and a writer.
 
-   Similar to :func:`connect` but operates on Unix sockets.
+   *limit* determines the buffer size limit used by the returned :class:`Stream`
+   instance. By default the *limit* is set to 64 KiB.
+
+   The rest of the arguments are passed directly to :meth:`loop.create_unix_connection`.
+
+   The function can be used with ``await`` to get a connected stream::
+
+       stream = await asyncio.connect_unix('/tmp/example.sock')
+
+   The function can also be used as an async context manager::
+
+       async with asyncio.connect_unix('/tmp/example.sock') as stream:
+           ...
 
    .. availability:: Unix.
 
@@ -174,7 +202,7 @@ and work with streams:
 
    .. deprecated-removed:: 3.8 3.10
 
-      `open_unix_connection()` is deprecated if favor of :func:`connect_unix`.
+      ``open_unix_connection()`` is deprecated if favor of :func:`connect_unix`.
 
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
@@ -200,7 +228,7 @@ and work with streams:
 
    .. deprecated-removed:: 3.8 3.10
 
-      `start_unix_server()` is deprecated in favor of :class:`UnixStreamServer`.
+      ``start_unix_server()`` is deprecated in favor of :class:`UnixStreamServer`.
 
 
 ---------
@@ -213,6 +241,21 @@ StreamServer
                         flags=socket.AI_PASSIVE, sock=None, backlog=100, \
                         ssl=None, reuse_address=None, reuse_port=None, \
                         ssl_handshake_timeout=None, shutdown_timeout=60)
+
+   The *client_connected_cb* callback is called whenever a new client
+   connection is established.  It receives a :class:`Stream` object of the
+   mode :attr:`StreamMode.READWRITE`.
+
+   *client_connected_cb* can be a plain callable or a
+   :ref:`coroutine function <coroutine>`; if it is a coroutine function,
+   it will be automatically scheduled as a :class:`Task`.
+
+   *limit* determines the buffer size limit used by the
+   returned :class:`Stream` instance.  By default the *limit*
+   is set to 64 KiB.
+
+   The rest of the arguments are passed directly to
+   :meth:`loop.create_server`.
 
    .. coroutinemethod:: start_serving()
 
@@ -266,6 +309,21 @@ UnixStreamServer
                             limit=2**16, sock=None, backlog=100, \
                             ssl=None, ssl_handshake_timeout=None, shutdown_timeout=60)
 
+   The *client_connected_cb* callback is called whenever a new client
+   connection is established.  It receives a :class:`Stream` object of the
+   mode :attr:`StreamMode.READWRITE`.
+
+   *client_connected_cb* can be a plain callable or a
+   :ref:`coroutine function <coroutine>`; if it is a coroutine function,
+   it will be automatically scheduled as a :class:`Task`.
+
+   *limit* determines the buffer size limit used by the
+   returned :class:`Stream` instance.  By default the *limit*
+   is set to 64 KiB.
+
+   The rest of the arguments are passed directly to
+   :meth:`loop.create_unix_server`.
+
    .. coroutinemethod:: start_serving()
 
       Binds to the given host and port to start the server.
@@ -315,6 +373,30 @@ Stream
    and :class:`StreamServer` instead.
 
    .. versionadded:: 3.8
+
+
+StreamMode
+==========
+
+.. class:: StreamMode
+
+   A subclass of :class:`enum.Flag` that defines a set of values that can be
+   used to determine the ``mode`` of :class:`Stream` objects.
+
+   .. data:: READ
+
+   The stream object is readable and provides the API of :class:`StreamReader`.
+
+   .. data:: WRITE
+
+   The stream object is writeable and provides the API of :class:`StreamWriter`.
+
+   .. data:: READWRITE
+
+   The stream object is readable and writeable and provides the API of both
+   :class:`StreamReader` and :class:`StreamWriter`.
+
+  .. versionadded:: 3.8
 
 
 StreamReader
@@ -529,8 +611,6 @@ TCP echo client using the :func:`asyncio.connect` function::
             data = await stream.read(100)
             print(f'Received: {data.decode()!r}')
 
-            print('Close the connection')
-
     asyncio.run(tcp_echo_client('Hello World!'))
 
 
@@ -601,11 +681,7 @@ Simple example querying HTTP headers of the URL passed on the command line::
         )
 
         stream.write(query.encode('latin-1'))
-        while True:
-            line = await stream.readline()
-            if not line:
-                break
-
+        while (line := await stream.readline()):
             line = line.decode('latin1').rstrip()
             if line:
                 print(f'HTTP header> {line}')
