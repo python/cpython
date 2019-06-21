@@ -31,7 +31,7 @@ for ``x > y``.
 Because there are no begin/end brackets, Python is much less prone to
 coding-style conflicts.  In C there are many different ways to place the braces.
 After becoming used to reading and writing code using a particular style,
-it is normal to feel somewhat uneasy when reading (or being required to write) 
+it is normal to feel somewhat uneasy when reading (or being required to write)
 in a different one.
 
 
