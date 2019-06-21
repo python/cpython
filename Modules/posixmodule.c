@@ -3759,6 +3759,10 @@ static PyObject *
 os_listdir_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=293045673fcd1a75 input=e3f58030f538295d]*/
 {
+    if (PySys_Audit("os.listdir", "O",
+                    path->object ? path->object : Py_None) < 0) {
+        return NULL;
+    }
 #if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
     return _listdir_windows_no_opendir(path, NULL);
 #else
@@ -13163,6 +13167,11 @@ os_scandir_impl(PyObject *module, path_t *path)
     int fd = -1;
 #endif
 #endif
+
+    if (PySys_Audit("os.scandir", "O",
+                    path->object ? path->object : Py_None) < 0) {
+        return NULL;
+    }
 
     iterator = PyObject_New(ScandirIterator, &ScandirIteratorType);
     if (!iterator)

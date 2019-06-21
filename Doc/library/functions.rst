@@ -277,7 +277,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. audit-event:: compile "source filename"
 
-      Raises an :func:`auditing event <sys.audit>` ``compile`` with arguments
+      Raises an :ref:`auditing event <auditing>` ``compile`` with arguments
       ``source`` and ``filename``. This event may also be raised by implicit
       compilation.
 
@@ -490,8 +490,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. audit-event:: exec code_object
 
-      Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
-      the argument. Code compilation events may also be raised.
+      Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
+      as the argument. Code compilation events may also be raised.
 
 .. index:: builtin: exec
 
@@ -525,8 +525,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. audit-event:: exec code_object
 
-      Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
-      the argument. Code compilation events may also be raised.
+      Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
+      as the argument. Code compilation events may also be raised.
 
    .. note::
 
@@ -779,7 +779,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. audit-event:: builtins.input prompt
 
-      Raises an :func:`auditing event <sys.audit>` ``builtins.input`` with
+      Raises an :ref:`auditing event <auditing>` ``builtins.input`` with
       argument ``prompt`` before reading input
 
    .. audit-event:: builtins.input/result result

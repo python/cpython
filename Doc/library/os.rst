@@ -1801,6 +1801,8 @@ features:
    This function can also support :ref:`specifying a file descriptor
    <path_fd>`; the file descriptor must refer to a directory.
 
+   .. audit-event:: os.listdir path
+
    .. note::
       To encode ``str`` filenames to ``bytes``, use :func:`~os.fsencode`.
 
@@ -2177,6 +2179,8 @@ features:
 
    This function can also support :ref:`specifying a file descriptor
    <path_fd>`; the file descriptor must refer to a directory.
+
+   .. audit-event:: os.scandir path
 
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
