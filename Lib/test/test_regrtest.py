@@ -618,6 +618,8 @@ class ProgramsTestCase(BaseTestCase):
         test_args = ['--testdir=%s' % self.tmptestdir]
         if platform.machine() == 'ARM64':
             test_args.append('-arm64') # ARM 64-bit build
+        elif platform.machine() == 'ARM':
+            test_args.append('-arm32')   # 32-bit ARM build
         elif platform.architecture()[0] == '64bit':
             test_args.append('-x64')   # 64-bit build
         if not Py_DEBUG:
@@ -633,6 +635,8 @@ class ProgramsTestCase(BaseTestCase):
         rt_args = ["-q"]             # Quick, don't run tests twice
         if platform.machine() == 'ARM64':
             rt_args.append('-arm64') # ARM 64-bit build
+        elif platform.machine() == 'ARM':
+            rt_args.append('-arm32')   # 32-bit ARM build
         elif platform.architecture()[0] == '64bit':
             rt_args.append('-x64')   # 64-bit build
         if Py_DEBUG:

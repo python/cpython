@@ -945,7 +945,7 @@ Text I/O
       *errors*, *newline*, *line_buffering* and *write_through*.
 
       Parameters not specified keep current settings, except
-      ``errors='strict`` is used when *encoding* is specified but
+      ``errors='strict'`` is used when *encoding* is specified but
       *errors* is not specified.
 
       It is not possible to change the encoding or newline if some data

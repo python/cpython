@@ -3036,10 +3036,10 @@ error:
 /* Create sys module without all attributes: _PySys_InitMain() should be called
    later to add remaining attributes. */
 PyStatus
-_PySys_Create(_PyRuntimeState *runtime, PyInterpreterState *interp,
+_PySys_Create(_PyRuntimeState *runtime, PyThreadState *tstate,
               PyObject **sysmod_p)
 {
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyInterpreterState *interp = tstate->interp;
 
     PyObject *modules = PyDict_New();
     if (modules == NULL) {

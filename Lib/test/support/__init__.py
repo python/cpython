@@ -485,7 +485,9 @@ def _is_gui_available():
     if hasattr(_is_gui_available, 'result'):
         return _is_gui_available.result
     reason = None
-    if sys.platform.startswith('win'):
+    if sys.platform.startswith('win') and platform.win32_is_iot():
+        reason = "gui is not available on Windows IoT Core"
+    elif sys.platform.startswith('win'):
         # if Python is running as a service (such as the buildbot service),
         # gui interaction may be disallowed
         import ctypes

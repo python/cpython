@@ -1479,10 +1479,8 @@ class _ActionsContainer(object):
 
             # strings starting with two prefix characters are long options
             option_strings.append(option_string)
-            if option_string[0] in self.prefix_chars:
-                if len(option_string) > 1:
-                    if option_string[1] in self.prefix_chars:
-                        long_option_strings.append(option_string)
+            if len(option_string) > 1 and option_string[1] in self.prefix_chars:
+                long_option_strings.append(option_string)
 
         # infer destination, '--foo-bar' -> 'foo_bar' and '-x' -> 'x'
         dest = kwargs.pop('dest', None)

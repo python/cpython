@@ -15792,8 +15792,10 @@ init_fs_encoding(PyInterpreterState *interp)
 
 
 PyStatus
-_PyUnicode_InitEncodings(PyInterpreterState *interp)
+_PyUnicode_InitEncodings(PyThreadState *tstate)
 {
+    PyInterpreterState *interp = tstate->interp;
+
     PyStatus status = init_fs_encoding(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
