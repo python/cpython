@@ -1,1 +1,0 @@
-Add a link pointing to the traceback object reference documentation in the sys.exc_info return value documentation block.
