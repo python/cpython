@@ -4908,6 +4908,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     // Use _PyUnicodeWriter after fast path is failed.
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
+    writer.min_length = size;
     writer.buffer = u;
     writer.pos = s - starts;
     _PyUnicodeWriter_Update(&writer);
@@ -7009,6 +7010,7 @@ PyUnicode_DecodeASCII(const char *s,
 
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
+    writer.min_length = size;
     writer.buffer = u;
     writer.pos = outpos;
     _PyUnicodeWriter_Update(&writer);
