@@ -265,6 +265,9 @@ unicode_fill(enum PyUnicode_Kind kind, void *data, Py_UCS4 value,
 /* Forward declaration */
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
+static inline int
+_PyUnicodeWriter_InitPrepare(_PyUnicodeWriter *writer,
+                             Py_ssize_t length, Py_UCS4 maxchar);
 static PyObject *
 unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
                     const char *errors);
@@ -4900,10 +4903,9 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
         return get_latin1_char((unsigned char)s[0]);
     }
 
-    _PyUnicodeWriter_Init(&writer);
-    writer.min_length = size;
-    if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) == -1)
+    if (_PyUnicodeWriter_InitPrepare(&writer, size, 127) == -1) {
         goto onError;
+    }
 
     writer.pos = ascii_decode(s, end, writer.data);
     s += writer.pos;
@@ -6993,10 +6995,9 @@ PyUnicode_DecodeASCII(const char *s,
     if (size == 1 && (unsigned char)s[0] < 128)
         return get_latin1_char((unsigned char)s[0]);
 
-    _PyUnicodeWriter_Init(&writer);
-    writer.min_length = size;
-    if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0)
+    if (_PyUnicodeWriter_InitPrepare(&writer, size, 127) < 0) {
         return NULL;
+    }
 
     e = s + size;
     data = writer.data;
@@ -8056,9 +8057,7 @@ PyUnicode_DecodeCharmap(const char *s,
 
     if (size == 0)
         _Py_RETURN_UNICODE_EMPTY();
-    _PyUnicodeWriter_Init(&writer);
-    writer.min_length = size;
-    if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) == -1)
+    if (_PyUnicodeWriter_InitPrepare(&writer, size, 127) == -1)
         goto onError;
 
     if (PyUnicode_CheckExact(mapping)) {
@@ -8979,8 +8978,7 @@ _PyUnicode_TranslateCharmap(PyObject *input,
 
     /* allocate enough for a simple 1:1 translation without
        replacements, if we need more, we'll resize */
-    _PyUnicodeWriter_Init(&writer);
-    if (_PyUnicodeWriter_Prepare(&writer, size, 127) == -1)
+    if (_PyUnicodeWriter_InitPrepare(&writer, size, 127) == -1)
         goto onError;
 
     ignore = (errors != NULL && strcmp(errors, "ignore") == 0);
@@ -13506,6 +13504,32 @@ _PyUnicodeWriter_Init(_PyUnicodeWriter *writer)
     assert(writer->kind <= PyUnicode_1BYTE_KIND);
 }
 
+static inline int
+_PyUnicodeWriter_InitPrepare(_PyUnicodeWriter *writer,
+                             Py_ssize_t length, Py_UCS4 maxchar)
+{
+    assert(maxchar <= MAX_UNICODE);
+    maxchar = Py_MAX(maxchar, 127);
+
+    memset(writer, 0, sizeof(*writer));
+    writer->min_length = length;
+
+    writer->buffer = PyUnicode_New(length, maxchar);
+    if (writer->buffer == NULL) {
+        return -1;
+    }
+    _PyUnicodeWriter_Update(writer);
+    return 0;
+}
+
+/* Initialize and prepare the writer.
+ *
+ * This is same to following code, but faster:
+ *
+ *   _PyUnicodeWriter_Init(&writer);
+ *   writer.min_length = size;
+ *   _PyUnicodeWriter_Prepare(&writer, size, maxchar);
+ */
 int
 _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
                                  Py_ssize_t length, Py_UCS4 maxchar)
