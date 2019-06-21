@@ -265,6 +265,8 @@ unicode_fill(enum PyUnicode_Kind kind, void *data, Py_UCS4 value,
 /* Forward declaration */
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
+static inline void
+_PyUnicodeWriter_Update(_PyUnicodeWriter *writer);
 static PyObject *
 unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
                     const char *errors);
@@ -4877,7 +4879,6 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
                     _Py_error_handler error_handler, const char *errors,
                     Py_ssize_t *consumed)
 {
-    _PyUnicodeWriter writer;
     const char *starts = s;
     const char *end = s + size;
 
@@ -4900,13 +4901,22 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
         return get_latin1_char((unsigned char)s[0]);
     }
 
-    _PyUnicodeWriter_Init(&writer);
-    writer.min_length = size;
-    if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) == -1)
-        goto onError;
+    // Try simple ASCII case
+    PyObject *u = PyUnicode_New(size, 127);
+    if (u == NULL) {
+        return NULL;
+    }
+    s += ascii_decode(s, end, PyUnicode_DATA(u));
+    if (s == end) {
+        return u;
+    }
 
-    writer.pos = ascii_decode(s, end, writer.data);
-    s += writer.pos;
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    writer.buffer = u;
+    writer.pos = s - starts;
+    _PyUnicodeWriter_Update(&writer);
+
     while (s < end) {
         Py_UCS4 ch;
         int kind = writer.kind;
@@ -6975,13 +6985,12 @@ PyUnicode_DecodeASCII(const char *s,
                       const char *errors)
 {
     const char *starts = s;
-    _PyUnicodeWriter writer;
     int kind;
     void *data;
     Py_ssize_t startinpos;
     Py_ssize_t endinpos;
     Py_ssize_t outpos;
-    const char *e;
+    const char *e = s + size;
     PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
     _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
@@ -6993,19 +7002,24 @@ PyUnicode_DecodeASCII(const char *s,
     if (size == 1 && (unsigned char)s[0] < 128)
         return get_latin1_char((unsigned char)s[0]);
 
-    _PyUnicodeWriter_Init(&writer);
-    writer.min_length = size;
-    if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0)
+    // Shortcut for simple case
+    PyObject *u = PyUnicode_New(size, 127);
+    if (u == NULL) {
         return NULL;
+    }
+    outpos = ascii_decode(s, e, PyUnicode_DATA(u));
+    if (outpos == size) {
+        return u;
+    }
 
-    e = s + size;
-    data = writer.data;
-    outpos = ascii_decode(s, e, (Py_UCS1 *)data);
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    writer.buffer = u;
     writer.pos = outpos;
-    if (writer.pos == size)
-        return _PyUnicodeWriter_Finish(&writer);
+    _PyUnicodeWriter_Update(&writer);
 
-    s += writer.pos;
+    data = writer.data;
+    s += outpos;
     kind = writer.kind;
     while (s < e) {
         unsigned char c = (unsigned char)*s;
