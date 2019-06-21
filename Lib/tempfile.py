@@ -771,15 +771,17 @@ class TemporaryDirectory(object):
     in it are removed.
     """
 
-    def __init__(self, suffix=None, prefix=None, dir=None):
+    def __init__(self, suffix=None, prefix=None, dir=None, onerror=None):
         self.name = mkdtemp(suffix, prefix, dir)
+        self.onerror = onerror
         self._finalizer = _weakref.finalize(
             self, self._cleanup, self.name,
-            warn_message="Implicitly cleaning up {!r}".format(self))
+            warn_message="Implicitly cleaning up {!r}".format(self),
+            onerror=onerror)
 
     @classmethod
-    def _rmtree(cls, name):
-        def onerror(func, path, exc_info):
+    def _rmtree(cls, name, onerror):
+        def rmtree_onerror(func, path, exc_info):
             if issubclass(exc_info[0], PermissionError):
                 def resetperms(path):
                     try:
@@ -797,19 +799,22 @@ class TemporaryDirectory(object):
                         _os.unlink(path)
                     # PermissionError is raised on FreeBSD for directories
                     except (IsADirectoryError, PermissionError):
-                        cls._rmtree(path)
+                        cls._rmtree(path, onerror)
                 except FileNotFoundError:
                     pass
             elif issubclass(exc_info[0], FileNotFoundError):
                 pass
             else:
-                raise
+                onerror(func, path, exc_info)
 
-        _shutil.rmtree(name, onerror=onerror)
+        if onerror is None:
+            def onerror(*args):
+                raise
+        _shutil.rmtree(name, onerror=rmtree_onerror)
 
     @classmethod
-    def _cleanup(cls, name, warn_message):
-        cls._rmtree(name)
+    def _cleanup(cls, name, warn_message, onerror):
+        cls._rmtree(name, onerror)
         _warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):
@@ -821,6 +826,7 @@ class TemporaryDirectory(object):
     def __exit__(self, exc, value, tb):
         self.cleanup()
 
-    def cleanup(self):
+    def cleanup(self, onerror=None):
         if self._finalizer.detach():
-            self._rmtree(self.name)
+            self._rmtree(self.name,
+                         onerror=onerror if onerror else self.onerror)
