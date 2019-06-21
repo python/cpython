@@ -11,11 +11,14 @@ import contextlib
 import stat
 import weakref
 from unittest import mock
+import subprocess
+import shutil
 
 import unittest
 from test import support
 from test.support import script_helper
 
+MACOS = sys.platform.startswith("darwin")
 
 has_textmode = (tempfile._text_openflags != tempfile._bin_openflags)
 has_spawnl = hasattr(os, 'spawnl')
@@ -1485,6 +1488,142 @@ class TestTemporaryDirectory(BaseTestCase):
             d.cleanup()
         self.assertFalse(os.path.exists(d.name))
 
+    @unittest.skipUnless(MACOS, "requires macOS")
+    def test_onerror_implicit_cleanup_macOS(self):
+        # bpo-37302: confirm that an onerror handler
+        # passed to the constructor is called.
+        #
+        # The test creates a filesystem image and
+        # mounts it inside the temporary directory.
+        # This raises an error in _cleanup() because
+        # the mount point can't be deleted until it
+        # is unmounted.
+        self.onerror_called = False
+        device = ''
+        tmpdir = ''
+
+        def _onerror(*args):
+            self.onerror_called = True
+
+        imagefile = tempfile.mktemp(suffix='.dmg', dir=tempfile.gettempdir())
+        subprocess.run(['hdiutil', 'create', '-fs', 'MS-DOS',
+                        '-size', '180KB', imagefile],
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE)
+        try:
+            with tempfile.TemporaryDirectory(onerror=_onerror) as d:
+                tmpdir = str(d)
+                foodir = os.path.join(d, 'foo')
+                os.mkdir(foodir)
+                ret = subprocess.run(['hdiutil', 'attach',
+                                      '-mountroot', foodir, imagefile],
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
+                device = ret.stdout.split()[2].decode('ascii')
+        except:
+            pass
+
+        if os.path.exists(tmpdir):
+            subprocess.run(['hdiutil', 'unmount', device],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            shutil.rmtree(tmpdir)
+            os.unlink(imagefile)
+
+        self.assertTrue(self.onerror_called, 'onerror handler not called')
+
+    @unittest.skipUnless(MACOS, "requires macOS")
+    def test_onerror_explicit_cleanup_macOS(self):
+        # bpo-37302: confirm that an onerror handler
+        # passed to the cleanup() function is called.
+        #
+        # The test creates a filesystem image and
+        # mounts it inside the temporary directory.
+        # This raises an error in _cleanup() because
+        # the mount point can't be deleted until it
+        # is unmounted.
+        device = ''
+        tmpdir = ''
+        self.onerror_called = False
+
+        def _onerror(func, path, exc_info):
+            self.onerror_called = True
+
+        imagefile = tempfile.mktemp(suffix='.dmg', dir=tempfile.gettempdir())
+        subprocess.run(['hdiutil', 'create', '-fs', 'MS-DOS',
+                        '-size', '180KB', imagefile],
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE)
+        try:
+            td = tempfile.TemporaryDirectory()
+            tmpdir = str(td.name)
+            foodir = os.path.join(td.name, 'foo')
+            os.mkdir(foodir)
+            ret = subprocess.run(['hdiutil', 'attach',
+                                  '-mountroot', foodir, imagefile],
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+            device = ret.stdout.split()[2].decode('ascii')
+            td.cleanup(onerror=_onerror)
+        except:
+            pass
+
+        if os.path.exists(tmpdir):
+            subprocess.run(['hdiutil', 'unmount', device],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            shutil.rmtree(tmpdir)
+            os.unlink(imagefile)
+
+        self.assertTrue(self.onerror_called, 'onerror handler not called')
+
+    @unittest.skipUnless(MACOS, "requires macOS")
+    def test_onerror_override_macOS(self):
+        # bpo-37302: confirm that the onerror handler
+        # passed to the cleanup() function is called
+        # instead of the handler passed to the constructor.
+        #
+        # The test creates a filesystem image and
+        # mounts it inside the temporary directory.
+        # This raises an error in _cleanup() because
+        # the mount point can't be deleted until it
+        # is unmounted.
+        device = ''
+        tmpdir = ''
+        self.onerror1_called = False
+        self.onerror2_called = False
+
+        def _onerror1(func, path, exc_info):
+            self.onerror1_called = True
+
+        def _onerror2(func, path, exc_info):
+            self.onerror2_called = True
+
+        imagefile = tempfile.mktemp(suffix='.dmg', dir=tempfile.gettempdir())
+        subprocess.run(['hdiutil', 'create', '-fs', 'MS-DOS',
+                        '-size', '180KB', imagefile],
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE)
+        try:
+            td = tempfile.TemporaryDirectory(onerror=_onerror1)
+            tmpdir = str(td.name)
+            foodir = os.path.join(td.name, 'foo')
+            os.mkdir(foodir)
+            ret = subprocess.run(['hdiutil', 'attach',
+                                  '-mountroot', foodir, imagefile],
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+            device = ret.stdout.split()[2].decode('ascii')
+            td.cleanup(onerror=_onerror2)
+        except:
+            pass
+
+        if os.path.exists(tmpdir):
+            subprocess.run(['hdiutil', 'unmount', device],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            shutil.rmtree(tmpdir)
+            os.unlink(imagefile)
+
+        self.assertFalse(self.onerror1_called, 'onerror handler #1 not called')
+        self.assertTrue(self.onerror2_called, 'onerror handler #2 not called')
 
 if __name__ == "__main__":
     unittest.main()
