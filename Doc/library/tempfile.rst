@@ -114,7 +114,7 @@ The module defines the following user-callable items:
       Added *errors* parameter.
 
 
-.. function:: TemporaryDirectory(suffix=None, prefix=None, dir=None)
+.. function:: TemporaryDirectory(suffix=None, prefix=None, dir=None, onerror=None)
 
    This function securely creates a temporary directory using the same rules as :func:`mkdtemp`.
    The resulting object can be used as a context manager (see
@@ -128,10 +128,23 @@ The module defines the following user-callable items:
    the :keyword:`with` statement, if there is one.
 
    The directory can be explicitly cleaned up by calling the
-   :func:`cleanup` method.
+   :func:`cleanup` method.  It also accepts an optional *onerror* parameter that
+   will be used instead of the *onerror* parameter passed to
+   :func:`TemporaryDirectory`.
+
+   If *onerror* is provided, it must be a callable that accepts three
+   parameters: *function*, *path*, and *excinfo*.
+
+   The first parameter, *function*, is the function which raised the exception;
+   it depends on the platform and implementation.  The second parameter,
+   *path*, will be the path name passed to *function*.  The third parameter,
+   *excinfo*, will be the exception information returned by
+   :func:`sys.exc_info`.  Exceptions raised by *onerror* will not be caught.
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.9
+      Added *onerror* parameters.
 
 .. function:: mkstemp(suffix=None, prefix=None, dir=None, text=False)
 
