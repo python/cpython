@@ -261,6 +261,13 @@ def test_cantrace():
     assertSequenceEqual(["call"] * 4, traced)
 
 
+def test_mmap():
+    import mmap
+    with TestHook() as hook:
+        mmap.mmap(-1, 8)
+        assertEqual(hook.seen[0][1][:2], (-1, 8))
+
+
 if __name__ == "__main__":
     from test.libregrtest.setup import suppress_msvcrt_asserts
     suppress_msvcrt_asserts(False)
