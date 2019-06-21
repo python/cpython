@@ -1,0 +1,3 @@
+The :func:`TemporaryDirectory` function now accepts an optional *onerror*
+parameter with the same functionality as the :func:`shutil.rmtree`
+function's *onerror* parameter.  Patch by Jeffrey Kintscher.
