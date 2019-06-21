@@ -43,6 +43,7 @@ HOST_PLATFORM = get_platform()
 MS_WINDOWS = (HOST_PLATFORM == 'win32')
 CYGWIN = (HOST_PLATFORM == 'cygwin')
 MACOS = (HOST_PLATFORM == 'darwin')
+AIX = (HOST_PLATFORM.startswith('aix'))
 VXWORKS = ('vxworks' in HOST_PLATFORM)
 
 
@@ -806,8 +807,8 @@ class PyBuildExt(build_ext):
                 self.config_h_vars.get('HAVE_GETSPENT', False)):
             self.add(Extension('spwd', ['spwdmodule.c']))
         # AIX has shadow passwords, but access is not via getspent(), etc.
-        # module support is not to be expected
-        elif not HOST_PLATFORM.startswith("aix"):
+        # module support is not expected so it not 'missing'
+        elif not AIX:
             self.missing.append('spwd')
 
         # select(2); not on ancient System V
@@ -913,8 +914,7 @@ class PyBuildExt(build_ext):
             curses_library = 'ncursesw'
         # Issue 36210: OSS provided ncurses does not link on AIX
         # Use IBM supplied 'curses' for successful build of _curses
-        elif HOST_PLATFORM.startswith("aix") and \
-            self.compiler.find_library_file(self.lib_dirs, 'curses'):
+        elif AIX and self.compiler.find_library_file(self.lib_dirs, 'curses'):
             curses_library = 'curses'
         elif self.compiler.find_library_file(self.lib_dirs, 'ncurses'):
             curses_library = 'ncurses'
@@ -986,7 +986,7 @@ class PyBuildExt(build_ext):
             curses_defines.append(('HAVE_NCURSESW', '1'))
             curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
 
-        ncurses_enabled = curses_enabled = True
+        curses_enabled = True
         if curses_library.startswith('ncurses'):
             curses_libs = [curses_library]
             self.add(Extension('_curses', ['_cursesmodule.c'],
@@ -996,7 +996,6 @@ class PyBuildExt(build_ext):
         elif curses_library == 'curses' and not MACOS:
                 # OSX has an old Berkeley curses, not good enough for
                 # the _curses module.
-            ncurses_enabled = False
             if (self.compiler.find_library_file(self.lib_dirs, 'terminfo')):
                 curses_libs = ['curses', 'terminfo']
             elif (self.compiler.find_library_file(self.lib_dirs, 'termcap')):
@@ -1009,18 +1008,18 @@ class PyBuildExt(build_ext):
                                libraries=curses_libs))
         else:
             curses_enabled = False
-            ncurses_enabled = False
             self.missing.append('_curses')
 
         # If the curses module is enabled, check for the panel module
         # _curses_panel needs some form of ncurses
-        if (curses_enabled and ncurses_enabled and
+        skip_curses_panel = True if AIX else False
+        if (curses_enabled and not skip_curses_panel and
                 self.compiler.find_library_file(self.lib_dirs, panel_library)):
             self.add(Extension('_curses_panel', ['_curses_panel.c'],
                            include_dirs=curses_includes,
                            define_macros=curses_defines,
                            libraries=[panel_library, *curses_libs]))
-        else:
+        elif not skip_curses_panel:
             self.missing.append('_curses_panel')
 
     def detect_crypt(self):
@@ -1473,7 +1472,7 @@ class PyBuildExt(build_ext):
         # Platform-specific libraries
         if HOST_PLATFORM.startswith(('linux', 'freebsd', 'gnukfreebsd')):
             self.add(Extension('ossaudiodev', ['ossaudiodev.c']))
-        elif not HOST_PLATFORM.startswith("aix"):
+        elif not AIX:
             self.missing.append('ossaudiodev')
 
         if MACOS:
