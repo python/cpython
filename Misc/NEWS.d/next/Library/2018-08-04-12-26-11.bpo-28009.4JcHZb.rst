@@ -1,1 +1,1 @@
-Fix uuid.getnode() on AIX - to use proper MAC_DELIM character
+Fix uuid.getnode() on AIX to use proper MAC_DELIM character
