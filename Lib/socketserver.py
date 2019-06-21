@@ -639,6 +639,7 @@ class ThreadingMixIn:
     # For non-daemonic threads, list of threading.Threading objects
     # used by server_close() to wait for all threads completion.
     _threads = None
+    _threads_lock = threading.Lock()
 
     def process_request_thread(self, request, client_address):
         """Same as in BaseServer but as a thread.
@@ -653,11 +654,9 @@ class ThreadingMixIn:
         finally:
             self.shutdown_request(request)
             thread = threading.current_thread()
-            try:
-                if not thread.daemon:
+            with self._threads_lock:
+                if self._threads and not thread.daemon:
                     self._threads.remove(thread)
-            except AttributeError:
-                pass
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
@@ -665,16 +664,18 @@ class ThreadingMixIn:
                              args = (request, client_address))
         t.daemon = self.daemon_threads
         if not t.daemon and self.block_on_close:
-            if self._threads is None:
-                self._threads = []
-            self._threads.append(t)
+            with self._threads_lock:
+                if self._threads is None:
+                    self._threads = []
+                self._threads.append(t)
         t.start()
 
     def server_close(self):
         super().server_close()
         if self.block_on_close:
             threads = self._threads
-            self._threads = None
+            with self._threads_lock:
+                self._threads = None
             if threads:
                 for thread in threads:
                     thread.join()
