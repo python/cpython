@@ -86,6 +86,16 @@ New Modules
 Improved Modules
 ================
 
+tempfile
+--------
+
+The :func:`TemporaryDirectory` function now accepts an optional *onerror*
+parameter with the same functionality as the :func:`shutil.rmtree` function's
+*onerror* parameter.  The :func:`cleanup` method of the object returned
+by :func:`TemporaryDirectory` also accepts an optional *onerror* parameter
+that will be used in place of the :func:`TemporaryDirectory` *onerror*
+parameter.  (Contributed by Jeffrey Kintscher in :issue:`37302`.)
+
 threading
 ---------
 
