@@ -2684,7 +2684,7 @@ class Symlink(unittest.TestCase):
     def test_list_dst_not_directory(self):
         exist = {'file': self.dst_file1, 'link_to_file': self.link_to_file,
                  'link_to_link': self.link_to_link}
-        absent = {'absent': self.absent, 'broken_link': self.broken_link,
+        absent = {'absent': self.new1, 'broken_link': self.broken_link,
                   'link_to_broken_link': self.link_to_broken_link}
 
         for description, dst_path in exist.items():
