@@ -200,12 +200,12 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.8
 
-- :const:`IPPROTO_UDPLITE` is a variant on UDP which allows you to specify
-  what portion of a packet to cover with the checksum. It adds the methods
-  :meth:`socket.setsockopt` calls
-  ``self.setsockopt(IPPROTO_UDPLITE, UDPLITE_SEND_CSCOV, length)`` to
-  change what portion of outgoing packets are covered and
-  ``self.setsockopt(IPPROTO_UDPLITE, UDPLITE_RECV_CSCOV, length)`` to
+- :const:`IPPROTO_UDPLITE` is a variant of UDP which allows you to specify
+  what portion of a packet is covered with the checksum. It adds two socket
+  options that you can change.
+  ``self.setsockopt(IPPROTO_UDPLITE, UDPLITE_SEND_CSCOV, length)`` will
+  change what portion of outgoing packets are covered by the checksum and
+  ``self.setsockopt(IPPROTO_UDPLITE, UDPLITE_RECV_CSCOV, length)`` will
   filter out packets which cover too little of their data. In both cases
   ``length`` should be in ``range(8, 2**16, 8)``.
 
