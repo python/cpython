@@ -645,10 +645,12 @@ the original TOS1.
 
 .. opcode:: MAP_ADD (i)
 
-   Calls ``dict.setitem(TOS1[-i], TOS, TOS1)``.  Used to implement dict
+   Calls ``dict.__setitem__(TOS1[-i], TOS1, TOS)``.  Used to implement dict
    comprehensions.
 
    .. versionadded:: 3.1
+   .. versionchanged:: 3.8
+      Map value is TOS and map key is TOS1. Before, those were reversed.
 
 For all of the :opcode:`SET_ADD`, :opcode:`LIST_APPEND` and :opcode:`MAP_ADD`
 instructions, while the added value or key/value pair is popped off, the
