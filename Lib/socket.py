@@ -409,38 +409,6 @@ class socket(_socket.socket):
         if self._closed:
             self.close()
 
-    if hasattr(_socket, "IPPROTO_UDPLITE"):
-        def set_send_checksum_coverage(self, length):
-            """set_send_checksum_coverage(length) -> None
-
-            On a UDPLITE socket, this function will set the checksum coverage
-            for all outgoing packets. This means that any portion of the
-            packet after *length* bytes will not be covered by a checksum.
-
-            *length* must be greater than 8, must be a multiple of 8, and must
-            be smaller than 2^16."""
-            if self.proto != IPPROTO_UDPLITE:
-                raise TypeError("Socket must be UDPLITE to set this option")
-            elif length not in range(8, 0x10000, 8):
-                raise ValueError("Must be in range(8, 2**16, 8)")
-            self.setsockopt(IPPROTO_UDPLITE, UDPLITE_SEND_CSCOV, length)
-
-        def set_recv_checksum_coverage(self, length):
-            """set_recv_checksum_coverage(length) -> None
-
-            On a UDPLITE socket, this function will set the checksum coverage
-            for all incoming packets. This means that any packets received
-            with a checksum coverage smaller than *length* will be dropped
-            (and this may cause a warning in the system log).
-
-            *length* must be greater than 8, must be a multiple of 8, and must
-            be smaller than 2^16."""
-            if self.proto != IPPROTO_UDPLITE:
-                raise TypeError("Socket must be UDPLITE to set this option")
-            elif length not in range(8, 0x10000, 8):
-                raise ValueError("Must be in range(8, 2**16, 8)")
-            self.setsockopt(IPPROTO_UDPLITE, UDPLITE_RECV_CSCOV, length)
-
     def _real_close(self, _ss=_socket.socket):
         # This function should not reference any globals. See issue #808164.
         _ss.close(self)
