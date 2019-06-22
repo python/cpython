@@ -3,5 +3,4 @@ is now easier to detect support with ``hasattr(socket, 'IPPROTO_UDPLITE')``
 and there are constants defined for each of the values needed:
 :py:obj:`socket.IPPROTO_UDPLITE`, :py:obj:`UDPLITE_SEND_CSCOV`, and
 :py:obj:`UDPLITE_RECV_CSCOV`.
-
-.. availability:: Linux >= 2.6.20, FreeBSD >= 10.1-RELEASE
+Patch by Gabe Appleton.
