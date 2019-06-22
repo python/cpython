@@ -530,6 +530,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     function that supports the same signature (like copy()) can be used.
 
     """
+    sys.audit("shutil.copytree", src, dst)
     with os.scandir(src) as entries:
         return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
                          ignore=ignore, copy_function=copy_function,
@@ -640,6 +641,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
     is false and onerror is None, an exception is raised.
 
     """
+    sys.audit("shutil.rmtree", path)
     if ignore_errors:
         def onerror(*args):
             pass
@@ -965,6 +967,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     'owner' and 'group' are used when creating a tar archive. By default,
     uses the current owner and group.
     """
+    sys.audit("shutil.make_archive", base_name, format, root_dir, base_dir)
     save_cwd = os.getcwd()
     if root_dir is not None:
         if logger is not None:

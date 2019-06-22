@@ -128,6 +128,8 @@ are always available.  They are listed here in alphabetical order.
    :func:`breakpoint` will automatically call that, allowing you to drop into
    the debugger of choice.
 
+   .. audit-event:: builtins.breakpoint "sys.breakpointhook"
+
    .. versionadded:: 3.7
 
 .. _func-bytearray:
