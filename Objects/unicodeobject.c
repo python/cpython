@@ -6459,7 +6459,7 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
        length after conversion to the true value. (But decoding error
        handler might have to resize the string) */
     _PyUnicodeWriter_Init(&writer);
-     writer.min_length = size;
+    writer.min_length = size;
     if (_PyUnicodeWriter_Prepare(&writer, size, 127) < 0) {
         goto onError;
     }
