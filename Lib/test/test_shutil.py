@@ -2575,9 +2575,8 @@ class Symlink(unittest.TestCase):
 
         self.srcs = [self.src_file1, self.src_file2, '../x/y/relative']
 
-        # Create pathnames for new directories, files and symlinks
+        # Create absent pathnames under tmp_dir
         new_paths = {'new1': 'new1', 'new2': os.path.join('dd1', 'new2')}
-        # Add relative links
         for name, value in new_paths.items():
             path = os.path.join(self.tmp_dir, value)
             setattr(self, name, path)
@@ -2682,8 +2681,7 @@ class Symlink(unittest.TestCase):
                 shutil.symlink(self.srcs, dir_path, overwrite=True)
                 for src in self.srcs:
                     link_path = os.path.join(dir_path, os.path.basename(src))
-                    src_abs_path = os.path.abspath(src)
-                    self.assertEqual(os.readlink(link_path), src_abs_path)
+                    self.assertEqual(os.readlink(link_path), src)
 
     def test_list_dst_not_directory(self):
         exist = {'file': self.dst_file1, 'link_to_file': self.link_to_file,
