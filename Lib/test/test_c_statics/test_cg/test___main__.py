@@ -3,7 +3,7 @@ import unittest
 
 from test.test_c_statics import cg
 from test.test_c_statics.cg import info
-from test.test_c_statics.cg.__main__ import cmd_show, parse_args, main
+from test.test_c_statics.cg.__main__ import cmd_check, cmd_show, parse_args, main
 
 
 TYPICAL = [
@@ -37,7 +37,7 @@ TYPICAL = [
         ]
 
 
-class ShowTests(unittest.TestCase):
+class CMDBase(unittest.TestCase):
 
     maxDiff = None
 
@@ -60,6 +60,70 @@ class ShowTests(unittest.TestCase):
 
     def _print(self, *args):
         self.calls.append(('_print', args))
+
+
+class CheckTests(CMDBase):
+
+    def test_defaults(self):
+        self._return_find = []
+
+        cmd_check('check',
+                  _find=self._find,
+                  _show=self._show,
+                  _print=self._print,
+                  )
+
+        self.assertEqual(self.calls[0], (
+            '_find', (
+                cg.SOURCE_DIRS,
+                cg.IGNORED_FILE,
+                cg.KNOWN_FILE,
+                ),
+            ))
+
+    def test_all_supported(self):
+        self._return_find = [(v, s) for v, s in TYPICAL if s]
+        dirs = ['src1', 'src2', 'Include']
+
+        cmd_check('check',
+                 dirs,
+                 ignored='ignored.tsv',
+                 known='known.tsv',
+                 _find=self._find,
+                 _show=self._show,
+                 _print=self._print,
+                 )
+
+        self.assertEqual(self.calls, [
+            ('_find', (dirs, 'ignored.tsv', 'known.tsv')),
+            #('_print', ('okay',)),
+            ])
+
+    def test_some_unsupported(self):
+        self._return_find = TYPICAL
+        dirs = ['src1', 'src2', 'Include']
+
+        with self.assertRaises(SystemExit) as cm:
+            cmd_check('check',
+                      dirs,
+                      ignored='ignored.tsv',
+                      known='known.tsv',
+                      _find=self._find,
+                      _show=self._show,
+                      _print=self._print,
+                      )
+
+        unsupported = [v for v, s in TYPICAL if not s]
+        self.assertEqual(self.calls, [
+            ('_find', (dirs, 'ignored.tsv', 'known.tsv')),
+            ('_print', ('ERROR: found unsupported static variables',)),
+            ('_print', ()),
+            ('_show', (unsupported,)),
+            ])
+        self.assertEqual(cm.exception.code, 1)
+
+
+class ShowTests(CMDBase):
 
     def test_defaults(self):
         self._return_find = []

@@ -7,22 +7,36 @@ from . import (
         )
 
 
-def cmd_check(cmd, dirs=SOURCE_DIRS, *, ignored=IGNORED_FILE, known=KNOWN_FILE):
+def cmd_check(cmd, dirs=SOURCE_DIRS, *,
+              ignored=IGNORED_FILE, known=KNOWN_FILE,
+              _find=find.statics,
+              _show=show.basic,
+              _print=print,
+              ):
     """
     Fail if there are unsupported statics variables.
 
     In the failure case, the list of unsupported variables
     will be printed out.
     """
-    raise NotImplementedError
+    unsupported = [v for v, s in _find(dirs, ignored, known) if not s]
+    if not unsupported:
+        #_print('okay')
+        return
+
+    _print('ERROR: found unsupported static variables')
+    _print()
+    _show(unsupported)
+    # XXX totals?
+    sys.exit(1)
 
 
 def cmd_show(cmd, dirs=SOURCE_DIRS, *,
-         ignored=IGNORED_FILE, known=KNOWN_FILE,
-         _find=find.statics,
-         _show=show.basic,
-         _print=print,
-         ):
+             ignored=IGNORED_FILE, known=KNOWN_FILE,
+             _find=find.statics,
+             _show=show.basic,
+             _print=print,
+             ):
     """
     print out the list of found static variables.
 
