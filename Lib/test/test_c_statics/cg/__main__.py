@@ -34,7 +34,7 @@ PROG = sys.argv[0]
 PROG = 'c-statics.py'
 
 
-def parse_args(prog=PROG, argv=sys.argv[1:]):
+def parse_args(prog=PROG, argv=sys.argv[1:], *, _fail=None):
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument('--ignored', metavar='FILE',
                         default=IGNORED_FILE,
@@ -55,13 +55,17 @@ def parse_args(prog=PROG, argv=sys.argv[1:]):
 
     check = subs.add_parser('show', parents=[common])
 
+    if _fail is None:
+        def _fail(msg):
+            parser.error(msg)
+
     # Now parse the args.
     args = parser.parse_args(argv)
     ns = vars(args)
 
     cmd = ns.pop('cmd')
     if not cmd:
-        parser.error('missing command')
+        _fail('missing command')
 
     return cmd, ns
 

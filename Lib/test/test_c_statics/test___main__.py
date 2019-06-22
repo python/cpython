@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 from . import cg
@@ -7,8 +8,15 @@ from .cg.__main__ import parse_args, main
 class ParseArgsTests(unittest.TestCase):
 
     def test_no_args(self):
+        self.errmsg = None
+        def fail(msg):
+            self.errmsg = msg
+            sys.exit(msg)
+
         with self.assertRaises(SystemExit):
-            parse_args('cg', [])
+            parse_args('cg', [], _fail=fail)
+
+        self.assertEqual(self.errmsg, 'missing command')
 
     def test_check_no_args(self):
         cmd, cmdkwargs = parse_args('cg', [
