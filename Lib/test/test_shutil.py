@@ -2589,9 +2589,8 @@ class Symlink(unittest.TestCase):
         except BaseException:
             pass
 
-    #
     # Argument checking
-    #
+
     def test_bool_argument_type_checking(self):
         bool_args = ['overwrite', 'target_is_dir']
 
@@ -2606,10 +2605,8 @@ class Symlink(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, '2 positional arguments'):
             shutil.symlink(self.src_file1, self.dst_file1, True)
 
-
-    #
     # Calling of functions
-    #
+
     @unittest.expectedFailure
     def test_target_is_dir_passed_for_each_src(self):
         srcs = self.extant_symlinks
@@ -2660,7 +2657,6 @@ class Symlink(unittest.TestCase):
             with self.subTest(symlink_type=name):
                 shutil.symlink(src, dst, overwrite=True)
                 self.assertEqual(os.readlink(dst), src)
-
 
     # Edge case lists
 
