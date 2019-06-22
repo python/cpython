@@ -2666,6 +2666,12 @@ class Symlink(unittest.TestCase):
         link_path = os.path.join(self.dst_dir1, os.path.basename(srcs[0]))
         self.assertEqual(os.readlink(link_path), srcs[0])
 
+    def test_empty_list(self):
+        srcs = []
+        with unittest.mock.patch("os.symlink") as m:
+            shutil.symlink(srcs, self.dst_dir1)
+        assert m.not_called
+
     # List of sources
 
     def test_list_dst_is_directory(self):
