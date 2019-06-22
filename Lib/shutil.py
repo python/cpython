@@ -1479,23 +1479,14 @@ def _create_or_replace(dst, create_temp_dest):
 
 # https://pubs.opengroup.org/onlinepubs/9699919799/utilities/ln.html
 
-def _link_or_symlink_parse_args(src_or_srcs, dst, overwrite,
-                                follow_symlinks, *, target_is_dir=False):
+def _link_or_symlink_parse_args(src_or_srcs, dst, *, overwrite,
+                                follow_symlinks):
     """Check that the arguments to link or symlink are valid."""
-    if not any(isinstance(src_or_srcs, typ) for typ in [list, set, tuple]):
-        sources = [src_or_srcs]
-    else:  # src_or_srcs is already something list-y
-        sources = src_or_srcs
-
-    for bool_arg in ['overwrite', 'follow_symlinks', 'target_is_dir']:
-        if not isinstance(locals()[bool_arg], bool):
-            raise TypeError(f"{bool_arg} not a bool")
-
-    return sources
+    pass
+    # return sources
 
 
-def symlink(src_or_srcs, dst, *, overwrite=False, follow_symlinks=True,
-            target_is_dir=False):
+def symlink(src_or_srcs, dst, *, overwrite=False, target_is_dir=False):
     """Symbolic link(s) to a single source or a list of multiple sources.
 
     Given a list of sources, `dst` must be a directory and links to each
@@ -1521,15 +1512,23 @@ def symlink(src_or_srcs, dst, *, overwrite=False, follow_symlinks=True,
     a directory if `target_is_dir` is True or a file symlink (the default)
     otherwise. On non-Windows platforms, `target_is_dir` is ignored.
     """
-    targets = _link_or_symlink_parse_args(src_or_srcs, dst, overwrite,
-                                          follow_symlinks,
-                                          target_is_dir=target_is_dir)
+    # targets = _link_or_symlink_parse_args(src_or_srcs, dst, overwrite,
+    #                                       follow_symlinks,
+    #                                       target_is_dir=target_is_dir)
 
-    for target in targets:
-        if follow_symlinks: # XXXXXXXXXXXXXXXXXXX XXX
-            target = os.path.realpath(target)
+    if not any(isinstance(src_or_srcs, typ) for typ in [list, set, tuple]):
+        sources = [src_or_srcs]
+        dst_is_dir = False
+    else:  # src_or_srcs is already something list-y
+        sources = src_or_srcs
+        dst_is_dir = True
 
-        if len(targets) > 1:
+    for bool_arg in ['overwrite', 'target_is_dir']:
+        if not isinstance(locals()[bool_arg], bool):
+            raise TypeError(f"{bool_arg} not a bool")
+
+    for target in sources:
+        if dst_is_dir:
             link_name = os.path.join(dst, os.path.basename(target))
         else:
             link_name = dst
