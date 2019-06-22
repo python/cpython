@@ -1,5 +1,5 @@
 import inspect
-import time
+import math
 import types
 import unittest
 
@@ -886,8 +886,8 @@ class SpecSignatureTest(unittest.TestCase):
 
 
     def test_autospec_on_bound_builtin_function(self):
-        meth = types.MethodType(time.ctime, time.time())
-        self.assertIsInstance(meth(), str)
+        meth = types.MethodType(math.log, 32)
+        self.assertIsInstance(meth(), float)
         mocked = create_autospec(meth)
 
         # no signature, so no spec to check against

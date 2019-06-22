@@ -849,7 +849,7 @@ id(42)
         # Various optimizations multiply the code paths by which these are
         # called, so test a variety of calling conventions.
         for py_name, py_args, c_name, expected_frame_number in (
-            ('gmtime', '', 'time_gmtime', 1),  # METH_VARARGS
+            ('gmtime', '', 'time_gmtime', 2),  # METH_VARARGS
             ('len', '[]', 'builtin_len', 2),  # METH_O
             ('locals', '', 'builtin_locals', 2),  # METH_NOARGS
             ('iter', '[]', 'builtin_iter', 2),  # METH_FASTCALL
