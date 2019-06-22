@@ -11,6 +11,7 @@ def check(cmd, dirs=SOURCE_DIRS, *, ignored=IGNORED_FILE, known=KNOWN_FILE):
     In the failure case, the list of unsupported variables
     will be printed out.
     """
+    raise NotImplementedError
 
 
 def show(cmd, dirs=SOURCE_DIRS, *, ignored=IGNORED_FILE, known=KNOWN_FILE):
