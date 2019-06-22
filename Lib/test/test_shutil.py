@@ -2581,8 +2581,8 @@ class Symlink(unittest.TestCase):
             path = os.path.join(self.tmp_dir, value)
             setattr(self, name, path)
 
-        self.dst_types = {'file': self.dst_file1, 'directory': self.dst_dir1,
-                          'absent': self.new1, **self.symlink_to_path}
+        self.path_types = {'file': self.dst_file1, 'directory': self.dst_dir1,
+                           'absent': self.new1, **self.symlink_to_path}
 
     def tearDown(self):
         try:
@@ -2629,7 +2629,7 @@ class Symlink(unittest.TestCase):
 
     def test_1src_dst_existing_path(self):
         src = self.src_file1
-        dst_existing = {k: v for k, v in self.dst_types.items()
+        dst_existing = {k: v for k, v in self.path_types.items()
                         if k != 'absent'}
         for description, dst_path in dst_existing.items():
             with self.subTest(type=description):
