@@ -2663,13 +2663,17 @@ class Symlink(unittest.TestCase):
                 shutil.symlink(src, dst, overwrite=True)
                 self.assertEqual(os.readlink(dst), src)
 
-    #
-    # List with single element
-    #
 
-    #
+    # Edge case lists
+
+    def test_single_element_list(self):
+        srcs = [self.src_file1]
+        shutil.symlink(srcs, self.dst_dir1)
+        link_path = os.path.join(self.dst_dir1, os.path.basename(srcs[0]))
+        self.assertEqual(os.readlink(link_path), srcs[0])
+
     # List of sources
-    #
+
     def test_list_dst_is_directory(self):
         dsts = {'directory': self.dst_dir1,
                 'symlink_to_dir': self.link_to_dir}
