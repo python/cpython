@@ -206,9 +206,9 @@ created.  Socket addresses are represented as follows:
   outgoing packets are covered and :meth:`socket.set_recv_checksum_coverage`
   to filter out packets which cover too little of their data.
 
-  ..availability:: Linux >= 2.6.20
+  .. availability:: Linux >= 2.6.20
 
-  .. versionadded:: 3.8
+  .. versionadded:: 3.9
 
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
