@@ -2675,10 +2675,11 @@ class Symlink(unittest.TestCase):
                 'symlink_to_dir': self.link_to_dir}
         for description, dir_path in dsts.items():
             with self.subTest(type=description):
-                shutil.symlink(self.srcs, dir_path)
+                shutil.symlink(self.srcs, dir_path, overwrite=True)
                 for src in self.srcs:
                     link_path = os.path.join(dir_path, os.path.basename(src))
-                    self.assertEqual(os.readlink(link_path), src)
+                    src_abs_path = os.path.abspath(src)
+                    self.assertEqual(os.readlink(link_path), src_abs_path)
 
     def test_list_dst_not_directory(self):
         exist = {'file': self.dst_file1, 'link_to_file': self.link_to_file,
