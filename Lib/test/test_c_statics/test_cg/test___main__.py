@@ -2,7 +2,107 @@ import sys
 import unittest
 
 from test.test_c_statics import cg
-from test.test_c_statics.cg.__main__ import parse_args, main
+from test.test_c_statics.cg import info
+from test.test_c_statics.cg.__main__ import cmd_show, parse_args, main
+
+
+TYPICAL = [
+        (info.StaticVar('src1/spam.c', None, 'var1', 'const char *'),
+         True,
+         ),
+        (info.StaticVar('src1/spam.c', 'ham', 'initialized', 'int'),
+         True,
+         ),
+        (info.StaticVar('src1/spam.c', None, 'var2', 'PyObject *'),
+         False,
+         ),
+        (info.StaticVar('src1/eggs.c', 'tofu', 'ready', 'int'),
+         True,
+         ),
+        (info.StaticVar('src1/spam.c', None, 'freelist', '(PyTupleObject *)[10]'),
+         False,
+         ),
+        (info.StaticVar('src1/sub/ham.c', None, 'var1', 'const char const *'),
+         True,
+         ),
+        (info.StaticVar('src2/jam.c', None, 'var1', 'int'),
+         True,
+         ),
+        (info.StaticVar('src2/jam.c', None, 'var2', 'MyObject *'),
+         False,
+         ),
+        (info.StaticVar('Include/spam.h', None, 'data', 'const int'),
+         True,
+         ),
+        ]
+
+
+class ShowTests(unittest.TestCase):
+
+    maxDiff = None
+
+    _return_find = ()
+
+    @property
+    def calls(self):
+        try:
+            return self._calls
+        except AttributeError:
+            self._calls = []
+            return self._calls
+
+    def _find(self, *args):
+        self.calls.append(('_find', args))
+        return self._return_find
+
+    def _show(self, *args):
+        self.calls.append(('_show', args))
+
+    def _print(self, *args):
+        self.calls.append(('_print', args))
+
+    def test_defaults(self):
+        self._return_find = []
+
+        cmd_show('show',
+                 _find=self._find,
+                 _show=self._show,
+                 _print=self._print,
+                 )
+
+        self.assertEqual(self.calls[0], (
+            '_find', (
+                cg.SOURCE_DIRS,
+                cg.IGNORED_FILE,
+                cg.KNOWN_FILE,
+                ),
+            ))
+
+    def test_typical(self):
+        self._return_find = TYPICAL
+        dirs = ['src1', 'src2', 'Include']
+
+        cmd_show('show',
+                 dirs,
+                 ignored='ignored.tsv',
+                 known='known.tsv',
+                 _find=self._find,
+                 _show=self._show,
+                 _print=self._print,
+                 )
+
+        supported = [v for v, s in TYPICAL if s]
+        unsupported = [v for v, s in TYPICAL if not s]
+        self.assertEqual(self.calls, [
+            ('_find', (dirs, 'ignored.tsv', 'known.tsv')),
+            ('_print', ('supported:',)),
+            ('_print', ('----------',)),
+            ('_show', (supported,)),
+            ('_print', ()),
+            ('_print', ('unsupported:',)),
+            ('_print', ('------------',)),
+            ('_show', (unsupported,)),
+            ])
 
 
 class ParseArgsTests(unittest.TestCase):

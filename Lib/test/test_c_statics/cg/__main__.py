@@ -1,10 +1,13 @@
 import argparse
 import sys
 
-from . import KNOWN_FILE, IGNORED_FILE, SOURCE_DIRS
+from . import (
+        KNOWN_FILE, IGNORED_FILE, SOURCE_DIRS,
+        find, show,
+        )
 
 
-def check(cmd, dirs=SOURCE_DIRS, *, ignored=IGNORED_FILE, known=KNOWN_FILE):
+def cmd_check(cmd, dirs=SOURCE_DIRS, *, ignored=IGNORED_FILE, known=KNOWN_FILE):
     """
     Fail if there are unsupported statics variables.
 
@@ -14,20 +17,40 @@ def check(cmd, dirs=SOURCE_DIRS, *, ignored=IGNORED_FILE, known=KNOWN_FILE):
     raise NotImplementedError
 
 
-def show(cmd, dirs=SOURCE_DIRS, *, ignored=IGNORED_FILE, known=KNOWN_FILE):
+def cmd_show(cmd, dirs=SOURCE_DIRS, *,
+         ignored=IGNORED_FILE, known=KNOWN_FILE,
+         _find=find.statics,
+         _show=show.basic,
+         _print=print,
+         ):
     """
     print out the list of found static variables.
 
     The variables will be distinguished as "supported" or "unsupported".
     """
+    allsupported = []
+    allunsupported = []
+    for found, supported in _find(dirs, ignored, known):
+        (allsupported if supported else allunsupported
+         ).append(found)
+
+    _print('supported:')
+    _print('----------')
+    _show(allsupported)
+    # XXX totals?
+    _print()
+    _print('unsupported:')
+    _print('------------')
+    _show(allunsupported)
+    # XXX totals?
 
 
 #############################
 # the script
 
 COMMANDS = {
-        'check': check,
-        'show': show,
+        'check': cmd_check,
+        'show': cmd_show,
         }
 
 PROG = sys.argv[0]
