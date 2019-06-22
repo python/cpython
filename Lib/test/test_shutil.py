@@ -2573,8 +2573,6 @@ class Symlink(unittest.TestCase):
             setattr(self, link_name, dst)
             self.symlink_to_path[link_name] = dst
 
-        self.srcs = [self.src_file1, self.src_file2, '../x/y/relative']
-
         # Create absent pathnames under tmp_dir
         new_paths = {'new1': 'new1', 'new2': os.path.join('dd1', 'new2')}
         for name, value in new_paths.items():
@@ -2583,6 +2581,7 @@ class Symlink(unittest.TestCase):
 
         self.path_types = {'file': self.dst_file1, 'directory': self.dst_dir1,
                            'absent': self.new1, **self.symlink_to_path}
+        self.srcs = list(self.path_types.values())
 
     def tearDown(self):
         try:
