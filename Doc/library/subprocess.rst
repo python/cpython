@@ -586,7 +586,7 @@ functions.
           log.write(proc.stdout.read())
 
    .. audit-event:: subprocess.Popen "executable args cwd env"
-      
+
       Popen and the other functions in this module that use it raise an
       :ref:`auditing event <auditing>` ``subprocess.Popen`` with arguments
       ``executable``, ``args``, ``cwd``, ``env``. The value for ``args``
