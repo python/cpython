@@ -213,7 +213,7 @@ created.  Socket addresses are represented as follows:
   ``socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE)`` for IPv4 or
   ``socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDPLITE)`` for IPv6.
 
-  .. availability:: Linux >= 2.6.20
+  .. availability:: Linux >= 2.6.20, FreeBSD >= 10.1-RELEASE
 
   .. versionadded:: 3.9
 

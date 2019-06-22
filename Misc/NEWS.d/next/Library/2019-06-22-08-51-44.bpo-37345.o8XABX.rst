@@ -1,0 +1,7 @@
+Add formal support for UDPLITE sockets. Support was present before, but it
+is now easier to detect support with ``hasattr(socket, 'IPPROTO_UDPLITE')``
+and there are constants defined for each of the values needed:
+:var:`socket.IPPROTO_UDPLITE`, :var:`UDPLITE_SEND_CSCOV`, and
+:var:`UDPLITE_RECV_CSCOV`.
+
+.. availability:: Linux >= 2.6.20, FreeBSD >= 10.1-RELEASE
