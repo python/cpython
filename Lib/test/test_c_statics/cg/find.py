@@ -1,82 +1,32 @@
-from . import info
+import os
+import os.path
+
+from . import info, scan
+from .supported import is_supported
 
 
-def statics(dirs, ignored, known):
+def _iter_files(dirnames):
+    for dirname in dirnames:
+        for parent, _, names in os.walk(dirname):
+            for name in names:
+                yield os.path.join(parent, name)
+
+
+def _iter_statics(dirnames):
+    for filename in _iter_files(dirnames):
+        yield from scan.iter_statics(filename)
+
+
+def statics(dirnames, ignored, known, *,
+            _iter_statics=_iter_statics,
+            _is_supported=is_supported,
+            ):
     """Return a list of (StaticVar, <supported>) for each found static var."""
-    if not dirs:
+    if not dirnames:
         return []
 
-    return [
-            (info.StaticVar(
-                filename='src1/spam.c',
-                funcname=None,
-                name='var1',
-                vartype='const char *',
-                ),
-             True,
-             ),
-            (info.StaticVar(
-                filename='src1/spam.c',
-                funcname='ham',
-                name='initialized',
-                vartype='int',
-                ),
-             True,
-             ),
-            (info.StaticVar(
-                filename='src1/spam.c',
-                funcname=None,
-                name='var2',
-                vartype='PyObject *',
-                ),
-             False,
-             ),
-            (info.StaticVar(
-                filename='src1/eggs.c',
-                funcname='tofu',
-                name='ready',
-                vartype='int',
-                ),
-             False,
-             ),
-            (info.StaticVar(
-                filename='src1/spam.c',
-                funcname=None,
-                name='freelist',
-                vartype='(PyTupleObject *)[10]',
-                ),
-             False,
-             ),
-            (info.StaticVar(
-                filename='src1/sub/ham.c',
-                funcname=None,
-                name='var1',
-                vartype='const char const *',
-                ),
-             True,
-             ),
-            (info.StaticVar(
-                filename='src2/jam.c',
-                funcname=None,
-                name='var1',
-                vartype='int',
-                ),
-             True,
-             ),
-            (info.StaticVar(
-                filename='src2/jam.c',
-                funcname=None,
-                name='var2',
-                vartype='MyObject *',
-                ),
-             False,
-             ),
-            (info.StaticVar(
-                filename='Include/spam.h',
-                funcname=None,
-                name='data',
-                vartype='const int',
-                ),
-             True,
-             ),
-            ]
+    found = []
+    for static in _iter_statics(dirnames):
+        found.append(
+                (static, _is_supported(static)))
+    return found

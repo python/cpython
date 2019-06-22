@@ -4,71 +4,76 @@ from test.test_c_statics.cg import info
 from test.test_c_statics.cg.find import statics
 
 
-def supported_global(filename, name, vartype):
-    static = info.StaticVar(filename, None, name, vartype)
-    return static, True
+class _Base(unittest.TestCase):
+
+#    _return_iter_statics = ()
+#    _return_is_supported = ()
+
+    @property
+    def calls(self):
+        try:
+            return self._calls
+        except AttributeError:
+            self._calls = []
+            return self._calls
+
+    def add_static(self, filename, funcname, name, vartype, *, supported=True):
+        static = info.StaticVar(filename, funcname, name, vartype)
+        try:
+            statics = self._return_iter_statics
+        except AttributeError:
+            statics = self._return_iter_statics = []
+        statics.append(static)
+
+        try:
+            unsupported = self._return_is_supported
+        except AttributeError:
+            unsupported = self._return_is_supported = set()
+        if not supported:
+            unsupported.add(static)
+
+        return static, supported
+
+    def _iter_statics(self, *args):
+        self.calls.append(('_iter_statics', args))
+        return iter(self._return_iter_statics)
+
+    def _is_supported(self, static):
+        self.calls.append(('_is_supported', (static,)))
+        return static not in self._return_is_supported
 
 
-def unsupported_global(filename, name, vartype):
-    static = info.StaticVar(filename, None, name, vartype)
-    return static, False
-
-
-def supported_local(filename, funcname, name, vartype):
-    static = info.StaticVar(filename, funcname, name, vartype)
-    return static, True
-
-
-def unsupported_local(filename, funcname, name, vartype):
-    static = info.StaticVar(filename, funcname, name, vartype)
-    return static, False
-
-
-class StaticsTest(unittest.TestCase):
+class StaticsTest(_Base):
 
     maxDiff = None
 
-    @unittest.expectedFailure
     def test_typical(self):
-        raise NotImplementedError
+        expected = [
+            self.add_static('src1/spam.c', None, 'var1', 'const char *'),
+            self.add_static('src1/spam.c', 'ham', 'initialized', 'int'),
+            self.add_static('src1/spam.c', None, 'var2', 'PyObject *', supported=False),
+            self.add_static('src1/eggs.c', 'tofu', 'ready', 'int', supported=False),
+            self.add_static('src1/spam.c', None, 'freelist', '(PyTupleObject *)[10]', supported=False),
+            self.add_static('src1/sub/ham.c', None, 'var1', 'const char const *'),
+            self.add_static('src2/jam.c', None, 'var1', 'int'),
+            self.add_static('src2/jam.c', None, 'var2', 'MyObject *', supported=False),
+            self.add_static('Include/spam.h', None, 'data', 'const int'),
+            ]
+        dirs = ['src1', 'src2', 'Include']
+
         found = statics(
-                ['src1', 'src2', 'Include'],
+                dirs,
                 'ignored.tsv',
                 'known.tsv',
+                _iter_statics=self._iter_statics,
+                _is_supported=self._is_supported,
                 )
 
-        self.assertEqual(found, [
-            supported_global('src1/spam.c', 'var1', 'const char *'),
-            supported_local('src1/spam.c', 'ham', 'initialized', 'int'),
-            unsupported_global('src1/spam.c', 'var2', 'PyObject *'),
-            unsupported_local('src1/eggs.c', 'tofu', 'ready', 'int'),
-            unsupported_global('src1/spam.c', 'freelist', '(PyTupleObject *)[10]'),
-            supported_global('src1/sub/ham.c', 'var1', 'const char const *'),
-            supported_global('src2/jam.c', 'var1', 'int'),
-            unsupported_global('src2/jam.c', 'var2', 'MyObject *'),
-            supported_global('Include/spam.h', 'data', 'const int'),
-            ])
-
-    @unittest.expectedFailure
-    def test_no_modifiers(self):
-        raise NotImplementedError
-        found = statics(
-                ['src1', 'src2', 'Include'],
-                '',
-                '',
-                )
-
-        self.assertEqual(found, [
-            supported_global('src1/spam.c', 'var1', 'const char *'),
-            supported_local('src1/spam.c', 'ham', 'initialized', 'int'),
-            unsupported_global('src1/spam.c', 'var2', 'PyObject *'),
-            unsupported_local('src1/eggs.c', 'tofu', 'ready', 'int'),
-            unsupported_global('src1/spam.c', 'freelist', '(PyTupleObject *)[10]'),
-            supported_global('src1/sub/ham.c', 'var1', 'const char const *'),
-            supported_global('src2/jam.c', 'var1', 'int'),
-            unsupported_global('src2/jam.c', 'var2', 'MyObject *'),
-            supported_global('Include/spam.h', 'data', 'const int'),
-            ])
+        self.assertEqual(found, expected)
+        self.assertEqual(self.calls, [
+            ('_iter_statics', (dirs,)),
+            ] + [('_is_supported', (v,))
+                 for v, _ in expected])
 
     def test_no_dirs(self):
         found = statics([], '', '')
