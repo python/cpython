@@ -265,7 +265,7 @@ unicode_fill(enum PyUnicode_Kind kind, void *data, Py_UCS4 value,
 /* Forward declaration */
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
-static inline int
+static inline void
 _PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer);
 static PyObject *
 unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
@@ -13514,7 +13514,7 @@ _PyUnicodeWriter_Init(_PyUnicodeWriter *writer)
 }
 
 // Initialize _PyUnicodeWriter with initial buffer
-static inline int
+static inline void
 _PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer)
 {
     memset(writer, 0, sizeof(*writer));
