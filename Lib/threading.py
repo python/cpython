@@ -1101,8 +1101,7 @@ class Thread:
         main thread is not a daemon thread and therefore all threads created in
         the main thread default to daemon = False.
 
-        The entire Python program exits when no alive non-daemon threads are
-        left.
+        The entire Python program exits when only daemon threads are left.
 
         """
         assert self._initialized, "Thread.__init__() not called"
