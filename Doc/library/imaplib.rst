@@ -361,7 +361,7 @@ An :class:`IMAP4` instance has the following methods:
    :meth:`IMAP4.send`, and :meth:`IMAP4.shutdown` methods.  You may override
    this method.
 
-   ..audit-event:: imaplib.IMAP4.open "self host port"
+   .. audit-event:: imaplib.IMAP4.open "self host port"
 
 
 .. method:: IMAP4.partial(message_num, message_part, start, length)
