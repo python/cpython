@@ -573,10 +573,10 @@ STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
         }
 
         /* UTF-16 code pair: */
-        if (q >= e)
-            goto UnexpectedEnd;
         if (!Py_UNICODE_IS_HIGH_SURROGATE(ch))
             goto IllegalEncoding;
+        if (q >= e)
+            goto UnexpectedEnd;
         ch2 = (q[ihi] << 8) | q[ilo];
         q += 2;
         if (!Py_UNICODE_IS_LOW_SURROGATE(ch2))

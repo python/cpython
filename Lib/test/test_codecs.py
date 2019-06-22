@@ -429,11 +429,18 @@ class ReadTest(MixInCheckStateHandling):
     def test_incremental_surrogatepass(self):
         # Test incremental decoder for surrogatepass handler:
         # see issue #24214
+        # High surrogate
         data = '\uD901'.encode(self.encoding, 'surrogatepass')
         for i in range(1, len(data)):
             dec = codecs.getincrementaldecoder(self.encoding)('surrogatepass')
             self.assertEqual(dec.decode(data[:i]), '')
             self.assertEqual(dec.decode(data[i:], True), '\uD901')
+        # Low surrogate
+        data = '\uDC02'.encode(self.encoding, 'surrogatepass')
+        for i in range(1, len(data)):
+            dec = codecs.getincrementaldecoder(self.encoding)('surrogatepass')
+            self.assertEqual(dec.decode(data[:i]), '')
+            self.assertEqual(dec.decode(data[i:]), '\uDC02')
 
 
 class UTF32Test(ReadTest, unittest.TestCase):
