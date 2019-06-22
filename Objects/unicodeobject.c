@@ -265,8 +265,8 @@ unicode_fill(enum PyUnicode_Kind kind, void *data, Py_UCS4 value,
 /* Forward declaration */
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
-static inline void
-_PyUnicodeWriter_Update(_PyUnicodeWriter *writer);
+static inline int
+_PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer);
 static PyObject *
 unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
                     const char *errors);
@@ -4907,11 +4907,8 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
 
     // Use _PyUnicodeWriter after fast path is failed.
     _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    writer.min_length = size;
-    writer.buffer = u;
+    _PyUnicodeWriter_InitWithBuffer(&writer, u);
     writer.pos = s - starts;
-    _PyUnicodeWriter_Update(&writer);
 
     Py_ssize_t startinpos, endinpos;
     const char *errmsg = "";
@@ -7009,11 +7006,8 @@ PyUnicode_DecodeASCII(const char *s,
     }
 
     _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    writer.min_length = size;
-    writer.buffer = u;
+    _PyUnicodeWriter_InitWithBuffer(&writer, u);
     writer.pos = outpos;
-    _PyUnicodeWriter_Update(&writer);
 
     s += outpos;
     int kind = writer.kind;
@@ -13517,6 +13511,16 @@ _PyUnicodeWriter_Init(_PyUnicodeWriter *writer)
        _PyUnicodeWriter_PrepareKind() will copy the buffer. */
     writer->kind = PyUnicode_WCHAR_KIND;
     assert(writer->kind <= PyUnicode_1BYTE_KIND);
+}
+
+// Initialize _PyUnicodeWriter with initial buffer
+static inline int
+_PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer)
+{
+    memset(writer, 0, sizeof(*writer));
+    writer->buffer = buffer;
+    _PyUnicodeWriter_Update(writer);
+    writer->min_length = writer->size;
 }
 
 int
