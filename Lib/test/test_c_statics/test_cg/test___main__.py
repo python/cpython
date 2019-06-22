@@ -1,8 +1,8 @@
 import sys
 import unittest
 
-from . import cg
-from .cg.__main__ import parse_args, main
+from test.test_c_statics import cg
+from test.test_c_statics.cg.__main__ import parse_args, main
 
 
 class ParseArgsTests(unittest.TestCase):
