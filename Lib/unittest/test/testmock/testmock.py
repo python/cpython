@@ -1512,7 +1512,7 @@ class MockTest(unittest.TestCase):
             m.assert_called_once()
         self.assertNotIn("Calls:", str(e.exception))
 
-    #Issue37212 printout of keyword args now preserve the original order
+    #Issue37212 printout of keyword args now preserves the original order
     def test_ordered_call_signature(self):
         m = Mock()
         m.hello(name='hello', daddy='hero')
