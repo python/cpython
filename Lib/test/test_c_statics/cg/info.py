@@ -16,6 +16,7 @@ class StaticVar(namedtuple('StaticVar', 'filename funcname name vartype')):
             return None
 
         # XXX finish!
+        # XXX Return (modifiers, type, pointer)?
         return str(vartype)
 
     @classmethod
