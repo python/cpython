@@ -368,11 +368,14 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         raises(-721)
         raises(0, 100, -12)
         # Non-integer start/stop
-        raises(3.14159)
-        raises(0, 2.71828)
+        self.assertRaises(TypeError, self.gen.randrange, 3.0)
+        self.assertRaises(TypeError, self.gen.randrange, Fraction(3, 1))
+        self.assertRaises(TypeError, self.gen.randrange, 0, 2.0)
+        self.assertRaises(TypeError, self.gen.randrange, 0, Fraction(2, 1))
         # Zero and non-integer step
         raises(0, 42, 0)
-        raises(0, 42, 3.14159)
+        self.assertRaises(TypeError, self.gen.randrange, 0, 42, 3.0)
+        self.assertRaises(TypeError, self.gen.randrange, 0, 42, Fraction(3, 1))
 
     def test_genrandbits(self):
         # Verify ranges
