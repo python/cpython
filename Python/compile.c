@@ -4238,10 +4238,10 @@ compiler_sync_comprehension_generator(struct compiler *c,
             ADDOP_I(c, SET_ADD, gen_index + 1);
             break;
         case COMP_DICTCOMP:
-            /* With 'd[k] = v', v is evaluated before k, so we do
+            /* With '{k: v}', k is evaluated before v, so we do
                the same. */
-            VISIT(c, expr, val);
             VISIT(c, expr, elt);
+            VISIT(c, expr, val);
             ADDOP_I(c, MAP_ADD, gen_index + 1);
             break;
         default:
@@ -4327,10 +4327,10 @@ compiler_async_comprehension_generator(struct compiler *c,
             ADDOP_I(c, SET_ADD, gen_index + 1);
             break;
         case COMP_DICTCOMP:
-            /* With 'd[k] = v', v is evaluated before k, so we do
+            /* With '{k: v}', k is evaluated before v, so we do
                the same. */
-            VISIT(c, expr, val);
             VISIT(c, expr, elt);
+            VISIT(c, expr, val);
             ADDOP_I(c, MAP_ADD, gen_index + 1);
             break;
         default:
