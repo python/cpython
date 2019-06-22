@@ -4937,7 +4937,9 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
             endinpos = startinpos + 1;
             break;
         case 2:
-            if (consumed && (unsigned char)*s == 0xED && end - s < 3) {
+            if (consumed && (unsigned char)s[0] == 0xED && end - s == 2
+                && (unsigned char)s[1] >= 0xA0 && (unsigned char)s[1] <= 0xBF)
+            {
                 /* Truncated surrogate code in range D800-DFFF */
                 goto End;
             }

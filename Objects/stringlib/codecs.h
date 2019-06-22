@@ -207,7 +207,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                     goto InvalidContinuation1;
             } else if (ch == 0xF4 && ch2 >= 0x90) {
                 /* invalid sequence
-                   \xF4\x90\x80\80- -- 110000- overflow */
+                   \xF4\x90\x80\x80- -- 110000- overflow */
                 goto InvalidContinuation1;
             }
             if (!IS_CONTINUATION_BYTE(ch3)) {
