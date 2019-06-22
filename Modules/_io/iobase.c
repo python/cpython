@@ -572,26 +572,23 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
                 Py_DECREF(readahead);
                 goto fail;
             }
-            if (PyBytes_GET_SIZE(readahead) > 0) {
-                Py_ssize_t n = 0;
-                const char *buf = PyBytes_AS_STRING(readahead);
-                if (limit >= 0) {
+            {
+                const Py_ssize_t len_readahead = PyBytes_GET_SIZE(readahead);
+                if (len_readahead > 0) {
+#ifndef min
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+                    const Py_ssize_t upper_limit = (((limit >= 0) ? min(limit, len_readahead) : len_readahead)-1);
+                    Py_ssize_t n = -1;
+                    const char *buf = PyBytes_AS_STRING(readahead);
                     do {
-                        if (n >= PyBytes_GET_SIZE(readahead) || n >= limit)
+                        if (n >= upper_limit)
                             break;
-                        if (buf[n++] == '\n')
+                        if (buf[++n] == '\n')
                             break;
                     } while (1);
+                    nreadahead = n+1;
                 }
-                else {
-                    do {
-                        if (n >= PyBytes_GET_SIZE(readahead))
-                            break;
-                        if (buf[n++] == '\n')
-                            break;
-                    } while (1);
-                }
-                nreadahead = n;
             }
             Py_DECREF(readahead);
         }
