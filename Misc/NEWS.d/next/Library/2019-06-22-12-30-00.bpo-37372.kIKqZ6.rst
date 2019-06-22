@@ -1,0 +1,1 @@
+Fix errors unpickling certain datetime.time objects from Python 2.
