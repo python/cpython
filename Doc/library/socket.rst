@@ -202,9 +202,16 @@ created.  Socket addresses are represented as follows:
 
 - :const:`IPPROTO_UDPLITE` is a variant on UDP which allows you to specify
   what portion of a packet to cover with the checksum. It adds the methods
-  :meth:`socket.set_send_checksum_coverage` to change what portion of
-  outgoing packets are covered and :meth:`socket.set_recv_checksum_coverage`
-  to filter out packets which cover too little of their data.
+  :meth:`socket.setsockopt` calls
+  ``self.setsockopt(IPPROTO_UDPLITE, UDPLITE_SEND_CSCOV, length)`` to
+  change what portion of outgoing packets are covered and
+  ``self.setsockopt(IPPROTO_UDPLITE, UDPLITE_RECV_CSCOV, length)`` to
+  filter out packets which cover too little of their data. In both cases
+  ``length`` should be in ``range(8, 2**16, 8)``.
+
+  Such a socket should be constructed with
+  ``socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE)`` for IPv4 or
+  ``socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDPLITE)`` for IPv6.
 
   .. availability:: Linux >= 2.6.20
 
