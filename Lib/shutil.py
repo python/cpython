@@ -1453,19 +1453,20 @@ def _create_or_replace(dst, create_temp_dest):
     the pathname where the temporary file to replace `dst` will be created.
 
     """
-    # Attempt creation of temporary destination, try again on FileExistsError
-    while True:
-        temp_path = tempfile.mktemp(dir=os.path.dirname(dst))
-        try:
-            create_temp_dest(temp_path)
-            break
-        except FileExistsError:
-            pass
-
+    temp_path = ''
     try:
+        while True:
+            # Try to create temporary symlink, try again on FileExistsError
+            temp_path = tempfile.mktemp(dir=os.path.dirname(dst))
+            try:
+                create_temp_dest(temp_path)
+                break
+            except FileExistsError:
+                pass
         os.replace(temp_path, dst)
     except BaseException as e:
-        os.remove(temp_path)
+        if temp_path and os.path.lexists(temp_path):
+            os.remove(temp_path)
         raise e
 
 
