@@ -2729,6 +2729,22 @@ class Symlink(unittest.TestCase):
         self.assertGreater(mock_mktemp.call_count, 1)
         self.assertEqual(os.readlink(self.dst_file1), self.src_file1)
 
+    class ExpectedException(BaseException):
+        pass
+
+    def _mock_rename(*args, **kwargs):
+        """Ensure temp symlink exists; throw BaseException"""
+        assert(os.path.lexists(Symlink._mock_mktemp.path))
+        raise Symlink.ExpectedException
+
+    @unittest.mock.patch('os.replace', side_effect=_mock_rename)
+    @unittest.mock.patch('tempfile.mktemp', side_effect=_mock_mktemp)
+    def test_temp_is_removed_on_exception(self, mock_mktemp, mock_replace):
+        # Simulate exception in os.replace(tmp_path, dst)
+        with self.assertRaises(Symlink.ExpectedException):
+            shutil.symlink(self.src_file1, self.dst_file1, overwrite=True)
+        self.assertFalse(os.path.lexists(Symlink._mock_mktemp.path))
+
 
 class PublicAPITests(unittest.TestCase):
     """Ensures that the correct values are exposed in the public API."""
