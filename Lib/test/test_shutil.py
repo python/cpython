@@ -2711,6 +2711,26 @@ class Symlink(unittest.TestCase):
             shutil.symlink(srcs, dst_dir, overwrite=True)
             self.assertEqual(os.readlink(src_to_dst_path[src]), src)
 
+    # _create_or_replace helper function
+
+    def _mock_mktemp(*, orig_mktemp=tempfile.mktemp, **kwargs):
+        """Ensure only the first mktemp call returns an existing pathname.
+        Save the temp path created for later retrieval"""
+        virgin = getattr(Symlink._mock_mktemp, 'virgin', True)
+        temp = orig_mktemp(**kwargs)
+        Symlink._mock_mktemp.path = temp
+        if virgin:
+            open(temp, 'w').close()
+            Symlink._mock_mktemp.virgin = False
+        return temp
+
+    @unittest.mock.patch('tempfile.mktemp', side_effect=_mock_mktemp)
+    def test_retry_on_existing_temp_path(self, mock_mktemp):
+        # Simulate race condition: creation of temp path after tempfile.mktemp
+        shutil.symlink(self.src_file1, self.dst_file1, overwrite=True)
+        self.assertGreater(mock_mktemp.call_count, 1)
+        self.assertEqual(os.readlink(self.dst_file1), self.src_file1)
+
 
 class PublicAPITests(unittest.TestCase):
     """Ensures that the correct values are exposed in the public API."""
