@@ -3319,13 +3319,13 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
             Py_DECREF(self);
             return NULL;
         }
-        args += 1;
+        args++;
     }
     if (kwnames == NULL) {
         return self;
     }
     Py_ssize_t items = PyTuple_GET_SIZE(kwnames);
-    for(Py_ssize_t index = 0; index < items; index++) {
+    for (Py_ssize_t index = 0; index < items; index++) {
         int err = PyDict_SetItem(self, PyTuple_GET_ITEM(kwnames, index), args[index]);
         if (err < 0) {
             Py_DECREF(self);
