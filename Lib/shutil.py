@@ -1444,13 +1444,13 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     return None
 
 
-def _create_or_replace(dst, create_temp_dest):
+def _create_or_replace(dst, create_temp_dst):
     """Create or overwrite file `dst` atomically via os.replace.
 
     The file to replace `dst` is created at a temporary destination.
 
-    `create_temp_dest` is a function taking a single argument:
-    the pathname where the temporary file to replace `dst` will be created.
+    `create_temp_dst` is a function taking a single argument: a pathname
+    where the temporary file to replace `dst` will be created.
 
     """
     temp_path = ''
@@ -1459,7 +1459,7 @@ def _create_or_replace(dst, create_temp_dest):
             # Try to create temporary symlink, try again on FileExistsError
             temp_path = tempfile.mktemp(dir=os.path.dirname(dst))
             try:
-                create_temp_dest(temp_path)
+                create_temp_dst(temp_path)
                 break
             except FileExistsError:
                 pass
