@@ -2618,10 +2618,6 @@ class Symlink(unittest.TestCase):
             for call in mock_os_symlink.call_args_list:
                 self.assertEqual(call[1]['target_is_directory'], boolean)
 
-    @unittest.expectedFailure
-    def test_overwrite_passed_for_each_src(self):
-        srcs = self.srcs
-
     # Single source
 
     def test_1src_dst_not_exist(self):
