@@ -2635,38 +2635,6 @@ class Symlink(unittest.TestCase):
                 with self.assertRaisesRegex(FileExistsError, dst_path):
                     shutil.symlink(src, dst_path)
 
-    # Overwrite=True
-
-    def test_single_src_overwrite_existing_directory(self):
-        dst = self.dst_dir1
-        self.assertTrue(os.path.exists(dst))
-        with self.assertRaisesRegex(IsADirectoryError, dst):
-            shutil.symlink(self.src_file1, dst, overwrite=True)
-
-    def test_single_src_overwrite_existing_not_directory(self):
-        src = self.src_file1
-        dsts_not_dir = {k: v for k, v in self.path_types.items()
-                        if k not in ['absent', 'directory']}
-        for description, dst in dsts_not_dir.items():
-            with self.subTest(type=description):
-                self.assertTrue(os.path.lexists(dst))
-                shutil.symlink(src, dst, overwrite=True)
-                self.assertEqual(os.readlink(dst), src)
-
-    def test_many_srcs_overwrite(self):
-        srcs = [self.src_file1, self.src_file2]
-        dst_dir = self.dst_dir1
-        src_to_dst_path = {}
-        for src in srcs:
-            src_to_dst_path[src] = os.path.join(dst_dir, os.path.basename(src))
-            self.assertTrue(os.path.exists(src_to_dst_path[src]))
-
-        shutil.symlink(srcs, dst_dir, overwrite=True)
-
-        for src in srcs:
-            shutil.symlink(srcs, dst_dir, overwrite=True)
-            self.assertEqual(os.readlink(src_to_dst_path[src]), src)
-
     # List of sources
 
     def test_list_dst_is_directory(self):
@@ -2710,6 +2678,38 @@ class Symlink(unittest.TestCase):
         shutil.symlink(srcs, self.dst_dir1)
         link_path = os.path.join(self.dst_dir1, os.path.basename(srcs[0]))
         self.assertEqual(os.readlink(link_path), srcs[0])
+
+    # Overwrite=True
+
+    def test_single_src_overwrite_existing_directory(self):
+        dst = self.dst_dir1
+        self.assertTrue(os.path.exists(dst))
+        with self.assertRaisesRegex(IsADirectoryError, dst):
+            shutil.symlink(self.src_file1, dst, overwrite=True)
+
+    def test_single_src_overwrite_existing_not_directory(self):
+        src = self.src_file1
+        dsts_not_dir = {k: v for k, v in self.path_types.items()
+                        if k not in ['absent', 'directory']}
+        for description, dst in dsts_not_dir.items():
+            with self.subTest(type=description):
+                self.assertTrue(os.path.lexists(dst))
+                shutil.symlink(src, dst, overwrite=True)
+                self.assertEqual(os.readlink(dst), src)
+
+    def test_many_srcs_overwrite(self):
+        srcs = [self.src_file1, self.src_file2]
+        dst_dir = self.dst_dir1
+        src_to_dst_path = {}
+        for src in srcs:
+            src_to_dst_path[src] = os.path.join(dst_dir, os.path.basename(src))
+            self.assertTrue(os.path.exists(src_to_dst_path[src]))
+
+        shutil.symlink(srcs, dst_dir, overwrite=True)
+
+        for src in srcs:
+            shutil.symlink(srcs, dst_dir, overwrite=True)
+            self.assertEqual(os.readlink(src_to_dst_path[src]), src)
 
 
 class PublicAPITests(unittest.TestCase):
