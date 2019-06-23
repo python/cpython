@@ -2638,15 +2638,18 @@ class Symlink(unittest.TestCase):
     # Overwrite=True
 
     def test_single_src_overwrite_existing_directory(self):
-        with self.assertRaisesRegex(IsADirectoryError, self.dst_dir1):
-            shutil.symlink(self.src_file1, self.dst_dir1, overwrite=True)
+        dst = self.dst_dir1
+        self.assertTrue(os.path.exists(dst))
+        with self.assertRaisesRegex(IsADirectoryError, dst):
+            shutil.symlink(self.src_file1, dst, overwrite=True)
 
     def test_single_src_overwrite_existing_not_directory(self):
         src = self.src_file1
         dsts_not_dir = {k: v for k, v in self.path_types.items()
-                        if k != 'directory'}
+                        if k not in ['absent', 'directory']}
         for description, dst in dsts_not_dir.items():
             with self.subTest(type=description):
+                self.assertTrue(os.path.lexists(dst))
                 shutil.symlink(src, dst, overwrite=True)
                 self.assertEqual(os.readlink(dst), src)
 
