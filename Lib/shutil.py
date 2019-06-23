@@ -1513,11 +1513,8 @@ def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
     symlink (the default) otherwise. On non-Windows platforms,
     `target_is_directory` is ignored.
     """
-    # targets = _link_or_symlink_parse_args(src_or_srcs, dst, overwrite,
-    #                                       follow_symlinks,
-    #                                       target_is_dir=target_is_dir)
 
-    if not any(isinstance(src_or_srcs, typ) for typ in [list, set, tuple]):
+    if not isinstance(src_or_srcs, (list, set, tuple)):
         sources = [src_or_srcs]
         dst_is_dir = False
     else:  # src_or_srcs is already something list-y
