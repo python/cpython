@@ -2595,7 +2595,7 @@ class Symlink(unittest.TestCase):
     def test_bool_argument_type_checking(self):
         bool_args = ['overwrite', 'target_is_dir']
 
-        # Set each bool arg to be non-bool ('X'), one after another
+        # Set only one bool arg to be non-bool ('X') on each call
         for arg in bool_args:
             kwargs = {k: 'X' if k == arg else True for k in bool_args}
             with self.subTest(bool_arg=arg):
