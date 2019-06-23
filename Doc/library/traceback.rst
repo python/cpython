@@ -65,13 +65,29 @@ The module defines the following functions:
 
 .. function:: print_exc(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(*sys.exc_info(), limit, file,
+   Print exception up to *limit* stack trace entries from *tb* to *file*.
+
+   The optional argument *limit* defines how many entries are printed. If it
+   is omitted or ``None``, all the entries are printed.
+   If the optional argument *file* is omitted or ``None``, the outuput goes to
+   ``sys.stderr``; otherwise *file* should be an open file or file-like object
+   with a write() method.
+
+   It is a shorthand for ``print_exception(*sys.exc_info(), limit, file,
    chain)``.
 
 
 .. function:: print_last(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(sys.last_type, sys.last_value,
+   Print the last exception and the stack trace.
+
+   The optional argument *limit* defines how many entries are printed. If it
+   is omitted or ``None``, all the entries are printed.
+   If the optional argument *file* is omitted or ``None``, the output goes to
+   ``sys.stderr``; otherwise *file* should be an open file or file-like object
+   with a write() method.
+
+   It is a shorthand for ``print_exception(sys.last_type, sys.last_value,
    sys.last_traceback, limit, file, chain)``.  In general it will work only
    after an exception has reached an interactive prompt (see
    :data:`sys.last_type`).
@@ -152,13 +168,27 @@ The module defines the following functions:
 
 .. function:: format_tb(tb, limit=None)
 
-   A shorthand for ``format_list(extract_tb(tb, limit))``,
-   which returns a list of strings ready for printing.
+   Return an :func:`extract_tb` object which returns a list of pre-processed
+   entries from *tb*.
+
+   The argument *tb* is the traceback to be foramtted.
+   The optional argument *limit* defines how many entries are formatted.
+   If it is omitted or ``None``, all entries are formatted ready to be
+   printed.
+
+   It is a shorthand for ``format_list(extract_tb(tb, limit))``.
 
 
 .. function:: format_stack(f=None, limit=None)
 
-   A shorthand for ``format_list(extract_stack(f, limit))``.
+   Return a :func:`format_list` object which is a list of strings with the
+   messages of the traceback formatted ready to be printed.
+
+   The optional argument *f* is the stack frame from which to start.
+   The optional argument *limit* defines how many entries are formatted.
+   If it is omitted or ``None``, all entries are formatted.
+
+   It is a shorthand for ``format_list(extract_stack(f, limit))``.
 
 .. function:: clear_frames(tb)
 

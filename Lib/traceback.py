@@ -53,7 +53,15 @@ def print_tb(tb, limit=None, file=None):
     print_list(extract_tb(tb, limit=limit), file=file)
 
 def format_tb(tb, limit=None):
-    """A shorthand for 'format_list(extract_tb(tb, limit))',
+    """Return an 'extract_tb' object which returns a list of pre-processed
+    entries from 'tb'.
+
+    The argument 'tb' is the traceback to be foramtted.
+    The optional argument 'limit' defines how many entries are formatted.
+    If it is omitted or None, then all entries are formatted ready to be
+    printed.
+
+    It is a shorthand for 'format_list(extract_tb(tb, limit))',
     which returns a list of strings ready for printing.
     """
     return extract_tb(tb, limit=limit).format()
@@ -161,7 +169,15 @@ def _some_str(value):
 # --
 
 def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(*sys.exc_info(), limit, file)'."""
+    """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
+
+    The optional argument 'limit' defines how many entries are printed.
+    If the optional argument 'file' is omitted or None, the output goes to
+    sys.stderr; otherwise 'file' should be an open file or file-like object
+    with a write() method.
+
+    It is a shorthand for 'print_exception(*sys.exc_info(), limit, file)'.
+    """
     print_exception(*sys.exc_info(), limit=limit, file=file, chain=chain)
 
 def format_exc(limit=None, chain=True):
@@ -169,8 +185,16 @@ def format_exc(limit=None, chain=True):
     return "".join(format_exception(*sys.exc_info(), limit=limit, chain=chain))
 
 def print_last(limit=None, file=None, chain=True):
-    """This is a shorthand for 'print_exception(sys.last_type,
-    sys.last_value, sys.last_traceback, limit, file)'."""
+    """Print the last exception and the stack trace.
+
+    The optional argument 'limit' defines how many entries are printed.
+    If the optional argument 'file' is omitted or None, the oputput goes to
+    sys.stderr; otherwise 'file' should be an open file or file-like object
+    with a write() method.
+
+    It is a shorthand for 'print_exception(sys.last_type,
+    sys.last_value, sys.last_traceback, limit, file)'.
+    """
     if not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
     print_exception(sys.last_type, sys.last_value, sys.last_traceback,
@@ -193,7 +217,15 @@ def print_stack(f=None, limit=None, file=None):
 
 
 def format_stack(f=None, limit=None):
-    """Shorthand for 'format_list(extract_stack(f, limit))'."""
+    """Return a 'format_list' object which is a list of strings with the
+    messages of the traceback formatted ready to be printed.
+
+    The optional argument 'f' is the stack frame from which to start.
+    The optional argument 'limit' defines how many entries are formatted.
+    If it is omitted or None, then all entries are formatted.
+
+    It is a shorthand for 'format_list(extract_stack(f, limit))'.
+    """
     if f is None:
         f = sys._getframe().f_back
     return format_list(extract_stack(f, limit=limit))
