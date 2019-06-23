@@ -118,7 +118,7 @@ class CheckTests(CMDBase):
             ('_find', (dirs, 'ignored.tsv', 'known.tsv')),
             ('_print', ('ERROR: found unsupported static variables',)),
             ('_print', ()),
-            ('_show', (unsupported,)),
+            ('_show', (sorted(unsupported),)),
             ])
         self.assertEqual(cm.exception.code, 1)
 
@@ -161,11 +161,11 @@ class ShowTests(CMDBase):
             ('_find', (dirs, 'ignored.tsv', 'known.tsv')),
             ('_print', ('supported:',)),
             ('_print', ('----------',)),
-            ('_show', (supported,)),
+            ('_show', (sorted(supported),)),
             ('_print', ()),
             ('_print', ('unsupported:',)),
             ('_print', ('------------',)),
-            ('_show', (unsupported,)),
+            ('_show', (sorted(unsupported),)),
             ])
 
 

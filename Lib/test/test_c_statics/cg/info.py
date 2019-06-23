@@ -42,6 +42,18 @@ class StaticVar(namedtuple('StaticVar', 'filename funcname name vartype')):
     #    _, _, sig = super().__repr__().partition('(')
     #    return f'{self.__class__.__name__}({sig}'
 
+    # To make sorting work with None:
+    def __lt__(self, other):
+        try:
+            return super().__lt__(other)
+        except TypeError:
+            if None in self:
+                return True
+            elif None in other:
+                return False
+            else:
+                raise
+
     def validate(self):
         """Fail if the StaticVar is invalid (i.e. init with bad data)."""
         for field in self._fields:
