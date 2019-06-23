@@ -2546,8 +2546,8 @@ class Symlink(unittest.TestCase):
         # Create extant directories, files and symlinks
         extant_dirs = {'src_dir1': 'sd1', 'dst_dir1': 'dd1'}
         extant_files = {'src_file1': 'sf1',
-                        'src_file2': os.path.join('sd1', 'sf2'),
-                        'dst_file1': 'df1'}
+                        'dst_file1': os.path.join('dd1', 'df1'),
+                        'dst_file2': os.path.join('dd1', 'df2')}
 
         self.tmp_dir = tempfile.mkdtemp()
         for name, value in extant_dirs.items():
