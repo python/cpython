@@ -79,3 +79,4 @@ class StaticsTest(_Base):
         found = statics([], '', '')
 
         self.assertEqual(found, [])
+        self.assertEqual(self.calls, [])
