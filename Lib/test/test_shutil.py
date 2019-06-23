@@ -2593,7 +2593,7 @@ class Symlink(unittest.TestCase):
     # Argument checking
 
     def test_bool_argument_type_checking(self):
-        bool_args = ['overwrite', 'target_is_dir']
+        bool_args = ['overwrite', 'target_is_directory']
 
         # Set only one bool arg to be non-bool ('X') on each call
         for arg in bool_args:
@@ -2609,11 +2609,11 @@ class Symlink(unittest.TestCase):
     # Calling of functions
 
     @unittest.mock.patch('os.symlink', side_effect=os.symlink)
-    def test_target_is_dir_passed_for_each_src(self, mock_os_symlink):
+    def test_target_is_directory_passed_for_each_src(self, mock_os_symlink):
         for boolean in [True, False]:
             mock_os_symlink.reset_mock()
             shutil.symlink(self.srcs, self.dst_dir1, overwrite=True,
-                           target_is_dir=boolean)
+                           target_is_directory=boolean)
             self.assertEqual(mock_os_symlink.call_count, len(self.srcs))
             for call in mock_os_symlink.call_args_list:
                 self.assertEqual(call[1]['target_is_directory'], boolean)

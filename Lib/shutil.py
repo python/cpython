@@ -1486,7 +1486,7 @@ def _link_or_symlink_parse_args(src_or_srcs, dst, *, overwrite,
     # return sources
 
 
-def symlink(src_or_srcs, dst, *, overwrite=False, target_is_dir=False):
+def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
     """Symbolic link(s) to a single source or a list of multiple sources.
 
     Given a list of sources, `dst` must be a directory and links to each
@@ -1506,11 +1506,12 @@ def symlink(src_or_srcs, dst, *, overwrite=False, target_is_dir=False):
 
     With `follow_symlinks=False`, create symlinks to symlinks XXXXXXXXX
 
-    On Windows, a symlink represents either a file or a directory, and does not
-    morph to the target dynamically. If the target is present, the type of the
-    symlink will be created to match. Otherwise, the symlink will be created as
-    a directory if `target_is_dir` is True or a file symlink (the default)
-    otherwise. On non-Windows platforms, `target_is_dir` is ignored.
+    On Windows, a symlink represents either a file or a directory, and does
+    not morph to the target dynamically. If the target is present, the type
+    of the symlink will be created to match. Otherwise, the symlink will be
+    created as a directory if `target_is_directory` is True or a file
+    symlink (the default) otherwise. On non-Windows platforms,
+    `target_is_directory` is ignored.
     """
     # targets = _link_or_symlink_parse_args(src_or_srcs, dst, overwrite,
     #                                       follow_symlinks,
@@ -1523,7 +1524,7 @@ def symlink(src_or_srcs, dst, *, overwrite=False, target_is_dir=False):
         sources = src_or_srcs
         dst_is_dir = True
 
-    for bool_arg in ['overwrite', 'target_is_dir']:
+    for bool_arg in ['overwrite', 'target_is_directory']:
         if not isinstance(locals()[bool_arg], bool):
             raise TypeError(f"{bool_arg} not a bool")
 
@@ -1534,7 +1535,7 @@ def symlink(src_or_srcs, dst, *, overwrite=False, target_is_dir=False):
             link_name = dst
 
         def create_link_at(here):
-            os.symlink(target, here, target_is_directory=target_is_dir)
+            os.symlink(target, here, target_is_directory=target_is_directory)
 
         if not overwrite:
             create_link_at(link_name)
