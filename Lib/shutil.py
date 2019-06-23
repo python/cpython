@@ -1533,7 +1533,7 @@ def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
         def create_link_at(here):
             os.symlink(target, here, target_is_directory=target_is_directory)
 
-        if not overwrite:
-            create_link_at(link_name)
-        else:
+        if overwrite:
             _create_or_replace(link_name, create_link_at)
+        else:
+            create_link_at(link_name)
