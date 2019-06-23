@@ -2653,6 +2653,20 @@ class Symlink(unittest.TestCase):
                 shutil.symlink(src, dst, overwrite=True)
                 self.assertEqual(os.readlink(dst), src)
 
+    def test_many_srcs_overwrite(self):
+        srcs = [self.src_file1, self.src_file2]
+        dst_dir = self.dst_dir1
+        src_to_dst_path = {}
+        for src in srcs:
+            src_to_dst_path[src] = os.path.join(dst_dir, os.path.basename(src))
+            self.assertTrue(os.path.exists(src_to_dst_path[src]))
+
+        shutil.symlink(srcs, dst_dir, overwrite=True)
+
+        for src in srcs:
+            shutil.symlink(srcs, dst_dir, overwrite=True)
+            self.assertEqual(os.readlink(src_to_dst_path[src]), src)
+
     # List of sources
 
     def test_list_dst_is_directory(self):
