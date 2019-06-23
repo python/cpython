@@ -1469,23 +1469,6 @@ def _create_or_replace(dst, create_temp_dest):
         raise e
 
 
-# `dst_is_file` prevents the race condition of symlink('target', 'link')
-# creating 'target/link' or 'target' in shared writeable directories.
-# See GNU's -T common option:
-# https://www.gnu.org/software/coreutils/manual/html_node/Target-directory.html
-#
-# Analogously, `dst_is_dir` allows enforcing that a link is created as
-# 'target/link' rather 'link'. (c.f. GNUs common option '-t')
-
-# https://pubs.opengroup.org/onlinepubs/9699919799/utilities/ln.html
-
-def _link_or_symlink_parse_args(src_or_srcs, dst, *, overwrite,
-                                follow_symlinks):
-    """Check that the arguments to link or symlink are valid."""
-    pass
-    # return sources
-
-
 def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
     """Symbolic link(s) to a single source or a list of multiple sources.
 
