@@ -462,7 +462,7 @@ Buffer-related functions
 
 .. c:function:: Py_ssize_t PyBuffer_SizeFromFormat(const char *format)
 
-   Return the implied :c:data:`~Py_buffer.itemsize` from :c:data:`~Py_buffer.format`. 
+   Return the implied :c:data:`~Py_buffer.itemsize` from :c:data:`~Py_buffer.format`.
    On error, raise an exception and return -1.
 
    .. versionadded:: 3.9
