@@ -2607,9 +2607,15 @@ class Symlink(unittest.TestCase):
 
     # Calling of functions
 
-    @unittest.expectedFailure
-    def test_target_is_dir_passed_for_each_src(self):
-        srcs = self.extant_symlinks
+    @unittest.mock.patch('os.symlink', side_effect=os.symlink)
+    def test_target_is_dir_passed_for_each_src(self, mock_os_symlink):
+        for boolean in [True, False]:
+            mock_os_symlink.reset_mock()
+            shutil.symlink(self.srcs, self.dst_dir1, overwrite=True,
+                           target_is_dir=boolean)
+            self.assertEqual(mock_os_symlink.call_count, len(self.srcs))
+            for call in mock_os_symlink.call_args_list:
+                self.assertEqual(call[1]['target_is_directory'], boolean)
 
     @unittest.expectedFailure
     def test_overwrite_passed_for_each_src(self):
