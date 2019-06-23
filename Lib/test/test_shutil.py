@@ -2659,9 +2659,8 @@ class Symlink(unittest.TestCase):
 
     def test_overwrite_existing_symlink(self):
         src = self.src_file1
-        for name in self.symlink_names:
-            dst = getattr(self, name)
-            with self.subTest(symlink_type=name):
+        for symlink_type, dst in self.symlink_to_path.items():
+            with self.subTest(symlink_type=symlink_type):
                 shutil.symlink(src, dst, overwrite=True)
                 self.assertEqual(os.readlink(dst), src)
 
