@@ -1492,17 +1492,17 @@ def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
     Given a list of sources, `dst` must be a directory and links to each
     source are created inside `dst`.
 
-    Given a single source, `dst` is assumed to be a file, even if it is a
+    Given a single source, `dst` is taken to be a file, even if it is a
     symlink to a directory. This allows for:
-     * Replacing symlinks (with `overwrite=True`)
      * Enforcing that a link is created as `dst` rather than `dst`/src
+     * Replacing symlinks to directories (with `overwrite=True`)
 
-    With `overwrite=False`, FileExistsError is raised if the pathname `dst`
-    already exists.
+    With `overwrite=False`, FileExistsError is raised if the destination
+    pathname already exists.
 
-    With `overwrite=True`, attempt to overwrite an existing destination.
-     * Raises IsADirectoryError if `dst` is a directory.
-     * Symlinks to directories can be overwritten.
+    With `overwrite=True`, overwrite an existing destination.
+     * Raises IsADirectoryError if `dst` is a directory
+     * Symlinks to directories are treated as files
 
     With `follow_symlinks=False`, create symlinks to symlinks XXXXXXXXX
 
@@ -1513,7 +1513,6 @@ def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
     symlink (the default) otherwise. On non-Windows platforms,
     `target_is_directory` is ignored.
     """
-
     if not isinstance(src_or_srcs, (list, set, tuple)):
         sources = [src_or_srcs]
         dst_is_dir = False
