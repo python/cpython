@@ -2580,7 +2580,7 @@ class Symlink(unittest.TestCase):
             path = os.path.join(self.tmp_dir, value)
             setattr(self, name, path)
 
-        self.path_types = {'file': self.dst_file1, 'directory': self.dst_dir1,
+        self.path_types = {'file': self.src_file1, 'directory': self.dst_dir1,
                            'absent': self.new1, **self.symlink_to_path}
         self.srcs = list(self.path_types.values())
 
