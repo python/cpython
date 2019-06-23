@@ -349,6 +349,9 @@ Other Language Changes
   is ``-1``, and a suitable power of that inverse for other negative exponents.
   (Contributed by Mark Dickinson in :issue:`36027`.)
 
+* When dictionary comprehensions are evaluated, the key is now evaluated before
+  the value, as proposed by :pep:`572`.
+
 
 New Modules
 ===========
