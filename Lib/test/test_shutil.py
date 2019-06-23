@@ -2602,7 +2602,7 @@ class Symlink(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, arg):
                     shutil.symlink(self.src_file1, self.dst_file1, **kwargs)
 
-    def test_only_two_positional_args(self):
+    def test_two_positional_args(self):
         with self.assertRaisesRegex(TypeError, '2 positional arguments'):
             shutil.symlink(self.src_file1, self.dst_file1, True)
 
