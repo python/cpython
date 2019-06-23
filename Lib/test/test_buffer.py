@@ -4418,7 +4418,6 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(BufferError, memoryview, x)
 
     @support.cpython_only
-    @unittest.skipUnless(_testcapi, 'requires _testcapi')
     def test_pybuffer_size_from_format(self):
         # basic tests
         for format in ("i", "3s", "0i", " "):

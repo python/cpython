@@ -1,1 +1,1 @@
-`PyBuffer_SizeFromFormat()` now added.
+:c:func:`PyBuffer_SizeFromFormat()` now added.
