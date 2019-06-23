@@ -2664,20 +2664,6 @@ class Symlink(unittest.TestCase):
                 shutil.symlink(src, dst, overwrite=True)
                 self.assertEqual(os.readlink(dst), src)
 
-    # Edge case lists
-
-    def test_single_element_list(self):
-        srcs = [self.src_file1]
-        shutil.symlink(srcs, self.dst_dir1)
-        link_path = os.path.join(self.dst_dir1, os.path.basename(srcs[0]))
-        self.assertEqual(os.readlink(link_path), srcs[0])
-
-    def test_empty_list(self):
-        srcs = []
-        with unittest.mock.patch("os.symlink") as m:
-            shutil.symlink(srcs, self.dst_dir1)
-        assert m.not_called
-
     # List of sources
 
     def test_list_dst_is_directory(self):
@@ -2707,6 +2693,20 @@ class Symlink(unittest.TestCase):
             with self.subTest(type=description):
                 with self.assertRaisesRegex(FileNotFoundError, dst_path):
                     shutil.symlink(self.srcs, dst_path)
+
+    # List of sources - Edge cases
+
+    def test_empty_list(self):
+        srcs = []
+        with unittest.mock.patch("os.symlink") as m:
+            shutil.symlink(srcs, self.dst_dir1)
+        self.assertTrue(m.not_called)
+
+    def test_single_element_list(self):
+        srcs = [self.src_file1]
+        shutil.symlink(srcs, self.dst_dir1)
+        link_path = os.path.join(self.dst_dir1, os.path.basename(srcs[0]))
+        self.assertEqual(os.readlink(link_path), srcs[0])
 
 
 class PublicAPITests(unittest.TestCase):
