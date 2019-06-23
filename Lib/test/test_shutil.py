@@ -2545,9 +2545,9 @@ class Symlink(unittest.TestCase):
     def setUp(self):
         # Create extant directories, files and symlinks
         extant_dirs = {'src_dir1': 'sd1', 'dst_dir1': 'dd1'}
-        extant_files = {'src_file1': 'sf1',
-                        'dst_file1': os.path.join('dd1', 'df1'),
-                        'dst_file2': os.path.join('dd1', 'df2')}
+        extant_files = {'src_file1': 'file1', 'src_file2': 'file2',
+                        'dst_file1': os.path.join('dd1', 'file1'),
+                        'dst_file2': os.path.join('dd1', 'file2')}
 
         self.tmp_dir = tempfile.mkdtemp()
         for name, value in extant_dirs.items():
@@ -2561,7 +2561,7 @@ class Symlink(unittest.TestCase):
             setattr(self, name, path)
 
         # Keys are link filenames, values are link targets:
-        symlink_names = {'link_to_file': 'df1', 'link_to_dir': 'dd1',
+        symlink_names = {'link_to_file': 'file1', 'link_to_dir': 'dd1',
                          'link_to_link': 'link_to_file',
                          'broken_link': 'non-extant',
                          'link_to_broken_link': 'broken_link'}
@@ -2689,7 +2689,7 @@ class Symlink(unittest.TestCase):
         self.assertTrue(m.not_called)
 
     def test_single_element_list(self):
-        srcs = [self.src_file1]
+        srcs = [self.new1]
         shutil.symlink(srcs, self.dst_dir1)
         link_path = os.path.join(self.dst_dir1, os.path.basename(srcs[0]))
         self.assertEqual(os.readlink(link_path), srcs[0])
