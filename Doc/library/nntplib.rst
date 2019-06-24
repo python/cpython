@@ -79,6 +79,11 @@ The module itself defines the following classes:
     ('211 1755 1 1755 gmane.comp.python.committers', 1755, 1, 1755, 'gmane.comp.python.committers')
     >>>
 
+   .. audit-event:: nntplib.NNTP "self host port"
+
+   All commands will raise an :ref:`auditing event <auditing>`
+   ``nntplib.NNTP.putline`` with arguments ``self`` and ``line``,
+   where ``line`` is the bytes about to be sent to the remote host.
 
    .. versionchanged:: 3.2
       *usenetrc* is now ``False`` by default.
@@ -99,6 +104,12 @@ The module itself defines the following classes:
    Note that SSL-on-563 is discouraged per :rfc:`4642`, in favor of
    STARTTLS as described below.  However, some servers only support the
    former.
+
+   .. audit-event:: nntplib.NNTP "self host port"
+
+   All commands will raise an :ref:`auditing event <auditing>`
+   ``nntplib.NNTP.putline`` with arguments ``self`` and ``line``,
+   where ``line`` is the bytes about to be sent to the remote host.
 
    .. versionadded:: 3.2
 

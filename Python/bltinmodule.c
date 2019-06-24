@@ -482,6 +482,11 @@ builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         PyErr_SetString(PyExc_RuntimeError, "lost sys.breakpointhook");
         return NULL;
     }
+
+    if (PySys_Audit("builtins.breakpoint", "O", hook) < 0) {
+        return NULL;
+    }
+
     Py_INCREF(hook);
     PyObject *retval = _PyObject_Vectorcall(hook, args, nargs, keywords);
     Py_DECREF(hook);

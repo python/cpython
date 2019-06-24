@@ -122,7 +122,7 @@ High-level Module Interface
 
    .. audit-event:: open "path mode flags"
 
-      This function raises an :func:`auditing event <sys.audit>` ``open`` with
+      This function raises an :ref:`auditing event <auditing>` ``open`` with
       arguments ``path``, ``mode`` and ``flags``. The ``mode`` and ``flags``
       arguments may have been modified or inferred from the original call.
 
