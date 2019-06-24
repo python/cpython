@@ -2711,18 +2711,18 @@ class Symlink(unittest.TestCase):
 
     # _create_or_replace helper function
 
-    def _mock_mktemp(*, orig_mktemp=tempfile.mktemp, **kwargs):
+    def mock_mktemp(*, orig_mktemp=tempfile.mktemp, **kwargs):
         """Ensure only the first mktemp call returns an existing pathname.
         Save the temp path created for later retrieval"""
-        virgin = getattr(Symlink._mock_mktemp, 'virgin', True)
+        virgin = getattr(Symlink.mock_mktemp, 'virgin', True)
         temp = orig_mktemp(**kwargs)
-        Symlink._mock_mktemp.path = temp
+        Symlink.mock_mktemp.path = temp
         if virgin:
             open(temp, 'w').close()
-            Symlink._mock_mktemp.virgin = False
+            Symlink.mock_mktemp.virgin = False
         return temp
 
-    @unittest.mock.patch('tempfile.mktemp', side_effect=_mock_mktemp)
+    @unittest.mock.patch('tempfile.mktemp', side_effect=mock_mktemp)
     def test_retry_on_existing_temp_path(self, mock_mktemp):
         # Simulate race condition: creation of temp path after tempfile.mktemp
         shutil.symlink(self.src_file1, self.dst_file1, overwrite=True)
@@ -2733,17 +2733,17 @@ class Symlink(unittest.TestCase):
         """An exception that is expected to be raised by mocks"""
         pass
 
-    def _mock_symlink(*args, orig_symlink=os.symlink, **kwargs):
+    def mock_symlink(*args, orig_symlink=os.symlink, **kwargs):
         """Raise exception immediately after temp symlink creation"""
         orig_symlink(*args, **kwargs)
-        assert(os.path.lexists(Symlink._mock_mktemp.path))
+        assert(os.path.lexists(Symlink.mock_mktemp.path))
         raise Symlink.ExpectedException
 
-    @unittest.mock.patch('tempfile.mktemp', side_effect=_mock_mktemp)
+    @unittest.mock.patch('tempfile.mktemp', side_effect=mock_mktemp)
     def test_temp_is_removed_on_exception(self, mock_mktemp):
         # Simulate exceptions while temporary link exists
         patch_symlink = unittest.mock.patch('os.symlink',
-                                            side_effect=Symlink._mock_symlink)
+                                            side_effect=Symlink.mock_symlink)
         patch_replace = unittest.mock.patch('os.replace',
                                         side_effect=Symlink.ExpectedException)
         exceptions = {'after symlink': patch_symlink,
@@ -2754,7 +2754,7 @@ class Symlink(unittest.TestCase):
                     shutil.symlink(self.src_file1, self.dst_file1,
                                    overwrite=True)
                 mock.assert_called_once()
-                self.assertFalse(os.path.lexists(Symlink._mock_mktemp.path))
+                self.assertFalse(os.path.lexists(Symlink.mock_mktemp.path))
 
 
 class PublicAPITests(unittest.TestCase):
