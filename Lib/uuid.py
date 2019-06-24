@@ -348,24 +348,33 @@ class UUID:
         if self.variant == RFC_4122:
             return int((self.int >> 76) & 0xf)
 
-def _popen(command, *args):
-    import os, shutil, subprocess
-    executable = shutil.which(command)
-    if executable is None:
-        path = os.pathsep.join(('/sbin', '/usr/sbin'))
-        executable = shutil.which(command, path=path)
+
+def _get_command_stdout(command, *args):
+    import io, os, shutil, subprocess
+
+    try:
+        executable = shutil.which(command)
         if executable is None:
+            path = os.pathsep.join(('/sbin', '/usr/sbin'))
+            executable = shutil.which(command, path=path)
+            if executable is None:
+                return None
+        # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
+        # on stderr (Note: we don't have an example where the words we search
+        # for are actually localized, but in theory some system could do so.)
+        env = dict(os.environ)
+        env['LC_ALL'] = 'C'
+        proc = subprocess.Popen((executable,) + args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL,
+                                env=env)
+        if not proc:
             return None
-    # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
-    # on stderr (Note: we don't have an example where the words we search
-    # for are actually localized, but in theory some system could do so.)
-    env = dict(os.environ)
-    env['LC_ALL'] = 'C'
-    proc = subprocess.Popen((executable,) + args,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.DEVNULL,
-                            env=env)
-    return proc
+        stdout, stderr = proc.communicate()
+        return io.BytesIO(stdout)
+    except (OSError, subprocess.SubprocessError):
+        return None
+
 
 # For MAC (a.k.a. IEEE 802, or EUI-48) addresses, the second least significant
 # bit of the first octet signifies whether the MAC address is universally (0)
@@ -393,68 +402,19 @@ def _is_universal(mac):
 # f_index: lambda function to modify, if needed, an index value
 # keyword and value are on the same line aka 'inline'
 def _find_mac_inline(command, args, hw_identifiers, f_index):
-    first_local_mac = None
-    try:
-        proc = _popen(command, *args.split())
-        if not proc:
-            return None
-        with proc:
-            for line in proc.stdout:
-                words = line.lower().rstrip().split()
-                for i in range(len(words)):
-                    if words[i] in hw_identifiers:
-                        try:
-                            word = words[f_index(i)]
-                            mac = int(word.replace(_MAC_DELIM, b''), 16)
-                            if _is_universal(mac):
-                                return mac
-                            first_local_mac = first_local_mac or mac
-                        except (ValueError, IndexError):
-                            # Virtual interfaces, such as those provided by
-                            # VPNs, do not have a colon-delimited MAC address
-                            # as expected, but a 16-byte HWAddr separated by
-                            # dashes. These should be ignored in favor of a
-                            # real MAC address
-                            pass
-    except OSError:
-        pass
-    return first_local_mac or None
+    stdout = _get_command_stdout(command, args)
+    if stdout is None:
+        return None
 
-# Keyword is only on firstline - values on remaining lines
-def _find_mac_nextlines(command, args, hw_identifiers, f_index):
     first_local_mac = None
-    mac = None
-    try:
-        proc = _popen(command, *args.split())
-        if not proc:
-            return None
-        with proc:
-            keywords = proc.stdout.readline().rstrip().split()
-            try:
-                i = keywords.index(hw_identifiers)
-            except ValueError:
-                return None
-            # we have the index (i) into the data that follows
-            for line in proc.stdout:
+    for line in stdout:
+        words = line.lower().rstrip().split()
+        for i in range(len(words)):
+            if words[i] in hw_identifiers:
                 try:
-                    values = line.rstrip().split()
-                    value = values[f_index(i)]
-                    if len(value) == 17 and value.count(_MAC_DELIM) == 5:
-                        mac = int(value.replace(_MAC_DELIM, b''), 16)
-                    # (Only) on AIX the macaddr value given is not prefixed by 0, e.g.
-                    # en0   1500  link#2      fa.bc.de.f7.62.4 110854824     0 160133733     0     0
-                    # not
-                    # en0   1500  link#2      fa.bc.de.f7.62.04 110854824     0 160133733     0     0
-                    elif _AIX and  value.count(_MAC_DELIM) == 5:
-                        # the extracted hex string is not a 12 hex digit
-                        # string, so add the fields piece by piece
-                        if len(value) < 17 and len(value) >= 11:
-                            mac = 0
-                            fields = value.split(_MAC_DELIM)
-                            for hex in fields:
-                                mac <<= 8
-                                mac += int(hex, 16)
-                    if mac and _is_universal(mac):
+                    word = words[f_index(i)]
+                    mac = int(word.replace(_MAC_DELIM, b''), 16)
+                    if _is_universal(mac):
                         return mac
                     first_local_mac = first_local_mac or mac
                 except (ValueError, IndexError):
@@ -464,8 +424,52 @@ def _find_mac_nextlines(command, args, hw_identifiers, f_index):
                     # dashes. These should be ignored in favor of a
                     # real MAC address
                     pass
-    except OSError:
-        pass
+    return first_local_mac or None
+
+
+# Keyword is only on firstline - values on remaining lines
+def _find_mac_nextlines(command, args, hw_identifiers, f_index):
+    stdout = _get_command_stdout(command, args)
+    if stdout is None:
+        return None
+
+    first_local_mac = None
+    mac = None
+    keywords = stdout.readline().rstrip().split()
+    try:
+        i = keywords.index(hw_identifiers)
+    except ValueError:
+        return None
+    # we have the index (i) into the data that follows
+    for line in stdout:
+        try:
+            values = line.rstrip().split()
+            value = values[f_index(i)]
+            if len(value) == 17 and value.count(_MAC_DELIM) == 5:
+                mac = int(value.replace(_MAC_DELIM, b''), 16)
+            # (Only) on AIX the macaddr value given is not prefixed by 0, e.g.
+            # en0   1500  link#2      fa.bc.de.f7.62.4 110854824     0 160133733     0     0
+            # not
+            # en0   1500  link#2      fa.bc.de.f7.62.04 110854824     0 160133733     0     0
+            elif _AIX and  value.count(_MAC_DELIM) == 5:
+                # the extracted hex string is not a 12 hex digit
+                # string, so add the fields piece by piece
+                if len(value) < 17 and len(value) >= 11:
+                    mac = 0
+                    fields = value.split(_MAC_DELIM)
+                    for hex in fields:
+                        mac <<= 8
+                        mac += int(hex, 16)
+            if mac and _is_universal(mac):
+                return mac
+            first_local_mac = first_local_mac or mac
+        except (ValueError, IndexError):
+            # Virtual interfaces, such as those provided by
+            # VPNs, do not have a colon-delimited MAC address
+            # as expected, but a 16-byte HWAddr separated by
+            # dashes. These should be ignored in favor of a
+            # real MAC address
+            pass
     return first_local_mac or None
 
 
