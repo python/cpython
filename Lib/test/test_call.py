@@ -577,9 +577,18 @@ class TestPEP590(unittest.TestCase):
             def __call__(self, n):
                 return 'new'
 
+        class SuperBase:
+            def __call__(self, *args):
+                return super().__call__(*args)
+
+        class MethodDescriptorSuper(SuperBase, _testcapi.MethodDescriptorBase):
+            def __call__(self, *args):
+                return super().__call__(*args)
+
         calls += [
             (MethodDescriptorHeap(), (0,), {}, True),
             (MethodDescriptorOverridden(), (0,), {}, 'new'),
+            (MethodDescriptorSuper(), (0,), {}, True),
         ]
 
         for (func, args, kwargs, expected) in calls:
