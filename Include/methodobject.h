@@ -41,17 +41,6 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
-#ifdef Py_BUILD_CORE
-extern PyObject * _PyCFunction_Vectorcall_FASTCALL(
-    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
-extern PyObject * _PyCFunction_Vectorcall_FASTCALL_KEYWORDS(
-    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
-extern PyObject * _PyCFunction_Vectorcall_NOARGS(
-    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
-extern PyObject * _PyCFunction_Vectorcall_O(
-    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
-#endif
-
 struct PyMethodDef {
     const char  *ml_name;   /* The name of the built-in function/method */
     PyCFunction ml_meth;    /* The C function that implements it */

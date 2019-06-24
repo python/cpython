@@ -1563,7 +1563,7 @@ class Frame(object):
         if not caller:
             return False
 
-        if (caller.startswith('_PyCFunction_Vectorcall') or
+        if (caller.startswith('vectorcall_') or
             caller == 'cfunction_call_varargs'):
             arg_name = 'func'
             # Within that frame:
