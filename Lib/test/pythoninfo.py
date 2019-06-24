@@ -555,6 +555,7 @@ def collect_test_support(info_add):
 
     call_func(info_add, 'test_support._is_gui_available', support, '_is_gui_available')
     call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
+    call_func(info_add, 'test_support.python_has_debug_info', support, 'python_has_debug_info')
 
 
 def collect_cc(info_add):

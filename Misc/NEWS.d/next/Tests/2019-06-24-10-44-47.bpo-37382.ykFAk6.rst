@@ -1,0 +1,3 @@
+GDB tests are now run whenever Python is compiled with debug info,
+regardless of optimization flags. A new function
+``test.support.python_has_debug_info`` is added for this.

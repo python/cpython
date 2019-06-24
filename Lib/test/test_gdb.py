@@ -13,7 +13,7 @@ import textwrap
 import unittest
 
 from test import support
-from test.support import run_unittest, findfile, python_is_optimized
+from test.support import run_unittest, findfile, python_has_debug_info
 
 def get_gdb_version():
     try:
@@ -657,8 +657,8 @@ id(foo.__code__)''',
                                  re.DOTALL),
                         'Unexpected gdb representation: %r\n%s' % (gdb_output, gdb_output))
 
-@unittest.skipIf(python_is_optimized(),
-                 "Python was compiled with optimizations")
+@unittest.skipUnless(python_has_debug_info(),
+                     "Python was compiled without debug info")
 class PyListTests(DebuggerTests):
     def assertListing(self, expected, actual):
         self.assertEndsWith(actual, expected)
@@ -701,8 +701,8 @@ class PyListTests(DebuggerTests):
 
 class StackNavigationTests(DebuggerTests):
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     def test_pyup_command(self):
         'Verify that the "py-up" command works'
         bt = self.get_stack_trace(script=self.get_sample_script(),
@@ -730,8 +730,8 @@ $''')
                             'Unable to find an older python frame\n')
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     def test_up_then_down(self):
         'Verify "py-up" followed by "py-down"'
         bt = self.get_stack_trace(script=self.get_sample_script(),
@@ -745,8 +745,8 @@ $''')
 $''')
 
 class PyBtTests(DebuggerTests):
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     def test_bt(self):
         'Verify that the "py-bt" command works'
         bt = self.get_stack_trace(script=self.get_sample_script(),
@@ -765,8 +765,8 @@ Traceback \(most recent call first\):
     foo\(1, 2, 3\)
 ''')
 
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     def test_bt_full(self):
         'Verify that the "py-bt-full" command works'
         bt = self.get_stack_trace(script=self.get_sample_script(),
@@ -813,8 +813,8 @@ id(42)
                                           cmds_after_breakpoint=['thread apply all py-bt-full'])
         self.assertIn('Waiting for the GIL', gdb_output)
 
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     # Some older versions of gdb will fail with
     #  "Cannot find new threads: generic error"
     # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
@@ -839,8 +839,8 @@ id(42)
                                           )
         self.assertIn('Garbage-collecting', gdb_output)
 
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     # Some older versions of gdb will fail with
     #  "Cannot find new threads: generic error"
     # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
@@ -881,8 +881,8 @@ id(42)
                     gdb_output,
                 )
 
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     def test_wrapper_call(self):
         cmd = textwrap.dedent('''
             class MyList(list):
@@ -908,8 +908,8 @@ id(42)
 
 
 class PyPrintTests(DebuggerTests):
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     def test_basic_command(self):
         'Verify that the "py-print" command works'
         bt = self.get_stack_trace(script=self.get_sample_script(),
@@ -917,8 +917,8 @@ class PyPrintTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'args' = \(1, 2, 3\)\n.*")
 
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_print_after_up(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
@@ -926,16 +926,16 @@ class PyPrintTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'c' = 3\nlocal 'b' = 2\nlocal 'a' = 1\n.*")
 
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     def test_printing_global(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-print __name__'])
         self.assertMultilineMatches(bt,
                                     r".*\nglobal '__name__' = '__main__'\n.*")
 
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     def test_printing_builtin(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-print len'])
@@ -943,8 +943,8 @@ class PyPrintTests(DebuggerTests):
                                     r".*\nbuiltin 'len' = <built-in method len of module object at remote 0x-?[0-9a-f]+>\n.*")
 
 class PyLocalsTests(DebuggerTests):
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     def test_basic_command(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-locals'])
@@ -952,8 +952,8 @@ class PyLocalsTests(DebuggerTests):
                                     r".*\nargs = \(1, 2, 3\)\n.*")
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
-    @unittest.skipIf(python_is_optimized(),
-                     "Python was compiled with optimizations")
+    @unittest.skipUnless(python_has_debug_info(),
+                         "Python was compiled without debug info")
     def test_locals_after_up(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-up', 'py-locals'])

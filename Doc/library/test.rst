@@ -414,6 +414,11 @@ The :mod:`test.support` module defines the following functions:
    Return ``True`` if Python was not built with ``-O0`` or ``-Og``.
 
 
+.. function:: python_has_debug_info()
+
+   Return ``True`` if Python was built with ``-g``.
+
+
 .. function:: with_pymalloc()
 
    Return :data:`_testcapi.WITH_PYMALLOC`.
