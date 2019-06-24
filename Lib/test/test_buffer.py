@@ -4422,7 +4422,7 @@ class TestBufferProtocol(unittest.TestCase):
         # basic tests
         for format in ("i", "3s", "0i", " "):
             self.assertEqual(_testcapi.pybuffer_size_from_format(format),
-                             struct.calcsize(format))
+                             struct.calcsize(format.encode()))
 
 if __name__ == "__main__":
     unittest.main()
