@@ -2752,7 +2752,7 @@ class Symlink(unittest.TestCase):
             with patched_context as mock, self.subTest(exception=location):
                 with self.assertRaises(Symlink.ExpectedException):
                     shutil.symlink(self.src_file1, self.dst_file1,
-                            overwrite=True)
+                                   overwrite=True)
                 mock.assert_called_once()
                 self.assertFalse(os.path.lexists(Symlink._mock_mktemp.path))
 
