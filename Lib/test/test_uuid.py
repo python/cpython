@@ -674,11 +674,9 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 class BaseTestInternals:
     _uuid = py_uuid
 
-    # data is specific to AIX - with '.' as _MAC_DELIM
-    # and strings shorter than 17 bytes (no leading 0)
-    @unittest.skipUnless(_AIX, 'requires AIX')
-    # key is on lineX, value is on lineX+1 aka 'nextline'
+
     def test_find_mac_nextlines(self):
+        # key is on line X, value is on line X+1 aka 'nextline'
         data = '''\
 Name  Mtu   Network     Address           Ipkts Ierrs    Opkts Oerrs  Coll
 en0   1500  link#2      fe.ad.c.1.23.4   1714807956     0 711348489     0     0
@@ -688,44 +686,48 @@ en0   1500  192.168.129 x071             1714807956     0 711348489     0     0
 en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
                         224.0.0.1
 '''
-        popen = mock.MagicMock()
-        popen.stdout = io.BytesIO(data.encode())
 
-        with mock.patch.object(shutil, 'which',
-                                        return_value='/usr/bin/netstat'):
-            with mock.patch.object(subprocess, 'Popen',
-                                            return_value=popen):
-                mac = self.uuid._find_mac_nextlines(
-                    command='netstat',
-                    args='-ia',
-                    hw_identifiers=b'Address',
-                    f_index=lambda x: x,
-                )
+        def mock_get_command_stdout(command, args):
+            return io.BytesIO(data.encode())
+
+        # The above data is specific to AIX - with '.' as _MAC_DELIM
+        # and strings shorter than 17 bytes (no leading 0).
+        # The above data will only be parsed properly on non-AIX unixes.
+        with mock.patch.multiple(self.uuid,
+                                 _AIX=True,
+                                 _MAC_DELIM=b'.',
+                                 _get_command_stdout=mock_get_command_stdout):
+            mac = self.uuid._find_mac_nextlines(
+                command='netstat',
+                args='-ia',
+                hw_identifiers=b'Address',
+                f_index=lambda x: x,
+            )
 
         self.assertEqual(mac, 0xfead0c012304)
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(_AIX, 'AIX has different DELIM')
-    # key and value are on the same line aka 'inline'
     def test_find_mac_inline(self):
+        # key and value are on the same line aka 'inline'
         data = '''
 fake      Link encap:UNSPEC  hwaddr 00-00
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 '''
-        popen = mock.MagicMock()
-        popen.stdout = io.BytesIO(data.encode())
 
-        with mock.patch.object(shutil, 'which',
-                                        return_value='/sbin/ifconfig'):
-            with mock.patch.object(subprocess, 'Popen',
-                                            return_value=popen):
-                mac = self.uuid._find_mac_inline(
-                    command='ifconfig',
-                    args='',
-                    hw_identifiers=[b'hwaddr'],
-                    f_index=lambda x: x + 1,
-                )
+        def mock_get_command_stdout(command, args):
+            return io.BytesIO(data.encode())
+
+        # The above data will only be parsed properly on non-AIX unixes.
+        with mock.patch.multiple(self.uuid,
+                                 _AIX=False,
+                                 _MAC_DELIM=b':',
+                                 _get_command_stdout=mock_get_command_stdout):
+            mac = self.uuid._find_mac_inline(
+                command='ifconfig',
+                args='',
+                hw_identifiers=[b'hwaddr'],
+                f_index=lambda x: x + 1,
+            )
 
         self.assertEqual(mac, 0x1234567890ab)
 
