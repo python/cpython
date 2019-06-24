@@ -97,7 +97,7 @@ The :mod:`urllib.request` module defines the following functions:
 
    .. audit-event:: urllib.Request "fullurl data headers method"
 
-      The default opener raises an :func:`auditing event <sys.audit>`
+      The default opener raises an :ref:`auditing event <auditing>`
       ``urllib.Request`` with arguments ``fullurl``, ``data``, ``headers``,
       ``method`` taken from the request object.
 

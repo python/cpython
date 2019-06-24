@@ -1268,6 +1268,11 @@ class Popen(object):
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = '{} /c "{}"'.format (comspec, args)
 
+            if cwd is not None:
+                cwd = os.fsdecode(cwd)
+
+            sys.audit("subprocess.Popen", executable, args, cwd, env)
+
             # Start the process
             try:
                 hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
@@ -1276,7 +1281,7 @@ class Popen(object):
                                          int(not close_fds),
                                          creationflags,
                                          env,
-                                         os.fsdecode(cwd) if cwd is not None else None,
+                                         cwd,
                                          startupinfo)
             finally:
                 # Child is launched. Close the parent's copy of those pipe
@@ -1542,6 +1547,8 @@ class Popen(object):
 
             if executable is None:
                 executable = args[0]
+
+            sys.audit("subprocess.Popen", executable, args, cwd, env)
 
             if (_USE_POSIX_SPAWN
                     and os.path.dirname(executable)
