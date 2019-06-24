@@ -3306,13 +3306,19 @@ static PyObject *
 pybuffer_size_from_format(PyObject *self, PyObject *args)
 {
     const char *format;
+    Py_ssize_t result;
 
     if (!PyArg_ParseTuple(args, "s:pybuffer_size_from_format",
                           &format)) {
         return NULL;
     }
 
-    return PyLong_FromSsize_t(PyBuffer_SizeFromFormat(format));
+    result = PyBuffer_SizeFromFormat(format);
+    if (result == -1) {
+        return NULL;
+    }
+
+    return PyLong_FromSsize_t(result);
 }
 
 /* Test that the fatal error from not having a current thread doesn't
