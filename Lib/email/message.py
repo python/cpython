@@ -1045,9 +1045,12 @@ class MIMEPart(Message):
         # Certain malformed messages can have content type set to `multipart/*`
         # but still have single part body, in which case payload.copy() can
         # fail with AttributeError.
-        if not isinstance(payload, list):
+        try:
+            parts = payload.copy()
+        except AttributeError:
+            # payload is not a list, it is most probably a string.
             return
-        parts = payload.copy()
+        
         if maintype == 'multipart' and subtype == 'related':
             # For related, we treat everything but the root as an attachment.
             # The root may be indicated by 'start'; if there's no start or we
