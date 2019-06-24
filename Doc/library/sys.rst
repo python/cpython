@@ -880,6 +880,10 @@ always available.
 
    .. versionadded:: 3.3
 
+   .. note::
+
+      All proposals for new required attributes must go through the normal PEP
+      process. See :pep:`421` for more information.
 
 .. data:: int_info
 
