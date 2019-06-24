@@ -200,6 +200,23 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.8
 
+- :const:`IPPROTO_UDPLITE` is a variant of UDP which allows you to specify
+  what portion of a packet is covered with the checksum. It adds two socket
+  options that you can change.
+  ``self.setsockopt(IPPROTO_UDPLITE, UDPLITE_SEND_CSCOV, length)`` will
+  change what portion of outgoing packets are covered by the checksum and
+  ``self.setsockopt(IPPROTO_UDPLITE, UDPLITE_RECV_CSCOV, length)`` will
+  filter out packets which cover too little of their data. In both cases
+  ``length`` should be in ``range(8, 2**16, 8)``.
+
+  Such a socket should be constructed with
+  ``socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE)`` for IPv4 or
+  ``socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDPLITE)`` for IPv6.
+
+  .. availability:: Linux >= 2.6.20, FreeBSD >= 10.1-RELEASE
+
+  .. versionadded:: 3.9
+
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
 returned from the DNS resolution.  The socket address will be resolved
