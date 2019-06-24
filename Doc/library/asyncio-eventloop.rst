@@ -1454,7 +1454,7 @@ asyncio ships with two different event loop implementations:
 :class:`SelectorEventLoop` and :class:`ProactorEventLoop`.
 
 By default asyncio is configured to use :class:`SelectorEventLoop`
-on all platforms.
+on Unix and :class:`ProactorEventLoop` on Windows.
 
 
 .. class:: SelectorEventLoop
