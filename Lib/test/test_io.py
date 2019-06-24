@@ -604,10 +604,15 @@ class IOTest(unittest.TestCase):
             support.requires(
                 'largefile',
                 'test requires %s bytes and a long time to run' % self.LARGE)
-        with self.open(support.TESTFN, "w+b", 0) as f:
-            self.large_file_ops(f)
-        with self.open(support.TESTFN, "w+b") as f:
-            self.large_file_ops(f)
+        try:
+            with self.open(support.TESTFN, "w+b", 0) as f:
+                self.large_file_ops(f)
+            with self.open(support.TESTFN, "w+b") as f:
+                self.large_file_ops(f)
+        except OSError as e:
+            if e.errno == errno.ENOSPC:
+                self.skipTest("No space left on device")
+            raise
 
     def test_with_open(self):
         for bufsize in (0, 100):
