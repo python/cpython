@@ -1156,6 +1156,21 @@ class ArgsTestCase(BaseTestCase):
                                   fail_env_changed=True)
         self.assertIn("Warning -- Unraisable exception", output)
 
+    def test_cleanup(self):
+        dirname = os.path.join(self.tmptestdir, "test_python_123")
+        os.mkdir(dirname)
+        filename = os.path.join(self.tmptestdir, "test_python_456")
+        open(filename, "wb").close()
+        names = [dirname, filename]
+
+        cmdargs = ['-m', 'test',
+                   '--tempdir=%s' % self.tmptestdir,
+                   '--cleanup']
+        self.run_python(cmdargs)
+
+        for name in names:
+            self.assertFalse(os.path.exists(name), name)
+
 
 class TestUtils(unittest.TestCase):
     def test_format_duration(self):
