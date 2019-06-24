@@ -89,7 +89,7 @@ Queue
 
       Return the number of items in the queue.
 
-   .. method:: cancel()
+   .. method:: close()
 
       Cancel all currently waiting :meth:`get` or :meth:`put`
       coroutines.

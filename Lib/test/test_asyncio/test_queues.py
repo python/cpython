@@ -297,12 +297,12 @@ class QueueGetTests(_QueueTestBase):
         self.loop.run_until_complete(self.loop.create_task(consumer(queue)))
         self.assertEqual(len(queue._getters), 0)
 
-    def test_cancel_get(self):
+    def test_close_get(self):
         queue = asyncio.Queue(loop=self.loop)
 
         getter = self.loop.create_task(queue.get())
         test_utils.run_briefly(self.loop)
-        queue.cancel()
+        queue.close()
         test_utils.run_briefly(self.loop)
         with self.assertRaises(asyncio.CancelledError):
             self.loop.run_until_complete(getter)
@@ -585,13 +585,13 @@ class QueuePutTests(_QueueTestBase):
         with self.assertRaises(asyncio.CancelledError):
             loop.run_until_complete(put_task)
 
-    def test_cancel_put(self):
+    def test_close_put(self):
         queue = asyncio.Queue(1, loop=self.loop)
         queue.put_nowait(1)
 
         putter = self.loop.create_task(queue.put(1))
         test_utils.run_briefly(self.loop)
-        queue.cancel()
+        queue.close()
         test_utils.run_briefly(self.loop)
         with self.assertRaises(asyncio.CancelledError):
             self.loop.run_until_complete(putter)
