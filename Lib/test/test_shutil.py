@@ -2730,6 +2730,7 @@ class Symlink(unittest.TestCase):
         self.assertEqual(os.readlink(self.dst_file1), self.src_file1)
 
     class ExpectedException(BaseException):
+        """An exception that is expected to be raised by mocks"""
         pass
 
     def _mock_rename(*args, **kwargs):
