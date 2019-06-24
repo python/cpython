@@ -281,62 +281,6 @@ sys_getprofile(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_getprofile_impl(module);
 }
 
-PyDoc_STRVAR(sys_setcheckinterval__doc__,
-"setcheckinterval($module, n, /)\n"
-"--\n"
-"\n"
-"Set the async event check interval to n instructions.\n"
-"\n"
-"This tells the Python interpreter to check for asynchronous events\n"
-"every n instructions.\n"
-"\n"
-"This also affects how often thread switches occur.");
-
-#define SYS_SETCHECKINTERVAL_METHODDEF    \
-    {"setcheckinterval", (PyCFunction)sys_setcheckinterval, METH_O, sys_setcheckinterval__doc__},
-
-static PyObject *
-sys_setcheckinterval_impl(PyObject *module, int n);
-
-static PyObject *
-sys_setcheckinterval(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    int n;
-
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    n = _PyLong_AsInt(arg);
-    if (n == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = sys_setcheckinterval_impl(module, n);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(sys_getcheckinterval__doc__,
-"getcheckinterval($module, /)\n"
-"--\n"
-"\n"
-"Return the current check interval; see sys.setcheckinterval().");
-
-#define SYS_GETCHECKINTERVAL_METHODDEF    \
-    {"getcheckinterval", (PyCFunction)sys_getcheckinterval, METH_NOARGS, sys_getcheckinterval__doc__},
-
-static PyObject *
-sys_getcheckinterval_impl(PyObject *module);
-
-static PyObject *
-sys_getcheckinterval(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_getcheckinterval_impl(module);
-}
-
 PyDoc_STRVAR(sys_setswitchinterval__doc__,
 "setswitchinterval($module, interval, /)\n"
 "--\n"
@@ -1082,4 +1026,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=43c4fde7b5783d8d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=022614f3794666ae input=a9049054013a1b77]*/

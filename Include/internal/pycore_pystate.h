@@ -82,9 +82,6 @@ struct _is {
     PyObject *builtins;
     PyObject *importlib;
 
-    /* Used in Python/sysmodule.c. */
-    int check_interval;
-
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
     /* Support for runtime thread stack size tuning.
