@@ -148,6 +148,7 @@ class FTP:
             self.timeout = timeout
         if source_address is not None:
             self.source_address = source_address
+        sys.audit("ftplib.FTP.connect", self, self.host, self.port)
         self.sock = socket.create_connection((self.host, self.port), self.timeout,
                                              source_address=self.source_address)
         self.af = self.sock.family
@@ -188,6 +189,7 @@ class FTP:
     def putline(self, line):
         if '\r' in line or '\n' in line:
             raise ValueError('an illegal newline character should not be contained')
+        sys.audit("ftplib.FTP.sendcmd", self, line)
         line = line + CRLF
         if self.debugging > 1:
             print('*put*', self.sanitize(line))
