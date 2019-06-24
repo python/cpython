@@ -167,29 +167,34 @@ class AuditEvent(Directive):
     ]
 
     def run(self):
+        name = self.arguments[0]
         if len(self.arguments) >= 2 and self.arguments[1]:
-            args = [
-                "``{}``".format(a.strip())
-                for a in self.arguments[1].strip("'\"").split()
-                if a.strip()
-            ]
+            args = [a.strip() for a in self.arguments[1].strip("'\"").split()]
         else:
             args = []
 
         label = translators['sphinx'].gettext(self._label[min(2, len(args))])
-        text = label.format(name="``{}``".format(self.arguments[0]),
-                            args=", ".join(args))
+        text = label.format(name="``{}``".format(name),
+                            args=", ".join("``{}``".format(a) for a in args if a))
 
         env = self.state.document.settings.env
         if not hasattr(env, 'all_audit_events'):
-            env.all_audit_events = []
+            env.all_audit_events = {}
 
-        env.all_audit_events.append({
-            'docname': env.docname,
-            'lineno': self.lineno,
-            'name': self.arguments[0],
+        new_info = {
+            'source': [],
             'args': args
-        })
+        }
+        info = env.all_audit_events.setdefault(name, new_info)
+        if info is not new_info:
+            if not self._do_args_match(info['args'], new_info['args']):
+                self.warn("Mismatched arguments for event {}: {!r} != {!r}"
+                                .format(name, info['args'], new_info['args']))
+
+        label = "audit_event_{}_{}".format(name, len(info['source']))
+        label = re.sub(r'\W', '_', label)
+        target = nodes.target('', '', ids=[label])
+        info['source'].append((env.docname, label))
 
         pnode = nodes.paragraph(text, classes=["audit-hook"])
         if self.content:
@@ -198,7 +203,24 @@ class AuditEvent(Directive):
             n, m = self.state.inline_text(text, self.lineno)
             pnode.extend(n + m)
 
-        return [pnode]
+        return target + pnode
+
+    _SYNONYMS = [
+        #{"file", "path", "fd"},
+    ]
+
+    def _do_args_match(self, args1, args2):
+        if args1 == args2:
+            return True
+        if len(args1) != len(args2):
+            return False
+        for a1, a2 in zip(args1, args2):
+            if a1 == a2:
+                continue
+            if any(a1 in s and a2 in s for s in self._SYNONYMS):
+                continue
+            return False
+        return True
 
 
 class audit_event_list(nodes.General, nodes.Element):
@@ -480,10 +502,20 @@ def parse_pdb_command(env, sig, signode):
 
 
 def process_audit_events(app, doctree, fromdocname):
+    for node in doctree.traverse(audit_event_list):
+        break
+    else:
+        return
+
     env = app.builder.env
 
-    table = nodes.table(cols=2)
-    group = nodes.tgroup()
+    table = nodes.table(cols=3)
+    group = nodes.tgroup(
+        '',
+        nodes.colspec(colwidth=30),
+        nodes.colspec(colwidth=55),
+        nodes.colspec(colwidth=15),
+    )
     head = nodes.thead()
     body = nodes.tbody()
 
@@ -494,12 +526,34 @@ def process_audit_events(app, doctree, fromdocname):
     row = nodes.row()
     row += nodes.entry('', nodes.paragraph('', nodes.Text('Audit event')))
     row += nodes.entry('', nodes.paragraph('', nodes.Text('Arguments')))
+    row += nodes.entry('', nodes.paragraph('', nodes.Text('References')))
     head += row
 
-    for audit_event in env.all_audit_events:
+    for name in sorted(env.all_audit_events):
+        audit_event = env.all_audit_events[name]
+
         row = nodes.row()
-        row += nodes.entry('', nodes.paragraph('', nodes.Text(audit_event['name'])))
-        row += nodes.entry('', nodes.paragraph('', nodes.Text(', '.join(audit_event['args']))))
+        node = nodes.paragraph('', nodes.Text(name))
+        row += nodes.entry('', node)
+
+        node = nodes.paragraph()
+        for i, a in enumerate(audit_event['args']):
+            if i:
+                node += nodes.Text(", ")
+            node += nodes.literal(a, nodes.Text(a))
+        row += nodes.entry('', node)
+
+        node = nodes.paragraph()
+        for i, (doc, label) in enumerate(audit_event['source'], start=1):
+            if isinstance(label, str):
+                ref = nodes.reference("", nodes.Text("[{}]".format(i)))
+                ref['refuri'] = "{}#{}".format(
+                    app.builder.get_relative_uri(fromdocname, doc),
+                    label,
+                )
+                node += ref
+        row += nodes.entry('', node)
+
         body += row
 
     for node in doctree.traverse(audit_event_list):
