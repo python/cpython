@@ -414,9 +414,6 @@ def _find_mac_inline(command, args, hw_identifiers, f_index):
                 try:
                     word = words[f_index(i)]
                     mac = int(word.replace(_MAC_DELIM, b''), 16)
-                    if _is_universal(mac):
-                        return mac
-                    first_local_mac = first_local_mac or mac
                 except (ValueError, IndexError):
                     # Virtual interfaces, such as those provided by
                     # VPNs, do not have a colon-delimited MAC address
@@ -424,6 +421,10 @@ def _find_mac_inline(command, args, hw_identifiers, f_index):
                     # dashes. These should be ignored in favor of a
                     # real MAC address
                     pass
+                else:
+                    if _is_universal(mac):
+                        return mac
+                    first_local_mac = first_local_mac or mac
     return first_local_mac or None
 
 
@@ -460,9 +461,6 @@ def _find_mac_nextlines(command, args, hw_identifiers, f_index):
                     for hex in fields:
                         mac <<= 8
                         mac += int(hex, 16)
-            if mac and _is_universal(mac):
-                return mac
-            first_local_mac = first_local_mac or mac
         except (ValueError, IndexError):
             # Virtual interfaces, such as those provided by
             # VPNs, do not have a colon-delimited MAC address
@@ -470,6 +468,10 @@ def _find_mac_nextlines(command, args, hw_identifiers, f_index):
             # dashes. These should be ignored in favor of a
             # real MAC address
             pass
+        else:
+            if mac and _is_universal(mac):
+                return mac
+            first_local_mac = first_local_mac or mac
     return first_local_mac or None
 
 
