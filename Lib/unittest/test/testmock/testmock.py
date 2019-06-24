@@ -1344,7 +1344,7 @@ class MockTest(unittest.TestCase):
 
             class Foo:
 
-                def __init__(self): pass
+                def __init__(self, a): pass
                 def meth1(self, a, b): pass
 
         mock_class = create_autospec(Something)
@@ -1354,17 +1354,20 @@ class MockTest(unittest.TestCase):
             m.assert_has_calls([call.meth(1, 2, 3, d=1)])
             m.assert_has_calls([call.meth(1, 2, 3, 1)])
 
-        mock_class = create_autospec(Something)
+        mock_class.reset_mock()
 
         for m in [mock_class, mock_class()]:
             self.assertRaises(AssertionError, m.assert_has_calls, [call.Foo()])
-            m.Foo().meth1(1, 2)
-            m.assert_has_calls([call.Foo(), call.Foo().meth1(1, 2)])
+            m.Foo(1).meth1(1, 2)
+            m.assert_has_calls([call.Foo(1), call.Foo(1).meth1(1, 2)])
+            m.Foo.assert_has_calls([call(1), call().meth1(1, 2)])
 
-        mock_class = create_autospec(Something)
+        mock_class.reset_mock()
+
         invalid_calls = [call.meth(1),
                          call.non_existent(1),
-                         call.Foo().non_existent(1)]
+                         call.Foo().non_existent(1),
+                         call.Foo().meth(1, 2, 3, 4)]
 
         for kall in invalid_calls:
             self.assertRaises(AssertionError,
