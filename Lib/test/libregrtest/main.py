@@ -592,8 +592,8 @@ class Regrtest:
         path = os.path.join(self.tmp_dir, 'test_python_*')
         print("Cleanup %s directory" % self.tmp_dir)
         for name in glob.glob(path):
-            print("Remove directory: %s" % name)
             if os.path.isdir(name):
+                print("Remove directory: %s" % name)
                 support.rmtree(name)
             else:
                 print("Remove file: %s" % name)
