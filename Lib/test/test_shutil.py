@@ -2733,24 +2733,28 @@ class Symlink(unittest.TestCase):
         """An exception that is expected to be raised by mocks"""
         pass
 
-    def _mock_rename(*args, **kwargs):
-        """Ensure temp symlink exists; throw BaseException"""
-        assert(os.path.lexists(Symlink._mock_mktemp.path))
-        raise Symlink.ExpectedException
-
     def _mock_symlink(*args, orig_symlink=os.symlink, **kwargs):
         """Raise exception immediately after temp symlink creation"""
         orig_symlink(*args, **kwargs)
         assert(os.path.lexists(Symlink._mock_mktemp.path))
         raise Symlink.ExpectedException
 
-    @unittest.mock.patch('os.symlink', side_effect=_mock_symlink)
     @unittest.mock.patch('tempfile.mktemp', side_effect=_mock_mktemp)
-    def test_temp_is_removed_on_exception(self, mock_symlink, mock_mktemp):
-        # Simulate exception after temporary link is created
-        with self.assertRaises(Symlink.ExpectedException):
-            shutil.symlink(self.src_file1, self.dst_file1, overwrite=True)
-        self.assertFalse(os.path.lexists(Symlink._mock_mktemp.path))
+    def test_temp_is_removed_on_exception(self, mock_mktemp):
+        # Simulate exceptions while temporary link exists
+        patch_symlink = unittest.mock.patch('os.symlink',
+                                            side_effect=Symlink._mock_symlink)
+        patch_replace = unittest.mock.patch('os.replace',
+                                        side_effect=Symlink.ExpectedException)
+        exceptions = {'after symlink': patch_symlink,
+                      'in replace': patch_replace}
+        for location, patched_context in exceptions.items():
+            with patched_context as mock, self.subTest(exception=location):
+                with self.assertRaises(Symlink.ExpectedException):
+                    shutil.symlink(self.src_file1, self.dst_file1,
+                            overwrite=True)
+                mock.assert_called_once()
+                self.assertFalse(os.path.lexists(Symlink._mock_mktemp.path))
 
 
 class PublicAPITests(unittest.TestCase):
