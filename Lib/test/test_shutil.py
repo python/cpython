@@ -2738,10 +2738,16 @@ class Symlink(unittest.TestCase):
         assert(os.path.lexists(Symlink._mock_mktemp.path))
         raise Symlink.ExpectedException
 
-    @unittest.mock.patch('os.replace', side_effect=_mock_rename)
+    def _mock_symlink(*args, orig_symlink=os.symlink, **kwargs):
+        """Raise exception immediately after temp symlink creation"""
+        orig_symlink(*args, **kwargs)
+        assert(os.path.lexists(Symlink._mock_mktemp.path))
+        raise Symlink.ExpectedException
+
+    @unittest.mock.patch('os.symlink', side_effect=_mock_symlink)
     @unittest.mock.patch('tempfile.mktemp', side_effect=_mock_mktemp)
-    def test_temp_is_removed_on_exception(self, mock_mktemp, mock_replace):
-        # Simulate exception in os.replace(tmp_path, dst)
+    def test_temp_is_removed_on_exception(self, mock_symlink, mock_mktemp):
+        # Simulate exception after temporary link is created
         with self.assertRaises(Symlink.ExpectedException):
             shutil.symlink(self.src_file1, self.dst_file1, overwrite=True)
         self.assertFalse(os.path.lexists(Symlink._mock_mktemp.path))
