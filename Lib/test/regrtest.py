@@ -375,7 +375,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo',
              'failfast', 'match=', 'testdir=', 'list-tests', 'list-cases',
-             'coverage', 'matchfile=', 'fail-env-changed'])
+             'coverage', 'matchfile=', 'fail-env-changed', 'cleanup'])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -388,6 +388,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     list_tests = False
     list_cases_opt = False
     fail_env_changed = False
+    cleanup_tests = False
     for o, a in opts:
         if o in ('-h', '--help'):
             usage(0)
@@ -490,6 +491,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             list_cases_opt = True
         elif o == '--fail-env-changed':
             fail_env_changed = True
+        elif o == '--cleanup':
+            cleanup_tests = True
         else:
             print >>sys.stderr, ("No handler for option {}.  Please "
                 "report this as a bug at http://bugs.python.org.").format(o)
@@ -526,6 +529,22 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                    "each (1:1).")
             print >>sys.stderr, msg
             sys.exit(2)
+
+    if cleanup_tests:
+        import glob
+
+        os.chdir(support.SAVEDCWD)
+        path = os.path.join(TEMPDIR, 'test_python_*')
+        print("Cleanup %s directory" % TEMPDIR)
+        for name in glob.glob(path):
+            if os.path.isdir(name):
+                print("Remove directory: %s" % name)
+                support.rmtree(name)
+            else:
+                print("Remove file: %s" % name)
+                support.unlink(name)
+        sys.exit(0)
+
 
     if slaveargs is not None:
         args, kwargs = json.loads(slaveargs)

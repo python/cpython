@@ -855,6 +855,12 @@ $(LIBRARY_OBJS) $(MODOBJS) Modules/python.o: $(PYTHON_HEADERS)
 TESTOPTS=	-l $(EXTRATESTOPTS)
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
 TESTPYTHON=	$(RUNSHARED) ./$(BUILDPYTHON) -Wd -3 -E -tt $(TESTPYTHONOPTS)
+
+# Remove "test_python_*" directories of previous failed test jobs.
+# Pass TESTOPTS options because it can contain --tempdir option.
+cleantest: build_all
+	$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) --cleanup
+
 test:		@DEF_MAKE_RULE@ platform
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
