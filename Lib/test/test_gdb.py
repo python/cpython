@@ -849,19 +849,19 @@ id(42)
         # Various optimizations multiply the code paths by which these are
         # called, so test a variety of calling conventions.
         for py_name, py_args, c_name, expected_frame_number in (
-            ('gmtime', '', 'time_gmtime', 1),  # METH_VARARGS
-            ('len', '[]', 'builtin_len', 2),  # METH_O
-            ('locals', '', 'builtin_locals', 2),  # METH_NOARGS
-            ('iter', '[]', 'builtin_iter', 2),  # METH_FASTCALL
+            ('dir', 'object', 'builtin_dir', 1),    # METH_VARARGS
+            ('len', '[]', 'builtin_len', 2),        # METH_O
+            ('locals', '', 'builtin_locals', 2),    # METH_NOARGS
+            ('iter', '[]', 'builtin_iter', 2),      # METH_FASTCALL
             ('sorted', '[]', 'builtin_sorted', 2),  # METH_FASTCALL|METH_KEYWORDS
         ):
             with self.subTest(c_name):
-                cmd = ('from time import gmtime\n'  # (not always needed)
-                    'def foo():\n'
-                    f'    {py_name}({py_args})\n'
-                    'def bar():\n'
-                    '    foo()\n'
-                    'bar()\n')
+                cmd = textwrap.dedent(f'''
+                    def foo():
+                        {py_name}({py_args})
+                    def bar():
+                        foo()
+                    bar()''')
                 # Verify with "py-bt":
                 gdb_output = self.get_stack_trace(
                     cmd,
