@@ -229,145 +229,210 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
 
 /* Vectorcall functions for each of the PyMethodDescr calling conventions.
  *
- * First two macros to define common boilerplate
+ * First, common helpers
  */
-#define PyMethodDescr_VECTORCALL_BEGIN(ALLOW_KWARGS) \
-    assert(!PyErr_Occurred()); \
-    assert(PyObject_TypeCheck(func, &PyMethodDescr_Type)); \
-    PyMethodDescrObject *f = (PyMethodDescrObject *)func; \
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf); \
-    PyMethodDef *method = f->d_method; \
-    const char *name = method->ml_name; \
-    void(*meth)(void) = (void(*)(void))method->ml_meth; \
-    PyObject *result = NULL; \
-    \
-    /* self is the first positional argument */ \
-    if (nargs < 1) { \
-        PyErr_Format(PyExc_TypeError, \
-                     "descriptor '%.200s' of '%.100s' " \
-                     "object needs an argument", \
-                     name, PyDescr_TYPE(func)->tp_name); \
-        return NULL; \
-    } \
-    PyObject *self = args[0]; \
-    args++; \
-    nargs--; \
-    if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self), \
-                                  (PyObject *)PyDescr_TYPE(func))) \
-    { \
-        PyErr_Format(PyExc_TypeError, \
-                     "descriptor '%.200s' for '%.100s' objects " \
-                     "doesn't apply to a '%.100s' object", \
-                     name, PyDescr_TYPE(func)->tp_name, \
-                     Py_TYPE(self)->tp_name); \
-        return NULL; \
-    } \
-    \
-    if (!ALLOW_KWARGS && kwnames && PyTuple_GET_SIZE(kwnames) > 0) { \
-        PyErr_Format(PyExc_TypeError, \
-                     "%.200s() takes no keyword arguments", name); \
-        return NULL; \
-    } \
-    if (Py_EnterRecursiveCall(" while calling a Python object")) { \
-        return NULL; \
-    }
+static inline const char *
+get_name(PyObject *func) {
+    return ((PyMethodDescrObject *)func)->d_method->ml_name;
+}
 
-#define PyMethodDescr_VECTORCALL_END \
-    Py_LeaveRecursiveCall(); \
+typedef void (*funcptr)(void);
+
+static inline funcptr
+get_meth(PyObject *func) {
+    PyMethodDef *method = ((PyMethodDescrObject *)func)->d_method;
+    return (funcptr)method->ml_meth;
+}
+
+static inline int
+vectorcall_check(PyObject *func, size_t nargs, PyObject *const *args) {
+    assert(!PyErr_Occurred());
+    assert(PyObject_TypeCheck(func, &PyMethodDescr_Type));
+    if (nargs < 1) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%.200s' of '%.100s' "
+                     "object needs an argument",
+                     get_name(func), PyDescr_TYPE(func)->tp_name);
+        return 0;
+    }
+    PyObject *self = args[0];
+    if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
+                                  (PyObject *)PyDescr_TYPE(func)))
+    {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%.200s' for '%.100s' objects "
+                     "doesn't apply to a '%.100s' object",
+                     get_name(func), PyDescr_TYPE(func)->tp_name,
+                     Py_TYPE(self)->tp_name);
+        return 0;
+    }
+    return 1;
+}
+
+static inline int
+check_no_kwargs(PyObject *func, PyObject *kwnames) {
+    if (kwnames && PyTuple_GET_SIZE(kwnames) > 0) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s() takes no keyword arguments", get_name(func));
+        return 0;
+    }
+    return 1;
+}
+
+static inline int
+vectorcall_begin() {
+    if (Py_EnterRecursiveCall(" while calling a Python object")) {
+        return 0;
+    }
+    return 1;
+}
+
+static inline PyObject *
+vectorcall_end(PyObject *func, PyObject *result) {
+    Py_LeaveRecursiveCall();
     return _Py_CheckFunctionResult(func, result, NULL);
+}
 
 /* Now the actual vectorcall functions */
 static PyObject *
 _PyMethodDescr_Vectorcall_VARARGS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
-    PyMethodDescr_VECTORCALL_BEGIN(0)
-    /* Create a temporary tuple for positional arguments */
-    PyObject *argstuple = _PyTuple_FromArray(args, nargs);
-    if (argstuple == NULL) {
-        goto exit;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!vectorcall_check(func, nargs, args)) {
+        return NULL;
     }
-    result = ((PyCFunction)meth)(self, argstuple);
+    if (!check_no_kwargs(func, kwnames)) {
+        return NULL;
+    }
+    PyObject *argstuple = _PyTuple_FromArray(args+1, nargs-1);
+    if (argstuple == NULL) {
+        return NULL;
+    }
+    if (!vectorcall_begin()) {
+        return NULL;
+    }
+    PyCFunction meth = (PyCFunction)get_meth(func);
+    PyObject *result = meth(args[0], argstuple);
     Py_DECREF(argstuple);
-exit:
-    PyMethodDescr_VECTORCALL_END
+    return vectorcall_end(func, result);
 }
 
 static PyObject *
 _PyMethodDescr_Vectorcall_VARARGS_KEYWORDS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
-    PyMethodDescr_VECTORCALL_BEGIN(1)
-    /* Create a temporary tuple for positional arguments */
-    PyObject *argstuple = _PyTuple_FromArray(args, nargs);
-    if (argstuple == NULL) {
-        goto exit;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!vectorcall_check(func, nargs, args)) {
+        return NULL;
     }
+    PyObject *argstuple = _PyTuple_FromArray(args+1, nargs-1);
+    if (argstuple == NULL) {
+        return NULL;
+    }
+    PyObject *result = NULL;
     /* Create a temporary dict for keyword arguments */
     PyObject *kwdict;
     if (kwnames == NULL || PyTuple_GET_SIZE(kwnames) == 0) {
         kwdict = NULL;
     }
     else {
-        kwdict = _PyStack_AsDict(args + nargs, kwnames);
+        kwdict = _PyStack_AsDict(args+1 + nargs, kwnames);
         if (kwdict == NULL) {
             Py_DECREF(argstuple);
-            goto exit;
+            return NULL;
         }
     }
-    result = ((PyCFunctionWithKeywords)meth)(self, argstuple, kwdict);
+    if (!vectorcall_begin()) {
+        return NULL;
+    }
+    PyCFunctionWithKeywords meth = (PyCFunctionWithKeywords)get_meth(func);
+    result = meth(args[0], argstuple, kwdict);
     Py_DECREF(argstuple);
     Py_XDECREF(kwdict);
-exit:
-    PyMethodDescr_VECTORCALL_END
+    return vectorcall_end(func, result);
 }
 
 static PyObject *
 _PyMethodDescr_Vectorcall_FASTCALL(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
-    PyMethodDescr_VECTORCALL_BEGIN(0)
-    result = ((_PyCFunctionFast)meth)(self, args, nargs);
-    PyMethodDescr_VECTORCALL_END
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!vectorcall_check(func, nargs, args)) {
+        return NULL;
+    }
+    if (!check_no_kwargs(func, kwnames)) {
+        return NULL;
+    }
+    if (!vectorcall_begin()) {
+        return NULL;
+    }
+    _PyCFunctionFast meth = (_PyCFunctionFast)get_meth(func);
+    PyObject *result = meth(args[0], args+1, nargs-1);
+    return vectorcall_end(func, result);
 }
 
 static PyObject *
 _PyMethodDescr_Vectorcall_FASTCALL_KEYWORDS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
-    PyMethodDescr_VECTORCALL_BEGIN(1)
-    result = ((_PyCFunctionFastWithKeywords)meth)(self, args, nargs, kwnames);
-    PyMethodDescr_VECTORCALL_END
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!vectorcall_check(func, nargs, args)) {
+        return NULL;
+    }
+    vectorcall_begin();
+    _PyCFunctionFastWithKeywords meth = (_PyCFunctionFastWithKeywords)get_meth(func);
+    PyObject *result = meth(args[0], args+1, nargs-1, kwnames);
+    return vectorcall_end(func, result);
 }
 
 static PyObject *
 _PyMethodDescr_Vectorcall_NOARGS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
-    PyMethodDescr_VECTORCALL_BEGIN(0)
-    if (nargs != 0) {
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!vectorcall_check(func, nargs, args)) {
+        return NULL;
+    }
+    if (!check_no_kwargs(func, kwnames)) {
+        return NULL;
+    }
+    if (nargs != 1) {
         PyErr_Format(PyExc_TypeError,
-            "%.200s() takes no arguments (%zd given)", name, nargs);
+            "%.200s() takes no arguments (%zd given)", get_name(func), nargs-1);
+        return NULL;
     }
-    else {
-        result = ((PyCFunction)meth)(self, NULL);
+    if (!vectorcall_begin()) {
+        return NULL;
     }
-    PyMethodDescr_VECTORCALL_END
+    PyCFunction meth = (PyCFunction)get_meth(func);
+    PyObject *result = meth(args[0], NULL);
+    return vectorcall_end(func, result);
 }
 
 static PyObject *
 _PyMethodDescr_Vectorcall_O(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
-    PyMethodDescr_VECTORCALL_BEGIN(0)
-    if (nargs != 1) {
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!vectorcall_check(func, nargs, args)) {
+        return NULL;
+    }
+    if (!check_no_kwargs(func, kwnames)) {
+        return NULL;
+    }
+    if (nargs != 2) {
         PyErr_Format(PyExc_TypeError,
-            "%.200s() takes exactly one argument (%zd given)", name, nargs);
+            "%.200s() takes exactly one argument (%zd given)",
+            get_name(func), nargs-1);
+        return NULL;
     }
-    else {
-        result = ((PyCFunction)meth)(self, args[0]);
+    if (!vectorcall_begin()) {
+        return NULL;
     }
-    PyMethodDescr_VECTORCALL_END
+    PyCFunction meth = (PyCFunction)get_meth(func);
+    PyObject *result = meth(args[0], args[1]);
+    return vectorcall_end(func, result);
 }
 
 
