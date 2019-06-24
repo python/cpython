@@ -13,7 +13,6 @@ import sys
 import threading
 import warnings
 
-
 from . import base_events
 from . import base_subprocess
 from . import constants
@@ -1295,8 +1294,6 @@ class ThreadedChildWatcher(AbstractChildWatcher):
             loop.call_soon_threadsafe(callback, pid, returncode, *args)
 
         self._threads.pop(expected_pid)
-        import time
-        time.sleep(0.5)
 
 
 class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):

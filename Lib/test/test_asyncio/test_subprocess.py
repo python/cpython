@@ -651,7 +651,7 @@ if sys.platform != 'win32':
             policy.set_child_watcher(watcher)
 
         def tearDown(self):
-            super().setUp()
+            super().tearDown()
             policy = asyncio.get_event_loop_policy()
             watcher = policy.get_child_watcher()
             policy.set_child_watcher(None)
