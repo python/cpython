@@ -180,6 +180,17 @@ class AuditEvent(Directive):
         text = label.format(name="``{}``".format(self.arguments[0]),
                             args=", ".join(args))
 
+        env = self.state.document.settings.env
+        if not hasattr(env, 'all_audit_events'):
+            env.all_audit_events = []
+
+        env.all_audit_events.append({
+            'docname': env.docname,
+            'lineno': self.lineno,
+            'name': self.arguments[0],
+            'args': args
+        })
+
         pnode = nodes.paragraph(text, classes=["audit-hook"])
         if self.content:
             self.state.nested_parse(self.content, self.content_offset, pnode)
@@ -188,6 +199,16 @@ class AuditEvent(Directive):
             pnode.extend(n + m)
 
         return [pnode]
+
+
+class audit_event_list(nodes.General, nodes.Element):
+    pass
+
+
+class AuditEventListDirective(Directive):
+
+    def run(self):
+        return [audit_event_list('')]
 
 
 # Support for documenting decorators
@@ -458,12 +479,40 @@ def parse_pdb_command(env, sig, signode):
     return fullname
 
 
+def process_audit_events(app, doctree, fromdocname):
+    env = app.builder.env
+
+    table = nodes.table(cols=2)
+    group = nodes.tgroup()
+    head = nodes.thead()
+    body = nodes.tbody()
+
+    table += group
+    group += head
+    group += body
+
+    row = nodes.row()
+    row += nodes.entry('', nodes.paragraph('', nodes.Text('Audit event')))
+    row += nodes.entry('', nodes.paragraph('', nodes.Text('Arguments')))
+    head += row
+
+    for audit_event in env.all_audit_events:
+        row = nodes.row()
+        row += nodes.entry('', nodes.paragraph('', nodes.Text(audit_event['name'])))
+        row += nodes.entry('', nodes.paragraph('', nodes.Text(', '.join(audit_event['args']))))
+        body += row
+
+    for node in doctree.traverse(audit_event_list):
+        node.replace_self(table)
+
+
 def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_directive('availability', Availability)
     app.add_directive('audit-event', AuditEvent)
+    app.add_directive('audit-event-table', AuditEventListDirective)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
@@ -478,4 +527,5 @@ def setup(app):
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
+    app.connect('doctree-resolved', process_audit_events)
     return {'version': '1.0', 'parallel_read_safe': True}
