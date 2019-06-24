@@ -3288,12 +3288,18 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
     def test_compat_unpickle(self):
         tests = [
-            (b"cdatetime\ntime\n(S'\\x14;\\x10\\x00\\x10\\x00'\ntR.", (20, 59, 16, 64**2)),
-            (b'cdatetime\ntime\n(U\x06\x14;\x10\x00\x10\x00tR.', (20, 59, 16, 64**2)),
-            (b'\x80\x02cdatetime\ntime\nU\x06\x14;\x10\x00\x10\x00\x85R.', (20, 59, 16, 64**2)),
-            (b"cdatetime\ntime\n(S'\\x14;\\x19\\x00\\x10\\x00'\ntR.", (20, 59, 25, 64**2)),
-            (b'cdatetime\ntime\n(U\x06\x14;\x19\x00\x10\x00tR.', (20, 59, 25, 64**2)),
-            (b'\x80\x02cdatetime\ntime\nU\x06\x14;\x19\x00\x10\x00\x85R.', (20, 59, 25, 64**2)),
+            (b"cdatetime\ntime\n(S'\\x14;\\x10\\x00\\x10\\x00'\ntR.",
+             (20, 59, 16, 64**2)),
+            (b'cdatetime\ntime\n(U\x06\x14;\x10\x00\x10\x00tR.',
+             (20, 59, 16, 64**2)),
+            (b'\x80\x02cdatetime\ntime\nU\x06\x14;\x10\x00\x10\x00\x85R.',
+             (20, 59, 16, 64**2)),
+            (b"cdatetime\ntime\n(S'\\x14;\\x19\\x00\\x10\\x00'\ntR.",
+             (20, 59, 25, 64**2)),
+            (b'cdatetime\ntime\n(U\x06\x14;\x19\x00\x10\x00tR.',
+             (20, 59, 25, 64**2)),
+            (b'\x80\x02cdatetime\ntime\nU\x06\x14;\x19\x00\x10\x00\x85R.',
+             (20, 59, 25, 64**2)),
         ]
         for i, (data, args) in enumerate(tests):
             with self.subTest(i=i):
