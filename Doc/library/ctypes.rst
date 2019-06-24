@@ -2046,7 +2046,7 @@ Data types
       .. audit-event:: ctypes.cdata address
 
          This method, and others that indirectly call this method, raises an
-         :func:`auditing event <sys.audit>` ``ctypes.cdata`` with argument
+         :ref:`auditing event <auditing>` ``ctypes.cdata`` with argument
          ``address``.
 
    .. method:: from_param(obj)

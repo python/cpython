@@ -335,6 +335,7 @@ class SMTP:
             port = self.default_port
         if self.debuglevel > 0:
             self._print_debug('connect:', (host, port))
+        sys.audit("smtplib.SMTP.connect", self, host, port)
         self.sock = self._get_socket(host, port, self.timeout)
         self.file = None
         (code, msg) = self.getreply()
@@ -352,6 +353,7 @@ class SMTP:
                 # should not be used, but 'data' needs to convert the string to
                 # binary itself anyway, so that's not a problem.
                 s = s.encode(self.command_encoding)
+            sys.audit("smtplib.SMTP.send", self, s)
             try:
                 self.sock.sendall(s)
             except OSError:
