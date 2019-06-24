@@ -86,6 +86,9 @@ always available.
    The native equivalent of this function is :c:func:`PySys_Audit`. Using the
    native function is preferred when possible.
 
+   See the :ref:`audit events table <audit-events>` for all events raised by
+   ``CPython``.
+
    .. versionadded:: 3.8
 
 

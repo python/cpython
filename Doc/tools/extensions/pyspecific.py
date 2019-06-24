@@ -23,7 +23,7 @@ from docutils import nodes, utils
 from sphinx import addnodes
 from sphinx.builders import Builder
 from sphinx.locale import translators
-from sphinx.util import status_iterator
+from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.html import HTMLTranslator
 from sphinx.writers.text import TextWriter, TextTranslator
@@ -166,6 +166,11 @@ class AuditEvent(Directive):
         "Raises an :ref:`auditing event <auditing>` {name} with arguments {args}.",
     ]
 
+    @property
+    def logger(self):
+        cls = type(self)
+        return logging.getLogger(cls.__module__ + "." + cls.__name__)
+
     def run(self):
         name = self.arguments[0]
         if len(self.arguments) >= 2 and self.arguments[1]:
@@ -188,25 +193,30 @@ class AuditEvent(Directive):
         info = env.all_audit_events.setdefault(name, new_info)
         if info is not new_info:
             if not self._do_args_match(info['args'], new_info['args']):
-                self.warn("Mismatched arguments for event {}: {!r} != {!r}"
-                                .format(name, info['args'], new_info['args']))
+                self.logger.warn(
+                    "Mismatched arguments for audit-event {}: {!r} != {!r}"
+                    .format(name, info['args'], new_info['args'])
+                )
 
         label = "audit_event_{}_{}".format(name, len(info['source']))
         label = re.sub(r'\W', '_', label)
-        target = nodes.target('', '', ids=[label])
         info['source'].append((env.docname, label))
 
-        pnode = nodes.paragraph(text, classes=["audit-hook"])
+        pnode = nodes.paragraph(text, classes=["audit-hook"], ids=[label])
         if self.content:
             self.state.nested_parse(self.content, self.content_offset, pnode)
         else:
             n, m = self.state.inline_text(text, self.lineno)
             pnode.extend(n + m)
 
-        return target + pnode
+        return [pnode]
 
+    # This list of sets are allowable synonyms for event argument names.
+    # If two names are in the same set, they are treated as equal for the
+    # purposes of warning. This won't help if number of arguments is
+    # different!
     _SYNONYMS = [
-        #{"file", "path", "fd"},
+        {"file", "path", "fd"},
     ]
 
     def _do_args_match(self, args1, args2):
@@ -437,7 +447,7 @@ class PydocTopicsBuilder(Builder):
                                      'building topics... ',
                                      length=len(pydoc_topic_labels)):
             if label not in self.env.domaindata['std']['labels']:
-                self.warn('label %r not in documentation' % label)
+                self.env.logger.warn('label %r not in documentation' % label)
                 continue
             docname, labelid, sectname = self.env.domaindata['std']['labels'][label]
             doctree = self.env.get_and_resolve_doctree(docname, self)
