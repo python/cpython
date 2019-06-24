@@ -1058,6 +1058,11 @@ TESTTIMEOUT=	1200
 
 .PHONY: test testall testuniversal buildbottest pythoninfo
 
+# Remove "test_python_*" directories of previous failed test jobs.
+# Pass TESTOPTS options because it can contain --tempdir option.
+cleantest: build_all
+	$(TESTRUNNER) $(TESTOPTS) --cleanup
+
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
 test:		@DEF_MAKE_RULE@ platform
