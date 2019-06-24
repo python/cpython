@@ -1,13 +1,16 @@
+/*
+ * Python UUID module that wraps libuuid -
+ * DCE compatible Universally Unique Identifier library.
+ */
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
 #ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
-#endif
-#ifdef HAVE_UUID_H
+#elif defined(HAVE_UUID_H)
 #include <uuid.h>
 #endif
-
 
 static PyObject *
 py_uuid_generate_time_safe(void)
