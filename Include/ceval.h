@@ -31,7 +31,6 @@ PyAPI_FUNC(PyObject *) PyEval_CallMethod(PyObject *obj,
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);
 PyAPI_FUNC(void) PyEval_SetTrace(Py_tracefunc, PyObject *);
-PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(int new_depth);
 PyAPI_FUNC(int) _PyEval_GetCoroutineOriginTrackingDepth(void);
 PyAPI_FUNC(void) _PyEval_SetAsyncGenFirstiter(PyObject *);
 PyAPI_FUNC(PyObject *) _PyEval_GetAsyncGenFirstiter(void);

@@ -1866,20 +1866,10 @@ class FinalizeTestCase(unittest.TestCase):
         f()
         self.assertEqual(res, [((1, 2), {'func': 3, 'obj': 4})])
 
-        res = []
-        with self.assertWarns(DeprecationWarning):
-            f = weakref.finalize(a, func=fin, arg=1)
-        self.assertEqual(f.peek(), (a, fin, (), {'arg': 1}))
-        f()
-        self.assertEqual(res, [((), {'arg': 1})])
-
-        res = []
-        with self.assertWarns(DeprecationWarning):
-            f = weakref.finalize(obj=a, func=fin, arg=1)
-        self.assertEqual(f.peek(), (a, fin, (), {'arg': 1}))
-        f()
-        self.assertEqual(res, [((), {'arg': 1})])
-
+        with self.assertRaises(TypeError):
+            weakref.finalize(a, func=fin, arg=1)
+        with self.assertRaises(TypeError):
+            weakref.finalize(obj=a, func=fin, arg=1)
         self.assertRaises(TypeError, weakref.finalize, a)
         self.assertRaises(TypeError, weakref.finalize)
 

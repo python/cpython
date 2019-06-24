@@ -1,4 +1,0 @@
-Improve the AST for "debug" f-strings, which use '=' to print out the source
-of the expression being evaluated.  Delete expr_text from the FormattedValue
-node, and instead use a Constant string node (possibly merged with adjacent
-constant expressions inside the f-string).

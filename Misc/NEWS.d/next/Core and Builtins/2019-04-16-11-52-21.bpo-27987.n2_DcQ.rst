@@ -1,3 +1,0 @@
-pymalloc returns memory blocks aligned by 16 bytes, instead of 8 bytes, on
-64-bit platforms to conform x86-64 ABI. Recent compilers assume this alignment
-more often. Patch by Inada Naoki.

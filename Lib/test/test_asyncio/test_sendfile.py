@@ -86,7 +86,8 @@ class MyProto(asyncio.Protocol):
 
 class SendfileBase:
 
-    DATA = b"SendfileBaseData" * (1024 * 8)  # 128 KiB
+      # 128 KiB plus small unaligned to buffer chunk
+    DATA = b"SendfileBaseData" * (1024 * 8 + 1)
 
     # Reduce socket buffer size to test on relative small data sets.
     BUF_SIZE = 4 * 1024   # 4 KiB

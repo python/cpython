@@ -56,7 +56,7 @@ def FancyURLopener():
         return urllib.request.FancyURLopener()
 
 
-def fakehttp(fakedata):
+def fakehttp(fakedata, mock_close=False):
     class FakeSocket(io.BytesIO):
         io_refs = 1
 
@@ -90,15 +90,24 @@ def fakehttp(fakedata):
         def connect(self):
             self.sock = FakeSocket(self.fakedata)
             type(self).fakesock = self.sock
+
+        if mock_close:
+            # bpo-36918: HTTPConnection destructor calls close() which calls
+            # flush(). Problem: flush() calls self.fp.flush() which raises
+            # "ValueError: I/O operation on closed file" which is logged as an
+            # "Exception ignored in". Override close() to silence this error.
+            def close(self):
+                pass
     FakeHTTPConnection.fakedata = fakedata
 
     return FakeHTTPConnection
 
 
 class FakeHTTPMixin(object):
-    def fakehttp(self, fakedata):
+    def fakehttp(self, fakedata, mock_close=False):
+        fake_http_class = fakehttp(fakedata, mock_close=mock_close)
         self._connection_class = http.client.HTTPConnection
-        http.client.HTTPConnection = fakehttp(fakedata)
+        http.client.HTTPConnection = fake_http_class
 
     def unfakehttp(self):
         http.client.HTTPConnection = self._connection_class
@@ -400,7 +409,7 @@ Date: Wed, 02 Jan 2008 03:03:54 GMT
 Server: Apache/1.3.33 (Debian GNU/Linux) mod_ssl/2.8.22 OpenSSL/0.9.7e
 Connection: close
 Content-Type: text/html; charset=iso-8859-1
-''')
+''', mock_close=True)
         try:
             self.assertRaises(OSError, urlopen, "http://python.org/")
         finally:
@@ -414,7 +423,7 @@ Server: Apache/1.3.33 (Debian GNU/Linux) mod_ssl/2.8.22 OpenSSL/0.9.7e
 Location: file://guidocomputer.athome.com:/python/license
 Connection: close
 Content-Type: text/html; charset=iso-8859-1
-''')
+''', mock_close=True)
         try:
             msg = "Redirection to url 'file:"
             with self.assertRaisesRegex(urllib.error.HTTPError, msg):
@@ -429,7 +438,7 @@ Content-Type: text/html; charset=iso-8859-1
             self.fakehttp(b'''HTTP/1.1 302 Found
 Location: file://guidocomputer.athome.com:/python/license
 Connection: close
-''')
+''', mock_close=True)
             try:
                 self.assertRaises(urllib.error.HTTPError, urlopen,
                     "http://something")

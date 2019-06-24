@@ -1,3 +1,0 @@
-Handle late binding and attribute access in :class:`unittest.mock.AsyncMock`
-setup for autospeccing. Document newly implemented async methods in
-:class:`unittest.mock.MagicMock`.

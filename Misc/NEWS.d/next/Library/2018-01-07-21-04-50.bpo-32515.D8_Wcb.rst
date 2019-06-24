@@ -1,1 +1,0 @@
-trace.py can now run modules via python3 -m trace -t --module module_name

@@ -1,2 +1,0 @@
-Port binascii to PEP 489 multiphase initialization.
-Patch by Marcel Plch.

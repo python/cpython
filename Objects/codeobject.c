@@ -261,7 +261,8 @@ _PyCode_InitOpcache(PyCodeObject *co)
 
         // TODO: LOAD_METHOD, LOAD_ATTR
         if (opcode == LOAD_GLOBAL) {
-            co->co_opcache_map[i] = ++opts;
+            opts++;
+            co->co_opcache_map[i] = (unsigned char)opts;
             if (opts > 254) {
                 break;
             }
@@ -281,7 +282,7 @@ _PyCode_InitOpcache(PyCodeObject *co)
         co->co_opcache = NULL;
     }
 
-    co->co_opcache_size = opts;
+    co->co_opcache_size = (unsigned char)opts;
     return 0;
 }
 

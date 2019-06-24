@@ -1,1 +1,0 @@
-Make `codecs.StreamRecoder.writelines` take a list of bytes.

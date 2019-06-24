@@ -1376,7 +1376,7 @@ _PyLong_AsUnsignedLongLongMask(PyObject *vv)
 
     if (vv == NULL || !PyLong_Check(vv)) {
         PyErr_BadInternalCall();
-        return (unsigned long) -1;
+        return (unsigned long long) -1;
     }
     v = (PyLongObject *)vv;
     switch(Py_SIZE(v)) {
@@ -1404,7 +1404,7 @@ PyLong_AsUnsignedLongLongMask(PyObject *op)
 
     if (op == NULL) {
         PyErr_BadInternalCall();
-        return (unsigned long)-1;
+        return (unsigned long long)-1;
     }
 
     if (PyLong_Check(op)) {

@@ -49,7 +49,7 @@ The example below would like to show how to register a pickle function and how
 it will be used:
 
    >>> import copyreg, copy, pickle
-   >>> class C(object):
+   >>> class C:
    ...     def __init__(self, a):
    ...         self.a = a
    ...

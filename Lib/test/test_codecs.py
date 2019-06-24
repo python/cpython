@@ -2870,7 +2870,6 @@ class ExceptionChainingTest(unittest.TestCase):
 @unittest.skipUnless(sys.platform == 'win32',
                      'code pages are specific to Windows')
 class CodePageTest(unittest.TestCase):
-    # CP_UTF8 is already tested by CP65001Test
     CP_UTF8 = 65001
 
     def test_invalid_code_page(self):

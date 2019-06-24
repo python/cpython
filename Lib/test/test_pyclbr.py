@@ -225,9 +225,7 @@ class PyclbrTest(TestCase):
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('cgi', ignore=('log',))      # set with = in module
         cm('pickle', ignore=('partial', 'PickleBuffer'))
-        # TODO(briancurtin): openfp is deprecated as of 3.7.
-        # Update this once it has been removed.
-        cm('aifc', ignore=('openfp', '_aifc_params'))  # set with = in module
+        cm('aifc', ignore=('_aifc_params',))  # set with = in module
         cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
         cm('pdb')
         cm('pydoc', ignore=('input', 'output',)) # properties

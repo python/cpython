@@ -1,2 +1,0 @@
-Provide both sync and async calls for StreamWriter.write() and
-StreamWriter.close()

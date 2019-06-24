@@ -216,7 +216,7 @@ get_future_loop(PyObject *fut)
         return NULL;
     }
     if (getloop != NULL) {
-        PyObject *res = _PyObject_CallNoArg(getloop);
+        PyObject *res = PyObject_CallNoArgs(getloop);
         Py_DECREF(getloop);
         return res;
     }
@@ -328,7 +328,7 @@ get_event_loop(void)
         return loop;
     }
 
-    policy = _PyObject_CallNoArg(asyncio_get_event_loop_policy);
+    policy = PyObject_CallNoArgs(asyncio_get_event_loop_policy);
     if (policy == NULL) {
         return NULL;
     }
@@ -510,7 +510,7 @@ future_init(FutureObj *fut, PyObject *loop)
            method, which is called during the interpreter shutdown and the
            traceback module is already unloaded.
         */
-        fut->fut_source_tb = _PyObject_CallNoArg(traceback_extract_stack);
+        fut->fut_source_tb = PyObject_CallNoArgs(traceback_extract_stack);
         if (fut->fut_source_tb == NULL) {
             return -1;
         }
@@ -553,7 +553,7 @@ future_set_exception(FutureObj *fut, PyObject *exc)
     }
 
     if (PyExceptionClass_Check(exc)) {
-        exc_val = _PyObject_CallNoArg(exc);
+        exc_val = PyObject_CallNoArgs(exc);
         if (exc_val == NULL) {
             return NULL;
         }
@@ -2593,7 +2593,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
 
         if (!exc) {
             /* exc was not a CancelledError */
-            exc = _PyObject_CallNoArg(asyncio_CancelledError);
+            exc = PyObject_CallNoArgs(asyncio_CancelledError);
             if (!exc) {
                 goto fail;
             }
@@ -3308,7 +3308,7 @@ module_init(void)
     PyObject *weak_set;
     WITH_MOD("weakref")
     GET_MOD_ATTR(weak_set, "WeakSet");
-    all_tasks = _PyObject_CallNoArg(weak_set);
+    all_tasks = PyObject_CallNoArgs(weak_set);
     Py_CLEAR(weak_set);
     if (all_tasks == NULL) {
         goto fail;

@@ -10,6 +10,8 @@ try:
 except ImportError:
     gc = None
 
+from test.libregrtest.utils import setup_unraisable_hook
+
 
 def setup_tests(ns):
     try:
@@ -92,6 +94,8 @@ def setup_tests(ns):
         def _test_audit_hook(name, args):
             pass
         sys.addaudithook(_test_audit_hook)
+
+    setup_unraisable_hook()
 
 
 def suppress_msvcrt_asserts(verbose):

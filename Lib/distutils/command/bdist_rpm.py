@@ -309,10 +309,7 @@ class bdist_rpm(Command):
 
         # build package
         log.info("building RPMs")
-        rpm_cmd = ['rpm']
-        if os.path.exists('/usr/bin/rpmbuild') or \
-           os.path.exists('/bin/rpmbuild'):
-            rpm_cmd = ['rpmbuild']
+        rpm_cmd = ['rpmbuild']
 
         if self.source_only: # what kind of RPMs?
             rpm_cmd.append('-bs')

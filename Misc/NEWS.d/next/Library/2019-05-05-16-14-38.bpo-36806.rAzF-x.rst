@@ -1,2 +1,0 @@
-Forbid creation of asyncio stream objects like StreamReader, StreamWriter,
-Process, and their protocols outside of asyncio package.

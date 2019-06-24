@@ -1,2 +1,0 @@
-Fix possible overflow in ``wrap_lenfunc()`` when
-``sizeof(long) < sizeof(Py_ssize_t)`` (e.g., 64-bit Windows).

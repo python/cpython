@@ -223,21 +223,6 @@ Importing Modules
    Return a new reference to the finder object.
 
 
-.. c:function:: void _PyImport_Init()
-
-   Initialize the import mechanism.  For internal use only.
-
-
-.. c:function:: void PyImport_Cleanup()
-
-   Empty the module table.  For internal use only.
-
-
-.. c:function:: void _PyImport_Fini()
-
-   Finalize the import mechanism.  For internal use only.
-
-
 .. c:function:: int PyImport_ImportFrozenModuleObject(PyObject *name)
 
    Load a frozen module named *name*.  Return ``1`` for success, ``0`` if the

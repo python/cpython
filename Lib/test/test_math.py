@@ -468,6 +468,8 @@ class MathTests(unittest.TestCase):
             self.assertRaises(ValueError, math.cos, NINF)
         self.assertTrue(math.isnan(math.cos(NAN)))
 
+    @unittest.skipIf(sys.platform == 'win32' and platform.machine() in ('ARM', 'ARM64'),
+                    "Windows UCRT is off by 2 ULP this test requires accuracy within 1 ULP")
     def testCosh(self):
         self.assertRaises(TypeError, math.cosh)
         self.ftest('cosh(0)', math.cosh(0), 1)
@@ -501,30 +503,35 @@ class MathTests(unittest.TestCase):
 
     def testFactorial(self):
         self.assertEqual(math.factorial(0), 1)
-        self.assertEqual(math.factorial(0.0), 1)
         total = 1
         for i in range(1, 1000):
             total *= i
             self.assertEqual(math.factorial(i), total)
-            self.assertEqual(math.factorial(float(i)), total)
             self.assertEqual(math.factorial(i), py_factorial(i))
         self.assertRaises(ValueError, math.factorial, -1)
-        self.assertRaises(ValueError, math.factorial, -1.0)
         self.assertRaises(ValueError, math.factorial, -10**100)
-        self.assertRaises(ValueError, math.factorial, -1e100)
-        self.assertRaises(ValueError, math.factorial, math.pi)
 
     def testFactorialNonIntegers(self):
-        self.assertRaises(TypeError, math.factorial, decimal.Decimal(5.2))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(math.factorial(5.0), 120)
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(ValueError, math.factorial, 5.2)
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(ValueError, math.factorial, -1.0)
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(ValueError, math.factorial, -1e100)
+        self.assertRaises(TypeError, math.factorial, decimal.Decimal('5'))
+        self.assertRaises(TypeError, math.factorial, decimal.Decimal('5.2'))
         self.assertRaises(TypeError, math.factorial, "5")
 
     # Other implementations may place different upper bounds.
     @support.cpython_only
     def testFactorialHugeInputs(self):
-        # Currently raises ValueError for inputs that are too large
+        # Currently raises OverflowError for inputs that are too large
         # to fit into a C long.
         self.assertRaises(OverflowError, math.factorial, 10**100)
-        self.assertRaises(OverflowError, math.factorial, 1e100)
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(OverflowError, math.factorial, 1e100)
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
@@ -1885,8 +1892,13 @@ class IsCloseTests(unittest.TestCase):
             self.assertEqual(perm(n, 1), n)
             self.assertEqual(perm(n, n), factorial(n))
 
+        # Test one argument form
+        for n in range(20):
+            self.assertEqual(perm(n), factorial(n))
+            self.assertEqual(perm(n, None), factorial(n))
+
         # Raises TypeError if any argument is non-integer or argument count is
-        # not 2
+        # not 1 or 2
         self.assertRaises(TypeError, perm, 10, 1.0)
         self.assertRaises(TypeError, perm, 10, decimal.Decimal(1.0))
         self.assertRaises(TypeError, perm, 10, "1")
@@ -1894,7 +1906,7 @@ class IsCloseTests(unittest.TestCase):
         self.assertRaises(TypeError, perm, decimal.Decimal(10.0), 1)
         self.assertRaises(TypeError, perm, "10", 1)
 
-        self.assertRaises(TypeError, perm, 10)
+        self.assertRaises(TypeError, perm)
         self.assertRaises(TypeError, perm, 10, 1, 3)
         self.assertRaises(TypeError, perm)
 
@@ -1912,7 +1924,8 @@ class IsCloseTests(unittest.TestCase):
         self.assertEqual(perm(n, 0), 1)
         self.assertEqual(perm(n, 1), n)
         self.assertEqual(perm(n, 2), n * (n-1))
-        self.assertRaises((OverflowError, MemoryError), perm, n, n)
+        if support.check_impl_detail(cpython=True):
+            self.assertRaises(OverflowError, perm, n, n)
 
         for n, k in (True, True), (True, False), (False, False):
             self.assertEqual(perm(n, k), 1)
@@ -1981,7 +1994,8 @@ class IsCloseTests(unittest.TestCase):
         self.assertEqual(comb(n, n), 1)
         self.assertEqual(comb(n, n-1), n)
         self.assertEqual(comb(n, n-2), n * (n-1) // 2)
-        self.assertRaises((OverflowError, MemoryError), comb, n, n//2)
+        if support.check_impl_detail(cpython=True):
+            self.assertRaises(OverflowError, comb, n, n//2)
 
         for n, k in (True, True), (True, False), (False, False):
             self.assertEqual(comb(n, k), 1)

@@ -645,10 +645,12 @@ the original TOS1.
 
 .. opcode:: MAP_ADD (i)
 
-   Calls ``dict.setitem(TOS1[-i], TOS, TOS1)``.  Used to implement dict
+   Calls ``dict.__setitem__(TOS1[-i], TOS1, TOS)``.  Used to implement dict
    comprehensions.
 
    .. versionadded:: 3.1
+   .. versionchanged:: 3.8
+      Map value is TOS and map key is TOS1. Before, those were reversed.
 
 For all of the :opcode:`SET_ADD`, :opcode:`LIST_APPEND` and :opcode:`MAP_ADD`
 instructions, while the added value or key/value pair is popped off, the
@@ -1219,10 +1221,10 @@ All of the following opcodes use their arguments.
 
 .. opcode:: EXTENDED_ARG (ext)
 
-   Prefixes any opcode which has an argument too big to fit into the default two
-   bytes.  *ext* holds two additional bytes which, taken together with the
-   subsequent opcode's argument, comprise a four-byte argument, *ext* being the
-   two most-significant bytes.
+   Prefixes any opcode which has an argument too big to fit into the default one
+   byte. *ext* holds an additional byte which act as higher bits in the argument.
+   For each opcode, at most three prefixal ``EXTENDED_ARG`` are allowed, forming
+   an argument from two-byte to four-byte.
 
 
 .. opcode:: FORMAT_VALUE (flags)

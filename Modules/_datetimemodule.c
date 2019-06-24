@@ -1528,8 +1528,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = 1;
         }
         else if ((ch = *pin++) == '\0') {
-        /* Null byte follows %, copy only '%'. 
-         * 
+        /* Null byte follows %, copy only '%'.
+         *
          * Back the pin up one char so that we catch the null check
          * the next time through the loop.*/
             pin--;
@@ -1619,7 +1619,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         usednew += ntoappend;
         assert(usednew <= totalnew);
     }  /* end while() */
-    
+
     if (_PyBytes_Resize(&newfmt, usednew) < 0)
         goto Done;
     {
@@ -3607,7 +3607,7 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     getinitargs = _PyObject_GetAttrId(self, &PyId___getinitargs__);
     if (getinitargs != NULL) {
-        args = _PyObject_CallNoArg(getinitargs);
+        args = PyObject_CallNoArgs(getinitargs);
         Py_DECREF(getinitargs);
         if (args == NULL) {
             return NULL;
@@ -3624,7 +3624,7 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     getstate = _PyObject_GetAttrId(self, &PyId___getstate__);
     if (getstate != NULL) {
-        state = _PyObject_CallNoArg(getstate);
+        state = PyObject_CallNoArgs(getstate);
         Py_DECREF(getstate);
         if (state == NULL) {
             Py_DECREF(args);

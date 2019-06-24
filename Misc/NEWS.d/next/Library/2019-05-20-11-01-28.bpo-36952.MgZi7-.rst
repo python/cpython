@@ -1,4 +1,0 @@
-:func:`fileinput.input` and :class:`fileinput.FileInput` **bufsize**
-argument has been removed (was deprecated and ignored since Python 3.6),
-and as a result the **mode** and **openhook** arguments have been made
-keyword-only.

@@ -1527,10 +1527,10 @@ Here's Python code equivalent to the C implementation below:
         a = 1
         d = 0
         for s in reversed(range(c.bit_length())):
+            # Loop invariant: (a-1)**2 < (n >> 2*(c - d)) < (a+1)**2
             e = d
             d = c >> s
             a = (a << d - e - 1) + (n >> 2*c - e - d + 1) // a
-            assert (a-1)**2 < n >> 2*(c - d) < (a+1)**2
 
         return a - (a*a > n)
 
@@ -1981,6 +1981,12 @@ math_factorial(PyObject *module, PyObject *arg)
     PyObject *result, *odd_part, *pyint_form;
 
     if (PyFloat_Check(arg)) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Using factorial() with floats is deprecated",
+                         1) < 0)
+        {
+            return NULL;
+        }
         PyObject *lx;
         double dx = PyFloat_AS_DOUBLE((PyFloatObject *)arg);
         if (!(Py_IS_FINITE(dx) && dx == floor(dx))) {
@@ -3002,7 +3008,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 math.perm
 
     n: object
-    k: object
+    k: object = None
     /
 
 Number of ways to choose k items from n items without repetition and with order.
@@ -3010,18 +3016,24 @@ Number of ways to choose k items from n items without repetition and with order.
 Evaluates to n! / (n - k)! when k <= n and evaluates
 to zero when k > n.
 
+If k is not specified or is None, then k defaults to n
+and the function returns n!.
+
 Raises TypeError if either of the arguments are not integers.
 Raises ValueError if either of the arguments are negative.
 [clinic start generated code]*/
 
 static PyObject *
 math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=e021a25469653e23 input=b2e7729d9a1949cf]*/
+/*[clinic end generated code: output=e021a25469653e23 input=5311c5a00f359b53]*/
 {
     PyObject *result = NULL, *factor = NULL;
     int overflow, cmp;
     long long i, factors;
 
+    if (k == Py_None) {
+        return math_factorial(module, n);
+    }
     n = PyNumber_Index(n);
     if (n == NULL) {
         return NULL;
@@ -3050,6 +3062,12 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
                         "n must be a non-negative integer");
         goto error;
     }
+    if (Py_SIZE(k) < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "k must be a non-negative integer");
+        goto error;
+    }
+
     cmp = PyObject_RichCompareBool(n, k, Py_LT);
     if (cmp != 0) {
         if (cmp > 0) {
@@ -3066,11 +3084,8 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
                      LLONG_MAX);
         goto error;
     }
-    else if (overflow < 0 || factors < 0) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
-                            "k must be a non-negative integer");
-        }
+    else if (factors == -1) {
+        /* k is nonnegative, so a return value of -1 can only indicate error */
         goto error;
     }
 
@@ -3170,6 +3185,12 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
                         "n must be a non-negative integer");
         goto error;
     }
+    if (Py_SIZE(k) < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "k must be a non-negative integer");
+        goto error;
+    }
+
     /* k = min(k, n - k) */
     temp = PyNumber_Subtract(n, k);
     if (temp == NULL) {
@@ -3198,11 +3219,8 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
                      LLONG_MAX);
         goto error;
     }
-    else if (overflow < 0 || factors < 0) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
-                            "k must be a non-negative integer");
-        }
+    if (factors == -1) {
+        /* k is nonnegative, so a return value of -1 can only indicate error */
         goto error;
     }
 

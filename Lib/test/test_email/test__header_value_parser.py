@@ -118,7 +118,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                          '=?us-ascii?q?first?==?utf-8?q?second?=',
                          'first',
                          'first',
-                         [],
+                         [errors.InvalidHeaderDefect],
                          '=?utf-8?q?second?=')
 
     def test_get_encoded_word_sets_extra_attributes(self):
@@ -361,6 +361,25 @@ class TestParser(TestParserMixin, TestEmailBase):
             '=?utf-8?q?foo?==?utf-8?q?bar?=',
             'foobar',
             'foobar',
+            [errors.InvalidHeaderDefect,
+            errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_ew_without_leading_whitespace(self):
+        self._test_get_x(
+            self._get_unst,
+            'nowhitespace=?utf-8?q?somevalue?=',
+            'nowhitespacesomevalue',
+            'nowhitespacesomevalue',
+            [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_ew_without_trailing_whitespace(self):
+        self._test_get_x(
+            self._get_unst,
+            '=?utf-8?q?somevalue?=nowhitespace',
+            'somevaluenowhitespace',
+            'somevaluenowhitespace',
             [errors.InvalidHeaderDefect],
             '')
 
@@ -546,7 +565,8 @@ class TestParser(TestParserMixin, TestEmailBase):
             '"=?utf-8?Q?not_really_valid?="',
             '"not really valid"',
             'not really valid',
-            [errors.InvalidHeaderDefect],
+            [errors.InvalidHeaderDefect,
+             errors.InvalidHeaderDefect],
             '')
 
     # get_comment
@@ -2493,6 +2513,78 @@ class TestParser(TestParserMixin, TestEmailBase):
             parser.parse_content_transfer_encoding_header,
             ";foo", ";foo", ";foo", [errors.InvalidHeaderDefect]*3
         )
+
+    # get_msg_id
+
+    def test_get_msg_id_valid(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            "<simeple.local@example.something.com>",
+            "<simeple.local@example.something.com>",
+            "<simeple.local@example.something.com>",
+            [],
+            '',
+            )
+        self.assertEqual(msg_id.token_type, 'msg-id')
+
+    def test_get_msg_id_obsolete_local(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            '<"simeple.local"@example.com>',
+            '<"simeple.local"@example.com>',
+            '<simeple.local@example.com>',
+            [errors.ObsoleteHeaderDefect],
+            '',
+            )
+        self.assertEqual(msg_id.token_type, 'msg-id')
+
+    def test_get_msg_id_non_folding_literal_domain(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            "<simple.local@[someexamplecom.domain]>",
+            "<simple.local@[someexamplecom.domain]>",
+            "<simple.local@[someexamplecom.domain]>",
+            [],
+            "",
+            )
+        self.assertEqual(msg_id.token_type, 'msg-id')
+
+
+    def test_get_msg_id_obsolete_domain_part(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            "<simplelocal@(old)example.com>",
+            "<simplelocal@(old)example.com>",
+            "<simplelocal@ example.com>",
+            [errors.ObsoleteHeaderDefect],
+            ""
+        )
+
+    def test_get_msg_id_no_id_right_part(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            "<simplelocal>",
+            "<simplelocal>",
+            "<simplelocal>",
+            [errors.InvalidHeaderDefect],
+            ""
+        )
+        self.assertEqual(msg_id.token_type, 'msg-id')
+
+    def test_get_msg_id_no_angle_start(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id("msgwithnoankle")
+
+    def test_get_msg_id_no_angle_end(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            "<simplelocal@domain",
+            "<simplelocal@domain>",
+            "<simplelocal@domain>",
+            [errors.InvalidHeaderDefect],
+            ""
+        )
+        self.assertEqual(msg_id.token_type, 'msg-id')
 
 
 @parameterize

@@ -70,6 +70,14 @@ _Py_CheckFunctionResult(PyObject *callable, PyObject *result, const char *where)
 
 /* --- Core PyObject call functions ------------------------------- */
 
+/* Call a callable Python object without any arguments */
+PyObject *
+PyObject_CallNoArgs(PyObject *func)
+{
+    return _PyObject_CallNoArg(func);
+}
+
+
 PyObject *
 _PyObject_FastCallDict(PyObject *callable, PyObject *const *args,
                        size_t nargsf, PyObject *kwargs)
@@ -176,7 +184,7 @@ PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
     /* get vectorcallfunc as in _PyVectorcall_Function, but without
      * the _Py_TPFLAGS_HAVE_VECTORCALL check */
     Py_ssize_t offset = Py_TYPE(callable)->tp_vectorcall_offset;
-    if ((offset <= 0) || (!Py_TYPE(callable)->tp_call)) {
+    if (offset <= 0) {
         PyErr_Format(PyExc_TypeError, "'%.200s' object does not support vectorcall",
                      Py_TYPE(callable)->tp_name);
         return NULL;
@@ -291,94 +299,6 @@ function_code_fastcall(PyCodeObject *co, PyObject *const *args, Py_ssize_t nargs
         Py_DECREF(f);
         --tstate->recursion_depth;
     }
-    return result;
-}
-
-
-PyObject *
-_PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs,
-                         PyObject *kwargs)
-{
-    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
-    PyObject *globals = PyFunction_GET_GLOBALS(func);
-    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
-    PyObject *kwdefs, *closure, *name, *qualname;
-    PyObject *kwtuple, **k;
-    PyObject **d;
-    Py_ssize_t nd, nk;
-    PyObject *result;
-
-    assert(func != NULL);
-    assert(nargs >= 0);
-    assert(nargs == 0 || args != NULL);
-    assert(kwargs == NULL || PyDict_Check(kwargs));
-
-    if (co->co_kwonlyargcount == 0 &&
-        (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) &&
-        (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
-    {
-        /* Fast paths */
-        if (argdefs == NULL && co->co_argcount == nargs) {
-            return function_code_fastcall(co, args, nargs, globals);
-        }
-        else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
-            /* function called with no arguments, but all parameters have
-               a default value: use default values as arguments .*/
-            args = _PyTuple_ITEMS(argdefs);
-            return function_code_fastcall(co, args, PyTuple_GET_SIZE(argdefs),
-                                          globals);
-        }
-    }
-
-    nk = (kwargs != NULL) ? PyDict_GET_SIZE(kwargs) : 0;
-    if (nk != 0) {
-        Py_ssize_t pos, i;
-
-        /* bpo-29318, bpo-27840: Caller and callee functions must not share
-           the dictionary: kwargs must be copied. */
-        kwtuple = PyTuple_New(2 * nk);
-        if (kwtuple == NULL) {
-            return NULL;
-        }
-
-        k = _PyTuple_ITEMS(kwtuple);
-        pos = i = 0;
-        while (PyDict_Next(kwargs, &pos, &k[i], &k[i+1])) {
-            /* We must hold strong references because keyword arguments can be
-               indirectly modified while the function is called:
-               see issue #2016 and test_extcall */
-            Py_INCREF(k[i]);
-            Py_INCREF(k[i+1]);
-            i += 2;
-        }
-        assert(i / 2 == nk);
-    }
-    else {
-        kwtuple = NULL;
-        k = NULL;
-    }
-
-    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
-    closure = PyFunction_GET_CLOSURE(func);
-    name = ((PyFunctionObject *)func) -> func_name;
-    qualname = ((PyFunctionObject *)func) -> func_qualname;
-
-    if (argdefs != NULL) {
-        d = _PyTuple_ITEMS(argdefs);
-        nd = PyTuple_GET_SIZE(argdefs);
-    }
-    else {
-        d = NULL;
-        nd = 0;
-    }
-
-    result = _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
-                                      args, nargs,
-                                      k, k != NULL ? k + 1 : NULL, nk, 2,
-                                      d, nd, kwdefs,
-                                      closure, name, qualname);
-    Py_XDECREF(kwtuple);
     return result;
 }
 
@@ -571,24 +491,6 @@ no_keyword_error:
 
 exit:
     Py_LeaveRecursiveCall();
-    return result;
-}
-
-
-PyObject *
-_PyCFunction_FastCallDict(PyObject *func,
-                          PyObject *const *args, Py_ssize_t nargs,
-                          PyObject *kwargs)
-{
-    PyObject *result;
-
-    assert(func != NULL);
-    assert(PyCFunction_Check(func));
-
-    result = _PyMethodDef_RawFastCallDict(((PyCFunctionObject*)func)->m_ml,
-                                          PyCFunction_GET_SELF(func),
-                                          args, nargs, kwargs);
-    result = _Py_CheckFunctionResult(func, result, NULL);
     return result;
 }
 
@@ -834,42 +736,6 @@ PyObject *
 PyObject_CallObject(PyObject *callable, PyObject *args)
 {
     return PyEval_CallObjectWithKeywords(callable, args, NULL);
-}
-
-
-/* Positional arguments are obj followed by args:
-   call callable(obj, *args, **kwargs) */
-PyObject *
-_PyObject_FastCall_Prepend(PyObject *callable, PyObject *obj,
-                           PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
-    PyObject **args2;
-    PyObject *result;
-
-    nargs++;
-    if (nargs <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
-        args2 = small_stack;
-    }
-    else {
-        args2 = PyMem_Malloc(nargs * sizeof(PyObject *));
-        if (args2 == NULL) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-    }
-
-    /* use borrowed references */
-    args2[0] = obj;
-    if (nargs > 1) {
-        memcpy(&args2[1], args, (nargs - 1) * sizeof(PyObject *));
-    }
-
-    result = _PyObject_FastCall(callable, args2, nargs);
-    if (args2 != small_stack) {
-        PyMem_Free(args2);
-    }
-    return result;
 }
 
 
@@ -1210,9 +1076,6 @@ object_vacall(PyObject *base, PyObject *callable, va_list vargs)
     return result;
 }
 
-
-/* Private API for the LOAD_METHOD opcode. */
-extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
 
 PyObject *
 PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)

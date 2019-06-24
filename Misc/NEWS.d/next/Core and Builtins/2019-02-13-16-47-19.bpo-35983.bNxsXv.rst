@@ -1,3 +1,0 @@
-Added new trashcan macros to deal with a double deallocation that could occur
-when the `tp_dealloc` of a subclass calls the `tp_dealloc` of a base class
-and that base class uses the trashcan mechanism. Patch by Jeroen Demeyer.

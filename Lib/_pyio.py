@@ -405,6 +405,16 @@ class IOBase(metaclass=abc.ABCMeta):
 
     def __del__(self):
         """Destructor.  Calls close()."""
+        try:
+            closed = self.closed
+        except Exception:
+            # If getting closed fails, then the object is probably
+            # in an unusable state, so ignore.
+            return
+
+        if closed:
+            return
+
         if _IOBASE_EMITS_UNRAISABLE:
             self.close()
         else:

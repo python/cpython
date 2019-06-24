@@ -89,6 +89,8 @@ class EntryPoint(collections.namedtuple('EntryPointBase', 'name value group')):
     @classmethod
     def _from_text(cls, text):
         config = ConfigParser()
+        # case sensitive: https://stackoverflow.com/q/1611799/812183
+        config.optionxform = str
         try:
             config.read_string(text)
         except AttributeError:  # pragma: nocover

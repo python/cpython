@@ -825,6 +825,26 @@ test_long_as_size_t(PyObject *self, PyObject *Py_UNUSED(ignored))
     return Py_None;
 }
 
+static PyObject *
+test_long_as_unsigned_long_long_mask(PyObject *self,
+                                     PyObject *Py_UNUSED(ignored))
+{
+    unsigned long long res = PyLong_AsUnsignedLongLongMask(NULL);
+
+    if (res != (unsigned long long)-1 || !PyErr_Occurred()) {
+        return raiseTestError("test_long_as_unsigned_long_long_mask",
+                              "PyLong_AsUnsignedLongLongMask(NULL) didn't "
+                              "complain");
+    }
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+        return raiseTestError("test_long_as_unsigned_long_long_mask",
+                              "PyLong_AsUnsignedLongLongMask(NULL) raised "
+                              "something other than SystemError");
+    }
+    PyErr_Clear();
+    Py_RETURN_NONE;
+}
+
 /* Test the PyLong_AsDouble API. At present this just tests that
    non-integer arguments are handled correctly.
  */
@@ -4469,15 +4489,17 @@ test_pymem_getallocatorsname(PyObject *self, PyObject *args)
 
 
 static PyObject*
-pyobject_is_freed(PyObject *self, PyObject *op)
+test_pyobject_is_freed(const char *test_name, PyObject *op)
 {
-    int res = _PyObject_IsFreed(op);
-    return PyBool_FromLong(res);
+    if (!_PyObject_IsFreed(op)) {
+        return raiseTestError(test_name, "object is not seen as freed");
+    }
+    Py_RETURN_NONE;
 }
 
 
 static PyObject*
-pyobject_uninitialized(PyObject *self, PyObject *args)
+check_pyobject_uninitialized_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject));
     if (op == NULL) {
@@ -4486,12 +4508,12 @@ pyobject_uninitialized(PyObject *self, PyObject *args)
     /* Initialize reference count to avoid early crash in ceval or GC */
     Py_REFCNT(op) = 1;
     /* object fields like ob_type are uninitialized! */
-    return op;
+    return test_pyobject_is_freed("check_pyobject_uninitialized_is_freed", op);
 }
 
 
 static PyObject*
-pyobject_forbidden_bytes(PyObject *self, PyObject *args)
+check_pyobject_forbidden_bytes_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
     /* Allocate an incomplete PyObject structure: truncate 'ob_type' field */
     PyObject *op = (PyObject *)PyObject_Malloc(offsetof(PyObject, ob_type));
@@ -4502,12 +4524,12 @@ pyobject_forbidden_bytes(PyObject *self, PyObject *args)
     Py_REFCNT(op) = 1;
     /* ob_type field is after the memory block: part of "forbidden bytes"
        when using debug hooks on memory allocatrs! */
-    return op;
+    return test_pyobject_is_freed("check_pyobject_forbidden_bytes_is_freed", op);
 }
 
 
 static PyObject*
-pyobject_freed(PyObject *self, PyObject *args)
+check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyObject *op = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
     if (op == NULL) {
@@ -4517,7 +4539,7 @@ pyobject_freed(PyObject *self, PyObject *args)
     /* Reset reference count to avoid early crash in ceval or GC */
     Py_REFCNT(op) = 1;
     /* object memory is freed! */
-    return op;
+    return test_pyobject_is_freed("check_pyobject_freed_is_freed", op);
 }
 
 
@@ -5070,6 +5092,8 @@ static PyMethodDef TestMethods[] = {
     {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
     {"test_long_as_double",     test_long_as_double,             METH_NOARGS},
     {"test_long_as_size_t",     test_long_as_size_t,             METH_NOARGS},
+    {"test_long_as_unsigned_long_long_mask",
+        test_long_as_unsigned_long_long_mask, METH_NOARGS},
     {"test_long_numbits",       test_long_numbits,               METH_NOARGS},
     {"test_k_code",             test_k_code,                     METH_NOARGS},
     {"test_empty_argparse",     test_empty_argparse,             METH_NOARGS},
@@ -5242,10 +5266,9 @@ static PyMethodDef TestMethods[] = {
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
-    {"pyobject_is_freed", (PyCFunction)(void(*)(void))pyobject_is_freed, METH_O},
-    {"pyobject_uninitialized", pyobject_uninitialized, METH_NOARGS},
-    {"pyobject_forbidden_bytes", pyobject_forbidden_bytes, METH_NOARGS},
-    {"pyobject_freed", pyobject_freed, METH_NOARGS},
+    {"check_pyobject_uninitialized_is_freed", check_pyobject_uninitialized_is_freed, METH_NOARGS},
+    {"check_pyobject_forbidden_bytes_is_freed", check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
+    {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},
     {"pyobject_malloc_without_gil", pyobject_malloc_without_gil, METH_NOARGS},
     {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},

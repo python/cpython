@@ -524,7 +524,7 @@ pymain_run_python(int *exitcode)
         }
     }
 
-    PyCompilerFlags cf = {.cf_flags = 0, .cf_feature_version = PY_MINOR_VERSION};
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
 
     pymain_header(config);
     pymain_import_readline(config);

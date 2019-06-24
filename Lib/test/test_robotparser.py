@@ -97,28 +97,36 @@ Disallow: /
 
 
 class BaseRequestRateTest(BaseRobotTest):
+    request_rate = None
+    crawl_delay = None
 
     def test_request_rate(self):
+        parser = self.parser
         for url in self.good + self.bad:
             agent, url = self.get_agent_and_url(url)
             with self.subTest(url=url, agent=agent):
-                if self.crawl_delay:
-                    self.assertEqual(
-                        self.parser.crawl_delay(agent), self.crawl_delay
-                    )
-                if self.request_rate:
+                self.assertEqual(parser.crawl_delay(agent), self.crawl_delay)
+
+                parsed_request_rate = parser.request_rate(agent)
+                self.assertEqual(parsed_request_rate, self.request_rate)
+                if self.request_rate is not None:
                     self.assertIsInstance(
-                        self.parser.request_rate(agent),
+                        parsed_request_rate,
                         urllib.robotparser.RequestRate
                     )
                     self.assertEqual(
-                        self.parser.request_rate(agent).requests,
+                        parsed_request_rate.requests,
                         self.request_rate.requests
                     )
                     self.assertEqual(
-                        self.parser.request_rate(agent).seconds,
+                        parsed_request_rate.seconds,
                         self.request_rate.seconds
                     )
+
+
+class EmptyFileTest(BaseRequestRateTest, unittest.TestCase):
+    robots_txt = ''
+    good = ['/foo']
 
 
 class CrawlDelayAndRequestRateTest(BaseRequestRateTest, unittest.TestCase):
@@ -141,10 +149,6 @@ Disallow: /%7ejoe/index.html
 
 class DifferentAgentTest(CrawlDelayAndRequestRateTest):
     agent = 'FigTree Robot libwww-perl/5.04'
-    # these are not actually tested, but we still need to parse it
-    # in order to accommodate the input parameters
-    request_rate = None
-    crawl_delay = None
 
 
 class InvalidRequestRateTest(BaseRobotTest, unittest.TestCase):

@@ -1274,7 +1274,7 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
         return -1;
 
     if (n == READ_WHOLE_LINE) {
-        data = _PyObject_CallNoArg(self->readline);
+        data = PyObject_CallNoArgs(self->readline);
     }
     else {
         PyObject *len;
@@ -4411,7 +4411,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             /* Check for a __reduce__ method. */
             reduce_func = _PyObject_GetAttrId(obj, &PyId___reduce__);
             if (reduce_func != NULL) {
-                reduce_value = _PyObject_CallNoArg(reduce_func);
+                reduce_value = PyObject_CallNoArgs(reduce_func);
             }
             else {
                 PyErr_Format(st->PicklingError,

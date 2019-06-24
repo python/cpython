@@ -175,6 +175,10 @@ async def open_connection(host=None, port=None, *,
                   stacklevel=2)
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
     reader = StreamReader(limit=limit, loop=loop)
     protocol = StreamReaderProtocol(reader, loop=loop, _asyncio_internal=True)
     transport, _ = await loop.create_connection(
@@ -213,6 +217,10 @@ async def start_server(client_connected_cb, host=None, port=None, *,
                   stacklevel=2)
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
 
     def factory():
         reader = StreamReader(limit=limit, loop=loop)
@@ -414,6 +422,10 @@ if hasattr(socket, 'AF_UNIX'):
                       stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
+        else:
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
         reader = StreamReader(limit=limit, loop=loop)
         protocol = StreamReaderProtocol(reader, loop=loop,
                                         _asyncio_internal=True)
@@ -473,6 +485,10 @@ if hasattr(socket, 'AF_UNIX'):
                       stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
+        else:
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
 
         def factory():
             reader = StreamReader(limit=limit, loop=loop)

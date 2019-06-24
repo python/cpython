@@ -591,7 +591,9 @@ class IdleConf:
     former_extension_events = {  #  Those with user-configurable keys.
         '<<force-open-completions>>', '<<expand-word>>',
         '<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>',
-         '<<run-module>>', '<<check-module>>', '<<zoom-height>>'}
+         '<<run-module>>', '<<check-module>>', '<<zoom-height>>',
+         '<<run-custom>>',
+         }
 
     def GetCoreKeys(self, keySetName=None):
         """Return dict of core virtual-key keybindings for keySetName.
@@ -658,6 +660,7 @@ class IdleConf:
             '<<flash-paren>>': ['<Control-Key-0>'],
             '<<format-paragraph>>': ['<Alt-Key-q>'],
             '<<run-module>>': ['<Key-F5>'],
+            '<<run-custom>>': ['<Shift-Key-F5>'],
             '<<check-module>>': ['<Alt-Key-x>'],
             '<<zoom-height>>': ['<Alt-Key-2>'],
             }
