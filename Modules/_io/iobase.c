@@ -575,10 +575,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
             {
                 const Py_ssize_t len_readahead = PyBytes_GET_SIZE(readahead);
                 if (len_readahead > 0) {
-#ifndef min
-#define min(a,b) (((a) < (b)) ? (a) : (b))
-#endif
-                    const Py_ssize_t upper_limit = (((limit >= 0) ? min(limit, len_readahead) : len_readahead)-1);
+                    const Py_ssize_t upper_limit = (((limit >= 0) ? Py_MIN(limit, len_readahead) : len_readahead)-1);
                     Py_ssize_t n = -1;
                     const char *buf = PyBytes_AS_STRING(readahead);
                     do {
