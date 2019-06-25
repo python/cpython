@@ -203,7 +203,6 @@ PyInterpreterState_New(void)
 
     memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
-    interp->check_interval = 100;
 
     PyStatus status = PyConfig_InitPythonConfig(&interp->config);
     if (_PyStatus_EXCEPTION(status)) {
