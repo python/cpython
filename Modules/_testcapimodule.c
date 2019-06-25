@@ -6008,6 +6008,10 @@ PyInit__testcapi(void)
     Py_INCREF(&MyList_Type);
     PyModule_AddObject(m, "MyList", (PyObject *)&MyList_Type);
 
+    /* bpo-37250: old Cython code sets tp_print to 0, we check that
+     * this doesn't break anything. */
+    MyList_Type.tp_print = 0;
+
     if (PyType_Ready(&MethodDescriptorBase_Type) < 0)
         return NULL;
     Py_INCREF(&MethodDescriptorBase_Type);
