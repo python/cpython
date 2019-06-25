@@ -1025,56 +1025,6 @@ sys_getprofile_impl(PyObject *module)
     return temp;
 }
 
-/*[clinic input]
-sys.setcheckinterval
-
-    n: int
-    /
-
-Set the async event check interval to n instructions.
-
-This tells the Python interpreter to check for asynchronous events
-every n instructions.
-
-This also affects how often thread switches occur.
-[clinic start generated code]*/
-
-static PyObject *
-sys_setcheckinterval_impl(PyObject *module, int n)
-/*[clinic end generated code: output=3f686cef07e6e178 input=7a35b17bf22a6227]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "sys.getcheckinterval() and sys.setcheckinterval() "
-                     "are deprecated.  Use sys.setswitchinterval() "
-                     "instead.", 1) < 0) {
-        return NULL;
-    }
-
-    PyThreadState *tstate = _PyThreadState_GET();
-    tstate->interp->check_interval = n;
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
-sys.getcheckinterval
-
-Return the current check interval; see sys.setcheckinterval().
-[clinic start generated code]*/
-
-static PyObject *
-sys_getcheckinterval_impl(PyObject *module)
-/*[clinic end generated code: output=1b5060bf2b23a47c input=4b6589cbcca1db4e]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "sys.getcheckinterval() and sys.setcheckinterval() "
-                     "are deprecated.  Use sys.getswitchinterval() "
-                     "instead.", 1) < 0) {
-        return NULL;
-    }
-
-    PyThreadState *tstate = _PyThreadState_GET();
-    return PyLong_FromLong(tstate->interp->check_interval);
-}
 
 /*[clinic input]
 sys.setswitchinterval
@@ -1990,8 +1940,6 @@ static PyMethodDef sys_methods[] = {
     SYS_INTERN_METHODDEF
     SYS_IS_FINALIZING_METHODDEF
     SYS_MDEBUG_METHODDEF
-    SYS_SETCHECKINTERVAL_METHODDEF
-    SYS_GETCHECKINTERVAL_METHODDEF
     SYS_SETSWITCHINTERVAL_METHODDEF
     SYS_GETSWITCHINTERVAL_METHODDEF
     SYS_SETDLOPENFLAGS_METHODDEF
@@ -2430,7 +2378,6 @@ getrefcount() -- return the reference count for an object (plus one :-)\n\
 getrecursionlimit() -- return the max recursion depth for the interpreter\n\
 getsizeof() -- return the size of an object in bytes\n\
 gettrace() -- get the global debug tracing function\n\
-setcheckinterval() -- control how often the interpreter checks for events\n\
 setdlopenflags() -- set the flags to be used for dlopen() calls\n\
 setprofile() -- set the global profiling function\n\
 setrecursionlimit() -- set the max recursion depth for the interpreter\n\

@@ -541,10 +541,12 @@ def main():
                       help="run I/O bandwidth tests")
     parser.add_option("-i", "--interval",
                       action="store", type="int", dest="check_interval", default=None,
-                      help="sys.setcheckinterval() value")
+                      help="sys.setcheckinterval() value "
+                           "(Python 3.8 and older)")
     parser.add_option("-I", "--switch-interval",
                       action="store", type="float", dest="switch_interval", default=None,
-                      help="sys.setswitchinterval() value")
+                      help="sys.setswitchinterval() value "
+                           "(Python 3.2 and newer)")
     parser.add_option("-n", "--num-threads",
                       action="store", type="int", dest="nthreads", default=4,
                       help="max number of threads in tests")

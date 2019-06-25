@@ -551,14 +551,6 @@ always available.
    .. versionadded:: 3.7
 
 
-.. function:: getcheckinterval()
-
-   Return the interpreter's "check interval"; see :func:`setcheckinterval`.
-
-   .. deprecated:: 3.2
-      Use :func:`getswitchinterval` instead.
-
-
 .. function:: getdefaultencoding()
 
    Return the name of the current default string encoding used by the Unicode
@@ -1139,21 +1131,6 @@ always available.
    assigned to either variable, its :func:`str` is re-evaluated each time the
    interpreter prepares to read a new interactive command; this can be used to
    implement a dynamic prompt.
-
-
-.. function:: setcheckinterval(interval)
-
-   Set the interpreter's "check interval".  This integer value determines how often
-   the interpreter checks for periodic things such as thread switches and signal
-   handlers.  The default is ``100``, meaning the check is performed every 100
-   Python virtual instructions. Setting it to a larger value may increase
-   performance for programs using threads.  Setting it to a value ``<=`` 0 checks
-   every virtual instruction, maximizing responsiveness as well as overhead.
-
-   .. deprecated:: 3.2
-      This function doesn't have an effect anymore, as the internal logic for
-      thread switching and asynchronous tasks has been rewritten.  Use
-      :func:`setswitchinterval` instead.
 
 
 .. function:: setdlopenflags(n)
