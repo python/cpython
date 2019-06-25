@@ -17,6 +17,9 @@ import warnings
 from test import support, string_tests
 from test.support.script_helper import assert_python_failure
 
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+
+
 # Error handling (bad decoder return)
 def search_function(encoding):
     def decode1(input, errors="strict"):
@@ -2881,9 +2884,10 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(IndexError, unicode_copycharacters, s, -1, s, 0, 5)
         self.assertRaises(IndexError, unicode_copycharacters, s, 0, s, 6, 5)
         self.assertRaises(IndexError, unicode_copycharacters, s, 0, s, -1, 5)
-        self.assertRaises(SystemError, unicode_copycharacters, s, 1, s, 0, 5)
-        self.assertRaises(SystemError, unicode_copycharacters, s, 0, s, 0, -1)
-        self.assertRaises(SystemError, unicode_copycharacters, s, 0, b'', 0, 0)
+        if Py_DEBUG:
+            self.assertRaises(SystemError, unicode_copycharacters, s, 1, s, 0, 5)
+            self.assertRaises(SystemError, unicode_copycharacters, s, 0, s, 0, -1)
+            self.assertRaises(SystemError, unicode_copycharacters, s, 0, b'', 0, 0)
 
     @support.cpython_only
     def test_encode_decimal(self):
