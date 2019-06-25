@@ -1508,7 +1508,7 @@ CPython bytecode changes
 * The :opcode:`MAP_ADD` now expects the value as the first element in the
   stack and the key as the second element. This change was made so the key
   is always evaluated before the value in dictionary comprehensions, as
-  porposed by :pep:`572`. (Contributed by Jörn Heissler in :issue:`35224`.)
+  proposed by :pep:`572`. (Contributed by Jörn Heissler in :issue:`35224`.)
 
 
 Demos and Tools
