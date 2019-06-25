@@ -1,0 +1,3 @@
+Parameter *uppercase* is added to :func:`urllib.parse.quote` and its variants
+to specify cases for hexadecimal digits.
+Patch by Eisuke Kawashima.

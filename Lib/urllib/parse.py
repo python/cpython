@@ -784,9 +784,10 @@ class Quoter(collections.defaultdict):
     """
     # Keeps a cache internally, using defaultdict, for efficiency (lookups
     # of cached keys don't call Python code at all).
-    def __init__(self, safe):
+    def __init__(self, safe, *, uppercase=True):
         """safe: bytes object."""
         self.safe = _ALWAYS_SAFE.union(safe)
+        self._fmt = '%{:02X}' if uppercase else '%{:02x}'
 
     def __repr__(self):
         # Without this, will just display as a defaultdict
@@ -794,11 +795,11 @@ class Quoter(collections.defaultdict):
 
     def __missing__(self, b):
         # Handle a cache miss. Store quoted string in cache and return.
-        res = chr(b) if b in self.safe else '%{:02X}'.format(b)
+        res = chr(b) if b in self.safe else self._fmt.format(b)
         self[b] = res
         return res
 
-def quote(string, safe='/', encoding=None, errors=None):
+def quote(string, safe='/', encoding=None, errors=None, *, uppercase=True):
     """quote('abc def') -> 'abc%20def'
 
     Each part of a URL, e.g. the path info, the query, etc., has a
@@ -850,9 +851,9 @@ def quote(string, safe='/', encoding=None, errors=None):
             raise TypeError("quote() doesn't support 'encoding' for bytes")
         if errors is not None:
             raise TypeError("quote() doesn't support 'errors' for bytes")
-    return quote_from_bytes(string, safe)
+    return quote_from_bytes(string, safe, uppercase=uppercase)
 
-def quote_plus(string, safe='', encoding=None, errors=None):
+def quote_plus(string, safe='', encoding=None, errors=None, *, uppercase=True):
     """Like quote(), but also replace ' ' with '+', as required for quoting
     HTML form values. Plus signs in the original string are escaped unless
     they are included in safe. It also does not have safe default to '/'.
@@ -861,15 +862,15 @@ def quote_plus(string, safe='', encoding=None, errors=None):
     # there are no spaces, the regular quote will produce the right answer.
     if ((isinstance(string, str) and ' ' not in string) or
         (isinstance(string, bytes) and b' ' not in string)):
-        return quote(string, safe, encoding, errors)
+        return quote(string, safe, encoding, errors, uppercase=uppercase)
     if isinstance(safe, str):
         space = ' '
     else:
         space = b' '
-    string = quote(string, safe + space, encoding, errors)
+    string = quote(string, safe + space, encoding, errors, uppercase=uppercase)
     return string.replace(' ', '+')
 
-def quote_from_bytes(bs, safe='/'):
+def quote_from_bytes(bs, safe='/', *, uppercase=True):
     """Like quote(), but accepts a bytes object rather than a str, and does
     not perform string-to-bytes encoding.  It always returns an ASCII string.
     quote_from_bytes(b'abc def\x3f') -> 'abc%20def%3f'
@@ -888,11 +889,11 @@ def quote_from_bytes(bs, safe='/'):
     try:
         quoter = _safe_quoters[safe]
     except KeyError:
-        _safe_quoters[safe] = quoter = Quoter(safe).__getitem__
+        _safe_quoters[safe, uppercase] = quoter = Quoter(safe, uppercase=uppercase).__getitem__
     return ''.join([quoter(char) for char in bs])
 
 def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
-              quote_via=quote_plus):
+              quote_via=quote_plus, *, uppercase=True):
     """Encode a dict or sequence of two-element tuples into a URL query string.
 
     If any values in the query arg are sequences and doseq is true, each
@@ -931,27 +932,27 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
     if not doseq:
         for k, v in query:
             if isinstance(k, bytes):
-                k = quote_via(k, safe)
+                k = quote_via(k, safe, uppercase=uppercase)
             else:
-                k = quote_via(str(k), safe, encoding, errors)
+                k = quote_via(str(k), safe, encoding, errors, uppercase=uppercase)
 
             if isinstance(v, bytes):
-                v = quote_via(v, safe)
+                v = quote_via(v, safe, uppercase=uppercase)
             else:
-                v = quote_via(str(v), safe, encoding, errors)
+                v = quote_via(str(v), safe, encoding, errors, uppercase=uppercase)
             l.append(k + '=' + v)
     else:
         for k, v in query:
             if isinstance(k, bytes):
-                k = quote_via(k, safe)
+                k = quote_via(k, safe, uppercase=uppercase)
             else:
-                k = quote_via(str(k), safe, encoding, errors)
+                k = quote_via(str(k), safe, encoding, errors, uppercase=uppercase)
 
             if isinstance(v, bytes):
-                v = quote_via(v, safe)
+                v = quote_via(v, safe, uppercase=uppercase)
                 l.append(k + '=' + v)
             elif isinstance(v, str):
-                v = quote_via(v, safe, encoding, errors)
+                v = quote_via(v, safe, encoding, errors, uppercase=uppercase)
                 l.append(k + '=' + v)
             else:
                 try:
@@ -959,15 +960,15 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
                     x = len(v)
                 except TypeError:
                     # not a sequence
-                    v = quote_via(str(v), safe, encoding, errors)
+                    v = quote_via(str(v), safe, encoding, errors, uppercase=uppercase)
                     l.append(k + '=' + v)
                 else:
                     # loop over the sequence
                     for elt in v:
                         if isinstance(elt, bytes):
-                            elt = quote_via(elt, safe)
+                            elt = quote_via(elt, safe, uppercase=uppercase)
                         else:
-                            elt = quote_via(str(elt), safe, encoding, errors)
+                            elt = quote_via(str(elt), safe, encoding, errors, uppercase=uppercase)
                         l.append(k + '=' + elt)
     return '&'.join(l)
 

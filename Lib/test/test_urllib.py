@@ -959,15 +959,18 @@ class QuotingTests(unittest.TestCase):
                              "using quote_plus(): "
                              "%s should be escapes to %s, not %s" %
                              (char, hexescape(char), result))
-        del should_quote
+
+        def case(partial_quote, expected, uppercase):
+            result = urllib.parse.quote(partial_quote, uppercase=uppercase)
+            self.assertEqual(expected, result,
+                             "using quote(): %r != %r" % (expected, result))
+            result = urllib.parse.quote_plus(partial_quote,
+                                             uppercase=uppercase)
+            self.assertEqual(expected, result, "using quote_plus(): %r != %r" %
+                             (expected, result))
         partial_quote = "ab[]cd"
-        expected = "ab%5B%5Dcd"
-        result = urllib.parse.quote(partial_quote)
-        self.assertEqual(expected, result,
-                         "using quote(): %r != %r" % (expected, result))
-        result = urllib.parse.quote_plus(partial_quote)
-        self.assertEqual(expected, result,
-                         "using quote_plus(): %r != %r" % (expected, result))
+        case(partial_quote, "ab%5B%5Dcd", True)
+        case(partial_quote, "ab%5b%5dcd", False)
 
     def test_quoting_space(self):
         # Make sure quote() and quote_plus() handle spaces as specified in
@@ -989,13 +992,21 @@ class QuotingTests(unittest.TestCase):
                          "using quote_plus(): %r != %r" % (expect, result))
 
     def test_quoting_plus(self):
-        self.assertEqual(urllib.parse.quote_plus('alpha+beta gamma'),
+        self.assertEqual(urllib.parse.quote_plus('alpha+beta gamma',
+                                                 uppercase=True),
                          'alpha%2Bbeta+gamma')
+        self.assertEqual(urllib.parse.quote_plus('alpha+beta gamma',
+                                                 uppercase=False),
+                         'alpha%2bbeta+gamma')
         self.assertEqual(urllib.parse.quote_plus('alpha+beta gamma', '+'),
                          'alpha+beta+gamma')
         # Test with bytes
-        self.assertEqual(urllib.parse.quote_plus(b'alpha+beta gamma'),
+        self.assertEqual(urllib.parse.quote_plus(b'alpha+beta gamma',
+                                                 uppercase=True),
                          'alpha%2Bbeta+gamma')
+        self.assertEqual(urllib.parse.quote_plus(b'alpha+beta gamma',
+                                                 uppercase=False),
+                         'alpha%2bbeta+gamma')
         # Test with safe bytes
         self.assertEqual(urllib.parse.quote_plus('alpha+beta gamma', b'+'),
                          'alpha+beta+gamma')
@@ -1003,60 +1014,76 @@ class QuotingTests(unittest.TestCase):
     def test_quote_bytes(self):
         # Bytes should quote directly to percent-encoded values
         given = b"\xa2\xd8ab\xff"
-        expect = "%A2%D8ab%FF"
-        result = urllib.parse.quote(given)
-        self.assertEqual(expect, result,
-                         "using quote(): %r != %r" % (expect, result))
+        def case(expect, uppercase):
+            result = urllib.parse.quote(given, uppercase=uppercase)
+            self.assertEqual(expect, result,
+                             "using quote(): %r != %r" % (expect, result))
+        expect_upper = "%A2%D8ab%FF"
+        expect_lower = "%a2%d8ab%ff"
+        case(expect_upper, True)
+        case(expect_lower, False)
+
         # Encoding argument should raise type error on bytes input
         self.assertRaises(TypeError, urllib.parse.quote, given,
                             encoding="latin-1")
+
         # quote_from_bytes should work the same
-        result = urllib.parse.quote_from_bytes(given)
-        self.assertEqual(expect, result,
-                         "using quote_from_bytes(): %r != %r"
-                         % (expect, result))
+        def case_bytes(expect, uppercase):
+            result = urllib.parse.quote_from_bytes(given, uppercase=uppercase)
+            self.assertEqual(expect, result,
+                             "using quote_from_bytes(): %r != %r"
+                             % (expect, result))
+        case_bytes(expect_upper, True)
+        case_bytes(expect_lower, False)
 
     def test_quote_with_unicode(self):
-        # Characters in Latin-1 range, encoded by default in UTF-8
+        def case1(give, expect_utf8, expect_latin1, uppercase):
+            # Characters in Latin-1 range, encoded by default in UTF-8
+            result = urllib.parse.quote(given, uppercase=uppercase)
+            self.assertEqual(expect_utf8, result,
+                             "using quote(): %r != %r" % (expect_utf8, result))
+            # Characters in Latin-1 range, encoded by with None (default)
+            result = urllib.parse.quote(given, encoding=None, errors=None,
+                                        uppercase=uppercase)
+            self.assertEqual(expect_utf8, result,
+                             "using quote(): %r != %r" % (expect_utf8, result))
+            # Characters in Latin-1 range, encoded with Latin-1
+            result = urllib.parse.quote(given, encoding="latin-1",
+                                        uppercase=uppercase)
+            self.assertEqual(expect_latin1, result,
+                             "using quote(): %r != %r" % (expect_latin1, result))
         given = "\xa2\xd8ab\xff"
-        expect = "%C2%A2%C3%98ab%C3%BF"
-        result = urllib.parse.quote(given)
-        self.assertEqual(expect, result,
-                         "using quote(): %r != %r" % (expect, result))
-        # Characters in Latin-1 range, encoded by with None (default)
-        result = urllib.parse.quote(given, encoding=None, errors=None)
-        self.assertEqual(expect, result,
-                         "using quote(): %r != %r" % (expect, result))
-        # Characters in Latin-1 range, encoded with Latin-1
-        given = "\xa2\xd8ab\xff"
-        expect = "%A2%D8ab%FF"
-        result = urllib.parse.quote(given, encoding="latin-1")
-        self.assertEqual(expect, result,
-                         "using quote(): %r != %r" % (expect, result))
-        # Characters in BMP, encoded by default in UTF-8
-        given = "\u6f22\u5b57"              # "Kanji"
-        expect = "%E6%BC%A2%E5%AD%97"
-        result = urllib.parse.quote(given)
-        self.assertEqual(expect, result,
-                         "using quote(): %r != %r" % (expect, result))
-        # Characters in BMP, encoded with Latin-1
-        given = "\u6f22\u5b57"
-        self.assertRaises(UnicodeEncodeError, urllib.parse.quote, given,
-                                    encoding="latin-1")
-        # Characters in BMP, encoded with Latin-1, with replace error handling
-        given = "\u6f22\u5b57"
-        expect = "%3F%3F"                   # "??"
-        result = urllib.parse.quote(given, encoding="latin-1",
-                                    errors="replace")
-        self.assertEqual(expect, result,
-                         "using quote(): %r != %r" % (expect, result))
-        # Characters in BMP, Latin-1, with xmlcharref error handling
-        given = "\u6f22\u5b57"
-        expect = "%26%2328450%3B%26%2323383%3B"     # "&#28450;&#23383;"
-        result = urllib.parse.quote(given, encoding="latin-1",
-                                    errors="xmlcharrefreplace")
-        self.assertEqual(expect, result,
-                         "using quote(): %r != %r" % (expect, result))
+        case1(given, "%C2%A2%C3%98ab%C3%BF", "%A2%D8ab%FF", True)
+        case1(given, "%c2%a2%c3%98ab%c3%bf", "%a2%d8ab%ff", False)
+
+        def case_kanji(given, expect_utf8, expect_replace, expect_xmlcharref, uppercase):
+            # Characters in BMP, encoded by default in UTF-8
+            result = urllib.parse.quote(given, uppercase=uppercase)
+            self.assertEqual(expect_utf8, result,
+                             "using quote(): %r != %r" % (expect_utf8, result))
+            # Characters in BMP, encoded with Latin-1
+            self.assertRaises(UnicodeEncodeError, urllib.parse.quote, given,
+                              encoding="latin-1")
+            # Characters in BMP, encoded with Latin-1, with replace error handling
+            result = urllib.parse.quote(given, encoding="latin-1",
+                                        errors="replace", uppercase=uppercase)
+            self.assertEqual(expect_replace, result,
+                             "using quote(): %r != %r" % (expect_replace, result))
+            # Characters in BMP, Latin-1, with xmlcharref error handling
+            result = urllib.parse.quote(given, encoding="latin-1",
+                                        errors="xmlcharrefreplace",
+                                        uppercase=uppercase)
+            self.assertEqual(expect_xmlcharref, result,
+                             "using quote(): %r != %r"
+                             % (expect_xmlcharref, result))
+
+        given = "\u6f22\u5b57"  # "Kanji"
+        expect_utf8 = "%E6%BC%A2%E5%AD%97"
+        expect_replace = "%3F%3F"  # "??"
+        expect_xmlcharref = "%26%2328450%3B%26%2323383%3B"  # "&#28450;&#23383;"
+        case_kanji(given, expect_utf8, expect_replace, expect_xmlcharref, True)
+        case_kanji(given, expect_utf8.lower(), expect_replace.lower(),
+                   expect_xmlcharref.lower(), False)
 
     def test_quote_plus_with_unicode(self):
         # Encoding (latin-1) test for quote_plus

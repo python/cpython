@@ -517,19 +517,23 @@ encoding non-ASCII text. They also support reversing these operations to
 recreate the original data from the contents of a URL component if that
 task isn't already covered by the URL parsing functions above.
 
-.. function:: quote(string, safe='/', encoding=None, errors=None)
+.. function:: quote(string, safe='/', encoding=None, errors=None, \*, uppercase=True)
 
-   Replace special characters in *string* using the ``%xx`` escape. Letters,
+   Replace special characters in *string* using the ``%XX`` escape. Letters,
    digits, and the characters ``'_.-~'`` are never quoted. By default, this
    function is intended for quoting the path section of a URL. The optional
    *safe* parameter specifies additional ASCII characters that should not be
-   quoted --- its default value is ``'/'``.
+   quoted --- its default value is ``'/'``. If *uppercase* is ``True``
+   (the default), the hexadecimal digits are in uppercase.
 
    *string* may be either a :class:`str` or a :class:`bytes` object.
 
    .. versionchanged:: 3.7
       Moved from :rfc:`2396` to :rfc:`3986` for quoting URL strings. "~" is now
       included in the set of unreserved characters.
+
+   .. versionchanged:: 3.9
+      Parameter *uppercase* is added.
 
    The optional *encoding* and *errors* parameters specify how to deal with
    non-ASCII characters, as accepted by the :meth:`str.encode` method.
@@ -545,20 +549,26 @@ task isn't already covered by the URL parsing functions above.
    Example: ``quote('/El Niño/')`` yields ``'/El%20Ni%C3%B1o/'``.
 
 
-.. function:: quote_plus(string, safe='', encoding=None, errors=None)
+.. function:: quote_plus(string, safe='', encoding=None, errors=None, \*, uppercase=True)
 
    Like :func:`quote`, but also replace spaces with plus signs, as required for
    quoting HTML form values when building up a query string to go into a URL.
    Plus signs in the original string are escaped unless they are included in
    *safe*.  It also does not have *safe* default to ``'/'``.
 
+   .. versionchanged:: 3.9
+      Parameter *uppercase* is added.
+
    Example: ``quote_plus('/El Niño/')`` yields ``'%2FEl+Ni%C3%B1o%2F'``.
 
 
-.. function:: quote_from_bytes(bytes, safe='/')
+.. function:: quote_from_bytes(bytes, safe='/', \*, uppercase=True)
 
    Like :func:`quote`, but accepts a :class:`bytes` object rather than a
    :class:`str`, and does not perform string-to-bytes encoding.
+
+   .. versionchanged:: 3.9
+      Parameter *uppercase* is added.
 
    Example: ``quote_from_bytes(b'a&\xef')`` yields
    ``'a%26%EF'``.
@@ -609,7 +619,7 @@ task isn't already covered by the URL parsing functions above.
 
 
 .. function:: urlencode(query, doseq=False, safe='', encoding=None, \
-                        errors=None, quote_via=quote_plus)
+                        errors=None, quote_via=quote_plus, \*, uppercase=True)
 
    Convert a mapping object or a sequence of two-element tuples, which may
    contain :class:`str` or :class:`bytes` objects, to a percent-encoded ASCII
@@ -652,6 +662,9 @@ task isn't already covered by the URL parsing functions above.
 
    .. versionadded:: 3.5
       *quote_via* parameter.
+
+   .. versionchanged:: 3.9
+      Parameter *uppercase* is added.
 
 
 .. seealso::
