@@ -3784,29 +3784,25 @@ static PyObject *
 os__getfullpathname_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=bb8679d56845bc9b input=332ed537c29d0a3e]*/
 {
-    wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
-    wchar_t *wtemp;
-    DWORD result;
-    PyObject *v;
+    wchar_t *abspath;
 
-    result = GetFullPathNameW(path->wide,
-                              Py_ARRAY_LENGTH(woutbuf),
-                              woutbuf, &wtemp);
-    if (result > Py_ARRAY_LENGTH(woutbuf)) {
-        woutbufp = PyMem_New(wchar_t, result);
-        if (!woutbufp)
-            return PyErr_NoMemory();
-        result = GetFullPathNameW(path->wide, result, woutbufp, &wtemp);
+    /* _Py_abspath() is implemented with GetFullPathNameW() on Windows */
+    if (_Py_abspath(path->wide, &abspath) < 0) {
+        return win32_error_object("GetFullPathNameW", path->object);
     }
-    if (result) {
-        v = PyUnicode_FromWideChar(woutbufp, wcslen(woutbufp));
-        if (path->narrow)
-            Py_SETREF(v, PyUnicode_EncodeFSDefault(v));
-    } else
-        v = win32_error_object("GetFullPathNameW", path->object);
-    if (woutbufp != woutbuf)
-        PyMem_Free(woutbufp);
-    return v;
+    if (abspath == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    PyObject *str = PyUnicode_FromWideChar(abspath, wcslen(abspath));
+    PyMem_RawFree(abspath);
+    if (str == NULL) {
+        return NULL;
+    }
+    if (path->narrow) {
+        Py_SETREF(str, PyUnicode_EncodeFSDefault(str));
+    }
+    return str;
 }
 
 
