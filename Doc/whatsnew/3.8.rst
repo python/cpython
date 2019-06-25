@@ -349,6 +349,9 @@ Other Language Changes
   is ``-1``, and a suitable power of that inverse for other negative exponents.
   (Contributed by Mark Dickinson in :issue:`36027`.)
 
+* When dictionary comprehensions are evaluated, the key is now evaluated before
+  the value, as proposed by :pep:`572`.
+
 
 New Modules
 ===========
@@ -1501,6 +1504,11 @@ CPython bytecode changes
 * Added new opcode :opcode:`END_ASYNC_FOR` for handling exceptions raised
   when awaiting a next item in an :keyword:`async for` loop.
   (Contributed by Serhiy Storchaka in :issue:`33041`.)
+
+* The :opcode:`MAP_ADD` now expects the value as the first element in the
+  stack and the key as the second element. This change was made so the key
+  is always evaluated before the value in dictionary comprehensions, as
+  porposed by :pep:`572`. (Contributed by Jörn Heissler in :issue:`35224`.)
 
 
 Demos and Tools
