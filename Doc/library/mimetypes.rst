@@ -88,6 +88,10 @@ behavior of the module.
    Specifying an empty list for *files* will prevent the system defaults from
    being applied: only the well-known values will be present from a built-in list.
 
+   If *files* is ``None`` the internal data structure is completely rebuilt to its
+   initial default value. This is a stable operation and will produce the same results
+   when called multiple times.
+
    .. versionchanged:: 3.2
       Previously, Windows registry settings were ignored.
 
