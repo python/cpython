@@ -4937,11 +4937,15 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
             endinpos = startinpos + 1;
             break;
         case 2:
-        case 3:
-        case 4:
-            if (s == end || consumed) {
+            if (consumed && (unsigned char)s[0] == 0xED && end - s == 2
+                && (unsigned char)s[1] >= 0xA0 && (unsigned char)s[1] <= 0xBF)
+            {
+                /* Truncated surrogate code in range D800-DFFF */
                 goto End;
             }
+            /* fall through */
+        case 3:
+        case 4:
             errmsg = "invalid continuation byte";
             startinpos = s - starts;
             endinpos = startinpos + ch - 1;
