@@ -1,7 +1,8 @@
 import unittest, os, shutil, subprocess
 from test.test_tools import import_tool, scriptsdir
 from unittest.mock import patch
-from tempfile import mkdtemp,  gettempdir
+from tempfile import mkdtemp
+import sys
 
 
 class TestPathFixUnit(unittest.TestCase):
@@ -97,8 +98,8 @@ class TestPathfixFunctional(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.temp_dir)
 
-    def test_pathfix_keeping(self):
-        subprocess.call([self.script, '-i', '/usr/bin/python', '-f', "", self.temp_file])
+    def test_pathfix_keeping_flags(self):
+        subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', '-f', "", self.temp_file])
         with open(self.temp_file) as f:
             output = f.read()
         self.assertEqual(output, '#! /usr/bin/python -R\n')
@@ -109,7 +110,7 @@ class TestPathfixFunctional(unittest.TestCase):
     def test_pathfix_keeping_argument(self):
         with open(self.temp_file, 'w') as f:
             f.write('#! /usr/bin/env python -W something\n')
-        subprocess.call([self.script, '-i', '/usr/bin/python', '-f', "", self.temp_file])
+        subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', '-f', "", self.temp_file])
         with open(self.temp_file) as f:
             output = f.read()
         self.assertEqual(output, '#! /usr/bin/python -W something\n')
@@ -117,8 +118,8 @@ class TestPathfixFunctional(unittest.TestCase):
             output = f.read()
         self.assertEqual(output, '#! /usr/bin/env python -W something\n')
 
-    def test_pathfix_adding(self):
-        subprocess.call([self.script, '-i', '/usr/bin/python', '-f', 's', self.temp_file])
+    def test_pathfix_adding_flag(self):
+        subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', '-f', 's', self.temp_file])
         with open(self.temp_file) as f:
             output = f.read()
         self.assertEqual(output, '#! /usr/bin/python -sR\n')
@@ -126,8 +127,17 @@ class TestPathfixFunctional(unittest.TestCase):
             output = f.read()
         self.assertEqual(output, '#! /usr/bin/env python -R\n')
 
-    def test_pathfix_removing(self):
-        subprocess.call([self.script, '-i', '/usr/bin/python', self.temp_file])
+    def test_pathfix_adding_flags(self):
+        subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', '-f', 'OO', self.temp_file])
+        with open(self.temp_file) as f:
+            output = f.read()
+        self.assertEqual(output, '#! /usr/bin/python -OOR\n')
+        with open(self.temp_file + '~') as f:
+            output = f.read()
+        self.assertEqual(output, '#! /usr/bin/env python -R\n')
+
+    def test_pathfix_replacing_interpreter(self):
+        subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', self.temp_file])
         with open(self.temp_file) as f:
             output = f.read()
         self.assertEqual(output, '#! /usr/bin/python\n')
@@ -136,7 +146,7 @@ class TestPathfixFunctional(unittest.TestCase):
         self.assertEqual(output, '#! /usr/bin/env python -R\n')
 
     def test_pathfix_without_backup(self):
-        subprocess.call([self.script, '-i', '/usr/bin/python', '-n', self.temp_file])
+        subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', '-n', self.temp_file])
         with open(self.temp_file) as f:
             output = f.read()
         self.assertEqual(output, '#! /usr/bin/python\n')

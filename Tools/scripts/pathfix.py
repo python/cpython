@@ -10,8 +10,9 @@
 # arguments).
 # The original file is kept as a back-up (with a "~" attached to its name),
 # -n flag can be used to disable this.
-# Sometimes you may find shebang with flags `#! /usr/bin/env python -si`.
+# Sometimes you may find shebang with flags as such `#! /usr/bin/env python -si`.
 # For keeping shebang flags use -f "". For adding flag: -f "flag".
+# flag will be added before already existing flag. Flags with argument are not supported.
 
 
 # Undoubtedly you can do this using find and sed or perl, but this is
