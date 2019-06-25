@@ -377,7 +377,7 @@ Stream
 
    .. attribute:: mode
 
-      Returns the mode of the stream which is a :class:`StreamMode`.
+      Returns the mode of the stream which is a :class:`StreamMode` value.
 
    .. method:: set_exception(exc)
 
@@ -387,6 +387,21 @@ Stream
    .. coroutinemethod:: abort()
 
       Aborts the :ref:`Transport <asyncio-transport>` instance used by the Stream.
+
+   .. coroutinemethod:: drain()
+
+      Wait until it is appropriate to resume writing to the stream.
+      Example::
+
+          stream.write(data)
+          await stream.drain()
+
+      This is a flow control method that interacts with the underlying
+      IO write buffer.  When the size of the buffer reaches
+      the high watermark, *drain()* blocks until the size of the
+      buffer is drained down to the low watermark and writing can
+      be resumed.  When there is nothing to wait for, the :meth:`drain`
+      returns immediately.
 
    .. coroutinemethod:: sendfile(file, offset=0, count=None, *, fallback=True)
 
@@ -443,16 +458,6 @@ Stream
       buffer is reset.  The :attr:`IncompleteReadError.partial` attribute
       may contain a portion of the separator.
 
-   .. method:: at_eof()
-
-      Return ``True`` if the buffer is empty and :meth:`feed_eof`
-      was called.
-
-   .. method:: feed_data(data)
-
-      Adds ``data`` to the write buffer. It raises an :exc:`AssertionError` when
-      it was called after :meth:`feed_eof`.
-
    .. method:: write(data)
 
       The method attempts to write the *data* to the underlying socket immediately.
@@ -491,11 +496,6 @@ Stream
       The ``await`` pauses the current coroutine until the stream and the underlying
       socket are closed (and SSL shutdown is performed for a secure connection).
 
-      Below is an equivalent code that works with Python <= 3.7::
-
-         stream.close()
-         await stream.wait_closed()
-
    .. method:: can_write_eof()
 
       Return *True* if the underlying transport supports
@@ -506,6 +506,16 @@ Stream
       Close the write end of the stream after the buffered write
       data is flushed.
 
+   .. method:: at_eof()
+
+      Return ``True`` if the buffer is empty and :meth:`feed_eof`
+      was called.
+
+   .. method:: feed_data(data)
+
+      Adds ``data`` to the write buffer. It raises an :exc:`AssertionError` when
+      it was called after :meth:`feed_eof`.
+
    .. attribute:: transport
 
       Return the underlying asyncio transport.
@@ -514,21 +524,6 @@ Stream
 
       Access optional transport information; see
       :meth:`BaseTransport.get_extra_info` for details.
-
-   .. coroutinemethod:: drain()
-
-      Wait until it is appropriate to resume writing to the stream.
-      Example::
-
-          stream.write(data)
-          await stream.drain()
-
-      This is a flow control method that interacts with the underlying
-      IO write buffer.  When the size of the buffer reaches
-      the high watermark, *drain()* blocks until the size of the
-      buffer is drained down to the low watermark and writing can
-      be resumed.  When there is nothing to wait for, the :meth:`drain`
-      returns immediately.
 
    .. method:: is_closing()
 
