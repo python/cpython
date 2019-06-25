@@ -670,7 +670,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
             raise
     try:
         if not os.path.exists(path):
-            raise FileNotFoundError("Cannot call rmtree on a non-existent path")
+            raise FileNotFoundError(errno.ENOENT, "Cannot call rmtree on a non-existent path", path)
     except:
         onerror(os.path.exists, path, sys.exc_info())
         return
