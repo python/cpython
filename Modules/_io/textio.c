@@ -988,6 +988,46 @@ _textiowrapper_fix_encoder_state(textio *self)
     return 0;
 }
 
+static int
+io_check_errors(PyObject *errors)
+{
+    assert(errors != NULL && errors != Py_None);
+
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+#ifndef Py_DEBUG
+    /* In release mode, only check in development mode (-X dev) */
+    if (!interp->config.dev_mode) {
+        return 0;
+    }
+#else
+    /* Always check in debug mode */
+#endif
+
+    /* Avoid calling PyCodec_LookupError() before the codec registry is ready:
+       before_PyUnicode_InitEncodings() is called. */
+    if (!interp->fs_codec.encoding) {
+        return 0;
+    }
+
+    Py_ssize_t name_length;
+    const char *name = PyUnicode_AsUTF8AndSize(errors, &name_length);
+    if (name == NULL) {
+        return -1;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character in errors");
+        return -1;
+    }
+    PyObject *handler = PyCodec_LookupError(name);
+    if (handler != NULL) {
+        Py_DECREF(handler);
+        return 0;
+    }
+    return -1;
+}
+
+
+
 /*[clinic input]
 _io.TextIOWrapper.__init__
     buffer: object
@@ -1055,6 +1095,9 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
             PyExc_TypeError,
             "TextIOWrapper() argument 'errors' must be str or None, not %.50s",
             errors->ob_type->tp_name);
+        return -1;
+    }
+    else if (io_check_errors(errors)) {
         return -1;
     }
 
