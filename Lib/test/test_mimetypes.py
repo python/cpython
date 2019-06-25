@@ -1,6 +1,7 @@
 import io
 import locale
 import mimetypes
+import pathlib
 import sys
 import unittest
 
