@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Change the #! line occurring in Python scripts.  The new interpreter
+# Change the #! line (shebang) occurring in Python scripts.  The new interpreter
 # pathname must be given with a -i option.
 #
 # Command line arguments are files or directories to be processed.
@@ -10,7 +10,10 @@
 # arguments).
 # The original file is kept as a back-up (with a "~" attached to its name),
 # -n flag can be used to disable this.
-# For keeping flags use -f option with. For adding flags pass argument to -f option
+# Sometimes you may find shebang with flags `#! /usr/bin/env python -si`.
+# For keeping shebang flags use -f "". For adding flag: -f "flag".
+
+
 # Undoubtedly you can do this using find and sed or perl, but this is
 # a nice example of Python code that recurses down a directory tree
 # and uses regular expressions.  Also note several subtleties like
@@ -34,7 +37,6 @@ new_interpreter = None
 preserve_timestamps = False
 create_backup = True
 add_flag = None
-
 
 
 def main():
