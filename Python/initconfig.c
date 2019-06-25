@@ -2137,6 +2137,11 @@ config_update_argv(PyConfig *config, Py_ssize_t opt_index)
         /* Force sys.argv[0] = '-m'*/
         arg0 = L"-m";
     }
+    else if (config->run_filename != NULL) {
+        /* run_filename is converted to an absolute path: update argv */
+        arg0 = config->run_filename;
+    }
+
     if (arg0 != NULL) {
         arg0 = _PyMem_RawWcsdup(arg0);
         if (arg0 == NULL) {
@@ -2183,6 +2188,37 @@ core_read_precmdline(PyConfig *config, _PyPreCmdline *precmdline)
 }
 
 
+/* Get run_filename absolute path */
+static PyStatus
+config_run_filename_abspath(PyConfig *config)
+{
+    if (!config->run_filename) {
+        return _PyStatus_OK();
+    }
+
+#ifndef MS_WINDOWS
+    if (_Py_isabs(config->run_filename)) {
+        /* path is already absolute */
+        return _PyStatus_OK();
+    }
+#endif
+
+    wchar_t *abs_filename;
+    if (_Py_abspath(config->run_filename, &abs_filename) < 0) {
+        /* failed to get the absolute path of the command line filename:
+           ignore the error, keep the relative path */
+        return _PyStatus_OK();
+    }
+    if (abs_filename == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+
+    PyMem_RawFree(config->run_filename);
+    config->run_filename = abs_filename;
+    return _PyStatus_OK();
+}
+
+
 static PyStatus
 config_read_cmdline(PyConfig *config)
 {
@@ -2208,7 +2244,18 @@ config_read_cmdline(PyConfig *config)
             goto done;
         }
 
+        status = config_run_filename_abspath(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            goto done;
+        }
+
         status = config_update_argv(config, opt_index);
+        if (_PyStatus_EXCEPTION(status)) {
+            goto done;
+        }
+    }
+    else {
+        status = config_run_filename_abspath(config);
         if (_PyStatus_EXCEPTION(status)) {
             goto done;
         }
