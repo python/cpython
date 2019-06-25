@@ -427,6 +427,48 @@ get_error_handler_wide(const wchar_t *errors)
 }
 
 
+static inline int
+unicode_check_encoding_errors(const char *encoding, const char *errors)
+{
+    if (encoding == NULL && errors == NULL) {
+        return 0;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+#ifndef Py_DEBUG
+    /* In release mode, only check in development mode (-X dev) */
+    if (!interp->config.dev_mode) {
+        return 0;
+    }
+#else
+    /* Always check in debug mode */
+#endif
+
+    /* Avoid calling _PyCodec_Lookup() and PyCodec_LookupError() before the
+       codec registry is ready: before_PyUnicode_InitEncodings() is called. */
+    if (!interp->fs_codec.encoding) {
+        return 0;
+    }
+
+    if (encoding != NULL) {
+        PyObject *handler = _PyCodec_Lookup(encoding);
+        if (handler == NULL) {
+            return -1;
+        }
+        Py_DECREF(handler);
+    }
+
+    if (errors != NULL) {
+        PyObject *handler = PyCodec_LookupError(errors);
+        if (handler == NULL) {
+            return -1;
+        }
+        Py_DECREF(handler);
+    }
+    return 0;
+}
+
+
 /* The max unicode value is always 0x10FFFF while using the PEP-393 API.
    This function is kept for backward compatibility with the old API. */
 Py_UNICODE
@@ -3211,12 +3253,15 @@ PyUnicode_FromEncodedObject(PyObject *obj,
 
     /* Decoding bytes objects is the most common case and should be fast */
     if (PyBytes_Check(obj)) {
-        if (PyBytes_GET_SIZE(obj) == 0)
+        if (PyBytes_GET_SIZE(obj) == 0) {
+            if (unicode_check_encoding_errors(encoding, errors) < 0) {
+                return NULL;
+            }
             _Py_RETURN_UNICODE_EMPTY();
-        v = PyUnicode_Decode(
+        }
+        return PyUnicode_Decode(
                 PyBytes_AS_STRING(obj), PyBytes_GET_SIZE(obj),
                 encoding, errors);
-        return v;
     }
 
     if (PyUnicode_Check(obj)) {
@@ -3235,6 +3280,9 @@ PyUnicode_FromEncodedObject(PyObject *obj,
 
     if (buffer.len == 0) {
         PyBuffer_Release(&buffer);
+        if (unicode_check_encoding_errors(encoding, errors) < 0) {
+            return NULL;
+        }
         _Py_RETURN_UNICODE_EMPTY();
     }
 
@@ -3301,6 +3349,10 @@ PyUnicode_Decode(const char *s,
     PyObject *buffer = NULL, *unicode;
     Py_buffer info;
     char buflower[11];   /* strlen("iso-8859-1\0") == 11, longest shortcut */
+
+    if (unicode_check_encoding_errors(encoding, errors) < 0) {
+        return NULL;
+    }
 
     if (encoding == NULL) {
         return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
@@ -3562,7 +3614,8 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
        cannot use it to encode and decode filenames before it is loaded. Load
        the Python codec requires to encode at least its own filename. Use the C
        implementation of the locale codec until the codec registry is
-       initialized and the Python codec is loaded. See initfsencoding(). */
+       initialized and the Python codec is loaded.
+       See _PyUnicode_InitEncodings(). */
     if (interp->fs_codec.encoding) {
         return PyUnicode_AsEncodedString(unicode,
                                          interp->fs_codec.encoding,
@@ -3588,6 +3641,10 @@ PyUnicode_AsEncodedString(PyObject *unicode,
 
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
+        return NULL;
+    }
+
+    if (unicode_check_encoding_errors(encoding, errors) < 0) {
         return NULL;
     }
 
@@ -3800,7 +3857,8 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
        cannot use it to encode and decode filenames before it is loaded. Load
        the Python codec requires to encode at least its own filename. Use the C
        implementation of the locale codec until the codec registry is
-       initialized and the Python codec is loaded. See initfsencoding(). */
+       initialized and the Python codec is loaded.
+       See _PyUnicode_InitEncodings(). */
     if (interp->fs_codec.encoding) {
         return PyUnicode_Decode(s, size,
                                 interp->fs_codec.encoding,
