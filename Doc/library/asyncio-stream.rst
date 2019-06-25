@@ -46,7 +46,6 @@ and work with streams:
    Connect to TCP socket on *host* : *port* address and return a :class:`Stream`
    object of mode :attr:`StreamMode.READWRITE`.
 
-
    *limit* determines the buffer size limit used by the returned :class:`Stream`
    instance. By default the *limit* is set to 64 KiB.
 
@@ -367,12 +366,181 @@ Stream
 
    Represents a Stream object that provides APIs to read and write data
    to the IO stream . It includes the API provided by :class:`StreamReader`
-   and :class:`StreamWriter`.
+   and :class:`StreamWriter`. It can also be used as :term:`asynchronous iterator`
+   where :meth:`readline` is used. It raises :exc:`StopAsyncIteration` when
+   :meth:`readline` returns empty data.
 
    Do not instantiate *Stream* objects directly; use API like :func:`connect`
    and :class:`StreamServer` instead.
 
    .. versionadded:: 3.8
+
+   .. attribute:: mode
+
+      Returns the mode of the stream which is a :class:`StreamMode`.
+
+   .. method:: set_exception(exc)
+
+      Sets the exception to be raised when :meth:`read`, :meth:`readexactly` and
+      :meth:`readuntil` are called.
+
+   .. coroutinemethod:: abort()
+
+      Aborts the :ref:`Transport <asyncio-transport>` instance used by the Stream.
+
+   .. coroutinemethod:: sendfile(file, offset=0, count=None, *, fallback=True)
+
+      Calls :meth:`Stream.drain()` and rest of the arguments are passed directly to
+      :meth:`loop.sendfile`.
+
+   .. coroutinemethod:: start_tls(sslcontext, *, server_hostname=None, \
+			          ssl_handshake_timeout=None)
+
+      Calls :meth:`Stream.drain()` and rest of the arguments are passed directly to
+      :meth:`loop.start_tls`.
+
+   .. coroutinemethod:: read(n=-1)
+
+      Read up to *n* bytes.  If *n* is not provided, or set to ``-1``,
+      read until EOF and return all read bytes.
+
+      If EOF was received and the internal buffer is empty,
+      return an empty ``bytes`` object.
+
+   .. coroutinemethod:: readline()
+
+      Read one line, where "line" is a sequence of bytes
+      ending with ``\n``.
+
+      If EOF is received and ``\n`` was not found, the method
+      returns partially read data.
+
+      If EOF is received and the internal buffer is empty,
+      return an empty ``bytes`` object.
+
+   .. coroutinemethod:: readexactly(n)
+
+      Read exactly *n* bytes.
+
+      Raise an :exc:`IncompleteReadError` if EOF is reached before *n*
+      can be read.  Use the :attr:`IncompleteReadError.partial`
+      attribute to get the partially read data.
+
+   .. coroutinemethod:: readuntil(separator=b'\\n')
+
+      Read data from the stream until *separator* is found.
+
+      On success, the data and separator will be removed from the
+      internal buffer (consumed). Returned data will include the
+      separator at the end.
+
+      If the amount of data read exceeds the configured stream limit, a
+      :exc:`LimitOverrunError` exception is raised, and the data
+      is left in the internal buffer and can be read again.
+
+      If EOF is reached before the complete separator is found,
+      an :exc:`IncompleteReadError` exception is raised, and the internal
+      buffer is reset.  The :attr:`IncompleteReadError.partial` attribute
+      may contain a portion of the separator.
+
+   .. method:: at_eof()
+
+      Return ``True`` if the buffer is empty and :meth:`feed_eof`
+      was called.
+
+   .. method:: feed_data(data)
+
+      Adds ``data`` to the write buffer. It raises an :exc:`AssertionError` when
+      it was called after :meth:`feed_eof`.
+
+   .. method:: write(data)
+
+      The method attempts to write the *data* to the underlying socket immediately.
+      If that fails, the data is queued in an internal write buffer until it can be
+      sent.
+
+      It is possible to directly await on the `write()` method::
+
+         await stream.write(data)
+
+      The ``await`` pauses the current coroutine until the data is written to the
+      socket.
+
+   .. method:: writelines(data)
+
+      The method writes a list (or any iterable) of bytes to the underlying socket
+      immediately.
+      If that fails, the data is queued in an internal write buffer until it can be
+      sent.
+
+      It is possible to directly await on the `write()` method::
+
+         await stream.writelines(lines)
+
+      The ``await`` pauses the current coroutine until the data is written to the
+      socket.
+
+   .. method:: close()
+
+      The method closes the stream and the underlying socket.
+
+      It is possible to directly await on the `close()` method::
+
+         await stream.close()
+
+      The ``await`` pauses the current coroutine until the stream and the underlying
+      socket are closed (and SSL shutdown is performed for a secure connection).
+
+      Below is an equivalent code that works with Python <= 3.7::
+
+         stream.close()
+         await stream.wait_closed()
+
+   .. method:: can_write_eof()
+
+      Return *True* if the underlying transport supports
+      the :meth:`write_eof` method, *False* otherwise.
+
+   .. method:: write_eof()
+
+      Close the write end of the stream after the buffered write
+      data is flushed.
+
+   .. attribute:: transport
+
+      Return the underlying asyncio transport.
+
+   .. method:: get_extra_info(name, default=None)
+
+      Access optional transport information; see
+      :meth:`BaseTransport.get_extra_info` for details.
+
+   .. coroutinemethod:: drain()
+
+      Wait until it is appropriate to resume writing to the stream.
+      Example::
+
+          stream.write(data)
+          await stream.drain()
+
+      This is a flow control method that interacts with the underlying
+      IO write buffer.  When the size of the buffer reaches
+      the high watermark, *drain()* blocks until the size of the
+      buffer is drained down to the low watermark and writing can
+      be resumed.  When there is nothing to wait for, the :meth:`drain`
+      returns immediately.
+
+   .. method:: is_closing()
+
+      Return ``True`` if the stream is closed or in the process of
+      being closed.
+
+   .. coroutinemethod:: wait_closed()
+
+      Wait until the stream is closed.
+
+      Should be called after :meth:`close` to wait until the underlying
+      connection is closed.
 
 
 StreamMode
