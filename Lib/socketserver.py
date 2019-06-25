@@ -656,9 +656,10 @@ class ThreadingMixIn:
                 self.shutdown_request(request)
             finally:
                 thread = threading.current_thread()
-                with self._threads_lock:
-                    if self._threads and not thread.daemon:
-                        self._threads.remove(thread)
+                if not thread.daemon:
+                    with self._threads_lock:
+                        if self._threads is not None:
+                            self._threads.remove(thread)
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
