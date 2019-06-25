@@ -663,7 +663,10 @@ class ThreadingMixIn:
         if not thread.daemon:
             with self._threads_lock:
                 if self._threads is not None:
-                    self._threads.remove(thread)
+                    try:
+                        self._threads.remove(thread)
+                    except ValueError:
+                        pass
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
