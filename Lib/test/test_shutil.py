@@ -2537,7 +2537,6 @@ class TestGetTerminalSize(unittest.TestCase):
             self.assertEqual(size.columns, 30)
             self.assertEqual(size.lines, 40)
 
-
 class Symlink(unittest.TestCase):
 
     def setUp(self):
@@ -2755,7 +2754,6 @@ class Symlink(unittest.TestCase):
                                    overwrite=True)
                 mock.assert_called_once()
                 self.assertFalse(os.path.lexists(Symlink.mock_mktemp.path))
-
 
 class PublicAPITests(unittest.TestCase):
     """Ensures that the correct values are exposed in the public API."""

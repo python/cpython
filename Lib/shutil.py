@@ -1443,7 +1443,6 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
                     return name
     return None
 
-
 def _create_or_replace(dst, create_temp_dst):
     """Create or overwrite file `dst` atomically via os.replace.
 
@@ -1468,7 +1467,6 @@ def _create_or_replace(dst, create_temp_dst):
         if temp_path and os.path.lexists(temp_path):
             os.remove(temp_path)
         raise e
-
 
 def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
     """Symbolic link(s) to a single source or a list of multiple sources.
@@ -1496,6 +1494,7 @@ def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
     created as a directory if `target_is_directory` is True or a file
     symlink (the default) otherwise. On non-Windows platforms,
     `target_is_directory` is ignored.
+
     """
     if not isinstance(src_or_srcs, (list, set, tuple)):
         sources = [src_or_srcs]
