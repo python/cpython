@@ -109,7 +109,6 @@ sends logging output to a disk file.  It inherits the output functionality from
 
       Closes the file.
 
-
    .. method:: emit(record)
 
       Outputs the record to the file.
