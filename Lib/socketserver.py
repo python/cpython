@@ -676,8 +676,8 @@ class ThreadingMixIn:
     def server_close(self):
         super().server_close()
         if self.block_on_close:
-            threads = self._threads
             with self._threads_lock:
+                threads = self._threads
                 self._threads = None
             if threads:
                 for thread in threads:
