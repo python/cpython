@@ -314,13 +314,13 @@ defines.  It returns a sorted list of strings::
     'call_tracing', 'callstats', 'copyright', 'displayhook',
     'dont_write_bytecode', 'exc_info', 'excepthook', 'exec_prefix',
     'executable', 'exit', 'flags', 'float_info', 'float_repr_style',
-    'getcheckinterval', 'getdefaultencoding', 'getdlopenflags',
+    'getdefaultencoding', 'getdlopenflags',
     'getfilesystemencoding', 'getobjects', 'getprofile', 'getrecursionlimit',
     'getrefcount', 'getsizeof', 'getswitchinterval', 'gettotalrefcount',
     'gettrace', 'hash_info', 'hexversion', 'implementation', 'int_info',
     'intern', 'maxsize', 'maxunicode', 'meta_path', 'modules', 'path',
     'path_hooks', 'path_importer_cache', 'platform', 'prefix', 'ps1',
-    'setcheckinterval', 'setdlopenflags', 'setprofile', 'setrecursionlimit',
+    'setdlopenflags', 'setprofile', 'setrecursionlimit',
     'setswitchinterval', 'settrace', 'stderr', 'stdin', 'stdout',
     'thread_info', 'version', 'version_info', 'warnoptions']
 
