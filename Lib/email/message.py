@@ -1050,7 +1050,7 @@ class MIMEPart(Message):
         except AttributeError:
             # payload is not a list, it is most probably a string.
             return
-        
+
         if maintype == 'multipart' and subtype == 'related':
             # For related, we treat everything but the root as an attachment.
             # The root may be indicated by 'start'; if there's no start or we
