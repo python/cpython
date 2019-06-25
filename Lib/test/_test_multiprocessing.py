@@ -5013,7 +5013,7 @@ class TestResourceTracker(unittest.TestCase):
 
                 deadline = time.monotonic() + 60
                 while time.monotonic() < deadline:
-                    time.sleep(2.0)
+                    time.sleep(.5)
                     try:
                         _resource_unlink(name2, rtype)
                     except OSError as e:
