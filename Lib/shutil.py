@@ -542,7 +542,7 @@ def _rmtree_unsafe(path, onerror):
         with os.scandir(path) as scandir_it:
             entries = list(scandir_it)
     except FileNotFoundError:
-        entries = []
+        return
     except OSError:
         onerror(os.scandir, path, sys.exc_info())
         entries = []
