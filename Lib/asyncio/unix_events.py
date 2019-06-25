@@ -1114,6 +1114,18 @@ class FastChildWatcher(BaseChildWatcher):
 
 
 class MultiLoopChildWatcher(AbstractChildWatcher):
+    """A watcher that doen't require running loop in main thread to work.
+
+    This implementation registers a SIGCHLD signal handler on
+    instantiation (which may conflict with other code that
+    install own handler for this signal).
+
+    The solution is safe but it has a significant overhead when
+    handling a big number of processes (*O(n)* each time a
+    SIGCHLD is received).
+    """
+
+    # Implementation note:
     # The class keeps compatibility with AbstractChildWatcher ABC
     # To achieve this it has empty attach_loop() method
     # and doesn't accept explicit loop argument
@@ -1223,9 +1235,17 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
 
 
 class ThreadedChildWatcher(AbstractChildWatcher):
-    # The watcher uses a thread per process
-    # for waiting for the process finish.
-    # It doesn't require subscription on POSIX signal
+    """Threaded child watcher implementation.
+
+    The watcher uses a thread per process
+    for waiting for the process finish.
+
+    It doesn't require subscription on POSIX signal
+    but a thread creation is not free.
+
+    The watcher has O(1) complexity, its perfomance doesn't depend
+    on amount of spawn processes.
+    """
 
     def __init__(self):
         self._pid_counter = itertools.count(0)
