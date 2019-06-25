@@ -176,7 +176,7 @@ PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
     /* get vectorcallfunc as in _PyVectorcall_Function, but without
      * the _Py_TPFLAGS_HAVE_VECTORCALL check */
     Py_ssize_t offset = Py_TYPE(callable)->tp_vectorcall_offset;
-    if ((offset <= 0) || (!Py_TYPE(callable)->tp_call)) {
+    if (offset <= 0) {
         PyErr_Format(PyExc_TypeError, "'%.200s' object does not support vectorcall",
                      Py_TYPE(callable)->tp_name);
         return NULL;
