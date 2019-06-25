@@ -415,7 +415,8 @@ class ReadTest(MixInCheckStateHandling):
         for i in range(1, len(data)):
             dec = codecs.getincrementaldecoder(self.encoding)('surrogatepass')
             self.assertEqual(dec.decode(data[:i]), '')
-            self.assertEqual(dec.decode(data[i:]), '\uDC02')
+            final = encoding == "cp65001"
+            self.assertEqual(dec.decode(data[i:], final), '\uDC02')
 
 
 class UTF32Test(ReadTest, unittest.TestCase):
