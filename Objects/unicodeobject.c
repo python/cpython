@@ -3354,6 +3354,10 @@ PyUnicode_Decode(const char *s,
         return NULL;
     }
 
+    if (size == 0) {
+        _Py_RETURN_UNICODE_EMPTY();
+    }
+
     if (encoding == NULL) {
         return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
     }
