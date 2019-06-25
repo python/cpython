@@ -26,7 +26,7 @@ popular alternative location.)
 On Windows machines where you have installed from the :ref:`Microsoft Store
 <windows-store>`, the :file:`python3.9` command will be available. If you have
 the :ref:`py.exe launcher <launcher>` installed, you can use the :file:`py`
-command. See :ref:`configuring-python` for other ways to launch Python.
+command. See :ref:`setting-envvars` for other ways to launch Python.
 
 Typing an end-of-file character (:kbd:`Control-D` on Unix, :kbd:`Control-Z` on
 Windows) at the primary prompt causes the interpreter to exit with a zero exit
