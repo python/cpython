@@ -1734,6 +1734,103 @@ _Py_wrealpath(const wchar_t *path,
 }
 #endif
 
+
+#ifndef MS_WINDOWS
+int
+_Py_isabs(const wchar_t *path)
+{
+    return (path[0] == SEP);
+}
+#endif
+
+
+/* Get an absolute path.
+   On error (ex: fail to get the current directory), return -1.
+   On memory allocation failure, set *abspath_p to NULL and return 0.
+   On success, return a newly allocated to *abspath_p to and return 0.
+   The string must be freed by PyMem_RawFree(). */
+int
+_Py_abspath(const wchar_t *path, wchar_t **abspath_p)
+{
+#ifdef MS_WINDOWS
+    wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
+    DWORD result;
+
+    result = GetFullPathNameW(path,
+                              Py_ARRAY_LENGTH(woutbuf), woutbuf,
+                              NULL);
+    if (!result) {
+        return -1;
+    }
+
+    if (result > Py_ARRAY_LENGTH(woutbuf)) {
+        if ((size_t)result <= (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+            woutbufp = PyMem_RawMalloc((size_t)result * sizeof(wchar_t));
+        }
+        else {
+            woutbufp = NULL;
+        }
+        if (!woutbufp) {
+            *abspath_p = NULL;
+            return 0;
+        }
+
+        result = GetFullPathNameW(path, result, woutbufp, NULL);
+        if (!result) {
+            PyMem_RawFree(woutbufp);
+            return -1;
+        }
+    }
+
+    if (woutbufp != woutbuf) {
+        *abspath_p = woutbufp;
+        return 0;
+    }
+
+    *abspath_p = _PyMem_RawWcsdup(woutbufp);
+    return 0;
+#else
+    if (_Py_isabs(path)) {
+        *abspath_p = _PyMem_RawWcsdup(path);
+        return 0;
+    }
+
+    wchar_t cwd[MAXPATHLEN + 1];
+    cwd[Py_ARRAY_LENGTH(cwd) - 1] = 0;
+    if (!_Py_wgetcwd(cwd, Py_ARRAY_LENGTH(cwd) - 1)) {
+        /* unable to get the current directory */
+        return -1;
+    }
+
+    size_t cwd_len = wcslen(cwd);
+    size_t path_len = wcslen(path);
+    size_t len = cwd_len + 1 + path_len + 1;
+    if (len <= (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+        *abspath_p = PyMem_RawMalloc(len * sizeof(wchar_t));
+    }
+    else {
+        *abspath_p = NULL;
+    }
+    if (*abspath_p == NULL) {
+        return 0;
+    }
+
+    wchar_t *abspath = *abspath_p;
+    memcpy(abspath, cwd, cwd_len * sizeof(wchar_t));
+    abspath += cwd_len;
+
+    *abspath = (wchar_t)SEP;
+    abspath++;
+
+    memcpy(abspath, path, path_len * sizeof(wchar_t));
+    abspath += path_len;
+
+    *abspath = 0;
+    return 0;
+#endif
+}
+
+
 /* Get the current directory. buflen is the buffer size in wide characters
    including the null character. Decode the path from the locale encoding.
 
