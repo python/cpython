@@ -1779,44 +1779,6 @@ sys_call_tracing_impl(PyObject *module, PyObject *func, PyObject *funcargs)
     return _PyEval_CallTracing(func, funcargs);
 }
 
-/*[clinic input]
-sys.callstats
-
-Return a tuple of function call statistics.
-
-A tuple is returned only if CALL_PROFILE was defined when Python was
-built.  Otherwise, this returns None.
-
-When enabled, this function returns detailed, implementation-specific
-details about the number of function calls executed. The return value
-is a 11-tuple where the entries in the tuple are counts of:
-0. all function calls
-1. calls to PyFunction_Type objects
-2. PyFunction calls that do not create an argument tuple
-3. PyFunction calls that do not create an argument tuple
-   and bypass PyEval_EvalCodeEx()
-4. PyMethod calls
-5. PyMethod calls on bound methods
-6. PyType calls
-7. PyCFunction calls
-8. generator calls
-9. All other calls
-10. Number of stack pops performed by call_function()
-[clinic start generated code]*/
-
-static PyObject *
-sys_callstats_impl(PyObject *module)
-/*[clinic end generated code: output=edc4a74957fa8def input=d447d8d224d5d175]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                      "sys.callstats() has been deprecated in Python 3.7 "
-                      "and will be removed in the future", 1) < 0) {
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -1910,7 +1872,6 @@ static PyMethodDef sys_methods[] = {
     {"audit",           (PyCFunction)(void(*)(void))sys_audit, METH_FASTCALL, audit_doc },
     {"breakpointhook",  (PyCFunction)(void(*)(void))sys_breakpointhook,
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
-    SYS_CALLSTATS_METHODDEF
     SYS__CLEAR_TYPE_CACHE_METHODDEF
     SYS__CURRENT_FRAMES_METHODDEF
     SYS_DISPLAYHOOK_METHODDEF
