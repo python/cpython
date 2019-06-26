@@ -931,18 +931,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(word[0].token_type, 'cfws')
 
     def test_get_word_all_CFWS(self):
-        word = self._test_get_x(parser.get_word,
-                                '(Recipients list suppressed',
-                                str(parser.CFWSList([parser.Comment([
-                                    parser.WhiteSpaceTerminal('Recipients', 'ptext'),
-                                    parser.WhiteSpaceTerminal(' ', 'fws'),
-                                    parser.WhiteSpaceTerminal('list', 'ptext'),
-                                    parser.WhiteSpaceTerminal(' ', 'fws'),
-                                    parser.WhiteSpaceTerminal('suppressed', 'ptext')
-                                    ])])),
-                                    ' ', [], ''
-                                )
-        self.assertEqual(word.token_type, 'cfws')
+        # bpo-29412: Test that we don't raise IndexError when parsing CFWS only
+        # token.
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_word('(Recipients list suppressed')
 
     def test_get_word_qs_yields_qs(self):
         word = self._test_get_x(parser.get_word,

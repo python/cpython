@@ -1,0 +1,2 @@
+Fix IndexError in parsing a header value with only comments in some headers.
+Patch by Abhilash Raj.

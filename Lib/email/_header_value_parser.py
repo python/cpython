@@ -1360,16 +1360,13 @@ def get_word(value):
         leader, value = get_cfws(value)
     else:
         leader = None
-    if value:
-        if value[0]=='"':
-            token, value = get_quoted_string(value)
-        elif value[0] in SPECIALS:
-            raise errors.HeaderParseError("Expected 'atom' or 'quoted-string' "
-                                          "but found '{}'".format(value))
-        else:
-            token, value = get_atom(value)
-        if leader is not None:
-            token[:0] = [leader]
+    if not value:
+        raise errors.HeaderParseError("Expected 'atom' or 'quoted-string' "
+                                      "but found nothing.")
+    if value[0]=='"':
+        token, value = get_quoted_string(value)
+    elif value[0] in SPECIALS:
+        raise errors.HeaderParseError((value))
     else:
         token, value = get_atom(value)
     if leader is not None:
