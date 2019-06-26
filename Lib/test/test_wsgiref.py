@@ -13,7 +13,7 @@ import os
 import re
 import sys
 
-from test import test_support
+from test import support
 
 class MockServer(WSGIServer):
     """Non-socket HTTP server"""
@@ -595,7 +595,7 @@ class HandlerTests(TestCase):
 
 
 def test_main():
-    test_support.run_unittest(__name__)
+    support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()
