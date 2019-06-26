@@ -195,7 +195,7 @@ static int fuzz_sre_match(const char* data, size_t size) {
     }
     /* Use the first byte as a uint8_t specifying the index of the
        regex to use */
-    uint8_t idx = ((uint8_t*) data)[0];
+    unsigned char idx = (unsigned char) data[0];
     idx = idx % NUM_PATTERNS;
 
     /* Pull the string to match from the remaining bytes */
