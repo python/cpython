@@ -2560,6 +2560,12 @@ class PidTests(unittest.TestCase):
         status = os.waitpid(pid, 0)
         self.assertEqual(status, (pid, 0))
 
+class AffinityTests(unittest.TestCase):
+
+    @unittest.skipUnless(hasattr(os, 'sched_setaffinity'), "test needs os.sched_setaffinity")
+    def test_os_sched_setaffinity_error(self):
+        bad_iter = map(int, "0X")
+        self.assertRaises(ValueError, os.sched_setaffinity, 0, bad_iter)
 
 class SpawnTests(unittest.TestCase):
     def create_args(self, *, with_env=False, use_bytes=False):
