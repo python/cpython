@@ -1513,8 +1513,9 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
 #endif /* CAN_ISOTP */
           default:
           {
-              return Py_BuildValue("O&", PyUnicode_DecodeFSDefault,
-                                        ifname);
+              return Py_BuildValue("O&h", PyUnicode_DecodeFSDefault,
+                                        ifname,
+                                        a->can_family);
           }
         }
     }
