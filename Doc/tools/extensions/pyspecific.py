@@ -562,7 +562,7 @@ def process_audit_events(app, doctree, fromdocname):
         node = nodes.paragraph()
         for i, (doc, label) in enumerate(audit_event['source'], start=1):
             if isinstance(label, str):
-                ref = nodes.reference("", nodes.Text("[{}]".format(i)))
+                ref = nodes.reference("", nodes.Text("[{}]".format(i)), internal=True)
                 ref['refuri'] = "{}#{}".format(
                     app.builder.get_relative_uri(fromdocname, doc),
                     label,

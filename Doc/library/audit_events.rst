@@ -1,5 +1,7 @@
 .. _audit-events:
 
+.. index:: single: audit events
+
 Audit events table
 ==================
 
