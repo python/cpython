@@ -1306,6 +1306,7 @@ class Popen(object):
             self._handle.Close()
             self._handle = None
 
+
         def _internal_poll(self, _deadstate=None,
                 _WaitForSingleObject=_winapi.WaitForSingleObject,
                 _WAIT_OBJECT_0=_winapi.WAIT_OBJECT_0,
@@ -1322,6 +1323,7 @@ class Popen(object):
                     exitcode = _GetExitCodeProcess(self._handle)
                     self._set_returncode(exitcode)
             return self.returncode
+
 
         def _wait(self, timeout):
             """Internal implementation of wait() on Windows."""
