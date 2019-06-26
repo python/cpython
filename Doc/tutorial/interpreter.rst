@@ -23,12 +23,10 @@ is an installation option, other places are possible; check with your local
 Python guru or system administrator.  (E.g., :file:`/usr/local/python` is a
 popular alternative location.)
 
-On Windows machines, the Python installation is usually placed in
-:file:`C:\\Python38`, though you can change this when you're running the
-installer.  To add this directory to your path,  you can type the following
-command into :ref:`a command prompt window <faq-run-program-under-windows>`::
-
-   set path=%path%;C:\python38
+On Windows machines where you have installed from the :ref:`Microsoft Store
+<windows-store>`, the :file:`python3.8` command will be available. If you have
+the :ref:`py.exe launcher <launcher>` installed, you can use the :file:`py`
+command. See :ref:`setting-envvars` for other ways to launch Python.
 
 Typing an end-of-file character (:kbd:`Control-D` on Unix, :kbd:`Control-Z` on
 Windows) at the primary prompt causes the interpreter to exit with a zero exit
