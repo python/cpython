@@ -1314,6 +1314,8 @@ class Popen(object):
             if self.returncode is None:
                 if _WaitForSingleObject(self._handle, 0) == _WAIT_OBJECT_0:
                     self.returncode = _GetExitCodeProcess(self._handle)
+                    self._handle.Close()
+                    self._handle = None
             return self.returncode
 
 
