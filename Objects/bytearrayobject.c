@@ -1689,6 +1689,10 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
     }
     Py_DECREF(bytearray_obj);
 
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
