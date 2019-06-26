@@ -1730,6 +1730,11 @@ features:
 
    Return a bytestring representing the current working directory.
 
+   .. versionchanged:: 3.8
+      The function now uses the UTF-8 encoding on Windows, rather than the ANSI
+      code page: see :pep:`529` for the rationale. The function is no longer
+      deprecated on Windows.
+
 
 .. function:: lchflags(path, flags)
 

@@ -82,6 +82,17 @@ def create_file(filename, content=b'content'):
         fp.write(content)
 
 
+class MiscTests(unittest.TestCase):
+    def test_getcwd(self):
+        cwd = os.getcwd()
+        self.assertIsInstance(cwd, str)
+
+    def test_getcwdb(self):
+        cwd = os.getcwdb()
+        self.assertIsInstance(cwd, bytes)
+        self.assertEqual(os.fsdecode(cwd), os.getcwd())
+
+
 # Tests creating TESTFN
 class FileTests(unittest.TestCase):
     def setUp(self):
