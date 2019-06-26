@@ -59,6 +59,8 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     self->st = NULL;
     self->in_use = 0;
 
+    assert(PyUnicode_Check(sql));
+
     sql_cstr = PyUnicode_AsUTF8AndSize(sql, &sql_cstr_len);
     if (sql_cstr == NULL) {
         rc = PYSQLITE_SQL_WRONG_TYPE;
