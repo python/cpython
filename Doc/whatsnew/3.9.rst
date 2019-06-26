@@ -111,6 +111,12 @@ threads were never supported in subinterpreters. Previously, the subinterpreter
 finalization crashed with a Pyton fatal error if a daemon thread was still
 running.
 
+pprint
+------
+
+:mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
+(Contributed by Carl Bordum Hansen in :issue:`37376`.)
+
 
 Optimizations
 =============
