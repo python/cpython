@@ -1,0 +1,19 @@
+Found the response of the `EXISTS` command is padded by some IMAP servers/translators including `davmail`, it seems to be when the number of emails is around or over 500.
+
+Acceptable response:
+```
+  58:24.54 > PJJD3 EXAMINE INBOX
+  58:24.77 < * 486 EXISTS
+  58:24.78      matched r'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?' => ('486', 'EXISTS', None, None)
+  58:24.78 untagged_responses[EXISTS] 0 += ["486"]
+```
+Failed response:
+```
+  57:50.86 > KPFE3 EXAMINE INBOX
+  57:51.10 < *  953 EXISTS
+  57:51.10 last 0 IMAP4 interactions:
+  57:51.10 > KPFE4 LOGOUT
+```
+Notice the additional whitespace after the *
+
+The `imaplib` default regex should be updated to account for one or two whitespaces
