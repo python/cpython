@@ -568,6 +568,13 @@ class HandlerTests(TestCase):
             handler = TestHandler(X="Y", HOME="/override/home")
             handler.setup_environ()
 
+        # Check that wsgi_xxx attributes are copied to wsgi.xxx variables
+        # of handler.environ
+        for attr in ('version', 'multithread', 'multiprocess', 'run_once',
+                     'file_wrapper'):
+            self.assertEqual(getattr(handler, 'wsgi_' + attr),
+                             handler.environ['wsgi.' + attr])
+
         # Test handler.environ as a dict
         expected = {}
         setup_testing_defaults(expected)
@@ -597,13 +604,6 @@ class HandlerTests(TestCase):
             'wsgi.file_wrapper': util.FileWrapper,
         })
         self.assertDictEqual(handler.environ, expected)
-
-        # Check that wsgi_xxx attributes are copied to wsgi.xxx variables
-        # of handler.environ
-        for attr in ('version', 'multithread', 'multiprocess', 'run_once',
-                     'file_wrapper'):
-            self.assertEqual(getattr(handler, 'wsgi_' + attr),
-                             handler.environ['wsgi.' + attr])
 
     def testCGIEnviron(self):
         h = BaseCGIHandler(None,None,None,{})
