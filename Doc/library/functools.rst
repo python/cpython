@@ -544,9 +544,9 @@ The :mod:`functools` module defines the following functions:
       >>> from functools import wraps
       >>> def my_decorator(f):
       ...     @wraps(f)
-      ...     def wrapper(*args, **kwds):
+      ...     def wrapper(*args, **kwargs):
       ...         print('Calling decorated function')
-      ...         return f(*args, **kwds)
+      ...         return f(*args, **kwargs)
       ...     return wrapper
       ...
       >>> @my_decorator
