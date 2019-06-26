@@ -1231,6 +1231,11 @@ Changes in Python behavior
 Changes in the Python API
 -------------------------
 
+* The :func:`os.getcwdb` function now uses the UTF-8 encoding on Windows,
+  rather than the ANSI code page: see :pep:`529` for the rationale. The
+  function is no longer deprecated on Windows.
+  (Contributed by Victor Stinner in :issue:`37412`.)
+
 * :class:`subprocess.Popen` can now use :func:`os.posix_spawn` in some cases
   for better performance. On Windows Subsystem for Linux and QEMU User
   Emulation, Popen constructor using :func:`os.posix_spawn` no longer raise an
