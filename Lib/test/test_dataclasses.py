@@ -16,6 +16,9 @@ from functools import total_ordering
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
+# Used for pickle tests
+Scientist = make_dataclass('Scientist', [('name', str), ('level', str)])
+
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
 
@@ -3062,6 +3065,50 @@ class TestMakeDataclass(unittest.TestCase):
             with self.subTest(classname=classname):
                 C = make_dataclass(classname, ['a', 'b'])
                 self.assertEqual(C.__name__, classname)
+
+    def test_picklable(self):
+        d_knuth = Scientist(name='Donald Knuth', level='God')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                new_d_knuth = pickle.loads(pickle.dumps(d_knuth))
+                self.assertEqual(d_knuth, new_d_knuth)
+                self.assertIsNot(d_knuth, new_d_knuth)
+
+    def test_qualname(self):
+        d_knuth = Scientist(name='Donald Knuth', level='God')
+        self.assertEqual(d_knuth.__class__.__qualname__, 'Scientist')
+
+        ComputerScientist = make_dataclass(
+            'ComputerScientist',
+            [('name', str), ('level', str)],
+            qualname='Computer.Scientist'
+        )
+        d_knuth = ComputerScientist(name='Donald Knuth', level='God')
+        self.assertEqual(d_knuth.__class__.__qualname__, 'Computer.Scientist')
+
+    def test_module(self):
+        d_knuth = Scientist(name='Donald Knuth', level='God')
+        self.assertEqual(d_knuth.__module__, __name__)
+
+        ComputerScientist = make_dataclass(
+            'ComputerScientist',
+            [('name', str), ('level', str)],
+            module='other_module'
+        )
+        d_knuth = ComputerScientist(name='Donald Knuth', level='God')
+        self.assertEqual(d_knuth.__module__, 'other_module')
+
+    def test_unpicklable(self):
+        # if there is no way to determine the calling module, attempts to pickle
+        # an instance should raise TypeError
+        import sys
+        with unittest.mock.patch.object(sys, '_getframe', return_value=object()):
+            Scientist = make_dataclass('Scientist', [('name', str), ('level', str)])
+
+        d_knuth = Scientist(name='Donald Knuth', level='God')
+        self.assertEqual(d_knuth.__module__, '<unknown>')
+        with self.assertRaisesRegex(TypeError, 'cannot be pickled'):
+            pickle.dumps(d_knuth)
 
 class TestReplace(unittest.TestCase):
     def test(self):

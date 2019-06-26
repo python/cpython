@@ -322,16 +322,26 @@ Module-level decorators, classes, and functions
 
    Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, module=None, qualname=None)
 
    Creates a new dataclass with name ``cls_name``, fields as defined
    in ``fields``, base classes as given in ``bases``, and initialized
    with a namespace as given in ``namespace``.  ``fields`` is an
    iterable whose elements are each either ``name``, ``(name, type)``,
    or ``(name, type, Field)``.  If just ``name`` is supplied,
-   ``typing.Any`` is used for ``type``.  The values of ``init``,
-   ``repr``, ``eq``, ``order``, ``unsafe_hash``, and ``frozen`` have
-   the same meaning as they do in :func:`dataclass`.
+   ``typing.Any`` is used for ``type``.
+
+   ``module`` is the module in which the dataclass can be found, ``qualname`` is
+   where in this module the dataclass can be found.
+
+   .. warning::
+
+      If ``module`` and ``qualname`` are not supplied and ``make_dataclass``
+      cannot determine what they are, the new class will not be unpicklable;
+      to keep errors close to the source, pickling will be disabled.
+
+   The values of ``init``, ``repr``, ``eq``, ``order``, ``unsafe_hash``, and
+   ``frozen`` have the same meaning as they do in :func:`dataclass`.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with ``__annotations__`` can
@@ -355,6 +365,9 @@ Module-level decorators, classes, and functions
 
          def add_one(self):
              return self.x + 1
+
+  .. versionchanged:: 3.8
+    The *module* and *qualname* parameters have been added.
 
 .. function:: replace(instance, **changes)
 

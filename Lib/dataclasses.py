@@ -8,6 +8,8 @@ import builtins
 import functools
 import _thread
 
+# Used by the functionnal API when the calling module is not known
+from enum import _make_class_unpicklable
 
 __all__ = ['dataclass',
            'field',
@@ -1142,7 +1144,7 @@ def _astuple_inner(obj, tuple_factory):
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
-                   frozen=False):
+                   frozen=False, module=None, qualname=None):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -1161,6 +1163,14 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
           z: int = field(init=False)
 
     For the bases and namespace parameters, see the builtin type() function.
+
+    'module' should be set to the module this class is being created in; if it
+    is not set, an attempt to find that module will be made, but if it fails the
+    class will not be picklable.
+
+    'qualname' should be set to the actual location this call can be found in
+    its module; by default it is set to the global scope. If this is not correct,
+    pickle will fail in some circumstances.
 
     The parameters init, repr, eq, order, unsafe_hash, and frozen are passed to
     dataclass().
@@ -1202,6 +1212,22 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     # We use `types.new_class()` instead of simply `type()` to allow dynamic creation
     # of generic dataclassses.
     cls = types.new_class(cls_name, bases, {}, lambda ns: ns.update(namespace))
+
+    # TODO: this hack is the same that can be found in enum.py and should be
+    # removed if there ever is a way to get the caller module.
+    if module is None:
+        try:
+            module = sys._getframe(1).f_globals['__name__']
+        except (AttributeError, ValueError):
+            pass
+    if module is None:
+        _make_class_unpicklable(cls)
+    else:
+        cls.__module__ = module
+
+    if qualname is not None:
+        cls.__qualname__ = qualname
+
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
                      unsafe_hash=unsafe_hash, frozen=frozen)
 

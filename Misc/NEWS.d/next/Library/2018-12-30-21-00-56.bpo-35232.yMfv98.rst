@@ -1,0 +1,3 @@
+`dataclasses.make_dataclass` accepts two new keyword arguments `module` and
+`qualname` in order to make created classes picklable. Patch contributed by
+Rémi Lapeyre.
