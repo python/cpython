@@ -83,7 +83,7 @@ class Regrtest:
 
         # misc
         self.win_load_tracker = None
-        self.tmp_dir = None
+        self.directory = None
         self.worker_test_name = None
 
     def get_executed(self):
@@ -191,7 +191,7 @@ class Regrtest:
         self.tests = tests
 
         if self.ns.single:
-            self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
+            self.next_single_filename = os.path.join(self.directory, 'pynexttest')
             try:
                 with open(self.next_single_filename, 'r') as fp:
                     next_test = fp.read().strip()
@@ -551,28 +551,28 @@ class Regrtest:
 
     def set_temp_dir(self):
         if self.ns.tempdir:
-            self.tmp_dir = self.ns.tempdir
+            self.directory = self.ns.tempdir
 
-        if not self.tmp_dir:
+        if not self.directory:
             # When tests are run from the Python build directory, it is best practice
             # to keep the test files in a subfolder.  This eases the cleanup of leftover
             # files using the "make distclean" command.
             if sysconfig.is_python_build():
-                self.tmp_dir = sysconfig.get_config_var('abs_builddir')
-                if self.tmp_dir is None:
+                self.directory = sysconfig.get_config_var('abs_builddir')
+                if self.directory is None:
                     # bpo-30284: On Windows, only srcdir is available. Using
                     # abs_builddir mostly matters on UNIX when building Python
                     # out of the source tree, especially when the source tree
                     # is read only.
-                    self.tmp_dir = sysconfig.get_config_var('srcdir')
-                self.tmp_dir = os.path.join(self.tmp_dir, 'build')
+                    self.directory = sysconfig.get_config_var('srcdir')
+                self.directory = os.path.join(self.directory, 'build')
             else:
-                self.tmp_dir = tempfile.gettempdir()
+                self.directory = tempfile.gettempdir()
 
-        self.tmp_dir = os.path.abspath(self.tmp_dir)
+        self.directory = os.path.abspath(self.directory)
 
-    def create_temp_dir(self):
-        os.makedirs(self.tmp_dir, exist_ok=True)
+    def create_test_dir(self):
+        os.makedirs(self.directory, exist_ok=True)
 
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
@@ -582,14 +582,14 @@ class Regrtest:
             test_cwd = 'test_python_worker_{}'.format(pid)
         else:
             test_cwd = 'test_python_{}'.format(pid)
-        test_cwd = os.path.join(self.tmp_dir, test_cwd)
+        test_cwd = os.path.join(self.directory, test_cwd)
         return test_cwd
 
     def cleanup(self):
         import glob
 
-        path = os.path.join(self.tmp_dir, 'test_python_*')
-        print("Cleanup %s directory" % self.tmp_dir)
+        path = os.path.join(self.directory, 'test_python_*')
+        print("Cleanup %s directory" % self.directory)
         for name in glob.glob(path):
             if os.path.isdir(name):
                 print("Remove directory: %s" % name)
@@ -607,13 +607,20 @@ class Regrtest:
             self.cleanup()
             sys.exit(0)
 
-        test_cwd = self.create_temp_dir()
+        test_cwd = self.create_test_dir()
 
         # Run the tests in a context manager that temporarily changes the CWD
         # to a temporary and writable directory. If it's not possible to
         # create or change the CWD, the original CWD will be used.
         # The original CWD is available from support.SAVEDCWD.
         with support.temp_cwd(test_cwd, quiet=True):
+            tmpdir = os.path.join(test_cwd, 'tmpdir')
+            os.mkdir(tmpdir)
+
+            os.environ['TMPDIR'] = tmpdir
+            os.environ['TEMPDIR'] = tmpdir
+            support.TMPDIR = tmpdir
+
             # When using multiprocessing, worker processes will use test_cwd
             # as their parent temporary directory. So when the main process
             # exit, it removes also subdirectories of worker processes.

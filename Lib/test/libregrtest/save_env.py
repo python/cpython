@@ -46,6 +46,7 @@ class saved_test_environment:
         self.verbose = verbose
         self.quiet = quiet
         self.pgo = pgo
+        self.tmpdir = support.TMPDIR
 
     # To add things to save and restore, add a name XXX to the resources list
     # and add corresponding get_XXX/restore_XXX functions.  get_XXX should
@@ -70,6 +71,7 @@ class saved_test_environment:
                  'shutil_archive_formats', 'shutil_unpack_formats',
                  'asyncio.events._event_loop_policy',
                  'urllib.requests._url_tempfiles', 'urllib.requests._opener',
+                 'tmpdir',
                 )
 
     def get_urllib_requests__url_tempfiles(self):
@@ -241,6 +243,17 @@ class saved_test_environment:
         return sorted(fn + ('/' if os.path.isdir(fn) else '')
                       for fn in os.listdir())
     def restore_files(self, saved_value):
+        fn = support.TESTFN
+        if fn not in saved_value and (fn + '/') not in saved_value:
+            if os.path.isfile(fn):
+                support.unlink(fn)
+            elif os.path.isdir(fn):
+                support.rmtree(fn)
+
+    def get_tmpdir(self):
+        return sorted(fn + ('/' if os.path.isdir(fn) else '')
+                      for fn in os.listdir(self.tmpdir))
+    def restore_tmpdir(self, saved_value):
         fn = support.TESTFN
         if fn not in saved_value and (fn + '/') not in saved_value:
             if os.path.isfile(fn):
