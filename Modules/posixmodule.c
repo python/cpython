@@ -6415,6 +6415,10 @@ os_sched_setaffinity_impl(PyObject *module, pid_t pid, PyObject *mask)
     }
     Py_CLEAR(iterator);
 
+    if (PyErr_Occurred()) {
+        goto error;
+    }
+
     if (sched_setaffinity(pid, setsize, cpu_set)) {
         posix_error();
         goto error;
