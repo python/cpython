@@ -879,43 +879,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(sys_callstats__doc__,
-"callstats($module, /)\n"
-"--\n"
-"\n"
-"Return a tuple of function call statistics.\n"
-"\n"
-"A tuple is returned only if CALL_PROFILE was defined when Python was\n"
-"built.  Otherwise, this returns None.\n"
-"\n"
-"When enabled, this function returns detailed, implementation-specific\n"
-"details about the number of function calls executed. The return value\n"
-"is a 11-tuple where the entries in the tuple are counts of:\n"
-"0. all function calls\n"
-"1. calls to PyFunction_Type objects\n"
-"2. PyFunction calls that do not create an argument tuple\n"
-"3. PyFunction calls that do not create an argument tuple\n"
-"   and bypass PyEval_EvalCodeEx()\n"
-"4. PyMethod calls\n"
-"5. PyMethod calls on bound methods\n"
-"6. PyType calls\n"
-"7. PyCFunction calls\n"
-"8. generator calls\n"
-"9. All other calls\n"
-"10. Number of stack pops performed by call_function()");
-
-#define SYS_CALLSTATS_METHODDEF    \
-    {"callstats", (PyCFunction)sys_callstats, METH_NOARGS, sys_callstats__doc__},
-
-static PyObject *
-sys_callstats_impl(PyObject *module);
-
-static PyObject *
-sys_callstats(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_callstats_impl(module);
-}
-
 PyDoc_STRVAR(sys__debugmallocstats__doc__,
 "_debugmallocstats($module, /)\n"
 "--\n"
@@ -1026,4 +989,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=022614f3794666ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=acef77d2bb8f6da9 input=a9049054013a1b77]*/
