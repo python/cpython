@@ -124,7 +124,7 @@ def supports_file2file_sendfile():
 
         with open(srcname, "rb") as src:
             with tempfile.NamedTemporaryFile("wb", delete=False) as dst:
-                dstname = f.name
+                dstname = dst.name
                 infd = src.fileno()
                 outfd = dst.fileno()
                 try:
@@ -878,8 +878,9 @@ class TestShutil(unittest.TestCase):
 
         flag = []
         src = tempfile.mkdtemp()
+        self.addCleanup(support.rmtree, src)
         dst = tempfile.mktemp()
-        self.addCleanup(shutil.rmtree, src)
+        self.addCleanup(support.rmtree, dst)
         with open(os.path.join(src, 'foo'), 'w') as f:
             f.close()
         shutil.copytree(src, dst, copy_function=custom_cpfun)
