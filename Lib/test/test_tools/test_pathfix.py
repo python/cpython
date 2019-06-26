@@ -54,16 +54,16 @@ class TestPathFixUnit(unittest.TestCase):
                 testing_output = self.pathfix.fixline(line)
                 self.assertEqual(testing_output, b'#! ' + self.pathfix.new_interpreter + b'\n')
 
-    input_file = \
-        b"#! /usr/bin/env python -u\n" + \
-        b"import random.randint\n" + \
+    input_file = (
+        b"#! /usr/bin/env python -u\n"
+        b"import random.randint\n"
         b"print(random.randint(1,7))\n"
-
-    output_file = \
-        b"#! /usr/bin/python -Ru\n" + \
-        b"import random.randint\n" + \
+    )
+    output_file = (
+        b"#! /usr/bin/python -Ru\n"
+        b"import random.randint\n"
         b"print(random.randint(1,7))\n"
-
+    )
     def test_main(self):
 
         with open('file', 'wb') as f:
@@ -93,7 +93,7 @@ class TestPathfixFunctional(unittest.TestCase):
         self.temp_file = os.path.join(self.temp_dir, 'script')
 
         with open(self.temp_file, 'w') as f:
-            f.write('#! /usr/bin/env python -R\n')
+            f.write('#! /usr/bin/env python -R\n' + 'print("Hello world")\n')
 
     def tearDown(self):
         shutil.rmtree(self.temp_dir)
@@ -102,54 +102,56 @@ class TestPathfixFunctional(unittest.TestCase):
         subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', '-f', "", self.temp_file])
         with open(self.temp_file) as f:
             output = f.read()
-        self.assertEqual(output, '#! /usr/bin/python -R\n')
+        self.assertEqual(output, '#! /usr/bin/python -R\n' + 'print("Hello world")\n')
         with open(self.temp_file + '~') as f:
             output = f.read()
-        self.assertEqual(output, '#! /usr/bin/env python -R\n')
+        self.assertEqual(output, '#! /usr/bin/env python -R\n' + 'print("Hello world")\n')
 
     def test_pathfix_keeping_argument(self):
         with open(self.temp_file, 'w') as f:
-            f.write('#! /usr/bin/env python -W something\n')
+            f.write('#! /usr/bin/env python -W something\n' + 'print("Hello world")\n')
         subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', '-f', "", self.temp_file])
         with open(self.temp_file) as f:
             output = f.read()
-        self.assertEqual(output, '#! /usr/bin/python -W something\n')
+        self.assertEqual(output, '#! /usr/bin/python -W something\n' + 'print("Hello world")\n')
         with open(self.temp_file + '~') as f:
             output = f.read()
-        self.assertEqual(output, '#! /usr/bin/env python -W something\n')
+        self.assertEqual(output, '#! /usr/bin/env python -W something\n' + 'print("Hello world")\n')
 
     def test_pathfix_adding_flag(self):
         subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', '-f', 's', self.temp_file])
         with open(self.temp_file) as f:
             output = f.read()
-        self.assertEqual(output, '#! /usr/bin/python -sR\n')
+        self.assertEqual(output, '#! /usr/bin/python -sR\n' + 'print("Hello world")\n')
         with open(self.temp_file + '~') as f:
             output = f.read()
-        self.assertEqual(output, '#! /usr/bin/env python -R\n')
+        self.assertEqual(output, '#! /usr/bin/env python -R\n' + 'print("Hello world")\n')
 
     def test_pathfix_adding_flags(self):
         subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', '-f', 'OO', self.temp_file])
         with open(self.temp_file) as f:
             output = f.read()
-        self.assertEqual(output, '#! /usr/bin/python -OOR\n')
+        self.assertEqual(output, '#! /usr/bin/python -OOR\n' + 'print("Hello world")\n')
         with open(self.temp_file + '~') as f:
             output = f.read()
-        self.assertEqual(output, '#! /usr/bin/env python -R\n')
+        self.assertEqual(output, '#! /usr/bin/env python -R\n' + 'print("Hello world")\n')
 
     def test_pathfix_replacing_interpreter(self):
         subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', self.temp_file])
         with open(self.temp_file) as f:
             output = f.read()
-        self.assertEqual(output, '#! /usr/bin/python\n')
+        self.assertEqual(output, '#! /usr/bin/python\n' + 'print("Hello world")\n')
         with open(self.temp_file + '~') as f:
             output = f.read()
-        self.assertEqual(output, '#! /usr/bin/env python -R\n')
+        self.assertEqual(output, '#! /usr/bin/env python -R\n' + 'print("Hello world")\n')
 
     def test_pathfix_without_backup(self):
         subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', '-n', self.temp_file])
         with open(self.temp_file) as f:
             output = f.read()
-        self.assertEqual(output, '#! /usr/bin/python\n')
+        self.assertEqual(output, '#! /usr/bin/python\n' + 'print("Hello world")\n')
+
+        assert (self.temp_file + '~') not in os.listdir(self.temp_dir)
 
 
 if __name__ == '__main__':
