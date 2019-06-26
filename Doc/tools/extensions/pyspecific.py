@@ -545,7 +545,7 @@ def process_audit_events(app, doctree, fromdocname):
     row += nodes.entry('', nodes.paragraph('', nodes.Text('References')))
     head += row
 
-    for name in sorted(env.all_audit_events):
+    for name in sorted(getattr(env, "all_audit_events", ())):
         audit_event = env.all_audit_events[name]
 
         row = nodes.row()
