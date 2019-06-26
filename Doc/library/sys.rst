@@ -169,7 +169,7 @@ always available.
 
    This function should be used for internal and specialized purposes only.
 
-   .. audit-event:: sys._current_frames
+   .. audit-event:: sys._current_frames "" sys._current_frames
 
 
 .. function:: breakpointhook()
@@ -678,7 +678,7 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   .. audit-event:: sys._getframe
+   .. audit-event:: sys._getframe "" sys._getframe
 
    .. impl-detail::
 
@@ -1193,7 +1193,7 @@ always available.
    ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
    on the event type.
 
-   .. audit-event:: sys.setprofile
+   .. audit-event:: sys.setprofile "" sys.setprofile
 
    The events have the following meaning:
 
@@ -1315,7 +1315,7 @@ always available.
 
    For more information on code and frame objects, refer to :ref:`types`.
 
-   .. audit-event:: sys.settrace
+   .. audit-event:: sys.settrace "" sys.settrace
 
    .. impl-detail::
 
@@ -1337,9 +1337,9 @@ always available.
    first time. The *finalizer* will be called when an asynchronous generator
    is about to be garbage collected.
 
-   .. audit-event:: sys.set_asyncgen_hooks_firstiter
+   .. audit-event:: sys.set_asyncgen_hooks_firstiter "" sys.set_asyncgen_hooks
 
-   .. audit-event:: sys.set_asyncgen_hooks_finalizer
+   .. audit-event:: sys.set_asyncgen_hooks_finalizer "" sys.set_asyncgen_hooks
 
    Two auditing events are raised because the underlying API consists of two
    calls, each of which must raise its own event.

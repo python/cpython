@@ -157,7 +157,7 @@ class AuditEvent(Directive):
 
     has_content = True
     required_arguments = 1
-    optional_arguments = 1
+    optional_arguments = 2
     final_argument_whitespace = True
 
     _label = [
@@ -174,7 +174,8 @@ class AuditEvent(Directive):
     def run(self):
         name = self.arguments[0]
         if len(self.arguments) >= 2 and self.arguments[1]:
-            args = [a.strip() for a in self.arguments[1].strip("'\"").split()]
+            args = (a.strip() for a in self.arguments[1].strip("'\"").split(","))
+            args = [a for a in args if a]
         else:
             args = []
 
@@ -198,11 +199,16 @@ class AuditEvent(Directive):
                     .format(name, info['args'], new_info['args'])
                 )
 
-        label = "audit_event_{}_{}".format(name, len(info['source']))
-        label = re.sub(r'\W', '_', label)
-        info['source'].append((env.docname, label))
+        if len(self.arguments) >= 3 and self.arguments[2]:
+            target = self.arguments[2]
+            ids = []
+        else:
+            target = "audit_event_{}_{}".format(name, len(info['source']))
+            target = re.sub(r'\W', '_', label)
+            ids = [target]
+        info['source'].append((env.docname, target))
 
-        pnode = nodes.paragraph(text, classes=["audit-hook"], ids=[label])
+        pnode = nodes.paragraph(text, classes=["audit-hook"], ids=ids)
         if self.content:
             self.state.nested_parse(self.content, self.content_offset, pnode)
         else:

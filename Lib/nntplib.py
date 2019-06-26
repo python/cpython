@@ -414,7 +414,7 @@ class _NNTPBase:
     def _putline(self, line):
         """Internal: send one line to the server, appending CRLF.
         The `line` must be a bytes-like object."""
-        sys.audit("nntplib.NNTP.putline", self, line)
+        sys.audit("nntplib.putline", self, line)
         line = line + _CRLF
         if self.debugging > 1: print('*put*', repr(line))
         self.file.write(line)
@@ -1042,7 +1042,7 @@ class NNTP(_NNTPBase):
         """
         self.host = host
         self.port = port
-        sys.audit("nntplib.NNTP", self, host, port)
+        sys.audit("nntplib.connect", self, host, port)
         self.sock = socket.create_connection((host, port), timeout)
         file = None
         try:
@@ -1074,7 +1074,7 @@ if _have_ssl:
             """This works identically to NNTP.__init__, except for the change
             in default port and the `ssl_context` argument for SSL connections.
             """
-            sys.audit("nntplib.NNTP", self, host, port)
+            sys.audit("nntplib.connect", self, host, port)
             self.sock = socket.create_connection((host, port), timeout)
             file = None
             try:
