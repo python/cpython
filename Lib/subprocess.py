@@ -1300,6 +1300,12 @@ class Popen(object):
             self.pid = pid
             _winapi.CloseHandle(ht)
 
+
+        def _set_returncode(self, exitcode):
+            self.returncode = exitcode
+            self._handle.Close()
+            self._handle = None
+
         def _internal_poll(self, _deadstate=None,
                 _WaitForSingleObject=_winapi.WaitForSingleObject,
                 _WAIT_OBJECT_0=_winapi.WAIT_OBJECT_0,
@@ -1313,11 +1319,9 @@ class Popen(object):
             """
             if self.returncode is None:
                 if _WaitForSingleObject(self._handle, 0) == _WAIT_OBJECT_0:
-                    self.returncode = _GetExitCodeProcess(self._handle)
-                    self._handle.Close()
-                    self._handle = None
+                    exitcode = _GetExitCodeProcess(self._handle)
+                    self._set_returncode(exitcode)
             return self.returncode
-
 
         def _wait(self, timeout):
             """Internal implementation of wait() on Windows."""
@@ -1331,7 +1335,8 @@ class Popen(object):
                                                      timeout_millis)
                 if result == _winapi.WAIT_TIMEOUT:
                     raise TimeoutExpired(self.args, timeout)
-                self.returncode = _winapi.GetExitCodeProcess(self._handle)
+                exitcode = _winapi.GetExitCodeProcess(self._handle)
+                self._set_returncode(exitcode)
             return self.returncode
 
 
@@ -1419,7 +1424,7 @@ class Popen(object):
                 rc = _winapi.GetExitCodeProcess(self._handle)
                 if rc == _winapi.STILL_ACTIVE:
                     raise
-                self.returncode = rc
+                self._set_returncode(rc)
 
         kill = terminate
 
@@ -1640,7 +1645,7 @@ class Popen(object):
                 try:
                     pid, sts = os.waitpid(self.pid, 0)
                     if pid == self.pid:
-                        self._handle_exitstatus(sts)
+                        self._set_returncode(sts)
                     else:
                         self.returncode = sys.maxsize
                 except ChildProcessError:
@@ -1676,7 +1681,7 @@ class Popen(object):
                 raise child_exception_type(err_msg)
 
 
-        def _handle_exitstatus(self, sts, _WIFSIGNALED=os.WIFSIGNALED,
+        def _set_returncode(self, sts, _WIFSIGNALED=os.WIFSIGNALED,
                 _WTERMSIG=os.WTERMSIG, _WIFEXITED=os.WIFEXITED,
                 _WEXITSTATUS=os.WEXITSTATUS, _WIFSTOPPED=os.WIFSTOPPED,
                 _WSTOPSIG=os.WSTOPSIG):
@@ -1713,7 +1718,7 @@ class Popen(object):
                         return self.returncode  # Another thread waited.
                     pid, sts = _waitpid(self.pid, _WNOHANG)
                     if pid == self.pid:
-                        self._handle_exitstatus(sts)
+                        self._set_returncode(sts)
                 except OSError as e:
                     if _deadstate is not None:
                         self.returncode = _deadstate
@@ -1760,7 +1765,7 @@ class Popen(object):
                             (pid, sts) = self._try_wait(os.WNOHANG)
                             assert pid == self.pid or pid == 0
                             if pid == self.pid:
-                                self._handle_exitstatus(sts)
+                                self._set_returncode(sts)
                                 break
                         finally:
                             self._waitpid_lock.release()
@@ -1779,7 +1784,7 @@ class Popen(object):
                         # return 0 even without WNOHANG in odd situations.
                         # http://bugs.python.org/issue14396.
                         if pid == self.pid:
-                            self._handle_exitstatus(sts)
+                            self._set_returncode(sts)
             return self.returncode
 
 
