@@ -216,7 +216,7 @@ PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
     PyObject *result = func(callable, args,
                             nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
     _PyStack_UnpackDict_Free(args, nargs, kwnames);
-    return result;
+    return _Py_CheckFunctionResult(callable, result, NULL);
 }
 
 

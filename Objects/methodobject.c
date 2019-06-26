@@ -20,13 +20,13 @@ static int numfree = 0;
 #undef PyCFunction_New
 
 /* Forward declarations */
-static inline PyObject * vectorcall_FASTCALL(
+static PyObject * cfunction_vectorcall_FASTCALL(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
-static inline PyObject * vectorcall_FASTCALL_KEYWORDS(
+static PyObject * cfunction_vectorcall_FASTCALL_KEYWORDS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
-static inline PyObject * vectorcall_NOARGS(
+static PyObject * cfunction_vectorcall_NOARGS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
-static inline PyObject * vectorcall_O(
+static PyObject * cfunction_vectorcall_O(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 
 
@@ -50,16 +50,16 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
             vectorcall = NULL;
             break;
         case METH_FASTCALL:
-            vectorcall = vectorcall_FASTCALL;
+            vectorcall = cfunction_vectorcall_FASTCALL;
             break;
         case METH_FASTCALL | METH_KEYWORDS:
-            vectorcall = vectorcall_FASTCALL_KEYWORDS;
+            vectorcall = cfunction_vectorcall_FASTCALL_KEYWORDS;
             break;
         case METH_NOARGS:
-            vectorcall = vectorcall_NOARGS;
+            vectorcall = cfunction_vectorcall_NOARGS;
             break;
         case METH_O:
-            vectorcall = vectorcall_O;
+            vectorcall = cfunction_vectorcall_O;
             break;
         default:
             PyErr_SetString(PyExc_SystemError, "bad call flags");
@@ -372,88 +372,77 @@ _PyCFunction_DebugMallocStats(FILE *out)
  *
  * First, common helpers
  */
-static inline PyObject *
-get_self(PyObject *func) {
-    return ((PyCFunctionObject *)func)->m_self;
-}
-
-static inline const char *
-get_name(PyObject *func) {
+static const char *
+get_name(PyObject *func)
+{
+    assert(PyCFunction_Check(func));
     PyMethodDef *method = ((PyCFunctionObject *)func)->m_ml;
     return method->ml_name;
 }
 
 typedef void (*funcptr)(void);
 
-static inline funcptr
-get_meth(PyObject *func) {
-    PyMethodDef *method = ((PyCFunctionObject *)func)->m_ml;
-    return (funcptr)method->ml_meth;
-}
-
 static inline int
-check_no_kwargs(PyObject *func, PyObject *kwnames) {
-    assert(PyCFunction_Check(func));
-    if (kwnames && PyTuple_GET_SIZE(kwnames) > 0) {
-        PyErr_Format(PyExc_TypeError,
-                     "%.200s() takes no keyword arguments", get_name(func));
-        return 0;
-    }
-    return 1;
-}
-
-static inline int
-vectorcall_begin(PyObject *func) {
+cfunction_check_kwargs(PyObject *func, PyObject *kwnames)
+{
     assert(!PyErr_Occurred());
     assert(PyCFunction_Check(func));
-    if (Py_EnterRecursiveCall(" while calling a Python object")) {
-        return 0;
+    if (kwnames && PyTuple_GET_SIZE(kwnames)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s() takes no keyword arguments", get_name(func));
+        return -1;
     }
-    return 1;
+    return 0;
 }
 
-static inline PyObject *
-vectorcall_end(PyObject *func, PyObject *result) {
-    Py_LeaveRecursiveCall();
-    return _Py_CheckFunctionResult(func, result, NULL);
+static inline funcptr
+cfunction_enter_call(PyObject *func)
+{
+    if (Py_EnterRecursiveCall(" while calling a Python object")) {
+        return NULL;
+    }
+    return (funcptr)PyCFunction_GET_FUNCTION(func);
 }
-
 
 /* Now the actual vectorcall functions */
-static inline PyObject *
-vectorcall_FASTCALL(
+static PyObject *
+cfunction_vectorcall_FASTCALL(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
-    if (!check_no_kwargs(func, kwnames)) {
-        return NULL;
-    }
-    if (!vectorcall_begin(func)) {
+    if (cfunction_check_kwargs(func, kwnames)) {
         return NULL;
     }
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    _PyCFunctionFast meth = (_PyCFunctionFast)get_meth(func);
-    PyObject *result = meth(get_self(func), args, nargs);
-    return vectorcall_end(func, result);
-}
-
-static inline PyObject *
-vectorcall_FASTCALL_KEYWORDS(
-    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
-{
-    if (!vectorcall_begin(func)) {
+    _PyCFunctionFast meth = (_PyCFunctionFast)
+                            cfunction_enter_call(func);
+    if (meth == NULL) {
         return NULL;
     }
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    _PyCFunctionFastWithKeywords meth = (_PyCFunctionFastWithKeywords)get_meth(func);
-    PyObject *result = meth(get_self(func), args, nargs, kwnames);
-    return vectorcall_end(func, result);
+    PyObject *result = meth(PyCFunction_GET_SELF(func), args, nargs);
+    Py_LeaveRecursiveCall();
+    return result;
 }
 
-static inline PyObject *
-vectorcall_NOARGS(
+static PyObject *
+cfunction_vectorcall_FASTCALL_KEYWORDS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
-    if (!check_no_kwargs(func, kwnames)) {
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    _PyCFunctionFastWithKeywords meth = (_PyCFunctionFastWithKeywords)
+                                        cfunction_enter_call(func);
+    if (meth == NULL) {
+        return NULL;
+    }
+    PyObject *result = meth(PyCFunction_GET_SELF(func), args, nargs, kwnames);
+    Py_LeaveRecursiveCall();
+    return result;
+}
+
+static PyObject *
+cfunction_vectorcall_NOARGS(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    if (cfunction_check_kwargs(func, kwnames)) {
         return NULL;
     }
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
@@ -462,19 +451,20 @@ vectorcall_NOARGS(
             "%.200s() takes no arguments (%zd given)", get_name(func), nargs);
         return NULL;
     }
-    if (!vectorcall_begin(func)) {
+    PyCFunction meth = (PyCFunction)cfunction_enter_call(func);
+    if (meth == NULL) {
         return NULL;
     }
-    PyCFunction meth = (PyCFunction)get_meth(func);
-    PyObject *result = meth(get_self(func), NULL);
-    return vectorcall_end(func, result);
+    PyObject *result = meth(PyCFunction_GET_SELF(func), NULL);
+    Py_LeaveRecursiveCall();
+    return result;
 }
 
-static inline PyObject *
-vectorcall_O(
+static PyObject *
+cfunction_vectorcall_O(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
-    if (!check_no_kwargs(func, kwnames)) {
+    if (cfunction_check_kwargs(func, kwnames)) {
         return NULL;
     }
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
@@ -484,10 +474,11 @@ vectorcall_O(
             get_name(func), nargs);
         return NULL;
     }
-    if (!vectorcall_begin(func)) {
+    PyCFunction meth = (PyCFunction)cfunction_enter_call(func);
+    if (meth == NULL) {
         return NULL;
     }
-    PyCFunction meth = (PyCFunction)get_meth(func);
-    PyObject *result = meth(get_self(func), args[0]);
-    return vectorcall_end(func, result);
+    PyObject *result = meth(PyCFunction_GET_SELF(func), args[0]);
+    Py_LeaveRecursiveCall();
+    return result;
 }
