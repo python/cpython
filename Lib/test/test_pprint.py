@@ -346,6 +346,65 @@ mappingproxy(OrderedDict([('the', 0),
                           ('lazy', 7),
                           ('dog', 8)]))""")
 
+    def test_empty_simple_namespace(self):
+        ns = types.SimpleNamespace()
+        formatted = pprint.pformat(ns)
+        self.assertEqual(formatted, "namespace()")
+
+    def test_small_simple_namespace(self):
+        ns = types.SimpleNamespace(a=1, b=2)
+        formatted = pprint.pformat(ns)
+        self.assertEqual(formatted, "namespace(a=1, b=2)")
+
+    def test_simple_namespace(self):
+        ns = types.SimpleNamespace(
+            the=0,
+            quick=1,
+            brown=2,
+            fox=3,
+            jumped=4,
+            over=5,
+            a=6,
+            lazy=7,
+            dog=8,
+        )
+        formatted = pprint.pformat(ns, width=60)
+        self.assertEqual(formatted, """\
+namespace(the=0,
+          quick=1,
+          brown=2,
+          fox=3,
+          jumped=4,
+          over=5,
+          a=6,
+          lazy=7,
+          dog=8)""")
+
+    def test_simple_namespace_subclass(self):
+        class AdvancedNamespace(types.SimpleNamespace): pass
+        ns = AdvancedNamespace(
+            the=0,
+            quick=1,
+            brown=2,
+            fox=3,
+            jumped=4,
+            over=5,
+            a=6,
+            lazy=7,
+            dog=8,
+        )
+        formatted = pprint.pformat(ns, width=60)
+        self.assertEqual(formatted, """\
+AdvancedNamespace(the=0,
+                  quick=1,
+                  brown=2,
+                  fox=3,
+                  jumped=4,
+                  over=5,
+                  a=6,
+                  lazy=7,
+                  dog=8)""")
+
     def test_subclassing(self):
         o = {'names with spaces': 'should be presented using repr()',
              'others.should.not.be': 'like.this'}
