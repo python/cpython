@@ -141,7 +141,7 @@ Telnet Objects
 
    Do not try to reopen an already connected instance.
 
-   .. audit-event:: telnetlib.Telnet.open "self host port"
+   .. audit-event:: telnetlib.Telnet.open self,host,port telnetlib.Telnet.open
 
 
 .. method:: Telnet.msg(msg, *args)
@@ -178,7 +178,7 @@ Telnet Objects
    block if the connection is blocked.  May raise :exc:`OSError` if the
    connection is closed.
 
-   .. audit-event:: telnetlib.Telnet.write "self buffer"
+   .. audit-event:: telnetlib.Telnet.write self,buffer telnetlib.Telnet.write
 
    .. versionchanged:: 3.3
       This method used to raise :exc:`socket.error`, which is now an alias

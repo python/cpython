@@ -585,7 +585,7 @@ functions.
       with Popen(["ifconfig"], stdout=PIPE) as proc:
           log.write(proc.stdout.read())
 
-   .. audit-event:: subprocess.Popen "executable args cwd env"
+   .. audit-event:: subprocess.Popen executable,args,cwd,env subprocess.Popen
 
       Popen and the other functions in this module that use it raise an
       :ref:`auditing event <auditing>` ``subprocess.Popen`` with arguments
