@@ -100,7 +100,7 @@ class POP3:
         self.host = host
         self.port = port
         self._tls_established = False
-        sys.audit("poplib.POP3", self, host, port)
+        sys.audit("poplib.connect", self, host, port)
         self.sock = self._create_socket(timeout)
         self.file = self.sock.makefile('rb')
         self._debugging = 0
@@ -111,7 +111,7 @@ class POP3:
 
     def _putline(self, line):
         if self._debugging > 1: print('*put*', repr(line))
-        sys.audit("poplib.POP3.putline", self, line)
+        sys.audit("poplib.putline", self, line)
         self.sock.sendall(line + CRLF)
 
 

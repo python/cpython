@@ -128,7 +128,7 @@ are always available.  They are listed here in alphabetical order.
    :func:`breakpoint` will automatically call that, allowing you to drop into
    the debugger of choice.
 
-   .. audit-event:: builtins.breakpoint "sys.breakpointhook"
+   .. audit-event:: builtins.breakpoint breakpointhook breakpoint
 
    .. versionadded:: 3.7
 
@@ -277,7 +277,7 @@ are always available.  They are listed here in alphabetical order.
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
 
-   .. audit-event:: compile "source filename"
+   .. audit-event:: compile source,filename compile
 
       Raises an :ref:`auditing event <auditing>` ``compile`` with arguments
       ``source`` and ``filename``. This event may also be raised by implicit
@@ -490,7 +490,7 @@ are always available.  They are listed here in alphabetical order.
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
 
-   .. audit-event:: exec code_object
+   .. audit-event:: exec code_object eval
 
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
       as the argument. Code compilation events may also be raised.
@@ -525,7 +525,7 @@ are always available.  They are listed here in alphabetical order.
    builtins are available to the executed code by inserting your own
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
 
-   .. audit-event:: exec code_object
+   .. audit-event:: exec code_object exec
 
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
       as the argument. Code compilation events may also be raised.
@@ -779,12 +779,12 @@ are always available.  They are listed here in alphabetical order.
    If the :mod:`readline` module was loaded, then :func:`input` will use it
    to provide elaborate line editing and history features.
 
-   .. audit-event:: builtins.input prompt
+   .. audit-event:: builtins.input prompt input
 
       Raises an :ref:`auditing event <auditing>` ``builtins.input`` with
       argument ``prompt`` before reading input
 
-   .. audit-event:: builtins.input/result result
+   .. audit-event:: builtins.input/result result input
 
       Raises an auditing event ``builtins.input/result`` with the result after
       successfully reading input.
@@ -1222,7 +1222,7 @@ are always available.  They are listed here in alphabetical order.
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
 
-   .. audit-event:: open "file mode flags"
+   .. audit-event:: open file,mode,flags open
 
    The ``mode`` and ``flags`` arguments may have been modified or inferred from
    the original call.
