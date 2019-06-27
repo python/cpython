@@ -102,7 +102,7 @@ class BasicTest(BaseTest):
         else:
             self.assertFalse(os.path.exists(p))
         data = self.get_text_file_contents('pyvenv.cfg')
-        executable = sys.base_executable
+        executable = getattr(sys, '_base_executable', sys.executable)
         path = os.path.dirname(executable)
         self.assertIn('home = %s' % path, data)
         fn = self.get_env_file(self.bindir, self.exe)
