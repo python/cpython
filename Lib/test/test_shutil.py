@@ -336,6 +336,25 @@ class TestShutil(unittest.TestCase):
         finally:
             os.lstat = orig_lstat
 
+    def test_rmtree_onitem(self):
+        # bpo-37366
+        #
+        # verify that shutil.rmtree() calls its
+        # onitem parameter before traversing each
+        # directory entry.
+        def _onitem(path):
+            self.assertTrue(os.path.exists(path))
+            self.assertEqual(path, paths.pop(0))
+
+        paths = [TESTFN,
+                 os.path.join(TESTFN, 'foo'),
+                 os.path.join(TESTFN, 'foo', 'bar')]
+        os.mkdir(paths[0])
+        os.mkdir(paths[1])
+        write_file(paths[2], 'Hello world!')
+        shutil.rmtree(TESTFN, onitem=_onitem)
+        self.assertEqual(paths, [])
+
     @support.skip_unless_symlink
     def test_copymode_follow_symlinks(self):
         tmp_dir = self.mkdtemp()

@@ -1,0 +1,4 @@
+:func:`shutil.rmtree` is extended to accept an *onitem* callback argument
+that gets called for each directory entry as they are enumerated.  This
+allows entries to be made "deletable" before attempting to delete them.
+Patch by Jeffrey Kintscher.

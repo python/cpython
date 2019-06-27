@@ -537,7 +537,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                          dirs_exist_ok=dirs_exist_ok)
 
 # version vulnerable to race conditions
-def _rmtree_unsafe(path, onerror):
+def _rmtree_unsafe(path, onerror, onitem):
     try:
         with os.scandir(path) as scandir_it:
             entries = list(scandir_it)
@@ -546,6 +546,7 @@ def _rmtree_unsafe(path, onerror):
         entries = []
     for entry in entries:
         fullname = entry.path
+        onitem(fullname)
         try:
             is_dir = entry.is_dir(follow_symlinks=False)
         except OSError:
@@ -560,7 +561,7 @@ def _rmtree_unsafe(path, onerror):
             except OSError:
                 onerror(os.path.islink, fullname, sys.exc_info())
                 continue
-            _rmtree_unsafe(fullname, onerror)
+            _rmtree_unsafe(fullname, onerror, onitem)
         else:
             try:
                 os.unlink(fullname)
@@ -572,7 +573,7 @@ def _rmtree_unsafe(path, onerror):
         onerror(os.rmdir, path, sys.exc_info())
 
 # Version using fd-based APIs to protect against races
-def _rmtree_safe_fd(topfd, path, onerror):
+def _rmtree_safe_fd(topfd, path, onerror, onitem):
     try:
         with os.scandir(topfd) as scandir_it:
             entries = list(scandir_it)
@@ -582,6 +583,7 @@ def _rmtree_safe_fd(topfd, path, onerror):
         return
     for entry in entries:
         fullname = os.path.join(path, entry.name)
+        onitem(fullname)
         try:
             is_dir = entry.is_dir(follow_symlinks=False)
         except OSError:
@@ -602,7 +604,7 @@ def _rmtree_safe_fd(topfd, path, onerror):
             else:
                 try:
                     if os.path.samestat(orig_st, os.fstat(dirfd)):
-                        _rmtree_safe_fd(dirfd, fullname, onerror)
+                        _rmtree_safe_fd(dirfd, fullname, onerror, onitem)
                         try:
                             os.rmdir(entry.name, dir_fd=topfd)
                         except OSError:
@@ -629,7 +631,7 @@ _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.scandir in os.supports_fd and
                      os.stat in os.supports_follow_symlinks)
 
-def rmtree(path, ignore_errors=False, onerror=None):
+def rmtree(path, ignore_errors=False, onerror=None, onitem=None):
     """Recursively delete a directory tree.
 
     If ignore_errors is set, errors are ignored; otherwise, if onerror
@@ -646,6 +648,10 @@ def rmtree(path, ignore_errors=False, onerror=None):
     elif onerror is None:
         def onerror(*args):
             raise
+    if onitem is None:
+        def onitem(*args):
+            pass
+    onitem(path)
     if _use_fd_functions:
         # While the unsafe rmtree works fine on bytes, the fd based does not.
         if isinstance(path, bytes):
@@ -664,7 +670,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
             return
         try:
             if os.path.samestat(orig_st, os.fstat(fd)):
-                _rmtree_safe_fd(fd, path, onerror)
+                _rmtree_safe_fd(fd, path, onerror, onitem)
                 try:
                     os.rmdir(path)
                 except OSError:
@@ -686,7 +692,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
             onerror(os.path.islink, path, sys.exc_info())
             # can't continue even if onerror hook returns
             return
-        return _rmtree_unsafe(path, onerror)
+        return _rmtree_unsafe(path, onerror, onitem)
 
 # Allow introspection of whether or not the hardening against symlink
 # attacks is supported on the current platform
