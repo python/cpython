@@ -25,6 +25,13 @@ try:
 except ImportError:
     ctypes = None
 
+# Platforms that set sys._base_executable can create venvs from within
+# another venv, so no need to skip tests that require venv.create().
+requireVenvCreate = unittest.skipUnless(
+    hasattr(sys, '_base_executable')
+    or sys.prefix == sys.base_prefix,
+    'cannot run venv.create from within a venv on this platform')
+
 def check_output(cmd, encoding=None):
     p = subprocess.Popen(cmd,
         stdout=subprocess.PIPE,
@@ -50,7 +57,7 @@ class BaseTest(unittest.TestCase):
             self.bindir = 'bin'
             self.lib = ('lib', 'python%d.%d' % sys.version_info[:2])
             self.include = 'include'
-        executable = sys.base_executable
+        executable = getattr(sys, '_base_executable', sys.executable)
         self.exe = os.path.split(executable)[-1]
 
     def tearDown(self):
@@ -146,6 +153,7 @@ class BasicTest(BaseTest):
             with patch('venv.subprocess.check_call', pip_cmd_checker):
                 builder.upgrade_dependencies(fake_context)
 
+    @requireVenvCreate
     def test_prefixes(self):
         """
         Test that the prefix values are as expected.
@@ -281,6 +289,7 @@ class BasicTest(BaseTest):
     # run the test, the pyvenv.cfg in the venv created in the test will
     # point to the venv being used to run the test, and we lose the link
     # to the source build - so Python can't initialise properly.
+    @requireVenvCreate
     def test_executable(self):
         """
         Test that the sys.executable value is as expected.
@@ -324,6 +333,7 @@ class BasicTest(BaseTest):
         )
         self.assertEqual(out.strip(), '0')
 
+    @requireVenvCreate
     def test_multiprocessing(self):
         """
         Test that the multiprocessing is able to spawn.
@@ -343,6 +353,7 @@ class BasicTest(BaseTest):
             'pool.terminate()'])
         self.assertEqual(out.strip(), "python".encode())
 
+@requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
     def assert_pip_not_installed(self):
