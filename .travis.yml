@@ -166,7 +166,8 @@ install:
 
 # Travis provides only 2 cores, so don't overdo the parallelism and waste memory.
 before_script:
-  - ./configure --with-pydebug
+  # -Og is much faster than -O0
+  - CFLAGS="${CFLAGS} -Og" ./configure --with-pydebug
   - make -j4 regen-all
   - changes=`git status --porcelain`
   - |
