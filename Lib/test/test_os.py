@@ -2560,6 +2560,7 @@ class PidTests(unittest.TestCase):
         status = os.waitpid(pid, 0)
         self.assertEqual(status, (pid, 0))
 
+
 class SpawnTests(unittest.TestCase):
     def create_args(self, *, with_env=False, use_bytes=False):
         self.exitcode = 17
