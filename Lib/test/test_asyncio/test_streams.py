@@ -1779,6 +1779,12 @@ os.close(fd)
 
         self.loop.run_until_complete(test())
 
+    def test_stream_ctor_forbidden(self):
+        with self.assertRaisesRegex(RuntimeError,
+                                    "should be instantiated "
+                                    "by asyncio internals only"):
+            asyncio.Stream(asyncio.StreamMode.READWRITE)
+
 
 if __name__ == '__main__':
     unittest.main()
