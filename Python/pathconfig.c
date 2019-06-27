@@ -367,6 +367,14 @@ _PyConfig_InitPathConfig(PyConfig *config)
             return _PyStatus_NO_MEMORY();
         }
     }
+
+    if (config->base_executable == NULL) {
+        if (copy_wstr(&config->base_executable,
+                      config->executable) < 0) {
+            return _PyStatus_NO_MEMORY();
+        }
+    }
+
     return _PyStatus_OK();
 }
 
