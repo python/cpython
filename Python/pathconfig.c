@@ -57,7 +57,6 @@ pathconfig_clear(_PyPathConfig *config)
     CLEAR(config->module_search_path);
     CLEAR(config->home);
     CLEAR(config->program_name);
-    CLEAR(config->base_executable);
 #undef CLEAR
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
@@ -87,10 +86,6 @@ pathconfig_calculate(_PyPathConfig *pathconfig, const PyConfig *config)
         goto error;
     }
     if (copy_wstr(&new_config.program_name, config->program_name) < 0) {
-        status = _PyStatus_NO_MEMORY();
-        goto error;
-    }
-    if (copy_wstr(&new_config.base_executable, config->base_executable) < 0) {
         status = _PyStatus_NO_MEMORY();
         goto error;
     }
@@ -229,9 +224,6 @@ _PyConfig_SetPathConfig(const PyConfig *config)
     if (copy_wstr(&pathconfig.home, config->home) < 0) {
         goto no_memory;
     }
-    if (copy_wstr(&pathconfig.base_executable, config->base_executable) < 0) {
-        goto no_memory;
-    }
 
     status = _PyPathConfig_SetGlobal(&pathconfig);
     if (_PyStatus_EXCEPTION(status)) {
@@ -329,13 +321,6 @@ config_calculate_pathconfig(PyConfig *config)
         }
     }
 
-    if (config->base_executable == NULL) {
-        if (copy_wstr(&config->base_executable,
-                      pathconfig.base_executable) < 0) {
-            goto no_memory;
-        }
-    }
-
     if (pathconfig.isolated != -1) {
         config->isolated = pathconfig.isolated;
     }
@@ -367,12 +352,6 @@ _PyConfig_InitPathConfig(PyConfig *config)
         PyStatus status = config_calculate_pathconfig(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
-        }
-    }
-
-    if (config->base_executable == NULL) {
-        if (copy_wstr(&config->base_executable, config->executable) < 0) {
-            return _PyStatus_NO_MEMORY();
         }
     }
 
