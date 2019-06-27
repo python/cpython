@@ -1427,7 +1427,7 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
 {
     Py_ssize_t ix;
     Py_hash_t hash;
-    PyDictObject*mp = (PyDictObject *)op;
+    PyDictObject *mp = (PyDictObject *)op;
     PyObject *value;
 
     if (!PyDict_Check(op)) {
