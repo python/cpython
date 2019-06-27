@@ -23,7 +23,7 @@ from inspect import CO_COROUTINE
 from itertools import product
 from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType
-from operator import neg
+from operator import neg, length_hint
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink,
     maybe_get_event_loop_policy)
@@ -34,6 +34,23 @@ try:
 except ImportError:
     pty = signal = None
 
+
+class Iter(object):
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        raise StopIteration
+
+
+class SequenceWithoutALength:
+
+    def __getitem__(self, i):
+        if i == 5:
+            raise IndexError
+        else:
+            return i
 
 class Squares:
 
@@ -932,6 +949,80 @@ class BuiltinTest(unittest.TestCase):
             m2 = map(map_char, "Is this the real life?")
             self.check_iter_pickle(m1, list(m2), proto)
 
+    def test_map_length_hint(self):
+        def identity(x):
+            return x
+
+        it = map(pow, range(4), range(10))
+        self.assertEqual(4, length_hint(it))
+        next(it)
+        self.assertEqual(3, length_hint(it))
+        next(it)
+        self.assertEqual(2, length_hint(it))
+        self.assertEqual([pow(2,2), pow(3,3)], list(it))  # Consume the iterator.
+        self.assertEqual(0, length_hint(it))
+
+        types = [tuple, str, list, set, dict.fromkeys]
+        for typ in types:
+            with self.subTest(typ=typ):
+                self.assertEqual(0, length_hint(map(identity, typ('')), 8))
+                self.assertEqual(0, length_hint(map(identity, iter(typ(''))), 8))
+
+                self.assertEqual(3, length_hint(map(identity, typ('abc')), 8))
+                self.assertEqual(3, length_hint(map(identity, iter(typ('abc'))), 8))
+
+        class Hinted(Iter):
+            def __init__(self, hint_result):
+                self.hint_result = hint_result
+
+            def __length_hint__(self):
+                hint_result = self.hint_result
+                if isinstance(hint_result, type) and issubclass(hint_result, Exception):
+                    raise hint_result()
+                return self.hint_result
+
+        self.assertEqual(
+            3,
+            length_hint(map(identity, Hinted(3), Hinted(4), Hinted(5)))
+        )
+        self.assertEqual(
+            8,
+            length_hint(map(identity, Hinted(3), Iter()), 8)
+        )
+        self.assertEqual(
+            8,
+            length_hint(map(identity, Hinted(3), Hinted(NotImplemented)), 8)
+        )
+        self.assertEqual(
+            8,
+            length_hint(map(identity, SequenceWithoutALength()), 8)
+        )
+        self.assertEqual(
+            8,
+            length_hint(map(identity, Hinted(3), SequenceWithoutALength()), 8)
+        )
+        self.assertRaises(
+            ValueError, length_hint, map(identity, Hinted(ValueError))
+        )
+        self.assertRaises(
+            ValueError, length_hint, map(identity, Hinted(-5))
+        )
+        self.assertRaises(
+            OverflowError, length_hint, map(identity, Hinted(sys.maxsize + 1))
+        )
+        # According to PEP 424, when __length_hint__ raises TypeError,
+        # operator.length_hint() returns its default value.
+        self.assertEqual(
+            8, length_hint(map(identity, Hinted(3), Hinted(TypeError)), 8)
+        )
+        # This is probably not desirable.  It emerges because an inner
+        # evaluation of ``operator.length_hint(Hinted('z'))`` raises
+        # TypeError, which is then caught by an outer call to
+        # ``operator.length_hint``.
+        self.assertEqual(
+            8, length_hint(map(identity, Hinted(3), Hinted('z')), 8)
+        )
+
     def test_max(self):
         self.assertEqual(max('123123'), '3')
         self.assertEqual(max(1, 2, 3), 3)
@@ -1047,12 +1138,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(StopIteration, next, it)
         self.assertRaises(StopIteration, next, it)
         self.assertEqual(next(it, 42), 42)
-
-        class Iter(object):
-            def __iter__(self):
-                return self
-            def __next__(self):
-                raise StopIteration
 
         it = iter(Iter())
         self.assertEqual(next(it, 42), 42)
@@ -1450,12 +1535,6 @@ class BuiltinTest(unittest.TestCase):
         # Make sure zip doesn't try to allocate a billion elements for the
         # result list when one of its arguments doesn't say how long it is.
         # A MemoryError is the most likely failure mode.
-        class SequenceWithoutALength:
-            def __getitem__(self, i):
-                if i == 5:
-                    raise IndexError
-                else:
-                    return i
         self.assertEqual(
             list(zip(SequenceWithoutALength(), range(2**30))),
             list(enumerate(range(5)))

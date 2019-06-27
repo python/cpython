@@ -1293,6 +1293,39 @@ exit:
     return result;
 }
 
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
+
+static PyObject *
+map_length_hint(mapobject *lz, PyObject *Py_UNUSED(ignored))
+{
+    Py_ssize_t niters, i, hint_result = PY_SSIZE_T_MAX;
+    niters = PyTuple_GET_SIZE(lz->iters);
+    assert(niters > 0);
+
+    for (i = 0; i < niters; i++) {
+        PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
+        Py_ssize_t it_hint = PyObject_LengthHint(it, /*defaultvalue*/ -1);
+        /* There are three cases to distinguish:
+           it_hint >= 0:
+               Iterator provided length hint.
+           it_hint < 0 && PyErr_Occurred():
+               Exception occurred during length_hint evaluation; propagate it.
+           it_hint < 0 && no error occurred:
+               The iterator does not provide a length hint.
+        */
+        if (it_hint < 0) {
+            if (PyErr_Occurred()) {
+                return NULL;
+            }
+            Py_RETURN_NOTIMPLEMENTED;
+        }
+        /* min(hint_result, it_hint) */
+        hint_result = (it_hint < hint_result) ? it_hint : hint_result;
+    }
+    assert(hint_result >= 0);
+    return PyLong_FromSize_t(hint_result);
+}
+
 static PyObject *
 map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
 {
@@ -1313,6 +1346,7 @@ map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef map_methods[] = {
+    {"__length_hint__", (PyCFunction)map_length_hint, METH_NOARGS, length_hint_doc},
     {"__reduce__",   (PyCFunction)map_reduce,   METH_NOARGS, reduce_doc},
     {NULL,           NULL}           /* sentinel */
 };

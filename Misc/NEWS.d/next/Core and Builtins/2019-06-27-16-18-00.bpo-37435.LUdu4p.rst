@@ -1,0 +1,2 @@
+The iterator provided by builtin :func:`map` now provides a `__length_hint__`
+method.  Patch by Nicholas Musolino.
