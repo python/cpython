@@ -251,7 +251,7 @@ class EnvBuilder:
 
             for suffix in suffixes:
                 src = os.path.join(dirname, suffix)
-                if os.path.exists(src):
+                if os.path.lexists(src):
                     copier(src, os.path.join(binpath, suffix))
 
             if sysconfig.is_python_build(True):

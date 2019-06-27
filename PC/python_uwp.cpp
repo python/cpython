@@ -8,6 +8,8 @@
 #include <shellapi.h>
 #include <shlobj.h>
 
+#include <string>
+
 #include <winrt\Windows.ApplicationModel.h>
 #include <winrt\Windows.Storage.h>
 
@@ -66,9 +68,7 @@ get_package_family()
 static int
 set_process_name(PyConfig *config)
 {
-    DWORD bufferLen = MAX_PATH;
-    DWORD len = bufferLen;
-    wchar_t *r = NULL;
+    std::wstring executable, home;
 
     const auto family = get_package_family();
     
@@ -76,47 +76,55 @@ set_process_name(PyConfig *config)
         PWSTR localAppData;
         if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0,
                                            NULL, &localAppData))) {
-            bufferLen = (DWORD)(wcslen(localAppData)
-                        + family.size()
-                        + wcslen(PROGNAME)
-                        + 25);
-            r = (wchar_t *)malloc(bufferLen * sizeof(wchar_t));
-            swprintf_s(r, bufferLen,
-                       L"%ls\\Microsoft\\WindowsApps\\%ls\\%ls",
-                       localAppData,
-                       family.c_str(),
-                       PROGNAME);
+            executable = std::wstring(localAppData)
+                         + L"\\Microsoft\\WindowsApps\\"
+                         + family
+                         + L"\\"
+                         + PROGNAME;
 
             CoTaskMemFree(localAppData);
         }
     }
 
-    while (!r) {
-        r = (wchar_t *)malloc(bufferLen * sizeof(wchar_t));
-        if (!r) {
-            Py_FatalError("out of memory");
-            return NULL;
-        }
-        len = GetModuleFileNameW(NULL, r, bufferLen);
+    home.resize(MAX_PATH);
+    while (true) {
+        DWORD len = GetModuleFileNameW(
+            NULL, home.data(), (DWORD)home.size());
         if (len == 0) {
-            free((void *)r);
-            return 0;
-        } else if (len == bufferLen &&
+            home.clear();
+            break;
+        } else if (len == home.size() &&
                    GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-            free(r);
-            r = NULL;
-            bufferLen *= 2;
+            home.resize(len * 2);
+        } else {
+            home.resize(len);
+            size_t bslash = home.find_last_of(L"/\\");
+            if (bslash != std::wstring::npos) {
+                home.erase(bslash);
+            }
+            break;
         }
     }
 
-    PyConfig_SetString(config, &config->base_executable, r);
-    const wchar_t *launcherPath = _wgetenv(L"__PYVENV_LAUNCHER__");
-    if (launcherPath) {
-        PyConfig_SetString(config, &config->executable, launcherPath);
-    } else {
-        PyConfig_SetString(config, &config->executable, r);
+    if (executable.empty() && !home.empty()) {
+        executable = home + L"\\" + PROGNAME;
     }
-    free((void *)r);
+
+    if (!home.empty()) {
+        PyConfig_SetString(config, &config->home, home.c_str());
+        // XXX: Why doesn't setting prefix and exec_prefix work?
+        //PyConfig_SetString(config, &config->prefix, home.c_str());
+        //PyConfig_SetString(config, &config->exec_prefix, home.c_str());
+    }
+    if (!executable.empty()) {
+        PyConfig_SetString(config, &config->base_executable, executable.c_str());
+        const wchar_t *launcherPath = _wgetenv(L"__PYVENV_LAUNCHER__");
+        if (launcherPath) {
+            PyConfig_SetString(config, &config->executable, launcherPath);
+        } else {
+            PyConfig_SetString(config, &config->executable, executable.c_str());
+        }
+    }
 
     return 1;
 }
@@ -156,21 +164,23 @@ wmain(int argc, wchar_t **argv)
         p = argv[0];
     }
     if (p) {
-        if (*p++ == L'\\') {
-            const wchar_t *moduleName = NULL;
-            if (wcsnicmp(p, L"pip", 3) == 0) {
-                moduleName = L"pip";
-                /* No longer required when pip 19.1 is added */
-                _wputenv_s(L"PIP_USER", L"true");
-            } else if (wcsnicmp(p, L"idle", 4) == 0) {
-                moduleName = L"idlelib";
-            }
+        if (*p == L'\\') {
+            p++;
+        }
 
-            if (moduleName) {
-                PyConfig_SetString(&config, &config.run_module, moduleName);
-                PyConfig_SetString(&config, &config.run_filename, NULL);
-                PyConfig_SetString(&config, &config.run_command, NULL);
-            }
+        const wchar_t *moduleName = NULL;
+        if (wcsnicmp(p, L"pip", 3) == 0) {
+            moduleName = L"pip";
+            /* No longer required when pip 19.1 is added */
+            _wputenv_s(L"PIP_USER", L"true");
+        } else if (wcsnicmp(p, L"idle", 4) == 0) {
+            moduleName = L"idlelib";
+        }
+
+        if (moduleName) {
+            PyConfig_SetString(&config, &config.run_module, moduleName);
+            PyConfig_SetString(&config, &config.run_filename, NULL);
+            PyConfig_SetString(&config, &config.run_command, NULL);
         }
     }
 
