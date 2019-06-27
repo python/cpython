@@ -129,10 +129,12 @@ typedef struct {
 
     wchar_t *lib_python;               /* "lib/pythonX.Y" */
     wchar_t argv0_path[MAXPATHLEN+1];
+    wchar_t base_executable[MAXPATHLEN+1];
     wchar_t zip_path[MAXPATHLEN+1];    /* ".../lib/pythonXY.zip" */
 
     int prefix_found;         /* found platform independent libraries? */
     int exec_prefix_found;    /* found the platform dependent libraries? */
+    int base_executable_found; /* found a base_executable path */
 } PyCalculatePath;
 
 static const wchar_t delimiter[2] = {DELIM, '\0'};
@@ -987,6 +989,12 @@ calculate_read_pyenv(PyCalculatePath *calculate)
 
     /* Look for a 'home' variable and set argv0_path to it, if found */
     if (_Py_FindEnvConfigValue(env_file, L"home", tmpbuffer, buflen)) {
+        /* preserve the previous argv0_path as sys.base_executable */
+        if (safe_wcscpy(calculate->base_executable, calculate->argv0_path,
+                        Py_ARRAY_LENGTH(calculate->base_executable)) < 0) {
+            return PATHLEN_ERR();
+        }
+        calculate->base_executable_found = 1;
         if (safe_wcscpy(calculate->argv0_path, tmpbuffer,
                         Py_ARRAY_LENGTH(calculate->argv0_path)) < 0) {
             return PATHLEN_ERR();
@@ -1238,6 +1246,10 @@ calculate_path_impl(const PyConfig *config,
     pathconfig->exec_prefix = _PyMem_RawWcsdup(exec_prefix);
     if (pathconfig->exec_prefix == NULL) {
         return _PyStatus_NO_MEMORY();
+    }
+
+    if (calculate->base_executable_found) {
+        pathconfig->base_executable = _PyMem_RawWcsdup(calculate->base_executable);
     }
 
     return _PyStatus_OK();

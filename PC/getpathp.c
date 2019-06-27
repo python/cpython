@@ -128,6 +128,7 @@ typedef struct {
 
     wchar_t argv0_path[MAXPATHLEN+1];
     wchar_t zip_path[MAXPATHLEN+1];
+    wchar_t base_executable[MAXPATHLEN+1];
 } PyCalculatePath;
 
 
@@ -729,6 +730,8 @@ calculate_pyvenv_file(PyCalculatePath *calculate)
     /* Look for a 'home' variable and set argv0_path to it, if found */
     wchar_t tmpbuffer[MAXPATHLEN+1];
     if (_Py_FindEnvConfigValue(env_file, L"home", tmpbuffer, MAXPATHLEN)) {
+        /* Preserve original path as base_executable */
+        wcscpy_s(calculate->base_executable, MAXPATHLEN+1, calculate->argv0_path);
         wcscpy_s(calculate->argv0_path, MAXPATHLEN+1, tmpbuffer);
     }
     fclose(env_file);
@@ -998,6 +1001,13 @@ done:
     pathconfig->exec_prefix = _PyMem_RawWcsdup(prefix);
     if (pathconfig->exec_prefix == NULL) {
         return _PyStatus_NO_MEMORY();
+    }
+    if (calculate->base_executable[0]) {
+        pathconfig->base_executable = _PyMem_RawWcsdup(
+            calculate->base_executable);
+        if (pathconfig->base_executable == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
     }
 
     return _PyStatus_OK();
