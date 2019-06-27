@@ -544,7 +544,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         if expected['executable'] is self.GET_DEFAULT_CONFIG:
             expected['executable'] = default_executable
         if expected['base_executable'] is self.GET_DEFAULT_CONFIG:
-            expected['base_executable'] = default_executable 
+            expected['base_executable'] = default_executable
         if expected['program_name'] is self.GET_DEFAULT_CONFIG:
             expected['program_name'] = './_testembed'
 
