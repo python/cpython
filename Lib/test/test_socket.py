@@ -1921,12 +1921,7 @@ class BasicCANTest(unittest.TestCase):
     def testBindAny(self):
         with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
             s.bind(('', ))
-
-    def testBind(self):
-        with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
-            address = ('', )
-            s.bind(address)
-            self.assertEqual(s.getsockname(), address)
+            self.assertIsInstance(s.getsockname(), tuple)
 
     def testTooLongInterfaceName(self):
         # most systems limit IFNAMSIZ to 16, take 1024 to be sure
