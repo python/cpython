@@ -39,11 +39,13 @@ The :mod:`poplib` module provides two classes:
    connection attempt (if not specified, the global default timeout setting will
    be used).
 
-   .. audit-event:: poplib.POP3 "self host port"
+   .. audit-event:: poplib.connect self,host,port poplib.POP3
 
-   All commands will raise an :ref:`auditing event <auditing>`
-   ``poplib.POP3.putline`` with arguments ``self`` and ``line``,
-   where ``line`` is the bytes about to be sent to the remote host.
+   .. audit-event:: poplib.putline self,line poplib.POP3
+
+      All commands will raise an :ref:`auditing event <auditing>`
+      ``poplib.putline`` with arguments ``self`` and ``line``,
+      where ``line`` is the bytes about to be sent to the remote host.
 
 
 .. class:: POP3_SSL(host, port=POP3_SSL_PORT, keyfile=None, certfile=None, timeout=None, context=None)
@@ -60,11 +62,13 @@ The :mod:`poplib` module provides two classes:
    point to PEM-formatted private key and certificate chain files,
    respectively, for the SSL connection.
 
-   .. audit-event:: poplib.POP3 "self host port"
+   .. audit-event:: poplib.connect self,host,port poplib.POP3_SSL
 
-   All commands will raise an :ref:`auditing event <auditing>`
-   ``poplib.POP3.putline`` with arguments ``self`` and ``line``,
-   where ``line`` is the bytes about to be sent to the remote host.
+   .. audit-event:: poplib.putline self,line popplib.POP3_SSL
+
+      All commands will raise an :ref:`auditing event <auditing>`
+      ``poplib.putline`` with arguments ``self`` and ``line``,
+      where ``line`` is the bytes about to be sent to the remote host.
 
    .. versionchanged:: 3.2
       *context* parameter added.
