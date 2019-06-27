@@ -224,7 +224,7 @@ Module functions and constants
    More information about this feature, including a list of recognized options, can
    be found in the `SQLite URI documentation <https://www.sqlite.org/uri.html>`_.
 
-   .. audit-event:: sqlite3.connect "database"
+   .. audit-event:: sqlite3.connect database sqlite3.connect
 
    .. versionchanged:: 3.4
       Added the *uri* parameter.

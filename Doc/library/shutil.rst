@@ -249,7 +249,7 @@ Directory and files operations
    as arguments. By default, :func:`~shutil.copy2` is used, but any function
    that supports the same signature (like :func:`~shutil.copy`) can be used.
 
-   .. audit-event:: shutil.copytree "src dst"
+   .. audit-event:: shutil.copytree src,dst shutil.copytree
 
    .. versionchanged:: 3.3
       Copy metadata when *symlinks* is false.
@@ -298,7 +298,7 @@ Directory and files operations
    *excinfo*, will be the exception information returned by
    :func:`sys.exc_info`.  Exceptions raised by *onerror* will not be caught.
 
-   .. audit-event:: shutil.rmtree path
+   .. audit-event:: shutil.rmtree path shutil.rmtree
 
    .. versionchanged:: 3.3
       Added a symlink attack resistant version that is used automatically
@@ -562,7 +562,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    The *verbose* argument is unused and deprecated.
 
-   .. audit-event:: shutil.make_archive "base_name format root_dir base_dir"
+   .. audit-event:: shutil.make_archive base_name,format,root_dir,base_dir shutil.make_archive
 
    .. versionchanged:: 3.8
       The modern pax (POSIX.1-2001) format is now used instead of
