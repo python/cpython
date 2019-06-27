@@ -6,6 +6,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <shellapi.h>
+#include <shlobj.h>
 
 #include <winrt\Windows.ApplicationModel.h>
 #include <winrt\Windows.Storage.h>
@@ -70,21 +71,23 @@ set_process_name(PyConfig *config)
     wchar_t *r = NULL;
 
     const auto family = get_package_family();
-    while (!family.empty() && !r) {
-        r = (wchar_t *)malloc(bufferLen * sizeof(wchar_t));
-        if (!r) {
-            Py_FatalError("out of memory");
-            return 0;
-        }
-        len = _snwprintf_s(r, bufferLen, _TRUNCATE,
-                           L"%ls\\Microsoft\\WindowsApps\\%ls\\%ls",
-                           _wgetenv(L"LOCALAPPDATA"),
-                           family.c_str(),
-                           PROGNAME);
-        if (len < 0) {
-            free((void *)r);
-            r = NULL;
-            bufferLen *= 2;
+    
+    if (!family.empty()) {
+        PWSTR localAppData;
+        if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0,
+                                           NULL, &localAppData))) {
+            bufferLen = (DWORD)(wcslen(localAppData)
+                        + family.size()
+                        + wcslen(PROGNAME)
+                        + 25);
+            r = (wchar_t *)malloc(bufferLen * sizeof(wchar_t));
+            swprintf_s(r, bufferLen,
+                       L"%ls\\Microsoft\\WindowsApps\\%ls\\%ls",
+                       localAppData,
+                       family.c_str(),
+                       PROGNAME);
+
+            CoTaskMemFree(localAppData);
         }
     }
 
@@ -131,12 +134,12 @@ wmain(int argc, wchar_t **argv)
     if (PyStatus_Exception(status)) {
         goto fail;
     }
-    
+
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
         goto fail;
     }
-    
+
     status = PyConfig_SetArgv(&config, argc, argv);
     if (PyStatus_Exception(status)) {
         goto fail;

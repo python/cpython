@@ -22,8 +22,7 @@ WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
 def _path_eq(p1, p2):
     return p1 == p2 or os.path.normcase(p1) == os.path.normcase(p2)
 
-WINENV = (hasattr(sys, '_base_executable') and
-          not _path_eq(sys.executable, sys._base_executable))
+WINENV = not _path_eq(sys.executable, sys.base_executable)
 
 
 def _close_handles(*handles):
@@ -62,7 +61,7 @@ class Popen(object):
         # bpo-35797: When running in a venv, we bypass the redirect
         # executor and launch our base Python.
         if WINENV and _path_eq(python_exe, sys.executable):
-            python_exe = sys._base_executable
+            python_exe = sys.base_executable
             env = os.environ.copy()
             env["__PYVENV_LAUNCHER__"] = sys.executable
         else:
