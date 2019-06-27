@@ -1448,7 +1448,7 @@ def _create_or_replace(dst, create_temp_dst):
 
     The file to replace `dst` is created at a temporary destination.
 
-    `create_temp_dst` is a function taking a single argument: a pathname
+    `create_temp_dst` is a callable taking a single argument: a pathname
     where the temporary file to replace `dst` will be created.
 
     """
