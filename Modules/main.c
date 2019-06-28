@@ -62,7 +62,7 @@ pymain_init(const _PyArgv *args)
     PyConfig config;
     status = PyConfig_InitPythonConfig(&config);
     if (_PyStatus_EXCEPTION(status)) {
-        return status;
+        goto done;
     }
 
     /* pass NULL as the config: config is read from command line arguments,
@@ -74,14 +74,18 @@ pymain_init(const _PyArgv *args)
         status = PyConfig_SetArgv(&config, args->argc, args->wchar_argv);
     }
     if (_PyStatus_EXCEPTION(status)) {
-        return status;
+        goto done;
     }
 
     status = Py_InitializeFromConfig(&config);
     if (_PyStatus_EXCEPTION(status)) {
-        return status;
+        goto done;
     }
-    return _PyStatus_OK();
+    status = _PyStatus_OK();
+
+done:
+    PyConfig_Clear(&config);
+    return status;
 }
 
 
