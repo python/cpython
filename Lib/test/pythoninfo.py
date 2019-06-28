@@ -651,6 +651,29 @@ def collect_subprocess(info_add):
     copy_attributes(info_add, subprocess, 'subprocess.%s', ('_USE_POSIX_SPAWN',))
 
 
+def collect_windows(info_add):
+    try:
+        import ctypes
+    except ImportError:
+        return
+
+    if not hasattr(ctypes, 'WinDLL'):
+        return
+
+    ntdll = ctypes.WinDLL('ntdll')
+    BOOLEAN = ctypes.c_ubyte
+
+    try:
+        RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
+    except AttributeError:
+        res = '<function not available>'
+    else:
+        RtlAreLongPathsEnabled.restype = BOOLEAN
+        RtlAreLongPathsEnabled.argtypes = ()
+        res = bool(RtlAreLongPathsEnabled())
+    info_add('windows.RtlAreLongPathsEnabled', res)
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -684,6 +707,7 @@ def collect_info(info):
         collect_testcapi,
         collect_time,
         collect_tkinter,
+        collect_windows,
         collect_zlib,
 
         # Collecting from tests should be last as they have side effects.
