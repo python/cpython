@@ -93,7 +93,11 @@
 # endif
 #endif  /* not defined XML_STATIC */
 
-#if !defined(XMLIMPORT) && defined(__GNUC__) && (__GNUC__ >= 4)
+#ifndef XML_ENABLE_VISIBILITY
+# define XML_ENABLE_VISIBILITY 0
+#endif
+
+#if !defined(XMLIMPORT) && XML_ENABLE_VISIBILITY
 # define XMLIMPORT __attribute__ ((visibility ("default")))
 #endif
 

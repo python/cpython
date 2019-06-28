@@ -1076,7 +1076,7 @@ XML_GetFeatureList(void);
 */
 #define XML_MAJOR_VERSION 2
 #define XML_MINOR_VERSION 2
-#define XML_MICRO_VERSION 6
+#define XML_MICRO_VERSION 7
 
 #ifdef __cplusplus
 }
