@@ -16,14 +16,24 @@ class PlatformTest(unittest.TestCase):
 
     @support.skip_unless_symlink
     def test_architecture_via_symlink(self): # issue3762
+        if sys.platform == "win32" and not os.path.exists(sys.executable):
+            # App symlink appears to not exist, but we want the
+            # real executable here anyway
+            import _winapi
+            real = _winapi.GetModuleFileName(0)
+        else:
+            real = os.path.realpath(sys.executable)
+        link = os.path.abspath(support.TESTFN)
+        os.symlink(real, link)
+
         # On Windows, the EXE needs to know where pythonXY.dll and *.pyd is at
         # so we add the directory to the path, PYTHONHOME and PYTHONPATH.
         env = None
         if sys.platform == "win32":
             env = {k.upper(): os.environ[k] for k in os.environ}
             env["PATH"] = "{};{}".format(
-                os.path.dirname(sys.executable), env.get("PATH", ""))
-            env["PYTHONHOME"] = os.path.dirname(sys.executable)
+                os.path.dirname(real), env.get("PATH", ""))
+            env["PYTHONHOME"] = os.path.dirname(real)
             if sysconfig.is_python_build(True):
                 env["PYTHONPATH"] = os.path.dirname(os.__file__)
 
@@ -40,11 +50,8 @@ class PlatformTest(unittest.TestCase):
                           .format(p.returncode))
             return r
 
-        real = os.path.realpath(sys.executable)
-        link = os.path.abspath(support.TESTFN)
-        os.symlink(real, link)
         try:
-            self.assertEqual(get(real), get(link, env=env))
+            self.assertEqual(get(sys.executable), get(link, env=env))
         finally:
             os.remove(link)
 
@@ -280,6 +287,11 @@ class PlatformTest(unittest.TestCase):
            os.path.exists(sys.executable+'.exe'):
             # Cygwin horror
             executable = sys.executable + '.exe'
+        elif sys.platform == "win32" and not os.path.exists(sys.executable):
+            # App symlink appears to not exist, but we want the
+            # real executable here anyway
+            import _winapi
+            executable = _winapi.GetModuleFileName(0)
         else:
             executable = sys.executable
         res = platform.libc_ver(executable)
