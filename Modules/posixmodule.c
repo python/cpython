@@ -3334,7 +3334,7 @@ posix_getcwd(int use_bytes)
        terminating \0. If the buffer is too small, len includes
        the space needed for the terminator. */
     if (len >= Py_ARRAY_LENGTH(wbuf)) {
-        if (len >= PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+        if (len <= PY_SSIZE_T_MAX / sizeof(wchar_t)) {
             wbuf2 = PyMem_RawMalloc(len * sizeof(wchar_t));
         }
         else {
