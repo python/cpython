@@ -90,8 +90,8 @@ class MiscTests(unittest.TestCase):
 
     def test_getcwd_long_path(self):
         # bpo-37412: On Linux, PATH_MAX is usually around 4096 bytes. On
-        # Windows, MAX_PATH is defined as 260 characters, but the universal
-        # naming convention (UNC) allows longer paths. Internally, the os
+        # Windows, MAX_PATH is defined as 260 characters, but Windows supports
+        # longer path if longer paths support is enabled. Internally, the os
         # module uses MAXPATHLEN which is at least 1024.
         #
         # Use a directory name of 200 characters to fit into Windows MAX_PATH
