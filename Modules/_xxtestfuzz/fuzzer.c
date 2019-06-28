@@ -105,19 +105,18 @@ static int fuzz_json_loads(const char* data, size_t size) {
         return 0;
     }
     PyObject* parsed = PyObject_CallFunctionObjArgs(json_loads_method, input_bytes, NULL);
-    /* Ignore ValueError as the fuzzer will more than likely
-       generate some invalid json and values */
-    if (parsed == NULL && PyErr_ExceptionMatches(PyExc_ValueError)) {
-        PyErr_Clear();
-    }
-    /* Ignore RecursionError as the fuzzer generates long sequences of
-       arrays such as `[[[...` */
-    if (parsed == NULL && PyErr_ExceptionMatches(PyExc_RecursionError)) {
-        PyErr_Clear();
-    }
-    /* Ignore unicode errors, invalid byte sequences are common */
-    if (parsed == NULL && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
-        PyErr_Clear();
+    if (parsed == NULL) {
+        /* Ignore ValueError as the fuzzer will more than likely
+           generate some invalid json and values */
+        if (PyErr_ExceptionMatches(PyExc_ValueError) ||
+        /* Ignore RecursionError as the fuzzer generates long sequences of
+           arrays such as `[[[...` */
+            PyErr_ExceptionMatches(PyExc_RecursionError) ||
+        /* Ignore unicode errors, invalid byte sequences are common */
+            PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)
+        ) {
+            PyErr_Clear();
+        }
     }
     Py_DECREF(input_bytes);
     Py_XDECREF(parsed);
@@ -192,13 +191,10 @@ static int fuzz_sre_compile(const char* data, size_t size) {
     }
     /* Ignore some common errors thrown by sre_parse:
        Overflow, Assertion and Index */
-    if (compiled == NULL && PyErr_ExceptionMatches(PyExc_OverflowError)) {
-        PyErr_Clear();
-    }
-    if (compiled == NULL && PyErr_ExceptionMatches(PyExc_AssertionError)) {
-        PyErr_Clear();
-    }
-    if (compiled == NULL && PyErr_ExceptionMatches(PyExc_IndexError)) {
+    if (compiled == NULL && (PyErr_ExceptionMatches(PyExc_OverflowError) ||
+                             PyErr_ExceptionMatches(PyExc_AssertionError) ||
+                             PyErr_ExceptionMatches(PyExc_IndexError))
+    ) {
         PyErr_Clear();
     }
     /* Ignore re.error */
