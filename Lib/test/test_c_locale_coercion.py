@@ -128,19 +128,6 @@ class EncodingDetails(_EncodingDetails):
         env_info = expected_lang, expected_lc_ctype, expected_lc_all
         return dict(cls(fs_encoding, *stream_info, *env_info)._asdict())
 
-    @staticmethod
-    def _handle_output_variations(data):
-        """Adjust the output to handle platform specific idiosyncrasies
-
-        * Some platforms report ASCII as ANSI_X3.4-1968
-        * Some platforms report ASCII as US-ASCII
-        * Some platforms report UTF-8 instead of utf-8
-        """
-        data = data.replace(b"ANSI_X3.4-1968", b"ascii")
-        data = data.replace(b"US-ASCII", b"ascii")
-        data = data.lower()
-        return data
-
     @classmethod
     def get_child_details(cls, env_vars):
         """Retrieves fsencoding and standard stream details from a child process
@@ -160,7 +147,7 @@ class EncodingDetails(_EncodingDetails):
         if not result.rc == 0:
             result.fail(py_cmd)
         # All subprocess outputs in this test case should be pure ASCII
-        adjusted_output = cls._handle_output_variations(result.out)
+        adjusted_output = result.out.lower()
         stdout_lines = adjusted_output.decode("ascii").splitlines()
         child_encoding_details = dict(cls(*stdout_lines)._asdict())
         stderr_lines = result.err.decode("ascii").rstrip().splitlines()
