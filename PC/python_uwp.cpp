@@ -27,51 +27,70 @@ const wchar_t *PROGNAME = L"python.exe";
 #endif
 #endif
 
-static void
-set_user_base()
+static std::wstring
+get_user_base()
 {
-    wchar_t envBuffer[2048];
     try {
         const auto appData = winrt::Windows::Storage::ApplicationData::Current();
         if (appData) {
             const auto localCache = appData.LocalCacheFolder();
             if (localCache) {
                 auto path = localCache.Path();
-                if (!path.empty() &&
-                    !wcscpy_s(envBuffer, path.c_str()) &&
-                    !wcscat_s(envBuffer, L"\\local-packages")
-                ) {
-                    _wputenv_s(L"PYTHONUSERBASE", envBuffer);
+                if (!path.empty()) {
+                    return std::wstring(path) + L"\\local-packages";
                 }
             }
         }
     } catch (...) {
     }
+    return std::wstring();
 }
 
-static winrt::hstring
+static std::wstring
 get_package_family()
 {
     try {
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         if (package) {
             const auto id = package.Id();
-            return id ? id.FamilyName() : winrt::hstring();
+            if (id) {
+                return std::wstring(id.FamilyName());
+            }
         }
     }
     catch (...) {
     }
 
-    return winrt::hstring();
+    return std::wstring();
+}
+
+static std::wstring
+get_package_home()
+{
+    try {
+        const auto package = winrt::Windows::ApplicationModel::Package::Current();
+        if (package) {
+            const auto path = package.InstalledLocation();
+            if (path) {
+                return std::wstring(path.Path());
+            }
+        }
+    }
+    catch (...) {
+    }
+
+    return std::wstring();
 }
 
 static int
 set_process_name()
 {
-    std::wstring executable, home;
-
+    const auto home = get_package_home();
     const auto family = get_package_family();
 
+    std::wstring executable;
+
+    /* If inside a package, use user's symlink name for executable */
     if (!family.empty()) {
         PWSTR localAppData;
         if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0,
@@ -86,44 +105,40 @@ set_process_name()
         }
     }
 
-    home.resize(MAX_PATH);
-    while (true) {
-        DWORD len = GetModuleFileNameW(
-            NULL, home.data(), (DWORD)home.size());
-        if (len == 0) {
-            home.clear();
-            break;
-        } else if (len == home.size() &&
-                   GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-            home.resize(len * 2);
-        } else {
-            home.resize(len);
-            size_t bslash = home.find_last_of(L"/\\");
-            if (bslash != std::wstring::npos) {
-                home.erase(bslash);
+    /* Only use module filename if we don't have a home */
+    if (home.empty() && executable.empty()) {
+        executable.resize(MAX_PATH);
+        while (true) {
+            DWORD len = GetModuleFileNameW(
+                NULL, executable.data(), (DWORD)executable.size());
+            if (len == 0) {
+                executable.clear();
+                break;
+            } else if (len == executable.size() &&
+                       GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+                executable.resize(len * 2);
+            } else {
+                executable.resize(len);
+                break;
             }
-            break;
         }
-    }
-
-    if (executable.empty() && !home.empty()) {
-        executable = home + L"\\" + PROGNAME;
     }
 
     if (!home.empty()) {
         Py_SetPythonHome(home.c_str());
     }
-    if (!executable.empty()) {
-        const wchar_t *launcherPath = _wgetenv(L"__PYVENV_LAUNCHER__");
-        if (launcherPath) {
+
+    const wchar_t *launcherPath = _wgetenv(L"__PYVENV_LAUNCHER__");
+    if (launcherPath) {
+        if (!executable.empty()) {
             _wputenv_s(L"__PYVENV_BASE_EXECUTABLE__", executable.c_str());
-            _Py_SetProgramFullPath(launcherPath);
-            /* bpo-35873: Clear the environment variable to avoid it being
-             * inherited by child processes. */
-            _wputenv_s(L"__PYVENV_LAUNCHER__", L"");
-        } else {
-            _Py_SetProgramFullPath(executable.c_str());
         }
+        _Py_SetProgramFullPath(launcherPath);
+        /* bpo-35873: Clear the environment variable to avoid it being
+         * inherited by child processes. */
+        _wputenv_s(L"__PYVENV_LAUNCHER__", L"");
+    } else if (!executable.empty()) {
+        _Py_SetProgramFullPath(executable.c_str());
     }
 
     return 1;
@@ -135,7 +150,7 @@ wmain(int argc, wchar_t **argv)
     if (!set_process_name()) {
         return 121;
     }
-    set_user_base();
+    _wputenv_s(L"PYTHONUSERBASE", get_user_base().c_str());
 
     const wchar_t *p = wcsrchr(argv[0], L'\\');
     if (!p) {
