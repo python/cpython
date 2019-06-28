@@ -104,7 +104,7 @@
 }
 
 {
-   bpo-37329: _PyWarnings_Init allocates memory at startup, but does't release it at exit
+   bpo-37329: _PyWarnings_Init allocates memory at startup, but doesn't release it at exit
    Memcheck:Leak
    fun:malloc
    ...
