@@ -118,6 +118,9 @@ set_process_name()
         if (launcherPath) {
             _wputenv_s(L"__PYVENV_BASE_EXECUTABLE__", executable.c_str());
             _Py_SetProgramFullPath(launcherPath);
+            /* bpo-35873: Clear the environment variable to avoid it being
+             * inherited by child processes. */
+            _wputenv_s(L"__PYVENV_LAUNCHER__", L"");
         } else {
             _Py_SetProgramFullPath(executable.c_str());
         }
