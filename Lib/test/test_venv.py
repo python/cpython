@@ -58,6 +58,12 @@ class BaseTest(unittest.TestCase):
             self.include = 'include'
         executable = getattr(sys, '_base_executable', sys.executable)
         self.exe = os.path.split(executable)[-1]
+        if (sys.platform == 'win32'
+            and os.path.lexists(executable)
+            and not os.path.exists(executable)):
+            self.cannot_link_exe = True
+        else:
+            self.cannot_link_exe = False
 
     def tearDown(self):
         rmtree(self.env_dir)
@@ -248,7 +254,12 @@ class BasicTest(BaseTest):
             # symlinked to 'python3.3' in the env, even when symlinking in
             # general isn't wanted.
             if usl:
-                self.assertTrue(os.path.islink(fn))
+                if self.cannot_link_exe:
+                    # Symlinking is skipped when our executable is already a
+                    # special app symlink
+                    self.assertFalse(os.path.islink(fn))
+                else:
+                    self.assertTrue(os.path.islink(fn))
 
     # If a venv is created from a source build and that venv is used to
     # run the test, the pyvenv.cfg in the venv created in the test will
