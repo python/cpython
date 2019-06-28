@@ -549,13 +549,16 @@ get_program_full_path(const PyConfig *config,
         /* If overridden, preserve the original full path */
         pathconfig->base_executable = PyMem_RawMalloc(
             sizeof(wchar_t) * (MAXPATHLEN + 1));
-
         PyStatus status = canonicalize(pathconfig->base_executable,
                                        program_full_path);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
+
         wcscpy_s(program_full_path, MAXPATHLEN+1, pyvenv_launcher);
+        /* bpo-35873: Clear the environment variable to avoid it being
+        * inherited by child processes. */
+        _wputenv_s(L"__PYVENV_LAUNCHER__", L"");
     }
 
     pathconfig->program_full_path = PyMem_RawMalloc(

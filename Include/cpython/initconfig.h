@@ -374,7 +374,7 @@ typedef struct {
                                        to zero. */
 
     wchar_t *executable;        /* sys.executable */
-    wchar_t *base_executable;   /* sys.base_executable */
+    wchar_t *base_executable;   /* sys._base_executable */
     wchar_t *prefix;            /* sys.prefix */
     wchar_t *base_prefix;       /* sys.base_prefix */
     wchar_t *exec_prefix;       /* sys.exec_prefix */

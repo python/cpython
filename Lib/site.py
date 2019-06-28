@@ -459,12 +459,6 @@ def venv(known_paths):
     env = os.environ
     if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in env:
         executable = sys._base_executable = os.environ['__PYVENV_LAUNCHER__']
-    elif sys.platform == 'win32':
-        executable = sys.executable
-        if '__PYVENV_LAUNCHER__' in env:
-            # bpo-35873: Clear the environment variable to avoid it being
-            # inherited by child processes.
-            del os.environ['__PYVENV_LAUNCHER__']
     else:
         executable = sys.executable
     exe_dir, _ = os.path.split(os.path.abspath(executable))

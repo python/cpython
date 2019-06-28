@@ -27,51 +27,51 @@ const wchar_t *PROGNAME = L"python.exe";
 #endif
 #endif
 
-static void
-set_user_base()
+static std::wstring
+get_user_base()
 {
-    wchar_t envBuffer[2048];
     try {
         const auto appData = winrt::Windows::Storage::ApplicationData::Current();
         if (appData) {
             const auto localCache = appData.LocalCacheFolder();
             if (localCache) {
                 auto path = localCache.Path();
-                if (!path.empty() &&
-                    !wcscpy_s(envBuffer, path.c_str()) &&
-                    !wcscat_s(envBuffer, L"\\local-packages")
-                ) {
-                    _wputenv_s(L"PYTHONUSERBASE", envBuffer);
+                if (!path.empty()) {
+                    return std::wstring(path) + L"\\local-packages";
                 }
             }
         }
     } catch (...) {
     }
+    return std::wstring();
 }
 
-static winrt::hstring
+static std::wstring
 get_package_family()
 {
     try {
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         if (package) {
             const auto id = package.Id();
-            return id ? id.FamilyName() : winrt::hstring();
+            if (id) {
+                return std::wstring(id.FamilyName());
+            }
         }
     }
     catch (...) {
     }
 
-    return winrt::hstring();
+    return std::wstring();
 }
 
-static int
+static PyStatus
 set_process_name(PyConfig *config)
 {
+    PyStatus status;
     std::wstring executable, home;
 
     const auto family = get_package_family();
-    
+
     if (!family.empty()) {
         PWSTR localAppData;
         if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0,
@@ -101,6 +101,8 @@ set_process_name(PyConfig *config)
             size_t bslash = home.find_last_of(L"/\\");
             if (bslash != std::wstring::npos) {
                 home.erase(bslash);
+            } else {
+                home.clear();
             }
             break;
         }
@@ -111,22 +113,34 @@ set_process_name(PyConfig *config)
     }
 
     if (!home.empty()) {
-        PyConfig_SetString(config, &config->home, home.c_str());
-        // XXX: Why doesn't setting prefix and exec_prefix work?
-        //PyConfig_SetString(config, &config->prefix, home.c_str());
-        //PyConfig_SetString(config, &config->exec_prefix, home.c_str());
+        status = PyConfig_SetString(config, &config->home, home.c_str());
+        if (PyStatus_Exception(status)) {
+            return status;
+        }
     }
     if (!executable.empty()) {
-        PyConfig_SetString(config, &config->base_executable, executable.c_str());
+        status = PyConfig_SetString(config, &config->base_executable, executable.c_str());
+        if (PyStatus_Exception(status)) {
+            return status;
+        }
+
         const wchar_t *launcherPath = _wgetenv(L"__PYVENV_LAUNCHER__");
         if (launcherPath) {
-            PyConfig_SetString(config, &config->executable, launcherPath);
+            status = PyConfig_SetString(
+                config, &config->executable, launcherPath);
+            /* bpo-35873: Clear the environment variable to avoid it being
+            * inherited by child processes. */
+            _wputenv_s(L"__PYVENV_LAUNCHER__", L"");
         } else {
-            PyConfig_SetString(config, &config->executable, executable.c_str());
+            status = PyConfig_SetString(
+                config, &config->executable, executable.c_str());
+        }
+        if (PyStatus_Exception(status)) {
+            return status;
         }
     }
 
-    return 1;
+    return PyStatus_Ok();
 }
 
 int
@@ -153,11 +167,12 @@ wmain(int argc, wchar_t **argv)
         goto fail;
     }
 
-    if (!set_process_name(&config)) {
-        status = PyStatus_Exit(121);
+    status = set_process_name(&config);
+    if (PyStatus_Exception(status)) {
         goto fail;
     }
-    set_user_base();
+
+    _wputenv_s(L"PYTHONUSERBASE", get_user_base().c_str());
 
     const wchar_t *p = wcsrchr(argv[0], L'\\');
     if (!p) {
@@ -178,9 +193,18 @@ wmain(int argc, wchar_t **argv)
         }
 
         if (moduleName) {
-            PyConfig_SetString(&config, &config.run_module, moduleName);
-            PyConfig_SetString(&config, &config.run_filename, NULL);
-            PyConfig_SetString(&config, &config.run_command, NULL);
+            status = PyConfig_SetString(&config, &config.run_module, moduleName);
+            if (PyStatus_Exception(status)) {
+                goto fail;
+            }
+            status = PyConfig_SetString(&config, &config.run_filename, NULL);
+            if (PyStatus_Exception(status)) {
+                goto fail;
+            }
+            status = PyConfig_SetString(&config, &config.run_command, NULL);
+            if (PyStatus_Exception(status)) {
+                goto fail;
+            }
         }
     }
 
