@@ -1078,6 +1078,38 @@ object_vacall(PyObject *base, PyObject *callable, va_list vargs)
 
 
 PyObject *
+_PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
+                           size_t nargsf, PyObject *kwnames)
+{
+    assert(name != NULL);
+    assert(args != NULL);
+    assert(PyVectorcall_NARGS(nargsf) >= 1);
+
+    PyObject *callable = NULL;
+    /* Use args[0] as "self" argument */
+    int unbound = _PyObject_GetMethod(args[0], name, &callable);
+    if (callable == NULL) {
+        return NULL;
+    }
+
+    if (unbound) {
+        /* We must remove PY_VECTORCALL_ARGUMENTS_OFFSET since
+         * that would be interpreted as allowing to change args[-1] */
+        nargsf &= ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+    }
+    else {
+        /* Skip "self". We can keep PY_VECTORCALL_ARGUMENTS_OFFSET since
+         * args[-1] in the onward call is args[0] here. */
+        args++;
+        nargsf--;
+    }
+    PyObject *result = _PyObject_Vectorcall(callable, args, nargsf, kwnames);
+    Py_DECREF(callable);
+    return result;
+}
+
+
+PyObject *
 PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
 {
     if (obj == NULL || name == NULL) {
