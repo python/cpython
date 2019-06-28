@@ -64,12 +64,31 @@ get_package_family()
     return std::wstring();
 }
 
+static std::wstring
+get_package_home()
+{
+    try {
+        const auto package = winrt::Windows::ApplicationModel::Package::Current();
+        if (package) {
+            const auto path = package.InstalledLocation();
+            if (path) {
+                return std::wstring(path.Path());
+            }
+        }
+    }
+    catch (...) {
+    }
+
+    return std::wstring();
+}
+
 static PyStatus
 set_process_name(PyConfig *config)
 {
-    PyStatus status;
-    std::wstring executable, home;
+    PyStatus status = PyStatus_Ok();
+    std::wstring executable;
 
+    const auto home = get_package_home();
     const auto family = get_package_family();
 
     if (!family.empty()) {
@@ -86,30 +105,23 @@ set_process_name(PyConfig *config)
         }
     }
 
-    home.resize(MAX_PATH);
-    while (true) {
-        DWORD len = GetModuleFileNameW(
-            NULL, home.data(), (DWORD)home.size());
-        if (len == 0) {
-            home.clear();
-            break;
-        } else if (len == home.size() &&
-                   GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-            home.resize(len * 2);
-        } else {
-            home.resize(len);
-            size_t bslash = home.find_last_of(L"/\\");
-            if (bslash != std::wstring::npos) {
-                home.erase(bslash);
+    /* Only use module filename if we don't have a home */
+    if (home.empty() && executable.empty()) {
+        executable.resize(MAX_PATH);
+        while (true) {
+            DWORD len = GetModuleFileNameW(
+                NULL, executable.data(), (DWORD)executable.size());
+            if (len == 0) {
+                executable.clear();
+                break;
+            } else if (len == executable.size() &&
+                       GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+                executable.resize(len * 2);
             } else {
-                home.clear();
+                executable.resize(len);
+                break;
             }
-            break;
         }
-    }
-
-    if (executable.empty() && !home.empty()) {
-        executable = home + L"\\" + PROGNAME;
     }
 
     if (!home.empty()) {
@@ -118,29 +130,29 @@ set_process_name(PyConfig *config)
             return status;
         }
     }
-    if (!executable.empty()) {
-        status = PyConfig_SetString(config, &config->base_executable, executable.c_str());
-        if (PyStatus_Exception(status)) {
-            return status;
+
+    const wchar_t *launcherPath = _wgetenv(L"__PYVENV_LAUNCHER__");
+    if (launcherPath) {
+        if (!executable.empty()) {
+            status = PyConfig_SetString(config, &config->base_executable,
+                                        executable.c_str());
+            if (PyStatus_Exception(status)) {
+                return status;
+            }
         }
 
-        const wchar_t *launcherPath = _wgetenv(L"__PYVENV_LAUNCHER__");
-        if (launcherPath) {
-            status = PyConfig_SetString(
-                config, &config->executable, launcherPath);
-            /* bpo-35873: Clear the environment variable to avoid it being
-            * inherited by child processes. */
-            _wputenv_s(L"__PYVENV_LAUNCHER__", L"");
-        } else {
-            status = PyConfig_SetString(
-                config, &config->executable, executable.c_str());
-        }
-        if (PyStatus_Exception(status)) {
-            return status;
-        }
+        status = PyConfig_SetString(
+            config, &config->executable, launcherPath);
+
+        /* bpo-35873: Clear the environment variable to avoid it being
+        * inherited by child processes. */
+        _wputenv_s(L"__PYVENV_LAUNCHER__", L"");
+    } else if (!executable.empty()) {
+        status = PyConfig_SetString(
+            config, &config->executable, executable.c_str());
     }
 
-    return PyStatus_Ok();
+    return status;
 }
 
 int
