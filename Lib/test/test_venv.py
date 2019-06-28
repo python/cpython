@@ -127,10 +127,6 @@ class BasicTest(BaseTest):
         """
         Test that the prefix values are as expected.
         """
-        #check our prefixes
-        self.assertEqual(sys.base_prefix, sys.prefix)
-        self.assertEqual(sys.base_exec_prefix, sys.exec_prefix)
-
         # check a venv's prefixes
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
@@ -139,8 +135,8 @@ class BasicTest(BaseTest):
         for prefix, expected in (
             ('prefix', self.env_dir),
             ('prefix', self.env_dir),
-            ('base_prefix', sys.prefix),
-            ('base_exec_prefix', sys.exec_prefix)):
+            ('base_prefix', sys.base_prefix),
+            ('base_exec_prefix', sys.base_exec_prefix)):
             cmd[2] = 'import sys; print(sys.%s)' % prefix
             out, err = check_output(cmd)
             self.assertEqual(out.strip(), expected.encode())
