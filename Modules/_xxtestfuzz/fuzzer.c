@@ -81,8 +81,17 @@ static int fuzz_builtin_unicode(const char* data, size_t size) {
 
 #define MAX_JSON_TEST_SIZE 0x10000
 
-/* Initialized in LLVMFuzzerTestOneInput */
 PyObject* json_loads_method = NULL;
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_json_loads() {
+    /* Import json.loads */
+    PyObject* json_module = PyImport_ImportModule("json");
+    if (json_module == NULL) {
+        return 1;
+    }
+    json_loads_method = PyObject_GetAttrString(json_module, "loads");
+    return json_loads_method != NULL;
+}
 /* Fuzz json.loads(x) */
 static int fuzz_json_loads(const char* data, size_t size) {
     /* Since python supports arbitrarily large ints in JSON,
@@ -117,10 +126,36 @@ static int fuzz_json_loads(const char* data, size_t size) {
 
 #define MAX_RE_TEST_SIZE 0x10000
 
-/* Initialized in LLVMFuzzerTestOneInput */
 PyObject* sre_compile_method = NULL;
 PyObject* sre_error_exception = NULL;
 int SRE_FLAG_DEBUG = 0;
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_sre_compile() {
+    /* Import sre_compile.compile and sre.error */
+    PyObject* sre_compile_module = PyImport_ImportModule("sre_compile");
+    if (sre_compile_module == NULL) {
+        return 0;
+    }
+    sre_compile_method = PyObject_GetAttrString(sre_compile_module, "compile");
+    if (sre_compile_method == NULL) {
+        return 0;
+    }
+
+    PyObject* sre_constants = PyImport_ImportModule("sre_constants");
+    if (sre_constants == NULL) {
+        return 0;
+    }
+    sre_error_exception = PyObject_GetAttrString(sre_constants, "error");
+    if (sre_error_exception == NULL) {
+        return 0;
+    }
+    PyObject* debug_flag = PyObject_GetAttrString(sre_constants, "SRE_FLAG_DEBUG");
+    if (debug_flag == NULL) {
+        return 0;
+    }
+    SRE_FLAG_DEBUG = PyLong_AsLong(debug_flag);
+    return 1;
+}
 /* Fuzz _sre.compile(x) */
 static int fuzz_sre_compile(const char* data, size_t size) {
     /* Ignore really long regex patterns that will timeout the fuzzer */
@@ -179,7 +214,7 @@ static int fuzz_sre_compile(const char* data, size_t size) {
 
 /* Some random patterns used to test re.match.
    Be careful not to add catostraphically slow regexes here, we want to
-   excercise the matchign code without causing timeouts.*/
+   excercise the matching code without causing timeouts.*/
 static const char* regex_patterns[] = {
     ".", "^", "abc", "abc|def", "^xxx$", "\\b", "()", "[a-zA-Z0-9]",
     "abc+", "[^A-Z]", "[x]", "(?=)", "a{z}", "a+b", "a*?", "a??", "a+?",
@@ -188,6 +223,31 @@ static const char* regex_patterns[] = {
 };
 const size_t NUM_PATTERNS = sizeof(regex_patterns) / sizeof(regex_patterns[0]);
 PyObject** compiled_patterns = NULL;
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_sre_match() {
+    PyObject* re_module = PyImport_ImportModule("re");
+    if (re_module == NULL) {
+        return 0;
+    }
+    compiled_patterns = (PyObject**) PyMem_RawMalloc(
+        sizeof(PyObject*) * NUM_PATTERNS);
+    if (compiled_patterns == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
+
+    /* Precompile all the regex patterns on the first run for faster fuzzing */
+    for (size_t i = 0; i < NUM_PATTERNS; i++) {
+        PyObject* compiled = PyObject_CallMethod(
+            re_module, "compile", "y", regex_patterns[i]);
+        /* Bail if any of the patterns fail to compile */
+        if (compiled == NULL) {
+            return 0;
+        }
+        compiled_patterns[i] = compiled;
+    }
+    return 1;
+}
 /* Fuzz re.match(x) */
 static int fuzz_sre_match(const char* data, size_t size) {
     if (size < 1 || size > MAX_RE_TEST_SIZE) {
@@ -216,9 +276,18 @@ static int fuzz_sre_match(const char* data, size_t size) {
 }
 
 #define MAX_CSV_TEST_SIZE 0x10000
-/* Initialized in LLVMFuzzerTestOneInput */
 PyObject* csv_module = NULL;
 PyObject* csv_error = NULL;
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_csv_reader() {
+    /* Import csv and csv.Error */
+    csv_module = PyImport_ImportModule("csv");
+    if (csv_module == NULL) {
+        return 0;
+    }
+    csv_error = PyObject_GetAttrString(csv_module, "Error");
+    return csv_error != NULL;
+}
 /* Fuzz csv.reader([x]) */
 static int fuzz_csv_reader(const char* data, size_t size) {
     if (size < 1 || size > MAX_CSV_TEST_SIZE) {
@@ -314,55 +383,47 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     rv |= _run_fuzz(data, size, fuzz_builtin_unicode);
 #endif
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_json_loads)
-    /* Import json.loads */
-    if (json_loads_method == NULL) {
-        PyObject* json_module = PyImport_ImportModule("json");
-        json_loads_method = PyObject_GetAttrString(json_module, "loads");
+    static int JSON_LOADS_INITIALIZED = 0;
+    if (!JSON_LOADS_INITIALIZED && !init_json_loads()) {
+        PyErr_Print();
+        abort();
+    } else {
+        JSON_LOADS_INITIALIZED = 1;
     }
 
     rv |= _run_fuzz(data, size, fuzz_json_loads);
 #endif
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_sre_compile)
-    /* Impore sre_compile.compile and sre.error */
-    if (sre_compile_method == NULL) {
-        PyObject* sre_compile_module = PyImport_ImportModule("sre_compile");
-        sre_compile_method = PyObject_GetAttrString(sre_compile_module, "compile");
-
-        PyObject* sre_constants = PyImport_ImportModule("sre_constants");
-        sre_error_exception = PyObject_GetAttrString(sre_constants, "error");
-        SRE_FLAG_DEBUG = PyLong_AsLong(
-            PyObject_GetAttrString(sre_constants, "SRE_FLAG_DEBUG"));
+    static int SRE_COMPILE_INITIALIZED = 0;
+    if (!SRE_COMPILE_INITIALIZED && !init_sre_compile()) {
+        PyErr_Print();
+        abort();
+    } else {
+        SRE_COMPILE_INITIALIZED = 1;
     }
 
     rv |= _run_fuzz(data, size, fuzz_sre_compile);
 #endif
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_sre_match)
-    /* Precompile all the regex patterns on the first run for faster fuzzing */
-    if (compiled_patterns == NULL) {
-        PyObject* re_module = PyImport_ImportModule("re");
-        compiled_patterns = (PyObject**) PyMem_RawMalloc(
-            sizeof(PyObject*) * NUM_PATTERNS);
-
-        for (size_t i = 0; i < NUM_PATTERNS; i++) {
-            PyObject* compiled = PyObject_CallMethod(
-                re_module, "compile", "y", regex_patterns[i]);
-
-            if (compiled == NULL) {
-                PyErr_Print();
-                abort();
-            }
-            compiled_patterns[i] = compiled;
-        }
+    static int SRE_MATCH_INITIALIZED = 0;
+    if (!SRE_MATCH_INITIALIZED && !init_sre_match()) {
+        PyErr_Print();
+        abort();
+    } else {
+        SRE_MATCH_INITIALIZED = 1;
     }
 
     rv |= _run_fuzz(data, size, fuzz_sre_match);
 #endif
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_csv_reader)
-    /* Import csv and csv.Error */
-    if (csv_module == NULL) {
-        csv_module = PyImport_ImportModule("csv");
-        csv_error = PyObject_GetAttrString(csv_module, "Error");
+    static int CSV_READER_INITIALIZED = 0;
+    if (!CSV_READER_INITIALIZED && !init_csv_reader()) {
+        PyErr_Print();
+        abort();
+    } else {
+        CSV_READER_INITIALIZED = 1;
     }
+
     rv |= _run_fuzz(data, size, fuzz_csv_reader);
 #endif
   return rv;
