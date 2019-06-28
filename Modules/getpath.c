@@ -761,7 +761,7 @@ calculate_program_full_path(const PyConfig *config,
       * absolutize() should help us out below
       */
     else if(0 == _NSGetExecutablePath(execpath, &nsexeclength) &&
-            _Py_isabs(execpath))
+            (wchar_t)execpath[0] == SEP)
     {
         size_t len;
         wchar_t *path = Py_DecodeLocale(execpath, &len);
