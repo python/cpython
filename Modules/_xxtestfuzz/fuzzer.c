@@ -87,7 +87,7 @@ static int init_json_loads() {
     /* Import json.loads */
     PyObject* json_module = PyImport_ImportModule("json");
     if (json_module == NULL) {
-        return 1;
+        return 0;
     }
     json_loads_method = PyObject_GetAttrString(json_module, "loads");
     return json_loads_method != NULL;
