@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _exceptionhandling:
@@ -53,8 +53,8 @@ Printing and clearing
 .. c:function:: void PyErr_PrintEx(int set_sys_last_vars)
 
    Print a standard traceback to ``sys.stderr`` and clear the error indicator.
-   **Unless** the error is a ``SystemExit``.  In that case the no traceback
-   is printed and Python process will exit with the error code specified by
+   **Unless** the error is a ``SystemExit``, in that case no traceback is
+   printed and the Python process will exit with the error code specified by
    the ``SystemExit`` instance.
 
    Call this function **only** when the error indicator is set.  Otherwise it
@@ -72,6 +72,9 @@ Printing and clearing
 
 .. c:function:: void PyErr_WriteUnraisable(PyObject *obj)
 
+   Call :func:`sys.unraisablehook` using the current exception and *obj*
+   argument.
+
    This utility function prints a warning message to ``sys.stderr`` when an
    exception has been set but it is impossible for the interpreter to actually
    raise the exception.  It is used, for example, when an exception occurs in an
@@ -80,6 +83,8 @@ Printing and clearing
    The function is called with a single argument *obj* that identifies the context
    in which the unraisable exception occurred. If possible,
    the repr of *obj* will be printed in the warning message.
+
+   An exception must be set when calling this function.
 
 
 Raising exceptions
@@ -514,13 +519,13 @@ Signal Handling
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   This function simulates the effect of a :const:`SIGINT` signal arriving --- the
-   next time :c:func:`PyErr_CheckSignals` is called,  :exc:`KeyboardInterrupt` will
-   be raised.  It may be called without holding the interpreter lock.
+   Simulate the effect of a :const:`SIGINT` signal arriving. The next time
+   :c:func:`PyErr_CheckSignals` is called,  the Python signal handler for
+   :const:`SIGINT` will be called.
 
-   .. % XXX This was described as obsolete, but is used in
-   .. % _thread.interrupt_main() (used from IDLE), so it's still needed.
-
+   If :const:`SIGINT` isn't handled by Python (it was set to
+   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
+   nothing.
 
 .. c:function:: int PySignal_SetWakeupFd(int fd)
 

@@ -183,6 +183,18 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('lambda a, b, c=True: a')
         eq("lambda a, b, c=True, *, d=1 << v2, e='str': a")
         eq("lambda a, b, c=True, *vararg, d, e='str', **kwargs: a + b")
+        eq("lambda a, /, b, c=True, *vararg, d, e='str', **kwargs: a + b")
+        eq('lambda x, /: x')
+        eq('lambda x=1, /: x')
+        eq('lambda x, /, y: x + y')
+        eq('lambda x=1, /, y=2: x + y')
+        eq('lambda x, /, y=1: x + y')
+        eq('lambda x, /, y=1, *, z=3: x + y + z')
+        eq('lambda x=1, /, y=2, *, z=3: x + y + z')
+        eq('lambda x=1, /, y=2, *, z: x + y + z')
+        eq('lambda x=1, y=2, z=3, /, w=4, *, l, l2: x + y + z + w + l + l2')
+        eq('lambda x=1, y=2, z=3, /, w=4, *, l, l2, **kwargs: x + y + z + w + l + l2')
+        eq('lambda x, /, y=1, *, z: x + y + z')
         eq('lambda x: lambda y: x + y')
         eq('1 if True else 2')
         eq('str or None if int or True else str or bytes or None')
@@ -255,6 +267,9 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("f'space between opening braces: { {a for a in (1, 2, 3)}}'")
         eq("f'{(lambda x: x)}'")
         eq("f'{(None if a else lambda x: x)}'")
+        eq("f'{x}'")
+        eq("f'{x!r}'")
+        eq("f'{x!a}'")
         eq('(yield from outside_of_generator)')
         eq('(yield)')
         eq('(yield a + b)')
@@ -266,6 +281,18 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('f((x for x in a), 2)')
         eq('(((a)))', 'a')
         eq('(((a, b)))', '(a, b)')
+        eq("(x:=10)")
+        eq("f'{(x:=10):=10}'")
+
+    def test_fstring_debug_annotations(self):
+        # f-strings with '=' don't round trip very well, so set the expected
+        # result explicitely.
+        self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
+        self.assertAnnotationEqual("f'{x=:}'", expected="f'x={x:}'")
+        self.assertAnnotationEqual("f'{x=:.2f}'", expected="f'x={x:.2f}'")
+        self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
+        self.assertAnnotationEqual("f'{x=!a}'", expected="f'x={x!a}'")
+        self.assertAnnotationEqual("f'{x=!s:*^20}'", expected="f'x={x!s:*^20}'")
 
 
 if __name__ == "__main__":

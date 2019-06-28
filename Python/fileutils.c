@@ -1262,6 +1262,10 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 #endif
 
     if (gil_held) {
+        if (PySys_Audit("open", "sOi", pathname, Py_None, flags) < 0) {
+            return -1;
+        }
+
         do {
             Py_BEGIN_ALLOW_THREADS
             fd = open(pathname, flags);
@@ -1331,6 +1335,9 @@ FILE *
 _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 {
     FILE *f;
+    if (PySys_Audit("open", "uui", path, mode, 0) < 0) {
+        return NULL;
+    }
 #ifndef MS_WINDOWS
     char *cpath;
     char cmode[10];
@@ -1366,6 +1373,10 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 FILE*
 _Py_fopen(const char *pathname, const char *mode)
 {
+    if (PySys_Audit("open", "ssi", pathname, mode, 0) < 0) {
+        return NULL;
+    }
+
     FILE *f = fopen(pathname, mode);
     if (f == NULL)
         return NULL;
@@ -1401,6 +1412,9 @@ _Py_fopen_obj(PyObject *path, const char *mode)
 
     assert(PyGILState_Check());
 
+    if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
+        return NULL;
+    }
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError,
                      "str file path expected under Windows, got %R",
@@ -1433,6 +1447,10 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     if (!PyUnicode_FSConverter(path, &bytes))
         return NULL;
     path_bytes = PyBytes_AS_STRING(bytes);
+
+    if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
+        return NULL;
+    }
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -1716,6 +1734,103 @@ _Py_wrealpath(const wchar_t *path,
 }
 #endif
 
+
+#ifndef MS_WINDOWS
+int
+_Py_isabs(const wchar_t *path)
+{
+    return (path[0] == SEP);
+}
+#endif
+
+
+/* Get an absolute path.
+   On error (ex: fail to get the current directory), return -1.
+   On memory allocation failure, set *abspath_p to NULL and return 0.
+   On success, return a newly allocated to *abspath_p to and return 0.
+   The string must be freed by PyMem_RawFree(). */
+int
+_Py_abspath(const wchar_t *path, wchar_t **abspath_p)
+{
+#ifdef MS_WINDOWS
+    wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
+    DWORD result;
+
+    result = GetFullPathNameW(path,
+                              Py_ARRAY_LENGTH(woutbuf), woutbuf,
+                              NULL);
+    if (!result) {
+        return -1;
+    }
+
+    if (result > Py_ARRAY_LENGTH(woutbuf)) {
+        if ((size_t)result <= (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+            woutbufp = PyMem_RawMalloc((size_t)result * sizeof(wchar_t));
+        }
+        else {
+            woutbufp = NULL;
+        }
+        if (!woutbufp) {
+            *abspath_p = NULL;
+            return 0;
+        }
+
+        result = GetFullPathNameW(path, result, woutbufp, NULL);
+        if (!result) {
+            PyMem_RawFree(woutbufp);
+            return -1;
+        }
+    }
+
+    if (woutbufp != woutbuf) {
+        *abspath_p = woutbufp;
+        return 0;
+    }
+
+    *abspath_p = _PyMem_RawWcsdup(woutbufp);
+    return 0;
+#else
+    if (_Py_isabs(path)) {
+        *abspath_p = _PyMem_RawWcsdup(path);
+        return 0;
+    }
+
+    wchar_t cwd[MAXPATHLEN + 1];
+    cwd[Py_ARRAY_LENGTH(cwd) - 1] = 0;
+    if (!_Py_wgetcwd(cwd, Py_ARRAY_LENGTH(cwd) - 1)) {
+        /* unable to get the current directory */
+        return -1;
+    }
+
+    size_t cwd_len = wcslen(cwd);
+    size_t path_len = wcslen(path);
+    size_t len = cwd_len + 1 + path_len + 1;
+    if (len <= (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+        *abspath_p = PyMem_RawMalloc(len * sizeof(wchar_t));
+    }
+    else {
+        *abspath_p = NULL;
+    }
+    if (*abspath_p == NULL) {
+        return 0;
+    }
+
+    wchar_t *abspath = *abspath_p;
+    memcpy(abspath, cwd, cwd_len * sizeof(wchar_t));
+    abspath += cwd_len;
+
+    *abspath = (wchar_t)SEP;
+    abspath++;
+
+    memcpy(abspath, path, path_len * sizeof(wchar_t));
+    abspath += path_len;
+
+    *abspath = 0;
+    return 0;
+#endif
+}
+
+
 /* Get the current directory. buflen is the buffer size in wide characters
    including the null character. Decode the path from the locale encoding.
 
@@ -1758,7 +1873,6 @@ _Py_dup(int fd)
 {
 #ifdef MS_WINDOWS
     HANDLE handle;
-    DWORD ftype;
 #endif
 
     assert(PyGILState_Check());
@@ -1772,9 +1886,6 @@ _Py_dup(int fd)
         return -1;
     }
 
-    /* get the file type, ignore the error if it failed */
-    ftype = GetFileType(handle);
-
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     fd = dup(fd);
@@ -1785,14 +1896,11 @@ _Py_dup(int fd)
         return -1;
     }
 
-    /* Character files like console cannot be make non-inheritable */
-    if (ftype != FILE_TYPE_CHAR) {
-        if (_Py_set_inheritable(fd, 0, NULL) < 0) {
-            _Py_BEGIN_SUPPRESS_IPH
-            close(fd);
-            _Py_END_SUPPRESS_IPH
-            return -1;
-        }
+    if (_Py_set_inheritable(fd, 0, NULL) < 0) {
+        _Py_BEGIN_SUPPRESS_IPH
+        close(fd);
+        _Py_END_SUPPRESS_IPH
+        return -1;
     }
 #elif defined(HAVE_FCNTL_H) && defined(F_DUPFD_CLOEXEC)
     Py_BEGIN_ALLOW_THREADS

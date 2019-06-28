@@ -216,7 +216,7 @@ get_future_loop(PyObject *fut)
         return NULL;
     }
     if (getloop != NULL) {
-        PyObject *res = _PyObject_CallNoArg(getloop);
+        PyObject *res = PyObject_CallNoArgs(getloop);
         Py_DECREF(getloop);
         return res;
     }
@@ -328,7 +328,7 @@ get_event_loop(void)
         return loop;
     }
 
-    policy = _PyObject_CallNoArg(asyncio_get_event_loop_policy);
+    policy = PyObject_CallNoArgs(asyncio_get_event_loop_policy);
     if (policy == NULL) {
         return NULL;
     }
@@ -367,8 +367,7 @@ call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx)
         }
         stack[nargs] = (PyObject *)ctx;
 
-        handle = _PyObject_FastCallKeywords(
-            callable, stack, nargs, context_kwname);
+        handle = _PyObject_Vectorcall(callable, stack, nargs, context_kwname);
         Py_DECREF(callable);
     }
 
@@ -511,7 +510,7 @@ future_init(FutureObj *fut, PyObject *loop)
            method, which is called during the interpreter shutdown and the
            traceback module is already unloaded.
         */
-        fut->fut_source_tb = _PyObject_CallNoArg(traceback_extract_stack);
+        fut->fut_source_tb = PyObject_CallNoArgs(traceback_extract_stack);
         if (fut->fut_source_tb == NULL) {
             return -1;
         }
@@ -554,7 +553,7 @@ future_set_exception(FutureObj *fut, PyObject *exc)
     }
 
     if (PyExceptionClass_Check(exc)) {
-        exc_val = _PyObject_CallNoArg(exc);
+        exc_val = PyObject_CallNoArgs(exc);
         if (exc_val == NULL) {
             return NULL;
         }
@@ -1431,8 +1430,7 @@ static PyTypeObject FutureType = {
     .tp_dealloc = FutureObj_dealloc,
     .tp_as_async = &FutureType_as_async,
     .tp_repr = (reprfunc)FutureObj_repr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_FINALIZE,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .tp_doc = _asyncio_Future___init____doc__,
     .tp_traverse = (traverseproc)FutureObj_traverse,
     .tp_clear = (inquiry)FutureObj_clear,
@@ -2316,6 +2314,18 @@ _asyncio_Task_set_exception(TaskObj *self, PyObject *exception)
 }
 
 /*[clinic input]
+_asyncio.Task.get_coro
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task_get_coro_impl(TaskObj *self)
+/*[clinic end generated code: output=bcac27c8cc6c8073 input=d2e8606c42a7b403]*/
+{
+    Py_INCREF(self->task_coro);
+    return self->task_coro;
+}
+
+/*[clinic input]
 _asyncio.Task.get_name
 [clinic start generated code]*/
 
@@ -2441,6 +2451,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK__REPR_INFO_METHODDEF
     _ASYNCIO_TASK_GET_NAME_METHODDEF
     _ASYNCIO_TASK_SET_NAME_METHODDEF
+    _ASYNCIO_TASK_GET_CORO_METHODDEF
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -2462,8 +2473,7 @@ static PyTypeObject TaskType = {
     .tp_dealloc = TaskObj_dealloc,
     .tp_as_async = &FutureType_as_async,
     .tp_repr = (reprfunc)FutureObj_repr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_FINALIZE,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .tp_doc = _asyncio_Task___init____doc__,
     .tp_traverse = (traverseproc)TaskObj_traverse,
     .tp_clear = (inquiry)TaskObj_clear,
@@ -2583,7 +2593,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
 
         if (!exc) {
             /* exc was not a CancelledError */
-            exc = _PyObject_CallNoArg(asyncio_CancelledError);
+            exc = PyObject_CallNoArgs(asyncio_CancelledError);
             if (!exc) {
                 goto fail;
             }
@@ -2672,8 +2682,10 @@ set_exception:
         assert(o == Py_None);
         Py_DECREF(o);
 
-        if (!PyErr_GivenExceptionMatches(et, PyExc_Exception)) {
-            /* We've got a BaseException; re-raise it */
+        if (PyErr_GivenExceptionMatches(et, PyExc_KeyboardInterrupt) ||
+            PyErr_GivenExceptionMatches(et, PyExc_SystemExit))
+        {
+            /* We've got a KeyboardInterrupt or a SystemError; re-raise it */
             PyErr_Restore(et, ev, tb);
             goto fail;
         }
@@ -2803,8 +2815,7 @@ set_exception:
         PyObject *stack[2];
         stack[0] = wrapper;
         stack[1] = (PyObject *)task->task_context;
-        res = _PyObject_FastCallKeywords(
-            add_cb, stack, 1, context_kwname);
+        res = _PyObject_Vectorcall(add_cb, stack, 1, context_kwname);
         Py_DECREF(add_cb);
         Py_DECREF(wrapper);
         if (res == NULL) {
@@ -2950,11 +2961,6 @@ task_wakeup(TaskObj *task, PyObject *o)
     }
 
     PyErr_Fetch(&et, &ev, &tb);
-    if (!PyErr_GivenExceptionMatches(et, PyExc_Exception)) {
-        /* We've got a BaseException; re-raise it */
-        PyErr_Restore(et, ev, tb);
-        return NULL;
-    }
     if (!ev || !PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
         PyErr_NormalizeException(&et, &ev, &tb);
     }
@@ -3302,7 +3308,7 @@ module_init(void)
     PyObject *weak_set;
     WITH_MOD("weakref")
     GET_MOD_ATTR(weak_set, "WeakSet");
-    all_tasks = _PyObject_CallNoArg(weak_set);
+    all_tasks = PyObject_CallNoArgs(weak_set);
     Py_CLEAR(weak_set);
     if (all_tasks == NULL) {
         goto fail;

@@ -1,4 +1,4 @@
-# Copyright 2001-2017 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2017 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -668,10 +668,29 @@ class HandlerTest(BaseTest):
     # register_at_fork mechanism is also present and used.
     @unittest.skipIf(not hasattr(os, 'fork'), 'Test requires os.fork().')
     def test_post_fork_child_no_deadlock(self):
-        """Ensure forked child logging locks are not held; bpo-6721."""
-        refed_h = logging.Handler()
+        """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
+        class _OurHandler(logging.Handler):
+            def __init__(self):
+                super().__init__()
+                self.sub_handler = logging.StreamHandler(
+                    stream=open('/dev/null', 'wt'))
+
+            def emit(self, record):
+                self.sub_handler.acquire()
+                try:
+                    self.sub_handler.emit(record)
+                finally:
+                    self.sub_handler.release()
+
+        self.assertEqual(len(logging._handlers), 0)
+        refed_h = _OurHandler()
+        self.addCleanup(refed_h.sub_handler.stream.close)
         refed_h.name = 'because we need at least one for this test'
         self.assertGreater(len(logging._handlers), 0)
+        self.assertGreater(len(logging._at_fork_reinit_lock_weakset), 1)
+        test_logger = logging.getLogger('test_post_fork_child_no_deadlock')
+        test_logger.addHandler(refed_h)
+        test_logger.setLevel(logging.DEBUG)
 
         locks_held__ready_to_fork = threading.Event()
         fork_happened__release_locks_and_end_thread = threading.Event()
@@ -709,19 +728,24 @@ class HandlerTest(BaseTest):
         locks_held__ready_to_fork.wait()
         pid = os.fork()
         if pid == 0:  # Child.
-            logging.error(r'Child process did not deadlock. \o/')
-            os._exit(0)
+            try:
+                test_logger.info(r'Child process did not deadlock. \o/')
+            finally:
+                os._exit(0)
         else:  # Parent.
+            test_logger.info(r'Parent process returned from fork. \o/')
             fork_happened__release_locks_and_end_thread.set()
             lock_holder_thread.join()
             start_time = time.monotonic()
             while True:
+                test_logger.debug('Waiting for child process.')
                 waited_pid, status = os.waitpid(pid, os.WNOHANG)
                 if waited_pid == pid:
                     break  # child process exited.
                 if time.monotonic() - start_time > 7:
                     break  # so long? implies child deadlock.
                 time.sleep(0.05)
+            test_logger.debug('Done waiting.')
             if waited_pid != pid:
                 os.kill(pid, signal.SIGKILL)
                 waited_pid, status = os.waitpid(pid, 0)
@@ -736,6 +760,10 @@ class BadStream(object):
 class TestStreamHandler(logging.StreamHandler):
     def handleError(self, record):
         self.error_record = record
+
+class StreamWithIntName(object):
+    level = logging.NOTSET
+    name = 2
 
 class StreamHandlerTest(BaseTest):
     def test_error_handling(self):
@@ -773,6 +801,10 @@ class StreamHandlerTest(BaseTest):
         # test that setting to existing value returns None
         actual = h.setStream(old)
         self.assertIsNone(actual)
+
+    def test_can_represent_stream_with_int_name(self):
+        h = logging.StreamHandler(StreamWithIntName())
+        self.assertEqual(repr(h), '<StreamHandler 2 (NOTSET)>')
 
 # -- The following section could be moved into a server_helper.py module
 # -- if it proves to be of wider utility than just test_logging
@@ -3601,6 +3633,16 @@ if hasattr(logging.handlers, 'QueueListener'):
                                     [m.msg if isinstance(m, logging.LogRecord)
                                      else m for m in items]))
 
+        def test_calls_task_done_after_stop(self):
+            # Issue 36813: Make sure queue.join does not deadlock.
+            log_queue = queue.Queue()
+            listener = logging.handlers.QueueListener(log_queue)
+            listener.start()
+            listener.stop()
+            with self.assertRaises(ValueError):
+                # Make sure all tasks are done and .join won't block.
+                log_queue.task_done()
+
 
 ZERO = datetime.timedelta(0)
 
@@ -4130,6 +4172,37 @@ class ModuleLevelMiscTest(BaseTest):
         logging.setLoggerClass(logging.Logger)
         self.assertEqual(logging.getLoggerClass(), logging.Logger)
 
+    def test_subclass_logger_cache(self):
+        # bpo-37258
+        message = []
+
+        class MyLogger(logging.getLoggerClass()):
+            def __init__(self, name='MyLogger', level=logging.NOTSET):
+                super().__init__(name, level)
+                message.append('initialized')
+
+        logging.setLoggerClass(MyLogger)
+        logger = logging.getLogger('just_some_logger')
+        self.assertEqual(message, ['initialized'])
+        stream = io.StringIO()
+        h = logging.StreamHandler(stream)
+        logger.addHandler(h)
+        try:
+            logger.setLevel(logging.DEBUG)
+            logger.debug("hello")
+            self.assertEqual(stream.getvalue().strip(), "hello")
+
+            stream.truncate(0)
+            stream.seek(0)
+
+            logger.setLevel(logging.INFO)
+            logger.debug("hello")
+            self.assertEqual(stream.getvalue(), "")
+        finally:
+            logger.removeHandler(h)
+            h.close()
+            logging.setLoggerClass(logging.Logger)
+
     @support.requires_type_collecting
     def test_logging_at_shutdown(self):
         # Issue #20037
@@ -4402,6 +4475,99 @@ class BasicConfigTest(unittest.TestCase):
                          'WARNING:root:warn')
         self.assertEqual(new_string_io.getvalue().strip(),
                          'WARNING:root:warn\nINFO:root:info')
+
+    def test_encoding(self):
+        try:
+            encoding = 'utf-8'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                errors='strict',
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            logging.debug('The Øresund Bridge joins Copenhagen to Malmö')
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            self.assertEqual(data,
+                             'The Øresund Bridge joins Copenhagen to Malmö')
+
+    def test_encoding_errors(self):
+        try:
+            encoding = 'ascii'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                errors='ignore',
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            logging.debug('The Øresund Bridge joins Copenhagen to Malmö')
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            self.assertEqual(data, 'The resund Bridge joins Copenhagen to Malm')
+
+    def test_encoding_errors_default(self):
+        try:
+            encoding = 'ascii'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            self.assertEqual(handler.errors, 'backslashreplace')
+            logging.debug('😂: ☃️: The Øresund Bridge joins Copenhagen to Malmö')
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            self.assertEqual(data, r'\U0001f602: \u2603\ufe0f: The \xd8resund '
+                                   r'Bridge joins Copenhagen to Malm\xf6')
+
+    def test_encoding_errors_none(self):
+        # Specifying None should behave as 'strict'
+        try:
+            encoding = 'ascii'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                errors=None,
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            self.assertIsNone(handler.errors)
+
+            message = []
+
+            def dummy_handle_error(record):
+                _, v, _ = sys.exc_info()
+                message.append(str(v))
+
+            handler.handleError = dummy_handle_error
+            logging.debug('The Øresund Bridge joins Copenhagen to Malmö')
+            self.assertTrue(message)
+            self.assertIn("'ascii' codec can't encode "
+                          "character '\\xd8' in position 4:", message[0])
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            # didn't write anything due to the encoding error
+            self.assertEqual(data, r'')
+
 
     def _test_log(self, method, level=None):
         # logging.root has no handlers so basicConfig should be called

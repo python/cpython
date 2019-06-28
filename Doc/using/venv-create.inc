@@ -6,12 +6,13 @@ command ``venv``::
 Running this command creates the target directory (creating any parent
 directories that don't exist already) and places a ``pyvenv.cfg`` file in it
 with a ``home`` key pointing to the Python installation from which the command
-was run.  It also creates a ``bin`` (or ``Scripts`` on Windows) subdirectory
-containing a copy/symlink of the Python binary/binaries (as appropriate for the
-platform or arguments used at environment creation time). It also creates an
-(initially empty) ``lib/pythonX.Y/site-packages`` subdirectory
-(on Windows, this is ``Lib\site-packages``). If an existing
-directory is specified, it will be re-used.
+was run (a common name for the target directory is ``.venv``).  It also creates
+a ``bin`` (or ``Scripts`` on Windows) subdirectory containing a copy/symlink
+of the Python binary/binaries (as appropriate for the platform or arguments
+used at environment creation time). It also creates an (initially empty)
+``lib/pythonX.Y/site-packages`` subdirectory (on Windows, this is
+``Lib\site-packages``). If an existing directory is specified, it will be
+re-used.
 
 .. deprecated:: 3.6
    ``pyvenv`` was the recommended tool for creating virtual environments for
@@ -35,7 +36,7 @@ your :ref:`Python installation <using-on-windows>`::
 The command, if run with ``-h``, will show the available options::
 
     usage: venv [-h] [--system-site-packages] [--symlinks | --copies] [--clear]
-                [--upgrade] [--without-pip] [--prompt PROMPT]
+                [--upgrade] [--without-pip] [--prompt PROMPT] [--upgrade-deps]
                 ENV_DIR [ENV_DIR ...]
 
     Creates virtual Python environments in one or more target directories.
@@ -60,9 +61,14 @@ The command, if run with ``-h``, will show the available options::
                             environment (pip is bootstrapped by default)
       --prompt PROMPT       Provides an alternative prompt prefix for this
                             environment.
+      --upgrade-deps        Upgrade core dependencies: pip setuptools to the
+                            latest version in PyPI
 
     Once an environment has been created, you may wish to activate it, e.g. by
     sourcing an activate script in its bin directory.
+
+.. versionchanged:: 3.8
+   Add ``--upgrade-deps`` option to upgrade pip + setuptools to the latest on PyPI
 
 .. versionchanged:: 3.4
    Installs pip by default, added the ``--without-pip``  and ``--copies``
@@ -96,11 +102,13 @@ directory containing the virtual environment):
 +-------------+-----------------+-----------------------------------------+
 | Platform    | Shell           | Command to activate virtual environment |
 +=============+=================+=========================================+
-| Posix       | bash/zsh        | $ source <venv>/bin/activate            |
+| POSIX       | bash/zsh        | $ source <venv>/bin/activate            |
 +-------------+-----------------+-----------------------------------------+
 |             | fish            | $ . <venv>/bin/activate.fish            |
 +-------------+-----------------+-----------------------------------------+
 |             | csh/tcsh        | $ source <venv>/bin/activate.csh        |
++-------------+-----------------+-----------------------------------------+
+|             | PowerShell Core | $ <venv>/bin/Activate.ps1               |
 +-------------+-----------------+-----------------------------------------+
 | Windows     | cmd.exe         | C:\\> <venv>\\Scripts\\activate.bat     |
 +-------------+-----------------+-----------------------------------------+
@@ -122,3 +130,7 @@ when the virtual environment is created.
 
 .. versionadded:: 3.4
    ``fish`` and ``csh`` activation scripts.
+
+.. versionadded:: 3.8
+   PowerShell activation scripts installed under POSIX for PowerShell Core
+   support.

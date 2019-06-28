@@ -181,6 +181,8 @@ access further features, you have to do this yourself:
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
 
+   .. audit-event:: pdb.Pdb "" pdb.Pdb
+
    .. versionadded:: 3.1
       The *skip* argument.
 

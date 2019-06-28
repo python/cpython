@@ -1223,7 +1223,7 @@ PyObject* pysqlite_connection_call(pysqlite_Connection* self, PyObject* args, Py
     if (!_PyArg_NoKeywords(MODULE_NAME ".Connection", kwargs))
         return NULL;
 
-    if (!PyArg_ParseTuple(args, "O", &sql))
+    if (!PyArg_ParseTuple(args, "U", &sql))
         return NULL;
 
     _pysqlite_drop_unused_statement_references(self);
@@ -1838,10 +1838,10 @@ PyTypeObject pysqlite_ConnectionType = {
         sizeof(pysqlite_Connection),                    /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)pysqlite_connection_dealloc,        /* tp_dealloc */
-        0,                                              /* tp_print */
+        0,                                              /* tp_vectorcall_offset */
         0,                                              /* tp_getattr */
         0,                                              /* tp_setattr */
-        0,                                              /* tp_reserved */
+        0,                                              /* tp_as_async */
         0,                                              /* tp_repr */
         0,                                              /* tp_as_number */
         0,                                              /* tp_as_sequence */

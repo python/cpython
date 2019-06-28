@@ -43,11 +43,32 @@ The :mod:`pty` module defines the following functions:
 
    Spawn a process, and connect its controlling terminal with the current
    process's standard io. This is often used to baffle programs which insist on
-   reading from the controlling terminal.
+   reading from the controlling terminal. It is expected that the process
+   spawned behind the pty will eventually terminate, and when it does *spawn*
+   will return.
 
-   The functions *master_read* and *stdin_read* should be functions which read from
-   a file descriptor. The defaults try to read 1024 bytes each time they are
-   called.
+   The functions *master_read* and *stdin_read* are passed a file descriptor
+   which they should read from, and they should always return a byte string. In
+   order to force spawn to return before the child process exits an
+   :exc:`OSError` should be thrown.
+
+   The default implementation for both functions will read and return up to 1024
+   bytes each time the function is called. The *master_read* callback is passed
+   the pseudoterminal’s master file descriptor to read output from the child
+   process, and *stdin_read* is passed file descriptor 0, to read from the
+   parent process's standard input.
+
+   Returning an empty byte string from either callback is interpreted as an
+   end-of-file (EOF) condition, and that callback will not be called after
+   that. If *stdin_read* signals EOF the controlling terminal can no longer
+   communicate with the parent process OR the child process. Unless the child
+   process will quit without any input, *spawn* will then loop forever. If
+   *master_read* signals EOF the same behavior results (on linux at least).
+
+   If both callbacks signal EOF then *spawn* will probably never return, unless
+   *select* throws an error on your platform when passed three empty lists. This
+   is a bug, documented in `issue 26228 <https://bugs.python.org/issue26228>`_.
+
 
    .. versionchanged:: 3.4
       :func:`spawn` now returns the status value from :func:`os.waitpid`

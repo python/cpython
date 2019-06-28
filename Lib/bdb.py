@@ -384,7 +384,7 @@ class Bdb:
         return None
 
     def _prune_breaks(self, filename, lineno):
-        """Prune breakpoints for filname:lineno.
+        """Prune breakpoints for filename:lineno.
 
         A list of breakpoints is maintained in the Bdb instance and in
         the Breakpoint class.  If a breakpoint in the Bdb instance no
@@ -618,26 +618,11 @@ class Bdb:
 
     # This method is more useful to debug a single function call.
 
-    def runcall(*args, **kwds):
+    def runcall(self, func, /, *args, **kwds):
         """Debug a single function call.
 
         Return the result of the function call.
         """
-        if len(args) >= 2:
-            self, func, *args = args
-        elif not args:
-            raise TypeError("descriptor 'runcall' of 'Bdb' object "
-                            "needs an argument")
-        elif 'func' in kwds:
-            func = kwds.pop('func')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'func' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('runcall expected at least 1 positional argument, '
-                            'got %d' % (len(args)-1))
-
         self.reset()
         sys.settrace(self.trace_dispatch)
         res = None

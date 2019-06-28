@@ -1081,6 +1081,34 @@ The :mod:`test.support` module defines the following functions:
    :exc:`PermissionError` is raised.
 
 
+.. function:: catch_unraisable_exception()
+
+   Context manager catching unraisable exception using
+   :func:`sys.unraisablehook`.
+
+   Storing the exception value (``cm.unraisable.exc_value``) creates a
+   reference cycle. The reference cycle is broken explicitly when the context
+   manager exits.
+
+   Storing the object (``cm.unraisable.object``) can resurrect it if it is set
+   to an object which is being finalized. Exiting the context manager clears
+   the stored object.
+
+   Usage::
+
+       with support.catch_unraisable_exception() as cm:
+           # code creating an "unraisable exception"
+           ...
+
+           # check the unraisable exception: use cm.unraisable
+           ...
+
+       # cm.unraisable attribute no longer exists at this point
+       # (to break a reference cycle)
+
+   .. versionadded:: 3.8
+
+
 .. function:: find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM)
 
    Returns an unused port that should be suitable for binding.  This is

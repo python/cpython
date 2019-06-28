@@ -77,9 +77,17 @@ def test_pdb_basic_commands():
     ...     print('...')
     ...     return foo.upper()
 
+    >>> def test_function3(arg=None, *, kwonly=None):
+    ...     pass
+
+    >>> def test_function4(a, b, c, /):
+    ...     pass
+
     >>> def test_function():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     ret = test_function_2('baz')
+    ...     test_function3(kwonly=True)
+    ...     test_function4(1, 2, 3)
     ...     print(ret)
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
@@ -97,10 +105,17 @@ def test_pdb_basic_commands():
     ...     'jump 8',     # jump over second for loop
     ...     'return',     # return out of function
     ...     'retval',     # display return value
+    ...     'next',       # step to test_function3()
+    ...     'step',       # stepping into test_function3()
+    ...     'args',       # display function args
+    ...     'return',     # return out of function
+    ...     'next',       # step to test_function4()
+    ...     'step',       # stepping to test_function4()
+    ...     'args',       # display function args
     ...     'continue',
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_basic_commands[1]>(3)test_function()
+    > <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
     -> ret = test_function_2('baz')
     (Pdb) step
     --Call--
@@ -123,14 +138,14 @@ def test_pdb_basic_commands():
     [EOF]
     (Pdb) bt
     ...
-      <doctest test.test_pdb.test_pdb_basic_commands[2]>(18)<module>()
+      <doctest test.test_pdb.test_pdb_basic_commands[4]>(25)<module>()
     -> test_function()
-      <doctest test.test_pdb.test_pdb_basic_commands[1]>(3)test_function()
+      <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
     -> ret = test_function_2('baz')
     > <doctest test.test_pdb.test_pdb_basic_commands[0]>(1)test_function_2()
     -> def test_function_2(foo, bar='default'):
     (Pdb) up
-    > <doctest test.test_pdb.test_pdb_basic_commands[1]>(3)test_function()
+    > <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
     -> ret = test_function_2('baz')
     (Pdb) down
     > <doctest test.test_pdb.test_pdb_basic_commands[0]>(1)test_function_2()
@@ -168,6 +183,31 @@ def test_pdb_basic_commands():
     -> return foo.upper()
     (Pdb) retval
     'BAZ'
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_basic_commands[3]>(4)test_function()
+    -> test_function3(kwonly=True)
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_basic_commands[1]>(1)test_function3()
+    -> def test_function3(arg=None, *, kwonly=None):
+    (Pdb) args
+    arg = None
+    kwonly = True
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_pdb_basic_commands[1]>(2)test_function3()->None
+    -> pass
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_basic_commands[3]>(5)test_function()
+    -> test_function4(1, 2, 3)
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_basic_commands[2]>(1)test_function4()
+    -> def test_function4(a, b, c, /):
+    (Pdb) args
+    a = 1
+    b = 2
+    c = 3
     (Pdb) continue
     BAZ
     """

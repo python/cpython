@@ -10,7 +10,6 @@ by revealing an inconsistency in how sys.path is initialized when executing
 considered a potential security issue, as it may lead to privileged
 processes unexpectedly loading code from user controlled directories in
 situations where that was not previously the case.
-
 The interpreter now consistently avoids ever adding the import location's
 parent directory to ``sys.path``, and ensures no other ``sys.path`` entries
 are inadvertently modified when inserting the import location named on the
@@ -56,11 +55,10 @@ Fix potential crash during GC caused by ``tp_dealloc`` which doesn't call
 .. section: Library
 
 Fixed issues with binary plists:
-
-* Fixed saving bytearrays.
-* Identical objects will be saved only once.
-* Equal references will be load as identical objects.
-* Added support for saving and loading recursive data structures.
+Fixed saving bytearrays.
+Identical objects will be saved only once.
+Equal references will be load as identical objects.
+Added support for saving and loading recursive data structures.
 
 ..
 

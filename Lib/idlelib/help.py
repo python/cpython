@@ -2,7 +2,7 @@
 Contents are subject to revision at any time, without notice.
 
 
-Help => About IDLE: diplay About Idle dialog
+Help => About IDLE: display About Idle dialog
 
 <to be moved here from help_about.py>
 

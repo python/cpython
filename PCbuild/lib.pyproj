@@ -250,7 +250,6 @@
     <Compile Include="distutils\_msvccompiler.py" />
     <Compile Include="distutils\__init__.py" />
     <Compile Include="doctest.py" />
-    <Compile Include="dummy_threading.py" />
     <Compile Include="email\base64mime.py" />
     <Compile Include="email\charset.py" />
     <Compile Include="email\contentmanager.py" />
@@ -678,7 +677,7 @@
     <Compile Include="multiprocessing\queues.py" />
     <Compile Include="multiprocessing\reduction.py" />
     <Compile Include="multiprocessing\resource_sharer.py" />
-    <Compile Include="multiprocessing\semaphore_tracker.py" />
+    <Compile Include="multiprocessing\resource_tracker.py" />
     <Compile Include="multiprocessing\sharedctypes.py" />
     <Compile Include="multiprocessing\spawn.py" />
     <Compile Include="multiprocessing\synchronize.py" />
@@ -976,8 +975,6 @@
     <Compile Include="test\test_doctest2.py" />
     <Compile Include="test\test_docxmlrpc.py" />
     <Compile Include="test\test_dtrace.py" />
-    <Compile Include="test\test_dummy_thread.py" />
-    <Compile Include="test\test_dummy_threading.py" />
     <Compile Include="test\test_dynamic.py" />
     <Compile Include="test\test_dynamicclassattribute.py" />
     <Compile Include="test\test_eintr.py" />
@@ -1564,7 +1561,6 @@
     <Compile Include="_collections_abc.py" />
     <Compile Include="_compat_pickle.py" />
     <Compile Include="_compression.py" />
-    <Compile Include="_dummy_thread.py" />
     <Compile Include="_markupbase.py" />
     <Compile Include="_osx_support.py" />
     <Compile Include="_pydecimal.py" />

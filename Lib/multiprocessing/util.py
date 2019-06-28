@@ -421,3 +421,9 @@ def spawnv_passfds(path, args, passfds):
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)
+
+
+def close_fds(*fds):
+    """Close each file descriptor given as an argument"""
+    for fd in fds:
+        os.close(fd)

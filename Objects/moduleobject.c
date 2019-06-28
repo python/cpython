@@ -590,13 +590,15 @@ _PyModule_ClearDict(PyObject *d)
     Py_ssize_t pos;
     PyObject *key, *value;
 
+    int verbose = _PyInterpreterState_GET_UNSAFE()->config.verbose;
+
     /* First, clear only names starting with a single underscore */
     pos = 0;
     while (PyDict_Next(d, &pos, &key, &value)) {
         if (value != Py_None && PyUnicode_Check(key)) {
             if (PyUnicode_READ_CHAR(key, 0) == '_' &&
                 PyUnicode_READ_CHAR(key, 1) != '_') {
-                if (Py_VerboseFlag > 1) {
+                if (verbose > 1) {
                     const char *s = PyUnicode_AsUTF8(key);
                     if (s != NULL)
                         PySys_WriteStderr("#   clear[1] %s\n", s);
@@ -617,7 +619,7 @@ _PyModule_ClearDict(PyObject *d)
             if (PyUnicode_READ_CHAR(key, 0) != '_' ||
                 !_PyUnicode_EqualToASCIIString(key, "__builtins__"))
             {
-                if (Py_VerboseFlag > 1) {
+                if (verbose > 1) {
                     const char *s = PyUnicode_AsUTF8(key);
                     if (s != NULL)
                         PySys_WriteStderr("#   clear[2] %s\n", s);
@@ -675,8 +677,10 @@ module___init___impl(PyModuleObject *self, PyObject *name, PyObject *doc)
 static void
 module_dealloc(PyModuleObject *m)
 {
+    int verbose = _PyInterpreterState_GET_UNSAFE()->config.verbose;
+
     PyObject_GC_UnTrack(m);
-    if (Py_VerboseFlag && m->md_name) {
+    if (verbose && m->md_name) {
         PySys_FormatStderr("# destroy %S\n", m->md_name);
     }
     if (m->md_weaklist != NULL)
@@ -831,10 +835,10 @@ PyTypeObject PyModule_Type = {
     sizeof(PyModuleObject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)module_dealloc,                 /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)module_repr,                      /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

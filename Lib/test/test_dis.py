@@ -640,7 +640,7 @@ def tricky(a, b, /, x, y, z=True, *args, c, d, e=[], **kwds):
 code_info_tricky = """\
 Name:              tricky
 Filename:          (.*)
-Argument count:    3
+Argument count:    5
 Positional-only arguments: 2
 Kw-only arguments: 3
 Number of locals:  10

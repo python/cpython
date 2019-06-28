@@ -17,12 +17,7 @@ from xml.etree import ElementTree as ET
 
 from .constants import *
 
-__all__ = []
-
-
-def public(f):
-    __all__.append(f.__name__)
-    return f
+__all__ = ["get_appx_layout"]
 
 
 APPX_DATA = dict(
@@ -166,9 +161,7 @@ REGISTRY = {
             "Help": {
                 "Main Python Documentation": {
                     "_condition": lambda ns: ns.include_chm,
-                    "": "[{{AppVPackageRoot}}]\\Doc\\{}".format(
-                        PYTHON_CHM_NAME
-                    ),
+                    "": "[{{AppVPackageRoot}}]\\Doc\\{}".format(PYTHON_CHM_NAME),
                 },
                 "Local Python Documentation": {
                     "_condition": lambda ns: ns.include_html_doc,
@@ -237,31 +230,6 @@ def _fixup_sccd(ns, sccd, new_hash=None):
         xml.write(f, encoding="utf-8")
 
     return sccd
-
-
-@public
-def get_appx_layout(ns):
-    if not ns.include_appxmanifest:
-        return
-
-    yield "AppxManifest.xml", ns.temp / "AppxManifest.xml"
-    yield "_resources.xml", ns.temp / "_resources.xml"
-    icons = ns.source / "PC" / "icons"
-    yield "_resources/pythonx44.png", icons / "pythonx44.png"
-    yield "_resources/pythonx44$targetsize-44_altform-unplated.png", icons / "pythonx44.png"
-    yield "_resources/pythonx50.png", icons / "pythonx50.png"
-    yield "_resources/pythonx50$targetsize-50_altform-unplated.png", icons / "pythonx50.png"
-    yield "_resources/pythonx150.png", icons / "pythonx150.png"
-    yield "_resources/pythonx150$targetsize-150_altform-unplated.png", icons / "pythonx150.png"
-    yield "_resources/pythonwx44.png", icons / "pythonwx44.png"
-    yield "_resources/pythonwx44$targetsize-44_altform-unplated.png", icons / "pythonwx44.png"
-    yield "_resources/pythonwx150.png", icons / "pythonwx150.png"
-    yield "_resources/pythonwx150$targetsize-150_altform-unplated.png", icons / "pythonwx150.png"
-    sccd = ns.source / SCCD_FILENAME
-    if sccd.is_file():
-        # This should only be set for side-loading purposes.
-        sccd = _fixup_sccd(ns, sccd, os.getenv("APPX_DATA_SHA256"))
-        yield sccd.name, sccd
 
 
 def find_or_add(xml, element, attr=None, always_add=False):
@@ -393,7 +361,6 @@ def disable_registry_virtualization(xml):
     e = find_or_add(e, "rescap:Capability", ("Name", "unvirtualizedResources"))
 
 
-@public
 def get_appxmanifest(ns):
     for k, v in APPXMANIFEST_NS.items():
         ET.register_namespace(k, v)
@@ -481,6 +448,29 @@ def get_appxmanifest(ns):
     return buffer.getbuffer()
 
 
-@public
 def get_resources_xml(ns):
     return RESOURCES_XML_TEMPLATE.encode("utf-8")
+
+
+def get_appx_layout(ns):
+    if not ns.include_appxmanifest:
+        return
+
+    yield "AppxManifest.xml", ("AppxManifest.xml", get_appxmanifest(ns))
+    yield "_resources.xml", ("_resources.xml", get_resources_xml(ns))
+    icons = ns.source / "PC" / "icons"
+    yield "_resources/pythonx44.png", icons / "pythonx44.png"
+    yield "_resources/pythonx44$targetsize-44_altform-unplated.png", icons / "pythonx44.png"
+    yield "_resources/pythonx50.png", icons / "pythonx50.png"
+    yield "_resources/pythonx50$targetsize-50_altform-unplated.png", icons / "pythonx50.png"
+    yield "_resources/pythonx150.png", icons / "pythonx150.png"
+    yield "_resources/pythonx150$targetsize-150_altform-unplated.png", icons / "pythonx150.png"
+    yield "_resources/pythonwx44.png", icons / "pythonwx44.png"
+    yield "_resources/pythonwx44$targetsize-44_altform-unplated.png", icons / "pythonwx44.png"
+    yield "_resources/pythonwx150.png", icons / "pythonwx150.png"
+    yield "_resources/pythonwx150$targetsize-150_altform-unplated.png", icons / "pythonwx150.png"
+    sccd = ns.source / SCCD_FILENAME
+    if sccd.is_file():
+        # This should only be set for side-loading purposes.
+        sccd = _fixup_sccd(ns, sccd, os.getenv("APPX_DATA_SHA256"))
+        yield sccd.name, sccd

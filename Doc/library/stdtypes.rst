@@ -351,7 +351,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See http://www.unicode.org/Public/12.0.0/ucd/extracted/DerivedNumericType.txt
+   See http://www.unicode.org/Public/12.1.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -1114,7 +1114,7 @@ Notes:
    item is removed and returned.
 
 (3)
-   ``remove`` raises :exc:`ValueError` when *x* is not found in *s*.
+   :meth:`remove` raises :exc:`ValueError` when *x* is not found in *s*.
 
 (4)
    The :meth:`reverse` method modifies the sequence in place for economy of
@@ -1124,7 +1124,9 @@ Notes:
 (5)
    :meth:`clear` and :meth:`!copy` are included for consistency with the
    interfaces of mutable containers that don't support slicing operations
-   (such as :class:`dict` and :class:`set`)
+   (such as :class:`dict` and :class:`set`). :meth:`!copy` is not part of the
+   :class:`collections.abc.MutableSequence` ABC, but most concrete
+   mutable sequence classes provide it.
 
    .. versionadded:: 3.3
       :meth:`clear` and :meth:`!copy` methods.
@@ -1557,8 +1559,15 @@ expression support in the :mod:`re` module).
    :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
    list of possible encodings, see section :ref:`standard-encodings`.
 
+   By default, the *errors* argument is not checked for best performances, but
+   only used at the first encoding error. Enable the development mode
+   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+
    .. versionchanged:: 3.1
       Support for keyword arguments added.
+
+   .. versionchanged:: 3.9
+      The *errors* is now checked in development mode and in debug mode.
 
 
 .. method:: str.endswith(suffix[, start[, end]])
@@ -2402,7 +2411,25 @@ data and are closely related to string objects in a variety of other ways.
       >>> b'\xf0\xf1\xf2'.hex()
       'f0f1f2'
 
+      If you want to make the hex string easier to read, you can specify a
+      single character separator *sep* parameter to include in the output.
+      By default between each byte.  A second optional *bytes_per_sep*
+      parameter controls the spacing.  Positive values calculate the
+      separator position from the right, negative values from the left.
+
+      >>> value = b'\xf0\xf1\xf2'
+      >>> value.hex('-')
+      'f0-f1-f2'
+      >>> value.hex('_', 2)
+      'f0_f1f2'
+      >>> b'UUDDLRLRAB'.hex(' ', -4)
+      '55554444 4c524c52 4142'
+
       .. versionadded:: 3.5
+
+      .. versionchanged:: 3.8
+         :meth:`bytes.hex` now supports optional *sep* and *bytes_per_sep*
+         parameters to insert separators between bytes in the hex output.
 
 Since bytes objects are sequences of integers (akin to a tuple), for a bytes
 object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes
@@ -2555,6 +2582,10 @@ arbitrary binary data.
    :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
    list of possible encodings, see section :ref:`standard-encodings`.
 
+   By default, the *errors* argument is not checked for best performances, but
+   only used at the first decoding error. Enable the development mode
+   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+
    .. note::
 
       Passing the *encoding* argument to :class:`str` allows decoding any
@@ -2563,6 +2594,9 @@ arbitrary binary data.
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
+
+   .. versionchanged:: 3.9
+      The *errors* is now checked in development mode and in debug mode.
 
 
 .. method:: bytes.endswith(suffix[, start[, end]])
@@ -2716,8 +2750,8 @@ arbitrary binary data.
    The prefix(es) to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.translate(table, delete=b'')
-            bytearray.translate(table, delete=b'')
+.. method:: bytes.translate(table, /, delete=b'')
+            bytearray.translate(table, /, delete=b'')
 
    Return a copy of the bytes or bytearray object where all bytes occurring in
    the optional argument *delete* are removed, and the remaining bytes have

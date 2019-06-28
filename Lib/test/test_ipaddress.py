@@ -466,6 +466,14 @@ class NetmaskTestMixin_v4(CommonTestMixin_v4):
         assertBadNetmask("1.1.1.1", "pudding")
         assertBadNetmask("1.1.1.1", "::")
 
+    def test_netmask_in_tuple_errors(self):
+        def assertBadNetmask(addr, netmask):
+            msg = "%r is not a valid netmask" % netmask
+            with self.assertNetmaskError(re.escape(msg)):
+                self.factory((addr, netmask))
+        assertBadNetmask("1.1.1.1", -1)
+        assertBadNetmask("1.1.1.1", 33)
+
     def test_pickle(self):
         self.pickle_test('192.0.2.0/27')
         self.pickle_test('192.0.2.0/31')  # IPV4LENGTH - 1
@@ -587,6 +595,14 @@ class NetmaskTestMixin_v6(CommonTestMixin_v6):
         assertBadNetmask("::1", "1.2.3.4")
         assertBadNetmask("::1", "pudding")
         assertBadNetmask("::", "::")
+
+    def test_netmask_in_tuple_errors(self):
+        def assertBadNetmask(addr, netmask):
+            msg = "%r is not a valid netmask" % netmask
+            with self.assertNetmaskError(re.escape(msg)):
+                self.factory((addr, netmask))
+        assertBadNetmask("::1", -1)
+        assertBadNetmask("::1", 129)
 
     def test_pickle(self):
         self.pickle_test('2001:db8::1000/124')

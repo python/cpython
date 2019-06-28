@@ -32,6 +32,7 @@ typedef struct {
     PyObject *func_module;      /* The __module__ attribute, can be anything */
     PyObject *func_annotations; /* Annotations, a dict or NULL */
     PyObject *func_qualname;    /* The qualified name */
+    vectorcallfunc vectorcall;
 
     /* Invariant:
      *     func_closure contains the bindings for func_code->co_freevars, so
@@ -59,16 +60,10 @@ PyAPI_FUNC(PyObject *) PyFunction_GetAnnotations(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyFunction_FastCallDict(
-    PyObject *func,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs);
-
-PyAPI_FUNC(PyObject *) _PyFunction_FastCallKeywords(
+PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     PyObject *func,
     PyObject *const *stack,
-    Py_ssize_t nargs,
+    size_t nargsf,
     PyObject *kwnames);
 #endif
 

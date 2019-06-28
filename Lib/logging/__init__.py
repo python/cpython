@@ -1,4 +1,4 @@
-# Copyright 2001-2017 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python.
 
-Copyright (C) 2001-2017 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -231,49 +231,38 @@ def _releaseLock():
 # Prevent a held logging lock from blocking a child from logging.
 
 if not hasattr(os, 'register_at_fork'):  # Windows and friends.
-    def _register_at_fork_acquire_release(instance):
+    def _register_at_fork_reinit_lock(instance):
         pass  # no-op when os.register_at_fork does not exist.
-else:  # The os.register_at_fork API exists
-    os.register_at_fork(before=_acquireLock,
-                        after_in_child=_releaseLock,
-                        after_in_parent=_releaseLock)
+else:
+    # A collection of instances with a createLock method (logging.Handler)
+    # to be called in the child after forking.  The weakref avoids us keeping
+    # discarded Handler instances alive.  A set is used to avoid accumulating
+    # duplicate registrations as createLock() is responsible for registering
+    # a new Handler instance with this set in the first place.
+    _at_fork_reinit_lock_weakset = weakref.WeakSet()
 
-    # A collection of instances with acquire and release methods (logging.Handler)
-    # to be called before and after fork.  The weakref avoids us keeping discarded
-    # Handler instances alive forever in case an odd program creates and destroys
-    # many over its lifetime.
-    _at_fork_acquire_release_weakset = weakref.WeakSet()
+    def _register_at_fork_reinit_lock(instance):
+        _acquireLock()
+        try:
+            _at_fork_reinit_lock_weakset.add(instance)
+        finally:
+            _releaseLock()
 
-
-    def _register_at_fork_acquire_release(instance):
-        # We put the instance itself in a single WeakSet as we MUST have only
-        # one atomic weak ref. used by both before and after atfork calls to
-        # guarantee matched pairs of acquire and release calls.
-        _at_fork_acquire_release_weakset.add(instance)
-
-
-    def _at_fork_weak_calls(method_name):
-        for instance in _at_fork_acquire_release_weakset:
-            method = getattr(instance, method_name)
+    def _after_at_fork_child_reinit_locks():
+        # _acquireLock() was called in the parent before forking.
+        for handler in _at_fork_reinit_lock_weakset:
             try:
-                method()
+                handler.createLock()
             except Exception as err:
                 # Similar to what PyErr_WriteUnraisable does.
                 print("Ignoring exception from logging atfork", instance,
-                      method_name, "method:", err, file=sys.stderr)
+                      "._reinit_lock() method:", err, file=sys.stderr)
+        _releaseLock()  # Acquired by os.register_at_fork(before=.
 
 
-    def _before_at_fork_weak_calls():
-        _at_fork_weak_calls('acquire')
-
-
-    def _after_at_fork_weak_calls():
-        _at_fork_weak_calls('release')
-
-
-    os.register_at_fork(before=_before_at_fork_weak_calls,
-                        after_in_child=_after_at_fork_weak_calls,
-                        after_in_parent=_after_at_fork_weak_calls)
+    os.register_at_fork(before=_acquireLock,
+                        after_in_child=_after_at_fork_child_reinit_locks,
+                        after_in_parent=_releaseLock)
 
 
 #---------------------------------------------------------------------------
@@ -364,11 +353,9 @@ class LogRecord(object):
         else:
             self.process = None
 
-    def __str__(self):
+    def __repr__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
             self.pathname, self.lineno, self.msg)
-
-    __repr__ = __str__
 
     def getMessage(self):
         """
@@ -902,7 +889,7 @@ class Handler(Filterer):
         Acquire a thread lock for serializing access to the underlying I/O.
         """
         self.lock = threading.RLock()
-        _register_at_fork_acquire_release(self)
+        _register_at_fork_reinit_lock(self)
 
     def acquire(self):
         """
@@ -1124,6 +1111,8 @@ class StreamHandler(Handler):
     def __repr__(self):
         level = getLevelName(self.level)
         name = getattr(self.stream, 'name', '')
+        #  bpo-36015: name can be an int
+        name = str(name)
         if name:
             name += ' '
         return '<%s %s(%s)>' % (self.__class__.__name__, name, level)
@@ -1133,7 +1122,7 @@ class FileHandler(StreamHandler):
     """
     A handler class which writes formatted logging records to disk files.
     """
-    def __init__(self, filename, mode='a', encoding=None, delay=False):
+    def __init__(self, filename, mode='a', encoding=None, delay=False, errors=None):
         """
         Open the specified file and use it as the stream for logging.
         """
@@ -1144,6 +1133,7 @@ class FileHandler(StreamHandler):
         self.baseFilename = os.path.abspath(filename)
         self.mode = mode
         self.encoding = encoding
+        self.errors = errors
         self.delay = delay
         if delay:
             #We don't open the stream, but we still need to call the
@@ -1180,7 +1170,8 @@ class FileHandler(StreamHandler):
         Open the current base file with the (original) mode and encoding.
         Return the resulting stream.
         """
-        return open(self.baseFilename, self.mode, encoding=self.encoding)
+        return open(self.baseFilename, self.mode, encoding=self.encoding,
+                    errors=self.errors)
 
     def emit(self, record):
         """
@@ -1939,14 +1930,19 @@ def basicConfig(**kwargs):
               attached to the root logger are removed and closed, before
               carrying out the configuration as specified by the other
               arguments.
+    encoding  If specified together with a filename, this encoding is passed to
+              the created FileHandler, causing it to be used when the file is
+              opened.
+    errors    If specified together with a filename, this value is passed to the
+              created FileHandler, causing it to be used when the file is
+              opened in text mode. If not specified, the default value is
+              `backslashreplace`.
+
     Note that you could specify a stream created using open(filename, mode)
     rather than passing the filename and mode in. However, it should be
     remembered that StreamHandler does not close its stream (since it may be
     using sys.stdout or sys.stderr), whereas FileHandler closes its stream
     when the handler is closed.
-
-    .. versionchanged:: 3.8
-       Added the ``force`` parameter.
 
     .. versionchanged:: 3.2
        Added the ``style`` parameter.
@@ -1957,12 +1953,20 @@ def basicConfig(**kwargs):
        ``filename``/``filemode``, or ``filename``/``filemode`` specified
        together with ``stream``, or ``handlers`` specified together with
        ``stream``.
+
+    .. versionchanged:: 3.8
+       Added the ``force`` parameter.
+
+    .. versionchanged:: 3.9
+       Added the ``encoding`` and ``errors`` parameters.
     """
     # Add thread safety in case someone mistakenly calls
     # basicConfig() from multiple threads
     _acquireLock()
     try:
         force = kwargs.pop('force', False)
+        encoding = kwargs.pop('encoding', None)
+        errors = kwargs.pop('errors', 'backslashreplace')
         if force:
             for h in root.handlers[:]:
                 root.removeHandler(h)
@@ -1981,7 +1985,10 @@ def basicConfig(**kwargs):
                 filename = kwargs.pop("filename", None)
                 mode = kwargs.pop("filemode", 'a')
                 if filename:
-                    h = FileHandler(filename, mode)
+                    if 'b'in mode:
+                        errors = None
+                    h = FileHandler(filename, mode,
+                                    encoding=encoding, errors=errors)
                 else:
                     stream = kwargs.pop("stream", None)
                     h = StreamHandler(stream)
