@@ -107,6 +107,18 @@ class TestPathfixFunctional(unittest.TestCase):
             output = f.read()
         self.assertEqual(output, '#! /usr/bin/env python -R\n' + 'print("Hello world")\n')
 
+    def test_pathfix_keeping_flags_with_no_flags(self):
+        with open(self.temp_file, 'w') as f:
+            f.write('#! /usr/bin/env python\n' + 'print("Hello world")\n')
+
+        subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', '-f', "", self.temp_file])
+        with open(self.temp_file) as f:
+            output = f.read()
+        self.assertEqual(output, '#! /usr/bin/python\n' + 'print("Hello world")\n')
+        with open(self.temp_file + '~') as f:
+            output = f.read()
+        self.assertEqual(output, '#! /usr/bin/env python\n' + 'print("Hello world")\n')
+
     def test_pathfix_keeping_argument(self):
         with open(self.temp_file, 'w') as f:
             f.write('#! /usr/bin/env python -W something\n' + 'print("Hello world")\n')
