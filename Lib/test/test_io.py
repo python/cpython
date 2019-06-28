@@ -3687,10 +3687,7 @@ def _to_memoryview(buf):
 class CTextIOWrapperTest(TextIOWrapperTest):
     io = io
 
-    # Since port to multiphase init, state can be found as
-    # long as module lives, so Lookup error will be raised
-    # because ascii no longer exists
-    shutdown_error = "LookupError: unknown encoding:"
+    shutdown_error = "RuntimeError: could not find io module state"
 
     def test_initialization(self):
         r = self.BytesIO(b"\xc3\xa9\n\n")

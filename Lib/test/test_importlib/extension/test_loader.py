@@ -347,6 +347,17 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
 
         self.assertIs(ex.get_defining_module(), testmultiphase)
 
+    def test_subclass_get_module_with_super(self):
+        testmultiphase = self.load_module_by_name("_testmultiphase_meth_state_access")
+
+        class StateAccessType_Subclass(testmultiphase.StateAccessType):
+            def get_defining_module(self):
+                return super().get_defining_module()
+
+        ex = StateAccessType_Subclass()
+
+        self.assertIs(ex.get_defining_module(), testmultiphase)
+
 
 (Frozen_MultiPhaseExtensionModuleTests,
  Source_MultiPhaseExtensionModuleTests

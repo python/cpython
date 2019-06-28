@@ -717,19 +717,6 @@ class CLanguage(Language):
             {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
             """)
 
-        parser_prototype_def_class = normalize_snippet("""
-            static PyObject *
-            {c_basename}({self_type}{self_name}, PyTypeObject *cls, PyObject *args, PyObject *kwargs)
-        """)
-
-        body_keyword = normalize_snippet("""
-            if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-                {parse_arguments})) {{
-                goto exit;
-            }}
-            """, indent=4)
-
-
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
         parser_body_fields = ()
@@ -785,7 +772,7 @@ class CLanguage(Language):
             else:
                 parser_definition = parser_body(parser_prototype)
 
-        elif meth_o and not subclass_of_heaptype:
+        elif meth_o:
             flags = "METH_O"
 
             if (isinstance(converters[0], object_converter) and
@@ -832,44 +819,15 @@ class CLanguage(Language):
             # (we have to generate lots of PyArg_ParseTuple calls
             #  in a big switch statement)
 
-            if requires_defining_class:
-                flags = 'METH_METHOD|METH_VARARGS'
-                parser_prototype = parser_prototype_def_class
-                if len(parameters) > 1 or subclass_of_heaptype:
-                    parser_definition = parser_body(parser_prototype, body_keyword)
-                    parser_definition = insert_keywords(parser_definition)
-                else:
-                    parser_definition = parser_body(parser_prototype)
-            else:
-                flags = "METH_VARARGS"
-                parser_prototype = parser_prototype_varargs
+            flags = "METH_VARARGS"
+            parser_prototype = parser_prototype_varargs
 
-                parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
+            parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
 
         elif pos_only == len(parameters):
             if not new_or_init:
                 # positional-only, but no option groups
                 # we only need one call to _PyArg_ParseStack
-                if requires_defining_class or subclass_of_heaptype:
-                    flags = 'METH_METHOD|METH_VARARGS'
-                    parser_prototype = parser_prototype_def_class
-                    if len(parameters) > 1 or subclass_of_heaptype:
-                        parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                            if (!PyArg_ParseTuple(args, "{format_units}:{name}",
-                                {parse_arguments})) {{
-                                goto exit;
-                            }}
-                            """, indent=4))
-                    else:
-                        parser_definition = parser_body(parser_prototype)
-                else:
-                    flags = "METH_FASTCALL"
-                    parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                        if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
-                            {parse_arguments})) {{
-                            goto exit;
-                        }}
-                        """, indent=4))
 
                 flags = "METH_FASTCALL"
                 parser_prototype = parser_prototype_fastcall
@@ -1047,18 +1005,15 @@ class CLanguage(Language):
 
         if new_or_init:
             methoddef_define = ''
-            check_on_heaptype = False
 
             if f.kind == METHOD_NEW:
                 parser_prototype = parser_prototype_keyword
-                slot = "Py_tp_new"
             else:
                 return_value_declaration = "int return_value = -1;"
                 parser_prototype = normalize_snippet("""
                     static int
                     {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
                     """)
-                slot = "Py_tp_init"
 
             fields = list(parser_body_fields)
             parses_positional = 'METH_NOARGS' not in flags
@@ -1067,8 +1022,6 @@ class CLanguage(Language):
                 assert parses_positional
 
             if not parses_keywords:
-                if f.cls.is_heaptype:
-                    check_on_heaptype = True
                 fields.insert(0, normalize_snippet("""
                     if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
                         goto exit;
@@ -1263,11 +1216,6 @@ class CLanguage(Language):
 
         f_self = parameters[0]
         selfless = parameters[1:]
-        if selfless and isinstance(selfless[0].converter, defining_class_converter):
-            f_def_class = selfless[0]
-        else:
-            f_def_class = None
-
         assert isinstance(f_self.converter, self_converter), "No self parameter in " + repr(f.full_name) + "!"
 
         last_group = 0
@@ -1340,10 +1288,8 @@ class CLanguage(Language):
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
-        template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = template_dict['defining_class_name'] = ''
+        template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = ''
         f_self.converter.set_template_dict(template_dict)
-        if f_def_class:
-            f_def_class.converter.set_template_dict(template_dict)
 
         f.return_converter.render(f, data)
         template_dict['impl_return_type'] = f.return_converter.type
@@ -2119,11 +2065,6 @@ class Module:
 
 class Class:
     def __init__(self, name, module=None, cls=None, typedef=None, type_object=None):
-        if "!" in type_object:
-            self.state_name, type_object = type_object.split("!")
-            self.is_heaptype = True
-        else:
-            self.is_heaptype = False
         self.name = name
         self.module = module
         self.cls = cls
@@ -2496,8 +2437,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # Should we show this parameter in the generated
     # __text_signature__? This is *almost* always True.
-    # (It's only False for __new__, __init__, METH_STATIC functions, and
-    # defining_class.)
+    # (It's only False for __new__, __init__, and METH_STATIC functions.)
     show_in_signature = True
 
     # Overrides the name used in a text signature.
@@ -3243,10 +3183,6 @@ class object_converter(CConverter):
             self.converter = converter
         elif subclass_of:
             self.format_unit = 'O!'
-            if "!" in subclass_of:
-                state_name, type_object = subclass_of.split("!")
-                subclass_of = "(({st} *)PyModule_GetState(PyType_GetModule(cls)))->{to}".format(st=state_name,
-                                                                                                to=type_object)
             self.subclass_of = subclass_of
 
         if type is not None:
@@ -3341,25 +3277,6 @@ class str_converter(CConverter):
                 """.format(argname=argname, paramname=self.name,
                            displayname=displayname)
         return super().parse_arg(argname, displayname)
-
-class defining_class_converter(CConverter):
-    """
-    A special-case converter:
-    this is the default converter used for the defining class.
-    """
-    type = 'PyTypeObject *'
-    format_unit = ''
-    show_in_signature = False
-
-    def converter_init(self, *, type=None):
-        self.specified_type = type
-
-    def render(self, parameter, data):
-        self._render_self(parameter, data)
-
-    def set_template_dict(self, template_dict):
-        template_dict['defining_class_name'] = self.name
-
 
 #
 # This is the fourth or fifth rewrite of registering all the
@@ -3673,16 +3590,9 @@ class self_converter(CConverter):
             else:
                 passed_in_type = 'Py_TYPE({})'.format(self.name)
 
-            cls = self.function.cls
-            if cls.is_heaptype:
-                type_object = "(({st} *)PyModule_GetState(PyType_GetModule(cls)))->{to}".format(st=cls.state_name,
-                                                                                                to=cls.type_object)
-            else:
-                type_object = cls.type_object
-
             line = '({passed_in_type} == {type_object}) &&\n        '
             d = {
-                'type_object': type_object,
+                'type_object': self.function.cls.type_object,
                 'passed_in_type': passed_in_type
                 }
             template_dict['self_type_check'] = line.format_map(d)
@@ -4600,20 +4510,6 @@ class DSLParser:
                 self.function.parameters.clear()
             else:
                 fail("A 'self' parameter, if specified, must be the very first thing in the parameter block.")
-
-        if isinstance(converter, defining_class_converter):
-            _lp = len(self.function.parameters)
-            if _lp == 1:
-                if (self.parameter_state != self.ps_required):
-                    fail("A 'defining_class' parameter cannot be marked optional.")
-                if value is not unspecified:
-                    fail("A 'defining_class' parameter cannot have a default value.")
-                if self.group:
-                    fail("A 'defining_class' parameter cannot be in an optional group.")
-            else:
-                fail("A 'defining_class' parameter, if specified, must either be the first thing in the parameter block, or come just after 'self'.")
-
-
 
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
 
