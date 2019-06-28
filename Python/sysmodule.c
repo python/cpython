@@ -3110,30 +3110,17 @@ PySys_SetArgv(int argc, wchar_t **argv)
 static int
 sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
 {
-    PyObject *writer = NULL, *result = NULL;
-    int err;
-
     if (file == NULL)
         return -1;
-
-    writer = _PyObject_GetAttrId(file, &PyId_write);
-    if (writer == NULL)
-        goto error;
-
-    result = PyObject_CallFunctionObjArgs(writer, unicode, NULL);
+    assert(unicode != NULL);
+    PyObject *margs[2] = {file, unicode};
+    PyObject *result = _PyObject_VectorcallMethodId(&PyId_write, margs,
+        2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
     if (result == NULL) {
-        goto error;
-    } else {
-        err = 0;
-        goto finally;
+        return -1;
     }
-
-error:
-    err = -1;
-finally:
-    Py_XDECREF(writer);
-    Py_XDECREF(result);
-    return err;
+    Py_DECREF(result);
+    return 0;
 }
 
 static int
