@@ -1,0 +1,7 @@
+Raising an error if the socket passed to the following functions is an ssl.SSLSocket instance. Since, as discussed in the issue, these functions do not support SSLSocket.
+
+- sock_recv
+- sock_recv_into
+- sock_sendall
+- sock_connect
+- sock_accept
