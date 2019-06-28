@@ -106,8 +106,7 @@ class MiscTests(unittest.TestCase):
         dirname = dirname + ('a' * (dirlen - len(dirname)))
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with support.change_cwd(tmpdir):
-                path = tmpdir
+            with support.change_cwd(tmpdir) as path:
                 expected = path
 
                 while True:
