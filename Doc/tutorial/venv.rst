@@ -50,6 +50,12 @@ This will create the ``tutorial-env`` directory if it doesn't exist,
 and also create directories inside it containing a copy of the Python
 interpreter, the standard library, and various supporting files.
 
+A common directory location for a virtual environment is ``.venv``.
+This name keeps the directory typically hidden in your shell and thus
+out of the way while giving it a name that explains why the directory
+exists. It also prevents clashing with ``.env`` environment variable
+definition files that some tooling supports.
+
 Once you've created a virtual environment, you may activate it.
 
 On Windows, run::
