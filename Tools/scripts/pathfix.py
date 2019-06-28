@@ -10,9 +10,15 @@
 # arguments).
 # The original file is kept as a back-up (with a "~" attached to its name),
 # -n flag can be used to disable this.
-# Sometimes you may find shebang with flags as such `#! /usr/bin/env python -si`.
-# For keeping shebang flags use -f "". For adding flag: -f "flag".
-# flag will be added before already existing flag. Flags with argument are not supported.
+
+# Sometimes you may find shebangs with flags such as `#! /usr/bin/env python -si`.
+# Normally, pathfix overwrites the entire line, including the flags.
+# To keep flags from the original shebang line, use -f "".
+# To add a flag, pass it to the -f option. For example, -f s adds the `s` flag
+# if not already present.
+# The new flag will be added before any existing flags.
+# Adding multiple flags, multi-letter flags, or options with arguments
+# is not supported.
 
 
 # Undoubtedly you can do this using find and sed or perl, but this is
@@ -61,6 +67,9 @@ def main():
         if o == '-n':
             create_backup = False
         if o == '-f':
+            if len(a) > 1:
+                err('-f: just one literal flags can be added')
+                sys.exit(2)
             add_flag = a.encode()
     if not new_interpreter or not new_interpreter.startswith(b'/') or \
            not args:

@@ -127,14 +127,15 @@ class TestPathfixFunctional(unittest.TestCase):
             output = f.read()
         self.assertEqual(output, '#! /usr/bin/env python -R\n' + 'print("Hello world")\n')
 
-    def test_pathfix_adding_flags(self):
-        subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', '-f', 'OO', self.temp_file])
+    def test_pathfix_adding_multiliteral_flag(self):
+        result = subprocess.run([sys.executable, self.script, '-i', '/usr/bin/python', '-f', 'OO', self.temp_file],
+                                capture_output=True
+                                )
         with open(self.temp_file) as f:
             output = f.read()
-        self.assertEqual(output, '#! /usr/bin/python -OOR\n' + 'print("Hello world")\n')
-        with open(self.temp_file + '~') as f:
-            output = f.read()
         self.assertEqual(output, '#! /usr/bin/env python -R\n' + 'print("Hello world")\n')
+
+        self.assertEqual(result.stderr, b'-f: just one literal flags can be added')
 
     def test_pathfix_replacing_interpreter(self):
         subprocess.call([sys.executable, self.script, '-i', '/usr/bin/python', self.temp_file])
