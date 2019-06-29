@@ -1,0 +1,2 @@
+Include the ``FORMAT_MESSAGE_IGNORE_INSERTS`` flag in ``FormatMessageW()``
+calls.
