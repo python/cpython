@@ -1471,8 +1471,8 @@ def _create_or_replace(dst, create_temp_dst):
 def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
     """Symbolic link(s) to a single source or a list of multiple sources.
 
-    Given a list of sources, `dst` must be a directory and links to each
-    source are created inside `dst`.
+    Given a iterable of sources, `dst` must be a directory and links to
+    each source are created inside `dst`.
 
     Given a single source, `dst` is taken to be a file, even if it is a
     symlink to a directory. This allows for:
@@ -1496,7 +1496,7 @@ def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
     `target_is_directory` is ignored.
 
     """
-    if not isinstance(src_or_srcs, (list, set, tuple)):
+    if isinstance(src_or_srcs, str) or not hasattr(src_or_srcs, '__iter__'):
         sources = [src_or_srcs]
         dst_is_dir = False
     else:  # src_or_srcs is already something list-y

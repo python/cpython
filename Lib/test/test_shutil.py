@@ -2632,9 +2632,9 @@ class Symlink(unittest.TestCase):
                 with self.assertRaisesRegex(FileExistsError, dst_path):
                     shutil.symlink(src, dst_path)
 
-    # List of sources
+    # Iterable of sources
 
-    def test_list_dst_is_directory(self):
+    def test_iterable_dst_is_directory(self):
         dsts = {'directory': self.dst_dir1,
                 'symlink_to_dir': self.link_to_dir}
         for description, dir_path in dsts.items():
@@ -2644,7 +2644,7 @@ class Symlink(unittest.TestCase):
                     link_path = os.path.join(dir_path, os.path.basename(src))
                     self.assertEqual(os.readlink(link_path), src)
 
-    def test_list_dst_not_directory(self):
+    def test_iterable_dst_not_directory(self):
         exist = {'file': self.dst_file1, 'link_to_file': self.link_to_file,
                  'link_to_link': self.link_to_link}
         absent = {'absent': self.new1, 'broken_link': self.broken_link,
@@ -2662,15 +2662,15 @@ class Symlink(unittest.TestCase):
                 with self.assertRaisesRegex(FileNotFoundError, dst_path):
                     shutil.symlink(self.srcs, dst_path)
 
-    # List of sources - Edge cases
+    # Iterable of sources - Edge cases
 
-    def test_empty_list(self):
+    def test_empty_iterable(self):
         srcs = []
         with unittest.mock.patch("os.symlink") as m:
             shutil.symlink(srcs, self.dst_dir1)
         self.assertTrue(m.not_called)
 
-    def test_single_element_list(self):
+    def test_single_element_iterable(self):
         srcs = [self.new1]
         shutil.symlink(srcs, self.dst_dir1)
         link_path = os.path.join(self.dst_dir1, os.path.basename(srcs[0]))
