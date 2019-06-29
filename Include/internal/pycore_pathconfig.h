@@ -27,6 +27,8 @@ typedef struct _PyPathConfig {
        are ignored when their value are equal to -1 (unset). */
     int isolated;
     int site_import;
+    /* Set when a venv is detected */
+    wchar_t *base_executable;
 } _PyPathConfig;
 
 #define _PyPathConfig_INIT \
