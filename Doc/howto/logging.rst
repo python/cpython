@@ -472,7 +472,7 @@ hierarchical structures.  Multiple calls to :func:`getLogger` with the same name
 will return a reference to the same logger object.  Loggers that are further
 down in the hierarchical list are children of loggers higher up in the list.
 For example, given a logger with a name of ``foo``, loggers with names of
-``foo.bar``, ``foo.bar.baz``, and ``foo.bam`` are all descendants of ``foo``.
+``foo.bar``, ``foo.bar.baz``, and ``foo.bar`` are all descendants of ``foo``.
 
 Loggers have a concept of *effective level*. If a level is not explicitly set
 on a logger, the level of its parent is used instead as its effective level.
