@@ -1,6 +1,3 @@
-#import os
-#import os.path
-
 from . import info, symbols
 
 
@@ -19,10 +16,3 @@ def iter_statics(dirnames, *,
                 name=symbol.name,
                 vartype='???',
                 )
-
-
-#def _iter_files(dirnames):
-#    for dirname in dirnames:
-#        for parent, _, names in os.walk(dirname):
-#            for name in names:
-#                yield os.path.join(parent, name)
