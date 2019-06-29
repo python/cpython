@@ -1,1 +1,0 @@
-Unblock Proactor event loop when keyboard interrupt is received on Windows

@@ -10,13 +10,17 @@ mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"mapping", NULL};
-    static _PyArg_Parser _parser = {"O:mappingproxy", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "mappingproxy", 0};
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *mapping;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &mapping)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    mapping = fastargs[0];
     return_value = mappingproxy_new_impl(type, mapping);
 
 exit:
@@ -69,19 +73,46 @@ property_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"fget", "fset", "fdel", "doc", NULL};
-    static _PyArg_Parser _parser = {"|OOOO:property", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "property", 0};
+    PyObject *argsbuf[4];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *fget = NULL;
     PyObject *fset = NULL;
     PyObject *fdel = NULL;
     PyObject *doc = NULL;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &fget, &fset, &fdel, &doc)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 4, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        fget = fastargs[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[1]) {
+        fset = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[2]) {
+        fdel = fastargs[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    doc = fastargs[3];
+skip_optional_pos:
     return_value = property_init_impl((propertyobject *)self, fget, fset, fdel, doc);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=729021fa9cdc46be input=a9049054013a1b77]*/
+/*[clinic end generated code: output=916624e717862abc input=a9049054013a1b77]*/

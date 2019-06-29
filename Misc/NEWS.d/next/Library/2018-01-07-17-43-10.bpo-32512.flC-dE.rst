@@ -1,2 +1,0 @@
-:mod:`profile` CLI accepts `-m module_name` as an alternative to
-script path.

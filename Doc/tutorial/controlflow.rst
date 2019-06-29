@@ -139,18 +139,24 @@ but in fact it isn't. It is an object which returns the successive items of
 the desired sequence when you iterate over it, but it doesn't really make
 the list, thus saving space.
 
-We say such an object is *iterable*, that is, suitable as a target for
+We say such an object is :term:`iterable`, that is, suitable as a target for
 functions and constructs that expect something from which they can
-obtain successive items until the supply is exhausted. We have seen that
-the :keyword:`for` statement is such an *iterator*. The function :func:`list`
-is another; it creates lists from iterables::
+obtain successive items until the supply is exhausted.  We have seen that
+the :keyword:`for` statement is such a construct, while an example of function
+that takes an iterable is :func:`sum`::
 
+    >>> sum(range(4))  # 0 + 1 + 2 + 3
+    6
 
-   >>> list(range(5))
-   [0, 1, 2, 3, 4]
+Later we will see more functions that return iterables and take iterables as
+arguments.  Lastly, maybe you are curious about how to get a list from a range.
+Here is the solution::
 
-Later we will see more functions that return iterables and take iterables as argument.
+   >>> list(range(4))
+   [0, 1, 2, 3]
 
+In chapter :ref:`tut-structures`, we will discuss in more detail about
+:func:`list`.
 
 .. _tut-break:
 
@@ -161,7 +167,7 @@ The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
 Loop statements may have an :keyword:`!else` clause; it is executed when the loop
-terminates through exhaustion of the list (with :keyword:`for`) or when the
+terminates through exhaustion of the iterable (with :keyword:`for`) or when the
 condition becomes false (with :keyword:`while`), but not when the loop is
 terminated by a :keyword:`break` statement.  This is exemplified by the
 following loop, which searches for prime numbers::
@@ -188,8 +194,8 @@ following loop, which searches for prime numbers::
 the :keyword:`for` loop, **not** the :keyword:`if` statement.)
 
 When used with a loop, the ``else`` clause has more in common with the
-``else`` clause of a :keyword:`try` statement than it does that of
-:keyword:`if` statements: a :keyword:`!try` statement's ``else`` clause runs
+``else`` clause of a :keyword:`try` statement than it does with that of
+:keyword:`if` statements: a :keyword:`try` statement's ``else`` clause runs
 when no exception occurs, and a loop's ``else`` clause runs when no ``break``
 occurs. For more on the :keyword:`!try` statement and exceptions, see
 :ref:`tut-handling`.
@@ -279,9 +285,11 @@ variables of the function.  More precisely, all variable assignments in a
 function store the value in the local symbol table; whereas variable references
 first look in the local symbol table, then in the local symbol tables of
 enclosing functions, then in the global symbol table, and finally in the table
-of built-in names. Thus, global variables cannot be directly assigned a value
-within a function (unless named in a :keyword:`global` statement), although they
-may be referenced.
+of built-in names. Thus, global variables and variables of enclosing functions
+cannot be directly assigned a value within a function (unless, for global
+variables, named in a :keyword:`global` statement, or, for variables of enclosing
+functions, named in a :keyword:`nonlocal` statement), although they may be
+referenced.
 
 The actual parameters (arguments) to a function call are introduced in the local
 symbol table of the called function when it is called; thus, arguments are
@@ -482,9 +490,9 @@ When a final formal parameter of the form ``**name`` is present, it receives a
 dictionary (see :ref:`typesmapping`) containing all keyword arguments except for
 those corresponding to a formal parameter.  This may be combined with a formal
 parameter of the form ``*name`` (described in the next subsection) which
-receives a tuple containing the positional arguments beyond the formal parameter
-list.  (``*name`` must occur before ``**name``.) For example, if we define a
-function like this::
+receives a :ref:`tuple <tut-tuples>` containing the positional
+arguments beyond the formal parameter list.  (``*name`` must occur
+before ``**name``.) For example, if we define a function like this::
 
    def cheeseshop(kind, *arguments, **keywords):
        print("-- Do you have any", kind, "?")
@@ -519,6 +527,176 @@ and of course it would print:
 Note that the order in which the keyword arguments are printed is guaranteed
 to match the order in which they were provided in the function call.
 
+Special parameters
+------------------
+
+By default, arguments may be passed to a Python function either by position
+or explicitly by keyword. For readability and performance, it makes sense to
+restrict the way arguments can be passed so that a developer need only look
+at the function definition to determine if items are passed by position, by
+position or keyword, or by keyword.
+
+A function definition may look like:
+
+.. code-block:: none
+
+   def f(pos1, pos2, /, pos_or_kwd, *, kwd1, kwd2):
+         -----------    ----------     ----------
+           |             |                  |
+           |        Positional or keyword   |
+           |                                - Keyword only
+            -- Positional only
+
+where ``/`` and ``*`` are optional. If used, these symbols indicate the kind of
+parameter by how the arguments may be passed to the function:
+positional-only, positional-or-keyword, and keyword-only. Keyword parameters
+are also referred to as named parameters.
+
+-------------------------------
+Positional-or-Keyword Arguments
+-------------------------------
+
+If ``/`` and ``*`` are not present in the function definition, arguments may
+be passed to a function by position or by keyword.
+
+--------------------------
+Positional-Only Parameters
+--------------------------
+
+Looking at this in a bit more detail, it is possible to mark certain parameters
+as *positional-only*. If *positional-only*, the parameters' order matters, and
+the parameters cannot be passed by keyword. Positional-only parameters are
+placed before a ``/`` (forward-slash). The ``/`` is used to logically
+separate the positional-only parameters from the rest of the parameters.
+If there is no ``/`` in the function definition, there are no positional-only
+parameters.
+
+Parameters following the ``/`` may be *positional-or-keyword* or *keyword-only*.
+
+----------------------
+Keyword-Only Arguments
+----------------------
+
+To mark parameters as *keyword-only*, indicating the parameters must be passed
+by keyword argument, place an ``*`` in the arguments list just before the first
+*keyword-only* parameter.
+
+-----------------
+Function Examples
+-----------------
+
+Consider the following example function definitions paying close attention to the
+markers ``/`` and ``*``::
+
+   >>> def standard_arg(arg):
+   ...     print(arg)
+   ...
+   >>> def pos_only_arg(arg, /):
+   ...     print(arg)
+   ...
+   >>> def kwd_only_arg(*, arg):
+   ...     print(arg)
+   ...
+   >>> def combined_example(pos_only, /, standard, *, kwd_only):
+   ...     print(pos_only, standard, kwd_only)
+
+
+The first function definition, ``standard_arg``, the most familiar form,
+places no restrictions on the calling convention and arguments may be
+passed by position or keyword::
+
+   >>> standard_arg(2)
+   2
+
+   >>> standard_arg(arg=2)
+   2
+
+The second function ``pos_only_arg`` is restricted to only use positional
+parameters as there is a ``/`` in the function definition::
+
+   >>> pos_only_arg(1)
+   1
+
+   >>> pos_only_arg(arg=1)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: pos_only_arg() got an unexpected keyword argument 'arg'
+
+The third function ``kwd_only_args`` only allows keyword arguments as indicated
+by a ``*`` in the function definition::
+
+   >>> kwd_only_arg(3)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: kwd_only_arg() takes 0 positional arguments but 1 was given
+
+   >>> kwd_only_arg(arg=3)
+   3
+
+And the last uses all three calling conventions in the same function
+definition::
+
+   >>> combined_example(1, 2, 3)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: combined_example() takes 2 positional arguments but 3 were given
+
+   >>> combined_example(1, 2, kwd_only=3)
+   1 2 3
+
+   >>> combined_example(1, standard=2, kwd_only=3)
+   1 2 3
+
+   >>> combined_example(pos_only=1, standard=2, kwd_only=3)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: combined_example() got an unexpected keyword argument 'pos_only'
+
+
+Finally, consider this function definition which has a potential collision between the positional argument ``name``  and ``**kwds`` which has ``name`` as a key::
+
+    def foo(name, **kwds):
+        return 'name' in kwds
+
+There is no possible call that will make it return ``True`` as the keyword ``'name'``
+will always to bind to the first parameter. For example::
+
+    >>> foo(1, **{'name': 2})
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: foo() got multiple values for argument 'name'
+    >>>
+
+But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
+
+    def foo(name, /, **kwds):
+        return 'name' in kwds
+    >>> foo(1, **{'name': 2})
+    True
+
+In other words, the names of positional-only parameters can be used in
+``**kwds`` without ambiguity.
+
+-----
+Recap
+-----
+
+The use case will determine which parameters to use in the function definition::
+
+   def f(pos1, pos2, /, pos_or_kwd, *, kwd1, kwd2):
+
+As guidance:
+
+* Use positional-only if you want the name of the parameters to not be
+  available to the user. This is useful when parameter names have no real
+  meaning, if you want to enforce the order of the arguments when the function
+  is called or if you need to take some positional parameters and arbitrary
+  keywords.
+* Use keyword-only when names have meaning and the function definition is
+  more understandable by being explicit with names or you want to prevent
+  users relying on the position of the argument being passed.
+* For an API, use positional-only to prevent prevent breaking API changes
+  if the parameter's name is modified in the future.
 
 .. _tut-arbitraryargs:
 

@@ -8,9 +8,10 @@
 #endif
 
 /*[clinic input]
+module _collections
 class _tuplegetter "_tuplegetterobject *" "&tuplegetter_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ee5ed5baabe35068]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a8ece4ccad7e30ac]*/
 
 static PyTypeObject tuplegetter_type;
 #include "clinic/_collectionsmodule.c.h"
@@ -1463,9 +1464,13 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
     Py_ssize_t maxlen = -1;
     char *kwlist[] = {"iterable", "maxlen", 0};
 
-    if (kwdargs == NULL) {
-        if (!PyArg_UnpackTuple(args, "deque()", 0, 2, &iterable, &maxlenobj))
-            return -1;
+    if (kwdargs == NULL && PyTuple_GET_SIZE(args) <= 2) {
+        if (PyTuple_GET_SIZE(args) > 0) {
+            iterable = PyTuple_GET_ITEM(args, 0);
+        }
+        if (PyTuple_GET_SIZE(args) > 1) {
+            maxlenobj = PyTuple_GET_ITEM(args, 1);
+        }
     } else {
         if (!PyArg_ParseTupleAndKeywords(args, kwdargs, "|OO:deque", kwlist,
                                          &iterable, &maxlenobj))
@@ -1616,10 +1621,10 @@ static PyTypeObject deque_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)deque_dealloc,          /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     deque_repr,                         /* tp_repr */
     &deque_as_number,                   /* tp_as_number */
     &deque_as_sequence,                 /* tp_as_sequence */
@@ -1784,10 +1789,10 @@ static PyTypeObject dequeiter_type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)dequeiter_dealloc,              /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -1906,10 +1911,10 @@ static PyTypeObject dequereviter_type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)dequeiter_dealloc,              /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -2185,10 +2190,10 @@ static PyTypeObject defdict_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)defdict_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)defdict_repr,             /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -2224,17 +2229,24 @@ static PyTypeObject defdict_type = {
 
 /* helper function for Counter  *********************************************/
 
-PyDoc_STRVAR(_count_elements_doc,
-"_count_elements(mapping, iterable) -> None\n\
-\n\
-Count elements in the iterable, updating the mapping");
+/*[clinic input]
+_collections._count_elements
+
+    mapping: object
+    iterable: object
+    /
+
+Count elements in the iterable, updating the mapping
+[clinic start generated code]*/
 
 static PyObject *
-_count_elements(PyObject *self, PyObject *args)
+_collections__count_elements_impl(PyObject *module, PyObject *mapping,
+                                  PyObject *iterable)
+/*[clinic end generated code: output=7e0c1789636b3d8f input=e79fad04534a0b45]*/
 {
     _Py_IDENTIFIER(get);
     _Py_IDENTIFIER(__setitem__);
-    PyObject *it, *iterable, *mapping, *oldval;
+    PyObject *it, *oldval;
     PyObject *newval = NULL;
     PyObject *key = NULL;
     PyObject *bound_get = NULL;
@@ -2242,9 +2254,6 @@ _count_elements(PyObject *self, PyObject *args)
     PyObject *dict_get;
     PyObject *mapping_setitem;
     PyObject *dict_setitem;
-
-    if (!PyArg_UnpackTuple(args, "_count_elements", 2, 2, &mapping, &iterable))
-        return NULL;
 
     it = PyObject_GetIter(iterable);
     if (it == NULL)
@@ -2384,7 +2393,7 @@ tuplegetter_descr_get(PyObject *self, PyObject *obj, PyObject *type)
             return self;
         }
         PyErr_Format(PyExc_TypeError,
-                     "descriptor for index '%d' for tuple subclasses "
+                     "descriptor for index '%zd' for tuple subclasses "
                      "doesn't apply to '%s' object",
                      index,
                      obj->ob_type->tp_name);
@@ -2436,10 +2445,21 @@ tuplegetter_dealloc(_tuplegetterobject *self)
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
+static PyObject*
+tuplegetter_reduce(_tuplegetterobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return Py_BuildValue("(O(nO))", (PyObject*) Py_TYPE(self), self->index, self->doc);
+}
+
 
 static PyMemberDef tuplegetter_members[] = {
     {"__doc__",  T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
     {0}
+};
+
+static PyMethodDef tuplegetter_methods[] = {
+    {"__reduce__", (PyCFunction)tuplegetter_reduce, METH_NOARGS, NULL},
+    {NULL},
 };
 
 static PyTypeObject tuplegetter_type = {
@@ -2449,10 +2469,10 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)tuplegetter_dealloc,            /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -2471,7 +2491,7 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    tuplegetter_methods,                        /* tp_methods */
     tuplegetter_members,                        /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */
@@ -2495,7 +2515,7 @@ PyDoc_STRVAR(module_doc,
 ");
 
 static struct PyMethodDef module_functions[] = {
-    {"_count_elements", _count_elements,    METH_VARARGS,   _count_elements_doc},
+    _COLLECTIONS__COUNT_ELEMENTS_METHODDEF
     {NULL,       NULL}          /* sentinel */
 };
 

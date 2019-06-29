@@ -1,1 +1,0 @@
-The :mod:`zipimport` module has been rewritten in pure Python.

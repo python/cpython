@@ -236,6 +236,7 @@ PyCode_GetNumFree:PyCodeObject*:co:0:
 
 PyCode_New:PyCodeObject*::+1:
 PyCode_New:int:argcount::
+PyCode_New:int:posonlyargcount::
 PyCode_New:int:kwonlyargcount::
 PyCode_New:int:nlocals::
 PyCode_New:int:stacksize::
@@ -412,6 +413,16 @@ PyDateTime_FromDateAndTime:int:hour::
 PyDateTime_FromDateAndTime:int:minute::
 PyDateTime_FromDateAndTime:int:second::
 PyDateTime_FromDateAndTime:int:usecond::
+
+PyDateTime_FromDateAndTimeAndFold:PyObject*::+1:
+PyDateTime_FromDateAndTimeAndFold:int:year::
+PyDateTime_FromDateAndTimeAndFold:int:month::
+PyDateTime_FromDateAndTimeAndFold:int:day::
+PyDateTime_FromDateAndTimeAndFold:int:hour::
+PyDateTime_FromDateAndTimeAndFold:int:minute::
+PyDateTime_FromDateAndTimeAndFold:int:second::
+PyDateTime_FromDateAndTimeAndFold:int:usecond::
+PyDateTime_FromDateAndTimeAndFold:int:fold::
 
 PyDateTime_FromTimestamp:PyObject*::+1:
 PyDateTime_FromTimestamp:PyObject*:args:0:
@@ -2209,6 +2220,13 @@ PyTime_FromTime:int:hour::
 PyTime_FromTime:int:minute::
 PyTime_FromTime:int:second::
 PyTime_FromTime:int:usecond::
+
+PyTime_FromTimeAndFold:PyObject*::+1:
+PyTime_FromTimeAndFold:int:hour::
+PyTime_FromTimeAndFold:int:minute::
+PyTime_FromTimeAndFold:int:second::
+PyTime_FromTimeAndFold:int:usecond::
+PyTime_FromTimeAndFold:int:fold::
 
 PyTraceMalloc_Track:int:::
 PyTraceMalloc_Track:unsigned int:domain::

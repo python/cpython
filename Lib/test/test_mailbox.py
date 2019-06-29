@@ -864,7 +864,6 @@ class TestMaildir(TestMailbox, unittest.TestCase):
             pass
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
-    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def test_file_permissions(self):
         # Verify that message files are created without execute permissions
         msg = mailbox.MaildirMessage(self._template % 0)
@@ -878,7 +877,6 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self.assertFalse(mode & 0o111)
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
-    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def test_folder_file_perms(self):
         # From bug #3228, we want to verify that the file created inside a Maildir
         # subfolder isn't marked as executable.
@@ -1120,7 +1118,6 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
     _factory = lambda self, path, factory=None: mailbox.mbox(path, factory)
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
-    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def test_file_perms(self):
         # From bug #3228, we want to verify that the mailbox file isn't executable,
         # even if the umask is set to something that would leave executable bits set.

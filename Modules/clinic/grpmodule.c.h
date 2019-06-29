@@ -21,13 +21,15 @@ grp_getgrgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"id", NULL};
-    static _PyArg_Parser _parser = {"O:getgrgid", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "getgrgid", 0};
+    PyObject *argsbuf[1];
     PyObject *id;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &id)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    id = args[0];
     return_value = grp_getgrgid_impl(module, id);
 
 exit:
@@ -53,13 +55,22 @@ grp_getgrnam(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", NULL};
-    static _PyArg_Parser _parser = {"U:getgrnam", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "getgrnam", 0};
+    PyObject *argsbuf[1];
     PyObject *name;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &name)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("getgrnam", 1, "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    name = args[0];
     return_value = grp_getgrnam_impl(module, name);
 
 exit:
@@ -86,4 +97,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=ab10233f6015bc0a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2aa6c60873d41ee8 input=a9049054013a1b77]*/

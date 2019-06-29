@@ -1,2 +1,0 @@
-``ast.Constant(boolean)`` no longer an instance of :class:`ast.Num`.  Patch by Anthony
-Sottile.

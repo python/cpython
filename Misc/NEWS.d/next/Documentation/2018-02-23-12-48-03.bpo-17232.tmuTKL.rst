@@ -1,1 +1,0 @@
-Clarify docs for -O and -OO.  Patch by Terry Reedy.

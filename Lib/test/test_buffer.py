@@ -893,6 +893,15 @@ class TestBufferProtocol(unittest.TestCase):
                     y = ndarray(initlst, shape=shape, flags=ro, format=fmt)
                     self.assertEqual(memoryview(y), memoryview(result))
 
+                    contig_bytes = memoryview(result).tobytes()
+                    self.assertEqual(contig_bytes, contig)
+
+                    contig_bytes = memoryview(result).tobytes(order=None)
+                    self.assertEqual(contig_bytes, contig)
+
+                    contig_bytes = memoryview(result).tobytes(order='C')
+                    self.assertEqual(contig_bytes, contig)
+
                     # To 'F'
                     contig = py_buffer_to_contiguous(result, 'F', PyBUF_FULL_RO)
                     self.assertEqual(len(contig), nmemb * itemsize)
@@ -905,6 +914,9 @@ class TestBufferProtocol(unittest.TestCase):
                                 format=fmt)
                     self.assertEqual(memoryview(y), memoryview(result))
 
+                    contig_bytes = memoryview(result).tobytes(order='F')
+                    self.assertEqual(contig_bytes, contig)
+
                     # To 'A'
                     contig = py_buffer_to_contiguous(result, 'A', PyBUF_FULL_RO)
                     self.assertEqual(len(contig), nmemb * itemsize)
@@ -916,6 +928,9 @@ class TestBufferProtocol(unittest.TestCase):
                     f = ND_FORTRAN if is_contiguous(result, 'F') else 0
                     y = ndarray(initlst, shape=shape, flags=f|ro, format=fmt)
                     self.assertEqual(memoryview(y), memoryview(result))
+
+                    contig_bytes = memoryview(result).tobytes(order='A')
+                    self.assertEqual(contig_bytes, contig)
 
         if is_memoryview_format(fmt):
             try:

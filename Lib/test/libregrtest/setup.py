@@ -10,7 +10,7 @@ try:
 except ImportError:
     gc = None
 
-from test.libregrtest.refleak import warm_caches
+from test.libregrtest.utils import setup_unraisable_hook
 
 
 def setup_tests(ns):
@@ -79,39 +79,48 @@ def setup_tests(ns):
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
 
-        # Avoid false positives due to various caches
-        # filling slowly with random data:
-        warm_caches()
-
     if ns.memlimit is not None:
         support.set_memlimit(ns.memlimit)
 
     if ns.threshold is not None:
         gc.set_threshold(ns.threshold)
 
+    suppress_msvcrt_asserts(ns.verbose and ns.verbose >= 2)
+
+    support.use_resources = ns.use_resources
+
+    if hasattr(sys, 'addaudithook'):
+        # Add an auditing hook for all tests to ensure PySys_Audit is tested
+        def _test_audit_hook(name, args):
+            pass
+        sys.addaudithook(_test_audit_hook)
+
+    setup_unraisable_hook()
+
+
+def suppress_msvcrt_asserts(verbose):
     try:
         import msvcrt
     except ImportError:
-        pass
-    else:
-        msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
-                            msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
-                            msvcrt.SEM_NOGPFAULTERRORBOX|
-                            msvcrt.SEM_NOOPENFILEERRORBOX)
-        try:
-            msvcrt.CrtSetReportMode
-        except AttributeError:
-            # release build
-            pass
-        else:
-            for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-                if ns.verbose and ns.verbose >= 2:
-                    msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
-                    msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
-                else:
-                    msvcrt.CrtSetReportMode(m, 0)
+        return
 
-    support.use_resources = ns.use_resources
+    msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
+                        msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
+                        msvcrt.SEM_NOGPFAULTERRORBOX|
+                        msvcrt.SEM_NOOPENFILEERRORBOX)
+    try:
+        msvcrt.CrtSetReportMode
+    except AttributeError:
+        # release build
+        return
+
+    for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
+        if verbose:
+            msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
+            msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
+        else:
+            msvcrt.CrtSetReportMode(m, 0)
+
 
 
 def replace_stdout():

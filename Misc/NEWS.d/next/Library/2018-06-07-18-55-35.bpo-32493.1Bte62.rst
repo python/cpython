@@ -1,2 +1,0 @@
-Correct test for ``uuid_enc_be`` availability in ``configure.ac``.
-Patch by Michael Felt.

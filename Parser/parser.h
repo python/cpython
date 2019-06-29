@@ -7,11 +7,11 @@ extern "C" {
 
 /* Parser interface */
 
-#define MAXSTACK 1500
+#define MAXSTACK 1700
 
 typedef struct {
     int              s_state;       /* State in current DFA */
-    dfa             *s_dfa;         /* Current DFA */
+    const dfa       *s_dfa;         /* Current DFA */
     struct _node    *s_parent;      /* Where to add next node */
 } stackentry;
 
@@ -32,9 +32,16 @@ typedef struct {
 
 parser_state *PyParser_New(grammar *g, int start);
 void PyParser_Delete(parser_state *ps);
-int PyParser_AddToken(parser_state *ps, int type, char *str, int lineno, int col_offset,
+int PyParser_AddToken(parser_state *ps, int type, char *str,
+                      int lineno, int col_offset,
+                      int end_lineno, int end_col_offset,
                       int *expected_ret);
 void PyGrammar_AddAccelerators(grammar *g);
+
+
+#define showtree _Py_showtree
+#define printtree _Py_printtree
+#define dumptree _Py_dumptree
 
 #ifdef __cplusplus
 }

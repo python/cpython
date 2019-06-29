@@ -1,1 +1,0 @@
-Add testcase to ``test_future4``: check unicode literal.

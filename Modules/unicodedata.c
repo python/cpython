@@ -1029,7 +1029,7 @@ _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
     int offset;
     int i;
     int word;
-    unsigned char* w;
+    const unsigned char* w;
 
     if (code >= 0x110000)
         return 0;
@@ -1365,10 +1365,10 @@ static PyTypeObject UCD_Type = {
         0,                      /*tp_itemsize*/
         /* methods */
         (destructor)PyObject_Del, /*tp_dealloc*/
-        0,                      /*tp_print*/
+        0,                      /*tp_vectorcall_offset*/
         0,                      /*tp_getattr*/
         0,                      /*tp_setattr*/
-        0,                      /*tp_reserved*/
+        0,                      /*tp_as_async*/
         0,                      /*tp_repr*/
         0,                      /*tp_as_number*/
         0,                      /*tp_as_sequence*/

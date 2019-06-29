@@ -46,6 +46,14 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
     op->m_self = self;
     Py_XINCREF(module);
     op->m_module = module;
+    if (ml->ml_flags & METH_VARARGS) {
+        /* For METH_VARARGS functions, it's more efficient to use tp_call
+         * instead of vectorcall. */
+        op->vectorcall = NULL;
+    }
+    else {
+        op->vectorcall = _PyCFunction_Vectorcall;
+    }
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
 }
@@ -264,10 +272,10 @@ PyTypeObject PyCFunction_Type = {
     sizeof(PyCFunctionObject),
     0,
     (destructor)meth_dealloc,                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    offsetof(PyCFunctionObject, vectorcall),    /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)meth_repr,                        /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -278,7 +286,8 @@ PyTypeObject PyCFunction_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+    _Py_TPFLAGS_HAVE_VECTORCALL,                /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)meth_traverse,                /* tp_traverse */
     0,                                          /* tp_clear */

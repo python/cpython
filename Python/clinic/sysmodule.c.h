@@ -2,6 +2,38 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(sys_addaudithook__doc__,
+"addaudithook($module, /, hook)\n"
+"--\n"
+"\n"
+"Adds a new audit hook callback.");
+
+#define SYS_ADDAUDITHOOK_METHODDEF    \
+    {"addaudithook", (PyCFunction)(void(*)(void))sys_addaudithook, METH_FASTCALL|METH_KEYWORDS, sys_addaudithook__doc__},
+
+static PyObject *
+sys_addaudithook_impl(PyObject *module, PyObject *hook);
+
+static PyObject *
+sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"hook", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "addaudithook", 0};
+    PyObject *argsbuf[1];
+    PyObject *hook;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    hook = args[0];
+    return_value = sys_addaudithook_impl(module, hook);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_displayhook__doc__,
 "displayhook($module, object, /)\n"
 "--\n"
@@ -64,6 +96,23 @@ sys_exc_info(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return sys_exc_info_impl(module);
 }
+
+PyDoc_STRVAR(sys_unraisablehook__doc__,
+"unraisablehook($module, unraisable, /)\n"
+"--\n"
+"\n"
+"Handle an unraisable exception.\n"
+"\n"
+"The unraisable argument has the following attributes:\n"
+"\n"
+"* exc_type: Exception type.\n"
+"* exc_value: Exception value, can be None.\n"
+"* exc_traceback: Exception traceback, can be None.\n"
+"* err_msg: Error message, can be None.\n"
+"* object: Object causing the exception, can be None.");
+
+#define SYS_UNRAISABLEHOOK_METHODDEF    \
+    {"unraisablehook", (PyCFunction)sys_unraisablehook, METH_O, sys_unraisablehook__doc__},
 
 PyDoc_STRVAR(sys_exit__doc__,
 "exit($module, status=None, /)\n"
@@ -232,62 +281,6 @@ sys_getprofile(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_getprofile_impl(module);
 }
 
-PyDoc_STRVAR(sys_setcheckinterval__doc__,
-"setcheckinterval($module, n, /)\n"
-"--\n"
-"\n"
-"Set the async event check interval to n instructions.\n"
-"\n"
-"This tells the Python interpreter to check for asynchronous events\n"
-"every n instructions.\n"
-"\n"
-"This also affects how often thread switches occur.");
-
-#define SYS_SETCHECKINTERVAL_METHODDEF    \
-    {"setcheckinterval", (PyCFunction)sys_setcheckinterval, METH_O, sys_setcheckinterval__doc__},
-
-static PyObject *
-sys_setcheckinterval_impl(PyObject *module, int n);
-
-static PyObject *
-sys_setcheckinterval(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    int n;
-
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    n = _PyLong_AsInt(arg);
-    if (n == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = sys_setcheckinterval_impl(module, n);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(sys_getcheckinterval__doc__,
-"getcheckinterval($module, /)\n"
-"--\n"
-"\n"
-"Return the current check interval; see sys.setcheckinterval().");
-
-#define SYS_GETCHECKINTERVAL_METHODDEF    \
-    {"getcheckinterval", (PyCFunction)sys_getcheckinterval, METH_NOARGS, sys_getcheckinterval__doc__},
-
-static PyObject *
-sys_getcheckinterval_impl(PyObject *module);
-
-static PyObject *
-sys_getcheckinterval(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_getcheckinterval_impl(module);
-}
-
 PyDoc_STRVAR(sys_setswitchinterval__doc__,
 "setswitchinterval($module, interval, /)\n"
 "--\n"
@@ -410,11 +403,21 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"depth", NULL};
-    static _PyArg_Parser _parser = {"i:set_coroutine_origin_tracking_depth", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "set_coroutine_origin_tracking_depth", 0};
+    PyObject *argsbuf[1];
     int depth;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &depth)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    depth = _PyLong_AsInt(args[0]);
+    if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = sys_set_coroutine_origin_tracking_depth_impl(module, depth);
@@ -449,33 +452,6 @@ sys_get_coroutine_origin_tracking_depth(PyObject *module, PyObject *Py_UNUSED(ig
 
 exit:
     return return_value;
-}
-
-PyDoc_STRVAR(sys_set_coroutine_wrapper__doc__,
-"set_coroutine_wrapper($module, wrapper, /)\n"
-"--\n"
-"\n"
-"Set a wrapper for coroutine objects.");
-
-#define SYS_SET_COROUTINE_WRAPPER_METHODDEF    \
-    {"set_coroutine_wrapper", (PyCFunction)sys_set_coroutine_wrapper, METH_O, sys_set_coroutine_wrapper__doc__},
-
-PyDoc_STRVAR(sys_get_coroutine_wrapper__doc__,
-"get_coroutine_wrapper($module, /)\n"
-"--\n"
-"\n"
-"Return the wrapper for coroutines set by sys.set_coroutine_wrapper.");
-
-#define SYS_GET_COROUTINE_WRAPPER_METHODDEF    \
-    {"get_coroutine_wrapper", (PyCFunction)sys_get_coroutine_wrapper, METH_NOARGS, sys_get_coroutine_wrapper__doc__},
-
-static PyObject *
-sys_get_coroutine_wrapper_impl(PyObject *module);
-
-static PyObject *
-sys_get_coroutine_wrapper(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_get_coroutine_wrapper_impl(module);
 }
 
 PyDoc_STRVAR(sys_get_asyncgen_hooks__doc__,
@@ -903,43 +879,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(sys_callstats__doc__,
-"callstats($module, /)\n"
-"--\n"
-"\n"
-"Return a tuple of function call statistics.\n"
-"\n"
-"A tuple is returned only if CALL_PROFILE was defined when Python was\n"
-"built.  Otherwise, this returns None.\n"
-"\n"
-"When enabled, this function returns detailed, implementation-specific\n"
-"details about the number of function calls executed. The return value\n"
-"is a 11-tuple where the entries in the tuple are counts of:\n"
-"0. all function calls\n"
-"1. calls to PyFunction_Type objects\n"
-"2. PyFunction calls that do not create an argument tuple\n"
-"3. PyFunction calls that do not create an argument tuple\n"
-"   and bypass PyEval_EvalCodeEx()\n"
-"4. PyMethod calls\n"
-"5. PyMethod calls on bound methods\n"
-"6. PyType calls\n"
-"7. PyCFunction calls\n"
-"8. generator calls\n"
-"9. All other calls\n"
-"10. Number of stack pops performed by call_function()");
-
-#define SYS_CALLSTATS_METHODDEF    \
-    {"callstats", (PyCFunction)sys_callstats, METH_NOARGS, sys_callstats__doc__},
-
-static PyObject *
-sys_callstats_impl(PyObject *module);
-
-static PyObject *
-sys_callstats(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_callstats_impl(module);
-}
-
 PyDoc_STRVAR(sys__debugmallocstats__doc__,
 "_debugmallocstats($module, /)\n"
 "--\n"
@@ -1050,4 +989,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=109787af3401cd27 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=acef77d2bb8f6da9 input=a9049054013a1b77]*/

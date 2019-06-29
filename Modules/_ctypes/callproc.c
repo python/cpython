@@ -531,11 +531,11 @@ PyCArg_repr(PyCArgObject *self)
     default:
         if (is_literal_char((unsigned char)self->tag)) {
             sprintf(buffer, "<cparam '%c' at %p>",
-                (unsigned char)self->tag, self);
+                (unsigned char)self->tag, (void *)self);
         }
         else {
             sprintf(buffer, "<cparam 0x%02x at %p>",
-                (unsigned char)self->tag, self);
+                (unsigned char)self->tag, (void *)self);
         }
         break;
     }
@@ -555,10 +555,10 @@ PyTypeObject PyCArg_Type = {
     sizeof(PyCArgObject),
     0,
     (destructor)PyCArg_dealloc,                 /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)PyCArg_repr,                      /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -729,6 +729,28 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
     }
 }
 
+#if defined(MS_WIN32) && !defined(_WIN32_WCE)
+/*
+Per: https://msdn.microsoft.com/en-us/library/7572ztz4.aspx
+To be returned by value in RAX, user-defined types must have a length 
+of 1, 2, 4, 8, 16, 32, or 64 bits
+*/
+int can_return_struct_as_int(size_t s)
+{
+    return s == 1 || s == 2 || s == 4;
+}
+
+int can_return_struct_as_sint64(size_t s)
+{
+#ifdef _M_ARM
+    // 8 byte structs cannot be returned in a register on ARM32
+    return 0;
+#else
+    return s == 8;
+#endif
+}
+#endif
+
 
 ffi_type *_ctypes_get_ffi_type(PyObject *obj)
 {
@@ -778,12 +800,9 @@ static int _call_function_pointer(int flags,
     int *space;
     ffi_cif cif;
     int cc;
-#ifdef MS_WIN32
-    int delta;
-#ifndef DONT_USE_SEH
+#if defined(MS_WIN32) && !defined(DONT_USE_SEH)
     DWORD dwExceptionCode = 0;
     EXCEPTION_RECORD record;
-#endif
 #endif
     /* XXX check before here */
     if (restype == NULL) {
@@ -793,7 +812,7 @@ static int _call_function_pointer(int flags,
     }
 
     cc = FFI_DEFAULT_ABI;
-#if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(_WIN32_WCE)
+#if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(_WIN32_WCE) && !defined(_M_ARM)
     if ((flags & FUNCFLAG_CDECL) == 0)
         cc = FFI_STDCALL;
 #endif
@@ -828,7 +847,6 @@ static int _call_function_pointer(int flags,
 #ifndef DONT_USE_SEH
     __try {
 #endif
-        delta =
 #endif
                 ffi_call(&cif, (void *)pProc, resmem, avalues);
 #ifdef MS_WIN32
@@ -857,35 +875,6 @@ static int _call_function_pointer(int flags,
 #ifndef DONT_USE_SEH
     if (dwExceptionCode) {
         SetException(dwExceptionCode, &record);
-        return -1;
-    }
-#endif
-#ifdef MS_WIN64
-    if (delta != 0) {
-        PyErr_Format(PyExc_RuntimeError,
-                 "ffi_call failed with code %d",
-                 delta);
-        return -1;
-    }
-#else
-    if (delta < 0) {
-        if (flags & FUNCFLAG_CDECL)
-            PyErr_Format(PyExc_ValueError,
-                     "Procedure called with not enough "
-                     "arguments (%d bytes missing) "
-                     "or wrong calling convention",
-                     -delta);
-        else
-            PyErr_Format(PyExc_ValueError,
-                     "Procedure probably called with not enough "
-                     "arguments (%d bytes missing)",
-                     -delta);
-        return -1;
-    } else if (delta > 0) {
-        PyErr_Format(PyExc_ValueError,
-                 "Procedure probably called with too many "
-                 "arguments (%d bytes in excess)",
-                 delta);
         return -1;
     }
 #endif
@@ -1058,7 +1047,7 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 #endif
 
 #if (defined(__x86_64__) && (defined(__MINGW64__) || defined(__CYGWIN__))) || \
-    defined(__aarch64__)
+    defined(__aarch64__) || defined(__riscv)
 #define CTYPES_PASS_BY_REF_HACK
 #define POW2(x) (((x & ~(x - 1)) == x) ? x : 0)
 #define IS_PASS_BY_REF(x) (x > 8 || !POW2(x))
@@ -1131,20 +1120,20 @@ PyObject *_ctypes_callproc(PPROC pProc,
             converter = PyTuple_GET_ITEM(argtypes, i);
             v = PyObject_CallFunctionObjArgs(converter, arg, NULL);
             if (v == NULL) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
             }
 
             err = ConvParam(v, i+1, pa);
             Py_DECREF(v);
             if (-1 == err) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
             }
         } else {
             err = ConvParam(arg, i+1, pa);
             if (-1 == err) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup; /* leaking ? */
             }
         }
@@ -1267,28 +1256,48 @@ static PyObject *format_error(PyObject *self, PyObject *args)
 }
 
 static const char load_library_doc[] =
-"LoadLibrary(name) -> handle\n\
+"LoadLibrary(name, load_flags) -> handle\n\
 \n\
 Load an executable (usually a DLL), and return a handle to it.\n\
 The handle may be used to locate exported functions in this\n\
-module.\n";
+module. load_flags are as defined for LoadLibraryEx in the\n\
+Windows API.\n";
 static PyObject *load_library(PyObject *self, PyObject *args)
 {
     const WCHAR *name;
     PyObject *nameobj;
-    PyObject *ignored;
+    int load_flags = 0;
     HMODULE hMod;
+    DWORD err;
 
-    if (!PyArg_ParseTuple(args, "U|O:LoadLibrary", &nameobj, &ignored))
+    if (!PyArg_ParseTuple(args, "U|i:LoadLibrary", &nameobj, &load_flags))
         return NULL;
 
     name = _PyUnicode_AsUnicode(nameobj);
     if (!name)
         return NULL;
 
-    hMod = LoadLibraryW(name);
-    if (!hMod)
-        return PyErr_SetFromWindowsErr(GetLastError());
+    if (PySys_Audit("ctypes.dlopen", "O", nameobj) < 0) {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    /* bpo-36085: Limit DLL search directories to avoid pre-loading
+     * attacks and enable use of the AddDllDirectory function.
+     */
+    hMod = LoadLibraryExW(name, NULL, (DWORD)load_flags);
+    err = hMod ? 0 : GetLastError();
+    Py_END_ALLOW_THREADS
+
+    if (err == ERROR_MOD_NOT_FOUND) {
+        PyErr_Format(PyExc_FileNotFoundError,
+                     ("Could not find module '%.500S'. Try using "
+                      "the full path with constructor syntax."),
+                     nameobj);
+        return NULL;
+    } else if (err) {
+        return PyErr_SetFromWindowsErr(err);
+    }
 #ifdef _WIN64
     return PyLong_FromVoidPtr(hMod);
 #else
@@ -1303,10 +1312,19 @@ Free the handle of an executable previously loaded by LoadLibrary.\n";
 static PyObject *free_library(PyObject *self, PyObject *args)
 {
     void *hMod;
+    BOOL result;
+    DWORD err;
     if (!PyArg_ParseTuple(args, "O&:FreeLibrary", &_parse_voidp, &hMod))
         return NULL;
-    if (!FreeLibrary((HMODULE)hMod))
-        return PyErr_SetFromWindowsErr(GetLastError());
+
+    Py_BEGIN_ALLOW_THREADS
+    result = FreeLibrary((HMODULE)hMod);
+    err = result ? 0 : GetLastError();
+    Py_END_ALLOW_THREADS
+
+    if (!result) {
+        return PyErr_SetFromWindowsErr(err);
+    }
     Py_RETURN_NONE;
 }
 
@@ -1367,6 +1385,9 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     } else {
         name_str = NULL;
         name2 = NULL;
+    }
+    if (PySys_Audit("ctypes.dlopen", "s", name_str) < 0) {
+        return NULL;
     }
     handle = ctypes_dlopen(name_str, mode);
     Py_XDECREF(name2);

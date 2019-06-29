@@ -1,1 +1,0 @@
-Make dict and dict views reversible. Patch by Rémi Lapeyre.
