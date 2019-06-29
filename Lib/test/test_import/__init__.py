@@ -775,6 +775,17 @@ class RelativeImportTests(unittest.TestCase):
         ns = dict(__package__=object())
         self.assertRaises(TypeError, check_relative)
 
+    def test_import_from_beyond_toplevel(self):
+        # Regression test for https://bugs.python.org/issue37444
+        with self.assertRaises(ImportError):
+            from .......... import foo
+
+    @cpython_only
+    def test_import_shadowed_by_global(self):
+        # Regression test for https://bugs.python.org/issue37409
+        assert subprocess.call([sys.executable, '-c',
+            "foo = 'x'; from . import foo"])
+
     def test_absolute_import_without_future(self):
         # If explicit relative import syntax is used, then do not try
         # to perform an absolute import in the face of failure.
