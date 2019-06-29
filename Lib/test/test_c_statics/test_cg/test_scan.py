@@ -1,6 +1,6 @@
 import unittest
 
-from test.test_c_statics.cg import info, symbols
+from test.test_c_statics.cg import info
 from test.test_c_statics.cg.scan import iter_statics
 
 
@@ -16,22 +16,22 @@ class IterStaticsTests(unittest.TestCase):
             self._calls = []
             return self._calls
 
-    def _iter_symbols(self, *args):
-        self.calls.append(('_iter_symbols', args))
+    def _iter_symbols(self, dirnames):
+        self.calls.append(('_iter_symbols', (dirnames,)))
         return iter(self. _return_iter_symbols)
 
     def test_typical(self):
         self._return_iter_symbols = [
-                symbols.Symbol('var1', 'variable', False, 'dir1/spam.c'),
-                symbols.Symbol('var2', 'variable', False, 'dir1/spam.c'),
-                symbols.Symbol('func1', 'function', False, 'dir1/spam.c'),
-                symbols.Symbol('func2', 'function', True, 'dir1/spam.c'),
-                symbols.Symbol('var3', 'variable', False, 'dir1/spam.c'),
-                symbols.Symbol('var4-1', 'variable', False, None),
-                symbols.Symbol('var1', 'variable', True, 'dir1/ham.c'),
-                symbols.Symbol('var1', 'variable', False, 'dir1/eggs.c'),
-                symbols.Symbol('xyz', 'other', False, 'dir1/eggs.c'),
-                symbols.Symbol('???', 'other', False, None),
+                info.Symbol('var1', 'variable', False, 'dir1/spam.c', None, None),
+                info.Symbol('var2', 'variable', False, 'dir1/spam.c', None, None),
+                info.Symbol('func1', 'function', False, 'dir1/spam.c', None, None),
+                info.Symbol('func2', 'function', True, 'dir1/spam.c', None, None),
+                info.Symbol('var3', 'variable', False, 'dir1/spam.c', None, None),
+                info.Symbol('var4', 'variable', False, 'dir1/spam.c', 'func2', None),
+                info.Symbol('var1', 'variable', True, 'dir1/ham.c', None, None),
+                info.Symbol('var1', 'variable', False, 'dir1/eggs.c', None, None),
+                info.Symbol('xyz', 'other', False, 'dir1/eggs.c', None, None),
+                info.Symbol('???', 'other', False, None, None, None),
                 ]
 
         found = list(iter_statics(['dir1'],
@@ -41,11 +41,11 @@ class IterStaticsTests(unittest.TestCase):
             info.StaticVar('dir1/spam.c', None, 'var1', '???'),
             info.StaticVar('dir1/spam.c', None, 'var2', '???'),
             info.StaticVar('dir1/spam.c', None, 'var3', '???'),
-            info.StaticVar('<???>', '<???>', 'var4-1', '???'),
+            info.StaticVar('dir1/spam.c', 'func2', 'var4', '???'),
             info.StaticVar('dir1/eggs.c', None, 'var1', '???'),
             ])
         self.assertEqual(self.calls, [
-            ('_iter_symbols', ()),
+            ('_iter_symbols', (['dir1'],)),
             ])
 
     def test_no_symbols(self):
@@ -56,5 +56,5 @@ class IterStaticsTests(unittest.TestCase):
 
         self.assertEqual(found, [])
         self.assertEqual(self.calls, [
-            ('_iter_symbols', ()),
+            ('_iter_symbols', (['dir1'],)),
             ])
