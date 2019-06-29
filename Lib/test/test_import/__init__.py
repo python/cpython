@@ -775,6 +775,11 @@ class RelativeImportTests(unittest.TestCase):
         ns = dict(__package__=object())
         self.assertRaises(TypeError, check_relative)
 
+    def test_import_shadowed_by_global(self):
+        # Regression test for https://bugs.python.org/issue37409
+        script_helper.assert_python_failure('-W', 'ignore', '-c',
+            "foo = 1; from . import foo")
+
     def test_absolute_import_without_future(self):
         # If explicit relative import syntax is used, then do not try
         # to perform an absolute import in the face of failure.
