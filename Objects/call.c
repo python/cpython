@@ -184,7 +184,7 @@ PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
     /* get vectorcallfunc as in _PyVectorcall_Function, but without
      * the _Py_TPFLAGS_HAVE_VECTORCALL check */
     Py_ssize_t offset = Py_TYPE(callable)->tp_vectorcall_offset;
-    if ((offset <= 0) || (!Py_TYPE(callable)->tp_call)) {
+    if (offset <= 0) {
         PyErr_Format(PyExc_TypeError, "'%.200s' object does not support vectorcall",
                      Py_TYPE(callable)->tp_name);
         return NULL;
@@ -1073,6 +1073,38 @@ object_vacall(PyObject *base, PyObject *callable, va_list vargs)
     if (stack != small_stack) {
         PyMem_Free(stack);
     }
+    return result;
+}
+
+
+PyObject *
+_PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
+                           size_t nargsf, PyObject *kwnames)
+{
+    assert(name != NULL);
+    assert(args != NULL);
+    assert(PyVectorcall_NARGS(nargsf) >= 1);
+
+    PyObject *callable = NULL;
+    /* Use args[0] as "self" argument */
+    int unbound = _PyObject_GetMethod(args[0], name, &callable);
+    if (callable == NULL) {
+        return NULL;
+    }
+
+    if (unbound) {
+        /* We must remove PY_VECTORCALL_ARGUMENTS_OFFSET since
+         * that would be interpreted as allowing to change args[-1] */
+        nargsf &= ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+    }
+    else {
+        /* Skip "self". We can keep PY_VECTORCALL_ARGUMENTS_OFFSET since
+         * args[-1] in the onward call is args[0] here. */
+        args++;
+        nargsf--;
+    }
+    PyObject *result = _PyObject_Vectorcall(callable, args, nargsf, kwnames);
+    Py_DECREF(callable);
     return result;
 }
 

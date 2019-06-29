@@ -218,22 +218,38 @@ else:
         _PopenSelector = selectors.SelectSelector
 
 
-# This lists holds Popen instances for which the underlying process had not
-# exited at the time its __del__ method got called: those processes are wait()ed
-# for synchronously from _cleanup() when a new Popen object is created, to avoid
-# zombie processes.
-_active = []
+if _mswindows:
+    # On Windows we just need to close `Popen._handle` when we no longer need
+    # it, so that the kernel can free it. `Popen._handle` gets closed
+    # implicitly when the `Popen` instance is finalized (see `Handle.__del__`,
+    # which is calling `CloseHandle` as requested in [1]), so there is nothing
+    # for `_cleanup` to do.
+    #
+    # [1] https://docs.microsoft.com/en-us/windows/desktop/ProcThread/
+    # creating-processes
+    _active = None
 
-def _cleanup():
-    for inst in _active[:]:
-        res = inst._internal_poll(_deadstate=sys.maxsize)
-        if res is not None:
-            try:
-                _active.remove(inst)
-            except ValueError:
-                # This can happen if two threads create a new Popen instance.
-                # It's harmless that it was already removed, so ignore.
-                pass
+    def _cleanup():
+        pass
+else:
+    # This lists holds Popen instances for which the underlying process had not
+    # exited at the time its __del__ method got called: those processes are
+    # wait()ed for synchronously from _cleanup() when a new Popen object is
+    # created, to avoid zombie processes.
+    _active = []
+
+    def _cleanup():
+        if _active is None:
+            return
+        for inst in _active[:]:
+            res = inst._internal_poll(_deadstate=sys.maxsize)
+            if res is not None:
+                try:
+                    _active.remove(inst)
+                except ValueError:
+                    # This can happen if two threads create a new Popen instance.
+                    # It's harmless that it was already removed, so ignore.
+                    pass
 
 PIPE = -1
 STDOUT = -2
@@ -1268,6 +1284,11 @@ class Popen(object):
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = '{} /c "{}"'.format (comspec, args)
 
+            if cwd is not None:
+                cwd = os.fsdecode(cwd)
+
+            sys.audit("subprocess.Popen", executable, args, cwd, env)
+
             # Start the process
             try:
                 hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
@@ -1276,7 +1297,7 @@ class Popen(object):
                                          int(not close_fds),
                                          creationflags,
                                          env,
-                                         os.fsdecode(cwd) if cwd is not None else None,
+                                         cwd,
                                          startupinfo)
             finally:
                 # Child is launched. Close the parent's copy of those pipe
@@ -1542,6 +1563,8 @@ class Popen(object):
 
             if executable is None:
                 executable = args[0]
+
+            sys.audit("subprocess.Popen", executable, args, cwd, env)
 
             if (_USE_POSIX_SPAWN
                     and os.path.dirname(executable)

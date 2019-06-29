@@ -384,12 +384,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
 
     if (multiple) {
         /* executemany() */
-        if (!PyArg_ParseTuple(args, "OO", &operation, &second_argument)) {
-            goto error;
-        }
-
-        if (!PyUnicode_Check(operation)) {
-            PyErr_SetString(PyExc_ValueError, "operation parameter must be str");
+        if (!PyArg_ParseTuple(args, "UO", &operation, &second_argument)) {
             goto error;
         }
 
@@ -406,12 +401,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
         }
     } else {
         /* execute() */
-        if (!PyArg_ParseTuple(args, "O|O", &operation, &second_argument)) {
-            goto error;
-        }
-
-        if (!PyUnicode_Check(operation)) {
-            PyErr_SetString(PyExc_ValueError, "operation parameter must be str");
+        if (!PyArg_ParseTuple(args, "U|O", &operation, &second_argument)) {
             goto error;
         }
 

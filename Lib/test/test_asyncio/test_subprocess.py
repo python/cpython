@@ -248,8 +248,8 @@ class SubprocessMixin:
         proc, large_data = self.prepare_broken_pipe_test()
 
         # communicate() must ignore BrokenPipeError when feeding stdin
-        with test_utils.disable_logger():
-            self.loop.run_until_complete(proc.communicate(large_data))
+        self.loop.set_exception_handler(lambda loop, msg: None)
+        self.loop.run_until_complete(proc.communicate(large_data))
         self.loop.run_until_complete(proc.wait())
 
     def test_pause_reading(self):

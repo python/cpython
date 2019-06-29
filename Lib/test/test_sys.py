@@ -159,15 +159,6 @@ class SysModuleTest(unittest.TestCase):
     # testing sys.settrace() is done in test_sys_settrace.py
     # testing sys.setprofile() is done in test_sys_setprofile.py
 
-    def test_setcheckinterval(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            self.assertRaises(TypeError, sys.setcheckinterval)
-            orig = sys.getcheckinterval()
-            for n in 0, 100, 120, orig: # orig last to restore starting state
-                sys.setcheckinterval(n)
-                self.assertEqual(sys.getcheckinterval(), n)
-
     def test_switchinterval(self):
         self.assertRaises(TypeError, sys.setswitchinterval)
         self.assertRaises(TypeError, sys.setswitchinterval, "a")

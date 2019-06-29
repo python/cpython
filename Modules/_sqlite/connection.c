@@ -1223,7 +1223,7 @@ PyObject* pysqlite_connection_call(pysqlite_Connection* self, PyObject* args, Py
     if (!_PyArg_NoKeywords(MODULE_NAME ".Connection", kwargs))
         return NULL;
 
-    if (!PyArg_ParseTuple(args, "O", &sql))
+    if (!PyArg_ParseTuple(args, "U", &sql))
         return NULL;
 
     _pysqlite_drop_unused_statement_references(self);

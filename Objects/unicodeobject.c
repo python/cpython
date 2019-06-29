@@ -265,6 +265,8 @@ unicode_fill(enum PyUnicode_Kind kind, void *data, Py_UCS4 value,
 /* Forward declaration */
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
+static inline void
+_PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer);
 static PyObject *
 unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
                     const char *errors);
@@ -422,6 +424,48 @@ get_error_handler_wide(const wchar_t *errors)
         return _Py_ERROR_XMLCHARREFREPLACE;
     }
     return _Py_ERROR_OTHER;
+}
+
+
+static inline int
+unicode_check_encoding_errors(const char *encoding, const char *errors)
+{
+    if (encoding == NULL && errors == NULL) {
+        return 0;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+#ifndef Py_DEBUG
+    /* In release mode, only check in development mode (-X dev) */
+    if (!interp->config.dev_mode) {
+        return 0;
+    }
+#else
+    /* Always check in debug mode */
+#endif
+
+    /* Avoid calling _PyCodec_Lookup() and PyCodec_LookupError() before the
+       codec registry is ready: before_PyUnicode_InitEncodings() is called. */
+    if (!interp->fs_codec.encoding) {
+        return 0;
+    }
+
+    if (encoding != NULL) {
+        PyObject *handler = _PyCodec_Lookup(encoding);
+        if (handler == NULL) {
+            return -1;
+        }
+        Py_DECREF(handler);
+    }
+
+    if (errors != NULL) {
+        PyObject *handler = PyCodec_LookupError(errors);
+        if (handler == NULL) {
+            return -1;
+        }
+        Py_DECREF(handler);
+    }
+    return 0;
 }
 
 
@@ -3209,12 +3253,15 @@ PyUnicode_FromEncodedObject(PyObject *obj,
 
     /* Decoding bytes objects is the most common case and should be fast */
     if (PyBytes_Check(obj)) {
-        if (PyBytes_GET_SIZE(obj) == 0)
+        if (PyBytes_GET_SIZE(obj) == 0) {
+            if (unicode_check_encoding_errors(encoding, errors) < 0) {
+                return NULL;
+            }
             _Py_RETURN_UNICODE_EMPTY();
-        v = PyUnicode_Decode(
+        }
+        return PyUnicode_Decode(
                 PyBytes_AS_STRING(obj), PyBytes_GET_SIZE(obj),
                 encoding, errors);
-        return v;
     }
 
     if (PyUnicode_Check(obj)) {
@@ -3233,6 +3280,9 @@ PyUnicode_FromEncodedObject(PyObject *obj,
 
     if (buffer.len == 0) {
         PyBuffer_Release(&buffer);
+        if (unicode_check_encoding_errors(encoding, errors) < 0) {
+            return NULL;
+        }
         _Py_RETURN_UNICODE_EMPTY();
     }
 
@@ -3299,6 +3349,14 @@ PyUnicode_Decode(const char *s,
     PyObject *buffer = NULL, *unicode;
     Py_buffer info;
     char buflower[11];   /* strlen("iso-8859-1\0") == 11, longest shortcut */
+
+    if (unicode_check_encoding_errors(encoding, errors) < 0) {
+        return NULL;
+    }
+
+    if (size == 0) {
+        _Py_RETURN_UNICODE_EMPTY();
+    }
 
     if (encoding == NULL) {
         return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
@@ -3560,7 +3618,8 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
        cannot use it to encode and decode filenames before it is loaded. Load
        the Python codec requires to encode at least its own filename. Use the C
        implementation of the locale codec until the codec registry is
-       initialized and the Python codec is loaded. See initfsencoding(). */
+       initialized and the Python codec is loaded.
+       See _PyUnicode_InitEncodings(). */
     if (interp->fs_codec.encoding) {
         return PyUnicode_AsEncodedString(unicode,
                                          interp->fs_codec.encoding,
@@ -3586,6 +3645,10 @@ PyUnicode_AsEncodedString(PyObject *unicode,
 
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
+        return NULL;
+    }
+
+    if (unicode_check_encoding_errors(encoding, errors) < 0) {
         return NULL;
     }
 
@@ -3798,7 +3861,8 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
        cannot use it to encode and decode filenames before it is loaded. Load
        the Python codec requires to encode at least its own filename. Use the C
        implementation of the locale codec until the codec registry is
-       initialized and the Python codec is loaded. See initfsencoding(). */
+       initialized and the Python codec is loaded.
+       See _PyUnicode_InitEncodings(). */
     if (interp->fs_codec.encoding) {
         return PyUnicode_Decode(s, size,
                                 interp->fs_codec.encoding,
@@ -4877,16 +4941,6 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
                     _Py_error_handler error_handler, const char *errors,
                     Py_ssize_t *consumed)
 {
-    _PyUnicodeWriter writer;
-    const char *starts = s;
-    const char *end = s + size;
-
-    Py_ssize_t startinpos;
-    Py_ssize_t endinpos;
-    const char *errmsg = "";
-    PyObject *error_handler_obj = NULL;
-    PyObject *exc = NULL;
-
     if (size == 0) {
         if (consumed)
             *consumed = 0;
@@ -4900,13 +4954,29 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
         return get_latin1_char((unsigned char)s[0]);
     }
 
-    _PyUnicodeWriter_Init(&writer);
-    writer.min_length = size;
-    if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) == -1)
-        goto onError;
+    const char *starts = s;
+    const char *end = s + size;
 
-    writer.pos = ascii_decode(s, end, writer.data);
-    s += writer.pos;
+    // fast path: try ASCII string.
+    PyObject *u = PyUnicode_New(size, 127);
+    if (u == NULL) {
+        return NULL;
+    }
+    s += ascii_decode(s, end, PyUnicode_DATA(u));
+    if (s == end) {
+        return u;
+    }
+
+    // Use _PyUnicodeWriter after fast path is failed.
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_InitWithBuffer(&writer, u);
+    writer.pos = s - starts;
+
+    Py_ssize_t startinpos, endinpos;
+    const char *errmsg = "";
+    PyObject *error_handler_obj = NULL;
+    PyObject *exc = NULL;
+
     while (s < end) {
         Py_UCS4 ch;
         int kind = writer.kind;
@@ -4937,11 +5007,15 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
             endinpos = startinpos + 1;
             break;
         case 2:
-        case 3:
-        case 4:
-            if (s == end || consumed) {
+            if (consumed && (unsigned char)s[0] == 0xED && end - s == 2
+                && (unsigned char)s[1] >= 0xA0 && (unsigned char)s[1] <= 0xBF)
+            {
+                /* Truncated surrogate code in range D800-DFFF */
                 goto End;
             }
+            /* fall through */
+        case 3:
+        case 4:
             errmsg = "invalid continuation byte";
             startinpos = s - starts;
             endinpos = startinpos + ch - 1;
@@ -6451,7 +6525,7 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
        length after conversion to the true value. (But decoding error
        handler might have to resize the string) */
     _PyUnicodeWriter_Init(&writer);
-     writer.min_length = size;
+    writer.min_length = size;
     if (_PyUnicodeWriter_Prepare(&writer, size, 127) < 0) {
         goto onError;
     }
@@ -6975,13 +7049,7 @@ PyUnicode_DecodeASCII(const char *s,
                       const char *errors)
 {
     const char *starts = s;
-    _PyUnicodeWriter writer;
-    int kind;
-    void *data;
-    Py_ssize_t startinpos;
-    Py_ssize_t endinpos;
-    Py_ssize_t outpos;
-    const char *e;
+    const char *e = s + size;
     PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
     _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
@@ -6993,20 +7061,25 @@ PyUnicode_DecodeASCII(const char *s,
     if (size == 1 && (unsigned char)s[0] < 128)
         return get_latin1_char((unsigned char)s[0]);
 
-    _PyUnicodeWriter_Init(&writer);
-    writer.min_length = size;
-    if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0)
+    // Shortcut for simple case
+    PyObject *u = PyUnicode_New(size, 127);
+    if (u == NULL) {
         return NULL;
+    }
+    Py_ssize_t outpos = ascii_decode(s, e, PyUnicode_DATA(u));
+    if (outpos == size) {
+        return u;
+    }
 
-    e = s + size;
-    data = writer.data;
-    outpos = ascii_decode(s, e, (Py_UCS1 *)data);
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_InitWithBuffer(&writer, u);
     writer.pos = outpos;
-    if (writer.pos == size)
-        return _PyUnicodeWriter_Finish(&writer);
 
-    s += writer.pos;
-    kind = writer.kind;
+    s += outpos;
+    int kind = writer.kind;
+    void *data = writer.data;
+    Py_ssize_t startinpos, endinpos;
+
     while (s < e) {
         unsigned char c = (unsigned char)*s;
         if (c < 128) {
@@ -13504,6 +13577,16 @@ _PyUnicodeWriter_Init(_PyUnicodeWriter *writer)
        _PyUnicodeWriter_PrepareKind() will copy the buffer. */
     writer->kind = PyUnicode_WCHAR_KIND;
     assert(writer->kind <= PyUnicode_1BYTE_KIND);
+}
+
+// Initialize _PyUnicodeWriter with initial buffer
+static inline void
+_PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer)
+{
+    memset(writer, 0, sizeof(*writer));
+    writer->buffer = buffer;
+    _PyUnicodeWriter_Update(writer);
+    writer->min_length = writer->size;
 }
 
 int

@@ -361,6 +361,8 @@ An :class:`IMAP4` instance has the following methods:
    :meth:`IMAP4.send`, and :meth:`IMAP4.shutdown` methods.  You may override
    this method.
 
+   .. audit-event:: imaplib.open self,host,port imaplib.IMAP4.open
+
 
 .. method:: IMAP4.partial(message_num, message_part, start, length)
 
@@ -429,6 +431,8 @@ An :class:`IMAP4` instance has the following methods:
 .. method:: IMAP4.send(data)
 
    Sends ``data`` to the remote server. You may override this method.
+
+   .. audit-event:: imaplib.send self,data imaplib.IMAP4.send
 
 
 .. method:: IMAP4.setacl(mailbox, who, what)

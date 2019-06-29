@@ -1202,7 +1202,7 @@ def platform(aliased=0, terse=0):
 
     elif system in ('Linux',):
         # check for libc vs. glibc
-        libcname, libcversion = libc_ver(sys.executable)
+        libcname, libcversion = libc_ver()
         platform = _platform(system, release, machine, processor,
                              'with',
                              libcname+libcversion)

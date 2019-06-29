@@ -5153,15 +5153,15 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
     COPYSLOT(tp_repr);
     /* tp_hash see tp_richcompare */
     {
-        /* Inherit tp_vectorcall_offset only if tp_call is not overridden */
-        if (!type->tp_call) {
-            COPYSLOT(tp_vectorcall_offset);
-        }
-        /* Inherit_Py_TPFLAGS_HAVE_VECTORCALL for non-heap types
+        /* Always inherit tp_vectorcall_offset to support PyVectorcall_Call().
+         * If _Py_TPFLAGS_HAVE_VECTORCALL is not inherited, then vectorcall
+         * won't be used automatically. */
+        COPYSLOT(tp_vectorcall_offset);
+
+        /* Inherit _Py_TPFLAGS_HAVE_VECTORCALL for non-heap types
         * if tp_call is not overridden */
         if (!type->tp_call &&
             (base->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
-            !(type->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
             !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
         {
             type->tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;

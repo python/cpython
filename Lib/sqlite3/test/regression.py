@@ -261,7 +261,7 @@ class RegressionTests(unittest.TestCase):
         Call a connection with a non-string SQL request: check error handling
         of the statement constructor.
         """
-        self.assertRaises(sqlite.Warning, self.con, 1)
+        self.assertRaises(TypeError, self.con, 1)
 
     def CheckCollation(self):
         def collation_cb(a, b):
