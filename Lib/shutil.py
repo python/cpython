@@ -1476,15 +1476,15 @@ def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
 
     Given a single source, `dst` is taken to be a file, even if it is a
     symlink to a directory. This allows for:
-     * Enforcing that a link is created as `dst` rather than `dst`/src
-     * Replacing symlinks to directories (with `overwrite=True`)
+     - Enforcing that a link is created as `dst` rather than `dst`/src
+     - Replacing symlinks to directories (with `overwrite=True`)
 
     With `overwrite=False`, FileExistsError is raised if the destination
     pathname already exists.
 
     With `overwrite=True`, overwrite an existing destination.
-     * Raises IsADirectoryError if `dst` is a directory
-     * Symlinks to directories are treated as files
+     - Raises IsADirectoryError if `dst` is a directory
+     - Symlinks to directories are treated as files
 
     With `follow_symlinks=False`, create symlinks to symlinks XXXXXXXXX
 
