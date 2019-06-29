@@ -68,7 +68,7 @@ and :meth:`flush` methods).
 
       :return: the old stream, if the stream was changed, or *None* if it wasn't.
 
-   .. versionadded:: 3.7
+      .. versionadded:: 3.7
 
 
 .. versionchanged:: 3.2
@@ -108,7 +108,6 @@ sends logging output to a disk file.  It inherits the output functionality from
    .. method:: close()
 
       Closes the file.
-
 
    .. method:: emit(record)
 
