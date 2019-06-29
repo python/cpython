@@ -1,7 +1,9 @@
 import string
 import unittest
 
-from test.test_c_statics.cg.info import StaticVar
+from test.test_c_statics.cg.info import (
+        normalize_vartype, Symbol, StaticVar,
+        )
 
 
 class PseudoStr(str):
@@ -18,6 +20,209 @@ class Object:
         return '<object>'
 
 
+class NormalizeVartypeTests(unittest.TestCase):
+
+    def test_basic(self):
+        tests = [
+                (None, None),
+                ('', ''),
+                ('int', 'int'),
+                (PseudoStr('int'), 'int'),
+                (Proxy('int'), 'int'),
+                ]
+        for vartype, expected in tests:
+            with self.subTest(vartype):
+                normalized = normalize_vartype(vartype)
+
+                self.assertEqual(normalized, expected)
+
+
+class SymbolTests(unittest.TestCase):
+
+    VALID_ARGS = (
+            'eggs',
+            Symbol.KIND.VARIABLE,
+            False,
+            'x/y/z/spam.c',
+            'func',
+            'int',
+            )
+    VALID_KWARGS = dict(zip(Symbol._fields, VALID_ARGS))
+    VALID_EXPECTED = VALID_ARGS
+
+    def test_init_typical_binary(self):
+        symbol = Symbol(
+                name='spam',
+                kind=Symbol.KIND.VARIABLE,
+                external=False,
+                filename='Python/ceval.c',
+                )
+
+        self.assertEqual(symbol, (
+            'spam',
+            Symbol.KIND.VARIABLE,
+            False,
+            'Python/ceval.c',
+            None,
+            None,
+            ))
+
+    def test_init_typical_source(self):
+        symbol = Symbol(
+                name='spam',
+                kind=Symbol.KIND.VARIABLE,
+                external=False,
+                filename='Python/ceval.c',
+                declaration='static const int',
+                )
+
+        self.assertEqual(symbol, (
+            'spam',
+            Symbol.KIND.VARIABLE,
+            False,
+            'Python/ceval.c',
+            None,
+            'static const int',
+            ))
+
+    def test_init_coercion(self):
+        tests = [
+            ('str subclass',
+             dict(
+                 name=PseudoStr('eggs'),
+                 kind=PseudoStr('variable'),
+                 external=0,
+                 filename=PseudoStr('x/y/z/spam.c'),
+                 funcname=PseudoStr('func'),
+                 declaration=PseudoStr('int'),
+                 ),
+             ('eggs',
+              Symbol.KIND.VARIABLE,
+              False,
+              'x/y/z/spam.c',
+              'func',
+              'int',
+              )),
+            ('non-str',
+             dict(
+                 name=('a', 'b', 'c'),
+                 kind=Proxy('variable'),
+                 external=0,
+                 filename=Proxy('x/y/z/spam.c'),
+                 funcname=Proxy('func'),
+                 declaration=Object(),
+                 ),
+             ("('a', 'b', 'c')",
+              Symbol.KIND.VARIABLE,
+              False,
+              'x/y/z/spam.c',
+              'func',
+              '<object>',
+              )),
+            ]
+        for summary, kwargs, expected in tests:
+            with self.subTest(summary):
+                symbol = Symbol(**kwargs)
+
+                for field in Symbol._fields:
+                    value = getattr(symbol, field)
+                    if field == 'external':
+                        self.assertIs(type(value), bool)
+                    else:
+                        self.assertIs(type(value), str)
+                self.assertEqual(tuple(symbol), expected)
+
+    def test_init_all_missing(self):
+        symbol = Symbol('spam')
+
+        self.assertEqual(symbol, (
+            'spam',
+            Symbol.KIND.VARIABLE,
+            None,
+            None,
+            None,
+            None,
+            ))
+
+    def test_fields(self):
+        static = Symbol('a', 'b', False, 'z', 'x', 'w')
+
+        self.assertEqual(static.name, 'a')
+        self.assertEqual(static.kind, 'b')
+        self.assertIs(static.external, False)
+        self.assertEqual(static.filename, 'z')
+        self.assertEqual(static.funcname, 'x')
+        self.assertEqual(static.declaration, 'w')
+
+    def test_validate_typical(self):
+        symbol = Symbol(
+                name='spam',
+                kind=Symbol.KIND.VARIABLE,
+                external=False,
+                filename='Python/ceval.c',
+                declaration='static const int',
+                )
+
+        symbol.validate()  # This does not fail.
+
+    def test_validate_missing_field(self):
+        for field in Symbol._fields:
+            with self.subTest(field):
+                symbol = Symbol(**self.VALID_KWARGS)
+                symbol = symbol._replace(**{field: None})
+
+                if field in ('funcname', 'declaration'):
+                    symbol.validate()  # The field can be missing (not set).
+                    continue
+
+                with self.assertRaises(TypeError):
+                    symbol.validate()
+        with self.subTest('combined'):
+            symbol = Symbol(**self.VALID_KWARGS)
+            symbol = symbol._replace(filename=None, funcname=None)
+
+            symbol.validate()  # The fields together can be missing (not set).
+
+    def test_validate_bad_field(self):
+        badch = tuple(c for c in string.punctuation + string.digits)
+        notnames = (
+                '1a',
+                'a.b',
+                'a-b',
+                '&a',
+                'a++',
+                ) + badch
+        tests = [
+            ('name', notnames),
+            ('kind', ('bogus',)),
+            ('filename', ()),  # Any non-empty str is okay.
+            ('funcname', notnames),
+            ('declaration', ()),  # Any non-empty str is okay.
+            ]
+        seen = set()
+        for field, invalid in tests:
+            for value in invalid:
+                if field != 'kind':
+                    seen.add(value)
+                with self.subTest(f'{field}={value!r}'):
+                    symbol = Symbol(**self.VALID_KWARGS)
+                    symbol = symbol._replace(**{field: value})
+
+                    with self.assertRaises(ValueError):
+                        symbol.validate()
+
+        for field, invalid in tests:
+            if field == 'kind':
+                continue
+            valid = seen - set(invalid)
+            for value in valid:
+                with self.subTest(f'{field}={value!r}'):
+                    symbol = Symbol(**self.VALID_KWARGS)
+                    symbol = symbol._replace(**{field: value})
+
+                    symbol.validate()  # This does not fail.
+
+
 class StaticVarTests(unittest.TestCase):
 
     VALID_ARGS = (
@@ -28,20 +233,6 @@ class StaticVarTests(unittest.TestCase):
             )
     VALID_KWARGS = dict(zip(StaticVar._fields, VALID_ARGS))
     VALID_EXPECTED = VALID_ARGS
-
-    def test_normalize_vartype(self):
-        tests = [
-                (None, None),
-                ('', ''),
-                ('int', 'int'),
-                (PseudoStr('int'), 'int'),
-                (Proxy('int'), 'int'),
-                ]
-        for vartype, expected in tests:
-            with self.subTest(vartype):
-                normalized = StaticVar.normalize_vartype(vartype)
-
-                self.assertEqual(normalized, expected)
 
     def test_init_typical_global(self):
         static = StaticVar(

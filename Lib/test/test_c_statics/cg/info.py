@@ -5,31 +5,42 @@ import re
 NAME_RE = re.compile(r'^([a-zA-Z]|_\w*[a-zA-Z]\w*|[a-zA-Z]\w*)$')
 
 
-class StaticVar(namedtuple('StaticVar', 'filename funcname name vartype')):
-    """Information about a single static variable."""
+def normalize_vartype(vartype):
+    """Return the canonical form for a variable type (or func signature)."""
+    # We allow empty strring through for semantic reasons.
+    if vartype is None:
+        return None
+
+    # XXX finish!
+    # XXX Return (modifiers, type, pointer)?
+    return str(vartype)
+
+
+class Symbol(namedtuple('Symbol',
+                        'name kind external filename funcname declaration')):
+    """Info for a single compilation symbol."""
 
     __slots__ = ()
 
-    @classmethod
-    def normalize_vartype(cls, vartype):
-        if vartype is None:
-            return None
-
-        # XXX finish!
-        # XXX Return (modifiers, type, pointer)?
-        return str(vartype)
+    class KIND:
+        VARIABLE = 'variable'
+        FUNCTION = 'function'
+        OTHER = 'other'
 
     @classmethod
     def _make(cls, iterable):  # The default _make() is not subclass-friendly.
         return cls.__new__(cls, *iterable)
 
-    def __new__(cls, filename, funcname, name, vartype):
+    def __new__(cls, name, kind=KIND.VARIABLE, external=None,
+                filename=None, funcname=None, declaration=None):
         self = super().__new__(
                 cls,
+                name=str(name) if name else None,
+                kind=str(kind) if kind else None,
+                external=bool(external) if external is not None else None,
                 filename=str(filename) if filename else None,
                 funcname=str(funcname) if funcname else None,
-                name=str(name) if name else None,
-                vartype=cls.normalize_vartype(vartype) if vartype else None,
+                declaration=normalize_vartype(declaration),
                 )
         return self
 
@@ -42,7 +53,69 @@ class StaticVar(namedtuple('StaticVar', 'filename funcname name vartype')):
     #    _, _, sig = super().__repr__().partition('(')
     #    return f'{self.__class__.__name__}({sig}'
 
-    # To make sorting work with None:
+    def validate(self):
+        """Fail if the object is invalid (i.e. init with bad data)."""
+        if not self.name:
+            raise TypeError('missing name')
+        elif not NAME_RE.match(self.name):
+            raise ValueError(f'name must be a name, got {self.name!r}')
+
+        if not self.kind:
+            raise TypeError('missing kind')
+        elif self.kind not in vars(Symbol.KIND).values():
+            raise ValueError(f'unsupported kind {self.kind}')
+
+        if self.external is None:
+            raise TypeError('missing external')
+
+        if not self.filename and self.funcname:
+            raise TypeError('missing filename')
+        # filename, funcname and declaration can be not set.
+
+        if not self.funcname:
+            # funcname can be not set.
+            pass
+        elif not NAME_RE.match(self.funcname):
+            raise ValueError(f'funcname must be a name, got{self.funcname!r}')
+
+        # declaration can be not set.
+
+    # XXX Always validate?
+    #def _replace(self, **kwargs):
+    #    obj = super()._replace(**kwargs)
+    #    obj.validate()
+    #    return obj
+
+
+class StaticVar(namedtuple('StaticVar', 'filename funcname name vartype')):
+    """Information about a single static variable."""
+
+    __slots__ = ()
+
+    @classmethod
+    def _make(cls, iterable):  # The default _make() is not subclass-friendly.
+        return cls.__new__(cls, *iterable)
+
+    def __new__(cls, filename, funcname, name, vartype):
+        self = super().__new__(
+                cls,
+                filename=str(filename) if filename else None,
+                funcname=str(funcname) if funcname else None,
+                name=str(name) if name else None,
+                vartype=normalize_vartype(vartype) if vartype else None,
+                )
+        return self
+
+    # XXX Always validate?
+    #def __init__(self, *args, **kwargs):
+    #    self.validate()
+
+    # XXX The default __repr__() is not subclass-friendly (where the name changes).
+    #def __repr__(self):
+    #    _, _, sig = super().__repr__().partition('(')
+    #    return f'{self.__class__.__name__}({sig}'
+
+    # To make sorting work with None (for sorting):
     def __lt__(self, other):
         try:
             return super().__lt__(other)
@@ -55,7 +128,7 @@ class StaticVar(namedtuple('StaticVar', 'filename funcname name vartype')):
                 raise
 
     def validate(self):
-        """Fail if the StaticVar is invalid (i.e. init with bad data)."""
+        """Fail if the object is invalid (i.e. init with bad data)."""
         for field in self._fields:
             value = getattr(self, field)
             if value is None:
