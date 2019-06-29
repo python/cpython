@@ -373,10 +373,11 @@ typedef struct {
                                        module_search_paths_set is equal
                                        to zero. */
 
-    wchar_t *executable;    /* sys.executable */
-    wchar_t *prefix;        /* sys.prefix */
-    wchar_t *base_prefix;   /* sys.base_prefix */
-    wchar_t *exec_prefix;   /* sys.exec_prefix */
+    wchar_t *executable;        /* sys.executable */
+    wchar_t *base_executable;   /* sys._base_executable */
+    wchar_t *prefix;            /* sys.prefix */
+    wchar_t *base_prefix;       /* sys.base_prefix */
+    wchar_t *exec_prefix;       /* sys.exec_prefix */
     wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
 
     /* --- Parameter only used by Py_Main() ---------- */
