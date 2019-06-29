@@ -1419,8 +1419,7 @@ class IncompleteRead(HTTPException):
             e = ''
         return '%s(%i bytes read%s)' % (self.__class__.__name__,
                                         len(self.partial), e)
-    def __str__(self):
-        return repr(self)
+    __str__ = object.__str__
 
 class ImproperConnectionState(HTTPException):
     pass

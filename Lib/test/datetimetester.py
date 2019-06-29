@@ -2501,6 +2501,7 @@ class TestDateTime(TestDate):
                 self.assertEqual(expected, got)
 
         strptime = self.theclass.strptime
+
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
         self.assertEqual(
@@ -2534,6 +2535,40 @@ class TestDateTime(TestDate):
 
         with self.assertRaises(ValueError): strptime("-2400", "%z")
         with self.assertRaises(ValueError): strptime("-000", "%z")
+
+    def test_strptime_single_digit(self):
+        # bpo-34903: Check that single digit dates and times are allowed.
+
+        strptime = self.theclass.strptime
+
+        with self.assertRaises(ValueError):
+            # %y does require two digits.
+            newdate = strptime('01/02/3 04:05:06', '%d/%m/%y %H:%M:%S')
+        dt1 = self.theclass(2003, 2, 1, 4, 5, 6)
+        dt2 = self.theclass(2003, 1, 2, 4, 5, 6)
+        dt3 = self.theclass(2003, 2, 1, 0, 0, 0)
+        dt4 = self.theclass(2003, 1, 25, 0, 0, 0)
+        inputs = [
+            ('%d', '1/02/03 4:5:6', '%d/%m/%y %H:%M:%S', dt1),
+            ('%m', '01/2/03 4:5:6', '%d/%m/%y %H:%M:%S', dt1),
+            ('%H', '01/02/03 4:05:06', '%d/%m/%y %H:%M:%S', dt1),
+            ('%M', '01/02/03 04:5:06', '%d/%m/%y %H:%M:%S', dt1),
+            ('%S', '01/02/03 04:05:6', '%d/%m/%y %H:%M:%S', dt1),
+            ('%j', '2/03 04am:05:06', '%j/%y %I%p:%M:%S',dt2),
+            ('%I', '02/03 4am:05:06', '%j/%y %I%p:%M:%S',dt2),
+            ('%w', '6/04/03', '%w/%U/%y', dt3),
+            # %u requires a single digit.
+            ('%W', '6/4/2003', '%u/%W/%Y', dt3),
+            ('%V', '6/4/2003', '%u/%V/%G', dt4),
+        ]
+        for reason, string, format, target in inputs:
+            reason = 'test single digit ' + reason
+            with self.subTest(reason=reason,
+                              string=string,
+                              format=format,
+                              target=target):
+                newdate = strptime(string, format)
+                self.assertEqual(newdate, target, msg=reason)
 
     def test_more_timetuple(self):
         # This tests fields beyond those tested by the TestDate.test_timetuple.
@@ -3483,7 +3518,7 @@ class TZInfoBase:
                     self.assertEqual(got, expected)
 
         # However, if they're different members, uctoffset is not ignored.
-        # Note that a time can't actually have an operand-depedent offset,
+        # Note that a time can't actually have an operand-dependent offset,
         # though (and time.utcoffset() passes None to tzinfo.utcoffset()),
         # so skip this test for time.
         if cls is not time:
@@ -6018,6 +6053,100 @@ class CapiTest(unittest.TestCase):
                 with self.subTest(arg=arg, exact=exact):
                     self.assertFalse(is_tzinfo(arg, exact))
 
+    def test_date_from_date(self):
+        exp_date = date(1993, 8, 26)
+
+        for macro in [0, 1]:
+            with self.subTest(macro=macro):
+                c_api_date = _testcapi.get_date_fromdate(
+                    macro,
+                    exp_date.year,
+                    exp_date.month,
+                    exp_date.day)
+
+                self.assertEqual(c_api_date, exp_date)
+
+    def test_datetime_from_dateandtime(self):
+        exp_date = datetime(1993, 8, 26, 22, 12, 55, 99999)
+
+        for macro in [0, 1]:
+            with self.subTest(macro=macro):
+                c_api_date = _testcapi.get_datetime_fromdateandtime(
+                    macro,
+                    exp_date.year,
+                    exp_date.month,
+                    exp_date.day,
+                    exp_date.hour,
+                    exp_date.minute,
+                    exp_date.second,
+                    exp_date.microsecond)
+
+                self.assertEqual(c_api_date, exp_date)
+
+    def test_datetime_from_dateandtimeandfold(self):
+        exp_date = datetime(1993, 8, 26, 22, 12, 55, 99999)
+
+        for fold in [0, 1]:
+            for macro in [0, 1]:
+                with self.subTest(macro=macro, fold=fold):
+                    c_api_date = _testcapi.get_datetime_fromdateandtimeandfold(
+                        macro,
+                        exp_date.year,
+                        exp_date.month,
+                        exp_date.day,
+                        exp_date.hour,
+                        exp_date.minute,
+                        exp_date.second,
+                        exp_date.microsecond,
+                        exp_date.fold)
+
+                    self.assertEqual(c_api_date, exp_date)
+                    self.assertEqual(c_api_date.fold, exp_date.fold)
+
+    def test_time_from_time(self):
+        exp_time = time(22, 12, 55, 99999)
+
+        for macro in [0, 1]:
+            with self.subTest(macro=macro):
+                c_api_time = _testcapi.get_time_fromtime(
+                    macro,
+                    exp_time.hour,
+                    exp_time.minute,
+                    exp_time.second,
+                    exp_time.microsecond)
+
+                self.assertEqual(c_api_time, exp_time)
+
+    def test_time_from_timeandfold(self):
+        exp_time = time(22, 12, 55, 99999)
+
+        for fold in [0, 1]:
+            for macro in [0, 1]:
+                with self.subTest(macro=macro, fold=fold):
+                    c_api_time = _testcapi.get_time_fromtimeandfold(
+                        macro,
+                        exp_time.hour,
+                        exp_time.minute,
+                        exp_time.second,
+                        exp_time.microsecond,
+                        exp_time.fold)
+
+                    self.assertEqual(c_api_time, exp_time)
+                    self.assertEqual(c_api_time.fold, exp_time.fold)
+
+    def test_delta_from_dsu(self):
+        exp_delta = timedelta(26, 55, 99999)
+
+        for macro in [0, 1]:
+            with self.subTest(macro=macro):
+                c_api_delta = _testcapi.get_delta_fromdsu(
+                    macro,
+                    exp_delta.days,
+                    exp_delta.seconds,
+                    exp_delta.microseconds)
+
+                self.assertEqual(c_api_delta, exp_delta)
+
     def test_date_from_timestamp(self):
         ts = datetime(1995, 4, 12).timestamp()
 
@@ -6028,9 +6157,6 @@ class CapiTest(unittest.TestCase):
                 self.assertEqual(d, date(1995, 4, 12))
 
     def test_datetime_from_timestamp(self):
-        ts0 = datetime(1995, 4, 12).timestamp()
-        ts1 = datetime(1995, 4, 12, 12, 30).timestamp()
-
         cases = [
             ((1995, 4, 12), None, False),
             ((1995, 4, 12), None, True),

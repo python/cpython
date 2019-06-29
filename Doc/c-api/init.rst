@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _initialization:
@@ -875,13 +875,6 @@ code, or when embedding the Python interpreter:
    Swap the current thread state with the thread state given by the argument
    *tstate*, which may be *NULL*.  The global interpreter lock must be held
    and is not released.
-
-
-.. c:function:: void PyEval_ReInitThreads()
-
-   This function is called from :c:func:`PyOS_AfterFork_Child` to ensure
-   that newly created child processes don't hold locks referring to threads
-   which are not running in the child process.
 
 
 The following functions use thread-local storage, and are not compatible

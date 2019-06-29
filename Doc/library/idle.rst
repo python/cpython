@@ -50,7 +50,7 @@ default title and context menu.
 
 On macOS, there is one application menu.  It dynamically changes according
 to the window currently selected.  It has an IDLE menu, and some entries
-described below are moved around to conform to Apple guidlines.
+described below are moved around to conform to Apple guidelines.
 
 File menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -207,8 +207,12 @@ Strip trailing whitespace
 Run menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. _python-shell:
+
 Python Shell
    Open or wake up the Python Shell window.
+
+.. _check-module:
 
 Check Module
    Check the syntax of the module currently open in the Editor window. If the
@@ -217,14 +221,24 @@ Check Module
    there is a syntax error, the approximate location is indicated in the
    Editor window.
 
+.. _run-module:
+
 Run Module
-   Do Check Module (above).  If no error, restart the shell to clean the
+   Do :ref:`Check Module <check-module>`.  If no error, restart the shell to clean the
    environment, then execute the module.  Output is displayed in the Shell
    window.  Note that output requires use of ``print`` or ``write``.
    When execution is complete, the Shell retains focus and displays a prompt.
    At this point, one may interactively explore the result of execution.
    This is similar to executing a file with ``python -i file`` at a command
    line.
+
+.. _run-custom:
+
+Run... Customized
+   Same as :ref:`Run Module <run-module>`, but run the module with customized
+   settings.  *Command Line Arguments* extend :data:`sys.argv` as if passed
+   on a command line. The module can be run in the Shell without restarting.
+
 
 Shell menu (Shell window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -281,15 +295,18 @@ Configure IDLE
    menu. For more, see
    :ref:`Setting preferences <preferences>` under Help and preferences.
 
-Zoom/Restore Height
-   Toggles the window between normal size and maximum height. The initial size
-   defaults to 40 lines by 80 chars unless changed on the General tab of the
-   Configure IDLE dialog.
-
 Show/Hide Code Context (Editor Window only)
    Open a pane at the top of the edit window which shows the block context
    of the code which has scrolled above the top of the window.  See
    :ref:`Code Context <code-context>` in the Editing and Navigation section below.
+
+Zoom/Restore Height
+   Toggles the window between normal size and maximum height. The initial size
+   defaults to 40 lines by 80 chars unless changed on the General tab of the
+   Configure IDLE dialog.  The maximum height for a screen is determined by
+   momentarily maximizing a window the first time one is zoomed on the screen.
+   Changing screen settings may invalidate the saved height.  This toogle has
+   no effect when a window is maximized.
 
 Window menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -700,6 +717,9 @@ If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
 IDLE's changes are lost and input from the keyboard and output to the screen
 will not work correctly.
 
+When user code raises SystemExit either directly or by calling sys.exit, IDLE
+returns to a Shell prompt instead of exiting.
+
 User output in Shell
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -769,7 +789,7 @@ facilitate development of tkinter programs.  Enter ``import tkinter as tk;
 root = tk.Tk()`` in standard Python and nothing appears.  Enter the same
 in IDLE and a tk window appears.  In standard Python, one must also enter
 ``root.update()`` to see the window.  IDLE does the equivalent in the
-background, about 20 times a second, which is about every 50 milleseconds.
+background, about 20 times a second, which is about every 50 milliseconds.
 Next enter ``b = tk.Button(root, text='button'); b.pack()``.  Again,
 nothing visibly changes in standard Python until one enters ``root.update()``.
 

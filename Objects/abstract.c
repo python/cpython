@@ -1373,6 +1373,13 @@ PyNumber_Long(PyObject *o)
         }
         return result;
     }
+    if (m && m->nb_index) {
+        result = _PyLong_FromNbIndexOrNbInt(o);
+        if (result != NULL && !PyLong_CheckExact(result)) {
+            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
+        }
+        return result;
+    }
     trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
     if (trunc_func) {
         result = _PyObject_CallNoArg(trunc_func);
@@ -1478,6 +1485,18 @@ PyNumber_Float(PyObject *o)
         }
         val = PyFloat_AS_DOUBLE(res);
         Py_DECREF(res);
+        return PyFloat_FromDouble(val);
+    }
+    if (m && m->nb_index) {
+        PyObject *res = PyNumber_Index(o);
+        if (!res) {
+            return NULL;
+        }
+        double val = PyLong_AsDouble(res);
+        Py_DECREF(res);
+        if (val == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
         return PyFloat_FromDouble(val);
     }
     if (PyFloat_Check(o)) { /* A float subclass with nb_float == NULL */

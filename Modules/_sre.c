@@ -2594,10 +2594,10 @@ static PyTypeObject Pattern_Type = {
     "re.Pattern",
     sizeof(PatternObject), sizeof(SRE_CODE),
     (destructor)pattern_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)pattern_repr,             /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -2672,10 +2672,10 @@ static PyTypeObject Match_Type = {
     "re.Match",
     sizeof(MatchObject), sizeof(Py_ssize_t),
     (destructor)match_dealloc,  /* tp_dealloc */
-    0,                          /* tp_print */
+    0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
-    0,                          /* tp_reserved */
+    0,                          /* tp_as_async */
     (reprfunc)match_repr,       /* tp_repr */
     0,                          /* tp_as_number */
     0,                          /* tp_as_sequence */
@@ -2716,10 +2716,10 @@ static PyTypeObject Scanner_Type = {
     "_" SRE_MODULE ".SRE_Scanner",
     sizeof(ScannerObject), 0,
     (destructor)scanner_dealloc,/* tp_dealloc */
-    0,                          /* tp_print */
+    0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
-    0,                          /* tp_reserved */
+    0,                          /* tp_as_async */
     0,                          /* tp_repr */
     0,                          /* tp_as_number */
     0,                          /* tp_as_sequence */

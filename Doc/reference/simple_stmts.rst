@@ -329,10 +329,10 @@ Annotated assignment statements
 statement, of a variable or attribute annotation and an optional assignment statement:
 
 .. productionlist::
-   annotated_assignment_stmt: `augtarget` ":" `expression` ["=" `expression`]
+   annotated_assignment_stmt: `augtarget` ":" `expression`
+                            : ["=" (`starred_expression` | `yield_expression`)]
 
-The difference from normal :ref:`assignment` is that only single target and
-only single right hand side value is allowed.
+The difference from normal :ref:`assignment` is that only single target is allowed.
 
 For simple names as assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
@@ -365,6 +365,11 @@ target, then the interpreter evaluates the target except for the last
       The proposal that added the :mod:`typing` module to provide a standard
       syntax for type annotations that can be used in static analysis tools and
       IDEs.
+
+.. versionchanged:: 3.8
+   Now annotated assignments allow same expressions in the right hand side as
+   the regular assignments. Previously, some expressions (like un-parenthesized
+   tuple expressions) caused a syntax error.
 
 
 .. _assert:

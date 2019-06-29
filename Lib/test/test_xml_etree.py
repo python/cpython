@@ -1144,14 +1144,9 @@ class ElementTreeTest(unittest.TestCase):
 
         # tests from the xml specification
         check("*", ['*'])
-        check("{ns}*", ['{ns}*'])
-        check("{}*", ['{}*'])
-        check("{*}tag", ['{*}tag'])
-        check("{*}*", ['{*}*'])
         check("text()", ['text', '()'])
         check("@name", ['@', 'name'])
         check("@*", ['@', '*'])
-        check("@{ns}attr", ['@', '{ns}attr'])
         check("para[1]", ['para', '[', '1', ']'])
         check("para[last()]", ['para', '[', 'last', '()', ']'])
         check("*/para", ['*', '/', 'para'])
@@ -1163,7 +1158,6 @@ class ElementTreeTest(unittest.TestCase):
         check("//olist/item", ['//', 'olist', '/', 'item'])
         check(".", ['.'])
         check(".//para", ['.', '//', 'para'])
-        check(".//{*}tag", ['.', '//', '{*}tag'])
         check("..", ['..'])
         check("../@lang", ['..', '/', '@', 'lang'])
         check("chapter[title]", ['chapter', '[', 'title', ']'])
@@ -1171,11 +1165,32 @@ class ElementTreeTest(unittest.TestCase):
               '[', '@', 'secretary', '', 'and', '', '@', 'assistant', ']'])
 
         # additional tests
+        check("@{ns}attr", ['@', '{ns}attr'])
         check("{http://spam}egg", ['{http://spam}egg'])
         check("./spam.egg", ['.', '/', 'spam.egg'])
         check(".//{http://spam}egg", ['.', '//', '{http://spam}egg'])
+
+        # wildcard tags
+        check("{ns}*", ['{ns}*'])
+        check("{}*", ['{}*'])
+        check("{*}tag", ['{*}tag'])
+        check("{*}*", ['{*}*'])
+        check(".//{*}tag", ['.', '//', '{*}tag'])
+
+        # namespace prefix resolution
         check("./xsd:type", ['.', '/', '{http://www.w3.org/2001/XMLSchema}type'],
               {'xsd': 'http://www.w3.org/2001/XMLSchema'})
+        check("type", ['{http://www.w3.org/2001/XMLSchema}type'],
+              {'': 'http://www.w3.org/2001/XMLSchema'})
+        check("@xsd:type", ['@', '{http://www.w3.org/2001/XMLSchema}type'],
+              {'xsd': 'http://www.w3.org/2001/XMLSchema'})
+        check("@type", ['@', 'type'],
+              {'': 'http://www.w3.org/2001/XMLSchema'})
+        check("@{*}type", ['@', '{*}type'],
+              {'': 'http://www.w3.org/2001/XMLSchema'})
+        check("@{ns}attr", ['@', '{ns}attr'],
+              {'': 'http://www.w3.org/2001/XMLSchema',
+               'ns': 'http://www.w3.org/2001/XMLSchema'})
 
     def test_processinginstruction(self):
         # Test ProcessingInstruction directly

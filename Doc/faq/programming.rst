@@ -554,8 +554,8 @@ desired effect in a number of ways.
 5) Or bundle up values in a class instance::
 
       class callByRef:
-          def __init__(self, **args):
-              for (key, value) in args.items():
+          def __init__(self, /, **args):
+              for key, value in args.items():
                   setattr(self, key, value)
 
       def func4(args):
@@ -792,7 +792,7 @@ Its documentation looks like this::
       invoked using the three argument form.
 
 The slash at the end of the parameter list means that all three parameters are
-positional-only. Thus, calling :func:`pow` with keyword aguments would lead to
+positional-only. Thus, calling :func:`pow` with keyword arguments would lead to
 an error::
 
    >>> pow(x=3, y=4)

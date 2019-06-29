@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(_symtable_symtable__doc__,
-"symtable($module, str, filename, startstr, /)\n"
+"symtable($module, source, filename, startstr, /)\n"
 "--\n"
 "\n"
 "Return symbol and scope dictionaries used internally by compiler.");
@@ -12,33 +12,21 @@ PyDoc_STRVAR(_symtable_symtable__doc__,
     {"symtable", (PyCFunction)(void(*)(void))_symtable_symtable, METH_FASTCALL, _symtable_symtable__doc__},
 
 static PyObject *
-_symtable_symtable_impl(PyObject *module, const char *str,
+_symtable_symtable_impl(PyObject *module, PyObject *source,
                         PyObject *filename, const char *startstr);
 
 static PyObject *
 _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    const char *str;
+    PyObject *source;
     PyObject *filename;
     const char *startstr;
 
     if (!_PyArg_CheckPositional("symtable", nargs, 3, 3)) {
         goto exit;
     }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("symtable", 1, "str", args[0]);
-        goto exit;
-    }
-    Py_ssize_t str_length;
-    str = PyUnicode_AsUTF8AndSize(args[0], &str_length);
-    if (str == NULL) {
-        goto exit;
-    }
-    if (strlen(str) != (size_t)str_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    source = args[0];
     if (!PyUnicode_FSDecoder(args[1], &filename)) {
         goto exit;
     }
@@ -55,9 +43,9 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    return_value = _symtable_symtable_impl(module, str, filename, startstr);
+    return_value = _symtable_symtable_impl(module, source, filename, startstr);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=be1cca59de019984 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de655625eee705f4 input=a9049054013a1b77]*/

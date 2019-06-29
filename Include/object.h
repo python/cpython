@@ -263,17 +263,14 @@ PyAPI_FUNC(void) Py_ReprLeave(PyObject *);
 #define Py_PRINT_RAW    1       /* No string quotes etc. */
 
 /*
-`Type flags (tp_flags)
+Type flags (tp_flags)
 
-These flags are used to extend the type structure in a backwards-compatible
-fashion. Extensions can use the flags to indicate (and test) when a given
-type structure contains a new feature. The Python core will use these when
-introducing new functionality between major revisions (to avoid mid-version
-changes in the PYTHON_API_VERSION).
+These flags are used to change expected features and behavior for a
+particular type.
 
 Arbitration of the flag bit positions will need to be coordinated among
 all extension writers who publicly release their extensions (this will
-be fewer than you might expect!)..
+be fewer than you might expect!).
 
 Most flags were removed as of Python 3.0 to make room for new flags.  (Some
 flags are not for backwards compatibility but to indicate the presence of an
@@ -291,13 +288,18 @@ given type object has a specified feature.
 /* Set if the type allows subclassing */
 #define Py_TPFLAGS_BASETYPE (1UL << 10)
 
+/* Set if the type implements the vectorcall protocol (PEP 590) */
+#ifndef Py_LIMITED_API
+#define _Py_TPFLAGS_HAVE_VECTORCALL (1UL << 11)
+#endif
+
 /* Set if the type is 'ready' -- fully initialized */
 #define Py_TPFLAGS_READY (1UL << 12)
 
 /* Set while the type is being 'readied', to prevent recursive ready calls */
 #define Py_TPFLAGS_READYING (1UL << 13)
 
-/* Objects support garbage collection (see objimp.h) */
+/* Objects support garbage collection (see objimpl.h) */
 #define Py_TPFLAGS_HAVE_GC (1UL << 14)
 
 /* These two bits are preserved for Stackless Python, next after this is 17 */
@@ -306,6 +308,9 @@ given type object has a specified feature.
 #else
 #define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION 0
 #endif
+
+/* Objects behave like an unbound method */
+#define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
 
 /* Objects support type attribute cache */
 #define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
@@ -331,6 +336,11 @@ given type object has a specified feature.
 
 /* NOTE: The following flags reuse lower bits (removed as part of the
  * Python 3.0 transition). */
+
+/* The following flag is kept for compatibility.  Starting with 3.8,
+ * binary compatibility of C extensions accross feature releases of
+ * Python is not supported anymore, except when using the stable ABI.
+ */
 
 /* Type structure has tp_finalize member (3.4) */
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
@@ -649,11 +659,11 @@ times.
 
 When deallocating a container object, it's possible to trigger an unbounded
 chain of deallocations, as each Py_DECREF in turn drops the refcount on "the
-next" object in the chain to 0.  This can easily lead to stack faults, and
+next" object in the chain to 0.  This can easily lead to stack overflows,
 especially in threads (which typically have less stack space to work with).
 
-A container object that participates in cyclic gc can avoid this by
-bracketing the body of its tp_dealloc function with a pair of macros:
+A container object can avoid this by bracketing the body of its tp_dealloc
+function with a pair of macros:
 
 static void
 mytype_dealloc(mytype *p)
@@ -661,14 +671,14 @@ mytype_dealloc(mytype *p)
     ... declarations go here ...
 
     PyObject_GC_UnTrack(p);        // must untrack first
-    Py_TRASHCAN_SAFE_BEGIN(p)
+    Py_TRASHCAN_BEGIN(p, mytype_dealloc)
     ... The body of the deallocator goes here, including all calls ...
     ... to Py_DECREF on contained objects.                         ...
-    Py_TRASHCAN_SAFE_END(p)
+    Py_TRASHCAN_END                // there should be no code after this
 }
 
 CAUTION:  Never return from the middle of the body!  If the body needs to
-"get out early", put a label immediately before the Py_TRASHCAN_SAFE_END
+"get out early", put a label immediately before the Py_TRASHCAN_END
 call, and goto it.  Else the call-depth counter (see below) will stay
 above 0 forever, and the trashcan will never get emptied.
 
@@ -684,6 +694,12 @@ notices this, and calls another routine to deallocate all the objects that
 may have been added to the list of deferred deallocations.  In effect, a
 chain of N deallocations is broken into (N-1)/(PyTrash_UNWIND_LEVEL-1) pieces,
 with the call stack never exceeding a depth of PyTrash_UNWIND_LEVEL.
+
+Since the tp_dealloc of a subclass typically calls the tp_dealloc of the base
+class, we need to ensure that the trashcan is only triggered on the tp_dealloc
+of the actual class being deallocated. Otherwise we might end up with a
+partially-deallocated object. To check this, the tp_dealloc function must be
+passed as second argument to Py_TRASHCAN_BEGIN().
 */
 
 /* The new thread-safe private API, invoked by the macros below. */
@@ -692,20 +708,37 @@ PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(void);
 
 #define PyTrash_UNWIND_LEVEL 50
 
-#define Py_TRASHCAN_SAFE_BEGIN(op) \
+#define Py_TRASHCAN_BEGIN_CONDITION(op, cond) \
     do { \
-        PyThreadState *_tstate = PyThreadState_GET(); \
-        if (_tstate->trash_delete_nesting < PyTrash_UNWIND_LEVEL) { \
-            ++_tstate->trash_delete_nesting;
-            /* The body of the deallocator is here. */
-#define Py_TRASHCAN_SAFE_END(op) \
+        PyThreadState *_tstate = NULL; \
+        /* If "cond" is false, then _tstate remains NULL and the deallocator \
+         * is run normally without involving the trashcan */ \
+        if (cond) { \
+            _tstate = PyThreadState_GET(); \
+            if (_tstate->trash_delete_nesting >= PyTrash_UNWIND_LEVEL) { \
+                /* Store the object (to be deallocated later) and jump past \
+                 * Py_TRASHCAN_END, skipping the body of the deallocator */ \
+                _PyTrash_thread_deposit_object(_PyObject_CAST(op)); \
+                break; \
+            } \
+            ++_tstate->trash_delete_nesting; \
+        }
+        /* The body of the deallocator is here. */
+#define Py_TRASHCAN_END \
+        if (_tstate) { \
             --_tstate->trash_delete_nesting; \
             if (_tstate->trash_delete_later && _tstate->trash_delete_nesting <= 0) \
                 _PyTrash_thread_destroy_chain(); \
         } \
-        else \
-            _PyTrash_thread_deposit_object(_PyObject_CAST(op)); \
     } while (0);
+
+#define Py_TRASHCAN_BEGIN(op, dealloc) Py_TRASHCAN_BEGIN_CONDITION(op, \
+        Py_TYPE(op)->tp_dealloc == (destructor)(dealloc))
+
+/* For backwards compatibility, these macros enable the trashcan
+ * unconditionally */
+#define Py_TRASHCAN_SAFE_BEGIN(op) Py_TRASHCAN_BEGIN_CONDITION(op, 1)
+#define Py_TRASHCAN_SAFE_END(op) Py_TRASHCAN_END
 
 
 #ifndef Py_LIMITED_API

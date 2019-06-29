@@ -52,6 +52,8 @@ For example, ``'[?]'`` matches the character ``'?'``.
    more directories and subdirectories.  If the pattern is followed by an
    ``os.sep``, only directories and subdirectories match.
 
+   .. audit-event:: glob.glob pathname,recursive glob.glob
+
    .. note::
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
@@ -64,6 +66,8 @@ For example, ``'[?]'`` matches the character ``'?'``.
 
    Return an :term:`iterator` which yields the same values as :func:`glob`
    without actually storing them all simultaneously.
+
+   .. audit-event:: glob.glob pathname,recursive glob.iglob
 
 
 .. function:: escape(pathname)

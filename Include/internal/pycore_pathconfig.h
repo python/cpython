@@ -37,21 +37,25 @@ typedef struct _PyPathConfig {
 
 PyAPI_DATA(_PyPathConfig) _Py_path_config;
 
-PyAPI_FUNC(void) _PyPathConfig_ClearGlobal(void);
-PyAPI_FUNC(_PyInitError) _PyPathConfig_SetGlobal(
-    const struct _PyPathConfig *config);
+extern void _PyPathConfig_ClearGlobal(void);
+extern PyStatus _PyPathConfig_SetGlobal(
+    const struct _PyPathConfig *pathconfig);
 
-PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate_impl(
-    _PyPathConfig *config,
-    const _PyCoreConfig *core_config);
-PyAPI_FUNC(int) _PyPathConfig_ComputeSysPath0(
-    const _PyWstrList *argv,
+extern PyStatus _PyPathConfig_Calculate(
+    _PyPathConfig *pathconfig,
+    const PyConfig *config);
+extern int _PyPathConfig_ComputeSysPath0(
+    const PyWideStringList *argv,
     PyObject **path0);
-PyAPI_FUNC(int) _Py_FindEnvConfigValue(
+extern int _Py_FindEnvConfigValue(
     FILE *env_file,
     const wchar_t *key,
     wchar_t *value,
     size_t value_size);
+
+#ifdef MS_WINDOWS
+extern wchar_t* _Py_GetDLLPath(void);
+#endif
 
 #ifdef __cplusplus
 }

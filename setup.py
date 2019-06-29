@@ -43,6 +43,7 @@ HOST_PLATFORM = get_platform()
 MS_WINDOWS = (HOST_PLATFORM == 'win32')
 CYGWIN = (HOST_PLATFORM == 'cygwin')
 MACOS = (HOST_PLATFORM == 'darwin')
+AIX = (HOST_PLATFORM.startswith('aix'))
 VXWORKS = ('vxworks' in HOST_PLATFORM)
 
 
@@ -125,19 +126,57 @@ def sysroot_paths(make_vars, subdirs):
                 break
     return dirs
 
+MACOS_SDK_ROOT = None
 
 def macosx_sdk_root():
+    """Return the directory of the current macOS SDK.
+
+    If no SDK was explicitly configured, call the compiler to find which
+    include files paths are being searched by default.  Use '/' if the
+    compiler is searching /usr/include (meaning system header files are
+    installed) or use the root of an SDK if that is being searched.
+    (The SDK may be supplied via Xcode or via the Command Line Tools).
+    The SDK paths used by Apple-supplied tool chains depend on the
+    setting of various variables; see the xcrun man page for more info.
     """
-    Return the directory of the current OSX SDK,
-    or '/' if no SDK was specified.
-    """
+    global MACOS_SDK_ROOT
+
+    # If already called, return cached result.
+    if MACOS_SDK_ROOT:
+        return MACOS_SDK_ROOT
+
     cflags = sysconfig.get_config_var('CFLAGS')
     m = re.search(r'-isysroot\s+(\S+)', cflags)
-    if m is None:
-        sysroot = '/'
+    if m is not None:
+        MACOS_SDK_ROOT = m.group(1)
     else:
-        sysroot = m.group(1)
-    return sysroot
+        MACOS_SDK_ROOT = '/'
+        cc = sysconfig.get_config_var('CC')
+        tmpfile = '/tmp/setup_sdk_root.%d' % os.getpid()
+        try:
+            os.unlink(tmpfile)
+        except:
+            pass
+        ret = os.system('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
+        in_incdirs = False
+        try:
+            if ret >> 8 == 0:
+                with open(tmpfile) as fp:
+                    for line in fp.readlines():
+                        if line.startswith("#include <...>"):
+                            in_incdirs = True
+                        elif line.startswith("End of search list"):
+                            in_incdirs = False
+                        elif in_incdirs:
+                            line = line.strip()
+                            if line == '/usr/include':
+                                MACOS_SDK_ROOT = '/'
+                            elif line.endswith(".sdk/usr/include"):
+                                MACOS_SDK_ROOT = line[:-12]
+        finally:
+            os.unlink(tmpfile)
+
+    return MACOS_SDK_ROOT
 
 
 def is_macosx_sdk_path(path):
@@ -767,7 +806,9 @@ class PyBuildExt(build_ext):
         if (self.config_h_vars.get('HAVE_GETSPNAM', False) or
                 self.config_h_vars.get('HAVE_GETSPENT', False)):
             self.add(Extension('spwd', ['spwdmodule.c']))
-        else:
+        # AIX has shadow passwords, but access is not via getspent(), etc.
+        # module support is not expected so it not 'missing'
+        elif not AIX:
             self.missing.append('spwd')
 
         # select(2); not on ancient System V
@@ -871,6 +912,10 @@ class PyBuildExt(build_ext):
             curses_library = readline_termcap_library
         elif self.compiler.find_library_file(self.lib_dirs, 'ncursesw'):
             curses_library = 'ncursesw'
+        # Issue 36210: OSS provided ncurses does not link on AIX
+        # Use IBM supplied 'curses' for successful build of _curses
+        elif AIX and self.compiler.find_library_file(self.lib_dirs, 'curses'):
+            curses_library = 'curses'
         elif self.compiler.find_library_file(self.lib_dirs, 'ncurses'):
             curses_library = 'ncurses'
         elif self.compiler.find_library_file(self.lib_dirs, 'curses'):
@@ -966,13 +1011,15 @@ class PyBuildExt(build_ext):
             self.missing.append('_curses')
 
         # If the curses module is enabled, check for the panel module
-        if (curses_enabled and
-            self.compiler.find_library_file(self.lib_dirs, panel_library)):
+        # _curses_panel needs some form of ncurses
+        skip_curses_panel = True if AIX else False
+        if (curses_enabled and not skip_curses_panel and
+                self.compiler.find_library_file(self.lib_dirs, panel_library)):
             self.add(Extension('_curses_panel', ['_curses_panel.c'],
-                               include_dirs=curses_includes,
-                               define_macros=curses_defines,
-                               libraries=[panel_library, *curses_libs]))
-        else:
+                           include_dirs=curses_includes,
+                           define_macros=curses_defines,
+                           libraries=[panel_library, *curses_libs]))
+        elif not skip_curses_panel:
             self.missing.append('_curses_panel')
 
     def detect_crypt(self):
@@ -1425,7 +1472,7 @@ class PyBuildExt(build_ext):
         # Platform-specific libraries
         if HOST_PLATFORM.startswith(('linux', 'freebsd', 'gnukfreebsd')):
             self.add(Extension('ossaudiodev', ['ossaudiodev.c']))
-        else:
+        elif not AIX:
             self.missing.append('ossaudiodev')
 
         if MACOS:
@@ -2178,11 +2225,13 @@ class PyBuildExt(build_ext):
             ssl_incs.extend(krb5_h)
 
         if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
-            self.add(Extension('_ssl', ['_ssl.c'],
-                               include_dirs=openssl_includes,
-                               library_dirs=openssl_libdirs,
-                               libraries=openssl_libs,
-                               depends=['socketmodule.h']))
+            self.add(Extension(
+                '_ssl', ['_ssl.c'],
+                include_dirs=openssl_includes,
+                library_dirs=openssl_libdirs,
+                libraries=openssl_libs,
+                depends=['socketmodule.h', '_ssl/debughelpers.c'])
+            )
         else:
             self.missing.append('_ssl')
 

@@ -6,6 +6,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
@@ -368,10 +369,10 @@ static PyTypeObject _PyExc_BaseException = {
     sizeof(PyBaseExceptionObject), /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     (destructor)BaseException_dealloc, /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /* tp_reserved; */
+    0,                          /*tp_as_async*/
     (reprfunc)BaseException_repr, /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2498,13 +2499,13 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif
 #endif /* MS_WINDOWS */
 
-_PyInitError
+PyStatus
 _PyExc_Init(void)
 {
 #define PRE_INIT(TYPE) \
     if (!(_PyExc_ ## TYPE.tp_flags & Py_TPFLAGS_READY)) { \
         if (PyType_Ready(&_PyExc_ ## TYPE) < 0) { \
-            return _Py_INIT_ERR("exceptions bootstrapping error."); \
+            return _PyStatus_ERR("exceptions bootstrapping error."); \
         } \
         Py_INCREF(PyExc_ ## TYPE); \
     }
@@ -2514,7 +2515,7 @@ _PyExc_Init(void)
         PyObject *_code = PyLong_FromLong(CODE); \
         assert(_PyObject_RealIsSubclass(PyExc_ ## TYPE, PyExc_OSError)); \
         if (!_code || PyDict_SetItem(errnomap, _code, PyExc_ ## TYPE)) \
-            return _Py_INIT_ERR("errmap insertion problem."); \
+            return _PyStatus_ERR("errmap insertion problem."); \
         Py_DECREF(_code); \
     } while (0)
 
@@ -2588,14 +2589,14 @@ _PyExc_Init(void)
     PRE_INIT(TimeoutError);
 
     if (preallocate_memerrors() < 0) {
-        return _Py_INIT_ERR("Could not preallocate MemoryError object");
+        return _PyStatus_ERR("Could not preallocate MemoryError object");
     }
 
     /* Add exceptions to errnomap */
     if (!errnomap) {
         errnomap = PyDict_New();
         if (!errnomap) {
-            return _Py_INIT_ERR("Cannot allocate map from errnos to OSError subclasses");
+            return _PyStatus_ERR("Cannot allocate map from errnos to OSError subclasses");
         }
     }
 
@@ -2621,7 +2622,7 @@ _PyExc_Init(void)
     ADD_ERRNO(ProcessLookupError, ESRCH);
     ADD_ERRNO(TimeoutError, ETIMEDOUT);
 
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 
 #undef PRE_INIT
 #undef ADD_ERRNO
@@ -2629,12 +2630,12 @@ _PyExc_Init(void)
 
 
 /* Add exception types to the builtins module */
-_PyInitError
+PyStatus
 _PyBuiltins_AddExceptions(PyObject *bltinmod)
 {
 #define POST_INIT(TYPE) \
     if (PyDict_SetItemString(bdict, # TYPE, PyExc_ ## TYPE)) { \
-        return _Py_INIT_ERR("Module dictionary insertion problem."); \
+        return _PyStatus_ERR("Module dictionary insertion problem."); \
     }
 
 #define INIT_ALIAS(NAME, TYPE) \
@@ -2643,7 +2644,7 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
         Py_XDECREF(PyExc_ ## NAME); \
         PyExc_ ## NAME = PyExc_ ## TYPE; \
         if (PyDict_SetItemString(bdict, # NAME, PyExc_ ## NAME)) { \
-            return _Py_INIT_ERR("Module dictionary insertion problem."); \
+            return _PyStatus_ERR("Module dictionary insertion problem."); \
         } \
     } while (0)
 
@@ -2651,7 +2652,7 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
 
     bdict = PyModule_GetDict(bltinmod);
     if (bdict == NULL) {
-        return _Py_INIT_ERR("exceptions bootstrapping error.");
+        return _PyStatus_ERR("exceptions bootstrapping error.");
     }
 
     POST_INIT(BaseException);
@@ -2728,7 +2729,7 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     POST_INIT(ProcessLookupError);
     POST_INIT(TimeoutError);
 
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 
 #undef POST_INIT
 #undef INIT_ALIAS

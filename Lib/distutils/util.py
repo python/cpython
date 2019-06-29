@@ -40,6 +40,8 @@ def get_host_platform():
             return 'win-amd64'
         if '(arm)' in sys.version.lower():
             return 'win-arm32'
+        if '(arm64)' in sys.version.lower():
+            return 'win-arm64'
         return sys.platform
 
     # Set for cross builds explicitly

@@ -485,7 +485,9 @@ def _is_gui_available():
     if hasattr(_is_gui_available, 'result'):
         return _is_gui_available.result
     reason = None
-    if sys.platform.startswith('win'):
+    if sys.platform.startswith('win') and platform.win32_is_iot():
+        reason = "gui is not available on Windows IoT Core"
+    elif sys.platform.startswith('win'):
         # if Python is running as a service (such as the buildbot service),
         # gui interaction may be disallowed
         import ctypes
@@ -1006,7 +1008,7 @@ def temp_dir(path=None, quiet=False):
         yield path
     finally:
         # In case the process forks, let only the parent remove the
-        # directory. The child has a diffent process id. (bpo-30028)
+        # directory. The child has a different process id. (bpo-30028)
         if dir_created and pid == os.getpid():
             rmtree(path)
 
@@ -3034,3 +3036,47 @@ def collision_stats(nbins, nballs):
         collisions = k - occupied
         var = dn*(dn-1)*((dn-2)/dn)**k + meanempty * (1 - meanempty)
         return float(collisions), float(var.sqrt())
+
+
+class catch_unraisable_exception:
+    """
+    Context manager catching unraisable exception using sys.unraisablehook.
+
+    Storing the exception value (cm.unraisable.exc_value) creates a reference
+    cycle. The reference cycle is broken explicitly when the context manager
+    exits.
+
+    Storing the object (cm.unraisable.object) can resurrect it if it is set to
+    an object which is being finalized. Exiting the context manager clears the
+    stored object.
+
+    Usage:
+
+        with support.catch_unraisable_exception() as cm:
+            # code creating an "unraisable exception"
+            ...
+
+            # check the unraisable exception: use cm.unraisable
+            ...
+
+        # cm.unraisable attribute no longer exists at this point
+        # (to break a reference cycle)
+    """
+
+    def __init__(self):
+        self.unraisable = None
+        self._old_hook = None
+
+    def _hook(self, unraisable):
+        # Storing unraisable.object can resurrect an object which is being
+        # finalized. Storing unraisable.exc_value creates a reference cycle.
+        self.unraisable = unraisable
+
+    def __enter__(self):
+        self._old_hook = sys.unraisablehook
+        sys.unraisablehook = self._hook
+        return self
+
+    def __exit__(self, *exc_info):
+        sys.unraisablehook = self._old_hook
+        del self.unraisable

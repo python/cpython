@@ -1,13 +1,13 @@
 """Test suite for the cProfile module."""
 
 import sys
-from test.support import run_unittest, TESTFN, unlink
 import unittest
 
 # rip off all interesting stuff from test_profile
 import cProfile
 from test.test_profile import ProfileTest, regenerate_expected_output
 from test.support.script_helper import assert_python_failure, assert_python_ok
+from test import support
 
 
 class CProfileTest(ProfileTest):
@@ -18,24 +18,18 @@ class CProfileTest(ProfileTest):
     def get_expected_output(self):
         return _ProfileOutput
 
-    # Issue 3895.
     def test_bad_counter_during_dealloc(self):
+        # bpo-3895
         import _lsprof
-        # Must use a file as StringIO doesn't trigger the bug.
-        orig_stderr = sys.stderr
-        try:
-            with open(TESTFN, 'w') as file:
-                sys.stderr = file
-                try:
-                    obj = _lsprof.Profiler(lambda: int)
-                    obj.enable()
-                    obj = _lsprof.Profiler(1)
-                    obj.disable()
-                    obj.clear()
-                finally:
-                    sys.stderr = orig_stderr
-        finally:
-            unlink(TESTFN)
+
+        with support.catch_unraisable_exception() as cm:
+            obj = _lsprof.Profiler(lambda: int)
+            obj.enable()
+            obj = _lsprof.Profiler(1)
+            obj.disable()
+            obj.clear()
+
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
 
     def test_profile_enable_disable(self):
         prof = self.profilerclass()
@@ -70,12 +64,10 @@ class TestCommandLine(unittest.TestCase):
         self.assertGreater(rc, 0)
         self.assertIn(b"option -s: invalid choice: 'demo'", err)
 
-def test_main():
-    run_unittest(CProfileTest, TestCommandLine)
 
 def main():
     if '-r' not in sys.argv:
-        test_main()
+        unittest.main()
     else:
         regenerate_expected_output(__file__, CProfileTest)
 

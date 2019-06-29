@@ -4,6 +4,8 @@
 Creating Built Distributions
 ****************************
 
+.. include:: ./_setuptools_disclaimer.rst
+
 A "built distribution" is what you're probably used to thinking of either as a
 "binary package" or an "installer" (depending on your background).  It's not
 necessarily binary, though, because it might contain only Python source code

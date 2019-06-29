@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+# There are tests here with unicode string literals and
+# identifiers. There's a code in ast.c that was added because of a
+# failure with a non-ascii-only expression.  So, I have tests for
+# that.  There are workarounds that would let me run tests for that
+# code without unicode identifiers and strings, but just using them
+# directly seems like the easiest and therefore safest thing to do.
+# Unicode identifiers in tests is allowed by PEP 3131.
+
 import ast
 import types
 import decimal
@@ -878,6 +887,12 @@ non-important content
         self.assertEqual(f'{3!=4!s}', 'True')
         self.assertEqual(f'{3!=4!s:.3}', 'Tru')
 
+    def test_equal_equal(self):
+        # Because an expression ending in = has special meaning,
+        # there's a special test for ==. Make sure it works.
+
+        self.assertEqual(f'{0==1}', 'False')
+
     def test_conversions(self):
         self.assertEqual(f'{3.14:10.10}', '      3.14')
         self.assertEqual(f'{3.14!s:10.10}', '3.14      ')
@@ -1048,6 +1063,120 @@ non-important content
         # See bpo-30682: this used to raise an assert in pydebug mode.
         self.assertEqual(eval('f"\\\n"'), '')
         self.assertEqual(eval('f"\\\r"'), '')
+
+    def test_debug_conversion(self):
+        x = 'A string'
+        self.assertEqual(f'{x=}', 'x=' + repr(x))
+        self.assertEqual(f'{x =}', 'x =' + repr(x))
+        self.assertEqual(f'{x=!s}', 'x=' + str(x))
+        self.assertEqual(f'{x=!r}', 'x=' + repr(x))
+        self.assertEqual(f'{x=!a}', 'x=' + ascii(x))
+
+        x = 2.71828
+        self.assertEqual(f'{x=:.2f}', 'x=' + format(x, '.2f'))
+        self.assertEqual(f'{x=:}', 'x=' + format(x, ''))
+        self.assertEqual(f'{x=!r:^20}', 'x=' + format(repr(x), '^20'))
+        self.assertEqual(f'{x=!s:^20}', 'x=' + format(str(x), '^20'))
+        self.assertEqual(f'{x=!a:^20}', 'x=' + format(ascii(x), '^20'))
+
+        x = 9
+        self.assertEqual(f'{3*x+15=}', '3*x+15=42')
+
+        # There is code in ast.c that deals with non-ascii expression values.  So,
+        # use a unicode identifier to trigger that.
+        tenπ = 31.4
+        self.assertEqual(f'{tenπ=:.2f}', 'tenπ=31.40')
+
+        # Also test with Unicode in non-identifiers.
+        self.assertEqual(f'{"Σ"=}', '"Σ"=\'Σ\'')
+
+        # Make sure nested fstrings still work.
+        self.assertEqual(f'{f"{3.1415=:.1f}":*^20}', '*****3.1415=3.1*****')
+
+        # Make sure text before and after an expression with = works
+        # correctly.
+        pi = 'π'
+        self.assertEqual(f'alpha α {pi=} ω omega', "alpha α pi='π' ω omega")
+
+        # Check multi-line expressions.
+        self.assertEqual(f'''{
+3
+=}''', '\n3\n=3')
+
+        # Since = is handled specially, make sure all existing uses of
+        # it still work.
+
+        self.assertEqual(f'{0==1}', 'False')
+        self.assertEqual(f'{0!=1}', 'True')
+        self.assertEqual(f'{0<=1}', 'True')
+        self.assertEqual(f'{0>=1}', 'False')
+        self.assertEqual(f'{(x:="5")}', '5')
+        self.assertEqual(x, '5')
+        self.assertEqual(f'{(x:=5)}', '5')
+        self.assertEqual(x, 5)
+        self.assertEqual(f'{"="}', '=')
+
+        x = 20
+        # This isn't an assignment expression, it's 'x', with a format
+        # spec of '=10'.  See test_walrus: you need to use parens.
+        self.assertEqual(f'{x:=10}', '        20')
+
+        # Test named function parameters, to make sure '=' parsing works
+        # there.
+        def f(a):
+            nonlocal x
+            oldx = x
+            x = a
+            return oldx
+        x = 0
+        self.assertEqual(f'{f(a="3=")}', '0')
+        self.assertEqual(x, '3=')
+        self.assertEqual(f'{f(a=4)}', '3=')
+        self.assertEqual(x, 4)
+
+        # Make sure __format__ is being called.
+        class C:
+            def __format__(self, s):
+                return f'FORMAT-{s}'
+            def __repr__(self):
+                return 'REPR'
+
+        self.assertEqual(f'{C()=}', 'C()=REPR')
+        self.assertEqual(f'{C()=!r}', 'C()=REPR')
+        self.assertEqual(f'{C()=:}', 'C()=FORMAT-')
+        self.assertEqual(f'{C()=: }', 'C()=FORMAT- ')
+        self.assertEqual(f'{C()=:x}', 'C()=FORMAT-x')
+        self.assertEqual(f'{C()=!r:*^20}', 'C()=********REPR********')
+
+        self.assertRaises(SyntaxError, eval, "f'{C=]'")
+
+        # Make sure leading and following text works.
+        x = 'foo'
+        self.assertEqual(f'X{x=}Y', 'Xx='+repr(x)+'Y')
+
+        # Make sure whitespace around the = works.
+        self.assertEqual(f'X{x  =}Y', 'Xx  ='+repr(x)+'Y')
+        self.assertEqual(f'X{x=  }Y', 'Xx=  '+repr(x)+'Y')
+        self.assertEqual(f'X{x  =  }Y', 'Xx  =  '+repr(x)+'Y')
+
+        # These next lines contains tabs.  Backslash escapes don't
+        # work in f-strings.
+        # patchcheck doens't like these tabs.  So the only way to test
+        # this will be to dynamically created and exec the f-strings.  But
+        # that's such a hassle I'll save it for another day.  For now, convert
+        # the tabs to spaces just to shut up patchcheck.
+        #self.assertEqual(f'X{x =}Y', 'Xx\t='+repr(x)+'Y')
+        #self.assertEqual(f'X{x =       }Y', 'Xx\t=\t'+repr(x)+'Y')
+
+    def test_walrus(self):
+        x = 20
+        # This isn't an assignment expression, it's 'x', with a format
+        # spec of '=10'.
+        self.assertEqual(f'{x:=10}', '        20')
+
+        # This is an assignment expression, which requires parens.
+        self.assertEqual(f'{(x:=10)}', '10')
+        self.assertEqual(x, 10)
 
 
 if __name__ == '__main__':

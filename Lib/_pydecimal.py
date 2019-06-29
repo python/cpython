@@ -5631,8 +5631,6 @@ class _WorkRep(object):
     def __repr__(self):
         return "(%r, %r, %r)" % (self.sign, self.int, self.exp)
 
-    __str__ = __repr__
-
 
 
 def _normalize(op1, op2, prec = 0):

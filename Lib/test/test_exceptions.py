@@ -12,6 +12,9 @@ from test.support import (TESTFN, captured_stderr, check_impl_detail,
                           check_warnings, cpython_only, gc_collect, run_unittest,
                           no_tracing, unlink, import_module, script_helper,
                           SuppressCrashReport)
+from test import support
+
+
 class NaiveException(Exception):
     def __init__(self, x):
         self.x = x
@@ -1181,29 +1184,12 @@ class ExceptionTests(unittest.TestCase):
                 # The following line is included in the traceback report:
                 raise exc
 
-        class BrokenExceptionDel:
-            def __del__(self):
-                exc = BrokenStrException()
-                # The following line is included in the traceback report:
-                raise exc
+        obj = BrokenDel()
+        with support.catch_unraisable_exception() as cm:
+            del obj
 
-        for test_class in (BrokenDel, BrokenExceptionDel):
-            with self.subTest(test_class):
-                obj = test_class()
-                with captured_stderr() as stderr:
-                    del obj
-                report = stderr.getvalue()
-                self.assertIn("Exception ignored", report)
-                self.assertIn(test_class.__del__.__qualname__, report)
-                self.assertIn("test_exceptions.py", report)
-                self.assertIn("raise exc", report)
-                if test_class is BrokenExceptionDel:
-                    self.assertIn("BrokenStrException", report)
-                    self.assertIn("<exception str() failed>", report)
-                else:
-                    self.assertIn("ValueError", report)
-                    self.assertIn("del is broken", report)
-                self.assertTrue(report.endswith("\n"))
+            self.assertEqual(cm.unraisable.object, BrokenDel.__del__)
+            self.assertIsNotNone(cm.unraisable.exc_traceback)
 
     def test_unhandled(self):
         # Check for sensible reporting of unhandled exceptions

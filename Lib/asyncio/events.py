@@ -79,7 +79,9 @@ class Handle:
     def _run(self):
         try:
             self._context.run(self._callback, *self._args)
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             cb = format_helpers._format_callback_source(
                 self._callback, self._args)
             msg = f'Exception in callback {cb}'

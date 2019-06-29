@@ -135,17 +135,22 @@ used than UTF-8.)  UTF-8 uses the following rules:
 UTF-8 has several convenient properties:
 
 1. It can handle any Unicode code point.
-2. A Unicode string is turned into a sequence of bytes containing no embedded zero
-   bytes.  This avoids byte-ordering issues, and means UTF-8 strings can be
-   processed by C functions such as ``strcpy()`` and sent through protocols that
-   can't handle zero bytes.
+2. A Unicode string is turned into a sequence of bytes that contains embedded
+   zero bytes only where they represent the null character (U+0000). This means
+   that UTF-8 strings can be processed by C functions such as ``strcpy()`` and sent
+   through protocols that can't handle zero bytes for anything other than
+   end-of-string markers.
 3. A string of ASCII text is also valid UTF-8 text.
 4. UTF-8 is fairly compact; the majority of commonly used characters can be
    represented with one or two bytes.
 5. If bytes are corrupted or lost, it's possible to determine the start of the
    next UTF-8-encoded code point and resynchronize.  It's also unlikely that
    random 8-bit data will look like valid UTF-8.
-
+6. UTF-8 is a byte oriented encoding. The encoding specifies that each
+   character is represented by a specific sequence of one or more bytes. This
+   avoids the byte-ordering issues that can occur with integer and word oriented
+   encodings, like UTF-16 and UTF-32, where the sequence of bytes varies depending
+   on the hardware on which the string was encoded.
 
 
 References
@@ -157,7 +162,7 @@ difficult reading.  `A chronology <http://www.unicode.org/history/>`_ of the
 origin and development of Unicode is also available on the site.
 
 On the Computerphile Youtube channel, Tom Scott briefly
-`discusses the history of Unicode and UTF-8 <https://www.youtube.com/watch?v=MijmeoH9LT4>`
+`discusses the history of Unicode and UTF-8 <https://www.youtube.com/watch?v=MijmeoH9LT4>`_
 (9 minutes 36 seconds).
 
 To help understand the standard, Jukka Korpela has written `an introductory

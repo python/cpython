@@ -12,7 +12,7 @@ database keys are tuples (config-type, section, item).  As implemented,
 there are  separate dicts for default and user values.  Each has
 config-type keys 'main', 'extensions', 'highlight', and 'keys'.  The
 value for each key is a ConfigParser instance that maps section and item
-to values.  For 'main' and 'extenstons', user values override
+to values.  For 'main' and 'extensions', user values override
 default values.  For 'highlight' and 'keys', user sections augment the
 default sections (and must, therefore, have distinct names).
 
@@ -591,7 +591,9 @@ class IdleConf:
     former_extension_events = {  #  Those with user-configurable keys.
         '<<force-open-completions>>', '<<expand-word>>',
         '<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>',
-         '<<run-module>>', '<<check-module>>', '<<zoom-height>>'}
+         '<<run-module>>', '<<check-module>>', '<<zoom-height>>',
+         '<<run-custom>>',
+         }
 
     def GetCoreKeys(self, keySetName=None):
         """Return dict of core virtual-key keybindings for keySetName.
@@ -658,6 +660,7 @@ class IdleConf:
             '<<flash-paren>>': ['<Control-Key-0>'],
             '<<format-paragraph>>': ['<Alt-Key-q>'],
             '<<run-module>>': ['<Key-F5>'],
+            '<<run-custom>>': ['<Shift-Key-F5>'],
             '<<check-module>>': ['<Alt-Key-x>'],
             '<<zoom-height>>': ['<Alt-Key-2>'],
             }
