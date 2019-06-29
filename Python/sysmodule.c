@@ -2879,6 +2879,7 @@ _PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
     COPY_LIST("path", config->module_search_paths);
 
     SET_SYS_FROM_WSTR("executable", config->executable);
+    SET_SYS_FROM_WSTR("_base_executable", config->base_executable);
     SET_SYS_FROM_WSTR("prefix", config->prefix);
     SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
     SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
