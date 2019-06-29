@@ -99,6 +99,7 @@ Local naming conventions:
 # pragma weak inet_aton
 #endif
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h"
 
@@ -308,8 +309,44 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 #  include <fcntl.h>
 # endif
 
+/* Macros based on the IPPROTO enum, see: https://bugs.python.org/issue29515 */
+#ifdef MS_WINDOWS
+#define IPPROTO_ICMP IPPROTO_ICMP
+#define IPPROTO_IGMP IPPROTO_IGMP
+#define IPPROTO_GGP IPPROTO_GGP
+#define IPPROTO_TCP IPPROTO_TCP
+#define IPPROTO_PUP IPPROTO_PUP
+#define IPPROTO_UDP IPPROTO_UDP
+#define IPPROTO_IDP IPPROTO_IDP
+#define IPPROTO_ND IPPROTO_ND
+#define IPPROTO_RAW IPPROTO_RAW
+#define IPPROTO_MAX IPPROTO_MAX
+#define IPPROTO_HOPOPTS IPPROTO_HOPOPTS
+#define IPPROTO_IPV4 IPPROTO_IPV4
+#define IPPROTO_IPV6 IPPROTO_IPV6
+#define IPPROTO_ROUTING IPPROTO_ROUTING
+#define IPPROTO_FRAGMENT IPPROTO_FRAGMENT
+#define IPPROTO_ESP IPPROTO_ESP
+#define IPPROTO_AH IPPROTO_AH
+#define IPPROTO_ICMPV6 IPPROTO_ICMPV6
+#define IPPROTO_NONE IPPROTO_NONE
+#define IPPROTO_DSTOPTS IPPROTO_DSTOPTS
+#define IPPROTO_EGP IPPROTO_EGP
+#define IPPROTO_PIM IPPROTO_PIM
+#define IPPROTO_ICLFXBM IPPROTO_ICLFXBM  // WinSock2 only
+#define IPPROTO_ST IPPROTO_ST  // WinSock2 only
+#define IPPROTO_CBT IPPROTO_CBT  // WinSock2 only
+#define IPPROTO_IGP IPPROTO_IGP  // WinSock2 only
+#define IPPROTO_RDP IPPROTO_RDP  // WinSock2 only
+#define IPPROTO_PGM IPPROTO_PGM  // WinSock2 only
+#define IPPROTO_L2TP IPPROTO_L2TP  // WinSock2 only
+#define IPPROTO_SCTP IPPROTO_SCTP  // WinSock2 only
+#endif /* MS_WINDOWS */
+
 /* Provides the IsWindows7SP1OrGreater() function */
 #include <versionhelpers.h>
+// For if_nametoindex() and if_indextoname()
+#include <iphlpapi.h>
 
 /* remove some flags on older version Windows during run-time.
    https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx */
@@ -355,7 +392,7 @@ remove_unusable_flags(PyObject *m)
 
     for (int i=0; i<sizeof(win_runtime_flags)/sizeof(FlagRuntimeInfo); i++) {
         info.dwBuildNumber = win_runtime_flags[i].build_number;
-        /* greater than or equal to the specified version? 
+        /* greater than or equal to the specified version?
            Compatibility Mode will not cheat VerifyVersionInfo(...) */
         if (VerifyVersionInfo(
                 &info,
@@ -1414,7 +1451,7 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
                              a->sll_pkttype,
                              a->sll_hatype,
                              a->sll_addr,
-                             a->sll_halen);
+                             (Py_ssize_t)a->sll_halen);
     }
 #endif /* HAVE_NETPACKET_PACKET_H && SIOCGIFNAME */
 
@@ -3018,6 +3055,11 @@ sock_bind(PySocketSockObject *s, PyObject *addro)
     if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen, "bind")) {
         return NULL;
     }
+
+    if (PySys_Audit("socket.bind", "OO", s, addro) < 0) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     res = bind(s->sock_fd, SAS2SA(&addrbuf), addrlen);
     Py_END_ALLOW_THREADS
@@ -3184,6 +3226,10 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
         return NULL;
     }
 
+    if (PySys_Audit("socket.connect", "OO", s, addro) < 0) {
+        return NULL;
+    }
+
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 1);
     if (res < 0)
         return NULL;
@@ -3208,6 +3254,10 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
     int res;
 
     if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen, "connect_ex")) {
+        return NULL;
+    }
+
+    if (PySys_Audit("socket.connect", "OO", s, addro) < 0) {
         return NULL;
     }
 
@@ -4198,7 +4248,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
             break;
         default:
             PyErr_Format(PyExc_TypeError,
-                         "sendto() takes 2 or 3 arguments (%d given)",
+                         "sendto() takes 2 or 3 arguments (%zd given)",
                          arglen);
             return NULL;
     }
@@ -4210,6 +4260,10 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
 
     if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen, "sendto")) {
         PyBuffer_Release(&pbuf);
+        return NULL;
+    }
+
+    if (PySys_Audit("socket.sendto", "OO", s, addro) < 0) {
         return NULL;
     }
 
@@ -4344,8 +4398,15 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
         {
             goto finally;
         }
+        if (PySys_Audit("socket.sendmsg", "OO", s, addr_arg) < 0) {
+            return NULL;
+        }
         msg.msg_name = &addrbuf;
         msg.msg_namelen = addrlen;
+    } else {
+        if (PySys_Audit("socket.sendmsg", "OO", s, Py_None) < 0) {
+            return NULL;
+        }
     }
 
     /* Fill in an iovec for each message part, and save the Py_buffer
@@ -4741,7 +4802,7 @@ sock_ioctl(PySocketSockObject *s, PyObject *arg)
         return PyLong_FromUnsignedLong(recv); }
 #endif
     default:
-        PyErr_Format(PyExc_ValueError, "invalid ioctl command %d", cmd);
+        PyErr_Format(PyExc_ValueError, "invalid ioctl command %lu", cmd);
         return NULL;
     }
 }
@@ -4995,6 +5056,17 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
                                      &family, &type, &proto, &fdobj))
         return -1;
 
+#ifdef MS_WINDOWS
+    /* In this case, we don't use the family, type and proto args */
+    if (fdobj != NULL && fdobj != Py_None)
+#endif
+    {
+        if (PySys_Audit("socket.__new__", "Oiii",
+                        s, family, type, proto) < 0) {
+            return -1;
+        }
+    }
+
     if (fdobj != NULL && fdobj != Py_None) {
 #ifdef MS_WINDOWS
         /* recreate a socket that was duplicated */
@@ -5007,6 +5079,12 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
                 return -1;
             }
             memcpy(&info, PyBytes_AS_STRING(fdobj), sizeof(info));
+
+            if (PySys_Audit("socket()", "iii", info.iAddressFamily,
+                            info.iSocketType, info.iProtocol) < 0) {
+                return -1;
+            }
+
             Py_BEGIN_ALLOW_THREADS
             fd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
                      FROM_PROTOCOL_INFO, &info, 0, WSA_FLAG_OVERLAPPED);
@@ -5196,10 +5274,10 @@ static PyTypeObject sock_type = {
     sizeof(PySocketSockObject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)sock_dealloc,                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)sock_repr,                        /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -5210,8 +5288,7 @@ static PyTypeObject sock_type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_FINALIZE,             /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
     sock_doc,                                   /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -5249,6 +5326,10 @@ static PyTypeObject sock_type = {
 static PyObject *
 socket_gethostname(PyObject *self, PyObject *unused)
 {
+    if (PySys_Audit("socket.gethostname", NULL) < 0) {
+        return NULL;
+    }
+
 #ifdef MS_WINDOWS
     /* Don't use winsock's gethostname, as this returns the ANSI
        version of the hostname, whereas we need a Unicode string.
@@ -5327,6 +5408,11 @@ extern int sethostname(const char *, size_t);
             return NULL;
         flag = 1;
     }
+
+    if (PySys_Audit("socket.sethostname", "(O)", hnobj) < 0) {
+        return NULL;
+    }
+
     res = PyObject_GetBuffer(hnobj, &buf, PyBUF_SIMPLE);
     if (!res) {
         res = sethostname(buf.buf, buf.len);
@@ -5352,6 +5438,9 @@ socket_gethostbyname(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "et:gethostbyname", "idna", &name))
         return NULL;
+    if (PySys_Audit("socket.gethostbyname", "O", args) < 0) {
+        goto finally;
+    }
     if (setipaddr(name, (struct sockaddr *)&addrbuf,  sizeof(addrbuf), AF_INET) < 0)
         goto finally;
     ret = make_ipv4_addr(&addrbuf);
@@ -5536,6 +5625,9 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "et:gethostbyname_ex", "idna", &name))
         return NULL;
+    if (PySys_Audit("socket.gethostbyname", "O", args) < 0) {
+        goto finally;
+    }
     if (setipaddr(name, SAS2SA(&addr), sizeof(addr), AF_INET) < 0)
         goto finally;
     Py_BEGIN_ALLOW_THREADS
@@ -5614,6 +5706,9 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "et:gethostbyaddr", "idna", &ip_num))
         return NULL;
+    if (PySys_Audit("socket.gethostbyaddr", "O", args) < 0) {
+        goto finally;
+    }
     af = AF_UNSPEC;
     if (setipaddr(ip_num, sa, sizeof(addr), af) < 0)
         goto finally;
@@ -5685,6 +5780,11 @@ socket_getservbyname(PyObject *self, PyObject *args)
     struct servent *sp;
     if (!PyArg_ParseTuple(args, "s|s:getservbyname", &name, &proto))
         return NULL;
+
+    if (PySys_Audit("socket.getservbyname", "ss", name, proto) < 0) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     sp = getservbyname(name, proto);
     Py_END_ALLOW_THREADS
@@ -5722,6 +5822,11 @@ socket_getservbyport(PyObject *self, PyObject *args)
             "getservbyport: port must be 0-65535.");
         return NULL;
     }
+
+    if (PySys_Audit("socket.getservbyport", "is", port, proto) < 0) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     sp = getservbyport(htons((short)port), proto);
     Py_END_ALLOW_THREADS
@@ -6357,6 +6462,12 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         pptr = "00";
     }
 #endif
+
+    if (PySys_Audit("socket.getaddrinfo", "OOiii",
+                    hobj, pobj, family, socktype, protocol) < 0) {
+        return NULL;
+    }
+
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = family;
     hints.ai_socktype = socktype;
@@ -6448,6 +6559,11 @@ socket_getnameinfo(PyObject *self, PyObject *args)
                         "getnameinfo(): flowinfo must be 0-1048575.");
         return NULL;
     }
+
+    if (PySys_Audit("socket.getnameinfo", "(O)", sa) < 0) {
+        return NULL;
+    }
+
     PyOS_snprintf(pbuf, sizeof(pbuf), "%d", port);
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -6553,25 +6669,53 @@ Set the default timeout in seconds (float) for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
 When the socket module is first imported, the default is None.");
 
-#ifdef HAVE_IF_NAMEINDEX
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 /* Python API for getting interface indices and names */
 
 static PyObject *
 socket_if_nameindex(PyObject *self, PyObject *arg)
 {
-    PyObject *list;
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        return NULL;
+    }
+#ifdef MS_WINDOWS
+    PMIB_IF_TABLE2 tbl;
+    int ret;
+    if ((ret = GetIfTable2Ex(MibIfTableRaw, &tbl)) != NO_ERROR) {
+        Py_DECREF(list);
+        // ret is used instead of GetLastError()
+        return PyErr_SetFromWindowsErr(ret);
+    }
+    for (ULONG i = 0; i < tbl->NumEntries; ++i) {
+        MIB_IF_ROW2 r = tbl->Table[i];
+        WCHAR buf[NDIS_IF_MAX_STRING_SIZE + 1];
+        if ((ret = ConvertInterfaceLuidToNameW(&r.InterfaceLuid, buf,
+                                               Py_ARRAY_LENGTH(buf)))) {
+            Py_DECREF(list);
+            FreeMibTable(tbl);
+            // ret is used instead of GetLastError()
+            return PyErr_SetFromWindowsErr(ret);
+        }
+        PyObject *tuple = Py_BuildValue("Iu", r.InterfaceIndex, buf);
+        if (tuple == NULL || PyList_Append(list, tuple) == -1) {
+            Py_XDECREF(tuple);
+            Py_DECREF(list);
+            FreeMibTable(tbl);
+            return NULL;
+        }
+        Py_DECREF(tuple);
+    }
+    FreeMibTable(tbl);
+    return list;
+#else
     int i;
     struct if_nameindex *ni;
 
     ni = if_nameindex();
     if (ni == NULL) {
+        Py_DECREF(list);
         PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
-    }
-
-    list = PyList_New(0);
-    if (list == NULL) {
-        if_freenameindex(ni);
         return NULL;
     }
 
@@ -6606,6 +6750,7 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
 
     if_freenameindex(ni);
     return list;
+#endif
 }
 
 PyDoc_STRVAR(if_nameindex_doc,
@@ -6617,8 +6762,11 @@ static PyObject *
 socket_if_nametoindex(PyObject *self, PyObject *args)
 {
     PyObject *oname;
+#ifdef MS_WINDOWS
+    NET_IFINDEX index;
+#else
     unsigned long index;
-
+#endif
     if (!PyArg_ParseTuple(args, "O&:if_nametoindex",
                           PyUnicode_FSConverter, &oname))
         return NULL;
@@ -6642,7 +6790,11 @@ Returns the interface index corresponding to the interface name if_name.");
 static PyObject *
 socket_if_indextoname(PyObject *self, PyObject *arg)
 {
+#ifdef MS_WINDOWS
+    NET_IFINDEX index;
+#else
     unsigned long index;
+#endif
     char name[IF_NAMESIZE + 1];
 
     index = PyLong_AsUnsignedLong(arg);
@@ -6662,7 +6814,7 @@ PyDoc_STRVAR(if_indextoname_doc,
 \n\
 Returns the interface name corresponding to the interface index if_index.");
 
-#endif  /* HAVE_IF_NAMEINDEX */
+#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 
 
 #ifdef CMSG_LEN
@@ -6784,7 +6936,7 @@ static PyMethodDef socket_methods[] = {
      METH_NOARGS, getdefaulttimeout_doc},
     {"setdefaulttimeout",       socket_setdefaulttimeout,
      METH_O, setdefaulttimeout_doc},
-#ifdef HAVE_IF_NAMEINDEX
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
     {"if_nameindex", socket_if_nameindex,
      METH_NOARGS, if_nameindex_doc},
     {"if_nametoindex", socket_if_nametoindex,
@@ -7585,6 +7737,17 @@ PyInit__socket(void)
 #else
     PyModule_AddIntConstant(m, "IPPROTO_UDP", 17);
 #endif
+#ifdef  IPPROTO_UDPLITE
+    PyModule_AddIntMacro(m, IPPROTO_UDPLITE);
+    #ifndef UDPLITE_SEND_CSCOV
+        #define UDPLITE_SEND_CSCOV 10
+    #endif
+    PyModule_AddIntMacro(m, UDPLITE_SEND_CSCOV);
+    #ifndef UDPLITE_RECV_CSCOV
+        #define UDPLITE_RECV_CSCOV 11
+    #endif
+    PyModule_AddIntMacro(m, UDPLITE_RECV_CSCOV);
+#endif
 #ifdef  IPPROTO_IDP
     PyModule_AddIntMacro(m, IPPROTO_IDP);
 #endif
@@ -7656,6 +7819,17 @@ PyInit__socket(void)
 #endif
 #ifdef  IPPROTO_MAX
     PyModule_AddIntMacro(m, IPPROTO_MAX);
+#endif
+
+#ifdef  MS_WINDOWS
+    PyModule_AddIntMacro(m, IPPROTO_ICLFXBM);
+    PyModule_AddIntMacro(m, IPPROTO_ST);
+    PyModule_AddIntMacro(m, IPPROTO_CBT);
+    PyModule_AddIntMacro(m, IPPROTO_IGP);
+    PyModule_AddIntMacro(m, IPPROTO_RDP);
+    PyModule_AddIntMacro(m, IPPROTO_PGM);
+    PyModule_AddIntMacro(m, IPPROTO_L2TP);
+    PyModule_AddIntMacro(m, IPPROTO_SCTP);
 #endif
 
 #ifdef  SYSPROTO_CONTROL

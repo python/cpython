@@ -1,0 +1,3 @@
+Updated encodings:
+- Removed the "tis260" encoding, which was an alias for the nonexistent "tactis" codec.
+- Added "mac_centeuro" as an alias for the mac_latin2 encoding.

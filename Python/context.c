@@ -592,12 +592,12 @@ _contextvars_Context_keys_impl(PyContext *self)
 /*[clinic input]
 _contextvars.Context.values
 
-Return a list of all variables’ values in the context object.
+Return a list of all variables' values in the context object.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_values_impl(PyContext *self)
-/*[clinic end generated code: output=d286dabfc8db6dde input=6c3d08639ba3bf67]*/
+/*[clinic end generated code: output=d286dabfc8db6dde input=ce8075d04a6ea526]*/
 {
     return _PyHamt_NewIterValues(self->ctx_vars);
 }
@@ -631,7 +631,7 @@ context_run(PyContext *self, PyObject *const *args,
         return NULL;
     }
 
-    PyObject *call_result = _PyObject_FastCallKeywords(
+    PyObject *call_result = _PyObject_Vectorcall(
         args[0], args + 1, nargs - 1, kwnames);
 
     if (PyContext_Exit((PyObject *)self)) {

@@ -1250,7 +1250,6 @@ cm(x) method of builtins.type instance
         class X:
             attr = Descr()
 
-        text = pydoc.plain(pydoc.render_doc(X.attr))
         self.assertEqual(self._get_summary_lines(X.attr), """\
 <test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
 
@@ -1276,22 +1275,42 @@ foo(...)
         class X:
             attr = Descr()
 
-        text = pydoc.plain(pydoc.render_doc(X.attr))
         self.assertEqual(self._get_summary_lines(X.attr), "")
 
         X.attr.__doc__ = 'Custom descriptor'
-        text = pydoc.plain(pydoc.render_doc(X.attr))
         self.assertEqual(self._get_summary_lines(X.attr), """\
     Custom descriptor
 """)
 
         X.attr.__name__ = 'foo'
-        text = pydoc.plain(pydoc.render_doc(X.attr))
         self.assertEqual(self._get_summary_lines(X.attr), """\
 foo
     Custom descriptor
 """)
 
+    def test_async_annotation(self):
+        async def coro_function(ign) -> int:
+            return 1
+
+        text = pydoc.plain(pydoc.plaintext.document(coro_function))
+        self.assertIn('async coro_function', text)
+
+        html = pydoc.HTMLDoc().document(coro_function)
+        self.assertIn(
+            'async <a name="-coro_function"><strong>coro_function',
+            html)
+
+    def test_async_generator_annotation(self):
+        async def an_async_generator():
+            yield 1
+
+        text = pydoc.plain(pydoc.plaintext.document(an_async_generator))
+        self.assertIn('async an_async_generator', text)
+
+        html = pydoc.HTMLDoc().document(an_async_generator)
+        self.assertIn(
+            'async <a name="-an_async_generator"><strong>an_async_generator',
+            html)
 
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""

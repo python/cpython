@@ -462,8 +462,7 @@ class BaseTestUUID:
         with unittest.mock.patch.multiple(
             self.uuid,
             _node=None,  # Ignore any cached node value.
-            _NODE_GETTERS_WIN32=[too_large_getter],
-            _NODE_GETTERS_UNIX=[too_large_getter],
+            _GETTERS=[too_large_getter],
         ):
             node = self.uuid.getnode()
         self.assertTrue(0 < node < (1 << 48), '%012x' % node)
@@ -673,7 +672,7 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 
 
 class BaseTestInternals:
-    uuid = None
+    _uuid = py_uuid
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_find_mac(self):
@@ -708,27 +707,32 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         self.assertTrue(0 < node < (1 << 48),
                         "%s is not an RFC 4122 node ID" % hex)
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._ifconfig_getnode in _uuid._GETTERS,
+        "ifconfig is not used for introspection on this platform")
     def test_ifconfig_getnode(self):
         node = self.uuid._ifconfig_getnode()
         self.check_node(node, 'ifconfig')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._ip_getnode in _uuid._GETTERS,
+        "ip is not used for introspection on this platform")
     def test_ip_getnode(self):
         node = self.uuid._ip_getnode()
         self.check_node(node, 'ip')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._arp_getnode in _uuid._GETTERS,
+        "arp is not used for introspection on this platform")
     def test_arp_getnode(self):
         node = self.uuid._arp_getnode()
         self.check_node(node, 'arp')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._lanscan_getnode in _uuid._GETTERS,
+        "lanscan is not used for introspection on this platform")
     def test_lanscan_getnode(self):
         node = self.uuid._lanscan_getnode()
         self.check_node(node, 'lanscan')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._netstat_getnode in _uuid._GETTERS,
+        "netstat is not used for introspection on this platform")
     def test_netstat_getnode(self):
         node = self.uuid._netstat_getnode()
         self.check_node(node, 'netstat')

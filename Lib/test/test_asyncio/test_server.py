@@ -46,8 +46,9 @@ class BaseStartServer(func_tests.FunctionalTestCaseMixin):
             async with srv:
                 await srv.serve_forever()
 
-        srv = self.loop.run_until_complete(asyncio.start_server(
-            serve, support.HOSTv4, 0, loop=self.loop, start_serving=False))
+        with self.assertWarns(DeprecationWarning):
+            srv = self.loop.run_until_complete(asyncio.start_server(
+                serve, support.HOSTv4, 0, loop=self.loop, start_serving=False))
 
         self.assertFalse(srv.is_serving())
 
@@ -58,7 +59,7 @@ class BaseStartServer(func_tests.FunctionalTestCaseMixin):
             with self.tcp_client(lambda sock: client(sock, addr)):
                 self.loop.run_until_complete(main_task)
 
-        self.assertEqual(srv.sockets, [])
+        self.assertEqual(srv.sockets, ())
 
         self.assertIsNone(srv._sockets)
         self.assertIsNone(srv._waiters)
@@ -73,7 +74,7 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
     def new_loop(self):
         return asyncio.SelectorEventLoop()
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'no Unix sockets')
+    @support.skip_unless_bind_unix_socket
     def test_start_unix_server_1(self):
         HELLO_MSG = b'1' * 1024 * 5 + b'\n'
         started = threading.Event()
@@ -102,8 +103,9 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
                 await srv.serve_forever()
 
         with test_utils.unix_socket_path() as addr:
-            srv = self.loop.run_until_complete(asyncio.start_unix_server(
-                serve, addr, loop=self.loop, start_serving=False))
+            with self.assertWarns(DeprecationWarning):
+                srv = self.loop.run_until_complete(asyncio.start_unix_server(
+                    serve, addr, loop=self.loop, start_serving=False))
 
             main_task = self.loop.create_task(main(srv))
 
@@ -111,7 +113,7 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
                 with self.unix_client(lambda sock: client(sock, addr)):
                     self.loop.run_until_complete(main_task)
 
-            self.assertEqual(srv.sockets, [])
+            self.assertEqual(srv.sockets, ())
 
             self.assertIsNone(srv._sockets)
             self.assertIsNone(srv._waiters)

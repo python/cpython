@@ -109,16 +109,17 @@ newEVPobject(PyObject *name)
         return NULL;
     }
 
-    retval->ctx = EVP_MD_CTX_new();
-    if (retval->ctx == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
     /* save the name for .name to return */
     Py_INCREF(name);
     retval->name = name;
     retval->lock = NULL;
+
+    retval->ctx = EVP_MD_CTX_new();
+    if (retval->ctx == NULL) {
+        Py_DECREF(retval);
+        PyErr_NoMemory();
+        return NULL;
+    }
 
     return retval;
 }
@@ -182,6 +183,7 @@ EVP_copy_impl(EVPobject *self)
         return NULL;
 
     if (!locked_EVP_MD_CTX_copy(newobj->ctx, self)) {
+        Py_DECREF(newobj);
         return _setException(PyExc_ValueError);
     }
     return (PyObject *)newobj;
@@ -366,10 +368,10 @@ static PyTypeObject EVPtype = {
     0,                  /*tp_itemsize*/
     /* methods */
     (destructor)EVP_dealloc, /*tp_dealloc*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     (reprfunc)EVP_repr, /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
@@ -773,7 +775,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     if (!retval) {
         /* sorry, can't do much better */
         PyErr_SetString(PyExc_ValueError,
-                        "Invalid paramemter combination for n, r, p, maxmem.");
+                        "Invalid parameter combination for n, r, p, maxmem.");
         return NULL;
    }
 

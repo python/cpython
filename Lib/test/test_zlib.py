@@ -914,7 +914,7 @@ LAERTES
 
 
 class CustomInt:
-    def __int__(self):
+    def __index__(self):
         return 100
 
 

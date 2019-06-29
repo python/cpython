@@ -65,6 +65,15 @@ PyDoc_STRVAR(math_fsum__doc__,
 #define MATH_FSUM_METHODDEF    \
     {"fsum", (PyCFunction)math_fsum, METH_O, math_fsum__doc__},
 
+PyDoc_STRVAR(math_isqrt__doc__,
+"isqrt($module, n, /)\n"
+"--\n"
+"\n"
+"Return the integer part of the square root of the input.");
+
+#define MATH_ISQRT_METHODDEF    \
+    {"isqrt", (PyCFunction)math_isqrt, METH_O, math_isqrt__doc__},
+
 PyDoc_STRVAR(math_factorial__doc__,
 "factorial($module, x, /)\n"
 "--\n"
@@ -536,17 +545,44 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
-    static _PyArg_Parser _parser = {"dd|$dd:isclose", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "isclose", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     double a;
     double b;
     double rel_tol = 1e-09;
     double abs_tol = 0.0;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &a, &b, &rel_tol, &abs_tol)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    a = PyFloat_AsDouble(args[0]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+    b = PyFloat_AsDouble(args[1]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[2]) {
+        rel_tol = PyFloat_AsDouble(args[2]);
+        if (PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    abs_tol = PyFloat_AsDouble(args[3]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
     _return_value = math_isclose_impl(module, a, b, rel_tol, abs_tol);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -556,4 +592,132 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0664f30046da09fe input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(math_prod__doc__,
+"prod($module, iterable, /, *, start=1)\n"
+"--\n"
+"\n"
+"Calculate the product of all the elements in the input iterable.\n"
+"\n"
+"The default start value for the product is 1.\n"
+"\n"
+"When the iterable is empty, return the start value.  This function is\n"
+"intended specifically for use with numeric values and may reject\n"
+"non-numeric types.");
+
+#define MATH_PROD_METHODDEF    \
+    {"prod", (PyCFunction)(void(*)(void))math_prod, METH_FASTCALL|METH_KEYWORDS, math_prod__doc__},
+
+static PyObject *
+math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start);
+
+static PyObject *
+math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "start", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "prod", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *iterable;
+    PyObject *start = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    iterable = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    start = args[1];
+skip_optional_kwonly:
+    return_value = math_prod_impl(module, iterable, start);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_perm__doc__,
+"perm($module, n, k=None, /)\n"
+"--\n"
+"\n"
+"Number of ways to choose k items from n items without repetition and with order.\n"
+"\n"
+"Evaluates to n! / (n - k)! when k <= n and evaluates\n"
+"to zero when k > n.\n"
+"\n"
+"If k is not specified or is None, then k defaults to n\n"
+"and the function returns n!.\n"
+"\n"
+"Raises TypeError if either of the arguments are not integers.\n"
+"Raises ValueError if either of the arguments are negative.");
+
+#define MATH_PERM_METHODDEF    \
+    {"perm", (PyCFunction)(void(*)(void))math_perm, METH_FASTCALL, math_perm__doc__},
+
+static PyObject *
+math_perm_impl(PyObject *module, PyObject *n, PyObject *k);
+
+static PyObject *
+math_perm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *n;
+    PyObject *k = Py_None;
+
+    if (!_PyArg_CheckPositional("perm", nargs, 1, 2)) {
+        goto exit;
+    }
+    n = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    k = args[1];
+skip_optional:
+    return_value = math_perm_impl(module, n, k);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_comb__doc__,
+"comb($module, n, k, /)\n"
+"--\n"
+"\n"
+"Number of ways to choose k items from n items without repetition and without order.\n"
+"\n"
+"Evaluates to n! / (k! * (n - k)!) when k <= n and evaluates\n"
+"to zero when k > n.\n"
+"\n"
+"Also called the binomial coefficient because it is equivalent\n"
+"to the coefficient of k-th term in polynomial expansion of the\n"
+"expression (1 + x)**n.\n"
+"\n"
+"Raises TypeError if either of the arguments are not integers.\n"
+"Raises ValueError if either of the arguments are negative.");
+
+#define MATH_COMB_METHODDEF    \
+    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL, math_comb__doc__},
+
+static PyObject *
+math_comb_impl(PyObject *module, PyObject *n, PyObject *k);
+
+static PyObject *
+math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *n;
+    PyObject *k;
+
+    if (!_PyArg_CheckPositional("comb", nargs, 2, 2)) {
+        goto exit;
+    }
+    n = args[0];
+    k = args[1];
+    return_value = math_comb_impl(module, n, k);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=0eb1e76a769cdd30 input=a9049054013a1b77]*/

@@ -76,7 +76,8 @@ menudefs = {
    ('Python Shell', '<<open-python-shell>>'),
    ('C_heck Module', '<<check-module>>'),
    ('R_un Module', '<<run-module>>'),
-   ],
+   ('Run... _Customized', '<<run-custom>>'),
+   ]),
 
  'shell': [
    ('_View Last Restart', '<<view-restart>>'),

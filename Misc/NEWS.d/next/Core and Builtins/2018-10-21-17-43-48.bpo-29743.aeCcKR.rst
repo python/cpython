@@ -1,4 +1,0 @@
-Raise :exc:`ValueError` instead of :exc:`OverflowError` in case of a negative
-``_length_`` in a :class:`ctypes.Array` subclass.  Also raise :exc:`TypeError`
-instead of :exc:`AttributeError` for non-integer ``_length_``.
-Original patch by Oren Milman.

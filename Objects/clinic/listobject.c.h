@@ -156,7 +156,15 @@ PyDoc_STRVAR(list_sort__doc__,
 "sort($self, /, *, key=None, reverse=False)\n"
 "--\n"
 "\n"
-"Stable sort *IN PLACE*.");
+"Sort the list in ascending order and return None.\n"
+"\n"
+"The sort is in-place (i.e. the list itself is modified) and stable (i.e. the\n"
+"order of two equal elements is maintained).\n"
+"\n"
+"If a key function is given, apply it once to each list item and sort them,\n"
+"ascending or descending, according to their function values.\n"
+"\n"
+"The reverse flag can be set to sort in descending order.");
 
 #define LIST_SORT_METHODDEF    \
     {"sort", (PyCFunction)(void(*)(void))list_sort, METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},
@@ -169,14 +177,35 @@ list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "reverse", NULL};
-    static _PyArg_Parser _parser = {"|$Oi:sort", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sort", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *keyfunc = Py_None;
     int reverse = 0;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &keyfunc, &reverse)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[0]) {
+        keyfunc = args[0];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    reverse = _PyLong_AsInt(args[1]);
+    if (reverse == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = list_sort_impl(self, keyfunc, reverse);
 
 exit:
@@ -338,4 +367,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=4a835f9880a72273 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=73718c0c33798c62 input=a9049054013a1b77]*/

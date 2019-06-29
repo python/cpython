@@ -499,9 +499,11 @@ select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask)
     key = PyLong_FromLong(fd);
     if (key == NULL)
         return NULL;
-    if (PyDict_GetItem(self->dict, key) == NULL) {
-        errno = ENOENT;
-        PyErr_SetFromErrno(PyExc_OSError);
+    if (PyDict_GetItemWithError(self->dict, key) == NULL) {
+        if (!PyErr_Occurred()) {
+            errno = ENOENT;
+            PyErr_SetFromErrno(PyExc_OSError);
+        }
         Py_DECREF(key);
         return NULL;
     }
@@ -2217,10 +2219,10 @@ static PyTypeObject poll_Type = {
     0,                          /*tp_itemsize*/
     /* methods */
     (destructor)poll_dealloc, /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                      /*tp_setattr*/
-    0,                          /*tp_reserved*/
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2263,10 +2265,10 @@ static PyTypeObject devpoll_Type = {
     0,                          /*tp_itemsize*/
     /* methods */
     (destructor)devpoll_dealloc, /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_reserved*/
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2315,10 +2317,10 @@ static PyTypeObject pyEpoll_Type = {
     sizeof(pyEpoll_Object),                             /* tp_basicsize */
     0,                                                  /* tp_itemsize */
     (destructor)pyepoll_dealloc,                        /* tp_dealloc */
-    0,                                                  /* tp_print */
+    0,                                                  /* tp_vectorcall_offset */
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */
-    0,                                                  /* tp_reserved */
+    0,                                                  /* tp_as_async */
     0,                                                  /* tp_repr */
     0,                                                  /* tp_as_number */
     0,                                                  /* tp_as_sequence */
@@ -2361,10 +2363,10 @@ static PyTypeObject kqueue_event_Type = {
     sizeof(kqueue_event_Object),                        /* tp_basicsize */
     0,                                                  /* tp_itemsize */
     0,                                                  /* tp_dealloc */
-    0,                                                  /* tp_print */
+    0,                                                  /* tp_vectorcall_offset */
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */
-    0,                                                  /* tp_reserved */
+    0,                                                  /* tp_as_async */
     (reprfunc)kqueue_event_repr,                        /* tp_repr */
     0,                                                  /* tp_as_number */
     0,                                                  /* tp_as_sequence */
@@ -2411,10 +2413,10 @@ static PyTypeObject kqueue_queue_Type = {
     sizeof(kqueue_queue_Object),                        /* tp_basicsize */
     0,                                                  /* tp_itemsize */
     (destructor)kqueue_queue_dealloc,                   /* tp_dealloc */
-    0,                                                  /* tp_print */
+    0,                                                  /* tp_vectorcall_offset */
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */
-    0,                                                  /* tp_reserved */
+    0,                                                  /* tp_as_async */
     0,                                                  /* tp_repr */
     0,                                                  /* tp_as_number */
     0,                                                  /* tp_as_sequence */

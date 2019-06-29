@@ -1,1 +1,0 @@
-Document how passing coroutines to asyncio.wait() can be confusing.

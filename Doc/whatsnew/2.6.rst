@@ -227,7 +227,7 @@ the Python community.
 
 Sphinx is a standalone package that can be used for writing, and
 almost two dozen other projects
-(`listed on the Sphinx web site <http://sphinx-doc.org/examples.html>`__)
+(`listed on the Sphinx web site <https://www.sphinx-doc.org/en/master/examples.html>`__)
 have adopted Sphinx as their documentation tool.
 
 .. seealso::

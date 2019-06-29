@@ -1,0 +1,1 @@
+Fix the cast on error in :c:func:`PyLong_AsUnsignedLongLongMask()`.

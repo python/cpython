@@ -161,6 +161,25 @@ def collect_builtins(info_add):
     info_add('builtins.float.double_format', float.__getformat__("double"))
 
 
+def collect_urandom(info_add):
+    import os
+
+    if hasattr(os, 'getrandom'):
+        # PEP 524: Check if system urandom is initialized
+        try:
+            try:
+                os.getrandom(1, os.GRND_NONBLOCK)
+                state = 'ready (initialized)'
+            except BlockingIOError as exc:
+                state = 'not seeded yet (%s)' % exc
+            info_add('os.getrandom', state)
+        except OSError as exc:
+            # Python was compiled on a more recent Linux version
+            # than the current Linux kernel: ignore OSError(ENOSYS)
+            if exc.errno != errno.ENOSYS:
+                raise
+
+
 def collect_os(info_add):
     import os
 
@@ -180,16 +199,16 @@ def collect_os(info_add):
     )
     copy_attributes(info_add, os, 'os.%s', attributes, formatter=format_attr)
 
-    call_func(info_add, 'os.cwd', os, 'getcwd')
+    call_func(info_add, 'os.getcwd', os, 'getcwd')
 
-    call_func(info_add, 'os.uid', os, 'getuid')
-    call_func(info_add, 'os.gid', os, 'getgid')
+    call_func(info_add, 'os.getuid', os, 'getuid')
+    call_func(info_add, 'os.getgid', os, 'getgid')
     call_func(info_add, 'os.uname', os, 'uname')
 
     def format_groups(groups):
         return ', '.join(map(str, groups))
 
-    call_func(info_add, 'os.groups', os, 'getgroups', formatter=format_groups)
+    call_func(info_add, 'os.getgroups', os, 'getgroups', formatter=format_groups)
 
     if hasattr(os, 'getlogin'):
         try:
@@ -202,7 +221,7 @@ def collect_os(info_add):
             info_add("os.login", login)
 
     call_func(info_add, 'os.cpu_count', os, 'cpu_count')
-    call_func(info_add, 'os.loadavg', os, 'getloadavg')
+    call_func(info_add, 'os.getloadavg', os, 'getloadavg')
 
     # Environment variables used by the stdlib and tests. Don't log the full
     # environment: filter to list to not leak sensitive information.
@@ -286,20 +305,32 @@ def collect_os(info_add):
         os.umask(mask)
         info_add("os.umask", '%03o' % mask)
 
-    if hasattr(os, 'getrandom'):
-        # PEP 524: Check if system urandom is initialized
-        try:
-            try:
-                os.getrandom(1, os.GRND_NONBLOCK)
-                state = 'ready (initialized)'
-            except BlockingIOError as exc:
-                state = 'not seeded yet (%s)' % exc
-            info_add('os.getrandom', state)
-        except OSError as exc:
-            # Python was compiled on a more recent Linux version
-            # than the current Linux kernel: ignore OSError(ENOSYS)
-            if exc.errno != errno.ENOSYS:
-                raise
+
+def collect_pwd(info_add):
+    try:
+        import pwd
+    except ImportError:
+        return
+    import os
+
+    uid = os.getuid()
+    try:
+        entry = pwd.getpwuid(uid)
+    except KeyError:
+        entry = None
+
+    info_add('pwd.getpwuid(%s)'% uid,
+             entry if entry is not None else '<KeyError>')
+
+    if entry is None:
+        # there is nothing interesting to read if the current user identifier
+        # is not the password database
+        return
+
+    if hasattr(os, 'getgrouplist'):
+        groups = os.getgrouplist(entry.pw_name, entry.pw_gid)
+        groups = ', '.join(map(str, groups))
+        info_add('os.getgrouplist', groups)
 
 
 def collect_readline(info_add):
@@ -529,6 +560,8 @@ def collect_resource(info_add):
         value = resource.getrlimit(key)
         info_add('resource.%s' % name, value)
 
+    call_func(info_add, 'resource.pagesize', resource, 'getpagesize')
+
 
 def collect_test_socket(info_add):
     try:
@@ -569,10 +602,17 @@ def collect_cc(info_add):
     except ImportError:
         args = CC.split()
     args.append('--version')
-    proc = subprocess.Popen(args,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            universal_newlines=True)
+    try:
+        proc = subprocess.Popen(args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                universal_newlines=True)
+    except OSError:
+        # Cannot run the compiler, for example when Python has been
+        # cross-compiled and installed on the target platform where the
+        # compiler is missing.
+        return
+
     stdout = proc.communicate()[0]
     if proc.returncode:
         # CC --version failed: ignore error
@@ -593,21 +633,17 @@ def collect_gdbm(info_add):
 
 
 def collect_get_config(info_add):
-    # Dump global configuration variables, _PyCoreConfig
-    # and _PyMainInterpreterConfig
+    # Get global configuration variables, _PyPreConfig and _PyCoreConfig
     try:
-        from _testcapi import get_global_config, get_core_config, get_main_config
+        from _testinternalcapi import get_configs
     except ImportError:
         return
 
-    for prefix, get_config_func in (
-        ('global_config', get_global_config),
-        ('core_config', get_core_config),
-        ('main_config', get_main_config),
-    ):
-        config = get_config_func()
+    all_configs = get_configs()
+    for config_type in sorted(all_configs):
+        config = all_configs[config_type]
         for key in sorted(config):
-            info_add('%s[%s]' % (prefix, key), repr(config[key]))
+            info_add('%s[%s]' % (config_type, key), repr(config[key]))
 
 
 def collect_subprocess(info_add):
@@ -615,36 +651,64 @@ def collect_subprocess(info_add):
     copy_attributes(info_add, subprocess, 'subprocess.%s', ('_USE_POSIX_SPAWN',))
 
 
+def collect_windows(info_add):
+    try:
+        import ctypes
+    except ImportError:
+        return
+
+    if not hasattr(ctypes, 'WinDLL'):
+        return
+
+    ntdll = ctypes.WinDLL('ntdll')
+    BOOLEAN = ctypes.c_ubyte
+
+    try:
+        RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
+    except AttributeError:
+        res = '<function not available>'
+    else:
+        RtlAreLongPathsEnabled.restype = BOOLEAN
+        RtlAreLongPathsEnabled.argtypes = ()
+        res = bool(RtlAreLongPathsEnabled())
+    info_add('windows.RtlAreLongPathsEnabled', res)
+
+
 def collect_info(info):
     error = False
     info_add = info.add
 
     for collect_func in (
-        # collect_os() should be the first, to check the getrandom() status
-        collect_os,
+        # collect_urandom() must be the first, to check the getrandom() status.
+        # Other functions may block on os.urandom() indirectly and so change
+        # its state.
+        collect_urandom,
 
         collect_builtins,
+        collect_cc,
+        collect_datetime,
+        collect_decimal,
+        collect_expat,
         collect_gdb,
+        collect_gdbm,
+        collect_get_config,
         collect_locale,
+        collect_os,
         collect_platform,
+        collect_pwd,
         collect_readline,
+        collect_resource,
         collect_socket,
         collect_sqlite,
         collect_ssl,
+        collect_subprocess,
         collect_sys,
         collect_sysconfig,
-        collect_time,
-        collect_datetime,
-        collect_tkinter,
-        collect_zlib,
-        collect_expat,
-        collect_decimal,
         collect_testcapi,
-        collect_resource,
-        collect_cc,
-        collect_gdbm,
-        collect_get_config,
-        collect_subprocess,
+        collect_time,
+        collect_tkinter,
+        collect_windows,
+        collect_zlib,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,

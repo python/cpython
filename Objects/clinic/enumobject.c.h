@@ -25,14 +25,24 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "start", NULL};
-    static _PyArg_Parser _parser = {"O|O:enumerate", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "enumerate", 0};
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *iterable;
     PyObject *start = 0;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &iterable, &start)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    iterable = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    start = fastargs[1];
+skip_optional_pos:
     return_value = enum_new_impl(type, iterable, start);
 
 exit:
@@ -67,4 +77,4 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=831cec3db0e987c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e18c3fefcf914ec7 input=a9049054013a1b77]*/

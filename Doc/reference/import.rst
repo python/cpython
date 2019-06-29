@@ -345,12 +345,11 @@ of what happens during the loading portion of import::
     _init_module_attrs(spec, module)
 
     if spec.loader is None:
-        if spec.submodule_search_locations is not None:
-            # namespace package
-            sys.modules[spec.name] = module
-        else:
-            # unsupported
-            raise ImportError
+        # unsupported
+        raise ImportError
+    if spec.origin is None and spec.submodule_search_locations is not None:
+        # namespace package
+        sys.modules[spec.name] = module
     elif not hasattr(spec.loader, 'exec_module'):
         module = spec.loader.load_module(spec.name)
         # Set __loader__ and __package__ if missing.
@@ -920,6 +919,46 @@ it is sufficient to raise :exc:`ModuleNotFoundError` directly from
 :meth:`~importlib.abc.MetaPathFinder.find_spec` instead of returning
 ``None``. The latter indicates that the meta path search should continue,
 while raising an exception terminates it immediately.
+
+.. _relativeimports:
+
+Package Relative Imports
+========================
+
+Relative imports use leading dots. A single leading dot indicates a relative
+import, starting with the current package. Two or more leading dots indicate a
+relative import to the parent(s) of the current package, one level per dot
+after the first. For example, given the following package layout::
+
+    package/
+        __init__.py
+        subpackage1/
+            __init__.py
+            moduleX.py
+            moduleY.py
+        subpackage2/
+            __init__.py
+            moduleZ.py
+        moduleA.py
+
+In either ``subpackage1/moduleX.py`` or ``subpackage1/__init__.py``,
+the following are valid relative imports::
+
+    from .moduleY import spam
+    from .moduleY import spam as ham
+    from . import moduleY
+    from ..subpackage1 import moduleY
+    from ..subpackage2.moduleZ import eggs
+    from ..moduleA import foo
+
+Absolute imports may use either the ``import <>`` or ``from <> import <>``
+syntax, but relative imports may only use the second form; the reason
+for this is that::
+
+    import XXX.YYY.ZZZ
+
+should expose ``XXX.YYY.ZZZ`` as a usable expression, but .moduleY is
+not a valid expression.
 
 
 Special considerations for __main__

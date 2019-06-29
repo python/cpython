@@ -1858,6 +1858,15 @@ class TestEnum(unittest.TestCase):
             REVERT_ALL = "REVERT_ALL"
             RETRY = "RETRY"
 
+    def test_empty_globals(self):
+        # bpo-35717: sys._getframe(2).f_globals['__name__'] fails with KeyError
+        # when using compile and exec because f_globals is empty
+        code = "from enum import Enum; Enum('Animal', 'ANT BEE CAT DOG')"
+        code = compile(code, "<string>", "exec")
+        global_ns = {}
+        local_ls = {}
+        exec(code, global_ns, local_ls)
+
 
 class TestOrder(unittest.TestCase):
 
@@ -2721,6 +2730,23 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(256, len(seen), 'too many composite members created')
 
 
+class TestEmptyAndNonLatinStrings(unittest.TestCase):
+
+    def test_empty_string(self):
+        with self.assertRaises(ValueError):
+            empty_abc = Enum('empty_abc', ('', 'B', 'C'))
+
+    def test_non_latin_character_string(self):
+        greek_abc = Enum('greek_abc', ('\u03B1', 'B', 'C'))
+        item = getattr(greek_abc, '\u03B1')
+        self.assertEqual(item.value, 1)
+
+    def test_non_latin_number_string(self):
+        hebrew_123 = Enum('hebrew_123', ('\u05D0', '2', '3'))
+        item = getattr(hebrew_123, '\u05D0')
+        self.assertEqual(item.value, 1)
+
+
 class TestUnique(unittest.TestCase):
 
     def test_unique_clean(self):
@@ -2799,7 +2825,7 @@ class Color(enum.Enum)
  |      The value of the Enum member.
  |\x20\x20
  |  ----------------------------------------------------------------------
- |  Data descriptors inherited from enum.EnumMeta:
+ |  Readonly properties inherited from enum.EnumMeta:
  |\x20\x20
  |  __members__
  |      Returns a mapping of member name->value.

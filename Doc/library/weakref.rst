@@ -65,8 +65,8 @@ exposed by the :mod:`weakref` module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced; those objects which can include class
 instances, functions written in Python (but not in C), instance methods, sets,
-frozensets, some :term:`file objects <file object>`, :term:`generator`\s, type
-objects, sockets, arrays, deques, regular expression pattern objects, and code
+frozensets, some :term:`file objects <file object>`, :term:`generators <generator>`,
+type objects, sockets, arrays, deques, regular expression pattern objects, and code
 objects.
 
 .. versionchanged:: 3.2
@@ -80,9 +80,10 @@ support weak references but can add support through subclassing::
 
    obj = Dict(red=1, green=2, blue=3)   # this object is weak referenceable
 
-Other built-in types such as :class:`tuple` and :class:`int` do not support weak
-references even when subclassed (This is an implementation detail and may be
-different across various Python implementations.).
+.. impl-detail::
+
+   Other built-in types such as :class:`tuple` and :class:`int` do not support weak
+   references even when subclassed.
 
 Extension types can easily be made to support weak references; see
 :ref:`weakref-support`.
@@ -138,6 +139,10 @@ Extension types can easily be made to support weak references; see
    avoids a number of problems related to their fundamentally mutable nature, and
    prevent their use as dictionary keys.  *callback* is the same as the parameter
    of the same name to the :func:`ref` function.
+
+   .. versionchanged:: 3.8
+      Extended the operator support on proxy objects to include the matrix
+      multiplication operators ``@`` and ``@=``.
 
 
 .. function:: getweakrefcount(object)
@@ -236,7 +241,7 @@ objects.
 
    .. versionadded:: 3.4
 
-.. class:: finalize(obj, func, *args, **kwargs)
+.. class:: finalize(obj, func, /, *args, **kwargs)
 
    Return a callable finalizer object which will be called when *obj*
    is garbage collected. Unlike an ordinary weak reference, a finalizer
@@ -392,7 +397,7 @@ the referent is accessed::
    import weakref
 
    class ExtendedRef(weakref.ref):
-       def __init__(self, ob, callback=None, **annotations):
+       def __init__(self, ob, callback=None, /, **annotations):
            super(ExtendedRef, self).__init__(ob, callback)
            self.__counter = 0
            for k, v in annotations.items():
@@ -489,11 +494,14 @@ Unless you set the :attr:`~finalize.atexit` attribute to
 :const:`False`, a finalizer will be called when the program exits if it
 is still alive.  For instance
 
-    >>> obj = Object()
-    >>> weakref.finalize(obj, print, "obj dead or exiting")  #doctest:+ELLIPSIS
-    <finalize object at ...; for 'Object' at ...>
-    >>> exit()                                               #doctest:+SKIP
-    obj dead or exiting
+.. doctest::
+   :options: +SKIP
+
+   >>> obj = Object()
+   >>> weakref.finalize(obj, print, "obj dead or exiting")
+   <finalize object at ...; for 'Object' at ...>
+   >>> exit()
+   obj dead or exiting
 
 
 Comparing finalizers with :meth:`__del__` methods

@@ -384,12 +384,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
 
     if (multiple) {
         /* executemany() */
-        if (!PyArg_ParseTuple(args, "OO", &operation, &second_argument)) {
-            goto error;
-        }
-
-        if (!PyUnicode_Check(operation)) {
-            PyErr_SetString(PyExc_ValueError, "operation parameter must be str");
+        if (!PyArg_ParseTuple(args, "UO", &operation, &second_argument)) {
             goto error;
         }
 
@@ -406,12 +401,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
         }
     } else {
         /* execute() */
-        if (!PyArg_ParseTuple(args, "O|O", &operation, &second_argument)) {
-            goto error;
-        }
-
-        if (!PyUnicode_Check(operation)) {
-            PyErr_SetString(PyExc_ValueError, "operation parameter must be str");
+        if (!PyArg_ParseTuple(args, "U|O", &operation, &second_argument)) {
             goto error;
         }
 
@@ -922,10 +912,10 @@ PyTypeObject pysqlite_CursorType = {
         sizeof(pysqlite_Cursor),                        /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)pysqlite_cursor_dealloc,            /* tp_dealloc */
-        0,                                              /* tp_print */
+        0,                                              /* tp_vectorcall_offset */
         0,                                              /* tp_getattr */
         0,                                              /* tp_setattr */
-        0,                                              /* tp_reserved */
+        0,                                              /* tp_as_async */
         0,                                              /* tp_repr */
         0,                                              /* tp_as_number */
         0,                                              /* tp_as_sequence */

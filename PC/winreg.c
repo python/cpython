@@ -12,6 +12,7 @@
 
 */
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h"
 #include "windows.h"
@@ -354,10 +355,10 @@ PyTypeObject PyHKEY_Type =
     sizeof(PyHKEYObject),
     0,
     PyHKEY_deallocFunc,                 /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     &PyHKEY_NumberMethods,              /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -520,7 +521,7 @@ fixupMultiSZ(wchar_t **str, wchar_t *data, int len)
     Q = data + len;
     for (P = data, i = 0; P < Q && *P != '\0'; P++, i++) {
         str[i] = P;
-        for(; *P != '\0'; P++)
+        for (; P < Q && *P != '\0'; P++)
             ;
     }
 }
@@ -984,10 +985,12 @@ winreg_DeleteKeyEx_impl(PyObject *module, HKEY key,
 
     /* Only available on 64bit platforms, so we must load it
        dynamically. */
+    Py_BEGIN_ALLOW_THREADS
     hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
         pfn = (RDKEFunc)GetProcAddress(hMod,
                                                                    "RegDeleteKeyExW");
+    Py_END_ALLOW_THREADS
     if (!pfn) {
         PyErr_SetString(PyExc_NotImplementedError,
                                         "not implemented on this platform");
@@ -1602,13 +1605,16 @@ winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
     long rc;
 
     if (type != REG_SZ) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Type must be winreg.REG_SZ");
+        PyErr_SetString(PyExc_TypeError, "type must be winreg.REG_SZ");
+        return NULL;
+    }
+    if ((size_t)value_length >= PY_DWORD_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "value is too long");
         return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    rc = RegSetValueW(key, sub_key, REG_SZ, value, value_length+1);
+    rc = RegSetValueW(key, sub_key, REG_SZ, value, (DWORD)(value_length + 1));
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValue");
@@ -1714,10 +1720,12 @@ winreg_DisableReflectionKey_impl(PyObject *module, HKEY key)
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
+    Py_BEGIN_ALLOW_THREADS
     hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
         pfn = (RDRKFunc)GetProcAddress(hMod,
                                        "RegDisableReflectionKey");
+    Py_END_ALLOW_THREADS
     if (!pfn) {
         PyErr_SetString(PyExc_NotImplementedError,
                         "not implemented on this platform");
@@ -1757,10 +1765,12 @@ winreg_EnableReflectionKey_impl(PyObject *module, HKEY key)
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
+    Py_BEGIN_ALLOW_THREADS
     hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
         pfn = (RERKFunc)GetProcAddress(hMod,
                                        "RegEnableReflectionKey");
+    Py_END_ALLOW_THREADS
     if (!pfn) {
         PyErr_SetString(PyExc_NotImplementedError,
                         "not implemented on this platform");
@@ -1799,10 +1809,12 @@ winreg_QueryReflectionKey_impl(PyObject *module, HKEY key)
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
+    Py_BEGIN_ALLOW_THREADS
     hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
         pfn = (RQRKFunc)GetProcAddress(hMod,
                                        "RegQueryReflectionKey");
+    Py_END_ALLOW_THREADS
     if (!pfn) {
         PyErr_SetString(PyExc_NotImplementedError,
                         "not implemented on this platform");

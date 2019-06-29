@@ -1,3 +1,0 @@
-``test_asyncio/test_sendfile.py`` now resets the event loop policy using
-:func:`tearDownModule` as done in other tests, to prevent a warning when
-running tests on Windows.

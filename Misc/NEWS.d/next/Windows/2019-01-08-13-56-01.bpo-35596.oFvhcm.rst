@@ -1,2 +1,0 @@
-Use unchecked PYCs for the embeddable distro to avoid zipimport
-restrictions.
