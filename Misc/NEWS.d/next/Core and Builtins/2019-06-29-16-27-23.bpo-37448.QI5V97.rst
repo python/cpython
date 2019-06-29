@@ -1,0 +1,8 @@
+Add radix tree implementation of obmalloc's address_in_range().  Use it
+by default on 64-bit platforms.  The radix tree eliminates the
+(slightly) memory unsanitary behavior of the current address_in_range()
+approach.  It also has the small advantage of easily allowing larger
+pool sizes.  The current address_in_range() requires that pools be no
+larger than the OS page size.
+
+Co-authored-by: Tim Peters <tim.peters@gmail.com>
