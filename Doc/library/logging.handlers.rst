@@ -48,7 +48,7 @@ and :meth:`flush` methods).
    .. method:: emit(record)
 
       If a formatter is specified, it is used to format the record. The record
-      is then written to the stream with a terminator. If exception information
+      is then written to the stream followed by :attr:`terminator`. If exception information
       is present, it is formatted using :func:`traceback.print_exception` and
       appended to the stream.
 
@@ -70,13 +70,17 @@ and :meth:`flush` methods).
 
       .. versionadded:: 3.7
 
+   .. attribute:: terminator
 
-.. versionchanged:: 3.2
-   The ``StreamHandler`` class now has a ``terminator`` attribute, default
-   value ``'\n'``, which is used as the terminator when writing a formatted
-   record to a stream. If you don't want this newline termination, you can
-   set the handler instance's ``terminator`` attribute to the empty string.
-   In earlier versions, the terminator was hardcoded as ``'\n'``.
+      String used as the terminator when writing a formatted record to a stream.
+      Default value is ``'\n'``.
+
+      If you don't want a newline termination, you can set the handler instance's
+      ``terminator`` attribute to the empty string.
+
+      In earlier versions, the terminator was hardcoded as ``'\n'``.
+
+      .. versionadded:: 3.2
 
 
 .. _file-handler:
