@@ -151,7 +151,3 @@ jobs:
   - template: ./windows-steps.yml
     parameters:
       targetBranch: $(System.PullRequest.TargetBranch)
-  - template: ./windows-layout-steps.yml
-    parameters:
-      kind: appx
-      fulltest: true
