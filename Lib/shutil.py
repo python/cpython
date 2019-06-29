@@ -1468,8 +1468,8 @@ def _create_or_replace(dst, create_temp_dst):
             os.remove(temp_path)
         raise e
 
-def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
-    """Symbolic link(s) to a single source or a list of multiple sources.
+def symlink(srcs, dst, *, overwrite=False, target_is_directory=False):
+    """Create symbolic link(s) in `dst` pointing at `srcs`.
 
     Given a iterable of sources, `dst` must be a directory and links to
     each source are created inside `dst`.
@@ -1496,11 +1496,11 @@ def symlink(src_or_srcs, dst, *, overwrite=False, target_is_directory=False):
     `target_is_directory` is ignored.
 
     """
-    if isinstance(src_or_srcs, str) or not hasattr(src_or_srcs, '__iter__'):
-        sources = [src_or_srcs]
+    if isinstance(srcs, str) or not hasattr(srcs, '__iter__'):
+        sources = [srcs]  # We have been given a single source
         dst_is_dir = False
-    else:  # src_or_srcs is already something list-y
-        sources = src_or_srcs
+    else:  # We have been given an iterable of sources
+        sources = srcs
         dst_is_dir = True
 
     for bool_arg in ['overwrite', 'target_is_directory']:
