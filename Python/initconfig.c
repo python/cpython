@@ -528,6 +528,7 @@ PyConfig_Clear(PyConfig *config)
     config->module_search_paths_set = 0;
 
     CLEAR(config->executable);
+    CLEAR(config->base_executable);
     CLEAR(config->prefix);
     CLEAR(config->base_prefix);
     CLEAR(config->exec_prefix);
@@ -765,6 +766,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(module_search_paths_set);
 
     COPY_WSTR_ATTR(executable);
+    COPY_WSTR_ATTR(base_executable);
     COPY_WSTR_ATTR(prefix);
     COPY_WSTR_ATTR(base_prefix);
     COPY_WSTR_ATTR(exec_prefix);
@@ -865,6 +867,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_WSTR(home);
     SET_ITEM_WSTRLIST(module_search_paths);
     SET_ITEM_WSTR(executable);
+    SET_ITEM_WSTR(base_executable);
     SET_ITEM_WSTR(prefix);
     SET_ITEM_WSTR(base_prefix);
     SET_ITEM_WSTR(exec_prefix);
@@ -2404,6 +2407,7 @@ PyConfig_Read(PyConfig *config)
         assert(config->module_search_paths_set != 0);
         /* don't check config->module_search_paths */
         assert(config->executable != NULL);
+        assert(config->base_executable != NULL);
         assert(config->prefix != NULL);
         assert(config->base_prefix != NULL);
         assert(config->exec_prefix != NULL);

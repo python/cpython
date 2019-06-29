@@ -362,6 +362,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pythonpath_env': None,
         'home': None,
         'executable': GET_DEFAULT_CONFIG,
+        'base_executable': GET_DEFAULT_CONFIG,
 
         'prefix': GET_DEFAULT_CONFIG,
         'base_prefix': GET_DEFAULT_CONFIG,
@@ -534,14 +535,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if expected['stdio_errors'] is self.GET_DEFAULT_CONFIG:
                 expected['stdio_errors'] = 'surrogateescape'
 
+        if sys.platform == 'win32':
+            default_executable = self.test_exe
+        elif expected['program_name'] is not self.GET_DEFAULT_CONFIG:
+            default_executable = os.path.abspath(expected['program_name'])
+        else:
+            default_executable = os.path.join(os.getcwd(), '_testembed')
         if expected['executable'] is self.GET_DEFAULT_CONFIG:
-            if sys.platform == 'win32':
-                expected['executable'] = self.test_exe
-            else:
-                if expected['program_name'] is not self.GET_DEFAULT_CONFIG:
-                    expected['executable'] = os.path.abspath(expected['program_name'])
-                else:
-                    expected['executable'] = os.path.join(os.getcwd(), '_testembed')
+            expected['executable'] = default_executable
+        if expected['base_executable'] is self.GET_DEFAULT_CONFIG:
+            expected['base_executable'] = default_executable
         if expected['program_name'] is self.GET_DEFAULT_CONFIG:
             expected['program_name'] = './_testembed'
 
