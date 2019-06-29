@@ -166,12 +166,12 @@ wmain(int argc, wchar_t **argv)
     PyPreConfig_InitPythonConfig(&preconfig);
     status = Py_PreInitializeFromArgs(&preconfig, argc, argv);
     if (PyStatus_Exception(status)) {
-        goto fail;
+        goto fail_without_config;
     }
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
-        goto fail;
+        goto fail_without_config;
     }
 
     status = PyConfig_SetArgv(&config, argc, argv);
@@ -233,6 +233,7 @@ wmain(int argc, wchar_t **argv)
 
 fail:
     PyConfig_Clear(&config);
+fail_without_config:
     if (PyStatus_IsExit(status)) {
         return status.exitcode;
     }
