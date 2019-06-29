@@ -834,6 +834,14 @@ static int running_on_valgrind = -1;
  * -- Main tunable settings section --
  */
 
+/* If defined, use radix tree to find if address is controlled by
+ * obmalloc.  Otherwise, we use a slightly memory unsanitary scheme that
+ * has the advantage of performing very well.
+ */
+#if SIZEOF_VOID_P == 8
+#define WITH_RADIX_TREE
+#endif
+
 /*
  * Alignment of addresses returned to the user. 8-bytes alignment works
  * on most current architectures (with 32-bit or 64-bit address busses).
@@ -907,18 +915,32 @@ static int running_on_valgrind = -1;
  * Arenas are allocated with mmap() on systems supporting anonymous memory
  * mappings to reduce heap fragmentation.
  */
-#define ARENA_SIZE              (256 << 10)     /* 256KB */
+#define ARENA_BITS              18
+#define ARENA_SIZE              (1 << ARENA_BITS)     /* 256 KiB */
 
 #ifdef WITH_MEMORY_LIMITS
 #define MAX_ARENAS              (SMALL_MEMORY_LIMIT / ARENA_SIZE)
 #endif
 
 /*
- * Size of the pools used for small blocks. Should be a power of 2,
- * between 1K and SYSTEM_PAGE_SIZE, that is: 1k, 2k, 4k.
+ * Size of the pools used for small blocks.  Must be a power of 2.
  */
-#define POOL_SIZE               SYSTEM_PAGE_SIZE        /* must be 2^N */
-#define POOL_SIZE_MASK          SYSTEM_PAGE_SIZE_MASK
+#ifdef WITH_RADIX_TREE
+
+#define POOL_BITS               12                  /* 4 KiB */
+#define POOL_SIZE               (1 << POOL_BITS)    /* 4 KiB */
+
+#else
+
+/*
+ * For non-radix tree, must be between 1K and SYSTEM_PAGE_SIZE.  E.g. 1k, 2k,
+ * 4k.
+ */
+#define POOL_SIZE               SYSTEM_PAGE_SIZE
+
+#endif /* !WITH_RADIX_TREE */
+
+#define POOL_SIZE_MASK          (POOL_SIZE - 1)
 
 #define MAX_POOLS_IN_ARENA  (ARENA_SIZE / POOL_SIZE)
 #if MAX_POOLS_IN_ARENA * POOL_SIZE != ARENA_SIZE
@@ -1233,6 +1255,14 @@ _Py_GetAllocatedBlocks(void)
     return n;
 }
 
+#ifdef WITH_RADIX_TREE
+static int arena_map_is_marked(block *op);
+static int arena_map_mark_used(uintptr_t arena_base, int is_used);
+
+/* number of used radix tree nodes */
+static int arena_map1_count;
+static int arena_map2_count;
+#endif
 
 /* Allocate a new arena.  If we run out of memory, return NULL.  Else
  * allocate a new arena, and return the address of an arena_object
@@ -1302,6 +1332,15 @@ new_arena(void)
     unused_arena_objects = arenaobj->nextarena;
     assert(arenaobj->address == 0);
     address = _PyObject_Arena.alloc(_PyObject_Arena.ctx, ARENA_SIZE);
+#ifdef WITH_RADIX_TREE
+    if (address != NULL) {
+        if (!arena_map_mark_used((uintptr_t)address, 1)) {
+            /* marking arena in radix tree failed, abort */
+            _PyObject_Arena.free(_PyObject_Arena.ctx, address, ARENA_SIZE);
+            address = NULL;
+        }
+    }
+#endif
     if (address == NULL) {
         /* The allocation failed: return NULL after putting the
          * arenaobj back.
@@ -1331,6 +1370,19 @@ new_arena(void)
     return arenaobj;
 }
 
+
+#ifdef WITH_RADIX_TREE
+
+/* Return true if and only if P is an address that was allocated by
+   pymalloc.  When the radix tree is used, 'poolp' is unused.
+ */
+static bool
+address_in_range(void *p, poolp pool)
+{
+    return arena_map_is_marked(p);
+}
+
+#else /* !WITH_RADIX_TREE */
 
 /*
 address_in_range(P, POOL)
@@ -1422,7 +1474,7 @@ address_in_range(void *p, poolp pool)
         (uintptr_t)p - arenas[arenaindex].address < ARENA_SIZE &&
         arenas[arenaindex].address != 0;
 }
-
+#endif /* !WITH_RADIX_TREE */
 
 /*==========================================================================*/
 
@@ -1767,6 +1819,11 @@ insert_to_freepool(poolp pool)
          */
         ao->nextarena = unused_arena_objects;
         unused_arena_objects = ao;
+
+#ifdef WITH_RADIX_TREE
+        /* mark arena as not under control of obmalloc */
+        arena_map_mark_used(ao->address, 0);
+#endif
 
         /* Free the entire arena. */
         _PyObject_Arena.free(_PyObject_Arena.ctx,
@@ -2711,6 +2768,12 @@ _PyObject_DebugMallocStats(FILE *out)
     (void)printone(out, "# arenas reclaimed", ntimes_arena_allocated - narenas);
     (void)printone(out, "# arenas highwater mark", narenas_highwater);
     (void)printone(out, "# arenas allocated current", narenas);
+#ifdef WITH_RADIX_TREE
+    (void)printone(out, "# arena map level 1 nodes", arena_map1_count);
+    (void)printone(out, "# arena map level 2 nodes", arena_map2_count);
+    fputc('\n', out);
+#endif
+
 
     PyOS_snprintf(buf, sizeof(buf),
                   "%zu arenas * %d bytes/arena",
@@ -2732,5 +2795,196 @@ _PyObject_DebugMallocStats(FILE *out)
     (void)printone(out, "Total", total);
     return 1;
 }
+
+
+#ifdef WITH_RADIX_TREE
+/* radix tree for tracking arena coverage
+
+   key format (2^20 arena size)
+     15 -> MAP1
+     15 -> MAP2
+     14 -> MAP3
+     20 -> ideal aligned arena
+   ----
+     64
+*/
+
+/* number of bits in a pointer */
+#define BITS 64
+
+#if SIZEOF_VOID_P != 8
+ /* Currently this code works for 64-bit pointers only.  For 32-bits, we
+  * could use a two-layer tree but it hasn't been implemented yet.  */
+#error "Radix tree requires 64-bit pointers."
+#endif
+
+#define ARENA_MASK (ARENA_SIZE - 1)
+
+/* arena_coverage_t members require this to be true  */
+#if ARENA_BITS >= 32
+#   error "arena size must be < 2^32"
+#endif
+
+/* bits used for MAP1 and MAP2 nodes */
+#define INTERIOR_BITS ((BITS - ARENA_BITS + 2) / 3)
+
+#define MAP1_BITS INTERIOR_BITS
+#define MAP1_LENGTH (1 << MAP1_BITS)
+
+#define MAP2_BITS INTERIOR_BITS
+#define MAP2_LENGTH (1 << MAP2_BITS)
+#define MAP2_MASK (MAP2_LENGTH - 1)
+
+#define MAP3_BITS (BITS - ARENA_BITS - 2*INTERIOR_BITS)
+#define MAP3_LENGTH (1 << MAP3_BITS)
+#define MAP3_MASK (MAP3_LENGTH - 1)
+
+#define MAP3_SHIFT ARENA_BITS
+#define MAP2_SHIFT (MAP3_BITS + MAP3_SHIFT)
+#define MAP1_SHIFT (MAP2_BITS + MAP2_SHIFT)
+
+#define AS_UINT(p) ((uintptr_t)(p))
+#define MAP3_INDEX(p) ((AS_UINT(p) >> MAP3_SHIFT) & MAP3_MASK)
+#define MAP2_INDEX(p) ((AS_UINT(p) >> MAP2_SHIFT) & MAP2_MASK)
+#define MAP1_INDEX(p) (AS_UINT(p) >> MAP1_SHIFT)
+
+/* See arena_map_mark_used() for the meaning of these members. */
+typedef struct {
+    int32_t tail_hi;
+    int32_t tail_lo;
+} arena_coverage_t;
+
+typedef struct arena_map3 {
+    /* The members tail_hi and tail_lo are accessed together.  So, it
+     * better to have them as an array of structs, rather than two
+     * arrays.
+     */
+    arena_coverage_t arenas[MAP3_LENGTH];
+} arena_map3_t;
+
+typedef struct arena_map2 {
+    struct arena_map3 *ptrs[MAP2_LENGTH];
+} arena_map2_t;
+
+typedef struct arena_map1 {
+    struct arena_map2 *ptrs[MAP1_LENGTH];
+} arena_map1_t;
+
+/* The root of tree (MAP1) and contains all MAP2 nodes.  Note that by
+ * initializing like this, the memory should be in the BSS.  The OS will
+ * only map pages as the MAP2 nodes get used (OS pages are demand loaded
+ * as needed).
+ */
+static arena_map1_t arena_map_root;
+
+/* Return a pointer to a MAP3 node, return NULL if it doesn't exist
+ * or it cannot be created */
+static arena_map3_t *
+arena_map_get(block *p, int create)
+{
+    int i1 = MAP1_INDEX(p);
+    if (arena_map_root.ptrs[i1] == NULL) {
+        if (!create) {
+            return NULL;
+        }
+        arena_map2_t *n = PyMem_RawCalloc(1, sizeof(arena_map2_t));
+        if (n == NULL) {
+            return NULL;
+        }
+        arena_map_root.ptrs[i1] = n;
+        arena_map1_count++;
+    }
+    int i2 = MAP2_INDEX(p);
+    if (arena_map_root.ptrs[i1]->ptrs[i2] == NULL) {
+        if (!create) {
+            return NULL;
+        }
+        arena_map3_t *n = PyMem_RawCalloc(1, sizeof(arena_map3_t));
+        if (n == NULL) {
+            return NULL;
+        }
+        arena_map_root.ptrs[i1]->ptrs[i2] = n;
+        arena_map2_count++;
+    }
+    return arena_map_root.ptrs[i1]->ptrs[i2];
+}
+
+/* The radix tree only tracks arenas.  So, for 16 MiB arenas, we throw
+ * away 24 bits of the address.  That reduces the space requirement of
+ * the tree compared to similar radix tree page-map schemes.  In
+ * exchange for slashing the space requirement, it needs more
+ * computation to check an address.
+ *
+ * Tracking coverage is done by "ideal" arena address.  It is easier to
+ * explain in decimal so let's say that the arena size is 100 bytes.
+ * Then, ideal addresses are 100, 200, 300, etc.  For checking if a
+ * pointer address is inside an actual arena, we have to check two ideal
+ * arena addresses.  E.g. if pointer is 357, we need to check 200 and
+ * 300.  In the rare case that an arena is aligned in the ideal way
+ * (e.g. base address of arena is 200) then we only have to check one
+ * ideal address.
+ *
+ * The tree nodes for 200 and 300 both store the address of arena.
+ * There are two cases: the arena starts at a lower ideal arena and
+ * extends to this one, or the arena starts in this arena and extends to
+ * the next ideal arena.  The tail_lo and tail_hi members correspond to
+ * these two cases.
+ */
+
+
+/* mark or unmark addresses covered by arena */
+static int
+arena_map_mark_used(uintptr_t arena_base, int is_used)
+{
+    arena_map3_t *n_hi = arena_map_get((block *)arena_base, is_used);
+    if (n_hi == NULL) {
+        assert(is_used); /* otherwise node should already exist */
+        return 0; /* failed to allocate space for node */
+    }
+    int i3 = MAP3_INDEX((block *)arena_base);
+    int32_t tail = (int32_t)(arena_base & ARENA_MASK);
+    if (tail == 0) {
+        /* is ideal arena address */
+        n_hi->arenas[i3].tail_hi = is_used ? -1 : 0;
+    }
+    else {
+        /* arena_base address is not ideal (aligned to arena size) and
+         * so it potentially covers two MAP3 nodes.  Get the MAP3 node
+         * for the next arena.  Note that it might be in different MAP1
+         * and MAP2 nodes as well so we need to call arena_map_get()
+         * again (do the full tree traversal).
+         */
+        n_hi->arenas[i3].tail_hi = is_used ? tail : 0;
+        uintptr_t arena_base_next = arena_base + ARENA_SIZE;
+        arena_map3_t *n_lo = arena_map_get((block *)arena_base_next, is_used);
+        if (n_lo == NULL) {
+            assert(is_used); /* otherwise should already exist */
+            n_hi->arenas[i3].tail_hi = 0;
+            return 0; /* failed to allocate space for node */
+        }
+        int i3_next = MAP3_INDEX(arena_base_next);
+        n_lo->arenas[i3_next].tail_lo = is_used ? tail : 0;
+    }
+    return 1;
+}
+
+/* Return true if 'p' is a pointer inside an obmalloc arena.
+ * _PyObject_Free() calls this so it needs to be very fast. */
+static int
+arena_map_is_marked(block *p)
+{
+    arena_map3_t *n = arena_map_get(p, 0);
+    if (n == NULL) {
+        return 0;
+    }
+    int i3 = MAP3_INDEX(p);
+    /* in order to fit tail into 32-bits, ARENA_BITS must be <= 32 */
+    int32_t hi = n->arenas[i3].tail_hi;
+    int32_t lo = n->arenas[i3].tail_lo;
+    int32_t tail = (int32_t)(AS_UINT(p) & ARENA_MASK);
+    return (tail < lo) || (tail >= hi && hi != 0);
+}
+
+#endif /* WITH_RADIX_TREE */
 
 #endif /* #ifdef WITH_PYMALLOC */
