@@ -28,8 +28,8 @@ except ImportError:
 # Platforms that set sys._base_executable can create venvs from within
 # another venv, so no need to skip tests that require venv.create().
 requireVenvCreate = unittest.skipUnless(
-    hasattr(sys, '_base_executable')
-    or sys.prefix == sys.base_prefix,
+    sys.prefix == sys.base_prefix
+    or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
 def check_output(cmd, encoding=None):
@@ -57,7 +57,7 @@ class BaseTest(unittest.TestCase):
             self.bindir = 'bin'
             self.lib = ('lib', 'python%d.%d' % sys.version_info[:2])
             self.include = 'include'
-        executable = getattr(sys, '_base_executable', sys.executable)
+        executable = sys._base_executable
         self.exe = os.path.split(executable)[-1]
         if (sys.platform == 'win32'
             and os.path.lexists(executable)
@@ -108,7 +108,7 @@ class BasicTest(BaseTest):
         else:
             self.assertFalse(os.path.exists(p))
         data = self.get_text_file_contents('pyvenv.cfg')
-        executable = getattr(sys, '_base_executable', sys.executable)
+        executable = sys._base_executable
         path = os.path.dirname(executable)
         self.assertIn('home = %s' % path, data)
         fn = self.get_env_file(self.bindir, self.exe)
