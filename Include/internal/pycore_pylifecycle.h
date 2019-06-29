@@ -21,7 +21,7 @@ extern int _Py_SetFileSystemEncoding(
     const char *encoding,
     const char *errors);
 extern void _Py_ClearFileSystemEncoding(void);
-extern PyStatus _PyUnicode_InitEncodings(PyInterpreterState *interp);
+extern PyStatus _PyUnicode_InitEncodings(PyThreadState *tstate);
 #ifdef MS_WINDOWS
 extern int _PyUnicode_EnableLegacyWindowsFSEncoding(void);
 #endif
@@ -37,20 +37,20 @@ extern int _PyStructSequence_Init(void);
 extern int _PyLong_Init(void);
 extern PyStatus _PyFaulthandler_Init(int enable);
 extern int _PyTraceMalloc_Init(int enable);
-extern PyObject * _PyBuiltin_Init(void);
+extern PyObject * _PyBuiltin_Init(PyThreadState *tstate);
 extern PyStatus _PySys_Create(
     _PyRuntimeState *runtime,
-    PyInterpreterState *interp,
+    PyThreadState *tstate,
     PyObject **sysmod_p);
 extern PyStatus _PySys_SetPreliminaryStderr(PyObject *sysdict);
 extern int _PySys_InitMain(
     _PyRuntimeState *runtime,
     PyThreadState *tstate);
-extern PyStatus _PyImport_Init(PyInterpreterState *interp);
+extern PyStatus _PyImport_Init(PyThreadState *tstate);
 extern PyStatus _PyExc_Init(void);
 extern PyStatus _PyErr_Init(void);
 extern PyStatus _PyBuiltins_AddExceptions(PyObject * bltinmod);
-extern PyStatus _PyImportHooks_Init(void);
+extern PyStatus _PyImportHooks_Init(PyThreadState *tstate);
 extern int _PyFloat_Init(void);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
@@ -88,7 +88,6 @@ extern void _PyWarnings_Fini(PyInterpreterState *interp);
 
 extern void _PyGILState_Init(
     _PyRuntimeState *runtime,
-    PyInterpreterState *interp,
     PyThreadState *tstate);
 extern void _PyGILState_Fini(_PyRuntimeState *runtime);
 

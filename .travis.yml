@@ -14,8 +14,7 @@ env:
     - OPENSSL=1.1.1c
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
-    # Use -O3 because we don't use debugger on Travis-CI
-    - CFLAGS="-I${OPENSSL_DIR}/include -O3"
+    - CFLAGS="-I${OPENSSL_DIR}/include"
     - LDFLAGS="-L${OPENSSL_DIR}/lib"
     # Set rpath with env var instead of -Wl,-rpath linker flag
     # OpenSSL ignores LDFLAGS when linking bin/openssl
@@ -43,6 +42,7 @@ matrix:
       addons:
         apt:
           packages:
+            - gdb
             - xvfb
     - name: "Documentation build"
       os: linux
@@ -166,7 +166,8 @@ install:
 
 # Travis provides only 2 cores, so don't overdo the parallelism and waste memory.
 before_script:
-  - ./configure --with-pydebug
+  # -Og is much faster than -O0
+  - CFLAGS="${CFLAGS} -Og" ./configure --with-pydebug
   - make -j4 regen-all
   - changes=`git status --porcelain`
   - |

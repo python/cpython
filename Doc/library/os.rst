@@ -851,7 +851,7 @@ as internal buffering of data.
    most *length* bytes in size.  As of Python 3.3, this is equivalent to
    ``os.truncate(fd, length)``.
 
-   .. audit-event:: os.truncate "fd length"
+   .. audit-event:: os.truncate fd,length os.ftruncate
 
    .. availability:: Unix, Windows.
 
@@ -938,7 +938,7 @@ as internal buffering of data.
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>` with the *dir_fd* parameter.
 
-   .. audit-event:: open "path mode flags"
+   .. audit-event:: open path,mode,flags os.open
 
    .. versionchanged:: 3.4
       The new file descriptor is now non-inheritable.
@@ -1730,6 +1730,11 @@ features:
 
    Return a bytestring representing the current working directory.
 
+   .. versionchanged:: 3.8
+      The function now uses the UTF-8 encoding on Windows, rather than the ANSI
+      code page: see :pep:`529` for the rationale. The function is no longer
+      deprecated on Windows.
+
 
 .. function:: lchflags(path, flags)
 
@@ -1800,6 +1805,8 @@ features:
 
    This function can also support :ref:`specifying a file descriptor
    <path_fd>`; the file descriptor must refer to a directory.
+
+   .. audit-event:: os.listdir path os.listdir
 
    .. note::
       To encode ``str`` filenames to ``bytes``, use :func:`~os.fsencode`.
@@ -2177,6 +2184,8 @@ features:
 
    This function can also support :ref:`specifying a file descriptor
    <path_fd>`; the file descriptor must refer to a directory.
+
+   .. audit-event:: os.scandir path os.scandir
 
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
@@ -2784,7 +2793,7 @@ features:
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
-   .. audit-event:: os.truncate "path length"
+   .. audit-event:: os.truncate path,length os.truncate
 
    .. availability:: Unix, Windows.
 
@@ -3790,7 +3799,7 @@ written in Python, such as a mail server's external command delivery program.
    to using this function.  See the :ref:`subprocess-replacements` section in
    the :mod:`subprocess` documentation for some helpful recipes.
 
-   .. audit-event:: os.system command
+   .. audit-event:: os.system command os.system
 
    .. availability:: Unix, Windows.
 

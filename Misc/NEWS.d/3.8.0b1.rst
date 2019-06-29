@@ -355,7 +355,7 @@ standard library. They now inherit ``__str__()`` from :class:`object`.
 
 ..
 
-.. bpo: 36774
+.. bpo: 36817
 .. date: 2019-05-02-11-48-08
 .. nonce: ZqbJ1J
 .. section: Core and Builtins
