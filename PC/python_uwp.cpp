@@ -184,9 +184,12 @@ wmain(int argc, wchar_t **argv)
         goto fail;
     }
 
-    _wputenv_s(L"PYTHONUSERBASE", get_user_base().c_str());
+    const wchar_t *p = _wgetenv(L"PYTHONUSERBASE");
+    if (!p || !*p) {
+        _wputenv_s(L"PYTHONUSERBASE", get_user_base().c_str());
+    }
 
-    const wchar_t *p = wcsrchr(argv[0], L'\\');
+    p = wcsrchr(argv[0], L'\\');
     if (!p) {
         p = argv[0];
     }
