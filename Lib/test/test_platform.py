@@ -20,44 +20,9 @@ class PlatformTest(unittest.TestCase):
 
     @support.skip_unless_symlink
     def test_architecture_via_symlink(self): # issue3762
-        if sys.platform == "win32" and not os.path.exists(sys.executable):
-            # App symlink appears to not exist, but we want the
-            # real executable here anyway
-            import _winapi
-            real = _winapi.GetModuleFileName(0)
-        else:
-            real = os.path.realpath(sys.executable)
-        link = os.path.abspath(support.TESTFN)
-        os.symlink(real, link)
-
-        # On Windows, the EXE needs to know where pythonXY.dll and *.pyd is at
-        # so we add the directory to the path, PYTHONHOME and PYTHONPATH.
-        env = None
-        if sys.platform == "win32":
-            env = {k.upper(): os.environ[k] for k in os.environ}
-            env["PATH"] = "{};{}".format(
-                os.path.dirname(real), env.get("PATH", ""))
-            env["PYTHONHOME"] = os.path.dirname(real)
-            if sysconfig.is_python_build(True):
-                env["PYTHONPATH"] = os.path.dirname(os.__file__)
-
-        def get(python, env=None):
-            cmd = [python, '-c',
-                'import platform; print(platform.architecture())']
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE, env=env)
-            r = p.communicate()
-            if p.returncode:
-                print(repr(r[0]))
-                print(repr(r[1]), file=sys.stderr)
-                self.fail('unexpected return code: {0} (0x{0:08X})'
-                          .format(p.returncode))
-            return r
-
-        try:
-            self.assertEqual(get(sys.executable), get(link, env=env))
-        finally:
-            os.remove(link)
+        with support.PythonSymlink() as py:
+            cmd = "-c", "import platform; print(platform.architecture())"
+            self.assertEqual(py.call_real(*cmd), py.call_link(*cmd))
 
     def test_platform(self):
         for aliased in (False, True):
