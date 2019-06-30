@@ -212,7 +212,7 @@ implementation used by the asyncio event loop:
    There is no noticeable overhead when handling a big number of children (*O(1)* each
    time a child terminates) but stating a thread per process is not free.
 
-   asyncio uses this safe implementation by default.
+   This watcher is used by default.
 
    .. versionadded:: 3.8
 
