@@ -189,8 +189,9 @@ implementation used by the asyncio event loop:
    .. method:: is_active()
 
       Return ``True`` if the watcher is ready to use.
-      handler is installed, a loop is attached etc.  Spawning a subprocess with
-      *inactive* current child watcher raises :exc:`RuntimeError`.
+
+      Spawning a subprocess with *inactive* current child watcher raises
+      :exc:`RuntimeError`.
 
       .. versionadded:: 3.8
 
