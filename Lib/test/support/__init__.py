@@ -1491,6 +1491,8 @@ def get_socket_conn_refused_errs():
         # bpo-31910: socket.create_connection() fails randomly
         # with EADDRNOTAVAIL on Travis CI
         errors.append(errno.EADDRNOTAVAIL)
+    if not IPV6_ENABLED:
+        errors.append(errno.EAFNOSUPPORT)
     return errors
 
 
