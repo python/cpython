@@ -1468,6 +1468,34 @@ def _create_or_replace(dst, create_temp_dst):
             os.remove(temp_path)
         raise e
 
+def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
+    if isinstance(srcs, str) or not hasattr(srcs, '__iter__'):
+        sources = [srcs]  # We have been given a single source
+        dst_is_dir = False
+    else:  # We have been given an iterable of sources
+        sources = srcs
+        dst_is_dir = True
+
+    overwrite, follow_symlinks, = (bool(value) for value in
+                                            (overwrite, follow_symlinks))
+    for bool_arg in ['overwrite', 'follow_symlinks']:
+        if not isinstance(locals()[bool_arg], bool):
+            raise TypeError(f"{bool_arg} not a bool")
+
+    for target in sources:
+        if dst_is_dir:
+            link_name = os.path.join(dst, os.path.basename(target))
+        else:
+            link_name = dst
+
+        def create_link_at(here):
+            os.link(target, here, follow_symlinks=follow_symlinks)
+
+        if overwrite:
+            _create_or_replace(link_name, create_link_at)
+        else:
+            create_link_at(link_name)
+
 def symlink(srcs, dst, *, overwrite=False, target_is_directory=False):
     """Create symbolic link(s) in `dst` pointing at `srcs`.
 
