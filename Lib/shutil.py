@@ -1469,6 +1469,9 @@ def _create_or_replace(dst, create_temp_dst):
         raise e
 
 def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
+    _link_or_symlink(os.link, srcs, dst, overwrite=overwrite, follow_symlinks=follow_symlinks)
+
+def _link_or_symlink(linker, srcs, dst, **kwargs):
     if isinstance(srcs, str) or not hasattr(srcs, '__iter__'):
         sources = [srcs]  # We have been given a single source
         dst_is_dir = False
@@ -1476,11 +1479,16 @@ def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
         sources = srcs
         dst_is_dir = True
 
-    overwrite, follow_symlinks, = (bool(value) for value in
-                                            (overwrite, follow_symlinks))
-    for bool_arg in ['overwrite', 'follow_symlinks']:
-        if not isinstance(locals()[bool_arg], bool):
+    bool_args = {os.link: ('overwrite', 'follow_symlinks'),
+                 os.symlink: ('overwrite', 'target_is_directory')}
+    for bool_arg in bool_args[linker]:
+        if not isinstance(kwargs[bool_arg], bool):
             raise TypeError(f"{bool_arg} not a bool")
+
+    # Arguments to be passed to the os method
+    passthrough_args = {os.link: ['follow_symlinks'],
+                        os.symlink: ['target_is_directory']}
+    passthrough_args = {k: kwargs[k] for k in passthrough_args[linker]}
 
     for target in sources:
         if dst_is_dir:
@@ -1489,9 +1497,9 @@ def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
             link_name = dst
 
         def create_link_at(here):
-            os.link(target, here, follow_symlinks=follow_symlinks)
+            linker(target, here, **passthrough_args)
 
-        if overwrite:
+        if kwargs['overwrite']:
             _create_or_replace(link_name, create_link_at)
         else:
             create_link_at(link_name)
@@ -1524,27 +1532,5 @@ def symlink(srcs, dst, *, overwrite=False, target_is_directory=False):
     `target_is_directory` is ignored.
 
     """
-    if isinstance(srcs, str) or not hasattr(srcs, '__iter__'):
-        sources = [srcs]  # We have been given a single source
-        dst_is_dir = False
-    else:  # We have been given an iterable of sources
-        sources = srcs
-        dst_is_dir = True
-
-    for bool_arg in ['overwrite', 'target_is_directory']:
-        if not isinstance(locals()[bool_arg], bool):
-            raise TypeError(f"{bool_arg} not a bool")
-
-    for target in sources:
-        if dst_is_dir:
-            link_name = os.path.join(dst, os.path.basename(target))
-        else:
-            link_name = dst
-
-        def create_link_at(here):
-            os.symlink(target, here, target_is_directory=target_is_directory)
-
-        if overwrite:
-            _create_or_replace(link_name, create_link_at)
-        else:
-            create_link_at(link_name)
+    _link_or_symlink(os.symlink, srcs, dst, overwrite=overwrite,
+                     target_is_directory=target_is_directory)
