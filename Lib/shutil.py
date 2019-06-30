@@ -1450,7 +1450,6 @@ def _create_or_replace(dst, create_temp_dst):
 
     `create_temp_dst` is a callable taking a single argument: a pathname
     where the temporary file to replace `dst` will be created.
-
     """
     temp_path = ''
     try:
@@ -1531,7 +1530,6 @@ def symlink(srcs, dst, *, overwrite=False, target_is_directory=False):
     created as a directory if `target_is_directory` is True or a file
     symlink (the default) otherwise. On non-Windows platforms,
     `target_is_directory` is ignored.
-
     """
     _link_or_symlink(os.symlink, srcs, dst, overwrite=overwrite,
                      target_is_directory=target_is_directory)
