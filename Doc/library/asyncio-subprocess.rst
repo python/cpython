@@ -308,6 +308,9 @@ On UNIX *child watchers* are used for subprocess finish waiting, see
    UNIX switched to use :class:`ThreadedChildWatcher` for spawning subprocesses from
    different threads without any limitation.
 
+   Spawning a subprocess with *inactive* current child watcher raises
+   :exc:`RuntimeError`.
+
 Note that alternative event loop implementations might have own limitations;
 please refer to their documentation.
 
