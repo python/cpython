@@ -4964,8 +4964,15 @@ class NetworkConnectionNoServer(unittest.TestCase):
         # Issue #9792: create_connection() should not recast timeout errors
         # as generic socket errors.
         with self.mocked_socket_module():
-            with self.assertRaises(socket.timeout):
+            try:
                 socket.create_connection((HOST, 1234))
+            except socket.timeout:
+                pass
+            except OSError as exc:
+                if support.IPV6_ENABLED or exc.errno != errno.EAFNOSUPPORT:
+                    raise
+            else:
+                self.fail('socket.timeout not raised')
 
 
 class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
