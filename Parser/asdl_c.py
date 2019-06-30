@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 """Generate C code from an ASDL description."""
 
-import os, sys
+import os
+import sys
 
 import asdl
 
