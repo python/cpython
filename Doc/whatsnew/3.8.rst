@@ -1138,6 +1138,10 @@ The new :func:`shlex.join` function acts as the inverse of :func:`shlex.split`.
 shutil
 ------
 
+Added :func:`shutil.link` and :func:`shutil.symlink` which allow for multiple
+sources and atomic overwriting of existing destinations.
+(Contributed by Tom Hale in :issue:`36656`.)
+
 :func:`shutil.copytree` now accepts a new ``dirs_exist_ok`` keyword argument.
 (Contributed by Josh Bronson in :issue:`20849`.)
 
