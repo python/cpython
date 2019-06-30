@@ -1395,8 +1395,8 @@ find and load modules.
 
    .. attribute:: has_location
 
-   The boolean indicating whether or not the module's ``origin`` attribute
-   refers to a locatable resource.
+   The Boolean indicating whether or not the module's ``origin`` attribute
+   refers to a locatable module.
    It is ``True`` for packages run from the file system, imported modules and
    modules run from the module namespace and ``False`` for imported namespace
    packages, imported built-in modules and imported frozen modules.
