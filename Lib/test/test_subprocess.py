@@ -1567,9 +1567,9 @@ class RunFuncTestCase(BaseTestCase):
 
     @unittest.skipIf(mswindows, "requires posix like 'sleep' shell command")
     @mock.patch("subprocess._get_cleanup_timeout")
-    def test_run_with_shell_timeout_and_capture_output(
+    def test_run_with_shell_timeout_and_capture_output_explicit_session(
             self, mock_get_cleanup_timeout):
-        """Reproduce https://bugs.python.org/issue37424."""
+        """Test from https://bugs.python.org/issue37424 with a session."""
         # This test is about ensuring that the cleanup_timeout was not
         # needed, that the grandchild process holding the output handles
         # open actually died.  Thus we force a high cleanup time that'll
@@ -1585,6 +1585,22 @@ class RunFuncTestCase(BaseTestCase):
         else:
             self.fail("TimeoutExpired not raised.")
         self.assertLess(after_secs - before_secs, 2,
+                        msg="TimeoutExpired was delayed! Bad traceback:\n```\n"
+                        f"{stacks}```")
+
+    @unittest.skipIf(mswindows, "requires posix like 'sleep' shell command")
+    def test_run_with_shell_timeout_and_capture_output(self):
+        """Output capturing after a timeout mustn't hang forever on open filehandles."""
+        before_secs = time.monotonic()
+        try:
+            subprocess.run('sleep 3', shell=True, timeout=0.1,
+                           capture_output=True)  # New session unspecified.
+        except subprocess.TimeoutExpired as exc:
+            after_secs = time.monotonic()
+            stacks = traceback.format_exc()  # assertRaises doesn't give this.
+        else:
+            self.fail("TimeoutExpired not raised.")
+        self.assertLess(after_secs - before_secs, 1.5,
                         msg="TimeoutExpired was delayed! Bad traceback:\n```\n"
                         f"{stacks}```")
 
