@@ -188,7 +188,7 @@ implementation used by the asyncio event loop:
 
    .. method:: is_active()
 
-      Returns ``True`` is the watcher is ready to use, e.g. :py:data:`SIGCHLD`
+      Return ``True`` if the watcher is ready to use.
       handler is installed, a loop is attached etc.  Spawning a subprocess with
       *inactive* current child watcher raises :exc:`RuntimeError`.
 
