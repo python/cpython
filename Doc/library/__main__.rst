@@ -9,7 +9,8 @@
 ``'__main__'`` is the name of the environment where top-level code is run. A
 module's ``__name__`` is set equal to ``'__main__'`` when the module is run
 from the file system, from standard input or from the module namespace (with
-the :option:`-m` command line switch), but not when it is imported.
+the :option:`-m` command line switch or the :func:`runpy.run_module` function),
+but not when it is imported.
 
 A module can discover whether or not it is running in the main environment by
 checking its own ``__name__``, which allows a common idiom for conditionally
