@@ -1860,8 +1860,6 @@ unicode_aswidechar(PyObject *self, PyObject *args)
 
     if (size < buflen)
         buflen = size + 1;
-    else
-        buflen = size;
     result = PyUnicode_FromWideChar(buffer, buflen);
     PyMem_Free(buffer);
     if (result == NULL)
