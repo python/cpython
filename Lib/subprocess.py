@@ -491,7 +491,13 @@ def run(*popenargs,
             stdout, stderr = process.communicate(input, timeout=timeout)
         except TimeoutExpired:
             process.kill()
-            stdout, stderr = process.communicate()
+            # The timeout here is to avoid waiting around _forever_ if
+            # the kill failed to deal with all processes holding the
+            # output file handles open.  Otherwise we could hang until
+            # those processes terminate before continuing with our timeout.
+            # See https://bugs.python.org/issue37424.
+            stdout, stderr = process.communicate(
+                    timeout=_get_cleanup_timeout(timeout))
             raise TimeoutExpired(process.args, timeout, output=stdout,
                                  stderr=stderr)
         except:  # Including KeyboardInterrupt, communicate handled that.
@@ -503,6 +509,11 @@ def run(*popenargs,
             raise CalledProcessError(retcode, process.args,
                                      output=stdout, stderr=stderr)
     return CompletedProcess(process.args, retcode, stdout, stderr)
+
+
+def _get_cleanup_timeout(timeout):  # For test injection.
+    if timeout is not None:
+        return timeout/20
 
 
 def list2cmdline(seq):
@@ -742,6 +753,11 @@ class Popen(object):
             bufsize = -1  # Restore default
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
+
+        # If True, kill/terminate/send_signal will send the signal to
+        # os.getpgid(self.pid) on platforms with that concept IF the
+        # group is not our own process group.
+        self.__signal_process_group = shell and hasattr(os, 'getpgid')
 
         if _mswindows:
             if preexec_fn is not None:
@@ -1910,7 +1926,15 @@ class Popen(object):
             """Send a signal to the process."""
             # Skip signalling a process that we know has already died.
             if self.returncode is None:
-                os.kill(self.pid, sig)
+                if self.__signal_process_group:
+                    pgid = os.getpgid(self.pid)
+                    if pgid == os.getpgid(os.getpid()):
+                        # Never killpg our own process group.
+                        os.kill(self.pid, sig)
+                    else:
+                        os.killpg(pgid, sig)
+                else:
+                    os.kill(self.pid, sig)
 
         def terminate(self):
             """Terminate the process with SIGTERM

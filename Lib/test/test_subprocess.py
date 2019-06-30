@@ -11,6 +11,7 @@ import os
 import errno
 import tempfile
 import time
+import traceback
 import selectors
 import sysconfig
 import select
@@ -1563,6 +1564,29 @@ class RunFuncTestCase(BaseTestCase):
                                       capture_output=True, stderr=tf)
         self.assertIn('stderr', c.exception.args[0])
         self.assertIn('capture_output', c.exception.args[0])
+
+    @unittest.skipIf(mswindows, "requires posix like 'sleep' shell command")
+    @mock.patch("subprocess._get_cleanup_timeout")
+    def test_run_with_shell_timeout_and_capture_output(
+            self, mock_get_cleanup_timeout):
+        """Reproduce https://bugs.python.org/issue37424."""
+        # This test is about ensuring that the cleanup_timeout was not
+        # needed, that the grandchild process holding the output handles
+        # open actually died.  Thus we force a high cleanup time that'll
+        # obviously fail our timing test.
+        mock_get_cleanup_timeout.return_value = 3.1415926
+        before_secs = time.monotonic()
+        try:
+            subprocess.run('sleep 4', shell=True, timeout=0.1,
+                           capture_output=True, start_new_session=True)
+        except subprocess.TimeoutExpired as exc:
+            after_secs = time.monotonic()
+            stacks = traceback.format_exc()  # assertRaises doesn't give this.
+        else:
+            self.fail("TimeoutExpired not raised.")
+        self.assertLess(after_secs - before_secs, 2,
+                        msg="TimeoutExpired was delayed! Bad traceback:\n```\n"
+                        f"{stacks}```")
 
 
 @unittest.skipIf(mswindows, "POSIX specific tests")
