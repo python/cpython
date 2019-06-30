@@ -1398,9 +1398,8 @@ find and load modules.
    The boolean indicating whether or not the module's ``origin`` attribute
    refers to a locatable resource.
    It is ``True`` for packages run from the file system, imported modules and
-   modules run from the module namespace.
-   It is ``False`` for imported namespace packages, imported built-in modules,
-   imported frozen modules and modules dynamically created in code.
+   modules run from the module namespace and ``False`` for imported namespace
+   packages, imported built-in modules and imported frozen modules.
    It is not set for non-package modules run from the file system and
    non-package modules run from standard input.
 
