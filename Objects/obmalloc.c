@@ -2978,7 +2978,7 @@ arena_map_is_marked(block *p)
         return 0;
     }
     int i3 = MAP3_INDEX(p);
-    /* in order to fit tail into 32-bits, ARENA_BITS must be <= 32 */
+    /* ARENA_BITS must be < 32 so that the tail is a non-negative int32_t. */
     int32_t hi = n->arenas[i3].tail_hi;
     int32_t lo = n->arenas[i3].tail_lo;
     int32_t tail = (int32_t)(AS_UINT(p) & ARENA_MASK);
