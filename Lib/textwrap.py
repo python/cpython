@@ -383,6 +383,8 @@ def dedent(text):
     considered to have no common leading whitespace.  (This behaviour is
     new in Python 2.5; older versions of this module incorrectly
     expanded tabs before searching for common leading whitespace.)
+
+    Entirely blank lines are normalized to a newline character.
     """
     # Look for the longest leading string of spaces and tabs common to
     # all lines.
