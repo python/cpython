@@ -1471,7 +1471,7 @@ def _create_or_replace(dst, create_temp_dst):
 def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
     _link_or_symlink(os.link, srcs, dst, overwrite=overwrite, follow_symlinks=follow_symlinks)
 
-def _link_or_symlink(linker, srcs, dst, **kwargs):
+def _link_or_symlink(os_method, srcs, dst, **kwargs):
     if isinstance(srcs, str) or not hasattr(srcs, '__iter__'):
         sources = [srcs]  # We have been given a single source
         dst_is_dir = False
@@ -1481,14 +1481,11 @@ def _link_or_symlink(linker, srcs, dst, **kwargs):
 
     bool_args = {os.link: ('overwrite', 'follow_symlinks'),
                  os.symlink: ('overwrite', 'target_is_directory')}
-    for bool_arg in bool_args[linker]:
+    for bool_arg in bool_args[os_method]:
         if not isinstance(kwargs[bool_arg], bool):
             raise TypeError(f"{bool_arg} not a bool")
 
-    # Arguments to be passed to the os method
-    passthrough_args = {os.link: ['follow_symlinks'],
-                        os.symlink: ['target_is_directory']}
-    passthrough_args = {k: kwargs[k] for k in passthrough_args[linker]}
+    os_method_args = {k: kwargs[k] for k in kwargs if k != 'overwrite'}
 
     for target in sources:
         if dst_is_dir:
@@ -1497,7 +1494,7 @@ def _link_or_symlink(linker, srcs, dst, **kwargs):
             link_name = dst
 
         def create_link_at(here):
-            linker(target, here, **passthrough_args)
+            os_method(target, here, **os_method_args)
 
         if kwargs['overwrite']:
             _create_or_replace(link_name, create_link_at)
