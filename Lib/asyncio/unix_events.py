@@ -1114,7 +1114,7 @@ class FastChildWatcher(BaseChildWatcher):
 
 
 class MultiLoopChildWatcher(AbstractChildWatcher):
-    """A watcher that doen't require running loop in main thread to work.
+    """A watcher that doesn't require running loop in the main thread.
 
     This implementation registers a SIGCHLD signal handler on
     instantiation (which may conflict with other code that
