@@ -1472,6 +1472,10 @@ def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
     _link_or_symlink(os.link, srcs, dst, overwrite=overwrite, follow_symlinks=follow_symlinks)
 
 def _link_or_symlink(os_method, srcs, dst, **kwargs):
+    """Create either links or symlinks based upon the value of `os_method`.
+    Helper function for link and symlink.
+    `os_method` must be either os.link or os.symlink
+    """
     if isinstance(srcs, str) or not hasattr(srcs, '__iter__'):
         sources = [srcs]  # We have been given a single source
         dst_is_dir = False
