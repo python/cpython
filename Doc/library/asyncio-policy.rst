@@ -219,7 +219,7 @@ implementation used by the asyncio event loop:
 .. class:: MultiLoopChildWatcher
 
    This implementation registers a :py:data:`SIGCHLD` signal handler on
-   instantiation (which may conflict with other code that install own handler for this
+   instantiation. That can break third-party code that installs a custom handler for `SIGCHLD`.
    signal).
 
    The watcher avoids disrupting other code spawning processes
