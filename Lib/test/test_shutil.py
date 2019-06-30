@@ -2604,6 +2604,19 @@ class Link(unittest.TestCase):
                 with self.assertRaisesRegex(FileExistsError, dst_path):
                     shutil.link(src, dst_path)
 
+class LinkSymlinkHelpers(unittest.TestCase):
+
+    def test_link_or_symlink_invalid_os_method(self):
+        invalid_method = os.dup
+        with self.assertRaisesRegex(KeyError, 'dup'):
+            shutil._link_or_symlink(invalid_method, '.', '.', overwrite=True,
+                                    follow_symlinks=True)
+
+    def test_link_or_symlink_invalid_kwarg(self):
+        with self.assertRaisesRegex(TypeError, 'bad_arg'):
+            shutil._link_or_symlink(os.link, '.', '.', overwrite=True,
+                                    follow_symlinks=True, bad_arg='here')
+
 class Symlink(unittest.TestCase):
 
     def setUp(self):
