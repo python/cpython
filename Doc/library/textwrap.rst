@@ -66,6 +66,9 @@ indentation from strings that have unwanted whitespace to the left of the text.
    of this module incorrectly expanded tabs before searching for common leading
    whitespace.)
 
+   Lines containing only whitespace are ignored in the input and normalized to a
+   single newline character in the output.
+
    For example::
 
       def test():
