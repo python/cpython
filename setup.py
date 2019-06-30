@@ -1557,9 +1557,9 @@ class PyBuildExt(build_ext):
 
             cc = sysconfig.get_config_var('CC').split()[0]
             ret = os.system(
-                      '"%s" -Werror -Wimplicit-fallthrough -E -xc /dev/null >/dev/null 2>&1' % cc)
+                      '"%s" -Werror -Wno-unreachable-code -E -xc /dev/null >/dev/null 2>&1' % cc)
             if ret >> 8 == 0:
-                extra_compile_args.append('-Wno-implicit-fallthrough')
+                extra_compile_args.append('-Wno-unreachable-code')
 
         exts.append(Extension('pyexpat',
                               define_macros = define_macros,
