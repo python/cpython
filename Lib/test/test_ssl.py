@@ -4471,6 +4471,7 @@ class TestPostHandshakeAuth(unittest.TestCase):
 
 def test_main(verbose=False):
     if support.verbose:
+        import warnings
         plats = {
             'Linux': platform.linux_distribution,
             'Mac': platform.mac_ver,
