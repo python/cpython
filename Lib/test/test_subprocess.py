@@ -3,7 +3,6 @@ from unittest import mock
 from test import support
 import subprocess
 import sys
-import platform
 import signal
 import io
 import itertools
@@ -21,16 +20,10 @@ import textwrap
 from test.support import FakePath
 
 try:
-    import ctypes
-except ImportError:
-    ctypes = None
-else:
-    import ctypes.util
-
-try:
     import _testcapi
 except ImportError:
     _testcapi = None
+
 
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")

@@ -26,7 +26,7 @@ except ImportError:
 
 ssl = support.import_module("ssl")
 
-from ssl import TLSVersion, _TLSContentType, _TLSMessageType, _TLSAlertType
+from ssl import TLSVersion, _TLSContentType, _TLSMessageType
 
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 Py_DEBUG_WIN32 = Py_DEBUG and sys.platform == 'win32'
@@ -4601,7 +4601,6 @@ class TestSSLDebug(unittest.TestCase):
 
 def test_main(verbose=False):
     if support.verbose:
-        import warnings
         plats = {
             'Mac': platform.mac_ver,
             'Windows': platform.win32_ver,
