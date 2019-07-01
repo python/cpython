@@ -1,0 +1,1 @@
+Adding new 'MAP_ALIGNED_SUPER' FreeBSD constant.
