@@ -732,7 +732,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     } while (0)
 #define COPY_WSTRLIST(LIST) \
     do { \
-        if (_PyWideStringList_Copy(&config->LIST, &config2->LIST) < 0 ) { \
+        if (_PyWideStringList_Copy(&config->LIST, &config2->LIST) < 0) { \
             return _PyStatus_NO_MEMORY(); \
         } \
     } while (0)
@@ -2321,6 +2321,23 @@ PyConfig_SetArgv(PyConfig *config, Py_ssize_t argc, wchar_t * const *argv)
         .bytes_argv = NULL,
         .wchar_argv = argv};
     return _PyConfig_SetPyArgv(config, &args);
+}
+
+
+PyStatus
+PyConfig_SetWideStringList(PyConfig *config, PyWideStringList *list,
+                           Py_ssize_t length, wchar_t **items)
+{
+    PyStatus status = _Py_PreInitializeFromConfig(config, NULL);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    PyWideStringList list2 = {.length = length, .items = items};
+    if (_PyWideStringList_Copy(list, &list2) < 0) {
+        return _PyStatus_NO_MEMORY();
+    }
+    return _PyStatus_OK();
 }
 
 
