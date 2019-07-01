@@ -98,7 +98,7 @@ notation.  This uses the following style of definition:
    lc_letter: "a"..."z"
 
 The first line says that a ``name`` is an ``lc_letter`` followed by a sequence
-of zero or more ``lc_letter``\ s or underscores.  An ``lc_letter`` in turn is
+of zero or more ``lc_letter``\ s and/or underscores.  An ``lc_letter`` in turn is
 any of the single characters ``'a'`` through ``'z'``.  (This rule is actually
 adhered to for the names defined in lexical and grammar rules in this document.)
 
