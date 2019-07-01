@@ -1,1 +1,2 @@
-Adding new 'MAP_ALIGNED_SUPER' FreeBSD constant.
+Adding new :data:`mmap.MAP_ALIGNED_SUPER` FreeBSD constant.
+Adding new :data:`mmap.MAP_CONCEAL` OpenBSD constant.

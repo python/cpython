@@ -81,7 +81,11 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    private copy-on-write mapping, so changes to the contents of the mmap
    object will be private to this process, and :const:`MAP_SHARED` creates a
    mapping that's shared with all other processes mapping the same areas of
-   the file.  The default value is :const:`MAP_SHARED`.
+   the file. :const:`MAP_ALIGNED_SUPER` (FreeBSD only) uses super pages
+   feature, it is enabled by default in most of architectures and exists
+   since 2008.
+   The default value is :const:`MAP_SHARED`.
+   See :ref:`MAP_* constants <mmap-constants>`.
 
    *prot*, if specified, gives the desired memory protection; the two most
    useful values are :const:`PROT_READ` and :const:`PROT_WRITE`, to specify
@@ -307,6 +311,24 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       the mmap was created with :const:`ACCESS_READ`, then writing to it will
       raise a :exc:`TypeError` exception.
 
+.. _mmap-constants:
+
+MAP_* Constants
++++++++++++++++
+
+.. data:: MAP_ANONYMOUS
+          MAP_ANON
+          MAP_SHARED
+          MAP_PRIVATE
+          MAP_DENYWRITE
+          MAP_EXECUTABLE
+          MAP_ALIGNED_SUPER
+          MAP_CONCEAL
+
+   .. versionadded:: 3.9
+      Add :data:`MAP_ALIGNED_SUPER` constant.
+      Add :data:`MAP_CONCEAL` constant,
+
 .. _madvise-constants:
 
 MADV_* Constants
@@ -341,3 +363,4 @@ MADV_* Constants
    Availability: Systems with the madvise() system call.
 
    .. versionadded:: 3.8
+
