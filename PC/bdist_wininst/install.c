@@ -1117,6 +1117,7 @@ static BOOL ExtractInstallData(char *data, DWORD size, int *pexe_size,
         return FALSE;
     if (!GetTempPath(sizeof(tempdir), tempdir)
         || !GetTempFileName(tempdir, "~du", 0, ini_file)) {
+        free(ini_file);
         SystemError(GetLastError(),
                      "Could not create temporary file");
         return FALSE;
@@ -2368,15 +2369,23 @@ void DeleteRegistryKey(char *string)
     char *line;
 
     line = strdup(string); /* so we can change it */
+    if (!line) {
+        MessageBox(GetFocus(), string, "Out of memory", MB_OK);
+        return;
+    }
 
     keyname = strchr(line, '[');
-    if (!keyname)
+    if (!keyname) {
+        free(line);
         return;
+    }
     ++keyname;
 
     subkeyname = strchr(keyname, ']');
-    if (!subkeyname)
+    if (!subkeyname) {
+        free(line);
         return;
+    }
     *subkeyname++='\0';
     delim = strchr(subkeyname, '\n');
     if (delim)
@@ -2409,19 +2418,29 @@ void DeleteRegistryValue(char *string)
     char *line;
 
     line = strdup(string); /* so we can change it */
+    if (!line) {
+        MessageBox(GetFocus(), string, "Out of memory", MB_OK);
+        return;
+    }
 
 /* Format is 'Reg DB Value: [key]name=value' */
     keyname = strchr(line, '[');
-    if (!keyname)
+    if (!keyname) {
+        free(line);
         return;
+    }
     ++keyname;
     valuename = strchr(keyname, ']');
-    if (!valuename)
+    if (!valuename) {
+        free(line);
         return;
+    }
     *valuename++ = '\0';
     value = strchr(valuename, '=');
-    if (!value)
+    if (!value) {
+        free(line);
         return;
+    }
 
     *value++ = '\0';
 
@@ -2499,6 +2518,14 @@ BOOL Run_RemoveScript(char *line)
     return TRUE;
 }
 
+static void free_lines(char **lines, int num)
+{
+    for (int i = 0; i < num; ++i) {
+        free(lines[i]);
+    }
+    free(lines);
+}
+
 int DoUninstall(int argc, char **argv)
 {
     FILE *logfile;
@@ -2537,23 +2564,34 @@ int DoUninstall(int argc, char **argv)
     }
 
     lines = (char **)malloc(sizeof(char *) * lines_buffer_size);
-    if (!lines)
+    if (!lines) {
+        fclose(logfile);
         return SystemError(0, "Out of memory");
+    }
 
-    /* Read the whole logfile, realloacting the buffer */
+    /* Read the whole logfile, reallocating the buffer */
     while (fgets(buffer, sizeof(buffer), logfile)) {
         int len = strlen(buffer);
         /* remove trailing white space */
         while (isspace(buffer[len-1]))
             len -= 1;
         buffer[len] = '\0';
-        lines[nLines++] = strdup(buffer);
-        if (nLines >= lines_buffer_size) {
+        if (!(lines[nLines] = strdup(buffer))) {
+            fclose(logfile);
+            free_lines(lines, nLines);
+            return SystemError(0, "Out of memory");
+        }
+        if (++nLines >= lines_buffer_size) {
+            char **tmp;
             lines_buffer_size += 10;
-            lines = (char **)realloc(lines,
-                                     sizeof(char *) * lines_buffer_size);
-            if (!lines)
+            tmp = (char **)realloc(lines,
+                                   sizeof(char *) * lines_buffer_size);
+            if (!tmp) {
+                fclose(logfile);
+                free_lines(lines, nLines);
                 return SystemError(0, "Out of memory");
+            }
+            lines = tmp;
         }
     }
     fclose(logfile);
@@ -2566,8 +2604,10 @@ int DoUninstall(int argc, char **argv)
                             "Are you sure you want to remove\n"
                             "this package from your computer?",
                             "Please confirm",
-                            MB_YESNO | MB_ICONQUESTION))
+                            MB_YESNO | MB_ICONQUESTION)) {
+        free_lines(lines, nLines);
         return 0;
+    }
 
     hkey_root = HKEY_LOCAL_MACHINE;
     cp = "";
@@ -2588,6 +2628,7 @@ int DoUninstall(int argc, char **argv)
                                    "on this machine to uninstall this software",
                                    NULL,
                                    MB_OK | MB_ICONSTOP);
+                        free_lines(lines, nLines);
                         return 1; /* Error */
                     }
                 }
@@ -2627,6 +2668,7 @@ int DoUninstall(int argc, char **argv)
             }
         }
     }
+    free_lines(lines, nLines);
 
     if (DeleteFile(argv[2])) {
         ++nFiles;
