@@ -955,7 +955,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.run_embedded_interpreter("test_audit_run_file", timeout=3, returncode=1)
 
     def test_audit_run_interactivehook(self):
-        startup = support.TESTFN + ".py"
+        startup = os.path.join(self.oldcwd, support.TESTFN) + ".py"
         with open(startup, "w", encoding="utf-8") as f:
             print("import sys", file=f)
             print("sys.__interactivehook__ = lambda: None", file=f)
@@ -964,7 +964,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
                                       returncode=10, env=env)
 
     def test_audit_run_startup(self):
-        startup = support.TESTFN + ".py"
+        startup = os.path.join(self.oldcwd, support.TESTFN) + ".py"
         with open(startup, "w", encoding="utf-8") as f:
             print("pass", file=f)
         env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
