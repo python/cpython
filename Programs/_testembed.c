@@ -1251,6 +1251,81 @@ static int test_audit_subinterpreter(void)
     }
 }
 
+typedef struct {
+    const char* expected;
+    int exit;
+} AuditRunCommandTest;
+
+static int _audit_hook_run(const char *eventName, PyObject *args, void *userData)
+{
+    AuditRunCommandTest *test = (AuditRunCommandTest*)userData;
+    if (strcmp(eventName, test->expected)) {
+        return 0;
+    }
+
+    if (test->exit) {
+        exit(test->exit);
+    }
+
+    PyErr_Format(PyExc_RuntimeError, "detected %s(%R)", eventName, args);
+    return -1;
+}
+
+static int test_audit_run_command(void)
+{
+    AuditRunCommandTest test = {"cpython.run_command"};
+    wchar_t *argv[] = {L"./_testembed", L"-c", L"pass"};
+
+    Py_IgnoreEnvironmentFlag = 0;
+    PySys_AddAuditHook(_audit_hook_run, (void*)&test);
+
+    return Py_Main(Py_ARRAY_LENGTH(argv), argv);
+}
+
+static int test_audit_run_file(void)
+{
+    AuditRunCommandTest test = {"cpython.run_file"};
+    wchar_t *argv[] = {L"./_testembed", L"filename.py"};
+
+    Py_IgnoreEnvironmentFlag = 0;
+    PySys_AddAuditHook(_audit_hook_run, (void*)&test);
+
+    return Py_Main(Py_ARRAY_LENGTH(argv), argv);
+}
+
+static int test_audit_run_interactivehook(void)
+{
+    AuditRunCommandTest test = {"cpython.run_interactivehook", 10};
+    wchar_t *argv[] = {L"./_testembed"};
+
+    Py_IgnoreEnvironmentFlag = 0;
+    PySys_AddAuditHook(_audit_hook_run, (void*)&test);
+
+    return Py_Main(Py_ARRAY_LENGTH(argv), argv);
+}
+
+static int test_audit_run_startup(void)
+{
+    AuditRunCommandTest test = {"cpython.run_startup", 10};
+    wchar_t *argv[] = {L"./_testembed"};
+
+    Py_IgnoreEnvironmentFlag = 0;
+    PySys_AddAuditHook(_audit_hook_run, (void*)&test);
+
+    return Py_Main(Py_ARRAY_LENGTH(argv), argv);
+}
+
+static int test_audit_run_stdin(void)
+{
+    AuditRunCommandTest test = {"cpython.run_stdin"};
+    wchar_t *argv[] = {L"./_testembed"};
+
+    Py_IgnoreEnvironmentFlag = 0;
+    PySys_AddAuditHook(_audit_hook_run, (void*)&test);
+
+    return Py_Main(Py_ARRAY_LENGTH(argv), argv);
+}
+
 static int test_init_read_set(void)
 {
     PyStatus status;
@@ -1461,6 +1536,11 @@ static struct TestCase TestCases[] = {
     {"test_open_code_hook", test_open_code_hook},
     {"test_audit", test_audit},
     {"test_audit_subinterpreter", test_audit_subinterpreter},
+    {"test_audit_run_command", test_audit_run_command},
+    {"test_audit_run_file", test_audit_run_file},
+    {"test_audit_run_interactivehook", test_audit_run_interactivehook},
+    {"test_audit_run_startup", test_audit_run_startup},
+    {"test_audit_run_stdin", test_audit_run_stdin},
     {NULL, NULL}
 };
 

@@ -58,7 +58,8 @@ class EmbeddingTestsMixin:
     def tearDown(self):
         os.chdir(self.oldcwd)
 
-    def run_embedded_interpreter(self, *args, env=None):
+    def run_embedded_interpreter(self, *args, env=None,
+                                 timeout=None, returncode=0, input=None):
         """Runs a test in the embedded interpreter"""
         cmd = [self.test_exe]
         cmd.extend(args)
@@ -74,18 +75,18 @@ class EmbeddingTestsMixin:
                              universal_newlines=True,
                              env=env)
         try:
-            (out, err) = p.communicate()
+            (out, err) = p.communicate(input=input, timeout=timeout)
         except:
             p.terminate()
             p.wait()
             raise
-        if p.returncode != 0 and support.verbose:
+        if p.returncode != returncode and support.verbose:
             print(f"--- {cmd} failed ---")
             print(f"stdout:\n{out}")
             print(f"stderr:\n{err}")
             print(f"------")
 
-        self.assertEqual(p.returncode, 0,
+        self.assertEqual(p.returncode, returncode,
                          "bad returncode %d, stderr is %r" %
                          (p.returncode, err))
         return out, err
@@ -947,6 +948,31 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_audit_subinterpreter(self):
         self.run_embedded_interpreter("test_audit_subinterpreter")
 
+    def test_audit_run_command(self):
+        self.run_embedded_interpreter("test_audit_run_command", timeout=3, returncode=1)
+
+    def test_audit_run_file(self):
+        self.run_embedded_interpreter("test_audit_run_file", timeout=3, returncode=1)
+
+    def test_audit_run_interactivehook(self):
+        with open(support.TESTFN, "w", encoding="utf-8") as f:
+            print("import sys", file=f)
+            print("sys.__interactivehook__ = lambda: None", file=f)
+        self.run_embedded_interpreter("test_audit_run_interactivehook",
+                                      timeout=3,
+                                      returncode=10,
+                                      env={"PYTHONSTARTUP": support.TESTFN})
+
+    def test_audit_run_startup(self):
+        with open(support.TESTFN, "w", encoding="utf-8") as f:
+            print("pass", file=f)
+        self.run_embedded_interpreter("test_audit_run_startup",
+                                      timeout=3,
+                                      returncode=10,
+                                      env={"PYTHONSTARTUP": support.TESTFN})
+
+    def test_audit_run_stdin(self):
+        self.run_embedded_interpreter("test_audit_run_stdin", timeout=3, returncode=1)
 
 if __name__ == "__main__":
     unittest.main()

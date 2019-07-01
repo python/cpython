@@ -314,7 +314,7 @@ static int
 pymain_run_file(PyConfig *config, PyCompilerFlags *cf)
 {
     const wchar_t *filename = config->run_filename;
-    if (PySys_Audit("cpython.run_file", "U", filename) < 0) {
+    if (PySys_Audit("cpython.run_file", "u", filename) < 0) {
         return pymain_exit_err_print();
     }
     FILE *fp = _Py_wfopen(filename, L"rb");
@@ -429,7 +429,7 @@ pymain_run_interactive_hook(int *exitcode)
         return 0;
     }
 
-    if (PySys_Audit("cpython.run_interactive_hook", "O", hook) < 0) {
+    if (PySys_Audit("cpython.run_interactivehook", "O", hook) < 0) {
         goto error;
     }
 
