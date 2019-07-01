@@ -4,7 +4,6 @@ Implements the Distutils 'bdist_wininst' command: create a windows installer
 exe-program."""
 
 import sys, os
-import platform
 from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import create_tree, remove_tree
