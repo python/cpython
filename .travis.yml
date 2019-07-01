@@ -194,7 +194,7 @@ script:
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       XVFB_RUN=xvfb-run;
     fi
-    $XVFB_RUN make buildbottest TESTOPTS="-j4 -uall,-cpu test_embed"
+    $XVFB_RUN make buildbottest TESTOPTS="-j4 -uall,-cpu"
 notifications:
   email: false
   irc:

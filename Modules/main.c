@@ -389,7 +389,6 @@ pymain_run_file(PyConfig *config, PyCompilerFlags *cf)
 static int
 pymain_run_startup(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
 {
-    printf("PYTHONSTARTUP=%s\n", getenv("PYTHONSTARTUP"));
     const char *startup = _Py_GetEnv(config->use_environment, "PYTHONSTARTUP");
     if (startup == NULL) {
         return 0;

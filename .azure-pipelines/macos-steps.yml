@@ -12,7 +12,7 @@ steps:
 - script: make pythoninfo
   displayName: 'Display build info'
 
-- script: make buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml test_embed"
+- script: make buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
   displayName: 'Tests'
 
 - task: PublishTestResults@2
