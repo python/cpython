@@ -91,28 +91,26 @@ class BaseEventTests(test_utils.TestCase):
         self.assertIsNone(
             base_events._ipaddr_info('1.2.3.4', 1, UNSPEC, 0, 0))
 
-        if not support.IPV6_ENABLED:
-            return
+        if support.IPV6_ENABLED:
+            # IPv4 address with family IPv6.
+            self.assertIsNone(
+                base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
 
-        # IPv4 address with family IPv6.
-        self.assertIsNone(
-            base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
+            self.assertEqual(
+                (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
+                base_events._ipaddr_info('::3', 1, INET6, STREAM, TCP))
 
-        self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
-            base_events._ipaddr_info('::3', 1, INET6, STREAM, TCP))
+            self.assertEqual(
+                (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
+                base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
 
-        self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
-            base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
+            # IPv6 address with family IPv4.
+            self.assertIsNone(
+                base_events._ipaddr_info('::3', 1, INET, STREAM, TCP))
 
-        # IPv6 address with family IPv4.
-        self.assertIsNone(
-            base_events._ipaddr_info('::3', 1, INET, STREAM, TCP))
-
-        # IPv6 address with zone index.
-        self.assertIsNone(
-            base_events._ipaddr_info('::3%lo0', 1, INET6, STREAM, TCP))
+            # IPv6 address with zone index.
+            self.assertIsNone(
+                base_events._ipaddr_info('::3%lo0', 1, INET6, STREAM, TCP))
 
     def test_port_parameter_types(self):
         # Test obscure kinds of arguments for "port".
@@ -1284,25 +1282,24 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             t.close()
             test_utils.run_briefly(self.loop)  # allow transport to close
 
-        if not support.IPV6_ENABLED:
-            return
-
-        sock.family = socket.AF_INET6
-        coro = self.loop.create_connection(asyncio.Protocol, '::1', 80)
-        t, p = self.loop.run_until_complete(coro)
-        try:
-            # Without inet_pton we use getaddrinfo, which transforms ('::1', 80)
-            # to ('::1', 80, 0, 0). The last 0s are flow info, scope id.
-            [address] = sock.connect.call_args[0]
-            host, port = address[:2]
-            self.assertRegex(host, r'::(0\.)*1')
-            self.assertEqual(port, 80)
-            _, kwargs = m_socket.socket.call_args
-            self.assertEqual(kwargs['family'], m_socket.AF_INET6)
-            self.assertEqual(kwargs['type'], m_socket.SOCK_STREAM)
-        finally:
-            t.close()
-            test_utils.run_briefly(self.loop)  # allow transport to close
+        if support.IPV6_ENABLED:
+            sock.family = socket.AF_INET6
+            coro = self.loop.create_connection(asyncio.Protocol, '::1', 80)
+            t, p = self.loop.run_until_complete(coro)
+            try:
+                # Without inet_pton we use getaddrinfo, which transforms
+                # ('::1', 80) to ('::1', 80, 0, 0). The last 0s are flow info,
+                # scope id.
+                [address] = sock.connect.call_args[0]
+                host, port = address[:2]
+                self.assertRegex(host, r'::(0\.)*1')
+                self.assertEqual(port, 80)
+                _, kwargs = m_socket.socket.call_args
+                self.assertEqual(kwargs['family'], m_socket.AF_INET6)
+                self.assertEqual(kwargs['type'], m_socket.SOCK_STREAM)
+            finally:
+                t.close()
+                test_utils.run_briefly(self.loop)  # allow transport to close
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'no IPv6 support')
     @unittest.skipIf(sys.platform.startswith('aix'),
