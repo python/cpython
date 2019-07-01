@@ -422,6 +422,9 @@ PyAPI_FUNC(PyStatus) PyConfig_SetBytesArgv(
 PyAPI_FUNC(PyStatus) PyConfig_SetArgv(PyConfig *config,
     Py_ssize_t argc,
     wchar_t * const *argv);
+PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
+    PyWideStringList *list,
+    Py_ssize_t length, wchar_t **items);
 
 #ifdef __cplusplus
 }
