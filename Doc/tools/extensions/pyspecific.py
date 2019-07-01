@@ -199,13 +199,18 @@ class AuditEvent(Directive):
                     .format(name, info['args'], new_info['args'])
                 )
 
-        if len(self.arguments) >= 3 and self.arguments[2]:
-            target = self.arguments[2]
-            ids = []
-        else:
-            target = "audit_event_{}_{}".format(name, len(info['source']))
-            target = re.sub(r'\W', '_', label)
-            ids = [target]
+        ids = []
+        try:
+            target = self.arguments[2].strip("\"'")
+        except (IndexError, TypeError):
+            target = None
+        if not target:
+            target = "audit_event_{}_{}".format(
+                re.sub(r'\W', '_', name),
+                len(info['source']),
+            )
+            ids.append(target)
+
         info['source'].append((env.docname, target))
 
         pnode = nodes.paragraph(text, classes=["audit-hook"], ids=ids)
@@ -560,7 +565,8 @@ def process_audit_events(app, doctree, fromdocname):
         row += nodes.entry('', node)
 
         node = nodes.paragraph()
-        for i, (doc, label) in enumerate(audit_event['source'], start=1):
+        backlinks = enumerate(sorted(set(audit_event['source'])), start=1)
+        for i, (doc, label) in backlinks:
             if isinstance(label, str):
                 ref = nodes.reference("", nodes.Text("[{}]".format(i)), internal=True)
                 ref['refuri'] = "{}#{}".format(
