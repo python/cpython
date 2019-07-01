@@ -1001,7 +1001,12 @@ possible, while any potentially slow operations (such as sending an email via
 
    .. method:: emit(record)
 
-      Enqueues the result of preparing the LogRecord.
+      Enqueues the result of preparing the LogRecord. Should an exception
+      occur (e.g. because a bounded queue has filled up), the
+      :meth:`~logging.Handler.handleError` method is called to handle the
+      error. This can result in the record silently being dropped (if
+      :attr:`logging.raiseExceptions` is ``False``) or a message printed to
+      ``sys.stderr`` (if :attr:`logging.raiseExceptions` is ``True``).
 
    .. method:: prepare(record)
 
