@@ -1298,41 +1298,52 @@ static int test_audit_run_file(void)
     return Py_Main(Py_ARRAY_LENGTH(argv), argv);
 }
 
+static int run_audit_run_test(int argc, wchar_t **argv, void *test)
+{
+    PyStatus status;
+    PyConfig config;
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+    config.argv.length = argc;
+    config.argv.items = argv;
+    config.parse_argv = 1;
+    config.program_name = argv[0];
+    config.interactive = 1;
+    config.isolated = 0;
+    config.use_environment = 1;
+    config.quiet = 1;
+
+    PySys_AddAuditHook(_audit_hook_run, test);
+
+    status = Py_InitializeFromConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    return Py_RunMain();
+}
+
 static int test_audit_run_interactivehook(void)
 {
     AuditRunCommandTest test = {"cpython.run_interactivehook", 10};
     wchar_t *argv[] = {L"./_testembed"};
-
-    Py_IgnoreEnvironmentFlag = 0;
-    Py_InteractiveFlag = 1;
-    Py_IsolatedFlag = 0;
-    PySys_AddAuditHook(_audit_hook_run, (void*)&test);
-
-    return Py_Main(Py_ARRAY_LENGTH(argv), argv);
+    return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
 static int test_audit_run_startup(void)
 {
     AuditRunCommandTest test = {"cpython.run_startup", 10};
     wchar_t *argv[] = {L"./_testembed"};
-
-    Py_IgnoreEnvironmentFlag = 0;
-    Py_InteractiveFlag = 1;
-    Py_IsolatedFlag = 0;
-    PySys_AddAuditHook(_audit_hook_run, (void*)&test);
-
-    return Py_Main(Py_ARRAY_LENGTH(argv), argv);
+    return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
 static int test_audit_run_stdin(void)
 {
     AuditRunCommandTest test = {"cpython.run_stdin"};
     wchar_t *argv[] = {L"./_testembed"};
-
-    Py_IgnoreEnvironmentFlag = 0;
-    PySys_AddAuditHook(_audit_hook_run, (void*)&test);
-
-    return Py_Main(Py_ARRAY_LENGTH(argv), argv);
+    return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
 static int test_init_read_set(void)
