@@ -1467,9 +1467,6 @@ def _create_or_replace(dst, create_temp_dst):
             os.remove(temp_path)
         raise e
 
-def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
-    _link_or_symlink(os.link, srcs, dst, overwrite=overwrite, follow_symlinks=follow_symlinks)
-
 def _link_or_symlink(os_method, srcs, dst, **kwargs):
     """Create either links or symlinks based upon the value of `os_method`.
     Helper function for link and symlink.
@@ -1503,6 +1500,9 @@ def _link_or_symlink(os_method, srcs, dst, **kwargs):
             _create_or_replace(link_name, create_link_at)
         else:
             create_link_at(link_name)
+
+def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
+    _link_or_symlink(os.link, srcs, dst, overwrite=overwrite, follow_symlinks=follow_symlinks)
 
 def symlink(srcs, dst, *, overwrite=False, target_is_directory=False):
     """Create symbolic link(s) in `dst` pointing at `srcs`.
