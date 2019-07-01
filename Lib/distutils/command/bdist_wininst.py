@@ -4,6 +4,7 @@ Implements the Distutils 'bdist_wininst' command: create a windows installer
 exe-program."""
 
 import sys, os
+import platform
 from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import create_tree, remove_tree
@@ -54,6 +55,8 @@ class bdist_wininst(Command):
 
     boolean_options = ['keep-temp', 'no-target-compile', 'no-target-optimize',
                        'skip-build']
+
+    _unsupported = platform.system() != "Windows"
 
     def initialize_options(self):
         self.bdist_dir = None
