@@ -1,5 +1,7 @@
-import unittest, test.support
+import unittest
+import test.support
 from test.support.script_helper import assert_python_ok, assert_python_failure
+from test import support
 import sys, io, os
 import struct
 import subprocess
@@ -75,6 +77,20 @@ class SysModuleTest(unittest.TestCase):
             eh(*sys.exc_info())
 
         self.assertTrue(err.getvalue().endswith("ValueError: 42\n"))
+
+    def test_excepthook_bytes_filename(self):
+        # bpo-37467: sys.excepthook() must not crash if a filename
+        # is a bytes string
+        try:
+            raise SyntaxError("msg", (b"bytes_filename", 123, 0, "text"))
+        except SyntaxError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        err = err.getvalue()
+        self.assertIn("""  File "b'bytes_filename'", line 123\n""", err)
+        self.assertIn("""    text\n""", err)
+        self.assertTrue(err.endswith("SyntaxError: msg\n"))
 
     def test_excepthook(self):
         with test.support.captured_output("stderr") as stderr:
