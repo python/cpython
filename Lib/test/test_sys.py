@@ -1,80 +1,103 @@
-import unittest, test.support
+from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
-import sys, io, os
-import struct
-import subprocess
-import textwrap
-import warnings
-import operator
+import builtins
 import codecs
 import gc
-import sysconfig
+import io
 import locale
+import operator
+import os
+import struct
+import subprocess
+import sys
+import sysconfig
+import test.support
+import textwrap
+import unittest
+import warnings
+
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
-numruns = 0
+INTERN_NUMRUNS = 0
 
 
-class SysModuleTest(unittest.TestCase):
-
-    def setUp(self):
-        self.orig_stdout = sys.stdout
-        self.orig_stderr = sys.stderr
-        self.orig_displayhook = sys.displayhook
-
-    def tearDown(self):
-        sys.stdout = self.orig_stdout
-        sys.stderr = self.orig_stderr
-        sys.displayhook = self.orig_displayhook
-        test.support.reap_children()
+class DisplayHookTest(unittest.TestCase):
 
     def test_original_displayhook(self):
-        import builtins
-        out = io.StringIO()
-        sys.stdout = out
-
         dh = sys.__displayhook__
 
-        self.assertRaises(TypeError, dh)
-        if hasattr(builtins, "_"):
-            del builtins._
+        with support.captured_stdout() as out:
+            dh(42)
 
-        dh(None)
-        self.assertEqual(out.getvalue(), "")
-        self.assertTrue(not hasattr(builtins, "_"))
-        dh(42)
         self.assertEqual(out.getvalue(), "42\n")
         self.assertEqual(builtins._, 42)
 
-        del sys.stdout
-        self.assertRaises(RuntimeError, dh, 42)
+        del builtins._
+
+        with support.captured_stdout() as out:
+            dh(None)
+
+        self.assertEqual(out.getvalue(), "")
+        self.assertTrue(not hasattr(builtins, "_"))
+
+        # sys.displayhook() requires arguments
+        self.assertRaises(TypeError, dh)
+
+        stdout = sys.stdout
+        try:
+            del sys.stdout
+            self.assertRaises(RuntimeError, dh, 42)
+        finally:
+            sys.stdout = stdout
 
     def test_lost_displayhook(self):
-        del sys.displayhook
-        code = compile("42", "<string>", "single")
-        self.assertRaises(RuntimeError, eval, code)
+        displayhook = sys.displayhook
+        try:
+            del sys.displayhook
+            code = compile("42", "<string>", "single")
+            self.assertRaises(RuntimeError, eval, code)
+        finally:
+            sys.displayhook = displayhook
 
     def test_custom_displayhook(self):
         def baddisplayhook(obj):
             raise ValueError
-        sys.displayhook = baddisplayhook
-        code = compile("42", "<string>", "single")
-        self.assertRaises(ValueError, eval, code)
+
+        with support.swap_attr(sys, 'displayhook', baddisplayhook):
+            code = compile("42", "<string>", "single")
+            self.assertRaises(ValueError, eval, code)
+
+
+class ExceptHookTest(unittest.TestCase):
 
     def test_original_excepthook(self):
-        err = io.StringIO()
-        sys.stderr = err
-
-        eh = sys.__excepthook__
-
-        self.assertRaises(TypeError, eh)
         try:
             raise ValueError(42)
         except ValueError as exc:
-            eh(*sys.exc_info())
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
 
         self.assertTrue(err.getvalue().endswith("ValueError: 42\n"))
+
+        self.assertRaises(TypeError, sys.__excepthook__)
+
+    def test_excepthook_bytes_filename(self):
+        # bpo-37467: sys.excepthook() must not crash if a filename
+        # is a bytes string
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
+
+            try:
+                raise SyntaxError("msg", (b"bytes_filename", 123, 0, "text"))
+            except SyntaxError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+
+        err = err.getvalue()
+        self.assertIn("""  File "b'bytes_filename'", line 123\n""", err)
+        self.assertIn("""    text\n""", err)
+        self.assertTrue(err.endswith("SyntaxError: msg\n"))
 
     def test_excepthook(self):
         with test.support.captured_output("stderr") as stderr:
@@ -84,6 +107,12 @@ class SysModuleTest(unittest.TestCase):
 
     # FIXME: testing the code for a lost or replaced excepthook in
     # Python/pythonrun.c::PyErr_PrintEx() is tricky.
+
+
+class SysModuleTest(unittest.TestCase):
+
+    def tearDown(self):
+        test.support.reap_children()
 
     def test_exit(self):
         # call with two arguments
@@ -492,10 +521,10 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
-        global numruns
-        numruns += 1
+        global INTERN_NUMRUNS
+        INTERN_NUMRUNS += 1
         self.assertRaises(TypeError, sys.intern)
-        s = "never interned before" + str(numruns)
+        s = "never interned before" + str(INTERN_NUMRUNS)
         self.assertTrue(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assertTrue(sys.intern(s2) is s)
