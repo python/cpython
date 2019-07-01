@@ -931,6 +931,26 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     SSL_set_mode(self->ssl,
                  SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_AUTO_RETRY);
 
+#ifdef TLS1_3_VERSION
+    if (sslctx->post_handshake_auth == 1) {
+        if (socket_type == PY_SSL_SERVER) {
+            /* bpo-37428: OpenSSL does not ignore SSL_VERIFY_POST_HANDSHAKE.
+             * Set SSL_VERIFY_POST_HANDSHAKE flag only for server sockets and
+             * only in combination with SSL_VERIFY_PEER flag. */
+            int mode = SSL_get_verify_mode(self->ssl);
+            if (mode & SSL_VERIFY_PEER) {
+                int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
+                verify_cb = SSL_get_verify_callback(self->ssl);
+                mode |= SSL_VERIFY_POST_HANDSHAKE;
+                SSL_set_verify(self->ssl, mode, verify_cb);
+            }
+        } else {
+            /* client socket */
+            SSL_set_post_handshake_auth(self->ssl, 1);
+        }
+    }
+#endif
+
     if (server_hostname != NULL) {
         if (_ssl_configure_hostname(self, server_hostname) < 0) {
             Py_DECREF(self);
@@ -2928,10 +2948,10 @@ _set_verify_mode(PySSLContext *self, enum py_ssl_cert_requirements n)
                         "invalid value for verify_mode");
         return -1;
     }
-#ifdef TLS1_3_VERSION
-    if (self->post_handshake_auth)
-        mode |= SSL_VERIFY_POST_HANDSHAKE;
-#endif
+
+    /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
+     * server sockets and SSL_set_post_handshake_auth() for client. */
+
     /* keep current verify cb */
     verify_cb = SSL_CTX_get_verify_callback(self->ctx);
     SSL_CTX_set_verify(self->ctx, mode, verify_cb);
@@ -3628,8 +3648,6 @@ get_post_handshake_auth(PySSLContext *self, void *c) {
 #if TLS1_3_VERSION
 static int
 set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
-    int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
-    int mode = SSL_CTX_get_verify_mode(self->ctx);
     if (arg == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
@@ -3641,17 +3659,8 @@ set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
     }
     self->post_handshake_auth = pha;
 
-    /* client-side socket setting, ignored by server-side */
-    SSL_CTX_set_post_handshake_auth(self->ctx, pha);
-
-    /* server-side socket setting, ignored by client-side */
-    verify_cb = SSL_CTX_get_verify_callback(self->ctx);
-    if (pha) {
-        mode |= SSL_VERIFY_POST_HANDSHAKE;
-    } else {
-        mode ^= SSL_VERIFY_POST_HANDSHAKE;
-    }
-    SSL_CTX_set_verify(self->ctx, mode, verify_cb);
+    /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
+     * server sockets and SSL_set_post_handshake_auth() for client. */
 
     return 0;
 }
