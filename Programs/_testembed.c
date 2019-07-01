@@ -1258,12 +1258,6 @@ typedef struct {
 
 static int _audit_hook_run(const char *eventName, PyObject *args, void *userData)
 {
-    PyObject *msg2 = PyUnicode_FromFormat("evt: %s(%R)", eventName, args);
-    if (msg2) {
-        printf("%s\n", PyUnicode_AsUTF8(msg2));
-        Py_DECREF(msg2);
-    }
-
     AuditRunCommandTest *test = (AuditRunCommandTest*)userData;
     if (strcmp(eventName, test->expected)) {
         return 0;
@@ -1310,6 +1304,7 @@ static int test_audit_run_interactivehook(void)
     wchar_t *argv[] = {L"./_testembed"};
 
     Py_IgnoreEnvironmentFlag = 0;
+    Py_IsolatedFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
 
     return Py_Main(Py_ARRAY_LENGTH(argv), argv);
@@ -1321,6 +1316,7 @@ static int test_audit_run_startup(void)
     wchar_t *argv[] = {L"./_testembed"};
 
     Py_IgnoreEnvironmentFlag = 0;
+    Py_IsolatedFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
 
     return Py_Main(Py_ARRAY_LENGTH(argv), argv);
