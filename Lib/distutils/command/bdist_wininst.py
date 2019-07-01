@@ -56,7 +56,8 @@ class bdist_wininst(Command):
     boolean_options = ['keep-temp', 'no-target-compile', 'no-target-optimize',
                        'skip-build']
 
-    _unsupported = platform.system() != "Windows"
+    # bpo-10945: bdist_wininst requires mbcs encoding only available on Windows
+    _unsupported = (sys.platform != "win32")
 
     def initialize_options(self):
         self.bdist_dir = None
