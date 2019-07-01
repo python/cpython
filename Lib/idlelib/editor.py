@@ -1591,17 +1591,8 @@ def index2line(index):
 #              tabs to width tabwidth)
 
 def classifyws(s, tabwidth):
-    raw = effective = 0
-    for ch in s:
-        if ch == ' ':
-            raw = raw + 1
-            effective = effective + 1
-        elif ch == '\t':
-            raw = raw + 1
-            effective = (effective // tabwidth + 1) * tabwidth
-        else:
-            break
-    return raw, effective
+    m = re.match(r'[ \t]*', s)
+    return m.end(), len(m.group().expandtabs(tabwidth))
 
 
 class IndentSearcher(object):
