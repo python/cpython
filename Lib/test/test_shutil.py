@@ -2604,20 +2604,9 @@ class Link(unittest.TestCase):
                 with self.assertRaisesRegex(FileExistsError, dst_path):
                     shutil.link(src, dst_path)
 
-class LinkSymlinkHelpers(unittest.TestCase):
+# https://devguide.python.org/committing/#what-s-new-and-news-entries
 
-    def test_link_or_symlink_invalid_os_method(self):
-        invalid_method = os.dup
-        with self.assertRaisesRegex(KeyError, 'dup'):
-            shutil._link_or_symlink(invalid_method, '.', '.', overwrite=True,
-                                    follow_symlinks=True)
-
-    def test_link_or_symlink_invalid_kwarg(self):
-        with self.assertRaisesRegex(TypeError, 'bad_arg'):
-            shutil._link_or_symlink(os.link, '.', '.', overwrite=True,
-                                    follow_symlinks=True, bad_arg='here')
-
-class Symlink(unittest.TestCase):
+class LinkSymlink(unittest.TestCase):
 
     def setUp(self):
         # Create extant directories, files and symlinks
@@ -2667,9 +2656,69 @@ class Symlink(unittest.TestCase):
         except BaseException:
             pass
 
-    # Argument checking
 
-    def test_bool_argument_type_checking(self):
+    def test_link_or_symlink_invalid_os_method(self):
+        invalid_method = os.dup
+        with self.assertRaisesRegex(KeyError, 'dup'):
+            shutil._link_or_symlink(invalid_method, '.', '.', overwrite=True,
+                                    follow_symlinks=True)
+
+    def test_link_or_symlink_invalid_kwarg(self):
+        with self.assertRaisesRegex(TypeError, 'bad_arg'):
+            shutil._link_or_symlink(os.link, '.', '.', overwrite=True,
+                                    follow_symlinks=True, bad_arg='here')
+
+    # _create_or_replace
+
+    def mock_mktemp(*, orig_mktemp=tempfile.mktemp, **kwargs):
+        """Ensure only the first mktemp call returns an existing pathname.
+        Save the temp path created for later retrieval"""
+        virgin = getattr(LinkSymlink.mock_mktemp, 'virgin', True)
+        temp = orig_mktemp(**kwargs)
+        LinkSymlink.mock_mktemp.path = temp
+        if virgin:
+            open(temp, 'w').close()
+            LinkSymlink.mock_mktemp.virgin = False
+        return temp
+
+    @unittest.mock.patch('tempfile.mktemp', side_effect=mock_mktemp)
+    def test_retry_on_existing_temp_path(self, mock_mktemp):
+        # Simulate race condition: creation of temp path after tempfile.mktemp
+        shutil.symlink(self.src_file1, self.dst_file1, overwrite=True)
+        self.assertGreater(mock_mktemp.call_count, 1)
+        self.assertEqual(os.readlink(self.dst_file1), self.src_file1)
+
+    class ExpectedException(BaseException):
+        """An exception that is expected to be raised by mocks"""
+        pass
+
+    def mock_symlink(*args, orig_symlink=os.symlink, **kwargs):
+        """Raise exception immediately after temp symlink creation"""
+        orig_symlink(*args, **kwargs)
+        assert (os.path.lexists(LinkSymlink.mock_mktemp.path))
+        raise LinkSymlink.ExpectedException
+
+    @unittest.mock.patch('tempfile.mktemp', side_effect=mock_mktemp)
+    def test_temp_is_removed_on_exception(self, mock_mktemp):
+        # Simulate exceptions while temporary link exists
+        patch_symlink = unittest.mock.patch('os.symlink',
+                                        side_effect=LinkSymlink.mock_symlink)
+        patch_replace = unittest.mock.patch('os.replace',
+                                    side_effect=LinkSymlink.ExpectedException)
+        exceptions = {'after symlink': patch_symlink,
+                      'in replace': patch_replace}
+        for location, patched_context in exceptions.items():
+            with patched_context as mock, self.subTest(exception=location):
+                with self.assertRaises(LinkSymlink.ExpectedException):
+                    shutil.symlink(self.src_file1, self.dst_file1,
+                                   overwrite=True)
+                mock.assert_called_once()
+                self.assertFalse(os.path.lexists(
+                                        LinkSymlink.mock_mktemp.path))
+
+    # Symlink argument checking
+
+    def test_symlink_bool_argument_type_checking(self):
         bool_args = ['overwrite', 'target_is_directory']
 
         # Set only one bool arg to be non-bool ('X') on each call
@@ -2679,14 +2728,12 @@ class Symlink(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, arg):
                     shutil.symlink(self.src_file1, self.dst_file1, **kwargs)
 
-    def test_two_positional_args(self):
+    def test_symlink_two_positional_args(self):
         with self.assertRaisesRegex(TypeError, '2 positional arguments'):
             shutil.symlink(self.src_file1, self.dst_file1, True)
 
-    # Calling of functions
-
     @unittest.mock.patch('os.symlink', side_effect=os.symlink)
-    def test_target_is_directory_passed_for_each_src(self, mock_os_symlink):
+    def test_symlink_passes_target_is_directory(self, mock_os_symlink):
         for boolean in [True, False]:
             mock_os_symlink.reset_mock()
             shutil.symlink(self.srcs, self.dst_dir1, overwrite=True,
@@ -2695,15 +2742,15 @@ class Symlink(unittest.TestCase):
             for call in mock_os_symlink.call_args_list:
                 self.assertEqual(call[1]['target_is_directory'], boolean)
 
-    # Single source
+    # Symlink single source
 
-    def test_1src_dst_not_exist(self):
+    def test_symlink_1src_dst_not_exist(self):
         src = self.src_file1
         dst = self.new1
         shutil.symlink(src, dst)
         self.assertEqual(os.readlink(dst), src)
 
-    def test_1src_dst_existing_path(self):
+    def test_symlink_1src_dst_existing_path(self):
         src = self.src_file1
         dst_existing = {k: v for k, v in self.path_types.items()
                         if k != 'absent'}
@@ -2712,9 +2759,9 @@ class Symlink(unittest.TestCase):
                 with self.assertRaisesRegex(FileExistsError, dst_path):
                     shutil.symlink(src, dst_path)
 
-    # Iterable of sources
+    # Symlink iterable of sources
 
-    def test_iterable_dst_is_directory(self):
+    def test_symlink_iterable_dst_is_directory(self):
         dsts = {'directory': self.dst_dir1,
                 'symlink_to_dir': self.link_to_dir}
         for description, dir_path in dsts.items():
@@ -2724,7 +2771,7 @@ class Symlink(unittest.TestCase):
                     link_path = os.path.join(dir_path, os.path.basename(src))
                     self.assertEqual(os.readlink(link_path), src)
 
-    def test_iterable_dst_not_directory(self):
+    def test_symlink_iterable_dst_not_directory(self):
         exist = {'file': self.dst_file1, 'link_to_file': self.link_to_file,
                  'link_to_link': self.link_to_link}
         absent = {'absent': self.new1, 'broken_link': self.broken_link,
@@ -2742,29 +2789,29 @@ class Symlink(unittest.TestCase):
                 with self.assertRaisesRegex(FileNotFoundError, dst_path):
                     shutil.symlink(self.srcs, dst_path)
 
-    # Iterable of sources - Edge cases
+    # Symlink iterable of sources - Edge cases
 
-    def test_empty_iterable(self):
+    def test_symlink_empty_iterable(self):
         srcs = []
         with unittest.mock.patch("os.symlink") as m:
             shutil.symlink(srcs, self.dst_dir1)
         self.assertTrue(m.not_called)
 
-    def test_single_element_iterable(self):
+    def test_symlink_single_element_iterable(self):
         srcs = [self.new1]
         shutil.symlink(srcs, self.dst_dir1)
         link_path = os.path.join(self.dst_dir1, os.path.basename(srcs[0]))
         self.assertEqual(os.readlink(link_path), srcs[0])
 
-    # Overwrite=True
+    # Symlink `overwrite=True`
 
-    def test_single_src_overwrite_existing_directory(self):
+    def test_symlink_single_src_overwrite_existing_directory(self):
         dst = self.dst_dir1
         self.assertTrue(os.path.exists(dst))
         with self.assertRaisesRegex(IsADirectoryError, dst):
             shutil.symlink(self.src_file1, dst, overwrite=True)
 
-    def test_single_src_overwrite_existing_not_directory(self):
+    def test_symlink_single_src_overwrite_existing_not_directory(self):
         src = self.src_file1
         dsts_not_dir = {k: v for k, v in self.path_types.items()
                         if k not in ['absent', 'directory']}
@@ -2774,7 +2821,7 @@ class Symlink(unittest.TestCase):
                 shutil.symlink(src, dst, overwrite=True)
                 self.assertEqual(os.readlink(dst), src)
 
-    def test_many_srcs_overwrite(self):
+    def test_symlink_many_srcs_overwrite(self):
         srcs = [self.src_file1, self.src_file2]
         dst_dir = self.dst_dir1
         src_to_dst_path = {}
@@ -2787,53 +2834,6 @@ class Symlink(unittest.TestCase):
         for src in srcs:
             shutil.symlink(srcs, dst_dir, overwrite=True)
             self.assertEqual(os.readlink(src_to_dst_path[src]), src)
-
-    # _create_or_replace helper function
-
-    def mock_mktemp(*, orig_mktemp=tempfile.mktemp, **kwargs):
-        """Ensure only the first mktemp call returns an existing pathname.
-        Save the temp path created for later retrieval"""
-        virgin = getattr(Symlink.mock_mktemp, 'virgin', True)
-        temp = orig_mktemp(**kwargs)
-        Symlink.mock_mktemp.path = temp
-        if virgin:
-            open(temp, 'w').close()
-            Symlink.mock_mktemp.virgin = False
-        return temp
-
-    @unittest.mock.patch('tempfile.mktemp', side_effect=mock_mktemp)
-    def test_retry_on_existing_temp_path(self, mock_mktemp):
-        # Simulate race condition: creation of temp path after tempfile.mktemp
-        shutil.symlink(self.src_file1, self.dst_file1, overwrite=True)
-        self.assertGreater(mock_mktemp.call_count, 1)
-        self.assertEqual(os.readlink(self.dst_file1), self.src_file1)
-
-    class ExpectedException(BaseException):
-        """An exception that is expected to be raised by mocks"""
-        pass
-
-    def mock_symlink(*args, orig_symlink=os.symlink, **kwargs):
-        """Raise exception immediately after temp symlink creation"""
-        orig_symlink(*args, **kwargs)
-        assert(os.path.lexists(Symlink.mock_mktemp.path))
-        raise Symlink.ExpectedException
-
-    @unittest.mock.patch('tempfile.mktemp', side_effect=mock_mktemp)
-    def test_temp_is_removed_on_exception(self, mock_mktemp):
-        # Simulate exceptions while temporary link exists
-        patch_symlink = unittest.mock.patch('os.symlink',
-                                            side_effect=Symlink.mock_symlink)
-        patch_replace = unittest.mock.patch('os.replace',
-                                        side_effect=Symlink.ExpectedException)
-        exceptions = {'after symlink': patch_symlink,
-                      'in replace': patch_replace}
-        for location, patched_context in exceptions.items():
-            with patched_context as mock, self.subTest(exception=location):
-                with self.assertRaises(Symlink.ExpectedException):
-                    shutil.symlink(self.src_file1, self.dst_file1,
-                                   overwrite=True)
-                mock.assert_called_once()
-                self.assertFalse(os.path.lexists(Symlink.mock_mktemp.path))
 
 class PublicAPITests(unittest.TestCase):
     """Ensures that the correct values are exposed in the public API."""
