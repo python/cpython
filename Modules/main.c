@@ -243,6 +243,10 @@ pymain_run_command(wchar_t *command, PyCompilerFlags *cf)
         goto error;
     }
 
+    if (PySys_Audit("cpython.run_command", "O", unicode) < 0) {
+        return pymain_exit_err_print();
+    }
+
     bytes = PyUnicode_AsUTF8String(unicode);
     Py_DECREF(unicode);
     if (bytes == NULL) {
@@ -263,6 +267,9 @@ static int
 pymain_run_module(const wchar_t *modname, int set_argv0)
 {
     PyObject *module, *runpy, *runmodule, *runargs, *result;
+    if (PySys_Audit("cpython.run_module", "u", modname) < 0) {
+        return pymain_exit_err_print();
+    }
     runpy = PyImport_ImportModule("runpy");
     if (runpy == NULL) {
         fprintf(stderr, "Could not import runpy module\n");
@@ -307,6 +314,9 @@ static int
 pymain_run_file(PyConfig *config, PyCompilerFlags *cf)
 {
     const wchar_t *filename = config->run_filename;
+    if (PySys_Audit("cpython.run_file", "U", filename) < 0) {
+        return pymain_exit_err_print();
+    }
     FILE *fp = _Py_wfopen(filename, L"rb");
     if (fp == NULL) {
         char *cfilename_buffer;
@@ -379,6 +389,9 @@ pymain_run_startup(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
     if (startup == NULL) {
         return 0;
     }
+    if (PySys_Audit("cpython.run_startup", "s", startup) < 0) {
+        return pymain_err_print(exitcode);
+    }
 
     FILE *fp = _Py_fopen(startup, "r");
     if (fp == NULL) {
@@ -416,6 +429,10 @@ pymain_run_interactive_hook(int *exitcode)
         return 0;
     }
 
+    if (PySys_Audit("cpython.run_interactive_hook", "O", hook) < 0) {
+        goto error;
+    }
+
     result = _PyObject_CallNoArg(hook);
     Py_DECREF(hook);
     if (result == NULL) {
@@ -450,6 +467,10 @@ pymain_run_stdin(PyConfig *config, PyCompilerFlags *cf)
 
     /* call pending calls like signal handlers (SIGINT) */
     if (Py_MakePendingCalls() == -1) {
+        return pymain_exit_err_print();
+    }
+
+    if (PySys_Audit("cpython.run_stdin", NULL) < 0) {
         return pymain_exit_err_print();
     }
 
