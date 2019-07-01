@@ -90,9 +90,7 @@ class IterStatementsTests(TestCaseBase):
     def test_ignore_whitespace(self):
         raise NotImplementedError
 
-    @unittest.expectedFailure
     def test_ignore_comments(self):
-        raise NotImplementedError
         tests = [
             ('// msg', None),
             ('// int stmt;', None),

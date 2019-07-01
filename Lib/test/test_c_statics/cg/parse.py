@@ -11,7 +11,18 @@ def iter_statements(lines, *, local=False):
     statements a single line will be provided.
     """
     # XXX Bail out upon bogus syntax.
+    comment = False
     for line in lines:
+        # Deal with comments.
+        if comment:
+            _, sep, line = line.partition('*/')
+            if sep:
+                comment = False
+        line, _, _ = line.partition('//')
+        line, sep, _ = line.partition('/*')
+        if sep:
+            comment = True
+
         if not line.strip():
             continue
 
