@@ -6,7 +6,6 @@ if __name__ != 'test.support':
 import asyncio.events
 import collections.abc
 import contextlib
-import datetime
 import errno
 import faulthandler
 import fnmatch
@@ -15,7 +14,6 @@ import gc
 import glob
 import importlib
 import importlib.util
-import io
 import logging.handlers
 import nntplib
 import os

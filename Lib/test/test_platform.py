@@ -2,12 +2,11 @@ import os
 import platform
 import subprocess
 import sys
-import sysconfig
-import tempfile
 import unittest
 from unittest import mock
 
 from test import support
+
 
 class PlatformTest(unittest.TestCase):
     def clear_caches(self):

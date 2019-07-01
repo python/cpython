@@ -1,5 +1,4 @@
 import io
-import sys
 import types
 import textwrap
 import unittest

@@ -992,14 +992,21 @@ possible, while any potentially slow operations (such as sending an email via
 .. class:: QueueHandler(queue)
 
    Returns a new instance of the :class:`QueueHandler` class. The instance is
-   initialized with the queue to send messages to. The queue can be any
-   queue-like object; it's used as-is by the :meth:`enqueue` method, which needs
-   to know how to send messages to it.
+   initialized with the queue to send messages to. The *queue* can be any
+   queue-like object; it's used as-is by the :meth:`enqueue` method, which
+   needs to know how to send messages to it. The queue is not *required* to
+   have the task tracking API, which means that you can use
+   :class:`~queue.SimpleQueue` instances for *queue*.
 
 
    .. method:: emit(record)
 
-      Enqueues the result of preparing the LogRecord.
+      Enqueues the result of preparing the LogRecord. Should an exception
+      occur (e.g. because a bounded queue has filled up), the
+      :meth:`~logging.Handler.handleError` method is called to handle the
+      error. This can result in the record silently being dropped (if
+      :attr:`logging.raiseExceptions` is ``False``) or a message printed to
+      ``sys.stderr`` (if :attr:`logging.raiseExceptions` is ``True``).
 
    .. method:: prepare(record)
 
@@ -1050,11 +1057,14 @@ possible, while any potentially slow operations (such as sending an email via
    initialized with the queue to send messages to and a list of handlers which
    will handle entries placed on the queue. The queue can be any queue-like
    object; it's passed as-is to the :meth:`dequeue` method, which needs
-   to know how to get messages from it. If ``respect_handler_level`` is ``True``,
-   a handler's level is respected (compared with the level for the message) when
-   deciding whether to pass messages to that handler; otherwise, the behaviour
-   is as in previous Python versions - to always pass each message to each
-   handler.
+   to know how to get messages from it. The queue is not *required* to have the
+   task tracking API (though it's used if available), which means that you can
+   use :class:`~queue.SimpleQueue` instances for *queue*.
+
+   If ``respect_handler_level`` is ``True``, a handler's level is respected
+   (compared with the level for the message) when deciding whether to pass
+   messages to that handler; otherwise, the behaviour is as in previous Python
+   versions - to always pass each message to each handler.
 
    .. versionchanged:: 3.5
       The ``respect_handler_levels`` argument was added.
