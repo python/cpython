@@ -2674,24 +2674,13 @@ class LinkSymlink(unittest.TestCase):
             for call in mock_os_symlink.call_args_list:
                 self.assertEqual(call[1]['target_is_directory'], boolean)
 
-    # Link single source
+    # Single source
 
-    def test_1src_dst_not_exist(self):
+    def test_link_1src_dst_not_exist(self):
         src = self.src_file1
         dst = self.new1
         shutil.link(src, dst)
         self.assertTrue(os.path.samefile(src, dst))
-
-    def test_1src_dst_existing_path(self):
-        src = self.src_file1
-        dst_existing = {k: v for k, v in self.path_types.items()
-                        if k != 'absent'}
-        for description, dst_path in dst_existing.items():
-            with self.subTest(type=description):
-                with self.assertRaisesRegex(FileExistsError, dst_path):
-                    shutil.link(src, dst_path)
-
-    # Symlink single source
 
     def test_symlink_1src_dst_not_exist(self):
         src = self.src_file1
@@ -2699,14 +2688,16 @@ class LinkSymlink(unittest.TestCase):
         shutil.symlink(src, dst)
         self.assertEqual(os.readlink(dst), src)
 
-    def test_symlink_1src_dst_existing_path(self):
+    def test_1src_dst_existing_path(self):
         src = self.src_file1
         dst_existing = {k: v for k, v in self.path_types.items()
                         if k != 'absent'}
-        for description, dst_path in dst_existing.items():
-            with self.subTest(type=description):
-                with self.assertRaisesRegex(FileExistsError, dst_path):
-                    shutil.symlink(src, dst_path)
+        methods = {'link': os.symlink, 'symlink': os.symlink}
+        for method in methods:
+            for description, dst_path in dst_existing.items():
+                with self.subTest(method=method, type=description):
+                    with self.assertRaisesRegex(FileExistsError, dst_path):
+                        methods[method](src, dst_path)
 
     # Symlink iterable of sources
 
