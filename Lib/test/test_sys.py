@@ -81,11 +81,14 @@ class SysModuleTest(unittest.TestCase):
     def test_excepthook_bytes_filename(self):
         # bpo-37467: sys.excepthook() must not crash if a filename
         # is a bytes string
-        try:
-            raise SyntaxError("msg", (b"bytes_filename", 123, 0, "text"))
-        except SyntaxError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
+
+            try:
+                raise SyntaxError("msg", (b"bytes_filename", 123, 0, "text"))
+            except SyntaxError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
 
         err = err.getvalue()
         self.assertIn("""  File "b'bytes_filename'", line 123\n""", err)
