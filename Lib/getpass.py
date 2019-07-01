@@ -132,8 +132,8 @@ def _raw_input(prompt="", stream=None, input=None):
         stream = sys.stderr
     if not input:
         input = sys.stdin
-    prompt = str(prompt)
     if prompt:
+        prompt = str(prompt)
         try:
             stream.write(prompt)
         except UnicodeEncodeError:
