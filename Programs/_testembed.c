@@ -1264,6 +1264,11 @@ static int _audit_hook_run(const char *eventName, PyObject *args, void *userData
     }
 
     if (test->exit) {
+        PyObject *msg = PyUnicode_FromFormat("detected %s(%R)", eventName, args);
+        if (msg) {
+            printf("%s\n", PyUnicode_AsUTF8(msg));
+            Py_DECREF(msg);
+        }
         exit(test->exit);
     }
 

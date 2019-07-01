@@ -68,7 +68,6 @@ class EmbeddingTestsMixin:
             # start Python.
             env = env.copy()
             env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
-        print(env, file=sys.__stderr__)
 
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
