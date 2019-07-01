@@ -4,7 +4,6 @@ import sys
 import types
 import unittest
 
-from test import support
 from unittest import mock
 
 import asyncio

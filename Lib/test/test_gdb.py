@@ -3,7 +3,6 @@
 # The code for testing gdb was adapted from similar work in Unladen Swallow's
 # Lib/test/test_jit_gdb.py
 
-import locale
 import os
 import platform
 import re

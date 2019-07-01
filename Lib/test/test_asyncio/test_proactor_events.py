@@ -7,7 +7,6 @@ import sys
 from unittest import mock
 
 import asyncio
-from asyncio import events
 from asyncio.proactor_events import BaseProactorEventLoop
 from asyncio.proactor_events import _ProactorSocketTransport
 from asyncio.proactor_events import _ProactorWritePipeTransport

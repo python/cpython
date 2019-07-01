@@ -3,12 +3,12 @@ import os
 import platform
 import subprocess
 import sys
-import sysconfig
 import tempfile
 import unittest
 import warnings
 
 from test import support
+
 
 class PlatformTest(unittest.TestCase):
     def test_architecture(self):
