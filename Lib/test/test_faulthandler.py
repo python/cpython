@@ -9,7 +9,6 @@ import sysconfig
 from test import support
 from test.support import script_helper, is_android
 import tempfile
-import threading
 import unittest
 from textwrap import dedent
 

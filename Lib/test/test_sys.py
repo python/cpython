@@ -3,7 +3,6 @@ from test.support.script_helper import assert_python_ok, assert_python_failure
 import builtins
 import codecs
 import gc
-import io
 import locale
 import operator
 import os

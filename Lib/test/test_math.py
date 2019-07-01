@@ -12,7 +12,7 @@ import platform
 import random
 import struct
 import sys
-import sysconfig
+
 
 eps = 1E-05
 NAN = float('nan')

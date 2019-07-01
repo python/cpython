@@ -9,7 +9,6 @@ import contextlib
 import decimal
 import errno
 import fractions
-import getpass
 import itertools
 import locale
 import mmap

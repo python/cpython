@@ -26,8 +26,6 @@ if sys.platform != 'win32':
     import tty
 
 import asyncio
-from asyncio import base_events
-from asyncio import constants
 from asyncio import coroutines
 from asyncio import events
 from asyncio import proactor_events

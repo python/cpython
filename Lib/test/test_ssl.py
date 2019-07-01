@@ -26,7 +26,7 @@ except ImportError:
 
 ssl = support.import_module("ssl")
 
-from ssl import TLSVersion, _TLSContentType, _TLSMessageType, _TLSAlertType
+from ssl import TLSVersion, _TLSContentType, _TLSMessageType
 
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = support.HOST
@@ -4592,7 +4592,6 @@ class TestSSLDebug(unittest.TestCase):
 
 def test_main(verbose=False):
     if support.verbose:
-        import warnings
         plats = {
             'Mac': platform.mac_ver,
             'Windows': platform.win32_ver,

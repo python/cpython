@@ -22,8 +22,6 @@ if sys.platform == 'win32':
 
 import asyncio
 from asyncio import log
-from asyncio import base_events
-from asyncio import events
 from asyncio import unix_events
 from test.test_asyncio import utils as test_utils
 
