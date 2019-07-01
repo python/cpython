@@ -2266,9 +2266,9 @@ The script just arranges to decorate ``foo`` with a decorator which will do the
 conditional logging that's required. The decorator takes a logger as a parameter
 and attaches a memory handler for the duration of the call to the decorated
 function. The decorator can be additionally parameterised using a target handler,
-a level at which flushing should occur, and a capacity for the buffer. These
-default to a :class:`~logging.StreamHandler` which writes to ``sys.stderr``,
-``logging.ERROR`` and ``100`` respectively.
+a level at which flushing should occur, and a capacity for the buffer (number of
+records buffered). These default to a :class:`~logging.StreamHandler` which
+writes to ``sys.stderr``, ``logging.ERROR`` and ``100`` respectively.
 
 Here's the script::
 
