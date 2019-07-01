@@ -1,3 +1,4 @@
+from importlib import _bootstrap_external
 from test import support
 import unittest
 
