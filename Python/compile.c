@@ -5813,13 +5813,11 @@ makecode(struct compiler *c, struct assembler *a)
     if (maxdepth < 0) {
         goto error;
     }
-    co = PyCode_New(posonlyargcount+posorkeywordargcount, posonlyargcount,
-                    kwonlyargcount, nlocals_int, maxdepth, flags,
-                    bytecode, consts, names, varnames,
-                    freevars, cellvars,
-                    c->c_filename, c->u->u_name,
-                    c->u->u_firstlineno,
-                    a->a_lnotab);
+    co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
+                                   posonlyargcount, kwonlyargcount, nlocals_int, 
+                                   maxdepth, flags, bytecode, consts, names,
+                                   varnames, freevars, cellvars, c->c_filename,
+                                   c->u->u_name, c->u->u_firstlineno, a->a_lnotab);
  error:
     Py_XDECREF(consts);
     Py_XDECREF(names);
