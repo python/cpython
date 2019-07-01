@@ -2,7 +2,7 @@ import shlex
 import subprocess
 
 
-def iter_statements(lines):
+def iter_statements(lines, *, local=False):
     """Yield (lines, issimple) for each statement in the given lines.
 
     Only the (relative) top-level statements are yielded, hence
@@ -10,7 +10,13 @@ def iter_statements(lines):
     and block(s) of the statement are provided as-is.  For simple
     statements a single line will be provided.
     """
-    raise NotImplementedError
+    # XXX Bail out upon bogus syntax.
+    for line in lines:
+        if not line.strip():
+            continue
+
+        raise NotImplementedError
+        yield('', True)
 
 
 def parse_func(lines):
@@ -45,7 +51,7 @@ def iter_variables(filename, *,
                    ):
     """Yield (funcname, name, vartype) for every variable in the given file."""
     lines = _iter_source_lines(filename)
-    for stmt, issimple in _iter_statements(lines):
+    for stmt, issimple in _iter_statements(lines, local=False):
         # At the file top-level we only have to worry about vars & funcs.
         if issimple:
             name, vartype = _parse_var(stmt)
@@ -73,7 +79,7 @@ def _iter_locals(lines, *,
     while compound:
         block = compound.pop(0)
         blocklines = block.splitlines()
-        for stmt, issimple in _iter_statements(blocklines):
+        for stmt, issimple in _iter_statements(blocklines, local=True):
             if issimple:
                 name, vartype = _parse_var(stmt)
                 if name:

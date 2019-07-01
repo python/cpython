@@ -20,8 +20,103 @@ class TestCaseBase(unittest.TestCase):
 
 class IterStatementsTests(TestCaseBase):
 
-    def test_(self):
-        ...
+    @unittest.expectedFailure
+    def test_global_single(self):
+        raise NotImplementedError
+        tests = [
+            ('', ('', False)),
+            ]
+        for lines, expected in tests:
+            with self.subTest(lines):
+                lines = lines.splitlines()
+
+                stmts = list(iter_statements(lines, local=False))
+
+                self.assertEqual(stmts, expected)
+
+    @unittest.expectedFailure
+    def test_global_mixed(self):
+        raise NotImplementedError
+        lines = textwrap.dedent('''
+            ''').splitlines()
+
+        stmts = list(iter_statements(lines, local=False))
+
+        self.assertEqual(stmts, [
+            ('', True),
+            ])
+
+    @unittest.expectedFailure
+    def test_local_single(self):
+        raise NotImplementedError
+
+    @unittest.expectedFailure
+    def test_local_mixed(self):
+        raise NotImplementedError
+
+    def test_no_statements(self):
+        lines = textwrap.dedent('''
+            ''').splitlines()
+
+        with self.subTest('global'):
+            stmts = list(iter_statements(lines, local=False))
+
+            self.assertEqual(stmts, [])
+
+        with self.subTest('local'):
+            stmts = list(iter_statements(lines, local=True))
+
+            self.assertEqual(stmts, [])
+
+    @unittest.expectedFailure
+    def test_global_bogus(self):
+        raise NotImplementedError
+        tests = [
+            ('', ('', False)),
+            ]
+        for lines, expected in tests:
+            with self.subTest(lines):
+                lines = lines.splitlines()
+
+                stmts = list(iter_statements(lines, local=False))
+
+                self.assertEqual(stmts, expected)
+
+    @unittest.expectedFailure
+    def test_local_bogus(self):
+        raise NotImplementedError
+
+    @unittest.expectedFailure
+    def test_ignore_whitespace(self):
+        raise NotImplementedError
+
+    @unittest.expectedFailure
+    def test_ignore_comments(self):
+        raise NotImplementedError
+        tests = [
+            ('// msg', None),
+            ('// int stmt;', None),
+            ('    // ...    ', None),
+            ('// /*', None),
+            ('/* int stmt; */', None),
+            ("""
+             /**
+              * ...
+              * int stmt;
+              */
+             """, None),
+            # mixed with statements
+#            ('int stmt; // ...', ('int stmt', True)),
+#            ( 'int stmt; /* ...  */', ('int stmt', True)),
+#            ( '/* ...  */ int stmt;', ('int stmt', True)),
+            ]
+        for lines, expected in tests:
+            with self.subTest(lines):
+                lines = lines.splitlines()
+
+                stmts = list(iter_statements(lines, local=False))
+
+                self.assertEqual(stmts, [expected] if expected else [])
 
 
 class ParseFuncTests(TestCaseBase):
@@ -57,9 +152,9 @@ class IterVariablesTests(TestCaseBase):
                 ('_iter_source_lines', (filename,)))
         return self._return_iter_source_lines.splitlines()
 
-    def _iter_statements(self, lines):
+    def _iter_statements(self, lines, local):
         self.calls.append(
-                ('_iter_statements', (lines,)))
+                ('_iter_statements', (lines, local)))
         try:
             return self._return_iter_statements.pop(0)
         except IndexError:
@@ -109,7 +204,7 @@ class IterVariablesTests(TestCaseBase):
         self.assertEqual(srcvars, [])
         self.assertEqual(self.calls, [
             ('_iter_source_lines', ('spam.c',)),
-            ('_iter_statements', ([],)),
+            ('_iter_statements', ([], False)),
             ])
 
     def test_no_statements(self):
@@ -135,7 +230,7 @@ class IterVariablesTests(TestCaseBase):
         self.assertEqual(srcvars, [])
         self.assertEqual(self.calls, [
             ('_iter_source_lines', ('spam.c',)),
-            ('_iter_statements', (content.splitlines(),)),
+            ('_iter_statements', (content.splitlines(), False)),
             ])
 
     def test_typical(self):
@@ -194,17 +289,17 @@ class IterVariablesTests(TestCaseBase):
             ])
         self.assertEqual(self.calls, [
             ('_iter_source_lines', ('spam.c',)),
-            ('_iter_statements', (content.splitlines(),)),
+            ('_iter_statements', (content.splitlines(), False)),
             ('_parse_var', ('<lines 1>',)),
             ('_parse_var', ('<lines 2>',)),
             ('_parse_var', ('<lines 3>',)),
             ('_parse_func', ('<lines 4>',)),
-            ('_iter_statements', (['<body 1>'],)),
+            ('_iter_statements', (['<body 1>'], True)),
             ('_parse_var', ('<lines 5>',)),
             ('_parse_compound', ('<lines 6>',)),
             ('_parse_var', ('<simple>',)),
             ('_parse_var', ('<lines 8>',)),
-            ('_iter_statements', (['<block 1>'],)),
+            ('_iter_statements', (['<block 1>'], True)),
             ('_parse_var', ('<lines 7>',)),
             ('_parse_var', ('<lines 9>',)),
             ])
@@ -259,16 +354,16 @@ class IterVariablesTests(TestCaseBase):
             ])
         self.assertEqual(self.calls, [
             ('_iter_source_lines', ('spam.c',)),
-            ('_iter_statements', (content.splitlines(),)),
+            ('_iter_statements', (content.splitlines(), False)),
             ('_parse_var', ('<lines 1>',)),
             ('_parse_var', ('<lines 2>',)),
             ('_parse_var', ('<lines 3>',)),
             ('_parse_func', ('<lines 4>',)),
-            ('_iter_statements', (['<body 1>'],)),
+            ('_iter_statements', (['<body 1>'], True)),
             ('_parse_var', ('<lines 5>',)),
             ('_parse_compound', ('<lines 6>',)),
             ('_parse_var', ('<simple>',)),
             ('_parse_var', ('<lines 8>',)),
-            ('_iter_statements', (['<block 1>'],)),
+            ('_iter_statements', (['<block 1>'], True)),
             ('_parse_var', ('<lines 7>',)),
             ])
