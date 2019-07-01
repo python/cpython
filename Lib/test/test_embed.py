@@ -68,6 +68,7 @@ class EmbeddingTestsMixin:
             # start Python.
             env = env.copy()
             env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
+        print(env, file=sys.__stderr__)
 
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
@@ -959,17 +960,23 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
         with open(startup, "w", encoding="utf-8") as f:
             print("import sys", file=f)
             print("sys.__interactivehook__ = lambda: None", file=f)
-        env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
-        self.run_embedded_interpreter("test_audit_run_interactivehook", timeout=3,
-                                      returncode=10, env=env)
+        try:
+            env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
+            self.run_embedded_interpreter("test_audit_run_interactivehook", timeout=3,
+                                          returncode=10, env=env)
+        finally:
+            os.unlink(startup)
 
     def test_audit_run_startup(self):
         startup = os.path.join(self.oldcwd, support.TESTFN) + ".py"
         with open(startup, "w", encoding="utf-8") as f:
             print("pass", file=f)
-        env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
-        self.run_embedded_interpreter("test_audit_run_startup", timeout=3,
-                                      returncode=10, env=env)
+        try:
+            env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
+            self.run_embedded_interpreter("test_audit_run_startup", timeout=3,
+                                          returncode=10, env=env)
+        finally:
+            os.unlink(startup)
 
     def test_audit_run_stdin(self):
         self.run_embedded_interpreter("test_audit_run_stdin", timeout=3, returncode=1)
