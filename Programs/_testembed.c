@@ -1304,6 +1304,7 @@ static int test_audit_run_interactivehook(void)
     wchar_t *argv[] = {L"./_testembed"};
 
     Py_IgnoreEnvironmentFlag = 0;
+    Py_InteractiveFlag = 1;
     Py_IsolatedFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
 
@@ -1316,6 +1317,7 @@ static int test_audit_run_startup(void)
     wchar_t *argv[] = {L"./_testembed"};
 
     Py_IgnoreEnvironmentFlag = 0;
+    Py_InteractiveFlag = 1;
     Py_IsolatedFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
 
