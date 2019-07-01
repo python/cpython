@@ -13,7 +13,7 @@ from test import support
 import types
 import unittest
 
-from collections import namedtuple, Counter, OrderedDict, _count_elements, _tuplegetter
+from collections import namedtuple, Counter, OrderedDict, _count_elements
 from collections import UserDict, UserString, UserList
 from collections import ChainMap
 from collections import deque

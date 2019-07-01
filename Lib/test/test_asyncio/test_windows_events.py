@@ -2,7 +2,6 @@ import os
 import signal
 import socket
 import sys
-import subprocess
 import time
 import threading
 import unittest
@@ -12,14 +11,12 @@ if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
 
 import _overlapped
-import _testcapi
 import _winapi
 
 import asyncio
 from asyncio import windows_events
 from asyncio.streams import _StreamProtocol
 from test.test_asyncio import utils as test_utils
-from test.support.script_helper import spawn_python
 
 
 def tearDownModule():
