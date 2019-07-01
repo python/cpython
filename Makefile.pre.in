@@ -1419,6 +1419,8 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 			echo $(INSTALL_DATA) $$i $(LIBDEST); \
 		fi; \
 	done
+	@# bpo-37468: Don't install distutils/command/wininst-*.exe files used
+	@# by distutils bdist_wininst: bdist_wininst only works on Windows.
 	@for d in $(LIBSUBDIRS); \
 	do \
 		a=$(srcdir)/Lib/$$d; \
@@ -1431,6 +1433,7 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 			*CVS) ;; \
 			*.py[co]) ;; \
 			*.orig) ;; \
+			*wininst-*.exe) ;; \
 			*~) ;; \
 			*) \
 				if test -d $$i; then continue; fi; \
