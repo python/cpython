@@ -2537,73 +2537,6 @@ class TestGetTerminalSize(unittest.TestCase):
             self.assertEqual(size.columns, 30)
             self.assertEqual(size.lines, 40)
 
-class Link(unittest.TestCase):
-
-    def setUp(self):
-        # Create extant directories, files and symlinks
-        extant_dirs = {'src_dir1': 'sd1', 'dst_dir1': 'dd1'}
-        extant_files = {'src_file1': 'file1', 'src_file2': 'file2',
-                        'dst_file1': os.path.join('dd1', 'file1'),
-                        'dst_file2': os.path.join('dd1', 'file2')}
-
-        self.tmp_dir = tempfile.mkdtemp()
-        for name, value in extant_dirs.items():
-            path = os.path.join(self.tmp_dir, value)
-            os.mkdir(path)
-            setattr(self, name, path)
-
-        for name, value in extant_files.items():
-            path = os.path.join(self.tmp_dir, value)
-            open(path, 'w').close()  # os.mknod needs root on MacOS
-            setattr(self, name, path)
-
-        # Keys are link filenames, values are link targets:
-        symlink_names = {'link_to_file': 'file1', 'link_to_dir': 'dd1',
-                         'link_to_link': 'link_to_file',
-                         'broken_link': 'non-extant',
-                         'link_to_broken_link': 'broken_link'}
-        # Generate symlinks of all types
-        self.symlink_to_path = {}  # One of each type of symlink
-        for link_name, target in symlink_names.items():
-            dst = os.path.join(self.tmp_dir, link_name)
-            src = os.path.join(self.tmp_dir, target)
-            os.symlink(src, dst)
-            setattr(self, link_name, dst)
-            self.symlink_to_path[link_name] = dst
-
-        # Create absent pathnames under tmp_dir
-        new_paths = {'new1': 'new1', 'new2': os.path.join('dd1', 'new2')}
-        for name, value in new_paths.items():
-            path = os.path.join(self.tmp_dir, value)
-            setattr(self, name, path)
-
-        self.path_types = {'file': self.src_file1, 'directory': self.dst_dir1,
-                           'absent': self.new1, **self.symlink_to_path}
-        self.srcs = list(self.path_types.values())
-
-    def tearDown(self):
-        try:
-            shutil.rmtree(self.tmp_dir)
-        except BaseException:
-            pass
-
-    # Single source
-
-    def test_1src_dst_not_exist(self):
-        src = self.src_file1
-        dst = self.new1
-        shutil.link(src, dst)
-        self.assertTrue(os.path.samefile(src, dst))
-
-    def test_1src_dst_existing_path(self):
-        src = self.src_file1
-        dst_existing = {k: v for k, v in self.path_types.items()
-                        if k != 'absent'}
-        for description, dst_path in dst_existing.items():
-            with self.subTest(type=description):
-                with self.assertRaisesRegex(FileExistsError, dst_path):
-                    shutil.link(src, dst_path)
-
 # https://devguide.python.org/committing/#what-s-new-and-news-entries
 
 class LinkSymlink(unittest.TestCase):
@@ -2655,7 +2588,6 @@ class LinkSymlink(unittest.TestCase):
             shutil.rmtree(self.tmp_dir)
         except BaseException:
             pass
-
 
     def test_link_or_symlink_invalid_os_method(self):
         invalid_method = os.dup
@@ -2741,6 +2673,23 @@ class LinkSymlink(unittest.TestCase):
             self.assertEqual(mock_os_symlink.call_count, len(self.srcs))
             for call in mock_os_symlink.call_args_list:
                 self.assertEqual(call[1]['target_is_directory'], boolean)
+
+    # Link single source
+
+    def test_1src_dst_not_exist(self):
+        src = self.src_file1
+        dst = self.new1
+        shutil.link(src, dst)
+        self.assertTrue(os.path.samefile(src, dst))
+
+    def test_1src_dst_existing_path(self):
+        src = self.src_file1
+        dst_existing = {k: v for k, v in self.path_types.items()
+                        if k != 'absent'}
+        for description, dst_path in dst_existing.items():
+            with self.subTest(type=description):
+                with self.assertRaisesRegex(FileExistsError, dst_path):
+                    shutil.link(src, dst_path)
 
     # Symlink single source
 
