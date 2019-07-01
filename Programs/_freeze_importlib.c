@@ -88,7 +88,7 @@ main(int argc, char *argv[])
     config.site_import = 0;
 
     status = PyConfig_SetString(&config, &config.program_name,
-                                  L"./_freeze_importlib");
+                                L"./_freeze_importlib");
     if (PyStatus_Exception(status)) {
         PyConfig_Clear(&config);
         Py_ExitStatusException(status);
