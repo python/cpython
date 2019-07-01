@@ -1,7 +1,1 @@
-Remove ``Lib/test/outstanding_bugs.py`` file which was documented as:
-
-This file is for everybody to add tests for bugs that aren't fixed yet.
-Please add a test case and appropriate bug description.
-
-When you fix one of the bugs, please move the test to the correct test
-module.
+Remove ``Lib/test/outstanding_bugs.py``.
