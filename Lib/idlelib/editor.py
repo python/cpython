@@ -1590,8 +1590,8 @@ def index2line(index):
 #              effective # of leading blanks after expanding
 #              tabs to width tabwidth)
 
-def classifyws(s, tabwidth):
-    m = re.match(r'[ \t]*', s)
+def classifyws(line, tabwidth):
+    m = re.match(r'[ \t]*', line)
     return m.end(), len(m.group().expandtabs(tabwidth))
 
 

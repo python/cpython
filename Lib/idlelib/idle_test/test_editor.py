@@ -45,10 +45,10 @@ class EditorFunctionTest(unittest.TestCase):
 class TestClassifyWS(unittest.TestCase):
     def test_empty_lines(self):
         for tabwidth in [1, 2, 4, 6, 8]:
-            for s in ['', '\n']:
-                with self.subTest(string=s, tabwidth=tabwidth):
+            for line in ['', '\n']:
+                with self.subTest(line=line, tabwidth=tabwidth):
                     self.assertEqual(
-                        editor.classifyws(s, tabwidth=tabwidth),
+                        editor.classifyws(line, tabwidth=tabwidth),
                         (0, 0),
                     )
 
@@ -70,10 +70,10 @@ class TestClassifyWS(unittest.TestCase):
                  # Only checks spaces and tabs.
                  ('\nnewline test', (0, 0)))
 
-        for string, expected in tests:
-            with self.subTest(string=string):
+        for line, expected in tests:
+            with self.subTest(line=line):
                 self.assertEqual(
-                    editor.classifyws(string, tabwidth=4),
+                    editor.classifyws(line, tabwidth=4),
                     expected,
                 )
 
@@ -95,10 +95,10 @@ class TestClassifyWS(unittest.TestCase):
                  # Only checks spaces and tabs.
                  ('\nnewline test', (0, 0)))
 
-        for string, expected in tests:
-            with self.subTest(string=string):
+        for line, expected in tests:
+            with self.subTest(line=line):
                 self.assertEqual(
-                    editor.classifyws(string, tabwidth=8),
+                    editor.classifyws(line, tabwidth=8),
                     expected,
                 )
 
