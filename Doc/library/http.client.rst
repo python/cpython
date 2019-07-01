@@ -94,7 +94,7 @@ The module provides the following classes:
       :func:`ssl._create_unverified_context` can be passed to the *context*
       parameter.
 
-   .. versionchanged:: 3.8
+   .. versionchanged:: 3.7.4
       This class now enables TLS 1.3
       :attr:`ssl.SSLContext.post_handshake_auth` for the default *context* or
       when *cert_file* is passed with a custom *context*.
