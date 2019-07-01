@@ -25,6 +25,7 @@ Functions:
 * :c:func:`PyConfig_SetBytesArgv`
 * :c:func:`PyConfig_SetBytesString`
 * :c:func:`PyConfig_SetString`
+* :c:func:`PyConfig_SetWideStringList`
 * :c:func:`PyPreConfig_InitIsolatedConfig`
 * :c:func:`PyPreConfig_InitPythonConfig`
 * :c:func:`PyStatus_Error`
@@ -365,6 +366,12 @@ PyConfig
    .. c:function:: PyStatus PyConfig_SetBytesArgv(PyConfig *config, int argc, char * const *argv)
 
       Set command line arguments: decode bytes using :c:func:`Py_DecodeLocale`.
+
+      Preinitialize Python if needed.
+
+   .. c:function:: PyStatus PyConfig_SetWideStringList(PyConfig *config, PyWideStringList *list, Py_ssize_t length, wchar_t **items)
+
+      Set the list of wide strings *list* to *length* and *items*.
 
       Preinitialize Python if needed.
 
