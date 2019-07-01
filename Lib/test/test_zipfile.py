@@ -4,9 +4,7 @@ import io
 import os
 import pathlib
 import posixpath
-import shutil
 import struct
-import tempfile
 import time
 import unittest
 import zipfile
