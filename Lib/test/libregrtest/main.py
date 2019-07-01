@@ -587,7 +587,6 @@ class Regrtest:
 
     def cleanup(self):
         import glob
-        import shutil
 
         path = os.path.join(self.tmp_dir, 'test_python_*')
         print("Cleanup %s directory" % self.tmp_dir)
