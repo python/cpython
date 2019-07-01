@@ -625,6 +625,20 @@ to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
 
 
+pickle
+------
+
+Reduction methods can now include a 6th item in the tuple they return. This
+item should specify a custom state-setting method that's called instead of the
+regular ``__setstate__`` method.
+(Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`)
+
+:mod:`pickle` extensions subclassing the C-optimized :class:`~pickle.Pickler`
+can now override the pickling logic of functions and classes by defining the
+special :meth:`~pickle.Pickler.reducer_override` method.
+(Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`)
+
+
 plistlib
 --------
 
