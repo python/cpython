@@ -961,7 +961,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
             print("sys.__interactivehook__ = lambda: None", file=f)
         try:
             env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
-            self.run_embedded_interpreter("test_audit_run_interactivehook", timeout=3,
+            self.run_embedded_interpreter("test_audit_run_interactivehook", timeout=5,
                                           returncode=10, env=env)
         finally:
             os.unlink(startup)
@@ -972,7 +972,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
             print("pass", file=f)
         try:
             env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
-            self.run_embedded_interpreter("test_audit_run_startup", timeout=3,
+            self.run_embedded_interpreter("test_audit_run_startup", timeout=5,
                                           returncode=10, env=env)
         finally:
             os.unlink(startup)

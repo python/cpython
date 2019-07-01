@@ -1258,6 +1258,12 @@ typedef struct {
 
 static int _audit_hook_run(const char *eventName, PyObject *args, void *userData)
 {
+    PyObject *msg2 = PyUnicode_FromFormat("evt: %s(%R)", eventName, args);
+    if (msg2) {
+        printf("%s\n", PyUnicode_AsUTF8(msg2));
+        Py_DECREF(msg2);
+    }
+
     AuditRunCommandTest *test = (AuditRunCommandTest*)userData;
     if (strcmp(eventName, test->expected)) {
         return 0;
