@@ -695,10 +695,19 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             'pycache_prefix': 'conf_pycache_prefix',
             'program_name': './conf_program_name',
-            'argv': ['-c', 'arg2'],
+            'argv': ['-c', 'arg2', ],
             'parse_argv': 1,
-            'xoptions': ['xoption1=3', 'xoption2=', 'xoption3'],
-            'warnoptions': ['error::ResourceWarning', 'default::BytesWarning'],
+            'xoptions': [
+                'config_xoption1=3',
+                'config_xoption2=',
+                'config_xoption3',
+                'cmdline_xoption',
+            ],
+            'warnoptions': [
+                'config_warnoption',
+                'cmdline_warnoption',
+                'default::BytesWarning',
+            ],
             'run_command': 'pass\n',
 
             'site_import': 0,
