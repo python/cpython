@@ -70,6 +70,7 @@ source.
    :data:`sys.path` (allowing modules in that directory to be imported as top
    level modules).
 
+   .. audit-event:: cpython.run_command command cmdoption-c
 
 .. cmdoption:: -m <module-name>
 
@@ -106,12 +107,13 @@ source.
        python -mtimeit -s 'setup here' 'benchmarked code here'
        python -mtimeit -h # for details
 
+   .. audit-event:: cpython.run_module module-name cmdoption-m
+
    .. seealso::
       :func:`runpy.run_module`
          Equivalent functionality directly available to Python code
 
       :pep:`338` -- Executing modules as scripts
-
 
    .. versionchanged:: 3.1
       Supply the package name to run a ``__main__`` submodule.
@@ -129,6 +131,7 @@ source.
    ``"-"`` and the current directory will be added to the start of
    :data:`sys.path`.
 
+   .. audit-event:: cpython.run_stdin "" ""
 
 .. describe:: <script>
 
@@ -147,6 +150,8 @@ source.
    If the script name refers to a directory or zipfile, the script name is
    added to the start of :data:`sys.path` and the ``__main__.py`` file in
    that location is executed as the :mod:`__main__` module.
+
+   .. audit-event:: cpython.run_file filename
 
    .. seealso::
       :func:`runpy.run_path`
@@ -532,6 +537,11 @@ conflict.
    that objects defined or imported in it can be used without qualification in
    the interactive session.  You can also change the prompts :data:`sys.ps1` and
    :data:`sys.ps2` and the hook :data:`sys.__interactivehook__` in this file.
+
+   .. audit-event:: cpython.run_startup filename PYTHONSTARTUP
+
+      Raises an :ref:`auditing event <auditing>` ``cpython.run_startup`` with
+      the filename as the argument when called on startup.
 
 
 .. envvar:: PYTHONOPTIMIZE
