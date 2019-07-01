@@ -315,7 +315,8 @@ or the :command:`bdist` command with the :option:`!--formats` option::
 
 If you have a pure module distribution (only containing pure Python modules and
 packages), the resulting installer will be version independent and have a name
-like :file:`foo-1.0.win32.exe`.
+like :file:`foo-1.0.win32.exe`. Note that creating ``wininst`` binary
+distributions in only supported on Windows systems.
 
 If you have a non-pure distribution, the extensions can only be created on a
 Windows platform, and will be Python version dependent. The installer filename
@@ -340,9 +341,6 @@ version number.  This can be changed to another text by using the
 
 The installer file will be written to the "distribution directory" --- normally
 :file:`dist/`, but customizable with the :option:`!--dist-dir` option.
-
-   .. versionchanged:: 3.9
-      Creating ``wininst`` binary distributions in only supported on Windows.
 
 .. _cross-compile-windows:
 
