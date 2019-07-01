@@ -1528,6 +1528,9 @@ PyInit_mmap(void)
     setint(dict, "MAP_ANON", MAP_ANONYMOUS);
     setint(dict, "MAP_ANONYMOUS", MAP_ANONYMOUS);
 #endif
+#ifdef MAP_ALIGNED_SUPER
+    setint(dict, "MAP_ALIGNED_SUPER", MAP_ALIGNED_SUPER);
+#endif
 #ifdef MAP_CONCEAL
     setint(dict, "MAP_CONCEAL", MAP_CONCEAL);
 #endif
