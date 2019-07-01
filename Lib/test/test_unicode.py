@@ -2819,6 +2819,16 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(unicode_asucs4(s, len(s), 1), s+'\0')
             self.assertEqual(unicode_asucs4(s, len(s), 0), s+'\uffff')
 
+    # Test PyUnicode_AsUTF8()
+    @support.cpython_only
+    def test_asutf8(self):
+        from _testcapi import unicode_asutf8
+
+        self.assertEqual(unicode_asutf8('abc'), 'abc')
+        self.assertEqual(unicode_asutf8('abc\0'), 'abc')
+        self.assertEqual(unicode_asutf8('abc\0abc'), 'abc')
+        self.assertRaises(UnicodeEncodeError, unicode_asutf8, 'a\ud800b\udfffc')
+
     # Test PyUnicode_FindChar()
     @support.cpython_only
     def test_findchar(self):

@@ -1922,6 +1922,25 @@ unicode_asucs4(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+unicode_asutf8(PyObject *self, PyObject *args)
+{
+    PyObject *unicode, *result;
+    const char *buffer;
+
+    if (!PyArg_ParseTuple(args, "U", &unicode))
+        return NULL;
+
+    buffer = PyUnicode_AsUTF8(unicode);
+    if (buffer == NULL)
+        return NULL;
+
+    result = PyUnicode_FromString(buffer);
+    if (result == NULL)
+        return NULL;
+    return result;
+}
+
+static PyObject *
 unicode_findchar(PyObject *self, PyObject *args)
 {
     PyObject *str;
@@ -5174,6 +5193,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_aswidechar",      unicode_aswidechar,              METH_VARARGS},
     {"unicode_aswidecharstring",unicode_aswidecharstring,        METH_VARARGS},
     {"unicode_asucs4",          unicode_asucs4,                  METH_VARARGS},
+    {"unicode_asutf8",          unicode_asutf8,                  METH_VARARGS},
     {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
