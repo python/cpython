@@ -309,6 +309,9 @@ class RobotHandler(BaseHTTPRequestHandler):
 class PasswordProtectedSiteTestCase(unittest.TestCase):
 
     def setUp(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         self.server = HTTPServer((support.HOST, 0), RobotHandler)
 
         self.t = threading.Thread(
