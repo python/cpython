@@ -2582,6 +2582,8 @@ class LinkSymlink(unittest.TestCase):
         self.path_types = {'file': self.src_file1, 'directory': self.dst_dir1,
                            'absent': self.new1, **self.symlink_to_path}
         self.srcs = list(self.path_types.values())
+        # Reset mock_mktemp "static" variable
+        LinkSymlink.mock_mktemp.virgin = True
 
     def tearDown(self):
         try:
@@ -2616,9 +2618,10 @@ class LinkSymlink(unittest.TestCase):
     @unittest.mock.patch('tempfile.mktemp', side_effect=mock_mktemp)
     def test_retry_on_existing_temp_path(self, mock_mktemp):
         # Simulate race condition: creation of temp path after tempfile.mktemp
-        shutil.symlink(self.src_file1, self.dst_file1, overwrite=True)
+        create_file_at = lambda f: os.link(self.src_file1, f)
+        shutil._create_or_replace(self.dst_file1, create_file_at)
         self.assertGreater(mock_mktemp.call_count, 1)
-        self.assertEqual(os.readlink(self.dst_file1), self.src_file1)
+        self.assertTrue(os.path.samefile(self.dst_file1, self.src_file1))
 
     class ExpectedException(BaseException):
         """An exception that is expected to be raised by mocks"""
