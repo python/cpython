@@ -2987,23 +2987,37 @@ dict_clear(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-/*[clinic input]
-dict.pop
+/*
+We don't use Argument Clinic for dict.pop because it doesn't support
+custom signature for now.
+*/
+PyDoc_STRVAR(dict_pop__doc__,
+"D.pop(k[,d]) -> v, remove specified key and return the corresponding value.\n\
+If key is not found, d is returned if given, otherwise KeyError is raised");
 
-    key: object
-    default: object = NULL
-    /
-
-Remove specified key and return the corresponding value.
-
-If key is not found, default is returned if given, otherwise KeyError is raised
-[clinic start generated code]*/
+#define DICT_POP_METHODDEF    \
+    {"pop", (PyCFunction)(void(*)(void))dict_pop, METH_FASTCALL, dict_pop__doc__},
 
 static PyObject *
-dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=3abb47b89f24c21c input=016f6a000e4e633b]*/
+dict_pop(PyDictObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    return _PyDict_Pop((PyObject*)self, key, default_value);
+    PyObject *return_value = NULL;
+    PyObject *key;
+    PyObject *default_value = NULL;
+
+    if (!_PyArg_CheckPositional("pop", nargs, 1, 2)) {
+        goto exit;
+    }
+    key = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
+    return_value = _PyDict_Pop((PyObject*)self, key, default_value);
+
+exit:
+    return return_value;
 }
 
 /*[clinic input]
