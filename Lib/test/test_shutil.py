@@ -2619,7 +2619,7 @@ class LinkSymlink(unittest.TestCase):
 
     @unittest.mock.patch('tempfile.mktemp', side_effect=mock_mktemp)
     def test_retry_on_existing_temp_path(self, mock_mktemp):
-        # Simulate race condition: creation of temp path after tempfile.mktemp
+        # Simulate race: file creation at temp path path after tempfile.mktemp
         create_file_at = lambda f: os.link(self.src_file1, f)
         shutil._create_or_replace(self.dst_file1, create_file_at)
         self.assertGreater(mock_mktemp.call_count, 1)
