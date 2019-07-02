@@ -1927,16 +1927,19 @@ unicode_asutf8(PyObject *self, PyObject *args)
     PyObject *unicode, *result;
     const char *buffer;
 
-    if (!PyArg_ParseTuple(args, "U", &unicode))
+    if (!PyArg_ParseTuple(args, "U", &unicode)) {
         return NULL;
+    }
 
     buffer = PyUnicode_AsUTF8(unicode);
-    if (buffer == NULL)
+    if (buffer == NULL) {
         return NULL;
+    }
 
     result = PyUnicode_FromString(buffer);
-    if (result == NULL)
+    if (result == NULL) {
         return NULL;
+    }
     return result;
 }
 
