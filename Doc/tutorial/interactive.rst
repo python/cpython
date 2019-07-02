@@ -45,10 +45,11 @@ quotes, etc., would also be useful.
 One alternative enhanced interactive interpreter that has been around for quite
 some time is IPython_, which features tab completion, object exploration and
 advanced history management.  It can also be thoroughly customized and embedded
-into other applications.  Another similar enhanced interactive environment is
-bpython_.
+into other applications.  Other similar enhanced interactive environments are
+bpython_ and ptpython_.
 
 
 .. _GNU Readline: https://tiswww.case.edu/php/chet/readline/rltop.html
 .. _IPython: https://ipython.org/
 .. _bpython: https://www.bpython-interpreter.org/
+.. _ptpython: https://github.com/prompt-toolkit/ptpython
