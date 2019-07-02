@@ -181,7 +181,7 @@ class ThreadedImportTests(unittest.TestCase):
             del sys.modules['test.threaded_import_hangers']
         except KeyError:
             pass
-        import test.threaded_import_hangers
+        import test.test_importlib.threaded_import_hangers
         self.assertFalse(test.threaded_import_hangers.errors)
 
     def test_circular_imports(self):
