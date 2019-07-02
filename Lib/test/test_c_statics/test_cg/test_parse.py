@@ -94,7 +94,7 @@ class IterGlobalDeclarationsTests(TestCaseBase):
                 self.assertEqual(stmts, [expected])
 
     @unittest.expectedFailure
-    def test_global_declaration(self):
+    def test_declarations(self):
         tests = [
             'int spam;',
             'long long spam;',
@@ -118,15 +118,15 @@ class IterGlobalDeclarationsTests(TestCaseBase):
                 self.assertEqual(stmts, [expected])
 
     @unittest.expectedFailure
-    def test_global_declaration_multiple_vars(self):
+    def test_declaration_multiple_vars(self):
         lines = ['static const int const *spam, *ham=NULL, eggs = 3;']
 
         stmts = list(iter_global_declarations(lines))
 
         self.assertEqual(stmts, [
-            ('static const int const *spam;', True),
-            ('static const int *ham=NULL;', True),
-            ('static const int eggs = 3;', True),
+            ('static const int const *spam;', None),
+            ('static const int *ham=NULL;', None),
+            ('static const int eggs = 3;', None),
             ])
 
     def test_mixed(self):
@@ -191,7 +191,7 @@ class IterGlobalDeclarationsTests(TestCaseBase):
         #self.assertEqual([body for _, body in stmts],
         #                 [body for _, body in expected])
 
-    def test_empty(self):
+    def test_no_statements(self):
         lines = []
 
         stmts = list(iter_global_declarations(lines))
@@ -281,11 +281,109 @@ class IterGlobalDeclarationsTests(TestCaseBase):
                 self.assertEqual(stmts, [expected] if expected else [])
 
 
-@unittest.skip('not finished')
 class IterLocalStatementsTests(TestCaseBase):
 
+    def test_vars(self):
+        tests = [
+            # POTS
+            'int spam;',
+            'unsigned int spam;',
+            'char spam;',
+            'float spam;',
+
+            # typedefs
+            'uint spam;',
+            'MyType spam;',
+
+            # complex
+            'struct myspam spam;',
+            'union choice spam;',
+            # inline struct
+            # inline union
+            # enum?
+            ]
+        # pointers
+        tests.extend([
+            # POTS
+            'int * spam;',
+            'unsigned int * spam;',
+            'char *spam;',
+            'char const *spam = "spamspamspam...";',
+            # typedefs
+            'MyType *spam;',
+            # complex
+            'struct myspam *spam;',
+            'union choice *spam;',
+            # packed with details
+            'const char const *spam;',
+            # void pointer
+            'void *data = NULL;',
+            # function pointers
+            'int (* func)(char *arg1);',
+            'char * (* func)(void);',
+            ])
+        # storage class
+        tests.extend([
+            'static int spam;',
+            'extern int spam;',
+            'static unsigned int spam;',
+            'static struct myspam spam;',
+            ])
+        # type qualifier
+        tests.extend([
+            'const int spam;',
+            'const unsigned int spam;',
+            'const struct myspam spam;',
+            ])
+        # combined
+        tests.extend([
+            'const char *spam = eggs;',
+            'static const char const *spam = "spamspamspam...";',
+            'extern const char const *spam;',
+            'static void *data = NULL;',
+            'static int (const * func)(char *arg1) = func1;',
+            'static char * (* func)(void);',
+            ])
+        for line in tests:
+            expected = line
+            with self.subTest(line):
+                stmts = list(iter_local_statements([line]))
+
+                self.assertEqual(stmts, [(expected, None)])
+
     @unittest.expectedFailure
-    def test_single(self):
+    def test_vars_multiline_var(self):
+        lines = textwrap.dedent('''
+            PyObject *
+            spam
+            = NULL;
+            ''').splitlines()
+        expected = 'PyObject * spam = NULL;'
+
+        stmts = list(iter_local_statements(lines))
+
+        self.assertEqual(stmts, [(expected, None)])
+
+    @unittest.expectedFailure
+    def test_declaration_multiple_vars(self):
+        lines = ['static const int const *spam, *ham=NULL, ham2[]={1, 2, 3}, ham3[2]={1, 2}, eggs = 3;']
+
+        stmts = list(iter_global_declarations(lines))
+
+        self.assertEqual(stmts, [
+            ('static const int const *spam;', None),
+            ('static const int *ham=NULL;', None),
+            ('static const int ham[]={1, 2, 3};', None),
+            ('static const int ham[2]={1, 2};', None),
+            ('static const int eggs = 3;', None),
+            ])
+
+    @unittest.expectedFailure
+    def test_other_simple(self):
+        raise NotImplementedError
+
+    @unittest.expectedFailure
+    def test_compound(self):
         raise NotImplementedError
 
     @unittest.expectedFailure
@@ -293,24 +391,16 @@ class IterLocalStatementsTests(TestCaseBase):
         raise NotImplementedError
 
     def test_no_statements(self):
-        lines = textwrap.dedent('''
-            ''').splitlines()
+        lines = []
 
-        with self.subTest('global'):
-            stmts = list(iter_local_statements(lines))
+        stmts = list(iter_local_statements(lines))
 
-            self.assertEqual(stmts, [])
-
-        with self.subTest('local'):
-            stmts = list(iter_local_statements(lines, local=True))
-
-            self.assertEqual(stmts, [])
+        self.assertEqual(stmts, [])
 
     @unittest.expectedFailure
     def test_bogus(self):
         raise NotImplementedError
 
-    @unittest.expectedFailure
     def test_ignore_comments(self):
         tests = [
             ('// msg', None),
@@ -325,9 +415,9 @@ class IterLocalStatementsTests(TestCaseBase):
               */
              """, None),
             # mixed with statements
-            ('int stmt; // ...', ('int stmt', True)),
-            ( 'int stmt; /* ...  */', ('int stmt', True)),
-            ( '/* ...  */ int stmt;', ('int stmt', True)),
+            ('int stmt; // ...', ('int stmt;', None)),
+            ( 'int stmt; /* ...  */', ('int stmt;', None)),
+            ( '/* ...  */ int stmt;', ('int stmt;', None)),
             ]
         for lines, expected in tests:
             with self.subTest(lines):

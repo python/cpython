@@ -5,7 +5,7 @@ import subprocess
 
 IDENTIFIER = r'(?:[a-zA-z]|_+[a-zA-Z0-9]\w*)'
 
-#TYPE_QUAL = r'(?:const|volatile)'
+TYPE_QUAL = r'(?:const|volatile)'
 
 VAR_TYPE_SPEC = r'''(?:
         void |
@@ -65,25 +65,32 @@ FUNC_START = rf'''(?:
 #         )?\s+
 #        {VAR_TYPE_SPEC}
 #        )'''
-#LOCAL_VAR_START = rf'''(?:
-#        (?:
-#          (?:
-#            register |
-#            static
-#           )\s+
-#         )?
-#        (?:
-#          (?:
-#            {TYPE_QUAL}
-#            (?:\s+{TYPE_QUAL})?
-#           )\s+
-#         )?
-#        {VAR_TYPE_SPEC}
-#        )'''
 GLOBAL_DECL_START_RE = re.compile(rf'''
         ^
         (?:
             ({FUNC_START})
+         )
+        ''', re.VERBOSE)
+
+LOCAL_VAR_START = rf'''(?:
+        (?:
+          (?:
+            register |
+            static
+           )\s+
+         )?
+        (?:
+          (?:
+            {TYPE_QUAL}
+            (?:\s+{TYPE_QUAL})?
+           )\s+
+         )?
+        {VAR_TYPE_SPEC}
+        )'''
+LOCAL_STMT_START_RE = re.compile(rf'''
+        ^
+        (?:
+            ({LOCAL_VAR_START})
          )
         ''', re.VERBOSE)
 
@@ -144,7 +151,7 @@ def iter_global_declarations(lines):
         yield (f'{decl}\n{body}\n{end}', body)
 
 
-def iter_local_statements(lines, *, local=False):
+def iter_local_statements(lines):
     """Yield (lines, blocks) for each statement in the given lines.
 
     For simple statements, "blocks" is None and the statement is reduced
@@ -152,7 +159,20 @@ def iter_local_statements(lines, *, local=False):
     (header, body) for each block in the statement.  The headers are
     reduced to a single line each, but the bpdies are provided as-is.
     """
-    raise NotImplementedError
+    # XXX Bail out upon bogus syntax.
+    lines = _iter_clean_lines(lines)
+    for line in lines:
+        if not LOCAL_STMT_START_RE.match(line):
+            continue
+
+        stmt = line
+        blocks = None
+        if not line.endswith(';'):
+            # XXX Support compound & multiline simple statements.
+            #blocks = []
+            continue
+
+        yield (stmt, blocks)
 
 
 def _iter_clean_lines(lines):
@@ -165,12 +185,13 @@ def _iter_clean_lines(lines):
                 incomment = False
             continue
         line, _, _ = line.partition('//')
-        line, sep, _ = line.partition('/*')
+        line, sep, remainder = line.partition('/*')
         if sep:
-            _, sep, line = line.partition('*/')
+            _, sep, after = remainder.partition('*/')
             if not sep:
                 incomment = True
                 continue
+            line += ' ' + after
 
         # Ignore blank lines and leading/trailing whitespace.
         line = line.strip()
