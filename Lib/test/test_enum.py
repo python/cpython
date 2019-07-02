@@ -445,6 +445,16 @@ class TestEnum(unittest.TestCase):
         self.assertEqual('{:<20}'.format(Season.SPRING),
                          '{:<20}'.format(str(Season.SPRING)))
 
+    def test_str_enum_custom(self):
+        class TestIntWithStrOverride(IntEnum):
+            one = 1
+            two = 2
+            def __str__(self):
+                return 'Overridden!'
+
+        self.assertEqual(str(TestIntWithStrOverride.one), 'Overridden!')
+        self.assertEqual('{}'.format(TestIntWithStrOverride.one), 'Overridden!')
+
     def test_format_enum_custom(self):
         class TestFloat(float, Enum):
             one = 1.0
