@@ -1306,7 +1306,7 @@
     <Compile Include="test\test_textwrap.py" />
     <Compile Include="test\test_thread.py" />
     <Compile Include="test\test_threadedtempfile.py" />
-    <Compile Include="test\test_threaded_import.py" />
+    <Compile Include="test\test_importlib\test_threaded_import.py" />
     <Compile Include="test\test_threading.py" />
     <Compile Include="test\test_threading_local.py" />
     <Compile Include="test\test_threadsignals.py" />
