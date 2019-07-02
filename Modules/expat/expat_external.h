@@ -81,6 +81,10 @@
 # endif
 #endif  /* not defined XMLCALL */
 
+/* Namespace external symbols to allow multiple libexpat version to
+   co-exist. */
+#include "pyexpatns.h"
+
 
 #if !defined(XML_STATIC) && !defined(XMLIMPORT)
 # ifndef XML_BUILDING_EXPAT
