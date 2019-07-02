@@ -3314,7 +3314,6 @@ main_loop:
 
                Finally we push the result of the call.
             */
-            PyObject *stack[3];
             PyObject *exit_func;
             PyObject *exc, *val, *tb, *res;
 
@@ -3351,10 +3350,9 @@ main_loop:
                 block->b_level--;
             }
 
-            stack[0] = exc;
-            stack[1] = val;
-            stack[2] = tb;
-            res = _PyObject_FastCall(exit_func, stack, 3);
+            PyObject *stack[4] = {NULL, exc, val, tb};
+            res = _PyObject_Vectorcall(exit_func, stack + 1,
+                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             Py_DECREF(exit_func);
             if (res == NULL)
                 goto error;
