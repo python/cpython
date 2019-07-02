@@ -455,6 +455,15 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(str(EnumWithStrOverrides.one), 'Str!')
         self.assertEqual('{}'.format(EnumWithStrOverrides.one), 'Str!')
 
+    def test_format_override_enum(self):
+        class EnumWithFormatOverride(float, Enum):
+            one = 1.0
+            two = 2.0
+            def __format__(self, spec):
+                return 'Format!!'
+        self.assertEqual(str(EnumWithFormatOverride.one), 'EnumWithFormatOverride.one')
+        self.assertEqual('{}'.format(EnumWithFormatOverride.one), 'Format!!')
+
     def test_str_and_format_override_enum(self):
         class EnumWithStrFormatOverrides(Enum):
             one = auto()
