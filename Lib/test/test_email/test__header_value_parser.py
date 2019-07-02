@@ -3,7 +3,31 @@ import unittest
 from email import _header_value_parser as parser
 from email import errors
 from email import policy
+from email.parser import BytesParser, Parser
+from email.policy import default
 from test.test_email import TestEmailBase, parameterize
+
+
+
+class GetPtextTests(unittest.TestCase):
+
+    def test_get_ptext_to_endchars_notquotes(self):
+        ptext,value,escaped = parser._get_ptext_to_endchars("foo bar", '"')
+        self.assertFalse(escaped)
+        self.assertEqual(ptext, "foo")
+        self.assertEqual(value, " bar")
+
+    def test_get_ptext_to_endchars_quotes(self):
+        ptext,value,escaped = parser._get_ptext_to_endchars("\\foo", '"')
+        self.assertFalse(escaped)
+        self.assertEqual(ptext, "foo")
+        self.assertEqual(value, "")
+
+    def test_get_ptext_to_endchars_value_like_endchars(self):
+        ptext,value,escaped = parser._get_ptext_to_endchars('"', '"')
+        self.assertFalse(escaped)
+        self.assertEqual(ptext, '"')
+        self.assertEqual(value, "")
 
 class TestTokens(TestEmailBase):
 
@@ -165,6 +189,11 @@ class TestParser(TestParserMixin, TestEmailBase):
                         'Éric',
                         [],
                         '')
+
+    def test_check_payload_issue37461(self):
+        # Issue 37461 - expected to not hang
+        payload='Content-Type:x;\x1b*="\'G\'\\"\n'
+        Parser(policy=default).parsestr(payload)
 
     # get_unstructured
 
