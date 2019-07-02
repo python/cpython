@@ -547,10 +547,6 @@ class TestParser(TestParserMixin, TestEmailBase):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_bare_quoted_string('  "foo"')
 
-    def test_get_bare_quoted_string_only_quotes(self):
-        self._test_get_x(parser.get_bare_quoted_string,
-                         '""', '""', '', [], '')
-
     def test_get_bare_quoted_string_following_wsp_preserved(self):
         self._test_get_x(parser.get_bare_quoted_string,
              '"foo"\t bar', '"foo"', 'foo', [], '\t bar')
@@ -583,10 +579,6 @@ class TestParser(TestParserMixin, TestEmailBase):
         self._test_get_x(parser.get_bare_quoted_string,
              '"foo ', '"foo "', 'foo ',
              [errors.InvalidHeaderDefect], '')
-
-    def test_get_bare_quoted_string_empty_quotes(self):
-        self._test_get_x(parser.get_bare_quoted_string,
-            '""', '""', '', [], '')
 
     # Issue 16983: apply postel's law to some bad encoding.
     def test_encoded_word_inside_quotes(self):
