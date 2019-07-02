@@ -2606,14 +2606,14 @@ class LinkSymlink(unittest.TestCase):
 
     def mock_mktemp(*, orig_mktemp=tempfile.mktemp, **kwargs):
         """Ensure only the first mktemp call returns an existing pathname.
-        Save the temp path created for later retrieval"""
-        virgin = getattr(LinkSymlink.mock_mktemp, 'virgin', True)
-        temp = orig_mktemp(**kwargs)
-        LinkSymlink.mock_mktemp.path = temp
+        Save the temp_path path created for later retrieval"""
+        virgin = LinkSymlink.mock_mktemp.virgin
+        temp_path = orig_mktemp(**kwargs)
+        LinkSymlink.mock_mktemp.path = temp_path
         if virgin:
-            open(temp, 'w').close()
+            open(temp_path, 'w').close()
             LinkSymlink.mock_mktemp.virgin = False
-        return temp
+        return temp_path
 
     @unittest.mock.patch('tempfile.mktemp', side_effect=mock_mktemp)
     def test_retry_on_existing_temp_path(self, mock_mktemp):
