@@ -42,13 +42,13 @@ class EditorFunctionTest(unittest.TestCase):
             self.assertEqual(func(dummy, inp), out)
 
 
-class TestClassifyWS(unittest.TestCase):
+class TestGetLineIndent(unittest.TestCase):
     def test_empty_lines(self):
         for tabwidth in [1, 2, 4, 6, 8]:
             for line in ['', '\n']:
                 with self.subTest(line=line, tabwidth=tabwidth):
                     self.assertEqual(
-                        editor.classifyws(line, tabwidth=tabwidth),
+                        editor.get_line_indent(line, tabwidth=tabwidth),
                         (0, 0),
                     )
 
@@ -73,7 +73,7 @@ class TestClassifyWS(unittest.TestCase):
         for line, expected in tests:
             with self.subTest(line=line):
                 self.assertEqual(
-                    editor.classifyws(line, tabwidth=4),
+                    editor.get_line_indent(line, tabwidth=4),
                     expected,
                 )
 
@@ -98,7 +98,7 @@ class TestClassifyWS(unittest.TestCase):
         for line, expected in tests:
             with self.subTest(line=line):
                 self.assertEqual(
-                    editor.classifyws(line, tabwidth=8),
+                    editor.get_line_indent(line, tabwidth=8),
                     expected,
                 )
 
