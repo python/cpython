@@ -2591,6 +2591,8 @@ class LinkSymlink(unittest.TestCase):
         except BaseException:
             pass
 
+    # _link_or_symlink
+
     def test_link_or_symlink_invalid_os_method(self):
         invalid_method = os.dup
         with self.assertRaisesRegex(KeyError, 'dup'):
