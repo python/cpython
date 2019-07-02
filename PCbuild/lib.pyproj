@@ -1396,7 +1396,7 @@
     <Compile Include="test\test___all__.py" />
     <Compile Include="test\test___future__.py" />
     <Compile Include="test\tf_inherit_check.py" />
-    <Compile Include="test\threaded_import_hangers.py" />
+    <Compile Include="test\test_importlib\threaded_import_hangers.py" />
     <Compile Include="test\time_hashlib.py" />
     <Compile Include="test\tracedmodules\testmod.py" />
     <Compile Include="test\tracedmodules\__init__.py" />
