@@ -5651,6 +5651,9 @@ def install_tests_in_module_dict(remote_globs, start_method):
         if need_sleep:
             time.sleep(0.5)
         multiprocessing.process._cleanup()
+        # bpo-37421: Explicitly call _run_finalizers() to remove immediately
+        # temporary directories created by multiprocessing.util.get_temp_dir().
+        multiprocessing.util._run_finalizers()
         test.support.gc_collect()
 
     remote_globs['setUpModule'] = setUpModule
