@@ -216,7 +216,17 @@ def _extract_block(lines):
 
 def parse_func(stmt, body):
     """Return (name, signature) for the given function definition."""
-    raise NotImplementedError
+    header, _, end = stmt.partition(body)
+    assert end.strip() == '}'
+    assert header.strip().endswith('{')
+    header, _, _= header.rpartition('{')
+
+    signature = ' '.join(header.strip().splitlines())
+
+    _, _, name = signature.split('(')[0].strip().rpartition(' ')
+    assert name
+
+    return name, signature
 
 
 def parse_var(stmt):
@@ -254,7 +264,7 @@ def iter_variables(filename, *,
             if name:
                 yield (None, name, vartype)
         else:
-            funcname, _, body = _parse_func(stmt, body)
+            funcname, _ = _parse_func(stmt, body)
             localvars = _iter_locals(body,
                                      _iter_statements=_iter_local,
                                      _parse_var=_parse_var,

@@ -430,19 +430,33 @@ class IterLocalStatementsTests(TestCaseBase):
 
 class ParseFuncTests(TestCaseBase):
 
-    def test_(self):
-        ...
+    def test_typical(self):
+        tests = [
+            ('PyObject *\nspam(char *a)\n{\nreturn _spam(a);\n}',
+             'return _spam(a);',
+             ('spam', 'PyObject * spam(char *a)'),
+             ),
+            ]
+        for stmt, body, expected in tests:
+            with self.subTest(stmt):
+                name, signature = parse_func(stmt, body)
+
+                self.assertEqual((name, signature), expected)
 
 
 class ParseVarTests(TestCaseBase):
 
-    def test_(self):
+    @unittest.expectedFailure
+    def test_typical(self):
+        name, vartype = parse_var(stmt)
         ...
 
 
+@unittest.skip('not finished')
 class ParseCompoundTests(TestCaseBase):
 
-    def test_(self):
+    def test_typical(self):
+        headers, bodies = parse_compound(stmt, blocks)
         ...
 
 
@@ -482,7 +496,7 @@ class IterVariablesTests(TestCaseBase):
         try:
             return self._return_parse_func.pop(0)
         except IndexError:
-            return ('???', '???', '???')
+            return ('???', '???')
 
     def _parse_var(self, lines):
         self.calls.append(
@@ -575,7 +589,7 @@ class IterVariablesTests(TestCaseBase):
              ],
             ]
         self._return_parse_func = [
-            ('func1', '<sig 1>', '<body 1>'),
+            ('func1', '<sig 1>'),
             ]
         self._return_parse_var = [
             ('var1', '<vartype 1>'),
@@ -658,7 +672,7 @@ class IterVariablesTests(TestCaseBase):
              ],
             ]
         self._return_parse_func = [
-            ('func1', '<sig 1>', '<body 1>'),
+            ('func1', '<sig 1>'),
             ]
         self._return_parse_var = [
             ('var1', '<vartype 1>'),
