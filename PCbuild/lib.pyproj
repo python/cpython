@@ -1211,7 +1211,7 @@
     <Compile Include="test\test_pickletools.py" />
     <Compile Include="test\test_pipes.py" />
     <Compile Include="test\test_pkg.py" />
-    <Compile Include="test\test_pkgimport.py" />
+    <Compile Include="test\test_importlib\test_pkg_import.py" />
     <Compile Include="test\test_pkgutil.py" />
     <Compile Include="test\test_platform.py" />
     <Compile Include="test\test_plistlib.py" />
