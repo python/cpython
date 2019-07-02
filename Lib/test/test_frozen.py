@@ -13,6 +13,7 @@
 import sys
 import unittest
 from test.support import captured_stdout
+from importlib import util
 
 
 class TestFrozen(unittest.TestCase):

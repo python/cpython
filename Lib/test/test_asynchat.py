@@ -7,6 +7,7 @@ import asyncore
 import errno
 import socket
 import sys
+import _thread as thread
 import threading
 import time
 import unittest

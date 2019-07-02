@@ -3,11 +3,14 @@
    Nick Mathewson
 '''
 
+import os
 import sys
 from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase, main as unittest_main
+from test import support
+from functools import partial
 
 StaticMethodType = type(staticmethod(lambda: None))
 ClassMethodType = type(classmethod(lambda c: None))

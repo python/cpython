@@ -1,4 +1,5 @@
 import netrc, os, unittest, sys, tempfile, textwrap
+from unittest import mock
 from test import support
 
 

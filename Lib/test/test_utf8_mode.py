@@ -3,6 +3,7 @@ Test the implementation of the PEP 540: the UTF-8 Mode.
 """
 
 import locale
+import os
 import sys
 import textwrap
 import unittest

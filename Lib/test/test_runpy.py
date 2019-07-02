@@ -11,7 +11,8 @@ import warnings
 from test.support import (
     forget, make_legacy_pyc, unload, verbose, no_tracing,
     create_empty_file, temp_dir)
-from test.support.script_helper import make_script, make_zip_script
+from test.support.script_helper import (
+    make_pkg, make_script, make_zip_pkg, make_zip_script)
 
 
 import runpy

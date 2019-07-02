@@ -21,6 +21,7 @@ import urllib.parse
 import xml.etree
 import xml.etree.ElementTree
 import textwrap
+import threading
 from io import StringIO
 from collections import namedtuple
 from test.support.script_helper import assert_python_ok

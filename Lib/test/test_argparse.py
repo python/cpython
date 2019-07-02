@@ -1,5 +1,6 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
 
+import codecs
 import inspect
 import os
 import shutil

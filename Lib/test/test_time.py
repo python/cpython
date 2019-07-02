@@ -9,6 +9,7 @@ import sysconfig
 import time
 import threading
 import unittest
+import warnings
 try:
     import _testcapi
 except ImportError:
