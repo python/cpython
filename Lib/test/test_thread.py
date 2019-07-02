@@ -4,6 +4,7 @@ import random
 from test import support
 import _thread as thread
 import time
+import sys
 import weakref
 
 from test import lock_tests

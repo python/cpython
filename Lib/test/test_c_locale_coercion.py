@@ -2,6 +2,7 @@
 
 import locale
 import os
+import shutil
 import subprocess
 import sys
 import sysconfig
@@ -9,8 +10,10 @@ import unittest
 from collections import namedtuple
 
 import test.support
-from test.support.script_helper import run_python_until_end
-
+from test.support.script_helper import (
+    run_python_until_end,
+    interpreter_requires_environment,
+)
 
 # Set the list of ways we expect to be able to ask for the "C" locale
 EXPECTED_C_LOCALE_EQUIVALENTS = ["C", "invalid.ascii"]

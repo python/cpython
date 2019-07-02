@@ -1,6 +1,7 @@
 import os
 import posixpath
 import unittest
+import warnings
 from posixpath import realpath, abspath, dirname, basename
 from test import support, test_genericpath
 from test.support import FakePath
@@ -10,7 +11,6 @@ try:
     import posix
 except ImportError:
     posix = None
-
 
 # An absolute path to a temporary filename for testing. We can't rely on TESTFN
 # being an absolute path, so we need this.
