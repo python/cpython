@@ -25,6 +25,11 @@ VAR_TYPE_SPEC = r'''(?:
         {IDENTIFIER} |
         (?:struct|union)\s+{IDENTIFIER}
         )'''
+
+POINTER = rf'''(?:
+        (?:\s+const)?\s*[*]
+        )'''
+
 #STRUCT = r'''(?:
 #        (?:struct|(struct\s+%s))\s*[{]
 #            [^}]*
@@ -86,6 +91,7 @@ LOCAL_VAR_START = rf'''(?:
            )\s+
          )?
         {VAR_TYPE_SPEC}
+        {POINTER}?
         )'''
 LOCAL_STMT_START_RE = re.compile(rf'''
         ^
@@ -93,23 +99,6 @@ LOCAL_STMT_START_RE = re.compile(rf'''
             ({LOCAL_VAR_START})
          )
         ''', re.VERBOSE)
-
-#POINTER = rf'''(?:
-#        (?:\s+const)?\s*[*]
-#        )'''
-#
-#TYPEDEF = rf'''(?:
-#        typedef XXX {IDENTIFIER}
-#        )'''
-#VAR_INITIALIZER = rf'''(?:
-#        (?:&\s*)?
-#        XXX
-#        )'''
-#PARAMS = rf'''(?:
-#        [(]
-#        XXX
-#        [)]
-#        )'''
 
 
 def iter_global_declarations(lines):
@@ -231,7 +220,28 @@ def parse_func(stmt, body):
 
 def parse_var(stmt):
     """Return (name, vartype) for the given variable declaration."""
-    raise NotImplementedError
+    stmt = stmt.rstrip(';')
+    m = LOCAL_STMT_START_RE.match(stmt)
+    assert m
+    vartype = m.group(0)
+    name = stmt[len(vartype):].partition('=')[0].strip()
+
+    if name.startswith('('):
+        name, _, after = name[1:].partition(')')
+        assert after
+        name = name.replace('*', '* ')
+        inside, _, name = name.strip().rpartition(' ')
+        vartype = f'{vartype} ({inside.strip()}){after}'
+    else:
+        name = name.replace('*', '* ')
+        before, _, name = name.rpartition(' ')
+        vartype = f'{vartype} {before}'
+
+    vartype = vartype.strip()
+    while '  ' in vartype:
+        vartype = vartype.replace('  ', ' ')
+
+    return name, vartype
 
 
 def parse_compound(stmt, blocks):

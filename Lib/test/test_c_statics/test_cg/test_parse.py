@@ -446,10 +446,76 @@ class ParseFuncTests(TestCaseBase):
 
 class ParseVarTests(TestCaseBase):
 
-    @unittest.expectedFailure
     def test_typical(self):
-        name, vartype = parse_var(stmt)
-        ...
+        tests = [
+            # POTS
+            ('int spam;', ('spam', 'int')),
+            ('unsigned int spam;', ('spam', 'unsigned int')),
+            ('char spam;', ('spam', 'char')),
+            ('float spam;', ('spam', 'float')),
+
+            # typedefs
+            ('uint spam;', ('spam', 'uint')),
+            ('MyType spam;', ('spam', 'MyType')),
+
+            # complex
+            ('struct myspam spam;', ('spam', 'struct myspam')),
+            ('union choice spam;', ('spam', 'union choice')),
+            # inline struct
+            # inline union
+            # enum?
+            ]
+        # pointers
+        tests.extend([
+            # POTS
+            ('int * spam;', ('spam', 'int *')),
+            ('unsigned int * spam;', ('spam', 'unsigned int *')),
+            ('char *spam;', ('spam', 'char *')),
+            ('char const *spam = "spamspamspam...";', ('spam', 'char const *')),
+            # typedefs
+            ('MyType *spam;', ('spam', 'MyType *')),
+            # complex
+            ('struct myspam *spam;', ('spam', 'struct myspam *')),
+            ('union choice *spam;', ('spam', 'union choice *')),
+            # packed with details
+            ('const char const *spam;', ('spam', 'const char const *')),
+            # void pointer
+            ('void *data = NULL;', ('data', 'void *')),
+            # function pointers
+            ('int (* func)(char *);', ('func', 'int (*)(char *)')),
+            ('char * (* func)(void);', ('func', 'char * (*)(void)')),
+            ])
+        # storage class
+        tests.extend([
+            ('static int spam;', ('spam', 'static int')),
+            ('extern int spam;', ('spam', 'extern int')),
+            ('static unsigned int spam;', ('spam', 'static unsigned int')),
+            ('static struct myspam spam;', ('spam', 'static struct myspam')),
+            ])
+        # type qualifier
+        tests.extend([
+            ('const int spam;', ('spam', 'const int')),
+            ('const unsigned int spam;', ('spam', 'const unsigned int')),
+            ('const struct myspam spam;', ('spam', 'const struct myspam')),
+            ])
+        # combined
+        tests.extend([
+            ('const char *spam = eggs;', ('spam', 'const char *')),
+            ('static const char const *spam = "spamspamspam...";',
+             ('spam', 'static const char const *')),
+            ('extern const char const *spam;',
+             ('spam', 'extern const char const *')),
+            ('static void *data = NULL;', ('data', 'static void *')),
+            ('static int (const * func)(char *) = func1;',
+             ('func', 'static int (const *)(char *)')),
+            ('static char * (* func)(void);',
+             ('func', 'static char * (*)(void)')),
+            ])
+        for stmt, expected in tests:
+            with self.subTest(stmt):
+                name, vartype = parse_var(stmt)
+
+                self.assertEqual((name, vartype), expected)
 
 
 @unittest.skip('not finished')
