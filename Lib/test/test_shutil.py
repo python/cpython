@@ -2583,7 +2583,7 @@ class LinkSymlink(unittest.TestCase):
                            'absent': self.new1, **self.symlink_to_path}
         self.srcs = list(self.path_types.values())
         # Reset mock_mktemp "static" variable
-        LinkSymlink.mock_mktemp.virgin = True
+        LinkSymlink.mock_mktemp_exists.not_yet_called = True
 
     def tearDown(self):
         try:
@@ -2607,22 +2607,26 @@ class LinkSymlink(unittest.TestCase):
     # _create_or_replace
 
     def mock_mktemp(*, orig_mktemp=tempfile.mktemp, **kwargs):
-        """Ensure only the first mktemp call returns an existing pathname.
-        Save the temp_path path created for later retrieval"""
-        virgin = LinkSymlink.mock_mktemp.virgin
+        """Save the temp_path path created for later retrieval"""
         temp_path = orig_mktemp(**kwargs)
         LinkSymlink.mock_mktemp.path = temp_path
-        if virgin:
-            open(temp_path, 'w').close()
-            LinkSymlink.mock_mktemp.virgin = False
         return temp_path
 
-    @unittest.mock.patch('tempfile.mktemp', side_effect=mock_mktemp)
-    def test_retry_on_existing_temp_path(self, mock_mktemp):
-        # Simulate race: file creation at temp path path after tempfile.mktemp
+    def mock_mktemp_exists(*, orig_mktemp=tempfile.mktemp, **kwargs):
+        """Make the first mktemp call return an existing pathname."""
+        temp_path = orig_mktemp(**kwargs)
+        # LinkSymlink.mock_mktemp_exists.path = temp_path
+        if not_yet_called := LinkSymlink.mock_mktemp_exists.not_yet_called:
+            LinkSymlink.mock_mktemp_exists.not_yet_called = False
+            open(temp_path, 'w').close()
+        return temp_path
+
+    @unittest.mock.patch('tempfile.mktemp', side_effect=mock_mktemp_exists)
+    def test_retry_on_existing_temp_path(self, mock_mktemp_exists):
+        # Simulate race: file creation between tempfile.mktemp and link
         create_file_at = lambda f: os.link(self.src_file1, f)
         shutil._create_or_replace(self.dst_file1, create_file_at)
-        self.assertGreater(mock_mktemp.call_count, 1)
+        self.assertGreater(mock_mktemp_exists.call_count, 1)
         self.assertTrue(os.path.samefile(self.dst_file1, self.src_file1))
 
     class ExpectedException(BaseException):
@@ -2644,14 +2648,13 @@ class LinkSymlink(unittest.TestCase):
                                     side_effect=LinkSymlink.ExpectedException)
         exceptions = {'after symlink': patch_symlink,
                       'in replace': patch_replace}
-        for location, patched_context in exceptions.items():
-            with patched_context as mock, self.subTest(exception=location):
+        for code_location, patch_context in exceptions.items():
+            with patch_context as mock, self.subTest(exception=code_location):
                 with self.assertRaises(LinkSymlink.ExpectedException):
                     shutil.symlink(self.src_file1, self.dst_file1,
                                    overwrite=True)
                 mock.assert_called_once()
-                self.assertFalse(os.path.lexists(
-                                        LinkSymlink.mock_mktemp.path))
+                self.assertFalse(os.path.lexists(LinkSymlink.mock_mktemp.path))
 
     # Symlink argument checking
 
