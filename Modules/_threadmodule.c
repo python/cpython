@@ -1094,6 +1094,30 @@ function returns; the return value is ignored.  The thread will also exit\n\
 when the function raises an unhandled exception; a stack trace will be\n\
 printed unless the exception is SystemExit.\n");
 
+#ifdef PY_HAVE_SET_THREAD_NAME
+/*[clinic input]
+_thread._set_thread_name
+
+    name: object(converter="PyUnicode_FSConverter")
+    /
+
+Set the name of the current thread.
+[clinic start generated code]*/
+
+static PyObject *
+_thread__set_thread_name_impl(PyObject *module, PyObject *name)
+/*[clinic end generated code: output=72d978d5c53e2762 input=8c46f838fc1040c2]*/
+{
+    if (PyThread_set_thread_name(PyBytes_AS_STRING(name))) {
+        Py_DECREF(name);
+        PyErr_SetString(ThreadError, "setting the thread name failed");
+        return NULL;
+    }
+    Py_DECREF(name);
+    Py_RETURN_NONE;
+}
+#endif
+
 static PyObject *
 thread_PyThread_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -1495,6 +1519,7 @@ static PyMethodDef thread_methods[] = {
     {"_excepthook",              thread_excepthook,
      METH_O, excepthook_doc},
     _THREAD__IS_MAIN_INTERPRETER_METHODDEF
+    _THREAD__SET_THREAD_NAME_METHODDEF
     {NULL,                      NULL}           /* sentinel */
 };
 

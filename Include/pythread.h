@@ -31,6 +31,12 @@ PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
 PyAPI_FUNC(unsigned long) PyThread_get_thread_native_id(void);
 #endif
 
+#if defined(__APPLE__) || defined(__linux__) || defined(__FreeBSD__) || \
+    defined(__OpenBSD__) || defined(__NetBSD__)
+#define PY_HAVE_SET_THREAD_NAME
+PyAPI_FUNC(int) PyThread_set_thread_name(const char *);
+#endif
+
 PyAPI_FUNC(PyThread_type_lock) PyThread_allocate_lock(void);
 PyAPI_FUNC(void) PyThread_free_lock(PyThread_type_lock);
 PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);

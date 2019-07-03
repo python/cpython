@@ -17,6 +17,7 @@
 #elif defined(__FreeBSD__)
 #   include <pthread_np.h>      /* pthread_getthreadid_np() */
 #elif defined(__OpenBSD__)
+#   include <pthread_np.h>
 #   include <unistd.h>          /* getthrid() */
 #elif defined(_AIX)
 #   include <sys/thread.h>      /* thread_self() */
@@ -340,6 +341,37 @@ PyThread_get_thread_native_id(void)
     native_id = _lwp_self();
 #endif
     return (unsigned long) native_id;
+}
+#endif
+
+#ifdef PY_HAVE_SET_THREAD_NAME
+int
+PyThread_set_thread_name(const char *name)
+{
+    if (!initialized) {
+        PyThread_init_thread();
+    }
+    // Truncate the string to 15 chars for pthread_setname_np().
+    char buf[16];
+    size_t len = Py_ARRAY_LENGTH(buf) - 1;
+    strncpy(buf, name, len);
+    buf[len] = '\0';
+#ifndef __APPLE__
+    unsigned long ident = PyThread_get_thread_ident();
+#endif
+    int ret = 0;
+#ifdef __APPLE__
+    // On macOS, pthread_setname_np() can only set the calling thread's name.
+    ret = pthread_setname_np(buf);
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
+    // No return value.
+    pthread_set_name_np((pthread_t)ident, buf);
+#elif defined(__NetBSD__)
+    ret = pthread_setname_np((pthread_t)ident, "%s", (void *)buf);
+#elif defined(__linux__)
+    ret = pthread_setname_np((pthread_t)ident, buf);
+#endif
+    return ret;
 }
 #endif
 

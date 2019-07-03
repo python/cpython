@@ -2,6 +2,37 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(PY_HAVE_SET_THREAD_NAME)
+
+PyDoc_STRVAR(_thread__set_thread_name__doc__,
+"_set_thread_name($module, name, /)\n"
+"--\n"
+"\n"
+"Set the name of the current thread.");
+
+#define _THREAD__SET_THREAD_NAME_METHODDEF    \
+    {"_set_thread_name", (PyCFunction)_thread__set_thread_name, METH_O, _thread__set_thread_name__doc__},
+
+static PyObject *
+_thread__set_thread_name_impl(PyObject *module, PyObject *name);
+
+static PyObject *
+_thread__set_thread_name(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *name;
+
+    if (!PyUnicode_FSConverter(arg, &name)) {
+        goto exit;
+    }
+    return_value = _thread__set_thread_name_impl(module, name);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(PY_HAVE_SET_THREAD_NAME) */
+
 PyDoc_STRVAR(_thread__is_main_interpreter__doc__,
 "_is_main_interpreter($module, /)\n"
 "--\n"
@@ -19,4 +50,8 @@ _thread__is_main_interpreter(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _thread__is_main_interpreter_impl(module);
 }
-/*[clinic end generated code: output=505840d1b9101789 input=a9049054013a1b77]*/
+
+#ifndef _THREAD__SET_THREAD_NAME_METHODDEF
+    #define _THREAD__SET_THREAD_NAME_METHODDEF
+#endif /* !defined(_THREAD__SET_THREAD_NAME_METHODDEF) */
+/*[clinic end generated code: output=39d6d81a301f0458 input=a9049054013a1b77]*/
