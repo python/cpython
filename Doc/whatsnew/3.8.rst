@@ -577,11 +577,6 @@ format for new archives to improve portability and standards conformance,
 inherited from the corresponding change to the :mod:`tarfile` module.
 (Contributed by C.A.M. Gerlach in :issue:`30661`.)
 
-:func:`shutil.make_archive` now excludes '.' directory entries when adding
-directories to a tar archive. The new behavior is inherited from the
-corresponding change to the :mod:`tarfile` module.
-Contributed by Jeffrey Kintscher in :issue:`35964`.)
-
 
 ssl
 ---
@@ -657,9 +652,6 @@ This improves cross-platform portability with a consistent encoding (UTF-8)
 in a standardized and extensible format, and offers several other benefits.
 (Contributed by C.A.M. Gerlach in :issue:`36268`.)
 
-The :mod:`tarfile` module now excludes '.' directory entries when adding
-directories to a tar archive. (Contributed by Jeffrey Kintscher
-in :issue:`35964`.)
 
 threading
 ---------
