@@ -1352,8 +1352,8 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             tar = tarfile.open(tmpname, "r")
             try:
                 for t in tar:
-                    if t.name != ".":
-                        self.assertTrue(t.name.startswith("./"), t.name)
+                    self.assertNotEqual(t.name, os.curdir)
+                    self.assertTrue(t.name.startswith("./"), t.name)
             finally:
                 tar.close()
 
