@@ -50,6 +50,12 @@ from docutils import nodes
 from sphinx.builders import Builder
 import sphinx.util
 
+try:  # sphinx>=1.6
+    from sphinx.util.logging import getLogger
+except ImportError:  # sphinx<1.6
+    from logging import getLogger
+
+
 detect_all = re.compile(r'''
     ::(?=[^=])|            # two :: (but NOT ::=)
     :[a-zA-Z][a-zA-Z0-9]+| # :foo
@@ -86,7 +92,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
     Checks for possibly invalid markup that may leak into the output.
     """
     name = 'suspicious'
-    logger = sphinx.util.logging.getLogger("CheckSuspiciousMarkupBuilder")
+    logger = getLogger("CheckSuspiciousMarkupBuilder")
 
     def init(self):
         # create output file
