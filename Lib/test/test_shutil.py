@@ -2666,9 +2666,12 @@ class LinkSymlink(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, arg):
                     shutil.symlink(self.src_file1, self.dst_file1, **kwargs)
 
-    def test_symlink_two_positional_args(self):
-        with self.assertRaisesRegex(TypeError, '2 positional arguments'):
-            shutil.symlink(self.src_file1, self.dst_file1, True)
+    def test_two_positional_args(self):
+        methods = {'link': shutil.link, 'symlink': shutil.symlink}
+        for name, method in methods.items():
+            with self.subTest(method=method):
+                with self.assertRaisesRegex(TypeError, '2 positional'):
+                    method(self.src_file1, self.dst_file1, True)
 
     @unittest.mock.patch('os.symlink', side_effect=os.symlink)
     def test_symlink_passes_target_is_directory(self, mock_os_symlink):
