@@ -108,7 +108,7 @@ threading
 
 In a subinterpreter, spawning a daemon thread now raises an exception. Daemon
 threads were never supported in subinterpreters. Previously, the subinterpreter
-finalization crashed with a Pyton fatal error if a daemon thread was still
+finalization crashed with a Python fatal error if a daemon thread was still
 running.
 
 pprint
