@@ -2825,17 +2825,24 @@ _PyObject_DebugMallocStats(FILE *out)
 #   error "arena size must be < 2^32"
 #endif
 
+/* Current 64-bit processors are limited to 48-bit physical addresses.  For
+ * now, the top 17 bits of addresses will all be equal to bit 2**47.  If that
+ * changes in the future, this must be adjusted upwards.
+ */
+#define PHYSICAL_BITS 48
+
 /* bits used for MAP1 and MAP2 nodes */
-#define INTERIOR_BITS ((BITS - ARENA_BITS + 2) / 3)
+#define INTERIOR_BITS ((PHYSICAL_BITS - ARENA_BITS + 2) / 3)
 
 #define MAP1_BITS INTERIOR_BITS
 #define MAP1_LENGTH (1 << MAP1_BITS)
+#define MAP1_MASK (MAP3_LENGTH - 1)
 
 #define MAP2_BITS INTERIOR_BITS
 #define MAP2_LENGTH (1 << MAP2_BITS)
 #define MAP2_MASK (MAP2_LENGTH - 1)
 
-#define MAP3_BITS (BITS - ARENA_BITS - 2*INTERIOR_BITS)
+#define MAP3_BITS (PHYSICAL_BITS - ARENA_BITS - 2*INTERIOR_BITS)
 #define MAP3_LENGTH (1 << MAP3_BITS)
 #define MAP3_MASK (MAP3_LENGTH - 1)
 
@@ -2846,7 +2853,8 @@ _PyObject_DebugMallocStats(FILE *out)
 #define AS_UINT(p) ((uintptr_t)(p))
 #define MAP3_INDEX(p) ((AS_UINT(p) >> MAP3_SHIFT) & MAP3_MASK)
 #define MAP2_INDEX(p) ((AS_UINT(p) >> MAP2_SHIFT) & MAP2_MASK)
-#define MAP1_INDEX(p) (AS_UINT(p) >> MAP1_SHIFT)
+#define MAP1_INDEX(p) ((AS_UINT(p) >> MAP1_SHIFT) & MAP1_MASK)
+#define HIGH_BITS(p) (AS_UINT(p) >> PHYSICAL_BITS)
 
 /* See arena_map_mark_used() for the meaning of these members. */
 typedef struct {
@@ -2882,6 +2890,8 @@ static arena_map1_t arena_map_root;
 static arena_map3_t *
 arena_map_get(block *p, int create)
 {
+    /* sanity check that PHYSICAL_BITS is correct */
+    assert(HIGH_BITS(p) == HIGH_BITS(&arena_map_root));
     int i1 = MAP1_INDEX(p);
     if (arena_map_root.ptrs[i1] == NULL) {
         if (!create) {
@@ -2936,6 +2946,8 @@ arena_map_get(block *p, int create)
 static int
 arena_map_mark_used(uintptr_t arena_base, int is_used)
 {
+    /* sanity check that PHYSICAL_BITS is correct */
+    assert(HIGH_BITS(arena_base) == HIGH_BITS(&arena_map_root));
     arena_map3_t *n_hi = arena_map_get((block *)arena_base, is_used);
     if (n_hi == NULL) {
         assert(is_used); /* otherwise node should already exist */
