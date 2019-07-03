@@ -1955,9 +1955,23 @@ def _signature_strip_non_python_syntax(signature):
     return clean_signature, self_parameter, last_positional_only
 
 
-def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
+def _signature_fromstr(cls, obj, text, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.
+    """
+    modname = getattr(obj, '__module__', None)
+    _self = getattr(obj, '__self__', None)
+    try:
+        return _signature_from_text(cls, text, modname, _self, skip_bound_arg)
+    except ValueError as exc:
+        if getattr(exc, '_syntax', False):
+            raise ValueError("{!r} builtin has invalid signature".format(obj))
+        raise
+
+
+def _signature_from_text(cls, text, module_name=None, _self=None, skip_bound_arg=True):
+    """Private helper to parse a signature string in Argument Clinic's
+    extended signature format.
     """
     # Lazy import ast because it's relatively heavy and
     # it's not used for other than this function.
@@ -1965,8 +1979,8 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     Parameter = cls._parameter_cls
 
-    clean_signature, self_parameter, last_positional_only = \
-        _signature_strip_non_python_syntax(s)
+    (clean_signature, self_parameter, last_positional_only
+     ) = _signature_strip_non_python_syntax(text)
 
     program = "def foo" + clean_signature + ": pass"
 
@@ -1976,7 +1990,9 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         module = None
 
     if not isinstance(module, ast.Module):
-        raise ValueError("{!r} builtin has invalid signature".format(obj))
+        exc = ValueError(f"invalid signature {text!r}")
+        exc._syntax = True
+        raise exc
 
     f = module.body[0]
 
@@ -1986,7 +2002,6 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     module = None
     module_dict = {}
-    module_name = getattr(obj, '__module__', None)
     if module_name:
         module = sys.modules.get(module_name, None)
         if module:
@@ -2080,7 +2095,6 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         #    - We don't strip first bound argument if
         #      skip_bound_arg is False.
         assert parameters
-        _self = getattr(obj, '__self__', None)
         self_isbound = _self is not None
         self_ismodule = ismodule(_self)
         if self_isbound and (self_ismodule or skip_bound_arg):
