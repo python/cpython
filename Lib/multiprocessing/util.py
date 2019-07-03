@@ -108,8 +108,12 @@ def log_to_stderr(level=None):
 
 def _remove_temp_dir(rmtree, tempdir):
     rmtree(tempdir)
-    process.current_process()._config['tempdir'] = None
 
+    current_process = process.current_process()
+    # current_process() can be None if the finalizer is called
+    # late during Python finalization
+    if current_process is not None:
+        current_process._config['tempdir'] = None
 
 def get_temp_dir():
     # get name of a temp directory which will be automatically cleaned up
