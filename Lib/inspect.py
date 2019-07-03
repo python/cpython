@@ -2827,6 +2827,24 @@ class Signature:
         self._return_annotation = return_annotation
 
     @classmethod
+    def from_text(cls, text, *, skip_bound_arg=True):
+        """Constructs Signature for the given string.
+
+        The expected format matches what Signature.__str__() returns.
+        For example:
+
+          func()
+          func(a, b)
+          func(a: int, b: str)
+          func(a, b=None, /, c, d=None, *args, e, f=None, **kwargs)
+
+        For the most part this will round-trip with Signature.__str__().
+        """
+        # See Argument Clinic's extended signature format (PEP 436).
+        return _signature_from_text(cls, text,
+                                    skip_bound_arg=skip_bound_arg)
+
+    @classmethod
     def from_function(cls, func):
         """Constructs Signature for the given python function.
 
