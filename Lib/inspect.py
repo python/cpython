@@ -3122,7 +3122,10 @@ class Signature:
 
 def signature(obj, *, follow_wrapped=True):
     """Get a signature object for the passed callable."""
-    return Signature.from_callable(obj, follow_wrapped=follow_wrapped)
+    if isinstance(obj, str):
+        return Signature.from_text(obj)
+    else:
+        return Signature.from_callable(obj, follow_wrapped=follow_wrapped)
 
 
 def _main():

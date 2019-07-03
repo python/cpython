@@ -3250,9 +3250,11 @@ class TestSignatureObject(unittest.TestCase):
                         inspect.Signature.from_text(text, skip_bound_arg=True)
                     self.assertEqual(str(cm.exception), str(expected))
                 else:
+                    sig = inspect.signature(text)
                     sig_default = inspect.Signature.from_text(text)
                     sig_skip = inspect.Signature.from_text(text, skip_bound_arg=True)
 
+                    self.assertEqual(sig, expected)
                     self.assertEqual(sig_default, expected)
                     self.assertEqual(sig_skip, expected)
 
