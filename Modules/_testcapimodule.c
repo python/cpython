@@ -1924,7 +1924,7 @@ unicode_asucs4(PyObject *self, PyObject *args)
 static PyObject *
 unicode_asutf8(PyObject *self, PyObject *args)
 {
-    PyObject *unicode, *result;
+    PyObject *unicode;
     const char *buffer;
 
     if (!PyArg_ParseTuple(args, "U", &unicode)) {
@@ -1936,11 +1936,7 @@ unicode_asutf8(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    result = PyUnicode_FromString(buffer);
-    if (result == NULL) {
-        return NULL;
-    }
-    return result;
+    return PyBytes_FromString(buffer);
 }
 
 static PyObject *

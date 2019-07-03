@@ -2824,9 +2824,13 @@ class CAPITest(unittest.TestCase):
     def test_asutf8(self):
         from _testcapi import unicode_asutf8
 
-        self.assertEqual(unicode_asutf8('abc'), 'abc')
-        self.assertEqual(unicode_asutf8('abc\0'), 'abc')
-        self.assertEqual(unicode_asutf8('abc\0abc'), 'abc')
+        bmp = '\u0100'
+        bmp2 = '\uffff'
+        nonbmp = chr(0x10ffff)
+
+        self.assertEqual(unicode_asutf8(bmp), b'\xc4\x80')
+        self.assertEqual(unicode_asutf8(bmp2), b'\xef\xbf\xbf')
+        self.assertEqual(unicode_asutf8(nonbmp), b'\xf4\x8f\xbf\xbf')
         self.assertRaises(UnicodeEncodeError, unicode_asutf8, 'a\ud800b\udfffc')
 
     # Test PyUnicode_FindChar()
