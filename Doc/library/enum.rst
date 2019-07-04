@@ -741,9 +741,9 @@ Some rules:
 5. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
    and :func:`format` will use the mixed-in type's :meth:`__format__`
    unless :meth:`__str__` or :meth:`__format__` is overridden in the subclass,
-   In which case the overridden methods or :class:`Enum` methods will be used.
-   If the :class:`Enum` class's :func:`str` or :func:`repr` is desired, use the
-   `!s` or `!r` format codes.
+   in which case the overridden methods or :class:`Enum` methods will be used.
+   Use the !s and !r format codes to force usage of the :class:Enum class's
+   :func:str and :func:repr methods.
 
 When to use :meth:`__new__` vs. :meth:`__init__`
 ------------------------------------------------
