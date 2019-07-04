@@ -1,2 +1,0 @@
-Support running asyncio subprocesses when execution event loop in a thread
-on UNIX.

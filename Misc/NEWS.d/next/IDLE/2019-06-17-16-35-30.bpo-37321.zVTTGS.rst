@@ -1,2 +1,0 @@
-Both subprocess connection error messages now refer to the 'Startup failure'
-section of the IDLE doc.
