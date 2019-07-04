@@ -744,9 +744,11 @@ Some rules:
    :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
    `%i` or `%h` for IntEnum) treat the enum member as its mixed-in type.
 5. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
-   and :func:`format` will use the mixed-in
-   type's :meth:`__format__`.  If the :class:`Enum` class's :func:`str` or
-   :func:`repr` is desired, use the `!s` or `!r` format codes.
+   and :func:`format` will use the mixed-in type's :meth:`__format__`
+   unless :meth:`__str__` or :meth:`__format__` is overridden in the subclass,
+   in which case the overridden methods or :class:`Enum` methods will be used.
+   Use the !s and !r format codes to force usage of the :class:`Enum` class's
+   :meth:`__str__` and :meth:`__repr__` methods.
 
 When to use :meth:`__new__` vs. :meth:`__init__`
 ------------------------------------------------
