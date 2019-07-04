@@ -2967,22 +2967,20 @@ arena_map_mark_used(uintptr_t arena_base, int is_used)
          * again (do the full tree traversal).
          */
         n_hi->arenas[i3].tail_hi = is_used ? tail : 0;
-        uintptr_t arena_next = arena_base + ARENA_SIZE;
-        /* If arena_base is a legit arena address, so is arena_next - 1
-         * (last address in arena).  If arena_next overflows then it
+        uintptr_t arena_base_next = arena_base + ARENA_SIZE;
+        /* If arena_base is a legit arena address, so is arena_base_next - 1
+         * (last address in arena).  If arena_base_next overflows then it
          * must overflow to 0.  However, that would mean arena_base was
          * "ideal" and we should not be in this case. */
-        assert(arena_base < arena_next);
-        if (arena_next > arena_base) {
-            arena_map3_t *n_lo = arena_map_get((block *)arena_next, is_used);
-            if (n_lo == NULL) {
-                assert(is_used); /* otherwise should already exist */
-                n_hi->arenas[i3].tail_hi = 0;
-                return 0; /* failed to allocate space for node */
-            }
-            int i3_next = MAP3_INDEX(arena_next);
-            n_lo->arenas[i3_next].tail_lo = is_used ? tail : 0;
+        assert(arena_base < arena_base_next);
+        arena_map3_t *n_lo = arena_map_get((block *)arena_base_next, is_used);
+        if (n_lo == NULL) {
+            assert(is_used); /* otherwise should already exist */
+            n_hi->arenas[i3].tail_hi = 0;
+            return 0; /* failed to allocate space for node */
         }
+        int i3_next = MAP3_INDEX(arena_base_next);
+        n_lo->arenas[i3_next].tail_lo = is_used ? tail : 0;
     }
     return 1;
 }
