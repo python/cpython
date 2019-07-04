@@ -1566,15 +1566,11 @@ class RunFuncTestCase(BaseTestCase):
         self.assertIn('capture_output', c.exception.args[0])
 
     @unittest.skipIf(mswindows, "requires posix like 'sleep' shell command")
-    @mock.patch("subprocess._get_cleanup_timeout")
-    def test_run_with_shell_timeout_and_capture_output_explicit_session(
-            self, mock_get_cleanup_timeout):
+    def test_run_with_shell_timeout_and_capture_output_explicit_session(self):
         """Test from https://bugs.python.org/issue37424 with a session."""
         # This test is about ensuring that the cleanup_timeout was not
         # needed, that the grandchild process holding the output handles
-        # open actually died.  Thus we force a high cleanup time that'll
-        # obviously fail our timing test.
-        mock_get_cleanup_timeout.return_value = 3.1415926
+        # open actually died.
         before_secs = time.monotonic()
         try:
             subprocess.run('sleep 4', shell=True, timeout=0.1,
