@@ -1459,8 +1459,7 @@ static PyObject*
 call_unbound_noarg(int unbound, PyObject *func, PyObject *self)
 {
     if (unbound) {
-        PyObject *args[1] = {self};
-        return _PyObject_FastCall(func, args, 1);
+        return _PyObject_CallOneArg(func, self);
     }
     else {
         return _PyObject_CallNoArg(func);
@@ -6561,7 +6560,7 @@ call_attribute(PyObject *self, PyObject *attr, PyObject *name)
         else
             attr = descr;
     }
-    res = PyObject_CallFunctionObjArgs(attr, name, NULL);
+    res = _PyObject_CallOneArg(attr, name);
     Py_XDECREF(descr);
     return res;
 }

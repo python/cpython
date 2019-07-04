@@ -1240,7 +1240,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
     if (line == NULL) {
         return NULL;
     }
-    result = PyObject_CallFunctionObjArgs(self->write, line, NULL);
+    result = _PyObject_CallOneArg(self->write, line);
     Py_DECREF(line);
     return result;
 }

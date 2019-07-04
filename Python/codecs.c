@@ -99,7 +99,7 @@ PyObject *normalizestring(const char *string)
 
 PyObject *_PyCodec_Lookup(const char *encoding)
 {
-    PyObject *result, *args = NULL, *v;
+    PyObject *result, *v;
     Py_ssize_t i, len;
 
     if (encoding == NULL) {
@@ -132,13 +132,6 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     }
 
     /* Next, scan the search functions in order of registration */
-    args = PyTuple_New(1);
-    if (args == NULL) {
-        Py_DECREF(v);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(args,0,v);
-
     len = PyList_Size(interp->codec_search_path);
     if (len < 0)
         goto onError;
@@ -155,7 +148,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         func = PyList_GetItem(interp->codec_search_path, i);
         if (func == NULL)
             goto onError;
-        result = PyEval_CallObject(func, args);
+        result = _PyObject_CallOneArg(func, v);
         if (result == NULL)
             goto onError;
         if (result == Py_None) {
@@ -182,11 +175,9 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         Py_DECREF(result);
         goto onError;
     }
-    Py_DECREF(args);
     return result;
 
  onError:
-    Py_XDECREF(args);
     return NULL;
 }
 
@@ -325,7 +316,7 @@ PyObject *codec_getstreamcodec(const char *encoding,
     if (errors != NULL)
         streamcodec = PyObject_CallFunction(codeccls, "Os", stream, errors);
     else
-        streamcodec = PyObject_CallFunctionObjArgs(codeccls, stream, NULL);
+        streamcodec = _PyObject_CallOneArg(codeccls, stream);
     Py_DECREF(codecs);
     return streamcodec;
 }

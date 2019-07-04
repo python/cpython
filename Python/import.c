@@ -1180,7 +1180,7 @@ get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
         PyObject *hook = PyList_GetItem(path_hooks, j);
         if (hook == NULL)
             return NULL;
-        importer = PyObject_CallFunctionObjArgs(hook, p, NULL);
+        importer = _PyObject_CallOneArg(hook, p);
         if (importer != NULL)
             break;
 
