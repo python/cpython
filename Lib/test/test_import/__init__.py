@@ -5,7 +5,6 @@ from importlib._bootstrap_external import _get_sourcefile
 import builtins
 import marshal
 import os
-import platform
 import py_compile
 import random
 import shutil
@@ -23,9 +22,9 @@ import glob
 
 import test.support
 from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
-    make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
-    unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
+    TESTFN, forget, is_jython,
+    make_legacy_pyc, rmtree, swap_attr, swap_item, temp_umask,
+    unlink, unload, cpython_only, TESTFN_UNENCODABLE,
     temp_dir, DirsOnSysPath)
 from test.support import script_helper
 from test.test_importlib.util import uncache

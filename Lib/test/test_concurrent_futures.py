@@ -27,6 +27,9 @@ from concurrent.futures._base import (
 from concurrent.futures.process import BrokenProcessPool
 from multiprocessing import get_context
 
+import multiprocessing.process
+import multiprocessing.util
+
 
 def create_future(state=PENDING, exception=None, result=None):
     f = Future()
@@ -1293,12 +1296,24 @@ class FutureTests(BaseTestCase):
         self.assertEqual(f.exception(), e)
 
 
-@test.support.reap_threads
-def test_main():
-    try:
-        test.support.run_unittest(__name__)
-    finally:
-        test.support.reap_children()
+_threads_key = None
+
+def setUpModule():
+    global _threads_key
+    _threads_key = test.support.threading_setup()
+
+
+def tearDownModule():
+    test.support.threading_cleanup(*_threads_key)
+    test.support.reap_children()
+
+    # cleanup multiprocessing
+    multiprocessing.process._cleanup()
+    # bpo-37421: Explicitly call _run_finalizers() to remove immediately
+    # temporary directories created by multiprocessing.util.get_temp_dir().
+    multiprocessing.util._run_finalizers()
+    test.support.gc_collect()
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

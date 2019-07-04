@@ -26,24 +26,6 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
     PyObject *const *values,
     PyObject *kwnames);
 
-/* Convert (args, nargs, kwargs: dict) into a (stack, nargs, kwnames: tuple).
-
-   Return 0 on success, raise an exception and return -1 on error.
-
-   Write the new stack into *p_stack. If *p_stack is differen than args, it
-   must be released by PyMem_Free().
-
-   The stack uses borrowed references.
-
-   The type of keyword keys is not checked, these checks should be done
-   later (ex: _PyArg_ParseStackAndKeywords). */
-PyAPI_FUNC(int) _PyStack_UnpackDict(
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs,
-    PyObject *const **p_stack,
-    PyObject **p_kwnames);
-
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
    array is used to pass positional arguments to call functions of the
