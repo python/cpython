@@ -1976,7 +1976,7 @@ defdict_missing(defdictobject *dd, PyObject *key)
         Py_DECREF(tup);
         return NULL;
     }
-    value = PyEval_CallObject(factory, NULL);
+    value = _PyObject_CallNoArg(factory);
     if (value == NULL)
         return value;
     if (PyObject_SetItem((PyObject *)dd, key, value) < 0) {
