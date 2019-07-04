@@ -73,21 +73,17 @@ class UnseekableIO(io.BytesIO):
         raise io.UnsupportedOperation
 
 
-# We can't very well test the extension registry without putting known stuff
-# in it, but we have to be careful to restore its original state.  Code
-# should do this:
-#
-#     e = ExtensionSaver(extension_code)
-#     try:
-#         fiddle w/ the extension registry's stuff for extension_code
-#     finally:
-#         e.restore()
+# We can't test the extension registry well without putting known stuff
+# in it, but we have to be careful to restore its original state.
 
 class ExtensionSaver:
     # Remember current registration for code (if any), and remove it (if
     # there is one).
     def __init__(self, code):
         self.code = code
+
+    def __enter__(self):
+        code = self.code
         if code in copyreg._inverted_registry:
             self.pair = copyreg._inverted_registry[code]
             copyreg.remove_extension(self.pair[0], self.pair[1], code)
@@ -95,7 +91,7 @@ class ExtensionSaver:
             self.pair = None
 
     # Restore previous registration for code.
-    def restore(self):
+    def __exit__(self):
         code = self.code
         curpair = copyreg._inverted_registry.get(code)
         if curpair is not None:
@@ -1944,8 +1940,7 @@ class AbstractPickleTests(unittest.TestCase):
     # (EXT[124]) under proto 2, and not in proto 1.
 
     def produce_global_ext(self, extcode, opcode):
-        e = ExtensionSaver(extcode)
-        try:
+        with ExtensionSaver(extcode):
             copyreg.add_extension(__name__, "MyList", extcode)
             x = MyList([1, 2, 3])
             x.foo = 42
@@ -1968,8 +1963,6 @@ class AbstractPickleTests(unittest.TestCase):
 
             y = self.loads(s2)
             self.assert_is_copy(x, y)
-        finally:
-            e.restore()
 
     def test_global_ext1(self):
         self.produce_global_ext(0x00000001, pickle.EXT1)  # smallest EXT1 code
