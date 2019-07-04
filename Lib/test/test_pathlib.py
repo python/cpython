@@ -1499,12 +1499,13 @@ class _BasePathTest(object):
 
     @support.skip_unless_symlink
     def test_iterdir_recursive_symlink_cycle(self):
+        P = self.cls
         os.mkdir(join('dirF'))
         os.mkdir(join('dirF', 'dirG'))
         os.mkdir(join('dirF', 'dirH'))
-        open(join('dirF', 'fileF'), 'w').close()
-        open(join('dirF', 'dirG', 'fileG'), 'w').close()
-        open(join('dirF', 'dirH', 'fileH'), 'w').close()
+        P(join('dirF', 'fileF')).touch()
+        P(join('dirF', 'dirG', 'fileG')).touch()
+        P(join('dirF', 'dirH', 'fileH')).touch()
         os.symlink(os.path.join('..', 'dirG'), join('dirF', 'dirH', 'linkG'))
         os.symlink(os.path.join('..', 'dirH'), join('dirF', 'dirG', 'linkH'))
         # Now have structure
@@ -1523,7 +1524,6 @@ class _BasePathTest(object):
         #  |
         #  ...
         try:
-            P = self.cls
             p = P(join('dirF'))
             it = p.iterdir(recursive=True)
             paths = set(it)
