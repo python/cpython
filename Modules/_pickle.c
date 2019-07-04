@@ -359,7 +359,7 @@ _Pickle_FastCall(PyObject *func, PyObject *obj)
 {
     PyObject *result;
 
-    result = PyObject_CallFunctionObjArgs(func, obj, NULL);
+    result = _PyObject_CallOneArg(func, obj);
     Py_DECREF(obj);
     return result;
 }
@@ -420,7 +420,7 @@ call_method(PyObject *func, PyObject *self, PyObject *obj)
         return PyObject_CallFunctionObjArgs(func, self, obj, NULL);
     }
     else {
-        return PyObject_CallFunctionObjArgs(func, obj, NULL);
+        return _PyObject_CallOneArg(func, obj);
     }
 }
 
@@ -2296,7 +2296,7 @@ _Pickler_write_bytes(PicklerObject *self,
                 return -1;
             }
         }
-        result = PyObject_CallFunctionObjArgs(self->write, payload, NULL);
+        result = _PyObject_CallOneArg(self->write, payload);
         Py_XDECREF(mem);
         if (result == NULL) {
             return -1;
@@ -2504,8 +2504,7 @@ save_picklebuffer(PicklerObject *self, PyObject *obj)
     }
     int in_band = 1;
     if (self->buffer_callback != NULL) {
-        PyObject *ret = PyObject_CallFunctionObjArgs(self->buffer_callback,
-                                                     obj, NULL);
+        PyObject *ret = _PyObject_CallOneArg(self->buffer_callback, obj);
         if (ret == NULL) {
             return -1;
         }
@@ -4322,8 +4321,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
      * regular reduction mechanism.
      */
     if (self->reducer_override != NULL) {
-        reduce_value = PyObject_CallFunctionObjArgs(self->reducer_override,
-                                                    obj, NULL);
+        reduce_value = _PyObject_CallOneArg(self->reducer_override, obj);
         if (reduce_value == NULL) {
             goto error;
         }

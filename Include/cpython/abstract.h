@@ -62,6 +62,7 @@ PyVectorcall_NARGS(size_t n)
 static inline vectorcallfunc
 _PyVectorcall_Function(PyObject *callable)
 {
+    assert(callable != NULL);
     PyTypeObject *tp = Py_TYPE(callable);
     if (!PyType_HasFeature(tp, _Py_TPFLAGS_HAVE_VECTORCALL)) {
         return NULL;
@@ -132,6 +133,17 @@ _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
 static inline PyObject *
 _PyObject_CallNoArg(PyObject *func) {
     return _PyObject_Vectorcall(func, NULL, 0, NULL);
+}
+
+static inline PyObject *
+_PyObject_CallOneArg(PyObject *func, PyObject *arg)
+{
+    assert(arg != NULL);
+    PyObject *_args[2];
+    PyObject **args = _args + 1;  // For PY_VECTORCALL_ARGUMENTS_OFFSET
+    args[0] = arg;
+    return _PyObject_Vectorcall(func, args,
+                                1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
 PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(

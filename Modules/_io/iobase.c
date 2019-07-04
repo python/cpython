@@ -557,7 +557,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
         PyObject *b;
 
         if (peek != NULL) {
-            PyObject *readahead = PyObject_CallFunctionObjArgs(peek, _PyLong_One, NULL);
+            PyObject *readahead = _PyObject_CallOneArg(peek, _PyLong_One);
             if (readahead == NULL) {
                 /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals()
                    when EINTR occurs so we needn't do it ourselves. */
