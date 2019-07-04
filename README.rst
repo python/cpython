@@ -1,4 +1,4 @@
-This is Python version 3.8.0 beta 1
+This is Python version 3.8.0 beta 2
 ===================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
