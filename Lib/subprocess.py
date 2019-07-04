@@ -752,11 +752,6 @@ class Popen(object):
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
 
-        # If True, kill/terminate/send_signal will send the signal to
-        # os.getpgid(self.pid) on platforms with that concept IF the
-        # group is not our own process group.
-        self.__signal_process_group = shell and hasattr(os, 'getpgid')
-
         if _mswindows:
             if preexec_fn is not None:
                 raise ValueError("preexec_fn is not supported on Windows "
@@ -1933,15 +1928,7 @@ class Popen(object):
             """Send a signal to the process."""
             # Skip signalling a process that we know has already died.
             if self.returncode is None:
-                if self.__signal_process_group:
-                    pgid = os.getpgid(self.pid)
-                    if pgid == os.getpgid(os.getpid()):
-                        # Never killpg our own process group.
-                        os.kill(self.pid, sig)
-                    else:
-                        os.killpg(pgid, sig)
-                else:
-                    os.kill(self.pid, sig)
+                os.kill(self.pid, sig)
 
         def terminate(self):
             """Terminate the process with SIGTERM
