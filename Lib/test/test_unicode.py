@@ -2833,6 +2833,20 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_asutf8(nonbmp), b'\xf4\x8f\xbf\xbf')
         self.assertRaises(UnicodeEncodeError, unicode_asutf8, 'a\ud800b\udfffc')
 
+    # Test PyUnicode_AsUTF8()
+    @support.cpython_only
+    def test_asutf8andsize(self):
+        from _testcapi import unicode_asutf8andsize
+
+        bmp = '\u0100'
+        bmp2 = '\uffff'
+        nonbmp = chr(0x10ffff)
+
+        self.assertEqual(unicode_asutf8andsize(bmp), (b'\xc4\x80', 2))
+        self.assertEqual(unicode_asutf8andsize(bmp2), (b'\xef\xbf\xbf', 3))
+        self.assertEqual(unicode_asutf8andsize(nonbmp), (b'\xf4\x8f\xbf\xbf', 4))
+        self.assertRaises(UnicodeEncodeError, unicode_asutf8andsize, 'a\ud800b\udfffc')
+
     # Test PyUnicode_FindChar()
     @support.cpython_only
     def test_findchar(self):
