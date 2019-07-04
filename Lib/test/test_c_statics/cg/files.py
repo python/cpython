@@ -19,6 +19,8 @@ def iter_files(dirnames, filter_by_name=None, *,
 
     for dirname in dirnames:
         for parent, _, names in _walk(dirname):
+            if parent.endswith(os.path.join('', 'Include', 'cpython')):
+                continue
             for name in names:
                 if not filter_by_name(name):
                     continue
