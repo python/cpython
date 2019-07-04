@@ -264,6 +264,17 @@ Object Protocol
    .. versionadded:: 3.9
 
 
+.. c:function:: PyObject* _PyObject_CallOneArg(PyObject *callable, PyObject *arg)
+
+   Call a callable Python object *callable* with exactly 1 positional argument
+   *arg* and no keyword arguments.
+
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: PyObject* PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 
    Call a callable Python object *callable*, with arguments given by the

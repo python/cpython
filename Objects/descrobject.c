@@ -1340,8 +1340,7 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         return NULL;
     }
 
-    PyObject *args[1] = {obj};
-    return _PyObject_FastCall(gs->prop_get, args, 1);
+    return _PyObject_CallOneArg(gs->prop_get, obj);
 }
 
 static int
@@ -1362,7 +1361,7 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
         return -1;
     }
     if (value == NULL)
-        res = PyObject_CallFunctionObjArgs(func, obj, NULL);
+        res = _PyObject_CallOneArg(func, obj);
     else
         res = PyObject_CallFunctionObjArgs(func, obj, value, NULL);
     if (res == NULL)

@@ -1874,7 +1874,7 @@ main_loop:
                 Py_DECREF(value);
                 goto error;
             }
-            res = PyObject_CallFunctionObjArgs(hook, value, NULL);
+            res = _PyObject_CallOneArg(hook, value);
             Py_DECREF(value);
             if (res == NULL)
                 goto error;
