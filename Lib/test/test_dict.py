@@ -142,9 +142,11 @@ class DictTest(unittest.TestCase):
         d.update({2:20})
         d.update({1:1, 2:2, 3:3})
         self.assertEqual(d, {1:1, 2:2, 3:3})
+        d.update(([i,i] for i in range(4,6)), key="value")
+        self.assertEqual(d, {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 'key': 'value'})
 
         d.update()
-        self.assertEqual(d, {1:1, 2:2, 3:3})
+        self.assertEqual(d, {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 'key': 'value'})
 
         self.assertRaises((TypeError, AttributeError), d.update, None)
 

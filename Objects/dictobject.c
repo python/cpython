@@ -2340,16 +2340,6 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
     return result;
 }
 
-/* Note: dict.update() uses the METH_VARARGS|METH_KEYWORDS calling convention.
-   Using METH_FASTCALL|METH_KEYWORDS would make dict.update(**dict2) calls
-   slower, see the issue #29312. */
-static PyObject *
-dict_update(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    if (dict_update_common(self, args, kwds, "update") != -1)
-        Py_RETURN_NONE;
-    return NULL;
-}
 
 /* Update unconditionally replaces existing items.
    Merge has a 3rd argument 'override'; if set, it acts like Update,
@@ -2590,6 +2580,100 @@ dict_merge(PyObject *a, PyObject *b, int override)
     ASSERT_CONSISTENT(a);
     return 0;
 }
+
+/* Implementation of d.update(obj). There are two cases:
+ * - if obj has a "keys" method, assume that it is a mapping
+ * - otherwise, obj must be an iterable of (key, value) pairs
+ */
+static int
+dict_merge_from_any(PyObject *self, PyObject *obj)
+{
+    /* Fast path for dict subclasses */
+    if (PyDict_Check(obj)) {
+        return dict_merge(self, obj, 1);
+    }
+
+    _Py_IDENTIFIER(keys);
+    PyObject *func;
+    if (_PyObject_LookupAttrId(obj, &PyId_keys, &func) < 0) {
+        return -1;
+    }
+    if (func != NULL) {
+        Py_DECREF(func);
+        return dict_merge(self, obj, 1);
+    }
+    else {
+        return PyDict_MergeFromSeq2(self, obj, 1);
+    }
+}
+
+/* Insert the key:value pairs from the arrays keys and values (of length n).
+ * Return 0 if successful, -1 if an exception was raised */
+static int
+dict_merge_from_arrays(PyDictObject *mp, PyObject *const *keys, PyObject *const *values, Py_ssize_t n)
+{
+    /* Do one big resize at the start, rather than
+     * incrementally resizing as we insert new items.  Expect
+     * that there will be no (or few) overlapping keys.
+     */
+    if (USABLE_FRACTION(mp->ma_keys->dk_size) < n) {
+        if (dictresize(mp, ESTIMATE_SIZE(mp->ma_used + n))) {
+           return -1;
+        }
+    }
+
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *key = keys[i];
+        PyObject *value = values[i];
+        assert(PyUnicode_Check(key));
+        Py_hash_t hash = ((PyASCIIObject *)key)->hash;
+        if (hash == -1) {
+            hash = PyObject_Hash(key);
+            if (hash == -1) {
+                return -1;
+            }
+        }
+        if (insertdict(mp, key, hash, value)) {
+            return -1;
+        }
+    }
+    ASSERT_CONSISTENT(mp);
+    return 0;
+}
+
+
+static int
+dict_update_impl(PyObject *self, PyObject *const *args,
+                 Py_ssize_t nargs, PyObject *kwnames,
+                 const char *methname)
+{
+    if (nargs) {
+        if (!_PyArg_CheckPositional(methname, nargs, 0, 1)) {
+            return -1;
+        }
+        if (dict_merge_from_any(self, args[0])) {
+            return -1;
+        }
+        args += 1;
+    }
+    if (kwnames) {
+        Py_ssize_t nkw = PyTuple_GET_SIZE(kwnames);
+        PyObject *const *names = &PyTuple_GET_ITEM(kwnames, 0);
+        return dict_merge_from_arrays((PyDictObject*)self, names, args, nkw);
+    }
+    return 0;
+}
+
+static PyObject *
+dict_update(PyObject *self, PyObject *const *args,
+            Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (dict_update_impl(self, args, nargs, kwnames, "update")) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 
 int
 PyDict_Update(PyObject *a, PyObject *b)
@@ -3193,7 +3277,7 @@ static PyMethodDef mapp_methods[] = {
     items__doc__},
     {"values",          dictvalues_new,                 METH_NOARGS,
     values__doc__},
-    {"update",          (PyCFunction)(void(*)(void))dict_update, METH_VARARGS | METH_KEYWORDS,
+    {"update",          (PyCFunction)(void(*)(void))dict_update, METH_FASTCALL | METH_KEYWORDS,
      update__doc__},
     DICT_FROMKEYS_METHODDEF
     {"clear",           (PyCFunction)dict_clear,        METH_NOARGS,
