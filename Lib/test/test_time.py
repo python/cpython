@@ -163,9 +163,7 @@ class TimeTestCase(unittest.TestCase):
     def test_sleep(self):
         self.assertRaises(ValueError, time.sleep, -2)
         self.assertRaises(ValueError, time.sleep, -1)
-        time.sleep(1.2)
-        time.sleep(IndexLike(0))
-        time.sleep(FloatLike(0))
+        time.sleep(0.2)
 
     def test_strftime(self):
         tt = time.gmtime(self.t)
@@ -468,20 +466,23 @@ class TimeTestCase(unittest.TestCase):
             self.assertGreaterEqual(t2, t1, "times=%s" % times)
             t1 = t2
 
-        # monotonic() includes time elapsed during a sleep
-        t1 = time.monotonic()
-        time.sleep(0.5)
-        t2 = time.monotonic()
-        dt = t2 - t1
-        self.assertGreater(t2, t1)
-        # bpo-20101: tolerate a difference of 50 ms because of bad timer
-        # resolution on Windows
-        self.assertTrue(0.450 <= dt)
-
         # monotonic() is a monotonic but non adjustable clock
         info = time.get_clock_info('monotonic')
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
+
+    def test_monotic_sleep(self):
+        # This tests both time.sleep() and time.monotonic(): we test various
+        # types of input to time.sleep() and check using time.monotonic() that
+        # we sleep sufficiently long.
+        for T in (0.5, decimal.Decimal('0.5'), FloatLike(0.5), IndexLike(1)):
+            t1 = time.monotonic()
+            time.sleep(T)
+            t2 = time.monotonic()
+            dt = t2 - t1
+            # bpo-20101: tolerate a difference of 50 ms because of bad timer
+            # resolution on Windows
+            self.assertGreaterEqual(dt, float(T) - 0.05)
 
     def test_perf_counter(self):
         time.perf_counter()
