@@ -5052,6 +5052,11 @@ test_write_unraisable_exc(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+get_bytearray(PyObject *self, PyObject *obj)
+{
+    return PyByteArray_FromObject(obj);
+}
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -5295,6 +5300,7 @@ static PyMethodDef TestMethods[] = {
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
+    {"get_bytearray", get_bytearray, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

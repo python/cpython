@@ -383,6 +383,13 @@ class CAPITest(unittest.TestCase):
             del L
             self.assertEqual(PyList.num, 0)
 
+    def test_bytearray_from_obj(self):
+        for obj in 1, range(1), [], tuple(), {}, set():
+            with self.assertRaisesRegex(TypeError, 'buffer protocol'):
+                _testcapi.get_bytearray(obj)
+        self.assertEqual(_testcapi.get_bytearray(b'1'), bytearray(b'1'))
+        self.assertEqual(_testcapi.get_bytearray(bytearray()), bytearray(b''))
+
 
 class TestPendingCalls(unittest.TestCase):
 
