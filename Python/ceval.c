@@ -4943,7 +4943,7 @@ trace_call_function(PyThreadState *tstate,
 {
     PyObject *x;
     if (PyCFunction_Check(func)) {
-        C_TRACE(x, _PyCFunction_Vectorcall(func, args, nargs, kwnames));
+        C_TRACE(x, _PyObject_Vectorcall(func, args, nargs, kwnames));
         return x;
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type && nargs > 0) {
@@ -4959,9 +4959,9 @@ trace_call_function(PyThreadState *tstate,
         if (func == NULL) {
             return NULL;
         }
-        C_TRACE(x, _PyCFunction_Vectorcall(func,
-                                           args+1, nargs-1,
-                                           kwnames));
+        C_TRACE(x, _PyObject_Vectorcall(func,
+                                        args+1, nargs-1,
+                                        kwnames));
         Py_DECREF(func);
         return x;
     }
@@ -5023,10 +5023,10 @@ do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject
                 return NULL;
             }
 
-            C_TRACE(result, _PyCFunction_FastCallDict(func,
-                                                      &_PyTuple_ITEMS(callargs)[1],
-                                                      nargs - 1,
-                                                      kwdict));
+            C_TRACE(result, _PyObject_FastCallDict(func,
+                                                   &_PyTuple_ITEMS(callargs)[1],
+                                                   nargs - 1,
+                                                   kwdict));
             Py_DECREF(func);
             return result;
         }
