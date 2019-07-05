@@ -99,40 +99,38 @@ PyObject *normalizestring(const char *string)
 
 PyObject *_PyCodec_Lookup(const char *encoding)
 {
-    PyObject *result, *v;
-    Py_ssize_t i, len;
-
     if (encoding == NULL) {
         PyErr_BadArgument();
-        goto onError;
+        return NULL;
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
-        goto onError;
+    if (interp->codec_search_path == NULL && _PyCodecRegistry_Init()) {
+        return NULL;
+    }
 
     /* Convert the encoding to a normalized Python string: all
        characters are converted to lower case, spaces and hyphens are
        replaced with underscores. */
-    v = normalizestring(encoding);
-    if (v == NULL)
-        goto onError;
+    PyObject *v = normalizestring(encoding);
+    if (v == NULL) {
+        return NULL;
+    }
     PyUnicode_InternInPlace(&v);
 
     /* First, try to lookup the name in the registry dictionary */
-    result = PyDict_GetItemWithError(interp->codec_search_cache, v);
+    PyObject *result = PyDict_GetItemWithError(interp->codec_search_cache, v);
     if (result != NULL) {
         Py_INCREF(result);
         Py_DECREF(v);
         return result;
     }
     else if (PyErr_Occurred()) {
-        Py_DECREF(v);
-        return NULL;
+        goto onError;
     }
 
     /* Next, scan the search functions in order of registration */
-    len = PyList_Size(interp->codec_search_path);
+    const Py_ssize_t len = PyList_Size(interp->codec_search_path);
     if (len < 0)
         goto onError;
     if (len == 0) {
@@ -142,6 +140,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         goto onError;
     }
 
+    Py_ssize_t i;
     for (i = 0; i < len; i++) {
         PyObject *func;
 
@@ -175,9 +174,11 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         Py_DECREF(result);
         goto onError;
     }
+    Py_DECREF(v);
     return result;
 
  onError:
+    Py_DECREF(v);
     return NULL;
 }
 
