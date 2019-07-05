@@ -850,10 +850,10 @@ id(42)
         # called, so test a variety of calling conventions.
         for py_name, py_args, c_name, expected_frame_number in (
             ('gmtime', '', 'time_gmtime', 1),  # METH_VARARGS
-            ('len', '[]', 'builtin_len', 2),  # METH_O
-            ('locals', '', 'builtin_locals', 2),  # METH_NOARGS
-            ('iter', '[]', 'builtin_iter', 2),  # METH_FASTCALL
-            ('sorted', '[]', 'builtin_sorted', 2),  # METH_FASTCALL|METH_KEYWORDS
+            ('len', '[]', 'builtin_len', 1),  # METH_O
+            ('locals', '', 'builtin_locals', 1),  # METH_NOARGS
+            ('iter', '[]', 'builtin_iter', 1),  # METH_FASTCALL
+            ('sorted', '[]', 'builtin_sorted', 1),  # METH_FASTCALL|METH_KEYWORDS
         ):
             with self.subTest(c_name):
                 cmd = ('from time import gmtime\n'  # (not always needed)
