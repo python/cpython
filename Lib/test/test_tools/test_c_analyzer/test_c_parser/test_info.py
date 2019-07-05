@@ -3,7 +3,7 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_statics.info import (
+    from c_parser.info import (
         normalize_vartype, Symbol, StaticVar,
         )
 

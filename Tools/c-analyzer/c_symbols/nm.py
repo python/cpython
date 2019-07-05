@@ -2,11 +2,14 @@ from collections import namedtuple
 import os.path
 import shutil
 import subprocess
+import sys
 
-from . import REPO_ROOT, files, info, parse
+from c_parser import files, info
+from c_parser.declarations import iter_variables
 
 
-PYTHON = os.path.join(REPO_ROOT, 'python')
+#PYTHON = os.path.join(REPO_ROOT, 'python')
+PYTHON = sys.executable
 
 
 def iter_binary(dirnames, binary=PYTHON, *,
@@ -28,7 +31,7 @@ def iter_binary(dirnames, binary=PYTHON, *,
 # C scanning (move to scan.py)
 
 def _get_local_symbols(filename, *,
-                       _iter_variables=parse.iter_variables,
+                       _iter_variables=iter_variables,
                        ):
     symbols = {}
     for funcname, name, vartype in _iter_variables(filename):

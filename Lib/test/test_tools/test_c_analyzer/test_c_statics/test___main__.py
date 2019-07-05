@@ -3,8 +3,8 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
+    from c_parser import info
     import c_statics as cg
-    from c_statics import info
     from c_statics.__main__ import cmd_check, cmd_show, parse_args, main
 
 

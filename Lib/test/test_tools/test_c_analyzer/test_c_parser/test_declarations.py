@@ -3,7 +3,7 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_statics.parse import (
+    from c_parser.declarations import (
         iter_global_declarations, iter_local_statements,
         parse_func, parse_var, parse_compound,
         iter_variables,

@@ -1,4 +1,5 @@
-from . import info, symbols
+from c_parser import info
+from c_symbols import nm as symbols
 
 
 def iter_statics(dirnames, *,

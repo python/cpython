@@ -1,6 +1,6 @@
 # This is a script equivalent of running "python -m test.test_c_statics.cg".
 
-from cg.__main__ import parse_args, main
+from c_statics.__main__ import parse_args, main
 
 
 # This is effectively copied from cg/__main__.py:

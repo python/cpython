@@ -2,7 +2,7 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_statics import info
+    from c_parser import info
     from c_statics.find import statics
 
 
