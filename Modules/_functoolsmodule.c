@@ -141,21 +141,6 @@ partial_vectorcall_fallback(partialobject *pto, PyObject *const *args,
 }
 
 static PyObject *
-partial_vectorcall_no_args(partialobject *pto, PyObject *const *args,
-                           size_t nargsf, PyObject *kwnames)
-{
-    /* pto->kw is mutable, so need to check every time */
-    if (PyDict_GET_SIZE(pto->kw)) {
-        return partial_vectorcall_fallback(pto, args, nargsf, kwnames);
-    }
-
-    assert(PyTuple_GET_SIZE(pto->args) == 0);
-
-    /* No arguments need to be changed, simply pass through */
-    return _PyObject_Vectorcall(pto->fn, args, nargsf, kwnames);
-}
-
-static PyObject *
 partial_vectorcall(partialobject *pto, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
@@ -225,10 +210,9 @@ partial_setvectorcall(partialobject *pto)
         /* Don't use vectorcall if the underlying function doesn't support it */
         pto->vectorcall = NULL;
     }
-    else if (PyTuple_GET_SIZE(pto->args) == 0) {
-        /* Fast variant when no positional arguments need to be changed */
-        pto->vectorcall = (vectorcallfunc)partial_vectorcall_no_args;
-    }
+    /* We could have a special case if there are no arguments,
+     * but that is unlikely (why use partial without arguments?),
+     * so we don't optimize that */
     else {
         pto->vectorcall = (vectorcallfunc)partial_vectorcall;
     }
