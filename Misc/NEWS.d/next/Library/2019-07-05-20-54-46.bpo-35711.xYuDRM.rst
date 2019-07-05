@@ -1,0 +1,1 @@
+Adding new :data:`mmap.MADV_CONCEAL` OpenBSD constant.
