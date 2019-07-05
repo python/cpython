@@ -2301,12 +2301,13 @@ compiler_if(struct compiler *c, stmt_ty s)
         return 0;
 
     constant = expr_constant(s->v.If.test);
-    /* constant = 0: "if 0" Leave the optimizations to
-     * the pephole optimizer to check for syntax errors
-     * in the block.
+    /* constant = 0: "if 0"
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
-    if (constant == 1) {
+    if (constant == 0) {
+        if (s->v.If.orelse)
+            VISIT_SEQ(c, stmt, s->v.If.orelse);
+    } else if (constant == 1) {
         VISIT_SEQ(c, stmt, s->v.If.body);
     } else {
         if (asdl_seq_LEN(s->v.If.orelse)) {
