@@ -2,6 +2,8 @@ import re
 import shlex
 import subprocess
 
+from . import source
+
 
 IDENTIFIER = r'(?:[a-zA-z]|_+[a-zA-Z0-9]\w*)'
 
@@ -113,7 +115,7 @@ def iter_global_declarations(lines):
     is provided in the function body.
     """
     # XXX Bail out upon bogus syntax.
-    lines = _iter_clean_lines(lines)
+    lines = source.iter_clean_lines(lines)
     for line in lines:
         if not GLOBAL_DECL_START_RE.match(line):
             continue
@@ -149,7 +151,7 @@ def iter_local_statements(lines):
     reduced to a single line each, but the bpdies are provided as-is.
     """
     # XXX Bail out upon bogus syntax.
-    lines = _iter_clean_lines(lines)
+    lines = source.iter_clean_lines(lines)
     for line in lines:
         if not LOCAL_STMT_START_RE.match(line):
             continue
@@ -162,32 +164,6 @@ def iter_local_statements(lines):
             continue
 
         yield (stmt, blocks)
-
-
-def _iter_clean_lines(lines):
-    incomment = False
-    for line in lines:
-        # Deal with comments.
-        if incomment:
-            _, sep, line = line.partition('*/')
-            if sep:
-                incomment = False
-            continue
-        line, _, _ = line.partition('//')
-        line, sep, remainder = line.partition('/*')
-        if sep:
-            _, sep, after = remainder.partition('*/')
-            if not sep:
-                incomment = True
-                continue
-            line += ' ' + after
-
-        # Ignore blank lines and leading/trailing whitespace.
-        line = line.strip()
-        if not line:
-            continue
-
-        yield line
 
 
 def _extract_block(lines):
@@ -251,14 +227,8 @@ def parse_compound(stmt, blocks):
     raise NotImplementedError
 
 
-def _iter_source_lines(filename):
-    gcc, cflags = _get_build()
-    content = _preprocess(filename, gcc, cflags)
-    return iter(content.splitlines())
-
-
 def iter_variables(filename, *,
-                   _iter_source_lines=_iter_source_lines,
+                   _iter_source_lines=source.iter_lines,
                    _iter_global=iter_global_declarations,
                    _iter_local=iter_local_statements,
                    _parse_func=parse_func,
@@ -306,45 +276,3 @@ def _iter_locals(lines, *,
                         if name:
                             yield (name, vartype)
                 compound.extend(bodies)
-
-
-#############################
-# GCC preprocessor (platform-specific)
-
-def _get_build(*,
-               _open=open,
-               _run=subprocess.run,
-               ):
-    with _open('/tmp/print.mk', 'w') as tmpfile:
-        tmpfile.write('print-%:\n')
-        #tmpfile.write('\t@echo $* = $($*)\n')
-        tmpfile.write('\t@echo $($*)\n')
-    argv = ['/usr/bin/make',
-            '-f', 'Makefile',
-            '-f', '/tmp/print.mk',
-            'print-CC',
-            'print-PY_CORE_CFLAGS',
-            ]
-    proc = _run(argv,
-                capture_output=True,
-                text=True,
-                check=True,
-                )
-    gcc, cflags = proc.stdout.strip().splitlines()
-    cflags = shlex.split(cflags)
-    return gcc, cflags
-
-
-def _preprocess(filename, gcc, cflags, *,
-                _run=subprocess.run,
-                ):
-    argv = gcc.split() + cflags
-    argv.extend([
-            '-E', filename,
-            ])
-    proc = _run(argv,
-                capture_output=True,
-                text=True,
-                check=True,
-                )
-    return proc.stdout

@@ -1,11 +1,9 @@
-from collections import namedtuple
 import os.path
 import shutil
-import subprocess
 import sys
 
-from c_parser import files, info
-from c_parser.declarations import iter_variables
+from c_parser import info, util
+from . import local
 
 
 #PYTHON = os.path.join(REPO_ROOT, 'python')
@@ -14,7 +12,7 @@ PYTHON = sys.executable
 
 def iter_binary(dirnames, binary=PYTHON, *,
                 _file_exists=os.path.exists,
-                _find_local_symbol=(lambda *a, **k: _find_local_symbol(*a, **k)),
+                _find_local_symbol=local.find_symbol,
                 _iter_symbols_nm=(lambda b, fls: _iter_symbols_nm(b, fls)),
                 ):
     """Yield a Symbol for each symbol found in the binary."""
@@ -25,46 +23,6 @@ def iter_binary(dirnames, binary=PYTHON, *,
     def find_local_symbol(name):
         return _find_local_symbol(name, dirnames, _perfilecache=cache)
     yield from _iter_symbols_nm(binary, find_local_symbol)
-
-
-#############################
-# C scanning (move to scan.py)
-
-def _get_local_symbols(filename, *,
-                       _iter_variables=iter_variables,
-                       ):
-    symbols = {}
-    for funcname, name, vartype in _iter_variables(filename):
-        if not funcname:
-            continue
-        try:
-            instances = symbols[name]
-        except KeyError:
-            instances = symbols[name] = []
-        instances.append((funcname, vartype))
-    return symbols
-
-
-def _find_local_symbol(name, dirnames, *,
-                       _perfilecache,
-                       _get_local_symbols=_get_local_symbols,
-                       _iter_files=files.iter_files,
-                       ):
-    for filename in _iter_files(dirnames, ('.c', '.h')):
-        try:
-            symbols = _perfilecache[filename]
-        except KeyError:
-            symbols = _perfilecache[filename] = _get_local_symbols(filename)
-
-        try:
-            instances = symbols[name]
-        except KeyError:
-            continue
-
-        funcname, vartype = instances.pop(0)
-        if not instances:
-            symbols.pop(name)
-        return filename, funcname, vartype
 
 
 #############################
@@ -107,25 +65,22 @@ NM_KINDS = {
 
 def _iter_symbols_nm(binary, find_local_symbol=None,
                      *,
-                     _run=subprocess.run,
+                     _which=shutil.which,
+                     _run=util.run_cmd,
                      ):
-    nm = shutil.which('nm')
+    nm = _which('nm')
     argv = [nm,
             '--line-numbers',
             binary,
             ]
     try:
-        proc = _run(argv,
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                    )
+        output = _run(argv)
     except Exception:
         if nm is None:
             # XXX Use dumpbin.exe /SYMBOLS on Windows.
             raise NotImplementedError
         raise
-    for line in proc.stdout.splitlines():
+    for line in output.splitlines():
         (name, kind, external, filename, funcname, vartype,
          )= _parse_nm_line(line, _find_local_symbol=find_local_symbol)
         if kind != info.Symbol.KIND.VARIABLE:
