@@ -547,7 +547,7 @@ end:
 }
 
 
-// Return -1 when exception occured.
+// Return -1 when exception occurred.
 // Return 1 when result is set.
 // Return 0 otherwise.
 static int subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
@@ -659,7 +659,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
     /* 5. Check if it's a subclass of a registered class (recursive). */
     if (subclasscheck_check_registry(impl, subclass, &result)) {
-        // Exception occured or result is set.
+        // Exception occurred or result is set.
         goto end;
     }
 

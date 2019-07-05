@@ -1552,7 +1552,7 @@ prove that after that line is executed, we have
 
     (a - 1)**2 < (n >> 2*(c - d)) < (a + 1)**2
 
-To faciliate the proof, we make some changes of notation. Write `m` for
+To facilitate the proof, we make some changes of notation. Write `m` for
 `n >> 2*(c-d)`, and write `b` for the new value of `a`, so
 
     b = (a << d - e - 1) + (n >> 2*c - e - d + 1) // a
