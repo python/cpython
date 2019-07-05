@@ -808,6 +808,8 @@ class EditorWindow(object):
         # Called from configdialog.py
 
         self.text['font'] = idleConf.GetFont(self.root, 'main','EditorWindow')
+        if self.line_numbers is not None:
+            self.line_numbers.update_sidebar_text_font()
 
     def RemoveKeybindings(self):
         "Remove the keybindings before they are changed."

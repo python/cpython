@@ -23,10 +23,11 @@ class BaseSideBar:
         self.parent = editwin.text_frame
         self.text = editwin.text
 
-        self.text.bind('<<font-changed>>', self.update_sidebar_text_font)
-        self.sidebar_text = tk.Text(self.parent, width=1, wrap=tk.NONE)
+        self.sidebar_text = tk.Text(self.parent, width=1, wrap=tk.NONE,
+                                    relief=tk.FLAT)
         self.sidebar_text.config(state=tk.DISABLED)
         self.text['yscrollcommand'] = self.redirect_yscroll_event
+        self.update_sidebar_text_font()
 
         self.side = None
 
@@ -111,12 +112,12 @@ class LineNumbers(BaseSideBar):
     def __init__(self, editwin):
         BaseSideBar.__init__(self, editwin)
         self.prev_end = 1
-        self.update_sidebar_text_font()
         self._sidebar_width_type = type(self.sidebar_text['width'])
         self.sidebar_text.config(state=tk.NORMAL)
         self.sidebar_text.insert('insert', '1', 'linenumber')
         self.sidebar_text.config(state=tk.DISABLED)
         self.sidebar_text.config(takefocus=False, exportselection=False)
+        self.sidebar_text.tag_config('linenumber', justify=tk.RIGHT)
 
         self.bind_events()
 
@@ -214,22 +215,12 @@ class LineNumbers(BaseSideBar):
         colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'linenumber')
         bg = colors['background']
         fg = colors['foreground']
-        self.sidebar_text.tag_config('linenumber', justify=tk.RIGHT)
-        config = {'fg': fg, 'bg': bg, 'font': self.text['font'],
-                  'relief': tk.FLAT, 'selectforeground': fg,
-                  'selectbackground': bg}
-        if tk.TkVersion >= 8.5:
-            config['inactiveselectbackground'] = bg
-        self.sidebar_text.config(**config)
-        # The below lines below are required to allow tk to "catch up" with
-        # changes in font to the main text widget
-        #
-        # TODO: validate the assertion above
-        sidebar_text = self.sidebar_text.get('1.0', 'end')
-        self.sidebar_text.delete('1.0', 'end')
-        self.sidebar_text.insert('1.0', sidebar_text)
-        self.text.update_idletasks()
-        self.sidebar_text.update_idletasks()
+        self.sidebar_text.config(
+            font=self.text['font'],
+            fg=fg, bg=bg,
+            selectforeground=fg, selectbackground=bg,
+            inactiveselectbackground=bg,
+        )
 
     def toggle_line_numbers_event(self, event):
         self.show_sidebar(tk.LEFT) if not self.is_shown else self.hide_sidebar()
