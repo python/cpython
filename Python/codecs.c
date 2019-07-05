@@ -99,7 +99,7 @@ PyObject *normalizestring(const char *string)
 
 PyObject *_PyCodec_Lookup(const char *encoding)
 {
-    PyObject *result, *v;
+    PyObject *result;
     Py_ssize_t i, len;
 
     if (encoding == NULL) {
@@ -114,7 +114,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     /* Convert the encoding to a normalized Python string: all
        characters are converted to lower case, spaces and hyphens are
        replaced with underscores. */
-    v = normalizestring(encoding);
+    PyObject *v = normalizestring(encoding);
     if (v == NULL)
         goto onError;
     PyUnicode_InternInPlace(&v);
