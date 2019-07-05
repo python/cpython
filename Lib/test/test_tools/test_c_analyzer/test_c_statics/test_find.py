@@ -1,7 +1,9 @@
 import unittest
 
-from test.test_c_statics.cg import info
-from test.test_c_statics.cg.find import statics
+from .. import tool_imports_for_tests
+with tool_imports_for_tests():
+    from c_statics import info
+    from c_statics.find import statics
 
 
 class _Base(unittest.TestCase):

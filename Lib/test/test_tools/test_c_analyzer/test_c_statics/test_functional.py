@@ -1,5 +1,9 @@
 import unittest
 
+from .. import tool_imports_for_tests
+with tool_imports_for_tests():
+    pass
+
 
 class SelfCheckTests(unittest.TestCase):
 

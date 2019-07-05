@@ -1,6 +1,9 @@
 import unittest
+import test.test_tools
 
-from .cg.__main__ import main
+test.test_tools.skip_if_missing('c-analyzer')
+with test.test_tools.imports_under_tool('c-analyzer'):
+    from c_statics.__main__ import main
 
 
 class ActualChecks(unittest.TestCase):

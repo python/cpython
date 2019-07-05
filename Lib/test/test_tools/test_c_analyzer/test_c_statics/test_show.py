@@ -1,7 +1,9 @@
 import unittest
 
-from test.test_c_statics.cg import info
-from test.test_c_statics.cg.show import basic
+from .. import tool_imports_for_tests
+with tool_imports_for_tests():
+    from c_statics import info
+    from c_statics.show import basic
 
 
 TYPICAL = [

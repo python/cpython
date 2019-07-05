@@ -1,9 +1,11 @@
 import sys
 import unittest
 
-from test.test_c_statics import cg
-from test.test_c_statics.cg import info
-from test.test_c_statics.cg.__main__ import cmd_check, cmd_show, parse_args, main
+from .. import tool_imports_for_tests
+with tool_imports_for_tests():
+    import c_statics as cg
+    from c_statics import info
+    from c_statics.__main__ import cmd_check, cmd_show, parse_args, main
 
 
 TYPICAL = [

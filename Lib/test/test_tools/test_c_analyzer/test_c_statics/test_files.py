@@ -1,7 +1,9 @@
 import os.path
 import unittest
 
-from test.test_c_statics.cg.files import iter_files
+from .. import tool_imports_for_tests
+with tool_imports_for_tests():
+    from c_statics.files import iter_files
 
 
 def fixpath(filename):
