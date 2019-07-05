@@ -1599,7 +1599,7 @@ features:
    This function can support :ref:`specifying a file descriptor <path_fd>`.  The
    descriptor must refer to an opened directory, not an open file.
    
-   This method can raise :exc:`OSError`, such as :exc:`FileNotFoundError` and
+   This function can raise :exc:`OSError`, such as :exc:`FileNotFoundError` and
    :exc:`NotADirectoryError`.
 
    .. versionadded:: 3.3
