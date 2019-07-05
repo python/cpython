@@ -3,7 +3,9 @@
 Implements the Distutils 'bdist_wininst' command: create a windows installer
 exe-program."""
 
-import sys, os
+import os
+import sys
+import warnings
 from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import create_tree, remove_tree
@@ -57,6 +59,12 @@ class bdist_wininst(Command):
 
     # bpo-10945: bdist_wininst requires mbcs encoding only available on Windows
     _unsupported = (sys.platform != "win32")
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        warnings.warn("bdist_wininst command is deprecated since Python 3.8, "
+                      "use bdist_wheel (wheel packages) instead",
+                      DeprecationWarning, 2)
 
     def initialize_options(self):
         self.bdist_dir = None
