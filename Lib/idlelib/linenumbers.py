@@ -1,6 +1,7 @@
 """Line numbering implementation for IDLE as an extension.
 Includes BaseSideBar which can be extended for other sidebar based extensions
 """
+import functools
 import itertools
 
 import tkinter as tk
@@ -19,13 +20,13 @@ class BaseSideBar:
     """
     def __init__(self, editwin):
         self.editwin = editwin
+        self.parent = editwin.text_frame
         self.text = editwin.text
+
         self.text.bind('<<font-changed>>', self.update_sidebar_text_font)
-        self.parent = self.text.nametowidget(self.text.winfo_parent())
         self.sidebar_text = tk.Text(self.parent, width=1, wrap=tk.NONE)
         self.sidebar_text.config(state=tk.DISABLED)
-        self.text['yscrollcommand'] = self.vbar_set
-        self.sidebar_text['yscrollcommand'] = self.vbar_set
+        self.text['yscrollcommand'] = self.redirect_yscroll_event
 
         self.side = None
 
@@ -34,6 +35,7 @@ class BaseSideBar:
         Implement in subclass to update font config values of sidebar_text
         when font config values of editwin.text changes
         """
+        pass
 
     def show_sidebar(self, side):
         """
@@ -56,21 +58,31 @@ class BaseSideBar:
             self.sidebar_text.pack_forget()
             self.side = None
 
-    def vbar_set(self, *args, **kwargs):
-        """Redirect scrollbar's set command to editwin.text and sidebar_text
+    def redirect_yscroll_event(self, *args, **kwargs):
+        """Redirect vertical scrolling to the main editor text widget.
+
+        The scroll bar is also updated.
         """
         self.editwin.vbar.set(*args)
         self.sidebar_text.yview_moveto(args[0])
-        self.text.yview_moveto(args[0])
+        return 'break'
 
-    def redirect_event(self, event, event_name):
-        """Set focus to editwin.text and redirect 'event' to editwin.text.
-        """
+    def redirect_focusin_event(self, event):
+        """Redirect focus-in events to the main editor text widget."""
         self.text.focus_set()
-        kwargs = dict(x=event.x, y=event.y)
-        if event_name == '<MouseWheel>':
-            kwargs.update(delta=event.delta)
-        self.text.event_generate(event_name, **kwargs)
+        return 'break'
+
+    def redirect_mousebutton_event(self, event, event_name):
+        """Redirect mouse button events to the main editor text widget."""
+        self.text.focus_set()
+        self.text.event_generate(event_name or event, x=0, y=event.y)
+        return 'break'
+
+    def redirect_mousewheel_event(self, event):
+        """Redirect mouse wheel events to the editwin text widget."""
+        self.text.event_generate('<MouseWheel>',
+                                 x=0, y=event.y, delta=event.delta)
+        return 'break'
 
 
 class EndLineDelegator(Delegator):
@@ -104,16 +116,10 @@ class LineNumbers(BaseSideBar):
         self.sidebar_text.config(state=tk.NORMAL)
         self.sidebar_text.insert('insert', '1', 'linenumber')
         self.sidebar_text.config(state=tk.DISABLED)
-        for event_name in ('<Button-2>', '<Button-3>', '<Button-4>',
-                           '<Button-5>', '<B2-Motion>', '<B3-Motion>',
-                           '<ButtonRelease-2>', '<ButtonRelease-3>',
-                           '<Double-Button-1>', '<Double-Button-2>',
-                           '<Double-Button-3>', '<Enter>', '<Leave>',
-                           '<2>', '<3>', '<MouseWheel>',
-                           '<FocusIn>'):
-            self.sidebar_text.bind(event_name,
-                                   lambda event, event_name=event_name:
-                                   self.redirect_event(event, event_name))
+        self.sidebar_text.config(takefocus=False, exportselection=False)
+
+        self.bind_events()
+
         end = get_end_linenumber(self.text)
         self.update_sidebar_text(end)
 
@@ -134,6 +140,71 @@ class LineNumbers(BaseSideBar):
         # to get our desired state
         self.is_shown = not self.is_shown
         self.toggle_line_numbers_event('')
+
+    def bind_events(self):
+        # Ensure focus is always redirected to the main editor text widget.
+        self.sidebar_text.bind('<FocusIn>', self.redirect_focusin_event)
+
+        # Redirect mouse scrolling to the main editor text widget.
+        #
+        # Note that without this, scrolling with the mouse only scrolls
+        # the line numbers.
+        self.sidebar_text.bind('<MouseWheel>', self.redirect_mousewheel_event)
+
+        # Redirect mouse button events to the main editor text widget.
+        #
+        # Note that double- and triple-clicks must be replaced with normal
+        # clicks, since event_generate() doesn't allow generating them
+        # directly.
+        def bind_mouse_event(event_name, target_event_name=None):
+            target_event_name = target_event_name or event_name
+            handler = functools.partial(self.redirect_mousebutton_event,
+                                        event_name=target_event_name)
+            self.sidebar_text.bind(event_name, handler)
+
+        for button in range(1, 5+1):
+            for event in (f'<Button-{button}>',
+                          f'<Double-Button-{button}>',
+                          f'<Triple-Button-{button}>',
+                          ):
+                bind_mouse_event(event, target_event_name=f'<{button}>')
+            for event in (f'<ButtonRelease-{button}>',
+                          f'<B{button}-Motion>',
+                          ):
+                bind_mouse_event(event)
+
+        # These are set by b1_motion_handler() and read by selection_handler();
+        # see below.  last_y is passed this way since the mouse Y-coordinate
+        # is not available on selection event objects.  last_yview is passed
+        # this way to recognize scrolling while the mouse isn't moving.
+        last_y = last_yview = None
+
+        # Special handling of dragging with mouse button 1.  In "normal" text
+        # widgets this selects text, but the line numbers text widget has
+        # selection disabled.  Still, dragging triggers some selection-related
+        # functionality under the hood.  Specifically, dragging to above or
+        # below the text widget triggers scrolling, in a way that bypasses the
+        # other scrolling synchronization mechanisms.i
+        def b1_motion_handler(event, *args):
+            nonlocal last_y
+            nonlocal last_yview
+            last_y = event.y
+            last_yview = self.sidebar_text.yview()
+            if not 0 <= last_y <= self.sidebar_text.winfo_height():
+                self.text.yview_moveto(last_yview[0])
+            self.redirect_mousebutton_event(event, '<B1-Motion>')
+        self.sidebar_text.bind('<B1-Motion>', b1_motion_handler)
+
+        # With mouse-drag scrolling fixed by the above, there is still an edge-
+        # case we need to handle: When drag-scrolling, scrolling can continue
+        # while the mouse isn't moving, leading to the above fix not scrolling
+        # properly.
+        def selection_handler(event=None):
+            yview = self.sidebar_text.yview()
+            if yview != last_yview:
+                self.text.yview_moveto(yview[0])
+                self.text.event_generate('<B1-Motion>', x=0, y=last_y)
+        self.sidebar_text.bind('<<Selection>>', selection_handler)
 
     @property
     def is_shown(self):
