@@ -16,7 +16,47 @@ def normalize_vartype(vartype):
     return str(vartype)
 
 
-class Symbol(namedtuple('Symbol',
+class _NTBase:
+
+    __slots__ = ()
+
+    @classmethod
+    def _make(cls, iterable):  # The default _make() is not subclass-friendly.
+        return cls.__new__(cls, *iterable)
+
+    # XXX Always validate?
+    #def __init__(self, *args, **kwargs):
+    #    self.validate()
+
+    # XXX The default __repr__() is not subclass-friendly (where the name changes).
+    #def __repr__(self):
+    #    _, _, sig = super().__repr__().partition('(')
+    #    return f'{self.__class__.__name__}({sig}'
+
+    # To make sorting work with None:
+    def __lt__(self, other):
+        try:
+            return super().__lt__(other)
+        except TypeError:
+            if None in self:
+                return True
+            elif None in other:
+                return False
+            else:
+                raise
+
+    def validate(self):
+        return
+
+    # XXX Always validate?
+    #def _replace(self, **kwargs):
+    #    obj = super()._replace(**kwargs)
+    #    obj.validate()
+    #    return obj
+
+
+class Symbol(_NTBase,
+             namedtuple('Symbol',
                         'name kind external filename funcname declaration')):
     """Info for a single compilation symbol."""
 
@@ -26,10 +66,6 @@ class Symbol(namedtuple('Symbol',
         VARIABLE = 'variable'
         FUNCTION = 'function'
         OTHER = 'other'
-
-    @classmethod
-    def _make(cls, iterable):  # The default _make() is not subclass-friendly.
-        return cls.__new__(cls, *iterable)
 
     def __new__(cls, name, kind=KIND.VARIABLE, external=None,
                 filename=None, funcname=None, declaration=None):
@@ -43,15 +79,6 @@ class Symbol(namedtuple('Symbol',
                 declaration=normalize_vartype(declaration),
                 )
         return self
-
-    # XXX Always validate?
-    #def __init__(self, *args, **kwargs):
-    #    self.validate()
-
-    # XXX The default __repr__() is not subclass-friendly (where the name changes).
-    #def __repr__(self):
-    #    _, _, sig = super().__repr__().partition('(')
-    #    return f'{self.__class__.__name__}({sig}'
 
     def validate(self):
         """Fail if the object is invalid (i.e. init with bad data)."""
@@ -80,21 +107,12 @@ class Symbol(namedtuple('Symbol',
 
         # declaration can be not set.
 
-    # XXX Always validate?
-    #def _replace(self, **kwargs):
-    #    obj = super()._replace(**kwargs)
-    #    obj.validate()
-    #    return obj
 
-
-class StaticVar(namedtuple('StaticVar', 'filename funcname name vartype')):
+class StaticVar(_NTBase,
+                namedtuple('StaticVar', 'filename funcname name vartype')):
     """Information about a single static variable."""
 
     __slots__ = ()
-
-    @classmethod
-    def _make(cls, iterable):  # The default _make() is not subclass-friendly.
-        return cls.__new__(cls, *iterable)
 
     def __new__(cls, filename, funcname, name, vartype):
         self = super().__new__(
@@ -105,27 +123,6 @@ class StaticVar(namedtuple('StaticVar', 'filename funcname name vartype')):
                 vartype=normalize_vartype(vartype) if vartype else None,
                 )
         return self
-
-    # XXX Always validate?
-    #def __init__(self, *args, **kwargs):
-    #    self.validate()
-
-    # XXX The default __repr__() is not subclass-friendly (where the name changes).
-    #def __repr__(self):
-    #    _, _, sig = super().__repr__().partition('(')
-    #    return f'{self.__class__.__name__}({sig}'
-
-    # To make sorting work with None (for sorting):
-    def __lt__(self, other):
-        try:
-            return super().__lt__(other)
-        except TypeError:
-            if None in self:
-                return True
-            elif None in other:
-                return False
-            else:
-                raise
 
     def validate(self):
         """Fail if the object is invalid (i.e. init with bad data)."""
@@ -138,9 +135,3 @@ class StaticVar(namedtuple('StaticVar', 'filename funcname name vartype')):
             elif field not in ('filename', 'vartype'):
                 if not NAME_RE.match(value):
                     raise ValueError(f'{field} must be a name, got {value!r}')
-
-    # XXX Always validate?
-    #def _replace(self, **kwargs):
-    #    obj = super()._replace(**kwargs)
-    #    obj.validate()
-    #    return obj
