@@ -67,7 +67,7 @@ example::
 
 In this example, the memory request for the I/O buffer is handled by the C
 library allocator. The Python memory manager is involved only in the allocation
-of the string object returned as a result.
+of the bytes object returned as a result.
 
 In most situations, however, it is recommended to allocate memory from the
 Python heap specifically because the latter is under control of the Python
