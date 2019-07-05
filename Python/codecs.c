@@ -175,9 +175,11 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         Py_DECREF(result);
         goto onError;
     }
+    Py_DECREF(v);
     return result;
 
  onError:
+    Py_DECREF(v);
     return NULL;
 }
 
