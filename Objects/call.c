@@ -216,7 +216,7 @@ PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
     PyObject *result = func(callable, args,
                             nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
     _PyStack_UnpackDict_Free(args, nargs, kwnames);
-    return result;
+    return _Py_CheckFunctionResult(callable, result, NULL);
 }
 
 
@@ -624,26 +624,6 @@ exit:
     Py_LeaveRecursiveCall();
     return result;
 }
-
-
-PyObject *
-_PyCFunction_Vectorcall(PyObject *func,
-                        PyObject *const *args, size_t nargsf,
-                        PyObject *kwnames)
-{
-    PyObject *result;
-
-    assert(func != NULL);
-    assert(PyCFunction_Check(func));
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-
-    result = _PyMethodDef_RawFastCallKeywords(((PyCFunctionObject*)func)->m_ml,
-                                              PyCFunction_GET_SELF(func),
-                                              args, nargs, kwnames);
-    result = _Py_CheckFunctionResult(func, result, NULL);
-    return result;
-}
-
 
 static PyObject *
 cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
