@@ -1,6 +1,8 @@
 This is Python version 3.7.4 candidate 2+
 =========================================
-
+By Shago7932/Master
+  Code of conduct 
+    Hello World
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
    :target: https://travis-ci.org/python/cpython
