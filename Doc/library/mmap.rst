@@ -328,6 +328,7 @@ MADV_* Constants
           MADV_NOHUGEPAGE
           MADV_DONTDUMP
           MADV_DODUMP
+          MADV_CONCEAL
           MADV_FREE
           MADV_NOSYNC
           MADV_AUTOSYNC

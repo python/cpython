@@ -1555,6 +1555,9 @@ PyInit_mmap(void)
 #ifdef MADV_DONTNEED
     setint(dict, "MADV_DONTNEED", MADV_DONTNEED);
 #endif
+#ifdef MADV_CONCEAL
+    setint(dict, "MADV_CONCEAL", MADV_CONCEAL);
+#endif
 
     // Linux-specific advice values
 #ifdef MADV_REMOVE
