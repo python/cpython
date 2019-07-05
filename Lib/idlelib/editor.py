@@ -251,6 +251,7 @@ class EditorWindow(object):
         self.good_load = False
         self.set_indentation_params(False)
         self.color = None # initialized below in self.ResetColorizer
+        self.line_numbers = None # optionally initialized later below
         if filename:
             if os.path.exists(filename) and not os.path.isdir(filename):
                 if io.loadfile(filename):
@@ -322,9 +323,10 @@ class EditorWindow(object):
         else:
             self.update_menu_state('options', '*Code Context', 'disabled')
         if self.allow_line_numbers:
-            line_numbers = self.LineNumbers(self)
+            self.line_numbers = self.LineNumbers(self)
             text.bind("<<toggle-line-numbers>>",
-                      line_numbers.toggle_line_numbers_event)
+                      self.line_numbers.toggle_line_numbers_event)
+            pass
         else:
             self.update_menu_state('options', '*Line Numbers', 'disabled')
 
@@ -785,6 +787,8 @@ class EditorWindow(object):
         self._rmcolorizer()
         self._addcolorizer()
         EditorWindow.color_config(self.text)
+        if self.line_numbers is not None:
+            self.line_numbers.update_sidebar_text_font()
 
     IDENTCHARS = string.ascii_letters + string.digits + "_"
 
