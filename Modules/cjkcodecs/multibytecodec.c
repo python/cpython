@@ -81,7 +81,7 @@ internal_error_callback(const char *errors)
 static PyObject *
 call_error_callback(PyObject *errors, PyObject *exc)
 {
-    PyObject *args, *cb, *r;
+    PyObject *cb, *r;
     const char *str;
 
     assert(PyUnicode_Check(errors));
@@ -92,17 +92,7 @@ call_error_callback(PyObject *errors, PyObject *exc)
     if (cb == NULL)
         return NULL;
 
-    args = PyTuple_New(1);
-    if (args == NULL) {
-        Py_DECREF(cb);
-        return NULL;
-    }
-
-    PyTuple_SET_ITEM(args, 0, exc);
-    Py_INCREF(exc);
-
-    r = PyObject_CallObject(cb, args);
-    Py_DECREF(args);
+    r = _PyObject_CallOneArg(cb, exc);
     Py_DECREF(cb);
     return r;
 }

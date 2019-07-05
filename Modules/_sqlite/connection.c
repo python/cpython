@@ -310,7 +310,7 @@ PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, 
         factory = (PyObject*)&pysqlite_CursorType;
     }
 
-    cursor = PyObject_CallFunctionObjArgs(factory, (PyObject *)self, NULL);
+    cursor = _PyObject_CallOneArg(factory, (PyObject *)self);
     if (cursor == NULL)
         return NULL;
     if (!PyObject_TypeCheck(cursor, &pysqlite_CursorType)) {
@@ -970,7 +970,7 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     py_statement = PyUnicode_DecodeUTF8(statement_string,
             strlen(statement_string), "replace");
     if (py_statement) {
-        ret = PyObject_CallFunctionObjArgs((PyObject*)user_arg, py_statement, NULL);
+        ret = _PyObject_CallOneArg((PyObject*)user_arg, py_statement);
         Py_DECREF(py_statement);
     }
 
@@ -1465,16 +1465,9 @@ pysqlite_connection_iterdump(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    args = PyTuple_New(1);
-    if (!args) {
-        goto finally;
-    }
-    Py_INCREF(self);
-    PyTuple_SetItem(args, 0, (PyObject*)self);
-    retval = PyObject_CallObject(pyfn_iterdump, args);
+    retval = _PyObject_CallOneArg(pyfn_iterdump, (PyObject *)self);
 
 finally:
-    Py_XDECREF(args);
     Py_XDECREF(module);
     return retval;
 }

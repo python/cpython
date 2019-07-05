@@ -8,6 +8,14 @@
 static PyObject *
 cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs);
 
+static PyObject *const *
+_PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
+                    PyObject **p_kwnames);
+
+static void
+_PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
+                         PyObject *kwnames);
+
 
 static PyObject *
 null_error(void)
@@ -100,24 +108,19 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args,
     }
 
     PyObject *res;
-    if (kwargs == NULL) {
+    if (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) {
         res = func(callable, args, nargsf, NULL);
     }
     else {
         PyObject *kwnames;
         PyObject *const *newargs;
-        if (_PyStack_UnpackDict(args, nargs, kwargs, &newargs, &kwnames) < 0) {
+        newargs = _PyStack_UnpackDict(args, nargs, kwargs, &kwnames);
+        if (newargs == NULL) {
             return NULL;
         }
-        res = func(callable, newargs, nargs, kwnames);
-        if (kwnames != NULL) {
-            Py_ssize_t i, n = PyTuple_GET_SIZE(kwnames) + nargs;
-            for (i = 0; i < n; i++) {
-                Py_DECREF(newargs[i]);
-            }
-            PyMem_Free((PyObject **)newargs);
-            Py_DECREF(kwnames);
-        }
+        res = func(callable, newargs,
+                   nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+        _PyStack_UnpackDict_Free(newargs, nargs, kwnames);
     }
     return _Py_CheckFunctionResult(callable, res, NULL);
 }
@@ -196,24 +199,23 @@ PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
         return NULL;
     }
 
-    /* Convert arguments & call */
-    PyObject *const *args;
     Py_ssize_t nargs = PyTuple_GET_SIZE(tuple);
-    PyObject *kwnames;
-    if (_PyStack_UnpackDict(_PyTuple_ITEMS(tuple), nargs,
-        kwargs, &args, &kwnames) < 0) {
-        return NULL;
-    }
-    PyObject *result = func(callable, args, nargs, kwnames);
-    if (kwnames != NULL) {
-        Py_ssize_t i, n = PyTuple_GET_SIZE(kwnames) + nargs;
-        for (i = 0; i < n; i++) {
-            Py_DECREF(args[i]);
-        }
-        PyMem_Free((PyObject **)args);
-        Py_DECREF(kwnames);
+
+    /* Fast path for no keywords */
+    if (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) {
+        return func(callable, _PyTuple_ITEMS(tuple), nargs, NULL);
     }
 
+    /* Convert arguments & call */
+    PyObject *const *args;
+    PyObject *kwnames;
+    args = _PyStack_UnpackDict(_PyTuple_ITEMS(tuple), nargs, kwargs, &kwnames);
+    if (args == NULL) {
+        return NULL;
+    }
+    PyObject *result = func(callable, args,
+                            nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+    _PyStack_UnpackDict_Free(args, nargs, kwnames);
     return result;
 }
 
@@ -455,23 +457,22 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
 
     case METH_FASTCALL | METH_KEYWORDS:
     {
-        PyObject *const *stack;
-        PyObject *kwnames;
         _PyCFunctionFastWithKeywords fastmeth = (_PyCFunctionFastWithKeywords)(void(*)(void))meth;
 
-        if (_PyStack_UnpackDict(args, nargs, kwargs, &stack, &kwnames) < 0) {
-            goto exit;
+        /* Fast path for no keywords */
+        if (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) {
+            result = (*fastmeth) (self, args, nargs, NULL);
+            break;
         }
 
-        result = (*fastmeth) (self, stack, nargs, kwnames);
-        if (kwnames != NULL) {
-            Py_ssize_t i, n = nargs + PyTuple_GET_SIZE(kwnames);
-            for (i = 0; i < n; i++) {
-                Py_DECREF(stack[i]);
-            }
-            PyMem_Free((PyObject **)stack);
-            Py_DECREF(kwnames);
+        PyObject *const *stack;
+        PyObject *kwnames;
+        stack = _PyStack_UnpackDict(args, nargs, kwargs, &kwnames);
+        if (stack == NULL) {
+            goto exit;
         }
+        result = (*fastmeth) (self, stack, nargs, kwnames);
+        _PyStack_UnpackDict_Free(stack, nargs, kwnames);
         break;
     }
 
@@ -1206,53 +1207,63 @@ _PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
 }
 
 
-int
+/* Convert (args, nargs, kwargs: dict) into a (stack, nargs, kwnames: tuple).
+
+   Allocate a new argument vector and keyword names tuple. Return the argument
+   vector; return NULL with exception set on error. Return the keyword names
+   tuple in *p_kwnames.
+
+   The newly allocated argument vector supports PY_VECTORCALL_ARGUMENTS_OFFSET.
+
+   When done, you must call _PyStack_UnpackDict_Free(stack, nargs, kwnames)
+
+   The type of keyword keys is not checked, these checks should be done
+   later (ex: _PyArg_ParseStackAndKeywords). */
+static PyObject *const *
 _PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
-                    PyObject *const **p_stack, PyObject **p_kwnames)
+                    PyObject **p_kwnames)
 {
-    PyObject **stack, **kwstack;
-    Py_ssize_t nkwargs;
-    Py_ssize_t pos, i;
-    PyObject *key, *value;
-    PyObject *kwnames;
-
     assert(nargs >= 0);
-    assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+    assert(kwargs != NULL);
+    assert(PyDict_Check(kwargs));
 
-    if (kwargs == NULL || (nkwargs = PyDict_GET_SIZE(kwargs)) == 0) {
-        *p_stack = args;
-        *p_kwnames = NULL;
-        return 0;
-    }
-
-    if ((size_t)nargs > PY_SSIZE_T_MAX / sizeof(stack[0]) - (size_t)nkwargs) {
+    Py_ssize_t nkwargs = PyDict_GET_SIZE(kwargs);
+    /* Check for overflow in the PyMem_Malloc() call below. The subtraction
+     * in this check cannot overflow: both maxnargs and nkwargs are
+     * non-negative signed integers, so their difference fits in the type. */
+    Py_ssize_t maxnargs = PY_SSIZE_T_MAX / sizeof(args[0]) - 1;
+    if (nargs > maxnargs - nkwargs) {
         PyErr_NoMemory();
-        return -1;
+        return NULL;
     }
 
-    stack = PyMem_Malloc((nargs + nkwargs) * sizeof(stack[0]));
+    /* Add 1 to support PY_VECTORCALL_ARGUMENTS_OFFSET */
+    PyObject **stack = PyMem_Malloc((1 + nargs + nkwargs) * sizeof(args[0]));
     if (stack == NULL) {
         PyErr_NoMemory();
-        return -1;
+        return NULL;
     }
 
-    kwnames = PyTuple_New(nkwargs);
+    PyObject *kwnames = PyTuple_New(nkwargs);
     if (kwnames == NULL) {
         PyMem_Free(stack);
-        return -1;
+        return NULL;
     }
 
+    stack++;  /* For PY_VECTORCALL_ARGUMENTS_OFFSET */
+
     /* Copy positional arguments */
-    for (i = 0; i < nargs; i++) {
+    for (Py_ssize_t i = 0; i < nargs; i++) {
         Py_INCREF(args[i]);
         stack[i] = args[i];
     }
 
-    kwstack = stack + nargs;
-    pos = i = 0;
+    PyObject **kwstack = stack + nargs;
     /* This loop doesn't support lookup function mutating the dictionary
        to change its size. It's a deliberate choice for speed, this function is
        called in the performance critical hot code. */
+    Py_ssize_t pos = 0, i = 0;
+    PyObject *key, *value;
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
         Py_INCREF(key);
         Py_INCREF(value);
@@ -1261,7 +1272,18 @@ _PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
         i++;
     }
 
-    *p_stack = stack;
     *p_kwnames = kwnames;
-    return 0;
+    return stack;
+}
+
+static void
+_PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
+                         PyObject *kwnames)
+{
+    Py_ssize_t n = PyTuple_GET_SIZE(kwnames) + nargs;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        Py_DECREF(stack[i]);
+    }
+    PyMem_Free((PyObject **)stack - 1);
+    Py_DECREF(kwnames);
 }

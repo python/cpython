@@ -830,7 +830,6 @@
     <Compile Include="test\mp_fork_bomb.py" />
     <Compile Include="test\mp_preload.py" />
     <Compile Include="test\multibytecodec_support.py" />
-    <Compile Include="test\outstanding_bugs.py" />
     <Compile Include="test\pickletester.py" />
     <Compile Include="test\profilee.py" />
     <Compile Include="test\pyclbr_input.py" />

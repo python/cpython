@@ -91,6 +91,9 @@ class BaseEventTests(test_utils.TestCase):
         self.assertIsNone(
             base_events._ipaddr_info('1.2.3.4', 1, UNSPEC, 0, 0))
 
+        if not support.IPV6_ENABLED:
+            return
+
         # IPv4 address with family IPv6.
         self.assertIsNone(
             base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
@@ -1149,7 +1152,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
-    @unittest.skipUnless(hasattr(socket, 'AF_INET6'), 'no IPv6 support')
+    @unittest.skipUnless(support.IPV6_ENABLED, 'no IPv6 support')
     def test_create_server_ipv6(self):
         async def main():
             with self.assertWarns(DeprecationWarning):
@@ -1281,6 +1284,9 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             t.close()
             test_utils.run_briefly(self.loop)  # allow transport to close
 
+        if not support.IPV6_ENABLED:
+            return
+
         sock.family = socket.AF_INET6
         coro = self.loop.create_connection(asyncio.Protocol, '::1', 80)
         t, p = self.loop.run_until_complete(coro)
@@ -1298,6 +1304,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             t.close()
             test_utils.run_briefly(self.loop)  # allow transport to close
 
+    @unittest.skipUnless(support.IPV6_ENABLED, 'no IPv6 support')
     @unittest.skipIf(sys.platform.startswith('aix'),
                     "bpo-25545: IPv6 scope id and getaddrinfo() behave differently on AIX")
     @patch_socket
