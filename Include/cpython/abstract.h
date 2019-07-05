@@ -165,8 +165,7 @@ PyAPI_FUNC(PyObject *) _PyObject_VectorcallMethod(
 static inline PyObject *
 _PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)
 {
-    PyObject *args[1] = {self};
-    return _PyObject_VectorcallMethod(name, args,
+    return _PyObject_VectorcallMethod(name, &self,
            1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
@@ -201,8 +200,7 @@ _PyObject_VectorcallMethodId(
 static inline PyObject *
 _PyObject_CallMethodIdNoArgs(PyObject *self, _Py_Identifier *name)
 {
-    PyObject *args[1] = {self};
-    return _PyObject_VectorcallMethodId(name, args,
+    return _PyObject_VectorcallMethodId(name, &self,
            1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
