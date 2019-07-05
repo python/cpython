@@ -152,23 +152,16 @@ class LineNumbers(BaseSideBar):
         self.sidebar_text.bind('<MouseWheel>', self.redirect_mousewheel_event)
 
         # Redirect mouse button events to the main editor text widget.
-        #
-        # Note that double- and triple-clicks must be replaced with normal
-        # clicks, since event_generate() doesn't allow generating them
-        # directly.
-        def bind_mouse_event(event_name, target_event_name=None):
-            target_event_name = target_event_name or event_name
+        def bind_mouse_event(event_name):
             handler = functools.partial(self.redirect_mousebutton_event,
-                                        event_name=target_event_name)
+                                        event_name=event_name)
             self.sidebar_text.bind(event_name, handler)
 
         for button in range(1, 5+1):
             for event in (f'<Button-{button}>',
                           f'<Double-Button-{button}>',
                           f'<Triple-Button-{button}>',
-                          ):
-                bind_mouse_event(event, target_event_name=f'<{button}>')
-            for event in (f'<ButtonRelease-{button}>',
+                          f'<ButtonRelease-{button}>',
                           f'<B{button}-Motion>',
                           ):
                 bind_mouse_event(event)
