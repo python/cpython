@@ -321,8 +321,8 @@ def install_recursionlimit_wrappers():
         try:
             limit, = args
         except ValueError:
-            raise TypeError("setrecursionlimit() takes exactly one "
-                            "argument ({} given)".format(len(args)))
+            raise TypeError(f"setrecursionlimit() takes exactly one "
+                            f"argument ({len(args)} given)")
         if not limit > 0:
             raise ValueError(
                 "recursion limit must be greater or equal than 1")

@@ -263,6 +263,15 @@ class PseudeOutputFilesTest(unittest.TestCase):
 
 
 class TestSysRecursionLimitWrappers(unittest.TestCase):
+
+    def test_bad_setrecursionlimit_calls(self):
+        run.install_recursionlimit_wrappers()
+        self.addCleanup(run.uninstall_recursionlimit_wrappers)
+        f = sys.setrecursionlimit
+        self.assertRaises(TypeError, f, limit=100)
+        self.assertRaises(TypeError, f, 100, 1000)
+        self.assertRaises(ValueError, f, 0)
+
     def test_roundtrip(self):
         run.install_recursionlimit_wrappers()
         self.addCleanup(run.uninstall_recursionlimit_wrappers)
