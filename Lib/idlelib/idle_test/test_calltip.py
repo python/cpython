@@ -1,6 +1,7 @@
 "Test calltip, coverage 60%"
 
 from idlelib import calltip
+from test.support import requires_docstrings
 import unittest
 import textwrap
 import types
@@ -48,6 +49,7 @@ class Get_argspecTest(unittest.TestCase):
     # but a red buildbot is better than a user crash (as has happened).
     # For a simple mismatch, change the expected output to the actual.
 
+    @requires_docstrings
     def test_builtins(self):
 
         def tiptest(obj, out):
@@ -136,6 +138,7 @@ non-overlapping occurrences o...''')
         f.__doc__ = 'a'*300
         self.assertEqual(get_spec(f), f"()\n{'a'*(calltip._MAX_COLS-3) + '...'}")
 
+    @requires_docstrings
     def test_multiline_docstring(self):
         # Test fewer lines than max.
         self.assertEqual(get_spec(range),

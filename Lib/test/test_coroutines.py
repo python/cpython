@@ -923,13 +923,17 @@ class CoroutineTest(unittest.TestCase):
         self.assertEqual(inspect.getcoroutinestate(coro_b), inspect.CORO_CLOSED)
         self.assertIsNone(coro_b.cr_await)
 
-    def test_corotype_1(self):
+    @support.requires_docstrings
+    def test_corotype_docstrings(self):
         ct = types.CoroutineType
         self.assertIn('into coroutine', ct.send.__doc__)
         self.assertIn('inside coroutine', ct.close.__doc__)
         self.assertIn('in coroutine', ct.throw.__doc__)
         self.assertIn('of the coroutine', ct.__dict__['__name__'].__doc__)
         self.assertIn('of the coroutine', ct.__dict__['__qualname__'].__doc__)
+
+    def test_corotype_1(self):
+        ct = types.CoroutineType
         self.assertEqual(ct.__name__, 'coroutine')
 
         async def f(): pass

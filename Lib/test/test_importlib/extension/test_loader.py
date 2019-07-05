@@ -10,6 +10,7 @@ import unittest
 import importlib.util
 import importlib
 from test.support.script_helper import assert_python_failure
+from test.support import HAVE_DOCSTRINGS, MISSING_C_DOCSTRINGS
 
 class LoaderTests(abc.LoaderTests):
 
@@ -265,7 +266,9 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             with self.subTest(name):
                 module = self.load_module_by_name(name)
                 self.assertEqual(module.__name__, name)
-                self.assertEqual(module.__doc__, "Module named in %s" % lang)
+                if HAVE_DOCSTRINGS:
+                    self.assertEqual(module.__doc__,
+                                     "Module named in %s" % lang)
 
     @unittest.skipIf(not hasattr(sys, 'gettotalrefcount'),
             '--with-pydebug has to be enabled for this test')

@@ -778,6 +778,7 @@ class PydocDocTest(unittest.TestCase):
         methods = pydoc.allmethods(TestClass)
         self.assertDictEqual(methods, expected)
 
+    @requires_docstrings
     def test_method_aliases(self):
         class A:
             def tkraise(self, aboveThis=None):

@@ -9,6 +9,7 @@ import inspect
 import builtins
 import unittest
 from unittest.mock import Mock
+from test.support import requires_docstrings
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
@@ -858,6 +859,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C(10).bar, 5)
         self.assertEqual(C(10).i, 10)
 
+    @requires_docstrings
     def test_post_init(self):
         # Just make sure it gets called
         @dataclass
@@ -2976,6 +2978,7 @@ class TestMakeDataclass(unittest.TestCase):
         self.assertEqual(C.y, 10)
         self.assertEqual(C.z, 20)
 
+    @requires_docstrings
     def test_other_params(self):
         C = make_dataclass('C',
                            [('x', int),

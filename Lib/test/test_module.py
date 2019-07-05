@@ -1,7 +1,7 @@
 # Test the module type
 import unittest
 import weakref
-from test.support import gc_collect, requires_type_collecting
+from test.support import gc_collect, requires_type_collecting, HAVE_DOCSTRINGS
 from test.support.script_helper import assert_python_ok
 
 import sys
@@ -28,7 +28,8 @@ class ModuleTests(unittest.TestCase):
             self.fail("__name__ = %s" % repr(s))
         except AttributeError:
             pass
-        self.assertEqual(foo.__doc__, ModuleType.__doc__)
+        if HAVE_DOCSTRINGS:
+            self.assertEqual(foo.__doc__, ModuleType.__doc__)
 
     def test_uninitialized_missing_getattr(self):
         # Issue 8297
