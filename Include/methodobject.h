@@ -41,13 +41,6 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyCFunction_Vectorcall(PyObject *func,
-    PyObject *const *stack,
-    size_t nargsf,
-    PyObject *kwnames);
-#endif
-
 struct PyMethodDef {
     const char  *ml_name;   /* The name of the built-in function/method */
     PyCFunction ml_meth;    /* The C function that implements it */

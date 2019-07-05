@@ -19,6 +19,17 @@ static int numfree = 0;
 /* undefine macro trampoline to PyCFunction_NewEx */
 #undef PyCFunction_New
 
+/* Forward declarations */
+static PyObject * cfunction_vectorcall_FASTCALL(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
+static PyObject * cfunction_vectorcall_FASTCALL_KEYWORDS(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
+static PyObject * cfunction_vectorcall_NOARGS(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
+static PyObject * cfunction_vectorcall_O(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
+
+
 PyObject *
 PyCFunction_New(PyMethodDef *ml, PyObject *self)
 {
@@ -28,6 +39,33 @@ PyCFunction_New(PyMethodDef *ml, PyObject *self)
 PyObject *
 PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
 {
+    /* Figure out correct vectorcall function to use */
+    vectorcallfunc vectorcall;
+    switch (ml->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O | METH_KEYWORDS))
+    {
+        case METH_VARARGS:
+        case METH_VARARGS | METH_KEYWORDS:
+            /* For METH_VARARGS functions, it's more efficient to use tp_call
+             * instead of vectorcall. */
+            vectorcall = NULL;
+            break;
+        case METH_FASTCALL:
+            vectorcall = cfunction_vectorcall_FASTCALL;
+            break;
+        case METH_FASTCALL | METH_KEYWORDS:
+            vectorcall = cfunction_vectorcall_FASTCALL_KEYWORDS;
+            break;
+        case METH_NOARGS:
+            vectorcall = cfunction_vectorcall_NOARGS;
+            break;
+        case METH_O:
+            vectorcall = cfunction_vectorcall_O;
+            break;
+        default:
+            PyErr_SetString(PyExc_SystemError, "bad call flags");
+            return NULL;
+    }
+
     PyCFunctionObject *op;
     op = free_list;
     if (op != NULL) {
@@ -46,14 +84,7 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
     op->m_self = self;
     Py_XINCREF(module);
     op->m_module = module;
-    if (ml->ml_flags & METH_VARARGS) {
-        /* For METH_VARARGS functions, it's more efficient to use tp_call
-         * instead of vectorcall. */
-        op->vectorcall = NULL;
-    }
-    else {
-        op->vectorcall = _PyCFunction_Vectorcall;
-    }
+    op->vectorcall = vectorcall;
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
 }
@@ -332,4 +363,122 @@ _PyCFunction_DebugMallocStats(FILE *out)
     _PyDebugAllocatorStats(out,
                            "free PyCFunctionObject",
                            numfree, sizeof(PyCFunctionObject));
+}
+
+
+/* Vectorcall functions for each of the PyCFunction calling conventions,
+ * except for METH_VARARGS (possibly combined with METH_KEYWORDS) which
+ * doesn't use vectorcall.
+ *
+ * First, common helpers
+ */
+static const char *
+get_name(PyObject *func)
+{
+    assert(PyCFunction_Check(func));
+    PyMethodDef *method = ((PyCFunctionObject *)func)->m_ml;
+    return method->ml_name;
+}
+
+typedef void (*funcptr)(void);
+
+static inline int
+cfunction_check_kwargs(PyObject *func, PyObject *kwnames)
+{
+    assert(!PyErr_Occurred());
+    assert(PyCFunction_Check(func));
+    if (kwnames && PyTuple_GET_SIZE(kwnames)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s() takes no keyword arguments", get_name(func));
+        return -1;
+    }
+    return 0;
+}
+
+static inline funcptr
+cfunction_enter_call(PyObject *func)
+{
+    if (Py_EnterRecursiveCall(" while calling a Python object")) {
+        return NULL;
+    }
+    return (funcptr)PyCFunction_GET_FUNCTION(func);
+}
+
+/* Now the actual vectorcall functions */
+static PyObject *
+cfunction_vectorcall_FASTCALL(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    if (cfunction_check_kwargs(func, kwnames)) {
+        return NULL;
+    }
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    _PyCFunctionFast meth = (_PyCFunctionFast)
+                            cfunction_enter_call(func);
+    if (meth == NULL) {
+        return NULL;
+    }
+    PyObject *result = meth(PyCFunction_GET_SELF(func), args, nargs);
+    Py_LeaveRecursiveCall();
+    return result;
+}
+
+static PyObject *
+cfunction_vectorcall_FASTCALL_KEYWORDS(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    _PyCFunctionFastWithKeywords meth = (_PyCFunctionFastWithKeywords)
+                                        cfunction_enter_call(func);
+    if (meth == NULL) {
+        return NULL;
+    }
+    PyObject *result = meth(PyCFunction_GET_SELF(func), args, nargs, kwnames);
+    Py_LeaveRecursiveCall();
+    return result;
+}
+
+static PyObject *
+cfunction_vectorcall_NOARGS(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    if (cfunction_check_kwargs(func, kwnames)) {
+        return NULL;
+    }
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (nargs != 0) {
+        PyErr_Format(PyExc_TypeError,
+            "%.200s() takes no arguments (%zd given)", get_name(func), nargs);
+        return NULL;
+    }
+    PyCFunction meth = (PyCFunction)cfunction_enter_call(func);
+    if (meth == NULL) {
+        return NULL;
+    }
+    PyObject *result = meth(PyCFunction_GET_SELF(func), NULL);
+    Py_LeaveRecursiveCall();
+    return result;
+}
+
+static PyObject *
+cfunction_vectorcall_O(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    if (cfunction_check_kwargs(func, kwnames)) {
+        return NULL;
+    }
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (nargs != 1) {
+        PyErr_Format(PyExc_TypeError,
+            "%.200s() takes exactly one argument (%zd given)",
+            get_name(func), nargs);
+        return NULL;
+    }
+    PyCFunction meth = (PyCFunction)cfunction_enter_call(func);
+    if (meth == NULL) {
+        return NULL;
+    }
+    PyObject *result = meth(PyCFunction_GET_SELF(func), args[0]);
+    Py_LeaveRecursiveCall();
+    return result;
 }

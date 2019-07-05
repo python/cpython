@@ -4936,7 +4936,7 @@ trace_call_function(PyThreadState *tstate,
 {
     PyObject *x;
     if (PyCFunction_Check(func)) {
-        C_TRACE(x, _PyCFunction_Vectorcall(func, args, nargs, kwnames));
+        C_TRACE(x, _PyObject_Vectorcall(func, args, nargs, kwnames));
         return x;
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type && nargs > 0) {
@@ -4952,9 +4952,9 @@ trace_call_function(PyThreadState *tstate,
         if (func == NULL) {
             return NULL;
         }
-        C_TRACE(x, _PyCFunction_Vectorcall(func,
-                                           args+1, nargs-1,
-                                           kwnames));
+        C_TRACE(x, _PyObject_Vectorcall(func,
+                                        args+1, nargs-1,
+                                        kwnames));
         Py_DECREF(func);
         return x;
     }
