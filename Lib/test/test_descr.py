@@ -4647,9 +4647,11 @@ order (MRO) for bases """
     def test_mixing_slot_wrappers(self):
         class X(dict):
             __setattr__ = dict.__setitem__
+            __neg__ = dict.copy
         x = X()
         x.y = 42
         self.assertEqual(x["y"], 42)
+        self.assertEqual(x, -x)
 
     def test_slot_shadows_class_variable(self):
         with self.assertRaises(ValueError) as cm:

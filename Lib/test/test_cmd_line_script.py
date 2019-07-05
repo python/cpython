@@ -218,6 +218,18 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script')
             self._check_script(script_name, script_name, script_name,
                                script_dir, None,
+                               importlib.machinery.SourceFileLoader,
+                               expected_cwd=script_dir)
+
+    def test_script_abspath(self):
+        # pass the script using the relative path, expect the absolute path
+        # in __file__ and sys.argv[0]
+        with support.temp_cwd() as script_dir:
+            self.assertTrue(os.path.isabs(script_dir), script_dir)
+
+            script_name = _make_test_script(script_dir, 'script')
+            self._check_script(os.path.basename(script_name), script_name, script_name,
+                               script_dir, None,
                                importlib.machinery.SourceFileLoader)
 
     def test_script_compiled(self):
@@ -542,7 +554,7 @@ class CmdLineTest(unittest.TestCase):
 
         # Issue #16218
         source = 'print(ascii(__file__))\n'
-        script_name = _make_test_script(os.curdir, name, source)
+        script_name = _make_test_script(os.getcwd(), name, source)
         self.addCleanup(support.unlink, script_name)
         rc, stdout, stderr = assert_python_ok(script_name)
         self.assertEqual(

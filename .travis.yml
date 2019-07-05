@@ -14,8 +14,7 @@ env:
     - OPENSSL=1.1.1c
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
-    # Use -O3 because we don't use debugger on Travis-CI
-    - CFLAGS="-I${OPENSSL_DIR}/include -O3"
+    - CFLAGS="-I${OPENSSL_DIR}/include"
     - LDFLAGS="-L${OPENSSL_DIR}/lib"
     # Set rpath with env var instead of -Wl,-rpath linker flag
     # OpenSSL ignores LDFLAGS when linking bin/openssl
@@ -43,6 +42,7 @@ matrix:
       addons:
         apt:
           packages:
+            - gdb
             - xvfb
     - name: "Documentation build"
       os: linux
@@ -55,7 +55,7 @@ matrix:
         # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
         # (Updating the version is fine as long as no warnings are raised by doing so.)
         # The theme used by the docs is stored separately, so we need to install that as well.
-        - python -m pip install sphinx==1.8.2 blurb python-docs-theme
+        - python -m pip install sphinx==2.0.1 blurb python-docs-theme
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
     - name: "Documentation tests"
@@ -166,7 +166,8 @@ install:
 
 # Travis provides only 2 cores, so don't overdo the parallelism and waste memory.
 before_script:
-  - ./configure --with-pydebug
+  # -Og is much faster than -O0
+  - CFLAGS="${CFLAGS} -Og" ./configure --with-pydebug
   - make -j4 regen-all
   - changes=`git status --porcelain`
   - |

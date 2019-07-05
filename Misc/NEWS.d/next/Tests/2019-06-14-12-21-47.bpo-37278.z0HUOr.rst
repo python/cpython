@@ -1,0 +1,2 @@
+Fix test_asyncio ProactorLoopCtrlC: join the thread to prevent leaking a
+running thread and leaking a reference.

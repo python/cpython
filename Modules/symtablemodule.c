@@ -30,11 +30,10 @@ _symtable_symtable_impl(PyObject *module, PyObject *source,
     struct symtable *st;
     PyObject *t;
     int start;
-    PyCompilerFlags cf;
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
     PyObject *source_copy = NULL;
 
     cf.cf_flags = PyCF_SOURCE_IS_UTF8;
-    cf.cf_feature_version = PY_MINOR_VERSION;
 
     const char *str = _Py_SourceAsString(source, "symtable", "string or bytes", &cf, &source_copy);
     if (str == NULL) {

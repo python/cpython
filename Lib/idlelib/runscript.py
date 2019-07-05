@@ -18,6 +18,7 @@ import tkinter.messagebox as tkMessageBox
 from idlelib.config import idleConf
 from idlelib import macosx
 from idlelib import pyshell
+from idlelib.query import CustomRun
 
 indent_message = """Error: Inconsistent indentation detected!
 
@@ -108,20 +109,24 @@ class ScriptBinding:
             # tries to run a module using the keyboard shortcut
             # (the menu item works fine).
             self.editwin.text_frame.after(200,
-                lambda: self.editwin.text_frame.event_generate('<<run-module-event-2>>'))
+                lambda: self.editwin.text_frame.event_generate(
+                        '<<run-module-event-2>>'))
             return 'break'
         else:
             return self._run_module_event(event)
 
-    def _run_module_event(self, event):
+    def run_custom_event(self, event):
+        return self._run_module_event(event, customize=True)
+
+    def _run_module_event(self, event, *, customize=False):
         """Run the module after setting up the environment.
 
-        First check the syntax.  If OK, make sure the shell is active and
-        then transfer the arguments, set the run environment's working
-        directory to the directory of the module being executed and also
-        add that directory to its sys.path if not already included.
+        First check the syntax.  Next get customization.  If OK, make
+        sure the shell is active and then transfer the arguments, set
+        the run environment's working directory to the directory of the
+        module being executed and also add that directory to its
+        sys.path if not already included.
         """
-
         filename = self.getfilename()
         if not filename:
             return 'break'
@@ -130,23 +135,34 @@ class ScriptBinding:
             return 'break'
         if not self.tabnanny(filename):
             return 'break'
+        if customize:
+            title = f"Customize {self.editwin.short_title()} Run"
+            run_args = CustomRun(self.shell.text, title).result
+            if not run_args:  # User cancelled.
+                return 'break'
+        cli_args, restart = run_args if customize else ([], True)
         interp = self.shell.interp
-        if pyshell.use_subprocess:
-            interp.restart_subprocess(with_cwd=False, filename=
-                        self.editwin._filename_to_unicode(filename))
+        if pyshell.use_subprocess and restart:
+            interp.restart_subprocess(
+                    with_cwd=False, filename=
+                    self.editwin._filename_to_unicode(filename))
         dirname = os.path.dirname(filename)
-        # XXX Too often this discards arguments the user just set...
-        interp.runcommand("""if 1:
+        argv = [filename]
+        if cli_args:
+            argv += cli_args
+        interp.runcommand(f"""if 1:
             __file__ = {filename!r}
             import sys as _sys
             from os.path import basename as _basename
+            argv = {argv!r}
             if (not _sys.argv or
-                _basename(_sys.argv[0]) != _basename(__file__)):
-                _sys.argv = [__file__]
+                _basename(_sys.argv[0]) != _basename(__file__) or
+                len(argv) > 1):
+                _sys.argv = argv
             import os as _os
             _os.chdir({dirname!r})
             del _sys, _basename, _os
-            \n""".format(filename=filename, dirname=dirname))
+            \n""")
         interp.prepend_syspath(filename)
         # XXX KBK 03Jul04 When run w/o subprocess, runtime warnings still
         #         go to __stderr__.  With subprocess, they go to the shell.

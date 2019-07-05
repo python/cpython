@@ -930,6 +930,12 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(word.token_type, 'atom')
         self.assertEqual(word[0].token_type, 'cfws')
 
+    def test_get_word_all_CFWS(self):
+        # bpo-29412: Test that we don't raise IndexError when parsing CFWS only
+        # token.
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_word('(Recipients list suppressed')
+
     def test_get_word_qs_yields_qs(self):
         word = self._test_get_x(parser.get_word,
             '"bar " (bang) ah', '"bar " (bang) ', 'bar  ', [], 'ah')
@@ -2342,6 +2348,17 @@ class TestParser(TestParserMixin, TestEmailBase):
 
 
     # get_address_list
+
+    def test_get_address_list_CFWS(self):
+        address_list = self._test_get_x(parser.get_address_list,
+                                        '(Recipient list suppressed)',
+                                        '(Recipient list suppressed)',
+                                        ' ',
+                                        [errors.ObsoleteHeaderDefect],  # no content in address list
+                                        '')
+        self.assertEqual(address_list.token_type, 'address-list')
+        self.assertEqual(len(address_list.mailboxes), 0)
+        self.assertEqual(address_list.mailboxes, address_list.all_mailboxes)
 
     def test_get_address_list_mailboxes_simple(self):
         address_list = self._test_get_x(parser.get_address_list,

@@ -1509,13 +1509,13 @@ object is available:
    :c:type:`int`, which is of course not always the truth, so you have to assign
    the correct :attr:`restype` attribute to use these functions.
 
-.. audit-event:: ctypes.dlopen name
+.. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
 
    Loading a library through any of these objects raises an
    :ref:`auditing event <auditing>` ``ctypes.dlopen`` with string argument
    ``name``, the name used to load the library.
 
-.. audit-event:: ctypes.dlsym "library name"
+.. audit-event:: ctypes.dlsym library,name ctypes.LibraryLoader
 
    Accessing a function on a loaded library raises an auditing event
    ``ctypes.dlsym`` with arguments ``library`` (the library object) and ``name``
@@ -2043,10 +2043,10 @@ Data types
       This method returns a ctypes type instance using the memory specified by
       *address* which must be an integer.
 
-      .. audit-event:: ctypes.cdata address
+      .. audit-event:: ctypes.cdata address ctypes._CData.from_address
 
          This method, and others that indirectly call this method, raises an
-         :func:`auditing event <sys.audit>` ``ctypes.cdata`` with argument
+         :ref:`auditing event <auditing>` ``ctypes.cdata`` with argument
          ``address``.
 
    .. method:: from_param(obj)

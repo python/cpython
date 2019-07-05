@@ -2,7 +2,6 @@ import os
 import signal
 import socket
 import sys
-import subprocess
 import time
 import threading
 import unittest
@@ -12,14 +11,12 @@ if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
 
 import _overlapped
-import _testcapi
 import _winapi
 
 import asyncio
 from asyncio import windows_events
 from asyncio.streams import _StreamProtocol
 from test.test_asyncio import utils as test_utils
-from test.support.script_helper import spawn_python
 
 
 def tearDownModule():
@@ -45,20 +42,21 @@ class ProactorLoopCtrlC(test_utils.TestCase):
     def test_ctrl_c(self):
 
         def SIGINT_after_delay():
-            time.sleep(1)
+            time.sleep(0.1)
             signal.raise_signal(signal.SIGINT)
 
-        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-        l = asyncio.get_event_loop()
+        thread = threading.Thread(target=SIGINT_after_delay)
+        loop = asyncio.get_event_loop()
         try:
-            t = threading.Thread(target=SIGINT_after_delay)
-            t.start()
-            l.run_forever()
+            # only start the loop once the event loop is running
+            loop.call_soon(thread.start)
+            loop.run_forever()
             self.fail("should not fall through 'run_forever'")
         except KeyboardInterrupt:
             pass
         finally:
-            l.close()
+            self.close_loop(loop)
+        thread.join()
 
 
 class ProactorTests(test_utils.TestCase):

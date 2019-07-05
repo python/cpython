@@ -1563,8 +1563,7 @@ class Frame(object):
         if not caller:
             return False
 
-        if caller in ('_PyCFunction_FastCallDict',
-                      '_PyCFunction_Vectorcall',
+        if caller in ('_PyCFunction_Vectorcall',
                       'cfunction_call_varargs'):
             arg_name = 'func'
             # Within that frame:

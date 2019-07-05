@@ -437,7 +437,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
       how they can be loaded, potentially reducing security risks. Refer to
       :ref:`pickle-restrict` for details.
 
-      .. audit-event:: pickle.find_class "module name"
+      .. audit-event:: pickle.find_class module,name pickle.Unpickler.find_class
 
 .. class:: PickleBuffer(buffer)
 

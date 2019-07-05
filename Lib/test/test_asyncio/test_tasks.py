@@ -3352,7 +3352,9 @@ class CompatibilityTests(test_utils.TestCase):
 
             asyncio.run(old_style_coro())
         """)
-        assert_python_ok("-c", code, PYTHONASYNCIODEBUG="1")
+
+        assert_python_ok("-Wignore::DeprecationWarning", "-c", code,
+                         PYTHONASYNCIODEBUG="1")
 
 
 if __name__ == '__main__':

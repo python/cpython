@@ -91,7 +91,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
 {
     PyObject *filename, *v;
     int ret, err;
-    PyCompilerFlags local_flags;
+    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     int nomem_count = 0;
 #ifdef Py_REF_DEBUG
     int show_ref_count = _PyInterpreterState_Get()->config.show_ref_count;
@@ -105,8 +105,6 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
 
     if (flags == NULL) {
         flags = &local_flags;
-        local_flags.cf_flags = 0;
-        local_flags.cf_feature_version = PY_MINOR_VERSION;
     }
     v = _PySys_GetObjectId(&PyId_ps1);
     if (v == NULL) {
@@ -799,7 +797,7 @@ print_exception(PyObject *f, PyObject *value)
             Py_DECREF(value);
             value = message;
 
-            line = PyUnicode_FromFormat("  File \"%U\", line %d\n",
+            line = PyUnicode_FromFormat("  File \"%S\", line %d\n",
                                           filename, lineno);
             Py_DECREF(filename);
             if (line != NULL) {
@@ -1283,10 +1281,7 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
 struct symtable *
 Py_SymtableStringObject(const char *str, PyObject *filename, int start)
 {
-    PyCompilerFlags flags;
-
-    flags.cf_flags = 0;
-    flags.cf_feature_version = PY_MINOR_VERSION;
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
     return _Py_SymtableStringObjectFlags(str, filename, start, &flags);
 }
 
@@ -1331,7 +1326,7 @@ PyParser_ASTFromStringObject(const char *s, PyObject *filename, int start,
                              PyCompilerFlags *flags, PyArena *arena)
 {
     mod_ty mod;
-    PyCompilerFlags localflags;
+    PyCompilerFlags localflags = _PyCompilerFlags_INIT;
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
     if (flags && flags->cf_feature_version < 7)
@@ -1341,8 +1336,6 @@ PyParser_ASTFromStringObject(const char *s, PyObject *filename, int start,
                                          &_PyParser_Grammar, start, &err,
                                          &iflags);
     if (flags == NULL) {
-        localflags.cf_flags = 0;
-        localflags.cf_feature_version = PY_MINOR_VERSION;
         flags = &localflags;
     }
     if (n) {
@@ -1379,7 +1372,7 @@ PyParser_ASTFromFileObject(FILE *fp, PyObject *filename, const char* enc,
                            PyArena *arena)
 {
     mod_ty mod;
-    PyCompilerFlags localflags;
+    PyCompilerFlags localflags = _PyCompilerFlags_INIT;
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
 
@@ -1387,8 +1380,6 @@ PyParser_ASTFromFileObject(FILE *fp, PyObject *filename, const char* enc,
                                        &_PyParser_Grammar,
                                        start, ps1, ps2, &err, &iflags);
     if (flags == NULL) {
-        localflags.cf_flags = 0;
-        localflags.cf_feature_version = PY_MINOR_VERSION;
         flags = &localflags;
     }
     if (n) {

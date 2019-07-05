@@ -500,7 +500,7 @@ ABC hierarchy::
     packages or a module).
 
     Loaders that wish to support resource reading are expected to
-    provide a method called ``get_resource_loader(fullname)`` which
+    provide a method called ``get_resource_reader(fullname)`` which
     returns an object implementing this ABC's interface. If the module
     specified by fullname is not a package, this method should return
     :const:`None`. An object compatible with this ABC should only be

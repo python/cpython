@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
+    <__Python_Props_Imported>true</__Python_Props_Imported>
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <!--
@@ -10,6 +11,7 @@
 
     We set BasePlatformToolset for ICC's benefit, it's otherwise ignored.
     -->
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '16.0' or '$(VisualStudioVersion)' == '16.0')">v142</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '15.0' or '$(VisualStudioVersion)' == '15.0')">v141</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath12)' != ''">v120</BasePlatformToolset>
@@ -54,14 +56,14 @@
     <ExternalsDir>$(EXTERNALS_DIR)</ExternalsDir>
     <ExternalsDir Condition="$(ExternalsDir) == ''">$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals`))</ExternalsDir>
     <ExternalsDir Condition="!HasTrailingSlash($(ExternalsDir))">$(ExternalsDir)\</ExternalsDir>
-    <sqlite3Dir>$(ExternalsDir)sqlite-3.21.0.0\</sqlite3Dir>
+    <sqlite3Dir>$(ExternalsDir)sqlite-3.28.0.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
     <libffiDir>$(ExternalsDir)libffi\</libffiDir>
     <libffiOutDir>$(ExternalsDir)libffi\$(ArchName)\</libffiOutDir>
     <libffiIncludeDir>$(libffiOutDir)include</libffiIncludeDir>
-    <opensslDir>$(ExternalsDir)openssl-1.1.1b\</opensslDir>
-    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1b\$(ArchName)\</opensslOutDir>
+    <opensslDir>$(ExternalsDir)openssl-1.1.1c\</opensslDir>
+    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1c\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     <zlibDir>$(ExternalsDir)\zlib-1.2.11\</zlibDir>
@@ -79,6 +81,9 @@
     
     <!-- Full path of the resulting python.exe binary -->
     <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)python$(PyDebugExt).exe</PythonExe>
+
+    <!-- Include Tkinter by default -->
+    <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Platform)'=='ARM'" Label="ArmConfiguration">
@@ -214,6 +219,7 @@
     <Message Importance="high" Text="PythonVersionNumber: $(PythonVersionNumber)" />
     <Message Importance="high" Text="PythonVersion:       $(PythonVersion)" />
     <Message Importance="high" Text="PythonVersionHex:    0x$([System.UInt32]::Parse($(PythonVersionHex)).ToString(`X08`))" />
+    <Message Importance="high" Text="PythonVersionUnique: $(MajorVersionNumber).$(MinorVersionNumber).$(Field3Value)" />
     <Message Importance="high" Text="Field3Value:         $(Field3Value)" />
     <Message Importance="high" Text="SysWinVer:           $(SysWinVer)" />
     <Message Importance="high" Text="PyDllName:           $(PyDllName)" />

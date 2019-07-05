@@ -301,7 +301,7 @@ class _TestProcess(BaseTestCase):
             target=self._test_create_grandchild_process, args=(wconn, ))
         p.start()
 
-        if not rconn.poll(timeout=5):
+        if not rconn.poll(timeout=60):
             raise AssertionError("Could not communicate with child process")
         parent_process_status = rconn.recv()
         self.assertEqual(parent_process_status, "alive")
@@ -309,7 +309,7 @@ class _TestProcess(BaseTestCase):
         p.terminate()
         p.join()
 
-        if not rconn.poll(timeout=5):
+        if not rconn.poll(timeout=60):
             raise AssertionError("Could not communicate with child process")
         parent_process_status = rconn.recv()
         self.assertEqual(parent_process_status, "not alive")
@@ -318,7 +318,7 @@ class _TestProcess(BaseTestCase):
     def _test_create_grandchild_process(cls, wconn):
         p = cls.Process(target=cls._test_report_parent_status, args=(wconn, ))
         p.start()
-        time.sleep(100)
+        time.sleep(300)
 
     @classmethod
     def _test_report_parent_status(cls, wconn):
@@ -5010,12 +5010,21 @@ class TestResourceTracker(unittest.TestCase):
                 _resource_unlink(name1, rtype)
                 p.terminate()
                 p.wait()
-                time.sleep(2.0)
-                with self.assertRaises(OSError) as ctx:
-                    _resource_unlink(name2, rtype)
-                # docs say it should be ENOENT, but OSX seems to give EINVAL
-                self.assertIn(
-                    ctx.exception.errno, (errno.ENOENT, errno.EINVAL))
+
+                deadline = time.monotonic() + 60
+                while time.monotonic() < deadline:
+                    time.sleep(.5)
+                    try:
+                        _resource_unlink(name2, rtype)
+                    except OSError as e:
+                        # docs say it should be ENOENT, but OSX seems to give
+                        # EINVAL
+                        self.assertIn(e.errno, (errno.ENOENT, errno.EINVAL))
+                        break
+                else:
+                    raise AssertionError(
+                        f"A {rtype} resource was leaked after a process was "
+                        f"abruptly terminated.")
                 err = p.stderr.read().decode('utf-8')
                 p.stderr.close()
                 expected = ('resource_tracker: There appear to be 2 leaked {} '
@@ -5642,6 +5651,9 @@ def install_tests_in_module_dict(remote_globs, start_method):
         if need_sleep:
             time.sleep(0.5)
         multiprocessing.process._cleanup()
+        # bpo-37421: Explicitly call _run_finalizers() to remove immediately
+        # temporary directories created by multiprocessing.util.get_temp_dir().
+        multiprocessing.util._run_finalizers()
         test.support.gc_collect()
 
     remote_globs['setUpModule'] = setUpModule
