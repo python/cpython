@@ -161,6 +161,9 @@ struct compiler {
     int c_optimize;              /* optimization level */
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
+    int c_emit_bytecode;         /* The compiler won't emmit any bytecode
+                                    if this flag is false. This can be used
+                                    to visit nodes to check only errors. */
 
     PyObject *c_const_cache;     /* Python dict holding all constants,
                                     including names tuple */
@@ -340,6 +343,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_flags = flags;
     c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
     c.c_nestlevel = 0;
+    c.c_emit_bytecode = 1;
 
     if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
         goto finally;
@@ -1152,6 +1156,9 @@ compiler_addop(struct compiler *c, int opcode)
     struct instr *i;
     int off;
     assert(!HAS_ARG(opcode));
+    if (!c->c_emit_bytecode) {
+        return 1;
+    }
     off = compiler_next_instr(c, c->u->u_curblock);
     if (off < 0)
         return 0;
@@ -1359,6 +1366,10 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
     struct instr *i;
     int off;
 
+    if (!c->c_emit_bytecode) {
+        return 1;
+    }
+
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
 
@@ -1384,6 +1395,10 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 {
     struct instr *i;
     int off;
+
+    if (!c->c_emit_bytecode) {
+        return 1;
+    }
 
     assert(HAS_ARG(opcode));
     assert(b != NULL);
@@ -1517,6 +1532,17 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
             return 0; \
         } \
     } \
+}
+
+/* These macros allows to check only for errors and not emmit bytecode
+ * while visiting nodes.
+*/
+
+#define BEGIN_DO_NOT_EMIT_BYTECODE { \
+    c->c_emit_bytecode = 0;
+
+#define END_DO_NOT_EMIT_BYTECODE \
+    c->c_emit_bytecode = 1; \
 }
 
 /* Search if variable annotations are present statically in a block. */
@@ -2546,12 +2572,18 @@ compiler_if(struct compiler *c, stmt_ty s)
         return 0;
 
     constant = expr_constant(s->v.If.test);
-    /* constant = 0: "if 0" Leave the optimizations to
-     * the pephole optimizer to check for syntax errors
-     * in the block.
+    /* constant = 0: "if 0"
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
-    if (constant == 1) {
+    if (constant == 0) {
+        if (s->v.If.orelse) {
+            VISIT_SEQ(c, stmt, s->v.If.orelse);
+        } else{
+            BEGIN_DO_NOT_EMIT_BYTECODE
+            VISIT_SEQ(c, stmt, s->v.If.body);
+            END_DO_NOT_EMIT_BYTECODE
+        }
+    } else if (constant == 1) {
         VISIT_SEQ(c, stmt, s->v.If.body);
     } else {
         if (asdl_seq_LEN(s->v.If.orelse)) {

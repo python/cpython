@@ -697,6 +697,19 @@ if 1:
         # complex statements.
         compile("if a: b\n" * 200000, "<dummy>", "exec")
 
+    # Multiple users rely on the fact that CPython does not generate
+    # bytecode for dead code blocks. See bpo-37500 for more context.
+    @support.cpython_only
+    def test_dead_blocks_do_not_generate_bytecode(self):
+        def unused_block():
+            if 0:
+                return 42
+        opcodes = list(dis.get_instructions(unused_block))
+        self.assertEqual(2, len(opcodes))
+        self.assertEqual('LOAD_CONST', opcodes[0].opname)
+        self.assertEqual(None, opcodes[0].argval)
+        self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
