@@ -218,7 +218,7 @@ class LineNumbers(BaseSideBar):
 
     def update_sidebar_text_font(self, event=''):
         """Update the font when the editor window's font changes."""
-        colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'context')
+        colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'linenumber')
         bg = colors['background']
         fg = colors['foreground']
         self.sidebar_text.tag_config('linenumber', justify=tk.RIGHT)

@@ -336,6 +336,10 @@ class IdleConf:
                 'hit-background':'#000000',
                 'error-foreground':'#ffffff',
                 'error-background':'#000000',
+                'context-foreground':'#000000',
+                'context-background':'#ffffff',
+                'linenumber-foreground':'#000000',
+                'linenumber-background':'#ffffff',
                 #cursor (only foreground can be set)
                 'cursor-foreground':'#000000',
                 #shell window
@@ -345,8 +349,6 @@ class IdleConf:
                 'stderr-background':'#ffffff',
                 'console-foreground':'#000000',
                 'console-background':'#ffffff',
-                'context-foreground':'#000000',
-                'context-background':'#ffffff',
                 }
         for element in theme:
             if not cfgParser.has_option(themeName, element):

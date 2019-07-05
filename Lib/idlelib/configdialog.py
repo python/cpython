@@ -817,6 +817,7 @@ class HighPage(Frame):
             'Shell Error Text': ('error', '12'),
             'Shell Stdout Text': ('stdout', '13'),
             'Shell Stderr Text': ('stderr', '14'),
+            'Line Number': ('linenumber', '16'),
             }
         self.builtin_name = tracers.add(
                 StringVar(self), self.var_changed_builtin_name)
@@ -864,6 +865,11 @@ class HighPage(Frame):
             ('stderr', 'stderr'), ('\n\n', 'normal'))
         for texttag in text_and_tags:
             text.insert(END, texttag[0], texttag[1])
+        n_lines = len(text.get('1.0', END).splitlines())
+        for lineno in range(1, n_lines + 1):
+            text.insert(f'{lineno}.0',
+                        f'{lineno:{len(str(n_lines))}d} ',
+                        'linenumber')
         for element in self.theme_elements:
             def tem(event, elem=element):
                 # event.widget.winfo_top_level().highlight_target.set(elem)
