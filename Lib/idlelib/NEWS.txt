@@ -3,6 +3,11 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-26806: To compensate for stack frames added by IDLE and avoid
+possible problems with low recursion limits, add 30 to limits in the
+user code execution process.  Subtract 30 when reporting recursion
+limits to make this addition mostly transparent.
+
 bpo-37325: Fix tab focus traversal order for help source and custom
 run dialogs.
 
