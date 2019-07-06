@@ -1600,7 +1600,7 @@ features:
    descriptor must refer to an opened directory, not an open file.
 
    This function can raise :exc:`OSError` subclasses such as
-   :exc:`FileNotFoundError`, :exc:`PermissionError`, and exc:`NotADirectoryError`.
+   :exc:`FileNotFoundError`, :exc:`PermissionError`, and :exc:`NotADirectoryError`.
 
    .. versionadded:: 3.3
       Added support for specifying *path* as a file descriptor
