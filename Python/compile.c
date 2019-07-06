@@ -161,9 +161,10 @@ struct compiler {
     int c_optimize;              /* optimization level */
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
-    int c_emit_bytecode;         /* The compiler won't emmit any bytecode
+    int c_emit_bytecode;         /* The compiler won't emit any bytecode
                                     if this flag is false. This can be used
-                                    to visit nodes to check only errors. */
+                                    to temporarily visit nodes without emitting
+                                    bytecode to check only errors. */
 
     PyObject *c_const_cache;     /* Python dict holding all constants,
                                     including names tuple */
