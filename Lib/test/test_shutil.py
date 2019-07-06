@@ -2673,15 +2673,27 @@ class LinkSymlink(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, '2 positional'):
                     method(self.src_file1, self.dst_file1, True)
 
+    @unittest.mock.patch('os.link', side_effect=os.link)
     @unittest.mock.patch('os.symlink', side_effect=os.symlink)
-    def test_symlink_passes_target_is_directory(self, mock_os_symlink):
-        for boolean in [True, False]:
-            mock_os_symlink.reset_mock()
-            shutil.symlink(self.srcs, self.dst_dir1, overwrite=True,
-                           target_is_directory=boolean)
-            self.assertEqual(mock_os_symlink.call_count, len(self.srcs))
-            for call in mock_os_symlink.call_args_list:
-                self.assertEqual(call[1]['target_is_directory'], boolean)
+    def test_symlink_passes_target_is_directory(self, mock_link, mock_symlink):
+
+        patch_link = unittest.mock.patch('os.link', side_effect=os.link)
+        patch_symlink = unittest.mock.patch('os.symlink', side_effect=os.symlink)
+
+        # tests = {'link': (shutil.link, mock_link, 'follow_symlinks'),
+        #          'symlink': (shutil.symlink, mock_symlink, 'target_is_directory')}
+        tests = {'link': (shutil.link, patch_link, 'follow_symlinks'),
+                 'symlink': (shutil.symlink, patch_symlink, 'target_is_directory')}
+        self.srcs = (self.src_file1, self.src_file2)
+        for method_name, (method, patched, arg) in tests.items():
+            with patched as mock, self.subTest(method_name=method_name):
+                for value in (True, False):
+                    mock.reset_mock()
+                    method(self.srcs, self.dst_dir1, overwrite=True,
+                           **{arg: value})
+                    self.assertEqual(mock.call_count, len(self.srcs))
+                    for call in mock.call_args_list:
+                        self.assertEqual(call[1][arg], value)
 
     # Single source
 
