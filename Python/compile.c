@@ -2580,12 +2580,11 @@ compiler_if(struct compiler *c, stmt_ty s)
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
     if (constant == 0) {
+        BEGIN_DO_NOT_EMIT_BYTECODE
+        VISIT_SEQ(c, stmt, s->v.If.body);
+        END_DO_NOT_EMIT_BYTECODE
         if (s->v.If.orelse) {
             VISIT_SEQ(c, stmt, s->v.If.orelse);
-        } else{
-            BEGIN_DO_NOT_EMIT_BYTECODE
-            VISIT_SEQ(c, stmt, s->v.If.body);
-            END_DO_NOT_EMIT_BYTECODE
         }
     } else if (constant == 1) {
         VISIT_SEQ(c, stmt, s->v.If.body);
@@ -2703,12 +2702,11 @@ compiler_while(struct compiler *c, stmt_ty s)
     int constant = expr_constant(s->v.While.test);
 
     if (constant == 0) {
+        BEGIN_DO_NOT_EMIT_BYTECODE
+        VISIT_SEQ(c, stmt, s->v.While.body);
+        END_DO_NOT_EMIT_BYTECODE
         if (s->v.While.orelse) {
             VISIT_SEQ(c, stmt, s->v.While.orelse);
-        } else {
-            BEGIN_DO_NOT_EMIT_BYTECODE
-            VISIT_SEQ(c, stmt, s->v.While.body);
-            END_DO_NOT_EMIT_BYTECODE
         }
         return 1;
     }
