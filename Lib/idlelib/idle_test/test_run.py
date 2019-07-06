@@ -6,6 +6,8 @@ from unittest import mock
 from test.support import captured_stderr
 
 import io
+import sys
+
 
 class RunTest(unittest.TestCase):
 
@@ -258,6 +260,37 @@ class PseudeOutputFilesTest(unittest.TestCase):
         self.assertEqual(shell.written, [('test', 'stdout')])
         f.close()
         self.assertRaises(TypeError, f.close, 1)
+
+
+class TestSysRecursionLimitWrappers(unittest.TestCase):
+
+    def test_bad_setrecursionlimit_calls(self):
+        run.install_recursionlimit_wrappers()
+        self.addCleanup(run.uninstall_recursionlimit_wrappers)
+        f = sys.setrecursionlimit
+        self.assertRaises(TypeError, f, limit=100)
+        self.assertRaises(TypeError, f, 100, 1000)
+        self.assertRaises(ValueError, f, 0)
+
+    def test_roundtrip(self):
+        run.install_recursionlimit_wrappers()
+        self.addCleanup(run.uninstall_recursionlimit_wrappers)
+
+        # check that setting the recursion limit works
+        orig_reclimit = sys.getrecursionlimit()
+        self.addCleanup(sys.setrecursionlimit, orig_reclimit)
+        sys.setrecursionlimit(orig_reclimit + 3)
+
+        # check that the new limit is returned by sys.getrecursionlimit()
+        new_reclimit = sys.getrecursionlimit()
+        self.assertEqual(new_reclimit, orig_reclimit + 3)
+
+    def test_default_recursion_limit_preserved(self):
+        orig_reclimit = sys.getrecursionlimit()
+        run.install_recursionlimit_wrappers()
+        self.addCleanup(run.uninstall_recursionlimit_wrappers)
+        new_reclimit = sys.getrecursionlimit()
+        self.assertEqual(new_reclimit, orig_reclimit)
 
 
 if __name__ == '__main__':
