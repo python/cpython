@@ -352,7 +352,7 @@ def install_recursionlimit_wrappers():
 
 def uninstall_recursionlimit_wrappers():
     """Uninstall the recursion limit wrappers from the sys module.
-    
+
     IDLE only uses this for tests. Users can import run and call
     this to remove the wrapping.
     """
