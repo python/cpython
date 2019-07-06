@@ -1177,6 +1177,9 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 {
     PyObject *v;
     Py_ssize_t arg;
+    if (!c->c_emit_bytecode) {
+        return 1;
+    }
 
     v = PyDict_GetItemWithError(dict, o);
     if (!v) {
@@ -2585,6 +2588,11 @@ compiler_if(struct compiler *c, stmt_ty s)
         }
     } else if (constant == 1) {
         VISIT_SEQ(c, stmt, s->v.If.body);
+        if (s->v.If.orelse) {
+            BEGIN_DO_NOT_EMIT_BYTECODE
+            VISIT_SEQ(c, stmt, s->v.If.orelse);
+            END_DO_NOT_EMIT_BYTECODE
+        }
     } else {
         if (asdl_seq_LEN(s->v.If.orelse)) {
             next = compiler_new_block(c);
@@ -2694,8 +2702,13 @@ compiler_while(struct compiler *c, stmt_ty s)
     int constant = expr_constant(s->v.While.test);
 
     if (constant == 0) {
-        if (s->v.While.orelse)
+        if (s->v.While.orelse) {
             VISIT_SEQ(c, stmt, s->v.While.orelse);
+        } else {
+            BEGIN_DO_NOT_EMIT_BYTECODE
+            VISIT_SEQ(c, stmt, s->v.While.body);
+            END_DO_NOT_EMIT_BYTECODE
+        }
         return 1;
     }
     loop = compiler_new_block(c);
