@@ -24,7 +24,7 @@ from idlelib import iomenu  # encoding
 from idlelib import rpc  # multiple objects
 from idlelib import stackviewer  # StackTreeItem
 import __main__
-
+    
 import tkinter  # Use tcl and, if startup fails, messagebox.
 if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
     # Undo modifications of tkinter by idlelib imports; see bpo-25507.
@@ -354,7 +354,7 @@ def uninstall_recursionlimit_wrappers():
     """Uninstall the recursion limit wrappers from the sys module.
     
     IDLE only uses this for tests. Users can import run and call
-    this to removes the wrapping.
+    this to remove the wrapping.
     """
     if (
             getattr(sys.setrecursionlimit, '__wrapped__', None) and
