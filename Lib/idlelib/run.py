@@ -24,7 +24,7 @@ from idlelib import iomenu  # encoding
 from idlelib import rpc  # multiple objects
 from idlelib import stackviewer  # StackTreeItem
 import __main__
-    
+
 import tkinter  # Use tcl and, if startup fails, messagebox.
 if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
     # Undo modifications of tkinter by idlelib imports; see bpo-25507.
