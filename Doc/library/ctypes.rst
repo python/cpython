@@ -565,7 +565,7 @@ Here is a simple example of a POINT structure, which contains two integers named
    >>> POINT(1, 2, 3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: too many initializers
+   TypeError: too many initializers
    >>>
 
 You can, however, build much more complicated structures.  A structure can
