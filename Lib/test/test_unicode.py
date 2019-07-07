@@ -2833,7 +2833,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_asutf8(nonbmp), b'\xf4\x8f\xbf\xbf')
         self.assertRaises(UnicodeEncodeError, unicode_asutf8, 'a\ud800b\udfffc')
 
-    # Test PyUnicode_AsUTF8()
+    # Test PyUnicode_AsUTF8AndSize()
     @support.cpython_only
     def test_asutf8andsize(self):
         from _testcapi import unicode_asutf8andsize
