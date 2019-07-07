@@ -1596,7 +1596,7 @@ features:
 
    Change the current working directory to *path*.
 
-   This function can support :ref:`specifying a file descriptor <path_fd>`. The
+   This function can support :ref:`specifying a file descriptor <path_fd>`.  The
    descriptor must refer to an opened directory, not an open file.
 
    This function can raise :exc:`OSError` subclasses such as
