@@ -179,16 +179,16 @@ class LineNumberTest(unittest.TestCase):
         self.assert_sidebar_n_lines(99)
         self.assertEqual(get_width(), 2)
 
-        self.text.delete('50.0', 'end')
+        self.text.delete('50.0 -1c', 'end -1c')
         self.assert_sidebar_n_lines(49)
         self.assertEqual(get_width(), 2)
 
-        self.text.delete('5.0', 'end')
+        self.text.delete('5.0 -1c', 'end -1c')
         self.assert_sidebar_n_lines(4)
         self.assertEqual(get_width(), 1)
 
         # note: Text widgets always keep a single '\n' character at the end
-        self.text.delete('1.0', 'end')
+        self.text.delete('1.0', 'end -1c')
         self.assert_sidebar_n_lines(1)
         self.assertEqual(get_width(), 1)
 
