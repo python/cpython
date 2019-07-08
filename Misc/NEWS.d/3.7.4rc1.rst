@@ -131,7 +131,7 @@ ensure GC-ed objects are aligned properly.  Patch by Inada Naoki.
 
 A :exc:`SyntaxError` is now raised if a code blocks that will be optimized
 away (e.g. if conditions that are always false) contains syntax errors.
-Patch by Pablo Galindo.
+Patch by Pablo Galindo. (Reverted in 3.7.4 final by :issue:`37500`.)
 
 ..
 
