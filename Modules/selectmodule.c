@@ -1634,7 +1634,7 @@ select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
 {
     _Py_IDENTIFIER(close);
 
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_close, NULL);
+    return _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_close);
 }
 
 static PyGetSetDef pyepoll_getsetlist[] = {

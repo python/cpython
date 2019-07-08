@@ -203,7 +203,7 @@ static PyObject* module_register_converter(PyObject* self, PyObject* args)
     }
 
     /* convert the name to upper case */
-    name = _PyObject_CallMethodId(orig_name, &PyId_upper, NULL);
+    name = _PyObject_CallMethodIdNoArgs(orig_name, &PyId_upper);
     if (!name) {
         goto error;
     }

@@ -539,7 +539,7 @@ _PyImport_Cleanup(PyThreadState *tstate)
     }
     else {
         _Py_IDENTIFIER(clear);
-        if (_PyObject_CallMethodId(modules, &PyId_clear, "") == NULL) {
+        if (_PyObject_CallMethodIdNoArgs(modules, &PyId_clear) == NULL) {
             PyErr_WriteUnraisable(NULL);
         }
     }
