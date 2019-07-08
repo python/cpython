@@ -168,6 +168,9 @@ class BitFieldTest(unittest.TestCase):
                         ("b", c_short, 14),
                         ("c", c_short, 1)]
         self.assertEqual(sizeof(X), sizeof(c_short))
+        self.assertEqual(X.a.size, 1)
+        self.assertEqual(X.b.size, 14)
+        self.assertEqual(X.c.size, 1)
 
         class X(Structure):
             _fields_ = [("a", c_short, 1),
@@ -179,6 +182,10 @@ class BitFieldTest(unittest.TestCase):
         self.assertEqual(X.a1.offset, sizeof(c_short))
         self.assertEqual(X.b.offset, sizeof(c_short)*2)
         self.assertEqual(X.c.offset, sizeof(c_short)*2)
+        self.assertEqual(X.a.size, 1)
+        self.assertEqual(X.a1.size, sizeof(c_short))
+        self.assertEqual(X.b.size, 14)
+        self.assertEqual(X.c.size, 1)
 
         class X(Structure):
             _fields_ = [("a", c_short, 3),
@@ -188,6 +195,9 @@ class BitFieldTest(unittest.TestCase):
         self.assertEqual(X.a.offset, sizeof(c_short)*0)
         self.assertEqual(X.b.offset, sizeof(c_short)*1)
         self.assertEqual(X.c.offset, sizeof(c_short)*2)
+        self.assertEqual(X.a.size, 3)
+        self.assertEqual(X.b.size, 14)
+        self.assertEqual(X.c.size, 14)
 
 
     def get_except(self, func, *args, **kw):
