@@ -1,0 +1,19 @@
+.. bpo: 37500
+.. date: 2019-07-08-12-28-26
+.. nonce: 2OjTir
+.. release date: 2019-07-08
+.. section: Core and Builtins
+
+Due to unintended side effects, revert the change introduced by
+:issue:`1875` in 3.7.4rc1 to check for syntax errors in dead conditional
+code blocks.
+
+..
+
+.. bpo: 37149
+.. date: 2019-07-06-02-19-02
+.. nonce: NumHn3
+.. section: Documentation
+
+Replace the dead link to the Tkinter 8.5 reference by John Shipman, New
+Mexico Tech, with a link to the archive.org copy.
