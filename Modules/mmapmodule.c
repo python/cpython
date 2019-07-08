@@ -1528,6 +1528,9 @@ PyInit_mmap(void)
     setint(dict, "MAP_ANON", MAP_ANONYMOUS);
     setint(dict, "MAP_ANONYMOUS", MAP_ANONYMOUS);
 #endif
+#ifdef MAP_CONCEAL
+    setint(dict, "MAP_CONCEAL", MAP_CONCEAL);
+#endif
 
     setint(dict, "PAGESIZE", (long)my_getpagesize());
 
@@ -1554,9 +1557,6 @@ PyInit_mmap(void)
 #endif
 #ifdef MADV_DONTNEED
     setint(dict, "MADV_DONTNEED", MADV_DONTNEED);
-#endif
-#ifdef MADV_CONCEAL
-    setint(dict, "MADV_CONCEAL", MADV_CONCEAL);
 #endif
 
     // Linux-specific advice values
