@@ -1,3 +1,0 @@
-Due to unintended side effects, revert the change introduced by
-:issue:`1875` in 3.7.4rc1 to check for syntax errors in dead conditional
-code blocks.
