@@ -3974,7 +3974,7 @@ _build_result(PyObject *result, PyObject *callargs,
             _Py_IDENTIFIER(__ctypes_from_outparam__);
 
             v = PyTuple_GET_ITEM(callargs, i);
-            v = _PyObject_CallMethodId(v, &PyId___ctypes_from_outparam__, NULL);
+            v = _PyObject_CallMethodIdNoArgs(v, &PyId___ctypes_from_outparam__);
             if (v == NULL || numretvals == 1) {
                 Py_DECREF(callargs);
                 return v;

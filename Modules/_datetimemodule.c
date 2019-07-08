@@ -1659,7 +1659,7 @@ time_time(void)
     if (time != NULL) {
         _Py_IDENTIFIER(time);
 
-        result = _PyObject_CallMethodId(time, &PyId_time, NULL);
+        result = _PyObject_CallMethodIdNoArgs(time, &PyId_time);
         Py_DECREF(time);
     }
     return result;
@@ -1918,7 +1918,7 @@ get_float_as_integer_ratio(PyObject *floatobj)
     PyObject *ratio;
 
     assert(floatobj && PyFloat_Check(floatobj));
-    ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
+    ratio = _PyObject_CallMethodIdNoArgs(floatobj, &PyId_as_integer_ratio);
     if (ratio == NULL) {
         return NULL;
     }
@@ -3162,7 +3162,7 @@ date_isoformat(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 date_str(PyDateTime_Date *self)
 {
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, NULL);
+    return _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_isoformat);
 }
 
 
@@ -3188,7 +3188,7 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
                                       &format))
         return NULL;
 
-    tuple = _PyObject_CallMethodId((PyObject *)self, &PyId_timetuple, NULL);
+    tuple = _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_timetuple);
     if (tuple == NULL)
         return NULL;
     result = wrap_strftime((PyObject *)self, format, tuple,
@@ -4175,7 +4175,7 @@ time_repr(PyDateTime_Time *self)
 static PyObject *
 time_str(PyDateTime_Time *self)
 {
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, NULL);
+    return _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_isoformat);
 }
 
 static PyObject *

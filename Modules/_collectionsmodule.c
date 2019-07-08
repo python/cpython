@@ -2039,7 +2039,7 @@ defdict_reduce(defdictobject *dd, PyObject *Py_UNUSED(ignored))
         args = PyTuple_Pack(1, dd->default_factory);
     if (args == NULL)
         return NULL;
-    items = _PyObject_CallMethodId((PyObject *)dd, &PyId_items, NULL);
+    items = _PyObject_CallMethodIdNoArgs((PyObject *)dd, &PyId_items);
     if (items == NULL) {
         Py_DECREF(args);
         return NULL;

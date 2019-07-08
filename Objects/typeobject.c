@@ -4425,7 +4425,7 @@ _PyObject_GetItemsIter(PyObject *obj, PyObject **listitems,
         PyObject *items;
         _Py_IDENTIFIER(items);
 
-        items = _PyObject_CallMethodIdObjArgs(obj, &PyId_items, NULL);
+        items = _PyObject_CallMethodIdNoArgs(obj, &PyId_items);
         if (items == NULL) {
             Py_CLEAR(*listitems);
             return -1;
