@@ -2906,7 +2906,7 @@ _curses_getwin(PyObject *module, PyObject *file)
     if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0)
         goto error;
 
-    data = _PyObject_CallMethodId(file, &PyId_read, NULL);
+    data = _PyObject_CallMethodIdNoArgs(file, &PyId_read);
     if (data == NULL)
         goto error;
     if (!PyBytes_Check(data)) {

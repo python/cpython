@@ -2221,7 +2221,7 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
     PyObject *it, *result, *meth_output;
 
     assert(o != NULL);
-    meth_output = _PyObject_CallMethodId(o, meth_id, NULL);
+    meth_output = _PyObject_CallMethodIdNoArgs(o, meth_id);
     if (meth_output == NULL || PyList_CheckExact(meth_output)) {
         return meth_output;
     }

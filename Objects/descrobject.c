@@ -1019,28 +1019,28 @@ static PyObject *
 mappingproxy_keys(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(keys);
-    return _PyObject_CallMethodId(pp->mapping, &PyId_keys, NULL);
+    return _PyObject_CallMethodIdNoArgs(pp->mapping, &PyId_keys);
 }
 
 static PyObject *
 mappingproxy_values(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(values);
-    return _PyObject_CallMethodId(pp->mapping, &PyId_values, NULL);
+    return _PyObject_CallMethodIdNoArgs(pp->mapping, &PyId_values);
 }
 
 static PyObject *
 mappingproxy_items(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(items);
-    return _PyObject_CallMethodId(pp->mapping, &PyId_items, NULL);
+    return _PyObject_CallMethodIdNoArgs(pp->mapping, &PyId_items);
 }
 
 static PyObject *
 mappingproxy_copy(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(copy);
-    return _PyObject_CallMethodId(pp->mapping, &PyId_copy, NULL);
+    return _PyObject_CallMethodIdNoArgs(pp->mapping, &PyId_copy);
 }
 
 /* WARNING: mappingproxy methods must not give access

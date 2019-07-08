@@ -3305,7 +3305,7 @@ save_dict(PicklerObject *self, PyObject *obj)
         } else {
             _Py_IDENTIFIER(items);
 
-            items = _PyObject_CallMethodId(obj, &PyId_items, NULL);
+            items = _PyObject_CallMethodIdNoArgs(obj, &PyId_items);
             if (items == NULL)
                 goto error;
             iter = PyObject_GetIter(items);
