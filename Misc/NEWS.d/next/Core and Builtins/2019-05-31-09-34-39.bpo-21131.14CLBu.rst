@@ -1,0 +1,3 @@
+Fix stack overflow in signal handlers managed by :mod:`faulthandler` -
+add new :c:func:`_PyThread_preferred_stack_size` and use this to find an
+appropriate stack size in preference to SIGSTKSZ.
