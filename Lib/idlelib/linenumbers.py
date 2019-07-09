@@ -167,6 +167,18 @@ class LineNumbers(BaseSideBar):
                           ):
                 bind_mouse_event(event)
 
+        start_line = None
+        def b1_mousedown_handler(event):
+            # select the entire line
+            lineno = self.editwin.getlineno(f"@0,{event.y}")
+            self.text.tag_remove("sel", "1.0", "end")
+            self.text.tag_add("sel", f"{lineno}.0", f"{lineno+1}.0")
+
+            # remember this line in case this is the beginning of dragging
+            nonlocal start_line
+            start_line = lineno
+        self.sidebar_text.bind('<Button-1>', b1_mousedown_handler)
+
         # These are set by b1_motion_handler() and read by selection_handler();
         # see below.  last_y is passed this way since the mouse Y-coordinate
         # is not available on selection event objects.  last_yview is passed
@@ -187,6 +199,12 @@ class LineNumbers(BaseSideBar):
             if not 0 <= last_y <= self.sidebar_text.winfo_height():
                 self.text.yview_moveto(last_yview[0])
             self.redirect_mousebutton_event(event, '<B1-Motion>')
+
+            # update the selection
+            lineno = self.editwin.getlineno(f"@0,{event.y}")
+            a, b = sorted([start_line, lineno])
+            self.text.tag_remove("sel", "1.0", "end")
+            self.text.tag_add("sel", f"{a}.0", f"{b+1}.0")
         self.sidebar_text.bind('<B1-Motion>', b1_motion_handler)
 
         # With mouse-drag scrolling fixed by the above, there is still an edge-
@@ -198,6 +216,12 @@ class LineNumbers(BaseSideBar):
             if yview != last_yview:
                 self.text.yview_moveto(yview[0])
                 self.text.event_generate('<B1-Motion>', x=0, y=last_y)
+
+                # update the selection
+                lineno = self.editwin.getlineno(f"@0,{last_y}")
+                a, b = sorted([start_line, lineno])
+                self.text.tag_remove("sel", "1.0", "end")
+                self.text.tag_add("sel", f"{a}.0", f"{b+1}.0")
         self.sidebar_text.bind('<<Selection>>', selection_handler)
 
     @property
