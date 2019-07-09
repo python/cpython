@@ -328,20 +328,23 @@ def install_recursionlimit_wrappers():
                 "recursion limit must be greater or equal than 1")
 
         return setrecursionlimit.__wrapped__(limit + RECURSIONLIMIT_DELTA)
-
-    setrecursionlimit.__doc__ += "\n\n" + textwrap.fill(textwrap.dedent(f"""\
-        This IDLE wrapper adds {RECURSIONLIMIT_DELTA} to prevent possible
-        uninterruptible loops.
-        """).strip())
+    if setrecursionlimit.__doc__ is not None:
+        setrecursionlimit.__doc__ += (
+            "\n\n" + textwrap.fill(textwrap.dedent(f"""\
+            This IDLE wrapper adds {RECURSIONLIMIT_DELTA} to prevent possible
+            uninterruptible loops.
+            """)))
 
     @functools.wraps(sys.getrecursionlimit)
     def getrecursionlimit():
         return getrecursionlimit.__wrapped__() - RECURSIONLIMIT_DELTA
 
-    getrecursionlimit.__doc__ += "\n\n" + textwrap.fill(textwrap.dedent(f"""\
-        This IDLE wrapper subtracts {RECURSIONLIMIT_DELTA} to compensate for
-        the {RECURSIONLIMIT_DELTA} IDLE adds when setting the limit.
-        """).strip())
+    if getrecursionlimit.__doc__ is not None:
+        getrecursionlimit.__doc__ += (
+            "\n\n" + textwrap.fill(textwrap.dedent(f"""\
+            This IDLE wrapper subtracts {RECURSIONLIMIT_DELTA} to compensate
+            for the {RECURSIONLIMIT_DELTA} IDLE adds when setting the limit.
+            """)))
 
     # add the delta to the default recursion limit, to compensate
     sys.setrecursionlimit(sys.getrecursionlimit() + RECURSIONLIMIT_DELTA)
