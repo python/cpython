@@ -3641,7 +3641,7 @@ set_maximum_version(PySSLContext *self, PyObject *arg, void *c)
 static PyObject *
 get_num_tickets(PySSLContext *self, void *c)
 {
-    return PyLong_FromLong(SSL_CTX_get_num_tickets(self->ctx));
+    return PyLong_FromSize_t(SSL_CTX_get_num_tickets(self->ctx));
 }
 
 static int
