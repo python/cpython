@@ -1081,6 +1081,39 @@ The :mod:`test.support` module defines the following functions:
    :exc:`PermissionError` is raised.
 
 
+.. function:: catch_threading_exception()
+
+   Context manager catching :class:`threading.Thread` exception using
+   :func:`threading.excepthook`.
+
+   Attributes set when an exception is catched:
+
+   * ``exc_type``
+   * ``exc_value``
+   * ``exc_traceback``
+   * ``thread``
+
+   See :func:`threading.excepthook` documentation.
+
+   These attributes are deleted at the context manager exit.
+
+   Usage::
+
+       with support.catch_threading_exception() as cm:
+           # code spawning a thread which raises an exception
+           ...
+
+           # check the thread exception, use cm attributes:
+           # exc_type, exc_value, exc_traceback, thread
+           ...
+
+       # exc_type, exc_value, exc_traceback, thread attributes of cm no longer
+       # exists at this point
+       # (to avoid reference cycles)
+
+   .. versionadded:: 3.8
+
+
 .. function:: catch_unraisable_exception()
 
    Context manager catching unraisable exception using
