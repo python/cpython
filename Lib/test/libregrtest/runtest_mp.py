@@ -13,7 +13,7 @@ from test import support
 
 from test.libregrtest.runtest import (
     runtest, INTERRUPTED, CHILD_ERROR, PROGRESS_MIN_TIME,
-    format_test_result, TestResult, is_failed)
+    format_test_result, TestResult, is_failed, TIMEOUT)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import format_duration
 
@@ -137,6 +137,13 @@ class MultiprocessThread(threading.Thread):
         popen.stdout.close()
         popen.stderr.close()
 
+    def time_result(self, test_name, error_type):
+        test_time = time.monotonic() - self.start_time
+        result = TestResult(test_name, error_type, test_time, None)
+        stdout = stderr = ''
+        err_msg = None
+        return result, stdout, stderr, err_msg
+
     def _runtest(self, test_name):
         try:
             self.start_time = time.monotonic()
@@ -154,7 +161,9 @@ class MultiprocessThread(threading.Thread):
                         raise ExitThread
 
                     try:
-                        stdout, stderr = popen.communicate()
+                        stdout, stderr = popen.communicate(timeout=self.ns.timeout)
+                    except subprocess.TimeoutExpired:
+                        result, stdout, stderr, err_msg = self.time_result(test_name, TIMEOUT)
                     except OSError:
                         if self._killed:
                             # kill() has been called: communicate() fails
@@ -191,8 +200,7 @@ class MultiprocessThread(threading.Thread):
                     err_msg = "Failed to parse worker JSON: %s" % exc
 
         if err_msg is not None:
-            test_time = time.monotonic() - self.start_time
-            result = TestResult(test_name, CHILD_ERROR, test_time, None)
+            result, stdout, stderr, err_msg = self.time_result(test_name, CHILD_ERROR)
 
         return MultiprocessResult(result, stdout, stderr, err_msg)
 

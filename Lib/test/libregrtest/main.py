@@ -14,7 +14,7 @@ from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
-    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
+    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN, TIMEOUT,
     PROGRESS_MIN_TIME, format_test_result, is_failed)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
@@ -114,6 +114,8 @@ class Regrtest:
             self.run_no_tests.append(test_name)
         elif ok == INTERRUPTED:
             self.interrupted = True
+        elif ok == TIMEOUT:
+            self.bad.append(test_name)
         else:
             raise ValueError("invalid test result: %r" % ok)
 
