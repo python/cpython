@@ -67,11 +67,11 @@ class LineNumberTest(unittest.TestCase):
         self.assert_sidebar_n_lines(4)
 
     def test_toggle_linenumbering(self):
-        self.assertEqual(self.linenumber.side, tk.LEFT)
+        self.assertEqual(self.linenumber.is_shown, True)
         self.linenumber.toggle_line_numbers_event(None)
-        self.assertEqual(self.linenumber.side, None)
+        self.assertEqual(self.linenumber.is_shown, False)
         self.linenumber.toggle_line_numbers_event(None)
-        self.assertEqual(self.linenumber.side, tk.LEFT)
+        self.assertEqual(self.linenumber.is_shown, True)
 
     def test_insert(self):
         self.text.insert('insert', 'foobar')
