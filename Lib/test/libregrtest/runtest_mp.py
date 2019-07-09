@@ -163,7 +163,12 @@ class MultiprocessThread(threading.Thread):
                     try:
                         stdout, stderr = popen.communicate(timeout=self.ns.timeout)
                     except subprocess.TimeoutExpired:
+                        if self._killed:
+                            # kill() has been called: communicate() fails
+                            # on reading closed stdout/stderr
+                            raise ExitThread
                         result, stdout, stderr, err_msg = self.time_result(test_name, TIMEOUT)
+                        raise
                     except OSError:
                         if self._killed:
                             # kill() has been called: communicate() fails
