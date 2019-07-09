@@ -200,11 +200,11 @@ class EditorWindow(object):
 
         self.set_status_bar()
         vbar['command'] = self.handle_yview
-        vbar.pack(side=RIGHT, fill=Y)
+        vbar.grid(row=1, column=2, sticky=NSEW)
         text['yscrollcommand'] = vbar.set
         text['font'] = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         text_frame.pack(side=LEFT, fill=BOTH, expand=1)
-        text.pack(side=TOP, fill=BOTH, expand=1)
+        text.grid(row=1, column=1, sticky=NSEW)
         text.focus_set()
 
         # usetabs true  -> literal tab characters are used by indent and

@@ -29,7 +29,7 @@ class BaseSideBar:
         self.text['yscrollcommand'] = self.redirect_yscroll_event
         self.update_sidebar_text_font()
 
-        self.side = None
+        self.is_shown = False
 
     def update_sidebar_text_font(self, event=''):
         """
@@ -38,26 +38,14 @@ class BaseSideBar:
         """
         pass
 
-    def show_sidebar(self, side):
-        """
-        side - Valid values are tk.LEFT, tk.RIGHT
-        """
-        if side not in {tk.LEFT, tk.RIGHT}:
-            raise ValueError(
-                'side must be one of: '
-                'tk.LEFT = {tk.LEFT!r}; '
-                'tk.RIGHT = {tk.RIGHT!r}')
-        if side != self.side:
-            try:
-                self.sidebar_text.pack(side=side, fill=tk.Y, before=self.text)
-            except tk.TclError:
-                self.sidebar_text.pack(side=side, fill=tk.Y)
-            self.side = side
+    def show_sidebar(self):
+        self.sidebar_text.grid(row=1, column=0, sticky=tk.NSEW)
+        self.is_shown = True
 
     def hide_sidebar(self):
-        if self.side is not None:
-            self.sidebar_text.pack_forget()
-            self.side = None
+        if self.is_shown is not None:
+            self.sidebar_text.grid_forget()
+            self.is_shown = False
 
     def redirect_yscroll_event(self, *args, **kwargs):
         """Redirect vertical scrolling to the main editor text widget.
@@ -224,16 +212,6 @@ class LineNumbers(BaseSideBar):
                 self.text.tag_add("sel", f"{a}.0", f"{b+1}.0")
         self.sidebar_text.bind('<<Selection>>', selection_handler)
 
-    @property
-    def is_shown(self):
-        return self.side is not None
-
-    @is_shown.setter
-    def is_shown(self, value):
-        if not isinstance(value, bool):
-            raise TypeError('is_shown value must be boolean')
-        self.side = tk.LEFT if value else None
-
     def update_sidebar_text_font(self, event=''):
         """Update the font when the editor window's font changes."""
         colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'linenumber')
@@ -247,7 +225,7 @@ class LineNumbers(BaseSideBar):
         )
 
     def toggle_line_numbers_event(self, event):
-        self.show_sidebar(tk.LEFT) if not self.is_shown else self.hide_sidebar()
+        self.show_sidebar() if not self.is_shown else self.hide_sidebar()
         self.editwin.setvar('<<toggle-line-numbers>>', self.is_shown)
         # idleConf.SetOption('extensions', 'LineNumber', 'visible',
         #                    str(self.state))
