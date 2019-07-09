@@ -799,6 +799,8 @@ class EditorWindow(object):
         # Called from configdialog.py
 
         self.text['font'] = idleConf.GetFont(self.root, 'main','EditorWindow')
+        if self.codecontext is not None:
+            self.codecontext.update_font()
 
     def RemoveKeybindings(self):
         "Remove the keybindings before they are changed."

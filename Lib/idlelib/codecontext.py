@@ -78,10 +78,8 @@ class CodeContext:
     def __del__(self):
         "Cancel scheduled events."
         if self.t1 is not None:
-            try:
-                self.text.after_cancel(self.t1)
-            except tkinter.TclError:
-                pass
+            self.text.after_cancel(self.t1)
+            self.t1 = None
 
     def toggle_code_context_event(self, event=None):
         """Toggle code context display.
@@ -204,7 +202,7 @@ class CodeContext:
             newtop = 1
         else:
             # Line number clicked.
-            contextline = self.editwin.getlineno('insert')
+            contextline = int(float(self.context.index('insert')))
             # Lines not displayed due to maxlines.
             offset = max(1, lines - self.context_depth) - 1
             newtop = self.info[offset + contextline][0]
@@ -217,9 +215,9 @@ class CodeContext:
             self.update_code_context()
             self.t1 = self.text.after(self.UPDATEINTERVAL, self.timer_event)
 
-    def update_font(self, font):
+    def update_font(self):
         if self.context is not None:
-            self.context['font'] = font
+            self.context['font'] = self.text['font']
 
     def update_highlight_colors(self):
         if self.context is not None:
