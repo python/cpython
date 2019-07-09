@@ -1185,6 +1185,11 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
                 if (s < end && '0' <= *s && *s <= '7')
                     c = (c<<3) + *s++ - '0';
             }
+            if (c > 255) {
+                PyErr_Format(PyExc_ValueError,
+                             "octal value must be in range(0, 256)");
+                goto failed;
+            }
             *p++ = c;
             break;
         case 'x':

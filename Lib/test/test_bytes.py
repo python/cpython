@@ -14,6 +14,7 @@ import pickle
 import tempfile
 import textwrap
 import unittest
+from ast import literal_eval as _literal_eval
 
 import test.support
 import test.string_tests
@@ -961,6 +962,43 @@ class BaseBytesTest:
         self.assertEqual(c, b'hee')
         c = b.translate(None, delete=b'e')
         self.assertEqual(c, b'hllo')
+
+    def test_octal_values(self):
+        # bpo-37367: verify that octal values greater than 255
+        # raise ValueError
+
+        # test 1- and 2- digit octal values (i.e. no leading zeroes)
+        for i in range(0o00, 0o77):
+            v = "b'\\{0:o}'".format(i)
+            self.type2test(_literal_eval(v))
+            self.assertEqual(ord(_literal_eval(v)), i)
+
+        # test 3-digit octal values (including leading zeroes)
+        for i in range(0o00, 0o400):
+            v = "b'\\{0:03o}'".format(i)
+            self.type2test(_literal_eval(v))
+            self.assertEqual(ord(_literal_eval(v)), i)
+
+        raised = 0
+        for i in range(0o400, 0o1000):
+            try:
+                self.type2test(_literal_eval("b'\\{0:o}'".format(i)))
+            except SyntaxError as e:
+                # ast.literal_eval() raises SyntaxError and
+                # mentions the underlying ValueError in
+                # the returned string.
+                self.assertEqual(str(e).find("(value error) octal value "
+                                             "must be in range(0, 256)", 0),
+                                 0)
+                raised = raised + 1
+        self.assertEqual(raised, 256)
+
+        # test 4-digit octal value (4th digit should be treated as literal)
+        self.assertEqual(_literal_eval("b'\\1234'"), b'S4')
+        self.assertRaises(SyntaxError, _literal_eval, "b'\\4321'")
+
+        # specific case mentioned in bpo-37367
+        self.assertRaises(SyntaxError, eval, "ord(b'\\407')")
 
 
 class BytesTest(BaseBytesTest, unittest.TestCase):

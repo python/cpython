@@ -1174,7 +1174,7 @@ class EscapeDecodeTest(unittest.TestCase):
         check(br"[\418]", b"[!8]")
         check(br"[\101]", b"[A]")
         check(br"[\1010]", b"[A0]")
-        check(br"[\501]", b"[A]")
+        self.assertRaises(ValueError, decode, br"[\501]")
         check(br"[\x41]", b"[A]")
         check(br"[\x410]", b"[A0]")
         for i in range(97, 123):
