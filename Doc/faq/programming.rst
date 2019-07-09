@@ -800,10 +800,6 @@ an error::
      File "<stdin>", line 1, in <module>
    TypeError: pow() takes no keyword arguments
 
-Note that as of this writing this is only documentational and no valid syntax
-in Python, although there is :pep:`570`, which proposes a syntax for
-position-only parameters in Python.
-
 
 Numbers and strings
 ===================

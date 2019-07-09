@@ -818,14 +818,14 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
     *next_idx_ptr = idx + 1;
 
     if (has_pairs_hook) {
-        val = PyObject_CallFunctionObjArgs(s->object_pairs_hook, rval, NULL);
+        val = _PyObject_CallOneArg(s->object_pairs_hook, rval);
         Py_DECREF(rval);
         return val;
     }
 
     /* if object_hook is not None: rval = object_hook(rval) */
     if (s->object_hook != Py_None) {
-        val = PyObject_CallFunctionObjArgs(s->object_hook, rval, NULL);
+        val = _PyObject_CallOneArg(s->object_hook, rval);
         Py_DECREF(rval);
         return val;
     }
@@ -931,7 +931,7 @@ _parse_constant(PyScannerObject *s, const char *constant, Py_ssize_t idx, Py_ssi
         return NULL;
 
     /* rval = parse_constant(constant) */
-    rval = PyObject_CallFunctionObjArgs(s->parse_constant, cstr, NULL);
+    rval = _PyObject_CallOneArg(s->parse_constant, cstr);
     idx += PyUnicode_GET_LENGTH(cstr);
     Py_DECREF(cstr);
     *next_idx_ptr = idx;
@@ -1030,7 +1030,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
                                            idx - start);
         if (numstr == NULL)
             return NULL;
-        rval = PyObject_CallFunctionObjArgs(custom_func, numstr, NULL);
+        rval = _PyObject_CallOneArg(custom_func, numstr);
     }
     else {
         Py_ssize_t i, n;
@@ -1440,7 +1440,7 @@ encoder_encode_string(PyEncoderObject *s, PyObject *obj)
     if (s->fast_encode) {
         return s->fast_encode(NULL, obj);
     }
-    encoded = PyObject_CallFunctionObjArgs(s->encoder, obj, NULL);
+    encoded = _PyObject_CallOneArg(s->encoder, obj);
     if (encoded != NULL && !PyUnicode_Check(encoded)) {
         PyErr_Format(PyExc_TypeError,
                      "encoder() must return a string, not %.80s",
@@ -1526,7 +1526,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
                 return -1;
             }
         }
-        newobj = PyObject_CallFunctionObjArgs(s->defaultfn, obj, NULL);
+        newobj = _PyObject_CallOneArg(s->defaultfn, obj);
         if (newobj == NULL) {
             Py_XDECREF(ident);
             return -1;
