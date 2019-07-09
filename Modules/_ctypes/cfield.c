@@ -250,11 +250,9 @@ PyCField_get_size(PyObject *self, void *data)
     PyObject *result;
     Py_ssize_t bits = ((CFieldObject *)self)->size >> 16;
     if (bits) {
-        result = PyLong_FromSsize_t(bits); 
-    } else {
-        result = PyLong_FromSsize_t(((CFieldObject *)self)->size);
+        return PyLong_FromSsize_t(bits); 
     }
-    return result;
+    return PyLong_FromSsize_t(((CFieldObject *)self)->size);
 }
 
 static PyGetSetDef PyCField_getset[] = {
