@@ -773,6 +773,189 @@ class AbstractTestZip64InSmallFiles:
             self.assertEqual(content, "%d" % (i**3 % 57))
         zipf2.close()
 
+    def make_zip64_file(
+        self, file_size_64_set=False, file_size_extra=False,
+        compress_size_64_set=False, compress_size_extra=False,
+        header_offset_64_set=False, header_offset_extra=False,
+    ):
+        """Generate bytes sequence for a zip with (incomplete) zip64 data."""
+        actual_size = 8
+        actual_header_offset = 0
+        local_zip64_fields = []
+        central_zip64_fields = []
+
+        file_size = actual_size
+        if file_size_64_set:
+            file_size = 0xffffffff
+            if file_size_extra:
+                local_zip64_fields.append(actual_size)
+                central_zip64_fields.append(actual_size)
+        file_size = struct.pack("<L", file_size)
+
+        compress_size = actual_size
+        if compress_size_64_set:
+            compress_size = 0xffffffff
+            if compress_size_extra:
+                local_zip64_fields.append(actual_size)
+                central_zip64_fields.append(actual_size)
+        compress_size = struct.pack("<L", compress_size)
+
+        header_offset = actual_header_offset
+        if header_offset_64_set:
+            header_offset = 0xffffffff
+            if header_offset_extra:
+                central_zip64_fields.append(actual_header_offset)
+        header_offset = struct.pack("<L", header_offset)
+
+        local_extra = struct.pack(
+            '<HH' + 'Q'*len(local_zip64_fields),
+            0x0001,
+            8*len(local_zip64_fields),
+            *local_zip64_fields
+        )
+
+        central_extra = struct.pack(
+            '<HH' + 'Q'*len(central_zip64_fields),
+            0x0001,
+            8*len(central_zip64_fields),
+            *central_zip64_fields
+        )
+
+        central_dir_size = struct.pack('<Q', 58 + 8 * len(central_zip64_fields))
+        offset_to_central_dir = struct.pack('<Q', 50 + 8 * len(central_zip64_fields))
+
+        local_extra_length = struct.pack("<H", 4 + 8 * len(local_zip64_fields))
+        central_extra_length = struct.pack("<H", 4 + 8 * len(central_zip64_fields))
+
+        zip64_contents = (
+            # Local file header
+            b"PK\x03\x04\x14\x00\x00\x00\x00\x00\x00\x00!\x00\x9e%\xf5\xaf"
+            + compress_size
+            + file_size
+            + b"\x08\x00"
+            + local_extra_length
+            + b"test.txt"
+            + local_extra
+            + b"test1234"
+            # Central directory:
+            + b"PK\x01\x02-\x03-\x00\x00\x00\x00\x00\x00\x00!\x00\x9e%\xf5\xaf"
+            + compress_size
+            + file_size
+            + b"\x08\x00"
+            + central_extra_length
+            + b"\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01"
+            + header_offset
+            + b"test.txt"
+            + central_extra
+            # Zip64 end of central directory
+            + b"PK\x06\x06,\x00\x00\x00\x00\x00\x00\x00-\x00-"
+            + b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00"
+            + b"\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00"
+            + central_dir_size
+            + offset_to_central_dir
+            # Zip64 end of central directory locator
+            + b"PK\x06\x07\x00\x00\x00\x00l\x00\x00\x00\x00\x00\x00\x00\x01"
+            + b"\x00\x00\x00"
+            # end of central directory
+            + b"PK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00:\x00\x00\x002\x00"
+            + b"\x00\x00\x00\x00"
+        )
+        return zip64_contents
+
+    def test_bad_zip64_extra(self):
+        """Missing zip64 extra records raises an exception.
+
+        There are 4 fields that the zip64 format handles (the disk number is
+        not used in this module and so is ignored here). According to the zip
+        spec:
+              The order of the fields in the zip64 extended
+              information record is fixed, but the fields MUST
+              only appear if the corresponding Local or Central
+              directory record field is set to 0xFFFF or 0xFFFFFFFF.
+
+        If the zip64 extra content doesn't contain enough entries for the
+        number of fields marked with 0xFFFF or 0xFFFFFFFF, we raise an error.
+        This test mismatches the length of the zip64 extra field and the number
+        of fields set to indicate the presence of zip64 data.
+        """
+        # zip64 file size present, no fields in extra, expecting one, equals
+        # missing file size.
+        missing_file_size_extra = self.make_zip64_file(
+            file_size_64_set=True,
+        )
+        with self.assertRaises(zipfile.BadZipFile) as e:
+            zipfile.ZipFile(io.BytesIO(missing_file_size_extra))
+        self.assertIn('file size', str(e.exception).lower())
+
+        # zip64 file size present, zip64 compress size present, one field in
+        # extra, expecting two, equals missing compress size.
+        missing_compress_size_extra = self.make_zip64_file(
+            file_size_64_set=True,
+            file_size_extra=True,
+            compress_size_64_set=True,
+        )
+        with self.assertRaises(zipfile.BadZipFile) as e:
+            zipfile.ZipFile(io.BytesIO(missing_compress_size_extra))
+        self.assertIn('compress size', str(e.exception).lower())
+
+        # zip64 compress size present, no fields in extra, expecting one,
+        # equals missing compress size.
+        missing_compress_size_extra = self.make_zip64_file(
+            compress_size_64_set=True,
+        )
+        with self.assertRaises(zipfile.BadZipFile) as e:
+            zipfile.ZipFile(io.BytesIO(missing_compress_size_extra))
+        self.assertIn('compress size', str(e.exception).lower())
+
+        # zip64 file size present, zip64 compress size present, zip64 header
+        # offset present, two fields in extra, expecting three, equals missing
+        # header offset
+        missing_header_offset_extra = self.make_zip64_file(
+            file_size_64_set=True,
+            file_size_extra=True,
+            compress_size_64_set=True,
+            compress_size_extra=True,
+            header_offset_64_set=True,
+        )
+        with self.assertRaises(zipfile.BadZipFile) as e:
+            zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
+        self.assertIn('header offset', str(e.exception).lower())
+
+        # zip64 compress size present, zip64 header offset present, one field
+        # in extra, expecting two, equals missing header offset
+        missing_header_offset_extra = self.make_zip64_file(
+            file_size_64_set=False,
+            compress_size_64_set=True,
+            compress_size_extra=True,
+            header_offset_64_set=True,
+        )
+        with self.assertRaises(zipfile.BadZipFile) as e:
+            zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
+        self.assertIn('header offset', str(e.exception).lower())
+
+        # zip64 file size present, zip64 header offset present, one field in
+        # extra, expecting two, equals missing header offset
+        missing_header_offset_extra = self.make_zip64_file(
+            file_size_64_set=True,
+            file_size_extra=True,
+            compress_size_64_set=False,
+            header_offset_64_set=True,
+        )
+        with self.assertRaises(zipfile.BadZipFile) as e:
+            zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
+        self.assertIn('header offset', str(e.exception).lower())
+
+        # zip64 header offset present, no fields in extra, expecting one,
+        # equals missing header offset
+        missing_header_offset_extra = self.make_zip64_file(
+            file_size_64_set=False,
+            compress_size_64_set=False,
+            header_offset_64_set=True,
+        )
+        with self.assertRaises(zipfile.BadZipFile) as e:
+            zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
+        self.assertIn('header offset', str(e.exception).lower())
+
     def tearDown(self):
         zipfile.ZIP64_LIMIT = self._limit
         zipfile.ZIP_FILECOUNT_LIMIT = self._filecount_limit
