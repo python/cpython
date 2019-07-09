@@ -185,9 +185,7 @@ in bounds; that's the responsibility of the caller.
 static PyObject *
 b_getitem(arrayobject *ap, Py_ssize_t i)
 {
-    long x = ((char *)ap->ob_item)[i];
-    if (x >= 128)
-        x -= 256;
+    long x = ((signed char *)ap->ob_item)[i];
     return PyLong_FromLong(x);
 }
 
