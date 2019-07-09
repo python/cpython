@@ -62,6 +62,8 @@ class EditorWindow(object):
     filesystemencoding = sys.getfilesystemencoding()  # for file names
     help_url = None
 
+    allow_codecontext = True
+
     def __init__(self, flist=None, filename=None, key=None, root=None):
         # Delay import: runscript imports pyshell imports EditorWindow.
         from idlelib.runscript import ScriptBinding
@@ -247,6 +249,7 @@ class EditorWindow(object):
         self.good_load = False
         self.set_indentation_params(False)
         self.color = None # initialized below in self.ResetColorizer
+        self.codecontext = None
         if filename:
             if os.path.exists(filename) and not os.path.isdir(filename):
                 if io.loadfile(filename):
@@ -312,8 +315,10 @@ class EditorWindow(object):
         text.bind("<<refresh-calltip>>", ctip.refresh_calltip_event)
         text.bind("<<force-open-calltip>>", ctip.force_open_calltip_event)
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
-        text.bind("<<toggle-code-context>>",
-                  self.CodeContext(self).toggle_code_context_event)
+        if self.allow_codecontext:
+            self.codecontext = self.CodeContext(self)
+            text.bind("<<toggle-code-context>>",
+                      self.codecontext.toggle_code_context_event)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so displayable in Tk."""
@@ -772,6 +777,9 @@ class EditorWindow(object):
         self._rmcolorizer()
         self._addcolorizer()
         EditorWindow.color_config(self.text)
+
+        if self.codecontext is not None:
+            self.codecontext.update_highlight_colors()
 
     IDENTCHARS = string.ascii_letters + string.digits + "_"
 
