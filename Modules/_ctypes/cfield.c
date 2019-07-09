@@ -247,7 +247,6 @@ PyCField_get_offset(PyObject *self, void *data)
 static PyObject *
 PyCField_get_size(PyObject *self, void *data)
 {
-    PyObject *result;
     Py_ssize_t bits = ((CFieldObject *)self)->size >> 16;
     if (bits) {
         return PyLong_FromSsize_t(bits); 
