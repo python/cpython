@@ -25,6 +25,7 @@ RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
 TEST_DID_NOT_RUN = -6
+TIMEOUT = -7
 
 _FORMAT_TEST_RESULT = {
     PASSED: '%s passed',
@@ -35,6 +36,7 @@ _FORMAT_TEST_RESULT = {
     INTERRUPTED: '%s interrupted',
     CHILD_ERROR: '%s crashed',
     TEST_DID_NOT_RUN: '%s run no tests',
+    TIMEOUT: '%s test did not finish',
 }
 
 # Minimum duration of a test to display its duration or to mention that
@@ -66,7 +68,7 @@ FOUND_GARBAGE = []
 
 def is_failed(result, ns):
     ok = result.result
-    if ok in (PASSED, RESOURCE_DENIED, SKIPPED, TEST_DID_NOT_RUN):
+    if ok in (PASSED, RESOURCE_DENIED, SKIPPED, TEST_DID_NOT_RUN, TIMEOUT):
         return False
     if ok == ENV_CHANGED:
         return ns.fail_env_changed
@@ -179,6 +181,7 @@ def runtest(ns, test_name):
         FAILED           test failed
         PASSED           test passed
         EMPTY_TEST_SUITE test ran no subtests.
+        TIMEOUT         test failed due to timeout
 
     If ns.xmlpath is not None, xml_data is a list containing each
     generated testsuite element.
