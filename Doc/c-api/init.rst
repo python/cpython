@@ -992,11 +992,15 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    be held, but may be held if it is necessary to serialize calls to this
    function.
 
+   .. audit-event:: cpython.PyInterpreterState_New NULL
+
 
 .. c:function:: void PyInterpreterState_Clear(PyInterpreterState *interp)
 
    Reset all information in an interpreter state object.  The global interpreter
    lock must be held.
+
+   .. audit-event:: cpython.PyInterpreterState_Clear NULL
 
 
 .. c:function:: void PyInterpreterState_Delete(PyInterpreterState *interp)
