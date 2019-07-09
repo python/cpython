@@ -598,14 +598,14 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(parent_binop.end_lineno, 2)
 
         self.assertEqual(child_binop.col_offset, 0)
-        self.assertEqual(parent_binop.lineno, 1)
+        self.assertEqual(child_binop.lineno, 1)
         self.assertEqual(child_binop.end_col_offset, 2)
-        self.assertEqual(parent_binop.end_lineno, 2)
+        self.assertEqual(child_binop.end_lineno, 2)
 
         self.assertEqual(grandchild_binop.col_offset, 0)
-        self.assertEqual(parent_binop.lineno, 1)
+        self.assertEqual(grandchild_binop.lineno, 1)
         self.assertEqual(grandchild_binop.end_col_offset, 3)
-        self.assertEqual(parent_binop.end_lineno, 2)
+        self.assertEqual(grandchild_binop.end_lineno, 1)
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
