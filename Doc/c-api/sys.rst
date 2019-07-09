@@ -335,15 +335,6 @@ accessible to C code.  They all work with the current interpreter thread's
    .. versionadded:: 3.8
 
 
-.. c:function:: void _PySys_ClearAuditHooks()
-
-   Clears all audit hooks. The function is an internal implementation detail
-   and only mentioned here to document the associated auditing event.
-
-   .. audit-event:: cpython._PySys_ClearAuditHooks NULL
-
-   .. versionadded:: 3.8
-
 .. _processcontrol:
 
 Process Control
