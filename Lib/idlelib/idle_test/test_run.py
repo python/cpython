@@ -292,6 +292,14 @@ class TestSysRecursionLimitWrappers(unittest.TestCase):
         new_reclimit = sys.getrecursionlimit()
         self.assertEqual(new_reclimit, orig_reclimit)
 
+    def test_fixdoc(self):
+        def func(): "docstring"
+        run.fixdoc(func, "more")
+        self.assertEqual(func.__doc__, "docstring\n\nmore")
+        func.__doc__ = None
+        run.fixdoc(func, "more")
+        self.assertEqual(func.__doc__, "more")
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

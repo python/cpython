@@ -307,7 +307,12 @@ def fix_scaling(root):
                 font['size'] = round(-0.75*size)
 
 
+def fixdoc(fun, text):
+    tem = (fun.__doc__ + '\n\n') if fun.__doc__ is not None else ''
+    fun.__doc__ = tem + textwrap.fill(textwrap.dedent(text))
+
 RECURSIONLIMIT_DELTA = 30
+
 def install_recursionlimit_wrappers():
     """Install wrappers to always add 30 to the recursion limit."""
     # see: bpo-26806
@@ -328,23 +333,18 @@ def install_recursionlimit_wrappers():
                 "recursion limit must be greater or equal than 1")
 
         return setrecursionlimit.__wrapped__(limit + RECURSIONLIMIT_DELTA)
-    if setrecursionlimit.__doc__ is not None:
-        setrecursionlimit.__doc__ += (
-            "\n\n" + textwrap.fill(textwrap.dedent(f"""\
+
+    fixdoc(setrecursionlimit, f"""\
             This IDLE wrapper adds {RECURSIONLIMIT_DELTA} to prevent possible
-            uninterruptible loops.
-            """)))
+            uninterruptible loops.""")
 
     @functools.wraps(sys.getrecursionlimit)
     def getrecursionlimit():
         return getrecursionlimit.__wrapped__() - RECURSIONLIMIT_DELTA
 
-    if getrecursionlimit.__doc__ is not None:
-        getrecursionlimit.__doc__ += (
-            "\n\n" + textwrap.fill(textwrap.dedent(f"""\
+    fixdoc(getrecursionlimit, f"""\
             This IDLE wrapper subtracts {RECURSIONLIMIT_DELTA} to compensate
-            for the {RECURSIONLIMIT_DELTA} IDLE adds when setting the limit.
-            """)))
+            for the {RECURSIONLIMIT_DELTA} IDLE adds when setting the limit.""")
 
     # add the delta to the default recursion limit, to compensate
     sys.setrecursionlimit(sys.getrecursionlimit() + RECURSIONLIMIT_DELTA)
