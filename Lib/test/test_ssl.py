@@ -2382,7 +2382,6 @@ class ThreadedEchoServer(threading.Thread):
                         if self.server.chatty and support.verbose:
                             sys.stdout.write(err.args[1])
                         # test_pha_required_nocert is expecting this exception
-                        self.close()
                         raise ssl.SSLError('tlsv13 alert certificate required')
                 except OSError:
                     if self.server.chatty:
@@ -2460,6 +2459,7 @@ class ThreadedEchoServer(threading.Thread):
                 handler = self.ConnectionHandler(self, newconn, connaddr)
                 handler.start()
                 handler.join()
+                handler.close()
             except socket.timeout:
                 pass
             except KeyboardInterrupt:
