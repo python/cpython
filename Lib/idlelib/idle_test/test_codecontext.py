@@ -3,7 +3,7 @@
 from idlelib import codecontext
 import unittest
 from test.support import requires
-from tkinter import Tk, Frame, Text, TclError
+from tkinter import NSEW, Tk, Frame, Text, TclError
 
 from unittest import mock
 import re
@@ -58,7 +58,7 @@ class CodeContextTest(unittest.TestCase):
         text.insert('1.0', code_sample)
         # Need to pack for creation of code context text widget.
         frame.pack(side='left', fill='both', expand=1)
-        text.pack(side='top', fill='both', expand=1)
+        text.grid(row=1, column=1, sticky=NSEW)
         cls.editor = DummyEditwin(root, frame, text)
         codecontext.idleConf.userCfg = testcfg
 
