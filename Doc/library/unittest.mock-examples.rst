@@ -12,6 +12,7 @@
 
 .. testsetup::
 
+    import asyncio
     import unittest
     from unittest.mock import Mock, MagicMock, patch, call, sentinel
 
