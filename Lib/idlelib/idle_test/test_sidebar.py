@@ -6,7 +6,7 @@ import tkinter as tk
 
 from idlelib.delegator import Delegator
 from idlelib.percolator import Percolator
-from idlelib.linenumbers import LineNumbers
+from idlelib.sidebar import LineNumbers
 
 
 class Dummy_editwin:
