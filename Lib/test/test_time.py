@@ -250,6 +250,7 @@ class TimeTestCase(unittest.TestCase):
             result = time.strftime("%Y %m %d %H %M %S %w %j", (2000,)+(0,)*8)
         self.assertEqual(expected, result)
 
+    # bpo-37552 [Windows] strptime/strftime return invalid results with UCRT version 17763.615
     @unittest.skipIf(sys.platform == 'win32' and locale.getdefaultlocale()[1] == 'cp65001',
                      'issue in MSVC UCRT')
     def test_strptime(self):
@@ -674,9 +675,10 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 
 
 class TestPytime(unittest.TestCase):
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
+    # bpo-37552 [Windows] strptime/strftime return invalid results with UCRT version 17763.615
     @unittest.skipIf(sys.platform == 'win32' and locale.getdefaultlocale()[1] == 'cp65001',
                      'issue in MSVC UCRT')
+    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_localtime_timezone(self):
 
         # Get the localtime and examine it for the offset and zone.
