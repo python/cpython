@@ -20,7 +20,7 @@ Files required for the Python _decimal module
     context.c        ->  Context functions.
     io.{c,h}         ->  Conversions between mpd_t and ASCII strings,
                          mpd_t formatting (allows UTF-8 fill character).
-    memory.{c,h}     ->  Allocation handlers with overflow detection
+    mpalloc.{c,h}    ->  Allocation handlers with overflow detection
                          and functions for switching between static
                          and dynamic mpd_t.
     mpdecimal.{c,h}  ->  All (quiet) functions of the specification.
