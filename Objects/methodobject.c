@@ -482,3 +482,36 @@ cfunction_vectorcall_O(
     Py_LeaveRecursiveCall();
     return result;
 }
+
+
+PyObject *
+PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwargs)
+{
+    assert(!PyErr_Occurred());
+    assert(kwargs == NULL || PyDict_Check(kwargs));
+
+    int flags = PyCFunction_GET_FLAGS(func);
+    if (!(flags & METH_VARARGS)) {
+        /* If this is not a METH_VARARGS function, delegate to vectorcall */
+        return PyVectorcall_Call(func, args, kwargs);
+    }
+
+    /* For METH_VARARGS, we cannot use vectorcall as the vectorcall pointer
+     * is NULL. This is intentional, since vectorcall would be slower. */
+    PyCFunction meth = PyCFunction_GET_FUNCTION(func);
+    PyObject *self = PyCFunction_GET_SELF(func);
+
+    PyObject *result;
+    if (flags & METH_KEYWORDS) {
+        result = (*(PyCFunctionWithKeywords)(void(*)(void))meth)(self, args, kwargs);
+    }
+    else {
+        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
+            PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
+                         ((PyCFunctionObject*)func)->m_ml->ml_name);
+            return NULL;
+        }
+        result = meth(self, args);
+    }
+    return _Py_CheckFunctionResult(func, result, NULL);
+}
