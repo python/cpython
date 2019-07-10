@@ -1641,7 +1641,7 @@ _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
     assert(elsize == 0 || nelem <= (size_t)PY_SSIZE_T_MAX / elsize);
     size_t nbytes = nelem * elsize;
 
-    if (pymalloc_alloc(ctx, &ptr, nbytes)) {
+    if (LIKELY(pymalloc_alloc(ctx, &ptr, nbytes))) {
         memset(ptr, 0, nbytes);
         _Py_AllocatedBlocks++;
         return ptr;
