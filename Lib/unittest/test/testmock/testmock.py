@@ -1817,13 +1817,13 @@ class MockTest(unittest.TestCase):
         parent = Mock()
 
         with mock.patch(f'{__name__}.something', autospec=True) as mock_func:
-            self.assertEqual('something', mock_func.mock._extract_mock_name())
+            self.assertEqual(mock_func.mock._extract_mock_name(), 'something')
             parent.attach_mock(mock_func, 'child')
             parent.child()
 
             self.assertEqual(parent.mock_calls, [call.child()])
             self.assertIn('mock.child', repr(parent.child.mock))
-            self.assertEqual('mock.child', mock_func.mock._extract_mock_name())
+            self.assertEqual(mock_func.mock._extract_mock_name(), 'mock.child')
 
 
     def test_attribute_deletion(self):
