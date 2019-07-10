@@ -37,6 +37,9 @@ class Something(object):
     def smeth(a, b, c, d=None): pass
 
 
+def something(): pass
+
+
 class MockTest(unittest.TestCase):
 
     def test_all(self):
@@ -1808,6 +1811,21 @@ class MockTest(unittest.TestCase):
                 self.assertEqual(m.mock_calls, call().foo().call_list())
 
 
+    def test_attach_mock_patch_autospec(self):
+        # bpo-21478: attach_mock used with autospecced object should have
+        # should use child's name and record calls to parent
+        parent = Mock()
+
+        with mock.patch(f'{__name__}.something', autospec=True) as mock_func:
+            self.assertEqual('something', mock_func.mock._extract_mock_name())
+            parent.attach_mock(mock_func, 'child')
+            parent.child()
+
+            self.assertEqual(parent.mock_calls, [call.child()])
+            self.assertIn('mock.child', repr(parent.child.mock))
+            self.assertEqual('mock.child', mock_func.mock._extract_mock_name())
+
+
     def test_attribute_deletion(self):
         for mock in (Mock(), MagicMock(), NonCallableMagicMock(),
                      NonCallableMock()):
@@ -1891,6 +1909,16 @@ class MockTest(unittest.TestCase):
 
         self.assertRaises(TypeError, mock.child, 1)
         self.assertEqual(mock.mock_calls, [call.child(1, 2)])
+        self.assertIn('mock.child', repr(mock.child.mock))
+
+        parent = Mock()
+        parent.attach_mock(create_autospec(foo, name='bar'), 'child')
+        parent.child(1, 2)
+
+        self.assertRaises(TypeError, parent.child, 1)
+        self.assertEqual(parent.child.mock_calls, [call.child(1, 2)])
+        self.assertIn('mock.child', repr(parent.child.mock))
+
 
     def test_isinstance_under_settrace(self):
         # bpo-36593 : __class__ is not set for a class that has __class__

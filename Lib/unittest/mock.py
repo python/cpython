@@ -467,10 +467,19 @@ class NonCallableMock(Base):
         Attach a mock as an attribute of this one, replacing its name and
         parent. Calls to the attached mock will be recorded in the
         `method_calls` and `mock_calls` attributes of this one."""
-        mock._mock_parent = None
-        mock._mock_new_parent = None
-        mock._mock_name = ''
-        mock._mock_new_name = None
+
+        # When autospecced object is passed to attach_mock then clear
+        # name and parent of the mock attribute which holds the actual
+        # mock object.
+        if isinstance(mock, FunctionTypes) and hasattr(mock, 'mock'):
+            inner_mock = mock.mock
+        else:
+            inner_mock = mock
+
+        inner_mock._mock_parent = None
+        inner_mock._mock_new_parent = None
+        inner_mock._mock_name = ''
+        inner_mock._mock_new_name = None
 
         setattr(self, attribute, mock)
 
