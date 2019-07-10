@@ -187,6 +187,11 @@ _DD_SIGNATURE = 0x08074b50
 
 _EXTRA_FIELD_STRUCT = struct.Struct('<HH')
 
+# Extensible data field codes:
+# Zip64 extended information extra field
+EXTRA_ZIP64 = 0x0001
+
+
 def _strip_extra(extra, xids):
     # Remove Extra Fields with specified IDs.
     unpack = _EXTRA_FIELD_STRUCT.unpack
@@ -485,7 +490,7 @@ class ZipInfo (object):
             tp, ln = unpack('<HH', extra[:4])
             if ln+4 > len(extra):
                 raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
-            if tp == 0x0001:
+            if tp == EXTRA_ZIP64:
                 if ln >= 24:
                     counts = unpack('<QQQ', extra[4:28])
                 elif ln == 16:
