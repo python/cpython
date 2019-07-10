@@ -1655,88 +1655,37 @@ _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
 }
 
 
-/* Free a memory block allocated by pymalloc_alloc().
-   Return 1 if it was freed.
-   Return 0 if the block was not allocated by pymalloc_alloc(). */
-static inline int
-pymalloc_free(void *ctx, void *p)
+static void
+insert_to_usedpool(poolp pool)
 {
-    poolp pool;
-    block *lastfree;
-    poolp next, prev;
-    uint size;
+    assert(pool->ref.count > 0);            /* else the pool is empty */
 
-    assert(p != NULL);
+    uint size = pool->szidx;
+    poolp next = usedpools[size + size];
+    poolp prev = next->prevpool;
 
-#ifdef WITH_VALGRIND
-    if (UNLIKELY(running_on_valgrind > 0)) {
-        return 0;
-    }
-#endif
+    /* insert pool before next:   prev <-> pool <-> next */
+    pool->nextpool = next;
+    pool->prevpool = prev;
+    next->prevpool = pool;
+    prev->nextpool = pool;
+}
 
-    pool = POOL_ADDR(p);
-    if (UNLIKELY(!address_in_range(p, pool))) {
-        return 0;
-    }
-    /* We allocated this address. */
-
-    /* Link p to the start of the pool's freeblock list.  Since
-     * the pool had at least the p block outstanding, the pool
-     * wasn't empty (so it's already in a usedpools[] list, or
-     * was full and is in no list -- it's not in the freeblocks
-     * list in any case).
-     */
-    assert(pool->ref.count > 0);            /* else it was empty */
-    *(block **)p = lastfree = pool->freeblock;
-    pool->freeblock = (block *)p;
-    if (UNLIKELY(!lastfree)) {
-        /* Pool was full, so doesn't currently live in any list:
-         * link it to the front of the appropriate usedpools[] list.
-         * This mimics LRU pool usage for new allocations and
-         * targets optimal filling when several pools contain
-         * blocks of the same size class.
-         */
-        --pool->ref.count;
-        assert(pool->ref.count > 0);            /* else the pool is empty */
-        size = pool->szidx;
-        next = usedpools[size + size];
-        prev = next->prevpool;
-
-        /* insert pool before next:   prev <-> pool <-> next */
-        pool->nextpool = next;
-        pool->prevpool = prev;
-        next->prevpool = pool;
-        prev->nextpool = pool;
-        goto success;
-    }
-
-    struct arena_object* ao;
-    uint nf;  /* ao->nfreepools */
-
-    /* freeblock wasn't NULL, so the pool wasn't full,
-     * and the pool is in a usedpools[] list.
-     */
-    if (LIKELY(--pool->ref.count != 0)) {
-        /* pool isn't empty:  leave it in usedpools */
-        goto success;
-    }
-    /* Pool is now empty:  unlink from usedpools, and
-     * link to the front of freepools.  This ensures that
-     * previously freed pools will be allocated later
-     * (being not referenced, they are perhaps paged out).
-     */
-    next = pool->nextpool;
-    prev = pool->prevpool;
+static void
+insert_to_freepool(poolp pool)
+{
+    poolp next = pool->nextpool;
+    poolp prev = pool->prevpool;
     next->prevpool = prev;
     prev->nextpool = next;
 
     /* Link the pool to freepools.  This is a singly-linked
      * list, and pool->prevpool isn't used there.
      */
-    ao = &arenas[pool->arenaindex];
+    struct arena_object *ao = &arenas[pool->arenaindex];
     pool->nextpool = ao->freepools;
     ao->freepools = pool;
-    nf = ao->nfreepools;
+    uint nf = ao->nfreepools;
     /* If this is the rightmost arena with this number of free pools,
      * nfp2lasta[nf] needs to change.  Caution:  if nf is 0, there
      * are no arenas in usable_arenas with that value.
@@ -1810,7 +1759,7 @@ pymalloc_free(void *ctx, void *p)
         ao->address = 0;                        /* mark unassociated */
         --narenas_currently_allocated;
 
-        goto success;
+        return;
     }
 
     if (nf == 1) {
@@ -1829,7 +1778,7 @@ pymalloc_free(void *ctx, void *p)
             nfp2lasta[1] = ao;
         }
 
-        goto success;
+        return;
     }
 
     /* If this arena is now out of order, we need to keep
@@ -1846,7 +1795,7 @@ pymalloc_free(void *ctx, void *p)
     /* If this was the rightmost of the old size, it remains in place. */
     if (ao == lastnf) {
         /* Case 4.  Nothing to do. */
-        goto success;
+        return;
     }
     /* If ao were the only arena in the list, the last block would have
      * gotten us out.
@@ -1882,10 +1831,65 @@ pymalloc_free(void *ctx, void *p)
     assert(ao->nextarena == NULL || ao->nextarena->prevarena == ao);
     assert((usable_arenas == ao && ao->prevarena == NULL)
            || ao->prevarena->nextarena == ao);
+}
 
-    goto success;
+/* Free a memory block allocated by pymalloc_alloc().
+   Return 1 if it was freed.
+   Return 0 if the block was not allocated by pymalloc_alloc(). */
+static inline int
+pymalloc_free(void *ctx, void *p)
+{
+    assert(p != NULL);
 
-success:
+#ifdef WITH_VALGRIND
+    if (UNLIKELY(running_on_valgrind > 0)) {
+        return 0;
+    }
+#endif
+
+    poolp pool = POOL_ADDR(p);
+    if (UNLIKELY(!address_in_range(p, pool))) {
+        return 0;
+    }
+    /* We allocated this address. */
+
+    /* Link p to the start of the pool's freeblock list.  Since
+     * the pool had at least the p block outstanding, the pool
+     * wasn't empty (so it's already in a usedpools[] list, or
+     * was full and is in no list -- it's not in the freeblocks
+     * list in any case).
+     */
+    assert(pool->ref.count > 0);            /* else it was empty */
+    block *lastfree = pool->freeblock;
+    *(block **)p = lastfree;
+    pool->freeblock = (block *)p;
+    pool->ref.count--;
+
+    if (UNLIKELY(lastfree == NULL)) {
+        /* Pool was full, so doesn't currently live in any list:
+         * link it to the front of the appropriate usedpools[] list.
+         * This mimics LRU pool usage for new allocations and
+         * targets optimal filling when several pools contain
+         * blocks of the same size class.
+         */
+        insert_to_usedpool(pool);
+        return 1;
+    }
+
+    /* freeblock wasn't NULL, so the pool wasn't full,
+     * and the pool is in a usedpools[] list.
+     */
+    if (LIKELY(pool->ref.count != 0)) {
+        /* pool isn't empty:  leave it in usedpools */
+        return 1;
+    }
+
+    /* Pool is now empty:  unlink from usedpools, and
+     * link to the front of freepools.  This ensures that
+     * previously freed pools will be allocated later
+     * (being not referenced, they are perhaps paged out).
+     */
+    insert_to_freepool(pool);
     return 1;
 }
 
