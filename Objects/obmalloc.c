@@ -1206,12 +1206,29 @@ static size_t ntimes_arena_allocated = 0;
 /* High water mark (max value ever seen) for narenas_currently_allocated. */
 static size_t narenas_highwater = 0;
 
-static Py_ssize_t _Py_AllocatedBlocks = 0;
+static Py_ssize_t raw_allocated_blocks;
 
 Py_ssize_t
 _Py_GetAllocatedBlocks(void)
 {
-    return _Py_AllocatedBlocks;
+    Py_ssize_t n = raw_allocated_blocks;
+    /* add up allocated blocks for used pools */
+    for (uint i = 0; i < maxarenas; ++i) {
+        /* Skip arenas which are not allocated. */
+        if (arenas[i].address == NULL) {
+            continue;
+        }
+
+        uintptr_t base = (uintptr_t)_Py_ALIGN_UP(arenas[i].address, POOL_SIZE);
+
+        /* visit every pool in the arena */
+        assert(base <= (uintptr_t) arenas[i].pool_address);
+        for (; base < (uintptr_t) arenas[i].pool_address; base += POOL_SIZE) {
+            poolp p = (poolp)base;
+            n += p->ref.count;
+        }
+    }
+    return n;
 }
 
 
@@ -1622,13 +1639,12 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
 {
     void* ptr;
     if (pymalloc_alloc(ctx, &ptr, nbytes)) {
-        _Py_AllocatedBlocks++;
         return ptr;
     }
 
     ptr = PyMem_RawMalloc(nbytes);
     if (ptr != NULL) {
-        _Py_AllocatedBlocks++;
+        raw_allocated_blocks++;
     }
     return ptr;
 }
@@ -1644,13 +1660,12 @@ _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
 
     if (pymalloc_alloc(ctx, &ptr, nbytes)) {
         memset(ptr, 0, nbytes);
-        _Py_AllocatedBlocks++;
         return ptr;
     }
 
     ptr = PyMem_RawCalloc(nelem, elsize);
     if (ptr != NULL) {
-        _Py_AllocatedBlocks++;
+        raw_allocated_blocks++;
     }
     return ptr;
 }
@@ -1899,10 +1914,10 @@ _PyObject_Free(void *ctx, void *p)
         return;
     }
 
-    _Py_AllocatedBlocks--;
     if (!pymalloc_free(ctx, p)) {
         /* pymalloc didn't allocate this address */
         PyMem_RawFree(p);
+        raw_allocated_blocks--;
     }
 }
 
