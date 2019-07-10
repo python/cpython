@@ -1261,7 +1261,7 @@ _Py_GetAllocatedBlocks(void)
     /* add up allocated blocks for used pools */
     for (uint i = 0; i < maxarenas; ++i) {
         /* Skip arenas which are not allocated. */
-        if (arenas[i].address == NULL) {
+        if (arenas[i].address == 0) {
             continue;
         }
 
