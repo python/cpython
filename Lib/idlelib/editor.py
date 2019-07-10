@@ -199,11 +199,13 @@ class EditorWindow(object):
             text.bind("<<open-turtle-demo>>", self.open_turtle_demo)
 
         self.set_status_bar()
+        text_frame.pack(side=LEFT, fill=BOTH, expand=1)
+        text_frame.rowconfigure(1, weight=1)
+        text_frame.columnconfigure(1, weight=1)
         vbar['command'] = self.handle_yview
         vbar.grid(row=1, column=2, sticky=NSEW)
         text['yscrollcommand'] = vbar.set
         text['font'] = idleConf.GetFont(self.root, 'main', 'EditorWindow')
-        text_frame.pack(side=LEFT, fill=BOTH, expand=1)
         text.grid(row=1, column=1, sticky=NSEW)
         text.focus_set()
 
