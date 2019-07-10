@@ -30,7 +30,6 @@ Files required for the Python _decimal module
     Visual Studio only:
     ~~~~~~~~~~~~~~~~~~~
       vccompat.h    ->  snprintf <==> sprintf_s and similar things.
-      vcstdint.h    ->  stdint.h (included in VS 2010 but not in VS 2008).
       vcdiv64.asm   ->  Double word division used in typearith.h. VS 2008 does
                         not allow inline asm for x64. Also, it does not provide
                         an intrinsic for double word division.
