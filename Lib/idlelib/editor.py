@@ -327,9 +327,10 @@ class EditorWindow(object):
             self.update_menu_state('options', '*Code Context', 'disabled')
         if self.allow_line_numbers:
             self.line_numbers = self.LineNumbers(self)
-            text.bind("<<toggle-line-numbers>>",
-                      self.line_numbers.toggle_line_numbers_event)
-            pass
+            if idleConf.GetOption('main', 'EditorWindow',
+                                  'line-numbers-default', type='bool'):
+                self.toggle_line_numbers_event()
+            text.bind("<<toggle-line-numbers>>", self.toggle_line_numbers_event)
         else:
             self.update_menu_state('options', '*Line Numbers', 'disabled')
 
@@ -1602,6 +1603,19 @@ class EditorWindow(object):
         else:
             indentsmall = indentlarge = 0
         return indentlarge - indentsmall
+
+    def toggle_line_numbers_event(self, event=None):
+        if self.line_numbers is None:
+            return
+
+        if self.line_numbers.is_shown:
+            self.line_numbers.hide_sidebar()
+            menu_label = "Show"
+        else:
+            self.line_numbers.show_sidebar()
+            menu_label = "Hide"
+        self.update_menu_label(menu='options', index='*Line Numbers',
+                               label=f'{menu_label} Line Numbers')
 
 # "line.col" -> line, as an int
 def index2line(index):
