@@ -977,8 +977,8 @@ _textiowrapper_fix_encoder_state(textio *self)
 
     if (cmp == 0) {
         self->encoding_start_of_stream = 0;
-        PyObject *res = PyObject_CallMethodObjArgs(
-            self->encoder, _PyIO_str_setstate, _PyLong_Zero, NULL);
+        PyObject *res = _PyObject_CallMethodOneArg(
+            self->encoder, _PyIO_str_setstate, _PyLong_Zero);
         if (res == NULL) {
             return -1;
         }
@@ -1155,8 +1155,8 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         PyObject *locale_module = _PyIO_get_locale_module(state);
         if (locale_module == NULL)
             goto catch_ImportError;
-        self->encoding = _PyObject_CallMethodIdObjArgs(
-            locale_module, &PyId_getpreferredencoding, Py_False, NULL);
+        self->encoding = _PyObject_CallMethodIdOneArg(
+            locale_module, &PyId_getpreferredencoding, Py_False);
         Py_DECREF(locale_module);
         if (self->encoding == NULL) {
           catch_ImportError:
@@ -1597,8 +1597,7 @@ _textiowrapper_writeflush(textio *self)
 
     PyObject *ret;
     do {
-        ret = PyObject_CallMethodObjArgs(self->buffer,
-                                         _PyIO_str_write, b, NULL);
+        ret = _PyObject_CallMethodOneArg(self->buffer, _PyIO_str_write, b);
     } while (ret == NULL && _PyIO_trap_eintr());
     Py_DECREF(b);
     if (ret == NULL)
@@ -1668,8 +1667,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         self->encoding_start_of_stream = 0;
     }
     else
-        b = PyObject_CallMethodObjArgs(self->encoder,
-                                       _PyIO_str_encode, text, NULL);
+        b = _PyObject_CallMethodOneArg(self->encoder, _PyIO_str_encode, text);
 
     Py_DECREF(text);
     if (b == NULL)
@@ -1851,9 +1849,9 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
     if (chunk_size == NULL)
         goto fail;
 
-    input_chunk = PyObject_CallMethodObjArgs(self->buffer,
+    input_chunk = _PyObject_CallMethodOneArg(self->buffer,
         (self->has_read1 ? _PyIO_str_read1: _PyIO_str_read),
-        chunk_size, NULL);
+        chunk_size);
     Py_DECREF(chunk_size);
     if (input_chunk == NULL)
         goto fail;
@@ -2414,8 +2412,8 @@ _textiowrapper_encoder_reset(textio *self, int start_of_stream)
         self->encoding_start_of_stream = 1;
     }
     else {
-        res = PyObject_CallMethodObjArgs(self->encoder, _PyIO_str_setstate,
-                                         _PyLong_Zero, NULL);
+        res = _PyObject_CallMethodOneArg(self->encoder, _PyIO_str_setstate,
+                                        _PyLong_Zero);
         self->encoding_start_of_stream = 0;
     }
     if (res == NULL)
@@ -2554,8 +2552,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
     posobj = PyLong_FromOff_t(cookie.start_pos);
     if (posobj == NULL)
         goto fail;
-    res = PyObject_CallMethodObjArgs(self->buffer,
-                                     _PyIO_str_seek, posobj, NULL);
+    res = _PyObject_CallMethodOneArg(self->buffer, _PyIO_str_seek, posobj);
     Py_DECREF(posobj);
     if (res == NULL)
         goto fail;
@@ -2837,7 +2834,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     }
 
 finally:
-    res = _PyObject_CallMethodIdObjArgs(self->decoder, &PyId_setstate, saved_state, NULL);
+    res = _PyObject_CallMethodIdOneArg(self->decoder, &PyId_setstate, saved_state);
     Py_DECREF(saved_state);
     if (res == NULL)
         return NULL;
@@ -2851,7 +2848,7 @@ fail:
     if (saved_state) {
         PyObject *type, *value, *traceback;
         PyErr_Fetch(&type, &value, &traceback);
-        res = _PyObject_CallMethodIdObjArgs(self->decoder, &PyId_setstate, saved_state, NULL);
+        res = _PyObject_CallMethodIdOneArg(self->decoder, &PyId_setstate, saved_state);
         _PyErr_ChainExceptions(type, value, traceback);
         Py_DECREF(saved_state);
         Py_XDECREF(res);
@@ -2878,7 +2875,7 @@ _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos)
         return NULL;
     Py_DECREF(res);
 
-    return PyObject_CallMethodObjArgs(self->buffer, _PyIO_str_truncate, pos, NULL);
+    return _PyObject_CallMethodOneArg(self->buffer, _PyIO_str_truncate, pos);
 }
 
 static PyObject *
@@ -3055,9 +3052,9 @@ _io_TextIOWrapper_close_impl(textio *self)
     else {
         PyObject *exc = NULL, *val, *tb;
         if (self->finalizing) {
-            res = _PyObject_CallMethodIdObjArgs(self->buffer,
-                                                &PyId__dealloc_warn,
-                                                self, NULL);
+            res = _PyObject_CallMethodIdOneArg(self->buffer,
+                                              &PyId__dealloc_warn,
+                                              (PyObject *)self);
             if (res)
                 Py_DECREF(res);
             else
