@@ -1650,6 +1650,29 @@ class TestTypeCallable(ParserTestCase):
         ('1024.675', NS(eggs=None, spam=1024.675)),
     ]
 
+class TestTypeBool(ParserTestCase):
+    """Test some args with bool type:"""
+
+    argument_signatures = [
+        Sig('mybool', type=bool),
+    ]
+    failures = ['wrong','123','-1','abc','!@#']
+    successes = [
+        ('True', NS(mybool=True)),
+        ('False', NS(mybool=False)),
+        ('tRuE', NS(mybool=True)),
+        ('fAlSe', NS(mybool=False)),
+        ('yes', NS(mybool=True)),
+        ('no', NS(mybool=False)),
+        ('y', NS(mybool=True)),
+        ('n', NS(mybool=False)),
+        ('t', NS(mybool=True)),
+        ('f', NS(mybool=False)),
+        ('on', NS(mybool=True)),
+        ('off', NS(mybool=False)),
+        ('1', NS(mybool=True)),
+        ('0', NS(mybool=False)),
+    ]
 
 class TestTypeUserDefined(ParserTestCase):
     """Test a user-defined option/argument type"""

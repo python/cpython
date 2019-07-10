@@ -89,6 +89,7 @@ import shutil as _shutil
 import sys as _sys
 
 from gettext import gettext as _, ngettext
+from distutils.util import strtobool as _strtobool
 
 SUPPRESS = '==SUPPRESS=='
 
@@ -1663,6 +1664,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         def identity(string):
             return string
         self.register('type', None, identity)
+
+        # register bool with a type_func that translates string into bool instance logically and gracefully
+        self.register('type', bool, lambda v: bool(_strtobool(v)))
 
         # add help argument if necessary
         # (using explicit default to override global argument_default)
