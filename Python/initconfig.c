@@ -528,6 +528,7 @@ PyConfig_Clear(PyConfig *config)
     config->module_search_paths_set = 0;
 
     CLEAR(config->executable);
+    CLEAR(config->base_executable);
     CLEAR(config->prefix);
     CLEAR(config->base_prefix);
     CLEAR(config->exec_prefix);
@@ -731,7 +732,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     } while (0)
 #define COPY_WSTRLIST(LIST) \
     do { \
-        if (_PyWideStringList_Copy(&config->LIST, &config2->LIST) < 0 ) { \
+        if (_PyWideStringList_Copy(&config->LIST, &config2->LIST) < 0) { \
             return _PyStatus_NO_MEMORY(); \
         } \
     } while (0)
@@ -765,6 +766,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(module_search_paths_set);
 
     COPY_WSTR_ATTR(executable);
+    COPY_WSTR_ATTR(base_executable);
     COPY_WSTR_ATTR(prefix);
     COPY_WSTR_ATTR(base_prefix);
     COPY_WSTR_ATTR(exec_prefix);
@@ -865,6 +867,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_WSTR(home);
     SET_ITEM_WSTRLIST(module_search_paths);
     SET_ITEM_WSTR(executable);
+    SET_ITEM_WSTR(base_executable);
     SET_ITEM_WSTR(prefix);
     SET_ITEM_WSTR(base_prefix);
     SET_ITEM_WSTR(exec_prefix);
@@ -2321,6 +2324,23 @@ PyConfig_SetArgv(PyConfig *config, Py_ssize_t argc, wchar_t * const *argv)
 }
 
 
+PyStatus
+PyConfig_SetWideStringList(PyConfig *config, PyWideStringList *list,
+                           Py_ssize_t length, wchar_t **items)
+{
+    PyStatus status = _Py_PreInitializeFromConfig(config, NULL);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    PyWideStringList list2 = {.length = length, .items = items};
+    if (_PyWideStringList_Copy(list, &list2) < 0) {
+        return _PyStatus_NO_MEMORY();
+    }
+    return _PyStatus_OK();
+}
+
+
 /* Read the configuration into PyConfig from:
 
    * Command line arguments
@@ -2404,6 +2424,7 @@ PyConfig_Read(PyConfig *config)
         assert(config->module_search_paths_set != 0);
         /* don't check config->module_search_paths */
         assert(config->executable != NULL);
+        assert(config->base_executable != NULL);
         assert(config->prefix != NULL);
         assert(config->base_prefix != NULL);
         assert(config->exec_prefix != NULL);

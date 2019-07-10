@@ -545,6 +545,9 @@ class urlopen_DataTests(unittest.TestCase):
     """Test urlopen() opening a data URL."""
 
     def setUp(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         # text containing URL special- and unicode-characters
         self.text = "test data URLs :;,%=& \u00f6 \u00c4 "
         # 2x1 pixel RGB PNG image with one black and one white pixel
@@ -619,6 +622,9 @@ class urlretrieve_FileTests(unittest.TestCase):
     """Test urllib.urlretrieve() on local files"""
 
     def setUp(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         # Create a list of temporary files. Each item in the list is a file
         # name (absolute path or relative to the current working directory).
         # All files in this list will be deleted in the tearDown method. Note,
@@ -759,6 +765,8 @@ class urlretrieve_HttpTests(unittest.TestCase, FakeHTTPMixin):
     """Test urllib.urlretrieve() using fake http connections"""
 
     def test_short_content_raises_ContentTooShortError(self):
+        self.addCleanup(urllib.request.urlcleanup)
+
         self.fakehttp(b'''HTTP/1.1 200 OK
 Date: Wed, 02 Jan 2008 03:03:54 GMT
 Server: Apache/1.3.33 (Debian GNU/Linux) mod_ssl/2.8.22 OpenSSL/0.9.7e
@@ -780,6 +788,8 @@ FF
                 self.unfakehttp()
 
     def test_short_content_raises_ContentTooShortError_without_reporthook(self):
+        self.addCleanup(urllib.request.urlcleanup)
+
         self.fakehttp(b'''HTTP/1.1 200 OK
 Date: Wed, 02 Jan 2008 03:03:54 GMT
 Server: Apache/1.3.33 (Debian GNU/Linux) mod_ssl/2.8.22 OpenSSL/0.9.7e

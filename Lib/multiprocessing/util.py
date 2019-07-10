@@ -106,6 +106,15 @@ def log_to_stderr(level=None):
 # Function returning a temp directory which will be removed on exit
 #
 
+def _remove_temp_dir(rmtree, tempdir):
+    rmtree(tempdir)
+
+    current_process = process.current_process()
+    # current_process() can be None if the finalizer is called
+    # late during Python finalization
+    if current_process is not None:
+        current_process._config['tempdir'] = None
+
 def get_temp_dir():
     # get name of a temp directory which will be automatically cleaned up
     tempdir = process.current_process()._config.get('tempdir')
@@ -113,7 +122,10 @@ def get_temp_dir():
         import shutil, tempfile
         tempdir = tempfile.mkdtemp(prefix='pymp-')
         info('created temp directory %s', tempdir)
-        Finalize(None, shutil.rmtree, args=[tempdir], exitpriority=-100)
+        # keep a strong reference to shutil.rmtree(), since the finalizer
+        # can be called late during Python shutdown
+        Finalize(None, _remove_temp_dir, args=(shutil.rmtree, tempdir),
+                 exitpriority=-100)
         process.current_process()._config['tempdir'] = tempdir
     return tempdir
 

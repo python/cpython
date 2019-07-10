@@ -134,7 +134,7 @@ groupby_step(groupbyobject *gbo)
         newkey = newvalue;
         Py_INCREF(newvalue);
     } else {
-        newkey = PyObject_CallFunctionObjArgs(gbo->keyfunc, newvalue, NULL);
+        newkey = _PyObject_CallOneArg(gbo->keyfunc, newvalue);
         if (newkey == NULL) {
             Py_DECREF(newvalue);
             return -1;
@@ -1210,7 +1210,7 @@ dropwhile_next(dropwhileobject *lz)
         if (lz->start == 1)
             return item;
 
-        good = PyObject_CallFunctionObjArgs(lz->func, item, NULL);
+        good = _PyObject_CallOneArg(lz->func, item);
         if (good == NULL) {
             Py_DECREF(item);
             return NULL;
@@ -1373,7 +1373,7 @@ takewhile_next(takewhileobject *lz)
     if (item == NULL)
         return NULL;
 
-    good = PyObject_CallFunctionObjArgs(lz->func, item, NULL);
+    good = _PyObject_CallOneArg(lz->func, item);
     if (good == NULL) {
         Py_DECREF(item);
         return NULL;
@@ -3906,7 +3906,7 @@ filterfalse_next(filterfalseobject *lz)
             ok = PyObject_IsTrue(item);
         } else {
             PyObject *good;
-            good = PyObject_CallFunctionObjArgs(lz->func, item, NULL);
+            good = _PyObject_CallOneArg(lz->func, item);
             if (good == NULL) {
                 Py_DECREF(item);
                 return NULL;

@@ -141,8 +141,7 @@ _is_coroutine(PyObject *coro)
        Do this check after 'future_init()'; in case we need to raise
        an error, __del__ needs a properly initialized object.
     */
-    PyObject *res = PyObject_CallFunctionObjArgs(
-        asyncio_iscoroutine_func, coro, NULL);
+    PyObject *res = _PyObject_CallOneArg(asyncio_iscoroutine_func, coro);
     if (res == NULL) {
         return -1;
     }
@@ -333,7 +332,7 @@ get_event_loop(void)
         return NULL;
     }
 
-    loop = _PyObject_CallMethodId(policy, &PyId_get_event_loop, NULL);
+    loop = _PyObject_CallMethodIdNoArgs(policy, &PyId_get_event_loop);
     Py_DECREF(policy);
     return loop;
 }
@@ -494,7 +493,7 @@ future_init(FutureObj *fut, PyObject *loop)
     }
     fut->fut_loop = loop;
 
-    res = _PyObject_CallMethodId(fut->fut_loop, &PyId_get_debug, NULL);
+    res = _PyObject_CallMethodIdNoArgs(fut->fut_loop, &PyId_get_debug);
     if (res == NULL) {
         return -1;
     }
@@ -1286,8 +1285,7 @@ static PyObject *
 _asyncio_Future__repr_info_impl(FutureObj *self)
 /*[clinic end generated code: output=fa69e901bd176cfb input=f21504d8e2ae1ca2]*/
 {
-    return PyObject_CallFunctionObjArgs(
-        asyncio_future_repr_info_func, self, NULL);
+    return _PyObject_CallOneArg(asyncio_future_repr_info_func, (PyObject *)self);
 }
 
 static PyObject *
@@ -1297,9 +1295,8 @@ FutureObj_repr(FutureObj *fut)
 
     ENSURE_FUTURE_ALIVE(fut)
 
-    PyObject *rinfo = _PyObject_CallMethodIdObjArgs((PyObject*)fut,
-                                                    &PyId__repr_info,
-                                                    NULL);
+    PyObject *rinfo = _PyObject_CallMethodIdNoArgs((PyObject*)fut,
+                                                   &PyId__repr_info);
     if (rinfo == NULL) {
         return NULL;
     }
@@ -1364,7 +1361,7 @@ FutureObj_finalize(FutureObj *fut)
 
     func = _PyObject_GetAttrId(fut->fut_loop, &PyId_call_exception_handler);
     if (func != NULL) {
-        PyObject *res = PyObject_CallFunctionObjArgs(func, context, NULL);
+        PyObject *res = _PyObject_CallOneArg(func, context);
         if (res == NULL) {
             PyErr_WriteUnraisable(func);
         }
@@ -2104,13 +2101,13 @@ _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
             Py_DECREF(current_task_func);
             return NULL;
         }
-        ret = PyObject_CallFunctionObjArgs(current_task_func, loop, NULL);
+        ret = _PyObject_CallOneArg(current_task_func, loop);
         Py_DECREF(current_task_func);
         Py_DECREF(loop);
         return ret;
     }
     else {
-        ret = PyObject_CallFunctionObjArgs(current_task_func, loop, NULL);
+        ret = _PyObject_CallOneArg(current_task_func, loop);
         Py_DECREF(current_task_func);
         return ret;
     }
@@ -2146,7 +2143,7 @@ _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
         return NULL;
     }
 
-    res = PyObject_CallFunctionObjArgs(all_tasks_func, loop, NULL);
+    res = _PyObject_CallOneArg(all_tasks_func, loop);
     Py_DECREF(all_tasks_func);
     return res;
 }
@@ -2159,8 +2156,7 @@ static PyObject *
 _asyncio_Task__repr_info_impl(TaskObj *self)
 /*[clinic end generated code: output=6a490eb66d5ba34b input=3c6d051ed3ddec8b]*/
 {
-    return PyObject_CallFunctionObjArgs(
-        asyncio_task_repr_info_func, self, NULL);
+    return _PyObject_CallOneArg(asyncio_task_repr_info_func, (PyObject *)self);
 }
 
 /*[clinic input]
@@ -2200,8 +2196,7 @@ _asyncio_Task_cancel_impl(TaskObj *self)
         PyObject *res;
         int is_true;
 
-        res = _PyObject_CallMethodId(
-            self->task_fut_waiter, &PyId_cancel, NULL);
+        res = _PyObject_CallMethodIdNoArgs(self->task_fut_waiter, &PyId_cancel);
         if (res == NULL) {
             return NULL;
         }
@@ -2411,7 +2406,7 @@ TaskObj_finalize(TaskObj *task)
 
     func = _PyObject_GetAttrId(task->task_loop, &PyId_call_exception_handler);
     if (func != NULL) {
-        PyObject *res = PyObject_CallFunctionObjArgs(func, context, NULL);
+        PyObject *res = _PyObject_CallOneArg(func, context);
         if (res == NULL) {
             PyErr_WriteUnraisable(func);
         }
@@ -2543,7 +2538,7 @@ task_set_error_soon(TaskObj *task, PyObject *et, const char *format, ...)
         return NULL;
     }
 
-    PyObject *e = PyObject_CallFunctionObjArgs(et, msg, NULL);
+    PyObject *e = _PyObject_CallOneArg(et, msg);
     Py_DECREF(msg);
     if (e == NULL) {
         return NULL;
@@ -2738,7 +2733,7 @@ set_exception:
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
-            r = _PyObject_CallMethodId(result, &PyId_cancel, NULL);
+            r = _PyObject_CallMethodIdNoArgs(result, &PyId_cancel);
             if (r == NULL) {
                 return NULL;
             }
@@ -2829,7 +2824,7 @@ set_exception:
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
-            r = _PyObject_CallMethodId(result, &PyId_cancel, NULL);
+            r = _PyObject_CallMethodIdNoArgs(result, &PyId_cancel);
             if (r == NULL) {
                 return NULL;
             }

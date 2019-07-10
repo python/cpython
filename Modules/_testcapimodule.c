@@ -4907,7 +4907,7 @@ bad_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         return NULL;
     }
 
-    PyObject *res = PyObject_CallObject(cls, NULL);
+    PyObject *res = _PyObject_CallNoArg(cls);
     if (res == NULL) {
         return NULL;
     }
