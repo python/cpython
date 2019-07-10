@@ -341,7 +341,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self._ensure_fd_no_transport(fd)
         return self._remove_writer(fd)
 
-    async def sock_recv(self, sock, n, _warn=warnings.warn):
+    async def sock_recv(self, sock, n):
         """Receive data from the socket.
 
         The return value is a bytes object representing the data received.
@@ -349,7 +349,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         nbytes.
         """
         if isinstance(sock, ssl.SSLSocket):
-            _warn("the socket must not be an SSLSocket instance", DeprecationWarning, source=self)
+            warnings.warn("the socket must not be an SSLSocket instance", DeprecationWarning, source=self)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -382,14 +382,14 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(data)
 
-    async def sock_recv_into(self, sock, buf, _warn=warnings.warn):
+    async def sock_recv_into(self, sock, buf):
         """Receive data from the socket.
 
         The received data is written into *buf* (a writable buffer).
         The return value is the number of bytes written.
         """
         if isinstance(sock, ssl.SSLSocket):
-            _warn("the socket must not be an SSLSocket instance", DeprecationWarning, source=self)
+            warnings.warn("the socket must not be an SSLSocket instance", DeprecationWarning, source=self)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -420,7 +420,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(nbytes)
 
-    async def sock_sendall(self, sock, data, _warn=warnings.warn):
+    async def sock_sendall(self, sock, data):
         """Send data to the socket.
 
         The socket must be connected to a remote socket. This method continues
@@ -430,7 +430,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         successfully processed by the receiving end of the connection.
         """
         if isinstance(sock, ssl.SSLSocket):
-            _warn("the socket must not be an SSLSocket instance", DeprecationWarning, source=self)
+            warnings.warn("the socket must not be an SSLSocket instance", DeprecationWarning, source=self)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -473,13 +473,13 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             pos[0] = start
 
-    async def sock_connect(self, sock, address, _warn=warnings.warn):
+    async def sock_connect(self, sock, address):
         """Connect to a remote socket at address.
 
         This method is a coroutine.
         """
         if isinstance(sock, ssl.SSLSocket):
-            _warn("the socket must not be an SSLSocket instance", DeprecationWarning, source=self)
+            warnings.warn("the socket must not be an SSLSocket instance", DeprecationWarning, source=self)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
 
@@ -533,7 +533,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(None)
 
-    async def sock_accept(self, sock, _warn=warnings.warn):
+    async def sock_accept(self, sock):
         """Accept a connection.
 
         The socket must be bound to an address and listening for connections.
@@ -542,7 +542,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         is the address bound to the socket on the other end of the connection.
         """
         if isinstance(sock, ssl.SSLSocket):
-            _warn("the socket must not be an SSLSocket instance", DeprecationWarning, source=self)
+            warnings.warn("the socket must not be an SSLSocket instance", DeprecationWarning, source=self)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
