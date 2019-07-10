@@ -1,0 +1,1 @@
+Optimize code context to reduce unneeded background activity.
