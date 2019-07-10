@@ -17,16 +17,6 @@ style= expression
 flash-delay= 500
 bell= True
 
-# [LineNumber]
-# enable=1
-# enable_editor=1
-# # Should LineNumbering be visible on EditorWindow startup?
-# visible=0
-# bgcolor=Gray
-# fgcolor=Black
-# [LineNumber_bindings]
-# toggle-line-numbers=
-
 # IDLE reads several config files to determine user preferences.  This
 # file is the default configuration file for IDLE extensions settings.
 #
