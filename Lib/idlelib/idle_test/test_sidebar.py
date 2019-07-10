@@ -21,7 +21,7 @@ class Dummy_editwin:
         pass
 
 
-class LineNumberTest(unittest.TestCase):
+class LineNumbersTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
