@@ -156,6 +156,13 @@ PyAPI_FUNC(PyObject *) _PyObject_VectorcallMethod(
     PyObject *name, PyObject *const *args,
     size_t nargsf, PyObject *kwnames);
 
+static inline PyObject *
+_PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)
+{
+    return _PyObject_VectorcallMethod(name, &self,
+           1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+}
+
 /* Like PyObject_CallMethod(), but expect a _Py_Identifier*
    as the method name. */
 PyAPI_FUNC(PyObject *) _PyObject_CallMethodId(PyObject *obj,
@@ -182,6 +189,13 @@ _PyObject_VectorcallMethodId(
         return NULL;
     }
     return _PyObject_VectorcallMethod(oname, args, nargsf, kwnames);
+}
+
+static inline PyObject *
+_PyObject_CallMethodIdNoArgs(PyObject *self, _Py_Identifier *name)
+{
+    return _PyObject_VectorcallMethodId(name, &self,
+           1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
 PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
