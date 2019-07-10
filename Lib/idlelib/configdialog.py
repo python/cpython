@@ -1822,6 +1822,9 @@ class GenPage(Frame):
                 frame_format: Frame
                     format_width_title: Label
                     (*)format_width_int: Entry - format_width
+                frame_line_numbers_default: Frame
+                    line_numbers_default_title: Label
+                    (*)line_numbers_default_bool: Checkbutton - line_numbers_default
                 frame_context: Frame
                     context_title: Label
                     (*)context_int: Entry - context_lines
@@ -1861,6 +1864,9 @@ class GenPage(Frame):
                 IntVar(self), ('main', 'General', 'autosave'))
         self.format_width = tracers.add(
                 StringVar(self), ('extensions', 'FormatParagraph', 'max-width'))
+        self.line_numbers_default = tracers.add(
+                BooleanVar(self),
+                ('main', 'EditorWindow', 'line-numbers-default'))
         self.context_lines = tracers.add(
                 StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
 
@@ -1929,6 +1935,14 @@ class GenPage(Frame):
                                    text='Format Paragraph Max Width')
         self.format_width_int = Entry(
                 frame_format, textvariable=self.format_width, width=4)
+
+        frame_line_numbers_default = Frame(frame_editor, borderwidth=0)
+        line_numbers_default_title = Label(
+            frame_line_numbers_default, text='Show line numbers in new windows')
+        self.line_numbers_default_bool = Checkbutton(
+                frame_line_numbers_default,
+                variable=self.line_numbers_default,
+                width=1)
 
         frame_context = Frame(frame_editor, borderwidth=0)
         context_title = Label(frame_context, text='Max Context Lines :')
@@ -2003,6 +2017,10 @@ class GenPage(Frame):
         frame_format.pack(side=TOP, padx=5, pady=0, fill=X)
         format_width_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.format_width_int.pack(side=TOP, padx=10, pady=5)
+        # frame_line_numbers_default.
+        frame_line_numbers_default.pack(side=TOP, padx=5, pady=0, fill=X)
+        line_numbers_default_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.line_numbers_default_bool.pack(side=LEFT, padx=5, pady=5)
         # frame_context.
         frame_context.pack(side=TOP, padx=5, pady=0, fill=X)
         context_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -2045,6 +2063,8 @@ class GenPage(Frame):
                 'main', 'General', 'autosave', default=0, type='bool'))
         self.format_width.set(idleConf.GetOption(
                 'extensions', 'FormatParagraph', 'max-width', type='int'))
+        self.line_numbers_default.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'line-numbers-default', type='bool'))
         self.context_lines.set(idleConf.GetOption(
                 'extensions', 'CodeContext', 'maxlines', type='int'))
 
