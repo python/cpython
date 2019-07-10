@@ -1271,7 +1271,7 @@ _Py_GetAllocatedBlocks(void)
         assert(base <= (uintptr_t) arenas[i].pool_address);
         for (; base < (uintptr_t) arenas[i].pool_address; base += POOL_SIZE) {
             poolp p = (poolp)base;
-            n += p->ref.count;
+            n += p->nalloc;
         }
     }
     return n;
