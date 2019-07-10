@@ -124,7 +124,7 @@ class LineNumbers(BaseSideBar):
             delegator.resetcache()
             delegator = delegator.delegate
 
-        self.is_shown = True  # TODO: Read config
+        self.is_shown = False  # TODO: Read config?
         # Note : We invert state here, and call toggle_line_numbers_event
         # to get our desired state
         self.is_shown = not self.is_shown
@@ -232,10 +232,9 @@ class LineNumbers(BaseSideBar):
 
     def toggle_line_numbers_event(self, event):
         self.show_sidebar() if not self.is_shown else self.hide_sidebar()
-        self.editwin.setvar('<<toggle-line-numbers>>', self.is_shown)
-        # idleConf.SetOption('extensions', 'LineNumber', 'visible',
-        #                    str(self.state))
-        # idleConf.SaveUserCfgFiles()
+        menu_status = "Show" if not self.is_shown else "Hide"
+        self.editwin.update_menu_label(menu='options', index='* Line Numbers',
+                                       label=f'{menu_status} Line Numbers')
 
     def update_sidebar_text(self, end):
         """
