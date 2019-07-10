@@ -1409,96 +1409,43 @@ address_in_range(void *p, poolp pool)
 
 /*==========================================================================*/
 
-/* pymalloc allocator
-
-   The basic blocks are ordered by decreasing execution frequency,
-   which minimizes the number of jumps in the most common cases,
-   improves branching prediction and instruction scheduling (small
-   block allocations typically result in a couple of instructions).
-   Unless the optimizer reorders everything, being too smart...
-
-   Return 1 if pymalloc allocated memory and wrote the pointer into *ptr_p.
-
-   Return 0 if pymalloc failed to allocate the memory block: on bigger
-   requests, on error in the code below (as a last chance to serve the request)
-   or when the max memory limit has been reached. */
-static inline int
-pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
+static void
+pymalloc_pool_extend(poolp pool, uint size)
 {
-    block *bp;
-    poolp pool;
+    if (LIKELY(pool->nextoffset <= pool->maxnextoffset)) {
+        /* There is room for another block. */
+        pool->freeblock = (block*)pool + pool->nextoffset;
+        pool->nextoffset += INDEX2SIZE(size);
+        *(block **)(pool->freeblock) = NULL;
+        return;
+    }
+
+    /* Pool is full, unlink from used pools. */
     poolp next;
-    uint size;
+    next = pool->nextpool;
+    pool = pool->prevpool;
+    next->prevpool = pool;
+    pool->nextpool = next;
+}
 
-#ifdef WITH_VALGRIND
-    if (UNLIKELY(running_on_valgrind == -1)) {
-        running_on_valgrind = RUNNING_ON_VALGRIND;
-    }
-    if (UNLIKELY(running_on_valgrind)) {
-        return 0;
-    }
-#endif
-
-    if (nbytes == 0) {
-        return 0;
-    }
-    if (UNLIKELY(nbytes > SMALL_REQUEST_THRESHOLD)) {
-        return 0;
-    }
-
-    /*
-     * Most frequent paths first
-     */
-    size = (uint)(nbytes - 1) >> ALIGNMENT_SHIFT;
-    pool = usedpools[size + size];
-    if (LIKELY(pool != pool->nextpool)) {
-        /*
-         * There is a used pool for this size class.
-         * Pick up the head block of its free list.
-         */
-        ++pool->ref.count;
-        bp = pool->freeblock;
-        assert(bp != NULL);
-        if (LIKELY((pool->freeblock = *(block **)bp) != NULL)) {
-            goto success;
-        }
-
-        /*
-         * Reached the end of the free list, try to extend it.
-         */
-        if (pool->nextoffset <= pool->maxnextoffset) {
-            /* There is room for another block. */
-            pool->freeblock = (block*)pool +
-                              pool->nextoffset;
-            pool->nextoffset += INDEX2SIZE(size);
-            *(block **)(pool->freeblock) = NULL;
-            goto success;
-        }
-
-        /* Pool is full, unlink from used pools. */
-        next = pool->nextpool;
-        pool = pool->prevpool;
-        next->prevpool = pool;
-        pool->nextpool = next;
-        goto success;
-    }
-
+static void*
+allocate_from_new_pool(size_t size)
+{
     /* There isn't a pool of the right size class immediately
      * available:  use a free pool.
      */
-    if (usable_arenas == NULL) {
+    if (UNLIKELY(usable_arenas == NULL)) {
         /* No arena has a free pool:  allocate a new arena. */
 #ifdef WITH_MEMORY_LIMITS
         if (narenas_currently_allocated >= MAX_ARENAS) {
-            goto failed;
+            return NULL;
         }
 #endif
         usable_arenas = new_arena();
         if (usable_arenas == NULL) {
-            goto failed;
+            return NULL;
         }
-        usable_arenas->nextarena =
-            usable_arenas->prevarena = NULL;
+        usable_arenas->nextarena = usable_arenas->prevarena = NULL;
         assert(nfp2lasta[usable_arenas->nfreepools] == NULL);
         nfp2lasta[usable_arenas->nfreepools] = usable_arenas;
     }
@@ -1521,12 +1468,12 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
     }
 
     /* Try to get a cached free pool. */
-    pool = usable_arenas->freepools;
-    if (pool != NULL) {
+    poolp pool = usable_arenas->freepools;
+    if (LIKELY(pool != NULL)) {
         /* Unlink from cached pools. */
         usable_arenas->freepools = pool->nextpool;
-        --usable_arenas->nfreepools;
-        if (usable_arenas->nfreepools == 0) {
+        usable_arenas->nfreepools--;
+        if (UNLIKELY(usable_arenas->nfreepools == 0)) {
             /* Wholly allocated:  remove. */
             assert(usable_arenas->freepools == NULL);
             assert(usable_arenas->nextarena == NULL ||
@@ -1549,73 +1496,123 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
                    (block*)usable_arenas->address +
                        ARENA_SIZE - POOL_SIZE);
         }
+    }
+    else {
+        /* Carve off a new pool. */
+        assert(usable_arenas->nfreepools > 0);
+        assert(usable_arenas->freepools == NULL);
+        pool = (poolp)usable_arenas->pool_address;
+        assert((block*)pool <= (block*)usable_arenas->address +
+                                 ARENA_SIZE - POOL_SIZE);
+        pool->arenaindex = (uint)(usable_arenas - arenas);
+        assert(&arenas[pool->arenaindex] == usable_arenas);
+        pool->szidx = DUMMY_SIZE_IDX;
+        usable_arenas->pool_address += POOL_SIZE;
+        --usable_arenas->nfreepools;
 
-    init_pool:
-        /* Frontlink to used pools. */
-        next = usedpools[size + size]; /* == prev */
-        pool->nextpool = next;
-        pool->prevpool = next;
-        next->nextpool = pool;
-        next->prevpool = pool;
-        pool->ref.count = 1;
-        if (pool->szidx == size) {
-            /* Luckily, this pool last contained blocks
-             * of the same size class, so its header
-             * and free list are already initialized.
-             */
-            bp = pool->freeblock;
-            assert(bp != NULL);
-            pool->freeblock = *(block **)bp;
-            goto success;
+        if (usable_arenas->nfreepools == 0) {
+            assert(usable_arenas->nextarena == NULL ||
+                   usable_arenas->nextarena->prevarena ==
+                   usable_arenas);
+            /* Unlink the arena:  it is completely allocated. */
+            usable_arenas = usable_arenas->nextarena;
+            if (usable_arenas != NULL) {
+                usable_arenas->prevarena = NULL;
+                assert(usable_arenas->address != 0);
+            }
         }
-        /*
-         * Initialize the pool header, set up the free list to
-         * contain just the second block, and return the first
-         * block.
+    }
+
+    /* Frontlink to used pools. */
+    block *bp;
+    poolp next = usedpools[size + size]; /* == prev */
+    pool->nextpool = next;
+    pool->prevpool = next;
+    next->nextpool = pool;
+    next->prevpool = pool;
+    pool->ref.count = 1;
+    if (pool->szidx == size) {
+        /* Luckily, this pool last contained blocks
+         * of the same size class, so its header
+         * and free list are already initialized.
          */
-        pool->szidx = size;
-        size = INDEX2SIZE(size);
-        bp = (block *)pool + POOL_OVERHEAD;
-        pool->nextoffset = POOL_OVERHEAD + (size << 1);
-        pool->maxnextoffset = POOL_SIZE - size;
-        pool->freeblock = bp + size;
-        *(block **)(pool->freeblock) = NULL;
-        goto success;
+        bp = pool->freeblock;
+        assert(bp != NULL);
+        pool->freeblock = *(block **)bp;
+        return bp;
+    }
+    /*
+     * Initialize the pool header, set up the free list to
+     * contain just the second block, and return the first
+     * block.
+     */
+    pool->szidx = size;
+    size = INDEX2SIZE(size);
+    bp = (block *)pool + POOL_OVERHEAD;
+    pool->nextoffset = POOL_OVERHEAD + (size << 1);
+    pool->maxnextoffset = POOL_SIZE - size;
+    pool->freeblock = bp + size;
+    *(block **)(pool->freeblock) = NULL;
+    return bp;
+}
+
+/* pymalloc allocator
+
+   Return 1 if pymalloc allocated memory and wrote the pointer into *ptr_p.
+
+   Return 0 if pymalloc failed to allocate the memory block: on bigger
+   requests, on error in the code below (as a last chance to serve the request)
+   or when the max memory limit has been reached.
+*/
+static inline int
+pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
+{
+#ifdef WITH_VALGRIND
+    if (UNLIKELY(running_on_valgrind == -1)) {
+        running_on_valgrind = RUNNING_ON_VALGRIND;
+    }
+    if (UNLIKELY(running_on_valgrind)) {
+        return 0;
+    }
+#endif
+
+    if (UNLIKELY(nbytes == 0)) {
+        return 0;
+    }
+    if (UNLIKELY(nbytes > SMALL_REQUEST_THRESHOLD)) {
+        return 0;
     }
 
-    /* Carve off a new pool. */
-    assert(usable_arenas->nfreepools > 0);
-    assert(usable_arenas->freepools == NULL);
-    pool = (poolp)usable_arenas->pool_address;
-    assert((block*)pool <= (block*)usable_arenas->address +
-                             ARENA_SIZE - POOL_SIZE);
-    pool->arenaindex = (uint)(usable_arenas - arenas);
-    assert(&arenas[pool->arenaindex] == usable_arenas);
-    pool->szidx = DUMMY_SIZE_IDX;
-    usable_arenas->pool_address += POOL_SIZE;
-    --usable_arenas->nfreepools;
+    uint size = (uint)(nbytes - 1) >> ALIGNMENT_SHIFT;
+    poolp pool = usedpools[size + size];
+    block *bp;
+    
+    if (LIKELY(pool != pool->nextpool)) {
+        /*
+         * There is a used pool for this size class.
+         * Pick up the head block of its free list.
+         */
+        ++pool->ref.count;
+        bp = pool->freeblock;
 
-    if (usable_arenas->nfreepools == 0) {
-        assert(usable_arenas->nextarena == NULL ||
-               usable_arenas->nextarena->prevarena ==
-               usable_arenas);
-        /* Unlink the arena:  it is completely allocated. */
-        usable_arenas = usable_arenas->nextarena;
-        if (usable_arenas != NULL) {
-            usable_arenas->prevarena = NULL;
-            assert(usable_arenas->address != 0);
+        if (UNLIKELY((pool->freeblock = *(block **)bp) == NULL)) {
+            // Reached the end of the free list, try to extend it.
+            pymalloc_pool_extend(pool, size);
+        }
+    }
+    else {
+        /* There isn't a pool of the right size class immediately
+         * available:  use a free pool.
+         */
+        bp = allocate_from_new_pool(size);
+        if (UNLIKELY(bp == NULL)) {
+            return 0;
         }
     }
 
-    goto init_pool;
-
-success:
     assert(bp != NULL);
     *ptr_p = (void *)bp;
     return 1;
-
-failed:
-    return 0;
 }
 
 
