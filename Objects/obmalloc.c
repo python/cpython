@@ -1214,16 +1214,16 @@ _Py_GetAllocatedBlocks(void)
     Py_ssize_t n = raw_allocated_blocks;
     /* add up allocated blocks for used pools */
     for (uint i = 0; i < maxarenas; ++i) {
-        uintptr_t base = arenas[i].address;
-
         /* Skip arenas which are not allocated. */
-        if (arenas[i].address == (uintptr_t)NULL)
+        if (arenas[i].address == NULL) {
             continue;
+        }
+
+        uintptr_t base = (uintptr_t)_Py_ALIGN_UP(arenas[i].address, POOL_SIZE);
 
         /* visit every pool in the arena */
         assert(base <= (uintptr_t) arenas[i].pool_address);
-        for (uint j = 0; base < (uintptr_t) arenas[i].pool_address;
-             ++j, base += POOL_SIZE) {
+        for (; base < (uintptr_t) arenas[i].pool_address; base += POOL_SIZE) {
             poolp p = (poolp)base;
             n += p->ref.count;
         }
