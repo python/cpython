@@ -3504,7 +3504,9 @@ main_loop:
             PyObject **sp, *res, *names;
 
             names = POP();
-            assert(PyTuple_CheckExact(names) && PyTuple_GET_SIZE(names) <= oparg);
+            assert(PyTuple_Check(names));
+            assert(PyTuple_GET_SIZE(names) <= oparg);
+            /* We assume without checking that names contains only strings */
             sp = stack_pointer;
             res = call_function(tstate, &sp, oparg, names);
             stack_pointer = sp;
@@ -5372,20 +5374,12 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
         _PyErr_Fetch(tstate, &exc, &val, &tb);
         if (val && PyTuple_Check(val) && PyTuple_GET_SIZE(val) == 1) {
             PyObject *key = PyTuple_GET_ITEM(val, 0);
-            if (!PyUnicode_Check(key)) {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "%.200s%.200s keywords must be strings",
-                              PyEval_GetFuncName(func),
-                              PyEval_GetFuncDesc(func));
-            }
-            else {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "%.200s%.200s got multiple "
-                              "values for keyword argument '%U'",
-                              PyEval_GetFuncName(func),
-                              PyEval_GetFuncDesc(func),
-                              key);
-            }
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "%.200s%.200s got multiple "
+                          "values for keyword argument '%S'",
+                          PyEval_GetFuncName(func),
+                          PyEval_GetFuncDesc(func),
+                          key);
             Py_XDECREF(exc);
             Py_XDECREF(val);
             Py_XDECREF(tb);

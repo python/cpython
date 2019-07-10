@@ -88,8 +88,7 @@ _PyVectorcall_Function(PyObject *callable)
    of keyword arguments does not change nargsf). kwnames can also be NULL if
    there are no keyword arguments.
 
-   keywords must only contains str strings (no subclass), and all keys must
-   be unique.
+   keywords must only contain strings and all keys must be unique.
 
    Return the result on success. Raise an exception and return NULL on
    error. */
