@@ -868,16 +868,8 @@ class ZipExtFile(io.BufferedIOBase):
 
         self.process_local_header()
         self.raise_for_unsupported_flags()
+
         self._compress_type = zipinfo.compress_type
-        self._compress_left = zipinfo.compress_size
-        self._left = zipinfo.file_size
-
-        self._decompressor = _get_decompressor(self._compress_type)
-
-        self._eof = False
-        self._readbuffer = b''
-        self._offset = 0
-
         self.newlines = None
 
         self.mode = mode
@@ -885,22 +877,37 @@ class ZipExtFile(io.BufferedIOBase):
 
         if hasattr(zipinfo, 'CRC'):
             self._expected_crc = zipinfo.CRC
-            self._running_crc = crc32(b'')
         else:
             self._expected_crc = None
 
         self._seekable = False
         try:
             if fileobj.seekable():
-                self._orig_compress_start = fileobj.tell()
-                self._orig_compress_size = zipinfo.compress_size
-                self._orig_file_size = zipinfo.file_size
-                self._orig_start_crc = self._running_crc
                 self._seekable = True
         except AttributeError:
             pass
 
+        # Compress start is the byte after the 'local file header' ie. the
+        # start of 'encryption header' section if present or 'file data'
+        # otherwise.
+        self._compress_start = fileobj.tell()
+        self.read_init()
+
+    def read_init(self):
+        self._running_crc = crc32(b'')
+        # Remaining compressed bytes to be read.
+        self._compress_left = self._zinfo.compress_size
+        # Remaining number of uncompressed bytes not returned to the calling
+        # application.
+        self._left = self._zinfo.file_size
+        # Uncompressed data ready to return to the calling application.
+        self._readbuffer = b''
+        # The current position in _readbuffer for the next byte to return.
+        self._offset = 0
+        self._eof = False
+
         self._decrypter = self.get_decrypter()
+        self._decompressor = _get_decompressor(self._compress_type)
 
     def process_local_header(self):
         """Read the local header and raise for any errors.
@@ -1172,13 +1179,13 @@ class ZipExtFile(io.BufferedIOBase):
         elif whence == 1: # Seek from current position
             new_pos = curr_pos + offset
         elif whence == 2: # Seek from EOF
-            new_pos = self._orig_file_size + offset
+            new_pos = self._zinfo.file_size + offset
         else:
             raise ValueError("whence must be os.SEEK_SET (0), "
                              "os.SEEK_CUR (1), or os.SEEK_END (2)")
 
-        if new_pos > self._orig_file_size:
-            new_pos = self._orig_file_size
+        if new_pos > self._zinfo.file_size:
+            new_pos = self._zinfo.file_size
 
         if new_pos < 0:
             new_pos = 0
@@ -1192,14 +1199,8 @@ class ZipExtFile(io.BufferedIOBase):
             read_offset = 0
         elif read_offset < 0:
             # Position is before the current position. Reset the ZipExtFile
-            self._fileobj.seek(self._orig_compress_start)
-            self._running_crc = self._orig_start_crc
-            self._compress_left = self._orig_compress_size
-            self._left = self._orig_file_size
-            self._readbuffer = b''
-            self._offset = 0
-            self._decompressor = _get_decompressor(self._compress_type)
-            self._eof = False
+            self._fileobj.seek(self._compress_start)
+            self.read_init()
             read_offset = new_pos
 
         while read_offset > 0:
@@ -1212,7 +1213,7 @@ class ZipExtFile(io.BufferedIOBase):
     def tell(self):
         if not self._seekable:
             raise io.UnsupportedOperation("underlying stream is not seekable")
-        filepos = self._orig_file_size - self._left - len(self._readbuffer) + self._offset
+        filepos = self._zinfo.file_size - self._left - len(self._readbuffer) + self._offset
         return filepos
 
 
