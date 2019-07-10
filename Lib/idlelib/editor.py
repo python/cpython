@@ -54,7 +54,7 @@ class EditorWindow(object):
     from idlelib.calltip import Calltip
     from idlelib.codecontext import CodeContext
     from idlelib.paragraph import FormatParagraph
-    from idlelib.linenumbers import LineNumbers
+    from idlelib.sidebar import LineNumbers
     from idlelib.parenmatch import ParenMatch
     from idlelib.rstrip import Rstrip
     from idlelib.squeezer import Squeezer
