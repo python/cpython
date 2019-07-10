@@ -9,7 +9,6 @@ import contextlib
 import decimal
 import errno
 import fractions
-import getpass
 import itertools
 import locale
 import mmap
@@ -22,6 +21,7 @@ import stat
 import subprocess
 import sys
 import sysconfig
+import tempfile
 import threading
 import time
 import unittest
@@ -42,15 +42,6 @@ try:
     import _winapi
 except ImportError:
     _winapi = None
-try:
-    import grp
-    groups = [g.gr_gid for g in grp.getgrall() if getpass.getuser() in g.gr_mem]
-    if hasattr(os, 'getgid'):
-        process_gid = os.getgid()
-        if process_gid not in groups:
-            groups.append(process_gid)
-except ImportError:
-    groups = []
 try:
     import pwd
     all_users = [u.pw_uid for u in pwd.getpwall()]
@@ -89,6 +80,70 @@ def requires_os_func(name):
 def create_file(filename, content=b'content'):
     with open(filename, "xb", 0) as fp:
         fp.write(content)
+
+
+class MiscTests(unittest.TestCase):
+    def test_getcwd(self):
+        cwd = os.getcwd()
+        self.assertIsInstance(cwd, str)
+
+    def test_getcwd_long_path(self):
+        # bpo-37412: On Linux, PATH_MAX is usually around 4096 bytes. On
+        # Windows, MAX_PATH is defined as 260 characters, but Windows supports
+        # longer path if longer paths support is enabled. Internally, the os
+        # module uses MAXPATHLEN which is at least 1024.
+        #
+        # Use a directory name of 200 characters to fit into Windows MAX_PATH
+        # limit.
+        #
+        # On Windows, the test can stop when trying to create a path longer
+        # than MAX_PATH if long paths support is disabled:
+        # see RtlAreLongPathsEnabled().
+        min_len = 2000   # characters
+        dirlen = 200     # characters
+        dirname = 'python_test_dir_'
+        dirname = dirname + ('a' * (dirlen - len(dirname)))
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with support.change_cwd(tmpdir) as path:
+                expected = path
+
+                while True:
+                    cwd = os.getcwd()
+                    self.assertEqual(cwd, expected)
+
+                    need = min_len - (len(cwd) + len(os.path.sep))
+                    if need <= 0:
+                        break
+                    if len(dirname) > need and need > 0:
+                        dirname = dirname[:need]
+
+                    path = os.path.join(path, dirname)
+                    try:
+                        os.mkdir(path)
+                        # On Windows, chdir() can fail
+                        # even if mkdir() succeeded
+                        os.chdir(path)
+                    except FileNotFoundError:
+                        # On Windows, catch ERROR_PATH_NOT_FOUND (3) and
+                        # ERROR_FILENAME_EXCED_RANGE (206) errors
+                        # ("The filename or extension is too long")
+                        break
+                    except OSError as exc:
+                        if exc.errno == errno.ENAMETOOLONG:
+                            break
+                        else:
+                            raise
+
+                    expected = path
+
+                if support.verbose:
+                    print(f"Tested current directory length: {len(cwd)}")
+
+    def test_getcwdb(self):
+        cwd = os.getcwdb()
+        self.assertIsInstance(cwd, bytes)
+        self.assertEqual(os.fsdecode(cwd), os.getcwd())
 
 
 # Tests creating TESTFN
@@ -1320,13 +1375,19 @@ class ChownFileTests(unittest.TestCase):
         self.assertIsNone(os.chown(support.TESTFN, uid, gid))
         self.assertIsNone(os.chown(support.TESTFN, -1, -1))
 
-    @unittest.skipUnless(len(groups) > 1, "test needs more than one group")
-    def test_chown(self):
+    @unittest.skipUnless(hasattr(os, 'getgroups'), 'need os.getgroups')
+    def test_chown_gid(self):
+        groups = os.getgroups()
+        if len(groups) < 2:
+            self.skipTest("test needs at least 2 groups")
+
         gid_1, gid_2 = groups[:2]
         uid = os.stat(support.TESTFN).st_uid
+
         os.chown(support.TESTFN, uid, gid_1)
         gid = os.stat(support.TESTFN).st_gid
         self.assertEqual(gid, gid_1)
+
         os.chown(support.TESTFN, uid, gid_2)
         gid = os.stat(support.TESTFN).st_gid
         self.assertEqual(gid, gid_2)
@@ -3381,6 +3442,15 @@ class FDInheritanceTests(unittest.TestCase):
         fd2 = os.dup(fd1)
         self.addCleanup(os.close, fd2)
         self.assertEqual(os.get_inheritable(fd2), False)
+
+    @unittest.skipUnless(sys.platform == 'win32', 'win32-specific test')
+    def test_dup_nul(self):
+        # os.dup() was creating inheritable fds for character files.
+        fd1 = os.open('NUL', os.O_RDONLY)
+        self.addCleanup(os.close, fd1)
+        fd2 = os.dup(fd1)
+        self.addCleanup(os.close, fd2)
+        self.assertFalse(os.get_inheritable(fd2))
 
     @unittest.skipUnless(hasattr(os, 'dup2'), "need os.dup2()")
     def test_dup2(self):

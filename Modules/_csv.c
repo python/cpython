@@ -826,7 +826,7 @@ Reader_iternext(ReaderObj *self)
             if (c == '\0') {
                 Py_DECREF(lineobj);
                 PyErr_Format(_csvstate_global->error_obj,
-                             "line contains NULL byte");
+                             "line contains NUL");
                 goto err;
             }
             if (parse_process_char(self, c) < 0) {
@@ -1240,7 +1240,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
     if (line == NULL) {
         return NULL;
     }
-    result = PyObject_CallFunctionObjArgs(self->write, line, NULL);
+    result = _PyObject_CallOneArg(self->write, line);
     Py_DECREF(line);
     return result;
 }

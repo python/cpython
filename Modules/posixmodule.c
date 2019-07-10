@@ -36,6 +36,7 @@
 #endif
 
 #include "pycore_ceval.h"     /* _PyEval_ReInitThreads() */
+#include "pycore_import.h"    /* _PyImport_ReInitLock() */
 #include "pycore_pystate.h"   /* _PyRuntime */
 #include "pythread.h"
 #include "structmember.h"
@@ -432,7 +433,7 @@ run_at_forkers(PyObject *lst, int reverse)
             for (i = 0; i < PyList_GET_SIZE(cpy); i++) {
                 PyObject *func, *res;
                 func = PyList_GET_ITEM(cpy, i);
-                res = PyObject_CallObject(func, NULL);
+                res = _PyObject_CallNoArg(func);
                 if (res == NULL)
                     PyErr_WriteUnraisable(func);
                 else
@@ -503,17 +504,6 @@ PyOS_AfterFork(void)
 void _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
 void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
                                             ULONG, struct _Py_stat_struct *);
-#endif
-
-#ifdef MS_WINDOWS
-static int
-win32_warn_bytes_api()
-{
-    return PyErr_WarnEx(PyExc_DeprecationWarning,
-        "The Windows bytes API has been deprecated, "
-        "use Unicode filenames instead",
-        1);
-}
 #endif
 
 
@@ -3333,83 +3323,99 @@ os_lchown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid)
 static PyObject *
 posix_getcwd(int use_bytes)
 {
-    char *buf, *tmpbuf;
-    char *cwd;
-    const size_t chunk = 1024;
-    size_t buflen = 0;
-    PyObject *obj;
-
 #ifdef MS_WINDOWS
-    if (!use_bytes) {
-        wchar_t wbuf[MAXPATHLEN];
-        wchar_t *wbuf2 = wbuf;
-        PyObject *resobj;
-        DWORD len;
-        Py_BEGIN_ALLOW_THREADS
-        len = GetCurrentDirectoryW(Py_ARRAY_LENGTH(wbuf), wbuf);
-        /* If the buffer is large enough, len does not include the
-           terminating \0. If the buffer is too small, len includes
-           the space needed for the terminator. */
-        if (len >= Py_ARRAY_LENGTH(wbuf)) {
+    wchar_t wbuf[MAXPATHLEN];
+    wchar_t *wbuf2 = wbuf;
+    DWORD len;
+
+    Py_BEGIN_ALLOW_THREADS
+    len = GetCurrentDirectoryW(Py_ARRAY_LENGTH(wbuf), wbuf);
+    /* If the buffer is large enough, len does not include the
+       terminating \0. If the buffer is too small, len includes
+       the space needed for the terminator. */
+    if (len >= Py_ARRAY_LENGTH(wbuf)) {
+        if (len <= PY_SSIZE_T_MAX / sizeof(wchar_t)) {
             wbuf2 = PyMem_RawMalloc(len * sizeof(wchar_t));
-            if (wbuf2)
-                len = GetCurrentDirectoryW(len, wbuf2);
         }
-        Py_END_ALLOW_THREADS
-        if (!wbuf2) {
-            PyErr_NoMemory();
-            return NULL;
+        else {
+            wbuf2 = NULL;
         }
-        if (!len) {
-            if (wbuf2 != wbuf)
-                PyMem_RawFree(wbuf2);
-            return PyErr_SetFromWindowsErr(0);
+        if (wbuf2) {
+            len = GetCurrentDirectoryW(len, wbuf2);
         }
-        resobj = PyUnicode_FromWideChar(wbuf2, len);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (!wbuf2) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    if (!len) {
         if (wbuf2 != wbuf)
             PyMem_RawFree(wbuf2);
-        return resobj;
+        return PyErr_SetFromWindowsErr(0);
     }
 
-    if (win32_warn_bytes_api())
-        return NULL;
-#endif
+    PyObject *resobj = PyUnicode_FromWideChar(wbuf2, len);
+    if (wbuf2 != wbuf) {
+        PyMem_RawFree(wbuf2);
+    }
 
-    buf = cwd = NULL;
+    if (use_bytes) {
+        if (resobj == NULL) {
+            return NULL;
+        }
+        Py_SETREF(resobj, PyUnicode_EncodeFSDefault(resobj));
+    }
+
+    return resobj;
+#else
+    const size_t chunk = 1024;
+
+    char *buf = NULL;
+    char *cwd = NULL;
+    size_t buflen = 0;
+
     Py_BEGIN_ALLOW_THREADS
     do {
-        buflen += chunk;
-#ifdef MS_WINDOWS
-        if (buflen > INT_MAX) {
-            PyErr_NoMemory();
+        char *newbuf;
+        if (buflen <= PY_SSIZE_T_MAX - chunk) {
+            buflen += chunk;
+            newbuf = PyMem_RawRealloc(buf, buflen);
+        }
+        else {
+            newbuf = NULL;
+        }
+        if (newbuf == NULL) {
+            PyMem_RawFree(buf);
+            buf = NULL;
             break;
         }
-#endif
-        tmpbuf = PyMem_RawRealloc(buf, buflen);
-        if (tmpbuf == NULL)
-            break;
+        buf = newbuf;
 
-        buf = tmpbuf;
-#ifdef MS_WINDOWS
-        cwd = getcwd(buf, (int)buflen);
-#else
         cwd = getcwd(buf, buflen);
-#endif
     } while (cwd == NULL && errno == ERANGE);
     Py_END_ALLOW_THREADS
 
+    if (buf == NULL) {
+        return PyErr_NoMemory();
+    }
     if (cwd == NULL) {
         PyMem_RawFree(buf);
         return posix_error();
     }
 
-    if (use_bytes)
+    PyObject *obj;
+    if (use_bytes) {
         obj = PyBytes_FromStringAndSize(buf, strlen(buf));
-    else
+    }
+    else {
         obj = PyUnicode_DecodeFSDefault(buf);
+    }
     PyMem_RawFree(buf);
 
     return obj;
+#endif   /* !MS_WINDOWS */
 }
 
 
@@ -3758,6 +3764,10 @@ static PyObject *
 os_listdir_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=293045673fcd1a75 input=e3f58030f538295d]*/
 {
+    if (PySys_Audit("os.listdir", "O",
+                    path->object ? path->object : Py_None) < 0) {
+        return NULL;
+    }
 #if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
     return _listdir_windows_no_opendir(path, NULL);
 #else
@@ -3779,29 +3789,25 @@ static PyObject *
 os__getfullpathname_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=bb8679d56845bc9b input=332ed537c29d0a3e]*/
 {
-    wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
-    wchar_t *wtemp;
-    DWORD result;
-    PyObject *v;
+    wchar_t *abspath;
 
-    result = GetFullPathNameW(path->wide,
-                              Py_ARRAY_LENGTH(woutbuf),
-                              woutbuf, &wtemp);
-    if (result > Py_ARRAY_LENGTH(woutbuf)) {
-        woutbufp = PyMem_New(wchar_t, result);
-        if (!woutbufp)
-            return PyErr_NoMemory();
-        result = GetFullPathNameW(path->wide, result, woutbufp, &wtemp);
+    /* _Py_abspath() is implemented with GetFullPathNameW() on Windows */
+    if (_Py_abspath(path->wide, &abspath) < 0) {
+        return win32_error_object("GetFullPathNameW", path->object);
     }
-    if (result) {
-        v = PyUnicode_FromWideChar(woutbufp, wcslen(woutbufp));
-        if (path->narrow)
-            Py_SETREF(v, PyUnicode_EncodeFSDefault(v));
-    } else
-        v = win32_error_object("GetFullPathNameW", path->object);
-    if (woutbufp != woutbuf)
-        PyMem_Free(woutbufp);
-    return v;
+    if (abspath == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    PyObject *str = PyUnicode_FromWideChar(abspath, wcslen(abspath));
+    PyMem_RawFree(abspath);
+    if (str == NULL) {
+        return NULL;
+    }
+    if (path->narrow) {
+        Py_SETREF(str, PyUnicode_EncodeFSDefault(str));
+    }
+    return str;
 }
 
 
@@ -5371,7 +5377,7 @@ parse_file_actions(PyObject *file_actions,
         return -1;
     }
 
-    for (int i = 0; i < PySequence_Fast_GET_SIZE(seq); ++i) {
+    for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(seq); ++i) {
         file_action = PySequence_Fast_GET_ITEM(seq, i);
         Py_INCREF(file_action);
         if (!PyTuple_Check(file_action) || !PyTuple_GET_SIZE(file_action)) {
@@ -6407,6 +6413,9 @@ os_sched_setaffinity_impl(PyObject *module, pid_t pid, PyObject *mask)
         }
         CPU_SET_S(cpu, setsize, cpu_set);
     }
+    if (PyErr_Occurred()) {
+        goto error;
+    }
     Py_CLEAR(iterator);
 
     if (sched_setaffinity(pid, setsize, cpu_set)) {
@@ -6722,6 +6731,13 @@ os_getpid_impl(PyObject *module)
 }
 #endif /* HAVE_GETPID */
 
+#ifdef NGROUPS_MAX
+#define MAX_GROUPS NGROUPS_MAX
+#else
+    /* defined to be 16 on Solaris7, so this should be a small number */
+#define MAX_GROUPS 64
+#endif
+
 #ifdef HAVE_GETGROUPLIST
 
 /* AC 3.5: funny apple logic below */
@@ -6734,13 +6750,6 @@ Returns a list of groups to which a user belongs.\n\n\
 static PyObject *
 posix_getgrouplist(PyObject *self, PyObject *args)
 {
-#ifdef NGROUPS_MAX
-#define MAX_GROUPS NGROUPS_MAX
-#else
-    /* defined to be 16 on Solaris7, so this should be a small number */
-#define MAX_GROUPS 64
-#endif
-
     const char *user;
     int i, ngroups;
     PyObject *list;
@@ -6749,7 +6758,16 @@ posix_getgrouplist(PyObject *self, PyObject *args)
 #else
     gid_t *groups, basegid;
 #endif
-    ngroups = MAX_GROUPS;
+
+    /*
+     * NGROUPS_MAX is defined by POSIX.1 as the maximum
+     * number of supplimental groups a users can belong to.
+     * We have to increment it by one because
+     * getgrouplist() returns both the supplemental groups
+     * and the primary group, i.e. all of the groups the
+     * user belongs to.
+     */
+    ngroups = 1 + MAX_GROUPS;
 
 #ifdef __APPLE__
     if (!PyArg_ParseTuple(args, "si:getgrouplist", &user, &basegid))
@@ -6818,13 +6836,6 @@ os_getgroups_impl(PyObject *module)
 /*[clinic end generated code: output=42b0c17758561b56 input=d3f109412e6a155c]*/
 {
     PyObject *result = NULL;
-
-#ifdef NGROUPS_MAX
-#define MAX_GROUPS NGROUPS_MAX
-#else
-    /* defined to be 16 on Solaris7, so this should be a small number */
-#define MAX_GROUPS 64
-#endif
     gid_t grouplist[MAX_GROUPS];
 
     /* On MacOSX getgroups(2) can return more than MAX_GROUPS results
@@ -13160,6 +13171,11 @@ os_scandir_impl(PyObject *module, path_t *path)
     int fd = -1;
 #endif
 #endif
+
+    if (PySys_Audit("os.scandir", "O",
+                    path->object ? path->object : Py_None) < 0) {
+        return NULL;
+    }
 
     iterator = PyObject_New(ScandirIterator, &ScandirIteratorType);
     if (!iterator)

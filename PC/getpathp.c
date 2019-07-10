@@ -537,14 +537,28 @@ get_program_full_path(const PyConfig *config,
     wchar_t program_full_path[MAXPATHLEN+1];
     memset(program_full_path, 0, sizeof(program_full_path));
 
+    if (!GetModuleFileNameW(NULL, program_full_path, MAXPATHLEN)) {
+        /* GetModuleFileName should never fail when passed NULL */
+        return _PyStatus_ERR("Cannot determine program path");
+    }
+
     /* The launcher may need to force the executable path to a
      * different environment, so override it here. */
     pyvenv_launcher = _wgetenv(L"__PYVENV_LAUNCHER__");
     if (pyvenv_launcher && pyvenv_launcher[0]) {
+        /* If overridden, preserve the original full path */
+        pathconfig->base_executable = PyMem_RawMalloc(
+            sizeof(wchar_t) * (MAXPATHLEN + 1));
+        PyStatus status = canonicalize(pathconfig->base_executable,
+                                       program_full_path);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+
         wcscpy_s(program_full_path, MAXPATHLEN+1, pyvenv_launcher);
-    } else if (!GetModuleFileNameW(NULL, program_full_path, MAXPATHLEN)) {
-        /* GetModuleFileName should never fail when passed NULL */
-        return _PyStatus_ERR("Cannot determine program path");
+        /* bpo-35873: Clear the environment variable to avoid it being
+        * inherited by child processes. */
+        _wputenv_s(L"__PYVENV_LAUNCHER__", L"");
     }
 
     pathconfig->program_full_path = PyMem_RawMalloc(

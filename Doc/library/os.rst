@@ -36,9 +36,9 @@ Notes on the availability of these functions:
 
 .. note::
 
-   All functions in this module raise :exc:`OSError` in the case of invalid or
-   inaccessible file names and paths, or other arguments that have the correct
-   type, but are not accepted by the operating system.
+   All functions in this module raise :exc:`OSError` (or subclasses thereof) in
+   the case of invalid or inaccessible file names and paths, or other arguments
+   that have the correct type, but are not accepted by the operating system.
 
 .. exception:: error
 
@@ -851,7 +851,7 @@ as internal buffering of data.
    most *length* bytes in size.  As of Python 3.3, this is equivalent to
    ``os.truncate(fd, length)``.
 
-   .. audit-event:: os.truncate "fd length"
+   .. audit-event:: os.truncate fd,length os.ftruncate
 
    .. availability:: Unix, Windows.
 
@@ -938,7 +938,7 @@ as internal buffering of data.
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>` with the *dir_fd* parameter.
 
-   .. audit-event:: open "path mode flags"
+   .. audit-event:: open path,mode,flags os.open
 
    .. versionchanged:: 3.4
       The new file descriptor is now non-inheritable.
@@ -1599,6 +1599,9 @@ features:
    This function can support :ref:`specifying a file descriptor <path_fd>`.  The
    descriptor must refer to an opened directory, not an open file.
 
+   This function can raise :exc:`OSError` and subclasses such as
+   :exc:`FileNotFoundError`, :exc:`PermissionError`, and :exc:`NotADirectoryError`.
+
    .. versionadded:: 3.3
       Added support for specifying *path* as a file descriptor
       on some platforms.
@@ -1730,6 +1733,11 @@ features:
 
    Return a bytestring representing the current working directory.
 
+   .. versionchanged:: 3.8
+      The function now uses the UTF-8 encoding on Windows, rather than the ANSI
+      code page: see :pep:`529` for the rationale. The function is no longer
+      deprecated on Windows.
+
 
 .. function:: lchflags(path, flags)
 
@@ -1800,6 +1808,8 @@ features:
 
    This function can also support :ref:`specifying a file descriptor
    <path_fd>`; the file descriptor must refer to a directory.
+
+   .. audit-event:: os.listdir path os.listdir
 
    .. note::
       To encode ``str`` filenames to ``bytes``, use :func:`~os.fsencode`.
@@ -1891,8 +1901,8 @@ features:
    directories you can set the umask before invoking :func:`makedirs`.  The
    file permission bits of existing parent directories are not changed.
 
-   If *exist_ok* is ``False`` (the default), an :exc:`OSError` is raised if the
-   target directory already exists.
+   If *exist_ok* is ``False`` (the default), an :exc:`FileExistsError` is
+   raised if the target directory already exists.
 
    .. note::
 
@@ -2045,8 +2055,8 @@ features:
 
 .. function:: remove(path, *, dir_fd=None)
 
-   Remove (delete) the file *path*.  If *path* is a directory, :exc:`OSError` is
-   raised.  Use :func:`rmdir` to remove directories.
+   Remove (delete) the file *path*.  If *path* is a directory, an
+   :exc:`IsADirectoryError` is raised.  Use :func:`rmdir` to remove directories.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -2083,13 +2093,19 @@ features:
 
 .. function:: rename(src, dst, *, src_dir_fd=None, dst_dir_fd=None)
 
-   Rename the file or directory *src* to *dst*.  If *dst* is a directory,
-   :exc:`OSError` will be raised.  On Unix, if *dst* exists and is a file, it will
-   be replaced silently if the user has permission.  The operation may fail on some
-   Unix flavors if *src* and *dst* are on different filesystems.  If successful,
-   the renaming will be an atomic operation (this is a POSIX requirement).  On
-   Windows, if *dst* already exists, :exc:`OSError` will be raised even if it is a
-   file.
+   Rename the file or directory *src* to *dst*. If *dst* exists, the operation
+   will fail with an :exc:`OSError` subclass in a number of cases:
+
+   On Windows, if *dst* exists a :exc:`FileExistsError` is always raised.
+
+   On Unix, if *src* is a file and *dst* is a directory or vice-versa, anq:q
+   :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
+   respectively.  If both are directories and *dst* is empty, *dst* will be
+   silently replaced.  If *dst* is a non-empty directory, an :exc:`OSError`
+   is raised. If both are files, *dst* it will be replaced silently if the user
+   has permission.  The operation may fail on some Unix flavors if *src* and
+   *dst* are on different filesystems.  If successful, the renaming will be an
+   atomic operation (this is a POSIX requirement).
 
    This function can support specifying *src_dir_fd* and/or *dst_dir_fd* to
    supply :ref:`paths relative to directory descriptors <dir_fd>`.
@@ -2138,9 +2154,10 @@ features:
 
 .. function:: rmdir(path, *, dir_fd=None)
 
-   Remove (delete) the directory *path*.  Only works when the directory is
-   empty, otherwise, :exc:`OSError` is raised.  In order to remove whole
-   directory trees, :func:`shutil.rmtree` can be used.
+   Remove (delete) the directory *path*.  If the directory does not exist or is
+   not empty, an :exc:`FileNotFoundError` or an :exc:`OSError` is raised
+   respectively.  In order to remove whole directory trees,
+   :func:`shutil.rmtree` can be used.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -2177,6 +2194,8 @@ features:
 
    This function can also support :ref:`specifying a file descriptor
    <path_fd>`; the file descriptor must refer to a directory.
+
+   .. audit-event:: os.scandir path os.scandir
 
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
@@ -2784,7 +2803,7 @@ features:
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
-   .. audit-event:: os.truncate "path length"
+   .. audit-event:: os.truncate path,length os.truncate
 
    .. availability:: Unix, Windows.
 
@@ -3790,7 +3809,7 @@ written in Python, such as a mail server's external command delivery program.
    to using this function.  See the :ref:`subprocess-replacements` section in
    the :mod:`subprocess` documentation for some helpful recipes.
 
-   .. audit-event:: os.system command
+   .. audit-event:: os.system command os.system
 
    .. availability:: Unix, Windows.
 

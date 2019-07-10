@@ -1559,8 +1559,15 @@ expression support in the :mod:`re` module).
    :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
    list of possible encodings, see section :ref:`standard-encodings`.
 
+   By default, the *errors* argument is not checked for best performances, but
+   only used at the first encoding error. Enable the development mode
+   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+
    .. versionchanged:: 3.1
       Support for keyword arguments added.
+
+   .. versionchanged:: 3.9
+      The *errors* is now checked in development mode and in debug mode.
 
 
 .. method:: str.endswith(suffix[, start[, end]])
@@ -2575,6 +2582,10 @@ arbitrary binary data.
    :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
    list of possible encodings, see section :ref:`standard-encodings`.
 
+   By default, the *errors* argument is not checked for best performances, but
+   only used at the first decoding error. Enable the development mode
+   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+
    .. note::
 
       Passing the *encoding* argument to :class:`str` allows decoding any
@@ -2583,6 +2594,9 @@ arbitrary binary data.
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
+
+   .. versionchanged:: 3.9
+      The *errors* is now checked in development mode and in debug mode.
 
 
 .. method:: bytes.endswith(suffix[, start[, end]])
@@ -3801,7 +3815,7 @@ copying.
          >>> z.nbytes
          48
 
-      Cast 1D/unsigned char to 2D/unsigned long::
+      Cast 1D/unsigned long to 2D/unsigned long::
 
          >>> buf = struct.pack("L"*6, *list(range(6)))
          >>> x = memoryview(buf)

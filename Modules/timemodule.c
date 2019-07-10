@@ -1581,6 +1581,19 @@ init_timezone(PyObject *m)
     PyModule_AddIntConstant(m, "altzone", _Py_timezone-3600);
 #endif
     PyModule_AddIntConstant(m, "daylight", _Py_daylight);
+#ifdef MS_WINDOWS
+    TIME_ZONE_INFORMATION tzinfo = {0};
+    GetTimeZoneInformation(&tzinfo);
+    otz0 = PyUnicode_FromWideChar(tzinfo.StandardName, -1);
+    if (otz0 == NULL) {
+        return -1;
+    }
+    otz1 = PyUnicode_FromWideChar(tzinfo.DaylightName, -1);
+    if (otz1 == NULL) {
+        Py_DECREF(otz0);
+        return -1;
+    }
+#else
     otz0 = PyUnicode_DecodeLocale(_Py_tzname[0], "surrogateescape");
     if (otz0 == NULL) {
         return -1;
@@ -1590,6 +1603,7 @@ init_timezone(PyObject *m)
         Py_DECREF(otz0);
         return -1;
     }
+#endif // MS_WINDOWS
     PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
     if (tzname_obj == NULL) {
         return -1;

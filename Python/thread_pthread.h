@@ -18,8 +18,10 @@
 #   include <pthread_np.h>      /* pthread_getthreadid_np() */
 #elif defined(__OpenBSD__)
 #   include <unistd.h>          /* getthrid() */
-#elif defined(__NetBSD__)       /* _lwp_self */
-#   include <lwp.h>
+#elif defined(_AIX)
+#   include <sys/thread.h>      /* thread_self() */
+#elif defined(__NetBSD__)
+#   include <lwp.h>             /* _lwp_self() */
 #endif
 
 /* The POSIX spec requires that use of pthread_attr_setstacksize
@@ -330,6 +332,9 @@ PyThread_get_thread_native_id(void)
 #elif defined(__OpenBSD__)
     pid_t native_id;
     native_id = getthrid();
+#elif defined(_AIX)
+    tid_t native_id;
+    native_id = thread_self();
 #elif defined(__NetBSD__)
     lwpid_t native_id;
     native_id = _lwp_self();

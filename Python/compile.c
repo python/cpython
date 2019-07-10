@@ -309,7 +309,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
 {
     struct compiler c;
     PyCodeObject *co = NULL;
-    PyCompilerFlags local_flags;
+    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     int merged;
     PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
 
@@ -332,8 +332,6 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     if (c.c_future == NULL)
         goto finally;
     if (!flags) {
-        local_flags.cf_flags = 0;
-        local_flags.cf_feature_version = PY_MINOR_VERSION;
         flags = &local_flags;
     }
     merged = c.c_future->ff_features | flags->cf_flags;
@@ -4240,10 +4238,10 @@ compiler_sync_comprehension_generator(struct compiler *c,
             ADDOP_I(c, SET_ADD, gen_index + 1);
             break;
         case COMP_DICTCOMP:
-            /* With 'd[k] = v', v is evaluated before k, so we do
+            /* With '{k: v}', k is evaluated before v, so we do
                the same. */
-            VISIT(c, expr, val);
             VISIT(c, expr, elt);
+            VISIT(c, expr, val);
             ADDOP_I(c, MAP_ADD, gen_index + 1);
             break;
         default:
@@ -4329,10 +4327,10 @@ compiler_async_comprehension_generator(struct compiler *c,
             ADDOP_I(c, SET_ADD, gen_index + 1);
             break;
         case COMP_DICTCOMP:
-            /* With 'd[k] = v', v is evaluated before k, so we do
+            /* With '{k: v}', k is evaluated before v, so we do
                the same. */
-            VISIT(c, expr, val);
             VISIT(c, expr, elt);
+            VISIT(c, expr, val);
             ADDOP_I(c, MAP_ADD, gen_index + 1);
             break;
         default:
@@ -5815,13 +5813,11 @@ makecode(struct compiler *c, struct assembler *a)
     if (maxdepth < 0) {
         goto error;
     }
-    co = PyCode_New(posonlyargcount+posorkeywordargcount, posonlyargcount,
-                    kwonlyargcount, nlocals_int, maxdepth, flags,
-                    bytecode, consts, names, varnames,
-                    freevars, cellvars,
-                    c->c_filename, c->u->u_name,
-                    c->u->u_firstlineno,
-                    a->a_lnotab);
+    co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
+                                   posonlyargcount, kwonlyargcount, nlocals_int, 
+                                   maxdepth, flags, bytecode, consts, names,
+                                   varnames, freevars, cellvars, c->c_filename,
+                                   c->u->u_name, c->u->u_firstlineno, a->a_lnotab);
  error:
     Py_XDECREF(consts);
     Py_XDECREF(names);

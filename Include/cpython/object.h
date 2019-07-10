@@ -318,6 +318,9 @@ PyAPI_FUNC(int) _PyObject_HasAttrId(PyObject *, struct _Py_Identifier *);
 */
 PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject *, PyObject *, PyObject **);
 PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, struct _Py_Identifier *, PyObject **);
+
+PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
+
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_NextNotImplemented(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);

@@ -36,10 +36,16 @@ import io
 import codecs
 import _compat_pickle
 
-from _pickle import PickleBuffer
-
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
-           "Unpickler", "dump", "dumps", "load", "loads", "PickleBuffer"]
+           "Unpickler", "dump", "dumps", "load", "loads"]
+
+try:
+    from _pickle import PickleBuffer
+    __all__.append("PickleBuffer")
+    _HAVE_PICKLE_BUFFER = True
+except ImportError:
+    _HAVE_PICKLE_BUFFER = False
+
 
 # Shortcut for use in isinstance testing
 bytes_types = (bytes, bytearray)
@@ -812,31 +818,32 @@ class _Pickler:
             self.write(BYTEARRAY8 + pack("<Q", n) + obj)
     dispatch[bytearray] = save_bytearray
 
-    def save_picklebuffer(self, obj):
-        if self.proto < 5:
-            raise PicklingError("PickleBuffer can only pickled with "
-                                "protocol >= 5")
-        with obj.raw() as m:
-            if not m.contiguous:
-                raise PicklingError("PickleBuffer can not be pickled when "
-                                    "pointing to a non-contiguous buffer")
-            in_band = True
-            if self._buffer_callback is not None:
-                in_band = bool(self._buffer_callback(obj))
-            if in_band:
-                # Write data in-band
-                # XXX The C implementation avoids a copy here
-                if m.readonly:
-                    self.save_bytes(m.tobytes())
+    if _HAVE_PICKLE_BUFFER:
+        def save_picklebuffer(self, obj):
+            if self.proto < 5:
+                raise PicklingError("PickleBuffer can only pickled with "
+                                    "protocol >= 5")
+            with obj.raw() as m:
+                if not m.contiguous:
+                    raise PicklingError("PickleBuffer can not be pickled when "
+                                        "pointing to a non-contiguous buffer")
+                in_band = True
+                if self._buffer_callback is not None:
+                    in_band = bool(self._buffer_callback(obj))
+                if in_band:
+                    # Write data in-band
+                    # XXX The C implementation avoids a copy here
+                    if m.readonly:
+                        self.save_bytes(m.tobytes())
+                    else:
+                        self.save_bytearray(m.tobytes())
                 else:
-                    self.save_bytearray(m.tobytes())
-            else:
-                # Write data out-of-band
-                self.write(NEXT_BUFFER)
-                if m.readonly:
-                    self.write(READONLY_BUFFER)
+                    # Write data out-of-band
+                    self.write(NEXT_BUFFER)
+                    if m.readonly:
+                        self.write(READONLY_BUFFER)
 
-    dispatch[PickleBuffer] = save_picklebuffer
+        dispatch[PickleBuffer] = save_picklebuffer
 
     def save_str(self, obj):
         if self.bin:

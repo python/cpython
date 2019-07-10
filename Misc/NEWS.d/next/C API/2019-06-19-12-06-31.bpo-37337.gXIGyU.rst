@@ -1,0 +1,2 @@
+Add fast functions for calling methods: :c:func:`_PyObject_VectorcallMethod`
+and :c:func:`_PyObject_CallMethodNoArgs`

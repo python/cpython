@@ -90,6 +90,9 @@
     <ClInclude Include="..\Include\cpython\fileobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\import.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\initconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -199,6 +202,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_hamt.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_import.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_initconfig.h">

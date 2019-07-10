@@ -38,10 +38,6 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
-/* Private API for the LOAD_METHOD opcode. */
-extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
-
-typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
 Py_LOCAL_INLINE(PyObject *) call_function(
@@ -1878,7 +1874,7 @@ main_loop:
                 Py_DECREF(value);
                 goto error;
             }
-            res = PyObject_CallFunctionObjArgs(hook, value, NULL);
+            res = _PyObject_CallOneArg(hook, value);
             Py_DECREF(value);
             if (res == NULL)
                 goto error;
@@ -2944,8 +2940,8 @@ main_loop:
         }
 
         case TARGET(MAP_ADD): {
-            PyObject *key = TOP();
-            PyObject *value = SECOND();
+            PyObject *value = TOP();
+            PyObject *key = SECOND();
             PyObject *map;
             int err;
             STACK_SHRINK(2);
@@ -3318,7 +3314,6 @@ main_loop:
 
                Finally we push the result of the call.
             */
-            PyObject *stack[3];
             PyObject *exit_func;
             PyObject *exc, *val, *tb, *res;
 
@@ -3355,10 +3350,9 @@ main_loop:
                 block->b_level--;
             }
 
-            stack[0] = exc;
-            stack[1] = val;
-            stack[2] = tb;
-            res = _PyObject_FastCall(exit_func, stack, 3);
+            PyObject *stack[4] = {NULL, exc, val, tb};
+            res = _PyObject_Vectorcall(exit_func, stack + 1,
+                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             Py_DECREF(exit_func);
             if (res == NULL)
                 goto error;
@@ -4728,10 +4722,9 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 }
 
 void
-_PyEval_SetCoroutineOriginTrackingDepth(int new_depth)
+_PyEval_SetCoroutineOriginTrackingDepth(PyThreadState *tstate, int new_depth)
 {
     assert(new_depth >= 0);
-    PyThreadState *tstate = _PyThreadState_GET();
     tstate->coroutine_origin_tracking_depth = new_depth;
 }
 
@@ -4943,7 +4936,7 @@ trace_call_function(PyThreadState *tstate,
 {
     PyObject *x;
     if (PyCFunction_Check(func)) {
-        C_TRACE(x, _PyCFunction_Vectorcall(func, args, nargs, kwnames));
+        C_TRACE(x, _PyObject_Vectorcall(func, args, nargs, kwnames));
         return x;
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type && nargs > 0) {
@@ -4959,9 +4952,9 @@ trace_call_function(PyThreadState *tstate,
         if (func == NULL) {
             return NULL;
         }
-        C_TRACE(x, _PyCFunction_Vectorcall(func,
-                                           args+1, nargs-1,
-                                           kwnames));
+        C_TRACE(x, _PyObject_Vectorcall(func,
+                                        args+1, nargs-1,
+                                        kwnames));
         Py_DECREF(func);
         return x;
     }
@@ -5023,10 +5016,10 @@ do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject
                 return NULL;
             }
 
-            C_TRACE(result, _PyCFunction_FastCallDict(func,
-                                                      &_PyTuple_ITEMS(callargs)[1],
-                                                      nargs - 1,
-                                                      kwdict));
+            C_TRACE(result, _PyObject_FastCallDict(func,
+                                                   &_PyTuple_ITEMS(callargs)[1],
+                                                   nargs - 1,
+                                                   kwdict));
             Py_DECREF(func);
             return result;
         }
