@@ -1,25 +1,12 @@
 import string
 import unittest
 
+from .util import PseudoStr, StrProxy, Object
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
     from c_parser.info import (
         normalize_vartype, Symbol, StaticVar,
         )
-
-
-class PseudoStr(str):
-    pass
-
-class Proxy:
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return self.value
-
-class Object:
-    def __repr__(self):
-        return '<object>'
 
 
 class NormalizeVartypeTests(unittest.TestCase):
@@ -30,7 +17,7 @@ class NormalizeVartypeTests(unittest.TestCase):
                 ('', ''),
                 ('int', 'int'),
                 (PseudoStr('int'), 'int'),
-                (Proxy('int'), 'int'),
+                (StrProxy('int'), 'int'),
                 ]
         for vartype, expected in tests:
             with self.subTest(vartype):
@@ -108,10 +95,10 @@ class SymbolTests(unittest.TestCase):
             ('non-str',
              dict(
                  name=('a', 'b', 'c'),
-                 kind=Proxy('variable'),
+                 kind=StrProxy('variable'),
                  external=0,
-                 filename=Proxy('x/y/z/spam.c'),
-                 funcname=Proxy('func'),
+                 filename=StrProxy('x/y/z/spam.c'),
+                 funcname=StrProxy('func'),
                  declaration=Object(),
                  ),
              ("('a', 'b', 'c')",
@@ -314,8 +301,8 @@ class StaticVarTests(unittest.TestCase):
               )),
             ('non-str',
              dict(
-                 filename=Proxy('x/y/z/spam.c'),
-                 funcname=Proxy('func'),
+                 filename=StrProxy('x/y/z/spam.c'),
+                 funcname=StrProxy('func'),
                  name=('a', 'b', 'c'),
                  vartype=Object(),
                  ),
