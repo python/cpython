@@ -64,7 +64,7 @@ class BaseSideBar:
     def redirect_mousebutton_event(self, event, event_name):
         """Redirect mouse button events to the main editor text widget."""
         self.text.focus_set()
-        self.text.event_generate(event_name or event, x=0, y=event.y)
+        self.text.event_generate(event_name, x=0, y=event.y)
         return 'break'
 
     def redirect_mousewheel_event(self, event):
@@ -141,19 +141,25 @@ class LineNumbers(BaseSideBar):
         self.sidebar_text.bind('<MouseWheel>', self.redirect_mousewheel_event)
 
         # Redirect mouse button events to the main editor text widget.
-        def bind_mouse_event(event_name):
+        def bind_mouse_event(event_name, target_event_name):
             handler = functools.partial(self.redirect_mousebutton_event,
-                                        event_name=event_name)
+                                        event_name=target_event_name)
             self.sidebar_text.bind(event_name, handler)
 
         for button in range(1, 5+1):
-            for event in (f'<Button-{button}>',
-                          f'<Double-Button-{button}>',
-                          f'<Triple-Button-{button}>',
-                          f'<ButtonRelease-{button}>',
-                          f'<B{button}-Motion>',
-                          ):
-                bind_mouse_event(event)
+            for event_name in (f'<Button-{button}>',
+                               f'<ButtonRelease-{button}>',
+                               f'<B{button}-Motion>',
+                               ):
+                bind_mouse_event(event_name, target_event_name=event_name)
+
+            # Convert double- and triple-click events to normal click events,
+            # since event_generate() doesn't allow generating such events.
+            for event_name in (f'<Double-Button-{button}>',
+                               f'<Triple-Button-{button}>',
+                               ):
+                bind_mouse_event(event_name,
+                                 target_event_name=f'<Button-{button}>')
 
         start_line = None
         def b1_mousedown_handler(event):
@@ -186,7 +192,7 @@ class LineNumbers(BaseSideBar):
             last_yview = self.sidebar_text.yview()
             if not 0 <= last_y <= self.sidebar_text.winfo_height():
                 self.text.yview_moveto(last_yview[0])
-            self.redirect_mousebutton_event(event, '<B1-Motion>')
+            self.redirect_mousebutton_event(event, event_name='<B1-Motion>')
 
             # update the selection
             lineno = self.editwin.getlineno(f"@0,{event.y}")
