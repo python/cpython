@@ -2043,7 +2043,7 @@ find_keyword(PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
         if (kwname == key) {
             return kwstack[i];
         }
-        assert(PyUnicode_Check(kwnames));
+        assert(PyUnicode_Check(kwname));
         if (_PyUnicode_EQ(kwname, key)) {
             return kwstack[i];
         }
