@@ -1420,7 +1420,7 @@ Launcher arguments:\n\n\
 -X.Y   : Launch the specified Python version\n", stdout);
     if (canDo64bit) {
         fputws(L"\
-     The above all default to 64 bit if a matching 64 bit python is present*.\n\
+     The above all default to 64 bit if a matching 64 bit python is present.\n\
 -X.Y-32: Launch the specified 32bit Python version\n\
 -X-32  : Launch the latest 32bit Python X version\n\
 -X.Y-64: Launch the specified 64bit Python version\n\
