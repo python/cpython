@@ -337,7 +337,7 @@ class _CallList(list):
 
         for i in range(0, len_self - len_value + 1):
             sub_list = self[i:i+len_value]
-            if sub_list == value:
+            if value == sub_list:
                 return True
         return False
 
