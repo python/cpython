@@ -19,9 +19,9 @@ from idlelib.config import idleConf
 #   without altering overrideRootMenu() as well.
 #       TODO: Make this more robust
 
-menudefs = [
+menudefs = {
  # underscore prefixes character to underscore
- ('file', [
+ 'file': [
    ('_New File', '<<open-new-window>>'),
    ('_Open...', '<<open-window-from-file>>'),
    ('Open _Module...', '<<open-module>>'),
@@ -36,9 +36,9 @@ menudefs = [
    None,
    ('_Close', '<<close-window>>'),
    ('E_xit', '<<close-all-windows>>'),
-   ]),
+   ],
 
- ('edit', [
+ 'edit': [
    ('_Undo', '<<undo>>'),
    ('_Redo', '<<redo>>'),
    None,
@@ -57,9 +57,9 @@ menudefs = [
    ('E_xpand Word', '<<expand-word>>'),
    ('Show C_all Tip', '<<force-open-calltip>>'),
    ('Show Surrounding P_arens', '<<flash-paren>>'),
-   ]),
+   ],
 
- ('format', [
+ 'format': [
    ('_Indent Region', '<<indent-region>>'),
    ('_Dedent Region', '<<dedent-region>>'),
    ('Comment _Out Region', '<<comment-region>>'),
@@ -70,16 +70,16 @@ menudefs = [
    ('New Indent Width', '<<change-indentwidth>>'),
    ('F_ormat Paragraph', '<<format-paragraph>>'),
    ('S_trip Trailing Whitespace', '<<do-rstrip>>'),
-   ]),
+   ],
 
- ('run', [
+ 'run': [
    ('Python Shell', '<<open-python-shell>>'),
    ('C_heck Module', '<<check-module>>'),
    ('R_un Module', '<<run-module>>'),
    ('Run... _Customized', '<<run-custom>>'),
    ]),
 
- ('shell', [
+ 'shell': [
    ('_View Last Restart', '<<view-restart>>'),
    ('_Restart Shell', '<<restart-shell>>'),
    None,
@@ -87,35 +87,35 @@ menudefs = [
    ('_Next History', '<<history-next>>'),
    None,
    ('_Interrupt Execution', '<<interrupt-execution>>'),
-   ]),
+   ],
 
- ('debug', [
+ 'debug': [
    ('_Go to File/Line', '<<goto-file-line>>'),
    ('!_Debugger', '<<toggle-debugger>>'),
    ('_Stack Viewer', '<<open-stack-viewer>>'),
    ('!_Auto-open Stack Viewer', '<<toggle-jit-stack-viewer>>'),
-   ]),
+   ],
 
- ('options', [
+ 'options': [
    ('Configure _IDLE', '<<open-config-dialog>>'),
    None,
    ('Show _Code Context', '<<toggle-code-context>>'),
    ('Zoom Height', '<<zoom-height>>'),
-   ]),
+   ],
 
- ('window', [
-   ]),
+ 'window': [
+   ],
 
- ('help', [
+ 'help': [
    ('_About IDLE', '<<about-idle>>'),
    None,
    ('_IDLE Help', '<<help>>'),
    ('Python _Docs', '<<python-docs>>'),
-   ]),
-]
+   ],
+}
 
 if find_spec('turtledemo'):
-    menudefs[-1][1].append(('Turtle Demo', '<<open-turtle-demo>>'))
+    menudefs['help'].append(('Turtle Demo', '<<open-turtle-demo>>'))
 
 default_keydefs = idleConf.GetCurrentKeySet()
 

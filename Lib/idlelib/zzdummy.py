@@ -7,12 +7,12 @@ ztext = idleConf.GetOption('extensions', 'ZzDummy', 'z-text')
 
 class ZzDummy:
 
-##    menudefs = [
-##        ('format', [
+##    menudefs = {
+##        'format': [
 ##            ('Z in', '<<z-in>>'),
 ##            ('Z out', '<<z-out>>'),
-##        ] )
-##    ]
+##        ]
+##    }
 
     def __init__(self, editwin):
         self.text = editwin.text

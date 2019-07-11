@@ -815,11 +815,11 @@ class EditorWindow(object):
                 self.apply_bindings(xkeydefs)
         #update menu accelerators
         menuEventDict = {}
-        for menu in self.mainmenu.menudefs:
-            menuEventDict[menu[0]] = {}
-            for item in menu[1]:
+        for menu, items in self.mainmenu.menudefs.items():
+            menuEventDict[menu] = {}
+            for item in items:
                 if item:
-                    menuEventDict[menu[0]][prepstr(item[0])[1]] = item[1]
+                    menuEventDict[menu][prepstr(item[0])[1]] = item[1]
         for menubarItem in self.menudict:
             menu = self.menudict[menubarItem]
             end = menu.index(END)
@@ -1104,17 +1104,47 @@ class EditorWindow(object):
                 text.event_add(event, *keylist)
 
     def fill_menus(self, menudefs=None, keydefs=None):
-        """Add appropriate entries to the menus and submenus
+        """Add appropriate entries to the menus and submenus.
 
-        Menus that are absent or None in self.menudict are ignored.
+        The default menudefs and keydefs are loaded from idlelib.mainmenu.
+        Menus that are absent or None in self.menudict are ignored.  The
+        default menu type created for submenus from menudefs is `command`.
+        A submenu item of None results in a `separator` menu type.
+        A submenu name beginning with ! represents a `checkbutton` type.
+
+        The menus are stored in self.menudict.
+
+        Args:
+            menudefs: Menu and submenu names, underlines (shortcuts),
+                and events which is a dictionary of the form:
+                {menu1: [(submenu1a, '<<virtual event>>'),
+                          (submenu1b, '<<virtual event>>'), ...],
+                 menu2: [(submenu2a, '<<virtual event>>'),
+                          (submenu2b, '<<virtual event>>'), ...],
+                }
+                Alternate format (may have been used in extensions):
+                [(menu1, [(submenu1a, '<<virtual event>>'),
+                          (submenu1b, '<<virtual event>>'), ...]),
+                 (menu2, [(submenu2a, '<<virtual event>>'),
+                          (submenu2b, '<<virtual event>>'), ...]),
+                ]
+            keydefs: Virtual events and keybinding definitions.  Used for
+                the 'accelerator' text on the menu.  Stored as a
+                dictionary of
+                {'<<virtual event>>': ['<binding1>', '<binding2>'],}
         """
         if menudefs is None:
             menudefs = self.mainmenu.menudefs
+        # menudefs was changed from a list of tuples to a dictionary.
+        # This conversion is needed for backward-compatibility for
+        # existing extensions that use the list format.
+        if isinstance(menudefs, list):
+            menudefs = dict(menudefs)
         if keydefs is None:
             keydefs = self.mainmenu.default_keydefs
         menudict = self.menudict
         text = self.text
-        for mname, entrylist in menudefs:
+        for mname, entrylist in menudefs.items():
             menu = menudict.get(mname)
             if not menu:
                 continue
