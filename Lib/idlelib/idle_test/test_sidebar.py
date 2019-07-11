@@ -36,7 +36,7 @@ class LineNumbersTest(unittest.TestCase):
         cls.text_frame.rowconfigure(1, weight=1)
         cls.text_frame.columnconfigure(1, weight=1)
 
-        cls.text = tk.Text(cls.text_frame, width=80, height=24)
+        cls.text = tk.Text(cls.text_frame, width=80, height=24, wrap=tk.NONE)
         cls.text.grid(row=1, column=1, sticky=tk.NSEW)
 
         cls.editwin = Dummy_editwin(cls.text)

@@ -256,6 +256,30 @@ class LineNumbers(BaseSideBar):
         self.prev_end = end
 
 
+def _linenumbers_drag_scrolling(parent):  # htest #
+    from idlelib.idle_test.test_sidebar import Dummy_editwin
+
+    toplevel = tk.Toplevel(parent)
+    text_frame = tk.Frame(toplevel)
+    text_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    text_frame.rowconfigure(1, weight=1)
+    text_frame.columnconfigure(1, weight=1)
+
+    text = tk.Text(text_frame, width=80, height=24, wrap=tk.NONE)
+    text.grid(row=1, column=1, sticky=tk.NSEW)
+
+    editwin = Dummy_editwin(text)
+    editwin.vbar = tk.Scrollbar(text_frame)
+
+    linenumbers = LineNumbers(editwin)
+    linenumbers.show_sidebar()
+
+    text.insert('1.0', '\n'.join('a'*i for i in range(1, 101)))
+
+
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_linenumbers', verbosity=2)
+    main('idlelib.idle_test.test_sidebar', verbosity=2, exit=False)
+
+    from idlelib.idle_test.htest import run
+    run(_linenumbers_drag_scrolling)
