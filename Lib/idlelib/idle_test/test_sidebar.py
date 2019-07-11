@@ -20,6 +20,9 @@ class Dummy_editwin:
     def setvar(self, name, value):
         pass
 
+    def getlineno(self, index):
+        return int(float(self.text.index(index)))
+
 
 class LineNumbersTest(unittest.TestCase):
 
@@ -27,22 +30,40 @@ class LineNumbersTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = tk.Tk()
-        cls.text = tk.Text(cls.root)
+        # cls.root.withdraw()
+
+        cls.text_frame = tk.Frame(cls.root)
+        cls.text_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        cls.text_frame.rowconfigure(1, weight=1)
+        cls.text_frame.columnconfigure(1, weight=1)
+
+        cls.text = tk.Text(cls.text_frame, width=80, height=24)
+        cls.text.grid(row=1, column=1, sticky=tk.NSEW)
+
         cls.editwin = Dummy_editwin(cls.text)
-        cls.editwin.vbar = tk.Scrollbar(cls.root)
+        cls.editwin.vbar = tk.Scrollbar(cls.text_frame)
 
     @classmethod
     def tearDownClass(cls):
         cls.editwin.per.close()
-        cls.text.destroy()
+        cls.root.update()
         cls.root.destroy()
-        del cls.text, cls.editwin, cls.root
+        del cls.text, cls.text_frame, cls.editwin, cls.root
 
     def setUp(self):
         self.linenumber = LineNumbers(self.editwin)
 
     def tearDown(self):
         self.text.delete('1.0', 'end')
+
+    def get_selection(self):
+        return tuple(map(str, self.text.tag_ranges('sel')))
+
+    def get_line_screen_position(self, line):
+        bbox = self.linenumber.sidebar_text.bbox(f'{line}.end -1c')
+        x = bbox[0] + bbox[2] // 2
+        y = bbox[1] + bbox[3] // 2
+        return x, y
 
     def assert_state_disabled(self):
         state = self.linenumber.sidebar_text.config()['state']
@@ -197,6 +218,39 @@ class LineNumbersTest(unittest.TestCase):
         self.text.delete('1.0', 'end -1c')
         self.assert_sidebar_n_lines(1)
         self.assertEqual(get_width(), 1)
+
+    def test_click_selection(self):
+        self.linenumber.show_sidebar()
+        self.text.insert('1.0', 'one\ntwo\nthree\nfour\n')
+        self.root.update()
+
+        # click on the second line
+        x, y = self.get_line_screen_position(2)
+        self.linenumber.sidebar_text.event_generate('<Button-1>', x=x, y=y)
+        self.linenumber.sidebar_text.update()
+        self.root.update()
+
+        self.assertEqual(self.get_selection(), ('2.0', '3.0'))
+
+    def test_drag_selection(self):
+        self.linenumber.show_sidebar()
+        self.text.insert('1.0', 'one\ntwo\nthree\nfour\n')
+        self.root.update()
+
+        # drag from the first line to the third line
+        start_x, start_y = self.get_line_screen_position(1)
+        end_x, end_y = self.get_line_screen_position(3)
+        self.linenumber.sidebar_text.event_generate('<Button-1>',
+                                                    x=start_x, y=start_y)
+        self.linenumber.sidebar_text.event_generate('<B1-Motion>',
+                                                    x=start_x, y=start_y)
+        self.linenumber.sidebar_text.event_generate('<B1-Motion>',
+                                                    x=end_x, y=end_y)
+        self.linenumber.sidebar_text.event_generate('<ButtonRelease-1>',
+                                                    x=end_x, y=end_y)
+        self.root.update()
+
+        self.assertEqual(self.get_selection(), ('1.0', '4.0'))
 
 
 if __name__ == '__main__':
