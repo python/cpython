@@ -457,7 +457,16 @@ PyEval_CallObjectWithKeywords(PyObject *callable,
 PyObject *
 PyObject_CallObject(PyObject *callable, PyObject *args)
 {
-    return PyEval_CallObjectWithKeywords(callable, args, NULL);
+    assert(!PyErr_Occurred());
+    if (args == NULL) {
+        return _PyObject_CallNoArg(callable);
+    }
+    if (!PyTuple_Check(args)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "argument list must be a tuple");
+        return NULL;
+    }
+    return PyObject_Call(callable, args, NULL);
 }
 
 
