@@ -71,7 +71,7 @@ standard headers) have one of the prefixes ``Py`` or ``_Py``.  Names beginning
 with ``_Py`` are for internal use by the Python implementation and should not be
 used by extension writers. Structure member names do not have a reserved prefix.
 
-.. important:: 
+.. important::
 
    User code should never define names that begin with ``Py`` or
    ``_Py``.  This confuses the reader, and jeopardizes the portability of the user
