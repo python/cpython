@@ -2679,7 +2679,7 @@ treebuilder_add_subelement(PyObject *element, PyObject *child)
     }
     else {
         PyObject *res;
-        res = _PyObject_CallMethodIdObjArgs(element, &PyId_append, child, NULL);
+        res = _PyObject_CallMethodIdOneArg(element, &PyId_append, child);
         if (res == NULL)
             return -1;
         Py_DECREF(res);

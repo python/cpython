@@ -581,7 +581,7 @@ sys_displayhook_unencodable(PyThreadState *tstate, PyObject *outf, PyObject *o)
 
     buffer = _PyObject_GetAttrId(outf, &PyId_buffer);
     if (buffer) {
-        result = _PyObject_CallMethodIdObjArgs(buffer, &PyId_write, encoded, NULL);
+        result = _PyObject_CallMethodIdOneArg(buffer, &PyId_write, encoded);
         Py_DECREF(buffer);
         Py_DECREF(encoded);
         if (result == NULL)
@@ -3114,9 +3114,7 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
     if (file == NULL)
         return -1;
     assert(unicode != NULL);
-    PyObject *margs[2] = {file, unicode};
-    PyObject *result = _PyObject_VectorcallMethodId(&PyId_write, margs,
-        2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    PyObject *result = _PyObject_CallMethodIdOneArg(file, &PyId_write, unicode);
     if (result == NULL) {
         return -1;
     }

@@ -1185,9 +1185,9 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
             return -1;
         }
 
-        uppercase_level = _PyObject_CallMethodIdObjArgs(
+        uppercase_level = _PyObject_CallMethodIdOneArg(
                         (PyObject *)&PyUnicode_Type, &PyId_upper,
-                        isolation_level, NULL);
+                        isolation_level);
         if (!uppercase_level) {
             return -1;
         }
@@ -1648,8 +1648,8 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    uppercase_name = _PyObject_CallMethodIdObjArgs((PyObject *)&PyUnicode_Type,
-                                                   &PyId_upper, name, NULL);
+    uppercase_name = _PyObject_CallMethodIdOneArg((PyObject *)&PyUnicode_Type,
+                                                  &PyId_upper, name);
     if (!uppercase_name) {
         goto finally;
     }

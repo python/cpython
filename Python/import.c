@@ -962,9 +962,8 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
         external= PyObject_GetAttrString(interp->importlib,
                                          "_bootstrap_external");
         if (external != NULL) {
-            pathobj = _PyObject_CallMethodIdObjArgs(external,
-                                                    &PyId__get_sourcefile, cpathobj,
-                                                    NULL);
+            pathobj = _PyObject_CallMethodIdOneArg(
+                external, &PyId__get_sourcefile, cpathobj);
             Py_DECREF(external);
         }
         if (pathobj == NULL)
@@ -1827,9 +1826,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
          */
         spec = _PyObject_GetAttrId(mod, &PyId___spec__);
         if (_PyModuleSpec_IsInitializing(spec)) {
-            PyObject *value = _PyObject_CallMethodIdObjArgs(interp->importlib,
-                                            &PyId__lock_unlock_module, abs_name,
-                                            NULL);
+            PyObject *value = _PyObject_CallMethodIdOneArg(
+                interp->importlib, &PyId__lock_unlock_module, abs_name);
             if (value == NULL) {
                 Py_DECREF(spec);
                 goto error;
@@ -1968,7 +1966,7 @@ PyImport_ReloadModule(PyObject *m)
         }
     }
 
-    reloaded_module = _PyObject_CallMethodIdObjArgs(imp, &PyId_reload, m, NULL);
+    reloaded_module = _PyObject_CallMethodIdOneArg(imp, &PyId_reload, m);
     Py_DECREF(imp);
     return reloaded_module;
 }
