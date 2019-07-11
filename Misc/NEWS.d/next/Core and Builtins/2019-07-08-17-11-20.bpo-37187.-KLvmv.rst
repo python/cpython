@@ -1,1 +1,1 @@
-Print bit width in :c:func:`PyCField_get_size`
+Return bit width in ``PyCField_get_size``
