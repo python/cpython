@@ -309,7 +309,7 @@ functions:
       Profile the cmd via :func:`exec` with the specified global and
       local environment.
 
-   .. method:: runcall(func, *args, **kwargs)
+   .. method:: runcall(func, /, *args, **kwargs)
 
       Profile ``func(*args, **kwargs)``
 

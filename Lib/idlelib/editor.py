@@ -230,10 +230,6 @@ class EditorWindow(object):
         self.indentwidth = self.tabwidth
         self.set_notabs_indentwidth()
 
-        # If context_use_ps1 is true, parsing searches back for a ps1 line;
-        # else searches for a popular (if, def, ...) Python stmt.
-        self.context_use_ps1 = False
-
         # When searching backwards for a reliable place to begin parsing,
         # first start num_context_lines[0] lines back, then
         # num_context_lines[1] lines back if that didn't work, and so on.
@@ -310,6 +306,7 @@ class EditorWindow(object):
         scriptbinding = ScriptBinding(self)
         text.bind("<<check-module>>", scriptbinding.check_module_event)
         text.bind("<<run-module>>", scriptbinding.run_module_event)
+        text.bind("<<run-custom>>", scriptbinding.run_custom_event)
         text.bind("<<do-rstrip>>", self.Rstrip(self).do_rstrip)
         ctip = self.Calltip(self)
         text.bind("<<try-open-calltip>>", ctip.try_open_calltip_event)
@@ -321,7 +318,7 @@ class EditorWindow(object):
                   self.CodeContext(self).toggle_code_context_event)
 
     def _filename_to_unicode(self, filename):
-        """Return filename as BMP unicode so diplayable in Tk."""
+        """Return filename as BMP unicode so displayable in Tk."""
         # Decode bytes to unicode.
         if isinstance(filename, bytes):
             try:
@@ -1286,7 +1283,7 @@ class EditorWindow(object):
                 text.delete(first, last)
                 text.mark_set("insert", first)
             prefix = text.get("insert linestart", "insert")
-            raw, effective = classifyws(prefix, self.tabwidth)
+            raw, effective = get_line_indent(prefix, self.tabwidth)
             if raw == len(prefix):
                 # only whitespace to the left
                 self.reindent_to(effective + self.indentwidth)
@@ -1339,14 +1336,13 @@ class EditorWindow(object):
             # open/close first need to find the last stmt
             lno = index2line(text.index('insert'))
             y = pyparse.Parser(self.indentwidth, self.tabwidth)
-            if not self.context_use_ps1:
+            if not self.prompt_last_line:
                 for context in self.num_context_lines:
                     startat = max(lno - context, 1)
                     startatindex = repr(startat) + ".0"
                     rawtext = text.get(startatindex, "insert")
                     y.set_code(rawtext)
                     bod = y.find_good_parse_start(
-                              self.context_use_ps1,
                               self._build_char_in_string_func(startatindex))
                     if bod is not None or startat == 1:
                         break
@@ -1479,8 +1475,8 @@ class EditorWindow(object):
     def guess_indent(self):
         opener, indented = IndentSearcher(self.text, self.tabwidth).run()
         if opener and indented:
-            raw, indentsmall = classifyws(opener, self.tabwidth)
-            raw, indentlarge = classifyws(indented, self.tabwidth)
+            raw, indentsmall = get_line_indent(opener, self.tabwidth)
+            raw, indentlarge = get_line_indent(indented, self.tabwidth)
         else:
             indentsmall = indentlarge = 0
         return indentlarge - indentsmall
@@ -1489,23 +1485,16 @@ class EditorWindow(object):
 def index2line(index):
     return int(float(index))
 
-# Look at the leading whitespace in s.
-# Return pair (# of leading ws characters,
-#              effective # of leading blanks after expanding
-#              tabs to width tabwidth)
 
-def classifyws(s, tabwidth):
-    raw = effective = 0
-    for ch in s:
-        if ch == ' ':
-            raw = raw + 1
-            effective = effective + 1
-        elif ch == '\t':
-            raw = raw + 1
-            effective = (effective // tabwidth + 1) * tabwidth
-        else:
-            break
-    return raw, effective
+_line_indent_re = re.compile(r'[ \t]*')
+def get_line_indent(line, tabwidth):
+    """Return a line's indentation as (# chars, effective # of spaces).
+
+    The effective # of spaces is the length after properly "expanding"
+    the tabs into spaces, as done by str.expandtabs(tabwidth).
+    """
+    m = _line_indent_re.match(line)
+    return m.end(), len(m.group().expandtabs(tabwidth))
 
 
 class IndentSearcher(object):

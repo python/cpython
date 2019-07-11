@@ -1,2 +1,0 @@
-Python initialization now fails with an error, rather than silently
-truncating paths, if a path is too long.

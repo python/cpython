@@ -13,7 +13,7 @@ from test import support
 import types
 import unittest
 
-from collections import namedtuple, Counter, OrderedDict, _count_elements, _tuplegetter
+from collections import namedtuple, Counter, OrderedDict, _count_elements
 from collections import UserDict, UserString, UserList
 from collections import ChainMap
 from collections import deque
@@ -37,6 +37,20 @@ class TestUserObjects(unittest.TestCase):
                 b=b.__name__,
             ),
         )
+
+    def _copy_test(self, obj):
+        # Test internal copy
+        obj_copy = obj.copy()
+        self.assertIsNot(obj.data, obj_copy.data)
+        self.assertEqual(obj.data, obj_copy.data)
+
+        # Test copy.copy
+        obj.test = [1234]  # Make sure instance vars are also copied.
+        obj_copy = copy.copy(obj)
+        self.assertIsNot(obj.data, obj_copy.data)
+        self.assertEqual(obj.data, obj_copy.data)
+        self.assertIs(obj.test, obj_copy.test)
+
     def test_str_protocol(self):
         self._superset_test(UserString, str)
 
@@ -45,6 +59,16 @@ class TestUserObjects(unittest.TestCase):
 
     def test_dict_protocol(self):
         self._superset_test(UserDict, dict)
+
+    def test_list_copy(self):
+        obj = UserList()
+        obj.append(123)
+        self._copy_test(obj)
+
+    def test_dict_copy(self):
+        obj = UserDict()
+        obj[123] = "abc"
+        self._copy_test(obj)
 
 
 ################################################################################

@@ -2491,7 +2491,7 @@ exit:
 
 #endif /* defined(HAVE_POSIX_SPAWNP) */
 
-#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
+#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN))
 
 PyDoc_STRVAR(os_spawnv__doc__,
 "spawnv($module, mode, path, argv, /)\n"
@@ -2545,9 +2545,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
+#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN)) */
 
-#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
+#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN))
 
 PyDoc_STRVAR(os_spawnve__doc__,
 "spawnve($module, mode, path, argv, env, /)\n"
@@ -2606,7 +2606,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
+#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN)) */
 
 #if defined(HAVE_FORK)
 
@@ -5395,6 +5395,108 @@ exit:
 
 #endif /* (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)) */
 
+#if defined(HAVE_COPY_FILE_RANGE)
+
+PyDoc_STRVAR(os_copy_file_range__doc__,
+"copy_file_range($module, /, src, dst, count, offset_src=None,\n"
+"                offset_dst=None)\n"
+"--\n"
+"\n"
+"Copy count bytes from one file descriptor to another.\n"
+"\n"
+"  src\n"
+"    Source file descriptor.\n"
+"  dst\n"
+"    Destination file descriptor.\n"
+"  count\n"
+"    Number of bytes to copy.\n"
+"  offset_src\n"
+"    Starting offset in src.\n"
+"  offset_dst\n"
+"    Starting offset in dst.\n"
+"\n"
+"If offset_src is None, then src is read from the current position;\n"
+"respectively for offset_dst.");
+
+#define OS_COPY_FILE_RANGE_METHODDEF    \
+    {"copy_file_range", (PyCFunction)(void(*)(void))os_copy_file_range, METH_FASTCALL|METH_KEYWORDS, os_copy_file_range__doc__},
+
+static PyObject *
+os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
+                        PyObject *offset_src, PyObject *offset_dst);
+
+static PyObject *
+os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"src", "dst", "count", "offset_src", "offset_dst", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "copy_file_range", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
+    int src;
+    int dst;
+    Py_ssize_t count;
+    PyObject *offset_src = Py_None;
+    PyObject *offset_dst = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 5, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    src = _PyLong_AsInt(args[0]);
+    if (src == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    dst = _PyLong_AsInt(args[1]);
+    if (dst == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[3]) {
+        offset_src = args[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    offset_dst = args[4];
+skip_optional_pos:
+    return_value = os_copy_file_range_impl(module, src, dst, count, offset_src, offset_dst);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_COPY_FILE_RANGE) */
+
 #if defined(HAVE_MKFIFO)
 
 PyDoc_STRVAR(os_mkfifo__doc__,
@@ -7343,6 +7445,61 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_MEMFD_CREATE)
+
+PyDoc_STRVAR(os_memfd_create__doc__,
+"memfd_create($module, /, name, flags=MFD_CLOEXEC)\n"
+"--\n"
+"\n");
+
+#define OS_MEMFD_CREATE_METHODDEF    \
+    {"memfd_create", (PyCFunction)(void(*)(void))os_memfd_create, METH_FASTCALL|METH_KEYWORDS, os_memfd_create__doc__},
+
+static PyObject *
+os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags);
+
+static PyObject *
+os_memfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"name", "flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "memfd_create", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *name = NULL;
+    unsigned int flags = MFD_CLOEXEC;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[0], &name)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (flags == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_memfd_create_impl(module, name, flags);
+
+exit:
+    /* Cleanup for name */
+    Py_XDECREF(name);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_MEMFD_CREATE) */
+
 PyDoc_STRVAR(os_cpu_count__doc__,
 "cpu_count($module, /)\n"
 "--\n"
@@ -7961,6 +8118,94 @@ exit:
 
 #endif /* defined(HAVE_GETRANDOM_SYSCALL) */
 
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__add_dll_directory__doc__,
+"_add_dll_directory($module, /, path)\n"
+"--\n"
+"\n"
+"Add a path to the DLL search path.\n"
+"\n"
+"This search path is used when resolving dependencies for imported\n"
+"extension modules (the module itself is resolved through sys.path),\n"
+"and also by ctypes.\n"
+"\n"
+"Returns an opaque value that may be passed to os.remove_dll_directory\n"
+"to remove this directory from the search path.");
+
+#define OS__ADD_DLL_DIRECTORY_METHODDEF    \
+    {"_add_dll_directory", (PyCFunction)(void(*)(void))os__add_dll_directory, METH_FASTCALL|METH_KEYWORDS, os__add_dll_directory__doc__},
+
+static PyObject *
+os__add_dll_directory_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os__add_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_add_dll_directory", 0};
+    PyObject *argsbuf[1];
+    path_t path = PATH_T_INITIALIZE("_add_dll_directory", "path", 0, 0);
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    return_value = os__add_dll_directory_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__remove_dll_directory__doc__,
+"_remove_dll_directory($module, /, cookie)\n"
+"--\n"
+"\n"
+"Removes a path from the DLL search path.\n"
+"\n"
+"The parameter is an opaque value that was returned from\n"
+"os.add_dll_directory. You can only remove directories that you added\n"
+"yourself.");
+
+#define OS__REMOVE_DLL_DIRECTORY_METHODDEF    \
+    {"_remove_dll_directory", (PyCFunction)(void(*)(void))os__remove_dll_directory, METH_FASTCALL|METH_KEYWORDS, os__remove_dll_directory__doc__},
+
+static PyObject *
+os__remove_dll_directory_impl(PyObject *module, PyObject *cookie);
+
+static PyObject *
+os__remove_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"cookie", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_remove_dll_directory", 0};
+    PyObject *argsbuf[1];
+    PyObject *cookie;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    cookie = args[0];
+    return_value = os__remove_dll_directory_impl(module, cookie);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -8317,6 +8562,10 @@ exit:
     #define OS_PWRITEV_METHODDEF
 #endif /* !defined(OS_PWRITEV_METHODDEF) */
 
+#ifndef OS_COPY_FILE_RANGE_METHODDEF
+    #define OS_COPY_FILE_RANGE_METHODDEF
+#endif /* !defined(OS_COPY_FILE_RANGE_METHODDEF) */
+
 #ifndef OS_MKFIFO_METHODDEF
     #define OS_MKFIFO_METHODDEF
 #endif /* !defined(OS_MKFIFO_METHODDEF) */
@@ -8461,6 +8710,10 @@ exit:
     #define OS_LISTXATTR_METHODDEF
 #endif /* !defined(OS_LISTXATTR_METHODDEF) */
 
+#ifndef OS_MEMFD_CREATE_METHODDEF
+    #define OS_MEMFD_CREATE_METHODDEF
+#endif /* !defined(OS_MEMFD_CREATE_METHODDEF) */
+
 #ifndef OS_GET_HANDLE_INHERITABLE_METHODDEF
     #define OS_GET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_GET_HANDLE_INHERITABLE_METHODDEF) */
@@ -8480,4 +8733,12 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=1a9c62f5841221ae input=a9049054013a1b77]*/
+
+#ifndef OS__ADD_DLL_DIRECTORY_METHODDEF
+    #define OS__ADD_DLL_DIRECTORY_METHODDEF
+#endif /* !defined(OS__ADD_DLL_DIRECTORY_METHODDEF) */
+
+#ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
+    #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
+#endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
+/*[clinic end generated code: output=b3ae8afd275ea5cd input=a9049054013a1b77]*/

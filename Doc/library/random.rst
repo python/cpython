@@ -310,6 +310,11 @@ be found in any statistics text.
 Alternative Generator
 ---------------------
 
+.. class:: Random([seed])
+
+   Class that implements the default pseudo-random number generator used by the
+   :mod:`random` module.
+
 .. class:: SystemRandom([seed])
 
    Class that uses the :func:`os.urandom` function for generating random numbers

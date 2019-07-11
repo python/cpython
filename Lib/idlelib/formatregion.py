@@ -3,30 +3,21 @@
 Several formatting options are available:
 indent, deindent, comment, uncomment, tabify, and untabify.
 """
+import re
 from tkinter.simpledialog import askinteger
 
 
-def classifyws(s, tabwidth):
-    """Classify leading whitespace in a string.
+# Temporary copy from editor.py; importing it would cause an import cycle.
+# TODO: Move the definition to a common location that both modules can import.
+_line_indent_re = re.compile(r'[ \t]*')
+def get_line_indent(line, tabwidth):
+    """Return a line's indentation as (# chars, effective # of spaces).
 
-    Count the number of actual spaces and tabs at the beginning of
-    the string.  Also count the tabwidth number of spaces that a
-    tab would expand to.
-
-    Return a tuple of (number of raw leading whitespace characters,
-        number of leading characters after expanding tabs).
+    The effective # of spaces is the length after properly "expanding"
+    the tabs into spaces, as done by str.expandtabs(tabwidth).
     """
-    raw = effective = 0
-    for ch in s:
-        if ch == ' ':
-            raw = raw + 1
-            effective = effective + 1
-        elif ch == '\t':
-            raw = raw + 1
-            effective = (effective // tabwidth + 1) * tabwidth
-        else:
-            break
-    return raw, effective
+    m = _line_indent_re.match(line)
+    return m.end(), len(m.group().expandtabs(tabwidth))
 
 
 class FormatRegion:
@@ -87,7 +78,7 @@ class FormatRegion:
         for pos in range(len(lines)):
             line = lines[pos]
             if line:
-                raw, effective = classifyws(line, self.editwin.tabwidth)
+                raw, effective = get_line_indent(line, self.editwin.tabwidth)
                 effective = effective + self.editwin.indentwidth
                 lines[pos] = self.editwin._make_blanks(effective) + line[raw:]
         self.set_region(head, tail, chars, lines)
@@ -99,7 +90,7 @@ class FormatRegion:
         for pos in range(len(lines)):
             line = lines[pos]
             if line:
-                raw, effective = classifyws(line, self.editwin.tabwidth)
+                raw, effective = get_line_indent(line, self.editwin.tabwidth)
                 effective = max(effective - self.editwin.indentwidth, 0)
                 lines[pos] = self.editwin._make_blanks(effective) + line[raw:]
         self.set_region(head, tail, chars, lines)
@@ -145,7 +136,7 @@ class FormatRegion:
         for pos in range(len(lines)):
             line = lines[pos]
             if line:
-                raw, effective = classifyws(line, tabwidth)
+                raw, effective = get_line_indent(line, tabwidth)
                 ntabs, nspaces = divmod(effective, tabwidth)
                 lines[pos] = '\t' * ntabs + ' ' * nspaces + line[raw:]
         self.set_region(head, tail, chars, lines)

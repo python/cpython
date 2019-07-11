@@ -942,6 +942,13 @@ given numbers, so you can retrieve information about a group in two ways::
    >>> m.group(1)
    'Lots'
 
+Additionally, you can retrieve named groups as a dictionary with
+:meth:`~re.Match.groupdict`::
+
+   >>> m = re.match(r'(?P<first>\w+) (?P<last>\w+)', 'Jane Doe')
+   >>> m.groupdict()
+   {'first': 'Jane', 'last': 'Doe'}
+
 Named groups are handy because they let you use easily-remembered names, instead
 of having to remember numbers.  Here's an example RE from the :mod:`imaplib`
 module::

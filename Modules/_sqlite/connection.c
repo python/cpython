@@ -310,7 +310,7 @@ PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, 
         factory = (PyObject*)&pysqlite_CursorType;
     }
 
-    cursor = PyObject_CallFunctionObjArgs(factory, (PyObject *)self, NULL);
+    cursor = _PyObject_CallOneArg(factory, (PyObject *)self);
     if (cursor == NULL)
         return NULL;
     if (!PyObject_TypeCheck(cursor, &pysqlite_CursorType)) {
@@ -713,7 +713,7 @@ void _pysqlite_final_callback(sqlite3_context* context)
     PyErr_Fetch(&exception, &value, &tb);
     restore = 1;
 
-    function_result = _PyObject_CallMethodId(*aggregate_instance, &PyId_finalize, NULL);
+    function_result = _PyObject_CallMethodIdNoArgs(*aggregate_instance, &PyId_finalize);
 
     Py_DECREF(*aggregate_instance);
 
@@ -970,7 +970,7 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     py_statement = PyUnicode_DecodeUTF8(statement_string,
             strlen(statement_string), "replace");
     if (py_statement) {
-        ret = PyObject_CallFunctionObjArgs((PyObject*)user_arg, py_statement, NULL);
+        ret = _PyObject_CallOneArg((PyObject*)user_arg, py_statement);
         Py_DECREF(py_statement);
     }
 
@@ -1185,9 +1185,9 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
             return -1;
         }
 
-        uppercase_level = _PyObject_CallMethodIdObjArgs(
+        uppercase_level = _PyObject_CallMethodIdOneArg(
                         (PyObject *)&PyUnicode_Type, &PyId_upper,
-                        isolation_level, NULL);
+                        isolation_level);
         if (!uppercase_level) {
             return -1;
         }
@@ -1223,7 +1223,7 @@ PyObject* pysqlite_connection_call(pysqlite_Connection* self, PyObject* args, Py
     if (!_PyArg_NoKeywords(MODULE_NAME ".Connection", kwargs))
         return NULL;
 
-    if (!PyArg_ParseTuple(args, "O", &sql))
+    if (!PyArg_ParseTuple(args, "U", &sql))
         return NULL;
 
     _pysqlite_drop_unused_statement_references(self);
@@ -1275,7 +1275,7 @@ PyObject* pysqlite_connection_execute(pysqlite_Connection* self, PyObject* args)
     PyObject* result = 0;
     PyObject* method = 0;
 
-    cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, NULL);
+    cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
     if (!cursor) {
         goto error;
     }
@@ -1304,7 +1304,7 @@ PyObject* pysqlite_connection_executemany(pysqlite_Connection* self, PyObject* a
     PyObject* result = 0;
     PyObject* method = 0;
 
-    cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, NULL);
+    cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
     if (!cursor) {
         goto error;
     }
@@ -1333,7 +1333,7 @@ PyObject* pysqlite_connection_executescript(pysqlite_Connection* self, PyObject*
     PyObject* result = 0;
     PyObject* method = 0;
 
-    cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, NULL);
+    cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
     if (!cursor) {
         goto error;
     }
@@ -1465,16 +1465,9 @@ pysqlite_connection_iterdump(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    args = PyTuple_New(1);
-    if (!args) {
-        goto finally;
-    }
-    Py_INCREF(self);
-    PyTuple_SetItem(args, 0, (PyObject*)self);
-    retval = PyObject_CallObject(pyfn_iterdump, args);
+    retval = _PyObject_CallOneArg(pyfn_iterdump, (PyObject *)self);
 
 finally:
-    Py_XDECREF(args);
     Py_XDECREF(module);
     return retval;
 }
@@ -1655,8 +1648,8 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    uppercase_name = _PyObject_CallMethodIdObjArgs((PyObject *)&PyUnicode_Type,
-                                                   &PyId_upper, name, NULL);
+    uppercase_name = _PyObject_CallMethodIdOneArg((PyObject *)&PyUnicode_Type,
+                                                  &PyId_upper, name);
     if (!uppercase_name) {
         goto finally;
     }
@@ -1838,10 +1831,10 @@ PyTypeObject pysqlite_ConnectionType = {
         sizeof(pysqlite_Connection),                    /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)pysqlite_connection_dealloc,        /* tp_dealloc */
-        0,                                              /* tp_print */
+        0,                                              /* tp_vectorcall_offset */
         0,                                              /* tp_getattr */
         0,                                              /* tp_setattr */
-        0,                                              /* tp_reserved */
+        0,                                              /* tp_as_async */
         0,                                              /* tp_repr */
         0,                                              /* tp_as_number */
         0,                                              /* tp_as_sequence */

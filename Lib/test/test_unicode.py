@@ -11,9 +11,11 @@ import itertools
 import operator
 import struct
 import sys
+import textwrap
 import unittest
 import warnings
 from test import support, string_tests
+from test.support.script_helper import assert_python_failure
 
 # Error handling (bad decoder return)
 def search_function(encoding):
@@ -811,7 +813,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('h\u0130'.capitalize(), 'H\u0069\u0307')
         exp = '\u0399\u0308\u0300\u0069\u0307'
         self.assertEqual('\u1fd2\u0130'.capitalize(), exp)
-        self.assertEqual('ﬁnnish'.capitalize(), 'FInnish')
+        self.assertEqual('ﬁnnish'.capitalize(), 'Finnish')
         self.assertEqual('A\u0345\u03a3'.capitalize(), 'A\u0345\u03c2')
 
     def test_title(self):
@@ -2435,6 +2437,66 @@ class UnicodeTest(string_tests.CommonTest,
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, str)
         support.check_free_after_iterating(self, reversed, str)
+
+    def test_check_encoding_errors(self):
+        # bpo-37388: str(bytes) and str.decode() must check encoding and errors
+        # arguments in dev mode
+        encodings = ('ascii', 'utf8', 'latin1')
+        invalid = 'Boom, Shaka Laka, Boom!'
+        code = textwrap.dedent(f'''
+            import sys
+            encodings = {encodings!r}
+
+            for data in (b'', b'short string'):
+                try:
+                    str(data, encoding={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(21)
+
+                try:
+                    str(data, errors={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(22)
+
+                for encoding in encodings:
+                    try:
+                        str(data, encoding, errors={invalid!r})
+                    except LookupError:
+                        pass
+                    else:
+                        sys.exit(22)
+
+            for data in ('', 'short string'):
+                try:
+                    data.encode(encoding={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(23)
+
+                try:
+                    data.encode(errors={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(24)
+
+                for encoding in encodings:
+                    try:
+                        data.encode(encoding, errors={invalid!r})
+                    except LookupError:
+                        pass
+                    else:
+                        sys.exit(24)
+
+            sys.exit(10)
+        ''')
+        proc = assert_python_failure('-X', 'dev', '-c', code)
+        self.assertEqual(proc.rc, 10, proc)
 
 
 class CAPITest(unittest.TestCase):

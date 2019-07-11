@@ -3,7 +3,7 @@ dnl * Please run autoreconf to test your changes! *
 dnl ***********************************************
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.8)
+m4_define(PYTHON_VERSION, 3.9)
 
 AC_PREREQ([2.69])
 
@@ -404,12 +404,14 @@ then
     MACHDEP="$ac_md_system$ac_md_release"
 
     case $MACHDEP in
+	aix*) MACHDEP="aix";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
 	'')	MACHDEP="unknown";;
     esac
 fi
+AC_MSG_RESULT("$MACHDEP")
 
 AC_SUBST(_PYTHON_HOST_PLATFORM)
 if test "$cross_compiling" = yes; then
@@ -1227,8 +1229,21 @@ else AC_MSG_RESULT(no); Py_DEBUG='false'
 fi],
 [AC_MSG_RESULT(no)])
 
-# Check for --with-assertions. Py_DEBUG implies assertions, but also changes
-# the ABI. This allows enabling assertions without changing the ABI.
+# Check for --with-trace-refs
+# --with-trace-refs
+AC_MSG_CHECKING(for --with-trace-refs)
+AC_ARG_WITH(trace-refs,
+  AS_HELP_STRING([--with-trace-refs],[enable tracing references for debugging purpose]),,
+  with_trace_refs=no)
+AC_MSG_RESULT($with_trace_refs)
+
+if test "$with_trace_refs" = "yes"
+then
+  AC_DEFINE(Py_TRACE_REFS, 1, [Define if you want to enable tracing references for debugging purpose])
+fi
+
+# Check for --with-assertions.
+# This allows enabling assertions without Py_DEBUG.
 assertions='false'
 AC_MSG_CHECKING(for --with-assertions)
 AC_ARG_WITH(assertions,
@@ -1463,6 +1478,19 @@ esac
 # compiler and platform.  BASECFLAGS tweaks need to be made even if the
 # user set OPT.
 
+case $CC in
+    *clang*)
+        cc_is_clang=1
+        ;;
+    *)
+        if $CC --version 2>&1 | grep -q clang
+        then
+            cc_is_clang=1
+        else
+            cc_is_clang=
+        fi
+esac
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST(OPT)
@@ -1475,19 +1503,6 @@ then
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
         fi
-
-        case $CC in
-            *clang*)
-                cc_is_clang=1
-                ;;
-            *)
-                if $CC --version 2>&1 | grep -q clang
-                then
-                    cc_is_clang=1
-                else
-                    cc_is_clang=
-                fi
-        esac
 
         if test -n "${cc_is_clang}"
         then
@@ -2118,7 +2133,7 @@ sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h sys/sysmacros.h)
+sys/endian.h sys/sysmacros.h linux/memfd.h sys/memfd.h sys/mman.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -2706,7 +2721,7 @@ then
 		# when running test_compile.py.
 		LINKFORSHARED='-Wl,-E -N 2048K';;
 	VxWorks*)
-		LINKFORSHARED='--export-dynamic';;		
+		LINKFORSHARED='--export-dynamic';;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
@@ -3379,7 +3394,6 @@ if test "$with_pymalloc" != "no"
 then
     AC_DEFINE(WITH_PYMALLOC, 1,
      [Define if you want to compile in Python-specific mallocs])
-    ABIFLAGS="${ABIFLAGS}m"
 fi
 AC_MSG_RESULT($with_pymalloc)
 
@@ -3512,16 +3526,17 @@ fi
 
 # checks for library functions
 AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr ctermid dup3 execv faccessat fchmod fchmodat fchown fchownat \
+ clock confstr copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
+ faccessat fchmod fchmodat fchown fchownat \
  fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
  getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
+ initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
- mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
+ madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
  pthread_condattr_setclock pthread_init pthread_kill putenv pwrite pwritev pwritev2 \
  readlink readlinkat readv realpath renameat \
@@ -3534,7 +3549,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \
- wcscoll wcsftime wcsxfrm wmemcmp writev _getpty)
+ wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn)
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
@@ -3614,6 +3629,20 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/resource.h>
     ]], [[void *x=prlimit]])],
   [AC_DEFINE(HAVE_PRLIMIT, 1, Define if you have the 'prlimit' functions.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+])
+
+AC_MSG_CHECKING(for memfd_create)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+#ifdef HAVE_SYS_MEMFD_H
+#include <sys/memfd.h>
+#endif
+]], [[void *x=memfd_create]])],
+  [AC_DEFINE(HAVE_MEMFD_CREATE, 1, Define if you have the 'memfd_create' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
@@ -4580,18 +4609,28 @@ AC_C_BIGENDIAN
 # * The Python implementation (always 'cpython-' for us)
 # * The major and minor version numbers
 # * --with-pydebug (adds a 'd')
-# * --with-pymalloc (adds a 'm')
-# * --with-wide-unicode (adds a 'u')
 #
 # Thus for example, Python 3.2 built with wide unicode, pydebug, and pymalloc,
 # would get a shared library ABI version tag of 'cpython-32dmu' and shared
 # libraries would be named 'foo.cpython-32dmu.so'.
+#
+# In Python 3.2 and older, --with-wide-unicode added a 'u' flag.
+# In Python 3.7 and older, --with-pymalloc added a 'm' flag.
 AC_SUBST(SOABI)
 AC_MSG_CHECKING(ABIFLAGS)
 AC_MSG_RESULT($ABIFLAGS)
 AC_MSG_CHECKING(SOABI)
 SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
 AC_MSG_RESULT($SOABI)
+
+# Release and debug (Py_DEBUG) ABI are compatible, but not Py_TRACE_REFS ABI
+if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
+  # Similar to SOABI but remove "d" flag from ABIFLAGS
+  AC_SUBST(ALT_SOABI)
+  ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
+  AC_DEFINE_UNQUOTED(ALT_SOABI, "${ALT_SOABI}",
+            [Alternative SOABI used in debug build to load C extensions built in release mode])
+fi
 
 AC_SUBST(EXT_SUFFIX)
 case $ac_sys_system in
@@ -4604,6 +4643,14 @@ esac
 AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT($LDVERSION)
+
+# On Android and Cygwin the shared libraries must be linked with libpython.
+AC_SUBST(LIBPYTHON)
+if test -n "$ANDROID_API_LEVEL" -o "$MACHDEP" = "cygwin"; then
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+else
+  LIBPYTHON=''
+fi
 
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST(PY_ENABLE_SHARED)
@@ -5245,7 +5292,7 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Objects Python Modules Programs"
+SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then
@@ -5564,7 +5611,7 @@ AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
 
 
 # generate output files
-AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-config.sh)
+AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 

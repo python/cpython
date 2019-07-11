@@ -88,8 +88,9 @@ PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 /* Convenience functions */
 
 #ifdef MS_WINDOWS
+Py_DEPRECATED(3.3)
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithUnicodeFilename(
-    PyObject *, const Py_UNICODE *) Py_DEPRECATED(3.3);
+    PyObject *, const Py_UNICODE *);
 #endif /* MS_WINDOWS */
 
 /* Like PyErr_Format(), but saves current exception as __context__ and
@@ -103,11 +104,12 @@ PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
 
 #ifdef MS_WINDOWS
 /* XXX redeclare to use WSTRING */
+Py_DEPRECATED(3.3)
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithUnicodeFilename(
-    int, const Py_UNICODE *) Py_DEPRECATED(3.3);
-
+    int, const Py_UNICODE *);
+Py_DEPRECATED(3.3)
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithUnicodeFilename(
-    PyObject *,int, const Py_UNICODE *) Py_DEPRECATED(3.3);
+    PyObject *,int, const Py_UNICODE *);
 #endif
 
 /* In exceptions.c */
@@ -147,23 +149,23 @@ PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     int lineno);
 
 /* Create a UnicodeEncodeError object */
-PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_Create(
+Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_Create(
     const char *encoding,       /* UTF-8 encoded string */
     const Py_UNICODE *object,
     Py_ssize_t length,
     Py_ssize_t start,
     Py_ssize_t end,
     const char *reason          /* UTF-8 encoded string */
-    ) Py_DEPRECATED(3.3);
+    );
 
 /* Create a UnicodeTranslateError object */
-PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_Create(
+Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_Create(
     const Py_UNICODE *object,
     Py_ssize_t length,
     Py_ssize_t start,
     Py_ssize_t end,
     const char *reason          /* UTF-8 encoded string */
-    ) Py_DEPRECATED(3.3);
+    );
 PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
     PyObject *object,
     Py_ssize_t start,
@@ -171,6 +173,9 @@ PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
     const char *reason          /* UTF-8 encoded string */
     );
 
+PyAPI_FUNC(void) _PyErr_WriteUnraisableMsg(
+    const char *err_msg,
+    PyObject *obj);
 
 #ifdef __cplusplus
 }

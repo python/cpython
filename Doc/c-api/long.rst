@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _longobjects:
 
@@ -288,7 +288,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    If the value of *obj* is out of range for an :c:type:`unsigned long`,
    return the reduction of that value modulo ``ULONG_MAX + 1``.
 
-   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+   Returns ``(unsigned long)-1`` on error.  Use :c:func:`PyErr_Occurred` to
+   disambiguate.
 
    .. versionchanged:: 3.8
       Use :meth:`__index__` if available.
@@ -307,7 +308,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    If the value of *obj* is out of range for an :c:type:`unsigned long long`,
    return the reduction of that value modulo ``PY_ULLONG_MAX + 1``.
 
-   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+   Returns ``(unsigned long long)-1`` on error.  Use :c:func:`PyErr_Occurred`
+   to disambiguate.
 
    .. versionchanged:: 3.8
       Use :meth:`__index__` if available.

@@ -14,36 +14,38 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
 
-PyAPI_FUNC(_PyInitError) _Py_PreInitialize(void);
-PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromPreConfig(
-    _PyPreConfig *preconfig);
+PyAPI_FUNC(PyStatus) Py_PreInitialize(
+    const PyPreConfig *src_config);
+PyAPI_FUNC(PyStatus) Py_PreInitializeFromBytesArgs(
+    const PyPreConfig *src_config,
+    Py_ssize_t argc,
+    char **argv);
+PyAPI_FUNC(PyStatus) Py_PreInitializeFromArgs(
+    const PyPreConfig *src_config,
+    Py_ssize_t argc,
+    wchar_t **argv);
 
-PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
-    PyInterpreterState **interp,
-    const _PyCoreConfig *);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
 
-PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(
-    _PyMainInterpreterConfig *config,
-    const _PyCoreConfig *core_config);
-PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
-PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
-    _PyMainInterpreterConfig *config,
-    const _PyMainInterpreterConfig *config2);
-/* Used by _testcapi.get_main_config() */
-PyAPI_FUNC(PyObject*) _PyMainInterpreterConfig_AsDict(
-    const _PyMainInterpreterConfig *config);
-
-PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
-    PyInterpreterState *interp,
-    const _PyMainInterpreterConfig *);
-
 /* Initialization and finalization */
 
-PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
-    const _PyCoreConfig *config);
-PyAPI_FUNC(void) _Py_NO_RETURN _Py_ExitInitError(_PyInitError err);
+PyAPI_FUNC(PyStatus) Py_InitializeFromConfig(
+    const PyConfig *config);
+PyAPI_FUNC(PyStatus) _Py_InitializeFromArgs(
+    const PyConfig *config,
+    Py_ssize_t argc,
+    char * const *argv);
+PyAPI_FUNC(PyStatus) _Py_InitializeFromWideArgs(
+    const PyConfig *config,
+    Py_ssize_t argc,
+    wchar_t * const *argv);
+PyAPI_FUNC(PyStatus) _Py_InitializeMain(void);
+
+PyAPI_FUNC(int) Py_RunMain(void);
+
+
+PyAPI_FUNC(void) _Py_NO_RETURN Py_ExitStatusException(PyStatus err);
 
 /* Py_PyAtExit is for the atexit module, Py_AtExit is for low-level
  * exit functions.
@@ -67,8 +69,8 @@ PyAPI_FUNC(int) _PyOS_URandom(void *buffer, Py_ssize_t size);
 PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
 
 /* Legacy locale support */
-PyAPI_FUNC(void) _Py_CoerceLegacyLocale(int warn);
-PyAPI_FUNC(int) _Py_LegacyLocaleDetected(void);
+PyAPI_FUNC(int) _Py_CoerceLegacyLocale(int warn);
+PyAPI_FUNC(int) _Py_LegacyLocaleDetected(int warn);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
 
 #ifdef __cplusplus

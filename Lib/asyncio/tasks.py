@@ -23,7 +23,7 @@ from . import coroutines
 from . import events
 from . import exceptions
 from . import futures
-from .coroutines import coroutine
+from .coroutines import _is_coroutine
 
 # Helper to generate new task names
 # This uses itertools.count() instead of a "+= 1" operation because the latter
@@ -42,9 +42,22 @@ def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
         loop = events.get_running_loop()
-    # NB: set(_all_tasks) is required to protect
-    # from https://bugs.python.org/issue34970 bug
-    return {t for t in list(_all_tasks)
+    # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
+    # thread while we do so. Therefore we cast it to list prior to filtering. The list
+    # cast itself requires iteration, so we repeat it several times ignoring
+    # RuntimeErrors (which are not very likely to occur). See issues 34970 and 36607 for
+    # details.
+    i = 0
+    while True:
+        try:
+            tasks = list(_all_tasks)
+        except RuntimeError:
+            i += 1
+            if i >= 1000:
+                raise
+        else:
+            break
+    return {t for t in tasks
             if futures._get_loop(t) is loop and not t.done()}
 
 
@@ -54,9 +67,22 @@ def _all_tasks_compat(loop=None):
     # method.
     if loop is None:
         loop = events.get_event_loop()
-    # NB: set(_all_tasks) is required to protect
-    # from https://bugs.python.org/issue34970 bug
-    return {t for t in list(_all_tasks) if futures._get_loop(t) is loop}
+    # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
+    # thread while we do so. Therefore we cast it to list prior to filtering. The list
+    # cast itself requires iteration, so we repeat it several times ignoring
+    # RuntimeErrors (which are not very likely to occur). See issues 34970 and 36607 for
+    # details.
+    i = 0
+    while True:
+        try:
+            tasks = list(_all_tasks)
+        except RuntimeError:
+            i += 1
+            if i >= 1000:
+                raise
+        else:
+            break
+    return {t for t in tasks if futures._get_loop(t) is loop}
 
 
 def _set_task_name(task, name):
@@ -95,9 +121,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
         None is returned when called not in the context of a Task.
         """
-        warnings.warn("Task.current_task() is deprecated, "
+        warnings.warn("Task.current_task() is deprecated since Python 3.7, "
                       "use asyncio.current_task() instead",
-                      PendingDeprecationWarning,
+                      DeprecationWarning,
                       stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
@@ -109,9 +135,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
         By default all tasks for the current event loop are returned.
         """
-        warnings.warn("Task.all_tasks() is deprecated, "
+        warnings.warn("Task.all_tasks() is deprecated since Python 3.7, "
                       "use asyncio.all_tasks() instead",
-                      PendingDeprecationWarning,
+                      DeprecationWarning,
                       stacklevel=2)
         return _all_tasks_compat(loop)
 
@@ -151,6 +177,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
+
+    def get_coro(self):
+        return self._coro
 
     def get_name(self):
         return self._name
@@ -260,11 +289,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 super().set_result(exc.value)
         except exceptions.CancelledError:
             super().cancel()  # I.e., Future.cancel(self).
-        except Exception as exc:
-            super().set_exception(exc)
-        except BaseException as exc:
+        except (KeyboardInterrupt, SystemExit) as exc:
             super().set_exception(exc)
             raise
+        except BaseException as exc:
+            super().set_exception(exc)
         else:
             blocking = getattr(result, '_asyncio_future_blocking', None)
             if blocking is not None:
@@ -318,7 +347,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def __wakeup(self, future):
         try:
             future.result()
-        except Exception as exc:
+        except BaseException as exc:
             # This may also be a cancellation.
             self.__step(exc)
         else:
@@ -388,8 +417,8 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     if loop is None:
         loop = events.get_running_loop()
     else:
-        warnings.warn("The loop argument is deprecated and scheduled for "
-                      "removal in Python 3.10.",
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
 
     fs = {ensure_future(f, loop=loop) for f in set(fs)}
@@ -418,8 +447,8 @@ async def wait_for(fut, timeout, *, loop=None):
     if loop is None:
         loop = events.get_running_loop()
     else:
-        warnings.warn("The loop argument is deprecated and scheduled for "
-                      "removal in Python 3.10.",
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
 
     if timeout is None:
@@ -495,10 +524,11 @@ async def _wait(fs, timeout, return_when, loop):
     finally:
         if timeout_handle is not None:
             timeout_handle.cancel()
+        for f in fs:
+            f.remove_done_callback(_on_completion)
 
     done, pending = set(), set()
     for f in fs:
-        f.remove_done_callback(_on_completion)
         if f.done():
             done.add(f)
         else:
@@ -599,8 +629,8 @@ async def sleep(delay, result=None, *, loop=None):
     if loop is None:
         loop = events.get_running_loop()
     else:
-        warnings.warn("The loop argument is deprecated and scheduled for "
-                      "removal in Python 3.10.",
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
 
     future = loop.create_future()
@@ -627,7 +657,8 @@ def ensure_future(coro_or_future, *, loop=None):
         return task
     elif futures.isfuture(coro_or_future):
         if loop is not None and loop is not futures._get_loop(coro_or_future):
-            raise ValueError('loop argument must agree with Future')
+            raise ValueError('The future belongs to a different loop than '
+                             'the one specified as the loop argument')
         return coro_or_future
     elif inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
@@ -636,7 +667,7 @@ def ensure_future(coro_or_future, *, loop=None):
                         'required')
 
 
-@coroutine
+@types.coroutine
 def _wrap_awaitable(awaitable):
     """Helper for asyncio.ensure_future().
 
@@ -644,6 +675,8 @@ def _wrap_awaitable(awaitable):
     that will later be wrapped in a Task by ensure_future().
     """
     return (yield from awaitable.__await__())
+
+_wrap_awaitable._is_coroutine = _is_coroutine
 
 
 class _GatheringFuture(futures.Future):
@@ -816,7 +849,7 @@ def shield(arg, *, loop=None):
     loop = futures._get_loop(inner)
     outer = loop.create_future()
 
-    def _done_callback(inner):
+    def _inner_done_callback(inner):
         if outer.cancelled():
             if not inner.cancelled():
                 # Mark inner's result as retrieved.
@@ -832,7 +865,13 @@ def shield(arg, *, loop=None):
             else:
                 outer.set_result(inner.result())
 
-    inner.add_done_callback(_done_callback)
+
+    def _outer_done_callback(outer):
+        if not inner.done():
+            inner.remove_done_callback(_inner_done_callback)
+
+    inner.add_done_callback(_inner_done_callback)
+    outer.add_done_callback(_outer_done_callback)
     return outer
 
 
@@ -848,7 +887,9 @@ def run_coroutine_threadsafe(coro, loop):
     def callback():
         try:
             futures._chain_future(ensure_future(coro, loop=loop), future)
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             if future.set_running_or_notify_cancel():
                 future.set_exception(exc)
             raise

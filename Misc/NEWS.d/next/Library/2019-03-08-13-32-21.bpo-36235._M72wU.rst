@@ -1,4 +1,0 @@
-Fix ``CFLAGS`` in ``customize_compiler()`` of ``distutils.sysconfig``: when
-the ``CFLAGS`` environment variable is defined, don't override ``CFLAGS``
-variable with the ``OPT`` variable anymore. Initial patch written by David
-Malcolm.

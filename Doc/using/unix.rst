@@ -1,4 +1,4 @@
-.. highlightlang:: sh
+.. highlight:: sh
 
 .. _using-on-unix:
 

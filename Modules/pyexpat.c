@@ -119,7 +119,7 @@ set_error(xmlparseobject *self, enum XML_Error code)
                                   XML_ErrorString(code), lineno, column);
     if (buffer == NULL)
         return NULL;
-    err = PyObject_CallFunctionObjArgs(ErrorObject, buffer, NULL);
+    err = _PyObject_CallOneArg(ErrorObject, buffer);
     Py_DECREF(buffer);
     if (  err != NULL
           && set_error_attr(err, "code", code)
@@ -1468,10 +1468,10 @@ static PyTypeObject Xmlparsetype = {
         0,                              /*tp_itemsize*/
         /* methods */
         (destructor)xmlparse_dealloc,   /*tp_dealloc*/
-        (printfunc)0,           /*tp_print*/
+        0,                              /*tp_vectorcall_offset*/
         0,                      /*tp_getattr*/
         0,  /*tp_setattr*/
-        0,                      /*tp_reserved*/
+        0,                      /*tp_as_async*/
         (reprfunc)0,            /*tp_repr*/
         0,                      /*tp_as_number*/
         0,              /*tp_as_sequence*/

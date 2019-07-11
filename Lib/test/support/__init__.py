@@ -6,15 +6,14 @@ if __name__ != 'test.support':
 import asyncio.events
 import collections.abc
 import contextlib
-import datetime
 import errno
 import faulthandler
 import fnmatch
 import functools
 import gc
+import glob
 import importlib
 import importlib.util
-import io
 import logging.handlers
 import nntplib
 import os
@@ -485,7 +484,9 @@ def _is_gui_available():
     if hasattr(_is_gui_available, 'result'):
         return _is_gui_available.result
     reason = None
-    if sys.platform.startswith('win'):
+    if sys.platform.startswith('win') and platform.win32_is_iot():
+        reason = "gui is not available on Windows IoT Core"
+    elif sys.platform.startswith('win'):
         # if Python is running as a service (such as the buildbot service),
         # gui interaction may be disallowed
         import ctypes
@@ -1006,7 +1007,7 @@ def temp_dir(path=None, quiet=False):
         yield path
     finally:
         # In case the process forks, let only the parent remove the
-        # directory. The child has a diffent process id. (bpo-30028)
+        # directory. The child has a different process id. (bpo-30028)
         if dir_created and pid == os.getpid():
             rmtree(path)
 
@@ -1477,6 +1478,24 @@ socket_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 ioerror_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 
 
+def get_socket_conn_refused_errs():
+    """
+    Get the different socket error numbers ('errno') which can be received
+    when a connection is refused.
+    """
+    errors = [errno.ECONNREFUSED]
+    if hasattr(errno, 'ENETUNREACH'):
+        # On Solaris, ENETUNREACH is returned sometimes instead of ECONNREFUSED
+        errors.append(errno.ENETUNREACH)
+    if hasattr(errno, 'EADDRNOTAVAIL'):
+        # bpo-31910: socket.create_connection() fails randomly
+        # with EADDRNOTAVAIL on Travis CI
+        errors.append(errno.EADDRNOTAVAIL)
+    if not IPV6_ENABLED:
+        errors.append(errno.EAFNOSUPPORT)
+    return errors
+
+
 @contextlib.contextmanager
 def transient_internet(resource_name, *, timeout=30.0, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
@@ -1637,7 +1656,7 @@ def python_is_optimized():
 
 _header = 'nP'
 _align = '0n'
-if hasattr(sys, "gettotalrefcount"):
+if hasattr(sys, "getobjects"):
     _header = '2P' + _header
     _align = '0P'
 _vheader = _header + 'n'
@@ -2482,6 +2501,84 @@ def skip_unless_symlink(test):
     msg = "Requires functional symlink implementation"
     return test if ok else unittest.skip(msg)(test)
 
+class PythonSymlink:
+    """Creates a symlink for the current Python executable"""
+    def __init__(self, link=None):
+        self.link = link or os.path.abspath(TESTFN)
+        self._linked = []
+        self.real = os.path.realpath(sys.executable)
+        self._also_link = []
+
+        self._env = None
+
+        self._platform_specific()
+
+    def _platform_specific(self):
+        pass
+
+    if sys.platform == "win32":
+        def _platform_specific(self):
+            import _winapi
+
+            if os.path.lexists(self.real) and not os.path.exists(self.real):
+                # App symlink appears to not exist, but we want the
+                # real executable here anyway
+                self.real = _winapi.GetModuleFileName(0)
+
+            dll = _winapi.GetModuleFileName(sys.dllhandle)
+            src_dir = os.path.dirname(dll)
+            dest_dir = os.path.dirname(self.link)
+            self._also_link.append((
+                dll,
+                os.path.join(dest_dir, os.path.basename(dll))
+            ))
+            for runtime in glob.glob(os.path.join(src_dir, "vcruntime*.dll")):
+                self._also_link.append((
+                    runtime,
+                    os.path.join(dest_dir, os.path.basename(runtime))
+                ))
+
+            self._env = {k.upper(): os.getenv(k) for k in os.environ}
+            self._env["PYTHONHOME"] = os.path.dirname(self.real)
+            if sysconfig.is_python_build(True):
+                self._env["PYTHONPATH"] = os.path.dirname(os.__file__)
+
+    def __enter__(self):
+        os.symlink(self.real, self.link)
+        self._linked.append(self.link)
+        for real, link in self._also_link:
+            os.symlink(real, link)
+            self._linked.append(link)
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        for link in self._linked:
+            try:
+                os.remove(link)
+            except IOError as ex:
+                if verbose:
+                    print("failed to clean up {}: {}".format(link, ex))
+
+    def _call(self, python, args, env, returncode):
+        cmd = [python, *args]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, env=env)
+        r = p.communicate()
+        if p.returncode != returncode:
+            if verbose:
+                print(repr(r[0]))
+                print(repr(r[1]), file=sys.stderr)
+            raise RuntimeError(
+                'unexpected return code: {0} (0x{0:08X})'.format(p.returncode))
+        return r
+
+    def call_real(self, *args, returncode=0):
+        return self._call(self.real, args, None, returncode)
+
+    def call_link(self, *args, returncode=0):
+        return self._call(self.link, args, self._env, returncode)
+
+
 _can_xattr = None
 def can_xattr():
     global _can_xattr
@@ -3018,3 +3115,104 @@ def collision_stats(nbins, nballs):
         collisions = k - occupied
         var = dn*(dn-1)*((dn-2)/dn)**k + meanempty * (1 - meanempty)
         return float(collisions), float(var.sqrt())
+
+
+class catch_unraisable_exception:
+    """
+    Context manager catching unraisable exception using sys.unraisablehook.
+
+    Storing the exception value (cm.unraisable.exc_value) creates a reference
+    cycle. The reference cycle is broken explicitly when the context manager
+    exits.
+
+    Storing the object (cm.unraisable.object) can resurrect it if it is set to
+    an object which is being finalized. Exiting the context manager clears the
+    stored object.
+
+    Usage:
+
+        with support.catch_unraisable_exception() as cm:
+            # code creating an "unraisable exception"
+            ...
+
+            # check the unraisable exception: use cm.unraisable
+            ...
+
+        # cm.unraisable attribute no longer exists at this point
+        # (to break a reference cycle)
+    """
+
+    def __init__(self):
+        self.unraisable = None
+        self._old_hook = None
+
+    def _hook(self, unraisable):
+        # Storing unraisable.object can resurrect an object which is being
+        # finalized. Storing unraisable.exc_value creates a reference cycle.
+        self.unraisable = unraisable
+
+    def __enter__(self):
+        self._old_hook = sys.unraisablehook
+        sys.unraisablehook = self._hook
+        return self
+
+    def __exit__(self, *exc_info):
+        sys.unraisablehook = self._old_hook
+        del self.unraisable
+
+
+class catch_threading_exception:
+    """
+    Context manager catching threading.Thread exception using
+    threading.excepthook.
+
+    Attributes set when an exception is catched:
+
+    * exc_type
+    * exc_value
+    * exc_traceback
+    * thread
+
+    See threading.excepthook() documentation for these attributes.
+
+    These attributes are deleted at the context manager exit.
+
+    Usage:
+
+        with support.catch_threading_exception() as cm:
+            # code spawning a thread which raises an exception
+            ...
+
+            # check the thread exception, use cm attributes:
+            # exc_type, exc_value, exc_traceback, thread
+            ...
+
+        # exc_type, exc_value, exc_traceback, thread attributes of cm no longer
+        # exists at this point
+        # (to avoid reference cycles)
+    """
+
+    def __init__(self):
+        self.exc_type = None
+        self.exc_value = None
+        self.exc_traceback = None
+        self.thread = None
+        self._old_hook = None
+
+    def _hook(self, args):
+        self.exc_type = args.exc_type
+        self.exc_value = args.exc_value
+        self.exc_traceback = args.exc_traceback
+        self.thread = args.thread
+
+    def __enter__(self):
+        self._old_hook = threading.excepthook
+        threading.excepthook = self._hook
+        return self
+
+    def __exit__(self, *exc_info):
+        threading.excepthook = self._old_hook
+        del self.exc_type
+        del self.exc_value
+        del self.exc_traceback
+        del self.thread

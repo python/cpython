@@ -6,35 +6,6 @@ from test import support
 
 import _ctypes_test
 
-# Only windows 32-bit has different calling conventions.
-@unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
-@unittest.skipUnless(sizeof(c_void_p) == sizeof(c_int),
-                     "sizeof c_void_p and c_int differ")
-class WindowsTestCase(unittest.TestCase):
-    def test_callconv_1(self):
-        # Testing stdcall function
-
-        IsWindow = windll.user32.IsWindow
-        # ValueError: Procedure probably called with not enough arguments
-        # (4 bytes missing)
-        self.assertRaises(ValueError, IsWindow)
-
-        # This one should succeed...
-        self.assertEqual(0, IsWindow(0))
-
-        # ValueError: Procedure probably called with too many arguments
-        # (8 bytes in excess)
-        self.assertRaises(ValueError, IsWindow, 0, 0, 0)
-
-    def test_callconv_2(self):
-        # Calling stdcall function as cdecl
-
-        IsWindow = cdll.user32.IsWindow
-
-        # ValueError: Procedure called with not enough arguments
-        # (4 bytes missing) or wrong calling convention
-        self.assertRaises(ValueError, IsWindow, None)
-
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class FunctionCallTestCase(unittest.TestCase):
     @unittest.skipUnless('MSC' in sys.version, "SEH only supported by MSC")

@@ -80,6 +80,8 @@ extern struct tok_state *PyTokenizer_FromFile(FILE *, const char*,
 extern void PyTokenizer_Free(struct tok_state *);
 extern int PyTokenizer_Get(struct tok_state *, char **, char **);
 
+#define tok_dump _Py_tok_dump
+
 #ifdef __cplusplus
 }
 #endif

@@ -40,6 +40,27 @@ def grep(text, io=None, flist=None):
     dialog.open(text, searchphrase, io)
 
 
+def walk_error(msg):
+    "Handle os.walk error."
+    print(msg)
+
+
+def findfiles(folder, pattern, recursive):
+    """Generate file names in dir that match pattern.
+
+    Args:
+        folder: Root directory to search.
+        pattern: File pattern to match.
+        recursive: True to include subdirectories.
+    """
+    for dirpath, _, filenames in os.walk(folder, onerror=walk_error):
+        yield from (os.path.join(dirpath, name)
+                    for name in filenames
+                    if fnmatch.fnmatch(name, pattern))
+        if not recursive:
+            break
+
+
 class GrepDialog(SearchDialogBase):
     "Dialog for searching multiple files."
 
@@ -140,15 +161,16 @@ class GrepDialog(SearchDialogBase):
             prog: The compiled, cooked search pattern.
             path: String containing the search path.
         """
-        dir, base = os.path.split(path)
-        list = self.findfiles(dir, base, self.recvar.get())
-        list.sort()
+        folder, filepat = os.path.split(path)
+        if not folder:
+            folder = os.curdir
+        filelist = sorted(findfiles(folder, filepat, self.recvar.get()))
         self.close()
         pat = self.engine.getpat()
         print(f"Searching {pat!r} in {path} ...")
         hits = 0
         try:
-            for fn in list:
+            for fn in filelist:
                 try:
                     with open(fn, errors='replace') as f:
                         for lineno, line in enumerate(f, 1):
@@ -165,36 +187,6 @@ class GrepDialog(SearchDialogBase):
             # Tk window has been closed, OutputWindow.text = None,
             # so in OW.write, OW.text.insert fails.
             pass
-
-    def findfiles(self, dir, base, rec):
-        """Return list of files in the dir that match the base pattern.
-
-        Use the current directory if dir has no value.
-        If rec is True, recursively iterate through subdirectories.
-
-        Args:
-            dir: Directory path to search.
-            base: File search pattern.
-            rec: Boolean for recursive search through subdirectories.
-        """
-        try:
-            names = os.listdir(dir or os.curdir)
-        except OSError as msg:
-            print(msg)
-            return []
-        list = []
-        subdirs = []
-        for name in names:
-            fn = os.path.join(dir, name)
-            if os.path.isdir(fn):
-                subdirs.append(fn)
-            else:
-                if fnmatch.fnmatch(name, base):
-                    list.append(fn)
-        if rec:
-            for subdir in subdirs:
-                list.extend(self.findfiles(subdir, base, rec))
-        return list
 
 
 def _grep_dialog(parent):  # htest #

@@ -39,34 +39,6 @@ class DummyEditwin:
     get_selection_indices = EditorWindow.get_selection_indices
 
 
-class HelperTest(unittest.TestCase):
-
-    def test_classifyws(self):
-        classify = formatregion.classifyws
-        eq = self.assertEqual
-
-        tabwidth = 4
-        tests = (('no spaces', (0, 0)),
-                 # Internal space isn't counted.
-                 ('    space test', (4, 4)),
-                 ('\ttab test', (1, 4)),
-                 ('\t\tdouble tabs test', (2, 8)),
-                 # Different results when mixing tabs and spaces.
-                 ('    \tmixed test', (5, 8)),
-                 ('  \t  mixed test', (5, 6)),
-                 ('\t    mixed test', (5, 8)),
-                 # Spaces not divisible by tabwidth.
-                 ('  \tmixed test', (3, 4)),
-                 (' \t mixed test', (3, 5)),
-                 ('\t  mixed test', (3, 6)),
-                 # Only checks spaces and tabs.
-                 ('\nnewline test', (0, 0)))
-
-        for string, expected in tests:
-            with self.subTest(string=string):
-                eq(classify(string, tabwidth), expected)
-
-
 class FormatRegionTest(unittest.TestCase):
 
     @classmethod

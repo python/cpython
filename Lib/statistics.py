@@ -7,18 +7,21 @@ averages, variance, and standard deviation.
 Calculating averages
 --------------------
 
-==================  =============================================
+==================  ==================================================
 Function            Description
-==================  =============================================
+==================  ==================================================
 mean                Arithmetic mean (average) of data.
+fmean               Fast, floating point arithmetic mean.
+geometric_mean      Geometric mean of data.
 harmonic_mean       Harmonic mean of data.
 median              Median (middle value) of data.
 median_low          Low median of data.
 median_high         High median of data.
 median_grouped      Median, or 50th percentile, of grouped data.
 mode                Mode (most common value) of data.
-multimode           List of modes (most common values of data)
-==================  =============================================
+multimode           List of modes (most common values of data).
+quantiles           Divide data into intervals with equal probability.
+==================  ==================================================
 
 Calculate the arithmetic mean ("the average") of data:
 
@@ -77,10 +80,11 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 
 """
 
-__all__ = [ 'StatisticsError', 'NormalDist',
+__all__ = [ 'StatisticsError', 'NormalDist', 'quantiles',
             'pstdev', 'pvariance', 'stdev', 'variance',
             'median',  'median_low', 'median_high', 'median_grouped',
             'mean', 'mode', 'multimode', 'harmonic_mean', 'fmean',
+            'geometric_mean',
           ]
 
 import math
@@ -316,17 +320,35 @@ def fmean(data):
     except TypeError:
         # Handle iterators that do not define __len__().
         n = 0
-        def count(x):
+        def count(iterable):
             nonlocal n
-            n += 1
-            return x
-        total = fsum(map(count, data))
+            for n, x in enumerate(iterable, start=1):
+                yield x
+        total = fsum(count(data))
     else:
         total = fsum(data)
     try:
         return total / n
     except ZeroDivisionError:
         raise StatisticsError('fmean requires at least one data point') from None
+
+def geometric_mean(data):
+    """Convert data to floats and compute the geometric mean.
+
+    Raises a StatisticsError if the input dataset is empty,
+    if it contains a zero, or if it contains a negative value.
+
+    No special efforts are made to achieve exact results.
+    (However, this may change in the future.)
+
+    >>> round(geometric_mean([54, 24, 36]), 9)
+    36.0
+    """
+    try:
+        return exp(fmean(map(log, data)))
+    except ValueError:
+        raise StatisticsError('geometric mean requires a non-empty dataset '
+                              ' containing positive numbers') from None
 
 def harmonic_mean(data):
     """Return the harmonic mean of data.
@@ -542,6 +564,93 @@ def multimode(data):
     maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
     return list(map(itemgetter(0), mode_items))
 
+# Notes on methods for computing quantiles
+# ----------------------------------------
+#
+# There is no one perfect way to compute quantiles.  Here we offer
+# two methods that serve common needs.  Most other packages
+# surveyed offered at least one or both of these two, making them
+# "standard" in the sense of "widely-adopted and reproducible".
+# They are also easy to explain, easy to compute manually, and have
+# straight-forward interpretations that aren't surprising.
+
+# The default method is known as "R6", "PERCENTILE.EXC", or "expected
+# value of rank order statistics". The alternative method is known as
+# "R7", "PERCENTILE.INC", or "mode of rank order statistics".
+
+# For sample data where there is a positive probability for values
+# beyond the range of the data, the R6 exclusive method is a
+# reasonable choice.  Consider a random sample of nine values from a
+# population with a uniform distribution from 0.0 to 100.0.  The
+# distribution of the third ranked sample point is described by
+# betavariate(alpha=3, beta=7) which has mode=0.250, median=0.286, and
+# mean=0.300.  Only the latter (which corresponds with R6) gives the
+# desired cut point with 30% of the population falling below that
+# value, making it comparable to a result from an inv_cdf() function.
+
+# For describing population data where the end points are known to
+# be included in the data, the R7 inclusive method is a reasonable
+# choice.  Instead of the mean, it uses the mode of the beta
+# distribution for the interior points.  Per Hyndman & Fan, "One nice
+# property is that the vertices of Q7(p) divide the range into n - 1
+# intervals, and exactly 100p% of the intervals lie to the left of
+# Q7(p) and 100(1 - p)% of the intervals lie to the right of Q7(p)."
+
+# If the need arises, we could add method="median" for a median
+# unbiased, distribution-free alternative.  Also if needed, the
+# distribution-free approaches could be augmented by adding
+# method='normal'.  However, for now, the position is that fewer
+# options make for easier choices and that external packages can be
+# used for anything more advanced.
+
+def quantiles(dist, /, *, n=4, method='exclusive'):
+    '''Divide *dist* into *n* continuous intervals with equal probability.
+
+    Returns a list of (n - 1) cut points separating the intervals.
+
+    Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
+    Set *n* to 100 for percentiles which gives the 99 cuts points that
+    separate *dist* in to 100 equal sized groups.
+
+    The *dist* can be any iterable containing sample data or it can be
+    an instance of a class that defines an inv_cdf() method.  For sample
+    data, the cut points are linearly interpolated between data points.
+
+    If *method* is set to *inclusive*, *dist* is treated as population
+    data.  The minimum value is treated as the 0th percentile and the
+    maximum value is treated as the 100th percentile.
+    '''
+    # Possible future API extensions:
+    #     quantiles(data, already_sorted=True)
+    #     quantiles(data, cut_points=[0.02, 0.25, 0.50, 0.75, 0.98])
+    if n < 1:
+        raise StatisticsError('n must be at least 1')
+    if hasattr(dist, 'inv_cdf'):
+        return [dist.inv_cdf(i / n) for i in range(1, n)]
+    data = sorted(dist)
+    ld = len(data)
+    if ld < 2:
+        raise StatisticsError('must have at least two data points')
+    if method == 'inclusive':
+        m = ld - 1
+        result = []
+        for i in range(1, n):
+            j = i * m // n
+            delta = i*m - j*n
+            interpolated = (data[j] * (n - delta) + data[j+1] * delta) / n
+            result.append(interpolated)
+        return result
+    if method == 'exclusive':
+        m = ld + 1
+        result = []
+        for i in range(1, n):
+            j = i * m // n                               # rescale i to m/n
+            j = 1 if j < 1 else ld-1 if j > ld-1 else j  # clamp to 1 .. ld-1
+            delta = i*m - j*n                            # exact integer math
+            interpolated = (data[j-1] * (n - delta) + data[j] * delta) / n
+            result.append(interpolated)
+        return result
+    raise ValueError(f'Unknown method: {method!r}')
 
 # === Measures of spread ===
 
@@ -709,7 +818,8 @@ class NormalDist:
     # https://en.wikipedia.org/wiki/Normal_distribution
     # https://en.wikipedia.org/wiki/Variance#Properties
 
-    __slots__ = ('mu', 'sigma')
+    __slots__ = {'mu': 'Arithmetic mean of a normal distribution',
+                 'sigma': 'Standard deviation of a normal distribution'}
 
     def __init__(self, mu=0.0, sigma=1.0):
         'NormalDist where mu is the mean and sigma is the standard deviation.'
@@ -726,7 +836,7 @@ class NormalDist:
         xbar = fmean(data)
         return cls(xbar, stdev(data, xbar))
 
-    def samples(self, n, seed=None):
+    def samples(self, n, *, seed=None):
         'Generate *n* samples for a given mean and standard deviation.'
         gauss = random.gauss if seed is None else random.Random(seed).gauss
         mu, sigma = self.mu, self.sigma

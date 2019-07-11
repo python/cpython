@@ -1,2 +1,0 @@
-Fix a possible null pointer dereference in ``merge_consts_recursive()``.
-Patch by Zackery Spytz.

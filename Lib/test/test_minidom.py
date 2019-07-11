@@ -1631,5 +1631,21 @@ class MinidomTest(unittest.TestCase):
                          '<?xml version="1.0" ?>\n'
                          '<curriculum status="public" company="example"/>\n')
 
+    def test_toprettyxml_with_cdata(self):
+        xml_str = '<?xml version="1.0" ?><root><node><![CDATA[</data>]]></node></root>'
+        doc = parseString(xml_str)
+        self.assertEqual(doc.toprettyxml(),
+                         '<?xml version="1.0" ?>\n'
+                         '<root>\n'
+                         '\t<node><![CDATA[</data>]]></node>\n'
+                         '</root>\n')
+
+    def test_cdata_parsing(self):
+        xml_str = '<?xml version="1.0" ?><root><node><![CDATA[</data>]]></node></root>'
+        dom1 = parseString(xml_str)
+        self.checkWholeText(dom1.getElementsByTagName('node')[0].firstChild, '</data>')
+        dom2 = parseString(dom1.toprettyxml())
+        self.checkWholeText(dom2.getElementsByTagName('node')[0].firstChild, '</data>')
+
 if __name__ == "__main__":
     unittest.main()

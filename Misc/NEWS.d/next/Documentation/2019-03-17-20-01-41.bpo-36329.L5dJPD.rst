@@ -1,3 +1,0 @@
-Declare the path of the Python binary for the usage of
-``Tools/scripts/serve.py`` when executing ``make -C Doc/ serve``.
-Contributed by Stéphane Wirtel

@@ -218,6 +218,18 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script')
             self._check_script(script_name, script_name, script_name,
                                script_dir, None,
+                               importlib.machinery.SourceFileLoader,
+                               expected_cwd=script_dir)
+
+    def test_script_abspath(self):
+        # pass the script using the relative path, expect the absolute path
+        # in __file__ and sys.argv[0]
+        with support.temp_cwd() as script_dir:
+            self.assertTrue(os.path.isabs(script_dir), script_dir)
+
+            script_name = _make_test_script(script_dir, 'script')
+            self._check_script(os.path.basename(script_name), script_name, script_name,
+                               script_dir, None,
                                importlib.machinery.SourceFileLoader)
 
     def test_script_compiled(self):
@@ -409,6 +421,23 @@ class CmdLineTest(unittest.TestCase):
                                       script_name, script_name, script_dir, '',
                                       importlib.machinery.SourceFileLoader)
 
+    def test_issue20884(self):
+        # On Windows, script with encoding cookie and LF line ending
+        # will be failed.
+        with support.temp_dir() as script_dir:
+            script_name = os.path.join(script_dir, "issue20884.py")
+            with open(script_name, "w", newline='\n') as f:
+                f.write("#coding: iso-8859-1\n")
+                f.write('"""\n')
+                for _ in range(30):
+                    f.write('x'*80 + '\n')
+                f.write('"""\n')
+
+            with support.change_cwd(path=script_dir):
+                rc, out, err = assert_python_ok(script_name)
+            self.assertEqual(b"", out)
+            self.assertEqual(b"", err)
+
     @contextlib.contextmanager
     def setup_test_pkg(self, *args):
         with support.temp_dir() as script_dir, \
@@ -525,7 +554,7 @@ class CmdLineTest(unittest.TestCase):
 
         # Issue #16218
         source = 'print(ascii(__file__))\n'
-        script_name = _make_test_script(os.curdir, name, source)
+        script_name = _make_test_script(os.getcwd(), name, source)
         self.addCleanup(support.unlink, script_name)
         rc, stdout, stderr = assert_python_ok(script_name)
         self.assertEqual(

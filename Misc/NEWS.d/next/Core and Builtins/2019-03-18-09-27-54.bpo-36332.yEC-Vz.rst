@@ -1,2 +1,0 @@
-The builtin :func:`compile` can now handle AST objects that contain
-assignment expressions. Patch by Pablo Galindo.

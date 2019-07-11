@@ -1,4 +1,0 @@
-Add a new interpreter-specific dict and expose it in the C-API via
-PyInterpreterState_GetDict().  This parallels PyThreadState_GetDict().
-However, extension modules should continue using PyModule_GetState() for
-their own internal per-interpreter state.

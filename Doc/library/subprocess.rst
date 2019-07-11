@@ -55,7 +55,9 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
    ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
-   not be used as well.
+   not be supplied at the same time as *capture_output*.  If you wish to capture
+   and combine both streams into one, use ``stdout=PIPE`` and ``stderr=STDOUT``
+   instead of *capture_output*.
 
    The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
    expires, the child process will be killed and waited for.  The
@@ -345,7 +347,8 @@ functions.
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
-   *args* should be a sequence of program arguments or else a single string.
+   *args* should be a sequence of program arguments or else a single string
+   or :term:`path-like object`.
    By default, the program to execute is the first item in *args* if *args* is
    a sequence.  If *args* is a string, the interpretation is
    platform-dependent and described below.  See the *shell* and *executable*
@@ -378,6 +381,15 @@ functions.
    On Windows, if *args* is a sequence, it will be converted to a string in a
    manner described in :ref:`converting-argument-sequence`.  This is because
    the underlying ``CreateProcess()`` operates on strings.
+
+   .. versionchanged:: 3.6
+      *args* parameter accepts a :term:`path-like object` if *shell* is
+      ``False`` and a sequence containing path-like objects on POSIX.
+
+   .. versionchanged:: 3.8
+      *args* parameter accepts a :term:`path-like object` if *shell* is
+      ``False`` and a sequence containing bytes and path-like objects
+      on Windows.
 
    The *shell* argument (which defaults to ``False``) specifies whether to use
    the shell as the program to execute.  If *shell* is ``True``, it is
@@ -433,6 +445,13 @@ functions.
    becomes the display name for the executable in utilities such as
    :program:`ps`.  If ``shell=True``, on POSIX the *executable* argument
    specifies a replacement shell for the default :file:`/bin/sh`.
+
+   .. versionchanged:: 3.6
+      *executable* parameter accepts a :term:`path-like object` on POSIX.
+
+   .. versionchanged:: 3.8
+      *executable* parameter accepts a bytes and :term:`path-like object`
+      on Windows.
 
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
@@ -490,13 +509,19 @@ functions.
       The *pass_fds* parameter was added.
 
    If *cwd* is not ``None``, the function changes the working directory to
-   *cwd* before executing the child.  *cwd* can be a :class:`str` and
+   *cwd* before executing the child.  *cwd* can be a string, bytes or
    :term:`path-like <path-like object>` object.  In particular, the function
    looks for *executable* (or for the first item in *args*) relative to *cwd*
    if the executable path is a relative path.
 
    .. versionchanged:: 3.6
-      *cwd* parameter accepts a :term:`path-like object`.
+      *cwd* parameter accepts a :term:`path-like object` on POSIX.
+
+   .. versionchanged:: 3.7
+      *cwd* parameter accepts a :term:`path-like object` on Windows.
+
+   .. versionchanged:: 3.8
+      *cwd* parameter accepts a bytes object on Windows.
 
    If *restore_signals* is true (the default) all signals that Python has set to
    SIG_IGN are restored to SIG_DFL in the child process before the exec.
@@ -560,12 +585,26 @@ functions.
       with Popen(["ifconfig"], stdout=PIPE) as proc:
           log.write(proc.stdout.read())
 
+   .. audit-event:: subprocess.Popen executable,args,cwd,env subprocess.Popen
+
+      Popen and the other functions in this module that use it raise an
+      :ref:`auditing event <auditing>` ``subprocess.Popen`` with arguments
+      ``executable``, ``args``, ``cwd``, ``env``. The value for ``args``
+      may be a single string or a list of strings, depending on platform.
+
    .. versionchanged:: 3.2
       Added context manager support.
 
    .. versionchanged:: 3.6
       Popen destructor now emits a :exc:`ResourceWarning` warning if the child
       process is still running.
+
+   .. versionchanged:: 3.8
+      Popen can use :func:`os.posix_spawn` in some cases for better
+      performance. On Windows Subsystem for Linux and QEMU User Emulation,
+      Popen constructor using :func:`os.posix_spawn` no longer raise an
+      exception on errors like missing program, but the child process fails
+      with a non-zero :attr:`~Popen.returncode`.
 
 
 Exceptions
@@ -1002,14 +1041,14 @@ calls these functions.
    Run the command described by *args*.  Wait for command to complete, then
    return the :attr:`~Popen.returncode` attribute.
 
-   This is equivalent to::
+   Code needing to capture stdout or stderr should use :func:`run` instead:
 
        run(...).returncode
 
-   (except that the *input* and *check* parameters are not supported)
+   To suppress stdout or stderr, supply a value of :data:`DEVNULL`.
 
-   The arguments shown above are merely the most
-   common ones. The full function signature is largely the
+   The arguments shown above are merely some common ones.
+   The full function signature is the
    same as that of the :class:`Popen` constructor - this function passes all
    supplied arguments other than *timeout* directly through to that interface.
 
@@ -1030,14 +1069,14 @@ calls these functions.
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
 
-   This is equivalent to::
+   Code needing to capture stdout or stderr should use :func:`run` instead:
 
        run(..., check=True)
 
-   (except that the *input* parameter is not supported)
+   To suppress stdout or stderr, supply a value of :data:`DEVNULL`.
 
-   The arguments shown above are merely the most
-   common ones. The full function signature is largely the
+   The arguments shown above are merely some common ones.
+   The full function signature is the
    same as that of the :class:`Popen` constructor - this function passes all
    supplied arguments other than *timeout* directly through to that interface.
 
@@ -1067,7 +1106,7 @@ calls these functions.
 
        run(..., check=True, stdout=PIPE).stdout
 
-   The arguments shown above are merely the most common ones.
+   The arguments shown above are merely some common ones.
    The full function signature is largely the same as that of :func:`run` -
    most arguments are passed directly through to that interface.
    However, explicitly passing ``input=None`` to inherit the parent's
@@ -1077,8 +1116,9 @@ calls these functions.
    encoding of the output data may depend on the command being invoked, so the
    decoding to text will often need to be handled at the application level.
 
-   This behaviour may be overridden by setting *universal_newlines* to
-   ``True`` as described above in :ref:`frequently-used-arguments`.
+   This behaviour may be overridden by setting *text*, *encoding*, *errors*,
+   or *universal_newlines* to ``True`` as described in
+   :ref:`frequently-used-arguments` and :func:`run`.
 
    To also capture standard error in the result, use
    ``stderr=subprocess.STDOUT``::

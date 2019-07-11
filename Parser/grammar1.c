@@ -2,18 +2,16 @@
 /* Grammar subroutines needed by parser */
 
 #include "Python.h"
-#include "pgenheaders.h"
 #include "grammar.h"
 #include "token.h"
 
 /* Return the DFA for the given type */
 
-dfa *
+const dfa *
 PyGrammar_FindDFA(grammar *g, int type)
 {
-    dfa *d;
     /* Massive speed-up */
-    d = &g->g_dfa[type - NT_OFFSET];
+    const dfa *d = &g->g_dfa[type - NT_OFFSET];
     assert(d->d_type == type);
     return d;
 }
