@@ -1293,6 +1293,18 @@ else
   DEF_MAKE_RULE="all"
 fi
 
+# PGO generation task
+AC_SUBST(PROFILE_TASK)
+PROFILE_TASK='$(DEFAULT_PROFILE_TASK)'
+AC_MSG_CHECKING(for --with-profile-task=STRING)
+AC_ARG_WITH(profile-task,
+            AS_HELP_STRING([--with-profile-task=ARGS],
+			   [Python args for PGO generation task]),
+[
+	PROFILE_TASK="$withval"
+	])
+AC_MSG_RESULT($PROFILE_TASK)
+
 # Make llvm-relatec checks work on systems where llvm tools are not installed with their
 # normal names in the default $PATH (ie: Ubuntu).  They exist under the
 # non-suffixed name in their versioned llvm directory.

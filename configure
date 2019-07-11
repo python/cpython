@@ -686,6 +686,7 @@ target_vendor
 target_cpu
 target
 LLVM_AR
+PROFILE_TASK
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
 ABIFLAGS
@@ -785,6 +786,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -819,6 +821,7 @@ with_pydebug
 with_trace_refs
 with_assertions
 enable_optimizations
+with_profile_task
 with_lto
 with_hash_algorithm
 with_address_sanitizer
@@ -897,6 +900,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1149,6 +1153,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1286,7 +1299,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1439,6 +1452,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1505,6 +1519,8 @@ Optional Packages:
   --with-pydebug          build with Py_DEBUG defined
   --with-trace-refs       enable tracing references for debugging purpose
   --with-assertions       build with C assertions enabled
+  --with-profile-task=ARGS
+                          Python args for PGO generation task
   --with-lto              Enable Link Time Optimization in any build. Disabled
                           by default.
   --with-hash-algorithm=[fnv|siphash24]
@@ -6425,6 +6441,22 @@ else
   REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
 fi
+
+# PGO generation task
+
+PROFILE_TASK='$(DEFAULT_PROFILE_TASK)'
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-profile-task=STRING" >&5
+$as_echo_n "checking for --with-profile-task=STRING... " >&6; }
+
+# Check whether --with-profile-task was given.
+if test "${with_profile_task+set}" = set; then :
+  withval=$with_profile_task;
+	PROFILE_TASK="$withval"
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PROFILE_TASK" >&5
+$as_echo "$PROFILE_TASK" >&6; }
 
 # Make llvm-relatec checks work on systems where llvm tools are not installed with their
 # normal names in the default $PATH (ie: Ubuntu).  They exist under the
