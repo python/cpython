@@ -2734,7 +2734,7 @@ class LinkSymlink(unittest.TestCase):
                     for call in mock.call_args_list:
                         self.assertEqual(call[1][arg], value)
 
-    # Single source, both link and symlink, overwrite=false
+    # link and symlink, single source, overwrite=false
 
     def test_link_1src_dst_not_exist(self):
         src = self.src_file1
@@ -2759,7 +2759,7 @@ class LinkSymlink(unittest.TestCase):
                     with self.assertRaisesRegex(FileExistsError, dst_path):
                         methods[method](src, dst_path)
 
-    # link - iterable of sources
+    # link and symlink - iterable of sources
 
     def test_link_iterable_dst_is_directory(self):
         srcs = (self.src_file1, self.src_file2)
@@ -2816,7 +2816,7 @@ class LinkSymlink(unittest.TestCase):
         link_path = os.path.join(self.dst_dir1, os.path.basename(srcs[0]))
         self.assertEqual(os.readlink(link_path), srcs[0])
 
-    # symlink - `overwrite=True`
+    # symlink - overwrite=True
 
     def test_symlink_single_src_overwrite_existing_directory(self):
         dst = self.dst_dir1
