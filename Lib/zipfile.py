@@ -598,6 +598,26 @@ class ZipInfo (object):
         return self.filename[-1] == '/'
 
 
+class BaseDecrypter:
+
+    def start_decrypt(self, fileobj):
+        """Initialise or reset the decrypter.
+
+        Returns the number of bytes in the "encryption header" section.
+
+        By the end of this method fileobj should be at the start of the
+        "file data" section.
+        """
+        raise NotImplementedError(
+            "Subclasses of BaseDecrypter must provide a start_decrypt() method"
+        )
+
+    def decrypt(self, data):
+        raise NotImplementedError(
+            "Subclasses of BaseDecrypter must provide a decrypt() method"
+        )
+
+
 # ZIP encryption uses the CRC32 one-byte primitive for scrambling some
 # internal keys. We noticed that a direct implementation is faster than
 # relying on binascii.crc32().
@@ -611,50 +631,85 @@ def _gen_crc(crc):
             crc >>= 1
     return crc
 
-# ZIP supports a password-based form of encryption. Even though known
-# plaintext attacks have been found against it, it is still useful
-# to be able to get data out of such a file.
-#
-# Usage:
-#     zd = _ZipDecrypter(mypwd)
-#     plain_bytes = zd(cypher_bytes)
 
-def _ZipDecrypter(pwd):
-    key0 = 305419896
-    key1 = 591751049
-    key2 = 878082192
+class CRCZipDecrypter(BaseDecrypter):
+    """PKWARE Encryption Decrypter
 
-    global _crctable
-    if _crctable is None:
-        _crctable = list(map(_gen_crc, range(256)))
-    crctable = _crctable
+    ZIP supports a password-based form of encryption. Even though known
+    plaintext attacks have been found against it, it is still useful
+    to be able to get data out of such a file.
 
-    def crc32(ch, crc):
+    Usage:
+        zd = CRCZipDecrypter(zinfo, mypwd)
+        zd.start_decrypt(fileobj)
+        plain_bytes = zd.decrypt(cypher_bytes)
+    """
+
+    encryption_header_length = 12
+
+    def __init__(self, zinfo, pwd):
+        self.zinfo = zinfo
+        self.name = zinfo.filename
+
+        if not pwd:
+            raise RuntimeError("File %r is encrypted, a password is "
+                               "required for extraction" % self.name)
+        self.pwd = pwd
+
+    def start_decrypt(self, fileobj):
+
+        self.key0 = 305419896
+        self.key1 = 591751049
+        self.key2 = 878082192
+
+        global _crctable
+        if _crctable is None:
+            _crctable = list(map(_gen_crc, range(256)))
+        self.crctable = _crctable
+
+        for p in self.pwd:
+            self.update_keys(p)
+
+        # The first 12 bytes in the cypher stream is an encryption header
+        #  used to strengthen the algorithm. The first 11 bytes are
+        #  completely random, while the 12th contains the MSB of the CRC,
+        #  or the MSB of the file time depending on the header type
+        #  and is used to check the correctness of the password.
+        header = fileobj.read(self.encryption_header_length)
+        h = self.decrypt(header[0:12])
+
+        if self.zinfo.use_datadescripter:
+            # compare against the file type from extended local headers
+            check_byte = (self.zinfo._raw_time >> 8) & 0xff
+        else:
+            # compare against the CRC otherwise
+            check_byte = (self.zinfo.CRC >> 24) & 0xff
+
+        if h[11] != check_byte:
+            raise RuntimeError("Bad password for file %r" % self.name)
+
+        return self.encryption_header_length
+
+    def crc32(self, ch, crc):
         """Compute the CRC32 primitive on one byte."""
-        return (crc >> 8) ^ crctable[(crc ^ ch) & 0xFF]
+        return (crc >> 8) ^ self.crctable[(crc ^ ch) & 0xFF]
 
-    def update_keys(c):
-        nonlocal key0, key1, key2
-        key0 = crc32(c, key0)
-        key1 = (key1 + (key0 & 0xFF)) & 0xFFFFFFFF
-        key1 = (key1 * 134775813 + 1) & 0xFFFFFFFF
-        key2 = crc32(key1 >> 24, key2)
+    def update_keys(self, c):
+        self.key0 = self.crc32(c, self.key0)
+        self.key1 = (self.key1 + (self.key0 & 0xFF)) & 0xFFFFFFFF
+        self.key1 = (self.key1 * 134775813 + 1) & 0xFFFFFFFF
+        self.key2 = self.crc32(self.key1 >> 24, self.key2)
 
-    for p in pwd:
-        update_keys(p)
-
-    def decrypter(data):
+    def decrypt(self, data):
         """Decrypt a bytes object."""
         result = bytearray()
         append = result.append
         for c in data:
-            k = key2 | 2
+            k = self.key2 | 2
             c ^= ((k * (k^1)) >> 8) & 0xFF
-            update_keys(c)
+            self.update_keys(c)
             append(c)
         return bytes(result)
-
-    return decrypter
 
 
 class LZMACompressor:
@@ -860,11 +915,12 @@ class ZipExtFile(io.BufferedIOBase):
     # Chunk size to read during seek
     MAX_SEEK_READ = 1 << 24
 
-    def __init__(self, fileobj, mode, zipinfo, close_fileobj=False, pwd=None):
+    def __init__(self, fileobj, mode, zipinfo, decrypter=None,
+                 close_fileobj=False):
         self._fileobj = fileobj
         self._zinfo = zipinfo
+        self._decrypter = decrypter
         self._close_fileobj = close_fileobj
-        self._pwd = pwd
 
         self.process_local_header()
         self.raise_for_unsupported_flags()
@@ -906,7 +962,7 @@ class ZipExtFile(io.BufferedIOBase):
         self._offset = 0
         self._eof = False
 
-        self._decrypter = self.get_decrypter()
+        self.start_decrypter()
         self._decompressor = _get_decompressor(self._compress_type)
 
     def process_local_header(self):
@@ -950,37 +1006,22 @@ class ZipExtFile(io.BufferedIOBase):
             # strong encryption
             raise NotImplementedError("strong encryption (flag bit 6)")
 
-
-    def get_decrypter(self):
+    def start_decrypter(self):
         # check for encrypted flag & handle password
-        decrypter = None
         if self._zinfo.is_encrypted:
-            if not self._pwd:
-                raise RuntimeError("File %r is encrypted, password "
+            if not self._decrypter:
+                raise RuntimeError("File %r is encrypted, a decrypter is "
                                    "required for extraction" % self.name)
 
-            decrypter = _ZipDecrypter(self._pwd)
-            # The first 12 bytes in the cypher stream is an encryption header
-            #  used to strengthen the algorithm. The first 11 bytes are
-            #  completely random, while the 12th contains the MSB of the CRC,
-            #  or the MSB of the file time depending on the header type
-            #  and is used to check the correctness of the password.
-            header = self._fileobj.read(12)
-            h = decrypter(header[0:12])
-            if self._zinfo.use_datadescripter:
-                # compare against the file type from extended local headers
-                check_byte = (self._zinfo._raw_time >> 8) & 0xff
-            else:
-                # compare against the CRC otherwise
-                check_byte = (self._zinfo.CRC >> 24) & 0xff
-            if h[11] != check_byte:
-                raise RuntimeError("Bad password for file %r" % self.name)
+            # self._decrypter is responsible for reading the
+            # "encryption header" section if present.
+            encryption_header_length = self._decrypter.start_decrypt(self._fileobj)
+            # By here, self._fileobj should be at the start of the "file data"
+            # section.
 
-            # Adjust read size for encrypted files since the first 12 bytes are
-            # for the encryption/password information.
-            self._compress_left -= 12
-
-            return decrypter
+            # Adjust read size for encrypted files by the length of the
+            # "encryption header" section.
+            self._compress_left -= encryption_header_length
 
     def __repr__(self):
         result = ['<%s.%s' % (self.__class__.__module__,
@@ -1157,7 +1198,7 @@ class ZipExtFile(io.BufferedIOBase):
             raise EOFError
 
         if self._decrypter is not None:
-            data = self._decrypter(data)
+            data = self._decrypter.decrypt(data)
         return data
 
     def close(self):
@@ -1632,13 +1673,19 @@ class ZipFile:
 
         return self._open_to_read(mode, zinfo, pwd)
 
+    def get_decrypter(self, zinfo, pwd):
+        if zinfo.is_encrypted:
+            return CRCZipDecrypter(zinfo, pwd)
+
     def _open_to_read(self, mode, zinfo, pwd):
         # Open for reading:
         self._fileRefCnt += 1
+
         zef_file = _SharedFile(self.fp, zinfo.header_offset,
                                self._fpclose, self._lock, lambda: self._writing)
         try:
-            return ZipExtFile(zef_file, mode, zinfo, True, pwd)
+            decrypter = self.get_decrypter(zinfo, pwd)
+            return ZipExtFile(zef_file, mode, zinfo, decrypter, True)
         except:
             zef_file.close()
             raise
