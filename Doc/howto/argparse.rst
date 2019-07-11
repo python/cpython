@@ -530,7 +530,7 @@ Let's fix::
    # bugfix: replace == with >=
    if args.verbosity >= 2:
        print("the square of {} equals {}".format(args.square, answer))
-   elif args.verbosity >= 1:
+   elif args.verbosity == 1:
        print("{}^2 == {}".format(args.square, answer))
    else:
        print(answer)
@@ -567,7 +567,7 @@ Let's fix that bug::
    answer = args.square**2
    if args.verbosity >= 2:
        print("the square of {} equals {}".format(args.square, answer))
-   elif args.verbosity >= 1:
+   elif args.verbosity == 1:
        print("{}^2 == {}".format(args.square, answer))
    else:
        print(answer)
@@ -607,7 +607,7 @@ not just squares::
    answer = args.x**args.y
    if args.verbosity >= 2:
        print("{} to the power {} equals {}".format(args.x, args.y, answer))
-   elif args.verbosity >= 1:
+   elif args.verbosity == 1:
        print("{}^{} == {}".format(args.x, args.y, answer))
    else:
        print(answer)
@@ -646,7 +646,7 @@ to display *more* text instead::
    answer = args.x**args.y
    if args.verbosity >= 2:
        print("Running '{}'".format(__file__))
-   if args.verbosity >= 1:
+   if args.verbosity == 1:
        print("{}^{} == ".format(args.x, args.y), end="")
    print(answer)
 
