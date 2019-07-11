@@ -214,11 +214,9 @@ _linenumbers_drag_scrolling_spec = {
         window, moving the mouse a bit and then leaving it there for a while.
         The text and line numbers should gradually scroll down, with the
         selection updated continuously.
-        
         Do the same as above, dragging to above the window. The text and line
         numbers should gradually scroll up, with the selection updated
-        continuously.
-    """),
+        continuously."""),
     }
 
 _multi_call_spec = {
