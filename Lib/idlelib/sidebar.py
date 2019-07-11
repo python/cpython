@@ -39,11 +39,12 @@ class BaseSideBar:
         pass
 
     def show_sidebar(self):
-        self.sidebar_text.grid(row=1, column=0, sticky=tk.NSEW)
-        self.is_shown = True
+        if not self.is_shown:
+            self.sidebar_text.grid(row=1, column=0, sticky=tk.NSEW)
+            self.is_shown = True
 
     def hide_sidebar(self):
-        if self.is_shown is not None:
+        if self.is_shown:
             self.sidebar_text.grid_forget()
             self.is_shown = False
 

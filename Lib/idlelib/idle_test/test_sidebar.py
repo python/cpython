@@ -72,6 +72,10 @@ class LineNumbersTest(unittest.TestCase):
         self.assertEqual(self.linenumber.is_shown, True)
         self.linenumber.hide_sidebar()
         self.assertEqual(self.linenumber.is_shown, False)
+        self.linenumber.hide_sidebar()
+        self.assertEqual(self.linenumber.is_shown, False)
+        self.linenumber.show_sidebar()
+        self.assertEqual(self.linenumber.is_shown, True)
         self.linenumber.show_sidebar()
         self.assertEqual(self.linenumber.is_shown, True)
 
