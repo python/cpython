@@ -1,0 +1,1 @@
+``.pyc`` files with non-ASCII paths can now be reopened on Windows.

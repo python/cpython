@@ -1365,7 +1365,7 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
     return f;
 }
 
-/* Wrapper to fopen().
+/* Open a file.
 
    The file descriptor is created non-inheritable.
 
@@ -1377,14 +1377,13 @@ _Py_fopen(const char *pathname, const char *mode)
         return NULL;
     }
 
-    FILE *f = fopen(pathname, mode);
-    if (f == NULL)
-        return NULL;
-    if (make_non_inheritable(fileno(f)) < 0) {
-        fclose(f);
+    PyObject *path = PyUnicode_DecodeFSDefault(pathname);
+    if (path == NULL) {
         return NULL;
     }
-    return f;
+    FILE *ret = _Py_fopen_obj(path, mode);
+    Py_DECREF(path);
+    return ret;
 }
 
 /* Open a file. Call _wfopen() on Windows, or encode the path to the filesystem

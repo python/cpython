@@ -438,6 +438,15 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(b"", out)
             self.assertEqual(b"", err)
 
+    def test_issue32381(self):
+        # On Windows, a .pyc file with a non-ASCII path could not be reopened.
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'ߢߢscript')
+            py_compile.compile(script_name, doraise=True)
+            pyc_file = support.make_legacy_pyc(script_name)
+            self._check_script(pyc_file, pyc_file, pyc_file, script_dir, None,
+                               importlib.machinery.SourcelessFileLoader)
+
     @contextlib.contextmanager
     def setup_test_pkg(self, *args):
         with support.temp_dir() as script_dir, \
