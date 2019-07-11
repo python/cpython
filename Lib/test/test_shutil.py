@@ -2759,13 +2759,26 @@ class LinkSymlink(unittest.TestCase):
                     with self.assertRaisesRegex(FileExistsError, dst_path):
                         methods[method](src, dst_path)
 
+    # link - iterable of sources
+
+    def test_link_iterable_dst_is_directory(self):
+        srcs = (self.src_file1, self.src_file2)
+        dsts = {'directory': self.dst_dir1,
+                'symlink_to_dir': self.link_to_dir}
+        for description, dir_path in dsts.items():
+            with self.subTest(dir_type=description):
+                shutil.link(.srcs, dir_path, overwrite=True)
+                for src in srcs:
+                    dst_path = os.path.join(dir_path, os.path.basename(src))
+                    self.assertTrue(os.path.samefile(src, dst_path))
+
     # symlink - iterable of sources
 
     def test_symlink_iterable_dst_is_directory(self):
         dsts = {'directory': self.dst_dir1,
                 'symlink_to_dir': self.link_to_dir}
         for description, dir_path in dsts.items():
-            with self.subTest(type=description):
+            with self.subTest(dir_type=description):
                 shutil.symlink(self.srcs, dir_path, overwrite=True)
                 for src in self.srcs:
                     link_path = os.path.join(dir_path, os.path.basename(src))
