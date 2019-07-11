@@ -1433,7 +1433,7 @@ Launcher arguments:\n\n\
     fputws(L"\nany of the following, (in priority order):", stdout);
     fputws(L"\n An active virtual environment", stdout);
     fputws(L"\n A shebang line in the script (if present)", stdout);
-    fputws(L"\n Matching PY_PYTHON2 or 3 Enviroment variable", stdout);
+    fputws(L"\n With -2 or -3 flag a matching PY_PYTHON2 or PY_PYTHON3 Enviroment variable", stdout);
     fputws(L"\n A PY_PYTHON Enviroment variable", stdout);
     fputws(L"\n From [defaults] in py.ini in your %LOCALAPPDATA%\\py.ini", stdout);
     fputws(L"\n From [defaults] in py.ini beside py.exe (use `where py` to locate)", stdout);
