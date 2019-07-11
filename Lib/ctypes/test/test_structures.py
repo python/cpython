@@ -439,7 +439,7 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
-    @unittest.skipIf(sys.platform == "win32", "pass-by-value copy causes exception")
+    # bpo-37140: ctypes change made clang fail to build
     def test_pass_by_value_string_buffer(self):
         dll = CDLL(_ctypes_test.__file__)
         dll.my_strdup.restype = POINTER(c_char)
