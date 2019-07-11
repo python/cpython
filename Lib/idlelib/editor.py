@@ -1586,13 +1586,14 @@ def index2line(index):
     return int(float(index))
 
 
+_line_indent_re = re.compile(r'[ \t]*')
 def get_line_indent(line, tabwidth):
     """Return a line's indentation as (# chars, effective # of spaces).
 
     The effective # of spaces is the length after properly "expanding"
     the tabs into spaces, as done by str.expandtabs(tabwidth).
     """
-    m = re.match(r'[ \t]*', line)
+    m = _line_indent_re.match(line)
     return m.end(), len(m.group().expandtabs(tabwidth))
 
 
