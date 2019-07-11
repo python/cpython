@@ -2673,15 +2673,10 @@ class LinkSymlink(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, '2 positional'):
                     method(self.src_file1, self.dst_file1, True)
 
-    @unittest.mock.patch('os.link', side_effect=os.link)
-    @unittest.mock.patch('os.symlink', side_effect=os.symlink)
-    def test_symlink_passes_target_is_directory(self, mock_link, mock_symlink):
-
+    def test_passes_arg_to_os_method(self):
         patch_link = unittest.mock.patch('os.link', side_effect=os.link)
-        patch_symlink = unittest.mock.patch('os.symlink', side_effect=os.symlink)
-
-        # tests = {'link': (shutil.link, mock_link, 'follow_symlinks'),
-        #          'symlink': (shutil.symlink, mock_symlink, 'target_is_directory')}
+        patch_symlink = unittest.mock.patch('os.symlink',
+                                            side_effect=os.symlink)
         tests = {'link': (shutil.link, patch_link, 'follow_symlinks'),
                  'symlink': (shutil.symlink, patch_symlink, 'target_is_directory')}
         self.srcs = (self.src_file1, self.src_file2)
