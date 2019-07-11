@@ -30,7 +30,6 @@ class LineNumbersTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = tk.Tk()
-        # cls.root.withdraw()
 
         cls.text_frame = tk.Frame(cls.root)
         cls.text_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -134,7 +133,7 @@ class LineNumbersTest(unittest.TestCase):
         self.assert_sidebar_n_lines(3)
         self.assert_state_disabled()
 
-        # note: deleting up to "2.end" doesn't delete the final newline
+        # Note: deleting up to "2.end" doesn't delete the final newline.
         self.text.delete('2.0', '2.end')
         self.assert_text_equals('fbarfoo\n\n\n')
         self.assert_sidebar_n_lines(3)
@@ -145,7 +144,7 @@ class LineNumbersTest(unittest.TestCase):
         self.assert_sidebar_n_lines(1)
         self.assert_state_disabled()
 
-        # note: Text widgets always keep a single '\n' character at the end
+        # Note: Text widgets always keep a single '\n' character at the end.
         self.text.delete('1.0', 'end')
         self.assert_text_equals('\n')
         self.assert_sidebar_n_lines(1)
@@ -214,7 +213,7 @@ class LineNumbersTest(unittest.TestCase):
         self.assert_sidebar_n_lines(4)
         self.assertEqual(get_width(), 1)
 
-        # note: Text widgets always keep a single '\n' character at the end
+        # Note: Text widgets always keep a single '\n' character at the end.
         self.text.delete('1.0', 'end -1c')
         self.assert_sidebar_n_lines(1)
         self.assertEqual(get_width(), 1)
@@ -224,7 +223,7 @@ class LineNumbersTest(unittest.TestCase):
         self.text.insert('1.0', 'one\ntwo\nthree\nfour\n')
         self.root.update()
 
-        # click on the second line
+        # Click on the second line.
         x, y = self.get_line_screen_position(2)
         self.linenumber.sidebar_text.event_generate('<Button-1>', x=x, y=y)
         self.linenumber.sidebar_text.update()
@@ -237,7 +236,7 @@ class LineNumbersTest(unittest.TestCase):
         self.text.insert('1.0', 'one\ntwo\nthree\nfour\n')
         self.root.update()
 
-        # drag from the first line to the third line
+        # Drag from the first line to the third line.
         start_x, start_y = self.get_line_screen_position(1)
         end_x, end_y = self.get_line_screen_position(3)
         self.linenumber.sidebar_text.event_generate('<Button-1>',
@@ -251,6 +250,27 @@ class LineNumbersTest(unittest.TestCase):
         self.root.update()
 
         self.assertEqual(self.get_selection(), ('1.0', '4.0'))
+
+    def test_scroll(self):
+        self.linenumber.show_sidebar()
+        self.text.insert('1.0', 'line\n' * 100)
+        self.root.update()
+
+        # Scroll down 10 lines.
+        self.text.yview_scroll(10, 'unit')
+        self.root.update()
+        self.assertEqual(self.text.index('@0,0'), '11.0')
+        self.assertEqual(self.linenumber.sidebar_text.index('@0,0'), '11.0')
+
+        # Generate a mouse-wheel event and make sure it scrolled up or down.
+        # The meaning of the "delta" is OS-dependant, so this just checks for
+        # any change.
+        self.linenumber.sidebar_text.event_generate('<MouseWheel>',
+                                                    x=0, y=0,
+                                                    delta=10)
+        self.root.update()
+        self.assertNotEqual(self.text.index('@0,0'), '11.0')
+        self.assertNotEqual(self.linenumber.sidebar_text.index('@0,0'), '11.0')
 
 
 if __name__ == '__main__':
