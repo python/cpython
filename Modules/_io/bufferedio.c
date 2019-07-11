@@ -439,8 +439,8 @@ buffered_dealloc_warn(buffered *self, PyObject *source)
 {
     if (self->ok && self->raw) {
         PyObject *r;
-        r = _PyObject_CallMethodIdObjArgs(self->raw, &PyId__dealloc_warn,
-                                          source, NULL);
+        r = _PyObject_CallMethodIdOneArg(self->raw, &PyId__dealloc_warn,
+                                         source);
         if (r)
             Py_DECREF(r);
         else
@@ -1323,7 +1323,7 @@ _io__Buffered_truncate_impl(buffered *self, PyObject *pos)
             goto end;
         Py_CLEAR(res);
     }
-    res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_truncate, pos, NULL);
+    res = _PyObject_CallMethodOneArg(self->raw, _PyIO_str_truncate, pos);
     if (res == NULL)
         goto end;
     /* Reset cached position */
@@ -1467,7 +1467,7 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
        raised (see issue #10956).
     */
     do {
-        res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_readinto, memobj, NULL);
+        res = _PyObject_CallMethodOneArg(self->raw, _PyIO_str_readinto, memobj);
     } while (res == NULL && _PyIO_trap_eintr());
     Py_DECREF(memobj);
     if (res == NULL)
@@ -1815,7 +1815,7 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     */
     do {
         errno = 0;
-        res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_write, memobj, NULL);
+        res = _PyObject_CallMethodOneArg(self->raw, _PyIO_str_write, memobj);
         errnum = errno;
     } while (res == NULL && _PyIO_trap_eintr());
     Py_DECREF(memobj);
