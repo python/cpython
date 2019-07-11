@@ -2396,6 +2396,14 @@ Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aksm?=
         self.assertEqual(str(make_header(decode_header(s))),
                          '"Müller T" <T.Mueller@xxx.com>')
 
+    def test_unicode_decode_error(self):
+        s = 'Hostel,=?UTF-8?B?UGFuYW3DoSBDaXR5?=, Panamá'
+        self.assertEqual(decode_header(s),
+            [(b'Hostel,', None),
+             (b'Panam\xc3\xa1 City, Panam\xc3\xa1', 'utf-8')])
+        self.assertEqual(str(make_header(decode_header(s))),
+                         'Hostel, Panamá City, Panamá')
+
 
 # Test the MIMEMessage class
 class TestMIMEMessage(TestEmailBase):

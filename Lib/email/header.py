@@ -136,7 +136,14 @@ def decode_header(header):
     last_word = last_charset = None
     for word, charset in decoded_words:
         if isinstance(word, str):
-            word = bytes(word, 'raw-unicode-escape')
+            word_tmp = bytes(word, 'raw-unicode-escape')
+            input_charset = charset or 'us-ascii'
+            try:
+                # Test to avoid UnicodeDecodeError in Header.append()
+                _ = word_tmp.decode(input_charset, errors='strict')
+                word = word_tmp
+            except UnicodeDecodeError:
+                word, charset = word.encode('utf-8'), 'utf-8'
         if last_word is None:
             last_word = word
             last_charset = charset
