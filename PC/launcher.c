@@ -1415,21 +1415,21 @@ usage:\n\
 %ls [launcher-args] [python-args] [script [script-args]]\n\n", argv[0]);
     fputws(L"\
 Launcher arguments:\n\n\
--2     : Launch the latest* Python 2.x version\n\
--3     : Launch the latest* Python 3.x version\n\
+-2     : Launch the latest Python 2.x version\n\
+-3     : Launch the latest Python 3.x version\n\
 -X.Y   : Launch the specified Python version\n", stdout);
     if (canDo64bit) {
         fputws(L"\
      The above all default to 64 bit if a matching 64 bit python is present*.\n\
 -X.Y-32: Launch the specified 32bit Python version\n\
--X-32  : Launch the latest* 32bit Python X version\n\
+-X-32  : Launch the latest 32bit Python X version\n\
 -X.Y-64: Launch the specified 64bit Python version\n\
--X-64  : Launch the latest* 64bit Python X version", stdout);
+-X-64  : Launch the latest 64bit Python X version", stdout);
     }
     fputws(L"\n-0  --list       : List the available pythons", stdout);
     fputws(L"\n-0p --list-paths : List with paths", stdout);
     fputws(L"\n\n If no script is specified the specified interpreter is opened.", stdout);
-    fputws(L"\n*If an exact version is not given latest can be overriden by:", stdout);
+    fputws(L"\nIf an exact version is not given latest can be overriden by:", stdout);
     fputws(L"\n An active virtual environment", stdout);
     fputws(L"\n A shebang line in the script (if present)", stdout);
     fputws(L"\n Matching PY_PYTHON[n] Enviroment variable(s)", stdout);
