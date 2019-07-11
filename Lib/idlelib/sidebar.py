@@ -137,13 +137,16 @@ class LineNumbers(BaseSideBar):
         # the line numbers.
         self.sidebar_text.bind('<MouseWheel>', self.redirect_mousewheel_event)
 
-        # Redirect mouse button events to the main editor text widget.
+        # Redirect mouse button events to the main editor text widget,
+        # except for the left mouse button (1).
+        #
+        # Note: X-11 sends Button-4 and Button-5 events for the scroll wheel.
         def bind_mouse_event(event_name, target_event_name):
             handler = functools.partial(self.redirect_mousebutton_event,
                                         event_name=target_event_name)
             self.sidebar_text.bind(event_name, handler)
 
-        for button in range(1, 5+1):
+        for button in [2, 3, 4, 5]:
             for event_name in (f'<Button-{button}>',
                                f'<ButtonRelease-{button}>',
                                f'<B{button}-Motion>',
@@ -164,6 +167,7 @@ class LineNumbers(BaseSideBar):
             lineno = self.editwin.getlineno(f"@0,{event.y}")
             self.text.tag_remove("sel", "1.0", "end")
             self.text.tag_add("sel", f"{lineno}.0", f"{lineno+1}.0")
+            self.text.mark_set("insert", f"{lineno+1}.0")
 
             # remember this line in case this is the beginning of dragging
             nonlocal start_line
@@ -176,43 +180,40 @@ class LineNumbers(BaseSideBar):
         # this way to recognize scrolling while the mouse isn't moving.
         last_y = last_yview = None
 
+        def drag_update_selection_and_insert_mark(y_coord):
+            """Helper function for drag and selection event handlers."""
+            lineno = self.editwin.getlineno(f"@0,{y_coord}")
+            a, b = sorted([start_line, lineno])
+            self.text.tag_remove("sel", "1.0", "end")
+            self.text.tag_add("sel", f"{a}.0", f"{b+1}.0")
+            self.text.mark_set("insert",
+                               f"{lineno if lineno == a else lineno + 1}.0")
+
         # Special handling of dragging with mouse button 1.  In "normal" text
         # widgets this selects text, but the line numbers text widget has
         # selection disabled.  Still, dragging triggers some selection-related
         # functionality under the hood.  Specifically, dragging to above or
         # below the text widget triggers scrolling, in a way that bypasses the
         # other scrolling synchronization mechanisms.i
-        def b1_motion_handler(event, *args):
+        def b1_drag_handler(event, *args):
             nonlocal last_y
             nonlocal last_yview
             last_y = event.y
             last_yview = self.sidebar_text.yview()
             if not 0 <= last_y <= self.sidebar_text.winfo_height():
                 self.text.yview_moveto(last_yview[0])
-            self.redirect_mousebutton_event(event, event_name='<B1-Motion>')
-
-            # update the selection
-            lineno = self.editwin.getlineno(f"@0,{event.y}")
-            a, b = sorted([start_line, lineno])
-            self.text.tag_remove("sel", "1.0", "end")
-            self.text.tag_add("sel", f"{a}.0", f"{b+1}.0")
-        self.sidebar_text.bind('<B1-Motion>', b1_motion_handler)
+            drag_update_selection_and_insert_mark(event.y)
+        self.sidebar_text.bind('<B1-Motion>', b1_drag_handler)
 
         # With mouse-drag scrolling fixed by the above, there is still an edge-
         # case we need to handle: When drag-scrolling, scrolling can continue
         # while the mouse isn't moving, leading to the above fix not scrolling
         # properly.
-        def selection_handler(event=None):
+        def selection_handler(event):
             yview = self.sidebar_text.yview()
             if yview != last_yview:
                 self.text.yview_moveto(yview[0])
-                self.text.event_generate('<B1-Motion>', x=0, y=last_y)
-
-                # update the selection
-                lineno = self.editwin.getlineno(f"@0,{last_y}")
-                a, b = sorted([start_line, lineno])
-                self.text.tag_remove("sel", "1.0", "end")
-                self.text.tag_add("sel", f"{a}.0", f"{b+1}.0")
+                drag_update_selection_and_insert_mark(last_y)
         self.sidebar_text.bind('<<Selection>>', selection_handler)
 
     def update_sidebar_text_font(self, event=''):
