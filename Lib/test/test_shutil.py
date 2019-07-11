@@ -2654,17 +2654,18 @@ class LinkSymlink(unittest.TestCase):
                 mock.assert_called_once()
                 self.assertFalse(os.path.lexists(LinkSymlink.mock_mktemp.path))
 
-    # Symlink argument checking
+    # Argument checking
 
-    def test_symlink_bool_argument_type_checking(self):
-        bool_args = ['overwrite', 'target_is_directory']
+    def test_bool_argument_type_checking(self):
+        method_bools = {shutil.link: ('overwrite', 'follow_symlinks'),
+                        shutil.symlink: ('overwrite', 'target_is_directory')}
 
-        # Set only one bool arg to be non-bool ('X') on each call
-        for arg in bool_args:
-            kwargs = {k: 'X' if k == arg else True for k in bool_args}
-            with self.subTest(bool_arg=arg):
-                with self.assertRaisesRegex(TypeError, arg):
-                    shutil.symlink(self.src_file1, self.dst_file1, **kwargs)
+        for method, bool_args in method_bools.items():
+            for bool_arg in bool_args:
+                kwargs = {k: 'X' if k == bool_arg else True for k in bool_args}
+                with self.subTest(method=method, bool_arg=bool_arg):
+                    with self.assertRaisesRegex(TypeError, bool_arg):
+                        method(self.src_file1, self.dst_file1, **kwargs)
 
     def test_two_positional_args(self):
         methods = {'link': shutil.link, 'symlink': shutil.symlink}
