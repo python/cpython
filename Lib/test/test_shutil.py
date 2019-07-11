@@ -2673,15 +2673,15 @@ class LinkSymlink(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, '2 positional'):
                     method(self.src_file1, self.dst_file1, True)
 
-    def test_passes_arg_to_os_method(self):
-        patch_link = unittest.mock.patch('os.link', side_effect=os.link)
-        patch_symlink = unittest.mock.patch('os.symlink',
-                                            side_effect=os.symlink)
-        tests = {'link': (shutil.link, patch_link, 'follow_symlinks'),
-                 'symlink': (shutil.symlink, patch_symlink, 'target_is_directory')}
+    @unittest.mock.patch('os.symlink', side_effect=os.symlink)
+    @unittest.mock.patch('os.link', side_effect=os.link)
+    def test_passes_arg_to_os_method(self, mock_os_link, mock_os_symlink):
+        tests = {'link': (shutil.link, mock_os_link, 'follow_symlinks'),
+                 'symlink': (shutil.symlink, mock_os_symlink,
+                             'target_is_directory')}
         self.srcs = (self.src_file1, self.src_file2)
-        for method_name, (method, patched, arg) in tests.items():
-            with patched as mock, self.subTest(method_name=method_name):
+        for method_name, (method, mock, arg) in tests.items():
+            with mock, self.subTest(method_name=method_name):
                 for value in (True, False):
                     mock.reset_mock()
                     method(self.srcs, self.dst_dir1, overwrite=True,
