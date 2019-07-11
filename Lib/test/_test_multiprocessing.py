@@ -3990,7 +3990,7 @@ class _TestSharedMemory(BaseTestCase):
 
             # Create a shared_memory segment, and send the segment name
             sm = shared_memory.SharedMemory(create=True, size=10)
-            sys.stdout.write(sm._name + '\\n')
+            sys.stdout.write(sm.name + '\\n')
             sys.stdout.flush()
             time.sleep(100)
         '''
