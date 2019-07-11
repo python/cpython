@@ -2761,28 +2761,23 @@ class LinkSymlink(unittest.TestCase):
 
     # link and symlink - iterable of sources
 
-    def test_link_iterable_dst_is_directory(self):
+    def test_iterable_dst_is_directory(self):
+        methods = {'link': shutil.link, 'symlink': shutil.symlink}
         srcs = (self.src_file1, self.src_file2)
         dsts = {'directory': self.dst_dir1,
                 'symlink_to_dir': self.link_to_dir}
-        for description, dir_path in dsts.items():
-            with self.subTest(dir_type=description):
-                shutil.link(.srcs, dir_path, overwrite=True)
-                for src in srcs:
-                    dst_path = os.path.join(dir_path, os.path.basename(src))
-                    self.assertTrue(os.path.samefile(src, dst_path))
+        for method_name, method in methods.items():
+            for description, dir_path in dsts.items():
+                with self.subTest(method=method_name, dir_type=description):
+                    method(srcs, dir_path, overwrite=True)
+                    for src in srcs:
+                        dst = os.path.join(dir_path, os.path.basename(src))
+                        if method_name == 'link':
+                            self.assertTrue(os.path.samefile(src, dst))
+                        else:  # method_name = 'symlink'
+                            self.assertEqual(src, os.readlink(dst))
 
     # symlink - iterable of sources
-
-    def test_symlink_iterable_dst_is_directory(self):
-        dsts = {'directory': self.dst_dir1,
-                'symlink_to_dir': self.link_to_dir}
-        for description, dir_path in dsts.items():
-            with self.subTest(dir_type=description):
-                shutil.symlink(self.srcs, dir_path, overwrite=True)
-                for src in self.srcs:
-                    link_path = os.path.join(dir_path, os.path.basename(src))
-                    self.assertEqual(os.readlink(link_path), src)
 
     def test_symlink_iterable_dst_not_directory(self):
         exist = {'file': self.dst_file1, 'link_to_file': self.link_to_file,
