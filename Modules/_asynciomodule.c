@@ -1842,8 +1842,8 @@ register_task(PyObject *task)
 {
     _Py_IDENTIFIER(add);
 
-    PyObject *res = _PyObject_CallMethodIdObjArgs(
-        all_tasks, &PyId_add, task, NULL);
+    PyObject *res = _PyObject_CallMethodIdOneArg(all_tasks,
+                                                 &PyId_add, task);
     if (res == NULL) {
         return -1;
     }
@@ -1857,8 +1857,8 @@ unregister_task(PyObject *task)
 {
     _Py_IDENTIFIER(discard);
 
-    PyObject *res = _PyObject_CallMethodIdObjArgs(
-        all_tasks, &PyId_discard, task, NULL);
+    PyObject *res = _PyObject_CallMethodIdOneArg(all_tasks,
+                                                 &PyId_discard, task);
     if (res == NULL) {
         return -1;
     }
@@ -2611,13 +2611,11 @@ task_step_impl(TaskObj *task, PyObject *exc)
             result = _PyGen_Send((PyGenObject*)coro, Py_None);
         }
         else {
-            result = _PyObject_CallMethodIdObjArgs(coro, &PyId_send,
-                                                   Py_None, NULL);
+            result = _PyObject_CallMethodIdOneArg(coro, &PyId_send, Py_None);
         }
     }
     else {
-        result = _PyObject_CallMethodIdObjArgs(coro, &PyId_throw,
-                                               exc, NULL);
+        result = _PyObject_CallMethodIdOneArg(coro, &PyId_throw, exc);
         if (clear_exc) {
             /* We created 'exc' during this call */
             Py_DECREF(exc);

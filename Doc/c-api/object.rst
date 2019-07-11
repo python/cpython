@@ -375,6 +375,18 @@ Object Protocol
    .. versionadded:: 3.9
 
 
+.. c:function:: PyObject* _PyObject_CallMethodOneArg(PyObject *obj, PyObject *name, PyObject *arg)
+
+   Call a method of the Python object *obj* with a single positional argument
+   *arg*, where the name of the method is given as a Python string object in
+   *name*.
+
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: PyObject* _PyObject_Vectorcall(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 
    Call a callable Python object *callable*, using

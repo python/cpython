@@ -5773,7 +5773,7 @@ instantiate(PyObject *cls, PyObject *args)
             return NULL;
         }
         if (func == NULL) {
-            return _PyObject_CallMethodIdObjArgs(cls, &PyId___new__, cls, NULL);
+            return _PyObject_CallMethodIdOneArg(cls, &PyId___new__, cls);
         }
         Py_DECREF(func);
     }
