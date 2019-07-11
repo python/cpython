@@ -351,9 +351,9 @@ class IdleConf:
                 'console-background':'#ffffff',
                 }
         for element in theme:
-            if (not cfgParser.has_option(themeName, element) and
-                # Skip warning for new elements.
-                not element.startswith(('context-', 'linenumber-')):
+            if not (cfgParser.has_option(themeName, element) or
+                    # Skip warning for new elements.
+                    element.startswith(('context-', 'linenumber-'))):
                 # Print warning that will return a default color
                 warning = ('\n Warning: config.IdleConf.GetThemeDict'
                            ' -\n problem retrieving theme element %r'
