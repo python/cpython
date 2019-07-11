@@ -7088,10 +7088,6 @@ PyInit__socket(void)
     Py_INCREF(socket_timeout);
     PyModule_AddObject(m, "timeout", socket_timeout);
     Py_INCREF((PyObject *)&sock_type);
-    if (PyModule_AddObject(m, "SocketType",
-                           (PyObject *)&sock_type) != 0)
-        return NULL;
-    Py_INCREF((PyObject *)&sock_type);
     if (PyModule_AddObject(m, "socket",
                            (PyObject *)&sock_type) != 0)
         return NULL;

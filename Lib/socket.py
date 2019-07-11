@@ -61,7 +61,7 @@ EAGAIN = getattr(errno, 'EAGAIN', 11)
 EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
 __all__ = ["fromfd", "getfqdn", "create_connection", "create_server",
-           "has_dualstack_ipv6", "AddressFamily", "SocketKind"]
+           "has_dualstack_ipv6", "AddressFamily", "SocketKind", "SocketType"]
 __all__.extend(os._get_exports_list(_socket))
 
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
@@ -541,6 +541,7 @@ The arguments are the same as for socket() except the default family is AF_UNIX
 if defined on the platform; otherwise, the default is AF_INET.
 """
 
+SocketType = socket
 _blocking_errnos = { EAGAIN, EWOULDBLOCK }
 
 class SocketIO(io.RawIOBase):

@@ -801,8 +801,7 @@ def requireSocket(*args):
 class GeneralModuleTests(unittest.TestCase):
 
     def test_SocketType_is_socketobject(self):
-        import _socket
-        self.assertTrue(socket.SocketType is _socket.socket)
+        self.assertTrue(socket.SocketType is socket.socket)
         s = socket.socket()
         self.assertIsInstance(s, socket.SocketType)
         s.close()
