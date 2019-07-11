@@ -1,0 +1,1 @@
+Avoid UnicodeDecodeError in email.header.make_header(). Patch by Aldwin Pollefeyt.
