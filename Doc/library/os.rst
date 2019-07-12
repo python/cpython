@@ -2098,7 +2098,7 @@ features:
 
    On Windows, if *dst* exists a :exc:`FileExistsError` is always raised.
 
-   On Unix, if *src* is a file and *dst* is a directory or vice-versa, anq:q
+   On Unix, if *src* is a file and *dst* is a directory or vice-versa, an
    :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
    respectively.  If both are directories and *dst* is empty, *dst* will be
    silently replaced.  If *dst* is a non-empty directory, an :exc:`OSError`

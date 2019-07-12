@@ -1281,7 +1281,7 @@ class EditorWindow(object):
                 text.delete(first, last)
                 text.mark_set("insert", first)
             prefix = text.get("insert linestart", "insert")
-            raw, effective = classifyws(prefix, self.tabwidth)
+            raw, effective = get_line_indent(prefix, self.tabwidth)
             if raw == len(prefix):
                 # only whitespace to the left
                 self.reindent_to(effective + self.indentwidth)
@@ -1415,7 +1415,7 @@ class EditorWindow(object):
         for pos in range(len(lines)):
             line = lines[pos]
             if line:
-                raw, effective = classifyws(line, self.tabwidth)
+                raw, effective = get_line_indent(line, self.tabwidth)
                 effective = effective + self.indentwidth
                 lines[pos] = self._make_blanks(effective) + line[raw:]
         self.set_region(head, tail, chars, lines)
@@ -1426,7 +1426,7 @@ class EditorWindow(object):
         for pos in range(len(lines)):
             line = lines[pos]
             if line:
-                raw, effective = classifyws(line, self.tabwidth)
+                raw, effective = get_line_indent(line, self.tabwidth)
                 effective = max(effective - self.indentwidth, 0)
                 lines[pos] = self._make_blanks(effective) + line[raw:]
         self.set_region(head, tail, chars, lines)
@@ -1461,7 +1461,7 @@ class EditorWindow(object):
         for pos in range(len(lines)):
             line = lines[pos]
             if line:
-                raw, effective = classifyws(line, tabwidth)
+                raw, effective = get_line_indent(line, tabwidth)
                 ntabs, nspaces = divmod(effective, tabwidth)
                 lines[pos] = '\t' * ntabs + ' ' * nspaces + line[raw:]
         self.set_region(head, tail, chars, lines)
@@ -1575,8 +1575,8 @@ class EditorWindow(object):
     def guess_indent(self):
         opener, indented = IndentSearcher(self.text, self.tabwidth).run()
         if opener and indented:
-            raw, indentsmall = classifyws(opener, self.tabwidth)
-            raw, indentlarge = classifyws(indented, self.tabwidth)
+            raw, indentsmall = get_line_indent(opener, self.tabwidth)
+            raw, indentlarge = get_line_indent(indented, self.tabwidth)
         else:
             indentsmall = indentlarge = 0
         return indentlarge - indentsmall
@@ -1585,23 +1585,16 @@ class EditorWindow(object):
 def index2line(index):
     return int(float(index))
 
-# Look at the leading whitespace in s.
-# Return pair (# of leading ws characters,
-#              effective # of leading blanks after expanding
-#              tabs to width tabwidth)
 
-def classifyws(s, tabwidth):
-    raw = effective = 0
-    for ch in s:
-        if ch == ' ':
-            raw = raw + 1
-            effective = effective + 1
-        elif ch == '\t':
-            raw = raw + 1
-            effective = (effective // tabwidth + 1) * tabwidth
-        else:
-            break
-    return raw, effective
+_line_indent_re = re.compile(r'[ \t]*')
+def get_line_indent(line, tabwidth):
+    """Return a line's indentation as (# chars, effective # of spaces).
+
+    The effective # of spaces is the length after properly "expanding"
+    the tabs into spaces, as done by str.expandtabs(tabwidth).
+    """
+    m = _line_indent_re.match(line)
+    return m.end(), len(m.group().expandtabs(tabwidth))
 
 
 class IndentSearcher(object):

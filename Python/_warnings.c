@@ -164,7 +164,7 @@ check_matched(PyObject *obj, PyObject *arg)
     }
 
     /* Otherwise assume a regex filter and call its match() method */
-    result = _PyObject_CallMethodIdObjArgs(obj, &PyId_match, arg, NULL);
+    result = _PyObject_CallMethodIdOneArg(obj, &PyId_match, arg);
     if (result == NULL)
         return -1;
 

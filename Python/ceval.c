@@ -2052,7 +2052,7 @@ main_loop:
                 if (v == Py_None)
                     retval = Py_TYPE(receiver)->tp_iternext(receiver);
                 else
-                    retval = _PyObject_CallMethodIdObjArgs(receiver, &PyId_send, v, NULL);
+                    retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
             }
             Py_DECREF(v);
             if (retval == NULL) {
