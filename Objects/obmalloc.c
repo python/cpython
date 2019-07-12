@@ -1426,10 +1426,12 @@ address_in_range(void *p, poolp pool)
 
 /*==========================================================================*/
 
+// Called when freelist is exhausted.  Extend the freelist if there is
+// space for a block.  Otherwise, remove this pool from usedpools.
 static void
 pymalloc_pool_extend(poolp pool, uint size)
 {
-    if (LIKELY(pool->nextoffset <= pool->maxnextoffset)) {
+    if (UNLIKELY(pool->nextoffset <= pool->maxnextoffset)) {
         /* There is room for another block. */
         pool->freeblock = (block*)pool + pool->nextoffset;
         pool->nextoffset += INDEX2SIZE(size);
