@@ -25,7 +25,6 @@ import datetime
 import unittest
 import sqlite3 as sqlite
 import weakref
-import sys
 import functools
 from test import support
 
@@ -395,11 +394,7 @@ class RegressionTests(unittest.TestCase):
                        self.con.set_authorizer]:
             printer_instance = Printer()
             method(printer_instance.log)
-            log = printer_instance.log
-            refcnt_before = sys.getrefcount(log)
-            method(log)
-            refcnt_after = sys.getrefcount(log)
-            self.assertEqual(refcnt_after - refcnt_before, 1, "%r must increase reference-count of arg" % method)
+            method(printer_instance.log)
             self.con.execute("select 1")  # trigger seg fault
             method(None)
 
