@@ -119,7 +119,7 @@ set_error(xmlparseobject *self, enum XML_Error code)
                                   XML_ErrorString(code), lineno, column);
     if (buffer == NULL)
         return NULL;
-    err = PyObject_CallFunctionObjArgs(ErrorObject, buffer, NULL);
+    err = _PyObject_CallOneArg(ErrorObject, buffer);
     Py_DECREF(buffer);
     if (  err != NULL
           && set_error_attr(err, "code", code)
@@ -208,7 +208,7 @@ call_with_frame(const char *funcname, int lineno, PyObject* func, PyObject* args
 {
     PyObject *res;
 
-    res = PyEval_CallObject(func, args);
+    res = PyObject_Call(func, args, NULL);
     if (res == NULL) {
         _PyTraceback_Add(funcname, __FILE__, lineno);
         XML_StopParser(self->itself, XML_FALSE);

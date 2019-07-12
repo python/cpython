@@ -3990,7 +3990,7 @@ class _TestSharedMemory(BaseTestCase):
 
             # Create a shared_memory segment, and send the segment name
             sm = shared_memory.SharedMemory(create=True, size=10)
-            sys.stdout.write(sm._name + '\\n')
+            sys.stdout.write(sm.name + '\\n')
             sys.stdout.flush()
             time.sleep(100)
         '''
@@ -5650,7 +5650,13 @@ def install_tests_in_module_dict(remote_globs, start_method):
         # Sleep 500 ms to give time to child processes to complete.
         if need_sleep:
             time.sleep(0.5)
+
         multiprocessing.process._cleanup()
+
+        # Stop the ForkServer process if it's running
+        from multiprocessing import forkserver
+        forkserver._forkserver._stop()
+
         # bpo-37421: Explicitly call _run_finalizers() to remove immediately
         # temporary directories created by multiprocessing.util.get_temp_dir().
         multiprocessing.util._run_finalizers()

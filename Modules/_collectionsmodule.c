@@ -512,8 +512,7 @@ deque_copy(PyObject *deque, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
     if (old_deque->maxlen < 0)
-        result = PyObject_CallFunctionObjArgs((PyObject *)(Py_TYPE(deque)),
-                                              deque, NULL);
+        result = _PyObject_CallOneArg((PyObject *)(Py_TYPE(deque)), deque);
     else
         result = PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
                                        deque, old_deque->maxlen, NULL);
@@ -1977,7 +1976,7 @@ defdict_missing(defdictobject *dd, PyObject *key)
         Py_DECREF(tup);
         return NULL;
     }
-    value = PyEval_CallObject(factory, NULL);
+    value = _PyObject_CallNoArg(factory);
     if (value == NULL)
         return value;
     if (PyObject_SetItem((PyObject *)dd, key, value) < 0) {
@@ -2040,7 +2039,7 @@ defdict_reduce(defdictobject *dd, PyObject *Py_UNUSED(ignored))
         args = PyTuple_Pack(1, dd->default_factory);
     if (args == NULL)
         return NULL;
-    items = _PyObject_CallMethodId((PyObject *)dd, &PyId_items, NULL);
+    items = _PyObject_CallMethodIdNoArgs((PyObject *)dd, &PyId_items);
     if (items == NULL) {
         Py_DECREF(args);
         return NULL;

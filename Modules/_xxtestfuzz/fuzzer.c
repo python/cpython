@@ -104,7 +104,7 @@ static int fuzz_json_loads(const char* data, size_t size) {
     if (input_bytes == NULL) {
         return 0;
     }
-    PyObject* parsed = PyObject_CallFunctionObjArgs(json_loads_method, input_bytes, NULL);
+    PyObject* parsed = _PyObject_CallOneArg(json_loads_method, input_bytes);
     if (parsed == NULL) {
         /* Ignore ValueError as the fuzzer will more than likely
            generate some invalid json and values */
@@ -263,7 +263,7 @@ static int fuzz_sre_match(const char* data, size_t size) {
     PyObject* pattern = compiled_patterns[idx];
     PyObject* match_callable = PyObject_GetAttrString(pattern, "match");
 
-    PyObject* matches = PyObject_CallFunctionObjArgs(match_callable, to_match, NULL);
+    PyObject* matches = _PyObject_CallOneArg(match_callable, to_match);
 
     Py_XDECREF(matches);
     Py_DECREF(match_callable);

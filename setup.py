@@ -2095,7 +2095,7 @@ class PyBuildExt(build_ext):
               '_decimal/libmpdec/fnt.c',
               '_decimal/libmpdec/fourstep.c',
               '_decimal/libmpdec/io.c',
-              '_decimal/libmpdec/memory.c',
+              '_decimal/libmpdec/mpalloc.c',
               '_decimal/libmpdec/mpdecimal.c',
               '_decimal/libmpdec/numbertheory.c',
               '_decimal/libmpdec/sixstep.c',
