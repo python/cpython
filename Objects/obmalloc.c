@@ -1445,8 +1445,11 @@ pymalloc_pool_extend(poolp pool, uint size)
     pool->nextpool = next;
 }
 
+/* called when pymalloc_alloc can not allocate a block from usedpool.
+ * This function takes new pool and allocate a block from it.
+ */
 static void*
-allocate_from_new_pool(size_t size)
+allocate_from_new_pool(uint size)
 {
     /* There isn't a pool of the right size class immediately
      * available:  use a free pool.
