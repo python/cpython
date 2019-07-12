@@ -802,39 +802,6 @@ def _check_compression(compression):
         raise NotImplementedError("That compression method is not supported")
 
 
-def _get_compressor(compress_type, compresslevel=None):
-    if compress_type == ZIP_DEFLATED:
-        if compresslevel is not None:
-            return zlib.compressobj(compresslevel, zlib.DEFLATED, -15)
-        return zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -15)
-    elif compress_type == ZIP_BZIP2:
-        if compresslevel is not None:
-            return bz2.BZ2Compressor(compresslevel)
-        return bz2.BZ2Compressor()
-    # compresslevel is ignored for ZIP_LZMA
-    elif compress_type == ZIP_LZMA:
-        return LZMACompressor()
-    else:
-        return None
-
-
-def _get_decompressor(compress_type):
-    if compress_type == ZIP_STORED:
-        return None
-    elif compress_type == ZIP_DEFLATED:
-        return zlib.decompressobj(-15)
-    elif compress_type == ZIP_BZIP2:
-        return bz2.BZ2Decompressor()
-    elif compress_type == ZIP_LZMA:
-        return LZMADecompressor()
-    else:
-        descr = compressor_names.get(compress_type)
-        if descr:
-            raise NotImplementedError("compression type %d (%s)" % (compress_type, descr))
-        else:
-            raise NotImplementedError("compression type %d" % (compress_type,))
-
-
 class _SharedFile:
     def __init__(self, file, pos, close, lock, writing):
         self._file = file
@@ -963,7 +930,7 @@ class ZipExtFile(io.BufferedIOBase):
         self._eof = False
 
         self.start_decrypter()
-        self._decompressor = _get_decompressor(self._compress_type)
+        self._decompressor = self.get_decompressor(self._compress_type)
 
     def process_local_header(self):
         """Read the local header and raise for any errors.
@@ -1005,6 +972,26 @@ class ZipExtFile(io.BufferedIOBase):
         if self._zinfo.is_strong_encryption:
             # strong encryption
             raise NotImplementedError("strong encryption (flag bit 6)")
+
+    def get_decompressor(self, compress_type):
+        if compress_type == ZIP_STORED:
+            return None
+        elif compress_type == ZIP_DEFLATED:
+            return zlib.decompressobj(-15)
+        elif compress_type == ZIP_BZIP2:
+            return bz2.BZ2Decompressor()
+        elif compress_type == ZIP_LZMA:
+            return LZMADecompressor()
+        else:
+            descr = compressor_names.get(compress_type)
+            if descr:
+                raise NotImplementedError(
+                    "compression type %d (%s)" % (compress_type, descr)
+                )
+            else:
+                raise NotImplementedError(
+                    "compression type %d" % (compress_type,)
+                )
 
     def start_decrypter(self):
         # check for encrypted flag & handle password
@@ -1263,8 +1250,9 @@ class _ZipWriteFile(io.BufferedIOBase):
         self._zinfo = zinfo
         self._zip64 = zip64
         self._zipfile = zf
-        self._compressor = _get_compressor(zinfo.compress_type,
-                                           zinfo._compresslevel)
+        self._compressor = self.get_compressor(
+            zinfo.compress_type, zinfo._compresslevel
+        )
         self._file_size = 0
         self._compress_size = 0
         self._crc = 0
@@ -1272,6 +1260,21 @@ class _ZipWriteFile(io.BufferedIOBase):
     @property
     def _fileobj(self):
         return self._zipfile.fp
+
+    def get_compressor(self, compress_type, compresslevel=None):
+        if compress_type == ZIP_DEFLATED:
+            if compresslevel is not None:
+                return zlib.compressobj(compresslevel, zlib.DEFLATED, -15)
+            return zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -15)
+        elif compress_type == ZIP_BZIP2:
+            if compresslevel is not None:
+                return bz2.BZ2Compressor(compresslevel)
+            return bz2.BZ2Compressor()
+        # compresslevel is ignored for ZIP_LZMA
+        elif compress_type == ZIP_LZMA:
+            return LZMACompressor()
+        else:
+            return None
 
     def writable(self):
         return True
@@ -1369,7 +1372,7 @@ class ZipFile:
         if mode not in ('r', 'w', 'x', 'a'):
             raise ValueError("ZipFile requires mode 'r', 'w', 'x', or 'a'")
 
-        _check_compression(compression)
+        self.check_compression(compression)
 
         self._allowZip64 = allowZip64
         self._didModify = False
@@ -1598,6 +1601,9 @@ class ZipFile:
             self.pwd = pwd
         else:
             self.pwd = None
+
+    def check_compression(self, compression):
+        _check_compression(compression)
 
     @property
     def comment(self):
@@ -1830,7 +1836,7 @@ class ZipFile:
         if not self.fp:
             raise ValueError(
                 "Attempt to write ZIP archive that was already closed")
-        _check_compression(zinfo.compress_type)
+        self.check_compression(zinfo.compress_type)
         if not self._allowZip64:
             requires_zip64 = None
             if len(self.filelist) >= ZIP_FILECOUNT_LIMIT:
