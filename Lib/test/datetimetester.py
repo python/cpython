@@ -30,6 +30,7 @@ from datetime import tzinfo
 from datetime import time
 from datetime import timezone
 from datetime import date, datetime
+from unittest.mock import ANY
 import time as _time
 
 import _testcapi
@@ -398,6 +399,11 @@ class HarmlessMixedComparison:
 
         self.assertIn(me, [1, 20, [], me])
         self.assertIn([], [me, 1, 20, []])
+
+        # Comparison over a type other that is not object's type should return
+        # NotImplemented and fallback to other.__eq__. In this case ANY.__eq__
+        # always returns True.
+        self.assertEqual(me, ANY)
 
     def test_harmful_mixed_comparison(self):
         me = self.theclass(1, 1, 1)
