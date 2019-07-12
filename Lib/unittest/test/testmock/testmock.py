@@ -37,7 +37,7 @@ class Something(object):
     def smeth(a, b, c, d=None): pass
 
 
-def something(): pass
+def something(a): pass
 
 
 class MockTest(unittest.TestCase):
@@ -1813,15 +1813,23 @@ class MockTest(unittest.TestCase):
 
     def test_attach_mock_patch_autospec(self):
         # bpo-21478: attach_mock used with autospecced object should have
-        # should use child's name and record calls to parent
+        # should use child's name and record calls to parent when being called
+        # as child and also as standalone functions.
         parent = Mock()
 
         with mock.patch(f'{__name__}.something', autospec=True) as mock_func:
             self.assertEqual(mock_func.mock._extract_mock_name(), 'something')
             parent.attach_mock(mock_func, 'child')
-            parent.child()
+            parent.child(1)
+            something(2)
+            mock_func(3)
 
-            self.assertEqual(parent.mock_calls, [call.child()])
+            parent_calls = [call.child(1), call.child(2), call.child(3)]
+            child_calls = [call(1), call(2), call(3)]
+            self.assertEqual(parent.mock_calls, parent_calls)
+            self.assertEqual(parent.child.mock_calls, child_calls)
+            self.assertEqual(something.mock_calls, child_calls)
+            self.assertEqual(mock_func.mock_calls, child_calls)
             self.assertIn('mock.child', repr(parent.child.mock))
             self.assertEqual(mock_func.mock._extract_mock_name(), 'mock.child')
 
