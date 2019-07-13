@@ -186,10 +186,9 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     }
     self->check_same_thread = check_same_thread;
 
-    Py_XSETREF(self->function_pinboard, PyDict_New());
-    if (!self->function_pinboard) {
-        return -1;
-    }
+    self->function_pinboard_trace_callback = NULL;
+    self->function_pinboard_progress_handler = NULL;
+    self->function_pinboard_authorizer_cb = NULL;
 
     Py_XSETREF(self->collations, PyDict_New());
     if (!self->collations) {
@@ -249,19 +248,18 @@ void pysqlite_connection_dealloc(pysqlite_Connection* self)
 
     /* Clean up if user has not called .close() explicitly. */
     if (self->db) {
-        Py_BEGIN_ALLOW_THREADS
         SQLITE3_CLOSE(self->db);
-        Py_END_ALLOW_THREADS
     }
 
     Py_XDECREF(self->isolation_level);
-    Py_XDECREF(self->function_pinboard);
+    Py_XDECREF(self->function_pinboard_trace_callback);
+    Py_XDECREF(self->function_pinboard_progress_handler);
+    Py_XDECREF(self->function_pinboard_authorizer_cb);
     Py_XDECREF(self->row_factory);
     Py_XDECREF(self->text_factory);
     Py_XDECREF(self->collations);
     Py_XDECREF(self->statements);
     Py_XDECREF(self->cursors);
-
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -342,9 +340,7 @@ PyObject* pysqlite_connection_close(pysqlite_Connection* self, PyObject* args)
     pysqlite_do_all_statements(self, ACTION_FINALIZE, 1);
 
     if (self->db) {
-        Py_BEGIN_ALLOW_THREADS
         rc = SQLITE3_CLOSE(self->db);
-        Py_END_ALLOW_THREADS
 
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->db, NULL);
@@ -808,6 +804,11 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
     Py_SETREF(self->cursors, new_list);
 }
 
+static void _destructor(void* args)
+{
+    Py_DECREF((PyObject*)args);
+}
+
 PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
     static char *kwlist[] = {"name", "narg", "func", "deterministic", NULL};
@@ -843,17 +844,16 @@ PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObjec
         flags |= SQLITE_DETERMINISTIC;
 #endif
     }
-    if (PyDict_SetItem(self->function_pinboard, func, Py_None) == -1) {
-        return NULL;
-    }
-    rc = sqlite3_create_function(self->db,
-                                 name,
-                                 narg,
-                                 flags,
-                                 (void*)func,
-                                 _pysqlite_func_callback,
-                                 NULL,
-                                 NULL);
+    Py_INCREF(func);
+    rc = sqlite3_create_function_v2(self->db,
+                                    name,
+                                    narg,
+                                    flags,
+                                    (void*)func,
+                                    _pysqlite_func_callback,
+                                    NULL,
+                                    NULL,
+                                    &_destructor);  // will decref func
 
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
@@ -880,11 +880,16 @@ PyObject* pysqlite_connection_create_aggregate(pysqlite_Connection* self, PyObje
                                       kwlist, &name, &n_arg, &aggregate_class)) {
         return NULL;
     }
-
-    if (PyDict_SetItem(self->function_pinboard, aggregate_class, Py_None) == -1) {
-        return NULL;
-    }
-    rc = sqlite3_create_function(self->db, name, n_arg, SQLITE_UTF8, (void*)aggregate_class, 0, &_pysqlite_step_callback, &_pysqlite_final_callback);
+    Py_INCREF(aggregate_class);
+    rc = sqlite3_create_function_v2(self->db,
+                                    name,
+                                    n_arg,
+                                    SQLITE_UTF8,
+                                    (void*)aggregate_class,
+                                    0,
+                                    &_pysqlite_step_callback,
+                                    &_pysqlite_final_callback,
+                                    &_destructor); // will decref func
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
         PyErr_SetString(pysqlite_OperationalError, "Error creating aggregate");
@@ -1003,13 +1008,14 @@ static PyObject* pysqlite_connection_set_authorizer(pysqlite_Connection* self, P
         return NULL;
     }
 
-    if (PyDict_SetItem(self->function_pinboard, authorizer_cb, Py_None) == -1) {
-        return NULL;
-    }
     rc = sqlite3_set_authorizer(self->db, _authorizer_callback, (void*)authorizer_cb);
     if (rc != SQLITE_OK) {
         PyErr_SetString(pysqlite_OperationalError, "Error setting authorizer callback");
+        Py_XSETREF(self->function_pinboard_authorizer_cb, NULL);
         return NULL;
+    } else {
+        Py_INCREF(authorizer_cb);
+        Py_XSETREF(self->function_pinboard_authorizer_cb, authorizer_cb);
     }
     Py_RETURN_NONE;
 }
@@ -1033,12 +1039,12 @@ static PyObject* pysqlite_connection_set_progress_handler(pysqlite_Connection* s
     if (progress_handler == Py_None) {
         /* None clears the progress handler previously set */
         sqlite3_progress_handler(self->db, 0, 0, (void*)0);
+        Py_XSETREF(self->function_pinboard_progress_handler, NULL);
     } else {
-        if (PyDict_SetItem(self->function_pinboard, progress_handler, Py_None) == -1)
-            return NULL;
         sqlite3_progress_handler(self->db, n, _progress_handler, progress_handler);
+        Py_INCREF(progress_handler);
+        Py_XSETREF(self->function_pinboard_progress_handler, progress_handler);
     }
-
     Py_RETURN_NONE;
 }
 
@@ -1060,10 +1066,11 @@ static PyObject* pysqlite_connection_set_trace_callback(pysqlite_Connection* sel
     if (trace_callback == Py_None) {
         /* None clears the trace callback previously set */
         sqlite3_trace(self->db, 0, (void*)0);
+        Py_XSETREF(self->function_pinboard_trace_callback, NULL);
     } else {
-        if (PyDict_SetItem(self->function_pinboard, trace_callback, Py_None) == -1)
-            return NULL;
         sqlite3_trace(self->db, _trace_callback, trace_callback);
+        Py_INCREF(trace_callback);
+        Py_XSETREF(self->function_pinboard_trace_callback, trace_callback);
     }
 
     Py_RETURN_NONE;
