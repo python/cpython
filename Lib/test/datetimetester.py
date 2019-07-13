@@ -53,6 +53,19 @@ OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
 INF = float("inf")
 NAN = float("nan")
 
+
+class ComparesEqualClass(object):
+    """
+    A class that is always equal to whatever you compare it to.
+    """
+
+    def __eq__(self, other):
+        return True
+
+    def __ne__(self, other):
+        return False
+
+
 #############################################################################
 # module tests
 
@@ -398,6 +411,13 @@ class HarmlessMixedComparison:
 
         self.assertIn(me, [1, 20, [], me])
         self.assertIn([], [me, 1, 20, []])
+
+        # Comparison to objects of unsupported types should return
+        # NotImplemented which falls back to the right hand side's __eq__
+        # method. In this case, ComparesEqualClass.__eq__ always returns True.
+        # ComparesEqualClass.__ne__ always returns False.
+        self.assertTrue(me == ComparesEqualClass())
+        self.assertFalse(me != ComparesEqualClass())
 
     def test_harmful_mixed_comparison(self):
         me = self.theclass(1, 1, 1)
