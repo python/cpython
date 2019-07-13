@@ -214,3 +214,8 @@ jrel_op('CALL_FINALLY', 162)
 def_op('POP_FINALLY', 163)
 
 del def_op, name_op, jrel_op, jabs_op
+
+for container in __all__:
+    obj = locals()[container]
+    if isinstance(obj, list):
+        locals()[container] = frozenset(obj)
