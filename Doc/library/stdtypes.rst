@@ -594,7 +594,7 @@ debugging, and in numerical work.
 
    Class method to return the float represented by a hexadecimal
    string *s*.  The string *s* may have leading and trailing
-   whitespace.
+   :term:`whitespace`.
 
 
 Note that :meth:`float.hex` is an instance method, while
@@ -1407,10 +1407,10 @@ written in a variety of ways:
 * Double quotes: ``"allows embedded 'single' quotes"``.
 * Triple quoted: ``'''Three single quotes'''``, ``"""Three double quotes"""``
 
-Triple quoted strings may span multiple lines - all associated whitespace will
+Triple quoted strings may span multiple lines - all associated :term:`whitespace` will
 be included in the string literal.
 
-String literals that are part of a single expression and have only whitespace
+String literals that are part of a single expression and have only :term:`whitespace`
 between them will be implicitly converted to a single string literal. That
 is, ``("spam " "eggs") == "spam eggs"``.
 
@@ -1762,10 +1762,8 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isspace()
 
-   Return true if there are only whitespace characters in the string and there is
-   at least one character, false otherwise.  Whitespace characters  are those
-   characters defined in the Unicode character database as "Other" or "Separator"
-   and those with bidirectional property being one of "WS", "B", or "S".
+   Return true if there are only :term:`whitespace` characters in the string and there is
+   at least one character, false otherwise.
 
 .. method:: str.istitle()
 
@@ -1808,7 +1806,7 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with leading characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
-   or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
+   or ``None``, the *chars* argument defaults to removing :term:`whitespace`.  The *chars*
    argument is not a prefix; rather, all combinations of its values are stripped::
 
       >>> '   spacious   '.lstrip()
@@ -1879,7 +1877,7 @@ expression support in the :mod:`re` module).
 
    Return a list of the words in the string, using *sep* as the delimiter string.
    If *maxsplit* is given, at most *maxsplit* splits are done, the *rightmost*
-   ones.  If *sep* is not specified or ``None``, any whitespace string is a
+   ones.  If *sep* is not specified or ``None``, any :term:`whitespace` string is a
    separator.  Except for splitting from the right, :meth:`rsplit` behaves like
    :meth:`split` which is described in detail below.
 
@@ -1888,7 +1886,7 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
-   or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
+   or ``None``, the *chars* argument defaults to removing :term:`whitespace`.  The *chars*
    argument is not a suffix; rather, all combinations of its values are stripped::
 
       >>> '   spacious   '.rstrip()
@@ -1921,7 +1919,7 @@ expression support in the :mod:`re` module).
       ['1', '2', '', '3', '']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm is
-   applied: runs of consecutive whitespace are regarded as a single separator,
+   applied: runs of consecutive :term:`whitespace` are regarded as a single separator,
    and the result will contain no empty strings at the start or end if the
    string has leading or trailing whitespace.  Consequently, splitting an empty
    string or a string consisting of just whitespace with a ``None`` separator
@@ -2015,7 +2013,7 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with the leading and trailing characters removed.
    The *chars* argument is a string specifying the set of characters to be removed.
-   If omitted or ``None``, the *chars* argument defaults to removing whitespace.
+   If omitted or ``None``, the *chars* argument defaults to removing :term:`whitespace`.
    The *chars* argument is not a prefix or suffix; rather, all combinations of its
    values are stripped::
 
@@ -2391,7 +2389,7 @@ data and are closely related to string objects in a variety of other ways.
 
       This :class:`bytes` class method returns a bytes object, decoding the
       given string object.  The string must contain two hexadecimal digits per
-      byte, with ASCII whitespace being ignored.
+      byte, with ASCII :term:`whitespace` being ignored.
 
       >>> bytes.fromhex('2Ef0 F1f2  ')
       b'.\xf0\xf1\xf2'
@@ -2485,7 +2483,7 @@ objects.
 
       This :class:`bytearray` class method returns bytearray object, decoding
       the given string object.  The string must contain two hexadecimal digits
-      per byte, with ASCII whitespace being ignored.
+      per byte, with ASCII :term:`whitespace` being ignored.
 
       >>> bytearray.fromhex('2Ef0 F1f2  ')
       bytearray(b'.\xf0\xf1\xf2')
@@ -2812,7 +2810,7 @@ produce new objects.
    *chars* argument is a binary sequence specifying the set of byte values to
    be removed - the name refers to the fact this method is usually used with
    ASCII characters.  If omitted or ``None``, the *chars* argument defaults
-   to removing ASCII whitespace.  The *chars* argument is not a prefix;
+   to removing ASCII :term:`whitespace`.  The *chars* argument is not a prefix;
    rather, all combinations of its values are stripped::
 
       >>> b'   spacious   '.lstrip()
@@ -2849,7 +2847,7 @@ produce new objects.
    Split the binary sequence into subsequences of the same type, using *sep*
    as the delimiter string. If *maxsplit* is given, at most *maxsplit* splits
    are done, the *rightmost* ones.  If *sep* is not specified or ``None``,
-   any subsequence consisting solely of ASCII whitespace is a separator.
+   any subsequence consisting solely of ASCII :term:`whitespace` is a separator.
    Except for splitting from the right, :meth:`rsplit` behaves like
    :meth:`split` which is described in detail below.
 
@@ -2861,7 +2859,7 @@ produce new objects.
    *chars* argument is a binary sequence specifying the set of byte values to
    be removed - the name refers to the fact this method is usually used with
    ASCII characters.  If omitted or ``None``, the *chars* argument defaults to
-   removing ASCII whitespace.  The *chars* argument is not a suffix; rather,
+   removing ASCII :term:`whitespace`.  The *chars* argument is not a suffix; rather,
    all combinations of its values are stripped::
 
       >>> b'   spacious   '.rstrip()
@@ -2906,11 +2904,11 @@ produce new objects.
       [b'1', b'2', b'', b'3', b'']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm
-   is applied: runs of consecutive ASCII whitespace are regarded as a single
+   is applied: runs of consecutive ASCII :term:`whitespace` are regarded as a single
    separator, and the result will contain no empty strings at the start or
-   end if the sequence has leading or trailing whitespace.  Consequently,
+   end if the sequence has leading or trailing :term:`whitespace`.  Consequently,
    splitting an empty sequence or a sequence consisting solely of ASCII
-   whitespace without a specified separator returns ``[]``.
+   :term:`whitespace` without a specified separator returns ``[]``.
 
    For example::
 
@@ -2930,7 +2928,7 @@ produce new objects.
    removed. The *chars* argument is a binary sequence specifying the set of
    byte values to be removed - the name refers to the fact this method is
    usually used with ASCII characters.  If omitted or ``None``, the *chars*
-   argument defaults to removing ASCII whitespace. The *chars* argument is
+   argument defaults to removing ASCII :term:`whitespace`. The *chars* argument is
    not a prefix or suffix; rather, all combinations of its values are
    stripped::
 
@@ -3073,10 +3071,8 @@ place, and instead produce new objects.
 .. method:: bytes.isspace()
             bytearray.isspace()
 
-   Return true if all bytes in the sequence are ASCII whitespace and the
-   sequence is not empty, false otherwise.  ASCII whitespace characters are
-   those byte values in the sequence ``b' \t\n\r\x0b\f'`` (space, tab, newline,
-   carriage return, vertical tab, form feed).
+   Return true if all bytes in the sequence are ASCII :term:`whitespace` and the
+   sequence is not empty, false otherwise.
 
 
 .. method:: bytes.istitle()
