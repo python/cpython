@@ -515,13 +515,16 @@ class TestMiscellaneous(unittest.TestCase):
                     orig_env[key] = os.environ[key]
                     del os.environ[key]
 
-                os.environ['LC_CTYPE'] = 'UTF-8'
+            os.environ['LC_CTYPE'] = 'UTF-8'
 
-                self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
+            self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
 
         finally:
             for k in orig_env:
                 os.environ[k] = orig_env[k]
+
+            if 'LC_CTYPE' not in orig_env:
+                del os.environ['LC_CTYPE']
 
             if orig_getlocale is not None:
                 _locale._getdefaultlocale = orig_getlocale
