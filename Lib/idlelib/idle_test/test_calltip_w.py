@@ -6,7 +6,7 @@ from test.support import requires
 from tkinter import Tk, Text
 
 
-class CallTipTest(unittest.TestCase):
+class CallTipWindowTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -14,7 +14,7 @@ class CallTipTest(unittest.TestCase):
         cls.root = Tk()
         cls.root.withdraw()
         cls.text = Text(cls.root)
-        cls.calltip = calltip_w.CallTip(cls.text)
+        cls.calltip = calltip_w.CalltipWindow(cls.text)
 
     @classmethod
     def tearDownClass(cls):
@@ -23,7 +23,7 @@ class CallTipTest(unittest.TestCase):
         del cls.text, cls.root
 
     def test_init(self):
-        self.assertEqual(self.calltip.widget, self.text)
+        self.assertEqual(self.calltip.anchor_widget, self.text)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

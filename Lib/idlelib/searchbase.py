@@ -1,7 +1,7 @@
 '''Define SearchDialogBase used by Search, Replace, and Grep dialogs.'''
 
-from tkinter import Toplevel, Frame
-from tkinter.ttk import Entry, Label, Button, Checkbutton, Radiobutton
+from tkinter import Toplevel
+from tkinter.ttk import Frame, Entry, Label, Button, Checkbutton, Radiobutton
 
 
 class SearchDialogBase:
@@ -36,12 +36,13 @@ class SearchDialogBase:
         text (Text searched): set in open(), only used in subclasses().
         ent (ry): created in make_entry() called from create_entry().
         row (of grid): 0 in create_widgets(), +1 in make_entry/frame().
-        default_command: set in subclasses, used in create_widgers().
+        default_command: set in subclasses, used in create_widgets().
 
         title (of dialog): class attribute, override in subclasses.
         icon (of dialog): ditto, use unclear if cannot minimize dialog.
         '''
         self.root = root
+        self.bell = root.bell
         self.engine = engine
         self.top = None
 
@@ -53,6 +54,7 @@ class SearchDialogBase:
         else:
             self.top.deiconify()
             self.top.tkraise()
+        self.top.transient(text.winfo_toplevel())
         if searchphrase:
             self.ent.delete(0,"end")
             self.ent.insert("end",searchphrase)
@@ -65,6 +67,7 @@ class SearchDialogBase:
         "Put dialog away for later use."
         if self.top:
             self.top.grab_release()
+            self.top.transient('')
             self.top.withdraw()
 
     def create_widgets(self):
@@ -80,7 +83,6 @@ class SearchDialogBase:
         top.wm_title(self.title)
         top.wm_iconname(self.icon)
         self.top = top
-        self.bell = top.bell
 
         self.row = 0
         self.top.grid_columnconfigure(0, pad=2, weight=0)
@@ -172,7 +174,7 @@ class SearchDialogBase:
         f = self.buttonframe = Frame(self.top)
         f.grid(row=0,column=2,padx=2,pady=2,ipadx=2,ipady=2)
 
-        b = self.make_button("close", self.close)
+        b = self.make_button("Close", self.close)
         b.lower()
 
 
@@ -192,9 +194,10 @@ class _searchbase(SearchDialogBase):  # htest #
 
     def default_command(self, dummy): pass
 
+
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_searchbase', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_searchbase', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_searchbase)

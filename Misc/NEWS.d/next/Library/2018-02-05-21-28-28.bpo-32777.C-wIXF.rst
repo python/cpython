@@ -1,3 +1,0 @@
-Fix a rare but potential pre-exec child process deadlock in subprocess on
-POSIX systems when marking file descriptors inheritable on exec in the child
-process.  This bug appears to have been introduced in 3.4.

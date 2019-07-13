@@ -11,9 +11,11 @@ import itertools
 import operator
 import struct
 import sys
+import textwrap
 import unittest
 import warnings
 from test import support, string_tests
+from test.support.script_helper import assert_python_failure
 
 # Error handling (bad decoder return)
 def search_function(encoding):
@@ -811,7 +813,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('h\u0130'.capitalize(), 'H\u0069\u0307')
         exp = '\u0399\u0308\u0300\u0069\u0307'
         self.assertEqual('\u1fd2\u0130'.capitalize(), exp)
-        self.assertEqual('ﬁnnish'.capitalize(), 'FInnish')
+        self.assertEqual('ﬁnnish'.capitalize(), 'Finnish')
         self.assertEqual('A\u0345\u03a3'.capitalize(), 'A\u0345\u03c2')
 
     def test_title(self):
@@ -1630,6 +1632,10 @@ class UnicodeTest(string_tests.CommonTest,
         for c in set_o:
             self.assertEqual(c.encode('ascii').decode('utf7'), c)
 
+        with self.assertRaisesRegex(UnicodeDecodeError,
+                                    'ill-formed sequence'):
+            b'+@'.decode('utf-7')
+
     def test_codecs_utf8(self):
         self.assertEqual(''.encode('utf-8'), b'')
         self.assertEqual('\u20ac'.encode('utf-8'), b'\xe2\x82\xac')
@@ -2100,12 +2106,8 @@ class UnicodeTest(string_tests.CommonTest,
             u = chr(c)
             for encoding in ('utf-7', 'utf-8', 'utf-16', 'utf-16-le',
                              'utf-16-be', 'raw_unicode_escape',
-                             'unicode_escape', 'unicode_internal'):
-                with warnings.catch_warnings():
-                    # unicode-internal has been deprecated
-                    warnings.simplefilter("ignore", DeprecationWarning)
-
-                    self.assertEqual(str(u.encode(encoding),encoding), u)
+                             'unicode_escape'):
+                self.assertEqual(str(u.encode(encoding),encoding), u)
 
         # Roundtrip safety for BMP (just the first 256 chars)
         for c in range(256):
@@ -2121,13 +2123,9 @@ class UnicodeTest(string_tests.CommonTest,
 
         # Roundtrip safety for non-BMP (just a few chars)
         with warnings.catch_warnings():
-            # unicode-internal has been deprecated
-            warnings.simplefilter("ignore", DeprecationWarning)
-
             u = '\U00010001\U00020002\U00030003\U00040004\U00050005'
             for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
-                             'raw_unicode_escape',
-                             'unicode_escape', 'unicode_internal'):
+                             'raw_unicode_escape', 'unicode_escape'):
                 self.assertEqual(str(u.encode(encoding),encoding), u)
 
         # UTF-8 must be roundtrip safe for all code points
@@ -2345,22 +2343,22 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(args[0], text)
         self.assertEqual(len(args), 1)
 
+    @support.cpython_only
     def test_resize(self):
+        from _testcapi import getargs_u
         for length in range(1, 100, 7):
             # generate a fresh string (refcount=1)
             text = 'a' * length + 'b'
 
-            with support.check_warnings(('unicode_internal codec has been '
-                                         'deprecated', DeprecationWarning)):
-                # fill wstr internal field
-                abc = text.encode('unicode_internal')
-                self.assertEqual(abc.decode('unicode_internal'), text)
+            # fill wstr internal field
+            abc = getargs_u(text)
+            self.assertEqual(abc, text)
 
-                # resize text: wstr field must be cleared and then recomputed
-                text += 'c'
-                abcdef = text.encode('unicode_internal')
-                self.assertNotEqual(abc, abcdef)
-                self.assertEqual(abcdef.decode('unicode_internal'), text)
+            # resize text: wstr field must be cleared and then recomputed
+            text += 'c'
+            abcdef = getargs_u(text)
+            self.assertNotEqual(abc, abcdef)
+            self.assertEqual(abcdef, text)
 
     def test_compare(self):
         # Issue #17615
@@ -2439,6 +2437,66 @@ class UnicodeTest(string_tests.CommonTest,
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, str)
         support.check_free_after_iterating(self, reversed, str)
+
+    def test_check_encoding_errors(self):
+        # bpo-37388: str(bytes) and str.decode() must check encoding and errors
+        # arguments in dev mode
+        encodings = ('ascii', 'utf8', 'latin1')
+        invalid = 'Boom, Shaka Laka, Boom!'
+        code = textwrap.dedent(f'''
+            import sys
+            encodings = {encodings!r}
+
+            for data in (b'', b'short string'):
+                try:
+                    str(data, encoding={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(21)
+
+                try:
+                    str(data, errors={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(22)
+
+                for encoding in encodings:
+                    try:
+                        str(data, encoding, errors={invalid!r})
+                    except LookupError:
+                        pass
+                    else:
+                        sys.exit(22)
+
+            for data in ('', 'short string'):
+                try:
+                    data.encode(encoding={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(23)
+
+                try:
+                    data.encode(errors={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(24)
+
+                for encoding in encodings:
+                    try:
+                        data.encode(encoding, errors={invalid!r})
+                    except LookupError:
+                        pass
+                    else:
+                        sys.exit(24)
+
+            sys.exit(10)
+        ''')
+        proc = assert_python_failure('-X', 'dev', '-c', code)
+        self.assertEqual(proc.rc, 10, proc)
 
 
 class CAPITest(unittest.TestCase):
@@ -2675,6 +2733,12 @@ class CAPITest(unittest.TestCase):
                      b'%+i', c_int(10))
         check_format('%.%s',
                      b'%.%s', b'abc')
+
+        # Issue #33817: empty strings
+        check_format('',
+                     b'')
+        check_format('',
+                     b'%s', b'')
 
     # Test PyUnicode_AsWideChar()
     @support.cpython_only

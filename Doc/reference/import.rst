@@ -15,11 +15,11 @@ way.  Functions such as :func:`importlib.import_module` and built-in
 
 The :keyword:`import` statement combines two operations; it searches for the
 named module, then it binds the results of that search to a name in the local
-scope.  The search operation of the :keyword:`import` statement is defined as
+scope.  The search operation of the :keyword:`!import` statement is defined as
 a call to the :func:`__import__` function, with the appropriate arguments.
 The return value of :func:`__import__` is used to perform the name
-binding operation of the :keyword:`import` statement.  See the
-:keyword:`import` statement for the exact details of that name binding
+binding operation of the :keyword:`!import` statement.  See the
+:keyword:`!import` statement for the exact details of that name binding
 operation.
 
 A direct call to :func:`__import__` performs only the module search and, if
@@ -127,8 +127,8 @@ Namespace packages
 ------------------
 
 .. index::
-    pair:: package; namespace
-    pair:: package; portion
+    pair: package; namespace
+    pair: package; portion
 
 A namespace package is a composite of various :term:`portions <portion>`,
 where each portion contributes a subpackage to the parent package.  Portions
@@ -345,12 +345,11 @@ of what happens during the loading portion of import::
     _init_module_attrs(spec, module)
 
     if spec.loader is None:
-        if spec.submodule_search_locations is not None:
-            # namespace package
-            sys.modules[spec.name] = module
-        else:
-            # unsupported
-            raise ImportError
+        # unsupported
+        raise ImportError
+    if spec.origin is None and spec.submodule_search_locations is not None:
+        # namespace package
+        sys.modules[spec.name] = module
     elif not hasattr(spec.loader, 'exec_module'):
         module = spec.loader.load_module(spec.name)
         # Set __loader__ and __package__ if missing.
@@ -921,6 +920,46 @@ it is sufficient to raise :exc:`ModuleNotFoundError` directly from
 ``None``. The latter indicates that the meta path search should continue,
 while raising an exception terminates it immediately.
 
+.. _relativeimports:
+
+Package Relative Imports
+========================
+
+Relative imports use leading dots. A single leading dot indicates a relative
+import, starting with the current package. Two or more leading dots indicate a
+relative import to the parent(s) of the current package, one level per dot
+after the first. For example, given the following package layout::
+
+    package/
+        __init__.py
+        subpackage1/
+            __init__.py
+            moduleX.py
+            moduleY.py
+        subpackage2/
+            __init__.py
+            moduleZ.py
+        moduleA.py
+
+In either ``subpackage1/moduleX.py`` or ``subpackage1/__init__.py``,
+the following are valid relative imports::
+
+    from .moduleY import spam
+    from .moduleY import spam as ham
+    from . import moduleY
+    from ..subpackage1 import moduleY
+    from ..subpackage2.moduleZ import eggs
+    from ..moduleA import foo
+
+Absolute imports may use either the ``import <>`` or ``from <> import <>``
+syntax, but relative imports may only use the second form; the reason
+for this is that::
+
+    import XXX.YYY.ZZZ
+
+should expose ``XXX.YYY.ZZZ`` as a usable expression, but .moduleY is
+not a valid expression.
+
 
 Special considerations for __main__
 ===================================
@@ -951,7 +990,7 @@ In :ref:`the remaining cases <using-on-interface-options>`
 :mod:`__main__` does not correspond directly with an importable module:
 
 - interactive prompt
-- -c switch
+- :option:`-c` option
 - running from stdin
 - running directly from a source or bytecode file
 

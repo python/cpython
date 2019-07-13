@@ -4,6 +4,8 @@
 An Introduction to Distutils
 ****************************
 
+.. include:: ./_setuptools_disclaimer.rst
+
 This document covers using the Distutils to distribute your Python modules,
 concentrating on the role of developer/distributor: if you're looking for
 information on installing Python modules, you should refer to the
@@ -94,7 +96,7 @@ containing your setup script :file:`setup.py`, and your module :file:`foo.py`.
 The archive file will be named :file:`foo-1.0.tar.gz` (or :file:`.zip`), and
 will unpack into a directory :file:`foo-1.0`.
 
-If an end-user wishes to install your :mod:`foo` module, all she has to do is
+If an end-user wishes to install your :mod:`foo` module, all they have to do is
 download :file:`foo-1.0.tar.gz` (or :file:`.zip`), unpack it, and---from the
 :file:`foo-1.0` directory---run ::
 

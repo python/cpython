@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _memory:
@@ -35,7 +35,7 @@ operate within the bounds of the private heap.
 
 It is important to understand that the management of the Python heap is
 performed by the interpreter itself and that the user has no control over it,
-even if she regularly manipulates object pointers to memory blocks inside that
+even if they regularly manipulate object pointers to memory blocks inside that
 heap.  The allocation of heap space for Python objects and other internal
 buffers is performed on demand by the Python memory manager through the Python/C
 API functions listed in this document.
@@ -67,7 +67,7 @@ example::
 
 In this example, the memory request for the I/O buffer is handled by the C
 library allocator. The Python memory manager is involved only in the allocation
-of the string object returned as a result.
+of the bytes object returned as a result.
 
 In most situations, however, it is recommended to allocate memory from the
 Python heap specifically because the latter is under control of the Python
@@ -342,7 +342,7 @@ Configuration                    Name                  PyMem_RawMalloc     PyMem
 Release build                    ``"pymalloc"``        ``malloc``          ``pymalloc``           ``pymalloc``
 Debug build                      ``"pymalloc_debug"``  ``malloc`` + debug  ``pymalloc`` + debug   ``pymalloc`` + debug
 Release build, without pymalloc  ``"malloc"``          ``malloc``          ``malloc``             ``malloc``
-Release build, without pymalloc  ``"malloc_debug"``    ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
+Debug build, without pymalloc    ``"malloc_debug"``    ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
 ===============================  ====================  ==================  =====================  ====================
 
 Legend:
@@ -440,8 +440,9 @@ Customize Memory Allocators
 
    Setup hooks to detect bugs in the Python memory allocator functions.
 
-   Newly allocated memory is filled with the byte ``0xCB``, freed memory is
-   filled with the byte ``0xDB``.
+   Newly allocated memory is filled with the byte ``0xCD`` (``CLEANBYTE``),
+   freed memory is filled with the byte ``0xDD`` (``DEADBYTE``). Memory blocks
+   are surrounded by "forbidden bytes" (``FORBIDDENBYTE``: byte ``0xFD``).
 
    Runtime checks:
 
@@ -470,6 +471,12 @@ Customize Memory Allocators
       where a memory block was allocated. The debug hooks now also check
       if the GIL is held when functions of :c:data:`PYMEM_DOMAIN_OBJ` and
       :c:data:`PYMEM_DOMAIN_MEM` domains are called.
+
+   .. versionchanged:: 3.8.0
+      Byte patterns ``0xCB`` (``CLEANBYTE``), ``0xDB`` (``DEADBYTE``) and
+      ``0xFB`` (``FORBIDDENBYTE``) have been replaced with ``0xCD``, ``0xDD``
+      and ``0xFD`` to use the same values than Windows CRT debug ``malloc()``
+      and ``free()``.
 
 
 .. _pymalloc:

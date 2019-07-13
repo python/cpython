@@ -1,35 +1,43 @@
 """Tests for distutils.log"""
 
+import io
 import sys
 import unittest
-from tempfile import NamedTemporaryFile
-from test.support import run_unittest
+from test.support import swap_attr, run_unittest
 
 from distutils import log
 
 class TestLog(unittest.TestCase):
     def test_non_ascii(self):
-        # Issue #8663: test that non-ASCII text is escaped with
-        # backslashreplace error handler (stream use ASCII encoding and strict
-        # error handler)
-        old_stdout = sys.stdout
-        old_stderr = sys.stderr
-        old_threshold = log.set_threshold(log.DEBUG)
-        try:
-            with NamedTemporaryFile(mode="w+", encoding='ascii') as stdout, \
-                 NamedTemporaryFile(mode="w+", encoding='ascii') as stderr:
-                sys.stdout = stdout
-                sys.stderr = stderr
-                log.debug("debug:\xe9")
-                log.fatal("fatal:\xe9")
+        # Issues #8663, #34421: test that non-encodable text is escaped with
+        # backslashreplace error handler and encodable non-ASCII text is
+        # output as is.
+        for errors in ('strict', 'backslashreplace', 'surrogateescape',
+                       'replace', 'ignore'):
+            with self.subTest(errors=errors):
+                stdout = io.TextIOWrapper(io.BytesIO(),
+                                          encoding='cp437', errors=errors)
+                stderr = io.TextIOWrapper(io.BytesIO(),
+                                          encoding='cp437', errors=errors)
+                old_threshold = log.set_threshold(log.DEBUG)
+                try:
+                    with swap_attr(sys, 'stdout', stdout), \
+                         swap_attr(sys, 'stderr', stderr):
+                        log.debug('Dεbug\tMėssãge')
+                        log.fatal('Fαtal\tÈrrōr')
+                finally:
+                    log.set_threshold(old_threshold)
+
                 stdout.seek(0)
-                self.assertEqual(stdout.read().rstrip(), "debug:\\xe9")
+                self.assertEqual(stdout.read().rstrip(),
+                        'Dεbug\tM?ss?ge' if errors == 'replace' else
+                        'Dεbug\tMssge' if errors == 'ignore' else
+                        'Dεbug\tM\\u0117ss\\xe3ge')
                 stderr.seek(0)
-                self.assertEqual(stderr.read().rstrip(), "fatal:\\xe9")
-        finally:
-            log.set_threshold(old_threshold)
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
+                self.assertEqual(stderr.read().rstrip(),
+                        'Fαtal\t?rr?r' if errors == 'replace' else
+                        'Fαtal\trrr' if errors == 'ignore' else
+                        'Fαtal\t\\xc8rr\\u014dr')
 
 def test_suite():
     return unittest.makeSuite(TestLog)

@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_object.h"
 #include "structmember.h"       /* for offsetof() */
 #include "_iomodule.h"
 
@@ -201,7 +202,7 @@ write_bytes(bytesio *self, const char *bytes, Py_ssize_t len)
 }
 
 static PyObject *
-bytesio_get_closed(bytesio *self)
+bytesio_get_closed(bytesio *self, void *Py_UNUSED(ignored))
 {
     if (self->buf == NULL) {
         Py_RETURN_TRUE;
@@ -942,8 +943,13 @@ bytesio_sizeof(bytesio *self, void *unused)
     Py_ssize_t res;
 
     res = _PyObject_SIZE(Py_TYPE(self));
-    if (self->buf && !SHARED_BUF(self))
-        res += _PySys_GetSizeOf(self->buf);
+    if (self->buf && !SHARED_BUF(self)) {
+        Py_ssize_t s = _PySys_GetSizeOf(self->buf);
+        if (s == -1) {
+            return NULL;
+        }
+        res += s;
+    }
     return PyLong_FromSsize_t(res);
 }
 
@@ -1001,10 +1007,10 @@ PyTypeObject PyBytesIO_Type = {
     sizeof(bytesio),                     /*tp_basicsize*/
     0,                                         /*tp_itemsize*/
     (destructor)bytesio_dealloc,               /*tp_dealloc*/
-    0,                                         /*tp_print*/
+    0,                                         /*tp_vectorcall_offset*/
     0,                                         /*tp_getattr*/
     0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
+    0,                                         /*tp_as_async*/
     0,                                         /*tp_repr*/
     0,                                         /*tp_as_number*/
     0,                                         /*tp_as_sequence*/
@@ -1101,10 +1107,10 @@ PyTypeObject _PyBytesIOBuffer_Type = {
     sizeof(bytesiobuf),                        /*tp_basicsize*/
     0,                                         /*tp_itemsize*/
     (destructor)bytesiobuf_dealloc,            /*tp_dealloc*/
-    0,                                         /*tp_print*/
+    0,                                         /*tp_vectorcall_offset*/
     0,                                         /*tp_getattr*/
     0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
+    0,                                         /*tp_as_async*/
     0,                                         /*tp_repr*/
     0,                                         /*tp_as_number*/
     0,                                         /*tp_as_sequence*/

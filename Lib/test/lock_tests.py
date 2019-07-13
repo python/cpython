@@ -74,7 +74,7 @@ class BaseTestCase(unittest.TestCase):
         support.reap_children()
 
     def assertTimeout(self, actual, expected):
-        # The waiting and/or time.time() can be imprecise, which
+        # The waiting and/or time.monotonic() can be imprecise, which
         # is why comparing to the expected value would sometimes fail
         # (especially under Windows).
         self.assertGreaterEqual(actual, expected * 0.6)
@@ -190,16 +190,16 @@ class BaseLockTests(BaseTestCase):
         # TIMEOUT_MAX is ok
         lock.acquire(timeout=TIMEOUT_MAX)
         lock.release()
-        t1 = time.time()
+        t1 = time.monotonic()
         self.assertTrue(lock.acquire(timeout=5))
-        t2 = time.time()
+        t2 = time.monotonic()
         # Just a sanity test that it didn't actually wait for the timeout.
         self.assertLess(t2 - t1, 5)
         results = []
         def f():
-            t1 = time.time()
+            t1 = time.monotonic()
             results.append(lock.acquire(timeout=0.5))
-            t2 = time.time()
+            t2 = time.monotonic()
             results.append(t2 - t1)
         Bunch(f, 1).wait_for_finished()
         self.assertFalse(results[0])
@@ -382,9 +382,9 @@ class EventTests(BaseTestCase):
         N = 5
         def f():
             results1.append(evt.wait(0.0))
-            t1 = time.time()
+            t1 = time.monotonic()
             r = evt.wait(0.5)
-            t2 = time.time()
+            t2 = time.monotonic()
             results2.append((r, t2 - t1))
         Bunch(f, N).wait_for_finished()
         self.assertEqual(results1, [False] * N)
@@ -405,12 +405,13 @@ class EventTests(BaseTestCase):
         # cleared before the waiting thread is woken up.
         evt = self.eventtype()
         results = []
+        timeout = 0.250
         N = 5
         def f():
-            results.append(evt.wait(1))
+            results.append(evt.wait(timeout * 4))
         b = Bunch(f, N)
         b.wait_for_started()
-        time.sleep(0.5)
+        time.sleep(timeout)
         evt.set()
         evt.clear()
         b.wait_for_finished()
@@ -544,9 +545,9 @@ class ConditionTests(BaseTestCase):
         N = 5
         def f():
             cond.acquire()
-            t1 = time.time()
+            t1 = time.monotonic()
             result = cond.wait(0.5)
-            t2 = time.time()
+            t2 = time.monotonic()
             cond.release()
             results.append((t2 - t1, result))
         Bunch(f, N).wait_for_finished()
@@ -583,9 +584,9 @@ class ConditionTests(BaseTestCase):
         success = []
         def f():
             with cond:
-                dt = time.time()
+                dt = time.monotonic()
                 result = cond.wait_for(lambda : state==4, timeout=0.1)
-                dt = time.time() - dt
+                dt = time.monotonic() - dt
                 self.assertFalse(result)
                 self.assertTimeout(dt, 0.1)
                 success.append(None)
@@ -691,9 +692,9 @@ class BaseSemaphoreTests(BaseTestCase):
         self.assertFalse(sem.acquire(timeout=0.005))
         sem.release()
         self.assertTrue(sem.acquire(timeout=0.005))
-        t = time.time()
+        t = time.monotonic()
         self.assertFalse(sem.acquire(timeout=0.5))
-        dt = time.time() - t
+        dt = time.monotonic() - t
         self.assertTimeout(dt, 0.5)
 
     def test_default_value(self):

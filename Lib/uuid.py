@@ -45,12 +45,19 @@ Typical usage:
 """
 
 import os
+import platform
 import sys
 
 from enum import Enum
 
 
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
+
+# The recognized platforms - known behaviors
+_AIX     = platform.system() == 'AIX'
+_DARWIN  = platform.system() == 'Darwin'
+_LINUX   = platform.system() == 'Linux'
+_WINDOWS = platform.system() == 'Windows'
 
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
@@ -117,6 +124,8 @@ class UUID:
                     a way that is safe for multiprocessing applications, via
                     uuid_generate_time_safe(3).
     """
+
+    __slots__ = ('int', 'is_safe', '__weakref__')
 
     def __init__(self, hex=None, bytes=None, bytes_le=None, fields=None,
                        int=None, version=None,
@@ -201,8 +210,23 @@ class UUID:
             # Set the version number.
             int &= ~(0xf000 << 64)
             int |= version << 76
-        self.__dict__['int'] = int
-        self.__dict__['is_safe'] = is_safe
+        object.__setattr__(self, 'int', int)
+        object.__setattr__(self, 'is_safe', is_safe)
+
+    def __getstate__(self):
+        d = {'int': self.int}
+        if self.is_safe != SafeUUID.unknown:
+            # is_safe is a SafeUUID instance.  Return just its value, so that
+            # it can be un-pickled in older Python versions without SafeUUID.
+            d['is_safe'] = self.is_safe.value
+        return d
+
+    def __setstate__(self, state):
+        object.__setattr__(self, 'int', state['int'])
+        # is_safe was added in 3.7; it is also omitted when it is "unknown"
+        object.__setattr__(self, 'is_safe',
+                           SafeUUID(state['is_safe'])
+                           if 'is_safe' in state else SafeUUID.unknown)
 
     def __eq__(self, other):
         if isinstance(other, UUID):
@@ -656,12 +680,31 @@ def _random_getnode():
     return random.getrandbits(48) | (1 << 40)
 
 
+# _OS_GETTERS, when known, are targetted for a specific OS or platform.
+# The order is by 'common practice' on the specified platform.
+# Note: 'posix' and 'windows' _OS_GETTERS are prefixed by a dll/dlload() method
+# which, when successful, means none of these "external" methods are called.
+# _GETTERS is (also) used by test_uuid.py to SkipUnless(), e.g.,
+#     @unittest.skipUnless(_uuid._ifconfig_getnode in _uuid._GETTERS, ...)
+if _LINUX:
+    _OS_GETTERS = [_ip_getnode, _ifconfig_getnode]
+elif _DARWIN:
+    _OS_GETTERS = [_ifconfig_getnode, _arp_getnode, _netstat_getnode]
+elif _WINDOWS:
+    _OS_GETTERS = [_netbios_getnode, _ipconfig_getnode]
+elif _AIX:
+    _OS_GETTERS = [_netstat_getnode]
+else:
+    _OS_GETTERS = [_ifconfig_getnode, _ip_getnode, _arp_getnode,
+                   _netstat_getnode, _lanscan_getnode]
+if os.name == 'posix':
+    _GETTERS = [_unix_getnode] + _OS_GETTERS
+elif os.name == 'nt':
+    _GETTERS = [_windll_getnode] + _OS_GETTERS
+else:
+    _GETTERS = _OS_GETTERS
+
 _node = None
-
-_NODE_GETTERS_WIN32 = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
-
-_NODE_GETTERS_UNIX = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
-                      _arp_getnode, _lanscan_getnode, _netstat_getnode]
 
 def getnode(*, getters=None):
     """Get the hardware address as a 48-bit positive integer.
@@ -675,12 +718,7 @@ def getnode(*, getters=None):
     if _node is not None:
         return _node
 
-    if sys.platform == 'win32':
-        getters = _NODE_GETTERS_WIN32
-    else:
-        getters = _NODE_GETTERS_UNIX
-
-    for getter in getters + [_random_getnode]:
+    for getter in _GETTERS + [_random_getnode]:
         try:
             _node = getter()
         except:
@@ -711,10 +749,10 @@ def uuid1(node=None, clock_seq=None):
 
     global _last_timestamp
     import time
-    nanoseconds = int(time.time() * 1e9)
+    nanoseconds = time.time_ns()
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
-    timestamp = int(nanoseconds/100) + 0x01b21dd213814000
+    timestamp = nanoseconds // 100 + 0x01b21dd213814000
     if _last_timestamp is not None and timestamp <= _last_timestamp:
         timestamp = _last_timestamp + 1
     _last_timestamp = timestamp

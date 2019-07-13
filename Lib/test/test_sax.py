@@ -13,15 +13,16 @@ except SAXReaderNotAvailable:
 from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
                              XMLFilterBase, prepare_input_source
 from xml.sax.expatreader import create_parser
-from xml.sax.handler import feature_namespaces
+from xml.sax.handler import feature_namespaces, feature_external_ges
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import BytesIO, StringIO
 import codecs
-import gc
 import os.path
 import shutil
+from urllib.error import URLError
+import urllib.request
 from test import support
-from test.support import findfile, run_unittest, TESTFN
+from test.support import findfile, run_unittest, FakePath, TESTFN
 
 TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
 TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")
@@ -182,6 +183,10 @@ class ParseTest(unittest.TestCase):
             with self.assertRaises(SAXException):
                 self.check_parse(f)
 
+    def test_parse_path_object(self):
+        make_xml_file(self.data, 'utf-8', None)
+        self.check_parse(FakePath(TESTFN))
+
     def test_parse_InputSource(self):
         # accept data without declared but with explicitly specified encoding
         make_xml_file(self.data, 'iso-8859-1', None)
@@ -253,6 +258,34 @@ class MakeParserTest(unittest.TestCase):
         from xml.sax import make_parser
         p = make_parser()
 
+    def test_make_parser3(self):
+        # Testing that make_parser can handle different types of
+        # iterables.
+        make_parser(['module'])
+        make_parser(('module', ))
+        make_parser({'module'})
+        make_parser(frozenset({'module'}))
+        make_parser({'module': None})
+        make_parser(iter(['module']))
+
+    def test_make_parser4(self):
+        # Testing that make_parser can handle empty iterables.
+        make_parser([])
+        make_parser(tuple())
+        make_parser(set())
+        make_parser(frozenset())
+        make_parser({})
+        make_parser(iter([]))
+
+    def test_make_parser5(self):
+        # Testing that make_parser can handle iterables with more than
+        # one item.
+        make_parser(['module1', 'module2'])
+        make_parser(('module1', 'module2'))
+        make_parser({'module1', 'module2'})
+        make_parser(frozenset({'module1', 'module2'}))
+        make_parser({'module1': None, 'module2': None})
+        make_parser(iter(['module1', 'module2']))
 
 # ===========================================================================
 #
@@ -365,6 +398,13 @@ class PrepareInputSourceTest(unittest.TestCase):
     def test_string(self):
         # If the source is a string, use it as a system ID and open it.
         prep = prepare_input_source(self.file)
+        self.assertIsNone(prep.getCharacterStream())
+        self.checkContent(prep.getByteStream(),
+                          b"This was read from a file.")
+
+    def test_path_objects(self):
+        # If the source is a Path object, use it as a system ID and open it.
+        prep = prepare_input_source(FakePath(self.file))
         self.assertIsNone(prep.getCharacterStream())
         self.checkContent(prep.getByteStream(),
                           b"This was read from a file.")
@@ -911,6 +951,18 @@ class ExpatReaderTest(XmlTestBase):
         def unparsedEntityDecl(self, name, publicId, systemId, ndata):
             self._entities.append((name, publicId, systemId, ndata))
 
+
+    class TestEntityRecorder:
+        def __init__(self):
+            self.entities = []
+
+        def resolveEntity(self, publicId, systemId):
+            self.entities.append((publicId, systemId))
+            source = InputSource()
+            source.setPublicId(publicId)
+            source.setSystemId(systemId)
+            return source
+
     def test_expat_dtdhandler(self):
         parser = create_parser()
         handler = self.TestDTDHandler()
@@ -927,6 +979,35 @@ class ExpatReaderTest(XmlTestBase):
             [("GIF", "-//CompuServe//NOTATION Graphics Interchange Format 89a//EN", None)])
         self.assertEqual(handler._entities, [("img", None, "expat.gif", "GIF")])
 
+    def test_expat_external_dtd_enabled(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
+        parser = create_parser()
+        parser.setFeature(feature_external_ges, True)
+        resolver = self.TestEntityRecorder()
+        parser.setEntityResolver(resolver)
+
+        with self.assertRaises(URLError):
+            parser.feed(
+                '<!DOCTYPE external SYSTEM "unsupported://non-existing">\n'
+            )
+        self.assertEqual(
+            resolver.entities, [(None, 'unsupported://non-existing')]
+        )
+
+    def test_expat_external_dtd_default(self):
+        parser = create_parser()
+        resolver = self.TestEntityRecorder()
+        parser.setEntityResolver(resolver)
+
+        parser.feed(
+            '<!DOCTYPE external SYSTEM "unsupported://non-existing">\n'
+        )
+        parser.feed('<doc />')
+        parser.close()
+        self.assertEqual(resolver.entities, [])
+
     # ===== EntityResolver support
 
     class TestEntityResolver:
@@ -936,8 +1017,9 @@ class ExpatReaderTest(XmlTestBase):
             inpsrc.setByteStream(BytesIO(b"<entity/>"))
             return inpsrc
 
-    def test_expat_entityresolver(self):
+    def test_expat_entityresolver_enabled(self):
         parser = create_parser()
+        parser.setFeature(feature_external_ges, True)
         parser.setEntityResolver(self.TestEntityResolver())
         result = BytesIO()
         parser.setContentHandler(XMLGenerator(result))
@@ -950,6 +1032,22 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), start +
                          b"<doc><entity></entity></doc>")
+
+    def test_expat_entityresolver_default(self):
+        parser = create_parser()
+        self.assertEqual(parser.getFeature(feature_external_ges), False)
+        parser.setEntityResolver(self.TestEntityResolver())
+        result = BytesIO()
+        parser.setContentHandler(XMLGenerator(result))
+
+        parser.feed('<!DOCTYPE doc [\n')
+        parser.feed('  <!ENTITY test SYSTEM "whatever">\n')
+        parser.feed(']>\n')
+        parser.feed('<doc>&test;</doc>')
+        parser.close()
+
+        self.assertEqual(result.getvalue(), start +
+                         b"<doc></doc>")
 
     # ===== Attributes support
 

@@ -1,0 +1,1 @@
+Distutils won't check for rpmbuild in specified paths only.

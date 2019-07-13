@@ -459,7 +459,9 @@ class OrderedDictTests:
         self.assertEqual(list(MyOD(items).items()), items)
 
     def test_highly_nested(self):
-        # Issue 25395: crashes during garbage collection
+        # Issues 25395 and 35983: test that the trashcan mechanism works
+        # correctly for OrderedDict: deleting a highly nested OrderDict
+        # should not crash Python.
         OrderedDict = self.OrderedDict
         obj = None
         for _ in range(1000):
@@ -468,7 +470,9 @@ class OrderedDictTests:
         support.gc_collect()
 
     def test_highly_nested_subclass(self):
-        # Issue 25395: crashes during garbage collection
+        # Issues 25395 and 35983: test that the trashcan mechanism works
+        # correctly for OrderedDict: deleting a highly nested OrderDict
+        # should not crash Python.
         OrderedDict = self.OrderedDict
         deleted = []
         class MyOD(OrderedDict):
@@ -697,9 +701,9 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         nodesize = calcsize('Pn2P')
 
         od = OrderedDict()
-        check(od, basicsize + 8*p + 8 + 5*entrysize)  # 8byte indices + 8*2//3 * entry table
+        check(od, basicsize + 8 + 5*entrysize)  # 8byte indices + 8*2//3 * entry table
         od.x = 1
-        check(od, basicsize + 8*p + 8 + 5*entrysize)
+        check(od, basicsize + 8 + 5*entrysize)
         od.update([(i, i) for i in range(3)])
         check(od, basicsize + 8*p + 8 + 5*entrysize + 3*nodesize)
         od.update([(i, i) for i in range(3, 10)])
@@ -731,6 +735,23 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
             for k in od:
                 del od['c']
         self.assertEqual(list(od), list('bdeaf'))
+
+    def test_iterators_pickling(self):
+        OrderedDict = self.OrderedDict
+        pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
+        od = OrderedDict(pairs)
+
+        for method_name in ('keys', 'values', 'items'):
+            meth = getattr(od, method_name)
+            expected = list(meth())[1:]
+            for i in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(method_name=method_name, protocol=i):
+                    it = iter(meth())
+                    next(it)
+                    p = pickle.dumps(it, i)
+                    unpickled = pickle.loads(p)
+                    self.assertEqual(list(unpickled), expected)
+                    self.assertEqual(list(it), expected)
 
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):

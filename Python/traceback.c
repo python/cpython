@@ -2,7 +2,7 @@
 /* Traceback implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 
 #include "code.h"
 #include "frameobject.h"
@@ -163,11 +163,11 @@ static void
 tb_dealloc(PyTracebackObject *tb)
 {
     PyObject_GC_UnTrack(tb);
-    Py_TRASHCAN_SAFE_BEGIN(tb)
+    Py_TRASHCAN_BEGIN(tb, tb_dealloc)
     Py_XDECREF(tb->tb_next);
     Py_XDECREF(tb->tb_frame);
     PyObject_GC_Del(tb);
-    Py_TRASHCAN_SAFE_END(tb)
+    Py_TRASHCAN_END
 }
 
 static int
@@ -178,11 +178,12 @@ tb_traverse(PyTracebackObject *tb, visitproc visit, void *arg)
     return 0;
 }
 
-static void
+static int
 tb_clear(PyTracebackObject *tb)
 {
     Py_CLEAR(tb->tb_next);
     Py_CLEAR(tb->tb_frame);
+    return 0;
 }
 
 PyTypeObject PyTraceBack_Type = {
@@ -191,10 +192,10 @@ PyTypeObject PyTraceBack_Type = {
     sizeof(PyTracebackObject),
     0,
     (destructor)tb_dealloc, /*tp_dealloc*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,    /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     0,                  /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
@@ -226,13 +227,24 @@ PyTypeObject PyTraceBack_Type = {
     tb_new,                                     /* tp_new */
 };
 
+
+PyObject*
+_PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
+{
+    assert(tb_next == NULL || PyTraceBack_Check(tb_next));
+    assert(frame != NULL);
+
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti,
+                         PyFrame_GetLineNumber(frame));
+}
+
+
 int
 PyTraceBack_Here(PyFrameObject *frame)
 {
     PyObject *exc, *val, *tb, *newtb;
     PyErr_Fetch(&exc, &val, &tb);
-    newtb = tb_create_raw((PyTracebackObject *)tb, frame, frame->f_lasti,
-                          PyFrame_GetLineNumber(frame));
+    newtb = _PyTraceBack_FromFrame(tb, frame);
     if (newtb == NULL) {
         _PyErr_ChainExceptions(exc, val, tb);
         return -1;
@@ -418,7 +430,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     if (fob == NULL) {
         PyErr_Clear();
 
-        res = _PyObject_CallMethodId(binary, &PyId_close, NULL);
+        res = _PyObject_CallMethodIdNoArgs(binary, &PyId_close);
         Py_DECREF(binary);
         if (res)
             Py_DECREF(res);
@@ -438,7 +450,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
             break;
         }
     }
-    res = _PyObject_CallMethodId(fob, &PyId_close, NULL);
+    res = _PyObject_CallMethodIdNoArgs(fob, &PyId_close);
     if (res)
         Py_DECREF(res);
     else
@@ -511,16 +523,21 @@ tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
     return err;
 }
 
+static const int TB_RECURSIVE_CUTOFF = 3; // Also hardcoded in traceback.py.
+
 static int
 tb_print_line_repeated(PyObject *f, long cnt)
 {
-    int err;
+    cnt -= TB_RECURSIVE_CUTOFF;
     PyObject *line = PyUnicode_FromFormat(
-            "  [Previous line repeated %ld more times]\n", cnt-3);
+        (cnt > 1)
+          ? "  [Previous line repeated %ld more times]\n"
+          : "  [Previous line repeated %ld more time]\n",
+        cnt);
     if (line == NULL) {
         return -1;
     }
-    err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
+    int err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
     Py_DECREF(line);
     return err;
 }
@@ -544,15 +561,11 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
         tb = tb->tb_next;
     }
     while (tb != NULL && err == 0) {
-        if (last_file != NULL &&
-            tb->tb_frame->f_code->co_filename == last_file &&
-            last_line != -1 && tb->tb_lineno == last_line &&
-            last_name != NULL && tb->tb_frame->f_code->co_name == last_name)
-        {
-            cnt++;
-        }
-        else {
-            if (cnt > 3) {
+        if (last_file == NULL ||
+            tb->tb_frame->f_code->co_filename != last_file ||
+            last_line == -1 || tb->tb_lineno != last_line ||
+            last_name == NULL || tb->tb_frame->f_code->co_name != last_name) {
+            if (cnt > TB_RECURSIVE_CUTOFF) {
                 err = tb_print_line_repeated(f, cnt);
             }
             last_file = tb->tb_frame->f_code->co_filename;
@@ -560,7 +573,8 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
             last_name = tb->tb_frame->f_code->co_name;
             cnt = 0;
         }
-        if (err == 0 && cnt < 3) {
+        cnt++;
+        if (err == 0 && cnt <= TB_RECURSIVE_CUTOFF) {
             err = tb_displayline(f,
                                  tb->tb_frame->f_code->co_filename,
                                  tb->tb_lineno,
@@ -571,7 +585,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
         }
         tb = tb->tb_next;
     }
-    if (err == 0 && cnt > 3) {
+    if (err == 0 && cnt > TB_RECURSIVE_CUTOFF) {
         err = tb_print_line_repeated(f, cnt);
     }
     return err;

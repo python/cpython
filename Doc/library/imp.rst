@@ -179,7 +179,7 @@ This module provides an interface to the mechanisms used to implement the
    If a module imports objects from another module using :keyword:`from` ...
    :keyword:`import` ..., calling :func:`reload` for the other module does not
    redefine the objects imported from it --- one way around this is to re-execute
-   the :keyword:`from` statement, another is to use :keyword:`import` and qualified
+   the :keyword:`!from` statement, another is to use :keyword:`!import` and qualified
    names (*module*.*name*) instead.
 
    If a module instantiates instances of a class, reloading the module that defines
@@ -229,7 +229,7 @@ file paths.
    file path.  For example, if *path* is
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` the returned path would be
    ``/foo/bar/baz.py``.  *path* need not exist, however if it does not conform
-   to :pep:`3147` format, a ``ValueError`` is raised. If
+   to :pep:`3147` format, a :exc:`ValueError` is raised. If
    :attr:`sys.implementation.cache_tag` is not defined,
    :exc:`NotImplementedError` is raised.
 

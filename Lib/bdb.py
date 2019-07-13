@@ -74,7 +74,7 @@ class Bdb:
             return: A function or other code block is about to return.
             exception: An exception has occurred.
             c_call: A C function is about to be called.
-            c_return: A C functon has returned.
+            c_return: A C function has returned.
             c_exception: A C function has raised an exception.
 
         For the Python events, specialized functions (see the dispatch_*()
@@ -190,6 +190,8 @@ class Bdb:
 
     def is_skipped_module(self, module_name):
         "Return True if module_name matches any skip pattern."
+        if module_name is None:  # some modules do not have names
+            return False
         for pattern in self.skip:
             if fnmatch.fnmatch(module_name, pattern):
                 return True
@@ -382,7 +384,7 @@ class Bdb:
         return None
 
     def _prune_breaks(self, filename, lineno):
-        """Prune breakpoints for filname:lineno.
+        """Prune breakpoints for filename:lineno.
 
         A list of breakpoints is maintained in the Bdb instance and in
         the Breakpoint class.  If a breakpoint in the Bdb instance no
@@ -616,7 +618,7 @@ class Bdb:
 
     # This method is more useful to debug a single function call.
 
-    def runcall(self, func, *args, **kwds):
+    def runcall(self, func, /, *args, **kwds):
         """Debug a single function call.
 
         Return the result of the function call.

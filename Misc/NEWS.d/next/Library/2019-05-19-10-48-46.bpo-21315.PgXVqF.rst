@@ -1,0 +1,4 @@
+Email headers containing RFC2047 encoded words are parsed despite the missing
+whitespace, and a defect registered. Also missing trailing whitespace after
+encoded words is now registered as a defect.
+

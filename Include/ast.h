@@ -4,6 +4,9 @@
 extern "C" {
 #endif
 
+#include "Python-ast.h"   /* mod_ty */
+#include "node.h"         /* node */
+
 PyAPI_FUNC(int) PyAST_Validate(mod_ty);
 PyAPI_FUNC(mod_ty) PyAST_FromNode(
     const node *n,

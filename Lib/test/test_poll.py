@@ -83,13 +83,12 @@ class PollTests(unittest.TestCase):
         r = p.poll()
         self.assertEqual(r[0], (FD, select.POLLNVAL))
 
-        f = open(TESTFN, 'w')
-        fd = f.fileno()
-        p = select.poll()
-        p.register(f)
-        r = p.poll()
-        self.assertEqual(r[0][0], fd)
-        f.close()
+        with open(TESTFN, 'w') as f:
+            fd = f.fileno()
+            p = select.poll()
+            p.register(f)
+            r = p.poll()
+            self.assertEqual(r[0][0], fd)
         r = p.poll()
         self.assertEqual(r[0], (fd, select.POLLNVAL))
         os.unlink(TESTFN)
@@ -159,9 +158,9 @@ class PollTests(unittest.TestCase):
             self.fail('Overflow must have occurred')
 
         # Issues #15989, #17919
-        self.assertRaises(OverflowError, pollster.register, 0, -1)
+        self.assertRaises(ValueError, pollster.register, 0, -1)
         self.assertRaises(OverflowError, pollster.register, 0, 1 << 64)
-        self.assertRaises(OverflowError, pollster.modify, 1, -1)
+        self.assertRaises(ValueError, pollster.modify, 1, -1)
         self.assertRaises(OverflowError, pollster.modify, 1, 1 << 64)
 
     @cpython_only

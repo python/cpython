@@ -1,10 +1,8 @@
-from test.support import check_warnings
 import cgi
 import os
 import sys
 import tempfile
 import unittest
-import warnings
 from collections import namedtuple
 from io import StringIO, BytesIO
 from test import support
@@ -162,15 +160,6 @@ Content-Length: 3
         self.assertRaises(TypeError, cgi.FieldStorage, "foo", "bar")
         fs = cgi.FieldStorage(headers={'content-type':'text/plain'})
         self.assertRaises(TypeError, bool, fs)
-
-    def test_escape(self):
-        # cgi.escape() is deprecated.
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'cgi\.escape',
-                                     DeprecationWarning)
-            self.assertEqual("test &amp; string", cgi.escape("test & string"))
-            self.assertEqual("&lt;test string&gt;", cgi.escape("<test string>"))
-            self.assertEqual("&quot;test string&quot;", cgi.escape('"test string"', True))
 
     def test_strict(self):
         for orig, expect in parse_strict_test_cases:
@@ -391,6 +380,60 @@ Larry
         v = gen_result(data, environ)
         self.assertEqual(self._qs_result, v)
 
+    def test_max_num_fields(self):
+        # For application/x-www-form-urlencoded
+        data = '&'.join(['a=a']*11)
+        environ = {
+            'CONTENT_LENGTH': str(len(data)),
+            'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+            'REQUEST_METHOD': 'POST',
+        }
+
+        with self.assertRaises(ValueError):
+            cgi.FieldStorage(
+                fp=BytesIO(data.encode()),
+                environ=environ,
+                max_num_fields=10,
+            )
+
+        # For multipart/form-data
+        data = """---123
+Content-Disposition: form-data; name="a"
+
+3
+---123
+Content-Type: application/x-www-form-urlencoded
+
+a=4
+---123
+Content-Type: application/x-www-form-urlencoded
+
+a=5
+---123--
+"""
+        environ = {
+            'CONTENT_LENGTH':   str(len(data)),
+            'CONTENT_TYPE':     'multipart/form-data; boundary=-123',
+            'QUERY_STRING':     'a=1&a=2',
+            'REQUEST_METHOD':   'POST',
+        }
+
+        # 2 GET entities
+        # 1 top level POST entities
+        # 1 entity within the second POST entity
+        # 1 entity within the third POST entity
+        with self.assertRaises(ValueError):
+            cgi.FieldStorage(
+                fp=BytesIO(data.encode()),
+                environ=environ,
+                max_num_fields=4,
+            )
+        cgi.FieldStorage(
+            fp=BytesIO(data.encode()),
+            environ=environ,
+            max_num_fields=5,
+        )
+
     def testQSAndFormData(self):
         data = """---123
 Content-Disposition: form-data; name="key2"
@@ -448,20 +491,6 @@ this is the content of the fake file
         })
         v = gen_result(data, environ)
         self.assertEqual(result, v)
-
-    def test_deprecated_parse_qs(self):
-        # this func is moved to urllib.parse, this is just a sanity check
-        with check_warnings(('cgi.parse_qs is deprecated, use urllib.parse.'
-                             'parse_qs instead', DeprecationWarning)):
-            self.assertEqual({'a': ['A1'], 'B': ['B3'], 'b': ['B2']},
-                             cgi.parse_qs('a=A1&b=B2&B=B3'))
-
-    def test_deprecated_parse_qsl(self):
-        # this func is moved to urllib.parse, this is just a sanity check
-        with check_warnings(('cgi.parse_qsl is deprecated, use urllib.parse.'
-                             'parse_qsl instead', DeprecationWarning)):
-            self.assertEqual([('a', 'A1'), ('b', 'B2'), ('B', 'B3')],
-                             cgi.parse_qsl('a=A1&b=B2&B=B3'))
 
     def test_parse_header(self):
         self.assertEqual(
