@@ -545,17 +545,17 @@ the module.
 
 .. attribute:: __loader__
 
-   The ``__loader__`` attribute must be set to the loader that the import
-   machinery used when loading the module.  This is mostly for
-   introspection, but can be used for additional loader-specific
-   functionality, for example getting data associated with a loader.
+   The ``__loader__`` attribute must be set to the loader that was used
+   when loading the module.  This is mostly for introspection, but can
+   be used for additional loader-specific functionality, for example
+   getting data associated with a loader.
 
 .. attribute:: __package__
 
    The ``__package__`` attribute must be set to the fully-qualified name
-   of the package the module is in (or the empty string for top-level
-   modules).  For packages, it is the same as ``__name__``.  See
-   :pep:`366` for further details.
+   of the package under which the module was loaded as a submodule (or
+   the empty string for top-level modules).  For packages, it is the same
+   as ``__name__``.  See :pep:`366` for further details.
 
    This attribute is used instead of ``__name__`` to calculate explicit
    relative imports for main modules, as defined in :pep:`366`.  It is
@@ -585,7 +585,7 @@ the module.
 .. attribute:: __path__
 
    If the module is a package, the ``__path__`` attribute must be set to an
-   iterable specifying the submodule search path within that package.  If
+   iterable specifying the submodule search paths within that package.  If
    ``__path__`` is empty, it has no further significance.  If ``__path__``
    is not empty, it must produce strings when iterated over.  More details
    on the semantics of ``__path__`` are given
@@ -611,7 +611,7 @@ the module.
 .. attribute:: __cached__
 
    If ``__file__`` is set, it may also be appropriate to set the
-   ``__cached__`` attribute which must be set to the path to any compiled
+   ``__cached__`` attribute which must be set to the path to a compiled
    version of the code (e.g. byte-compiled file).  The file does not need
    to exist to set this attribute; the path can simply point to where the
    compiled file would exist (see :pep:`3147`).  If ``__file__`` is not
