@@ -1296,11 +1296,14 @@ buffered_tell(buffered *self, PyObject *Py_UNUSED(ignored))
        updated. The optimizations that had previously
        been implemented are prone to get out of sync
        with the kernel when the file has been opened
-       in append mode. See issue #36411.
+       in append mode. See bpo-36411.
     */
 
     CHECK_INITIALIZED(self)
-    return _io__Buffered_seek_impl(self, PyLong_FromLong(0), SEEK_CUR);
+    PyObject *z_obj = PyLong_FromLong(0);
+    return (z_obj == NULL)
+            ? NULL
+            : _io__Buffered_seek_impl(self, z_obj, SEEK_CUR);
 }
 
 /*[clinic input]
