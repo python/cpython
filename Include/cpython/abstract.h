@@ -99,13 +99,19 @@ _PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
 {
     assert(kwnames == NULL || PyTuple_Check(kwnames));
     assert(args != NULL || PyVectorcall_NARGS(nargsf) == 0);
-    vectorcallfunc func = _PyVectorcall_Function(callable);
-    if (func == NULL) {
-        Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-        return _PyObject_MakeTpCall(callable, args, nargs, kwnames);
+    PyTypeObject *tp = Py_TYPE(callable);
+    if (PyType_HasFeature(tp, _Py_TPFLAGS_HAVE_VECTORCALL)) {
+        assert(PyCallable_Check(callable));
+        Py_ssize_t offset = tp->tp_vectorcall_offset;
+        assert(offset > 0);
+        vectorcallfunc func = *((vectorcallfunc *)(((char *)callable) + offset));
+        if (func != NULL) {
+            PyObject *res = func(callable, args, nargsf, kwnames);
+            return _Py_CheckFunctionResult(callable, res, NULL);
+        }
     }
-    PyObject *res = func(callable, args, nargsf, kwnames);
-    return _Py_CheckFunctionResult(callable, res, NULL);
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    return _PyObject_MakeTpCall(callable, args, nargs, kwnames);
 }
 
 /* Same as _PyObject_Vectorcall except that keyword arguments are passed as
