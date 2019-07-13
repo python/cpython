@@ -1305,7 +1305,7 @@ find and load modules.
 .. class:: ModuleSpec(name, loader, *, origin=None, loader_state=None, is_package=None)
 
    A specification for a module's import-system-related state.  This is
-   typically exposed as the module's ``__spec__`` attribute.  In the
+   typically exposed as the module's :attr:`__spec__` attribute.  In the
    descriptions below, the names in parentheses give the corresponding
    attribute available directly on the module object. For example,
    ``module.__spec__.origin == module.__file__``.  Note however that while
@@ -1319,7 +1319,7 @@ find and load modules.
 
    .. attribute:: name
 
-   (``__name__``)
+   (:attr:`__name__`)
 
    The module's fully-qualified name.
    It is not set for non-package modules run from the file system and
@@ -1327,15 +1327,15 @@ find and load modules.
 
    .. attribute:: loader
 
-   (``__loader__``)
+   (:attr:`__loader__`)
 
-   The loader to use for importing the module.
+   The loader to use when importing the module.
    It is not set for non-package modules run from the file system and
    non-package modules run from standard input.
 
    .. attribute:: origin
 
-   (``__file__``)
+   (:attr:`__file__`)
 
    The place from which the module's data was imported.  Its value and meaning
    is up to the finder.
@@ -1349,7 +1349,7 @@ find and load modules.
 
    .. attribute:: submodule_search_locations
 
-   (``__path__``)
+   (:attr:`__path__`)
 
    The (possibly empty) iterable of all locations to search (i.e. the search
    path) when looking for the package's submodules.  Order is significant.
@@ -1365,7 +1365,7 @@ find and load modules.
 
    .. attribute:: cached
 
-   (``__cached__``)
+   (:attr:`__cached__`)
 
    The location of the module's cached data.  Some loaders support optimization
    through caching the bytecode of the module.  ``cached`` is how the finder
@@ -1381,7 +1381,7 @@ find and load modules.
 
    .. attribute:: parent
 
-   (``__package__``)
+   (:attr:`__package__`)
 
    The module's ``__spec.__name`` attribute for imported packages and packages
    run from the module namespace, the parent package's ``__spec__.name``
