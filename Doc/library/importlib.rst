@@ -423,25 +423,25 @@ ABC hierarchy::
             The module's fully-qualified name.
 
         - :attr:`__file__`
-            The location (usually filename) from which the module was imported.
+            The location from which the module was loaded (usually the path).
             It is not set on all modules (e.g. built-in modules).
 
         - :attr:`__cached__`
-            The path to where a compiled version of the module is stored.
+            The path to a compiled version of the code.
             It is not set when the attribute would be inappropriate.
 
         - :attr:`__path__`
-            The (possibly empty) iterable specifying the submodule search path
-            within a package.
+            The (possibly empty) iterable specifying the submodule search paths
+            within the package.
             It is not set on non-package modules.
 
         - :attr:`__package__`
-            The fully-qualified name of the package the module is in (or the
-            empty string for top-level modules).  For packages, it is the same
-            as ``__name__``.
+            The fully-qualified name of the package under which the module was
+            loaded as a submodule (or the empty string for top-level modules).
+            For packages, it is the same as :attr:`__name__`.
 
         - :attr:`__loader__`
-            The loader used when the module was imported.
+            The loader that was used when loading the module.
 
         When :meth:`exec_module` is available then backwards-compatible
         functionality is provided.
@@ -1286,9 +1286,9 @@ find and load modules.
    ``module.__spec__.origin == module.__file__``.  Note however that while
    the *values* are usually equivalent, they can differ since there is no
    synchronization between the two objects.  For example, it is possible
-   to update the module's ``__file__`` at runtime and this will not be
-   automatically reflected in the module's ``__spec__.origin``, and vice
-   versa.
+   to update the module's :attr:`__file__` at runtime and this will not be
+   automatically reflected in the module's :attr:`__spec__.origin`, and
+   vice versa.
 
    .. versionadded:: 3.4
 
@@ -1296,42 +1296,33 @@ find and load modules.
 
    (:attr:`__name__`)
 
-   The module's fully-qualified name.
-   It is not set for non-package modules run from the file system and
-   non-package modules run from standard input.
+   The module's fully-qualified name.  Finders should always set this.  A
+   ``None`` value has special meaning.
 
    .. attribute:: loader
 
    (:attr:`__loader__`)
 
-   The loader to use when importing the module.
-   It is not set for non-package modules run from the file system and
-   non-package modules run from standard input.
+   The loader that should be used when loading the module.  Finders should
+   always set this.  A ``None`` value is reserved for namespace packages.
 
    .. attribute:: origin
 
    (:attr:`__file__`)
 
-   The place from which the module's data was imported.  Its value and meaning
-   is up to the finder.
-   It is the relative path for packages run from the file system and the
-   absolute path for imported modules and modules run from the module
-   namespace.
-   It is ``None`` for imported namespace packages, ``'built-in'`` for imported
-   built-in modules and ``'frozen'`` for imported frozen modules.
-   It is not set for non-package modules run from the file system and
-   non-package modules run from standard input.
+   The location from which the module should be loaded (e.g. ``'builtin'``
+   for built-in modules and the path for modules loaded from source).
+   Finders should normally set this attribute, but it may be ``None`` (the
+   default) which indicates it is unspecified (like for namespace packages).
 
    .. attribute:: submodule_search_locations
 
    (:attr:`__path__`)
 
-   The (possibly empty) iterable of all locations to search (i.e. the search
-   path) when looking for the package's submodules.  Order is significant.
-   It is ``None`` for packages run from the file system, imported non-package
-   modules and modules run from the module namespace.
-   It is not set for non-package modules run from the file system and
-   non-package modules run from standard input.
+   The (possibly empty) iterable specifying the submodule search paths
+   within the package (or ``None`` if not a package).  Finders must set
+   this on a package, even if just to an empty list.  For namespace
+   packages (where :attr:`origin` is ``None``) this is set automatically.
 
    .. attribute:: loader_state
 
@@ -1342,41 +1333,22 @@ find and load modules.
 
    (:attr:`__cached__`)
 
-   The location of the module's cached data.  Some loaders support optimization
-   through caching the bytecode of the module.  ``cached`` is how the finder
-   tells the loader where to look for that cached bytecode, or where to store
-   it.
-   It is the relative path for packages run from the file system and the
-   absolute path for imported modules and modules run from the module
-   namespace.
-   It is ``None`` for imported namespace packages, imported built-in modules
-   and imported frozen modules.
-   It is not set for non-package modules run from the file system and
-   non-package modules run from standard input.
+   The path to where a compiled version of the code should be stored (or
+   ``None``).
 
    .. attribute:: parent
 
    (:attr:`__package__`)
 
-   The module's ``__spec.__name`` attribute for imported packages and packages
-   run from the module namespace, the parent package's ``__spec__.name``
-   attribute for imported non-package submodules and non-paclage submodules run
-   from the module namespace and ``''`` for packages run from the file system,
-   imported non-package top-level modules and non-package top-level modules run
-   from the module namespace.
-   It is not set for non-package modules run from the file system and
-   non-package modules run from standard input.
-   It is a read-only attribute.
+   (Read-only) The fully-qualified name of the package under which the
+   module should be loaded as a submodule (or the empty string for top-level
+   modules).  For packages, it is the same as :attr:`__name__`.
 
    .. attribute:: has_location
 
-   The Boolean indicating whether or not the module's ``origin`` attribute
-   refers to a locatable module.
-   It is ``True`` for packages run from the file system, imported modules and
-   modules run from the module namespace and ``False`` for imported namespace
-   packages, imported built-in modules and imported frozen modules.
-   It is not set for non-package modules run from the file system and
-   non-package modules run from standard input.
+   True if the spec's :attr:`origin` refers to a loadable location.  False
+   otherwise.  This value impacts how :attr:`origin` is interpreted and how
+   the module's :attr:`__file__`` is populated.
 
 :mod:`importlib.util` -- Utility code for importers
 ---------------------------------------------------
