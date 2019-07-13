@@ -1200,21 +1200,17 @@ class UnquotingTests(unittest.TestCase):
                          "using unquote(): %r != %r" % (expect, result))
 
     def test_unquoting_with_bytes_input(self):
-        # Make sure unquoting of all ASCII values works
-        escape_list = []
-        for num in range(128):
-            given = bytes([num])
-            expect = chr(num)
-            result = urllib.parse.unquote(given)
-            self.assertEqual(expect, result,
-                             "using unquote(): %r != %r" % (expect, result))
-            escape_list.append(given)
-        escape_string = b''.join(escape_list)
-        del escape_list
-        result = urllib.parse.unquote(escape_string)
-        self.assertEqual(result.count('%'), 1,
-                         "using unquote(): not all characters escaped: "
-                         "%s" % result)
+        given = b'bl\xc3\xa5b\xc3\xa6rsyltet\xc3\xb8y'
+        expect = 'bl\u00e5b\u00e6rsyltet\u00f8y'
+        result = urllib.parse.unquote(given)
+        self.assertEqual(expect, result,
+                         "using unquote(): %r != %r" % (expect, result))
+
+        given = b'bl%c3%a5b%c3%a6rsyltet%c3%b8j'
+        expect = 'bl\u00e5b\u00e6rsyltet\u00f8j'
+        result = urllib.parse.unquote(given)
+        self.assertEqual(expect, result,
+                         "using unquote(): %r != %r" % (expect, result))
 
 
 class urlencode_Tests(unittest.TestCase):
