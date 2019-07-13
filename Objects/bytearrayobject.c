@@ -1780,26 +1780,78 @@ bytearray_remove_impl(PyByteArrayObject *self, int value)
     Py_RETURN_NONE;
 }
 
-/* XXX These two helpers could be optimized if argsize == 1 */
+#define LEFTSTRIP 0
+#define RIGHTSTRIP 1
+#define BOTHSTRIP 2
 
-static Py_ssize_t
-lstrip_helper(const char *myptr, Py_ssize_t mysize,
-              const void *argptr, Py_ssize_t argsize)
+static PyObject *
+do_xstrip(PyByteArrayObject *self, int striptype, PyObject *sepobj)
 {
-    Py_ssize_t i = 0;
-    while (i < mysize && memchr(argptr, (unsigned char) myptr[i], argsize))
-        i++;
-    return i;
+    Py_buffer vsep;
+    char *s = PyByteArray_AS_STRING(self);
+    Py_ssize_t len = PyByteArray_GET_SIZE(self);
+    char *sep;
+    Py_ssize_t seplen;
+    Py_ssize_t i, j;
+
+    if (PyObject_GetBuffer(sepobj, &vsep, PyBUF_SIMPLE) != 0)
+        return NULL;
+    sep = vsep.buf;
+    seplen = vsep.len;
+
+    i = 0;
+    if (striptype != RIGHTSTRIP) {
+        while (i < len && memchr(sep, Py_CHARMASK(s[i]), seplen)) {
+            i++;
+        }
+    }
+
+    j = len;
+    if (striptype != LEFTSTRIP) {
+        do {
+            j--;
+        } while (j >= i && memchr(sep, Py_CHARMASK(s[j]), seplen));
+        j++;
+    }
+
+    PyBuffer_Release(&vsep);
+
+    return PyByteArray_FromStringAndSize(s+i, j-i);
 }
 
-static Py_ssize_t
-rstrip_helper(const char *myptr, Py_ssize_t mysize,
-              const void *argptr, Py_ssize_t argsize)
+
+static PyObject *
+do_strip(PyByteArrayObject *self, int striptype)
 {
-    Py_ssize_t i = mysize - 1;
-    while (i >= 0 && memchr(argptr, (unsigned char) myptr[i], argsize))
-        i--;
-    return i + 1;
+    char *s = PyByteArray_AS_STRING(self);
+    Py_ssize_t len = PyByteArray_GET_SIZE(self), i, j;
+
+    i = 0;
+    if (striptype != RIGHTSTRIP) {
+        while (i < len && Py_ISSPACE(s[i])) {
+            i++;
+        }
+    }
+
+    j = len;
+    if (striptype != LEFTSTRIP) {
+        do {
+            j--;
+        } while (j >= i && Py_ISSPACE(s[j]));
+        j++;
+    }
+
+    return PyByteArray_FromStringAndSize(s+i, j-i);
+}
+
+
+static PyObject *
+do_argstrip(PyByteArrayObject *self, int striptype, PyObject *bytes)
+{
+    if (bytes != NULL && bytes != Py_None) {
+        return do_xstrip(self, striptype, bytes);
+    }
+    return do_strip(self, striptype);
 }
 
 /*[clinic input]
@@ -1815,33 +1867,9 @@ If the argument is omitted or None, strip leading and trailing ASCII whitespace.
 
 static PyObject *
 bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes)
-/*[clinic end generated code: output=760412661a34ad5a input=ef7bb59b09c21d62]*/
+/*[clinic end generated code: output=c7c228d3bd104a1b input=8a354640e4e0b3ef]*/
 {
-    Py_ssize_t left, right, mysize, byteslen;
-    char *myptr;
-    const char *bytesptr;
-    Py_buffer vbytes;
-
-    if (bytes == Py_None) {
-        bytesptr = "\t\n\r\f\v ";
-        byteslen = 6;
-    }
-    else {
-        if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
-            return NULL;
-        bytesptr = (const char *) vbytes.buf;
-        byteslen = vbytes.len;
-    }
-    myptr = PyByteArray_AS_STRING(self);
-    mysize = Py_SIZE(self);
-    left = lstrip_helper(myptr, mysize, bytesptr, byteslen);
-    if (left == mysize)
-        right = left;
-    else
-        right = rstrip_helper(myptr, mysize, bytesptr, byteslen);
-    if (bytes != Py_None)
-        PyBuffer_Release(&vbytes);
-    return PyByteArray_FromStringAndSize(myptr + left, right - left);
+    return do_argstrip(self, BOTHSTRIP, bytes);
 }
 
 /*[clinic input]
@@ -1852,35 +1880,14 @@ bytearray.lstrip
 
 Strip leading bytes contained in the argument.
 
-If the argument is omitted or None, strip leading ASCII whitespace.
+If the argument is omitted or None, strip leading  ASCII whitespace.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
-/*[clinic end generated code: output=d005c9d0ab909e66 input=80843f975dd7c480]*/
+/*[clinic end generated code: output=28602e586f524e82 input=9baff4398c3f6857]*/
 {
-    Py_ssize_t left, right, mysize, byteslen;
-    char *myptr;
-    const char *bytesptr;
-    Py_buffer vbytes;
-
-    if (bytes == Py_None) {
-        bytesptr = "\t\n\r\f\v ";
-        byteslen = 6;
-    }
-    else {
-        if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
-            return NULL;
-        bytesptr = (const char *) vbytes.buf;
-        byteslen = vbytes.len;
-    }
-    myptr = PyByteArray_AS_STRING(self);
-    mysize = Py_SIZE(self);
-    left = lstrip_helper(myptr, mysize, bytesptr, byteslen);
-    right = mysize;
-    if (bytes != Py_None)
-        PyBuffer_Release(&vbytes);
-    return PyByteArray_FromStringAndSize(myptr + left, right - left);
+    return do_argstrip(self, LEFTSTRIP, bytes);
 }
 
 /*[clinic input]
@@ -1896,29 +1903,9 @@ If the argument is omitted or None, strip trailing ASCII whitespace.
 
 static PyObject *
 bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
-/*[clinic end generated code: output=030e2fbd2f7276bd input=e728b994954cfd91]*/
+/*[clinic end generated code: output=547e3815c95447da input=b78af445c727e32b]*/
 {
-    Py_ssize_t right, mysize, byteslen;
-    char *myptr;
-    const char *bytesptr;
-    Py_buffer vbytes;
-
-    if (bytes == Py_None) {
-        bytesptr = "\t\n\r\f\v ";
-        byteslen = 6;
-    }
-    else {
-        if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
-            return NULL;
-        bytesptr = (const char *) vbytes.buf;
-        byteslen = vbytes.len;
-    }
-    myptr = PyByteArray_AS_STRING(self);
-    mysize = Py_SIZE(self);
-    right = rstrip_helper(myptr, mysize, bytesptr, byteslen);
-    if (bytes != Py_None)
-        PyBuffer_Release(&vbytes);
-    return PyByteArray_FromStringAndSize(myptr, right);
+    return do_argstrip(self, RIGHTSTRIP, bytes);
 }
 
 /*[clinic input]
