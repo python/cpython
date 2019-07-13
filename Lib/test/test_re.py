@@ -450,6 +450,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(pat.findall("abcd", -3, 3), ['b', 'c'])
         self.assertEqual(pat.findall("abcd", -1, 1), [])
         self.assertEqual(pat.findall("abcd", -1, -3), [])
+        self.assertEqual(pat.findall("abcd", -200, -1), ['a', 'b', 'c'])
+        self.assertEqual(pat.findall("abcd", -200, -100), [])
         self.assertEqual(pat.findall("abcd", pos=1, endpos=-1), ['b', 'c'])
 
         self.assertEqual([m[0] for m in pat.finditer("abcd", 1, 3)],
@@ -463,6 +465,10 @@ class ReTests(unittest.TestCase):
         self.assertEqual([m[0] for m in pat.finditer("abcd", -1, 1)],
                          [])
         self.assertEqual([m[0] for m in pat.finditer("abcd", -1, -3)],
+                         [])
+        self.assertEqual([m[0] for m in pat.finditer("abcd", -200, -1)],
+                         ['a', 'b', 'c'])
+        self.assertEqual([m[0] for m in pat.finditer("abcd", -200, -100)],
                          [])
         self.assertEqual([m[0] for m in pat.finditer("abcd", pos=1,
                                                      endpos=-1)], ['b', 'c'])
