@@ -199,7 +199,6 @@ NAME_MAPPING.update({
     ('__builtin__', 'basestring'): ('builtins', 'str'),
     ('exceptions', 'StandardError'): ('builtins', 'Exception'),
     ('UserDict', 'UserDict'): ('collections', 'UserDict'),
-    ('socket', '_socketobject'): ('socket', 'SocketType'),
 })
 
 REVERSE_NAME_MAPPING.update({
@@ -221,7 +220,6 @@ REVERSE_NAME_MAPPING.update({
         ('SimpleHTTPServer', 'SimpleHTTPRequestHandler'),
     ('http.server', 'CGIHTTPRequestHandler'):
         ('CGIHTTPServer', 'CGIHTTPRequestHandler'),
-    ('_socket', 'socket'): ('socket', '_socketobject'),
 })
 
 PYTHON3_OSERROR_EXCEPTIONS = (
