@@ -701,9 +701,9 @@ class TestMaildir(TestMailbox, unittest.TestCase):
                 subpath = os.path.normpath(os.path.join(self._path, subdir))
                 subpath = os.path.abspath(subpath)
                 _create_subfolders_except(subdir)
-                with self.assertRaises(mailbox.NoSuchMailboxError) as error:
+                with self.assertRaisesRegex(
+                        mailbox.NoSuchMailboxError, subpath):
                     self._factory(self._path, factory=None, create=False)
-                self.assertEqual(str(error.exception), subpath)
 
     def _check_basics(self, factory=None):
         # (Used by test_open_new() and test_open_existing().)
