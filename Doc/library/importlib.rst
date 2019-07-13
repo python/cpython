@@ -275,7 +275,7 @@ ABC hierarchy::
       When passed in, ``target`` is a module object that the finder may
       use to make a more educated guess about what spec to return.
       :func:`importlib.util.spec_from_loader` may be useful for implementing
-      concrete ``MetaPathFinder``s.
+      concrete ``MetaPathFinders``.
 
       .. versionadded:: 3.4
 
@@ -326,7 +326,7 @@ ABC hierarchy::
       cannot be found, ``None`` is returned.  When passed in, ``target``
       is a module object that the finder may use to make a more educated
       guess about what spec to return. :func:`importlib.util.spec_from_loader`
-      may be useful for implementing concrete ``PathEntryFinder``s.
+      may be useful for implementing concrete ``PathEntryFinders``.
 
       .. versionadded:: 3.4
 
