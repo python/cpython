@@ -242,6 +242,13 @@ wider range of codecs when working with binary files:
    :func:`iterencode`.
 
 
+.. function:: escape_decode(data, errors=None)
+
+   Decode the bytes-like object *data* and return a tuple (decoded object,
+   length consumed). This is useful for decoding ascii escape sequences mixed
+   with unicode characters.
+
+
 The module also provides the following constants which are useful for reading
 and writing to platform dependent files:
 
@@ -1313,7 +1320,10 @@ encodings.
 |                    |         | Latin-1 source code.      |
 |                    |         | Beware that Python source |
 |                    |         | code actually uses UTF-8  |
-|                    |         | by default.               |
+|                    |         | by default. This does not |
+|                    |         | work in the general case, |
+|                    |         | see:                      |
+|                    |         | :func:`escape_decode`.    |
 +--------------------+---------+---------------------------+
 
 .. versionchanged:: 3.8
