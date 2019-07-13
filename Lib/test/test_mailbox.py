@@ -672,11 +672,6 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self._box = mailbox.Maildir(self._path)
         self._check_basics()
 
-        self._delete_recursively(self._path)
-        os.mkdir(self._path)  # maildir exists, but there's no subdirs in it
-        self._box = self._factory(self._path, factory=None)
-        self._check_basics()
-
     def _check_basics(self, factory=None):
         # (Used by test_open_new() and test_open_existing().)
         self.assertEqual(self._box._path, os.path.abspath(self._path))
