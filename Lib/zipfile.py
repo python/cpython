@@ -465,6 +465,12 @@ class ZipInfo (object):
         """
         return self.flag_bits & _MASK_USE_DATA_DESCRIPTOR
 
+    def encode_datadescriptor(self, zip64):
+        fmt = '<LLQQ' if zip64 else '<LLLL'
+        return struct.pack(
+            fmt, _DD_SIGNATURE, self.CRC, self.compress_size, self.file_size
+        )
+
     @property
     def dosdate(self):
         dt = self.date_time
@@ -1317,9 +1323,7 @@ class _ZipWriteFile(io.BufferedIOBase):
             # Write updated header info
             if self._zinfo.use_datadescriptor:
                 # Write CRC and file sizes after the file data
-                fmt = '<LLQQ' if self._zip64 else '<LLLL'
-                self._fileobj.write(struct.pack(fmt, _DD_SIGNATURE, self._zinfo.CRC,
-                    self._zinfo.compress_size, self._zinfo.file_size))
+                self._fileobj.write(self._zinfo.encode_datadescriptor(self._zip64))
                 self._zipfile.start_dir = self._fileobj.tell()
             else:
                 if not self._zip64:
