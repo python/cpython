@@ -538,7 +538,7 @@ the module.
    The ``__name__`` attribute must be set to the fully-qualified name of
    the module.  This name is used to uniquely identify the module in
    the import system.
-   
+
    ``__name__`` is set to ``'__main__'`` for non-package modules run
    from the file system, non-package modules run from standard input
    and non-package modules run from the module namespace.
@@ -585,13 +585,13 @@ the module.
 .. attribute:: __path__
 
    If the module is a package, the ``__path__`` attribute must be set to an
-   iterable specifying the submodule search path within a package.  If
+   iterable specifying the submodule search path within that package.  If
    ``__path__`` is empty, it has no further significance.  If ``__path__``
    is not empty, it must produce strings when iterated over.  More details
    on the semantics of ``__path__`` are given
    :ref:`below <package-path-rules>`.
 
-   ``__path__`` is not set for non-package modules, packages run from the
+   ``__path__`` is not set on non-package modules, packages run from the
    file system and packages run from the module namespace.
 
 .. attribute:: __file__
@@ -600,12 +600,12 @@ the module.
    must be set to the location from which the module was imported.  The
    import system may opt to leave ``__file__`` unset if it has no
    semantic meaning (e.g. a module loaded from a database).
-   
-   ``__file__`` is set to the relative path to the code for modules run
-   from the file system, the absolute path to the code for imported
+
+   ``__file__`` is set to the relative path to the code on modules run
+   from the file system, the absolute path to the code on imported
    modules and modules run from the module namespace and ``'<stdin>'``
-   for non-package modules run from standard input.  ``__file__`` is
-   not set for imported namespace packages, imported built-in modules
+   on non-package modules run from standard input.  ``__file__`` is
+   not set on imported namespace packages, imported built-in modules
    and imported frozen modules.
 
 .. attribute:: __cached__
@@ -620,11 +620,11 @@ the module.
    of ``__file__`` and/or ``__cached__``.  So if a loader can load from a
    cached module but otherwise does not load from a file, that atypical
    scenario may be appropriate.
-            
-   ``__cached__`` is set to the relative path to the compiled code for
+
+   ``__cached__`` is set to the relative path to the compiled code on
    packages run from the file system and the absolute path to the
-   compiled code for imported modules and modules run from the module
-   namespace.  ``__cached__`` is not set for non-package modules run from
+   compiled code on imported modules and modules run from the module
+   namespace.  ``__cached__`` is not set on non-package modules run from
    the file system, non-package modules run from standard input, imported
    namespace packages, imported built-in modules and imported frozen
    modules.
