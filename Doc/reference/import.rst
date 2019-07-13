@@ -538,26 +538,29 @@ the module.
    The ``__name__`` attribute must be set to the fully-qualified name of
    the module.  This name is used to uniquely identify the module in
    the import system.
+   
+   ``__name__`` is set to ``'__main__'`` for non-package modules run
+   from the file system, non-package modules run from standard input
+   and non-package modules run from the module namespace.
 
 .. attribute:: __loader__
 
-   The ``__loader__`` attribute must be set to the loader object that
-   the import machinery used when loading the module.  This is mostly
-   for introspection, but can be used for additional loader-specific
+   The ``__loader__`` attribute must be set to the loader that the import
+   machinery used when loading the module.  This is mostly for
+   introspection, but can be used for additional loader-specific
    functionality, for example getting data associated with a loader.
 
 .. attribute:: __package__
 
-   The module's ``__package__`` attribute must be set.  Its value must
-   be a string, but it can be the same value as its ``__name__``.  When
-   the module is a package, its ``__package__`` value should be set to
-   its ``__name__``.  When the module is not a package, ``__package__``
-   should be set to the empty string for top-level modules, or for
-   submodules, to the parent package's name.  See :pep:`366` for further
-   details.
+   The ``__package__`` attribute must be set to the fully-qualified name
+   of the package the module is in.  When the module is a package, it is
+   set to its ``__name__`` attribute.  When the module is not a package,
+   it is set to the empty string for top-level modules, or for
+   submodules, to the parent package's ``__name__`` attribute.  See
+   :pep:`366` for further details.
 
    This attribute is used instead of ``__name__`` to calculate explicit
-   relative imports for main modules, as defined in :pep:`366`. It is
+   relative imports for main modules, as defined in :pep:`366`.  It is
    expected to have the same value as ``__spec__.parent``.
 
    .. versionchanged:: 3.6
@@ -567,10 +570,10 @@ the module.
 .. attribute:: __spec__
 
    The ``__spec__`` attribute must be set to the module spec that was
-   used when importing the module. Setting ``__spec__``
-   appropriately applies equally to :ref:`modules initialized during
-   interpreter startup <programs>`.  The one exception is ``__main__``,
-   where ``__spec__`` is :ref:`set to None in some cases <main_spec>`.
+   used when importing the module. Setting ``__spec__`` appropriately
+   applies equally to :ref:`modules initialized during interpreter
+   startup <programs>`.  The one exception is ``__main__``, where
+   ``__spec__`` is :ref:`set to None in some cases <main_spec>`.
 
    When ``__package__`` is not defined, ``__spec__.parent`` is used as
    a fallback.
@@ -583,33 +586,50 @@ the module.
 
 .. attribute:: __path__
 
-   If the module is a package (either regular or namespace), the module
-   object's ``__path__`` attribute must be set.  The value must be
-   iterable, but may be empty if ``__path__`` has no further significance.
-   If ``__path__`` is not empty, it must produce strings when iterated
-   over. More details on the semantics of ``__path__`` are given
+   If the module is a package, the ``__path__`` attribute must be set to an
+   iterable specifying the submodule search path within a package.  If
+   ``__path__`` is empty, it has no further significance.  If ``__path__``
+   is not empty, it must produce strings when iterated over.  More details
+   on the semantics of ``__path__`` are given
    :ref:`below <package-path-rules>`.
 
-   Non-package modules should not have a ``__path__`` attribute.
+   ``__path__`` is not set for non-package modules, packages run from the
+   file system and packages run from the module namespace.
 
 .. attribute:: __file__
+
+   The ``__file__`` attribute is optional.  If ``__file__`` is set, it
+   must be set to the location from which the module was imported.  The
+   import system may opt to leave ``__file__`` unset if it has no
+   semantic meaning (e.g. a module loaded from a database).
+   
+   ``__file__`` is set to the relative path to the code for modules run
+   from the file system, the absolute path to the code for imported
+   modules and modules run from the module namespace and ``'<stdin>'``
+   for non-package modules run from standard input.  ``__file__`` is
+   not set for imported namespace packages, imported built-in modules
+   and imported frozen modules.
+
 .. attribute:: __cached__
 
-   ``__file__`` is optional. If set, this attribute's value must be a
-   string.  The import system may opt to leave ``__file__`` unset if it
-   has no semantic meaning (e.g. a module loaded from a database).
-
    If ``__file__`` is set, it may also be appropriate to set the
-   ``__cached__`` attribute which is the path to any compiled version of
-   the code (e.g. byte-compiled file). The file does not need to exist
-   to set this attribute; the path can simply point to where the
-   compiled file would exist (see :pep:`3147`).
-
-   It is also appropriate to set ``__cached__`` when ``__file__`` is not
-   set.  However, that scenario is quite atypical.  Ultimately, the
-   loader is what makes use of ``__file__`` and/or ``__cached__``.  So
-   if a loader can load from a cached module but otherwise does not load
-   from a file, that atypical scenario may be appropriate.
+   ``__cached__`` attribute which must be set to the path to any compiled
+   version of the code (e.g. byte-compiled file).  The file does not need
+   to exist to set this attribute; the path can simply point to where the
+   compiled file would exist (see :pep:`3147`).  If ``__file__`` is not
+   set, it is also appropriate to set ``__cached__``.  However, that
+   scenario is quite atypical.  Ultimately, the loader is what makes use
+   of ``__file__`` and/or ``__cached__``.  So if a loader can load from a
+   cached module but otherwise does not load from a file, that atypical
+   scenario may be appropriate.
+            
+   ``__cached__`` is set to the relative path to the compiled code for
+   packages run from the file system and the absolute path to the
+   compiled code for imported modules and modules run from the module
+   namespace.  ``__cached__`` is not set for non-package modules run from
+   the file system, non-package modules run from standard input, imported
+   namespace packages, imported built-in modules and imported frozen
+   modules.
 
 .. _package-path-rules:
 
