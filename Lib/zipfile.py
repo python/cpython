@@ -453,10 +453,10 @@ class ZipInfo (object):
         return self.flag_bits & _MASK_STRONG_ENCRYPTION
 
     @property
-    def use_datadescripter(self):
-        """Returns True if datadescripter is in use.
+    def use_datadescriptor(self):
+        """Returns True if datadescriptor is in use.
 
-        If bit 3 of flags is set, the data descripter is must exist.  It is
+        If bit 3 of flags is set, the data descriptor is must exist.  It is
         byte aligned and immediately follows the last byte of compressed data.
 
         crc-32                          4 bytes
@@ -470,7 +470,7 @@ class ZipInfo (object):
         dt = self.date_time
         dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
         dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
-        if self.use_datadescripter:
+        if self.use_datadescriptor:
             # Set these to zero because we write them after the file data
             CRC = compress_size = file_size = 0
         else:
@@ -678,7 +678,7 @@ class CRCZipDecrypter(BaseDecrypter):
         header = fileobj.read(self.encryption_header_length)
         h = self.decrypt(header[0:12])
 
-        if self.zinfo.use_datadescripter:
+        if self.zinfo.use_datadescriptor:
             # compare against the file type from extended local headers
             check_byte = (self.zinfo._raw_time >> 8) & 0xff
         else:
@@ -1308,7 +1308,7 @@ class _ZipWriteFile(io.BufferedIOBase):
             self._zinfo.file_size = self._file_size
 
             # Write updated header info
-            if self._zinfo.use_datadescripter:
+            if self._zinfo.use_datadescriptor:
                 # Write CRC and file sizes after the file data
                 fmt = '<LLQQ' if self._zip64 else '<LLLL'
                 self._fileobj.write(struct.pack(fmt, _DD_SIGNATURE, self._zinfo.CRC,
