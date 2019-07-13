@@ -421,52 +421,27 @@ ABC hierarchy::
 
         - :attr:`__name__`
             The module's fully-qualified name.
-            It is ``'__main__'`` for non-package modules run from the file
-            system, non-package modules run from standard input and non-package
-            modules run from the module namespace.
 
         - :attr:`__file__`
-            The place from which the module's data was imported.  Its value and
-            meaning is up to the finder.
-            It is the relative path for modules run from the file system, the
-            absolute path for imported modules and modules run from the module
-            namespace and ``'<stdin>'`` for non-package modules run from
-            standard input.
-            It is not set for imported namespace packages, imported built-in
-            modules and imported frozen modules.
+            The location (usually filename) from which the module was imported.
+            It is not set on all modules (e.g. built-in modules).
 
         - :attr:`__cached__`
-            The location of the module's cached data.
-            It is the relative path for packages run from the file system and
-            the absolute path for imported modules and modules run from the
-            module namespace.
-            It is not set for non-package modules run from the file system,
-            non-package modules run from standard input, imported namespace
-            packages, imported built-in modules and imported frozen modules.
+            The path to where a compiled version of the module is stored.
+            It is not set when the attribute would be inappropriate.
 
         - :attr:`__path__`
-            The (possibly empty) iterable of all locations to search (i.e. the
-            search path) when looking for the package's submodules.  Order is
-            significant. ``__path__`` is passed to finders instead of
-            ``sys.metapath`` during import of the package's submodules.
-            It is not set for non-package modules, packages run from the file
-            system and packages run from the module namespace.
+            The (possibly empty) iterable specifying the submodule search path
+            within a package.
+            It is not set on non-package modules.
 
         - :attr:`__package__`
-            The module's ``__spec.__name`` attribute for imported packages and
-            packages run from the module namespace, the parent package's
-            ``__spec__.name`` attribute for imported non-package submodules and
-            non-paclage submodules run from the module namespace and ``''`` for
-            packages run from the file system, imported non-package top-level
-            modules and non-package top-level modules run from the module
-            namespace.
-            The :func:`importlib.util.module_for_loader` decorator can handle
-            the details for :attr:`__package__`.
+            The fully-qualified name of the package the module is in (or the
+            empty string for top-level modules).  For packages, it is the same
+            as ``__name__``.
 
         - :attr:`__loader__`
             The loader used when the module was imported.
-            The :func:`importlib.util.module_for_loader` decorator can handle
-            the details for :attr:`__package__`.
 
         When :meth:`exec_module` is available then backwards-compatible
         functionality is provided.
