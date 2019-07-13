@@ -434,12 +434,16 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
     while (1) {
         /* Find the end of the string or the next escape */
         Py_UCS4 c = 0;
-        for (next = end; next < len; next++) {
-            c = PyUnicode_READ(kind, buf, next);
-            if (c == '"' || c == '\\') {
+        next = end;
+        /* This is a tight loop in a hot path so we try to avoid
+           MOV from the register variable into memory. See bpo-37587 */
+        for (Py_UCS4 c_in = 0; next < len; next++) {
+            c_in = PyUnicode_READ(kind, buf, next);
+            if (c_in == '"' || c_in == '\\') {
+                c = c_in;
                 break;
             }
-            else if (strict && c <= 0x1f) {
+            else if (c_in <= 0x1f && strict) {
                 raise_errmsg("Invalid control character at", pystr, next);
                 goto bail;
             }
