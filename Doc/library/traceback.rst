@@ -32,6 +32,9 @@ The module defines the following functions:
    ``sys.stderr``; otherwise it should be an open file or file-like object to
    receive the output.
 
+   See also :func:`faulthandler.dump_traceback` which can be used to print the
+   current traceback of all or the current thread.
+
    .. versionchanged:: 3.5
        Added negative *limit* support.
 
