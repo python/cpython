@@ -481,6 +481,60 @@ class ZipInfo (object):
         dt = self.date_time
         return dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
 
+    def encode_local_header(self, *, filename, extract_version, reserved,
+                            flag_bits, compress_type, dostime, dosdate, crc,
+                            compress_size, file_size, extra):
+        header = struct.pack(
+            structFileHeader,
+            stringFileHeader,
+            extract_version,
+            reserved,
+            flag_bits,
+            compress_type,
+            dostime,
+            dosdate,
+            crc,
+            compress_size,
+            file_size,
+            len(filename),
+            len(extra)
+        )
+        return header + filename + extra
+
+    def zip64_local_header(self, zip64, file_size, compress_size):
+        """If zip64 is required, return encoded extra block and other
+        parameters which may alter the local file header.
+
+        The local zip64 entry requires that, if the zip64 block is present, it
+        must contain both file_size and compress_size. This is different to the
+        central directory zip64 extra block which requires only fields which
+        need the extra zip64 size be present in the extra block (zip app note
+        4.5.3).
+        """
+        min_version = 0
+        requires_zip64 = file_size > ZIP64_LIMIT or compress_size > ZIP64_LIMIT
+        if zip64 is None:
+            zip64 = requires_zip64
+        if zip64:
+            extra = struct.pack(
+                '<HHQQ',
+                EXTRA_ZIP64,
+                16,  # QQ
+                file_size,
+                compress_size
+            )
+        else:
+            extra = b''
+        if requires_zip64:
+            if not zip64:
+                raise LargeZipFile("Filesize would require ZIP64 extensions")
+            # File is larger than what fits into a 4 byte integer,
+            # fall back to the ZIP64 extension
+            file_size = 0xffffffff
+            compress_size = 0xffffffff
+            min_version = ZIP64_VERSION
+        return extra, file_size, compress_size, min_version
+
     def FileHeader(self, zip64=None):
         """Return the per-file header as a bytes object."""
         if self.use_datadescriptor:
@@ -491,23 +545,15 @@ class ZipInfo (object):
             compress_size = self.compress_size
             file_size = self.file_size
 
-        extra = self.extra
-
+        # There are reports that windows 7 can only read zip 64 archives if the
+        # zip 64 extra block is the first extra block present.
         min_version = 0
-        if zip64 is None:
-            zip64 = file_size > ZIP64_LIMIT or compress_size > ZIP64_LIMIT
-        if zip64:
-            fmt = '<HHQQ'
-            extra = extra + struct.pack(fmt,
-                                        1, struct.calcsize(fmt)-4, file_size, compress_size)
-        if file_size > ZIP64_LIMIT or compress_size > ZIP64_LIMIT:
-            if not zip64:
-                raise LargeZipFile("Filesize would require ZIP64 extensions")
-            # File is larger than what fits into a 4 byte integer,
-            # fall back to the ZIP64 extension
-            file_size = 0xffffffff
-            compress_size = 0xffffffff
-            min_version = ZIP64_VERSION
+        (extra,
+         file_size,
+         compress_size,
+         zip64_min_version,
+         ) = self.zip64_local_header(zip64, file_size, compress_size)
+        min_version = min(min_version, zip64_min_version)
 
         if self.compress_type == ZIP_BZIP2:
             min_version = max(BZIP2_VERSION, min_version)
@@ -517,12 +563,19 @@ class ZipInfo (object):
         self.extract_version = max(min_version, self.extract_version)
         self.create_version = max(min_version, self.create_version)
         filename, flag_bits = self._encodeFilenameFlags()
-        header = struct.pack(structFileHeader, stringFileHeader,
-                             self.extract_version, self.reserved, flag_bits,
-                             self.compress_type, self.dostime, self.dosdate,
-                             CRC, compress_size, file_size,
-                             len(filename), len(extra))
-        return header + filename + extra
+        return self.encode_local_header(
+            filename=filename,
+            extract_version=self.extract_version,
+            reserved=self.reserved,
+            flag_bits=flag_bits,
+            compress_type=self.compress_type,
+            dostime=self.dostime,
+            dosdate=self.dosdate,
+            crc=CRC,
+            compress_size=compress_size,
+            file_size=file_size,
+            extra=extra
+        )
 
     def _encodeFilenameFlags(self):
         try:
