@@ -188,15 +188,18 @@ def parse_shebang(shebangline):
     parse_shebang(b'#!/usr/bin/python -f sfj') --> (b'f',b'sfj')
     """
     end = len(shebangline)
-    start = shebangline.find(b' -', 0, end) + 2  # .find() returns index at space
-    if chr(shebangline[start]).isalpha():
-        flags = shebangline[start:end].split()
-        args = b''
-        if len(flags) > 1:
-            args = b' '.join(flags[1:])
-        flags = flags[0]
-        return flags, args
-    return b'', b''
+    start = shebangline.find(b' -', 0, end)  # .find() returns index at space
+    if start == -1:
+        return b'', b''
+
+    start += 2
+    flags = shebangline[start:end].split()
+    args = b''
+    if len(flags) > 1:
+        args = b' '.join(flags[1:])
+    flags = flags[0]
+    return flags, args
+
 
 
 def fixline(line):
@@ -206,21 +209,22 @@ def fixline(line):
     if b"python" not in line:
         return line
 
-    fixedline = b'#! ' + new_interpreter
-    if add_flag is None:
-        return fixedline + b'\n'
+    if add_flag is not None:
+        flags, args = parse_shebang(line)
+        if args:
+            args = b' ' + args
 
-    flags, args = parse_shebang(line)
-    if args:
-        args = b' ' + args
+        if flags == b'' and add_flag == b'':
+            flags = b''
 
-    if flags == b'' and add_flag == b'':
-        return fixedline + b'\n'
+        elif add_flag in flags:
+            flags = b' -' + flags + args
 
-    if add_flag in flags:
-        return fixedline + b' -' + flags + args + b'\n'
-
-    return fixedline + b' -' + add_flag + flags + args + b'\n'
+        else:
+            flags = b' -' + add_flag + flags + args
+    else:
+        flags = b''
+    return b'#! ' + new_interpreter + flags + b'\n'
 
 
 if __name__ == '__main__':
