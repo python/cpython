@@ -942,7 +942,7 @@ form.
       >>> print('|'.join(map(re.escape, sorted(operators, reverse=True))))
       /|\-|\+|\*\*|\*
 
-   This functions must not be used for the replacement string in :func:`sub`
+   This function must not be used for the replacement string in :func:`sub`
    and :func:`subn`, only backslashes should be escaped.  For example::
 
       >>> digits_re = r'\d+'
