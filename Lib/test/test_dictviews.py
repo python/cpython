@@ -68,9 +68,15 @@ class DictSetTest(unittest.TestCase):
 
     def test_dict_values(self):
         d = {1: 10, "a": "ABC"}
+        e = d.copy()
+        f = {1: 11, "a": "CBA"}
         values = d.values()
+
         self.assertEqual(set(values), {10, "ABC"})
         self.assertEqual(len(values), 2)
+        self.assertEqual(d.values(), d.values())
+        self.assertEqual(d.values(), e.values())
+        self.assertNotEqual(d.values(), f.values())
 
     def test_dict_repr(self):
         d = {1: 10, "a": "ABC"}

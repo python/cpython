@@ -4044,10 +4044,10 @@ dictview_richcompare(PyObject *self, PyObject *other, int op)
     PyObject *result;
 
     assert(self != NULL);
-    assert(PyDictViewSet_Check(self));
+    assert(PyDictViewSet_Check(self) || PyDictValues_Check(self));
     assert(other != NULL);
 
-    if (!PyAnySet_Check(other) && !PyDictViewSet_Check(other))
+    if (!PyAnySet_Check(other) && !(PyDictViewSet_Check(other) || PyDictValues_Check(other)))
         Py_RETURN_NOTIMPLEMENTED;
 
     len_self = PyObject_Size(self);
@@ -4527,7 +4527,7 @@ PyTypeObject PyDictValues_Type = {
     0,                                          /* tp_doc */
     (traverseproc)dictview_traverse,            /* tp_traverse */
     0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
+    dictview_richcompare,                       /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     (getiterfunc)dictvalues_iter,               /* tp_iter */
     0,                                          /* tp_iternext */
