@@ -646,7 +646,7 @@ m_remainder(double x, double y)
            Warning: some subtlety here. What we *want* to know at this point is
            whether the remainder m is less than, equal to, or greater than half
            of absy. However, we can't do that comparison directly because we
-           can't be sure that 0.5*absy is representable (the mutiplication
+           can't be sure that 0.5*absy is representable (the multiplication
            might incur precision loss due to underflow). So instead we compare
            m with the complement c = absy - m: m < 0.5*absy if and only if m <
            c, and so on. The catch is that absy - m might also not be
