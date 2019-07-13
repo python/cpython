@@ -553,11 +553,9 @@ the module.
 .. attribute:: __package__
 
    The ``__package__`` attribute must be set to the fully-qualified name
-   of the package the module is in.  When the module is a package, it is
-   set to its ``__name__`` attribute.  When the module is not a package,
-   it is set to the empty string on top-level modules and to the parent
-   package's ``__name__`` attribute on submodules.  See :pep:`366` for
-   further details.
+   of the package the module is in (or the empty string for top-level
+   modules).  For packages, it is the same as ``__name__``.  See
+   :pep:`366` for further details.
 
    This attribute is used instead of ``__name__`` to calculate explicit
    relative imports for main modules, as defined in :pep:`366`.  It is
