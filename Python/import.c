@@ -2249,6 +2249,9 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 
     mod = _PyImport_FindExtensionObject(name, path);
     if (mod != NULL || PyErr_Occurred()) {
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
+        }
         Py_DECREF(name);
         Py_DECREF(path);
         Py_XINCREF(mod);
