@@ -442,8 +442,9 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             }
             /* Defer the strict error until outside this (hot) loop. */
             /* See bpo-37587 */
-            if (c <= 0x1f && invalid < 0)
-              invalid = next;
+            if (c <= 0x1f && invalid < 0) {
+                invalid = next;
+            }
         }
         if (strict && invalid >= 0) {
             raise_errmsg("Invalid control character at", pystr, invalid);
