@@ -465,11 +465,18 @@ class ZipInfo (object):
         """
         return self.flag_bits & _MASK_USE_DATA_DESCRIPTOR
 
+    @property
+    def dosdate(self):
+        dt = self.date_time
+        return (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
+
+    @property
+    def dostime(self):
+        dt = self.date_time
+        return dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
+
     def FileHeader(self, zip64=None):
         """Return the per-file header as a bytes object."""
-        dt = self.date_time
-        dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
-        dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
         if self.use_datadescriptor:
             # Set these to zero because we write them after the file data
             CRC = compress_size = file_size = 0
@@ -506,8 +513,8 @@ class ZipInfo (object):
         filename, flag_bits = self._encodeFilenameFlags()
         header = struct.pack(structFileHeader, stringFileHeader,
                              self.extract_version, self.reserved, flag_bits,
-                             self.compress_type, dostime, dosdate, CRC,
-                             compress_size, file_size,
+                             self.compress_type, self.dostime, self.dosdate,
+                             CRC, compress_size, file_size,
                              len(filename), len(extra))
         return header + filename + extra
 
@@ -1971,9 +1978,6 @@ class ZipFile:
 
     def _write_end_record(self):
         for zinfo in self.filelist:         # write central directory
-            dt = zinfo.date_time
-            dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
-            dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
             extra = []
             if zinfo.file_size > ZIP64_LIMIT \
                or zinfo.compress_size > ZIP64_LIMIT:
@@ -2014,7 +2018,8 @@ class ZipFile:
                 centdir = struct.pack(structCentralDir,
                                       stringCentralDir, create_version,
                                       zinfo.create_system, extract_version, zinfo.reserved,
-                                      flag_bits, zinfo.compress_type, dostime, dosdate,
+                                      flag_bits, zinfo.compress_type,
+                                      zinfo.dostime, zinfo.dosdate,
                                       zinfo.CRC, compress_size, file_size,
                                       len(filename), len(extra_data), len(zinfo.comment),
                                       0, zinfo.internal_attr, zinfo.external_attr,
@@ -2022,8 +2027,8 @@ class ZipFile:
             except DeprecationWarning:
                 print((structCentralDir, stringCentralDir, create_version,
                        zinfo.create_system, extract_version, zinfo.reserved,
-                       zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
-                       zinfo.CRC, compress_size, file_size,
+                       zinfo.flag_bits, zinfo.compress_type, zinfo.dostime,
+                       zinfo.dosdate, zinfo.CRC, compress_size, file_size,
                        len(zinfo.filename), len(extra_data), len(zinfo.comment),
                        0, zinfo.internal_attr, zinfo.external_attr,
                        header_offset), file=sys.stderr)
