@@ -1072,19 +1072,22 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
 
 FUNC1(acos, acos, 0,
       "acos($module, x, /)\n--\n\n"
-      "Return the arc cosine (measured in radians) of x.")
+      "Return the arc cosine (measured in radians) of x.\n\n"
+      "The result is between 0 and pi.")
 FUNC1(acosh, m_acosh, 0,
       "acosh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic cosine of x.")
 FUNC1(asin, asin, 0,
       "asin($module, x, /)\n--\n\n"
-      "Return the arc sine (measured in radians) of x.")
+      "Return the arc sine (measured in radians) of x.\n\n"
+      "The result is between -pi/2 and pi/2.")
 FUNC1(asinh, m_asinh, 0,
       "asinh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic sine of x.")
 FUNC1(atan, atan, 0,
       "atan($module, x, /)\n--\n\n"
-      "Return the arc tangent (measured in radians) of x.")
+      "Return the arc tangent (measured in radians) of x.\n\n"
+      "The result is between -pi/2 and pi/2.")
 FUNC2(atan2, m_atan2,
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
