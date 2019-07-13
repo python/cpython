@@ -454,10 +454,14 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     /* adjust boundaries */
     if (start < 0)
+        start += length;
+    if (start < 0)
         start = 0;
     else if (start > length)
         start = length;
 
+    if (end < 0)
+        end += length;
     if (end < 0)
         end = 0;
     else if (end > length)

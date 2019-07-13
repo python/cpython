@@ -441,6 +441,32 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.findall(r"(a|(b))", "aba"),
                          [("a", ""),("b", "b"),("a", "")])
 
+    def test_bug_7940(self):
+        # Issue 7940: re.finditer and re.findall should support negative end positions
+        pat = re.compile(".")
+        self.assertEqual(pat.findall("abcd", 1, 3), ['b', 'c'])
+        self.assertEqual(pat.findall("abcd", 1, -1), ['b', 'c'])
+        self.assertEqual(pat.findall("abcd", -3, -1), ['b', 'c'])
+        self.assertEqual(pat.findall("abcd", -3, 3), ['b', 'c'])
+        self.assertEqual(pat.findall("abcd", -1, 1), [])
+        self.assertEqual(pat.findall("abcd", -1, -3), [])
+        self.assertEqual(pat.findall("abcd", pos=1, endpos=-1), ['b', 'c'])
+
+        self.assertEqual([m[0] for m in pat.finditer("abcd", 1, 3)],
+                         ['b', 'c'])
+        self.assertEqual([m[0] for m in pat.finditer("abcd", 1, -1)],
+                         ['b', 'c'])
+        self.assertEqual([m[0] for m in pat.finditer("abcd", -3, -1)],
+                         ['b', 'c'])
+        self.assertEqual([m[0] for m in pat.finditer("abcd", -3, 3)],
+                         ['b', 'c'])
+        self.assertEqual([m[0] for m in pat.finditer("abcd", -1, 1)],
+                         [])
+        self.assertEqual([m[0] for m in pat.finditer("abcd", -1, -3)],
+                         [])
+        self.assertEqual([m[0] for m in pat.finditer("abcd", pos=1,
+                                                     endpos=-1)], ['b', 'c'])
+
     def test_re_match(self):
         for string in 'a', S('a'):
             self.assertEqual(re.match('a', string).groups(), ())
