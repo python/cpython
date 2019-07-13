@@ -1,0 +1,1 @@
+Update SocketType to keep back compatible
