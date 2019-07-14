@@ -977,7 +977,7 @@ Is there an equivalent to Perl's chomp() for removing trailing newlines from str
 
 You can use ``S.rstrip("\r\n")`` to remove all occurrences of any line
 terminator from the end of the string ``S`` without removing other trailing
-whitespace.  If the string ``S`` represents more than one line, with several
+:term:`whitespace`.  If the string ``S`` represents more than one line, with several
 empty lines at the end, the line terminators for all the blank lines will
 be removed::
 
@@ -997,7 +997,7 @@ Is there a scanf() or sscanf() equivalent?
 Not as such.
 
 For simple input parsing, the easiest approach is usually to split the line into
-whitespace-delimited words using the :meth:`~str.split` method of string objects
+:term:`whitespace`-delimited words using the :meth:`~str.split` method of string objects
 and then convert decimal strings to numeric values using :func:`int` or
 :func:`float`.  ``split()`` supports an optional "sep" parameter which is useful
 if the line uses something other than whitespace as a separator.

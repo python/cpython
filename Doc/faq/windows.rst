@@ -271,7 +271,7 @@ this respect, and is easily configured to use spaces: Take :menuselection:`Tools
 size" to 4, and select the "Insert spaces" radio button.
 
 Python raises :exc:`IndentationError` or :exc:`TabError` if mixed tabs
-and spaces are causing problems in leading whitespace.
+and spaces are causing problems in leading :term:`whitespace`.
 You may also run the :mod:`tabnanny` module to check a directory tree
 in batch mode.
 
