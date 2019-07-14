@@ -1867,7 +1867,7 @@ If the argument is omitted or None, strip leading and trailing ASCII whitespace.
 
 static PyObject *
 bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes)
-/*[clinic end generated code: output=c7c228d3bd104a1b input=8a354640e4e0b3ef]*/
+/*[clinic end generated code: output=760412661a34ad5a input=ef7bb59b09c21d62]*/
 {
     return do_argstrip(self, BOTHSTRIP, bytes);
 }
@@ -1880,12 +1880,12 @@ bytearray.lstrip
 
 Strip leading bytes contained in the argument.
 
-If the argument is omitted or None, strip leading  ASCII whitespace.
+If the argument is omitted or None, strip leading ASCII whitespace.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
-/*[clinic end generated code: output=28602e586f524e82 input=9baff4398c3f6857]*/
+/*[clinic end generated code: output=d005c9d0ab909e66 input=80843f975dd7c480]*/
 {
     return do_argstrip(self, LEFTSTRIP, bytes);
 }
@@ -1903,7 +1903,7 @@ If the argument is omitted or None, strip trailing ASCII whitespace.
 
 static PyObject *
 bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
-/*[clinic end generated code: output=547e3815c95447da input=b78af445c727e32b]*/
+/*[clinic end generated code: output=030e2fbd2f7276bd input=e728b994954cfd91]*/
 {
     return do_argstrip(self, RIGHTSTRIP, bytes);
 }
