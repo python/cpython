@@ -48,7 +48,7 @@ additional methods of invocation:
   appropriately named script from that directory.
 * When called with ``-c command``, it executes the Python statement(s) given as
   *command*.  Here *command* may contain multiple statements separated by
-  newlines. Leading whitespace is significant in Python statements!
+  newlines. Leading :term:`whitespace` is significant in Python statements!
 * When called with ``-m module-name``, the given module is located on the
   Python module path and executed as a script.
 
@@ -62,7 +62,7 @@ source.
 .. cmdoption:: -c <command>
 
    Execute the Python code in *command*.  *command* can be one or more
-   statements separated by newlines, with significant leading whitespace as in
+   statements separated by newlines, with significant leading :term:`whitespace` as in
    normal module code.
 
    If this option is given, the first element of :data:`sys.argv` will be

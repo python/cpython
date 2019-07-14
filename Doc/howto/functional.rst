@@ -328,7 +328,7 @@ Generator expressions and list comprehensions
 Two common operations on an iterator's output are 1) performing some operation
 for every element, 2) selecting a subset of elements that meet some condition.
 For example, given a list of strings, you might want to strip off trailing
-whitespace from each line or extract all the strings containing a given
+:term:`whitespace` from each line or extract all the strings containing a given
 substring.
 
 List comprehensions and generator expressions (short form: "listcomps" and

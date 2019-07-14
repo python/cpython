@@ -505,7 +505,7 @@ out.  If you supply the :const:`re.ASCII` flag to
 
 Similarly, ``\w`` matches a wide variety of Unicode characters but
 only ``[a-zA-Z0-9_]`` in bytes or if :const:`re.ASCII` is supplied,
-and ``\s`` will match either Unicode whitespace characters or
+and ``\s`` will match either Unicode :term:`whitespace` characters or
 ``[ \t\n\r\f\v]``.
 
 

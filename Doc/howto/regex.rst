@@ -110,7 +110,7 @@ meaning: ``\[`` or ``\\``.
 Some of the special sequences beginning with ``'\'`` represent
 predefined sets of characters that are often useful, such as the set
 of digits, the set of letters, or the set of anything that isn't
-whitespace.
+:term:`whitespace`.
 
 Let's take an example: ``\w`` matches any alphanumeric character.  If
 the regex pattern is expressed in bytes, this is equivalent to the
@@ -134,11 +134,11 @@ category in the Unicode database.
    Matches any non-digit character; this is equivalent to the class ``[^0-9]``.
 
 ``\s``
-   Matches any whitespace character; this is equivalent to the class ``[
+   Matches any :term:`whitespace` character; this is equivalent to the class ``[
    \t\n\r\f\v]``.
 
 ``\S``
-   Matches any non-whitespace character; this is equivalent to the class ``[^
+   Matches any non-:term:`whitespace` character; this is equivalent to the class ``[^
    \t\n\r\f\v]``.
 
 ``\w``
@@ -150,7 +150,7 @@ category in the Unicode database.
    ``[^a-zA-Z0-9_]``.
 
 These sequences can be included inside a character class.  For example,
-``[\s,.]`` is a character class that will match any whitespace character, or
+``[\s,.]`` is a character class that will match any :term:`whitespace` character, or
 ``','`` or ``'.'``.
 
 The final metacharacter in this section is ``.``.  It matches anything except a
@@ -637,7 +637,7 @@ of each one.
 
    This flag allows you to write regular expressions that are more readable by
    granting you more flexibility in how you can format them.  When this flag has
-   been specified, whitespace within the RE string is ignored, except when the
+   been specified, :term:`whitespace` within the RE string is ignored, except when the
    whitespace is in a character class or preceded by an unescaped backslash; this
    lets you organize and indent the RE more clearly.  This flag also lets you put
    comments within a RE that will be ignored by the engine; comments are marked by
@@ -743,7 +743,7 @@ given location, they can obviously be matched an infinite number of times.
 ``\b``
    Word boundary.  This is a zero-width assertion that matches only at the
    beginning or end of a word.  A word is defined as a sequence of alphanumeric
-   characters, so the end of a word is indicated by whitespace or a
+   characters, so the end of a word is indicated by :term:`whitespace` or a
    non-alphanumeric character.
 
    The following example matches ``class`` only when it's a complete word; it won't
@@ -1082,7 +1082,7 @@ The :meth:`~re.Pattern.split` method of a pattern splits a string apart
 wherever the RE matches, returning a list of the pieces. It's similar to the
 :meth:`~str.split` method of strings but provides much more generality in the
 delimiters that you can split by; string :meth:`!split` only supports splitting by
-whitespace or by a fixed string.  As you'd expect, there's a module-level
+:term:`whitespace` or by a fixed string.  As you'd expect, there's a module-level
 :func:`re.split` function, too.
 
 
