@@ -535,6 +535,47 @@ class ZipInfo (object):
             min_version = ZIP64_VERSION
         return extra, file_size, compress_size, min_version
 
+    def zip64_central_header(self):
+        zip64_fields = []
+        if (self.file_size > ZIP64_LIMIT or
+                self.compress_size > ZIP64_LIMIT):
+            zip64_fields.append(self.file_size)
+            file_size = 0xffffffff
+            zip64_fields.append(self.compress_size)
+            compress_size = 0xffffffff
+        else:
+            file_size = self.file_size
+            compress_size = self.compress_size
+
+        if self.header_offset > ZIP64_LIMIT:
+            zip64_fields.append(self.header_offset)
+            header_offset = 0xffffffff
+        else:
+            header_offset = self.header_offset
+
+        # Here for completeness - We don't support writing disks with multiple
+        # parts so the number of disks is always going to be 0. Definitely not
+        # more than 65,535.
+        # ZIP64_DISK_LIMIT = (1 << 16) - 1
+        # if self.disk_start > ZIP64_DISK_LIMIT:
+        #     zip64_fields.append(self.disk_start)
+        #     disk_start = 0xffff
+        # else:
+        #     disk_start = self.disk_start
+
+        min_version = 0
+        if zip64_fields:
+            extra = struct.pack(
+                '<HH' + 'Q'*len(zip64_fields),
+                EXTRA_ZIP64,
+                8*len(zip64_fields),
+                *zip64_fields
+            )
+            min_version = ZIP64_VERSION
+        else:
+            extra = b''
+        return extra, file_size, compress_size, header_offset, min_version
+
     def FileHeader(self, zip64=None):
         """Return the per-file header as a bytes object."""
         if self.use_datadescriptor:
@@ -576,6 +617,61 @@ class ZipInfo (object):
             file_size=file_size,
             extra=extra
         )
+
+
+    def central_directory(self):
+        min_version = 0
+        # Strip the zip 64 extra block if present
+        extra_data = _strip_extra(self.extra, (EXTRA_ZIP64,))
+
+        (zip64_extra_data,
+         file_size,
+         compress_size,
+         header_offset,
+         zip64_min_version,
+         ) = self.zip64_central_header()
+
+        min_version = max(zip64_min_version, min_version)
+
+        # There are reports that windows 7 can only read zip 64 archives if the
+        # zip 64 extra block is the first extra block present. So we make sure
+        # the zip 64 block is first.
+        extra_data = zip64_extra_data + extra_data
+
+        if self.compress_type == ZIP_BZIP2:
+            min_version = max(BZIP2_VERSION, min_version)
+        elif self.compress_type == ZIP_LZMA:
+            min_version = max(LZMA_VERSION, min_version)
+
+        extract_version = max(min_version, self.extract_version)
+        create_version = max(min_version, self.create_version)
+        filename, flag_bits = self._encodeFilenameFlags()
+        # Writing multi disk archives is not supported so disks is always 0
+        disk_start = 0
+        try:
+            centdir = struct.pack(structCentralDir,
+                                  stringCentralDir, create_version,
+                                  self.create_system, extract_version, self.reserved,
+                                  flag_bits, self.compress_type,
+                                  self.dostime, self.dosdate,
+                                  self.CRC, compress_size, file_size,
+                                  len(filename), len(extra_data), len(self.comment),
+                                  disk_start, self.internal_attr, self.external_attr,
+                                  header_offset)
+        except DeprecationWarning:
+            # Is this for python 3.0 where struct would raise a
+            # DeprecationWarning instead of a struct.error when an integer
+            # conversion code was passed a non-integer?
+            # Is it still needed?
+            print((structCentralDir, stringCentralDir, create_version,
+                   self.create_system, extract_version, self.reserved,
+                   self.flag_bits, self.compress_type, self.dostime,
+                   self.dosdate, self.CRC, compress_size, file_size,
+                   len(self.filename), len(extra_data), len(self.comment),
+                   0, self.internal_attr, self.external_attr,
+                   header_offset), file=sys.stderr)
+            raise
+        return centdir + filename + extra_data
 
     def _encodeFilenameFlags(self):
         try:
@@ -2035,64 +2131,8 @@ class ZipFile:
 
     def _write_end_record(self):
         for zinfo in self.filelist:         # write central directory
-            extra = []
-            if zinfo.file_size > ZIP64_LIMIT \
-               or zinfo.compress_size > ZIP64_LIMIT:
-                extra.append(zinfo.file_size)
-                extra.append(zinfo.compress_size)
-                file_size = 0xffffffff
-                compress_size = 0xffffffff
-            else:
-                file_size = zinfo.file_size
-                compress_size = zinfo.compress_size
-
-            if zinfo.header_offset > ZIP64_LIMIT:
-                extra.append(zinfo.header_offset)
-                header_offset = 0xffffffff
-            else:
-                header_offset = zinfo.header_offset
-
-            extra_data = zinfo.extra
-            min_version = 0
-            if extra:
-                # Append a ZIP64 field to the extra's
-                extra_data = _strip_extra(extra_data, (1,))
-                extra_data = struct.pack(
-                    '<HH' + 'Q'*len(extra),
-                    1, 8*len(extra), *extra) + extra_data
-
-                min_version = ZIP64_VERSION
-
-            if zinfo.compress_type == ZIP_BZIP2:
-                min_version = max(BZIP2_VERSION, min_version)
-            elif zinfo.compress_type == ZIP_LZMA:
-                min_version = max(LZMA_VERSION, min_version)
-
-            extract_version = max(min_version, zinfo.extract_version)
-            create_version = max(min_version, zinfo.create_version)
-            try:
-                filename, flag_bits = zinfo._encodeFilenameFlags()
-                centdir = struct.pack(structCentralDir,
-                                      stringCentralDir, create_version,
-                                      zinfo.create_system, extract_version, zinfo.reserved,
-                                      flag_bits, zinfo.compress_type,
-                                      zinfo.dostime, zinfo.dosdate,
-                                      zinfo.CRC, compress_size, file_size,
-                                      len(filename), len(extra_data), len(zinfo.comment),
-                                      0, zinfo.internal_attr, zinfo.external_attr,
-                                      header_offset)
-            except DeprecationWarning:
-                print((structCentralDir, stringCentralDir, create_version,
-                       zinfo.create_system, extract_version, zinfo.reserved,
-                       zinfo.flag_bits, zinfo.compress_type, zinfo.dostime,
-                       zinfo.dosdate, zinfo.CRC, compress_size, file_size,
-                       len(zinfo.filename), len(extra_data), len(zinfo.comment),
-                       0, zinfo.internal_attr, zinfo.external_attr,
-                       header_offset), file=sys.stderr)
-                raise
+            centdir = zinfo.central_directory()
             self.fp.write(centdir)
-            self.fp.write(filename)
-            self.fp.write(extra_data)
             self.fp.write(zinfo.comment)
 
         pos2 = self.fp.tell()
