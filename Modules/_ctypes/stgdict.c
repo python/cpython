@@ -116,7 +116,7 @@ PyCStgDict_clone(StgDictObject *dst, StgDictObject *src)
     /* in bytes excluding the trailing NULL */
     /* pointer, so we have to add it in to  */
     /* to compute how many bytes to copy.   */
-    size = src->size + sizeof(ffi_type *);
+    size = src->size + max(sizeof(ffi_type *), src->align);
     dst->ffi_type_pointer.elements = PyMem_Malloc(size);
     if (dst->ffi_type_pointer.elements == NULL) {
         PyErr_NoMemory();
@@ -452,10 +452,9 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         union_size = 0;
         total_align = align ? align : 1;
         stgdict->ffi_type_pointer.type = FFI_TYPE_STRUCT;
-        base_len = size / sizeof(ffi_type *);   /* calculate the cumulative number */
-                                                /* of elements in the base class   */
-                                                /* so that all elements get copied */
-                                                /* to the child class              */
+        /* calculate the cumulative number of elements in the base class */
+        /* so that all elements get copied to the child class            */
+        base_len = size / max(sizeof(ffi_type *), align);
         stgdict->ffi_type_pointer.elements = PyMem_New(ffi_type *, base_len + len + 1);
         if (stgdict->ffi_type_pointer.elements == NULL) {
             PyErr_NoMemory();
