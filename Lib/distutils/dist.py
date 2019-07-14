@@ -26,6 +26,8 @@ from distutils.debug import DEBUG
 # to look for a Python module named after the command.
 command_re = re.compile(r'^[a-zA-Z]([a-zA-Z0-9_]*)$')
 
+longopt_revxlate = str.maketrans('_', '-')
+
 
 def _ensure_list(value, fieldname):
     if isinstance(value, str):
@@ -474,7 +476,6 @@ Common commands: (see '--help-commands' for more)
         parser.set_aliases({'licence': 'license'})
         args = parser.getopt(args=self.script_args, object=self)
         option_order = parser.get_option_order()
-        log.set_verbosity(self.verbose)
 
         # for display options we return immediately
         if self.handle_display_options(option_order):
@@ -483,6 +484,8 @@ Common commands: (see '--help-commands' for more)
             args = self._parse_command_opts(parser, args)
             if args is None:            # user asked for help (and got it)
                 return
+
+        log.set_verbosity(self.verbose)
 
         # Handle the cases of --help as a "global" option, ie.
         # "setup.py --help" and "setup.py --help command ...".  For the
@@ -597,11 +600,26 @@ Common commands: (see '--help-commands' for more)
             if help_option_found:
                 return
 
+        global_option_names = {n for n, *_ in self.global_options}
+        command_option_names = {n for n, *_ in cmd_class.user_options}
+
         # Put the options from the command-line into their official
         # holding pen, the 'command_options' dictionary.
         opt_dict = self.get_option_dict(command)
         for (name, value) in vars(opts).items():
-            opt_dict[name] = ("command line", value)
+            opt_name = name.translate(longopt_revxlate)
+            if (  opt_name in global_option_names
+                  and opt_name not in command_option_names):
+                alias = self.negative_opt.get(name)
+                try:
+                    if alias:
+                        setattr(self, alias, not value)
+                    else:
+                        setattr(self, name, value)
+                except ValueError as msg:
+                    raise DistutilsOptionError(msg)
+            else:
+                opt_dict[name] = ("command line", value)
 
         return args
 
