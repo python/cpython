@@ -47,6 +47,9 @@ class TrivialTests(unittest.TestCase):
     def test_trivial(self):
         # A couple trivial tests
 
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         self.assertRaises(ValueError, urllib.request.urlopen, 'bogus url')
 
         # XXX Name hacking to get this to work on Windows.
@@ -1290,6 +1293,10 @@ class HandlerTests(unittest.TestCase):
 
     def test_redirect_no_path(self):
         # Issue 14132: Relative redirect strips original path
+
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         real_class = http.client.HTTPConnection
         response1 = b"HTTP/1.1 302 Found\r\nLocation: ?query\r\n\r\n"
         http.client.HTTPConnection = test_urllib.fakehttp(response1)

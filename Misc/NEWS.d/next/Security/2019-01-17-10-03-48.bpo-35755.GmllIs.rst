@@ -1,5 +1,0 @@
-:func:`shutil.which` now uses ``os.confstr("CS_PATH")`` if available and if the
-:envvar:`PATH` environment variable is not set. Remove also the current
-directory from :data:`posixpath.defpath`. On Unix, :func:`shutil.which` and the
-:mod:`subprocess` module no longer search the executable in the current
-directory if the :envvar:`PATH` environment variable is not set.

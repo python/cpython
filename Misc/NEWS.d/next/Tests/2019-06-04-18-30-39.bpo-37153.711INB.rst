@@ -1,0 +1,2 @@
+``test_venv.test_mutiprocessing()`` now explicitly calls
+``pool.terminate()`` to wait until the pool completes.

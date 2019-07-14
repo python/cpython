@@ -1,6 +1,5 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
 
-import codecs
 import inspect
 import os
 import shutil
@@ -784,6 +783,25 @@ class TestOptionalsDisallowLongAbbreviation(ParserTestCase):
         ('', NS(foo=None, foodle=False, foonly=None)),
         ('--foo 3', NS(foo='3', foodle=False, foonly=None)),
         ('--foonly 7 --foodle --foo 2', NS(foo='2', foodle=True, foonly='7')),
+    ]
+
+
+class TestDisallowLongAbbreviationAllowsShortGrouping(ParserTestCase):
+    """Do not allow abbreviations of long options at all"""
+
+    parser_signature = Sig(allow_abbrev=False)
+    argument_signatures = [
+        Sig('-r'),
+        Sig('-c', action='count'),
+    ]
+    failures = ['-r', '-c -r']
+    successes = [
+        ('', NS(r=None, c=None)),
+        ('-ra', NS(r='a', c=None)),
+        ('-rcc', NS(r='cc', c=None)),
+        ('-cc', NS(r=None, c=2)),
+        ('-cc -ra', NS(r='a', c=2)),
+        ('-ccrcc', NS(r='cc', c=2)),
     ]
 
 # ================
@@ -1619,6 +1637,24 @@ class TestFileTypeOpenArgs(TestCase):
                 m.assert_called_with('foo', *args)
 
 
+class TestFileTypeMissingInitialization(TestCase):
+    """
+    Test that add_argument throws an error if FileType class
+    object was passed instead of instance of FileType
+    """
+
+    def test(self):
+        parser = argparse.ArgumentParser()
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument('-x', type=argparse.FileType)
+
+        self.assertEqual(
+            '%r is a FileType class object, instance of it must be passed'
+            % (argparse.FileType,),
+            str(cm.exception)
+        )
+
+
 class TestTypeCallable(ParserTestCase):
     """Test some callables as option/argument types"""
 
@@ -1785,6 +1821,15 @@ class TestActionRegistration(TestCase):
         self.assertEqual(parser.parse_args(['1']), NS(badger='foo[1]'))
         self.assertEqual(parser.parse_args(['42']), NS(badger='foo[42]'))
 
+
+class TestActionExtend(ParserTestCase):
+    argument_signatures = [
+        Sig('--foo', action="extend", nargs="+", type=str),
+    ]
+    failures = ()
+    successes = [
+        ('--foo f1 --foo f2 f3 f4', NS(foo=['f1', 'f2', 'f3', 'f4'])),
+    ]
 
 # ================
 # Subparsers tests

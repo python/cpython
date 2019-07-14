@@ -354,10 +354,10 @@ _PyWeakref_RefType = {
     sizeof(PyWeakReference),
     0,
     weakref_dealloc,            /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_reserved*/
+    0,                          /*tp_as_async*/
     (reprfunc)weakref_repr,     /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -455,7 +455,7 @@ proxy_checkref(PyWeakReference *proxy)
     method(PyObject *proxy, PyObject *Py_UNUSED(ignored)) { \
             _Py_IDENTIFIER(special); \
             UNWRAP(proxy); \
-                return _PyObject_CallMethodId(proxy, &PyId_##special, NULL); \
+                return _PyObject_CallMethodIdNoArgs(proxy, &PyId_##special); \
         }
 
 
@@ -674,10 +674,10 @@ _PyWeakref_ProxyType = {
     0,
     /* methods */
     (destructor)proxy_dealloc,          /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)proxy_repr,               /* tp_repr */
     &proxy_as_number,                   /* tp_as_number */
     &proxy_as_sequence,                 /* tp_as_sequence */
@@ -708,10 +708,10 @@ _PyWeakref_CallableProxyType = {
     0,
     /* methods */
     (destructor)proxy_dealloc,          /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (unaryfunc)proxy_repr,              /* tp_repr */
     &proxy_as_number,                   /* tp_as_number */
     &proxy_as_sequence,                 /* tp_as_sequence */
@@ -874,7 +874,7 @@ PyWeakref_GetObject(PyObject *ref)
 static void
 handle_callback(PyWeakReference *ref, PyObject *callback)
 {
-    PyObject *cbresult = PyObject_CallFunctionObjArgs(callback, ref, NULL);
+    PyObject *cbresult = _PyObject_CallOneArg(callback, (PyObject *)ref);
 
     if (cbresult == NULL)
         PyErr_WriteUnraisable(callback);

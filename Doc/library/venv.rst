@@ -97,7 +97,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
 .. class:: EnvBuilder(system_site_packages=False, clear=False, \
                       symlinks=False, upgrade=False, with_pip=False, \
-                      prompt=None)
+                      prompt=None, upgrade_deps=False)
 
     The :class:`EnvBuilder` class accepts the following keyword arguments on
     instantiation:
@@ -123,11 +123,16 @@ creation according to their needs, the :class:`EnvBuilder` class.
       (defaults to ``None`` which means directory name of the environment would
       be used).
 
+    * ``upgrade_deps`` -- Update the base venv modules to the latest on PyPI
+
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
 
     .. versionadded:: 3.6
        Added the ``prompt`` parameter
+
+    .. versionadded:: 3.8
+       Added the ``upgrade_deps`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
     provided ``EnvBuilder`` class as a base class.
@@ -234,13 +239,18 @@ creation according to their needs, the :class:`EnvBuilder` class.
 There is also a module-level convenience function:
 
 .. function:: create(env_dir, system_site_packages=False, clear=False, \
-                     symlinks=False, with_pip=False)
+                     symlinks=False, with_pip=False, prompt=None)
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
 
+    .. versionadded:: 3.3
+
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
+
+    .. versionchanged:: 3.6
+       Added the ``prompt`` parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------

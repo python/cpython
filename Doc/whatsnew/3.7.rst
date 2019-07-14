@@ -1307,7 +1307,7 @@ including failing the host name check now raises
 :exc:`~ssl.SSLCertVerificationError` and aborts the handshake with a proper
 TLS Alert message.  The new exception contains additional information.
 Host name validation can be customized with
-:attr:`SSLContext.host_flags <ssl.SSLContext.host_flags>`.
+:attr:`SSLContext.hostname_checks_common_name <ssl.SSLContext.hostname_checks_common_name>`.
 (Contributed by Christian Heimes in :issue:`31399`.)
 
 .. note::
@@ -1320,8 +1320,7 @@ The ``ssl`` module no longer sends IP addresses in SNI TLS extension.
 (Contributed by Christian Heimes in :issue:`32185`.)
 
 :func:`~ssl.match_hostname` no longer supports partial wildcards like
-``www*.example.org``. :attr:`SSLContext.host_flags <ssl.SSLContext.host_flags>`
-has partial wildcard matching disabled by default.
+``www*.example.org``.
 (Contributed by Mandeep Singh in :issue:`23033` and Christian Heimes in
 :issue:`31399`.)
 

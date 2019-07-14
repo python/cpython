@@ -3,7 +3,6 @@ from unittest import mock
 from test import support
 import subprocess
 import sys
-import platform
 import signal
 import io
 import itertools
@@ -21,16 +20,10 @@ import textwrap
 from test.support import FakePath
 
 try:
-    import ctypes
-except ImportError:
-    ctypes = None
-else:
-    import ctypes.util
-
-try:
     import _testcapi
 except ImportError:
     _testcapi = None
+
 
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
@@ -59,10 +52,14 @@ class BaseTestCase(unittest.TestCase):
         support.reap_children()
 
     def tearDown(self):
-        for inst in subprocess._active:
-            inst.wait()
-        subprocess._cleanup()
-        self.assertFalse(subprocess._active, "subprocess._active not empty")
+        if not mswindows:
+            # subprocess._active is not used on Windows and is set to None.
+            for inst in subprocess._active:
+                inst.wait()
+            subprocess._cleanup()
+            self.assertFalse(
+                subprocess._active, "subprocess._active not empty"
+            )
         self.doCleanups()
         support.reap_children()
 
@@ -304,6 +301,18 @@ class ProcessTestCase(BaseTestCase):
                                     "doesnotexist")
         self._assert_python([doesnotexist, "-c"], executable=sys.executable)
 
+    def test_bytes_executable(self):
+        doesnotexist = os.path.join(os.path.dirname(sys.executable),
+                                    "doesnotexist")
+        self._assert_python([doesnotexist, "-c"],
+                            executable=os.fsencode(sys.executable))
+
+    def test_pathlike_executable(self):
+        doesnotexist = os.path.join(os.path.dirname(sys.executable),
+                                    "doesnotexist")
+        self._assert_python([doesnotexist, "-c"],
+                            executable=FakePath(sys.executable))
+
     def test_executable_takes_precedence(self):
         # Check that the executable argument takes precedence over args[0].
         #
@@ -319,6 +328,16 @@ class ProcessTestCase(BaseTestCase):
         # Check that the executable argument replaces the default shell
         # when shell=True.
         self._assert_python([], executable=sys.executable, shell=True)
+
+    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    def test_bytes_executable_replaces_shell(self):
+        self._assert_python([], executable=os.fsencode(sys.executable),
+                            shell=True)
+
+    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    def test_pathlike_executable_replaces_shell(self):
+        self._assert_python([], executable=FakePath(sys.executable),
+                            shell=True)
 
     # For use in the test_cwd* tests below.
     def _normalize_cwd(self, cwd):
@@ -357,6 +376,11 @@ class ProcessTestCase(BaseTestCase):
         temp_dir = tempfile.gettempdir()
         temp_dir = self._normalize_cwd(temp_dir)
         self._assert_cwd(temp_dir, sys.executable, cwd=temp_dir)
+
+    def test_cwd_with_bytes(self):
+        temp_dir = tempfile.gettempdir()
+        temp_dir = self._normalize_cwd(temp_dir)
+        self._assert_cwd(temp_dir, sys.executable, cwd=os.fsencode(temp_dir))
 
     def test_cwd_with_pathlike(self):
         temp_dir = tempfile.gettempdir()
@@ -1473,6 +1497,34 @@ class RunFuncTestCase(BaseTestCase):
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
 
+    def test_run_with_pathlike_path(self):
+        # bpo-31961: test run(pathlike_object)
+        # the name of a command that can be run without
+        # any argumenets that exit fast
+        prog = 'tree.com' if mswindows else 'ls'
+        path = shutil.which(prog)
+        if path is None:
+            self.skipTest(f'{prog} required for this test')
+        path = FakePath(path)
+        res = subprocess.run(path, stdout=subprocess.DEVNULL)
+        self.assertEqual(res.returncode, 0)
+        with self.assertRaises(TypeError):
+            subprocess.run(path, stdout=subprocess.DEVNULL, shell=True)
+
+    def test_run_with_bytes_path_and_arguments(self):
+        # bpo-31961: test run([bytes_object, b'additional arguments'])
+        path = os.fsencode(sys.executable)
+        args = [path, '-c', b'import sys; sys.exit(57)']
+        res = subprocess.run(args)
+        self.assertEqual(res.returncode, 57)
+
+    def test_run_with_pathlike_path_and_arguments(self):
+        # bpo-31961: test run([pathlike_object, 'additional arguments'])
+        path = FakePath(sys.executable)
+        args = [path, '-c', 'import sys; sys.exit(57)']
+        res = subprocess.run(args)
+        self.assertEqual(res.returncode, 57)
+
     def test_capture_output(self):
         cp = self.run_python(("import sys;"
                               "sys.stdout.write('BDFL'); "
@@ -1650,16 +1702,15 @@ class POSIXProcessTestCase(BaseTestCase):
         # still indicates that it was called.
         try:
             output = subprocess.check_output(
-                    [sys.executable, "-c",
-                     "import os; print(os.getpgid(os.getpid()))"],
+                    [sys.executable, "-c", "import os; print(os.getsid(0))"],
                     start_new_session=True)
         except OSError as e:
             if e.errno != errno.EPERM:
                 raise
         else:
-            parent_pgid = os.getpgid(os.getpid())
-            child_pgid = int(output)
-            self.assertNotEqual(parent_pgid, child_pgid)
+            parent_sid = os.getsid(0)
+            child_sid = int(output)
+            self.assertNotEqual(parent_sid, child_sid)
 
     def test_run_abort(self):
         # returncode handles signal termination
@@ -2625,8 +2676,12 @@ class POSIXProcessTestCase(BaseTestCase):
         with support.check_warnings(('', ResourceWarning)):
             p = None
 
-        # check that p is in the active processes list
-        self.assertIn(ident, [id(o) for o in subprocess._active])
+        if mswindows:
+            # subprocess._active is not used on Windows and is set to None.
+            self.assertIsNone(subprocess._active)
+        else:
+            # check that p is in the active processes list
+            self.assertIn(ident, [id(o) for o in subprocess._active])
 
     def test_leak_fast_process_del_killed(self):
         # Issue #12650: on Unix, if Popen.__del__() was called before the
@@ -2647,8 +2702,12 @@ class POSIXProcessTestCase(BaseTestCase):
             p = None
 
         os.kill(pid, signal.SIGKILL)
-        # check that p is in the active processes list
-        self.assertIn(ident, [id(o) for o in subprocess._active])
+        if mswindows:
+            # subprocess._active is not used on Windows and is set to None.
+            self.assertIsNone(subprocess._active)
+        else:
+            # check that p is in the active processes list
+            self.assertIn(ident, [id(o) for o in subprocess._active])
 
         # let some time for the process to exit, and create a new Popen: this
         # should trigger the wait() of p
@@ -2660,7 +2719,11 @@ class POSIXProcessTestCase(BaseTestCase):
                 pass
         # p should have been wait()ed on, and removed from the _active list
         self.assertRaises(OSError, os.waitpid, pid, 0)
-        self.assertNotIn(ident, [id(o) for o in subprocess._active])
+        if mswindows:
+            # subprocess._active is not used on Windows and is set to None.
+            self.assertIsNone(subprocess._active)
+        else:
+            self.assertNotIn(ident, [id(o) for o in subprocess._active])
 
     def test_close_fds_after_preexec(self):
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")

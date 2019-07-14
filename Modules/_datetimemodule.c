@@ -1237,8 +1237,7 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
     if (tzinfo == Py_None)
         Py_RETURN_NONE;
 
-    result = _PyObject_CallMethodIdObjArgs(tzinfo, &PyId_tzname,
-                                           tzinfoarg, NULL);
+    result = _PyObject_CallMethodIdOneArg(tzinfo, &PyId_tzname, tzinfoarg);
 
     if (result == NULL || result == Py_None)
         return result;
@@ -1528,8 +1527,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = 1;
         }
         else if ((ch = *pin++) == '\0') {
-        /* Null byte follows %, copy only '%'. 
-         * 
+        /* Null byte follows %, copy only '%'.
+         *
          * Back the pin up one char so that we catch the null check
          * the next time through the loop.*/
             pin--;
@@ -1619,7 +1618,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         usednew += ntoappend;
         assert(usednew <= totalnew);
     }  /* end while() */
-    
+
     if (_PyBytes_Resize(&newfmt, usednew) < 0)
         goto Done;
     {
@@ -1659,7 +1658,7 @@ time_time(void)
     if (time != NULL) {
         _Py_IDENTIFIER(time);
 
-        result = _PyObject_CallMethodId(time, &PyId_time, NULL);
+        result = _PyObject_CallMethodIdNoArgs(time, &PyId_time);
         Py_DECREF(time);
     }
     return result;
@@ -1693,8 +1692,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
         return NULL;
     }
 
-    result = _PyObject_CallMethodIdObjArgs(time, &PyId_struct_time,
-                                           args, NULL);
+    result = _PyObject_CallMethodIdOneArg(time, &PyId_struct_time, args);
     Py_DECREF(time);
     Py_DECREF(args);
     return result;
@@ -1704,8 +1702,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
  * Miscellaneous helpers.
  */
 
-/* For various reasons, we need to use tp_richcompare instead of tp_reserved.
- * The comparisons here all most naturally compute a cmp()-like result.
+/* The comparisons here all most naturally compute a cmp()-like result.
  * This little helper turns that into a bool result for rich comparisons.
  */
 static PyObject *
@@ -1919,7 +1916,7 @@ get_float_as_integer_ratio(PyObject *floatobj)
     PyObject *ratio;
 
     assert(floatobj && PyFloat_Check(floatobj));
-    ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
+    ratio = _PyObject_CallMethodIdNoArgs(floatobj, &PyId_as_integer_ratio);
     if (ratio == NULL) {
         return NULL;
     }
@@ -2720,10 +2717,10 @@ static PyTypeObject PyDateTime_DeltaType = {
     sizeof(PyDateTime_Delta),                           /* tp_basicsize */
     0,                                                  /* tp_itemsize */
     0,                                                  /* tp_dealloc */
-    0,                                                  /* tp_print */
+    0,                                                  /* tp_vectorcall_offset */
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */
-    0,                                                  /* tp_reserved */
+    0,                                                  /* tp_as_async */
     (reprfunc)delta_repr,                               /* tp_repr */
     &delta_as_number,                                   /* tp_as_number */
     0,                                                  /* tp_as_sequence */
@@ -2895,8 +2892,7 @@ date_today(PyObject *cls, PyObject *dummy)
      * time.time() delivers; if someone were gonzo about optimization,
      * date.today() could get away with plain C time().
      */
-    result = _PyObject_CallMethodIdObjArgs(cls, &PyId_fromtimestamp,
-                                           time, NULL);
+    result = _PyObject_CallMethodIdOneArg(cls, &PyId_fromtimestamp, time);
     Py_DECREF(time);
     return result;
 }
@@ -3163,7 +3159,7 @@ date_isoformat(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 date_str(PyDateTime_Date *self)
 {
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, NULL);
+    return _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_isoformat);
 }
 
 
@@ -3189,7 +3185,7 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
                                       &format))
         return NULL;
 
-    tuple = _PyObject_CallMethodId((PyObject *)self, &PyId_timetuple, NULL);
+    tuple = _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_timetuple);
     if (tuple == NULL)
         return NULL;
     result = wrap_strftime((PyObject *)self, format, tuple,
@@ -3210,8 +3206,8 @@ date_format(PyDateTime_Date *self, PyObject *args)
     if (PyUnicode_GetLength(format) == 0)
         return PyObject_Str((PyObject *)self);
 
-    return _PyObject_CallMethodIdObjArgs((PyObject *)self, &PyId_strftime,
-                                         format, NULL);
+    return _PyObject_CallMethodIdOneArg((PyObject *)self, &PyId_strftime,
+                                        format);
 }
 
 /* ISO methods. */
@@ -3431,10 +3427,10 @@ static PyTypeObject PyDateTime_DateType = {
     sizeof(PyDateTime_Date),                            /* tp_basicsize */
     0,                                                  /* tp_itemsize */
     0,                                                  /* tp_dealloc */
-    0,                                                  /* tp_print */
+    0,                                                  /* tp_vectorcall_offset */
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */
-    0,                                                  /* tp_reserved */
+    0,                                                  /* tp_as_async */
     (reprfunc)date_repr,                                /* tp_repr */
     &date_as_number,                                    /* tp_as_number */
     0,                                                  /* tp_as_sequence */
@@ -3608,7 +3604,7 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     getinitargs = _PyObject_GetAttrId(self, &PyId___getinitargs__);
     if (getinitargs != NULL) {
-        args = _PyObject_CallNoArg(getinitargs);
+        args = PyObject_CallNoArgs(getinitargs);
         Py_DECREF(getinitargs);
         if (args == NULL) {
             return NULL;
@@ -3625,7 +3621,7 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     getstate = _PyObject_GetAttrId(self, &PyId___getstate__);
     if (getstate != NULL) {
-        state = _PyObject_CallNoArg(getstate);
+        state = PyObject_CallNoArgs(getstate);
         Py_DECREF(getstate);
         if (state == NULL) {
             Py_DECREF(args);
@@ -3681,10 +3677,10 @@ static PyTypeObject PyDateTime_TZInfoType = {
     sizeof(PyDateTime_TZInfo),                  /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -3920,10 +3916,10 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     sizeof(PyDateTime_TimeZone),      /* tp_basicsize */
     0,                                /* tp_itemsize */
     (destructor)timezone_dealloc,     /* tp_dealloc */
-    0,                                /* tp_print */
+    0,                                /* tp_vectorcall_offset */
     0,                                /* tp_getattr */
     0,                                /* tp_setattr */
-    0,                                /* tp_reserved */
+    0,                                /* tp_as_async */
     (reprfunc)timezone_repr,          /* tp_repr */
     0,                                /* tp_as_number */
     0,                                /* tp_as_sequence */
@@ -4176,7 +4172,7 @@ time_repr(PyDateTime_Time *self)
 static PyObject *
 time_str(PyDateTime_Time *self)
 {
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, NULL);
+    return _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_isoformat);
 }
 
 static PyObject *
@@ -4583,10 +4579,10 @@ static PyTypeObject PyDateTime_TimeType = {
     sizeof(PyDateTime_Time),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)time_dealloc,                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)time_repr,                        /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -5961,7 +5957,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 
     temp = (PyObject *)result;
     result = (PyDateTime_DateTime *)
-        _PyObject_CallMethodIdObjArgs(tzinfo, &PyId_fromutc, temp, NULL);
+        _PyObject_CallMethodIdOneArg(tzinfo, &PyId_fromutc, temp);
     Py_DECREF(temp);
 
     return result;
@@ -6299,10 +6295,10 @@ static PyTypeObject PyDateTime_DateTimeType = {
     sizeof(PyDateTime_DateTime),                /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)datetime_dealloc,               /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)datetime_repr,                    /* tp_repr */
     &datetime_as_number,                        /* tp_as_number */
     0,                                          /* tp_as_sequence */

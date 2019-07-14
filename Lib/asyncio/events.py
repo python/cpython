@@ -79,7 +79,9 @@ class Handle:
     def _run(self):
         try:
             self._context.run(self._callback, *self._args)
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             cb = format_helpers._format_callback_source(
                 self._callback, self._args)
             msg = f'Exception in callback {cb}'
@@ -298,7 +300,8 @@ class AbstractEventLoop:
             *, ssl=None, family=0, proto=0,
             flags=0, sock=None, local_addr=None,
             server_hostname=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            happy_eyeballs_delay=None, interleave=None):
         raise NotImplementedError
 
     async def create_server(

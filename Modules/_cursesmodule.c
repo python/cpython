@@ -2424,10 +2424,10 @@ PyTypeObject PyCursesWindow_Type = {
     0,                          /*tp_itemsize*/
     /* methods */
     (destructor)PyCursesWindow_Dealloc, /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     (getattrfunc)0,             /*tp_getattr*/
     (setattrfunc)0,             /*tp_setattr*/
-    0,                          /*tp_reserved*/
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2906,7 +2906,7 @@ _curses_getwin(PyObject *module, PyObject *file)
     if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0)
         goto error;
 
-    data = _PyObject_CallMethodId(file, &PyId_read, NULL);
+    data = _PyObject_CallMethodIdNoArgs(file, &PyId_read);
     if (data == NULL)
         goto error;
     if (!PyBytes_Check(data)) {

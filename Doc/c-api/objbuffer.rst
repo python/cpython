@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 Old Buffer Protocol
 -------------------

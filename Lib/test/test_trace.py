@@ -276,9 +276,8 @@ class TestFuncs(unittest.TestCase):
     def test_arg_errors(self):
         res = self.tracer.runfunc(traced_capturer, 1, 2, self=3, func=4)
         self.assertEqual(res, ((1, 2), {'self': 3, 'func': 4}))
-        with self.assertWarns(DeprecationWarning):
-            res = self.tracer.runfunc(func=traced_capturer, arg=1)
-        self.assertEqual(res, ((), {'arg': 1}))
+        with self.assertRaises(TypeError):
+            self.tracer.runfunc(func=traced_capturer, arg=1)
         with self.assertRaises(TypeError):
             self.tracer.runfunc()
 
@@ -474,7 +473,7 @@ class TestCommandLine(unittest.TestCase):
 
     def test_failures(self):
         _errors = (
-            (b'filename is missing: required with the main options', '-l', '-T'),
+            (b'progname is missing: required with the main options', '-l', '-T'),
             (b'cannot specify both --listfuncs and (--trace or --count)', '-lc'),
             (b'argument -R/--no-report: not allowed with argument -r/--report', '-rR'),
             (b'must specify one of --trace, --count, --report, --listfuncs, or --trackcalls', '-g'),
@@ -523,6 +522,11 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertIn('lines   cov%   module   (path)', stdout)
         self.assertIn(f'6   100%   {TESTFN}   ({filename})', stdout)
+
+    def test_run_as_module(self):
+        assert_python_ok('-m', 'trace', '-l', '--module', 'timeit', '-n', '1')
+        assert_python_failure('-m', 'trace', '-l', '--module', 'not_a_module_zzz')
+
 
 if __name__ == '__main__':
     unittest.main()

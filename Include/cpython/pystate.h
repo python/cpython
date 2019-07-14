@@ -6,12 +6,10 @@
 extern "C" {
 #endif
 
-#include "cpython/coreconfig.h"
+#include "cpython/initconfig.h"
 
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
-
-PyAPI_FUNC(_PyCoreConfig *) _PyInterpreterState_GetCoreConfig(PyInterpreterState *);
 
 PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
 
@@ -128,9 +126,6 @@ struct _ts {
 
     int coroutine_origin_tracking_depth;
 
-    PyObject *coroutine_wrapper;
-    int in_coroutine_wrapper;
-
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
 
@@ -153,7 +148,6 @@ struct _ts {
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
 
 PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
-PyAPI_FUNC(void) _PyState_ClearModules(void);
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error

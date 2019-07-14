@@ -1250,7 +1250,7 @@ _channel_finish_closing(struct _channel *chan) {
     // Do the things that would have been done in _channels_close().
     ref->chan = NULL;
     _channel_free(chan);
-};
+}
 
 /* "high"-level channel-related functions */
 
@@ -1740,7 +1740,7 @@ static PyTypeObject ChannelIDtype = {
     sizeof(channelid),              /* tp_basicsize */
     0,                              /* tp_itemsize */
     (destructor)channelid_dealloc,  /* tp_dealloc */
-    0,                              /* tp_print */
+    0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
     0,                              /* tp_as_async */

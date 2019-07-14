@@ -16,6 +16,9 @@ Is there a source code level debugger with breakpoints, single-stepping, etc.?
 
 Yes.
 
+Several debuggers for Python are described below, and the built-in function
+:func:`breakpoint` allows you to drop into any of them.
+
 The pdb module is a simple but adequate console-mode debugger for Python. It is
 part of the standard Python library, and is :mod:`documented in the Library
 Reference Manual <pdb>`. You can also write your own debugger by using the code
@@ -551,8 +554,8 @@ desired effect in a number of ways.
 5) Or bundle up values in a class instance::
 
       class callByRef:
-          def __init__(self, **args):
-              for (key, value) in args.items():
+          def __init__(self, /, **args):
+              for key, value in args.items():
                   setattr(self, key, value)
 
       def func4(args):
@@ -789,17 +792,13 @@ Its documentation looks like this::
       invoked using the three argument form.
 
 The slash at the end of the parameter list means that all three parameters are
-positional-only. Thus, calling :func:`pow` with keyword aguments would lead to
+positional-only. Thus, calling :func:`pow` with keyword arguments would lead to
 an error::
 
    >>> pow(x=3, y=4)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    TypeError: pow() takes no keyword arguments
-
-Note that as of this writing this is only documentational and no valid syntax
-in Python, although there is :pep:`570`, which proposes a syntax for
-position-only parameters in Python.
 
 
 Numbers and strings

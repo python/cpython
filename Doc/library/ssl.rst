@@ -139,6 +139,10 @@ purposes.
    *cadata* is given) or uses :meth:`SSLContext.load_default_certs` to load
    default CA certificates.
 
+   When :attr:`~SSLContext.keylog_filename` is supported and the environment
+   variable :envvar:`SSLKEYLOGFILE` is set, :func:`create_default_context`
+   enables key logging.
+
    .. note::
       The protocol, options, cipher and other settings may change to more
       restrictive values anytime without prior deprecation.  The values
@@ -171,6 +175,10 @@ purposes.
      ChaCha20/Poly1305 was added to the default cipher string.
 
      3DES was dropped from the default cipher string.
+
+   .. versionchanged:: 3.8
+
+      Support for key logging to :envvar:`SSLKEYLOGFILE` was added.
 
 
 Exceptions
@@ -665,7 +673,7 @@ Constants
 
 .. data:: PROTOCOL_SSLv23
 
-   Alias for data:`PROTOCOL_TLS`.
+   Alias for :data:`PROTOCOL_TLS`.
 
    .. deprecated:: 3.6
 
@@ -1055,6 +1063,7 @@ Constants
 .. attribute:: TLSVersion.TLSv1_3
 
    SSL 3.0 to TLS 1.3.
+
 
 SSL Sockets
 -----------
@@ -1821,7 +1830,7 @@ to speed up repeated connections from the same clients.
 
 .. attribute:: SSLContext.sslsocket_class
 
-   The return type of :meth:`SSLContext.wrap_sockets`, defaults to
+   The return type of :meth:`SSLContext.wrap_socket`, defaults to
    :class:`SSLSocket`. The attribute can be overridden on instance of class
    in order to return a custom subclass of :class:`SSLSocket`.
 
@@ -1831,7 +1840,7 @@ to speed up repeated connections from the same clients.
                                 server_hostname=None, session=None)
 
    Wrap the BIO objects *incoming* and *outgoing* and return an instance of
-   attr:`SSLContext.sslobject_class` (default :class:`SSLObject`). The SSL
+   :attr:`SSLContext.sslobject_class` (default :class:`SSLObject`). The SSL
    routines will read input data from the incoming BIO and write data to the
    outgoing BIO.
 
@@ -1901,6 +1910,20 @@ to speed up repeated connections from the same clients.
 
      This features requires OpenSSL 0.9.8f or newer.
 
+.. attribute:: SSLContext.keylog_filename
+
+   Write TLS keys to a keylog file, whenever key material is generated or
+   received. The keylog file is designed for debugging purposes only. The
+   file format is specified by NSS and used by many traffic analyzers such
+   as Wireshark. The log file is opened in append-only mode. Writes are
+   synchronized between threads, but not between processes.
+
+   .. versionadded:: 3.8
+
+   .. note::
+
+     This features requires OpenSSL 1.1.1 or newer.
+
 .. attribute:: SSLContext.maximum_version
 
    A :class:`TLSVersion` enum member representing the highest supported
@@ -1935,6 +1958,19 @@ to speed up repeated connections from the same clients.
      with OpenSSL 1.1.0g or newer.
 
    .. versionadded:: 3.7
+
+.. attribute:: SSLContext.num_tickets
+
+   Control the number of TLS 1.3 session tickets of a
+   :attr:`TLS_PROTOCOL_SERVER` context. The setting has no impact on TLS
+   1.0 to 1.2 connections.
+
+   .. note::
+
+     This attribute is not available unless the ssl module is compiled
+     with OpenSSL 1.1.1 or newer.
+
+   .. versionadded:: 3.8
 
 .. attribute:: SSLContext.options
 

@@ -182,6 +182,10 @@ ArgumentParser objects
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
 
+   .. versionchanged:: 3.8
+      In previous versions, *allow_abbrev* also disabled grouping of short
+      flags such as ``-vv`` to mean ``-v -v``.
+
 The following sections describe how each of these are used.
 
 
@@ -796,6 +800,15 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.add_argument('--version', action='version', version='%(prog)s 2.0')
     >>> parser.parse_args(['--version'])
     PROG 2.0
+
+* ``'extend'`` - This stores a list, and extends each argument value to the
+  list.
+  Example usage::
+
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
+    >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
+    Namespace(foo=['f1', 'f2', 'f3', 'f4'])
 
 You may also specify an arbitrary action by passing an Action subclass or
 other object that implements the same interface.  The recommended way to do

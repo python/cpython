@@ -42,6 +42,7 @@ LIBC="@LIBC@"
 SYSLIBS="$LIBM $LIBC"
 ABIFLAGS="@ABIFLAGS@"
 LIBS="@LIBPYTHON@ @LIBS@ $SYSLIBS"
+LIBS_EMBED="-lpython${VERSION}${ABIFLAGS} @LIBS@ $SYSLIBS"
 BASECFLAGS="@BASECFLAGS@"
 LDLIBRARY="@LDLIBRARY@"
 OPT="@OPT@"
@@ -53,6 +54,7 @@ SO="@EXT_SUFFIX@"
 PYTHONFRAMEWORK="@PYTHONFRAMEWORK@"
 INCDIR="-I$includedir/python${VERSION}${ABIFLAGS}"
 PLATINCDIR="-I$includedir/python${VERSION}${ABIFLAGS}"
+PY_EMBED=0
 
 # Scan for --help or unknown argument.
 for ARG in $*
@@ -61,6 +63,9 @@ do
         --help)
             exit_with_usage 0
         ;;
+        --embed)
+            PY_EMBED=1
+        ;;
         --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--abiflags|--configdir)
         ;;
         *)
@@ -68,6 +73,10 @@ do
         ;;
     esac
 done
+
+if [ $PY_EMBED = 1 ] ; then
+    LIBS="$LIBS_EMBED"
+fi
 
 for ARG in "$@"
 do

@@ -256,7 +256,7 @@ def _create_parser():
                        help='suppress error message boxes on Windows')
     group.add_argument('-F', '--forever', action='store_true',
                        help='run the specified tests in a loop, until an '
-                            'error happens')
+                            'error happens; imply --failfast')
     group.add_argument('--list-tests', action='store_true',
                        help="only write the name of tests that will be run, "
                             "don't execute them")
@@ -272,8 +272,10 @@ def _create_parser():
     group.add_argument('--junit-xml', dest='xmlpath', metavar='FILENAME',
                        help='writes JUnit-style XML results to the specified '
                             'file')
-    group.add_argument('--tempdir', dest='tempdir', metavar='PATH',
+    group.add_argument('--tempdir', metavar='PATH',
                        help='override the working directory for the test run')
+    group.add_argument('--cleanup', action='store_true',
+                       help='remove old test_python_* directories')
     return parser
 
 
@@ -389,5 +391,8 @@ def _parse_args(args, **kwargs):
         with open(ns.match_filename) as fp:
             for line in fp:
                 ns.match_tests.append(line.strip())
+    if ns.forever:
+        # --forever implies --failfast
+        ns.failfast = True
 
     return ns
