@@ -718,42 +718,69 @@ class ZipInfo (object):
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
+    def decode_extra_zip64(self, ln, extra):
+
+        # offset = len(extra block tag) + len(extra block size)
+        offset = 4
+
+        # Unpack the extra block from one of the possiblities given the
+        # combinations of a struct 'QQQL' where every field is optional.
+        if ln == 0:
+            counts = ()
+        elif ln in {8, 16, 24}:
+            field_cnt = ln / 8
+            counts = struct.unpack('<%dQ' % field_cnt, extra[offset:offset+ln])
+        elif ln in {4, 12, 20, 28}:
+            q_field_cnt = (ln - 4) / 8
+            if q_field_cnt == 0:
+                struct_str = '<L'
+            else:
+                struct_str = '<%dQL' % (q_field_cnt, )
+            counts = struct.unpack(struct_str, extra[offset:offset+ln])
+        else:
+            raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
+
+        idx = 0
+        # ZIP64 extension (large files and/or large archives)
+        if self.file_size in (0xFFFFFFFFFFFFFFFF, 0xFFFFFFFF):
+            self.file_size = counts[idx]
+            idx += 1
+
+        if self.compress_size == 0xFFFFFFFF:
+            self.compress_size = counts[idx]
+            idx += 1
+
+        # The following two fields should only appear in the central directory.
+        if self.header_offset == 0xFFFFFFFF:
+            old = self.header_offset
+            self.header_offset = counts[idx]
+            idx+=1
+
+        # For completeness - The spec defines a way for handling a larger
+        # number of disks than can fit into 4 bytes. As zipfile currently
+        # doesn't support multiple disks we don't do anything with this field.
+        # if self.diskno == 0xFFFF:
+        #     self.diskno = counts[zip64_field_cnt]
+        #     zip64_field_cnt += 1
+
+    def get_extra_decoders(self):
+        return {
+            EXTRA_ZIP64: self.decode_extra_zip64,
+        }
+
     def _decodeExtra(self):
         # Try to decode the extra field.
         extra = self.extra
-        unpack = struct.unpack
+        extra_decoders = self.get_extra_decoders()
         while len(extra) >= 4:
-            tp, ln = unpack('<HH', extra[:4])
+            tp, ln = struct.unpack('<HH', extra[:4])
             if ln+4 > len(extra):
                 raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
-            if tp == EXTRA_ZIP64:
-                if ln >= 24:
-                    counts = unpack('<QQQ', extra[4:28])
-                elif ln == 16:
-                    counts = unpack('<QQ', extra[4:20])
-                elif ln == 8:
-                    counts = unpack('<Q', extra[4:12])
-                elif ln == 0:
-                    counts = ()
-                else:
-                    raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
-
-                idx = 0
-
-                # ZIP64 extension (large files and/or large archives)
-                if self.file_size in (0xffffffffffffffff, 0xffffffff):
-                    self.file_size = counts[idx]
-                    idx += 1
-
-                if self.compress_size == 0xFFFFFFFF:
-                    self.compress_size = counts[idx]
-                    idx += 1
-
-                if self.header_offset == 0xffffffff:
-                    old = self.header_offset
-                    self.header_offset = counts[idx]
-                    idx+=1
-
+            try:
+                extra_decoders[tp](ln, extra)
+            except KeyError:
+                # We don't support this particular Extra Data field
+                pass
             extra = extra[ln+4:]
 
     @classmethod
