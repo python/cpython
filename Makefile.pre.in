@@ -731,6 +731,285 @@ regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar \
 	regen-token regen-keyword regen-symbol regen-ast regen-importlib clinic
 
 ############################################################################
+# Special rules for object files(under confirmation)
+
+Modules/atexitmodule.o: $(SPECIAL_PYTHON_HEADERS)
+
+Modules/bytesio.o: $(srcdir)/Modules/_io/clinic/bytesio.c.h $(srcdir)/Modules/_io/_iomodule.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/bufferedio.o: $(srcdir)/Modules/_io/clinic/bufferedio.c.h $(srcdir)/Modules/_io/_iomodule.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/config.o: $(srcdir)/Modules/config.c $(SPECIAL_PYTHON_HEADERS)
+
+Modules/errnomodule.o: $(SPECIAL_PYTHON_HEADERS)
+
+Modules/faulthandler.o: $(SPECIAL_PYTHON_HEADERS)
+
+Modules/fileio.o: $(srcdir)/Modules/_io/clinic/fileio.c.h $(srcdir)/Modules/_io/_iomodule.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/gcmodule.o: $(srcdir)/Modules/gcmodule.c $(srcdir)/Modules/clinic/gcmodule.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/getpath.o: $(SPECIAL_PYTHON_HEADERS)
+
+Modules/hashtable.o: $(srcdir)/Modules/hashtable.c $(SPECIAL_PYTHON_HEADERS)
+
+Modules/iobase.o: $(srcdir)/Modules/_io/_iomodule.h $(srcdir)/Modules/_io/clinic/iobase.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/itertoolsmodule.o: $(srcdir)/Modules/clinic/itertoolsmodule.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/main.o: $(srcdir)/Modules/main.c $(SPECIAL_PYTHON_HEADERS)
+
+Modules/posixmodule.o: $(srcdir)/Modules/clinic/posixmodule.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/pwdmodule.o: $(srcdir)/Modules/clinic/pwdmodule.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/signalmodule.o: $(srcdir)/Modules/clinic/signalmodule.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/symtablemodule.o: $(srcdir)/Modules/clinic/symtablemodule.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/timemodule.o: $(SPECIAL_PYTHON_HEADERS)
+
+Modules/xxsubtype.o: $(SPECIAL_PYTHON_HEADERS)
+
+Modules/_abc.o: $(srcdir)/Modules/clinic/_abc.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/_codecsmodule.o: $(srcdir)/Modules/clinic/_codecsmodule.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/_collectionsmodule.o: $(srcdir)/Modules/clinic/_collectionsmodule.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/_functoolsmodule.o: $(SPECIAL_PYTHON_HEADERS)
+
+Modules/_iomodule.o: $(srcdir)/Modules/_io/_iomodule.h $(srcdir)/Modules/_io/clinic/_iomodule.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/_localemodule.o: $(SPECIAL_PYTHON_HEADERS)
+
+Modules/_operator.o: $(srcdir)/Modules/clinic/_operator.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/_sre.o: $(srcdir)/Modules/clinic/_sre.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/_stat.o: $(SPECIAL_PYTHON_HEADERS)
+
+Modules/_tracemalloc.o: $(srcdir)/Modules/hashtable.h $(srcdir)/Modules/clinic/_tracemalloc.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Modules/_threadmodule.o: $(SPECIAL_PYTHON_HEADERS)
+
+Modules/_weakref.o: $(srcdir)/Modules/clinic/_weakref.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/abstract.o: $(srcdir)/Objects/abstract.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/accu.o: $(srcdir)/Objects/accu.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/boolobject.o: $(srcdir)/Objects/boolobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/bytearrayobject.o: $(srcdir)/Objects/clinic/bytearrayobject.c.h $(srcdir)/Objects/stringlib/clinic/transmogrify.h.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/bytesobject.o: $(srcdir)/Objects/clinic/bytesobject.c.h $(srcdir)/Objects/stringlib/clinic/transmogrify.h.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/bytes_methods.o: $(SPECIAL_PYTHON_HEADERS)
+
+Objects/call.o: $(srcdir)/Objects/call.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/cellobject.o: $(srcdir)/Objects/cellobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/classobject.o: $(srcdir)/Objects/classobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/capsule.o: $(srcdir)/Objects/capsule.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/codeobject.o: $(srcdir)/Objects/codeobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/complexobject.o: $(srcdir)/Objects/complexobject.c $(srcdir)/Objects/clinic/complexobject.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/descrobject.o: $(srcdir)/Objects/descrobject.c $(srcdir)/Objects/clinic/descrobject.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/dictobject.o: $(srcdir)/Objects/dictobject.c $(srcdir)/Objects/clinic/dictobject.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/enumobject.o: $(srcdir)/Objects/enumobject.c $(srcdir)/Objects/clinic/enumobject.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/exceptions.o: $(srcdir)/Objects/exceptions.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/floatobject.o: $(srcdir)/Objects/floatobject.c $(srcdir)/Objects/clinic/floatobject.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/fileobject.o: $(srcdir)/Objects/fileobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/frameobject.o: $(srcdir)/Objects/frameobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/funcobject.o: $(srcdir)/Objects/funcobject.c $(srcdir)/Objects/clinic/funcobject.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/genobject.o: $(srcdir)/Objects/genobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/interpreteridobject.o: $(srcdir)/Objects/interpreteridobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/iterobject.o: $(srcdir)/Objects/iterobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/listobject.o: $(srcdir)/Objects/listobject.c $(srcdir)/Objects/clinic/listobject.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/longobject.o: $(srcdir)/Objects/longobject.c $(srcdir)/Objects/clinic/longobject.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/memoryobject.o: $(srcdir)/Objects/memoryobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/methodobject.o: $(srcdir)/Objects/methodobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/moduleobject.o: $(srcdir)/Objects/moduleobject.c $(srcdir)/Objects/clinic/moduleobject.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/namespaceobject.o: $(srcdir)/Objects/namespaceobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/obmalloc.o: $(srcdir)/Objects/obmalloc.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/object.o: $(srcdir)/Objects/object.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/odictobject.o: $(srcdir)/Objects/odictobject.c $(srcdir)/Objects/clinic/odictobject.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/rangeobject.o: $(srcdir)/Objects/rangeobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/setobject.o: $(srcdir)/Objects/setobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/sliceobject.o: Objects/sliceobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Objects/structseq.o: $(srcdir)/Objects/structseq.c $(srcdir)/Objects/clinic/structseq.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/tupleobject.o: $(srcdir)/Objects/tupleobject.c $(srcdir)/Objects/clinic/tupleobject.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/typeobject.o: $(srcdir)/Objects/typeobject.c $(srcdir)/Objects/clinic/typeobject.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/unicodeobject.o: $(srcdir)/Objects/clinic/unicodeobject.c.h $(srcdir)/Objects/stringlib/eq.h $(SPECIAL_PYTHON_HEADERS)
+
+Objects/unicodectype.o: $(SPECIAL_PYTHON_HEADERS)
+
+Objects/weakrefobject.o: $(srcdir)/Objects/weakrefobject.c $(SPECIAL_PYTHON_HEADERS)
+
+Parser/acceler.o: $(srcdir)/Parser/acceler.c $(srcdir)/Include/grammar.h $(srcdir)/Include/token.h $(SPECIAL_PYTHON_HEADERS)
+
+Parser/grammar1.o: $(srcdir)/Parser/grammar1.c $(srcdir)/Include/grammar.h Include/token.h $(SPECIAL_PYTHON_HEADERS)
+
+Parser/listnode.o: $(srcdir)/Parser/listnode.c $(srcdir)/Include/token.h $(SPECIAL_PYTHON_HEADERS)
+
+Parser/myreadline.o: $(srcdir)/Parser/myreadline.c $(SPECIAL_PYTHON_HEADERS)
+
+Parser/node.o: $(srcdir)/Parser/node.c $(SPECIAL_PYTHON_HEADERS)
+
+Parser/parser.o: $(srcdir)/Parser/parser.c $(srcdir)/Include/graminit.h $(srcdir)/Include/grammar.h $(srcdir)/Include/token.h $(SPECIAL_PYTHON_HEADERS)
+
+Parser/parsetok.o: $(srcdir)/Parser/parsetok.c $(srcdir)/Include/token.h $(srcdir)/Include/graminit.h $(srcdir)/Include/grammar.h $(SPECIAL_PYTHON_HEADERS)
+
+Parser/token.o: $(srcdir)/Parser/token.c $(srcdir)/Include/token.h $(SPECIAL_PYTHON_HEADERS)
+
+Parser/tokenizer.o: $(srcdir)/Parser/tokenizer.c $(srcdir)/Include/token.h $(SPECIAL_PYTHON_HEADERS)
+
+Programs/python.o: $(SPECIAL_PYTHON_HEADERS)
+
+Python/asdl.o: $(srcdir)/Python/asdl.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/ast.o: $(srcdir)/Python/ast.c $(srcdir)/Include/grammar.h $(srcdir)/Include/token.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/ast_opt.o: $(srcdir)/Python/ast_opt.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/ast_unparse.o: $(srcdir)/Python/ast_unparse.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/bltinmodule: $(srcdir)/Python/bltinmodule.c $(srcdir)/Python/clinic/bltinmodule.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/bootstrap_hash.o: $(srcdir)/Python/bootstrap_hash.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/ceval.o: $(srcdir)/Python/ceval.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/codecs.o: $(srcdir)/Python/codecs.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/compile.o: $(srcdir)/Python/compile.c $(srcdir)/Python/wordcode_helpers.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/context.o: $(srcdir)/Python/context.c $(srcdir)/Python/clinic/context.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/coreconfig.o: $(srcdir)/Python/coreconfig.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/dtoa.o: $(SPECIAL_PYTHON_HEADERS)
+
+Python/dynamic_annotations.o: $(srcdir)/Python/dynamic_annotations.c
+
+Python/dynload_shlib.o: $(srcdir)/Python/importdl.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/errors.o: $(srcdir)/Python/errors.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/fileutils.o: $(srcdir)/Python/fileutils.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/frozen.o: $(srcdir)/Python/frozen.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/frozenmain.o: $(srcdir)/Python/frozenmain.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/future.o: $(srcdir)/Python/future.c $(srcdir)/Include/graminit.h $(srcdir)/Include/token.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/getargs.o: $(srcdir)/Python/getargs.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/getcompiler.o: $(srcdir)/Python/getcompiler.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/getcopyright.o: $(srcdir)/Python/getcopyright.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/getopt.o: $(srcdir)/Python/getopt.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/getplatform.o: $(SPECIAL_PYTHON_HEADERS)
+
+Python/getversion.o: $(srcdir)/Python/getversion.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/graminit.o: $(srcdir)/Python/graminit.c $(srcdir)/Include/grammar.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/hamt.o: $(srcdir)/Python/hamt.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/import.o: $(srcdir)/Python/import.c $(srcdir)/Python/importdl.h $(srcdir)/Python/clinic/import.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/importdl.o: $(srcdir)/Python/importdl.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/marshal.o: $(srcdir)/Python/marshal.c $(srcdir)/Modules/hashtable.h $(srcdir)/Python/clinic/marshal.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/modsupport.o: $(srcdir)/Python/modsupport.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/mysnprintf.o: $(srcdir)/Python/mysnprintf.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/mystrtoul.o: $(srcdir)/Python/mystrtoul.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/pathconfig.o: $(srcdir)/Python/pathconfig.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/peephole.o: $(srcdir)/Python/peephole.c $(srcdir)/Python/wordcode_helpers.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/preconfig.o: $(srcdir)/Python/preconfig.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/pyarena.o: $(srcdir)/Python/pyarena.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/pyctype.o: $(srcdir)/Python/pyctype.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/pyfpe.o: $(srcdir)/Python/pyfpe.c
+
+Python/pyhash.o: $(srcdir)/Python/pyhash.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/pylifecycle.o: $(srcdir)/Python/pylifecycle.c $(srcdir)/Include/grammar.h $(srcdir)/Include/token.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/pymath.o: $(srcdir)/Python/pymath.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/pystate.o: $(srcdir)/Python/pystate.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/pystrcmp.o: $(srcdir)/Python/pystrcmp.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/pystrhex.o: $(srcdir)/Python/pystrhex.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/pystrtod.o: $(srcdir)/Python/pystrtod.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/pytime.o: $(srcdir)/Python/pytime.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/pythonrun.o: $(srcdir)/Python/pythonrun.c $(srcdir)/Include/token.h $(srcdir)/Include/grammar.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/Python-ast.o: $(srcdir)/Python/Python-ast.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/structmember.o: $(srcdir)/Python/structmember.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/symtable.o: $(srcdir)/Python/symtable.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/sysmodule.o: $(srcdir)/Python/sysmodule.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/thread.o: $(srcdir)/Python/thread.c $(SPECIAL_PYTHON_HEADERS)
+
+Python/traceback.o: $(srcdir)/Python/traceback.c $(srcdir)/Python/clinic/traceback.c.h $(SPECIAL_PYTHON_HEADERS)
+
+Python/_warnings.o: $(srcdir)/Python/_warnings.c $(srcdir)/Python/clinic/_warnings.c.h $(SPECIAL_PYTHON_HEADERS)
+
+############################################################################
 # Special rules for object files
 
 Modules/getbuildinfo.o: $(PARSER_OBJS) \
@@ -958,6 +1237,11 @@ regen-typeslots:
 
 ############################################################################
 # Header files
+
+SPECIAL_PYTHON_HEADERS = \
+		$(srcdir)/Include/typeslots.h \
+		$(srcdir)/Include/odictobject.h \
+		$(srcdir)/Include/pymacconfig.h
 
 PYTHON_HEADERS= \
 		$(srcdir)/Include/Python.h \
