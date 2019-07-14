@@ -620,9 +620,6 @@ def quantiles(dist, /, *, n=4, method='exclusive'):
     data.  The minimum value is treated as the 0th percentile and the
     maximum value is treated as the 100th percentile.
     '''
-    # Possible future API extensions:
-    #     quantiles(data, already_sorted=True)
-    #     quantiles(data, cut_points=[0.02, 0.25, 0.50, 0.75, 0.98])
     if n < 1:
         raise StatisticsError('n must be at least 1')
     if hasattr(dist, 'inv_cdf'):
