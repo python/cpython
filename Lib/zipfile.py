@@ -1325,9 +1325,17 @@ class ZipExtFile(io.BufferedIOBase):
             # No need to compute the CRC if we don't have a reference value
             return
         self._running_crc = crc32(newdata, self._running_crc)
+
+    def check_crc(self):
+        if self._expected_crc is None:
+            # No need to compute the CRC if we don't have a reference value
+            return
         # Check the CRC if we're at the end of the file
         if self._eof and self._running_crc != self._expected_crc:
             raise BadZipFile("Bad CRC-32 for file %r" % self.name)
+
+    def check_integrity(self):
+        self.check_crc()
 
     def read1(self, n):
         """Read up to n bytes with at most one read() system call."""
@@ -1400,6 +1408,8 @@ class ZipExtFile(io.BufferedIOBase):
         if self._left <= 0:
             self._eof = True
         self._update_crc(data)
+        if self._eof:
+            self.check_integrity()
         return data
 
     def _read2(self, n):
