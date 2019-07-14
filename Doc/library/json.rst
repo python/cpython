@@ -168,7 +168,7 @@ Basic Usage
    If specified, *separators* should be an ``(item_separator, key_separator)``
    tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
    ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
-   you should specify ``(',', ':')`` to eliminate whitespace.
+   you should specify ``(',', ':')`` to eliminate :term:`whitespace`.
 
    .. versionchanged:: 3.4
       Use ``(',', ': ')`` as default if *indent* is not ``None``.
@@ -448,7 +448,7 @@ Encoders and Decoders
    If specified, *separators* should be an ``(item_separator, key_separator)``
    tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
    ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
-   you should specify ``(',', ':')`` to eliminate whitespace.
+   you should specify ``(',', ':')`` to eliminate :term:`whitespace`.
 
    .. versionchanged:: 3.4
       Use ``(',', ': ')`` as default if *indent* is not ``None``.

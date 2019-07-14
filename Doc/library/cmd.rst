@@ -79,7 +79,7 @@ A :class:`Cmd` instance has the following methods:
    completing of commands args is done by calling :meth:`complete_foo` with
    arguments *text*, *line*, *begidx*, and *endidx*.  *text* is the string prefix
    we are attempting to match: all returned matches must begin with it. *line* is
-   the current input line with leading whitespace removed, *begidx* and *endidx*
+   the current input line with leading :term:`whitespace` removed, *begidx* and *endidx*
    are the beginning and ending indexes of the prefix text, which could be used to
    provide different completion depending upon which position the argument is in.
 

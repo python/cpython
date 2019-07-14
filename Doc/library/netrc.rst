@@ -85,6 +85,6 @@ Instances of :class:`~netrc.netrc` have public instance variables:
 .. note::
 
    Passwords are limited to a subset of the ASCII character set.  All ASCII
-   punctuation is allowed in passwords, however, note that whitespace and
+   punctuation is allowed in passwords, however, note that :term:`whitespace` and
    non-printable characters are not allowed in passwords.  This is a limitation
    of the way the .netrc file is parsed and may be removed in the future.

@@ -434,7 +434,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: ws_comma
 
-   Removes excess whitespace from comma separated items.  This fixer is
+   Removes excess :term:`whitespace` from comma separated items.  This fixer is
    optional.
 
 .. 2to3fixer:: xrange

@@ -816,7 +816,7 @@ they add the ability to access fields by name instead of position index.
 
     The *field_names* are a sequence of strings such as ``['x', 'y']``.
     Alternatively, *field_names* can be a single string with each fieldname
-    separated by whitespace and/or commas, for example ``'x y'`` or ``'x, y'``.
+    separated by :term:`whitespace` and/or commas, for example ``'x y'`` or ``'x, y'``.
 
     Any valid Python identifier may be used for a fieldname except for names
     starting with an underscore.  Valid identifiers consist of letters, digits,

@@ -80,7 +80,7 @@ The following attributes are defined for formatter instance objects:
 
 .. method:: formatter.add_flowing_data(data)
 
-   Provide data which should be formatted with collapsed whitespace. Whitespace
+   Provide data which should be formatted with collapsed :term:`whitespace`. Whitespace
    from preceding and successive calls to :meth:`add_flowing_data` is considered as
    well when the whitespace collapse is performed.  The data which is passed to
    this method is expected to be word-wrapped by the output device.  Note that any
@@ -119,7 +119,7 @@ The following attributes are defined for formatter instance objects:
 
 .. method:: formatter.flush_softspace()
 
-   Send any pending whitespace buffered from a previous call to
+   Send any pending :term:`whitespace` buffered from a previous call to
    :meth:`add_flowing_data` to the associated writer object.  This should be called
    before any direct manipulation of the writer object.
 
@@ -298,7 +298,7 @@ typically be provided by the application.
 
    Output character data which may be word-wrapped and re-flowed as needed.  Within
    any sequence of calls to this method, the writer may assume that spans of
-   multiple whitespace characters have been collapsed to single space characters.
+   multiple :term:`whitespace` characters have been collapsed to single space characters.
 
 
 .. method:: writer.send_literal_data(data)

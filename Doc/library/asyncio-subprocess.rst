@@ -88,7 +88,7 @@ Creating Subprocesses
 
 .. important::
 
-   It is the application's responsibility to ensure that all whitespace and
+   It is the application's responsibility to ensure that all :term:`whitespace` and
    special characters are quoted appropriately to avoid `shell injection
    <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
    vulnerabilities. The :func:`shlex.quote` function can be used to properly

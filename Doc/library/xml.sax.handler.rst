@@ -309,7 +309,7 @@ events in the input document:
 
 .. method:: ContentHandler.ignorableWhitespace(whitespace)
 
-   Receive notification of ignorable whitespace in element content.
+   Receive notification of ignorable :term:`whitespace` in element content.
 
    Validating Parsers must use this method to report each chunk of ignorable
    whitespace (see the W3C XML 1.0 recommendation, section 2.10): non-validating

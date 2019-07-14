@@ -115,7 +115,7 @@ The output will then be:
 
    Return the text of the most recently opened start tag.  This should not normally
    be needed for structured processing, but may be useful in dealing with HTML "as
-   deployed" or for re-generating input with minimal changes (whitespace between
+   deployed" or for re-generating input with minimal changes (:term:`whitespace` between
    attributes can be preserved, etc.).
 
 

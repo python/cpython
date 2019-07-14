@@ -373,7 +373,7 @@ functions.
          >>> p = subprocess.Popen(args) # Success!
 
       Note in particular that options (such as *-input*) and arguments (such
-      as *eggs.txt*) that are separated by whitespace in the shell go in separate
+      as *eggs.txt*) that are separated by :term:`whitespace` in the shell go in separate
       list elements, while arguments that need quoting or backslash escaping when
       used in the shell (such as filenames containing spaces or the *echo* command
       shown above) are single list elements.
@@ -641,7 +641,7 @@ Unlike some other popen functions, this implementation will never
 implicitly call a system shell.  This means that all characters,
 including shell metacharacters, can safely be passed to child processes.
 If the shell is invoked explicitly, via ``shell=True``, it is the application's
-responsibility to ensure that all whitespace and metacharacters are
+responsibility to ensure that all :term:`whitespace` and metacharacters are
 quoted appropriately to avoid
 `shell injection <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
 vulnerabilities.

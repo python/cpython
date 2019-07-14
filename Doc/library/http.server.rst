@@ -132,7 +132,7 @@ provides three different variants:
    .. attribute:: server_version
 
       Specifies the server software version.  You may want to override this. The
-      format is multiple whitespace-separated strings, where each string is of
+      format is multiple :term:`whitespace`-separated strings, where each string is of
       the form name[/version]. For example, ``'BaseHTTP/0.2'``.
 
    .. attribute:: sys_version

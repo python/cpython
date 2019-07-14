@@ -327,7 +327,7 @@ but doctest isn't trying to do an exact emulation of any specific Python shell.
 
 Any expected output must immediately follow the final ``'>>> '`` or ``'... '``
 line containing the code, and the expected output (if any) extends to the next
-``'>>> '`` or all-whitespace line.
+``'>>> '`` or all-:term:`whitespace` line.
 
 The fine print:
 
@@ -550,7 +550,7 @@ doctest decides whether actual output matches an example's expected output:
 
 .. data:: NORMALIZE_WHITESPACE
 
-   When specified, all sequences of whitespace (blanks and newlines) are treated as
+   When specified, all sequences of :term:`whitespace` are treated as
    equal.  Any sequence of whitespace within the expected output will match any
    sequence of whitespace within the actual output. By default, whitespace must
    match exactly. :const:`NORMALIZE_WHITESPACE` is especially useful when a line of

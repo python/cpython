@@ -31,7 +31,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    Obershelp under the hyperbolic name "gestalt pattern matching."  The idea is to
    find the longest contiguous matching subsequence that contains no "junk"
    elements; these "junk" elements are ones that are uninteresting in some
-   sense, such as blank lines or whitespace.  (Handling junk is an
+   sense, such as blank lines or :term:`whitespace`.  (Handling junk is an
    extension to the Ratcliff and Obershelp algorithm.) The same
    idea is then applied recursively to the pieces of the sequences to the left and
    to the right of the matching subsequence.  This does not yield minimal edit
@@ -232,7 +232,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    *charjunk*: A function that accepts a character (a string of length 1), and
    returns if the character is junk, or false if not. The default is module-level
-   function :func:`IS_CHARACTER_JUNK`, which filters out whitespace characters (a
+   function :func:`IS_CHARACTER_JUNK`, which filters out :term:`whitespace` characters (a
    blank or tab; it's a bad idea to include newline in this!).
 
    :file:`Tools/scripts/ndiff.py` is a command-line front-end to this function.

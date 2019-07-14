@@ -45,7 +45,7 @@ another rational number, or from a string.
    decimal digits.  In addition, any string that represents a finite
    value and is accepted by the :class:`float` constructor is also
    accepted by the :class:`Fraction` constructor.  In either form the
-   input string may also have leading and/or trailing whitespace.
+   input string may also have leading and/or trailing :term:`whitespace`.
    Here are some examples::
 
       >>> from fractions import Fraction

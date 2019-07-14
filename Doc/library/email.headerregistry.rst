@@ -246,7 +246,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
 
    .. attribute:: version
 
-      The version number as a string, with any whitespace and/or comments
+      The version number as a string, with any :term:`whitespace` and/or comments
       removed.
 
    .. attribute:: major

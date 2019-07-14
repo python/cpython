@@ -793,13 +793,13 @@ Represents a processing instruction in the XML document; this inherits from the
 
 .. attribute:: ProcessingInstruction.target
 
-   The content of the processing instruction up to the first whitespace character.
+   The content of the processing instruction up to the first :term:`whitespace` character.
    This is a read-only attribute.
 
 
 .. attribute:: ProcessingInstruction.data
 
-   The content of the processing instruction following the first whitespace
+   The content of the processing instruction following the first :term:`whitespace`
    character.
 
 

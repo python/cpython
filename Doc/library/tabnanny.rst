@@ -29,7 +29,7 @@ described below.
    If *file_or_dir* is a directory and not a symbolic link, then recursively
    descend the directory tree named by *file_or_dir*, checking all :file:`.py`
    files along the way.  If *file_or_dir* is an ordinary Python source file, it
-   is checked for whitespace related problems.  The diagnostic messages are
+   is checked for :term:`whitespace` related problems.  The diagnostic messages are
    written to standard output using the :func:`print` function.
 
 
@@ -42,7 +42,7 @@ described below.
 .. data:: filename_only
 
    Flag indicating whether to print only the filenames of files containing
-   whitespace related problems.  This is set to true by the ``-q`` option if called
+   :term:`whitespace` related problems.  This is set to true by the ``-q`` option if called
    as a script.
 
 

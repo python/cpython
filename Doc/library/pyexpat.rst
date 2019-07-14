@@ -369,7 +369,7 @@ otherwise stated.
 .. method:: xmlparser.CharacterDataHandler(data)
 
    Called for character data.  This will be called for normal character data, CDATA
-   marked content, and ignorable whitespace.  Applications which must distinguish
+   marked content, and ignorable :term:`whitespace`.  Applications which must distinguish
    these cases can use the :attr:`StartCdataSectionHandler`,
    :attr:`EndCdataSectionHandler`, and :attr:`ElementDeclHandler` callbacks to
    collect the required information.
@@ -714,7 +714,7 @@ The ``errors`` module has the following attributes:
 
 .. data:: XML_ERROR_JUNK_AFTER_DOC_ELEMENT
 
-   Something other than whitespace occurred after the document element.
+   Something other than :term:`whitespace` occurred after the document element.
 
 
 .. data:: XML_ERROR_MISPLACED_XML_PI

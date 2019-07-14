@@ -192,7 +192,7 @@ The modern interface provides:
 
    *ignorechars* should be a :term:`bytes-like object` or ASCII string
    containing characters to ignore
-   from the input. This should only contain whitespace characters, and by
+   from the input. This should only contain :term:`whitespace` characters, and by
    default contains all whitespace characters in ASCII.
 
    .. versionadded:: 3.4

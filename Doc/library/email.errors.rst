@@ -35,7 +35,7 @@ The following exception classes are defined in the :mod:`email.errors` module:
    :class:`~email.header.Header` may raise this error for certain base64
    decoding errors, and when an attempt is made to create a header that appears
    to contain an embedded header (that is, there is what is supposed to be a
-   continuation line that has no leading whitespace and looks like a header).
+   continuation line that has no leading :term:`whitespace` and looks like a header).
 
 
 .. exception:: BoundaryError()

@@ -486,7 +486,7 @@ Functions
    byte-by-byte comparisons and digital signatures.  It reduced the freedom
    that XML serializers have and instead generates a more constrained XML
    representation.  The main restrictions regard the placement of namespace
-   declarations, the ordering of attributes, and ignorable whitespace.
+   declarations, the ordering of attributes, and ignorable :term:`whitespace`.
 
    This function takes an XML data string (*xml_data*) or a file path or
    file-like object (*from_file*) as input, converts it to the canonical
@@ -509,7 +509,7 @@ Functions
    The configuration *options* are as follows:
 
    - *with_comments*: set to true to include comments (default: false)
-   - *strip_text*: set to true to strip whitespace before and after text content
+   - *strip_text*: set to true to strip :term:`whitespace` before and after text content
                    (default: false)
    - *rewrite_prefixes*: set to true to replace namespace prefixes by "n{number}"
                          (default: false)

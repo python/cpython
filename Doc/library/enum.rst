@@ -466,7 +466,7 @@ The semantics of this API resemble :class:`~collections.namedtuple`. The first
 argument of the call to :class:`Enum` is the name of the enumeration.
 
 The second argument is the *source* of enumeration member names.  It can be a
-whitespace-separated string of names, a sequence of names, a sequence of
+:term:`whitespace`-separated string of names, a sequence of names, a sequence of
 2-tuples with key/value pairs, or a mapping (e.g. dictionary) of names to
 values.  The last two options enable assigning arbitrary values to
 enumerations; the others auto-assign increasing integers starting with 1 (use
@@ -512,7 +512,7 @@ The complete signature is::
 
 :value: What the new Enum class will record as its name.
 
-:names: The Enum members.  This can be a whitespace or comma separated string
+:names: The Enum members.  This can be a :term:`whitespace` or comma separated string
   (values will start at 1 unless otherwise specified)::
 
     'RED GREEN BLUE' | 'RED,GREEN,BLUE' | 'RED, GREEN, BLUE'

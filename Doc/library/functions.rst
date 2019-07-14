@@ -327,7 +327,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. note::
 
-      When converting from a string, the string must not contain whitespace
+      When converting from a string, the string must not contain :term:`whitespace`
       around the central ``+`` or ``-`` operator.  For example,
       ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
       :exc:`ValueError`.
@@ -570,7 +570,7 @@ are always available.  They are listed here in alphabetical order.
    Return a floating point number constructed from a number or string *x*.
 
    If the argument is a string, it should contain a decimal number, optionally
-   preceded by a sign, and optionally embedded in whitespace.  The optional
+   preceded by a sign, and optionally embedded in :term:`whitespace`.  The optional
    sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
    produced.  The argument may also be a string representing a NaN
    (not-a-number), or a positive or negative infinity.  More precisely, the
@@ -804,7 +804,7 @@ are always available.  They are listed here in alphabetical order.
    :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer
    literal <integers>` in radix *base*.  Optionally, the literal can be
    preceded by ``+`` or ``-`` (with no space in between) and surrounded by
-   whitespace.  A base-n literal consists of the digits 0 to n-1, with ``a``
+   :term:`whitespace`.  A base-n literal consists of the digits 0 to n-1, with ``a``
    to ``z`` (or ``A`` to ``Z``) having
    values 10 to 35.  The default *base* is 10. The allowed values are 0 and 2--36.
    Base-2, -8, and -16 literals can be optionally prefixed with ``0b``/``0B``,

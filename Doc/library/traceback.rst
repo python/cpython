@@ -101,7 +101,7 @@ The module defines the following functions:
    :attr:`~FrameSummary.name`, and :attr:`~FrameSummary.line` representing the
    information that is usually printed for a stack trace.  The
    :attr:`~FrameSummary.line` is a string with leading and trailing
-   whitespace stripped; if the source is not available it is ``None``.
+   :term:`whitespace` stripped; if the source is not available it is ``None``.
 
 
 .. function:: extract_stack(f=None, limit=None)

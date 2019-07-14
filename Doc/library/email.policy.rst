@@ -295,7 +295,7 @@ added matters.  To illustrate::
       The email package calls this method with a list of strings, each string
       ending with the line separation characters found in the source being
       parsed.  The first line includes the field header name and separator.
-      All whitespace in the source is preserved.  The method should return the
+      All :term:`whitespace` in the source is preserved.  The method should return the
       ``(name, value)`` tuple that is to be stored in the ``Message`` to
       represent the parsed header.
 
@@ -454,7 +454,7 @@ added matters.  To illustrate::
 
 
       The name is parsed as everything up to the '``:``' and returned
-      unmodified.  The value is determined by stripping leading whitespace off
+      unmodified.  The value is determined by stripping leading :term:`whitespace` off
       the remainder of the first line, joining all subsequent lines together,
       and stripping any trailing carriage return or linefeed characters.
 
@@ -604,7 +604,7 @@ The header objects and their attributes are described in
    .. method:: header_source_parse(sourcelines)
 
       The name is parsed as everything up to the '``:``' and returned
-      unmodified.  The value is determined by stripping leading whitespace off
+      unmodified.  The value is determined by stripping leading :term:`whitespace` off
       the remainder of the first line, joining all subsequent lines together,
       and stripping any trailing carriage return or linefeed characters.
 

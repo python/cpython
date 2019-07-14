@@ -82,7 +82,7 @@ Here is the :class:`Header` class description:
    first line of a long, split header.
 
    Optional *continuation_ws* must be :rfc:`2822`\ -compliant folding
-   whitespace, and is usually either a space or a hard tab character.  This
+   :term:`whitespace`, and is usually either a space or a hard tab character.  This
    character will be prepended to continuation lines.  *continuation_ws*
    defaults to a single space character.
 

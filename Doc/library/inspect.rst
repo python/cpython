@@ -533,7 +533,7 @@ Retrieving source code
    Clean up indentation from docstrings that are indented to line up with blocks
    of code.
 
-   All leading whitespace is removed from the first line.  Any leading whitespace
+   All leading :term:`whitespace` is removed from the first line.  Any leading whitespace
    that can be uniformly removed from the second line onwards is removed.  Empty
    lines at the beginning and end are subsequently removed.  Also, all tabs are
    expanded to spaces.

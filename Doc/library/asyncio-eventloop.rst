@@ -1295,7 +1295,7 @@ async/await code consider using the high-level
    *protocol* is an object instantiated by the *protocol_factory*.
 
 .. note::
-   It is the application's responsibility to ensure that all whitespace
+   It is the application's responsibility to ensure that all :term:`whitespace`
    and special characters are quoted appropriately to avoid `shell injection
    <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
    vulnerabilities. The :func:`shlex.quote` function can be used to

@@ -502,20 +502,20 @@ character ``'$'``.
 
 ``\s``
    For Unicode (str) patterns:
-      Matches Unicode whitespace characters (which includes
+      Matches Unicode :term:`whitespace` characters (which includes
       ``[ \t\n\r\f\v]``, and also many other characters, for example the
       non-breaking spaces mandated by typography rules in many
       languages). If the :const:`ASCII` flag is used, only
       ``[ \t\n\r\f\v]`` is matched.
 
    For 8-bit (bytes) patterns:
-      Matches characters considered whitespace in the ASCII character set;
+      Matches characters considered :term:`whitespace` in the ASCII character set;
       this is equivalent to ``[ \t\n\r\f\v]``.
 
 .. index:: single: \S; in regular expressions
 
 ``\S``
-   Matches any character which is not a whitespace character. This is
+   Matches any character which is not a :term:`whitespace` character. This is
    the opposite of ``\s``. If the :const:`ASCII` flag is used this
    becomes the equivalent of ``[^ \t\n\r\f\v]``.
 

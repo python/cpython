@@ -540,7 +540,7 @@ according to the locale.  For (Unicode) text strings these are done according
 to the character value only, while for byte strings, the conversions and
 classifications are done according to the ASCII value of the byte, and bytes
 whose high bit is set (i.e., non-ASCII bytes) are never converted or considered
-part of a character class such as letter or whitespace.
+part of a character class such as letter or :term:`whitespace`.
 
 
 .. _embedding-locale:

@@ -631,7 +631,7 @@ Functions
       affect the output of functions like :func:`localtime` without calling
       :func:`tzset`, this behavior should not be relied on.
 
-      The :envvar:`TZ` environment variable should contain no whitespace.
+      The :envvar:`TZ` environment variable should contain no :term:`whitespace`.
 
    The standard format of the :envvar:`TZ` environment variable is (whitespace
    added for clarity)::

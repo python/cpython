@@ -382,7 +382,7 @@ Dialects support the following attributes:
 
 .. attribute:: Dialect.skipinitialspace
 
-   When :const:`True`, whitespace immediately following the *delimiter* is ignored.
+   When :const:`True`, :term:`whitespace` immediately following the *delimiter* is ignored.
    The default is :const:`False`.
 
 

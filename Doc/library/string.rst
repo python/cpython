@@ -67,7 +67,7 @@ The constants defined in this module are:
 
 .. data:: whitespace
 
-   A string containing all ASCII characters that are considered whitespace.
+   A string containing all ASCII characters that are considered :term:`whitespace`.
    This includes the characters space, tab, linefeed, return, formfeed, and
    vertical tab.
 
@@ -839,6 +839,6 @@ Helper functions
    Split the argument into words using :meth:`str.split`, capitalize each word
    using :meth:`str.capitalize`, and join the capitalized words using
    :meth:`str.join`.  If the optional second argument *sep* is absent
-   or ``None``, runs of whitespace characters are replaced by a single space
+   or ``None``, runs of :term:`whitespace` characters are replaced by a single space
    and leading and trailing whitespace are removed, otherwise *sep* is used to
    split and join the words.

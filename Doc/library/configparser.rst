@@ -231,7 +231,7 @@ Supported INI File Structure
 A configuration file consists of sections, each led by a ``[section]`` header,
 followed by key/value entries separated by a specific string (``=`` or ``:`` by
 default [1]_).  By default, section names are case sensitive but keys are not
-[1]_.  Leading and trailing whitespace is removed from keys and values.
+[1]_.  Leading and trailing :term:`whitespace` is removed from keys and values.
 Values can be omitted, in which case the key/value delimiter may also be left
 out.  Values can also span multiple lines, as long as they are indented deeper
 than the first line of the value.  Depending on the parser's mode, blank lines
@@ -1154,7 +1154,7 @@ ConfigParser Objects
          cfgparser = ConfigParser()
          cfgparser.optionxform = str
 
-      Note that when reading configuration files, whitespace around the option
+      Note that when reading configuration files, :term:`whitespace` around the option
       names is stripped before :meth:`optionxform` is called.
 
 

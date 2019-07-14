@@ -45,7 +45,7 @@ functions should be good enough; otherwise, you should use an instance of
 
    Collapse and truncate the given *text* to fit in the given *width*.
 
-   First the whitespace in *text* is collapsed (all whitespace is replaced by
+   First the :term:`whitespace` in *text* is collapsed (all whitespace is replaced by
    single spaces).  If the result fits in the *width*, it is returned.
    Otherwise, enough words are dropped from the end so that the remaining words
    plus the :attr:`placeholder` fit within :attr:`width`::
@@ -68,7 +68,7 @@ functions should be good enough; otherwise, you should use an instance of
 
 .. function:: dedent(text)
 
-   Remove any common leading whitespace from every line in *text*.
+   Remove any common leading :term:`whitespace` from every line in *text*.
 
    This can be used to make triple-quoted strings line up with the left edge of the
    display, while still presenting them in the source code in indented form.
@@ -126,7 +126,7 @@ instance is not reused, so for applications that process many text
 strings using :func:`wrap` and/or :func:`fill`, it may be more efficient to
 create your own :class:`TextWrapper` object.
 
-Text is preferably wrapped on whitespaces and right after the hyphens in
+Text is preferably wrapped on :term:`whitespace`s and right after the hyphens in
 hyphenated words; only then will long words be broken if necessary, unless
 :attr:`TextWrapper.break_long_words` is set to false.
 
@@ -177,7 +177,7 @@ hyphenated words; only then will long words be broken if necessary, unless
    .. attribute:: replace_whitespace
 
       (default: ``True``) If true, after tab expansion but before wrapping,
-      the :meth:`wrap` method will replace each whitespace character
+      the :meth:`wrap` method will replace each :term:`whitespace` character
       with a single space.  The whitespace characters replaced are
       as follows: tab, newline, vertical tab, formfeed, and carriage
       return (``'\t\n\v\f\r'``).
@@ -198,7 +198,7 @@ hyphenated words; only then will long words be broken if necessary, unless
 
    .. attribute:: drop_whitespace
 
-      (default: ``True``) If true, whitespace at the beginning and ending of
+      (default: ``True``) If true, :term:`whitespace` at the beginning and ending of
       every line (after wrapping but before indenting) is dropped.
       Whitespace at the beginning of the paragraph, however, is not dropped
       if non-whitespace follows it.  If whitespace being dropped takes up an
@@ -255,7 +255,7 @@ hyphenated words; only then will long words be broken if necessary, unless
 
    .. attribute:: break_on_hyphens
 
-      (default: ``True``) If true, wrapping will occur preferably on whitespaces
+      (default: ``True``) If true, wrapping will occur preferably on :term:`whitespace`s
       and right after hyphens in compound words, as it is customary in English.
       If false, only whitespaces will be considered as potentially good places
       for line breaks, but you need to set :attr:`break_long_words` to false if

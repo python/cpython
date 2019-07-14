@@ -210,7 +210,7 @@ The commands recognized by the debugger are listed below.  Most commands can be
 abbreviated to one or two letters as indicated; e.g. ``h(elp)`` means that
 either ``h`` or ``help`` can be used to enter the help command (but not ``he``
 or ``hel``, nor ``H`` or ``Help`` or ``HELP``).  Arguments to commands must be
-separated by whitespace (spaces or tabs).  Optional arguments are enclosed in
+separated by :term:`whitespace` (spaces or tabs).  Optional arguments are enclosed in
 square brackets (``[]``) in the command syntax; the square brackets must not be
 typed.  Alternatives in the command syntax are separated by a vertical bar
 (``|``).

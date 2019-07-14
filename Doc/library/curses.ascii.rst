@@ -115,7 +115,7 @@ C library:
 
 .. function:: isblank(c)
 
-   Checks for an ASCII whitespace character; space or horizontal tab.
+   Checks for an ASCII :term:`whitespace` character; space or horizontal tab.
 
 
 .. function:: iscntrl(c)

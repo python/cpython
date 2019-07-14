@@ -300,7 +300,7 @@ A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.
 
 Whitespace characters between formats are ignored; a count and its format must
-not contain whitespace though.
+not contain :term:`whitespace` though.
 
 For the ``'s'`` format character, the count is interpreted as the length of the
 bytes, not a repeat count like for the other format characters; for example,
