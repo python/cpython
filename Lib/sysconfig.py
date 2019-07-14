@@ -84,9 +84,12 @@ _INSTALL_SCHEMES = {
 _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
                 'scripts', 'data')
 
- # FIXME don't rely on sys.version here, its format is an implementation detail
- # of CPython, use sys.version_info or sys.hexversion
-_PY_VERSION = sys.version.split()[0]
+if sys.version_info.releaselevel == "final":
+    _PY_VERSION = "{}.{}.{}".format(*sys.version_info[:3])
+else:
+    major, minor, micro, releaselevel, serial = sys.version_info
+    releasetoken = "rc" if releaselevel == "candidate" else releaselevel[0]
+    _PY_VERSION = f"{major}.{minor}.{micro}{releasetoken}{serial}"
 _PY_VERSION_SHORT = '%d.%d' % sys.version_info[:2]
 _PY_VERSION_SHORT_NO_DOT = '%d%d' % sys.version_info[:2]
 _PREFIX = os.path.normpath(sys.prefix)
