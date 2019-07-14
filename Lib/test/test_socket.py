@@ -5769,7 +5769,8 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     FILESIZE = (10 * 1024 * 1024)  # 10 MiB
     BUFSIZE = 8192
     FILEDATA = b""
-    TIMEOUT = 2
+    # bpo-37553: This is taking longer than 2 seconds on Windows ARM32 buildbot
+    TIMEOUT = 10 if sys.platform == 'win32' and platform.machine() == 'ARM' else 2
 
     @classmethod
     def setUpClass(cls):
