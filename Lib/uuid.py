@@ -434,33 +434,26 @@ def _find_mac_nextlines(command, args, hw_identifiers, f_index):
     if stdout is None:
         return None
 
-    first_local_mac = None
-    mac = None
     keywords = stdout.readline().rstrip().split()
     try:
         i = keywords.index(hw_identifiers)
     except ValueError:
         return None
     # we have the index (i) into the data that follows
+
+    first_local_mac = None
     for line in stdout:
         try:
-            values = line.rstrip().split()
-            value = values[f_index(i)]
-            if len(value) == 17 and value.count(_MAC_DELIM) == 5:
-                mac = int(value.replace(_MAC_DELIM, b''), 16)
+            words = line.rstrip().split()
+            word = words[f_index(i)]
             # (Only) on AIX the macaddr value given is not prefixed by 0, e.g.
             # en0   1500  link#2      fa.bc.de.f7.62.4 110854824     0 160133733     0     0
             # not
             # en0   1500  link#2      fa.bc.de.f7.62.04 110854824     0 160133733     0     0
-            elif _AIX and  value.count(_MAC_DELIM) == 5:
-                # the extracted hex string is not a 12 hex digit
-                # string, so add the fields piece by piece
-                if len(value) < 17 and len(value) >= 11:
-                    mac = 0
-                    fields = value.split(_MAC_DELIM)
-                    for hex in fields:
-                        mac <<= 8
-                        mac += int(hex, 16)
+            parts = word.split(_MAC_DELIM)
+            if len(parts) == 6 and all(0 < len(p) <= 2 for p in parts):
+                hexstr = b''.join(p.rjust(2, b'0') for p in parts)
+                mac = int(hexstr, 16)
         except (ValueError, IndexError):
             # Virtual interfaces, such as those provided by
             # VPNs, do not have a colon-delimited MAC address
@@ -469,7 +462,7 @@ def _find_mac_nextlines(command, args, hw_identifiers, f_index):
             # real MAC address
             pass
         else:
-            if mac and _is_universal(mac):
+            if _is_universal(mac):
                 return mac
             first_local_mac = first_local_mac or mac
     return first_local_mac or None
