@@ -63,7 +63,19 @@ class AnyTest(unittest.TestCase):
             ]
             self.assertEqual(expected, mock.mock_calls)
             self.assertEqual(mock.mock_calls, expected)
+            mock.assert_has_calls(expected)
 
+    def test_assert_has_calls_with_any_and_spec_set(self):
+        # This is a regression test for bpo-37555
+        class Foo(object):
+            def __eq__(self, other): pass
+            def __ne__(self, other): pass
+
+        mock = Mock(spec_set=Foo)
+        expected = [call(ANY)]
+        mock(Foo())
+
+        mock.assert_has_calls(expected)
 
 
 class CallTest(unittest.TestCase):
