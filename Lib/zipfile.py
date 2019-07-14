@@ -1497,6 +1497,7 @@ class _ZipWriteFile(io.BufferedIOBase):
         self._compress_size = 0
         self._crc = 0
 
+        self.write_local_header()
     @property
     def _fileobj(self):
         return self._zipfile.fp
@@ -1519,6 +1520,8 @@ class _ZipWriteFile(io.BufferedIOBase):
     def writable(self):
         return True
 
+    def write_local_header(self):
+        self.fp.write(zinfo.FileHeader(zip64))
     def write(self, data):
         if self.closed:
             raise ValueError('I/O operation on closed file.')
@@ -1974,9 +1977,6 @@ class ZipFile:
 
         self._writecheck(zinfo)
         self._didModify = True
-
-        self.fp.write(zinfo.FileHeader(zip64))
-
         self._writing = True
         return self.zipwritefile_cls(self, zinfo, zip64)
 
