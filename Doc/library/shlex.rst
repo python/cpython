@@ -257,7 +257,7 @@ variables which either control lexical analysis or can be used for debugging:
 
 .. attribute:: shlex.whitespace_split
 
-   If ``True``, tokens will only be split in :term:`whitespace`s.  This is useful, for
+   If ``True``, tokens will only be split on :term:`whitespace`.  This is useful, for
    example, for parsing command lines with :class:`~shlex.shlex`, getting
    tokens in a similar way to shell arguments.  When used in combination with
    :attr:`punctuation_chars`, tokens will be split on whitespace in addition to

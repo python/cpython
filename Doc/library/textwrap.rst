@@ -126,7 +126,7 @@ instance is not reused, so for applications that process many text
 strings using :func:`wrap` and/or :func:`fill`, it may be more efficient to
 create your own :class:`TextWrapper` object.
 
-Text is preferably wrapped on :term:`whitespace`s and right after the hyphens in
+Text is preferably wrapped on :term:`whitespace` and right after the hyphens in
 hyphenated words; only then will long words be broken if necessary, unless
 :attr:`TextWrapper.break_long_words` is set to false.
 
@@ -255,7 +255,7 @@ hyphenated words; only then will long words be broken if necessary, unless
 
    .. attribute:: break_on_hyphens
 
-      (default: ``True``) If true, wrapping will occur preferably on :term:`whitespace`s
+      (default: ``True``) If true, wrapping will occur preferably on :term:`whitespace`
       and right after hyphens in compound words, as it is customary in English.
       If false, only whitespaces will be considered as potentially good places
       for line breaks, but you need to set :attr:`break_long_words` to false if
