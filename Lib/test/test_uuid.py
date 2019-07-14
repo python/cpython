@@ -1,4 +1,4 @@
-import unittest.mock
+import unittest
 from test import support
 import builtins
 import contextlib
@@ -538,7 +538,7 @@ class BaseTestUUID:
         if f is None:
             self.skipTest('need uuid._generate_time_safe')
         with mock.patch.object(self.uuid, '_generate_time_safe',
-                                        lambda: (f()[0], safe_value)):
+                               lambda: (f()[0], safe_value)):
             yield
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
