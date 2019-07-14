@@ -161,10 +161,11 @@ struct compiler {
     int c_optimize;              /* optimization level */
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
-    int c_emit_bytecode;         /* The compiler won't emit any bytecode
-                                    if this flag is false. This can be used
-                                    to temporarily visit nodes without emitting
-                                    bytecode to check only errors. */
+    int c_do_not_emit_bytecode;  /* The compiler won't emit any bytecode
+                                    if this value is different from zero.
+                                    This can be used to temporarily visit
+                                    nodes without emitting bytecode to
+                                    check only errors. */
 
     PyObject *c_const_cache;     /* Python dict holding all constants,
                                     including names tuple */
@@ -344,7 +345,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_flags = flags;
     c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
     c.c_nestlevel = 0;
-    c.c_emit_bytecode = 1;
+    c.c_do_not_emit_bytecode = 0;
 
     if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
         goto finally;
@@ -1157,7 +1158,7 @@ compiler_addop(struct compiler *c, int opcode)
     struct instr *i;
     int off;
     assert(!HAS_ARG(opcode));
-    if (!c->c_emit_bytecode) {
+    if (c->c_do_not_emit_bytecode) {
         return 1;
     }
     off = compiler_next_instr(c, c->u->u_curblock);
@@ -1313,7 +1314,7 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
 static Py_ssize_t
 compiler_add_const(struct compiler *c, PyObject *o)
 {
-    if (!c->c_emit_bytecode) {
+    if (c->c_do_not_emit_bytecode) {
         return 0;
     }
 
@@ -1330,7 +1331,7 @@ compiler_add_const(struct compiler *c, PyObject *o)
 static int
 compiler_addop_load_const(struct compiler *c, PyObject *o)
 {
-    if (!c->c_emit_bytecode) {
+    if (c->c_do_not_emit_bytecode) {
         return 1;
     }
 
@@ -1344,7 +1345,7 @@ static int
 compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
                      PyObject *o)
 {
-    if (!c->c_emit_bytecode) {
+    if (c->c_do_not_emit_bytecode) {
         return 1;
     }
 
@@ -1360,7 +1361,7 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
 {
     Py_ssize_t arg;
 
-    if (!c->c_emit_bytecode) {
+    if (c->c_do_not_emit_bytecode) {
         return 1;
     }
 
@@ -1384,7 +1385,7 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
     struct instr *i;
     int off;
 
-    if (!c->c_emit_bytecode) {
+    if (c->c_do_not_emit_bytecode) {
         return 1;
     }
 
@@ -1414,7 +1415,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
     struct instr *i;
     int off;
 
-    if (!c->c_emit_bytecode) {
+    if (c->c_do_not_emit_bytecode) {
         return 1;
     }
 
@@ -1557,10 +1558,10 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 */
 
 #define BEGIN_DO_NOT_EMIT_BYTECODE { \
-    c->c_emit_bytecode = 0;
+    c->c_do_not_emit_bytecode++;
 
 #define END_DO_NOT_EMIT_BYTECODE \
-    c->c_emit_bytecode = 1; \
+    c->c_do_not_emit_bytecode--; \
 }
 
 /* Search if variable annotations are present statically in a block. */
