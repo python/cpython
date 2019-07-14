@@ -2886,7 +2886,7 @@ textiowrapper_repr(textio *self)
 
     CHECK_INITIALIZED(self);
 
-    res = PyUnicode_FromString("<_io.TextIOWrapper");
+    res = PyUnicode_FromFormat("<%s", Py_TYPE((PyObject *) self)->tp_name);
     if (res == NULL)
         return NULL;
 

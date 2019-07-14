@@ -1080,14 +1080,17 @@ fileio_repr(fileio *self)
     PyObject *nameobj, *res;
 
     if (self->fd < 0)
-        return PyUnicode_FromFormat("<_io.FileIO [closed]>");
+        return PyUnicode_FromFormat(
+            "<%s [closed]>",
+            Py_TYPE((PyObject *) self)->tp_name);
 
     if (_PyObject_LookupAttrId((PyObject *) self, &PyId_name, &nameobj) < 0) {
         return NULL;
     }
     if (nameobj == NULL) {
         res = PyUnicode_FromFormat(
-            "<_io.FileIO fd=%d mode='%s' closefd=%s>",
+            "<%s fd=%d mode='%s' closefd=%s>",
+            Py_TYPE((PyObject *) self)->tp_name,
             self->fd, mode_string(self), self->closefd ? "True" : "False");
     }
     else {
@@ -1095,7 +1098,8 @@ fileio_repr(fileio *self)
         res = NULL;
         if (status == 0) {
             res = PyUnicode_FromFormat(
-                "<_io.FileIO name=%R mode='%s' closefd=%s>",
+                "<%s name=%R mode='%s' closefd=%s>",
+                Py_TYPE((PyObject *) self)->tp_name,
                 nameobj, mode_string(self), self->closefd ? "True" : "False");
             Py_ReprLeave((PyObject *)self);
         }

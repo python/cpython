@@ -2630,6 +2630,30 @@ class TextIOWrapperTest(unittest.TestCase):
         t.buffer.detach()
         repr(t)  # Should not raise an exception
 
+    def test_subclass_repr(self):
+        class SubTextIOWrapper(self.TextIOWrapper):
+            pass
+
+        clsname = 'SubTextIOWrapper'
+        raw = self.BytesIO("hello".encode("utf-8"))
+        b = self.BufferedReader(raw)
+        t = SubTextIOWrapper(b, encoding="utf-8")
+        self.assertRegex(repr(t),
+                         r"%s encoding='utf-8'>" % clsname)
+        raw.name = "dummy"
+        self.assertRegex(repr(t),
+                         r"%s name='dummy' encoding='utf-8'>" % clsname)
+        t.mode = "r"
+        self.assertRegex(repr(t),
+                         r"%s name='dummy' mode='r' encoding='utf-8'>" %
+                         clsname)
+        raw.name = b"dummy"
+        self.assertRegex(
+            repr(t),
+            r"%s name=b'dummy' mode='r' encoding='utf-8'>" % clsname)
+        t.buffer.detach()
+        repr(t)  # Should not raise an exception
+
     def test_recursive_repr(self):
         # Issue #25455
         raw = self.BytesIO()

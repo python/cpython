@@ -1034,13 +1034,19 @@ static PyObject *
 winconsoleio_repr(winconsoleio *self)
 {
     if (self->handle == INVALID_HANDLE_VALUE)
-        return PyUnicode_FromFormat("<_io._WindowsConsoleIO [closed]>");
+        return PyUnicode_FromFormat(
+            "<%s [closed]>",
+            Py_TYPE((PyObject *) self)->tp_name);
 
     if (self->readable)
-        return PyUnicode_FromFormat("<_io._WindowsConsoleIO mode='rb' closefd=%s>",
+        return PyUnicode_FromFormat(
+            "<%s mode='rb' closefd=%s>",
+            Py_TYPE((PyObject *) self)->tp_name,
             self->closehandle ? "True" : "False");
     if (self->writable)
-        return PyUnicode_FromFormat("<_io._WindowsConsoleIO mode='wb' closefd=%s>",
+        return PyUnicode_FromFormat(
+            "<%s mode='wb' closefd=%s>",
+            Py_TYPE((PyObject *) self)->tp_name,
             self->closehandle ? "True" : "False");
 
     PyErr_SetString(PyExc_SystemError, "_WindowsConsoleIO has invalid mode");

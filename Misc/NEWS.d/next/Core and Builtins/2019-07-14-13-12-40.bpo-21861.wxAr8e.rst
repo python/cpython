@@ -1,0 +1,2 @@
+Remove the hardcoded classes names from ``_io`` module classes' ``__repr__`` in
+favor of the actual object type name to make it more subclass friendly.

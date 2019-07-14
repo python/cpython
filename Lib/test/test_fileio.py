@@ -154,6 +154,27 @@ class AutoFileTests:
     def test_reject(self):
         self.assertRaises(TypeError, self.f.write, "Hello!")
 
+    def test_subclass_repr(self):
+        class CustomFileIO(self.FileIO):
+            pass
+
+        custom_file_io = CustomFileIO(TESTFN, 'w')
+
+        self.assertIn(
+            "CustomFileIO name=%r mode=%r closefd=True>" %
+            (custom_file_io.name, custom_file_io.mode),
+            repr(custom_file_io))
+
+        del custom_file_io.name
+        self.assertIn(
+            "CustomFileIO fd=%r mode=%r closefd=True>" %
+            (custom_file_io.fileno(), custom_file_io.mode),
+            repr(custom_file_io))
+
+        custom_file_io.close()
+        self.assertIn("CustomFileIO [closed]", repr(custom_file_io))
+
+
     def testRepr(self):
         self.assertEqual(repr(self.f),
                          "<%s.FileIO name=%r mode=%r closefd=True>" %
