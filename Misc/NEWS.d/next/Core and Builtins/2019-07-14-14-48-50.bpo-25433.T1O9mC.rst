@@ -1,0 +1,5 @@
+Align ``bytearray.strip``, ``.lstrip``, ``.rstrip`` to their ``bytes``
+counterparts.
+
+Speedup ranges between 0% when stripping custom bytes and 8% when stripping
+whitespace.
