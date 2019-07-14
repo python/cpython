@@ -718,27 +718,23 @@ class ZipInfo (object):
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
-    def decode_extra_zip64(self, ln, extra):
-
-        # offset = len(extra block tag) + len(extra block size)
-        offset = 4
-
+    def decode_extra_zip64(self, ln, extra_payload):
         # Unpack the extra block from one of the possiblities given the
         # combinations of a struct 'QQQL' where every field is optional.
         if ln == 0:
             counts = ()
         elif ln in {8, 16, 24}:
             field_cnt = ln / 8
-            counts = struct.unpack('<%dQ' % field_cnt, extra[offset:offset+ln])
+            counts = struct.unpack('<%dQ' % field_cnt, extra_payload)
         elif ln in {4, 12, 20, 28}:
             q_field_cnt = (ln - 4) / 8
             if q_field_cnt == 0:
                 struct_str = '<L'
             else:
                 struct_str = '<%dQL' % (q_field_cnt, )
-            counts = struct.unpack(struct_str, extra[offset:offset+ln])
+            counts = struct.unpack(struct_str, extra_payload)
         else:
-            raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
+            raise BadZipFile("Corrupt extra field %04x (size=%d)" % (EXTRA_ZIP64, ln))
 
         idx = 0
         # ZIP64 extension (large files and/or large archives)
@@ -772,16 +768,22 @@ class ZipInfo (object):
         # Try to decode the extra field.
         extra = self.extra
         extra_decoders = self.get_extra_decoders()
-        while len(extra) >= 4:
-            tp, ln = struct.unpack('<HH', extra[:4])
-            if ln+4 > len(extra):
+        idx = 0
+        total_len = len(extra)
+        extra_left = total_len
+        while idx < total_len:
+            if extra_left < 4:
+                break
+            tp, ln = struct.unpack('<HH', extra[idx:idx+4])
+            if ln+4 > extra_left:
                 raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
             try:
-                extra_decoders[tp](ln, extra)
+                extra_decoders[tp](ln, extra[idx+4: idx+4+ln])
             except KeyError:
                 # We don't support this particular Extra Data field
                 pass
-            extra = extra[ln+4:]
+            idx = idx + 4 + ln
+            extra_left = extra_left - 4 - ln
 
     @classmethod
     def from_file(cls, filename, arcname=None, *, strict_timestamps=True):
