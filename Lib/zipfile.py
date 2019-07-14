@@ -618,6 +618,49 @@ class ZipInfo (object):
             extra=extra
         )
 
+    def encode_central_directory(self, filename, create_version, create_system,
+                                 extract_version, reserved, flag_bits,
+                                 compress_type, dostime, dosdate, crc,
+                                 compress_size, file_size, disk_start,
+                                 internal_attr, external_attr, header_offset,
+                                 extra_data, comment):
+        try:
+            centdir = struct.pack(
+                structCentralDir,
+                stringCentralDir,
+                create_version,
+                create_system,
+                extract_version,
+                reserved,
+                flag_bits,
+                compress_type,
+                dostime,
+                dosdate,
+                crc,
+                compress_size,
+                file_size,
+                len(filename),
+                len(extra_data),
+                len(comment),
+                disk_start,
+                internal_attr,
+                external_attr,
+                header_offset,
+            )
+        except DeprecationWarning:
+            # Is this for python 3.0 where struct would raise a
+            # DeprecationWarning instead of a struct.error when an integer
+            # conversion code was passed a non-integer?
+            # Is it still needed?
+            print((structCentralDir, stringCentralDir, create_version,
+                   create_system, extract_version, reserved,
+                   flag_bits, compress_type, dostime, dosdate,
+                   crc, compress_size, file_size,
+                   len(filename), len(extra_data), len(comment),
+                   disk_start, internal_attr, external_attr,
+                   header_offset), file=sys.stderr)
+            raise
+        return centdir + filename + extra_data
 
     def central_directory(self):
         min_version = 0
@@ -648,30 +691,26 @@ class ZipInfo (object):
         filename, flag_bits = self._encodeFilenameFlags()
         # Writing multi disk archives is not supported so disks is always 0
         disk_start = 0
-        try:
-            centdir = struct.pack(structCentralDir,
-                                  stringCentralDir, create_version,
-                                  self.create_system, extract_version, self.reserved,
-                                  flag_bits, self.compress_type,
-                                  self.dostime, self.dosdate,
-                                  self.CRC, compress_size, file_size,
-                                  len(filename), len(extra_data), len(self.comment),
-                                  disk_start, self.internal_attr, self.external_attr,
-                                  header_offset)
-        except DeprecationWarning:
-            # Is this for python 3.0 where struct would raise a
-            # DeprecationWarning instead of a struct.error when an integer
-            # conversion code was passed a non-integer?
-            # Is it still needed?
-            print((structCentralDir, stringCentralDir, create_version,
-                   self.create_system, extract_version, self.reserved,
-                   self.flag_bits, self.compress_type, self.dostime,
-                   self.dosdate, self.CRC, compress_size, file_size,
-                   len(self.filename), len(extra_data), len(self.comment),
-                   0, self.internal_attr, self.external_attr,
-                   header_offset), file=sys.stderr)
-            raise
-        return centdir + filename + extra_data
+        return self.encode_central_directory(
+            filename=filename,
+            create_version=create_version,
+            create_system=self.create_system,
+            extract_version=extract_version,
+            reserved=self.reserved,
+            flag_bits=flag_bits,
+            compress_type=self.compress_type,
+            dostime=self.dostime,
+            dosdate=self.dosdate,
+            crc=self.CRC,
+            compress_size=compress_size,
+            file_size=file_size,
+            disk_start=disk_start,
+            internal_attr=self.internal_attr,
+            external_attr=self.external_attr,
+            header_offset=header_offset,
+            extra_data=extra_data,
+            comment=self.comment,
+        )
 
     def _encodeFilenameFlags(self):
         try:
