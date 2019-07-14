@@ -391,7 +391,7 @@ number.  The accepted comparison operators are::
     <=   >=   !=
 
 These can be combined by using multiple qualifiers separated by commas (and
-optional whitespace).  In this case, all of the qualifiers must be matched; a
+optional :term:`whitespace`).  In this case, all of the qualifiers must be matched; a
 logical AND is used to combine the evaluations.
 
 Let's look at a bunch of examples:

@@ -1559,7 +1559,7 @@ lines, and joining lines with backslashes.
    commonly want to do when processing a text file  that has some line-by-line
    syntax: strip comments (as long as ``#``  is your comment character), skip blank
    lines, join adjacent lines by escaping the newline (ie. backslash at end of
-   line), strip leading and/or trailing whitespace.  All of these are optional and
+   line), strip leading and/or trailing :term:`whitespace`.  All of these are optional and
    independently controllable.
 
    The class provides a :meth:`warn` method so you can generate  warning messages
@@ -1675,7 +1675,7 @@ lines, and joining lines with backslashes.
       Push *line* (a string) onto an internal buffer that will be checked by future
       :meth:`readline` calls.  Handy for implementing a parser with line-at-a-time
       lookahead. Note that lines that are "unread" with :meth:`unreadline` are not
-      subsequently re-cleansed (whitespace  stripped, or whatever) when read with
+      subsequently re-cleansed (:term:`whitespace` stripped, or whatever) when read with
       :meth:`readline`. If multiple calls are made to :meth:`unreadline` before a call
       to :meth:`readline`, the lines will be returned most in most recent first order.
 

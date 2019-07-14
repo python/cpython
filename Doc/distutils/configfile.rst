@@ -126,7 +126,7 @@ own :file:`setup.cfg`:
                doc/
                examples/
 
-Note that the ``doc_files`` option is simply a whitespace-separated string
+Note that the ``doc_files`` option is simply a :term:`whitespace`-separated string
 split across multiple lines for readability.
 
 
