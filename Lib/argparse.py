@@ -89,7 +89,6 @@ import shutil as _shutil
 import sys as _sys
 
 from gettext import gettext as _, ngettext
-from distutils.util import strtobool as _strtobool
 
 SUPPRESS = '==SUPPRESS=='
 
@@ -1603,6 +1602,22 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         self._container._remove_action(action)
         self._group_actions.remove(action)
 
+def _strtobool (val):
+    """Convert a string representation of truth to true or false.
+
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+
+    <Based on strtobool located in module distutils.util>
+    """
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return True
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return False
+    else:
+        raise ValueError("invalid truth value %r" % (val,))
 
 class ArgumentParser(_AttributeHolder, _ActionsContainer):
     """Object for parsing command line strings into Python objects.
@@ -1666,7 +1681,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.register('type', None, identity)
 
         # register bool with a type_func that translates string into bool instance logically and gracefully
-        self.register('type', bool, lambda v: bool(_strtobool(v)))
+        self.register('type', bool, _strtobool)
 
         # add help argument if necessary
         # (using explicit default to override global argument_default)
