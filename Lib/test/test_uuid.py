@@ -14,7 +14,6 @@ from unittest import mock
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
-_AIX = sys.platform.startswith("aix")
 
 def importable(name):
     try:
