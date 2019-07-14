@@ -6,6 +6,7 @@ import _ctypes_test
 from ctypes.util import find_library
 import test.support
 import sys
+from platform import architecture as _architecture
 
 class SubclassesTest(unittest.TestCase):
     def test_subclass(self):
@@ -440,7 +441,7 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
-    @unittest.skipIf(sys.platform == 'win32', "can't test on Windows")
+    @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
     def test_issue18060_a(self):
         # The call to atan2() should succeed if the
         # class fields were correctly cloned in the
@@ -450,7 +451,10 @@ class StructureTestCase(unittest.TestCase):
         # PyCStructUnionType_update_stgdict() for each
         # _fields_ assignment, and PyCStgDict_clone()
         # for the Mid and Vector class definitions.
-        libm = CDLL(find_library('m'))
+        if sys.platform == 'win32':
+            libm = CDLL(find_library('msvcrt.dll'))
+        else:
+            libm = CDLL(find_library('m'))
 
         class Base(Structure):
             _fields_ = [('y', c_double),
@@ -469,7 +473,7 @@ class StructureTestCase(unittest.TestCase):
         arg = Vector(y=0.0, x=-1.0)
         self.assertAlmostEqual(libm.atan2(arg), 3.141592653589793)
 
-    @unittest.skipIf(sys.platform == 'win32', "can't test on Windows")
+    @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
     def test_issue18060_b(self):
         # The call to atan2() should succeed if the
         # class fields were correctly cloned in the
@@ -478,7 +482,10 @@ class StructureTestCase(unittest.TestCase):
         # This test case calls
         # PyCStructUnionType_update_stgdict() for each
         # _fields_ assignment.
-        libm = CDLL(find_library('m'))
+        if sys.platform == 'win32':
+            libm = CDLL(find_library('msvcrt.dll'))
+        else:
+            libm = CDLL(find_library('m'))
 
         class Base(Structure):
             _fields_ = [('y', c_double),
@@ -496,7 +503,7 @@ class StructureTestCase(unittest.TestCase):
         arg = Vector(y=0.0, x=-1.0)
         self.assertAlmostEqual(libm.atan2(arg), 3.141592653589793)
 
-    @unittest.skipIf(sys.platform == 'win32', "can't test on Windows")
+    @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
     def test_issue18060_c(self):
         # The call to atan2() should succeed if the
         # class fields were correctly cloned in the
@@ -505,7 +512,10 @@ class StructureTestCase(unittest.TestCase):
         # This test case calls
         # PyCStructUnionType_update_stgdict() for each
         # _fields_ assignment.
-        libm = CDLL(find_library('m'))
+        if sys.platform == 'win32':
+            libm = CDLL(find_library('msvcrt.dll'))
+        else:
+            libm = CDLL(find_library('m'))
 
         class Base(Structure):
             _fields_ = [('y', c_double)]
