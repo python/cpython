@@ -255,7 +255,7 @@ the Python configuration.
 
 .. c:function:: int Py_UNICODE_ISSPACE(Py_UNICODE ch)
 
-   Return ``1`` or ``0`` depending on whether *ch* is a whitespace character.
+   Return ``1`` or ``0`` depending on whether *ch* is a :term:`whitespace` character.
 
 
 .. c:function:: int Py_UNICODE_ISLOWER(Py_UNICODE ch)
@@ -1287,7 +1287,7 @@ These are the UTF-7 codec APIs:
 
    If *base64SetO* is nonzero, "Set O" (punctuation that has no otherwise
    special meaning) will be encoded in base-64.  If *base64WhiteSpace* is
-   nonzero, whitespace will be encoded in base-64.  Both are set to zero for the
+   nonzero, :term:`whitespace` will be encoded in base-64.  Both are set to zero for the
    Python "utf-7" codec.
 
    .. deprecated-removed:: 3.3 4.0
@@ -1576,7 +1576,7 @@ They all return *NULL* or ``-1`` if an exception occurs.
 .. c:function:: PyObject* PyUnicode_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
 
    Split a string giving a list of Unicode strings.  If *sep* is *NULL*, splitting
-   will be done at all whitespace substrings.  Otherwise, splits occur at the given
+   will be done at all :term:`whitespace` substrings.  Otherwise, splits occur at the given
    separator.  At most *maxsplit* splits will be done.  If negative, no limit is
    set.  Separators are not included in the resulting list.
 

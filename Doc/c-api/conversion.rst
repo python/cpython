@@ -56,7 +56,7 @@ The following functions provide locale-independent string to number conversions.
    Convert a string ``s`` to a :c:type:`double`, raising a Python
    exception on failure.  The set of accepted strings corresponds to
    the set of strings accepted by Python's :func:`float` constructor,
-   except that ``s`` must not have leading or trailing whitespace.
+   except that ``s`` must not have leading or trailing :term:`whitespace`.
    The conversion is independent of the current locale.
 
    If ``endptr`` is ``NULL``, convert the whole string.  Raise
