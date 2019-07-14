@@ -5176,6 +5176,59 @@ sequence_getitem(PyObject *self, PyObject *args)
 }
 
 
+static PyObject*
+meth_varargs(PyObject* self, PyObject* args)
+{
+    Py_INCREF(args);
+    return args;
+}
+
+static PyObject*
+meth_varargs_keywords(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    return Py_BuildValue("OO", args, kwargs);
+}
+
+static PyObject*
+meth_o(PyObject* self, PyObject* obj)
+{
+    Py_INCREF(obj);
+    return obj;
+}
+
+static PyObject*
+meth_noargs(PyObject* self, PyObject* ignored)
+{
+    Py_RETURN_NONE;
+}
+
+static PyObject*
+meth_fastcall(PyObject* self, PyObject** args, Py_ssize_t nargs)
+{
+    PyObject *tuple = PyTuple_New(nargs);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i=0; i < nargs; i++) {
+        Py_INCREF(args[i]);
+        PyTuple_SET_ITEM(tuple, i, args[i]);
+    }
+    return tuple;
+}
+
+static PyObject*
+meth_fastcall_keywords(PyObject* self, PyObject** args,
+                       Py_ssize_t nargs, PyObject* kwargs)
+{
+    PyObject *pyargs = meth_fastcall(self, args, nargs);
+    if (pyargs == NULL) {
+        return NULL;
+    }
+    PyObject *pykwargs = _PyObject_Vectorcall((PyObject*)&PyDict_Type,
+                                              args + nargs, 0, kwargs);
+    return Py_BuildValue("NN", pyargs, pykwargs);
+}
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -5426,6 +5479,12 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
     {"sequence_getitem", sequence_getitem, METH_VARARGS},
+    {"meth_varargs", meth_varargs, METH_VARARGS},
+    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS},
+    {"meth_o", meth_o, METH_O},
+    {"meth_noargs", meth_noargs, METH_NOARGS},
+    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL},
+    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS},
     {NULL, NULL} /* sentinel */
 };
 

@@ -27,12 +27,15 @@ class FunctionCalls(unittest.TestCase):
         self.assertEqual(list(res.items()), expected)
 
 
-# The test cases here cover several paths through the function calling
-# code.  They depend on the METH_XXX flag that is used to define a C
-# function, which can't be verified from Python.  If the METH_XXX decl
-# for a C function changes, these tests may not cover the right paths.
+# The test cases here covered several paths through the function calling
+# code.  They depended on the C function being defined with the METH_VARARGS
+# or METH_OLDARGS flag, but all these functions have since changed these
+# flags.
+# Nevertheless, the tests should still pass, so we keep them.
 
 class CFunctionCalls(unittest.TestCase):
+
+    # {}.__contains__
 
     def test_varargs0(self):
         self.assertRaises(TypeError, {}.__contains__)
@@ -65,6 +68,8 @@ class CFunctionCalls(unittest.TestCase):
 
     def test_varargs2_kw(self):
         self.assertRaises(TypeError, {}.__contains__, x=2, y=2)
+
+    # {}.keys
 
     def test_oldargs0_0(self):
         {}.keys()
@@ -107,6 +112,8 @@ class CFunctionCalls(unittest.TestCase):
 
     def test_oldargs0_2_kw(self):
         self.assertRaises(TypeError, {}.keys, x=2, y=2)
+
+    # [].count
 
     def test_oldargs1_0(self):
         self.assertRaises(TypeError, [].count)
@@ -287,6 +294,120 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
     def test_oldargs1_2_kw(self):
         msg = r"count\(\) takes no keyword arguments"
         self.assertRaisesRegex(TypeError, msg, [].count, x=2, y=2)
+
+
+
+@cpython_only
+class TestCallingCnventions(unittest.TestCase):
+    """Test calling using the various C calling conventions (METH_*)"""
+
+    # This uses dedicated C functons whose METH_* flags shouldn't change.
+
+    def test_varargs(self):
+        self.assertEqual(_testcapi.meth_varargs(1, 2, 3), (1, 2, 3))
+
+    def test_varargs_ext(self):
+        self.assertEqual(_testcapi.meth_varargs(*(1, 2, 3)), (1, 2, 3))
+
+    def test_varargs_error_kw(self):
+        msg = r"meth_varargs\(\) takes no keyword arguments"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: _testcapi.meth_varargs(k=1),
+        )
+
+    def test_varargs_keywords(self):
+        self.assertEqual(
+            _testcapi.meth_varargs_keywords(1, 2, a=3, b=4),
+            ((1, 2), {'a': 3, 'b': 4})
+        )
+
+    def test_o(self):
+        self.assertEqual(_testcapi.meth_o(1), 1)
+
+    def test_o_ext(self):
+        self.assertEqual(_testcapi.meth_o(*[1]), 1)
+
+    def test_o_error_no_arg(self):
+        msg = r"meth_o\(\) takes exactly one argument \(0 given\)"
+        self.assertRaisesRegex(TypeError, msg, _testcapi.meth_o)
+
+    def test_o_error_two_args(self):
+        msg = r"meth_o\(\) takes exactly one argument \(2 given\)"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: _testcapi.meth_o(1, 2),
+        )
+
+    def test_o_error_ext(self):
+        msg = r"meth_o\(\) takes exactly one argument \(3 given\)"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: _testcapi.meth_o(*(1, 2, 3)),
+        )
+
+    def test_o_error_kw(self):
+        msg = r"meth_o\(\) takes no keyword arguments"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: _testcapi.meth_o(k=1),
+        )
+
+    def test_o_error_arg_kw(self):
+        msg = r"meth_o\(\) takes no keyword arguments"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: _testcapi.meth_o(k=1),
+        )
+
+    def test_noargs(self):
+        self.assertEqual(_testcapi.meth_noargs(), None)
+
+    def test_noargs_ext(self):
+        self.assertEqual(_testcapi.meth_noargs(*[]), None)
+
+    def test_noargs_error_arg(self):
+        msg = r"meth_noargs\(\) takes no arguments \(1 given\)"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: _testcapi.meth_noargs(1),
+        )
+
+    def test_noargs_error_arg2(self):
+        msg = r"meth_noargs\(\) takes no arguments \(2 given\)"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: _testcapi.meth_noargs(1, 2),
+        )
+
+    def test_noargs_error_ext(self):
+        msg = r"meth_noargs\(\) takes no arguments \(3 given\)"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: _testcapi.meth_noargs(*(1, 2, 3)),
+        )
+
+    def test_noargs_error_kw(self):
+        msg = r"meth_noargs\(\) takes no keyword arguments"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: _testcapi.meth_noargs(k=1),
+        )
+
+    def test_fastcall(self):
+        self.assertEqual(_testcapi.meth_fastcall(1, 2, 3), (1, 2, 3))
+
+    def test_fastcall_ext(self):
+        self.assertEqual(_testcapi.meth_fastcall(*(1, 2, 3)), (1, 2, 3))
+
+    def test_fastcall_error_kw(self):
+        msg = r"meth_fastcall\(\) takes no keyword arguments"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: _testcapi.meth_fastcall(k=1),
+        )
+
+    def test_fastcall_keywords(self):
+        self.assertEqual(
+            _testcapi.meth_fastcall_keywords(1, 2, a=3, b=4),
+            ((1, 2), {'a': 3, 'b': 4})
+        )
+
+    def test_fastcall_keywords_ext(self):
+        self.assertEqual(
+            _testcapi.meth_fastcall_keywords(*(1, 2), a=3, b=4),
+            ((1, 2), {'a': 3, 'b': 4})
+        )
 
 
 def pyfunc(arg1, arg2):
