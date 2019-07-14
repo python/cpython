@@ -1688,7 +1688,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 return NULL;
         }
     }
-    return arguments(posargs, posonlyargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
+    return arguments(posonlyargs, posargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
 }
 
 static expr_ty
