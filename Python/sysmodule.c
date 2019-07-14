@@ -2959,6 +2959,9 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         return _PyStatus_ERR("failed to create a module object");
     }
 
+    PyModule_AddIntMacro(sysmod, EXIT_SUCCESS);
+    PyModule_AddIntMacro(sysmod, EXIT_FAILURE);
+
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {
         return _PyStatus_ERR("can't initialize sys dict");

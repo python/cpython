@@ -154,6 +154,17 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+        # test EXIT_SUCCESS and EXIT_FAILURE constants
+        self.assertNotEqual(sys.EXIT_SUCCESS, sys.EXIT_FAILURE)
+        rc, out, err = assert_python_ok('-c', 'import sys; sys.exit(sys.EXIT_SUCCESS)')
+        self.assertEqual(rc, sys.EXIT_SUCCESS)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(sys.EXIT_FAILURE)')
+        self.assertEqual(rc, sys.EXIT_FAILURE)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
         def check_exit_message(code, expected, **env_vars):
             rc, out, err = assert_python_failure('-c', code, **env_vars)
             self.assertEqual(rc, 1)
