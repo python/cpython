@@ -1183,7 +1183,7 @@ Another example that may behave different from what one would expect is this::
    b'abc def ghi'
    >>> s.value is s.value
    False
-    >>>
+   >>>
 
 .. note::
 
