@@ -652,6 +652,17 @@ class StructTest(unittest.TestCase):
         s2 = struct.Struct(s.format.encode())
         self.assertEqual(s2.format, s.format)
 
+    def test_uninitialized_struct(self):
+        s = struct.Struct.__new__(struct.Struct)
+        with self.assertRaises(ValueError):
+            s.format
+        with self.assertRaises(ValueError):
+            s.size
+        for meth in s.iter_unpack, s.pack, s.unpack, s.unpack_from:
+            self.assertRaises(ValueError, meth, b'0')
+        self.assertRaises(ValueError, s.pack_into, bytearray(1), 0, b'0')
+        self.assertRaises(ValueError, s.__sizeof__)
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """

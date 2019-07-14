@@ -270,6 +270,12 @@ get_size_t(PyObject *v, size_t *p)
 
 #define RANGE_ERROR(x, f, flag, mask) return _range_error(f, flag)
 
+#define CHECK_INITIALIZED(self) \
+    if (self->s_codes == NULL) { \
+        PyErr_SetString(PyExc_ValueError, \
+                        "Struct.__init__() wasn't called"); \
+        return NULL; \
+    }
 
 /* Floating point helpers */
 
@@ -1533,7 +1539,7 @@ static PyObject *
 Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=873a24faf02e848a input=3113f8e7038b2f6c]*/
 {
-    assert(self->s_codes != NULL);
+    CHECK_INITIALIZED(self);
     if (buffer->len != self->s_size) {
         PyErr_Format(StructError,
                      "unpack requires a buffer of %zd bytes",
@@ -1564,8 +1570,7 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset)
 /*[clinic end generated code: output=57fac875e0977316 input=cafd4851d473c894]*/
 {
-    assert(self->s_codes != NULL);
-
+    CHECK_INITIALIZED(self);
     if (offset < 0) {
         if (offset + self->s_size > 0) {
             PyErr_Format(StructError,
@@ -1714,8 +1719,7 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
 {
     unpackiterobject *iter;
 
-    assert(self->s_codes != NULL);
-
+    CHECK_INITIALIZED(self);
     if (self->s_size == 0) {
         PyErr_Format(StructError,
                      "cannot iteratively unpack with a struct of length 0");
@@ -1851,7 +1855,7 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     /* Validate arguments. */
     soself = (PyStructObject *)self;
     assert(PyStruct_Check(self));
-    assert(soself->s_codes != NULL);
+    CHECK_INITIALIZED(soself);
     if (nargs != soself->s_len)
     {
         PyErr_Format(StructError,
@@ -1891,7 +1895,7 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     /* Validate arguments.  +1 is for the first arg as buffer. */
     soself = (PyStructObject *)self;
     assert(PyStruct_Check(self));
-    assert(soself->s_codes != NULL);
+    CHECK_INITIALIZED(soself);
     if (nargs != (soself->s_len + 2))
     {
         if (nargs == 0) {
@@ -1977,6 +1981,7 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 static PyObject *
 s_get_format(PyStructObject *self, void *unused)
 {
+    CHECK_INITIALIZED(self);
     return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
                                        PyBytes_GET_SIZE(self->s_format));
 }
@@ -1984,6 +1989,7 @@ s_get_format(PyStructObject *self, void *unused)
 static PyObject *
 s_get_size(PyStructObject *self, void *unused)
 {
+    CHECK_INITIALIZED(self);
     return PyLong_FromSsize_t(self->s_size);
 }
 
@@ -1995,6 +2001,7 @@ s_sizeof(PyStructObject *self, void *unused)
 {
     Py_ssize_t size;
     formatcode *code;
+    CHECK_INITIALIZED(self);
 
     size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
     for (code = self->s_codes; code->fmtdef != NULL; code++)

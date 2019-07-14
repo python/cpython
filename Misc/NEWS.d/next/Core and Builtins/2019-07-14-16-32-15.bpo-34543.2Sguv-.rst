@@ -1,0 +1,2 @@
+Fix :exc:`SystemError`\ s and segfaults with uninitialized
+:class:`struct.Struct`\ s.
