@@ -407,7 +407,7 @@ class AbstractTestsWithSourceFile:
             def write(self, data):
                 nonlocal count
                 if count is not None:
-                    if count == stop:
+                    if (count > stop):
                         raise OSError
                     count += 1
                 super().write(data)
@@ -424,11 +424,12 @@ class AbstractTestsWithSourceFile:
                     with zipfp.open('file2', 'w') as f:
                         f.write(b'data2')
                 except OSError:
-                    stop += 1
+                    pass
                 else:
                     break
                 finally:
                     count = None
+                stop += 1
             with zipfile.ZipFile(io.BytesIO(testfile.getvalue())) as zipfp:
                 self.assertEqual(zipfp.namelist(), ['file1'])
                 self.assertEqual(zipfp.read('file1'), b'data1')

@@ -1101,6 +1101,9 @@ class ZipExtFile(io.BufferedIOBase):
         [encryption header]
         [file data]
         [data descriptor]
+
+    For symmetry, the _ZipWriteFile class is responsible for writing the same
+    sections.
     """
 
     # Max size supported by decompressor.
@@ -1498,6 +1501,7 @@ class _ZipWriteFile(io.BufferedIOBase):
         self._crc = 0
 
         self.write_local_header()
+
     @property
     def _fileobj(self):
         return self._zipfile.fp
@@ -1521,7 +1525,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         return True
 
     def write_local_header(self):
-        self.fp.write(zinfo.FileHeader(zip64))
+        self._fileobj.write(self._zinfo.FileHeader(self._zip64))
+
     def write(self, data):
         if self.closed:
             raise ValueError('I/O operation on closed file.')
@@ -1577,7 +1582,6 @@ class _ZipWriteFile(io.BufferedIOBase):
             self._zipfile.NameToInfo[self._zinfo.filename] = self._zinfo
         finally:
             self._zipfile._writing = False
-
 
 
 class ZipFile:
