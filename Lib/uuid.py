@@ -446,14 +446,21 @@ def _find_mac_nextlines(command, args, hw_identifiers, f_index):
         try:
             words = line.rstrip().split()
             word = words[f_index(i)]
-            # (Only) on AIX the macaddr value given is not prefixed by 0, e.g.
-            # en0   1500  link#2      fa.bc.de.f7.62.4 110854824     0 160133733     0     0
-            # not
-            # en0   1500  link#2      fa.bc.de.f7.62.04 110854824     0 160133733     0     0
-            parts = word.split(_MAC_DELIM)
-            if len(parts) == 6 and all(0 < len(p) <= 2 for p in parts):
-                hexstr = b''.join(p.rjust(2, b'0') for p in parts)
-                mac = int(hexstr, 16)
+            if len(word) == 17:
+                mac = int(word.replace(_MAC_DELIM, b''), 16)
+            elif _AIX:
+                # (Only) on AIX the macaddr value given is not prefixed by 0, e.g.
+                # en0   1500  link#2      fa.bc.de.f7.62.4 110854824     0 160133733     0     0
+                # not
+                # en0   1500  link#2      fa.bc.de.f7.62.04 110854824     0 160133733     0     0
+                parts = word.split(_MAC_DELIM)
+                if len(parts) == 6 and all(0 < len(p) <= 2 for p in parts):
+                    hexstr = b''.join(p.rjust(2, b'0') for p in parts)
+                    mac = int(hexstr, 16)
+                else:
+                    continue
+            else:
+                continue
         except (ValueError, IndexError):
             # Virtual interfaces, such as those provided by
             # VPNs, do not have a colon-delimited MAC address
