@@ -943,6 +943,13 @@ class CRCZipDecrypter(BaseDecrypter):
 
 
 class LZMACompressor:
+    # The LZMA SDK version is not related to the XZ Util's liblzma version that
+    # the python library links to. The LZMA SDK is associated with the 7-zip
+    # project by Igor Pavlov. If there is a breaking change in how the
+    # properties are packed or their contents, these version identifiers can be
+    # used to specify the strategy for decompression.
+    LZMA_SDK_MAJOR_VERSION = 9
+    LZMA_SDK_MINOR_VERSION = 4
 
     def __init__(self):
         self._comp = None
@@ -952,7 +959,12 @@ class LZMACompressor:
         self._comp = lzma.LZMACompressor(lzma.FORMAT_RAW, filters=[
             lzma._decode_filter_properties(lzma.FILTER_LZMA1, props)
         ])
-        return struct.pack('<BBH', 9, 4, len(props)) + props
+        return struct.pack(
+            '<BBH',
+            9,  # LZMA_SDK_MAJOR_VERSION
+            4,  # LZMA_SDK_MINOR_VERSION
+            len(props)
+        ) + props
 
     def compress(self, data):
         if self._comp is None:
@@ -977,6 +989,7 @@ class LZMADecompressor:
             self._unconsumed += data
             if len(self._unconsumed) <= 4:
                 return b''
+            # '<BBH' = major_version (1 byte), minor_version (1 byte), psize (2 bytes)
             psize, = struct.unpack('<H', self._unconsumed[2:4])
             if len(self._unconsumed) <= 4 + psize:
                 return b''
