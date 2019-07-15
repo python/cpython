@@ -698,7 +698,7 @@ en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
                                  _get_command_stdout=mock_get_command_stdout):
             mac = self.uuid._find_mac_nextlines(
                 command='netstat',
-                args='-ia',
+                args='-ian',
                 hw_identifiers=b'Address',
                 f_index=lambda x: x,
             )
