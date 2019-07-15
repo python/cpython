@@ -1295,7 +1295,7 @@ fi
 
 # PGO generation task
 AC_SUBST(PROFILE_TASK)
-PROFILE_TASK='$(DEFAULT_PROFILE_TASK)'
+PROFILE_TASK='-m test --pgo'
 AC_MSG_CHECKING(for --with-profile-task=STRING)
 AC_ARG_WITH(profile-task,
             AS_HELP_STRING([--with-profile-task=ARGS],

@@ -256,53 +256,9 @@ TCLTK_LIBS=	@TCLTK_LIBS@
 
 # The task to run while instrumented when building the profile-opt target.
 # To speed up profile generation, we don't run the full unit test suite
-# by default.  To run the full suite, use PROFILE_TASK="-m test --pgo".
+# by default. The default is "-m test --pgo". To run more tests, use
+# PROFILE_TASK="-m test --pgo-extended"
 PROFILE_TASK=	@PROFILE_TASK@
-
-# The set of tests below was chosen based on the following criteria: either
-# they exercise a commonly used C extension module or type, or they run some
-# relatively typical Python code.
-DEFAULT_PROFILE_TASK=-m test --pgo \
-	test_array \
-	test_base64 \
-	test_binascii  \
-	test_binop \
-	test_bisect  \
-	test_bytes \
-	test_cmath \
-	test_codecs \
-	test_collections \
-	test_complex \
-	test_dataclasses \
-	test_datetime \
-	test_decimal \
-	test_difflib \
-	test_embed \
-	test_float \
-	test_fstring \
-	test_functools \
-	test_generators \
-	test_hashlib \
-	test_heapq \
-	test_int \
-	test_itertools \
-	test_json \
-	test_long \
-	test_math \
-	test_memoryview \
-	test_operator \
-	test_ordered_dict \
-	test_pickle \
-	test_pprint \
-	test_re \
-	test_set \
-	test_statistics \
-	test_struct \
-	test_tabnanny \
-	test_time \
-	test_unicode \
-	test_xml_etree \
-	test_xml_etree_c
 
 # report files for gcov / lcov coverage report
 COVERAGE_INFO=	$(abs_builddir)/coverage.info

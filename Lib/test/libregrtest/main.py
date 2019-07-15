@@ -21,6 +21,55 @@ from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
 
 
+# Set of tests run by default if --pgo is specified.  The tests below were
+# chosen based on the following criteria: either they exercise a commonly used
+# C extension module or type, or they run some relatively typical Python code.
+# Long running tests should be avoided because the PGO instrumented executable
+# runs slowly.
+_PGO_TESTS = [
+    'test_array',
+    'test_base64',
+    'test_binascii',
+    'test_binop',
+    'test_bisect',
+    'test_bytes',
+    'test_cmath',
+    'test_codecs',
+    'test_collections',
+    'test_complex',
+    'test_dataclasses',
+    'test_datetime',
+    'test_decimal',
+    'test_difflib',
+    'test_embed',
+    'test_float',
+    'test_fstring',
+    'test_functools',
+    'test_generators',
+    'test_hashlib',
+    'test_heapq',
+    'test_int',
+    'test_itertools',
+    'test_json',
+    'test_long',
+    'test_math',
+    'test_memoryview',
+    'test_operator',
+    'test_ordered_dict',
+    'test_pickle',
+    'test_pprint',
+    'test_re',
+    'test_set',
+    'test_statistics',
+    'test_struct',
+    'test_tabnanny',
+    'test_time',
+    'test_unicode',
+    'test_xml_etree',
+    'test_xml_etree_c',
+]
+
+
 class Regrtest:
     """Execute a test suite.
 
@@ -213,6 +262,13 @@ class Regrtest:
                         self.tests.append(match.group())
 
         removepy(self.tests)
+
+        # Add default PGO tests if no tests are specified
+        if self.ns.pgo and not self.ns.args:
+            if self.ns.pgo_extended:
+                pass  # will run all tests not marked excluded for PGO
+            else:
+                self.ns.args = _PGO_TESTS[:]  # run smaller set of tests
 
         stdtests = STDTESTS[:]
         nottests = NOTTESTS.copy()
