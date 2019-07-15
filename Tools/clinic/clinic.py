@@ -717,10 +717,29 @@ class CLanguage(Language):
             {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
             """)
 
+        parser_prototype_def_class = normalize_snippet("""
+            static PyObject *
+            {c_basename}({self_type}{self_name}, PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+        """)
+
+        body_keyword = normalize_snippet("""
+            if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+                {parse_arguments})) {{
+                goto exit;
+            }}
+            """, indent=4)
+
+
+
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
         parser_body_fields = ()
         parser_body_declarations = ''
+        requires_defining_class = any(
+                                isinstance(p.converter,
+                                           defining_class_converter)
+                                for p in parameters)
+
         def parser_body(prototype, *fields, declarations=''):
             nonlocal parser_body_fields, parser_body_declarations
             add, output = text_accumulator()
@@ -813,6 +832,19 @@ class CLanguage(Language):
                         """ % argname
                 parser_definition = parser_body(parser_prototype,
                                                 normalize_snippet(parsearg, indent=4))
+
+        elif requires_defining_class:
+            # As METH_METHOD supports all of these, we may leave these
+            # flags enabled all
+            flags = 'METH_METHOD|METH_VARARGS|METH_KEYWORDS'
+            parser_prototype = parser_prototype_def_class
+
+            # Only defining class is required, so no need of parsing
+            if len(parameters) > 1:
+                parser_definition = parser_body(parser_prototype, body_keyword)
+                parser_definition = insert_keywords(parser_definition)
+            else:
+                parser_definition = parser_body(parser_prototype)
 
         elif has_option_groups:
             # positional parameters with option groups
@@ -1020,6 +1052,19 @@ class CLanguage(Language):
             parses_keywords = 'METH_KEYWORDS' in flags
             if parses_keywords:
                 assert parses_positional
+
+            if requires_defining_class:
+                fields.insert(0, normalize_snippet("""
+                    PyTypeObject *cls;
+
+                    cls = PyType_DefiningTypeFromSlotFunc(Py_TYPE(self),
+                                                          %s,
+                                                          &{c_basename});
+                    if (cls == NULL) {{
+                        goto exit;
+                    }}
+                    """ % "Py_tp_init", indent=4))
+                parser_definition = parser_body(parser_prototype, *fields)
 
             if not parses_keywords:
                 fields.insert(0, normalize_snippet("""
@@ -2729,6 +2774,25 @@ class bool_converter(CConverter):
                 }}}}
                 """.format(argname=argname, paramname=self.name)
         return super().parse_arg(argname, displayname)
+
+class defining_class_converter(CConverter):
+    """
+    A special-case converter:
+    this is the default converter used for the defining class.
+    """
+    type = 'PyTypeObject *'
+    format_unit = ''
+    show_in_signature = False
+
+    def converter_init(self, *, type=None):
+        self.specified_type = type
+
+    def render(self, parameter, data):
+        self._render_self(parameter, data)
+
+    def set_template_dict(self, template_dict):
+        template_dict['defining_class_name'] = self.name
+
 
 class char_converter(CConverter):
     type = 'char'
@@ -4510,6 +4574,19 @@ class DSLParser:
                 self.function.parameters.clear()
             else:
                 fail("A 'self' parameter, if specified, must be the very first thing in the parameter block.")
+
+        if isinstance(converter, defining_class_converter):
+            _lp = len(self.function.parameters)
+            if _lp == 1:
+                if (self.parameter_state != self.ps_required):
+                    fail("A 'defining_class' parameter cannot be marked optional.")
+                if value is not unspecified:
+                    fail("A 'defining_class' parameter cannot have a default value.")
+                if self.group:
+                    fail("A 'defining_class' parameter cannot be in an optional group.")
+            else:
+                fail("A 'defining_class' parameter, if specified, must either be the first thing in the parameter block, or come just after 'self'.")
+
 
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
 

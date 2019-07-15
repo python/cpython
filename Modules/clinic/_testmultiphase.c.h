@@ -32,7 +32,7 @@ PyDoc_STRVAR(_testmultiphase_StateAccessType_get_defining_module__doc__,
 "This method returns module of the defining class.");
 
 #define _TESTMULTIPHASE_STATEACCESSTYPE_GET_DEFINING_MODULE_METHODDEF    \
-    {"get_defining_module", (PyCFunction)_testmultiphase_StateAccessType_get_defining_module, METH_METHOD|METH_VARARGS|METH_KEYWORDS, _testmultiphase_StateAccessType_get_defining_module__doc__},
+    {"get_defining_module", (PyCFunction)(void(*)(void))_testmultiphase_StateAccessType_get_defining_module, METH_METHOD|METH_VARARGS|METH_KEYWORDS, _testmultiphase_StateAccessType_get_defining_module__doc__},
 
 static PyObject *
 _testmultiphase_StateAccessType_get_defining_module_impl(StateAccessTypeObject *self,
@@ -65,4 +65,4 @@ _testmultiphase_StateAccessType_get_instance_count(StateAccessTypeObject *self, 
 {
     return _testmultiphase_StateAccessType_get_instance_count_impl(self);
 }
-/*[clinic end generated code: output=455ce989b3cd9429 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b1c348e0c498a5fe input=a9049054013a1b77]*/
