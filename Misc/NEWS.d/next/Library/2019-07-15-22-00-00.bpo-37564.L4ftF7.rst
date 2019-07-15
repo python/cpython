@@ -1,0 +1,3 @@
+Fix ArgumentParser to treat ``type=bool`` according to common truth values.
+Values 'y', 'yes', 't', 'true', 'on', and '1' will be evaluated as True value,
+while 'n', 'no', 'f', 'false', 'off', and '0 will be evaluated as False value.
