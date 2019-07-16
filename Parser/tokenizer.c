@@ -969,6 +969,7 @@ tok_nextc(struct tok_state *tok)
                 tok->buf = newbuf;
                 tok->cur = tok->buf + cur;
                 tok->line_start = tok->cur;
+                tok->multi_line_start = tok->cur;
                 tok->inp = tok->buf + curvalid;
                 tok->end = tok->buf + newsize;
                 tok->start = curstart < 0 ? NULL :

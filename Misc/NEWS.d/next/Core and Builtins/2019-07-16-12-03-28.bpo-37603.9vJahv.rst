@@ -1,0 +1,2 @@
+Fix Python parser crash: when the tokenizer grows its internal buffer using
+REALLOC(), update also tok->multi_line_start.
