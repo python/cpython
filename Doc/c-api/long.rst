@@ -36,9 +36,9 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    :c:type:`PyLongObject`.
 
 
-.. c:function:: PyObject* PyLong_FromLong(long v)
+.. c:function:: PyObject* PyLong_FromLong(long ival)
 
-   Return a new :c:type:`PyLongObject` object from *v*, or *NULL* on failure.
+   Return a new :c:type:`PyLongObject` object from *ival*, or *NULL* on failure.
 
    The current implementation keeps an array of integer objects for all integers
    between ``-5`` and ``256``, when you create an int in that range you actually
