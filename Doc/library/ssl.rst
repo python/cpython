@@ -293,7 +293,7 @@ Random generation
    Read the Wikipedia article, `Cryptographically secure pseudorandom number
    generator (CSPRNG)
    <https://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator>`_,
-   to get the requirements of a cryptographically generator.
+   to get the requirements of a cryptographically strong generator.
 
    .. versionadded:: 3.3
 
