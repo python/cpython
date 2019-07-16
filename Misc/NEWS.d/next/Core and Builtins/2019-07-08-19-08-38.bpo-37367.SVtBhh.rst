@@ -1,2 +1,2 @@
-Byte strings containing octal values greater than 255 will now raise
-ValueError.  Patch by (Jeffrey Kintscher).
+Byte strings containing octal escape sequences with values greater than 255
+will now raise ValueError.  Patch by Jeffrey Kintscher.
