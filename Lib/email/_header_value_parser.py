@@ -2494,7 +2494,10 @@ def get_parameter(value):
         # Treat the rest of value as bare quoted string content.
         v = Value()
         while value:
-            if value[0] in WSP:
+            if value[0] == '"':
+                token = ValueTerminal('"', 'DQUOTE')
+                value = value[1:]
+            elif value[0] in WSP:
                 token, value = get_fws(value)
             else:
                 token, value = get_qcontent(value)
