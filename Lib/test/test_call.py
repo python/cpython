@@ -299,7 +299,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
 
 @cpython_only
 class TestCallingConventions(unittest.TestCase):
-    """Test calling using the various C calling conventions (METH_*)
+    """Test calling using various C calling conventions (METH_*) from Python
 
     Subclasses test several kinds of functions (module-level, methods,
     class methods static methods) using these attributes:
@@ -503,14 +503,15 @@ class PythonClass:
 
 PYTHON_INSTANCE = PythonClass()
 
-
-IGNORE_RESULT = object()
-
+NULL_OR_EMPTY = object()
 
 @cpython_only
 class FastCallTests(unittest.TestCase):
+    """Test calling using various callables from C
+    """
+
     # Test calls with positional arguments
-    CALLS_POSARGS = (
+    CALLS_POSARGS = [
         # (func, args: tuple, result)
 
         # Python function with 2 arguments
@@ -529,31 +530,11 @@ class FastCallTests(unittest.TestCase):
         (PYTHON_INSTANCE.class_method, (), "classmethod"),
         (PYTHON_INSTANCE.static_method, (), "staticmethod"),
 
-        # C function: METH_NOARGS
-        (globals, (), IGNORE_RESULT),
-
-        # C function: METH_O
-        (id, ("hello",), IGNORE_RESULT),
-
-        # C function: METH_VARARGS
-        (dir, (1,), IGNORE_RESULT),
-
-        # C function: METH_VARARGS | METH_KEYWORDS
-        (min, (5, 9), 5),
-
-        # C function: METH_FASTCALL
-        (divmod, (1000, 33), (30, 10)),
-
-        # C type static method: METH_FASTCALL | METH_CLASS
-        (int.from_bytes, (b'\x01\x00', 'little'), 1),
-
-        # bpo-30524: Test that calling a C type static method with no argument
-        # doesn't crash (ignore the result): METH_FASTCALL | METH_CLASS
-        (datetime.datetime.now, (), IGNORE_RESULT),
-    )
+        # C callables are added later
+    ]
 
     # Test calls with positional and keyword arguments
-    CALLS_KWARGS = (
+    CALLS_KWARGS = [
         # (func, args: tuple, kwargs: dict, result)
 
         # Python function with 2 arguments
@@ -564,17 +545,51 @@ class FastCallTests(unittest.TestCase):
         (PYTHON_INSTANCE.method, (1,), {'arg2': 2}, [1, 2]),
         (PYTHON_INSTANCE.method, (), {'arg1': 1, 'arg2': 2}, [1, 2]),
 
-        # C function: METH_VARARGS | METH_KEYWORDS
-        (max, ([],), {'default': 9}, 9),
+        # C callables are added later
+    ]
 
-        # C type static method: METH_FASTCALL | METH_CLASS
-        (int.from_bytes, (b'\x01\x00',), {'byteorder': 'little'}, 1),
-        (int.from_bytes, (), {'bytes': b'\x01\x00', 'byteorder': 'little'}, 1),
-    )
+    # Add all the calling conventions and variants of C callables
+    _instance = _testcapi.MethInstance()
+    for obj, expected_self in (
+        (_testcapi, _testcapi),  # module-level function
+        (_instance, _instance),  # bound method
+        (_testcapi.MethClass, _testcapi.MethClass),  # class method on class
+        (_testcapi.MethClass(), _testcapi.MethClass),  # class method on inst.
+        (_testcapi.MethStatic, None),  # static method
+    ):
+        CALLS_POSARGS.extend([
+            (obj.meth_varargs, (1, 2), (expected_self, (1, 2))),
+            (obj.meth_varargs_keywords,
+                (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
+            (obj.meth_fastcall, (1, 2), (expected_self, (1, 2))),
+            (obj.meth_fastcall, (), (expected_self, ())),
+            (obj.meth_fastcall_keywords,
+                (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
+            (obj.meth_fastcall_keywords,
+                (), (expected_self, (), NULL_OR_EMPTY)),
+            (obj.meth_noargs, (), expected_self),
+            (obj.meth_o, (123, ), (expected_self, 123)),
+        ])
+
+        CALLS_KWARGS.extend([
+            (obj.meth_varargs_keywords,
+                (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
+            (obj.meth_varargs_keywords,
+                (), {'x': 'y'}, (expected_self, (), {'x': 'y'})),
+            (obj.meth_varargs_keywords,
+                (1, 2), {}, (expected_self, (1, 2), NULL_OR_EMPTY)),
+            (obj.meth_fastcall_keywords,
+                (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
+            (obj.meth_fastcall_keywords,
+                (), {'x': 'y'}, (expected_self, (), {'x': 'y'})),
+            (obj.meth_fastcall_keywords,
+                (1, 2), {}, (expected_self, (1, 2), NULL_OR_EMPTY)),
+        ])
 
     def check_result(self, result, expected):
-        if expected is IGNORE_RESULT:
-            return
+        if isinstance(expected, tuple) and expected[-1] is NULL_OR_EMPTY:
+            if result[-1] in ({}, None):
+                expected = (*expected[:-1], result[-1])
         self.assertEqual(result, expected)
 
     def test_fastcall(self):
@@ -599,17 +614,9 @@ class FastCallTests(unittest.TestCase):
                 result = _testcapi.pyobject_fastcalldict(func, args, None)
                 self.check_result(result, expected)
 
-                # kwargs={}
-                result = _testcapi.pyobject_fastcalldict(func, args, {})
-                self.check_result(result, expected)
-
                 if not args:
                     # args=NULL, nargs=0, kwargs=NULL
                     result = _testcapi.pyobject_fastcalldict(func, None, None)
-                    self.check_result(result, expected)
-
-                    # args=NULL, nargs=0, kwargs={}
-                    result = _testcapi.pyobject_fastcalldict(func, None, {})
                     self.check_result(result, expected)
 
         for func, args, kwargs, expected in self.CALLS_KWARGS:
