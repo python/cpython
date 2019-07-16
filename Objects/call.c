@@ -253,6 +253,13 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 }
 
 
+PyObject *
+PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
+{
+    return PyObject_Call(callable, args, kwargs);
+}
+
+
 /* --- PyFunction call functions ---------------------------------- */
 
 static PyObject* _Py_HOT_FUNCTION

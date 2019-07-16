@@ -28,6 +28,8 @@ static PyObject * cfunction_vectorcall_NOARGS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 static PyObject * cfunction_vectorcall_O(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
+static PyObject * cfunction_call(
+    PyObject *func, PyObject *args, PyObject *kwargs);
 
 
 PyObject *
@@ -312,7 +314,7 @@ PyTypeObject PyCFunction_Type = {
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     (hashfunc)meth_hash,                        /* tp_hash */
-    PyCFunction_Call,                           /* tp_call */
+    cfunction_call,                             /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
@@ -484,8 +486,8 @@ cfunction_vectorcall_O(
 }
 
 
-PyObject *
-PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwargs)
+static PyObject *
+cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
 {
     assert(!PyErr_Occurred());
     assert(kwargs == NULL || PyDict_Check(kwargs));

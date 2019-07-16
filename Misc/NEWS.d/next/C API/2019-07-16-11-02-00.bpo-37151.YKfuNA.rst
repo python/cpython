@@ -1,0 +1,1 @@
+``PyCFunction_Call`` is now an alias of :c:func:`PyObject_Call`.
