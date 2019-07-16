@@ -227,7 +227,7 @@ The following classes are provided:
    is not None, ``Content-Type: application/x-www-form-urlencoded`` will
    be added as a default.
 
-   The final two arguments are only of interest for correct handling
+   The next two arguments are only of interest for correct handling
    of third-party HTTP cookies:
 
    *origin_req_host* should be the request-host of the origin
