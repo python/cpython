@@ -123,17 +123,11 @@ class IdleUserConfParser(IdleConfParser):
         self.RemoveEmptySections()
         return not self.sections()
 
-    def RemoveFile(self):
-        "Remove user config file self.file from disk if it exists."
-        if os.path.exists(self.file):
-            os.remove(self.file)
-
     def Save(self):
         """Update user configuration file.
 
         If self not empty after removing empty sections, write the file
         to disk. Otherwise, remove the file from disk if it exists.
-
         """
         fname = self.file
         if fname:
@@ -145,8 +139,8 @@ class IdleUserConfParser(IdleConfParser):
                     cfgFile = open(fname, 'w')
                 with cfgFile:
                     self.write(cfgFile)
-            else:
-                self.RemoveFile()
+            elif os.path.exists(self.file):
+                os.remove(self.file)
 
 class IdleConf:
     """Hold config parsers for all idle config files in singleton instance.
@@ -171,24 +165,13 @@ class IdleConf:
 
     def CreateConfigHandlers(self):
         "Populate default and user config parser dictionaries."
-        #build idle install path
-        if __name__ != '__main__': # we were imported
-            idleDir = os.path.dirname(__file__)
-        else: # we were exec'ed (for testing only)
-            idleDir = os.path.abspath(sys.path[0])
-        self.userdir = userDir = self.GetUserCfgDir()
-
-        defCfgFiles = {}
-        usrCfgFiles = {}
-        # TODO eliminate these temporaries by combining loops
-        for cfgType in self.config_types: #build config file names
-            defCfgFiles[cfgType] = os.path.join(
-                    idleDir, 'config-' + cfgType + '.def')
-            usrCfgFiles[cfgType] = os.path.join(
-                    userDir, 'config-' + cfgType + '.cfg')
-        for cfgType in self.config_types: #create config parsers
-            self.defaultCfg[cfgType] = IdleConfParser(defCfgFiles[cfgType])
-            self.userCfg[cfgType] = IdleUserConfParser(usrCfgFiles[cfgType])
+        idledir = os.path.dirname(__file__)
+        self.userdir = userdir = self.GetUserCfgDir()
+        for cfg_type in self.config_types:
+            self.defaultCfg[cfg_type] = IdleConfParser(
+                os.path.join(idledir, f'config-{cfg_type}.def'))
+            self.userCfg[cfg_type] = IdleUserConfParser(
+                os.path.join(userdir, f'config-{cfg_type}.cfg'))
 
     def GetUserCfgDir(self):
         """Return a filesystem directory for storing user config files.

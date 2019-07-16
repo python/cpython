@@ -159,19 +159,6 @@ class IdleUserConfParserTest(unittest.TestCase):
         self.assertFalse(parser.IsEmpty())
         self.assertCountEqual(parser.sections(), ['Foo'])
 
-    def test_remove_file(self):
-        with tempfile.TemporaryDirectory() as tdir:
-            path = os.path.join(tdir, 'test.cfg')
-            parser = self.new_parser(path)
-            parser.RemoveFile()  # Should not raise exception.
-
-            parser.AddSection('Foo')
-            parser.SetOption('Foo', 'bar', 'true')
-            parser.Save()
-            self.assertTrue(os.path.exists(path))
-            parser.RemoveFile()
-            self.assertFalse(os.path.exists(path))
-
     def test_save(self):
         with tempfile.TemporaryDirectory() as tdir:
             path = os.path.join(tdir, 'test.cfg')
