@@ -215,9 +215,9 @@ class CodeContext:
             self.update_code_context()
             self.t1 = self.text.after(self.UPDATEINTERVAL, self.timer_event)
 
-    def update_font(self):
+    def update_font(self, font):
         if self.context is not None:
-            self.context['font'] = self.text['font']
+            self.context['font'] = font
 
     def update_highlight_colors(self):
         if self.context is not None:

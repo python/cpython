@@ -798,9 +798,12 @@ class EditorWindow(object):
         "Update the text widgets' font if it is changed"
         # Called from configdialog.py
 
-        self.text['font'] = idleConf.GetFont(self.root, 'main','EditorWindow')
+        new_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
+        # Update the code context widget first, since its height affects
+        # the height of the text widget.  This avoids double re-rendering.
         if self.codecontext is not None:
-            self.codecontext.update_font()
+            self.codecontext.update_font(new_font)
+        self.text['font'] = new_font
 
     def RemoveKeybindings(self):
         "Remove the keybindings before they are changed."
