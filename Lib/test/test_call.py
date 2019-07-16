@@ -321,6 +321,9 @@ IGNORE_RESULT = object()
 
 @cpython_only
 class FastCallTests(unittest.TestCase):
+    from _testcapi import CallTest as C
+    c = C()
+
     # Test calls with positional arguments
     CALLS_POSARGS = (
         # (func, args: tuple, result)
@@ -341,20 +344,24 @@ class FastCallTests(unittest.TestCase):
         (PYTHON_INSTANCE.class_method, (), "classmethod"),
         (PYTHON_INSTANCE.static_method, (), "staticmethod"),
 
-        # C function: METH_NOARGS
-        (globals, (), IGNORE_RESULT),
+        # C methods
+        (c.varargs,           (1, 2),    [(1, 2), {}]),
+        (c.varargs_keywords,  (1, 2),    [(1, 2), {}]),
+        (c.fastcall,          (1, 2),    [(1, 2), {}]),
+        (c.fastcall_keywords, (1, 2),    [(1, 2), {}]),
+        (c.noargs,            (),        [(), {}]),
+        (c.onearg,            (123,),    [(123,), {}]),
+        (c.staticmeth,        (1, 2),    [(1, 2), {}]),
+        (c.classmeth,         (1, 2),    [(1, 2), {}]),
 
-        # C function: METH_O
-        (id, ("hello",), IGNORE_RESULT),
-
-        # C function: METH_VARARGS
-        (dir, (1,), IGNORE_RESULT),
-
-        # C function: METH_VARARGS | METH_KEYWORDS
-        (min, (5, 9), 5),
-
-        # C function: METH_FASTCALL
-        (divmod, (1000, 33), (30, 10)),
+        (C.varargs,           (c, 1, 2), [(1, 2), {}]),
+        (C.varargs_keywords,  (c, 1, 2), [(1, 2), {}]),
+        (C.fastcall,          (c, 1, 2), [(1, 2), {}]),
+        (C.fastcall_keywords, (c, 1, 2), [(1, 2), {}]),
+        (C.noargs,            (c,),      [(), {}]),
+        (C.onearg,            (c, 123),  [(123,), {}]),
+        (C.staticmeth,        (1, 2),    [(1, 2), {}]),
+        (C.classmeth,         (1, 2),    [(1, 2), {}]),
 
         # C type static method: METH_FASTCALL | METH_CLASS
         (int.from_bytes, (b'\x01\x00', 'little'), 1),
@@ -376,8 +383,16 @@ class FastCallTests(unittest.TestCase):
         (PYTHON_INSTANCE.method, (1,), {'arg2': 2}, [1, 2]),
         (PYTHON_INSTANCE.method, (), {'arg1': 1, 'arg2': 2}, [1, 2]),
 
-        # C function: METH_VARARGS | METH_KEYWORDS
-        (max, ([],), {'default': 9}, 9),
+        # C methods
+        (c.varargs_keywords,  (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (c.fastcall_keywords, (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (c.staticmeth,        (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (c.classmeth,         (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+
+        (C.varargs_keywords,  (c, 1, 2), {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (C.fastcall_keywords, (c, 1, 2), {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (C.staticmeth,        (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (C.classmeth,         (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
 
         # C type static method: METH_FASTCALL | METH_CLASS
         (int.from_bytes, (b'\x01\x00',), {'byteorder': 'little'}, 1),

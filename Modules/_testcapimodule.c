@@ -5856,6 +5856,97 @@ static PyTypeObject Generic_Type = {
 };
 
 
+/* Test various calling conventions. These functions always return a
+   two-element list [args, kwargs] */
+
+static PyObject *
+CallTest_call(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
+{
+    PyObject *res = PyList_New(2);
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_INCREF(args);
+    PyList_SET_ITEM(res, 0, args);
+    if (kwargs == NULL) {
+        kwargs = PyDict_New();
+        if (kwargs == NULL) {
+            Py_DECREF(res);
+            return NULL;
+        }
+        PyList_SET_ITEM(res, 1, kwargs);
+    }
+    else {
+        Py_INCREF(kwargs);
+        PyList_SET_ITEM(res, 1, kwargs);
+    }
+    return res;
+}
+
+static PyObject *
+CallTest_varargs(PyObject *self, PyObject *args)
+{
+    return PyObject_Call(self, args, NULL);
+}
+
+static PyObject *
+CallTest_varargs_keywords(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    return PyObject_Call(self, args, kwargs);
+}
+
+static PyObject *
+CallTest_noargs(PyObject *self, PyObject *unused)
+{
+    if (unused != NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    return _PyObject_CallNoArg(self);
+}
+
+static PyObject *
+CallTest_onearg(PyObject *self, PyObject *arg)
+{
+    return _PyObject_CallOneArg(self, arg);
+}
+
+static PyObject *
+CallTest_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    return _PyObject_Vectorcall(self, args, nargs, NULL);
+}
+
+static PyObject *
+CallTest_fastcall_keywords(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    return _PyObject_Vectorcall(self, args, nargs, kwnames);
+}
+
+static PyMethodDef CallTest_methods[] = {
+    {"varargs", (PyCFunction)(void(*)(void))CallTest_varargs, METH_VARARGS, NULL},
+    {"varargs_keywords", (PyCFunction)(void(*)(void))CallTest_varargs_keywords, METH_VARARGS|METH_KEYWORDS, NULL},
+    {"noargs", (PyCFunction)(void(*)(void))CallTest_noargs, METH_NOARGS, NULL},
+    {"onearg", (PyCFunction)(void(*)(void))CallTest_onearg, METH_O, NULL},
+    {"fastcall", (PyCFunction)(void(*)(void))CallTest_fastcall, METH_FASTCALL, NULL},
+    {"fastcall_keywords", (PyCFunction)(void(*)(void))CallTest_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS, NULL},
+    {"staticmeth", (PyCFunction)(void(*)(void))CallTest_call, METH_STATIC|METH_VARARGS|METH_KEYWORDS, NULL},
+    {"classmeth", (PyCFunction)(void(*)(void))CallTest_call, METH_CLASS|METH_VARARGS|METH_KEYWORDS, NULL},
+    {NULL}  /* sentinel */
+};
+
+static PyTypeObject CallTest_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "CallTest",
+    sizeof(PyObject),
+    .tp_new = PyType_GenericNew,
+    .tp_dealloc = (destructor)PyObject_Del,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_call = CallTest_call,
+    .tp_methods = CallTest_methods,
+};
+
+
 /* Test PEP 590 */
 
 typedef struct {
@@ -6007,6 +6098,11 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&MyList_Type);
     PyModule_AddObject(m, "MyList", (PyObject *)&MyList_Type);
+
+    if (PyType_Ready(&CallTest_Type) < 0)
+        return NULL;
+    Py_INCREF(&CallTest_Type);
+    PyModule_AddObject(m, "CallTest", (PyObject *)&CallTest_Type);
 
     if (PyType_Ready(&MethodDescriptorBase_Type) < 0)
         return NULL;
