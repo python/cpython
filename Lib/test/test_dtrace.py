@@ -107,9 +107,12 @@ class TraceTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.backend.assert_usable()
+        if self.backend:
+            self.backend.assert_usable()
 
     def run_case(self, name):
+        if self.backend is None:
+            return
         actual_output, expected_output = self.backend.run_case(
             name, optimize_python=self.optimize_python)
         self.assertEqual(actual_output, expected_output)
