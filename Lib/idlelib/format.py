@@ -353,7 +353,8 @@ class FormatRegion:
             maxvalue=16)
 
 
-class Indents:
+# With mixed indents not allowed, these are semi-useless and not unittested.
+class Indents:  # pragma: no cover
     "Change future indents."
 
     def __init__(self, editwin):
@@ -414,4 +415,3 @@ class Rstrip:  # 'Strip Trailing Whitespace" on "Format" menu.
 if __name__ == "__main__":
     from unittest import main
     main('idlelib.idle_test.test_format', verbosity=2, exit=False)
-    main('idlelib.idle_test.test_rstrip', verbosity=2,)
