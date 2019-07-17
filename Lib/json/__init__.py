@@ -115,7 +115,7 @@ _default_encoder = JSONEncoder(
     indent=None,
     separators=None,
     default=None,
-    encode_float=None
+    encode_float=None,
 )
 
 def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
