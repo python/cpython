@@ -1431,6 +1431,9 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 			*CVS) ;; \
 			*.py[co]) ;; \
 			*.orig) ;; \
+			# bpo-37468: Don't install distutils/command/wininst-*.exe files used \
+			# by distutils bdist_wininst: bdist_wininst only works on Windows. \
+			*wininst-*.exe) ;; \
 			*~) ;; \
 			*) \
 				if test -d $$i; then continue; fi; \

@@ -82,6 +82,9 @@ class AuthTests(unittest.TestCase):
 class CloseSocketTest(unittest.TestCase):
 
     def test_close(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         # calling .close() on urllib2's response objects should close the
         # underlying socket
         url = support.TEST_HTTP_URL
@@ -257,6 +260,10 @@ class OtherNetworkTests(unittest.TestCase):
 
 
 class TimeoutTest(unittest.TestCase):
+    def setUp(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
     def test_http_basic(self):
         self.assertIsNone(socket.getdefaulttimeout())
         url = support.TEST_HTTP_URL

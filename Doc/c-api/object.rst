@@ -264,6 +264,17 @@ Object Protocol
    .. versionadded:: 3.9
 
 
+.. c:function:: PyObject* _PyObject_CallOneArg(PyObject *callable, PyObject *arg)
+
+   Call a callable Python object *callable* with exactly 1 positional argument
+   *arg* and no keyword arguments.
+
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: PyObject* PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 
    Call a callable Python object *callable*, with arguments given by the
@@ -351,6 +362,29 @@ Object Protocol
 
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
+
+
+.. c:function:: PyObject* _PyObject_CallMethodNoArgs(PyObject *obj, PyObject *name)
+
+   Call a method of the Python object *obj* without arguments,
+   where the name of the method is given as a Python string object in *name*.
+
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: PyObject* _PyObject_CallMethodOneArg(PyObject *obj, PyObject *name, PyObject *arg)
+
+   Call a method of the Python object *obj* with a single positional argument
+   *arg*, where the name of the method is given as a Python string object in
+   *name*.
+
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
+
+   .. versionadded:: 3.9
 
 
 .. c:function:: PyObject* _PyObject_Vectorcall(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)

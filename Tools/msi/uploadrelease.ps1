@@ -164,5 +164,4 @@ if (-not $skiphash) {
         Out-String -Width 4096
     $hashes | clip
     $hashes
-    popd
 }

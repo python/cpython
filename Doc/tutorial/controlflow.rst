@@ -920,7 +920,7 @@ extracted for you:
   bracketing constructs: ``a = f(1, 2) + g(3, 4)``.
 
 * Name your classes and functions consistently; the convention is to use
-  ``CamelCase`` for classes and ``lower_case_with_underscores`` for functions
+  ``UpperCamelCase`` for classes and ``lowercase_with_underscores`` for functions
   and methods.  Always use ``self`` as the name for the first method argument
   (see :ref:`tut-firstclasses` for more on classes and methods).
 

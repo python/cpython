@@ -622,8 +622,9 @@ class Enum(metaclass=EnumMeta):
         # we can get strange results with the Enum name showing up instead of
         # the value
 
-        # pure Enum branch
-        if self._member_type_ is object:
+        # pure Enum branch, or branch with __str__ explicitly overridden
+        str_overridden = type(self).__str__ != Enum.__str__
+        if self._member_type_ is object or str_overridden:
             cls = str
             val = str(self)
         # mix-in branch
