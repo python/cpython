@@ -57,6 +57,21 @@ class TestDump:
         d[1337] = "true.dat"
         self.assertEqual(self.dumps(d, sort_keys=True), '{"1337": "true.dat"}')
 
+    # Issue 36841
+    def test_encode_float(self):
+        data = {0.88: 0.9, 0: 0.1}
+        expected = '{"0.88": 0.9, "0": 0.1}'
+        self.assertEqual(
+            self.dumps(data, encode_float=None),
+            expected
+        )
+
+        data = {0.88: 0.9, 0: 0.1}
+        expected = '{"1": 1, "0": 0}'
+        self.assertEqual(
+            self.dumps(data, encode_float=lambda x: str(round(x))),
+            expected
+        )
 
 class TestPyDump(TestDump, PyTest): pass
 
