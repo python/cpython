@@ -2247,23 +2247,73 @@ class ZipFile:
             if not self._allowZip64:
                 raise LargeZipFile(requires_zip64 +
                                    " would require ZIP64 extensions")
+
             zip64endrec = struct.pack(
-                structEndArchive64, stringEndArchive64,
-                44, 45, 45, 0, 0, centDirCount, centDirCount,
-                centDirSize, centDirOffset)
+                structEndArchive64,
+                stringEndArchive64,
+                # size of zip64 end of central directory record
+                # size = SizeOfFixedFields + SizeOfVariableData - 12
+                44,
+                # version zip64endrec was made by
+                ZIP64_VERSION,
+                # version needed to extract this zip64endrec
+                ZIP64_VERSION,
+                # number of this disk
+                0,
+                # number of the disk with the start of the central
+                # directory
+                0,
+                # total number of entries in the central directory on
+                # this disk
+                centDirCount,
+                # total number of entries in the central directory
+                centDirCount,
+                # size of the central directory
+                centDirSize,
+                # offset of start of central directory with respect to
+                # the starting disk number
+                centDirOffset,
+                # zip64 extensible data sector (variable size)
+            )
             self.fp.write(zip64endrec)
 
             zip64locrec = struct.pack(
                 structEndArchive64Locator,
-                stringEndArchive64Locator, 0, pos2, 1)
+                stringEndArchive64Locator,
+                # number of the disk with the start of the zip64 end of
+                # central directory
+                0,
+                # relative offset of the zip64 end of central directory
+                # record
+                pos2,
+                # total number of disks
+                1
+            )
             self.fp.write(zip64locrec)
             centDirCount = min(centDirCount, 0xFFFF)
             centDirSize = min(centDirSize, 0xFFFFFFFF)
             centDirOffset = min(centDirOffset, 0xFFFFFFFF)
 
-        endrec = struct.pack(structEndArchive, stringEndArchive,
-                             0, 0, centDirCount, centDirCount,
-                             centDirSize, centDirOffset, len(self._comment))
+        endrec = struct.pack(
+            structEndArchive,
+            stringEndArchive,
+            # number of this disk
+            0,
+            # number of the disk with the start of the central directory
+            0,
+            # total number of entries in the central directory on this
+            # disk
+            centDirCount,
+            # total number of entries in the central directory
+            centDirCount,
+            # size of the central directory
+            centDirSize,
+            # offset of start of central directory with respect to the
+            # starting disk number
+            centDirOffset,
+            # .ZIP file comment length
+            len(self._comment)
+        )
         self.fp.write(endrec)
         self.fp.write(self._comment)
         self.fp.flush()
