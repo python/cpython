@@ -363,6 +363,14 @@ Larry
         with self.assertRaisesRegex(ValueError, 'I/O operation on closed file'):
             fs.file.read()
 
+    def test_fieldstorage_exit_context(self):
+        fs = cgi.FieldStorage()
+        try:
+            with fs:
+                fs.bytes_read = 0
+        except AttributeError:
+            self.fail('clean up raises exception')
+
     _qs_result = {
         'key1': 'value1',
         'key2': ['value2x', 'value2y'],

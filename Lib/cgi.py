@@ -483,7 +483,10 @@ class FieldStorage:
         return self
 
     def __exit__(self, *args):
-        self.file.close()
+        try:
+            self.file.close()
+        except AttributeError:
+            pass
 
     def __repr__(self):
         """Return a printable representation."""
