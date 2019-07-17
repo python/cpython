@@ -641,11 +641,11 @@ to the end of some internal list; an interface specification cannot test that
 your :meth:`append` implementation will actually do this correctly, but it's
 trivial to check this property in a test suite.
 
-Writing test suites is very helpful, and you might want to design your code with
-an eye to making it easily tested.  One increasingly popular technique,
-test-directed development, calls for writing parts of the test suite first,
-before you write any of the actual code.  Of course Python allows you to be
-sloppy and not write test cases at all.
+Writing test suites is very helpful, and you might want to design your code to
+make it easily tested. One increasingly popular technique, test-driven
+development, calls for writing parts of the test suite first, before you write
+any of the actual code.  Of course Python allows you to be sloppy and not write
+test cases at all.
 
 
 Why is there no goto?

@@ -218,8 +218,6 @@ library/stdtypes,,:len,s[len(s):len(s)]
 library/stdtypes,,::,>>> y = m[::2]
 library/stdtypes,,::,>>> z = y[::-2]
 library/string,,`,"!""#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
-library/subprocess,,`,"output=`dmesg | grep hda`"
-library/subprocess,,`,"output=`mycmd myarg`"
 library/tarfile,,:bz2,
 library/tarfile,,:compression,filemode[:compression]
 library/tarfile,,:gz,
