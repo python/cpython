@@ -376,24 +376,6 @@ class FormatEventTest(unittest.TestCase):
 ##        text.delete('1.0', 'end')
 
 
-code_sample = """\
-
-class C1():
-    # Class comment.
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
-
-    def compare(self):
-        if a > b:
-            return a
-        elif a < b:
-            return b
-        else:
-            return None
-"""
-
-
 class DummyEditwin:
     def __init__(self, root, text):
         self.root = root
@@ -428,10 +410,29 @@ class FormatRegionTest(unittest.TestCase):
         del cls.root
 
     def setUp(self):
-        self.text.insert('1.0', code_sample)
+        self.text.insert('1.0', self.code_sample)
 
     def tearDown(self):
         self.text.delete('1.0', 'end')
+
+    code_sample = """\
+
+class C1():
+    # Class comment.
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+    def compare(self):
+        if a > b:
+            return a
+        elif a < b:
+            return b
+        else:
+            return None
+"""
+
+
 
     def test_get_region(self):
         get = self.formatter.get_region
@@ -455,8 +456,8 @@ class FormatRegionTest(unittest.TestCase):
 
         save_bell = text.bell
         text.bell = mock.Mock()
-        line6 = code_sample.splitlines()[5]
-        line10 = code_sample.splitlines()[9]
+        line6 = self.code_sample.splitlines()[5]
+        line10 = self.code_sample.splitlines()[9]
 
         text.tag_add('sel', '6.0', '11.0')
         head, tail, chars, lines = self.formatter.get_region()
