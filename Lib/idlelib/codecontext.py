@@ -78,7 +78,10 @@ class CodeContext:
     def __del__(self):
         "Cancel scheduled events."
         if self.t1 is not None:
-            self.text.after_cancel(self.t1)
+            try:
+                self.text.after_cancel(self.t1)
+            except tkinter.TclError:
+                pass
             self.t1 = None
 
     def toggle_code_context_event(self, event=None):
