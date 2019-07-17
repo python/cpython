@@ -1812,9 +1812,6 @@ class MockTest(unittest.TestCase):
 
 
     def test_attach_mock_patch_autospec(self):
-        # bpo-21478: attach_mock used with autospecced object should have
-        # should use child's name and record calls to parent when being called
-        # as child and also as standalone functions.
         parent = Mock()
 
         with mock.patch(f'{__name__}.something', autospec=True) as mock_func:
@@ -1918,6 +1915,10 @@ class MockTest(unittest.TestCase):
         self.assertRaises(TypeError, mock.child, 1)
         self.assertEqual(mock.mock_calls, [call.child(1, 2)])
         self.assertIn('mock.child', repr(mock.child.mock))
+
+    def test_parent_propagation_with_autospec_attach_mock(self):
+
+        def foo(a, b): pass
 
         parent = Mock()
         parent.attach_mock(create_autospec(foo, name='bar'), 'child')
