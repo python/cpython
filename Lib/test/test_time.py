@@ -14,6 +14,7 @@ try:
 except ImportError:
     _testcapi = None
 
+from test.support import skip_if_buggy_ucrt
 
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
@@ -250,9 +251,7 @@ class TimeTestCase(unittest.TestCase):
             result = time.strftime("%Y %m %d %H %M %S %w %j", (2000,)+(0,)*8)
         self.assertEqual(expected, result)
 
-    # bpo-37552 [Windows] strptime/strftime return invalid results with UCRT version 17763.615
-    @unittest.skipIf(sys.platform == 'win32' and locale.getdefaultlocale()[1] == 'cp65001',
-                     'issue in MSVC UCRT')
+    @skip_if_buggy_ucrt
     def test_strptime(self):
         # Should be able to go round-trip from strftime to strptime without
         # raising an exception.
@@ -675,9 +674,7 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 
 
 class TestPytime(unittest.TestCase):
-    # bpo-37552 [Windows] strptime/strftime return invalid results with UCRT version 17763.615
-    @unittest.skipIf(sys.platform == 'win32' and locale.getdefaultlocale()[1] == 'cp65001',
-                     'issue in MSVC UCRT')
+    @skip_if_buggy_ucrt
     @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_localtime_timezone(self):
 

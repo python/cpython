@@ -7,6 +7,7 @@ import re
 import os
 import sys
 from test import support
+from test.support import skip_if_buggy_ucrt
 from datetime import date as datetime_date
 
 import _strptime
@@ -135,9 +136,7 @@ class TimeRETests(unittest.TestCase):
                       "%s does not have re characters escaped properly" %
                       pattern_string)
 
-    # bpo-37552 [Windows] strptime/strftime return invalid results with UCRT version 17763.615
-    @unittest.skipIf(sys.platform == 'win32' and locale.getdefaultlocale()[1] == 'cp65001',
-                     'issue in MSVC UCRT')
+    @skip_if_buggy_ucrt
     def test_compile(self):
         # Check that compiled regex is correct
         found = self.time_re.compile(r"%A").match(self.locale_time.f_weekday[6])
@@ -368,9 +367,7 @@ class StrptimeTests(unittest.TestCase):
             _strptime._strptime("-01:3030", "%z")
         self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
 
-    # bpo-37552 [Windows] strptime/strftime return invalid results with UCRT version 17763.615
-    @unittest.skipIf(sys.platform == 'win32' and locale.getdefaultlocale()[1] == 'cp65001',
-                     'issue in MSVC UCRT')
+    @skip_if_buggy_ucrt
     def test_timezone(self):
         # Test timezone directives.
         # When gmtime() is used with %Z, entire result of strftime() is empty.
@@ -495,9 +492,7 @@ class CalculationTests(unittest.TestCase):
     def setUp(self):
         self.time_tuple = time.gmtime()
 
-    # bpo-37552 [Windows] strptime/strftime return invalid results with UCRT version 17763.615
-    @unittest.skipIf(sys.platform == 'win32' and locale.getdefaultlocale()[1] == 'cp65001',
-                     'issue in MSVC UCRT')
+    @skip_if_buggy_ucrt
     def test_julian_calculation(self):
         # Make sure that when Julian is missing that it is calculated
         format_string = "%Y %m %d %H %M %S %w %Z"
@@ -507,9 +502,7 @@ class CalculationTests(unittest.TestCase):
                         "Calculation of tm_yday failed; %s != %s" %
                          (result.tm_yday, self.time_tuple.tm_yday))
 
-    # bpo-37552 [Windows] strptime/strftime return invalid results with UCRT version 17763.615
-    @unittest.skipIf(sys.platform == 'win32' and locale.getdefaultlocale()[1] == 'cp65001',
-                     'issue in MSVC UCRT')
+    @skip_if_buggy_ucrt
     def test_gregorian_calculation(self):
         # Test that Gregorian date can be calculated from Julian day
         format_string = "%Y %H %M %S %w %j %Z"
@@ -524,9 +517,7 @@ class CalculationTests(unittest.TestCase):
                           self.time_tuple.tm_year, self.time_tuple.tm_mon,
                           self.time_tuple.tm_mday))
 
-    # bpo-37552 [Windows] strptime/strftime return invalid results with UCRT version 17763.615
-    @unittest.skipIf(sys.platform == 'win32' and locale.getdefaultlocale()[1] == 'cp65001',
-                     'issue in MSVC UCRT')
+    @skip_if_buggy_ucrt
     def test_day_of_week_calculation(self):
         # Test that the day of the week is calculated as needed
         format_string = "%Y %m %d %H %S %j %Z"
