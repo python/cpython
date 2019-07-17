@@ -2712,7 +2712,7 @@ class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
 
         # bpo-37461: Check that we don't go into an infinite loop.
         'extra_dquote': (
-            'r*="\'a\'\\"""',
+            'r*="\'a\'\\"',
             ' r="\\""',
             'r*=\'a\'"',
             [('r', '"')],
