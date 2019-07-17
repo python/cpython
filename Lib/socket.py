@@ -494,7 +494,12 @@ if hasattr(_socket, "socketpair"):
 else:
 
     # Origin: https://gist.github.com/4325783, by Geert Jansen.  Public domain.
-    def socketpair(family=AF_UNIX, type=SOCK_STREAM, proto=0):
+    def socketpair(family=None, type=SOCK_STREAM, proto=0):
+        if family is None:
+            try:
+                family = AF_UNIX
+            except NameError:
+                family = AF_INET
         if family == AF_INET:
             host = _LOCALHOST
         elif family == AF_INET6:
