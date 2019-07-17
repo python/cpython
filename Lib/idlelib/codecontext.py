@@ -112,12 +112,13 @@ class CodeContext:
                 padx=padx, border=border, relief=SUNKEN, state='disabled')
             self.update_highlight_colors()
             self.context.bind('<ButtonRelease-1>', self.jumptoline)
+            # Get the current context and initiate the recurring update event.
+            self.timer_event()
             # Pack the context widget before and above the text_frame widget,
             # thus ensuring that it will appear directly above text_frame.
             self.context.pack(side=TOP, fill=X, expand=False,
                               before=self.editwin.text_frame)
             menu_status = 'Hide'
-            self.t1 = self.text.after(self.UPDATEINTERVAL, self.timer_event)
         else:
             self.context.destroy()
             self.context = None
