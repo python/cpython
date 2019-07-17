@@ -93,7 +93,7 @@ __all__ = [
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
-    "check__all__", "skip_unless_bind_unix_socket", "skip_if_buggy_ucrt",
+    "check__all__", "skip_unless_bind_unix_socket", "skip_if_buggy_ucrt_strfptime",
     "ignore_warnings",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
@@ -2503,7 +2503,7 @@ def skip_unless_symlink(test):
     return test if ok else unittest.skip(msg)(test)
 
 _buggy_ucrt = None
-def skip_if_buggy_ucrt(test):
+def skip_if_buggy_ucrt_strfptime(test):
     """
     Skip decorator for tests that use buggy strptime/strftime
 
@@ -2521,7 +2521,7 @@ def skip_if_buggy_ucrt(test):
             _buggy_ucrt = True
         else:
             _buggy_ucrt = False
-    return unittest.skip("buggy MSVC UCRT")(test) if _buggy_ucrt else test
+    return unittest.skip("buggy MSVC UCRT strptime/strftime")(test) if _buggy_ucrt else test
 
 class PythonSymlink:
     """Creates a symlink for the current Python executable"""
