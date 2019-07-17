@@ -1,1 +1,2 @@
-Refactor formatting methods from editor.py and add tests.
+Rename paragraph.py to format.py and add region formatting methods
+from editor.py.  Add tests for the latter.

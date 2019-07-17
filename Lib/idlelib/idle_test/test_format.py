@@ -1,4 +1,4 @@
-"Test paragraph, coverage 76%."
+"Test format, coverage 99%."
 
 from idlelib import format as ft
 import unittest
