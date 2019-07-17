@@ -1448,6 +1448,16 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(addr_spec.domain, 'example.com')
         self.assertEqual(addr_spec.addr_spec, 'star.a.star@example.com')
 
+    def test_get_addr_spec_multiple_domains(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_addr_spec('star@a.star@example.com')
+
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_addr_spec('star@a@example.com')
+
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_addr_spec('star@172.17.0.1@example.com')
+
     # get_obs_route
 
     def test_get_obs_route_simple(self):
