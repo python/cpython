@@ -522,6 +522,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         self._test_get_x(parser.get_bare_quoted_string,
                          '""', '""', '', [], '')
 
+    def test_get_bare_quoted_string_missing_endquotes(self):
+        self._test_get_x(parser.get_bare_quoted_string,
+                         '"', '""', '', [errors.InvalidHeaderDefect], '')
+
     def test_get_bare_quoted_string_following_wsp_preserved(self):
         self._test_get_x(parser.get_bare_quoted_string,
              '"foo"\t bar', '"foo"', 'foo', [], '\t bar')
