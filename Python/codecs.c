@@ -416,7 +416,7 @@ _PyCodec_EncodeInternal(PyObject *object,
     if (args == NULL)
         goto onError;
 
-    result = PyEval_CallObject(encoder, args);
+    result = PyObject_Call(encoder, args, NULL);
     if (result == NULL) {
         wrap_codec_error("encoding", encoding);
         goto onError;
@@ -462,7 +462,7 @@ _PyCodec_DecodeInternal(PyObject *object,
     if (args == NULL)
         goto onError;
 
-    result = PyEval_CallObject(decoder,args);
+    result = PyObject_Call(decoder, args, NULL);
     if (result == NULL) {
         wrap_codec_error("decoding", encoding);
         goto onError;

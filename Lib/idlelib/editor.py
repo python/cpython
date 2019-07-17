@@ -253,6 +253,7 @@ class EditorWindow(object):
         self.good_load = False
         self.set_indentation_params(False)
         self.color = None # initialized below in self.ResetColorizer
+        self.code_context = None # optionally initialized later below
         self.line_numbers = None # optionally initialized later below
         if filename:
             if os.path.exists(filename) and not os.path.isdir(filename):
@@ -320,9 +321,9 @@ class EditorWindow(object):
         text.bind("<<force-open-calltip>>", ctip.force_open_calltip_event)
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
         if self.allow_code_context:
-            code_context = self.CodeContext(self)
+            self.code_context = self.CodeContext(self)
             text.bind("<<toggle-code-context>>",
-                      code_context.toggle_code_context_event)
+                      self.code_context.toggle_code_context_event)
         else:
             self.update_menu_state('options', '*Code Context', 'disabled')
         if self.allow_line_numbers:
@@ -791,6 +792,10 @@ class EditorWindow(object):
         self._rmcolorizer()
         self._addcolorizer()
         EditorWindow.color_config(self.text)
+
+        if self.code_context is not None:
+            self.code_context.update_highlight_colors()
+
         if self.line_numbers is not None:
             self.line_numbers.update_sidebar_text_font()
 
@@ -811,9 +816,16 @@ class EditorWindow(object):
         "Update the text widgets' font if it is changed"
         # Called from configdialog.py
 
-        self.text['font'] = idleConf.GetFont(self.root, 'main','EditorWindow')
+        new_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
+        # Update the code context widget first, since its height affects
+        # the height of the text widget.  This avoids double re-rendering.
+        if self.code_context is not None:
+            self.code_context.update_font(new_font)
+        # Next, update the line numbers widget, since its width affects
+        # the width of the text widget.
         if self.line_numbers is not None:
             self.line_numbers.update_sidebar_text_font()
+        self.text['font'] = new_font
 
     def RemoveKeybindings(self):
         "Remove the keybindings before they are changed."
@@ -1304,7 +1316,7 @@ class EditorWindow(object):
                 text.delete(first, last)
                 text.mark_set("insert", first)
             prefix = text.get("insert linestart", "insert")
-            raw, effective = classifyws(prefix, self.tabwidth)
+            raw, effective = get_line_indent(prefix, self.tabwidth)
             if raw == len(prefix):
                 # only whitespace to the left
                 self.reindent_to(effective + self.indentwidth)
@@ -1438,7 +1450,7 @@ class EditorWindow(object):
         for pos in range(len(lines)):
             line = lines[pos]
             if line:
-                raw, effective = classifyws(line, self.tabwidth)
+                raw, effective = get_line_indent(line, self.tabwidth)
                 effective = effective + self.indentwidth
                 lines[pos] = self._make_blanks(effective) + line[raw:]
         self.set_region(head, tail, chars, lines)
@@ -1449,7 +1461,7 @@ class EditorWindow(object):
         for pos in range(len(lines)):
             line = lines[pos]
             if line:
-                raw, effective = classifyws(line, self.tabwidth)
+                raw, effective = get_line_indent(line, self.tabwidth)
                 effective = max(effective - self.indentwidth, 0)
                 lines[pos] = self._make_blanks(effective) + line[raw:]
         self.set_region(head, tail, chars, lines)
@@ -1484,7 +1496,7 @@ class EditorWindow(object):
         for pos in range(len(lines)):
             line = lines[pos]
             if line:
-                raw, effective = classifyws(line, tabwidth)
+                raw, effective = get_line_indent(line, tabwidth)
                 ntabs, nspaces = divmod(effective, tabwidth)
                 lines[pos] = '\t' * ntabs + ' ' * nspaces + line[raw:]
         self.set_region(head, tail, chars, lines)
@@ -1598,8 +1610,8 @@ class EditorWindow(object):
     def guess_indent(self):
         opener, indented = IndentSearcher(self.text, self.tabwidth).run()
         if opener and indented:
-            raw, indentsmall = classifyws(opener, self.tabwidth)
-            raw, indentlarge = classifyws(indented, self.tabwidth)
+            raw, indentsmall = get_line_indent(opener, self.tabwidth)
+            raw, indentlarge = get_line_indent(indented, self.tabwidth)
         else:
             indentsmall = indentlarge = 0
         return indentlarge - indentsmall
@@ -1621,23 +1633,16 @@ class EditorWindow(object):
 def index2line(index):
     return int(float(index))
 
-# Look at the leading whitespace in s.
-# Return pair (# of leading ws characters,
-#              effective # of leading blanks after expanding
-#              tabs to width tabwidth)
 
-def classifyws(s, tabwidth):
-    raw = effective = 0
-    for ch in s:
-        if ch == ' ':
-            raw = raw + 1
-            effective = effective + 1
-        elif ch == '\t':
-            raw = raw + 1
-            effective = (effective // tabwidth + 1) * tabwidth
-        else:
-            break
-    return raw, effective
+_line_indent_re = re.compile(r'[ \t]*')
+def get_line_indent(line, tabwidth):
+    """Return a line's indentation as (# chars, effective # of spaces).
+
+    The effective # of spaces is the length after properly "expanding"
+    the tabs into spaces, as done by str.expandtabs(tabwidth).
+    """
+    m = _line_indent_re.match(line)
+    return m.end(), len(m.group().expandtabs(tabwidth))
 
 
 class IndentSearcher(object):
