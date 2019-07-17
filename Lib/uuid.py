@@ -58,7 +58,12 @@ _AIX     = platform.system() == 'AIX'
 _DARWIN  = platform.system() == 'Darwin'
 _LINUX   = platform.system() == 'Linux'
 _WINDOWS = platform.system() == 'Windows'
-_MAC_DELIM =  b':' if not _AIX else b'.'
+
+_MAC_DELIM = b':'
+_MAC_OMITS_LEADING_ZEROES = False
+if _AIX:
+    _MAC_DELIM = b'.'
+    _MAC_OMITS_LEADING_ZEROES = True
 
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
@@ -353,12 +358,11 @@ def _get_command_stdout(command, *args):
     import io, os, shutil, subprocess
 
     try:
-        executable = shutil.which(command)
+        path_dirs = os.environ.get('PATH', os.defpath).split(os.pathsep)
+        path_dirs.extend(['/sbin', '/usr/sbin'])
+        executable = shutil.which(command, path=os.pathsep.join(path_dirs))
         if executable is None:
-            path = os.pathsep.join(('/sbin', '/usr/sbin'))
-            executable = shutil.which(command, path=path)
-            if executable is None:
-                return None
+            return None
         # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
         # on stderr (Note: we don't have an example where the words we search
         # for are actually localized, but in theory some system could do so.)
@@ -395,13 +399,15 @@ def _is_universal(mac):
     return not (mac & (1 << 41))
 
 
-# In the next two fucnctions:
-# command: name of command to run
-# args:    arguments passed to command
-# hw_identifers: keywords used to locate a value
-# f_index: lambda function to modify, if needed, an index value
-# keyword and value are on the same line aka 'inline'
-def _find_mac_inline(command, args, hw_identifiers, f_index):
+def _find_mac_near_keyword(command, args, keywords, get_word_index):
+    """Searches a command's output for a MAC address near a keyword.
+
+    Each line of words in the output is case-insensitively searched for
+    any of the given keywords.  Upon a match, get_word_index is invoked
+    to pick a word from the line, given the index of the match.  For
+    example, lambda i: 0 would get the first word on the line, while
+    lambda i: i - 1 would get the word preceding the keyword.
+    """
     stdout = _get_command_stdout(command, args)
     if stdout is None:
         return None
@@ -410,9 +416,9 @@ def _find_mac_inline(command, args, hw_identifiers, f_index):
     for line in stdout:
         words = line.lower().rstrip().split()
         for i in range(len(words)):
-            if words[i] in hw_identifiers:
+            if words[i] in keywords:
                 try:
-                    word = words[f_index(i)]
+                    word = words[get_word_index(i)]
                     mac = int(word.replace(_MAC_DELIM, b''), 16)
                 except (ValueError, IndexError):
                     # Virtual interfaces, such as those provided by
@@ -428,27 +434,31 @@ def _find_mac_inline(command, args, hw_identifiers, f_index):
     return first_local_mac or None
 
 
-# Keyword is only on firstline - values on remaining lines
-def _find_mac_nextlines(command, args, hw_identifiers, f_index):
+def _find_mac_under_heading(command, args, heading):
+    """Looks for a MAC address under a heading in a command's output.
+
+    The first line of words in the output is searched for the given
+    heading. Words at the same word index as the heading in subsequent
+    lines are then examined to see if they look like MAC addresses.
+    """
     stdout = _get_command_stdout(command, args)
     if stdout is None:
         return None
 
     keywords = stdout.readline().rstrip().split()
     try:
-        i = keywords.index(hw_identifiers)
+        column_index = keywords.index(heading)
     except ValueError:
         return None
-    # we have the index (i) into the data that follows
 
     first_local_mac = None
     for line in stdout:
         try:
             words = line.rstrip().split()
-            word = words[f_index(i)]
+            word = words[column_index]
             if len(word) == 17:
                 mac = int(word.replace(_MAC_DELIM, b''), 16)
-            elif _AIX:
+            elif _MAC_OMITS_LEADING_ZEROES:
                 # (Only) on AIX the macaddr value given is not prefixed by 0, e.g.
                 # en0   1500  link#2      fa.bc.de.f7.62.4 110854824     0 160133733     0     0
                 # not
@@ -482,7 +492,7 @@ def _ifconfig_getnode():
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
     keywords = (b'hwaddr', b'ether', b'address:', b'lladdr')
     for args in ('', '-a', '-av'):
-        mac = _find_mac_inline('ifconfig', args, keywords, lambda i: i+1)
+        mac = _find_mac_near_keyword('ifconfig', args, keywords, lambda i: i+1)
         if mac:
             return mac
         return None
@@ -490,7 +500,7 @@ def _ifconfig_getnode():
 def _ip_getnode():
     """Get the hardware address on Unix by running ip."""
     # This works on Linux with iproute2.
-    mac = _find_mac_inline('ip', 'link', [b'link/ether'], lambda i: i+1)
+    mac = _find_mac_near_keyword('ip', 'link', [b'link/ether'], lambda i: i+1)
     if mac:
         return mac
     return None
@@ -504,17 +514,17 @@ def _arp_getnode():
         return None
 
     # Try getting the MAC addr from arp based on our IP address (Solaris).
-    mac = _find_mac_inline('arp', '-an', [os.fsencode(ip_addr)], lambda i: -1)
+    mac = _find_mac_near_keyword('arp', '-an', [os.fsencode(ip_addr)], lambda i: -1)
     if mac:
         return mac
 
     # This works on OpenBSD
-    mac = _find_mac_inline('arp', '-an', [os.fsencode(ip_addr)], lambda i: i+1)
+    mac = _find_mac_near_keyword('arp', '-an', [os.fsencode(ip_addr)], lambda i: i+1)
     if mac:
         return mac
 
     # This works on Linux, FreeBSD and NetBSD
-    mac = _find_mac_inline('arp', '-an', [os.fsencode('(%s)' % ip_addr)],
+    mac = _find_mac_near_keyword('arp', '-an', [os.fsencode('(%s)' % ip_addr)],
                     lambda i: i+2)
     # Return None instead of 0.
     if mac:
@@ -524,12 +534,12 @@ def _arp_getnode():
 def _lanscan_getnode():
     """Get the hardware address on Unix by running lanscan."""
     # This might work on HP-UX.
-    return _find_mac_inline('lanscan', '-ai', [b'lan0'], lambda i: 0)
+    return _find_mac_near_keyword('lanscan', '-ai', [b'lan0'], lambda i: 0)
 
 def _netstat_getnode():
     """Get the hardware address on Unix by running netstat."""
     # This works on AIX and might work on Tru64 UNIX.
-    return _find_mac_nextlines('netstat', '-ian', b'Address', lambda i: i)
+    return _find_mac_under_heading('netstat', '-ian', b'Address')
 
 def _ipconfig_getnode():
     """Get the hardware address on Windows by running ipconfig.exe."""

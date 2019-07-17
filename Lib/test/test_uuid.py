@@ -674,8 +674,7 @@ class BaseTestInternals:
     _uuid = py_uuid
 
 
-    def test_find_mac_nextlines(self):
-        # key is on line X, value is on line X+1 aka 'nextline'
+    def test_find_under_heading(self):
         data = '''\
 Name  Mtu   Network     Address           Ipkts Ierrs    Opkts Oerrs  Coll
 en0   1500  link#2      fe.ad.c.1.23.4   1714807956     0 711348489     0     0
@@ -691,22 +690,20 @@ en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
 
         # The above data is specific to AIX - with '.' as _MAC_DELIM
         # and strings shorter than 17 bytes (no leading 0).
-        # The above data will only be parsed properly on non-AIX unixes.
         with mock.patch.multiple(self.uuid,
-                                 _AIX=True,
                                  _MAC_DELIM=b'.',
+                                 _MAC_OMITS_LEADING_ZEROES=True,
                                  _get_command_stdout=mock_get_command_stdout):
-            mac = self.uuid._find_mac_nextlines(
+            mac = self.uuid._find_mac_under_heading(
                 command='netstat',
                 args='-ian',
-                hw_identifiers=b'Address',
-                f_index=lambda x: x,
+                heading=b'Address',
             )
 
         self.assertEqual(mac, 0xfead0c012304)
 
-    def test_find_mac_inline(self):
-        # key and value are on the same line aka 'inline'
+    def test_find_mac_near_keyword(self):
+        # key and value are on the same line
         data = '''
 fake      Link encap:UNSPEC  hwaddr 00-00
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
@@ -718,14 +715,14 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
         # The above data will only be parsed properly on non-AIX unixes.
         with mock.patch.multiple(self.uuid,
-                                 _AIX=False,
                                  _MAC_DELIM=b':',
+                                 _MAC_OMITS_LEADING_ZEROES=False,
                                  _get_command_stdout=mock_get_command_stdout):
-            mac = self.uuid._find_mac_inline(
+            mac = self.uuid._find_mac_near_keyword(
                 command='ifconfig',
                 args='',
-                hw_identifiers=[b'hwaddr'],
-                f_index=lambda x: x + 1,
+                keywords=[b'hwaddr'],
+                get_word_index=lambda x: x + 1,
             )
 
         self.assertEqual(mac, 0x1234567890ab)
