@@ -432,8 +432,6 @@ class C1():
             return None
 """
 
-
-
     def test_get_region(self):
         get = self.formatter.get_region
         text = self.text
@@ -441,9 +439,11 @@ class C1():
 
         # Add selection.
         text.tag_add('sel', '7.0', '10.0')
-        eq(get(), ('7.0', '10.0',
-                   '\n    def compare(self):\n        if a > b:\n',
-                   ['', '    def compare(self):', '        if a > b:', '']))
+        expected_lines = ['',
+                          '    def compare(self):',
+                          '        if a > b:',
+                          '']
+        eq(get(), ('7.0', '10.0', '\n'.join(expected_lines), expected_lines))
 
         # Remove selection.
         text.tag_remove('sel', '1.0', 'end')
