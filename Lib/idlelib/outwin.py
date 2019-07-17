@@ -74,6 +74,8 @@ class OutputWindow(EditorWindow):
         ("Go to file/line", "<<goto-file-line>>", None),
     ]
 
+    allow_codecontext = False
+
     def __init__(self, *args):
         EditorWindow.__init__(self, *args)
         self.text.bind("<<goto-file-line>>", self.goto_file_line)

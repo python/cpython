@@ -2,6 +2,7 @@
 
 from idlelib import codecontext
 import unittest
+import unittest.mock
 from test.support import requires
 from tkinter import Tk, Frame, Text, TclError
 
@@ -42,6 +43,9 @@ class DummyEditwin:
         self.text = text
         self.label = ''
 
+    def getlineno(self, index):
+        return int(float(self.text.index(index)))
+
     def update_menu_label(self, **kwargs):
         self.label = kwargs['label']
 
@@ -75,6 +79,18 @@ class CodeContextTest(unittest.TestCase):
         self.text.yview(0)
         self.cc = codecontext.CodeContext(self.editor)
 
+        self.highlight_cfg = {"background": '#abcdef',
+                              "foreground": '#123456'}
+        orig_idleConf_GetHighlight = codecontext.idleConf.GetHighlight
+        def mock_idleconf_GetHighlight(theme, element):
+            if element == 'context':
+                return self.highlight_cfg
+            return orig_idleConf_GetHighlight(theme, element)
+        patcher = unittest.mock.patch.object(
+            codecontext.idleConf, 'GetHighlight', mock_idleconf_GetHighlight)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def tearDown(self):
         if self.cc.context:
             self.cc.context.destroy()
@@ -89,30 +105,24 @@ class CodeContextTest(unittest.TestCase):
 
         eq(cc.editwin, ed)
         eq(cc.text, ed.text)
-        eq(cc.textfont, ed.text['font'])
+        eq(cc.text['font'], ed.text['font'])
         self.assertIsNone(cc.context)
         eq(cc.info, [(0, -1, '', False)])
         eq(cc.topvisible, 1)
-        eq(self.root.tk.call('after', 'info', self.cc.t1)[1], 'timer')
-        eq(self.root.tk.call('after', 'info', self.cc.t2)[1], 'timer')
+        self.assertIsNone(self.cc.t1)
 
     def test_del(self):
         self.cc.__del__()
-        with self.assertRaises(TclError) as msg:
-            self.root.tk.call('after', 'info', self.cc.t1)
-            self.assertIn("doesn't exist", msg)
-        with self.assertRaises(TclError) as msg:
-            self.root.tk.call('after', 'info', self.cc.t2)
-            self.assertIn("doesn't exist", msg)
-        # For coverage on the except.  Have to delete because the
-        # above Tcl error is caught by after_cancel.
-        del self.cc.t1, self.cc.t2
+
+    def test_del_with_timer(self):
+        timer = self.cc.t1 = self.text.after(10000, lambda: None)
         self.cc.__del__()
+        with self.assertRaises(TclError) as cm:
+            self.root.tk.call('after', 'info', timer)
+        self.assertIn("doesn't exist", str(cm.exception))
 
     def test_reload(self):
         codecontext.CodeContext.reload()
-        self.assertEqual(self.cc.colors, {'background': 'lightgray',
-                                          'foreground': '#000000'})
         self.assertEqual(self.cc.context_depth, 15)
 
     def test_toggle_code_context_event(self):
@@ -127,16 +137,18 @@ class CodeContextTest(unittest.TestCase):
         # Toggle on.
         eq(toggle(), 'break')
         self.assertIsNotNone(cc.context)
-        eq(cc.context['font'], cc.textfont)
-        eq(cc.context['fg'], cc.colors['foreground'])
-        eq(cc.context['bg'], cc.colors['background'])
+        eq(cc.context['font'], self.text['font'])
+        eq(cc.context['fg'], self.highlight_cfg['foreground'])
+        eq(cc.context['bg'], self.highlight_cfg['background'])
         eq(cc.context.get('1.0', 'end-1c'), '')
         eq(cc.editwin.label, 'Hide Code Context')
+        eq(self.root.tk.call('after', 'info', self.cc.t1)[1], 'timer')
 
         # Toggle off.
         eq(toggle(), 'break')
         self.assertIsNone(cc.context)
         eq(cc.editwin.label, 'Show Code Context')
+        self.assertIsNone(self.cc.t1)
 
     def test_get_context(self):
         eq = self.assertEqual
@@ -227,7 +239,7 @@ class CodeContextTest(unittest.TestCase):
                      (4, 4, '    def __init__(self, a, b):', 'def')])
         eq(cc.topvisible, 5)
         eq(cc.context.get('1.0', 'end-1c'), 'class C1():\n'
-                             '    def __init__(self, a, b):')
+                                            '    def __init__(self, a, b):')
 
         # Scroll down to line 11.  Last 'def' is removed.
         cc.text.yview(11)
@@ -239,9 +251,9 @@ class CodeContextTest(unittest.TestCase):
                      (10, 8, '        elif a < b:', 'elif')])
         eq(cc.topvisible, 12)
         eq(cc.context.get('1.0', 'end-1c'), 'class C1():\n'
-                             '    def compare(self):\n'
-                             '        if a > b:\n'
-                             '        elif a < b:')
+                                            '    def compare(self):\n'
+                                            '        if a > b:\n'
+                                            '        elif a < b:')
 
         # No scroll.  No update, even though context_depth changed.
         cc.update_code_context()
@@ -253,9 +265,9 @@ class CodeContextTest(unittest.TestCase):
                      (10, 8, '        elif a < b:', 'elif')])
         eq(cc.topvisible, 12)
         eq(cc.context.get('1.0', 'end-1c'), 'class C1():\n'
-                             '    def compare(self):\n'
-                             '        if a > b:\n'
-                             '        elif a < b:')
+                                            '    def compare(self):\n'
+                                            '        if a > b:\n'
+                                            '        elif a < b:')
 
         # Scroll up.
         cc.text.yview(5)
@@ -276,7 +288,7 @@ class CodeContextTest(unittest.TestCase):
             cc.toggle_code_context_event()
 
         # Empty context.
-        cc.text.yview(f'{2}.0')
+        cc.text.yview('2.0')
         cc.update_code_context()
         eq(cc.topvisible, 2)
         cc.context.mark_set('insert', '1.5')
@@ -284,7 +296,7 @@ class CodeContextTest(unittest.TestCase):
         eq(cc.topvisible, 1)
 
         # 4 lines of context showing.
-        cc.text.yview(f'{12}.0')
+        cc.text.yview('12.0')
         cc.update_code_context()
         eq(cc.topvisible, 12)
         cc.context.mark_set('insert', '3.0')
@@ -293,7 +305,7 @@ class CodeContextTest(unittest.TestCase):
 
         # More context lines than limit.
         cc.context_depth = 2
-        cc.text.yview(f'{12}.0')
+        cc.text.yview('12.0')
         cc.update_code_context()
         eq(cc.topvisible, 12)
         cc.context.mark_set('insert', '1.0')
@@ -313,56 +325,72 @@ class CodeContextTest(unittest.TestCase):
         self.cc.timer_event()
         mock_update.assert_called()
 
-    def test_config_timer_event(self):
+    def test_font(self):
         eq = self.assertEqual
         cc = self.cc
         save_font = cc.text['font']
-        save_colors = codecontext.CodeContext.colors
-        test_font = 'FakeFont'
+        test_font = 'TkFixedFont'
+
+        # Ensure code context is not active.
+        if cc.context is not None:
+            cc.toggle_code_context_event()
+
+        # Nothing breaks or changes with inactive code context.
+        cc.update_font(test_font)
+
+        # Activate code context, but no change to font.
+        cc.toggle_code_context_event()
+        eq(cc.context['font'], save_font)
+        # Call font update with the existing font.
+        cc.update_font(save_font)
+        eq(cc.context['font'], save_font)
+        cc.toggle_code_context_event()
+
+        # Change text widget font and activate code context.
+        cc.text['font'] = test_font
+        cc.toggle_code_context_event(test_font)
+        eq(cc.context['font'], test_font)
+
+        # Just call the font update.
+        cc.update_font(save_font)
+        eq(cc.context['font'], save_font)
+        cc.text['font'] = save_font
+
+    def test_highlight_colors(self):
+        eq = self.assertEqual
+        cc = self.cc
+        save_colors = dict(self.highlight_cfg)
         test_colors = {'background': '#222222', 'foreground': '#ffff00'}
 
         # Ensure code context is not active.
         if cc.context:
             cc.toggle_code_context_event()
 
-        # Nothing updates on inactive code context.
-        cc.text['font'] = test_font
-        codecontext.CodeContext.colors = test_colors
-        cc.config_timer_event()
-        eq(cc.textfont, save_font)
-        eq(cc.contextcolors, save_colors)
+        # Nothing breaks with inactive code context.
+        cc.update_highlight_colors()
 
-        # Activate code context, but no change to font or color.
+        # Activate code context, but no change to colors.
         cc.toggle_code_context_event()
-        cc.text['font'] = save_font
-        codecontext.CodeContext.colors = save_colors
-        cc.config_timer_event()
-        eq(cc.textfont, save_font)
-        eq(cc.contextcolors, save_colors)
-        eq(cc.context['font'], save_font)
         eq(cc.context['background'], save_colors['background'])
         eq(cc.context['foreground'], save_colors['foreground'])
 
-        # Active code context, change font.
-        cc.text['font'] = test_font
-        cc.config_timer_event()
-        eq(cc.textfont, test_font)
-        eq(cc.contextcolors, save_colors)
-        eq(cc.context['font'], test_font)
+        # Call colors update, but no change to font.
+        cc.update_highlight_colors()
         eq(cc.context['background'], save_colors['background'])
         eq(cc.context['foreground'], save_colors['foreground'])
+        cc.toggle_code_context_event()
 
-        # Active code context, change color.
-        cc.text['font'] = save_font
-        codecontext.CodeContext.colors = test_colors
-        cc.config_timer_event()
-        eq(cc.textfont, save_font)
-        eq(cc.contextcolors, test_colors)
-        eq(cc.context['font'], save_font)
+        # Change colors and activate code context.
+        self.highlight_cfg = test_colors
+        cc.toggle_code_context_event()
         eq(cc.context['background'], test_colors['background'])
         eq(cc.context['foreground'], test_colors['foreground'])
-        codecontext.CodeContext.colors = save_colors
-        cc.config_timer_event()
+
+        # Change colors and call highlight colors update.
+        self.highlight_cfg = save_colors
+        cc.update_highlight_colors()
+        eq(cc.context['background'], save_colors['background'])
+        eq(cc.context['foreground'], save_colors['foreground'])
 
 
 class HelperFunctionText(unittest.TestCase):
