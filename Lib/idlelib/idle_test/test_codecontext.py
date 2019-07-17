@@ -332,27 +332,27 @@ class CodeContextTest(unittest.TestCase):
         test_font = 'TkFixedFont'
 
         # Ensure code context is not active.
-        if cc.context:
+        if cc.context is not None:
             cc.toggle_code_context_event()
 
-        # Nothing breaks with inactive code context.
-        cc.update_font()
+        # Nothing breaks or changes with inactive code context.
+        cc.update_font(test_font)
 
         # Activate code context, but no change to font.
         cc.toggle_code_context_event()
         eq(cc.context['font'], save_font)
-        # Call font update, but no change to font.
-        cc.update_font()
+        # Call font update with the existing font.
+        cc.update_font(save_font)
         eq(cc.context['font'], save_font)
         cc.toggle_code_context_event()
 
-        # Change font and activate code context.
+        # Change text widget font and activate code context.
         cc.text['font'] = test_font
-        cc.toggle_code_context_event()
+        cc.toggle_code_context_event(test_font)
         eq(cc.context['font'], test_font)
 
-        # Change font and call the font update.
-        cc.update_font()
+        # Just call the font update.
+        cc.update_font(save_font)
         eq(cc.context['font'], save_font)
         cc.text['font'] = save_font
 
