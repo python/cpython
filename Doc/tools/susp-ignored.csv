@@ -148,6 +148,7 @@ library/ipaddress,,:db8,>>> ipaddress.IPv6Address('2001:db8::1000%1')
 library/ipaddress,,::,>>> ipaddress.IPv6Address('2001:db8::1000%1')
 library/ipaddress,,:db8,IPv6Address('2001:db8::1000%1')
 library/ipaddress,,::,IPv6Address('2001:db8::1000%1')
+library/ipaddress,,::,>>> IPv6Address('fe80::1234') == IPv6Address('fe80::1234%1')
 library/ipaddress,,:db8,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"
 library/ipaddress,,::,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"
 library/ipaddress,,::,"""::abc:7:def"""
