@@ -365,11 +365,8 @@ Larry
 
     def test_fieldstorage_exit_context(self):
         fs = cgi.FieldStorage()
-        try:
-            with fs:
-                fs.bytes_read = 0
-        except AttributeError:
-            self.fail('clean up raises exception')
+        with fs:
+            fs.bytes_read = 0
 
     _qs_result = {
         'key1': 'value1',

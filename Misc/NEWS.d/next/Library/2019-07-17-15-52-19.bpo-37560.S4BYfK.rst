@@ -1,0 +1,1 @@
+Add exception handler for :class:`FieldStorage` in :mod:`cgi.FieldStorage` at method `__exit__`
