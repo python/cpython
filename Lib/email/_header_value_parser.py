@@ -1191,7 +1191,7 @@ def get_bare_quoted_string(value):
             "expected '\"' but found '{}'".format(value))
     bare_quoted_string = BareQuotedString()
     value = value[1:]
-    if value[0] == '"':
+    if value and value[0] == '"':
         token, value = get_qcontent(value)
         bare_quoted_string.append(token)
     while value and value[0] != '"':
