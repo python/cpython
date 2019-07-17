@@ -53,9 +53,8 @@ class EditorWindow(object):
     from idlelib.autoexpand import AutoExpand
     from idlelib.calltip import Calltip
     from idlelib.codecontext import CodeContext
-    from idlelib.paragraph import FormatParagraph
+    from idlelib.format import FormatParagraph, FormatRegion
     from idlelib.parenmatch import ParenMatch
-    from idlelib.formatregion import FormatRegion
     from idlelib.rstrip import Rstrip
     from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
