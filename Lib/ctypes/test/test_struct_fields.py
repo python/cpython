@@ -46,6 +46,12 @@ class StructFieldsTestCase(unittest.TestCase):
         Y._fields_ = []
         self.assertRaises(AttributeError, setattr, X, "_fields_", [])
 
+    def test_5(self):
+        class X(Structure):
+           _fields_ = [("x", c_int)]
+        CField = type(X.x)
+        self.assertRaises(TypeError, CField)
+
     # __set__ and __get__ should raise a TypeError in case their self
     # argument is not a ctype instance.
     def test___set__(self):
