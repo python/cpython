@@ -3659,6 +3659,63 @@ class Test_future(FixerTestCase):
     def test_run_order(self):
         self.assert_runs_after('print')
 
+
+class Test_string(FixerTestCase):
+    fixer = "string"
+
+    def test_import(self):
+        b = "from string import lowercase, uppercase, letters"
+        a = "from string import ascii_lowercase, ascii_uppercase"
+        a += ", ascii_letters"
+        self.check(b, a)
+
+    def test_import_as(self):
+        b = "from string import uppercase as foo"
+        a = "from string import ascii_uppercase as foo"
+        self.check(b, a)
+
+    def test_import_as_mix(self):
+        b = "from string import lowercase, uppercase as foo, letters"
+        a = "from string import ascii_lowercase, ascii_uppercase as foo"
+        a += ", ascii_letters"
+        self.check(b, a)
+
+    def test_import_dont_crash(self):
+        s = "from a.b import lowercase"
+        self.unchanged(s)
+
+    def test_import_string(self):
+        b = "import string\nprint string.lowercase"
+        a = "import string\nprint string.ascii_lowercase"
+        self.check(b, a)
+
+    def test_star(self):
+        b = "from string import *\nprint letters"
+        a = "from string import *\nprint ascii_letters"
+        self.check(b, a)
+
+    def test_replace(self):
+        b = "from string import lowercase\nprint lowercase"
+        a = "from string import ascii_lowercase\nprint ascii_lowercase"
+        self.check(b, a)
+
+    def test_no_import(self):
+        s = "lowercase = 'foo'\nprint lowercase"
+        self.unchanged(s)
+
+    def test_nonstring_import(self):
+        s = "from mystringpackage import uppercase\nprint uppercase"
+        self.unchanged(s)
+
+    def test_nonstring_import_def(self):
+        s = "from foo import bar as letters\nprint letters"
+        self.unchanged(s)
+
+    def test_functions(self):
+        s = "def letters():\n  return 'abc'\nletters()"
+        self.unchanged(s)
+
+
 class Test_itertools(FixerTestCase):
     fixer = "itertools"
 

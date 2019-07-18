@@ -404,6 +404,14 @@ and off individually.  They are described here in more detail.
 
    Renames :exc:`StandardError` to :exc:`Exception`.
 
+.. 2to3fixer:: string
+
+    Renames `lowercase`, `uppercase`, and `letters` with the prefix `ascii_`.
+    Caution, some user-defined variables with these names might get renamed
+    also.
+
+    .. versionadded:: 3.9
+
 .. 2to3fixer:: sys_exc
 
    Changes the deprecated :data:`sys.exc_value`, :data:`sys.exc_type`,
