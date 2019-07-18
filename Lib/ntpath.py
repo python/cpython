@@ -134,16 +134,9 @@ def splitdrive(p):
     """
     p = os.fspath(p)
     if len(p) >= 2:
-        if isinstance(p, bytes):
-            sep = b'\\'
-            altsep = b'/'
-            colon = b':'
-        else:
-            sep = '\\'
-            altsep = '/'
-            colon = ':'
+        sep, altsep, colon = get_separator(p)
         normp = p.replace(altsep, sep)
-        if (normp[0:2] == sep*2) and (normp[2:3] != sep):
+        if is_unc_path(normp, sep):
             # is a UNC path:
             # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
             # \\machine\mountpoint\directory\etc\...
@@ -151,6 +144,9 @@ def splitdrive(p):
             index = normp.find(sep, 2)
             if index == -1:
                 return p[:0], p
+            if is_extended_unc(normp, colon):
+                start = normp.find(sep, index + 1)
+                index = normp.find(sep, start + 1)
             index2 = normp.find(sep, index + 1)
             # a UNC path can't have two slashes in a row
             # (after the initial two)
@@ -159,9 +155,28 @@ def splitdrive(p):
             if index2 == -1:
                 index2 = len(p)
             return p[:index2], p[index2:]
-        if normp[1:2] == colon:
+        if is_drive_path(normp, colon):
             return p[:2], p[2:]
     return p[:0], p
+
+
+def is_unc_path(path, sep):
+    return (path[0:2] == sep*2) and (path[2:3] != sep)
+
+
+def is_drive_path(path, colon):
+    return path[1:2] == colon
+
+
+def is_extended_unc(path, colon):
+    return path[2] in ['?', '.'] and path[-2] != colon
+
+
+def get_separator(path):
+    sep, altsep, colon = ['\\', '/', ':']
+    if isinstance(path, bytes):
+        sep, altsep, colon = [b'\\', b'/', b':']
+    return sep, altsep, colon
 
 
 # Split a path in head (everything up to the last '/') and tail (the
