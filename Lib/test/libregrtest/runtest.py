@@ -36,7 +36,7 @@ _FORMAT_TEST_RESULT = {
     INTERRUPTED: '%s interrupted',
     CHILD_ERROR: '%s crashed',
     TEST_DID_NOT_RUN: '%s run no tests',
-    TIMEOUT: '%s test did not finish',
+    TIMEOUT: '%s timed out',
 }
 
 # Minimum duration of a test to display its duration or to mention that
@@ -181,7 +181,7 @@ def runtest(ns, test_name):
         FAILED           test failed
         PASSED           test passed
         EMPTY_TEST_SUITE test ran no subtests.
-        TIMEOUT         test failed due to timeout
+        TIMEOUT          test timd out.
 
     If ns.xmlpath is not None, xml_data is a list containing each
     generated testsuite element.
