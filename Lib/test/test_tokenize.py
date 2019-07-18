@@ -944,6 +944,26 @@ async def f():
     DEDENT     ''            (7, 0) (7, 0)
     """)
 
+    def test_linecont(self):
+        self.check_tokenize("x = \\\n1", """\
+    NAME       'x'           (1, 0) (1, 1)
+    OP         '='           (1, 2) (1, 3)
+    NUMBER     '1'           (2, 0) (2, 1)
+    """)
+        self.check_tokenize("""x = 1
+\
+
+y = 1""", """\
+    NAME       'x'           (1, 0) (1, 1)
+    OP         '='           (1, 2) (1, 3)
+    NUMBER     '1'           (1, 4) (1, 5)
+    NEWLINE    '\\n'          (1, 5) (1, 6)
+    NL         '\\n'          (2, 0) (2, 1)
+    NAME       'y'           (3, 0) (3, 1)
+    OP         '='           (3, 2) (3, 3)
+    NUMBER     '1'           (3, 4) (3, 5)
+    """)
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
@@ -1593,6 +1613,10 @@ class TestRoundtrip(TestCase):
                              "# This also\n")
         self.check_roundtrip("# Comment \\\n"
                              "x = 0")
+        self.check_roundtrip("x = 1\n"
+                             "\\\n"
+                             "\n"
+                             "y = 1")
 
     def test_string_concatenation(self):
         # Two string literals on the same line
