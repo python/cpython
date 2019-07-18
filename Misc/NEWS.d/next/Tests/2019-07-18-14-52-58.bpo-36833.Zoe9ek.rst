@@ -1,0 +1,18 @@
+Added test for the following Untested macros with no corresponding API module:
+
+- `PyDateTime_GET_YEAR`
+- `PyDateTime_GET_MONTH`
+- `PyDateTime_GET_DAY`
+- `PyDateTime_DATE_GET_HOUR`
+- `PyDateTime_DATE_GET_MINUTE`
+- `PyDateTime_DATE_GET_SECOND`
+- `PyDateTime_DATE_GET_MICROSECOND`
+
+- `PyDateTime_TIME_GET_HOUR`
+- `PyDateTime_TIME_GET_MINUTE`
+- `PyDateTime_TIME_GET_SECOND`
+- `PyDateTime_TIME_GET_MICROSECOND`
+
+- `PyDateTime_DELTA_GET_DAYS`
+- `PyDateTime_DELTA_GET_SECONDS`
+- `PyDateTime_DELTA_GET_MICROSECONDS`
