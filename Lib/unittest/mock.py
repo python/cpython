@@ -337,12 +337,18 @@ class _CallList(list):
 
         for i in range(0, len_self - len_value + 1):
             sub_list = self[i:i+len_value]
-            if sub_list == value:
+            if value == sub_list:
                 return True
         return False
 
     def __repr__(self):
         return pprint.pformat(list(self))
+
+    def __eq__(self, other):
+        self_list = list(self)
+        other_list = list(other)
+        # checking equality both directions is necessary for ANY to work
+        return self_list.__eq__(other_list) or other_list.__eq__(self_list)
 
 
 def _check_and_set_parent(parent, value, name, new_name):
@@ -2293,7 +2299,6 @@ def _format_call_signature(name, args, kwargs):
     return message % formatted_args
 
 
-
 class _Call(tuple):
     """
     A tuple for holding the results of a call to a mock, either in the form
@@ -2403,8 +2408,12 @@ class _Call(tuple):
         if self_name and other_name != self_name:
             return False
 
-        # this order is important for ANY to work!
-        return (other_args, other_kwargs) == (self_args, self_kwargs)
+        self_params = self_args, self_kwargs
+        other_params = other_args, other_kwargs
+        return (
+            self_params.__eq__(other_params)
+            or other_params.__eq__(self_params)
+        )
 
 
     __ne__ = object.__ne__
