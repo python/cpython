@@ -5963,7 +5963,7 @@ class CapiTest(unittest.TestCase):
     def test_get_datetime_object_macros(self):
         class DateTimeSubclass(datetime):
             pass
-    
+
         exp_dt = datetime(1993, 8, 26, 22, 12, 55, 99999)
         exp_dts = DateTimeSubclass(1993, 8, 26, 22, 12, 55, 99999)
 
