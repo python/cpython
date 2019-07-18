@@ -1860,7 +1860,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
     def __str__(self):
         ip_str = super().__str__()
-        return ip_str + '%' + self.scope_id if self.scope_id else ip_str
+        return ip_str + '%' + self._scope_id if self._scope_id else ip_str
 
     @property
     def scope_id(self):
