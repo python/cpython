@@ -503,6 +503,11 @@ def _tokenize(readline, encoding):
                 yield TokenInfo(NL, line[pos:],
                            (lnum, pos), (lnum, len(line)), line)
                 continue
+            elif line[pos] == '\\':
+                if pos + 1 != max and line[pos + 1] in '\r\n':
+                    yield TokenInfo(NL, line[pos + 1:],
+                               (lnum, pos + 1), (lnum, len(line)), line)
+                    continue
 
             if column > indents[-1]:           # count indents or dedents
                 indents.append(column)

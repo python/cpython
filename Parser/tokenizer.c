@@ -1136,7 +1136,6 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 break;
             }
         }
-        tok_backup(tok, c);
         if (c == '#' || c == '\n') {
             /* Lines with only whitespace and/or comments
                shouldn't affect the indentation and are
@@ -1149,8 +1148,21 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             else {
                 blankline = 1; /* Ignore completely */
             }
+            tok_backup(tok, c);
             /* We can't jump back right here since we still
                may need to skip to the end of a comment */
+        }
+        else if (c == '\\') {
+            c = tok_nextc(tok);
+            if (c == '\n') {
+                /* Line continuation of a blank line */
+                blankline = 1;
+            }
+            tok_backup(tok, c);
+            tok_backup(tok, '\\');
+        }
+        else {
+            tok_backup(tok, c);
         }
         if (!blankline && tok->level == 0) {
             if (col == tok->indstack[tok->indent]) {
