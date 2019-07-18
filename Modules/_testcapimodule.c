@@ -2591,24 +2591,25 @@ static PyObject *
 get_fields_from_date(PyObject* self, PyObject *args)
 {
     PyObject *obj = NULL;
-    int *rv = NULL;
+    PyObject *rv;
     int year, month, day;
 
-    if (!PyArg_ParseTuple(args, "p", &obj)) {
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
     }
-
+    
     year = PyDateTime_GET_YEAR(obj);
     month = PyDateTime_GET_MONTH(obj);
     day = PyDateTime_GET_DAY(obj);
 
-    Py_DecRef(obj);
-
     rv = PyTuple_New(3);
+    if (rv == NULL) {
+        return NULL;
+    }
 
-    PyTuple_SET_ITEM(rv, 0, (PyObject *)year);
-    PyTuple_SET_ITEM(rv, 1, (PyObject *)month);
-    PyTuple_SET_ITEM(rv, 2, (PyObject *)day);
+    PyTuple_SET_ITEM(rv, 0, PyLong_FromSsize_t(year));
+    PyTuple_SET_ITEM(rv, 1, PyLong_FromSsize_t(month));
+    PyTuple_SET_ITEM(rv, 2, PyLong_FromSsize_t(day));
 
     return rv;
 }
@@ -2617,10 +2618,10 @@ static PyObject *
 get_fields_from_datetime(PyObject* self, PyObject *args)
 {
     PyObject *obj = NULL;
-    PyObject *rv = NULL;
+    PyObject *rv;
     int hour, minute, second, microsecond;
 
-    if (!PyArg_ParseTuple(args, "p", &obj)) {
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
     }
 
@@ -2629,14 +2630,15 @@ get_fields_from_datetime(PyObject* self, PyObject *args)
     second = PyDateTime_DATE_GET_SECOND(obj);
     microsecond = PyDateTime_DATE_GET_MICROSECOND(obj);
 
-    Py_DecRef(obj);
-
     rv = PyTuple_New(4);
+    if (rv == NULL) {
+        return NULL;
+    }
 
-    PyTuple_SET_ITEM(rv, 0, (PyObject *)hour);
-    PyTuple_SET_ITEM(rv, 1, (PyObject *)minute);
-    PyTuple_SET_ITEM(rv, 2, (PyObject *)second);
-    PyTuple_SET_ITEM(rv, 3, (PyObject *)microsecond);
+    PyTuple_SET_ITEM(rv, 0, PyLong_FromSsize_t(hour));
+    PyTuple_SET_ITEM(rv, 1, PyLong_FromSsize_t(minute));
+    PyTuple_SET_ITEM(rv, 2, PyLong_FromSsize_t(second));
+    PyTuple_SET_ITEM(rv, 3, PyLong_FromSsize_t(microsecond));
 
     return rv;
 }
@@ -2645,10 +2647,10 @@ static PyObject *
 get_fields_from_time(PyObject* self, PyObject *args)
 {
     PyObject *obj = NULL;
-    PyObject *rv = NULL;
+    PyObject *rv;
     int hour, minute, second, microsecond;
 
-    if (!PyArg_ParseTuple(args, "p", &obj)) {
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
     }
 
@@ -2657,14 +2659,15 @@ get_fields_from_time(PyObject* self, PyObject *args)
     second = PyDateTime_TIME_GET_SECOND(obj);
     microsecond = PyDateTime_TIME_GET_MICROSECOND(obj);
 
-    Py_DecRef(obj);
-
     rv = PyTuple_New(4);
+    if (rv == NULL) {
+        return NULL;
+    }
 
-    PyTuple_SET_ITEM(rv, 0, (PyObject *)hour);
-    PyTuple_SET_ITEM(rv, 1, (PyObject *)minute);
-    PyTuple_SET_ITEM(rv, 2, (PyObject *)second);
-    PyTuple_SET_ITEM(rv, 3, (PyObject *)microsecond);
+    PyTuple_SET_ITEM(rv, 0, PyLong_FromSsize_t(hour));
+    PyTuple_SET_ITEM(rv, 1, PyLong_FromSsize_t(minute));
+    PyTuple_SET_ITEM(rv, 2, PyLong_FromSsize_t(second));
+    PyTuple_SET_ITEM(rv, 3, PyLong_FromSsize_t(microsecond));
 
     return rv;
 }
@@ -2673,10 +2676,10 @@ static PyObject *
 get_fields_from_delta(PyObject* self, PyObject *args)
 {
     PyObject *obj = NULL;
-    PyObject *rv = NULL;
+    PyObject *rv;
     int days, seconds, microseconds;
 
-    if (!PyArg_ParseTuple(args, "p", &obj)) {
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
     }
 
@@ -2684,17 +2687,17 @@ get_fields_from_delta(PyObject* self, PyObject *args)
     seconds = PyDateTime_DELTA_GET_SECONDS(obj);
     microseconds = PyDateTime_DELTA_GET_MICROSECONDS(obj);
 
-    Py_DecRef(obj);
-
     rv = PyTuple_New(3);
+    if (rv == NULL) {
+        return NULL;
+    }
 
-    PyTuple_SET_ITEM(rv, 0, (PyObject *)days);
-    PyTuple_SET_ITEM(rv, 1, (PyObject *)seconds);
-    PyTuple_SET_ITEM(rv, 2, (PyObject *)microseconds);
+    PyTuple_SET_ITEM(rv, 0, PyLong_FromSsize_t(days));
+    PyTuple_SET_ITEM(rv, 1, PyLong_FromSsize_t(seconds));
+    PyTuple_SET_ITEM(rv, 2, PyLong_FromSsize_t(microseconds));
 
     return rv;
 }
-
 
 /* test_thread_state spawns a thread of its own, and that thread releases
  * `thread_done` when it's finished.  The driver code has to know when the

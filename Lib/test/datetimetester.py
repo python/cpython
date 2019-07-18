@@ -5920,24 +5920,24 @@ class CapiTest(unittest.TestCase):
         class TimeDeltaSubclass(timedelta):
             pass
 
-        exp_td = timedelta(1)
-        exp_tds = TimeDeltaSubclass(1)
+        exp_delta = timedelta(26, 55, 99999)
+        exp_delta_s = TimeDeltaSubclass(26, 55, 99999)
 
-        days, seconds, microseconds = _testcapi.get_fields_from_delta(exp_td)
-        days_s, seconds_s, microseconds_s = _testcapi.get_fields_from_delta(exp_tds)
+        days, seconds, microseconds = _testcapi.get_fields_from_delta(exp_delta)
+        days_s, seconds_s, microseconds_s = _testcapi.get_fields_from_delta(exp_delta_s)
 
         with self.subTest(testname="PyDateTime_DELTA_GET_DAYS"):
-            self.assertEqual(days, exp_dt.days)
-            self.assertEqual(days_s, exp_tds.days)
+            self.assertEqual(days, exp_delta.days)
+            self.assertEqual(days_s, exp_delta_s.days)
 
         with self.subTest(testname="PyDateTime_DELTA_GET_SECONDS"):
-            self.assertEqual(seconds, exp_td.seconds)
-            self.assertEqual(seconds_s, exp_tds.seconds)
+            self.assertEqual(seconds, exp_delta.seconds)
+            self.assertEqual(seconds_s, exp_delta_s.seconds)
 
         with self.subTest(testname="PyDateTime_DELTA_GET_MICROSECONDS"):
-            self.assertEqual(microseconds, exp_td.microseconds)
-            self.assertEqual(microseconds_s, exp_tds.microseconds)
-    
+            self.assertEqual(microseconds, exp_delta.microseconds)
+            self.assertEqual(microseconds_s, exp_delta_s.microseconds)
+
     def test_get_date_object_macros(self):
         class DateSubclass(date):
             pass
@@ -5980,7 +5980,7 @@ class CapiTest(unittest.TestCase):
 
         with self.subTest(testname="PyDateTime_DATE_GET_SECOND"):
             self.assertEqual(second, exp_dt.second)
-            self.assertEqual(minute_s, exp_dts.second)
+            self.assertEqual(second_s, exp_dts.second)
 
         with self.subTest(testname="PyDateTime_DATE_GET_MICROSECOND"):
             self.assertEqual(microsecond, exp_dt.microsecond)
@@ -5990,8 +5990,8 @@ class CapiTest(unittest.TestCase):
         class TimeSubclass(time):
             pass
 
-        exp_t = time(12, 30)
-        exp_ts = TimeSubclass(12, 30)
+        exp_t = time(12, 30, 20, 10)
+        exp_ts = TimeSubclass(12, 30, 20, 10)
 
         hour, minute, second, microsecond = _testcapi.get_fields_from_time(exp_t)
         hour_s, minute_s, second_s, microsecond_s = _testcapi.get_fields_from_time(exp_ts)
@@ -6006,7 +6006,7 @@ class CapiTest(unittest.TestCase):
 
         with self.subTest(testname="PyDateTime_TIME_GET_SECOND"):
             self.assertEqual(second, exp_t.second)
-            self.assertEqual(minute_s, exp_ts.second)
+            self.assertEqual(second_s, exp_ts.second)
 
         with self.subTest(testname="PyDateTime_TIME_GET_MICROSECOND"):
             self.assertEqual(microsecond, exp_t.microsecond)
