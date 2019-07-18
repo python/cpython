@@ -964,6 +964,22 @@ y = 1""", """\
     OP         '='           (4, 2) (4, 3)
     NUMBER     '1'           (4, 4) (4, 5)
     """)
+        self.check_tokenize("""def f(x):
+    \\
+  return x""", """\
+    NAME       'def'         (1, 0) (1, 3)
+    NAME       'f'           (1, 4) (1, 5)
+    OP         '('           (1, 5) (1, 6)
+    NAME       'x'           (1, 6) (1, 7)
+    OP         ')'           (1, 7) (1, 8)
+    OP         ':'           (1, 8) (1, 9)
+    NEWLINE    '\\n'          (1, 9) (1, 10)
+    NL         '\\n'          (2, 5) (2, 6)
+    INDENT     '  '          (3, 0) (3, 2)
+    NAME       'return'      (3, 2) (3, 8)
+    NAME       'x'           (3, 9) (3, 10)
+    DEDENT     ''            (4, 0) (4, 0)
+    """)
 
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):

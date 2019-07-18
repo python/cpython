@@ -1700,8 +1700,13 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         } else {
             tok_backup(tok, c);
         }
-        tok->cont_line = 1;
-        goto again; /* Read next line */
+        if (blankline && tok->level == 0) {
+            tok->atbol = 1;
+        }
+        else {
+            tok->cont_line = 1;
+        }
+        goto nextline; /* Read next line */
     }
 
     /* Check for two-character token */
