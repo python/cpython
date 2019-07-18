@@ -1,0 +1,1 @@
+Tokenizer no longer emits NEWLINE token on empty continuation lines.
