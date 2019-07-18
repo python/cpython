@@ -6,6 +6,7 @@ comment, uncomment, tabify, and untabify.
 File renamed from paragraph.py with functions added from editor.py.
 """
 import re
+from tkinter.messagebox import askyesno
 from tkinter.simpledialog import askinteger
 from idlelib.config import idleConf
 
@@ -195,7 +196,7 @@ def get_comment_header(line):
     return m.group(1)
 
 
-# Copy from editor.py; importing it would cause an import cycle.
+# Copied from editor.py; importing it would cause an import cycle.
 _line_indent_re = re.compile(r'[ \t]*')
 
 def get_line_indent(line, tabwidth):
@@ -209,7 +210,7 @@ def get_line_indent(line, tabwidth):
 
 
 class FormatRegion:
-    "Format selected text."
+    "Format selected text (region)."
 
     def __init__(self, editwin):
         self.editwin = editwin
@@ -350,6 +351,65 @@ class FormatRegion:
             initialvalue=self.editwin.indentwidth,
             minvalue=2,
             maxvalue=16)
+
+
+# With mixed indents not allowed, these are semi-useless and not unittested.
+class Indents:  # pragma: no cover
+    "Change future indents."
+
+    def __init__(self, editwin):
+        self.editwin = editwin
+
+    def toggle_tabs_event(self, event):
+        editwin = self.editwin
+        usetabs = editwin.usetabs
+        if askyesno(
+              "Toggle tabs",
+              "Turn tabs " + ("on", "off")[usetabs] +
+              "?\nIndent width " +
+              ("will be", "remains at")[usetabs] + " 8." +
+              "\n Note: a tab is always 8 columns",
+              parent=editwin.text):
+            editwin.usetabs = not usetabs
+            # Try to prevent inconsistent indentation.
+            # User must change indent width manually after using tabs.
+            editwin.indentwidth = 8
+        return "break"
+
+    def change_indentwidth_event(self, event):
+        editwin = self.editwin
+        new = askinteger(
+                  "Indent width",
+                  "New indent width (2-16)\n(Always use 8 when using tabs)",
+                  parent=editwin.text,
+                  initialvalue=editwin.indentwidth,
+                  minvalue=2,
+                  maxvalue=16)
+        if new and new != editwin.indentwidth and not editwin.usetabs:
+            editwin.indentwidth = new
+        return "break"
+
+
+class Rstrip:  # 'Strip Trailing Whitespace" on "Format" menu.
+    def __init__(self, editwin):
+        self.editwin = editwin
+
+    def do_rstrip(self, event=None):
+        text = self.editwin.text
+        undo = self.editwin.undo
+        undo.undo_block_start()
+
+        end_line = int(float(text.index('end')))
+        for cur in range(1, end_line):
+            txt = text.get('%i.0' % cur, '%i.end' % cur)
+            raw = len(txt)
+            cut = len(txt.rstrip())
+            # Since text.delete() marks file as changed, even if not,
+            # only call it when needed to actually delete something.
+            if cut < raw:
+                text.delete('%i.%i' % (cur, cut), '%i.end' % cur)
+
+        undo.undo_block_stop()
 
 
 if __name__ == "__main__":
