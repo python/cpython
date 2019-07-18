@@ -22,7 +22,7 @@ class FixString(fixer_base.BaseFix):
                        power< 'string'
                          trailer< '.' const=%(constants)s > >
                        |
-                       const=%(constants)s 
+                       const=%(constants)s
                        """ % dict(constants=constants)
         super(FixString, self).compile_pattern()
 
@@ -59,7 +59,7 @@ class FixString(fixer_base.BaseFix):
                     if not child.children[1].type == token.NAME or \
                       ( child.children[1].type == token.NAME \
                         and not child.children[1].value == 'string' ):
-                            continue
+                        continue
 
                     # from string import name   (one import)
                     if child.children[3].type == token.NAME:
@@ -97,7 +97,7 @@ class FixString(fixer_base.BaseFix):
     def transform(self, node, results):
         if not results.get('const', None) \
             or ( self.find_stringdot and not syms.power ):
-                return
+            return
         const = results['const'][0]
         if const.value in self.string_defs:
             assert const.type == token.NAME
