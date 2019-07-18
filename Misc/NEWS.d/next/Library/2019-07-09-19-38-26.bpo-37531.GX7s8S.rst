@@ -1,0 +1,3 @@
+The change only impacts "python3 -m test -jN --timeout=TIMEOUT", 
+it ensures that a worker process is stopped with a timeout if it 
+runs longer than `TIMEOUT` seconds.
