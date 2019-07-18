@@ -310,7 +310,7 @@ try:
 except ImportError:
     _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=doc)
 
-def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None):
+def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None, spec=None):
     """Returns a new subclass of tuple with named fields.
 
     >>> Point = namedtuple('Point', ['x', 'y'])
@@ -467,6 +467,9 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
             pass
     if module is not None:
         result.__module__ = module
+
+    if spec is not None:
+        result.__spec__ = spec
 
     return result
 
