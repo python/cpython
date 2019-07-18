@@ -3512,15 +3512,11 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 #else
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_LINKAT
-    if ((src_dir_fd != DEFAULT_DIR_FD) ||
-        (dst_dir_fd != DEFAULT_DIR_FD) ||
-        (!follow_symlinks))
-        result = linkat(src_dir_fd, src->narrow,
-            dst_dir_fd, dst->narrow,
-            follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
-    else
+    result = linkat(src_dir_fd, src->narrow, dst_dir_fd, dst->narrow,
+                    follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
+#else
+    result = link(src->narrow, dst->narrow);
 #endif /* HAVE_LINKAT */
-        result = link(src->narrow, dst->narrow);
     Py_END_ALLOW_THREADS
 
     if (result)
