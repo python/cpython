@@ -7233,7 +7233,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         descr = find_name_in_mro(type, p->name_strobj, &error);
         if (descr == NULL) {
             if (error == -1) {
-                /* It is unlikely by not impossible that there has been an exception
+                /* It is unlikely but not impossible that there has been an exception
                    during lookup. Since this function originally expected no errors,
                    we ignore them here in order to keep up the interface. */
                 PyErr_Clear();
@@ -7249,14 +7249,21 @@ update_one_slot(PyTypeObject *type, slotdef *p)
             if (tptr == NULL || tptr == ptr)
                 generic = p->function;
             d = (PyWrapperDescrObject *)descr;
-            if (d->d_base->wrapper == p->wrapper &&
+            if ((specific == NULL || specific == d->d_wrapped) &&
+                d->d_base->wrapper == p->wrapper &&
                 PyType_IsSubtype(type, PyDescr_TYPE(d)))
             {
-                if (specific == NULL ||
-                    specific == d->d_wrapped)
-                    specific = d->d_wrapped;
-                else
-                    use_generic = 1;
+                specific = d->d_wrapped;
+            }
+            else {
+                /* We cannot use the specific slot function because either
+                   - it is not unique: there are multiple methods for this
+                     slot and they conflict
+                   - the signature is wrong (as checked by the ->wrapper
+                     comparison above)
+                   - it's wrapping the wrong class
+                 */
+                use_generic = 1;
             }
         }
         else if (Py_TYPE(descr) == &PyCFunction_Type &&
