@@ -951,17 +951,18 @@ async def f():
     NUMBER     '1'           (2, 0) (2, 1)
     """)
         self.check_tokenize("""x = 1
-\
+\\
 
 y = 1""", """\
     NAME       'x'           (1, 0) (1, 1)
     OP         '='           (1, 2) (1, 3)
     NUMBER     '1'           (1, 4) (1, 5)
     NEWLINE    '\\n'          (1, 5) (1, 6)
-    NL         '\\n'          (2, 0) (2, 1)
-    NAME       'y'           (3, 0) (3, 1)
-    OP         '='           (3, 2) (3, 3)
-    NUMBER     '1'           (3, 4) (3, 5)
+    NL         '\\n'          (2, 1) (2, 2)
+    NL         '\\n'          (3, 0) (3, 1)
+    NAME       'y'           (4, 0) (4, 1)
+    OP         '='           (4, 2) (4, 3)
+    NUMBER     '1'           (4, 4) (4, 5)
     """)
 
 class GenerateTokensTest(TokenizeTest):
