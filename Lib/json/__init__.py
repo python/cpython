@@ -106,6 +106,9 @@ __author__ = 'Bob Ippolito <bob@redivi.com>'
 from .decoder import JSONDecoder, JSONDecodeError
 from .encoder import JSONEncoder
 import codecs
+import contextlib
+from pathlib import Path
+
 
 _default_encoder = JSONEncoder(
     skipkeys=False,
@@ -121,7 +124,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
         default=None, sort_keys=False, **kw):
     """Serialize ``obj`` as a JSON formatted stream to ``fp`` (a
-    ``.write()``-supporting file-like object).
+    ``.write()``-supporting file-like object) or path-like object.
 
     If ``skipkeys`` is true then ``dict`` keys that are not basic types
     (``str``, ``int``, ``float``, ``bool``, ``None``) will be skipped
@@ -174,10 +177,17 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
             check_circular=check_circular, allow_nan=allow_nan, indent=indent,
             separators=separators,
             default=default, sort_keys=sort_keys, **kw).iterencode(obj)
+
+    if isinstance(fp, (str, bytes, Path)):
+        cm = open(fp)
+    else:
+        cm = contextlib.nullcontext(fp)
+
     # could accelerate with writelines in some versions of Python, at
     # a debuggability cost
-    for chunk in iterable:
-        fp.write(chunk)
+    with cm as fp:
+        for chunk in iterable:
+            fp.write(chunk)
 
 
 def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
@@ -274,7 +284,7 @@ def detect_encoding(b):
 def load(fp, *, cls=None, object_hook=None, parse_float=None,
         parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
     """Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
-    a JSON document) to a Python object.
+    a JSON document) or a path-like object to a Python object.
 
     ``object_hook`` is an optional function that will be called with the
     result of any object literal decode (a ``dict``). The return value of
@@ -290,10 +300,16 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
     """
-    return loads(fp.read(),
-        cls=cls, object_hook=object_hook,
-        parse_float=parse_float, parse_int=parse_int,
-        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+    if isinstance(fp, (str, bytes, Path)):
+        cm = open(fp)
+    else:
+        cm = contextlib.nullcontext(fp)
+
+    with cm as fp:
+        return loads(fp.read(),
+            cls=cls, object_hook=object_hook,
+            parse_float=parse_float, parse_int=parse_int,
+            parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
 
 
 def loads(s, *, cls=None, object_hook=None, parse_float=None,
