@@ -1,1 +1,2 @@
-Add support for scoped IPv6 addresses to `ipaddress <https://github.com/python/cpython/blob/master/Lib/ipaddress.py>`_. Patch by Oleksandr Pavliuk.
+Add support for scoped IPv6 addresses to :mod:`ipaddress`. Patch by Oleksandr 
+Pavliuk.
