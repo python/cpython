@@ -1116,12 +1116,11 @@ same process and perhaps even in the same thread. Sub-interpreters allow
 you to do that.
 
 The "main" interpreter is the first one created when the runtime initializes.
-The :c:func:`PyInterpreterState_Main` funtion returns a pointer to this main
-interpreter's state. It is usually the only Python interpreter in a process.
-The main interpreter also has other responsibilities like signal and public
-calls handling in the main thread, is responsible for execution during runtime
-initialization, and it is usually the active interpreter during runtime
-finalization.
+It is usually the only Python interpreter in a process.  Unlike sub-interpreters,
+the main interpreter has unique process-global responsibilities like signal
+handling.  It is also responsible for execution during runtime initialization and
+is usually the active interpreter during runtime finalization.  The
+:c:func:`PyInterpreterState_Main` funtion returns a pointer to its state.
 
 You can switch between sub-interpreters using the :c:func:`PyThreadState_Swap`
 function. You can create and destroy them using the following functions:
