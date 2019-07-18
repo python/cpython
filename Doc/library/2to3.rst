@@ -406,7 +406,10 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: string
 
-    Renames `lowercase`, `uppercase`, and `letters` with the prefix `ascii_`.
+    Renames :const:`lowercase`, :const:`uppercase`, and :const:`letters` to
+    :const:`ascii_lowercase`, :const:`ascii_uppercase` and
+    :const:`ascii_letters`.
+
     Caution, some user-defined variables with these names might get renamed
     also.
 
