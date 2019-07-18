@@ -6,6 +6,7 @@ from unittest import mock
 from test.support import requires
 from tkinter import Tk, Text
 from idlelib.editor import EditorWindow
+from idlelib.idle_test.mock_idle import Editor as MockEditor
 
 
 class Is_Get_Test(unittest.TestCase):
@@ -571,6 +572,51 @@ class C1():
         ask = self.formatter._asktabwidth
         askinteger.return_value = 10
         self.assertEqual(ask(), 10)
+
+
+class rstripTest(unittest.TestCase):
+
+    def test_rstrip_line(self):
+        editor = MockEditor()
+        text = editor.text
+        do_rstrip = ft.Rstrip(editor).do_rstrip
+        eq = self.assertEqual
+
+        do_rstrip()
+        eq(text.get('1.0', 'insert'), '')
+        text.insert('1.0', '     ')
+        do_rstrip()
+        eq(text.get('1.0', 'insert'), '')
+        text.insert('1.0', '     \n')
+        do_rstrip()
+        eq(text.get('1.0', 'insert'), '\n')
+
+    def test_rstrip_multiple(self):
+        editor = MockEditor()
+        #  Comment above, uncomment 3 below to test with real Editor & Text.
+        #from idlelib.editor import EditorWindow as Editor
+        #from tkinter import Tk
+        #editor = Editor(root=Tk())
+        text = editor.text
+        do_rstrip = ft.Rstrip(editor).do_rstrip
+
+        original = (
+            "Line with an ending tab    \n"
+            "Line ending in 5 spaces     \n"
+            "Linewithnospaces\n"
+            "    indented line\n"
+            "    indented line with trailing space \n"
+            "    ")
+        stripped = (
+            "Line with an ending tab\n"
+            "Line ending in 5 spaces\n"
+            "Linewithnospaces\n"
+            "    indented line\n"
+            "    indented line with trailing space\n")
+
+        text.insert('1.0', original)
+        do_rstrip()
+        self.assertEqual(text.get('1.0', 'insert'), stripped)
 
 
 if __name__ == '__main__':
