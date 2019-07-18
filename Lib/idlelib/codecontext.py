@@ -63,10 +63,13 @@ class CodeContext:
         """
         self.editwin = editwin
         self.text = editwin.text
+        self._reset()
+
+    def _reset(self):
         self.context = None
+        self.t1 = None
         self.topvisible = 1
         self.info = [(0, -1, "", False)]
-        self.t1 = None
 
     @classmethod
     def reload(cls):
@@ -121,9 +124,8 @@ class CodeContext:
             menu_status = 'Hide'
         else:
             self.context.destroy()
-            self.context = None
             self.text.after_cancel(self.t1)
-            self.t1 = None
+            self._reset()
             menu_status = 'Show'
         self.editwin.update_menu_label(menu='options', index='* Code Context',
                                        label=f'{menu_status} Code Context')
