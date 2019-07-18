@@ -53,9 +53,8 @@ class EditorWindow(object):
     from idlelib.autoexpand import AutoExpand
     from idlelib.calltip import Calltip
     from idlelib.codecontext import CodeContext
-    from idlelib.format import FormatParagraph, FormatRegion
+    from idlelib.format import FormatParagraph, FormatRegion, Indents, Rstrip
     from idlelib.parenmatch import ParenMatch
-    from idlelib.rstrip import Rstrip
     from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
 
@@ -173,14 +172,15 @@ class EditorWindow(object):
         text.bind("<<newline-and-indent>>",self.newline_and_indent_event)
         text.bind("<<smart-indent>>",self.smart_indent_event)
         self.fregion = fregion = self.FormatRegion(self)
+        # self.fregion used in smart_indent_event to access indent_region.
         text.bind("<<indent-region>>", fregion.indent_region_event)
         text.bind("<<dedent-region>>", fregion.dedent_region_event)
         text.bind("<<comment-region>>", fregion.comment_region_event)
         text.bind("<<uncomment-region>>", fregion.uncomment_region_event)
         text.bind("<<tabify-region>>", fregion.tabify_region_event)
         text.bind("<<untabify-region>>", fregion.untabify_region_event)
-        text.bind("<<toggle-tabs>>", self.toggle_tabs_event)
-        text.bind("<<change-indentwidth>>",self.change_indentwidth_event)
+        text.bind("<<toggle-tabs>>", self.Indents.toggle_tabs_event)
+        text.bind("<<change-indentwidth>>", self.Indents.change_indentwidth_event)
         text.bind("<Left>", self.move_at_edge_if_selection(0))
         text.bind("<Right>", self.move_at_edge_if_selection(1))
         text.bind("<<del-word-left>>", self.del_word_left)
@@ -1424,20 +1424,6 @@ class EditorWindow(object):
             return _icis(_startindex + "+%dc" % offset)
         return inner
 
-    def toggle_tabs_event(self, event):
-        if self.askyesno(
-              "Toggle tabs",
-              "Turn tabs " + ("on", "off")[self.usetabs] +
-              "?\nIndent width " +
-              ("will be", "remains at")[self.usetabs] + " 8." +
-              "\n Note: a tab is always 8 columns",
-              parent=self.text):
-            self.usetabs = not self.usetabs
-            # Try to prevent inconsistent indentation.
-            # User must change indent width manually after using tabs.
-            self.indentwidth = 8
-        return "break"
-
     # XXX this isn't bound to anything -- see tabwidth comments
 ##     def change_tabwidth_event(self, event):
 ##         new = self._asktabwidth()
@@ -1445,18 +1431,6 @@ class EditorWindow(object):
 ##             self.tabwidth = new
 ##             self.set_indentation_params(0, guess=0)
 ##         return "break"
-
-    def change_indentwidth_event(self, event):
-        new = self.askinteger(
-                  "Indent width",
-                  "New indent width (2-16)\n(Always use 8 when using tabs)",
-                  parent=self.text,
-                  initialvalue=self.indentwidth,
-                  minvalue=2,
-                  maxvalue=16)
-        if new and new != self.indentwidth and not self.usetabs:
-            self.indentwidth = new
-        return "break"
 
     # Make string that displays as n leading blanks.
 
