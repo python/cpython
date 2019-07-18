@@ -48,7 +48,7 @@ class StructFieldsTestCase(unittest.TestCase):
 
     def test_5(self):
         class X(Structure):
-           _fields_ = [("x", c_int)]
+            _fields_ = [("x", c_int)]
         CField = type(X.x)
         self.assertRaises(TypeError, CField)
 
