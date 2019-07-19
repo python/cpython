@@ -41,6 +41,7 @@ class BaseContext(object):
     parent_process = staticmethod(process.parent_process)
     active_children = staticmethod(process.active_children)
     _reducer = None
+    _custom_reduction_enabled = False
 
     def cpu_count(self):
         '''Returns the number of CPUs in the system'''
@@ -49,6 +50,19 @@ class BaseContext(object):
             raise NotImplementedError('cannot determine number of cpus')
         else:
             return num
+
+    @property
+    def Process(self):
+        if not self._custom_reduction_enabled:
+            # Ensure backward compatibility by returning a class when no
+            # custom reducer was specified
+            return self._Process
+        else:
+            return self.process_factory
+
+    def process_factory(self, *args, **kwargs):
+        p = self._Process(*args, **kwargs)
+        p._ctx = self.get_context()
 
     def Manager(self):
         '''Returns a manager associated with a running server process
@@ -238,6 +252,7 @@ class BaseContext(object):
                             "in the get_pickler_class() method")
 
         ctx._reducer = reduction
+        ctx._custom_reduction_enabled = True
 
     def _check_available(self):
         pass
@@ -255,7 +270,7 @@ class Process(process.BaseProcess):
         return ctx.Process._Popen(process_obj, ctx)
 
 class DefaultContext(BaseContext):
-    Process = Process
+    _Process = Process
 
     def __init__(self, context):
         self._default_context = context
@@ -322,15 +337,15 @@ if sys.platform != 'win32':
 
     class ForkContext(BaseContext):
         _name = 'fork'
-        Process = ForkProcess
+        _Process = ForkProcess
 
     class SpawnContext(BaseContext):
         _name = 'spawn'
-        Process = SpawnProcess
+        _Process = SpawnProcess
 
     class ForkServerContext(BaseContext):
         _name = 'forkserver'
-        Process = ForkServerProcess
+        _Process = ForkServerProcess
         def _check_available(self):
             if not reduction.HAVE_SEND_HANDLE:
                 raise ValueError('forkserver start method not available')
