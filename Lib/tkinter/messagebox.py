@@ -24,6 +24,9 @@
 
 from tkinter.commondialog import Dialog
 
+__all__ = ["showinfo", "showwarning", "showerror", "askquestion", "askokcancel",
+           "askyesno", "askyesnocancel", "askretrycancel"]
+
 #
 # constants
 

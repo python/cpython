@@ -11,13 +11,15 @@ to the native file dialogues available in Tk 4.2 and newer, and the
 directory dialogue available in Tk 8.3 and newer.
 These interfaces were written by Fredrik Lundh, May 1997.
 """
+__all__ = ["FileDialog", "LoadFileDialog", "SaveFileDialog", "Open", "SaveAs",
+           "Directory", "askopenfilename", "asksaveasfilename", "askopenfilenames",
+           "askopenfile", "askopenfiles", "asksaveasfile", "askdirectory"]
 
+import fnmatch
+import os
 from tkinter import *
 from tkinter.dialog import Dialog
 from tkinter import commondialog
-
-import os
-import fnmatch
 
 
 dialogstates = {}
