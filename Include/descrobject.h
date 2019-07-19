@@ -17,9 +17,12 @@ typedef struct PyGetSetDef {
 } PyGetSetDef;
 
 #ifndef Py_LIMITED_API
-typedef PyObject *(*wrapperfunc)(PyObject *self, PyObject *args,
-                                 void *wrapped);
 
+/* For PyWrapperFlag_FASTCALL */
+typedef PyObject *(*wrapperfunc)(PyObject *self, PyObject *const *args,
+                                 Py_ssize_t nargs, void *wrapped);
+
+/* For PyWrapperFlag_KEYWORDS */
 typedef PyObject *(*wrapperfunc_kwds)(PyObject *self, PyObject *args,
                                       void *wrapped, PyObject *kwds);
 
@@ -33,8 +36,9 @@ struct wrapperbase {
     PyObject *name_strobj;
 };
 
-/* Flags for above struct */
-#define PyWrapperFlag_KEYWORDS 1 /* wrapper function takes keyword args */
+/* The "flags" field in wrapperbase must be exactly one of these two values */
+#define PyWrapperFlag_FASTCALL 0x0080  /* fastcall without keywords */
+#define PyWrapperFlag_KEYWORDS 0x0003  /* tp_call convention (args tuple and kwargs dict) */
 
 /* Various kinds of descriptor objects */
 
@@ -69,7 +73,8 @@ typedef struct {
 typedef struct {
     PyDescr_COMMON;
     struct wrapperbase *d_base;
-    void *d_wrapped; /* This can be any function pointer */
+    vectorcallfunc vectorcall;
+    void *d_wrapped;  /* Function pointer for the slot function which is being wrapped */
 } PyWrapperDescrObject;
 #endif /* Py_LIMITED_API */
 

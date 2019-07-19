@@ -451,36 +451,55 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
     return res;
 }
 
-Py_LOCAL_INLINE(PyObject *)
-wrapperdescr_raw_call(PyWrapperDescrObject *descr, PyObject *self,
-                      PyObject *args, PyObject *kwds)
+static inline PyObject *
+wrapperdescr_raw_call_KEYWORDS(PyWrapperDescrObject *descr, PyObject *self,
+                               PyObject *args, PyObject *kwds)
 {
-    wrapperfunc wrapper = descr->d_base->wrapper;
-
-    if (descr->d_base->flags & PyWrapperFlag_KEYWORDS) {
-        wrapperfunc_kwds wk = (wrapperfunc_kwds)(void(*)(void))wrapper;
-        return (*wk)(self, args, descr->d_wrapped, kwds);
-    }
-
-    if (kwds != NULL && (!PyDict_Check(kwds) || PyDict_GET_SIZE(kwds) != 0)) {
-        PyErr_Format(PyExc_TypeError,
-                     "wrapper %s() takes no keyword arguments",
-                     descr->d_base->name);
+    assert(descr->d_base->flags == PyWrapperFlag_KEYWORDS);
+    if (Py_EnterRecursiveCall(" while calling a Python object")) {
         return NULL;
     }
-    return (*wrapper)(self, args, descr->d_wrapped);
+    wrapperfunc_kwds f = (wrapperfunc_kwds)(void(*)(void))descr->d_base->wrapper;
+    PyObject *res = f(self, args, descr->d_wrapped, kwds);
+    if (res == NULL) {
+        assert(PyErr_Occurred());
+    }
+    else {
+        assert(!PyErr_Occurred());
+    }
+    Py_LeaveRecursiveCall();
+    return res;
+}
+
+static inline PyObject *
+wrapperdescr_raw_call_FASTCALL(PyWrapperDescrObject *descr, PyObject *self,
+                               PyObject *const *args, Py_ssize_t nargs)
+{
+    assert(descr->d_base->flags == PyWrapperFlag_FASTCALL);
+    if (Py_EnterRecursiveCall(" while calling a Python object")) {
+        return NULL;
+    }
+    wrapperfunc f = descr->d_base->wrapper;
+    PyObject *res = f(self, args, nargs, descr->d_wrapped);
+    if (res == NULL) {
+        assert(PyErr_Occurred());
+    }
+    else {
+        assert(!PyErr_Occurred());
+    }
+    Py_LeaveRecursiveCall();
+    return res;
 }
 
 static PyObject *
-wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
+wrapperdescr_vectorcall_FASTCALL(PyWrapperDescrObject *descr,
+                                 PyObject *const *args, size_t nargsf,
+                                 PyObject *kwnames)
 {
-    Py_ssize_t argc;
-    PyObject *self, *result;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
     /* Make sure that the first argument is acceptable as 'self' */
-    assert(PyTuple_Check(args));
-    argc = PyTuple_GET_SIZE(args);
-    if (argc < 1) {
+    if (nargs < 1) {
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%V' of '%.100s' "
                      "object needs an argument",
@@ -488,7 +507,7 @@ wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
                      PyDescr_TYPE(descr)->tp_name);
         return NULL;
     }
-    self = PyTuple_GET_ITEM(args, 0);
+    PyObject *self = args[0];
     if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
                                   (PyObject *)PyDescr_TYPE(descr))) {
         PyErr_Format(PyExc_TypeError,
@@ -501,12 +520,60 @@ wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    args = PyTuple_GetSlice(args, 1, argc);
-    if (args == NULL) {
+    if (kwnames != NULL && PyTuple_GET_SIZE(kwnames)) {
+        PyErr_Format(PyExc_TypeError,
+                     "wrapper %s() takes no keyword arguments",
+                     descr->d_base->name);
         return NULL;
     }
-    result = wrapperdescr_raw_call(descr, self, args, kwds);
-    Py_DECREF(args);
+    return wrapperdescr_raw_call_FASTCALL(descr, self, args+1, nargs-1);
+}
+
+static PyObject *
+wrapperdescr_vectorcall_KEYWORDS(PyWrapperDescrObject *descr,
+                                 PyObject *const *args, size_t nargsf,
+                                 PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    /* Make sure that the first argument is acceptable as 'self' */
+    if (nargs < 1) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' of '%.100s' "
+                     "object needs an argument",
+                     descr_name((PyDescrObject *)descr), "?",
+                     PyDescr_TYPE(descr)->tp_name);
+        return NULL;
+    }
+    PyObject *self = args[0];
+    if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
+                                  (PyObject *)PyDescr_TYPE(descr))) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' "
+                     "requires a '%.100s' object "
+                     "but received a '%.100s'",
+                     descr_name((PyDescrObject *)descr), "?",
+                     PyDescr_TYPE(descr)->tp_name,
+                     self->ob_type->tp_name);
+        return NULL;
+    }
+
+    PyObject *argstuple = _PyTuple_FromArray(args+1, nargs-1);
+    if (argstuple == NULL) {
+        return NULL;
+    }
+    PyObject *kwdict = NULL;
+    if (kwnames != NULL) {
+        kwdict = _PyStack_AsDict(args + nargs, kwnames);
+        if (kwdict == NULL) {
+            Py_DECREF(argstuple);
+            return NULL;
+        }
+    }
+
+    PyObject *result = wrapperdescr_raw_call_KEYWORDS(descr, self, argstuple, kwdict);
+    Py_DECREF(argstuple);
+    Py_XDECREF(kwdict);
     return result;
 }
 
@@ -801,7 +868,7 @@ PyTypeObject PyWrapperDescr_Type = {
     sizeof(PyWrapperDescrObject),
     0,
     (destructor)descr_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
+    offsetof(PyWrapperDescrObject, vectorcall), /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
@@ -810,12 +877,13 @@ PyTypeObject PyWrapperDescr_Type = {
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
-    (ternaryfunc)wrapperdescr_call,             /* tp_call */
+    PyVectorcall_Call,                          /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+    _Py_TPFLAGS_HAVE_VECTORCALL |
     Py_TPFLAGS_METHOD_DESCRIPTOR,               /* tp_flags */
     0,                                          /* tp_doc */
     descr_traverse,                             /* tp_traverse */
@@ -934,12 +1002,27 @@ PyDescr_NewGetSet(PyTypeObject *type, PyGetSetDef *getset)
 PyObject *
 PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
 {
-    PyWrapperDescrObject *descr;
+    /* Figure out correct vectorcall function to use */
+    vectorcallfunc vectorcall;
+    switch (base->flags)
+    {
+        case PyWrapperFlag_FASTCALL:
+            vectorcall = (vectorcallfunc)wrapperdescr_vectorcall_FASTCALL;
+            break;
+        case PyWrapperFlag_KEYWORDS:
+            vectorcall = (vectorcallfunc)wrapperdescr_vectorcall_KEYWORDS;
+            break;
+        default:
+            PyErr_SetString(PyExc_SystemError, "bad flags in PyDescr_NewWrapper(): exactly one of PyWrapperFlag_FASTCALL or PyWrapperFlag_KEYWORDS must be set");
+            return NULL;
+    }
 
+    PyWrapperDescrObject *descr;
     descr = (PyWrapperDescrObject *)descr_new(&PyWrapperDescr_Type,
                                              type, base->name);
     if (descr != NULL) {
         descr->d_base = base;
+        descr->vectorcall = vectorcall;
         descr->d_wrapped = wrapped;
     }
     return (PyObject *)descr;
@@ -1159,15 +1242,13 @@ PyDictProxy_New(PyObject *mapping)
 }
 
 
-/* --- Wrapper object for "slot" methods --- */
-
-/* This has no reason to be in this file except that adding new files is a
-   bit of a pain */
+/* --- MethodWrapper: bound wrapper descriptors such as [].__len__ --- */
 
 typedef struct {
     PyObject_HEAD
     PyWrapperDescrObject *descr;
     PyObject *self;
+    vectorcallfunc vectorcall;
 } wrapperobject;
 
 #define Wrapper_Check(v) (Py_TYPE(v) == &_PyMethodWrapper_Type)
@@ -1293,9 +1374,26 @@ static PyGetSetDef wrapper_getsets[] = {
 };
 
 static PyObject *
+wrapper_vectorcall_FASTCALL(wrapperobject *wp, PyObject *const *args,
+                            size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (kwnames != NULL && PyTuple_GET_SIZE(kwnames)) {
+        PyErr_Format(PyExc_TypeError,
+                     "wrapper %s() takes no keyword arguments",
+                     wp->descr->d_base->name);
+        return NULL;
+    }
+    return wrapperdescr_raw_call_FASTCALL(wp->descr, wp->self, args, nargs);
+}
+
+static PyObject *
 wrapper_call(wrapperobject *wp, PyObject *args, PyObject *kwds)
 {
-    return wrapperdescr_raw_call(wp->descr, wp->self, args, kwds);
+    if (wp->vectorcall) {
+        return PyVectorcall_Call((PyObject *)wp, args, kwds);
+    }
+    return wrapperdescr_raw_call_KEYWORDS(wp->descr, wp->self, args, kwds);
 }
 
 static int
@@ -1314,7 +1412,7 @@ PyTypeObject _PyMethodWrapper_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)wrapper_dealloc,                /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
+    offsetof(wrapperobject, vectorcall),        /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
@@ -1328,7 +1426,8 @@ PyTypeObject _PyMethodWrapper_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+    _Py_TPFLAGS_HAVE_VECTORCALL,                /* tp_flags */
     0,                                          /* tp_doc */
     wrapper_traverse,                           /* tp_traverse */
     0,                                          /* tp_clear */
@@ -1356,12 +1455,28 @@ PyWrapper_New(PyObject *d, PyObject *self)
     assert(_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
                                     (PyObject *)PyDescr_TYPE(descr)));
 
+    /* Figure out correct vectorcall function to use */
+    vectorcallfunc vectorcall;
+    switch (descr->d_base->flags)
+    {
+        case PyWrapperFlag_FASTCALL:
+            vectorcall = (vectorcallfunc)wrapper_vectorcall_FASTCALL;
+            break;
+        case PyWrapperFlag_KEYWORDS:
+            vectorcall = NULL;  /* Use tp_call instead */
+            break;
+        default:
+            PyErr_SetString(PyExc_SystemError, "bad flags in PyWrapper_New(): exactly one of PyWrapperFlag_FASTCALL or PyWrapperFlag_KEYWORDS must be set");
+            return NULL;
+    }
+
     wp = PyObject_GC_New(wrapperobject, &_PyMethodWrapper_Type);
     if (wp != NULL) {
         Py_INCREF(descr);
         wp->descr = descr;
         Py_INCREF(self);
         wp->self = self;
+        wp->vectorcall = vectorcall;
         _PyObject_GC_TRACK(wp);
     }
     return (PyObject *)wp;

@@ -2679,41 +2679,30 @@ _PyArg_CheckPositional(const char *name, Py_ssize_t nargs,
     assert(min >= 0);
     assert(min <= max);
 
-    if (nargs < min) {
-        if (name != NULL)
-            PyErr_Format(
-                PyExc_TypeError,
-                "%.200s expected %s%zd argument%s, got %zd",
-                name, (min == max ? "" : "at least "), min, min == 1 ? "" : "s", nargs);
-        else
-            PyErr_Format(
-                PyExc_TypeError,
-                "unpacked tuple should have %s%zd element%s,"
-                " but has %zd",
-                (min == max ? "" : "at least "), min, min == 1 ? "" : "s", nargs);
-        return 0;
-    }
-
-    if (nargs == 0) {
+    if (min <= nargs && nargs <= max) {
         return 1;
     }
 
-    if (nargs > max) {
-        if (name != NULL)
-            PyErr_Format(
-                PyExc_TypeError,
-                "%.200s expected %s%zd argument%s, got %zd",
-                name, (min == max ? "" : "at most "), max, max == 1 ? "" : "s", nargs);
-        else
-            PyErr_Format(
-                PyExc_TypeError,
-                "unpacked tuple should have %s%zd element%s,"
-                " but has %zd",
-                (min == max ? "" : "at most "), max, max == 1 ? "" : "s", nargs);
-        return 0;
+    const char *cmpstr;
+    Py_ssize_t cmpn = min;
+    if (min == max) {
+        cmpstr = "";
+    }
+    else if (nargs < min) {
+        cmpstr = "at least ";
+    }
+    else {
+        cmpstr = "at most ";
+        cmpn = max;
     }
 
-    return 1;
+    PyErr_Format(
+        PyExc_TypeError,
+        "%.200s%sexpected %s%zd argument%s, got %zd",
+        (name ? name : ""), (name ? " " : ""),
+        cmpstr, cmpn, (cmpn == 1 ? "" : "s"),
+        nargs);
+    return 0;
 }
 
 static int
