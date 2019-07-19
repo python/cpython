@@ -677,6 +677,10 @@ Functions
    .. versionadded:: 3.8
       The *xml_declaration* and *default_namespace* parameters.
 
+   .. versionchanged:: 3.8
+      The :func:`tostring` function now preserves the attribute order
+      specified by the user.
+
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
                            xml_declaration=None, default_namespace=None, \
@@ -699,6 +703,10 @@ Functions
 
    .. versionadded:: 3.8
       The *xml_declaration* and *default_namespace* parameters.
+
+   .. versionchanged:: 3.8
+      The :func:`tostringlist` function now preserves the attribute order
+      specified by the user.
 
 
 .. function:: XML(text, parser=None)
