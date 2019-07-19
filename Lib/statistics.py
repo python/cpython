@@ -596,12 +596,9 @@ def multimode(data):
 # intervals, and exactly 100p% of the intervals lie to the left of
 # Q7(p) and 100(1 - p)% of the intervals lie to the right of Q7(p)."
 
-# If the need arises, we could add method="median" for a median
-# unbiased, distribution-free alternative.  Also if needed, the
-# distribution-free approaches could be augmented by adding
-# method='normal'.  However, for now, the position is that fewer
-# options make for easier choices and that external packages can be
-# used for anything more advanced.
+# If needed, other methods could be added.  However, for now, the
+# position is that fewer options make for easier choices and that
+# external packages can be used for anything more advanced.
 
 def quantiles(dist, /, *, n=4, method='exclusive'):
     '''Divide *dist* into *n* continuous intervals with equal probability.
@@ -620,9 +617,6 @@ def quantiles(dist, /, *, n=4, method='exclusive'):
     data.  The minimum value is treated as the 0th percentile and the
     maximum value is treated as the 100th percentile.
     '''
-    # Possible future API extensions:
-    #     quantiles(data, already_sorted=True)
-    #     quantiles(data, cut_points=[0.02, 0.25, 0.50, 0.75, 0.98])
     if n < 1:
         raise StatisticsError('n must be at least 1')
     if hasattr(dist, 'inv_cdf'):
