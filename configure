@@ -820,7 +820,6 @@ with_pydebug
 with_trace_refs
 with_assertions
 enable_optimizations
-with_profile_task
 with_lto
 with_hash_algorithm
 with_address_sanitizer
@@ -858,6 +857,7 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CPP
+PROFILE_TASK
 PKG_CONFIG
 PKG_CONFIG_PATH
 PKG_CONFIG_LIBDIR'
@@ -1507,8 +1507,6 @@ Optional Packages:
   --with-pydebug          build with Py_DEBUG defined
   --with-trace-refs       enable tracing references for debugging purpose
   --with-assertions       build with C assertions enabled
-  --with-profile-task=ARGS
-                          Python args for PGO generation task
   --with-lto              Enable Link Time Optimization in any build. Disabled
                           by default.
   --with-hash-algorithm=[fnv|siphash24]
@@ -1563,6 +1561,8 @@ Some influential environment variables:
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CPP         C preprocessor
+  PROFILE_TASK
+              Python args for PGO generation task
   PKG_CONFIG  path to pkg-config utility
   PKG_CONFIG_PATH
               directories to add to pkg-config's search path
@@ -6430,19 +6430,13 @@ else
   DEF_MAKE_RULE="all"
 fi
 
-# PGO generation task
 
-PROFILE_TASK='-m test --pgo'
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-profile-task=STRING" >&5
-$as_echo_n "checking for --with-profile-task=STRING... " >&6; }
-
-# Check whether --with-profile-task was given.
-if test "${with_profile_task+set}" = set; then :
-  withval=$with_profile_task;
-	PROFILE_TASK="$withval"
-
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking PROFILE_TASK" >&5
+$as_echo_n "checking PROFILE_TASK... " >&6; }
+if test -z "$PROFILE_TASK"
+then
+	PROFILE_TASK='-m test --pgo'
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PROFILE_TASK" >&5
 $as_echo "$PROFILE_TASK" >&6; }
 

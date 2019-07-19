@@ -1293,16 +1293,12 @@ else
   DEF_MAKE_RULE="all"
 fi
 
-# PGO generation task
-AC_SUBST(PROFILE_TASK)
-PROFILE_TASK='-m test --pgo'
-AC_MSG_CHECKING(for --with-profile-task=STRING)
-AC_ARG_WITH(profile-task,
-            AS_HELP_STRING([--with-profile-task=ARGS],
-			   [Python args for PGO generation task]),
-[
-	PROFILE_TASK="$withval"
-	])
+AC_ARG_VAR(PROFILE_TASK, Python args for PGO generation task)
+AC_MSG_CHECKING(PROFILE_TASK)
+if test -z "$PROFILE_TASK"
+then
+	PROFILE_TASK='-m test --pgo'
+fi
 AC_MSG_RESULT($PROFILE_TASK)
 
 # Make llvm-relatec checks work on systems where llvm tools are not installed with their
