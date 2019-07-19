@@ -146,7 +146,9 @@ def splitdrive(p):
                 return p[:0], p
             if is_extended_unc(normp, colon):
                 start = normp.find(sep, index + 1)
-                index = normp.find(sep, start + 1)
+                drive_colon = normp.find(colon, index + 1)
+                if drive_colon == -1 or drive_colon > start:
+                    index = normp.find(sep, start + 1)
             index2 = normp.find(sep, index + 1)
             # a UNC path can't have two slashes in a row
             # (after the initial two)
