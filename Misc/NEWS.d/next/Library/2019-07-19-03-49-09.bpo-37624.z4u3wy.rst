@@ -1,0 +1,1 @@
+ValueError in random.choices with negative weights. Patch by Aldwin Pollefeyt
