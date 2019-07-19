@@ -171,7 +171,7 @@ def is_drive_path(path, colon):
 
 
 def is_extended_unc(path, colon):
-    return path[2] in ['?', '.'] and path[-2] != colon
+    return path[2] in ['?', '.'] and path[-2] != colon and path[4:7] == 'UNC'
 
 
 def get_separator(path):
