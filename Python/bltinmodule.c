@@ -2675,7 +2675,7 @@ static PyMethodDef zip_methods[] = {
 };
 
 PyDoc_STRVAR(zip_doc,
-"zip(iter1 [,iter2 [...]]) --> zip object\n\
+"zip(*iterables) --> zip object\n\
 \n\
 Return a zip object whose .__next__() method returns a tuple where\n\
 the i-th element comes from the i-th iterable argument.  The .__next__()\n\
