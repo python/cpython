@@ -227,6 +227,10 @@ class TestBasicOps:
         with self.assertRaises(IndexError):
             choices([], cum_weights=[], k=5)
 
+        # Test negative weights raise error
+        with self.assertRaises(ValueError):
+            choices("abcdefg", weights=(1,1,-1,1,1,0,1), k=20)
+
     def test_choices_subnormal(self):
         # Subnormal weights would occassionally trigger an IndexError
         # in choices() when the value returned by random() was large

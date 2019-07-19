@@ -397,6 +397,8 @@ class Random(_random.Random):
                 _int = int
                 n += 0.0    # convert to float for a small speed improvement
                 return [population[_int(random() * n)] for i in _repeat(None, k)]
+            if weights and min(weights)<0:
+                raise ValueError('Cannot have negative weights')
             cum_weights = list(_accumulate(weights))
         elif weights is not None:
             raise TypeError('Cannot specify both weights and cumulative weights')
