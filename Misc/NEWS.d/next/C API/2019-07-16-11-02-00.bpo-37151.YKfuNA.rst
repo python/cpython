@@ -1,1 +1,1 @@
-``PyCFunction_Call`` is now an alias of :c:func:`PyObject_Call`.
+``PyCFunction_Call`` is now a deprecated alias of :c:func:`PyObject_Call`.
