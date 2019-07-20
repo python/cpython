@@ -1047,6 +1047,10 @@ class NormalDist:
             return NotImplemented
         return (x1._mu, x2._sigma) == (x2._mu, x2._sigma)
 
+    def __hash__(self):
+        'NormalDist objects hash equal if their mu and sigma are both equal.'
+        return hash((self._mu, self._sigma))
+
     def __repr__(self):
         return f'{type(self).__name__}(mu={self._mu!r}, sigma={self._sigma!r})'
 

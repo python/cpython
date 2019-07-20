@@ -2679,6 +2679,11 @@ class TestNormalDist(unittest.TestCase):
         nd3 = pickle.loads(pickle.dumps(nd))
         self.assertEqual(nd, nd3)
 
+    def test_hashability(self):
+        ND = statistics.NormalDist
+        s = {ND(100, 15), ND(100.0, 15.0), ND(100, 10), ND(95, 15), ND(100, 15)}
+        self.assertEqual(len(s), 3)
+
     def test_repr(self):
         nd = statistics.NormalDist(37.5, 5.625)
         self.assertEqual(repr(nd), 'NormalDist(mu=37.5, sigma=5.625)')
