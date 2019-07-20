@@ -845,7 +845,7 @@ class NormalDist:
 
     def cdf(self, x):
         'Cumulative distribution function.  P(X <= x)'
-        if not self.sigma:
+        if not self._sigma:
             raise StatisticsError('cdf() not defined when sigma is zero')
         return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * sqrt(2.0))))
 
@@ -960,7 +960,7 @@ class NormalDist:
         dm = fabs(Y._mu - X._mu)
         if not dv:
             return 1.0 - erf(dm / (2.0 * X._sigma * sqrt(2.0)))
-        a = X.mu * Y_var - Y.mu * X_var
+        a = X._mu * Y_var - Y._mu * X_var
         b = X._sigma * Y._sigma * sqrt(dm**2.0 + dv * log(Y_var / X_var))
         x1 = (a + b) / dv
         x2 = (a - b) / dv
@@ -1065,8 +1065,8 @@ if __name__ == '__main__':
     g2 = NormalDist(-5, 25)
 
     # Test scaling by a constant
-    assert (g1 * 5 / 5).mu == g1.mu
-    assert (g1 * 5 / 5).sigma == g1.sigma
+    assert (g1 * 5 / 5).mean == g1.mean
+    assert (g1 * 5 / 5).stdev == g1.stdev
 
     n = 100_000
     G1 = g1.samples(n)
@@ -1090,8 +1090,8 @@ if __name__ == '__main__':
         print(NormalDist.from_samples(map(func, repeat(const), G1)))
 
     def assert_close(G1, G2):
-        assert isclose(G1.mu, G1.mu, rel_tol=0.01), (G1, G2)
-        assert isclose(G1.sigma, G2.sigma, rel_tol=0.01), (G1, G2)
+        assert isclose(G1.mean, G1.mean, rel_tol=0.01), (G1, G2)
+        assert isclose(G1.stdev, G2.stdev, rel_tol=0.01), (G1, G2)
 
     X = NormalDist(-105, 73)
     Y = NormalDist(31, 47)
