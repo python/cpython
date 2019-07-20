@@ -337,18 +337,12 @@ class _CallList(list):
 
         for i in range(0, len_self - len_value + 1):
             sub_list = self[i:i+len_value]
-            if value == sub_list:
+            if sub_list == value:
                 return True
         return False
 
     def __repr__(self):
         return pprint.pformat(list(self))
-
-    def __eq__(self, other):
-        self_list = list(self)
-        other_list = list(other)
-        # checking equality both directions is necessary for ANY to work
-        return self_list == other_list or other_list == self_list
 
 
 def _check_and_set_parent(parent, value, name, new_name):
