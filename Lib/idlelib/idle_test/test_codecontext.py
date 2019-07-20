@@ -135,7 +135,7 @@ class CodeContextTest(unittest.TestCase):
             toggle()
 
         # Toggle on.
-        eq(toggle(), 'break')
+        toggle()
         self.assertIsNotNone(cc.context)
         eq(cc.context['font'], self.text['font'])
         eq(cc.context['fg'], self.highlight_cfg['foreground'])
@@ -145,10 +145,21 @@ class CodeContextTest(unittest.TestCase):
         eq(self.root.tk.call('after', 'info', self.cc.t1)[1], 'timer')
 
         # Toggle off.
-        eq(toggle(), 'break')
+        toggle()
         self.assertIsNone(cc.context)
         eq(cc.editwin.label, 'Show Code Context')
         self.assertIsNone(self.cc.t1)
+
+        # Scroll down and toggle back on.
+        line11_context = '\n'.join(x[2] for x in cc.get_context(11)[0])
+        cc.text.yview(11)
+        toggle()
+        eq(cc.context.get('1.0', 'end-1c'), line11_context)
+
+        # Toggle off and on again.
+        toggle()
+        toggle()
+        eq(cc.context.get('1.0', 'end-1c'), line11_context)
 
     def test_get_context(self):
         eq = self.assertEqual
@@ -329,7 +340,7 @@ class CodeContextTest(unittest.TestCase):
         eq = self.assertEqual
         cc = self.cc
         save_font = cc.text['font']
-        test_font = 'TkFixedFont'
+        test_font = 'TkTextFont'
 
         # Ensure code context is not active.
         if cc.context is not None:

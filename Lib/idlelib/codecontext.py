@@ -63,11 +63,14 @@ class CodeContext:
         """
         self.editwin = editwin
         self.text = editwin.text
+        self._reset()
+
+    def _reset(self):
         self.context = None
         self.cell00 = None
+        self.t1 = None
         self.topvisible = 1
         self.info = [(0, -1, "", False)]
-        self.t1 = None
 
     @classmethod
     def reload(cls):
@@ -117,6 +120,8 @@ class CodeContext:
                 padx=padx, border=border, relief=SUNKEN, state='disabled')
             self.update_highlight_colors()
             self.context.bind('<ButtonRelease-1>', self.jumptoline)
+            # Get the current context and initiate the recurring update event.
+            self.timer_event()
             # Grid the context widget above the text widget.
             self.context.grid(row=0, column=1, sticky=NSEW)
 
@@ -126,14 +131,13 @@ class CodeContext:
                                         bg=line_number_colors['background'])
             self.cell00.grid(row=0, column=0, sticky=NSEW)
             menu_status = 'Hide'
-            self.t1 = self.text.after(self.UPDATEINTERVAL, self.timer_event)
         else:
             self.context.destroy()
             self.context = None
             self.cell00.destroy()
             self.cell00 = None
             self.text.after_cancel(self.t1)
-            self.t1 = None
+            self._reset()
             menu_status = 'Show'
         self.editwin.update_menu_label(menu='options', index='* Code Context',
                                        label=f'{menu_status} Code Context')

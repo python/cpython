@@ -29,7 +29,7 @@ from idlelib.textview import view_text
 from idlelib.autocomplete import AutoComplete
 from idlelib.codecontext import CodeContext
 from idlelib.parenmatch import ParenMatch
-from idlelib.paragraph import FormatParagraph
+from idlelib.format import FormatParagraph
 from idlelib.squeezer import Squeezer
 
 changes = ConfigChanges()

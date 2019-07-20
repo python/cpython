@@ -1191,7 +1191,7 @@ def get_bare_quoted_string(value):
             "expected '\"' but found '{}'".format(value))
     bare_quoted_string = BareQuotedString()
     value = value[1:]
-    if value[0] == '"':
+    if value and value[0] == '"':
         token, value = get_qcontent(value)
         bare_quoted_string.append(token)
     while value and value[0] != '"':
@@ -1587,6 +1587,8 @@ def get_domain(value):
         token, value = get_dot_atom(value)
     except errors.HeaderParseError:
         token, value = get_atom(value)
+    if value and value[0] == '@':
+        raise errors.HeaderParseError('Invalid Domain')
     if leader is not None:
         token[:0] = [leader]
     domain.append(token)
@@ -2496,6 +2498,9 @@ def get_parameter(value):
         while value:
             if value[0] in WSP:
                 token, value = get_fws(value)
+            elif value[0] == '"':
+                token = ValueTerminal('"', 'DQUOTE')
+                value = value[1:]
             else:
                 token, value = get_qcontent(value)
             v.append(token)
