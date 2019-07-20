@@ -820,7 +820,7 @@ class NonCallableMock(Base):
             else:
                 name, args, kwargs = _call
             try:
-                return name, sig.bind(*args, **kwargs)
+                return call(name, sig.bind(*args, **kwargs))
             except TypeError as e:
                 return e.with_traceback(None)
         else:
