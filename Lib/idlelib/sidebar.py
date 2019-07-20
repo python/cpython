@@ -23,7 +23,7 @@ class BaseSideBar:
         self.parent = editwin.text_frame
         self.text = editwin.text
 
-        self.sidebar_text = tk.Text(self.parent, width=1, wrap=tk.NONE,
+        self.sidebar_text = tk.Text(self.parent, width=1, wrap=tk.NONE, pady=2,
                                     borderwidth=0, highlightthickness=0)
         self.sidebar_text.config(state=tk.DISABLED)
         self.text['yscrollcommand'] = self.redirect_yscroll_event
