@@ -1,0 +1,4 @@
+Fix `NonCallableMock._call_matcher` returning tuple instead of `_Call` object
+when `self._spec_signature` exists. Additionally fix `__eq__` to be
+commutative on `_Call` and `_CallList`, to better account for `ANY`. Patch by
+Elizabeth Uselton
