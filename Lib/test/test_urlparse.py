@@ -531,6 +531,19 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.hostname, b"fe80::822a:a8ff:fe49:470c%tESt")
         self.assertEqual(p.netloc, b'[FE80::822a:a8ff:fe49:470c%tESt]:1234')
 
+    def test_urlsplit_prevents_hostname_injection(self):
+        cases = [
+            # bpo-36338: Ensure that [ is at position 0 of hostname
+            'http://good.com[bad.com]',
+            b'http://good.com[bad.com]',
+        ]
+        for case in cases:
+            with self.assertRaises(ValueError, msg=case):
+                urllib.parse.urlsplit(case)
+
+            with self.assertRaises(ValueError, msg=case):
+                urllib.parse.urlparse(case)
+
     def test_urlsplit_attributes(self):
         url = "HTTP://WWW.PYTHON.ORG/doc/#frag"
         p = urllib.parse.urlsplit(url)

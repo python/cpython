@@ -1,0 +1,1 @@
+Raise ValueError when parsing hostname with ``[`` in position > 0, e.g. ``good.com[malicious.com]``, that would otherwise return a hostname of ``malicious.com``.
