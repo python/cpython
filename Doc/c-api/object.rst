@@ -253,6 +253,28 @@ Object Protocol
    and ``0`` otherwise.  This function always succeeds.
 
 
+.. c:function:: PyObject* PyObject_CallNoArgs(PyObject *callable)
+
+   Call a callable Python object *callable* without any arguments. It is the
+   most efficient way to call a callable Python object without any argument.
+
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: PyObject* _PyObject_CallOneArg(PyObject *callable, PyObject *arg)
+
+   Call a callable Python object *callable* with exactly 1 positional argument
+   *arg* and no keyword arguments.
+
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: PyObject* PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 
    Call a callable Python object *callable*, with arguments given by the
@@ -261,7 +283,8 @@ Object Protocol
    *args* must not be *NULL*, use an empty tuple if no arguments are needed.
    If no named arguments are needed, *kwargs* can be *NULL*.
 
-   Returns the result of the call on success, or *NULL* on failure.
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
 
    This is the equivalent of the Python expression:
    ``callable(*args, **kwargs)``.
@@ -272,7 +295,8 @@ Object Protocol
    Call a callable Python object *callable*, with arguments given by the
    tuple *args*.  If no arguments are needed, then *args* can be *NULL*.
 
-   Returns the result of the call on success, or *NULL* on failure.
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
 
    This is the equivalent of the Python expression: ``callable(*args)``.
 
@@ -283,7 +307,8 @@ Object Protocol
    The C arguments are described using a :c:func:`Py_BuildValue` style format
    string.  The format can be *NULL*, indicating that no arguments are provided.
 
-   Returns the result of the call on success, or *NULL* on failure.
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
 
    This is the equivalent of the Python expression: ``callable(*args)``.
 
@@ -302,7 +327,8 @@ Object Protocol
 
    The format can be *NULL*, indicating that no arguments are provided.
 
-   Returns the result of the call on success, or *NULL* on failure.
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
 
    This is the equivalent of the Python expression:
    ``obj.name(arg1, arg2, ...)``.
@@ -320,7 +346,8 @@ Object Protocol
    :c:type:`PyObject\*` arguments.  The arguments are provided as a variable number
    of parameters followed by *NULL*.
 
-   Returns the result of the call on success, or *NULL* on failure.
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
 
    This is the equivalent of the Python expression:
    ``callable(arg1, arg2, ...)``.
@@ -331,8 +358,33 @@ Object Protocol
    Calls a method of the Python object *obj*, where the name of the method is given as a
    Python string object in *name*.  It is called with a variable number of
    :c:type:`PyObject\*` arguments.  The arguments are provided as a variable number
-   of parameters followed by *NULL*. Returns the result of the call on success, or
+   of parameters followed by *NULL*.
+
+   Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
+
+
+.. c:function:: PyObject* _PyObject_CallMethodNoArgs(PyObject *obj, PyObject *name)
+
+   Call a method of the Python object *obj* without arguments,
+   where the name of the method is given as a Python string object in *name*.
+
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: PyObject* _PyObject_CallMethodOneArg(PyObject *obj, PyObject *name, PyObject *arg)
+
+   Call a method of the Python object *obj* with a single positional argument
+   *arg*, where the name of the method is given as a Python string object in
+   *name*.
+
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
+
+   .. versionadded:: 3.9
 
 
 .. c:function:: PyObject* _PyObject_Vectorcall(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
@@ -355,7 +407,8 @@ Object Protocol
    *kwnames* must contain only objects of type ``str`` (not a subclass),
    and all keys must be unique.
 
-   Return the result of the call on success, or *NULL* on failure.
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
 
    This uses the vectorcall protocol if the callable supports it;
    otherwise, the arguments are converted to use
@@ -375,6 +428,9 @@ Object Protocol
    temporarily change ``args[-1]``. In other words, *args* points to
    argument 1 (not 0) in the allocated vector.
    The callee must restore the value of ``args[-1]`` before returning.
+
+   For :c:func:`_PyObject_VectorcallMethod`, this flag means instead that
+   ``args[0]`` may be changed.
 
    Whenever they can do so cheaply (without additional allocation), callers
    are encouraged to use :const:`PY_VECTORCALL_ARGUMENTS_OFFSET`.
@@ -411,6 +467,25 @@ Object Protocol
 
    .. versionadded:: 3.8
 
+.. c:function:: PyObject* _PyObject_VectorcallMethod(PyObject *name, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+
+   Call a method using the vectorcall calling convention. The name of the method
+   is given as Python string *name*. The object whose method is called is
+   *args[0]* and the *args* array starting at *args[1]* represents the arguments
+   of the call. There must be at least one positional argument.
+   *nargsf* is the number of positional arguments including *args[0]*,
+   plus :const:`PY_VECTORCALL_ARGUMENTS_OFFSET` if the value of ``args[0]`` may
+   temporarily be changed. Keyword arguments can be passed just like in
+   :c:func:`_PyObject_Vectorcall`.
+
+   If the object has the :const:`Py_TPFLAGS_METHOD_DESCRIPTOR` feature,
+   this will actually call the unbound method object with the full
+   *args* vector as arguments.
+
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
+
+   .. versionadded:: 3.9
 
 .. c:function:: Py_hash_t PyObject_Hash(PyObject *o)
 

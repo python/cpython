@@ -2113,8 +2113,7 @@ dict_subscript(PyDictObject *mp, PyObject *key)
             _Py_IDENTIFIER(__missing__);
             missing = _PyObject_LookupSpecial((PyObject *)mp, &PyId___missing__);
             if (missing != NULL) {
-                res = PyObject_CallFunctionObjArgs(missing,
-                                                   key, NULL);
+                res = _PyObject_CallOneArg(missing, key);
                 Py_DECREF(missing);
                 return res;
             }
@@ -4160,7 +4159,7 @@ dictviews_sub(PyObject* self, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    tmp = _PyObject_CallMethodIdObjArgs(result, &PyId_difference_update, other, NULL);
+    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_difference_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4180,7 +4179,7 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    tmp = _PyObject_CallMethodIdObjArgs(result, &PyId_intersection_update, other, NULL);
+    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_intersection_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4200,7 +4199,7 @@ dictviews_or(PyObject* self, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    tmp = _PyObject_CallMethodIdObjArgs(result, &PyId_update, other, NULL);
+    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4220,7 +4219,7 @@ dictviews_xor(PyObject* self, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    tmp = _PyObject_CallMethodIdObjArgs(result, &PyId_symmetric_difference_update, other, NULL);
+    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_symmetric_difference_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;

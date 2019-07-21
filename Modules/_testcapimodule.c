@@ -1922,6 +1922,48 @@ unicode_asucs4(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+unicode_asutf8(PyObject *self, PyObject *args)
+{
+    PyObject *unicode;
+    const char *buffer;
+
+    if (!PyArg_ParseTuple(args, "U", &unicode)) {
+        return NULL;
+    }
+
+    buffer = PyUnicode_AsUTF8(unicode);
+    if (buffer == NULL) {
+        return NULL;
+    }
+
+    return PyBytes_FromString(buffer);
+}
+
+static PyObject *
+unicode_asutf8andsize(PyObject *self, PyObject *args)
+{
+    PyObject *unicode, *result;
+    const char *buffer;
+    Py_ssize_t utf8_len;
+
+    if(!PyArg_ParseTuple(args, "U", &unicode)) {
+        return NULL;
+    }
+
+    buffer = PyUnicode_AsUTF8AndSize(unicode, &utf8_len); 
+    if (buffer == NULL) {
+        return NULL;
+    }
+
+    result = PyBytes_FromString(buffer);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    return Py_BuildValue("(Nn)", result, utf8_len);
+}
+
+static PyObject *
 unicode_findchar(PyObject *self, PyObject *args)
 {
     PyObject *str;
@@ -4907,7 +4949,7 @@ bad_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         return NULL;
     }
 
-    PyObject *res = PyObject_CallObject(cls, NULL);
+    PyObject *res = _PyObject_CallNoArg(cls);
     if (res == NULL) {
         return NULL;
     }
@@ -5174,6 +5216,8 @@ static PyMethodDef TestMethods[] = {
     {"unicode_aswidechar",      unicode_aswidechar,              METH_VARARGS},
     {"unicode_aswidecharstring",unicode_aswidecharstring,        METH_VARARGS},
     {"unicode_asucs4",          unicode_asucs4,                  METH_VARARGS},
+    {"unicode_asutf8",          unicode_asutf8,                  METH_VARARGS},
+    {"unicode_asutf8andsize",   unicode_asutf8andsize,           METH_VARARGS},
     {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},

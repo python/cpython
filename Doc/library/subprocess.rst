@@ -585,6 +585,13 @@ functions.
       with Popen(["ifconfig"], stdout=PIPE) as proc:
           log.write(proc.stdout.read())
 
+   .. audit-event:: subprocess.Popen executable,args,cwd,env subprocess.Popen
+
+      Popen and the other functions in this module that use it raise an
+      :ref:`auditing event <auditing>` ``subprocess.Popen`` with arguments
+      ``executable``, ``args``, ``cwd``, ``env``. The value for ``args``
+      may be a single string or a list of strings, depending on platform.
+
    .. versionchanged:: 3.2
       Added context manager support.
 
@@ -1159,12 +1166,12 @@ In the following examples, we assume that the relevant functions have already
 been imported from the :mod:`subprocess` module.
 
 
-Replacing /bin/sh shell backquote
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing :program:`/bin/sh` shell command substitution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   output=`mycmd myarg`
+   output=$(mycmd myarg)
 
 becomes::
 
@@ -1175,7 +1182,7 @@ Replacing shell pipeline
 
 .. code-block:: bash
 
-   output=`dmesg | grep hda`
+   output=$(dmesg | grep hda)
 
 becomes::
 
@@ -1192,7 +1199,7 @@ be used directly:
 
 .. code-block:: bash
 
-   output=`dmesg | grep hda`
+   output=$(dmesg | grep hda)
 
 becomes::
 

@@ -30,11 +30,11 @@ jobs:
   steps:
   - checkout: none
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: msi'
     inputs:
       artifactName: msi
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\msi
 
   - powershell: |
       $p = (gci -r *.exe | ?{ $_.Name -match '$(ExeMatch)' } | select -First 1)

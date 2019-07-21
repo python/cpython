@@ -1,11 +1,11 @@
 steps:
   - template: ./checkout.yml
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: doc'
     inputs:
       artifactName: doc
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\doc
 
   - task: CopyFiles@2
     displayName: 'Merge documentation files'
@@ -15,63 +15,41 @@ steps:
       contents: |
         htmlhelp\*.chm
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_win32'
     inputs:
       artifactName: bin_win32
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\win32
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_win32_d'
     inputs:
       artifactName: bin_win32_d
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\win32
 
-  - task: CopyFiles@2
-    displayName: 'Merge win32 debug files'
-    inputs:
-      sourceFolder: $(Build.BinariesDirectory)\bin_win32_d
-      targetFolder: $(Build.BinariesDirectory)\bin_win32
-      contents: |
-        **\*_d.*
-
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_amd64'
     inputs:
       artifactName: bin_amd64
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\amd64
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_amd64_d'
     inputs:
       artifactName: bin_amd64_d
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\amd64
 
-  - task: CopyFiles@2
-    displayName: 'Merge amd64 debug files'
-    inputs:
-      sourceFolder: $(Build.BinariesDirectory)\bin_amd64_d
-      targetFolder: $(Build.BinariesDirectory)\bin_amd64
-      contents: |
-        **\*_d.*
-
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: tcltk_lib_win32'
     inputs:
       artifactName: tcltk_lib_win32
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\tcltk_lib_win32
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: tcltk_lib_amd64'
     inputs:
       artifactName: tcltk_lib_amd64
-      downloadPath: $(Build.BinariesDirectory)
-
-  - script: |
-      ren bin_win32 win32
-      ren bin_amd64 amd64
-    displayName: 'Correct artifact directory names'
-    workingDirectory: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\tcltk_lib_amd64
 
   - script: |
       call Tools\msi\get_externals.bat
@@ -139,8 +117,8 @@ steps:
         *.cab
         *.exe
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: 'Publish MSI'
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)\msi'
-      ArtifactName: msi
+      targetPath: '$(Build.ArtifactStagingDirectory)\msi'
+      artifactName: msi

@@ -23,29 +23,29 @@ jobs:
   steps:
   - template: ./checkout.yml
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_$(Name)'
     inputs:
       artifactName: bin_$(Name)
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\bin
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_$(Name)_d'
     inputs:
       artifactName: bin_$(Name)_d
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\bin
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: doc'
     inputs:
       artifactName: doc
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\doc
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: tcltk_lib_$(Name)'
     inputs:
       artifactName: tcltk_lib_$(Name)
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\tcltk_lib
 
   - template: ./layout-command.yml
 
@@ -53,10 +53,10 @@ jobs:
       $(LayoutCmd) --copy "$(Build.ArtifactStagingDirectory)\layout" --preset-default
     displayName: 'Generate full layout'
     env:
-      TCL_LIBRARY: $(Build.BinariesDirectory)\tcltk_lib_$(Name)\tcl8
+      TCL_LIBRARY: $(Build.BinariesDirectory)\tcltk_lib\tcl8
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: 'Publish Artifact: layout_full_$(Name)'
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)\layout'
-      ArtifactName: layout_full_$(Name)
+      targetPath: '$(Build.ArtifactStagingDirectory)\layout'
+      artifactName: layout_full_$(Name)

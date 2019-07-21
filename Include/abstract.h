@@ -141,6 +141,12 @@ extern "C" {
 #endif
 
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+/* Call a callable Python object without any arguments */
+PyAPI_FUNC(PyObject *) PyObject_CallNoArgs(PyObject *func);
+#endif
+
+
 /* Call a callable Python object 'callable' with arguments given by the
    tuple 'args' and keywords arguments given by the dictionary 'kwargs'.
 

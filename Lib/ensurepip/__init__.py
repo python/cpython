@@ -73,6 +73,8 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
     if altinstall and default_pip:
         raise ValueError("Cannot use altinstall and default_pip together")
 
+    sys.audit("ensurepip.bootstrap", root)
+
     _disable_pip_configuration_settings()
 
     # By default, installing pip and setuptools installs all of the

@@ -1439,7 +1439,7 @@ lookup_maybe_method(PyObject *self, _Py_Identifier *attrid, int *unbound)
         return NULL;
     }
 
-    if (PyFunction_Check(res)) {
+    if (PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
         /* Avoid temporary PyMethodObject */
         *unbound = 1;
         Py_INCREF(res);
@@ -1486,8 +1486,7 @@ static PyObject*
 call_unbound_noarg(int unbound, PyObject *func, PyObject *self)
 {
     if (unbound) {
-        PyObject *args[1] = {self};
-        return _PyObject_FastCall(func, args, 1);
+        return _PyObject_CallOneArg(func, self);
     }
     else {
         return _PyObject_CallNoArg(func);
@@ -4156,8 +4155,8 @@ _PyType_GetSlotNames(PyTypeObject *cls)
     /* Use _slotnames function from the copyreg module to find the slots
        by this class and its bases. This function will cache the result
        in __slotnames__. */
-    slotnames = _PyObject_CallMethodIdObjArgs(copyreg, &PyId__slotnames,
-                                              cls, NULL);
+    slotnames = _PyObject_CallMethodIdOneArg(copyreg, &PyId__slotnames,
+                                             (PyObject *)cls);
     Py_DECREF(copyreg);
     if (slotnames == NULL)
         return NULL;
@@ -4436,7 +4435,7 @@ _PyObject_GetItemsIter(PyObject *obj, PyObject **listitems,
         PyObject *items;
         _Py_IDENTIFIER(items);
 
-        items = _PyObject_CallMethodIdObjArgs(obj, &PyId_items, NULL);
+        items = _PyObject_CallMethodIdNoArgs(obj, &PyId_items);
         if (items == NULL) {
             Py_CLEAR(*listitems);
             return -1;
@@ -5163,15 +5162,15 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
     COPYSLOT(tp_repr);
     /* tp_hash see tp_richcompare */
     {
-        /* Inherit tp_vectorcall_offset only if tp_call is not overridden */
-        if (!type->tp_call) {
-            COPYSLOT(tp_vectorcall_offset);
-        }
-        /* Inherit_Py_TPFLAGS_HAVE_VECTORCALL for non-heap types
+        /* Always inherit tp_vectorcall_offset to support PyVectorcall_Call().
+         * If _Py_TPFLAGS_HAVE_VECTORCALL is not inherited, then vectorcall
+         * won't be used automatically. */
+        COPYSLOT(tp_vectorcall_offset);
+
+        /* Inherit _Py_TPFLAGS_HAVE_VECTORCALL for non-heap types
         * if tp_call is not overridden */
         if (!type->tp_call &&
             (base->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
-            !(type->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
             !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
         {
             type->tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
@@ -6571,7 +6570,7 @@ call_attribute(PyObject *self, PyObject *attr, PyObject *name)
         else
             attr = descr;
     }
-    res = PyObject_CallFunctionObjArgs(attr, name, NULL);
+    res = _PyObject_CallOneArg(attr, name);
     Py_XDECREF(descr);
     return res;
 }

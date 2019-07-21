@@ -41,18 +41,6 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyCFunction_FastCallDict(PyObject *func,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs);
-
-PyAPI_FUNC(PyObject *) _PyCFunction_Vectorcall(PyObject *func,
-    PyObject *const *stack,
-    size_t nargsf,
-    PyObject *kwnames);
-#endif
-
 struct PyMethodDef {
     const char  *ml_name;   /* The name of the built-in function/method */
     PyCFunction ml_meth;    /* The C function that implements it */
@@ -107,20 +95,6 @@ typedef struct {
     PyObject    *m_weakreflist; /* List of weak references */
     vectorcallfunc vectorcall;
 } PyCFunctionObject;
-
-PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallDict(
-    PyMethodDef *method,
-    PyObject *self,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs);
-
-PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallKeywords(
-    PyMethodDef *method,
-    PyObject *self,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwnames);
 #endif
 
 PyAPI_FUNC(int) PyCFunction_ClearFreeList(void);

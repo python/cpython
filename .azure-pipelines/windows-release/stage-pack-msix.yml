@@ -24,11 +24,11 @@ jobs:
   steps:
   - template: ./checkout.yml
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: layout_$(Artifact)_$(Name)'
     inputs:
       artifactName: layout_$(Artifact)_$(Name)
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\layout
 
   - task: DownloadBuildArtifacts@0
     displayName: 'Download artifact: symbols'
@@ -46,7 +46,7 @@ jobs:
     displayName: 'Extract version numbers'
 
   - powershell: |
-      ./Tools/msi/make_appx.ps1 -layout "$(Build.BinariesDirectory)\layout_$(Artifact)_$(Name)" -msix "$(Build.ArtifactStagingDirectory)\msix\$(Filename).msix"
+      ./Tools/msi/make_appx.ps1 -layout "$(Build.BinariesDirectory)\layout" -msix "$(Build.ArtifactStagingDirectory)\msix\$(Filename).msix"
     displayName: 'Build msix'
 
   - powershell: |

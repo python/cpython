@@ -23,11 +23,11 @@ jobs:
   steps:
   - template: ./checkout.yml
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_$(Name)'
     inputs:
       artifactName: bin_$(Name)
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\bin
 
   - template: ./layout-command.yml
 
@@ -37,8 +37,8 @@ jobs:
     env:
       TCL_LIBRARY: $(Build.BinariesDirectory)\bin_$(Name)\tcl\tcl8
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: 'Publish Artifact: layout_nuget_$(Name)'
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)\nuget'
-      ArtifactName: layout_nuget_$(Name)
+      targetPath: '$(Build.ArtifactStagingDirectory)\nuget'
+      artifactName: layout_nuget_$(Name)

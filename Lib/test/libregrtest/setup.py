@@ -60,22 +60,6 @@ def setup_tests(ns):
         if getattr(module, '__file__', None):
             module.__file__ = os.path.abspath(module.__file__)
 
-    # MacOSX (a.k.a. Darwin) has a default stack size that is too small
-    # for deeply recursive regular expressions.  We see this as crashes in
-    # the Python test suite when running test_re.py and test_sre.py.  The
-    # fix is to set the stack limit to 2048.
-    # This approach may also be useful for other Unixy platforms that
-    # suffer from small default stack limits.
-    if sys.platform == 'darwin':
-        try:
-            import resource
-        except ImportError:
-            pass
-        else:
-            soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
-            newsoft = min(hard, max(soft, 1024*2048))
-            resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
-
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
 

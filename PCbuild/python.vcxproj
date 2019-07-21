@@ -150,10 +150,10 @@ $(_PGOPath)
       <LicenseFiles Include="$(PySourcePath)LICENSE;
                              $(PySourcePath)PC\crtlicense.txt;
                              $(bz2Dir)LICENSE;
-                             $(opensslOutDir)LICENSE;
-                             $(tcltkDir)tcllicense.terms;
+                             $(opensslOutDir)LICENSE;" />
+      <LicenseFiles Include="$(tcltkDir)tcllicense.terms;
                              $(tcltkDir)tklicense.terms;
-                             $(tcltkDir)tixlicense.terms" />
+                             $(tcltkDir)tixlicense.terms" Condition="$(IncludeTkinter)" />
       <_LicenseFiles Include="@(LicenseFiles)">
         <Content>$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
       </_LicenseFiles>

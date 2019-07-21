@@ -22,23 +22,23 @@ jobs:
   steps:
   - template: ./checkout.yml
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_$(Name)'
     inputs:
       artifactName: bin_$(Name)
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\bin
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_$(Name)_d'
     inputs:
       artifactName: bin_$(Name)_d
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\bin
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: tcltk_lib_$(Name)'
     inputs:
       artifactName: tcltk_lib_$(Name)
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\tcltk_lib
 
   - template: ./layout-command.yml
 
@@ -47,20 +47,20 @@ jobs:
       $(LayoutCmd) --copy "$(Build.ArtifactStagingDirectory)\appx-store" --preset-appx --precompile
     displayName: 'Generate store APPX layout'
     env:
-      TCL_LIBRARY: $(Build.BinariesDirectory)\tcltk_lib_$(Name)\tcl8
+      TCL_LIBRARY: $(Build.BinariesDirectory)\tcltk_lib\tcl8
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: 'Publish Artifact: layout_appxstore_$(Name)'
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)\appx-store'
-      ArtifactName: layout_appxstore_$(Name)
+      targetPath: '$(Build.ArtifactStagingDirectory)\appx-store'
+      artifactName: layout_appxstore_$(Name)
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: cert'
     condition: and(succeeded(), variables['SigningCertificate'])
     inputs:
       artifactName: cert
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\cert
 
   - powershell: |
       $info = (gc "$(Build.BinariesDirectory)\cert\certinfo.json" | ConvertFrom-JSON)
@@ -75,12 +75,10 @@ jobs:
       $(LayoutCmd) --copy "$(Build.ArtifactStagingDirectory)\appx" --preset-appx --precompile --include-symbols --include-tests
     displayName: 'Generate sideloading APPX layout'
     env:
-      TCL_LIBRARY: $(Build.BinariesDirectory)\tcltk_lib_$(Name)\tcl8
-      APPX_DATA_PUBLISHER: $(APPX_DATA_PUBLISHER)
-      APPX_DATA_SHA256: $(APPX_DATA_SHA256)
+      TCL_LIBRARY: $(Build.BinariesDirectory)\tcltk_lib\tcl8
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: 'Publish Artifact: layout_appx_$(Name)'
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)\appx'
-      ArtifactName: layout_appx_$(Name)
+      targetPath: '$(Build.ArtifactStagingDirectory)\appx'
+      artifactName: layout_appx_$(Name)

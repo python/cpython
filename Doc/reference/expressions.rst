@@ -337,6 +337,12 @@ all mutable objects.)  Clashes between duplicate keys are not detected; the last
 datum (textually rightmost in the display) stored for a given key value
 prevails.
 
+.. versionchanged:: 3.8
+   Prior to Python 3.8, in dict comprehensions, the evaluation order of key
+   and value was not well-defined.  In CPython, the value was evaluated before
+   the key.  Starting with 3.8, the key is evaluated before the value, as
+   proposed by :pep:`572`.
+
 
 .. _genexpr:
 

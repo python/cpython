@@ -15,7 +15,6 @@ import asyncio
 from asyncio import log
 from asyncio import protocols
 from asyncio import sslproto
-from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
 
@@ -498,6 +497,14 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
+        if (sys.platform.startswith('freebsd')
+                or sys.platform.startswith('win')
+                or sys.platform.startswith('darwin')):
+            # bpo-35031: Some FreeBSD and Windows buildbots fail to run this test
+            # as the eof was not being received by the server if the payload
+            # size is not big enough. This behaviour only appears if the
+            # client is using TLS1.3.  Also seen on macOS.
+            client_context.options |= ssl.OP_NO_TLSv1_3
         answer = None
 
         def client(sock, addr):

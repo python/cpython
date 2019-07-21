@@ -1,0 +1,2 @@
+Adds audit events for the range of supported run commands (see
+:ref:`using-on-general`).
