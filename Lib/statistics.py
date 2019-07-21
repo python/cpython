@@ -812,15 +812,15 @@ class NormalDist:
     # https://en.wikipedia.org/wiki/Normal_distribution
     # https://en.wikipedia.org/wiki/Variance#Properties
 
-    __slots__ = {'mu': 'Arithmetic mean of a normal distribution',
-                 'sigma': 'Standard deviation of a normal distribution'}
+    __slots__ = {'_mu': 'Arithmetic mean of a normal distribution',
+                 '_sigma': 'Standard deviation of a normal distribution'}
 
     def __init__(self, mu=0.0, sigma=1.0):
         'NormalDist where mu is the mean and sigma is the standard deviation.'
         if sigma < 0.0:
             raise StatisticsError('sigma must be non-negative')
-        self.mu = mu
-        self.sigma = sigma
+        self._mu = mu
+        self._sigma = sigma
 
     @classmethod
     def from_samples(cls, data):
@@ -833,21 +833,21 @@ class NormalDist:
     def samples(self, n, *, seed=None):
         'Generate *n* samples for a given mean and standard deviation.'
         gauss = random.gauss if seed is None else random.Random(seed).gauss
-        mu, sigma = self.mu, self.sigma
+        mu, sigma = self._mu, self._sigma
         return [gauss(mu, sigma) for i in range(n)]
 
     def pdf(self, x):
         'Probability density function.  P(x <= X < x+dx) / dx'
-        variance = self.sigma ** 2.0
+        variance = self._sigma ** 2.0
         if not variance:
             raise StatisticsError('pdf() not defined when sigma is zero')
-        return exp((x - self.mu)**2.0 / (-2.0*variance)) / sqrt(tau * variance)
+        return exp((x - self._mu)**2.0 / (-2.0*variance)) / sqrt(tau * variance)
 
     def cdf(self, x):
         'Cumulative distribution function.  P(X <= x)'
-        if not self.sigma:
+        if not self._sigma:
             raise StatisticsError('cdf() not defined when sigma is zero')
-        return 0.5 * (1.0 + erf((x - self.mu) / (self.sigma * sqrt(2.0))))
+        return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * sqrt(2.0))))
 
     def inv_cdf(self, p):
         '''Inverse cumulative distribution function.  x : P(X <= x) = p
@@ -859,7 +859,7 @@ class NormalDist:
         '''
         if (p <= 0.0 or p >= 1.0):
             raise StatisticsError('p must be in the range 0.0 < p < 1.0')
-        if self.sigma <= 0.0:
+        if self._sigma <= 0.0:
             raise StatisticsError('cdf() not defined when sigma at or below zero')
 
         # There is no closed-form solution to the inverse CDF for the normal
@@ -888,7 +888,7 @@ class NormalDist:
                          4.23133_30701_60091_1252e+1) * r +
                          1.0)
             x = num / den
-            return self.mu + (x * self.sigma)
+            return self._mu + (x * self._sigma)
         r = p if q <= 0.0 else 1.0 - p
         r = sqrt(-log(r))
         if r <= 5.0:
@@ -930,7 +930,7 @@ class NormalDist:
         x = num / den
         if q < 0.0:
             x = -x
-        return self.mu + (x * self.sigma)
+        return self._mu + (x * self._sigma)
 
     def overlap(self, other):
         '''Compute the overlapping coefficient (OVL) between two normal distributions.
@@ -951,17 +951,17 @@ class NormalDist:
         if not isinstance(other, NormalDist):
             raise TypeError('Expected another NormalDist instance')
         X, Y = self, other
-        if (Y.sigma, Y.mu) < (X.sigma, X.mu):   # sort to assure commutativity
+        if (Y._sigma, Y._mu) < (X._sigma, X._mu):   # sort to assure commutativity
             X, Y = Y, X
         X_var, Y_var = X.variance, Y.variance
         if not X_var or not Y_var:
             raise StatisticsError('overlap() not defined when sigma is zero')
         dv = Y_var - X_var
-        dm = fabs(Y.mu - X.mu)
+        dm = fabs(Y._mu - X._mu)
         if not dv:
-            return 1.0 - erf(dm / (2.0 * X.sigma * sqrt(2.0)))
-        a = X.mu * Y_var - Y.mu * X_var
-        b = X.sigma * Y.sigma * sqrt(dm**2.0 + dv * log(Y_var / X_var))
+            return 1.0 - erf(dm / (2.0 * X._sigma * sqrt(2.0)))
+        a = X._mu * Y_var - Y._mu * X_var
+        b = X._sigma * Y._sigma * sqrt(dm**2.0 + dv * log(Y_var / X_var))
         x1 = (a + b) / dv
         x2 = (a - b) / dv
         return 1.0 - (fabs(Y.cdf(x1) - X.cdf(x1)) + fabs(Y.cdf(x2) - X.cdf(x2)))
@@ -969,17 +969,17 @@ class NormalDist:
     @property
     def mean(self):
         'Arithmetic mean of the normal distribution.'
-        return self.mu
+        return self._mu
 
     @property
     def stdev(self):
         'Standard deviation of the normal distribution.'
-        return self.sigma
+        return self._sigma
 
     @property
     def variance(self):
         'Square of the standard deviation.'
-        return self.sigma ** 2.0
+        return self._sigma ** 2.0
 
     def __add__(x1, x2):
         '''Add a constant or another NormalDist instance.
@@ -992,8 +992,8 @@ class NormalDist:
         independent or if they are jointly normally distributed.
         '''
         if isinstance(x2, NormalDist):
-            return NormalDist(x1.mu + x2.mu, hypot(x1.sigma, x2.sigma))
-        return NormalDist(x1.mu + x2, x1.sigma)
+            return NormalDist(x1._mu + x2._mu, hypot(x1._sigma, x2._sigma))
+        return NormalDist(x1._mu + x2, x1._sigma)
 
     def __sub__(x1, x2):
         '''Subtract a constant or another NormalDist instance.
@@ -1006,8 +1006,8 @@ class NormalDist:
         independent or if they are jointly normally distributed.
         '''
         if isinstance(x2, NormalDist):
-            return NormalDist(x1.mu - x2.mu, hypot(x1.sigma, x2.sigma))
-        return NormalDist(x1.mu - x2, x1.sigma)
+            return NormalDist(x1._mu - x2._mu, hypot(x1._sigma, x2._sigma))
+        return NormalDist(x1._mu - x2, x1._sigma)
 
     def __mul__(x1, x2):
         '''Multiply both mu and sigma by a constant.
@@ -1015,7 +1015,7 @@ class NormalDist:
         Used for rescaling, perhaps to change measurement units.
         Sigma is scaled with the absolute value of the constant.
         '''
-        return NormalDist(x1.mu * x2, x1.sigma * fabs(x2))
+        return NormalDist(x1._mu * x2, x1._sigma * fabs(x2))
 
     def __truediv__(x1, x2):
         '''Divide both mu and sigma by a constant.
@@ -1023,15 +1023,15 @@ class NormalDist:
         Used for rescaling, perhaps to change measurement units.
         Sigma is scaled with the absolute value of the constant.
         '''
-        return NormalDist(x1.mu / x2, x1.sigma / fabs(x2))
+        return NormalDist(x1._mu / x2, x1._sigma / fabs(x2))
 
     def __pos__(x1):
         'Return a copy of the instance.'
-        return NormalDist(x1.mu, x1.sigma)
+        return NormalDist(x1._mu, x1._sigma)
 
     def __neg__(x1):
         'Negates mu while keeping sigma the same.'
-        return NormalDist(-x1.mu, x1.sigma)
+        return NormalDist(-x1._mu, x1._sigma)
 
     __radd__ = __add__
 
@@ -1045,10 +1045,14 @@ class NormalDist:
         'Two NormalDist objects are equal if their mu and sigma are both equal.'
         if not isinstance(x2, NormalDist):
             return NotImplemented
-        return (x1.mu, x2.sigma) == (x2.mu, x2.sigma)
+        return (x1._mu, x2._sigma) == (x2._mu, x2._sigma)
+
+    def __hash__(self):
+        'NormalDist objects hash equal if their mu and sigma are both equal.'
+        return hash((self._mu, self._sigma))
 
     def __repr__(self):
-        return f'{type(self).__name__}(mu={self.mu!r}, sigma={self.sigma!r})'
+        return f'{type(self).__name__}(mu={self._mu!r}, sigma={self._sigma!r})'
 
 
 if __name__ == '__main__':
@@ -1065,8 +1069,8 @@ if __name__ == '__main__':
     g2 = NormalDist(-5, 25)
 
     # Test scaling by a constant
-    assert (g1 * 5 / 5).mu == g1.mu
-    assert (g1 * 5 / 5).sigma == g1.sigma
+    assert (g1 * 5 / 5).mean == g1.mean
+    assert (g1 * 5 / 5).stdev == g1.stdev
 
     n = 100_000
     G1 = g1.samples(n)
@@ -1090,8 +1094,8 @@ if __name__ == '__main__':
         print(NormalDist.from_samples(map(func, repeat(const), G1)))
 
     def assert_close(G1, G2):
-        assert isclose(G1.mu, G1.mu, rel_tol=0.01), (G1, G2)
-        assert isclose(G1.sigma, G2.sigma, rel_tol=0.01), (G1, G2)
+        assert isclose(G1.mean, G1.mean, rel_tol=0.01), (G1, G2)
+        assert isclose(G1.stdev, G2.stdev, rel_tol=0.01), (G1, G2)
 
     X = NormalDist(-105, 73)
     Y = NormalDist(31, 47)
