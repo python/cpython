@@ -2326,18 +2326,18 @@ class TestNormalDist(unittest.TestCase):
         nd = statistics.NormalDist(300, 23)
         with self.assertRaises(TypeError):
             vars(nd)
-        self.assertEqual(tuple(nd.__slots__), ('mu', 'sigma'))
+        self.assertEqual(tuple(nd.__slots__), ('_mu', '_sigma'))
 
     def test_instantiation_and_attributes(self):
         nd = statistics.NormalDist(500, 17)
-        self.assertEqual(nd.mu, 500)
-        self.assertEqual(nd.sigma, 17)
+        self.assertEqual(nd.mean, 500)
+        self.assertEqual(nd.stdev, 17)
         self.assertEqual(nd.variance, 17**2)
 
         # default arguments
         nd = statistics.NormalDist()
-        self.assertEqual(nd.mu, 0)
-        self.assertEqual(nd.sigma, 1)
+        self.assertEqual(nd.mean, 0)
+        self.assertEqual(nd.stdev, 1)
         self.assertEqual(nd.variance, 1**2)
 
         # error case: negative sigma
@@ -2520,10 +2520,7 @@ class TestNormalDist(unittest.TestCase):
         with self.assertRaises(statistics.StatisticsError):
             iq.inv_cdf(1.1)                         # p over one
         with self.assertRaises(statistics.StatisticsError):
-            iq.sigma = 0.0                          # sigma is zero
-            iq.inv_cdf(0.5)
-        with self.assertRaises(statistics.StatisticsError):
-            iq.sigma = -0.1                         # sigma under zero
+            iq = NormalDist(100, 0)                 # sigma is zero
             iq.inv_cdf(0.5)
 
         # Special values
@@ -2544,8 +2541,8 @@ class TestNormalDist(unittest.TestCase):
         def overlap_numeric(X, Y, *, steps=8_192, z=5):
             'Numerical integration cross-check for overlap() '
             fsum = math.fsum
-            center = (X.mu + Y.mu) / 2.0
-            width = z * max(X.sigma, Y.sigma)
+            center = (X.mean + Y.mean) / 2.0
+            width = z * max(X.stdev, Y.stdev)
             start = center - width
             dx = 2.0 * width / steps
             x_arr = [start + i*dx for i in range(steps)]
@@ -2626,12 +2623,12 @@ class TestNormalDist(unittest.TestCase):
         X = NormalDist(100, 12)
         Y = +X
         self.assertIsNot(X, Y)
-        self.assertEqual(X.mu, Y.mu)
-        self.assertEqual(X.sigma, Y.sigma)
+        self.assertEqual(X.mean, Y.mean)
+        self.assertEqual(X.stdev, Y.stdev)
         Y = -X
         self.assertIsNot(X, Y)
-        self.assertEqual(X.mu, -Y.mu)
-        self.assertEqual(X.sigma, Y.sigma)
+        self.assertEqual(X.mean, -Y.mean)
+        self.assertEqual(X.stdev, Y.stdev)
 
     def test_equality(self):
         NormalDist = statistics.NormalDist
@@ -2681,6 +2678,11 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(nd, nd2)
         nd3 = pickle.loads(pickle.dumps(nd))
         self.assertEqual(nd, nd3)
+
+    def test_hashability(self):
+        ND = statistics.NormalDist
+        s = {ND(100, 15), ND(100.0, 15.0), ND(100, 10), ND(95, 15), ND(100, 15)}
+        self.assertEqual(len(s), 3)
 
     def test_repr(self):
         nd = statistics.NormalDist(37.5, 5.625)
