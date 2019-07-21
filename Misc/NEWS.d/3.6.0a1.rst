@@ -3695,7 +3695,7 @@ Adds validation of ucrtbase[d].dll version with warning for old versions.
 .. nonce: 102DA-
 .. section: Build
 
-Avoid error about nonexistant fileblocks.o file by using a lower-level check
+Avoid error about nonexistent fileblocks.o file by using a lower-level check
 for st_blocks in struct stat.
 
 ..
