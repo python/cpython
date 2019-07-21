@@ -822,7 +822,7 @@ class NormalDist:
     }
 
     def __init__(self, mu=0.0, sigma=1.0):
-        """NormalDist where mu is the mean and sigma is the standard deviation."""
+        "NormalDist where mu is the mean and sigma is the standard deviation."
         if sigma < 0.0:
             raise StatisticsError('sigma must be non-negative')
         self._mu = mu
