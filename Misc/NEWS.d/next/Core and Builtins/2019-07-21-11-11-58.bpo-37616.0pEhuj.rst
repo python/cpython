@@ -1,0 +1,1 @@
+Update `getpath` detect zip path in :mod:`sys.path`
