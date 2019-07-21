@@ -1332,6 +1332,32 @@ class SSLSocket(socket):
         else:
             raise ValueError("No SSL wrapper around " + str(self))
 
+    def export_keying_material(self, label, material_len, context=None):
+        """Export keying material from current connection.  Return a bytes
+        object with keying material or None if no keying material is
+        available, i.e. before the SSL handshake or after the SSL
+        connection is closed
+
+        The application specific `label` should be a bytes object or
+        ASCII string.  `material_len` specifies how many byts of
+        keying material to return.  The optional application specific
+        "context" should be a bytes object, ASCII string or None for
+        no conxtext.
+
+        """
+
+        if isinstance(label, str):
+            label = label.encode('ASCII')
+
+        if isinstance(context, str):
+            context = context.encode('ASCII')
+
+        self._checkClosed()
+        self._check_connected()
+        if self._sslobj is None:
+            return None
+        return self._sslobj.export_keying_material(label, material_len, context)
+
     def _real_close(self):
         self._sslobj = None
         super()._real_close()
