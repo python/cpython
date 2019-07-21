@@ -663,6 +663,34 @@ PyObject_Bytes(PyObject *v)
     return PyBytes_FromObject(v);
 }
 
+
+/*
+def PyObject_FunctionStr(f):
+    try:
+        return f.__qualname__ + "()"
+    except Exception:
+        return type(f).__name__ + " object"
+*/
+PyObject *
+PyObject_FunctionStr(PyObject *f)
+{
+    _Py_IDENTIFIER(__qualname__);
+    PyObject *name = _PyObject_GetAttrId(f, &PyId___qualname__);
+    if (name != NULL) {
+        PyObject *res = PyUnicode_FromFormat("%S()", name);
+        Py_DECREF(name);
+        return res;
+    }
+    /* __qualname__ lookup failed */
+    if (!PyErr_ExceptionMatches(PyExc_Exception)) {
+        /* An exception not inheriting from Exception, like KeyboardInterrupt.
+         * Propagate it. */
+        return NULL;
+    }
+    PyErr_Clear();
+    return PyUnicode_FromFormat("%.200s object", Py_TYPE(f)->tp_name);
+}
+
 /* For Python 3.0.1 and later, the old three-way comparison has been
    completely removed in favour of rich comparisons.  PyObject_Compare() and
    PyObject_Cmp() are gone, and the builtin cmp function no longer exists.

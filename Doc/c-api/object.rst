@@ -196,6 +196,17 @@ Object Protocol
       This function now includes a debug assertion to help ensure that it
       does not silently discard an active exception.
 
+
+.. c:function:: PyObject* PyObject_FunctionStr(PyObject *func)
+
+   Return a user-friendly string representation of the function-like object
+   *func*. This returns ``func.__qualname__ + "()"`` if there is a
+   ``__qualname__`` attribute and ``type(func).__name__ + " object"``
+   otherwise. Note that there is no check that *func* is actually callable.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: PyObject* PyObject_Bytes(PyObject *o)
 
    .. index:: builtin: bytes
