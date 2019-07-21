@@ -1868,7 +1868,7 @@ class IsCloseTests(unittest.TestCase):
     def testPerm(self):
         perm = math.perm
         factorial = math.factorial
-        # Test if factorial defintion is satisfied
+        # Test if factorial definition is satisfied
         for n in range(100):
             for k in range(n + 1):
                 self.assertEqual(perm(n, k),
@@ -1932,7 +1932,7 @@ class IsCloseTests(unittest.TestCase):
     def testComb(self):
         comb = math.comb
         factorial = math.factorial
-        # Test if factorial defintion is satisfied
+        # Test if factorial definition is satisfied
         for n in range(100):
             for k in range(n + 1):
                 self.assertEqual(comb(n, k), factorial(n)
