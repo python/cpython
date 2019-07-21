@@ -844,7 +844,7 @@ class NormalDist:
         variance = self._sigma ** 2.0
         if not variance:
             raise StatisticsError('pdf() not defined when sigma is zero')
-        return exp((x - self._mu)**2.0 / (-2.0*variance)) / sqrt(tau * variance)
+        return exp((x - self._mu)**2.0 / (-2.0*variance)) / sqrt(tau*variance)
 
     def cdf(self, x):
         """Cumulative distribution function.  P(X <= x)"""
@@ -855,10 +855,12 @@ class NormalDist:
     def inv_cdf(self, p):
         """Inverse cumulative distribution function.  x : P(X <= x) = p
 
-        Finds the value of the random variable such that the probability of the
-        variable being less than or equal to that value equals the given probability.
+        Finds the value of the random variable such that the probability of
+        the variable being less than or equal to that value equals the given
+        probability.
 
-        This function is also called the percent point function or quantile function.
+        This function is also called the percent point function or quantile
+        function.
         """
         if p <= 0.0 or p >= 1.0:
             raise StatisticsError('p must be in the range 0.0 < p < 1.0')
