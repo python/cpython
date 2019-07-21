@@ -288,18 +288,17 @@ def _compile_one_py(src, dest, name, optimize, checked=True):
         return None
 
 
-def _py_temp_compile(src, ns, dest_dir=None, checked=True):
+def _py_temp_compile(src, name, ns, dest_dir=None, checked=True):
     if not ns.precompile or src not in PY_FILES or src.parent in DATA_DIRS:
         return None
-
-    dest = (dest_dir or ns.temp) / (src.stem + ".py")
+    dest = (dest_dir or ns.temp) / (src.stem + ".pyc")
     return _compile_one_py(
-        src, dest.with_suffix(".pyc"), dest, optimize=2, checked=checked
+        src, dest, name, optimize=2, checked=checked
     )
 
 
 def _write_to_zip(zf, dest, src, ns, checked=True):
-    pyc = _py_temp_compile(src, ns, checked=checked)
+    pyc = _py_temp_compile(src, dest, ns, checked=checked)
     if pyc:
         try:
             zf.write(str(pyc), dest.with_suffix(".pyc"))
