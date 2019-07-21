@@ -325,9 +325,13 @@ class CustomRun(Query):
     """
     # Used in runscript.run_custom_event
 
-    def __init__(self, parent, title, *, cli_args='',
+    def __init__(self, parent, title, *, cli_args=[],
                  _htest=False, _utest=False):
-        # TODO Use cli_args to pre-populate entry.
+        """cli_args is a list of strings.
+
+        The list is assigned to the default Entry StringVar.
+        The strings are displayed joined by ' ' for display.
+        """
         message = 'Command Line Arguments for sys.argv:'
         super().__init__(
                 parent, title, message, text0=cli_args,
