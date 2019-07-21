@@ -80,12 +80,25 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 
 """
 
-__all__ = [ 'StatisticsError', 'NormalDist', 'quantiles',
-            'pstdev', 'pvariance', 'stdev', 'variance',
-            'median',  'median_low', 'median_high', 'median_grouped',
-            'mean', 'mode', 'multimode', 'harmonic_mean', 'fmean',
-            'geometric_mean',
-          ]
+__all__ = [
+    'NormalDist',
+    'StatisticsError',
+    'fmean',
+    'geometric_mean',
+    'harmonic_mean',
+    'mean',
+    'median',
+    'median_grouped',
+    'median_high',
+    'median_low',
+    'mode',
+    'multimode',
+    'pstdev',
+    'pvariance',
+    'quantiles',
+    'stdev',
+    'variance',
+]
 
 import math
 import numbers
