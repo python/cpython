@@ -603,7 +603,7 @@ def multimode(data):
 # external packages can be used for anything more advanced.
 
 def quantiles(dist, /, *, n=4, method='exclusive'):
-    '''Divide *dist* into *n* continuous intervals with equal probability.
+    """Divide *dist* into *n* continuous intervals with equal probability.
 
     Returns a list of (n - 1) cut points separating the intervals.
 
@@ -618,7 +618,7 @@ def quantiles(dist, /, *, n=4, method='exclusive'):
     If *method* is set to *inclusive*, *dist* is treated as population
     data.  The minimum value is treated as the 0th percentile and the
     maximum value is treated as the 100th percentile.
-    '''
+    """
     if n < 1:
         raise StatisticsError('n must be at least 1')
     if hasattr(dist, 'inv_cdf'):
@@ -812,7 +812,7 @@ def pstdev(data, mu=None):
 ## Normal Distribution #####################################################
 
 class NormalDist:
-    """Normal distribution of a random variable"""
+    "Normal distribution of a random variable"
     # https://en.wikipedia.org/wiki/Normal_distribution
     # https://en.wikipedia.org/wiki/Variance#Properties
 
@@ -830,27 +830,27 @@ class NormalDist:
 
     @classmethod
     def from_samples(cls, data):
-        """Make a normal distribution instance from sample data."""
+        "Make a normal distribution instance from sample data."
         if not isinstance(data, (list, tuple)):
             data = list(data)
         xbar = fmean(data)
         return cls(xbar, stdev(data, xbar))
 
     def samples(self, n, *, seed=None):
-        """Generate *n* samples for a given mean and standard deviation."""
+        "Generate *n* samples for a given mean and standard deviation."
         gauss = random.gauss if seed is None else random.Random(seed).gauss
         mu, sigma = self._mu, self._sigma
         return [gauss(mu, sigma) for i in range(n)]
 
     def pdf(self, x):
-        """Probability density function.  P(x <= X < x+dx) / dx"""
+        "Probability density function.  P(x <= X < x+dx) / dx"
         variance = self._sigma ** 2.0
         if not variance:
             raise StatisticsError('pdf() not defined when sigma is zero')
         return exp((x - self._mu)**2.0 / (-2.0*variance)) / sqrt(tau*variance)
 
     def cdf(self, x):
-        """Cumulative distribution function.  P(X <= x)"""
+        "Cumulative distribution function.  P(X <= x)"
         if not self._sigma:
             raise StatisticsError('cdf() not defined when sigma is zero')
         return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * sqrt(2.0))))
@@ -976,17 +976,17 @@ class NormalDist:
 
     @property
     def mean(self):
-        """Arithmetic mean of the normal distribution."""
+        "Arithmetic mean of the normal distribution."
         return self._mu
 
     @property
     def stdev(self):
-        """Standard deviation of the normal distribution."""
+        "Standard deviation of the normal distribution."
         return self._sigma
 
     @property
     def variance(self):
-        """Square of the standard deviation."""
+        "Square of the standard deviation."
         return self._sigma ** 2.0
 
     def __add__(x1, x2):
@@ -1034,29 +1034,29 @@ class NormalDist:
         return NormalDist(x1._mu / x2, x1._sigma / fabs(x2))
 
     def __pos__(x1):
-        """Return a copy of the instance."""
+        "Return a copy of the instance."
         return NormalDist(x1._mu, x1._sigma)
 
     def __neg__(x1):
-        """Negates mu while keeping sigma the same."""
+        "Negates mu while keeping sigma the same."
         return NormalDist(-x1._mu, x1._sigma)
 
     __radd__ = __add__
 
     def __rsub__(x1, x2):
-        """Subtract a NormalDist from a constant or another NormalDist."""
+        "Subtract a NormalDist from a constant or another NormalDist."
         return -(x1 - x2)
 
     __rmul__ = __mul__
 
     def __eq__(x1, x2):
-        """Two NormalDist objects are equal if their mu and sigma are both equal."""
+        "Two NormalDist objects are equal if their mu and sigma are both equal."
         if not isinstance(x2, NormalDist):
             return NotImplemented
         return (x1._mu, x2._sigma) == (x2._mu, x2._sigma)
 
     def __hash__(self):
-        """NormalDist objects hash equal if their mu and sigma are both equal."""
+        "NormalDist objects hash equal if their mu and sigma are both equal."
         return hash((self._mu, self._sigma))
 
     def __repr__(self):
