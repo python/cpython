@@ -304,8 +304,9 @@ def mean(data):
     assert count == n
     return _convert(total/n, T)
 
+
 def fmean(data):
-    """ Convert data to floats and compute the arithmetic mean.
+    """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
     The result is highly accurate but not as perfect as mean().
@@ -313,7 +314,6 @@ def fmean(data):
 
     >>> fmean([3.5, 4.0, 5.25])
     4.25
-
     """
     try:
         n = len(data)
@@ -332,6 +332,7 @@ def fmean(data):
     except ZeroDivisionError:
         raise StatisticsError('fmean requires at least one data point') from None
 
+
 def geometric_mean(data):
     """Convert data to floats and compute the geometric mean.
 
@@ -349,6 +350,7 @@ def geometric_mean(data):
     except ValueError:
         raise StatisticsError('geometric mean requires a non-empty dataset '
                               ' containing positive numbers') from None
+
 
 def harmonic_mean(data):
     """Return the harmonic mean of data.
@@ -547,22 +549,22 @@ def mode(data):
 
 
 def multimode(data):
-    """ Return a list of the most frequently occurring values.
+    """Return a list of the most frequently occurring values.
 
-        Will return more than one result if there are multiple modes
-        or an empty list if *data* is empty.
+    Will return more than one result if there are multiple modes
+    or an empty list if *data* is empty.
 
-        >>> multimode('aabbbbbbbbcc')
-        ['b']
-        >>> multimode('aabbbbccddddeeffffgg')
-        ['b', 'd', 'f']
-        >>> multimode('')
-        []
-
+    >>> multimode('aabbbbbbbbcc')
+    ['b']
+    >>> multimode('aabbbbccddddeeffffgg')
+    ['b', 'd', 'f']
+    >>> multimode('')
+    []
     """
     counts = Counter(iter(data)).most_common()
     maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
     return list(map(itemgetter(0), mode_items))
+
 
 # Notes on methods for computing quantiles
 # ----------------------------------------
@@ -645,6 +647,7 @@ def quantiles(dist, /, *, n=4, method='exclusive'):
             result.append(interpolated)
         return result
     raise ValueError(f'Unknown method: {method!r}')
+
 
 # === Measures of spread ===
 
