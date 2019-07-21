@@ -300,7 +300,7 @@ PyStatus
 PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
 {
     if (list->length == PY_SSIZE_T_MAX) {
-        /* lenght+1 would overflow */
+        /* length+1 would overflow */
         return _PyStatus_NO_MEMORY();
     }
 

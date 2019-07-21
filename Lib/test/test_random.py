@@ -228,7 +228,7 @@ class TestBasicOps:
             choices([], cum_weights=[], k=5)
 
     def test_choices_subnormal(self):
-        # Subnormal weights would occassionally trigger an IndexError
+        # Subnormal weights would occasionally trigger an IndexError
         # in choices() when the value returned by random() was large
         # enough to make `random() * total` round up to the total.
         # See https://bugs.python.org/msg275594 for more detail.

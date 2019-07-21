@@ -2978,7 +2978,7 @@ def fd_count():
     if sys.platform.startswith(('linux', 'freebsd')):
         try:
             names = os.listdir("/proc/self/fd")
-            # Substract one because listdir() opens internally a file
+            # Subtract one because listdir() internally opens a file
             # descriptor to list the content of the /proc/self/fd/ directory.
             return len(names) - 1
         except FileNotFoundError:
