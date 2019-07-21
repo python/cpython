@@ -39,7 +39,8 @@ class ScriptBinding:
         # XXX This should be done differently
         self.flist = self.editwin.flist
         self.root = self.editwin.root
-        self.cli_args = ''
+        # cli_args is list of strings that extends sys.argv
+        self.cli_args = []
 
         if macosx.isCocoaTk():
             self.editwin.text_frame.bind('<<run-module-event-2>>', self._run_module_event)
