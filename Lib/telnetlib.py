@@ -38,6 +38,9 @@ import socket
 import selectors
 from time import monotonic as _time
 
+# get current python version
+is_py_3 = sys.version_info >= (3, 6)
+
 __all__ = ["Telnet"]
 
 # Tunable parameters
@@ -552,7 +555,11 @@ class Telnet:
                             print('*** Connection closed by remote host ***')
                             return
                         if text:
-                            sys.stdout.write(text.decode('ascii'))
+                            if is_py_3:
+                                # fix UnicodeError while receiving unprintable characters from server
+                                sys.stdout.buffer.write(text)
+                            else:
+                                sys.stdout.write(text.decode('ascii'))
                             sys.stdout.flush()
                     elif key.fileobj is sys.stdin:
                         line = sys.stdin.readline().encode('ascii')
@@ -579,7 +586,11 @@ class Telnet:
                 print('*** Connection closed by remote host ***')
                 return
             if data:
-                sys.stdout.write(data.decode('ascii'))
+                if is_py_3:
+                    # fix UnicodeError while receiving unpritable characters from server
+                    sys.stdout.buffer.write(data)
+                else:
+                    sys.stdout.write(data.decode('ascii'))
             else:
                 sys.stdout.flush()
 
