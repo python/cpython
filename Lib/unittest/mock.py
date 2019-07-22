@@ -348,7 +348,7 @@ class _CallList(list):
         self_list = list(self)
         other_list = list(other)
         # checking equality both directions is necessary for ANY to work
-        return self_list == other_list or other_list == self_list
+        return self_list.__eq__(other_list) or other_list.__eq__(self_list)
 
 
 def _check_and_set_parent(parent, value, name, new_name):
@@ -2412,8 +2412,8 @@ class _Call(tuple):
         self_params = self_args, self_kwargs
         other_params = other_args, other_kwargs
         return (
-            self_params == other_params
-            or other_params == self_params
+            self_params.__eq__(other_params)
+            or other_params.__eq__(self_params)
         )
 
 
