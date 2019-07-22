@@ -72,6 +72,15 @@ def _is_exception(obj):
     )
 
 
+def _extract_mock(obj):
+    # Autospecced functions will return a FunctionType with "mock" attribute
+    # which is the actual mock object that needs to be used.
+    if isinstance(obj, FunctionTypes) and hasattr(obj, 'mock'):
+        return obj.mock
+    else:
+        return obj
+
+
 def _get_signature_object(func, as_instance, eat_self):
     """
     Given an arbitrary, possibly callable object, try to create a suitable
@@ -346,13 +355,7 @@ class _CallList(list):
 
 
 def _check_and_set_parent(parent, value, name, new_name):
-    # function passed to create_autospec will have mock
-    # attribute attached to which parent must be set
-    if isinstance(value, FunctionTypes):
-        try:
-            value = value.mock
-        except AttributeError:
-            pass
+    value = _extract_mock(value)
 
     if not _is_instance_mock(value):
         return False
@@ -467,10 +470,12 @@ class NonCallableMock(Base):
         Attach a mock as an attribute of this one, replacing its name and
         parent. Calls to the attached mock will be recorded in the
         `method_calls` and `mock_calls` attributes of this one."""
-        mock._mock_parent = None
-        mock._mock_new_parent = None
-        mock._mock_name = ''
-        mock._mock_new_name = None
+        inner_mock = _extract_mock(mock)
+
+        inner_mock._mock_parent = None
+        inner_mock._mock_new_parent = None
+        inner_mock._mock_name = ''
+        inner_mock._mock_new_name = None
 
         setattr(self, attribute, mock)
 
