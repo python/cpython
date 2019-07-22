@@ -949,6 +949,41 @@ This variant shows how you can e.g. apply configuration for particular loggers
 machinery in the main process (even though the logging events are generated in
 the worker processes) to direct the messages to the appropriate destinations.
 
+Using concurrent.futures.ProcessPoolExecutor
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you want to use :class:`concurrent.futures.ProcessPoolExecutor` to start
+your worker processes, you need to create the queue slightly differently.
+Instead of
+
+.. code-block:: python
+
+   queue = multiprocessing.Queue(-1)
+
+you should use
+
+.. code-block:: python
+
+   queue = multiprocessing.Manager().Queue(-1)  # also works with the examples above
+
+and you can then replace the worker creation from this::
+
+    workers = []
+    for i in range(10):
+        worker = multiprocessing.Process(target=worker_process,
+                                         args=(queue, worker_configurer))
+        workers.append(worker)
+        worker.start()
+    for w in workers:
+        w.join()
+
+to this (remembering to first import :mod:`concurrent.futures`)::
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
+        for i in range(10):
+            executor.submit(worker_process, queue, worker_configurer)
+
+
 Using file rotation
 -------------------
 
