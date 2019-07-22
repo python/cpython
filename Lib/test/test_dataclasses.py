@@ -3043,11 +3043,11 @@ class TestMakeDataclass(unittest.TestCase):
     def test_non_identifier_field_names(self):
         for field in ['()', 'x,y', '*', '2@3', '', 'little johnny tables']:
             with self.subTest(field=field):
-                with self.assertRaisesRegex(TypeError, 'must be valid identifers'):
+                with self.assertRaisesRegex(TypeError, 'must be valid identifiers'):
                     make_dataclass('C', ['a', field])
-                with self.assertRaisesRegex(TypeError, 'must be valid identifers'):
+                with self.assertRaisesRegex(TypeError, 'must be valid identifiers'):
                     make_dataclass('C', [field])
-                with self.assertRaisesRegex(TypeError, 'must be valid identifers'):
+                with self.assertRaisesRegex(TypeError, 'must be valid identifiers'):
                     make_dataclass('C', [field, 'a'])
 
     def test_underscore_field_names(self):
