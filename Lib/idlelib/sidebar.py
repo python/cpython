@@ -14,6 +14,32 @@ def get_end_linenumber(text):
     return int(float(text.index('end-1c')))
 
 
+def get_widget_padding(widget):
+    """Get the total padding of a Tk widget, including its border."""
+    # TODO: use also in codecontext.py
+    manager = widget.winfo_manager()
+    if manager == 'pack':
+        info = widget.pack_info()
+    elif manager == 'grid':
+        info = widget.grid_info()
+    else:
+        raise ValueError(f"Unsupported geometry manager: {manager}")
+
+    # All values are passed through getint(), since some
+    # values may be pixel objects, which can't simply be added to ints.
+    padx = sum(map(widget.tk.getint, [
+        info['padx'],
+        widget.cget('padx'),
+        widget.cget('border'),
+    ]))
+    pady = sum(map(widget.tk.getint, [
+        info['pady'],
+        widget.cget('pady'),
+        widget.cget('border'),
+    ]))
+    return padx, pady
+
+
 class BaseSideBar:
     """
     The base class for extensions which require a sidebar.
@@ -23,7 +49,9 @@ class BaseSideBar:
         self.parent = editwin.text_frame
         self.text = editwin.text
 
-        self.sidebar_text = tk.Text(self.parent, width=1, wrap=tk.NONE, pady=2,
+        _padx, pady = get_widget_padding(self.text)
+        self.sidebar_text = tk.Text(self.parent, width=1, wrap=tk.NONE,
+                                    padx=0, pady=pady,
                                     borderwidth=0, highlightthickness=0)
         self.sidebar_text.config(state=tk.DISABLED)
         self.text['yscrollcommand'] = self.redirect_yscroll_event
