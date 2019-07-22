@@ -481,26 +481,6 @@ class ZipInfo (object):
         dt = self.date_time
         return dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
 
-    def encode_local_header(self, *, filename, extract_version, reserved,
-                            flag_bits, compress_type, dostime, dosdate, crc,
-                            compress_size, file_size, extra):
-        header = struct.pack(
-            structFileHeader,
-            stringFileHeader,
-            extract_version,
-            reserved,
-            flag_bits,
-            compress_type,
-            dostime,
-            dosdate,
-            crc,
-            compress_size,
-            file_size,
-            len(filename),
-            len(extra)
-        )
-        return header + filename + extra
-
     def zip64_local_header(self, zip64, file_size, compress_size):
         """If zip64 is required, return encoded extra block and other
         parameters which may alter the local file header.
@@ -576,8 +556,7 @@ class ZipInfo (object):
             extra = b''
         return extra, file_size, compress_size, header_offset, min_version
 
-    def FileHeader(self, zip64=None):
-        """Return the per-file header as a bytes object."""
+    def get_local_header_params(self, zip64=False):
         if self.use_datadescriptor:
             # Set these to zero because we write them after the file data
             CRC = compress_size = file_size = 0
@@ -604,26 +583,102 @@ class ZipInfo (object):
         self.extract_version = max(min_version, self.extract_version)
         self.create_version = max(min_version, self.create_version)
         filename, flag_bits = self._encodeFilenameFlags()
-        return self.encode_local_header(
-            filename=filename,
-            extract_version=self.extract_version,
-            reserved=self.reserved,
-            flag_bits=flag_bits,
-            compress_type=self.compress_type,
-            dostime=self.dostime,
-            dosdate=self.dosdate,
-            crc=CRC,
-            compress_size=compress_size,
-            file_size=file_size,
-            extra=extra
-        )
+        return {
+            "filename": filename,
+            "extract_version": self.extract_version,
+            "reserved": self.reserved,
+            "flag_bits": flag_bits,
+            "compress_type": self.compress_type,
+            "dostime": self.dostime,
+            "dosdate": self.dosdate,
+            "crc": CRC,
+            "compress_size": compress_size,
+            "file_size": file_size,
+            "extra": extra,
+        }
 
-    def encode_central_directory(self, filename, create_version, create_system,
-                                 extract_version, reserved, flag_bits,
-                                 compress_type, dostime, dosdate, crc,
-                                 compress_size, file_size, disk_start,
-                                 internal_attr, external_attr, header_offset,
-                                 extra_data, comment):
+    def _encode_local_header(self, *, filename, extract_version, reserved,
+                             flag_bits, compress_type, dostime, dosdate, crc,
+                             compress_size, file_size, extra):
+        header = struct.pack(
+            structFileHeader,
+            stringFileHeader,
+            extract_version,
+            reserved,
+            flag_bits,
+            compress_type,
+            dostime,
+            dosdate,
+            crc,
+            compress_size,
+            file_size,
+            len(filename),
+            len(extra)
+        )
+        return header + filename + extra
+
+    def FileHeader(self, zip64=None):
+        """Return the per-file header as a bytes object."""
+
+        params = self.get_local_header_params(zip64=zip64)
+        return self._encode_local_header(**params)
+
+    def get_central_directory_kwargs(self):
+        min_version = 0
+        # Strip the zip 64 extra block if present
+        extra_data = _strip_extra(self.extra, (EXTRA_ZIP64,))
+
+        (zip64_extra_data,
+         file_size,
+         compress_size,
+         header_offset,
+         zip64_min_version,
+         ) = self.zip64_central_header()
+
+        min_version = max(zip64_min_version, min_version)
+
+        # There are reports that windows 7 can only read zip 64 archives if the
+        # zip 64 extra block is the first extra block present. So we make sure
+        # the zip 64 block is first.
+        extra_data = zip64_extra_data + extra_data
+
+        if self.compress_type == ZIP_BZIP2:
+            min_version = max(BZIP2_VERSION, min_version)
+        elif self.compress_type == ZIP_LZMA:
+            min_version = max(LZMA_VERSION, min_version)
+
+        extract_version = max(min_version, self.extract_version)
+        create_version = max(min_version, self.create_version)
+        filename, flag_bits = self._encodeFilenameFlags()
+        return {
+            "filename": filename,
+            "create_version": create_version,
+            "create_system": self.create_system,
+            "extract_version": extract_version,
+            "reserved": self.reserved,
+            "flag_bits": flag_bits,
+            "compress_type": self.compress_type,
+            "dostime": self.dostime,
+            "dosdate": self.dosdate,
+            "crc": self.CRC,
+            "compress_size": compress_size,
+            "file_size": file_size,
+            # Writing multi disk archives is not supported so disk_start
+            # is always 0
+            "disk_start": 0,
+            "internal_attr": self.internal_attr,
+            "external_attr": self.external_attr,
+            "header_offset": header_offset,
+            "extra_data": extra_data,
+            "comment": self.comment,
+        }
+
+    def _encode_central_directory(self, filename, create_version,
+                                  create_system, extract_version, reserved,
+                                  flag_bits, compress_type, dostime, dosdate,
+                                  crc, compress_size, file_size, disk_start,
+                                  internal_attr, external_attr, header_offset,
+                                  extra_data, comment):
         try:
             centdir = struct.pack(
                 structCentralDir,
@@ -660,57 +715,11 @@ class ZipInfo (object):
                    disk_start, internal_attr, external_attr,
                    header_offset), file=sys.stderr)
             raise
-        return centdir + filename + extra_data
+        return centdir + filename + extra_data + comment
 
     def central_directory(self):
-        min_version = 0
-        # Strip the zip 64 extra block if present
-        extra_data = _strip_extra(self.extra, (EXTRA_ZIP64,))
-
-        (zip64_extra_data,
-         file_size,
-         compress_size,
-         header_offset,
-         zip64_min_version,
-         ) = self.zip64_central_header()
-
-        min_version = max(zip64_min_version, min_version)
-
-        # There are reports that windows 7 can only read zip 64 archives if the
-        # zip 64 extra block is the first extra block present. So we make sure
-        # the zip 64 block is first.
-        extra_data = zip64_extra_data + extra_data
-
-        if self.compress_type == ZIP_BZIP2:
-            min_version = max(BZIP2_VERSION, min_version)
-        elif self.compress_type == ZIP_LZMA:
-            min_version = max(LZMA_VERSION, min_version)
-
-        extract_version = max(min_version, self.extract_version)
-        create_version = max(min_version, self.create_version)
-        filename, flag_bits = self._encodeFilenameFlags()
-        # Writing multi disk archives is not supported so disks is always 0
-        disk_start = 0
-        return self.encode_central_directory(
-            filename=filename,
-            create_version=create_version,
-            create_system=self.create_system,
-            extract_version=extract_version,
-            reserved=self.reserved,
-            flag_bits=flag_bits,
-            compress_type=self.compress_type,
-            dostime=self.dostime,
-            dosdate=self.dosdate,
-            crc=self.CRC,
-            compress_size=compress_size,
-            file_size=file_size,
-            disk_start=disk_start,
-            internal_attr=self.internal_attr,
-            external_attr=self.external_attr,
-            header_offset=header_offset,
-            extra_data=extra_data,
-            comment=self.comment,
-        )
+        params = self.get_central_directory_kwargs()
+        return self._encode_central_directory(**params)
 
     def _encodeFilenameFlags(self):
         try:
@@ -2240,17 +2249,167 @@ class ZipFile:
             self.fp = None
             self._fpclose(fp)
 
-    def _write_end_record(self):
-        for zinfo in self.filelist:         # write central directory
-            centdir = zinfo.central_directory()
-            self.fp.write(centdir)
-            self.fp.write(zinfo.comment)
+    def get_zip64_endrec_params(self, centDirCount, centDirSize, centDirOffset):
+        return {
+            "create_version": ZIP64_VERSION,
+            # version needed to extract this zip64endrec
+            "extract_version": ZIP64_VERSION,
+            # number of this disk
+            "diskno": 0,
+            # number of the disk with the start of the central
+            # directory
+            "cent_dir_start_diskno": 0,
+            # total number of entries in the central directory on
+            # this disk
+            "disk_cent_dir_count": centDirCount,
+            # total number of entries in the central directory
+            "total_cent_dir_count": centDirCount,
+            # size of the central directory
+            "cent_dir_size": centDirSize,
+            # offset of start of central directory with respect to
+            # the starting disk number
+            "cent_dir_offset": centDirOffset,
+            # zip64 extensible data sector (variable size)
+            "variable_data": b"",
+        }
 
-        pos2 = self.fp.tell()
+    def _encode_zip64_endrec(
+        self,
+        create_version,
+        extract_version,
+        diskno,
+        cent_dir_start_diskno,
+        disk_cent_dir_count,
+        total_cent_dir_count,
+        cent_dir_size,
+        cent_dir_offset,
+        variable_data=b"",
+    ):
+        # size of zip64 end of central directory record
+        # size = SizeOfFixedFields + SizeOfVariableData - 12
+        zip64_endrec_size = 44 + len(variable_data)
+        zip64endrec = struct.pack(
+            structEndArchive64,
+            stringEndArchive64,
+            zip64_endrec_size,
+            # version zip64endrec was made by
+            create_version,
+            # version needed to extract this zip64endrec
+            extract_version,
+            # number of this disk
+            diskno,
+            # number of the disk with the start of the central directory
+            cent_dir_start_diskno,
+            # total number of entries in the central directory on this
+            # disk
+            disk_cent_dir_count,
+            # total number of entries in the central directory
+            total_cent_dir_count,
+            # size of the central directory
+            cent_dir_size,
+            # offset of start of central directory with respect to the
+            # starting disk number
+            cent_dir_offset,
+            # zip64 extensible data sector (variable size)
+        )
+        return zip64endrec + variable_data
+
+    def zip64_endrec(self, centDirCount, centDirSize, centDirOffset):
+        params = self.get_zip64_endrec_params(
+            centDirCount,
+            centDirSize,
+            centDirOffset,
+        )
+        return self._encode_zip64_endrec(**params)
+
+    def get_zip64_endrec_locator_params(self, zip64_endrec_offset):
+        return {
+            "zip64_endrec_offset": zip64_endrec_offset,
+            "zip64_cent_dir_start_diskno": 0,
+            "total_disk_count": 1,
+        }
+
+    def _encode_zip64_endrec_locator(
+        self, zip64_endrec_offset, zip64_cent_dir_start_diskno, total_disk_count
+    ):
+        return struct.pack(
+            structEndArchive64Locator,
+            stringEndArchive64Locator,
+            # number of the disk with the start of the zip64 end of central
+            # directory
+            zip64_cent_dir_start_diskno,
+            # relative offset of the zip64 end of central directory record
+            zip64_endrec_offset,
+            # total number of disks
+            total_disk_count,
+        )
+
+    def zip64_endrec_locator(self, zip64_endrec_offset):
+        params = self.get_zip64_endrec_locator_params(zip64_endrec_offset)
+        return self._encode_zip64_endrec_locator(**params)
+
+    def get_endrec_params(self, centDirCount, centDirSize, centDirOffset):
+        return {
+            "diskno": 0,
+            "cent_dir_start_diskno": 0,
+            "disk_cent_dir_count": centDirCount,
+            # total number of entries in the central directory
+            "total_cent_dir_count": centDirCount,
+            # size of the central directory
+            "cent_dir_size": centDirSize,
+            # offset of start of central directory with respect to the
+            # starting disk number
+            "cent_dir_offset": centDirOffset,
+            "comment": self._comment,
+        }
+
+    def _encode_endrec(
+        self,
+        diskno,
+        cent_dir_start_diskno,
+        disk_cent_dir_count,
+        total_cent_dir_count,
+        cent_dir_size,
+        cent_dir_offset,
+        comment,
+    ):
+
+        endrec = struct.pack(
+            structEndArchive,
+            stringEndArchive,
+            # number of this disk
+            diskno,
+            # number of the disk with the start of the central directory
+            cent_dir_start_diskno,
+            # total number of entries in the central directory on this
+            # disk
+            disk_cent_dir_count,
+            # total number of entries in the central directory
+            total_cent_dir_count,
+            # size of the central directory
+            cent_dir_size,
+            # offset of start of central directory with respect to the
+            # starting disk number
+            cent_dir_offset,
+            # .ZIP file comment length
+            len(comment)
+        )
+        return endrec + comment
+
+    def endrec(self, centDirCount, centDirSize, centDirOffset):
+        params = self.get_endrec_params(centDirCount, centDirSize, centDirOffset)
+        return self._encode_endrec(**params)
+
+    def _write_end_record(self):
+        for zinfo in self.filelist:
+            self.fp.write(zinfo.central_directory())
+
+        pos = self.fp.tell()
         # Write end-of-zip-archive record
         centDirCount = len(self.filelist)
-        centDirSize = pos2 - self.start_dir
+        centDirSize = pos - self.start_dir
         centDirOffset = self.start_dir
+
         requires_zip64 = None
         if centDirCount > ZIP_FILECOUNT_LIMIT:
             requires_zip64 = "Files count"
@@ -2264,74 +2423,16 @@ class ZipFile:
                 raise LargeZipFile(requires_zip64 +
                                    " would require ZIP64 extensions")
 
-            zip64endrec = struct.pack(
-                structEndArchive64,
-                stringEndArchive64,
-                # size of zip64 end of central directory record
-                # size = SizeOfFixedFields + SizeOfVariableData - 12
-                44,
-                # version zip64endrec was made by
-                ZIP64_VERSION,
-                # version needed to extract this zip64endrec
-                ZIP64_VERSION,
-                # number of this disk
-                0,
-                # number of the disk with the start of the central
-                # directory
-                0,
-                # total number of entries in the central directory on
-                # this disk
-                centDirCount,
-                # total number of entries in the central directory
-                centDirCount,
-                # size of the central directory
-                centDirSize,
-                # offset of start of central directory with respect to
-                # the starting disk number
-                centDirOffset,
-                # zip64 extensible data sector (variable size)
+            self.fp.write(
+                self.zip64_endrec(centDirCount, centDirSize, centDirOffset)
             )
-            self.fp.write(zip64endrec)
+            self.fp.write(self.zip64_endrec_locator(pos))
 
-            zip64locrec = struct.pack(
-                structEndArchive64Locator,
-                stringEndArchive64Locator,
-                # number of the disk with the start of the zip64 end of
-                # central directory
-                0,
-                # relative offset of the zip64 end of central directory
-                # record
-                pos2,
-                # total number of disks
-                1
-            )
-            self.fp.write(zip64locrec)
             centDirCount = min(centDirCount, 0xFFFF)
             centDirSize = min(centDirSize, 0xFFFFFFFF)
             centDirOffset = min(centDirOffset, 0xFFFFFFFF)
 
-        endrec = struct.pack(
-            structEndArchive,
-            stringEndArchive,
-            # number of this disk
-            0,
-            # number of the disk with the start of the central directory
-            0,
-            # total number of entries in the central directory on this
-            # disk
-            centDirCount,
-            # total number of entries in the central directory
-            centDirCount,
-            # size of the central directory
-            centDirSize,
-            # offset of start of central directory with respect to the
-            # starting disk number
-            centDirOffset,
-            # .ZIP file comment length
-            len(self._comment)
-        )
-        self.fp.write(endrec)
-        self.fp.write(self._comment)
+        self.fp.write(self.endrec(centDirCount, centDirSize, centDirOffset))
         self.fp.flush()
 
     def _fpclose(self, fp):
