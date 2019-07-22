@@ -686,6 +686,7 @@ target_vendor
 target_cpu
 target
 LLVM_AR
+PROFILE_TASK
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
 ABIFLAGS
@@ -856,6 +857,7 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CPP
+PROFILE_TASK
 PKG_CONFIG
 PKG_CONFIG_PATH
 PKG_CONFIG_LIBDIR'
@@ -1559,6 +1561,8 @@ Some influential environment variables:
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CPP         C preprocessor
+  PROFILE_TASK
+              Python args for PGO generation task
   PKG_CONFIG  path to pkg-config utility
   PKG_CONFIG_PATH
               directories to add to pkg-config's search path
@@ -6425,6 +6429,16 @@ else
   REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
 fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking PROFILE_TASK" >&5
+$as_echo_n "checking PROFILE_TASK... " >&6; }
+if test -z "$PROFILE_TASK"
+then
+	PROFILE_TASK='-m test --pgo'
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PROFILE_TASK" >&5
+$as_echo "$PROFILE_TASK" >&6; }
 
 # Make llvm-relatec checks work on systems where llvm tools are not installed with their
 # normal names in the default $PATH (ie: Ubuntu).  They exist under the
