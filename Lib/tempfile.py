@@ -48,6 +48,9 @@ import weakref as _weakref
 import _thread
 _allocate_lock = _thread.allocate_lock
 
+if _sys.platform == 'linux':
+    import fcntl as _fcntl
+
 _text_openflags = _os.O_RDWR | _os.O_CREAT | _os.O_EXCL
 if hasattr(_os, 'O_NOFOLLOW'):
     _text_openflags |= _os.O_NOFOLLOW
@@ -776,12 +779,25 @@ class TemporaryDirectory(object):
 
     def __init__(self, suffix=None, prefix=None, dir=None):
         self.name = mkdtemp(suffix, prefix, dir)
+
+        if _sys.platform == 'linux':
+            # LOCK_SH will prevent systemd-tmpfiles from cleaning up this directory:
+            # https://systemd.io/TEMPORARY_DIRECTORIES.html#automatic-clean-up
+            # Once the fd is closed, the lock is automatically dropped.
+            self._fd = _os.open(self.name, _os.O_DIRECTORY)
+            _fcntl.flock(self._fd, _fcntl.LOCK_SH)
+        else:
+            self._fd = None
+
         self._finalizer = _weakref.finalize(
-            self, self._cleanup, self.name,
+            self, self._cleanup, self.name, self._fd,
             warn_message="Implicitly cleaning up {!r}".format(self))
 
     @classmethod
-    def _rmtree(cls, name):
+    def _rmtree(cls, name, fd):
+        if fd is not None:
+            _os.close(fd)
+
         def onerror(func, path, exc_info):
             if issubclass(exc_info[0], PermissionError):
                 def resetperms(path):
@@ -800,7 +816,7 @@ class TemporaryDirectory(object):
                         _os.unlink(path)
                     # PermissionError is raised on FreeBSD for directories
                     except (IsADirectoryError, PermissionError):
-                        cls._rmtree(path)
+                        cls._rmtree(path, None)
                 except FileNotFoundError:
                     pass
             elif issubclass(exc_info[0], FileNotFoundError):
@@ -811,8 +827,8 @@ class TemporaryDirectory(object):
         _shutil.rmtree(name, onerror=onerror)
 
     @classmethod
-    def _cleanup(cls, name, warn_message):
-        cls._rmtree(name)
+    def _cleanup(cls, name, fd, warn_message):
+        cls._rmtree(name, fd)
         _warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):
@@ -826,4 +842,4 @@ class TemporaryDirectory(object):
 
     def cleanup(self):
         if self._finalizer.detach():
-            self._rmtree(self.name)
+            self._rmtree(self.name, self._fd)
