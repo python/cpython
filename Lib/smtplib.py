@@ -236,7 +236,7 @@ class SMTP:
     does_esmtp = 0
     default_port = SMTP_PORT
 
-    def __init__(self, host='', port=0, local_hostname=None,
+    def __init__(self, host='', port=SMTP_PORT, local_hostname=None,
                  timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         """Initialize a new instance.
 
