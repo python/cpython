@@ -55,16 +55,31 @@ class BaseSideBar:
                                     borderwidth=0, highlightthickness=0)
         self.sidebar_text.config(state=tk.DISABLED)
         self.text['yscrollcommand'] = self.redirect_yscroll_event
-        self.update_sidebar_text_font()
+        self.update_font()
+        self.update_colors()
 
         self.is_shown = False
 
-    def update_sidebar_text_font(self, event=''):
-        """
-        Implement in subclass to update font config values of sidebar_text
-        when font config values of editwin.text changes
-        """
-        pass
+    def update_font(self):
+        """Update the sidebar text font, usually after config changes."""
+        font = idleConf.GetFont(self.text, 'main', 'EditorWindow')
+        self._update_font(font)
+
+    def _update_font(self, font):
+        self.sidebar_text['font'] = font
+
+    def update_colors(self):
+        """Update the sidebar text colors, usually after config changes."""
+        colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'normal')
+        self._update_colors(foreground=colors['foreground'],
+                            background=colors['background'])
+
+    def _update_colors(self, foreground, background):
+        self.sidebar_text.config(
+            fg=foreground, bg=background,
+            selectforeground=foreground, selectbackground=background,
+            inactiveselectbackground=background,
+        )
 
     def show_sidebar(self):
         if not self.is_shown:
@@ -244,17 +259,11 @@ class LineNumbers(BaseSideBar):
                 drag_update_selection_and_insert_mark(last_y)
         self.sidebar_text.bind('<<Selection>>', selection_handler)
 
-    def update_sidebar_text_font(self, event=''):
-        """Update the font when the editor window's font changes."""
+    def update_colors(self):
+        """Update the sidebar text colors, usually after config changes."""
         colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'linenumber')
-        bg = colors['background']
-        fg = colors['foreground']
-        self.sidebar_text.config(
-            font=self.text['font'],
-            fg=fg, bg=bg,
-            selectforeground=fg, selectbackground=bg,
-            inactiveselectbackground=bg,
-        )
+        self._update_colors(foreground=colors['foreground'],
+                            background=colors['background'])
 
     def update_sidebar_text(self, end):
         """

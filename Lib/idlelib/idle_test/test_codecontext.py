@@ -77,6 +77,7 @@ class CodeContextTest(unittest.TestCase):
 
     def setUp(self):
         self.text.yview(0)
+        self.text['font'] = 'TkFixedFont'
         self.cc = codecontext.CodeContext(self.editor)
 
         self.highlight_cfg = {"background": '#abcdef',
@@ -86,10 +87,18 @@ class CodeContextTest(unittest.TestCase):
             if element == 'context':
                 return self.highlight_cfg
             return orig_idleConf_GetHighlight(theme, element)
-        patcher = unittest.mock.patch.object(
+        GetHighlight_patcher = unittest.mock.patch.object(
             codecontext.idleConf, 'GetHighlight', mock_idleconf_GetHighlight)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        GetHighlight_patcher.start()
+        self.addCleanup(GetHighlight_patcher.stop)
+
+        self.font_override = 'TkFixedFont'
+        def mock_idleconf_GetFont(root, configType, section):
+            return self.font_override
+        GetFont_patcher = unittest.mock.patch.object(
+            codecontext.idleConf, 'GetFont', mock_idleconf_GetFont)
+        GetFont_patcher.start()
+        self.addCleanup(GetFont_patcher.stop)
 
     def tearDown(self):
         if self.cc.context:
@@ -341,31 +350,28 @@ class CodeContextTest(unittest.TestCase):
         cc = self.cc
         save_font = cc.text['font']
         test_font = 'TkTextFont'
+        self.assertNotEqual(save_font, test_font)
 
         # Ensure code context is not active.
         if cc.context is not None:
             cc.toggle_code_context_event()
 
+        self.font_override = test_font
         # Nothing breaks or changes with inactive code context.
-        cc.update_font(test_font)
+        cc.update_font()
 
-        # Activate code context, but no change to font.
+        # Activate code context, font change is immediately effective.
         cc.toggle_code_context_event()
-        eq(cc.context['font'], save_font)
-        # Call font update with the existing font.
-        cc.update_font(save_font)
-        eq(cc.context['font'], save_font)
-        cc.toggle_code_context_event()
-
-        # Change text widget font and activate code context.
-        cc.text['font'] = test_font
-        cc.toggle_code_context_event(test_font)
         eq(cc.context['font'], test_font)
-
-        # Just call the font update.
-        cc.update_font(save_font)
+        cc.toggle_code_context_event()
+        self.font_override = save_font
+        cc.toggle_code_context_event()
         eq(cc.context['font'], save_font)
-        cc.text['font'] = save_font
+
+        # Call the font update, change is picked up.
+        self.font_override = test_font
+        cc.update_font()
+        eq(cc.context['font'], test_font)
 
     def test_highlight_colors(self):
         eq = self.assertEqual

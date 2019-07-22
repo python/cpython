@@ -113,11 +113,12 @@ class CodeContext:
                 padx += widget.tk.getint(widget.cget('padx'))
                 border += widget.tk.getint(widget.cget('border'))
             self.context = tkinter.Text(
-                self.editwin.text_frame, font=self.text['font'],
+                self.editwin.text_frame,
                 height=1,
                 width=1,  # Don't request more than we get.
                 highlightthickness=0,
                 padx=padx, border=border, relief=SUNKEN, state='disabled')
+            self.update_font()
             self.update_highlight_colors()
             self.context.bind('<ButtonRelease-1>', self.jumptoline)
             # Get the current context and initiate the recurring update event.
@@ -233,8 +234,9 @@ class CodeContext:
             self.update_code_context()
             self.t1 = self.text.after(self.UPDATEINTERVAL, self.timer_event)
 
-    def update_font(self, font):
+    def update_font(self):
         if self.context is not None:
+            font = idleConf.GetFont(self.text, 'main', 'EditorWindow')
             self.context['font'] = font
 
     def update_highlight_colors(self):

@@ -798,7 +798,7 @@ class EditorWindow(object):
             self.code_context.update_highlight_colors()
 
         if self.line_numbers is not None:
-            self.line_numbers.update_sidebar_text_font()
+            self.line_numbers.update_colors()
 
     IDENTCHARS = string.ascii_letters + string.digits + "_"
 
@@ -817,15 +817,16 @@ class EditorWindow(object):
         "Update the text widgets' font if it is changed"
         # Called from configdialog.py
 
-        new_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         # Update the code context widget first, since its height affects
         # the height of the text widget.  This avoids double re-rendering.
         if self.code_context is not None:
-            self.code_context.update_font(new_font)
+            self.code_context.update_font()
         # Next, update the line numbers widget, since its width affects
         # the width of the text widget.
         if self.line_numbers is not None:
-            self.line_numbers.update_sidebar_text_font()
+            self.line_numbers.update_font()
+        # Finally, update the main text widget.
+        new_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         self.text['font'] = new_font
 
     def RemoveKeybindings(self):
