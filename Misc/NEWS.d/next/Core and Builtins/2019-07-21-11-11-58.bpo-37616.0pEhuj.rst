@@ -1,1 +1,2 @@
-Update `getpath` detect zip path in :mod:`sys.path`
+Update ``Module/getpath.c`` read python zip path if python
+version size more than 2 digit.

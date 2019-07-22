@@ -1312,10 +1312,11 @@ calculate_zip_path(PyCalculatePath *calculate)
     calculate->zip_path[bufsz - 7] = VERSION[0];
     calculate->zip_path[bufsz - 6] = VERSION[2];
     if (sizeof(VERSION) == 5) {
-      calculate->zip_path[bufsz - 5] = VERSION[3];
+        calculate->zip_path[bufsz - 5] = VERSION[3];
     }
     else {
-      memmove(&calculate->zip_path[bufsz - 5], &calculate->zip_path[bufsz - 4], bufsz);
+        memmove(&calculate->zip_path[bufsz - 5],
+            &calculate->zip_path[bufsz - 4], bufsz);
     }
 
     return _PyStatus_OK();
