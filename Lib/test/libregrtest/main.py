@@ -17,6 +17,7 @@ from test.libregrtest.runtest import (
     INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
     PROGRESS_MIN_TIME, format_test_result, is_failed)
 from test.libregrtest.setup import setup_tests
+from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
 
@@ -213,6 +214,9 @@ class Regrtest:
                         self.tests.append(match.group())
 
         removepy(self.tests)
+
+        # add default PGO tests if no tests are specified
+        setup_pgo_tests(self.ns)
 
         stdtests = STDTESTS[:]
         nottests = NOTTESTS.copy()
