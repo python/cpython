@@ -895,7 +895,6 @@ class CRCZipDecrypter(BaseDecrypter):
         global _crctable
         if _crctable is None:
             _crctable = list(map(_gen_crc, range(256)))
-        self.crctable = _crctable
 
         for p in self.pwd:
             self.update_keys(p)
@@ -922,23 +921,40 @@ class CRCZipDecrypter(BaseDecrypter):
 
     def crc32(self, ch, crc):
         """Compute the CRC32 primitive on one byte."""
-        return (crc >> 8) ^ self.crctable[(crc ^ ch) & 0xFF]
+        return (crc >> 8) ^ _crctable[(crc ^ ch) & 0xFF]
+
+    def _update_keys(self, c, key0, key1, key2):
+        key0 = self.crc32(c, key0)
+        key1 = (key1 + (key0 & 0xFF)) & 0xFFFFFFFF
+        key1 = (key1 * 134775813 + 1) & 0xFFFFFFFF
+        key2 = self.crc32(key1 >> 24, key2)
+        return key0, key1, key2
 
     def update_keys(self, c):
-        self.key0 = self.crc32(c, self.key0)
-        self.key1 = (self.key1 + (self.key0 & 0xFF)) & 0xFFFFFFFF
-        self.key1 = (self.key1 * 134775813 + 1) & 0xFFFFFFFF
-        self.key2 = self.crc32(self.key1 >> 24, self.key2)
+        self.key0, self.key1, self.key2 = self._update_keys(
+            c,
+            self.key0,
+            self.key1,
+            self.key2,
+        )
 
     def decrypt(self, data):
         """Decrypt a bytes object."""
         result = bytearray()
+        key0 = self.key0
+        key1 = self.key1
+        key2 = self.key2
         append = result.append
         for c in data:
-            k = self.key2 | 2
+            k = key2 | 2
             c ^= ((k * (k^1)) >> 8) & 0xFF
-            self.update_keys(c)
+            key0, key1, key2 = self._update_keys(c, key0, key1, key2)
             append(c)
+
+        self.key0 = key0
+        self.key1 = key1
+        self.key2 = key2
+
         return bytes(result)
 
 
