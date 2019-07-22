@@ -322,16 +322,6 @@ class CallTest(unittest.TestCase):
         kall = call(1).method(2)(3).foo.bar.baz(4)(5).__int__()
         self.assertEqual(kall.call_list(), mock.mock_calls)
 
-    def test_call_list_with_any_comparison_order(self):
-        class Foo:
-            def __eq__(self, other): pass
-            def __ne__(self, other): pass
-
-        mock = MagicMock()
-        mock(Foo())
-
-        self.assertEqual(call(ANY).call_list(), mock.mock_calls)
-        self.assertEqual(mock.mock_calls, call(ANY).call_list())
 
     def test_call_any(self):
         self.assertEqual(call, ANY)
@@ -341,16 +331,6 @@ class CallTest(unittest.TestCase):
         self.assertEqual(m.mock_calls, [ANY])
         self.assertEqual([ANY], m.mock_calls)
 
-    def test_call_any_comparison_order(self):
-        class Foo:
-            def __eq__(self, other): pass
-            def __ne__(self, other): pass
-
-        m = MagicMock()
-        m(Foo())
-
-        self.assertEqual(m.mock_calls[0], call(ANY))
-        self.assertEqual(call(ANY), m.mock_calls[0])
 
     def test_two_args_call(self):
         args = _Call(((1, 2), {'a': 3}), two=True)
