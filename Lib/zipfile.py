@@ -565,14 +565,16 @@ class ZipInfo (object):
             compress_size = self.compress_size
             file_size = self.file_size
 
+        extra = _strip_extra(self.extra, (EXTRA_ZIP64,))
         # There are reports that windows 7 can only read zip 64 archives if the
         # zip 64 extra block is the first extra block present.
         min_version = 0
-        (extra,
+        (zip64_extra,
          file_size,
          compress_size,
          zip64_min_version,
          ) = self.zip64_local_header(zip64, file_size, compress_size)
+        extra = zip64_extra + extra
         min_version = min(min_version, zip64_min_version)
 
         if self.compress_type == ZIP_BZIP2:
