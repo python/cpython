@@ -60,8 +60,8 @@ class LineNumbersTest(unittest.TestCase):
 
     def get_line_screen_position(self, line):
         bbox = self.linenumber.sidebar_text.bbox(f'{line}.end -1c')
-        x = bbox[0] + bbox[2] // 2
-        y = bbox[1] + bbox[3] // 2
+        x = bbox[0] + 2
+        y = bbox[1] + 2
         return x, y
 
     def assert_state_disabled(self):
