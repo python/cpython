@@ -74,13 +74,11 @@ class OutputWindow(EditorWindow):
         ("Go to file/line", "<<goto-file-line>>", None),
     ]
 
-    allow_codecontext = False
+    allow_code_context = False
 
     def __init__(self, *args):
         EditorWindow.__init__(self, *args)
         self.text.bind("<<goto-file-line>>", self.goto_file_line)
-        self.text.unbind("<<toggle-code-context>>")
-        self.update_menu_state('options', '*Code Context', 'disabled')
 
     # Customize EditorWindow
     def ispythonsource(self, filename):
