@@ -303,7 +303,8 @@ def _linenumbers_drag_scrolling(parent):  # htest #
     text_frame.rowconfigure(1, weight=1)
     text_frame.columnconfigure(1, weight=1)
 
-    text = tk.Text(text_frame, width=80, height=24, wrap=tk.NONE)
+    font = idleConf.GetFont(toplevel, 'main', 'EditorWindow')
+    text = tk.Text(text_frame, width=80, height=24, wrap=tk.NONE, font=font)
     text.grid(row=1, column=1, sticky=tk.NSEW)
 
     editwin = Dummy_editwin(text)
