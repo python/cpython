@@ -47,7 +47,7 @@ Creating virtual environments
    A virtual environment is a directory tree which contains Python executable
    files and other files which indicate that it is a virtual environment.
 
-   Common installation tools such as ``setuptools`` and ``pip`` work as
+   Common installation tools such as setuptools_ and pip_ work as
    expected with virtual environments. In other words, when a virtual
    environment is active, they install Python packages into the virtual
    environment without needing to be told to do so explicitly.
@@ -136,20 +136,20 @@ creation according to their needs, the :class:`EnvBuilder` class.
        Added the ``upgrade_deps`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
-    provided ``EnvBuilder`` class as a base class.
+    provided :cls:`EnvBuilder` class as a base class.
 
     The returned env-builder is an object which has a method, ``create``:
 
     .. method:: create(env_dir)
 
-        This method takes the path (absolute or relative to the current
-        directory) of the target directory which is to contain the virtual
-        environment.  The ``create`` method will either create the
+        Create a virtual environment by specifying the target directory
+        (absolute or relative to the current directory) which is to contain the
+        virtual environment.  The ``create`` method will either create the
         environment in the specified directory, or raise an appropriate
         exception.
 
-        The ``create`` method of the ``EnvBuilder`` class illustrates the hooks
-        available for subclass customization::
+        The ``create`` method of the :class:`EnvBuilder` class illustrates the
+        hooks available for subclass customization::
 
             def create(self, env_dir):
                 """
@@ -477,3 +477,7 @@ subclass which installs setuptools and pip into a created virtual environment::
 
 This script is also available for download `online
 <https://gist.github.com/vsajip/4673395>`_.
+
+
+.. _setuptools: https://pypi.org/project/setuptools/
+.. _pip: https://pypi.org/project/pip/
