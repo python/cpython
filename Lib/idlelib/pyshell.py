@@ -861,6 +861,8 @@ class PyShell(OutputWindow):
         ("Squeeze", "<<squeeze-current-text>>"),
     ]
 
+    allow_line_numbers = False
+
     # New classes
     from idlelib.history import History
 

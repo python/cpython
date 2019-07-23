@@ -36,7 +36,7 @@
 # Additional help sources are listed in the [HelpFiles] section below
 # and should be viewable by a web browser (or the Windows Help viewer in
 # the case of .chm files). These sources will be listed on the Help
-# menu.  The pattern, and two examples, are
+# menu.  The pattern, and two examples, are:
 #
 # <sequence_number = menu item;/path/to/help/source>
 # 1 = IDLE;C:/Programs/Python36/Lib/idlelib/help.html
@@ -46,7 +46,7 @@
 # platform specific because of path separators, drive specs etc.
 #
 # The default files should not be edited except to add new sections to
-# config-extensions.def for added extensions .  The user files should be
+# config-extensions.def for added extensions.  The user files should be
 # modified through the Settings dialog.
 
 [General]
@@ -65,6 +65,7 @@ font= TkFixedFont
 font-size= 10
 font-bold= 0
 encoding= none
+line-numbers-default= 0
 
 [PyShell]
 auto-squeeze-min-lines= 50

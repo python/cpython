@@ -515,6 +515,11 @@ for certain types of invalid or corrupt gzip files.
 idlelib and IDLE
 ----------------
 
+Add optional line numbers for IDLE editor windows. Windows
+open without line numbers unless set otherwise in the General
+tab of the configuration dialog.
+(Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
+
 Output over N lines (50 by default) is squeezed down to a button.
 N can be changed in the PyShell section of the General page of the
 Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by

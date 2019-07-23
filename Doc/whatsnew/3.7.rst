@@ -1017,6 +1017,13 @@ by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
 
 The changes above have been backported to 3.6 maintenance releases.
 
+New in 3.7.5:
+
+Add optional line numbers for IDLE editor windows. Windows
+open without line numbers unless set otherwise in the General
+tab of the configuration dialog.
+(Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
+
 
 importlib
 ---------
