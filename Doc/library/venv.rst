@@ -136,7 +136,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
        Added the ``upgrade_deps`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
-    provided :cls:`EnvBuilder` class as a base class.
+    provided :class:`EnvBuilder` class as a base class.
 
     The returned env-builder is an object which has a method, ``create``:
 
