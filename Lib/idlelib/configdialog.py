@@ -819,6 +819,7 @@ class HighPage(Frame):
             'Shell Error Text': ('error', '12'),
             'Shell Stdout Text': ('stdout', '13'),
             'Shell Stderr Text': ('stderr', '14'),
+            'Line Number': ('linenumber', '16'),
             }
         self.builtin_name = tracers.add(
                 StringVar(self), self.var_changed_builtin_name)
@@ -866,6 +867,11 @@ class HighPage(Frame):
             ('stderr', 'stderr'), ('\n\n', 'normal'))
         for texttag in text_and_tags:
             text.insert(END, texttag[0], texttag[1])
+        n_lines = len(text.get('1.0', END).splitlines())
+        for lineno in range(1, n_lines + 1):
+            text.insert(f'{lineno}.0',
+                        f'{lineno:{len(str(n_lines))}d} ',
+                        'linenumber')
         for element in self.theme_elements:
             def tem(event, elem=element):
                 # event.widget.winfo_top_level().highlight_target.set(elem)
@@ -1827,6 +1833,9 @@ class GenPage(Frame):
                 frame_format: Frame
                     format_width_title: Label
                     (*)format_width_int: Entry - format_width
+                frame_line_numbers_default: Frame
+                    line_numbers_default_title: Label
+                    (*)line_numbers_default_bool: Checkbutton - line_numbers_default
                 frame_context: Frame
                     context_title: Label
                     (*)context_int: Entry - context_lines
@@ -1866,6 +1875,9 @@ class GenPage(Frame):
                 IntVar(self), ('main', 'General', 'autosave'))
         self.format_width = tracers.add(
                 StringVar(self), ('extensions', 'FormatParagraph', 'max-width'))
+        self.line_numbers_default = tracers.add(
+                BooleanVar(self),
+                ('main', 'EditorWindow', 'line-numbers-default'))
         self.context_lines = tracers.add(
                 StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
 
@@ -1944,6 +1956,14 @@ class GenPage(Frame):
                 validatecommand=self.digits_only, validate='key',
         )
 
+        frame_line_numbers_default = Frame(frame_editor, borderwidth=0)
+        line_numbers_default_title = Label(
+            frame_line_numbers_default, text='Show line numbers in new windows')
+        self.line_numbers_default_bool = Checkbutton(
+                frame_line_numbers_default,
+                variable=self.line_numbers_default,
+                width=1)
+
         frame_context = Frame(frame_editor, borderwidth=0)
         context_title = Label(frame_context, text='Max Context Lines :')
         self.context_int = Entry(
@@ -2021,6 +2041,10 @@ class GenPage(Frame):
         frame_format.pack(side=TOP, padx=5, pady=0, fill=X)
         format_width_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.format_width_int.pack(side=TOP, padx=10, pady=5)
+        # frame_line_numbers_default.
+        frame_line_numbers_default.pack(side=TOP, padx=5, pady=0, fill=X)
+        line_numbers_default_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.line_numbers_default_bool.pack(side=LEFT, padx=5, pady=5)
         # frame_context.
         frame_context.pack(side=TOP, padx=5, pady=0, fill=X)
         context_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -2063,6 +2087,8 @@ class GenPage(Frame):
                 'main', 'General', 'autosave', default=0, type='bool'))
         self.format_width.set(idleConf.GetOption(
                 'extensions', 'FormatParagraph', 'max-width', type='int'))
+        self.line_numbers_default.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'line-numbers-default', type='bool'))
         self.context_lines.set(idleConf.GetOption(
                 'extensions', 'CodeContext', 'maxlines', type='int'))
 
