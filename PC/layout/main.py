@@ -287,7 +287,7 @@ def _compile_one_py(src, dest, name, optimize, checked=True):
         log_warning("Failed to compile {}", src)
         return None
 
-
+# name argument added to address bpo-37641
 def _py_temp_compile(src, name, ns, dest_dir=None, checked=True):
     if not ns.precompile or src not in PY_FILES or src.parent in DATA_DIRS:
         return None
