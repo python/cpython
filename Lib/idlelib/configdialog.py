@@ -9,6 +9,8 @@ Note that tab width in IDLE is currently fixed at eight due to Tk issues.
 Refer to comments in EditorWindow autoindent code for details.
 
 """
+import re
+
 from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
@@ -1764,8 +1766,17 @@ class GenPage(Frame):
 
     def __init__(self, master):
         super().__init__(master)
+
+        self.init_validators()
         self.create_page_general()
         self.load_general_cfg()
+
+    def init_validators(self):
+        digits_or_empty_re = re.compile(r'[0-9]*')
+        def is_digits_or_empty(s):
+            "Return 's is blank or contains only digits'"
+            return digits_or_empty_re.fullmatch(s) is not None
+        self.digits_only = (self.register(is_digits_or_empty), '%P',)
 
     def create_page_general(self):
         """Return frame of widgets for General tab.
@@ -1883,16 +1894,23 @@ class GenPage(Frame):
                 frame_win_size, text='Initial Window Size  (in characters)')
         win_width_title = Label(frame_win_size, text='Width')
         self.win_width_int = Entry(
-                frame_win_size, textvariable=self.win_width, width=3)
+                frame_win_size, textvariable=self.win_width, width=3,
+                validatecommand=self.digits_only, validate='key',
+        )
         win_height_title = Label(frame_win_size, text='Height')
         self.win_height_int = Entry(
-                frame_win_size, textvariable=self.win_height, width=3)
+                frame_win_size, textvariable=self.win_height, width=3,
+                validatecommand=self.digits_only, validate='key',
+        )
 
         frame_autocomplete = Frame(frame_window, borderwidth=0,)
         auto_wait_title = Label(frame_autocomplete,
                                text='Completions Popup Wait (milliseconds)')
         self.auto_wait_int = Entry(frame_autocomplete, width=6,
-                                   textvariable=self.autocomplete_wait)
+                                   textvariable=self.autocomplete_wait,
+                                   validatecommand=self.digits_only,
+                                   validate='key',
+                                   )
 
         frame_paren1 = Frame(frame_window, borderwidth=0)
         paren_style_title = Label(frame_paren1, text='Paren Match Style')
@@ -1922,20 +1940,26 @@ class GenPage(Frame):
         format_width_title = Label(frame_format,
                                    text='Format Paragraph Max Width')
         self.format_width_int = Entry(
-                frame_format, textvariable=self.format_width, width=4)
+                frame_format, textvariable=self.format_width, width=4,
+                validatecommand=self.digits_only, validate='key',
+        )
 
         frame_context = Frame(frame_editor, borderwidth=0)
         context_title = Label(frame_context, text='Max Context Lines :')
         self.context_int = Entry(
-                frame_context, textvariable=self.context_lines, width=3)
+                frame_context, textvariable=self.context_lines, width=3,
+                validatecommand=self.digits_only, validate='key',
+        )
 
         # Frame_shell.
         frame_auto_squeeze_min_lines = Frame(frame_shell, borderwidth=0)
         auto_squeeze_min_lines_title = Label(frame_auto_squeeze_min_lines,
                                              text='Auto-Squeeze Min. Lines:')
         self.auto_squeeze_min_lines_int = Entry(
-            frame_auto_squeeze_min_lines, width=4,
-            textvariable=self.auto_squeeze_min_lines)
+                frame_auto_squeeze_min_lines, width=4,
+                textvariable=self.auto_squeeze_min_lines,
+                validatecommand=self.digits_only, validate='key',
+        )
 
         # frame_help.
         frame_helplist = Frame(frame_help)
