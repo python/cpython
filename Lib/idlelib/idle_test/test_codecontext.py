@@ -348,9 +348,10 @@ class CodeContextTest(unittest.TestCase):
     def test_font(self):
         eq = self.assertEqual
         cc = self.cc
-        save_font = cc.text['font']
+
+        orig_font = cc.text['font']
         test_font = 'TkTextFont'
-        self.assertNotEqual(save_font, test_font)
+        self.assertNotEqual(orig_font, test_font)
 
         # Ensure code context is not active.
         if cc.context is not None:
@@ -360,54 +361,46 @@ class CodeContextTest(unittest.TestCase):
         # Nothing breaks or changes with inactive code context.
         cc.update_font()
 
-        # Activate code context, font change is immediately effective.
+        # Activate code context, previous font change is immediately effective.
         cc.toggle_code_context_event()
         eq(cc.context['font'], test_font)
-        cc.toggle_code_context_event()
-        self.font_override = save_font
-        cc.toggle_code_context_event()
-        eq(cc.context['font'], save_font)
 
         # Call the font update, change is picked up.
-        self.font_override = test_font
+        self.font_override = orig_font
         cc.update_font()
-        eq(cc.context['font'], test_font)
+        eq(cc.context['font'], orig_font)
 
     def test_highlight_colors(self):
         eq = self.assertEqual
         cc = self.cc
-        save_colors = dict(self.highlight_cfg)
+
+        orig_colors = dict(self.highlight_cfg)
         test_colors = {'background': '#222222', 'foreground': '#ffff00'}
+
+        def assert_colors_are_equal(colors):
+            eq(cc.context['background'], colors['background'])
+            eq(cc.context['foreground'], colors['foreground'])
 
         # Ensure code context is not active.
         if cc.context:
             cc.toggle_code_context_event()
 
+        self.highlight_cfg = test_colors
         # Nothing breaks with inactive code context.
         cc.update_highlight_colors()
 
-        # Activate code context, but no change to colors.
+        # Activate code context, previous colors change is immediately effective.
         cc.toggle_code_context_event()
-        eq(cc.context['background'], save_colors['background'])
-        eq(cc.context['foreground'], save_colors['foreground'])
+        assert_colors_are_equal(test_colors)
 
-        # Call colors update, but no change to font.
+        # Call colors update with no change to the configured colors.
         cc.update_highlight_colors()
-        eq(cc.context['background'], save_colors['background'])
-        eq(cc.context['foreground'], save_colors['foreground'])
-        cc.toggle_code_context_event()
+        assert_colors_are_equal(test_colors)
 
-        # Change colors and activate code context.
-        self.highlight_cfg = test_colors
-        cc.toggle_code_context_event()
-        eq(cc.context['background'], test_colors['background'])
-        eq(cc.context['foreground'], test_colors['foreground'])
-
-        # Change colors and call highlight colors update.
-        self.highlight_cfg = save_colors
+        # Call the colors update with code context active, change is picked up.
+        self.highlight_cfg = orig_colors
         cc.update_highlight_colors()
-        eq(cc.context['background'], save_colors['background'])
-        eq(cc.context['foreground'], save_colors['foreground'])
+        assert_colors_are_equal(orig_colors)
 
 
 class HelperFunctionText(unittest.TestCase):

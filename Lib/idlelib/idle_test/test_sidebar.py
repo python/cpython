@@ -1,12 +1,13 @@
 """Test sidebar, coverage 93%"""
 from itertools import chain
 import unittest
+import unittest.mock
 from test.support import requires
 import tkinter as tk
 
 from idlelib.delegator import Delegator
 from idlelib.percolator import Percolator
-from idlelib.sidebar import LineNumbers
+import idlelib.sidebar
 
 
 class Dummy_editwin:
@@ -50,7 +51,27 @@ class LineNumbersTest(unittest.TestCase):
         del cls.text, cls.text_frame, cls.editwin, cls.root
 
     def setUp(self):
-        self.linenumber = LineNumbers(self.editwin)
+        self.linenumber = idlelib.sidebar.LineNumbers(self.editwin)
+
+        self.highlight_cfg = {"background": '#abcdef',
+                              "foreground": '#123456'}
+        orig_idleConf_GetHighlight = idlelib.sidebar.idleConf.GetHighlight
+        def mock_idleconf_GetHighlight(theme, element):
+            if element == 'linenumber':
+                return self.highlight_cfg
+            return orig_idleConf_GetHighlight(theme, element)
+        GetHighlight_patcher = unittest.mock.patch.object(
+            idlelib.sidebar.idleConf, 'GetHighlight', mock_idleconf_GetHighlight)
+        GetHighlight_patcher.start()
+        self.addCleanup(GetHighlight_patcher.stop)
+
+        self.font_override = 'TkFixedFont'
+        def mock_idleconf_GetFont(root, configType, section):
+            return self.font_override
+        GetFont_patcher = unittest.mock.patch.object(
+            idlelib.sidebar.idleConf, 'GetFont', mock_idleconf_GetFont)
+        GetFont_patcher.start()
+        self.addCleanup(GetFont_patcher.stop)
 
     def tearDown(self):
         self.text.delete('1.0', 'end')
@@ -271,6 +292,59 @@ class LineNumbersTest(unittest.TestCase):
         self.root.update()
         self.assertNotEqual(self.text.index('@0,0'), '11.0')
         self.assertNotEqual(self.linenumber.sidebar_text.index('@0,0'), '11.0')
+
+    def test_font(self):
+        ln = self.linenumber
+
+        orig_font = ln.sidebar_text['font']
+        test_font = 'TkTextFont'
+        self.assertNotEqual(orig_font, test_font)
+
+        # Ensure line numbers aren't shown.
+        ln.hide_sidebar()
+
+        self.font_override = test_font
+        # Nothing breaks when line numbers aren't shown.
+        ln.update_font()
+
+        # Activate line numbers, previous font change is immediately effective.
+        ln.show_sidebar()
+        self.assertEqual(ln.sidebar_text['font'], test_font)
+
+        # Call the font update with line numbers shown, change is picked up.
+        self.font_override = orig_font
+        ln.update_font()
+        self.assertEqual(ln.sidebar_text['font'], orig_font)
+
+    def test_highlight_colors(self):
+        ln = self.linenumber
+
+        orig_colors = dict(self.highlight_cfg)
+        test_colors = {'background': '#222222', 'foreground': '#ffff00'}
+
+        def assert_colors_are_equal(colors):
+            self.assertEqual(ln.sidebar_text['background'], colors['background'])
+            self.assertEqual(ln.sidebar_text['foreground'], colors['foreground'])
+
+        # Ensure line numbers aren't shown.
+        ln.hide_sidebar()
+
+        self.highlight_cfg = test_colors
+        # Nothing breaks with inactive code context.
+        ln.update_colors()
+
+        # Show line numbers, previous colors change is immediately effective.
+        ln.show_sidebar()
+        assert_colors_are_equal(test_colors)
+
+        # Call colors update with no change to the configured colors.
+        ln.update_colors()
+        assert_colors_are_equal(test_colors)
+
+        # Call the colors update with line numbers shown, change is picked up.
+        self.highlight_cfg = orig_colors
+        ln.update_colors()
+        assert_colors_are_equal(orig_colors)
 
 
 if __name__ == '__main__':
