@@ -1885,9 +1885,10 @@ class BasicCANTest(unittest.TestCase):
         socket.CAN_BCM_TX_RESET_MULTI_IDX
         socket.CAN_BCM_RX_RTR_FRAME
 
-    @unittest.skipUnless(hasattr(socket, "CAN_BCM_CAN_FD_FRAME"),
-                         'socket.CAN_BCM_CAN_FD_FRAME required for this test')
-    def testBCMConstantsSupportsFD(self):
+    @unittest.skipUnless(hasattr(socket, "CAN_BCM"),
+                         'socket.CAN_BCM required for this test.')
+    @support.requires_linux_version(4, 8)
+    def testBCMConstantsLinux48(self):
         # This is only present on Linux kernel 4.8+
         socket.CAN_BCM_CAN_FD_FRAME
 
