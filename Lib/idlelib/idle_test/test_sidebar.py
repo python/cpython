@@ -1,4 +1,4 @@
-"""Unittest for idlelib.LineNumber"""
+"""Test sidebar, coverage 93%"""
 from itertools import chain
 import unittest
 from test.support import requires
