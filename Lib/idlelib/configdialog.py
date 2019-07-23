@@ -1776,8 +1776,7 @@ class GenPage(Frame):
         def is_digits_or_empty(s):
             "Return 's is blank or contains only digits'"
             return digits_or_empty_re.fullmatch(s) is not None
-        self.digits_or_empty_vldcmd = (
-            self.register(is_digits_or_empty), '%P',)
+        self.digits_only = (self.register(is_digits_or_empty), '%P',)
 
     def create_page_general(self):
         """Return frame of widgets for General tab.
@@ -1896,12 +1895,12 @@ class GenPage(Frame):
         win_width_title = Label(frame_win_size, text='Width')
         self.win_width_int = Entry(
                 frame_win_size, textvariable=self.win_width, width=3,
-                validatecommand=self.digits_or_empty_vldcmd, validate='key',
+                validatecommand=self.digits_only, validate='key',
         )
         win_height_title = Label(frame_win_size, text='Height')
         self.win_height_int = Entry(
                 frame_win_size, textvariable=self.win_height, width=3,
-                validatecommand=self.digits_or_empty_vldcmd, validate='key',
+                validatecommand=self.digits_only, validate='key',
         )
 
         frame_autocomplete = Frame(frame_window, borderwidth=0,)
@@ -1909,7 +1908,7 @@ class GenPage(Frame):
                                text='Completions Popup Wait (milliseconds)')
         self.auto_wait_int = Entry(frame_autocomplete, width=6,
                                    textvariable=self.autocomplete_wait,
-                                   validatecommand=self.digits_or_empty_vldcmd,
+                                   validatecommand=self.digits_only,
                                    validate='key',
                                    )
 
@@ -1942,14 +1941,14 @@ class GenPage(Frame):
                                    text='Format Paragraph Max Width')
         self.format_width_int = Entry(
                 frame_format, textvariable=self.format_width, width=4,
-                validatecommand=self.digits_or_empty_vldcmd, validate='key',
+                validatecommand=self.digits_only, validate='key',
         )
 
         frame_context = Frame(frame_editor, borderwidth=0)
         context_title = Label(frame_context, text='Max Context Lines :')
         self.context_int = Entry(
                 frame_context, textvariable=self.context_lines, width=3,
-                validatecommand=self.digits_or_empty_vldcmd, validate='key',
+                validatecommand=self.digits_only, validate='key',
         )
 
         # Frame_shell.
@@ -1959,7 +1958,7 @@ class GenPage(Frame):
         self.auto_squeeze_min_lines_int = Entry(
                 frame_auto_squeeze_min_lines, width=4,
                 textvariable=self.auto_squeeze_min_lines,
-                validatecommand=self.digits_or_empty_vldcmd, validate='key',
+                validatecommand=self.digits_only, validate='key',
         )
 
         # frame_help.
