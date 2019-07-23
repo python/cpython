@@ -3636,7 +3636,7 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
         /* shortcut */
         TreeBuilderObject *target = (TreeBuilderObject*) self->target;
 
-        if (target->events_append && target->pi_event_obj || target->insert_pis) {
+        if ((target->events_append && target->pi_event_obj) || target->insert_pis) {
             pi_target = PyUnicode_DecodeUTF8(target_in, strlen(target_in), "strict");
             if (!pi_target)
                 goto error;
