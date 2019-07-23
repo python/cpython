@@ -53,6 +53,7 @@ class EditorWindow(object):
     from idlelib.autoexpand import AutoExpand
     from idlelib.calltip import Calltip
     from idlelib.codecontext import CodeContext
+    from idlelib.sidebar import LineNumbers
     from idlelib.format import FormatParagraph, FormatRegion, Indents, Rstrip
     from idlelib.parenmatch import ParenMatch
     from idlelib.squeezer import Squeezer
@@ -61,7 +62,8 @@ class EditorWindow(object):
     filesystemencoding = sys.getfilesystemencoding()  # for file names
     help_url = None
 
-    allow_codecontext = True
+    allow_code_context = True
+    allow_line_numbers = True
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
         # Delay import: runscript imports pyshell imports EditorWindow.
@@ -198,12 +200,14 @@ class EditorWindow(object):
             text.bind("<<open-turtle-demo>>", self.open_turtle_demo)
 
         self.set_status_bar()
+        text_frame.pack(side=LEFT, fill=BOTH, expand=1)
+        text_frame.rowconfigure(1, weight=1)
+        text_frame.columnconfigure(1, weight=1)
         vbar['command'] = self.handle_yview
-        vbar.pack(side=RIGHT, fill=Y)
+        vbar.grid(row=1, column=2, sticky=NSEW)
         text['yscrollcommand'] = vbar.set
         text['font'] = idleConf.GetFont(self.root, 'main', 'EditorWindow')
-        text_frame.pack(side=LEFT, fill=BOTH, expand=1)
-        text.pack(side=TOP, fill=BOTH, expand=1)
+        text.grid(row=1, column=1, sticky=NSEW)
         text.focus_set()
 
         # usetabs true  -> literal tab characters are used by indent and
@@ -250,7 +254,8 @@ class EditorWindow(object):
         self.good_load = False
         self.set_indentation_params(False)
         self.color = None # initialized below in self.ResetColorizer
-        self.codecontext = None
+        self.code_context = None # optionally initialized later below
+        self.line_numbers = None # optionally initialized later below
         if filename:
             if os.path.exists(filename) and not os.path.isdir(filename):
                 if io.loadfile(filename):
@@ -316,10 +321,20 @@ class EditorWindow(object):
         text.bind("<<refresh-calltip>>", ctip.refresh_calltip_event)
         text.bind("<<force-open-calltip>>", ctip.force_open_calltip_event)
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
-        if self.allow_codecontext:
-            self.codecontext = self.CodeContext(self)
+        if self.allow_code_context:
+            self.code_context = self.CodeContext(self)
             text.bind("<<toggle-code-context>>",
-                      self.codecontext.toggle_code_context_event)
+                      self.code_context.toggle_code_context_event)
+        else:
+            self.update_menu_state('options', '*Code Context', 'disabled')
+        if self.allow_line_numbers:
+            self.line_numbers = self.LineNumbers(self)
+            if idleConf.GetOption('main', 'EditorWindow',
+                                  'line-numbers-default', type='bool'):
+                self.toggle_line_numbers_event()
+            text.bind("<<toggle-line-numbers>>", self.toggle_line_numbers_event)
+        else:
+            self.update_menu_state('options', '*Line Numbers', 'disabled')
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so displayable in Tk."""
@@ -779,8 +794,11 @@ class EditorWindow(object):
         self._addcolorizer()
         EditorWindow.color_config(self.text)
 
-        if self.codecontext is not None:
-            self.codecontext.update_highlight_colors()
+        if self.code_context is not None:
+            self.code_context.update_highlight_colors()
+
+        if self.line_numbers is not None:
+            self.line_numbers.update_colors()
 
     IDENTCHARS = string.ascii_letters + string.digits + "_"
 
@@ -799,11 +817,16 @@ class EditorWindow(object):
         "Update the text widgets' font if it is changed"
         # Called from configdialog.py
 
-        new_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         # Update the code context widget first, since its height affects
         # the height of the text widget.  This avoids double re-rendering.
-        if self.codecontext is not None:
-            self.codecontext.update_font(new_font)
+        if self.code_context is not None:
+            self.code_context.update_font()
+        # Next, update the line numbers widget, since its width affects
+        # the width of the text widget.
+        if self.line_numbers is not None:
+            self.line_numbers.update_font()
+        # Finally, update the main text widget.
+        new_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         self.text['font'] = new_font
 
     def RemoveKeybindings(self):
@@ -1466,6 +1489,19 @@ class EditorWindow(object):
         else:
             indentsmall = indentlarge = 0
         return indentlarge - indentsmall
+
+    def toggle_line_numbers_event(self, event=None):
+        if self.line_numbers is None:
+            return
+
+        if self.line_numbers.is_shown:
+            self.line_numbers.hide_sidebar()
+            menu_label = "Show"
+        else:
+            self.line_numbers.show_sidebar()
+            menu_label = "Hide"
+        self.update_menu_label(menu='options', index='*Line Numbers',
+                               label=f'{menu_label} Line Numbers')
 
 # "line.col" -> line, as an int
 def index2line(index):
