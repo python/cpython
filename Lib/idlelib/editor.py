@@ -2,7 +2,9 @@ import importlib.abc
 import importlib.util
 import os
 import platform
+import re
 import string
+import sys
 import tokenize
 import traceback
 import webbrowser
