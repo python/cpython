@@ -938,11 +938,11 @@ Element Objects
      if element is None:
          print("element not found")
 
-   Prior to Python 3.8, the serialisation order of the attributes of Elements
-   was artificially made predictable by sorting the attributes by their name.
-   Based on the now guaranteed ordering of dicts, this arbitrary reordering
-   was removed in Python 3.8 to preserve the order in which attributes were
-   originally parsed or created by user code.
+   Prior to Python 3.8, the serialisation order of the XML attributes of
+   elements was artificially made predictable by sorting the attributes by
+   their name. Based on the now guaranteed ordering of dicts, this arbitrary
+   reordering was removed in Python 3.8 to preserve the order in which
+   attributes were originally parsed or created by user code.
 
    In general, user code should try not to depend on a specific ordering of
    attributes, given that the `XML Information Set
