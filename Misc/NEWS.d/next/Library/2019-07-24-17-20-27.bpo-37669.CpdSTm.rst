@@ -1,0 +1,2 @@
+:func:`unittest.mock.mock_open` is now able to mock reading of multiple
+files with different contents.
