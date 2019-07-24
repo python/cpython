@@ -7,9 +7,6 @@
 #include "pycore_pystate.h"
 #include "structmember.h"
 
-// One free method object to save malloc/free overhead.
-static PyCFunctionObject *free_obj = NULL;
-
 /* undefine macro trampoline to PyCFunction_NewEx */
 #undef PyCFunction_New
 
@@ -61,16 +58,9 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
     }
 
     PyCFunctionObject *op;
-    op = free_obj;
-    if (op != NULL) {
-        free_obj = NULL;
-        (void)PyObject_INIT(op, &PyCFunction_Type);
-    }
-    else {
-        op = PyObject_GC_New(PyCFunctionObject, &PyCFunction_Type);
-        if (op == NULL)
-            return NULL;
-    }
+    op = PyObject_GC_New(PyCFunctionObject, &PyCFunction_Type);
+    if (op == NULL)
+        return NULL;
     op->m_weakreflist = NULL;
     op->m_ml = ml;
     Py_XINCREF(self);
@@ -123,12 +113,7 @@ meth_dealloc(PyCFunctionObject *m)
     }
     Py_XDECREF(m->m_self);
     Py_XDECREF(m->m_module);
-    if (free_obj == NULL) {
-        free_obj = m;
-    }
-    else {
-        PyObject_GC_Del(m);
-    }
+    PyObject_GC_Del(m);
 }
 
 static PyObject *
@@ -329,11 +314,6 @@ PyTypeObject PyCFunction_Type = {
 int
 PyCFunction_ClearFreeList(void)
 {
-    if (free_obj) {
-        PyObject_GC_Del(free_obj);
-        free_obj = NULL;
-        return 1;
-    }
     return 0;
 }
 
@@ -347,9 +327,6 @@ PyCFunction_Fini(void)
 void
 _PyCFunction_DebugMallocStats(FILE *out)
 {
-    _PyDebugAllocatorStats(out,
-                           "free PyCFunctionObject",
-                           free_obj != NULL, sizeof(PyCFunctionObject));
 }
 
 

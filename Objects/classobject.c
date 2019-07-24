@@ -8,9 +8,6 @@
 
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
 
-// Free one method object to safe malloc/free overhead
-static PyMethodObject *free_obj;
-
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__qualname__);
 
@@ -102,16 +99,9 @@ PyMethod_New(PyObject *func, PyObject *self)
         PyErr_BadInternalCall();
         return NULL;
     }
-    im = free_obj;
-    if (im != NULL) {
-        free_obj = NULL;
-        (void)PyObject_INIT(im, &PyMethod_Type);
-    }
-    else {
-        im = PyObject_GC_New(PyMethodObject, &PyMethod_Type);
-        if (im == NULL)
-            return NULL;
-    }
+    im = PyObject_GC_New(PyMethodObject, &PyMethod_Type);
+    if (im == NULL)
+        return NULL;
     im->im_weakreflist = NULL;
     Py_INCREF(func);
     im->im_func = func;
@@ -245,12 +235,7 @@ method_dealloc(PyMethodObject *im)
         PyObject_ClearWeakRefs((PyObject *)im);
     Py_DECREF(im->im_func);
     Py_XDECREF(im->im_self);
-    if (free_obj == NULL) {
-        free_obj = im;
-    }
-    else {
-        PyObject_GC_Del(im);
-    }
+    PyObject_GC_Del(im);
 }
 
 static PyObject *
@@ -386,11 +371,6 @@ PyTypeObject PyMethod_Type = {
 int
 PyMethod_ClearFreeList(void)
 {
-    if (free_obj) {
-        PyObject_GC_Del(free_obj);
-        free_obj = NULL;
-        return 1;
-    }
     return 0;
 }
 
@@ -404,9 +384,6 @@ PyMethod_Fini(void)
 void
 _PyMethod_DebugMallocStats(FILE *out)
 {
-    _PyDebugAllocatorStats(out,
-                           "free PyMethodObject",
-                           free_obj != NULL, sizeof(PyMethodObject));
 }
 
 /* ------------------------------------------------------------------------
