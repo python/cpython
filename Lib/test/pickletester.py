@@ -91,7 +91,7 @@ class ExtensionSaver:
         copyreg.remove_extension(self.pair[0], self.pair[1], self.code)
 
     # Restore previous registration for code.
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_value, traceback):
         code = self.code
         curpair = copyreg._inverted_registry.get(code)
         if curpair is not None:
