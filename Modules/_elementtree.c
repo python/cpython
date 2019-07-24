@@ -2884,7 +2884,7 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
 LOCAL(PyObject*)
 treebuilder_handle_comment(TreeBuilderObject* self, PyObject* text)
 {
-    PyObject* comment = NULL;
+    PyObject* comment;
     PyObject* this;
 
     if (treebuilder_flush_data(self) < 0) {
@@ -2923,7 +2923,7 @@ treebuilder_handle_comment(TreeBuilderObject* self, PyObject* text)
 LOCAL(PyObject*)
 treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
 {
-    PyObject* pi = NULL;
+    PyObject* pi;
     PyObject* this;
     PyObject* stack[2] = {target, text};
 
@@ -3532,8 +3532,8 @@ expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
 static void
 expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
 {
-    PyObject* comment = NULL;
-    PyObject* res = NULL;
+    PyObject* comment;
+    PyObject* res;
 
     if (PyErr_Occurred())
         return;
@@ -3547,16 +3547,17 @@ expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
             return; /* parser will look for errors */
 
         res = treebuilder_handle_comment(target,  comment);
+        Py_XDECREF(res);
+        Py_DECREF(comment);
     } else if (self->handle_comment) {
         comment = PyUnicode_DecodeUTF8(comment_in, strlen(comment_in), "strict");
         if (!comment)
             return;
 
         res = _PyObject_CallOneArg(self->handle_comment, comment);
+        Py_XDECREF(res);
+        Py_DECREF(comment);
     }
-
-    Py_XDECREF(res);
-    Py_DECREF(comment);
 }
 
 static void
@@ -3624,7 +3625,7 @@ static void
 expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
                  const XML_Char* data_in)
 {
-    PyObject* pi_target = NULL;
+    PyObject* pi_target;
     PyObject* data;
     PyObject* res;
     PyObject* stack[2];
