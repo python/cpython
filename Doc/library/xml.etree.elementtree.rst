@@ -659,7 +659,7 @@ Functions
 
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
-                       xml_declaration=None, default_namespace=None,
+                       xml_declaration=None, default_namespace=None, \
                        short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -677,9 +677,13 @@ Functions
    .. versionadded:: 3.8
       The *xml_declaration* and *default_namespace* parameters.
 
+   .. versionchanged:: 3.8
+      The :func:`tostring` function now preserves the attribute order
+      specified by the user.
+
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
-                           xml_declaration=None, default_namespace=None,
+                           xml_declaration=None, default_namespace=None, \
                            short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -699,6 +703,10 @@ Functions
 
    .. versionadded:: 3.8
       The *xml_declaration* and *default_namespace* parameters.
+
+   .. versionchanged:: 3.8
+      The :func:`tostringlist` function now preserves the attribute order
+      specified by the user.
 
 
 .. function:: XML(text, parser=None)
@@ -929,6 +937,36 @@ Element Objects
 
      if element is None:
          print("element not found")
+
+   Prior to Python 3.8, the serialisation order of the XML attributes of
+   elements was artificially made predictable by sorting the attributes by
+   their name. Based on the now guaranteed ordering of dicts, this arbitrary
+   reordering was removed in Python 3.8 to preserve the order in which
+   attributes were originally parsed or created by user code.
+
+   In general, user code should try not to depend on a specific ordering of
+   attributes, given that the `XML Information Set
+   <https://www.w3.org/TR/xml-infoset/>`_ explicitly excludes the attribute
+   order from conveying information. Code should be prepared to deal with
+   any ordering on input. In cases where deterministic XML output is required,
+   e.g. for cryptographic signing or test data sets, canonical serialisation
+   is available with the :func:`canonicalize` function.
+
+   In cases where canonical output is not applicable but a specific attribute
+   order is still desirable on output, code should aim for creating the
+   attributes directly in the desired order, to avoid perceptual mismatches
+   for readers of the code. In cases where this is difficult to achieve, a
+   recipe like the following can be applied prior to serialisation to enforce
+   an order independently from the Element creation::
+
+     def reorder_attributes(root):
+         for el in root.iter():
+             attrib = el.attrib
+             if len(attrib) > 1:
+                 # adjust attribute order, e.g. by sorting
+                 attribs = sorted(attrib.items())
+                 attrib.clear()
+                 attrib.update(attribs)
 
 
 .. _elementtree-elementtree-objects:
