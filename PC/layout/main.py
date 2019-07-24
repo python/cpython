@@ -228,7 +228,7 @@ def get_layout(ns):
 
     if ns.include_pip:
         for dest, src in get_pip_layout(ns):
-            if isinstance(src, tuple) or not (
+            if not isinstance(src, tuple) and (
                 src in EXCLUDE_FROM_LIB or src in EXCLUDE_FROM_PACKAGED_LIB
             ):
                 continue
