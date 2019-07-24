@@ -47,7 +47,7 @@ Creating virtual environments
    A virtual environment is a directory tree which contains Python executable
    files and other files which indicate that it is a virtual environment.
 
-   Common installation tools such as ``Setuptools`` and ``pip`` work as
+   Common installation tools such as setuptools_ and pip_ work as
    expected with virtual environments. In other words, when a virtual
    environment is active, they install Python packages into the virtual
    environment without needing to be told to do so explicitly.
@@ -64,24 +64,25 @@ Creating virtual environments
    Python installation).
 
    When a virtual environment is active, any options that change the
-   installation path will be ignored from all distutils configuration files to
-   prevent projects being inadvertently installed outside of the virtual
-   environment.
+   installation path will be ignored from all :mod:`distutils` configuration
+   files to prevent projects being inadvertently installed outside of the
+   virtual environment.
 
    When working in a command shell, users can make a virtual environment active
    by running an ``activate`` script in the virtual environment's executables
-   directory (the precise filename is shell-dependent), which prepends the
-   virtual environment's directory for executables to the ``PATH`` environment
-   variable for the running shell. There should be no need in other
-   circumstances to activate a virtual environment—scripts installed into
-   virtual environments have a "shebang" line which points to the virtual
-   environment's Python interpreter. This means that the script will run with
-   that interpreter regardless of the value of ``PATH``. On Windows, "shebang"
-   line processing is supported if you have the Python Launcher for Windows
-   installed (this was added to Python in 3.3 - see :pep:`397` for more
-   details). Thus, double-clicking an installed script in a Windows Explorer
-   window should run the script with the correct interpreter without there
-   needing to be any reference to its virtual environment in ``PATH``.
+   directory (the precise filename and command to use the file is
+   shell-dependent), which prepends the virtual environment's directory for
+   executables to the ``PATH`` environment variable for the running shell. There
+   should be no need in other circumstances to activate a virtual
+   environment; scripts installed into virtual environments have a "shebang"
+   line which points to the virtual environment's Python interpreter. This means
+   that the script will run with that interpreter regardless of the value of
+   ``PATH``. On Windows, "shebang" line processing is supported if you have the
+   Python Launcher for Windows installed (this was added to Python in 3.3 - see
+   :pep:`397` for more details). Thus, double-clicking an installed script in a
+   Windows Explorer window should run the script with the correct interpreter
+   without there needing to be any reference to its virtual environment in
+   ``PATH``.
 
 
 .. _venv-api:
@@ -130,20 +131,20 @@ creation according to their needs, the :class:`EnvBuilder` class.
        Added the ``prompt`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
-    provided ``EnvBuilder`` class as a base class.
+    provided :class:`EnvBuilder` class as a base class.
 
     The returned env-builder is an object which has a method, ``create``:
 
     .. method:: create(env_dir)
 
-        This method takes as required argument the path (absolute or relative to
-        the current directory) of the target directory which is to contain the
+        Create a virtual environment by specifying the target directory
+        (absolute or relative to the current directory) which is to contain the
         virtual environment.  The ``create`` method will either create the
         environment in the specified directory, or raise an appropriate
         exception.
 
-        The ``create`` method of the ``EnvBuilder`` class illustrates the hooks
-        available for subclass customization::
+        The ``create`` method of the :class:`EnvBuilder` class illustrates the
+        hooks available for subclass customization::
 
             def create(self, env_dir):
                 """
@@ -471,3 +472,7 @@ subclass which installs setuptools and pip into a created virtual environment::
 
 This script is also available for download `online
 <https://gist.github.com/vsajip/4673395>`_.
+
+
+.. _setuptools: https://pypi.org/project/setuptools/
+.. _pip: https://pypi.org/project/pip/
