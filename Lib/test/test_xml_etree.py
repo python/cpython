@@ -2954,6 +2954,66 @@ class TreeBuilderTest(unittest.TestCase):
         self.assertEqual(b.pi('target'), (len('target'), None))
         self.assertEqual(b.pi('pitarget', ' text '), (len('pitarget'), ' text '))
 
+    def test_late_tail(self):
+        # Issue #37399: The tail of an ignored comment could overwrite the text before it.
+        class TreeBuilderSubclass(ET.TreeBuilder):
+            pass
+
+        xml = "<a>text<!-- comment -->tail</a>"
+        a = ET.fromstring(xml)
+        self.assertEqual(a.text, "texttail")
+
+        parser = ET.XMLParser(target=TreeBuilderSubclass())
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a.text, "texttail")
+
+        xml = "<a>text<?pi data?>tail</a>"
+        a = ET.fromstring(xml)
+        self.assertEqual(a.text, "texttail")
+
+        xml = "<a>text<?pi data?>tail</a>"
+        parser = ET.XMLParser(target=TreeBuilderSubclass())
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a.text, "texttail")
+
+    def test_late_tail_mix_pi_comments(self):
+        # Issue #37399: The tail of an ignored comment could overwrite the text before it.
+        # Test appending tails to comments/pis.
+        class TreeBuilderSubclass(ET.TreeBuilder):
+            pass
+
+        xml = "<a>text<?pi1?> <!-- comment -->\n<?pi2?>tail</a>"
+        parser = ET.XMLParser(target=ET.TreeBuilder(insert_comments=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a[0].text, ' comment ')
+        self.assertEqual(a[0].tail, '\ntail')
+        self.assertEqual(a.text, "text ")
+
+        parser = ET.XMLParser(target=TreeBuilderSubclass(insert_comments=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a[0].text, ' comment ')
+        self.assertEqual(a[0].tail, '\ntail')
+        self.assertEqual(a.text, "text ")
+
+        xml = "<a>text<!-- comment -->\n<?pi data?>tail</a>"
+        parser = ET.XMLParser(target=ET.TreeBuilder(insert_pis=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a[0].text, 'pi data')
+        self.assertEqual(a[0].tail, 'tail')
+        self.assertEqual(a.text, "text\n")
+
+        parser = ET.XMLParser(target=TreeBuilderSubclass(insert_pis=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a[0].text, 'pi data')
+        self.assertEqual(a[0].tail, 'tail')
+        self.assertEqual(a.text, "text\n")
+
     def test_treebuilder_elementfactory_none(self):
         parser = ET.XMLParser(target=ET.TreeBuilder(element_factory=None))
         parser.feed(self.sample1)
