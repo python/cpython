@@ -2682,7 +2682,63 @@ def _to_stream(read_data):
         return io.StringIO(read_data)
 
 
-def mock_open(mock=None, read_data=''):
+class _MockOpenHandleHandler:
+
+    def __init__(self, read_data):
+        self.read_data = read_data
+        self._state = [_to_stream(read_data), None]
+        self.handle = handle = MagicMock(spec=file_spec)
+
+        handle.__enter__.return_value = handle
+
+        handle.write.return_value = None
+        handle.read.return_value = None
+        handle.readline.return_value = None
+        handle.readlines.return_value = None
+
+        handle.read.side_effect = self._read_side_effect
+        self._state[1] = self._readline_side_effect()
+        handle.readline.side_effect = self._state[1]
+        handle.readlines.side_effect = self._readlines_side_effect
+        handle.__iter__.side_effect = self._iter_side_effect
+        handle.__next__.side_effect = self._next_side_effect
+
+    def reset_data(self, *args, **kwargs):
+        self._state[0] = _to_stream(self.read_data)
+        if self.handle.readline.side_effect == self._state[1]:
+            # Only reset the side effect if the user hasn't overridden it.
+            self._state[1] = self._readline_side_effect()
+            self.handle.readline.side_effect = self._state[1]
+
+    def _readlines_side_effect(self, *args, **kwargs):
+        if self.handle.readlines.return_value is not None:
+            return self.handle.readlines.return_value
+        return self._state[0].readlines(*args, **kwargs)
+
+    def _read_side_effect(self, *args, **kwargs):
+        if self.handle.read.return_value is not None:
+            return self.handle.read.return_value
+        return self._state[0].read(*args, **kwargs)
+
+    def _readline_side_effect(self, *args, **kwargs):
+        yield from self._iter_side_effect()
+        while True:
+            yield self._state[0].readline(*args, **kwargs)
+
+    def _iter_side_effect(self):
+        if self.handle.readline.return_value is not None:
+            while True:
+                yield self.handle.readline.return_value
+        for line in self._state[0]:
+            yield line
+
+    def _next_side_effect(self):
+        if self.handle.readline.return_value is not None:
+            return self.handle.readline.return_value
+        return next(self._state[0])
+
+
+def mock_open(mock=None, read_data='', data=()):
     """
     A helper function to create a mock to replace the use of `open`. It works
     for `open` called directly or used as a context manager.
@@ -2693,70 +2749,39 @@ def mock_open(mock=None, read_data=''):
 
     `read_data` is a string for the `read`, `readline` and `readlines` of the
     file handle to return.  This is an empty string by default.
+
+    `data` is any value acceptable for `dict` constructor. The keys
+    represent file names. If a file name, found in `data`, is
+    mock-opened, and the value matching the file name in `data` will
+    be used instead of `read_data`. The default is an empty tuple.
     """
-    _read_data = _to_stream(read_data)
-    _state = [_read_data, None]
-
-    def _readlines_side_effect(*args, **kwargs):
-        if handle.readlines.return_value is not None:
-            return handle.readlines.return_value
-        return _state[0].readlines(*args, **kwargs)
-
-    def _read_side_effect(*args, **kwargs):
-        if handle.read.return_value is not None:
-            return handle.read.return_value
-        return _state[0].read(*args, **kwargs)
-
-    def _readline_side_effect(*args, **kwargs):
-        yield from _iter_side_effect()
-        while True:
-            yield _state[0].readline(*args, **kwargs)
-
-    def _iter_side_effect():
-        if handle.readline.return_value is not None:
-            while True:
-                yield handle.readline.return_value
-        for line in _state[0]:
-            yield line
-
-    def _next_side_effect():
-        if handle.readline.return_value is not None:
-            return handle.readline.return_value
-        return next(_state[0])
 
     global file_spec
     if file_spec is None:
         import _io
-        file_spec = list(set(dir(_io.TextIOWrapper)).union(set(dir(_io.BytesIO))))
+        file_spec = list(set(dir(_io.TextIOWrapper)).union(
+            set(dir(_io.BytesIO))))
 
     if mock is None:
         mock = MagicMock(name='open', spec=open)
 
-    handle = MagicMock(spec=file_spec)
-    handle.__enter__.return_value = handle
+    handlers = {filename: _MockOpenHandleHandler(read_data)
+                for filename, read_data in dict(data).items()}
 
-    handle.write.return_value = None
-    handle.read.return_value = None
-    handle.readline.return_value = None
-    handle.readlines.return_value = None
+    default_handler = _MockOpenHandleHandler(read_data)
 
-    handle.read.side_effect = _read_side_effect
-    _state[1] = _readline_side_effect()
-    handle.readline.side_effect = _state[1]
-    handle.readlines.side_effect = _readlines_side_effect
-    handle.__iter__.side_effect = _iter_side_effect
-    handle.__next__.side_effect = _next_side_effect
+    def _side_effect(*args, **kwargs):
+        try:
+            filename = args[0]
+            handler = handlers[filename]
+        except (IndexError, KeyError):
+            default_handler.reset_data()
+            return DEFAULT
+        handler.reset_data()
+        return handler.handle
 
-    def reset_data(*args, **kwargs):
-        _state[0] = _to_stream(read_data)
-        if handle.readline.side_effect == _state[1]:
-            # Only reset the side effect if the user hasn't overridden it.
-            _state[1] = _readline_side_effect()
-            handle.readline.side_effect = _state[1]
-        return DEFAULT
-
-    mock.side_effect = reset_data
-    mock.return_value = handle
+    mock.side_effect = _side_effect
+    mock.return_value = default_handler.handle
     return mock
 
 
