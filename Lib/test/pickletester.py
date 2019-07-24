@@ -81,14 +81,14 @@ class ExtensionSaver:
     # there is one).
     def __init__(self, code):
         self.code = code
+        self.pair = None
 
     def __enter__(self):
-        code = self.code
-        if code in copyreg._inverted_registry:
-            self.pair = copyreg._inverted_registry[code]
-            copyreg.remove_extension(self.pair[0], self.pair[1], code)
-        else:
-            self.pair = None
+        if self.code not in copyreg._inverted_registry:
+            return
+
+        self.pair = copyreg._inverted_registry[self.code]
+        copyreg.remove_extension(self.pair[0], self.pair[1], self.code)
 
     # Restore previous registration for code.
     def __exit__(self):
