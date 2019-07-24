@@ -6,7 +6,7 @@ def generate_tokens(tokens):
     for line in tokens:
         line = line.strip()
 
-        if not line or line.startswith('#')
+        if not line or line.startswith('#'):
             continue
 
         name = line.split()[0]
@@ -20,7 +20,7 @@ def generate_opmap(tokens):
     for line in tokens:
         line = line.strip()
 
-        if not line or line.startswith('#')
+        if not line or line.startswith('#'):
             continue
 
         pieces = line.split()
