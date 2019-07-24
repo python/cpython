@@ -309,6 +309,7 @@ class EnvBuilder:
         text = text.replace('__VENV_DIR__', context.env_dir)
         text = text.replace('__VENV_NAME__', context.env_name)
         text = text.replace('__VENV_PROMPT__', context.prompt)
+        text = text.replace('__VENV_DEFAULT_PROMPT__', '(%s) ' % context.env_name)
         text = text.replace('__VENV_BIN_NAME__', context.bin_name)
         text = text.replace('__VENV_PYTHON__', context.env_exe)
         return text

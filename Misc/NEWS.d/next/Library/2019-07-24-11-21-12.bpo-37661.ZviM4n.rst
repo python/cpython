@@ -1,0 +1,3 @@
+Due to the prompt context always being set to a truthy value the string
+substitution for the script files was always done to produce a check that
+would never fail, impacting the colouring of shells.
