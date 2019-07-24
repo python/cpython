@@ -215,8 +215,9 @@ class Regrtest:
 
         removepy(self.tests)
 
-        # add default PGO tests if no tests are specified
-        setup_pgo_tests(self.ns)
+        if self.ns.pgo:
+            # add default PGO tests if no tests are specified
+            setup_pgo_tests(self.ns)
 
         stdtests = STDTESTS[:]
         nottests = NOTTESTS.copy()
