@@ -1,0 +1,1 @@
+2to3 now works when run from a zipped standard library.
