@@ -2649,7 +2649,8 @@ treebuilder_extend_element_text_or_tail(PyObject *element, PyObject **data,
     /*  Fallback for the non-Element / non-trivial cases. */
     {
         int r;
-        PyObject *joined, *previous = _PyObject_GetAttrId(element, name);
+        PyObject* joined;
+        PyObject* previous = _PyObject_GetAttrId(element, name);
         if (!previous)
             return -1;
         joined = list_join(*data);
@@ -2660,11 +2661,12 @@ treebuilder_extend_element_text_or_tail(PyObject *element, PyObject **data,
         if (previous != Py_None) {
             PyObject *tmp = PyNumber_Add(previous, joined);
             Py_DECREF(joined);
-            if (!tmp) {
-                Py_DECREF(previous);
+            Py_DECREF(previous);
+            if (!tmp)
                 return -1;
-            }
             joined = tmp;
+        } else {
+            Py_DECREF(previous);
         }
 
         r = _PyObject_SetAttrId(element, name, joined);
