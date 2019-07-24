@@ -17,7 +17,10 @@ __all__ = ["FileDialog", "LoadFileDialog", "SaveFileDialog", "Open", "SaveAs",
 
 import fnmatch
 import os
-from tkinter import *
+from tkinter import (
+    Frame, LEFT, YES, BOTTOM, Entry, TOP, Button, Tk, X,
+    Toplevel, RIGHT, Y, END, Listbox, BOTH, Scrollbar,
+)
 from tkinter.dialog import Dialog
 from tkinter import commondialog
 
