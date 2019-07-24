@@ -1749,6 +1749,17 @@ class MockTest(unittest.TestCase):
         self.assertEqual([], h.readlines())
         self.assertEqual([], h.readlines())
 
+    def test_mock_open_multiple_content(self):
+        _open = mock.mock_open(
+            read_data='foo',
+            data={'file1': 'abc', 'file2': 'xyz'})
+        file1 = _open('file1').read()
+        file2 = _open('file2').read()
+        default_file = _open('other_file').read()
+        self.assertEqual('foo', default_file)
+        self.assertEqual('abc', file1)
+        self.assertEqual('xyz', file2)
+
     def test_mock_parents(self):
         for Klass in Mock, MagicMock:
             m = Klass()
