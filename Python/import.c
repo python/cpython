@@ -1648,13 +1648,15 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
                 goto error;
             }
 
-            if (dot >= 0) {
-                PyObject *substr = PyUnicode_Substring(package, 0, dot);
-                if (substr == NULL) {
-                    goto error;
-                }
-                Py_SETREF(package, substr);
+            if (dot == -1) {
+                dot = 0;
             }
+
+            PyObject *substr = PyUnicode_Substring(package, 0, dot);
+            if (substr == NULL) {
+                goto error;
+            }
+            Py_SETREF(package, substr);
         }
     }
 
