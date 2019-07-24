@@ -1,0 +1,2 @@
+Bring consistency to venv shell activation scripts by always using
+__VENV_PROMPT__.
