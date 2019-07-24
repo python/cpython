@@ -112,6 +112,16 @@ finalization crashed with a Python fatal error if a daemon thread was still
 running.
 (Contributed by Victor Stinner in :issue:`37266`.)
 
+venv
+----
+
+The activation scripts provided by :mod:`venv` now all specify their prompt
+customization consistently by always using the value specified by
+``__VENV_PROMPT__``. Previously some scripts unconditionally used
+``__VENV_PROMPT__``, others only if it happened to be set (which was the default
+case), and one used ``__VENV_NAME__`` instead.
+(Contributed by Brett Cannon in :issue:`37663`.)
+
 pprint
 ------
 
@@ -176,4 +186,5 @@ Porting to Python 3.9
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
-
+* The :mod:`venv` activation scripts no longer special-case when
+  ``__VENV_PROMPT__`` is set to ``""``.
