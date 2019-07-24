@@ -102,7 +102,7 @@ class HovertipTest(unittest.TestCase):
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
     def test_showtip_on_mouse_enter_hover_delay(self):
-        tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=50)
+        tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=100)
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
         root_update()
@@ -128,7 +128,7 @@ class HovertipTest(unittest.TestCase):
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
     def test_dont_show_on_mouse_leave_before_delay(self):
-        tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=50)
+        tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=100)
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
         root_update()
