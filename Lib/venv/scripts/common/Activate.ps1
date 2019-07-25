@@ -163,7 +163,7 @@ $pyvenvCfg = Get-PyVenvCfgOverrides -ConfigDir $VenvDir
 
 # Next, set the prompt from the command line, or the config file, or
 # just use the name of the virtual environment folder.
-if (-not $Promp) {
+if (-not $Prompt) {
     if ($pyvenvCfg -and $pyvenvCfg['prompt']) {
         $Prompt = $pyvenvCfg['prompt'];
     }
