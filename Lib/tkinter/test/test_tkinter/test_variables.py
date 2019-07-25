@@ -1,5 +1,6 @@
 import unittest
 import gc
+from unittest.mock import ANY
 from tkinter import (Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl,
                      TclError)
 
@@ -59,11 +60,17 @@ class TestVariable(TestBase):
         # values doesn't matter, only class and name are checked
         v1 = Variable(self.root, name="abc")
         v2 = Variable(self.root, name="abc")
+        self.assertIsNot(v1, v2)
         self.assertEqual(v1, v2)
 
-        v3 = Variable(self.root, name="abc")
-        v4 = StringVar(self.root, name="abc")
-        self.assertNotEqual(v3, v4)
+        v3 = StringVar(self.root, name="abc")
+        self.assertNotEqual(v1, v3)
+
+        V = type('Variable', (), {})
+        self.assertNotEqual(v1, V())
+
+        self.assertNotEqual(v1, object())
+        self.assertEqual(v1, ANY)
 
     def test_invalid_name(self):
         with self.assertRaises(TypeError):

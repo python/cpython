@@ -330,6 +330,11 @@ class MockTest(unittest.TestCase):
         self.assertTrue(call2 == call1)
         self.assertFalse(call2 != call1)
 
+        self.assertTrue(call1 == mock.ANY)
+        self.assertFalse(call1 != mock.ANY)
+        self.assertFalse(call1 == 1)
+        self.assertTrue(call1 != 1)
+
 
     def test_assert_called_with(self):
         mock = Mock()

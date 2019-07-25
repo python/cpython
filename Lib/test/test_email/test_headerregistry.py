@@ -1,6 +1,7 @@
 import datetime
 import textwrap
 import unittest
+from unittest.mock import ANY
 from email import errors
 from email import policy
 from email.message import Message
@@ -1524,6 +1525,24 @@ class TestAddressAndGroup(TestEmailBase):
         m['To'] = g
         self.assertEqual(m['to'], 'foo bar:;')
         self.assertEqual(m['to'].addresses, g.addresses)
+
+    def test_address_comparison(self):
+        a = Address('foo', 'bar', 'example.com')
+        self.assertEqual(Address('foo', 'bar', 'example.com'), a)
+        self.assertNotEqual(Address('baz', 'bar', 'example.com'), a)
+        self.assertNotEqual(Address('foo', 'baz', 'example.com'), a)
+        self.assertNotEqual(Address('foo', 'bar', 'baz'), a)
+        self.assertFalse(a == object())
+        self.assertTrue(a == ANY)
+
+    def test_group_comparison(self):
+        a = Address('foo', 'bar', 'example.com')
+        g = Group('foo bar', [a])
+        self.assertEqual(Group('foo bar', (a,)), g)
+        self.assertNotEqual(Group('baz', [a]), g)
+        self.assertNotEqual(Group('foo bar', []), g)
+        self.assertFalse(g == object())
+        self.assertTrue(g == ANY)
 
 
 class TestFolding(TestHeaderBase):

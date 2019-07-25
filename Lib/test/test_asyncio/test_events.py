@@ -2364,6 +2364,28 @@ class TimerTests(unittest.TestCase):
         self.assertIs(NotImplemented, h1.__eq__(h3))
         self.assertIs(NotImplemented, h1.__ne__(h3))
 
+        with self.assertRaises(TypeError):
+            h1 < ()
+        with self.assertRaises(TypeError):
+            h1 > ()
+        with self.assertRaises(TypeError):
+            h1 <= ()
+        with self.assertRaises(TypeError):
+            h1 >= ()
+        self.assertFalse(h1 == ())
+        self.assertTrue(h1 != ())
+
+        largest = support.LargestObject()
+        self.assertTrue(h1 < largest)
+        self.assertFalse(h1 > largest)
+        self.assertTrue(h1 <= largest)
+        self.assertFalse(h1 >= largest)
+        self.assertFalse(h1 == largest)
+        self.assertTrue(h1 != largest)
+
+        self.assertTrue(h1 == mock.ANY)
+        self.assertFalse(h1 != mock.ANY)
+
 
 class AbstractEventLoopTests(unittest.TestCase):
 

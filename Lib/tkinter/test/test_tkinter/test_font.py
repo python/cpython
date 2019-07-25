@@ -1,6 +1,7 @@
 import unittest
 import tkinter
 from tkinter import font
+from unittest.mock import ANY
 from test.support import requires, run_unittest, gc_collect
 from tkinter.test.support import AbstractTkTest
 
@@ -70,6 +71,7 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(font1, font2)
         self.assertNotEqual(font1, font1.copy())
         self.assertNotEqual(font1, 0)
+        self.assertEqual(font1, ANY)
 
     def test_measure(self):
         self.assertIsInstance(self.font.measure('abc'), int)

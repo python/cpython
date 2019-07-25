@@ -313,31 +313,38 @@ class DateTime:
             s = self.timetuple()
             o = other.timetuple()
         else:
-            otype = (hasattr(other, "__class__")
-                     and other.__class__.__name__
-                     or type(other))
-            raise TypeError("Can't compare %s and %s" %
-                            (self.__class__.__name__, otype))
+            s = self
+            o = NotImplemented
         return s, o
 
     def __lt__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s < o
 
     def __le__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s <= o
 
     def __gt__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s > o
 
     def __ge__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s >= o
 
     def __eq__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s == o
 
     def timetuple(self):

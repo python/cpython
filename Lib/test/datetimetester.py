@@ -16,6 +16,7 @@ import random
 import re
 import struct
 import unittest
+from unittest.mock import ANY
 
 from array import array
 
@@ -353,6 +354,18 @@ class TestTimeZone(unittest.TestCase):
         self.assertTrue(timezone(ZERO) != None)
         self.assertFalse(timezone(ZERO) ==  None)
 
+        tz = timezone(ZERO)
+        largest = support.LargestObject()
+        self.assertTrue(tz < largest)
+        self.assertFalse(tz > largest)
+        self.assertTrue(tz <= largest)
+        self.assertFalse(tz >= largest)
+        self.assertFalse(tz == largest)
+        self.assertTrue(tz != largest)
+
+        self.assertTrue(tz == ANY)
+        self.assertFalse(tz != ANY)
+
     def test_aware_datetime(self):
         # test that timezone instances can be used by datetime
         t = datetime(1, 1, 1)
@@ -414,10 +427,20 @@ class HarmlessMixedComparison:
 
         # Comparison to objects of unsupported types should return
         # NotImplemented which falls back to the right hand side's __eq__
-        # method. In this case, ComparesEqualClass.__eq__ always returns True.
-        # ComparesEqualClass.__ne__ always returns False.
-        self.assertTrue(me == ComparesEqualClass())
-        self.assertFalse(me != ComparesEqualClass())
+        # method. In this case, ANY.__eq__ always returns True.
+        # ANY.__ne__ always returns False.
+        self.assertTrue(me == ANY)
+        self.assertFalse(me != ANY)
+
+        # If the other class explicitly defines ordering
+        # relative to our class, it is allowed to do so
+        largest = support.LargestObject()
+        self.assertTrue(me < largest)
+        self.assertFalse(me > largest)
+        self.assertTrue(me <= largest)
+        self.assertFalse(me >= largest)
+        self.assertFalse(me == largest)
+        self.assertTrue(me != largest)
 
     def test_harmful_mixed_comparison(self):
         me = self.theclass(1, 1, 1)
@@ -1581,29 +1604,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(their != our, True)
         self.assertRaises(TypeError, lambda: our < their)
         self.assertRaises(TypeError, lambda: their < our)
-
-        # However, if the other class explicitly defines ordering
-        # relative to our class, it is allowed to do so
-
-        class LargerThanAnything:
-            def __lt__(self, other):
-                return False
-            def __le__(self, other):
-                return isinstance(other, LargerThanAnything)
-            def __eq__(self, other):
-                return isinstance(other, LargerThanAnything)
-            def __gt__(self, other):
-                return not isinstance(other, LargerThanAnything)
-            def __ge__(self, other):
-                return True
-
-        their = LargerThanAnything()
-        self.assertEqual(our == their, False)
-        self.assertEqual(their == our, False)
-        self.assertEqual(our != their, True)
-        self.assertEqual(their != our, True)
-        self.assertEqual(our < their, True)
-        self.assertEqual(their < our, False)
 
     def test_bool(self):
         # All dates are considered true.
@@ -3781,8 +3781,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertRaises(ValueError, base.replace, microsecond=1000000)
 
     def test_mixed_compare(self):
-        t1 = time(1, 2, 3)
-        t2 = time(1, 2, 3)
+        t1 = self.theclass(1, 2, 3)
+        t2 = self.theclass(1, 2, 3)
         self.assertEqual(t1, t2)
         t2 = t2.replace(tzinfo=None)
         self.assertEqual(t1, t2)

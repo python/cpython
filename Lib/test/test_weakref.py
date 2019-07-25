@@ -10,6 +10,8 @@ import threading
 import time
 import random
 
+from unittest.mock import ANY
+
 from test import support
 from test.support import script_helper
 
@@ -794,6 +796,10 @@ class ReferencesTestCase(TestBase):
         self.assertTrue(a != c)
         self.assertTrue(a == d)
         self.assertFalse(a != d)
+        self.assertFalse(a == x)
+        self.assertTrue(a != x)
+        self.assertTrue(a == ANY)
+        self.assertFalse(a != ANY)
         del x, y, z
         gc.collect()
         for r in a, b, c:
@@ -1102,6 +1108,9 @@ class WeakMethodTestCase(unittest.TestCase):
         _ne(a, f)
         _ne(b, e)
         _ne(b, f)
+        # Compare with different types
+        _ne(a, x.some_method)
+        _eq(a, ANY)
         del x, y, z
         gc.collect()
         # Dead WeakMethods compare by identity

@@ -530,14 +530,10 @@ class DateTimeTestCase(unittest.TestCase):
         # some other types
         dbytes = dstr.encode('ascii')
         dtuple = now.timetuple()
-        with self.assertRaises(TypeError):
-            dtime == 1970
-        with self.assertRaises(TypeError):
-            dtime != dbytes
-        with self.assertRaises(TypeError):
-            dtime == bytearray(dbytes)
-        with self.assertRaises(TypeError):
-            dtime != dtuple
+        self.assertFalse(dtime == 1970)
+        self.assertTrue(dtime != dbytes)
+        self.assertFalse(dtime == bytearray(dbytes))
+        self.assertTrue(dtime != dtuple)
         with self.assertRaises(TypeError):
             dtime < float(1970)
         with self.assertRaises(TypeError):
@@ -546,6 +542,18 @@ class DateTimeTestCase(unittest.TestCase):
             dtime <= bytearray(dbytes)
         with self.assertRaises(TypeError):
             dtime >= dtuple
+
+        self.assertTrue(dtime == mock.ANY)
+        self.assertFalse(dtime != mock.ANY)
+
+        largest = support.LargestObject()
+        self.assertFalse(dtime == largest)
+        self.assertTrue(dtime != largest)
+        self.assertTrue(dtime < largest)
+        self.assertTrue(dtime <= largest)
+        self.assertFalse(dtime > largest)
+        self.assertFalse(dtime >= largest)
+
 
 class BinaryTestCase(unittest.TestCase):
 

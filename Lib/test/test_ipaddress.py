@@ -12,6 +12,7 @@ import operator
 import pickle
 import ipaddress
 import weakref
+from test.support import LargestObject, SmallestObject
 
 
 class BaseTestCase(unittest.TestCase):
@@ -672,20 +673,6 @@ class FactoryFunctionErrors(BaseTestCase):
     def test_ip_network(self):
         self.assertFactoryError(ipaddress.ip_network, "network")
 
-
-@functools.total_ordering
-class LargestObject:
-    def __eq__(self, other):
-        return isinstance(other, LargestObject)
-    def __lt__(self, other):
-        return False
-
-@functools.total_ordering
-class SmallestObject:
-    def __eq__(self, other):
-        return isinstance(other, SmallestObject)
-    def __gt__(self, other):
-        return False
 
 class ComparisonTests(unittest.TestCase):
 
