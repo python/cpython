@@ -8,6 +8,8 @@
 # written by Fredrik Lundh, May 1997
 #
 
+__all__ = ["Dialog"]
+
 from tkinter import Frame
 
 
