@@ -2765,6 +2765,11 @@ class AbstractPickleTests(unittest.TestCase):
             with self.assertRaises(pickle.UnpicklingError):
                 self.loads(data, buffers=[])
 
+    def test_inband_accept_default_buffers_argument(self):
+        for proto in range(5, pickle.HIGHEST_PROTOCOL + 1):
+            data_pickled = self.dumps(1, proto, buffer_callback=None)
+            data = self.loads(data_pickled, buffers=None)
+
     @unittest.skipIf(np is None, "Test needs Numpy")
     def test_buffers_numpy(self):
         def check_no_copy(x, y):
