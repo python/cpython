@@ -26,7 +26,7 @@ objects:
    :noindex:
 
    Extend the list by appending all the items from the iterable.  Equivalent to
-   ``a[len(a):] = iterable``.
+   ``for x in iterable: a.append(x)``.
 
 
 .. method:: list.insert(i, x)
