@@ -94,14 +94,14 @@ method_vectorcall(PyObject *method, PyObject *const *args,
 PyObject *
 PyMethod_New(PyObject *func, PyObject *self)
 {
-    PyMethodObject *im;
     if (self == NULL) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    im = PyObject_GC_New(PyMethodObject, &PyMethod_Type);
-    if (im == NULL)
+    PyMethodObject *im = PyObject_GC_New(PyMethodObject, &PyMethod_Type);
+    if (im == NULL) {
         return NULL;
+    }
     im->im_weakreflist = NULL;
     Py_INCREF(func);
     im->im_func = func;
@@ -378,12 +378,6 @@ void
 PyMethod_Fini(void)
 {
     (void)PyMethod_ClearFreeList();
-}
-
-/* Print summary info about the state of the optimized allocator */
-void
-_PyMethod_DebugMallocStats(FILE *out)
-{
 }
 
 /* ------------------------------------------------------------------------

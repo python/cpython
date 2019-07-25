@@ -57,10 +57,11 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
             return NULL;
     }
 
-    PyCFunctionObject *op;
-    op = PyObject_GC_New(PyCFunctionObject, &PyCFunction_Type);
-    if (op == NULL)
+    PyCFunctionObject *op =
+        PyObject_GC_New(PyCFunctionObject, &PyCFunction_Type);
+    if (op == NULL) {
         return NULL;
+    }
     op->m_weakreflist = NULL;
     op->m_ml = ml;
     Py_XINCREF(self);
@@ -321,12 +322,6 @@ void
 PyCFunction_Fini(void)
 {
     (void)PyCFunction_ClearFreeList();
-}
-
-/* Print summary info about the state of the optimized allocator */
-void
-_PyCFunction_DebugMallocStats(FILE *out)
-{
 }
 
 
