@@ -4964,8 +4964,15 @@ class NetworkConnectionNoServer(unittest.TestCase):
         # Issue #9792: create_connection() should not recast timeout errors
         # as generic socket errors.
         with self.mocked_socket_module():
-            with self.assertRaises(socket.timeout):
+            try:
                 socket.create_connection((HOST, 1234))
+            except socket.timeout:
+                pass
+            except OSError as exc:
+                if support.IPV6_ENABLED or exc.errno != errno.EAFNOSUPPORT:
+                    raise
+            else:
+                self.fail('socket.timeout not raised')
 
 
 class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
@@ -5762,7 +5769,8 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     FILESIZE = (10 * 1024 * 1024)  # 10 MiB
     BUFSIZE = 8192
     FILEDATA = b""
-    TIMEOUT = 2
+    # bpo-37553: This is taking longer than 2 seconds on Windows ARM32 buildbot
+    TIMEOUT = 10 if sys.platform == 'win32' and platform.machine() == 'ARM' else 2
 
     @classmethod
     def setUpClass(cls):

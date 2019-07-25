@@ -14,7 +14,7 @@ class TestImport(unittest.TestCase):
     def __init__(self, *args, **kw):
         self.package_name = 'PACKAGE_'
         while self.package_name in sys.modules:
-            self.package_name += random.choose(string.ascii_letters)
+            self.package_name += random.choice(string.ascii_letters)
         self.module_name = self.package_name + '.foo'
         unittest.TestCase.__init__(self, *args, **kw)
 
@@ -60,7 +60,7 @@ class TestImport(unittest.TestCase):
         # ...make up a variable name that isn't bound in __builtins__
         var = 'a'
         while var in dir(__builtins__):
-            var += random.choose(string.ascii_letters)
+            var += random.choice(string.ascii_letters)
 
         # ...make a module that just contains that
         self.rewrite_file(var)

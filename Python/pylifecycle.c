@@ -1106,7 +1106,7 @@ flush_std_files(void)
     int status = 0;
 
     if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
-        tmp = _PyObject_CallMethodId(fout, &PyId_flush, NULL);
+        tmp = _PyObject_CallMethodIdNoArgs(fout, &PyId_flush);
         if (tmp == NULL) {
             PyErr_WriteUnraisable(fout);
             status = -1;
@@ -1116,7 +1116,7 @@ flush_std_files(void)
     }
 
     if (ferr != NULL && ferr != Py_None && !file_is_closed(ferr)) {
-        tmp = _PyObject_CallMethodId(ferr, &PyId_flush, NULL);
+        tmp = _PyObject_CallMethodIdNoArgs(ferr, &PyId_flush);
         if (tmp == NULL) {
             PyErr_Clear();
             status = -1;
@@ -1762,7 +1762,7 @@ create_stdio(const PyConfig *config, PyObject* io,
     text = PyUnicode_FromString(name);
     if (text == NULL || _PyObject_SetAttrId(raw, &PyId_name, text) < 0)
         goto error;
-    res = _PyObject_CallMethodId(raw, &PyId_isatty, NULL);
+    res = _PyObject_CallMethodIdNoArgs(raw, &PyId_isatty);
     if (res == NULL)
         goto error;
     isatty = PyObject_IsTrue(res);
@@ -2026,7 +2026,7 @@ _Py_FatalError_PrintExc(int fd)
     Py_XDECREF(tb);
 
     /* sys.stderr may be buffered: call sys.stderr.flush() */
-    res = _PyObject_CallMethodId(ferr, &PyId_flush, NULL);
+    res = _PyObject_CallMethodIdNoArgs(ferr, &PyId_flush);
     if (res == NULL) {
         _PyErr_Clear(tstate);
     }
@@ -2220,7 +2220,7 @@ wait_for_thread_shutdown(PyThreadState *tstate)
         /* else: threading not imported */
         return;
     }
-    result = _PyObject_CallMethodId(threading, &PyId__shutdown, NULL);
+    result = _PyObject_CallMethodIdNoArgs(threading, &PyId__shutdown);
     if (result == NULL) {
         PyErr_WriteUnraisable(threading);
     }

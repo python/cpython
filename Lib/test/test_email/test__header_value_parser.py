@@ -522,6 +522,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         self._test_get_x(parser.get_bare_quoted_string,
                          '""', '""', '', [], '')
 
+    def test_get_bare_quoted_string_missing_endquotes(self):
+        self._test_get_x(parser.get_bare_quoted_string,
+                         '"', '""', '', [errors.InvalidHeaderDefect], '')
+
     def test_get_bare_quoted_string_following_wsp_preserved(self):
         self._test_get_x(parser.get_bare_quoted_string,
              '"foo"\t bar', '"foo"', 'foo', [], '\t bar')
@@ -1443,6 +1447,16 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(addr_spec.local_part, 'star.a.star')
         self.assertEqual(addr_spec.domain, 'example.com')
         self.assertEqual(addr_spec.addr_spec, 'star.a.star@example.com')
+
+    def test_get_addr_spec_multiple_domains(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_addr_spec('star@a.star@example.com')
+
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_addr_spec('star@a@example.com')
+
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_addr_spec('star@172.17.0.1@example.com')
 
     # get_obs_route
 
@@ -2710,6 +2724,13 @@ class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
             # Defects are apparent missing *0*, and two 'out of sequence'.
             [errors.InvalidHeaderDefect]*3),
 
+        # bpo-37461: Check that we don't go into an infinite loop.
+        'extra_dquote': (
+            'r*="\'a\'\\"',
+            ' r="\\""',
+            'r*=\'a\'"',
+            [('r', '"')],
+            [errors.InvalidHeaderDefect]*2),
     }
 
 @parameterize

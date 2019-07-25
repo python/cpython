@@ -1745,6 +1745,24 @@ class HTTPSTest(TestCase):
             self.assertEqual(h, c.host)
             self.assertEqual(p, c.port)
 
+    def test_tls13_pha(self):
+        import ssl
+        if not ssl.HAS_TLSv1_3:
+            self.skipTest('TLS 1.3 support required')
+        # just check status of PHA flag
+        h = client.HTTPSConnection('localhost', 443)
+        self.assertTrue(h._context.post_handshake_auth)
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.assertFalse(context.post_handshake_auth)
+        h = client.HTTPSConnection('localhost', 443, context=context)
+        self.assertIs(h._context, context)
+        self.assertFalse(h._context.post_handshake_auth)
+
+        h = client.HTTPSConnection('localhost', 443, context=context,
+                                   cert_file=CERT_localhost)
+        self.assertTrue(h._context.post_handshake_auth)
+
 
 class RequestBodyTest(TestCase):
     """Test cases where a request includes a message body."""

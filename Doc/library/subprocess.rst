@@ -1166,12 +1166,12 @@ In the following examples, we assume that the relevant functions have already
 been imported from the :mod:`subprocess` module.
 
 
-Replacing /bin/sh shell backquote
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing :program:`/bin/sh` shell command substitution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   output=`mycmd myarg`
+   output=$(mycmd myarg)
 
 becomes::
 
@@ -1182,7 +1182,7 @@ Replacing shell pipeline
 
 .. code-block:: bash
 
-   output=`dmesg | grep hda`
+   output=$(dmesg | grep hda)
 
 becomes::
 
@@ -1199,7 +1199,7 @@ be used directly:
 
 .. code-block:: bash
 
-   output=`dmesg | grep hda`
+   output=$(dmesg | grep hda)
 
 becomes::
 

@@ -1688,7 +1688,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 return NULL;
         }
     }
-    return arguments(posargs, posonlyargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
+    return arguments(posonlyargs, posargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
 }
 
 static expr_ty
@@ -2645,7 +2645,7 @@ ast_for_binop(struct compiling *c, const node *n)
             return NULL;
 
         tmp_result = BinOp(result, newoperator, tmp,
-                           LINENO(next_oper), next_oper->n_col_offset,
+                           LINENO(n), n->n_col_offset,
                            CHILD(n, i * 2 + 2)->n_end_lineno,
                            CHILD(n, i * 2 + 2)->n_end_col_offset,
                            c->c_arena);

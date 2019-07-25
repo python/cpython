@@ -4,7 +4,6 @@ init = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
 importlib_util = util.import_importlib('importlib.util')
 
-import contextlib
 import importlib.util
 import os
 import pathlib

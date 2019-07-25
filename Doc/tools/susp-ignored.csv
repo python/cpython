@@ -4,7 +4,7 @@ c-api/sequence,,:i2,del o[i1:i2]
 c-api/sequence,,:i2,o[i1:i2]
 c-api/unicode,,:end,str[start:end]
 c-api/unicode,,:start,unicode[start:start+length]
-distutils/examples,274,`,This is the description of the ``foobar`` package.
+distutils/examples,267,`,This is the description of the ``foobar`` package.
 distutils/setupscript,,::,
 extending/embedding,,:numargs,"if(!PyArg_ParseTuple(args, "":numargs""))"
 extending/extending,,:myfunction,"PyArg_ParseTuple(args, ""D:myfunction"", &c);"
@@ -218,8 +218,6 @@ library/stdtypes,,:len,s[len(s):len(s)]
 library/stdtypes,,::,>>> y = m[::2]
 library/stdtypes,,::,>>> z = y[::-2]
 library/string,,`,"!""#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
-library/subprocess,,`,"output=`dmesg | grep hda`"
-library/subprocess,,`,"output=`mycmd myarg`"
 library/tarfile,,:bz2,
 library/tarfile,,:compression,filemode[:compression]
 library/tarfile,,:gz,

@@ -797,7 +797,7 @@ print_exception(PyObject *f, PyObject *value)
             Py_DECREF(value);
             value = message;
 
-            line = PyUnicode_FromFormat("  File \"%U\", line %d\n",
+            line = PyUnicode_FromFormat("  File \"%S\", line %d\n",
                                           filename, lineno);
             Py_DECREF(filename);
             if (line != NULL) {
@@ -978,7 +978,7 @@ _PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *t
     Py_XDECREF(seen);
 
     /* Call file.flush() */
-    PyObject *res = _PyObject_CallMethodId(file, &PyId_flush, NULL);
+    PyObject *res = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
     if (!res) {
         /* Silently ignore file.flush() error */
         PyErr_Clear();
@@ -1072,7 +1072,7 @@ flush_io(void)
 
     f = _PySys_GetObjectId(&PyId_stderr);
     if (f != NULL) {
-        r = _PyObject_CallMethodId(f, &PyId_flush, NULL);
+        r = _PyObject_CallMethodIdNoArgs(f, &PyId_flush);
         if (r)
             Py_DECREF(r);
         else
@@ -1080,7 +1080,7 @@ flush_io(void)
     }
     f = _PySys_GetObjectId(&PyId_stdout);
     if (f != NULL) {
-        r = _PyObject_CallMethodId(f, &PyId_flush, NULL);
+        r = _PyObject_CallMethodIdNoArgs(f, &PyId_flush);
         if (r)
             Py_DECREF(r);
         else

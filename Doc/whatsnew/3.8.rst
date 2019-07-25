@@ -515,6 +515,11 @@ for certain types of invalid or corrupt gzip files.
 idlelib and IDLE
 ----------------
 
+Add optional line numbers for IDLE editor windows. Windows
+open without line numbers unless set otherwise in the General
+tab of the configuration dialog.
+(Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
+
 Output over N lines (50 by default) is squeezed down to a button.
 N can be changed in the PyShell section of the General page of the
 Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
@@ -623,6 +628,20 @@ contain characters unrepresentable at the OS level.
 Added :meth:`pathlib.Path.link_to()` which creates a hard link pointing
 to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
+
+
+pickle
+------
+
+Reduction methods can now include a 6th item in the tuple they return. This
+item should specify a custom state-setting method that's called instead of the
+regular ``__setstate__`` method.
+(Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`)
+
+:mod:`pickle` extensions subclassing the C-optimized :class:`~pickle.Pickler`
+can now override the pickling logic of functions and classes by defining the
+special :meth:`~pickle.Pickler.reducer_override` method.
+(Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`)
 
 
 plistlib
@@ -1045,9 +1064,18 @@ Build and C API Changes
   allocation or deallocation may need to be adjusted.
   (Contributed by Eddie Elizondo in :issue:`35810`.)
 
+* The new function :c:func:`PyCode_NewWithPosOnlyArgs` allows to create
+  code objects like :c:func:`PyCode_New`, but with an extra *posonlyargcount*
+  parameter for indicating the number of positional-only arguments.
+  (Contributed by Pablo Galindo in :issue:`37221`.)
+
 
 Deprecated
 ==========
+
+* The distutils ``bdist_wininst`` command is now deprecated, use
+  ``bdist_wheel`` (wheel packages) instead.
+  (Contributed by Victor Stinner in :issue:`37481`.)
 
 * Deprecated methods ``getchildren()`` and ``getiterator()`` in
   the :mod:`~xml.etree.ElementTree` module emit now a

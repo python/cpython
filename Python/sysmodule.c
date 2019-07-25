@@ -581,7 +581,7 @@ sys_displayhook_unencodable(PyThreadState *tstate, PyObject *outf, PyObject *o)
 
     buffer = _PyObject_GetAttrId(outf, &PyId_buffer);
     if (buffer) {
-        result = _PyObject_CallMethodIdObjArgs(buffer, &PyId_write, encoded, NULL);
+        result = _PyObject_CallMethodIdOneArg(buffer, &PyId_write, encoded);
         Py_DECREF(buffer);
         Py_DECREF(encoded);
         if (result == NULL)
@@ -2850,6 +2850,7 @@ _PySys_InitMain(_PyRuntimeState *runtime, PyThreadState *tstate)
     COPY_LIST("path", config->module_search_paths);
 
     SET_SYS_FROM_WSTR("executable", config->executable);
+    SET_SYS_FROM_WSTR("_base_executable", config->base_executable);
     SET_SYS_FROM_WSTR("prefix", config->prefix);
     SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
     SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
@@ -3113,9 +3114,7 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
     if (file == NULL)
         return -1;
     assert(unicode != NULL);
-    PyObject *margs[2] = {file, unicode};
-    PyObject *result = _PyObject_VectorcallMethodId(&PyId_write, margs,
-        2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    PyObject *result = _PyObject_CallMethodIdOneArg(file, &PyId_write, unicode);
     if (result == NULL) {
         return -1;
     }

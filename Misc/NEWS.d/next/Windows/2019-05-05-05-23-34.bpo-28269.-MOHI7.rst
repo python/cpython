@@ -1,0 +1,1 @@
+Replace use of :c:func:`strcasecmp` for the system function :c:func:`_stricmp`. Patch by Minmin Gong.

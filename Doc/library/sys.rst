@@ -875,6 +875,10 @@ always available.
 
    .. versionadded:: 3.3
 
+   .. note::
+
+      The addition of new required attributes must go through the normal PEP
+      process. See :pep:`421` for more information.
 
 .. data:: int_info
 
@@ -904,6 +908,12 @@ always available.
    <tut-interactive>`.  This is done after the :envvar:`PYTHONSTARTUP` file is
    read, so that you can set this hook there.  The :mod:`site` module
    :ref:`sets this <rlcompleter-config>`.
+
+   .. audit-event:: cpython.run_interactivehook hook sys.__interactivehook__
+
+      Raises an :ref:`auditing event <auditing>`
+      ``cpython.run_interactivehook`` with the hook object as the argument when
+      the hook is called on startup.
 
    .. versionadded:: 3.4
 
