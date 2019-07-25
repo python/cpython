@@ -119,7 +119,7 @@ function Get-PyVenvCfgOverrides(
     $ConfigDir
 ) {
     # Ensure the file exists, and issue a warning if it doesn't (but still allow the function to continue).
-    $pyvenvConfigPath = Join-Path -Resolve -Path $PyVenvCfgPath -ChildPath 'pyvenv.cfg' -ErrorAction Continue
+    $pyvenvConfigPath = Join-Path -Resolve -Path $ConfigDir -ChildPath 'pyvenv.cfg' -ErrorAction Continue
 
     if ($pyvenvConfigPath) {
 
@@ -133,7 +133,7 @@ function Get-PyVenvCfgOverrides(
 
                 # Remove extraneous quotations around a string value.
                 if ("'""".Contains($val.Substring(0,1))) {
-                    $val = $val.Substring(1, $m.Length - 2)
+                    $val = $val.Substring(1, $val.Length - 2)
                 }
 
                 $pyvenvConfig[$keyval[0]] = $val
@@ -159,7 +159,7 @@ if (-not $VenvDir) {
 
 # Next, read the `pyvenv.cfg` file to determine any required value such
 # as `prompt`.
-$pyvenvCfg = Get-PyVenvCfgOverrides -VenvBaseDir $VenvDir
+$pyvenvCfg = Get-PyVenvCfgOverrides -ConfigDir $VenvDir
 
 # Next, set the prompt from the command line, or the config file, or
 # just use the name of the virtual environment folder.
