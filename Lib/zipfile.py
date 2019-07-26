@@ -1575,7 +1575,7 @@ class _ZipWriteFile(io.BufferedIOBase):
         self._crc = crc32(data, self._crc)
         if self._compressor:
             data = self._compressor.compress(data)
-            self._compress_size += len(data)
+        self._compress_size += len(data)
         self._fileobj.write(data)
         return nbytes
 
@@ -1589,9 +1589,7 @@ class _ZipWriteFile(io.BufferedIOBase):
                 buf = self._compressor.flush()
                 self._compress_size += len(buf)
                 self._fileobj.write(buf)
-                self._zinfo.compress_size = self._compress_size
-            else:
-                self._zinfo.compress_size = self._file_size
+            self._zinfo.compress_size = self._compress_size
             self._zinfo.CRC = self._crc
             self._zinfo.file_size = self._file_size
 
