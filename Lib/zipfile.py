@@ -1942,8 +1942,6 @@ class ZipFile:
             raise ValueError('open() requires mode "r" or "w"')
         if pwd and not isinstance(pwd, bytes):
             raise TypeError("pwd: expected bytes, got %s" % type(pwd).__name__)
-        if pwd and (mode == "w"):
-            raise ValueError("pwd is only supported for reading files")
         if not self.fp:
             raise ValueError(
                 "Attempt to use ZIP archive that was already closed")
@@ -1965,7 +1963,7 @@ class ZipFile:
 
         if mode == 'w':
             return self._open_to_write(
-                zinfo, force_zip64=force_zip64, **kwargs
+                zinfo, force_zip64=force_zip64, pwd=pwd, **kwargs
             )
 
         if self._writing:
@@ -1995,10 +1993,12 @@ class ZipFile:
             zef_file.close()
             raise
 
-    def get_zipwritefile(self, zinfo, zip64, **kwargs):
+    def get_zipwritefile(self, zinfo, zip64, pwd, **kwargs):
+        if pwd:
+            raise ValueError("pwd is only supported for reading files")
         return self.zipwritefile_cls(self, zinfo, zip64)
 
-    def _open_to_write(self, zinfo, force_zip64=False, **kwargs):
+    def _open_to_write(self, zinfo, force_zip64=False, pwd=None, **kwargs):
         if force_zip64 and not self._allowZip64:
             raise ValueError(
                 "force_zip64 is True, but allowZip64 was False when opening "
@@ -2036,7 +2036,7 @@ class ZipFile:
         self._writecheck(zinfo)
         self._didModify = True
         self._writing = True
-        return self.get_zipwritefile(zinfo, zip64, **kwargs)
+        return self.get_zipwritefile(zinfo, zip64, pwd, **kwargs)
 
     def extract(self, member, path=None, pwd=None):
         """Extract a member from the archive to the current working directory,
