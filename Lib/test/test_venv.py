@@ -473,8 +473,9 @@ class EnsurePipTest(BaseTest):
         #    Please check the permissions and owner of that directory. If
         #    executing pip with sudo, you may want sudo's -H flag."
         # where $HOME is replaced by the HOME environment variable.
-        err = re.sub("^The directory .* or its parent directory is not owned "
-                     "by the current user .*$", "", err, flags=re.MULTILINE)
+        err = re.sub("^(WARNING: )?The directory .* or its parent directory "
+                     "is not owned by the current user .*$", "",
+                     err, flags=re.MULTILINE)
         self.assertEqual(err.rstrip(), "")
         # Being fairly specific regarding the expected behaviour for the
         # initial bundling phase in Python 3.4. If the output changes in
