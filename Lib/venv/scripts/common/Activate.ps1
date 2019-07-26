@@ -88,7 +88,7 @@ function global:deactivate ([switch]$NonDestructive) {
     }
 
     # Just remove the _PYTHON_VENV_PROMPT_PREFIX altogether:
-    if ($_PYTHON_VENV_PROMPT_PREFIX) {
+    if (Get-Variable -Name "_PYTHON_VENV_PROMPT_PREFIX" -ErrorAction SilentlyContinue) {
         Remove-Variable -Name _PYTHON_VENV_PROMPT_PREFIX -Scope Global -Force
     }
 
@@ -118,11 +118,14 @@ function Get-PyVenvCfgOverrides(
     [String]
     $ConfigDir
 ) {
+    Write-Verbose "Given ConfigDir=$ConfigDir, obtain values in pyvenv.cfg"
+
     # Ensure the file exists, and issue a warning if it doesn't (but still allow the function to continue).
     $pyvenvConfigPath = Join-Path -Resolve -Path $ConfigDir -ChildPath 'pyvenv.cfg' -ErrorAction Continue
 
     if ($pyvenvConfigPath) {
 
+        Write-Verbose "File exists, parse `key = value` lines"
         $pyvenvConfigContent = Get-Content -Path $pyvenvConfigPath
         $pyvenvConfig = @{ }
 
@@ -137,6 +140,7 @@ function Get-PyVenvCfgOverrides(
                 }
 
                 $pyvenvConfig[$keyval[0]] = $val
+                Write-Verbose "Adding Key: '$($keyval[0])'='$val'"
             }
         }
     }
@@ -150,11 +154,20 @@ function Get-PyVenvCfgOverrides(
 $VenvExecPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $VenvExecDir = Get-Item -Path $VenvExecPath
 
+Write-Verbose "Activation script is located in path: '$VenvExecPath'"
+Write-Verbose "VenvExecDir Fullname: '$($VenvExecDir.FullName)"
+Write-Verbose "VenvExecDir Name: '$($VenvExecDir.Name)"
+
 # Set values required in priority: CmdLine, ConfigFile, Default
 # First, get the location of the virtual environment, it might not be
 # VenvExecDir if specified on the command line.
-if (-not $VenvDir) {
-    $VenvDir = $VenvExecDir.Parent.FullName
+if ($VenvDir) {
+    Write-Verbose "VenvDir given as parameter, using '$VenvDir' to determine values"
+} else {
+    Write-Verbose "VenvDir not given as a parameter, using parent directory name as VenvDir."
+    $VenvDir = $VenvExecDir.Parent.FullName.TrimEnd("\\/")
+    $VenvDir = $VenvDir.Insert($VenvDir.Length, "/")
+    Write-Verbose "VenvDir=$VenvDir"
 }
 
 # Next, read the `pyvenv.cfg` file to determine any required value such
@@ -163,13 +176,18 @@ $pyvenvCfg = Get-PyVenvCfgOverrides -ConfigDir $VenvDir
 
 # Next, set the prompt from the command line, or the config file, or
 # just use the name of the virtual environment folder.
-if (-not $Prompt) {
+if ($Prompt) {
+    Write-Verbose "Prompt specified as argument, using '$Prompt'"
+} else {
+    Write-Verbose "Prompt not specified as argument to script, checking pyvenv.cfg value"
     if ($pyvenvCfg -and $pyvenvCfg['prompt']) {
+        Write-Verbose "  Setting based on value in pyvenv.cfg='$($pyvenvCfg['prompt'])'"
         $Prompt = $pyvenvCfg['prompt'];
     }
     else {
-        $venvDir = Get-Item -Path $VenvDir
-        $Prompt = $venvDir.Name;
+        Write-Verbose "  Setting prompt based on parent's directory's name. (Is the directory name passed to venv module when creating the virutal environment)"
+        Write-Verbose "  Got leaf-name of $VenvDir='$(Split-Path -Path $venvDir -Leaf)'"
+        $Prompt = Split-Path -Path $venvDir -Leaf
     }
 }
 
@@ -195,7 +213,7 @@ if (-not $Env:VIRTUAL_ENV_DISABLE_PROMPT) {
     New-Variable -Name _PYTHON_VENV_PROMPT_PREFIX -Description "Python virtual environment prompt prefix" -Scope Global -Option ReadOnly -Visibility Public -Value $Prompt
 
     function global:prompt {
-        Write-Host -NoNewline -ForegroundColor DarkGreen "($_PYTHON_VENV_PROMPT_PREFIX) "
+        Write-Host -NoNewline -ForegroundColor Green "($_PYTHON_VENV_PROMPT_PREFIX) "
         _OLD_VIRTUAL_PROMPT
     }
 }
