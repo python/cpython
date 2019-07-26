@@ -3,11 +3,12 @@
 # written by Fredrik Lundh, February 1998
 #
 
-__version__ = "0.9"
-
 import itertools
 import tkinter
 
+__version__ = "0.9"
+__all__ = ["NORMAL", "ROMAN", "BOLD", "ITALIC",
+           "nametofont", "Font", "families", "names"]
 
 # weight/slant
 NORMAL = "normal"

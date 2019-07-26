@@ -32,12 +32,12 @@ tk.mainloop()
 
 import enum
 import sys
+import types
 
 import _tkinter # If this fails your Python may not be configured for Tk
 TclError = _tkinter.TclError
 from tkinter.constants import *
 import re
-
 
 wantobjects = 1
 
@@ -4568,6 +4568,10 @@ def _test():
     root.deiconify()
     root.mainloop()
 
+
+__all__ = [name for name, obj in globals().items()
+           if not name.startswith('_') and not isinstance(obj, types.ModuleType)
+           and name not in {'wantobjects'}]
 
 if __name__ == '__main__':
     _test()

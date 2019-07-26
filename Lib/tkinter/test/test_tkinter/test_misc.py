@@ -7,6 +7,20 @@ support.requires('gui')
 
 class MiscTest(AbstractTkTest, unittest.TestCase):
 
+    def test_all(self):
+        self.assertIn("Widget", tkinter.__all__)
+        # Check that variables from tkinter.constants are also in tkinter.__all__
+        self.assertIn("CASCADE", tkinter.__all__)
+        self.assertIsNotNone(tkinter.CASCADE)
+        # Check that sys, re, and constants are not in tkinter.__all__
+        self.assertNotIn("re", tkinter.__all__)
+        self.assertNotIn("sys", tkinter.__all__)
+        self.assertNotIn("constants", tkinter.__all__)
+        # Check that an underscored functions is not in tkinter.__all__
+        self.assertNotIn("_tkerror", tkinter.__all__)
+        # Check that wantobjects is not in tkinter.__all__
+        self.assertNotIn("wantobjects", tkinter.__all__)
+
     def test_repr(self):
         t = tkinter.Toplevel(self.root, name='top')
         f = tkinter.Frame(t, name='child')
