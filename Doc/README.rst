@@ -59,7 +59,7 @@ Available make targets are:
 * "htmlview", which re-uses the "html" builder, but then opens the main page
   in your default web browser.
 
-* "htmlhelp", which builds HTML files and a HTML Help project file usable to
+* "htmlhelp", which builds HTML files and an HTML Help project file used to
   convert them into a single Compiled HTML (.chm) file -- these are popular
   under Microsoft Windows, but very handy on every platform.
 
