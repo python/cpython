@@ -195,7 +195,7 @@ class ConfigDialog(Toplevel):
 
     def destroy(self):
         global font_sample_text
-        font_sample_text = self.fontpage.font_sample.text.get('1.0', 'end')
+        font_sample_text = self.fontpage.font_sample.get('1.0', 'end')
         self.grab_release()
         super().destroy()
 
@@ -557,11 +557,10 @@ class FontPage(Frame):
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
         # frame_sample.
-        # self.font_sample = Text(frame_sample, width=20, height=20)
-        # self.font_sample.insert(END, font_sample_text)
-        self.font_sample = ScrollableTextFrame(frame_sample)
-        self.font_sample.text.config(wrap='word', width=1, height=1)
-        self.font_sample.text.insert('1.0', font_sample_text)
+        font_sample_scrollable_frame = ScrollableTextFrame(frame_sample)
+        self.font_sample = font_sample_scrollable_frame.text
+        self.font_sample.config(wrap='word', width=1, height=1)
+        self.font_sample.insert(END, font_sample_text)
         # frame_indent.
         indent_title = Label(
                 frame_indent, justify=LEFT,
@@ -587,7 +586,7 @@ class FontPage(Frame):
         self.sizelist.pack(side=LEFT, anchor=W)
         self.bold_toggle.pack(side=LEFT, anchor=W, padx=20)
         # frame_sample.
-        self.font_sample.pack(expand=TRUE, fill=BOTH)
+        font_sample_scrollable_frame.pack(expand=TRUE, fill=BOTH)
         # frame_indent.
         indent_title.pack(side=TOP, anchor=W, padx=5)
         self.indent_scale.pack(side=TOP, padx=5, fill=X)
@@ -662,7 +661,7 @@ class FontPage(Frame):
         font_name = self.font_name.get()
         font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
         new_font = (font_name, self.font_size.get(), font_weight)
-        self.font_sample.text['font'] = new_font
+        self.font_sample['font'] = new_font
         self.highlight_sample['font'] = new_font
 
     def load_tab_cfg(self):
