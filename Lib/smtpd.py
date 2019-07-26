@@ -658,6 +658,8 @@ class SMTPServer(asyncore.dispatcher):
                 localaddr, remoteaddr), file=DEBUGSTREAM)
 
     def handle_accepted(self, conn, addr):
+        import logging
+        logging.error('never reached')
         print('Incoming connection from %s' % repr(addr), file=DEBUGSTREAM)
         channel = self.channel_class(self,
                                      conn,

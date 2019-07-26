@@ -371,6 +371,7 @@ class SMTP:
         self.send(str)
 
     def getreply(self):
+        import logging
         """Get a reply from the server.
 
         Returns a tuple consisting of:
@@ -388,6 +389,7 @@ class SMTP:
             self.file = self.sock.makefile('rb')
         while 1:
             try:
+                logging.error('staling here')
                 line = self.file.readline(_MAXLINE + 1)
             except OSError as e:
                 self.close()
