@@ -29,7 +29,7 @@ class AutoHiddenScrollbar(Scrollbar):
         raise TclError(f'{self.__class__.__name__} does not support "place"')
 
 
-def add_config_hook(config_callback):
+def add_config_callback(config_callback):
     """Class decorator adding a configuration callback for Tk widgets"""
     def decorator(cls):
         class WidgetWithConfigHook(cls):
@@ -64,7 +64,7 @@ class ScrollableTextFrame(Frame):
         """
         super().__init__(master, **kwargs)
 
-        @add_config_hook(self._config_callback)
+        @add_config_callback(self._config_callback)
         class TextWithConfigHook(Text):
             pass
         self.text = TextWithConfigHook(self)
