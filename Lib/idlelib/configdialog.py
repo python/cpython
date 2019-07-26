@@ -559,7 +559,7 @@ class FontPage(Frame):
         # frame_sample.
         font_sample_scrollable_frame = ScrollableTextFrame(frame_sample)
         self.font_sample = font_sample_scrollable_frame.text
-        self.font_sample.config(wrap='word', width=1, height=1)
+        self.font_sample.config(wrap=NONE, width=1, height=1)
         self.font_sample.insert(END, font_sample_text)
         # frame_indent.
         indent_title = Label(
