@@ -1,0 +1,1 @@
+Refactor :mod:`zipfile` module to ease extending functionality in subclasses and fix seeking in encrypted files.
