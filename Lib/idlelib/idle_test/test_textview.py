@@ -11,7 +11,7 @@ from test.support import requires
 requires('gui')
 
 import os
-from tkinter import Tk
+from tkinter import Tk, CHAR, NONE, WORD
 from tkinter.ttk import Button
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
@@ -69,13 +69,58 @@ class ViewWindowTest(unittest.TestCase):
         view.destroy()
 
 
-class TextFrameTest(unittest.TestCase):
+class ScrollableTextFrameTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.root = root = Tk()
         root.withdraw()
-        cls.frame = tv.TextFrame(root, 'test text')
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    def setUp(self):
+        self.frame = tv.ScrollableTextFrame(root)
+        self.text = self.frame.text
+
+    def tearDown(self):
+        self.frame.update_idletasks()
+        self.frame.destroy()
+
+    def test_line1(self):
+        self.text.insert('1.0', 'test text')
+        self.assertEqual(self.text.get('1.0', '1.end'), 'test text')
+
+    def test_horiz_scrollbar(self):
+        # The horizontal scrollbar should be shown/hidden according to
+        # the 'wrap' setting: It should only be shown when 'wrap' is
+        # set to NONE.
+
+        # Check initial state.
+        wrap = self.text.cget('wrap')
+        self.assertEqual(self.frame.xscroll is not None, wrap == NONE)
+
+        # Check after updating the 'wrap' setting in various ways.
+        self.text.config(wrap=NONE)
+        self.assertIsNotNone(self.frame.xscroll)
+        self.text.configure(wrap=CHAR)
+        self.assertIsNone(self.frame.xscroll)
+        self.text['wrap'] = NONE
+        self.assertIsNotNone(self.frame.xscroll)
+        self.text['wrap'] = WORD
+        self.assertIsNone(self.frame.xscroll)
+
+
+class ViewFrameTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.root = root = Tk()
+        root.withdraw()
+        cls.frame = tv.ViewFrame(root, 'test text')
 
     @classmethod
     def tearDownClass(cls):

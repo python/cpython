@@ -2,10 +2,11 @@
 
 """
 from tkinter import Toplevel, Text, TclError,\
-    HORIZONTAL, VERTICAL, N, S, E, W
+    HORIZONTAL, VERTICAL, N, S, E, W, NSEW, NONE, WORD, SUNKEN
 from tkinter.ttk import Frame, Scrollbar, Button
 from tkinter.messagebox import showerror
 
+from functools import update_wrapper
 from idlelib.colorizer import color_config
 
 
@@ -28,52 +29,104 @@ class AutoHiddenScrollbar(Scrollbar):
         raise TclError(f'{self.__class__.__name__} does not support "place"')
 
 
-class TextFrame(Frame):
-    "Display text with scrollbar."
+def add_config_hook(config_callback):
+    """Class decorator adding a configuration callback for Tk widgets"""
+    def decorator(cls):
+        class WidgetWithConfigHook(cls):
+            def __setitem__(self, key, value):
+                config_callback({key: value})
+                super().__setitem__(key, value)
 
-    def __init__(self, parent, rawtext, wrap='word'):
+            def configure(self, cnf=None, **kw):
+                if cnf is not None:
+                    config_callback(cnf)
+                if kw:
+                    config_callback(kw)
+                super().configure(cnf=cnf, **kw)
+
+            config = configure
+
+        update_wrapper(WidgetWithConfigHook, cls, updated=[])
+        return WidgetWithConfigHook
+
+    return decorator
+
+
+class ScrollableTextFrame(Frame):
+    """Display text with scrollbar(s)."""
+
+    def __init__(self, master, **kwargs):
         """Create a frame for Textview.
 
-        parent - parent widget for this frame
-        rawtext - text to display
-        """
-        super().__init__(parent)
-        self['relief'] = 'sunken'
-        self['height'] = 700
+        master - master widget for this frame
 
-        self.text = text = Text(self, wrap=wrap, highlightthickness=0)
-        color_config(text)
-        text.grid(row=0, column=0, sticky=N+S+E+W)
+        The Text widget is accessible via the 'text' attribute.
+        """
+        super().__init__(master, **kwargs)
+
+        @add_config_hook(self._config_callback)
+        class TextWithConfigHook(Text):
+            pass
+        self.text = TextWithConfigHook(self)
+        self.text.grid(row=0, column=0, sticky=NSEW)
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        text.insert(0.0, rawtext)
-        text['state'] = 'disabled'
-        text.focus_set()
 
         # vertical scrollbar
-        self.yscroll = yscroll = AutoHiddenScrollbar(self, orient=VERTICAL,
-                                                     takefocus=False,
-                                                     command=text.yview)
-        text['yscrollcommand'] = yscroll.set
-        yscroll.grid(row=0, column=1, sticky=N+S)
+        self.yscroll = AutoHiddenScrollbar(self, orient=VERTICAL,
+                                           takefocus=False,
+                                           command=self.text.yview)
+        self.text['yscrollcommand'] = self.yscroll.set
+        self.yscroll.grid(row=0, column=1, sticky=N+S)
 
-        if wrap == 'none':
-            # horizontal scrollbar
-            self.xscroll = xscroll = AutoHiddenScrollbar(self, orient=HORIZONTAL,
-                                                         takefocus=False,
-                                                         command=text.xview)
-            text['xscrollcommand'] = xscroll.set
-            xscroll.grid(row=1, column=0, sticky=E+W)
+        # horizontal scrollbar
+        self.xscroll = None
+        self._set_wrapping(self.text.cget('wrap'))
+
+    def _config_callback(self, cnf):
+        if 'wrap' in cnf:
+            self._set_wrapping(cnf['wrap'])
+
+    def _set_wrapping(self, wrap):
+        """show/hide the horizontal scrollbar as per the 'wrap' setting"""
+        # show the scrollbar only when wrap is set to NONE
+        if wrap == NONE and self.xscroll is None:
+            self.xscroll = AutoHiddenScrollbar(self, orient=HORIZONTAL,
+                                               takefocus=False,
+                                               command=self.text.xview)
+            self.text['xscrollcommand'] = self.xscroll.set
+            self.xscroll.grid(row=1, column=0, sticky=E+W)
+        elif wrap != NONE and self.xscroll is not None:
+            self.text['xscrollcommand'] = ''
+            self.xscroll.grid_forget()
+            self.xscroll.destroy()
+            self.xscroll = None
 
 
 class ViewFrame(Frame):
     "Display TextFrame and Close button."
     def __init__(self, parent, text, wrap='word'):
+        """Create a frame for viewing text with a "Close" button.
+
+        parent - parent widget for this frame
+        text - text to display
+        wrap - type of text wrapping to use ('word', 'char' or 'none')
+
+        The Text widget is accessible via the 'text' attribute.
+        """
         super().__init__(parent)
         self.parent = parent
         self.bind('<Return>', self.ok)
         self.bind('<Escape>', self.ok)
-        self.textframe = TextFrame(self, text, wrap=wrap)
+        self.textframe = ScrollableTextFrame(self, relief=SUNKEN, height=700)
+
+        self.text = self.textframe.text
+        self.text.configure(wrap=wrap, highlightthickness=0)
+        self.text.insert('1.0', text)
+        color_config(self.text)
+        self.text['state'] = 'disabled'
+        self.text.focus_set()
+
         self.button_ok = button_ok = Button(
                 self, text='Close', command=self.ok, takefocus=False)
         self.textframe.pack(side='top', expand=True, fill='both')
@@ -87,7 +140,7 @@ class ViewFrame(Frame):
 class ViewWindow(Toplevel):
     "A simple text viewer dialog for IDLE."
 
-    def __init__(self, parent, title, text, modal=True, wrap='word',
+    def __init__(self, parent, title, text, modal=True, wrap=WORD,
                  *, _htest=False, _utest=False):
         """Show the given text in a scrollable window with a 'close' button.
 
