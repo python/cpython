@@ -557,8 +557,8 @@ class FontPage(Frame):
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
         # frame_sample.
-        font_sample_scrollable_frame = ScrollableTextFrame(frame_sample)
-        self.font_sample = font_sample_scrollable_frame.text
+        font_sample__frame = ScrollableTextFrame(frame_sample)
+        self.font_sample = font_sample__frame.text
         self.font_sample.config(wrap=NONE, width=1, height=1)
         self.font_sample.insert(END, font_sample_text)
         # frame_indent.
@@ -586,7 +586,7 @@ class FontPage(Frame):
         self.sizelist.pack(side=LEFT, anchor=W)
         self.bold_toggle.pack(side=LEFT, anchor=W, padx=20)
         # frame_sample.
-        font_sample_scrollable_frame.pack(expand=TRUE, fill=BOTH)
+        font_sample__frame.pack(expand=TRUE, fill=BOTH)
         # frame_indent.
         indent_title.pack(side=TOP, anchor=W, padx=5)
         self.indent_scale.pack(side=TOP, padx=5, fill=X)
