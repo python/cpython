@@ -115,10 +115,8 @@ installed in a virtual environment should be runnable without activating it,
 and run with the virtual environment's Python automatically.
 
 You can deactivate a virtual environment by typing "deactivate" in your shell.
-The exact mechanism is platform-specific: for example, the Bash activation
-script defines a "deactivate" function, whereas on Windows there are separate
-scripts called ``deactivate.bat`` and ``Deactivate.ps1`` which are installed
-when the virtual environment is created.
+The exact mechanism is platform-specific and is an internal implementation
+detail (typically a script or shell function will be used).
 
 .. versionadded:: 3.4
    ``fish`` and ``csh`` activation scripts.
