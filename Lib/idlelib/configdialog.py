@@ -874,7 +874,7 @@ class HighPage(Frame):
         for texttag in text_and_tags:
             text.insert(END, texttag[0], texttag[1])
         n_lines = len(text.get('1.0', END).splitlines())
-        for lineno in range(1, n_lines + 1):
+        for lineno in range(1, n_lines):
             text.insert(f'{lineno}.0',
                         f'{lineno:{len(str(n_lines))}d} ',
                         'linenumber')
