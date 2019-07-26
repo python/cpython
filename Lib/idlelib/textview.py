@@ -2,7 +2,7 @@
 
 """
 from tkinter import Toplevel, Text, TclError,\
-    HORIZONTAL, VERTICAL, N, S, E, W, NSEW, NONE, WORD, SUNKEN
+    HORIZONTAL, VERTICAL, NS, EW, NSEW, NONE, WORD, SUNKEN
 from tkinter.ttk import Frame, Scrollbar, Button
 from tkinter.messagebox import showerror
 
@@ -76,8 +76,8 @@ class ScrollableTextFrame(Frame):
         self.yscroll = AutoHiddenScrollbar(self, orient=VERTICAL,
                                            takefocus=False,
                                            command=self.text.yview)
+        self.yscroll.grid(row=0, column=1, sticky=NS)
         self.text['yscrollcommand'] = self.yscroll.set
-        self.yscroll.grid(row=0, column=1, sticky=N+S)
 
         # horizontal scrollbar
         self.xscroll = None
@@ -94,8 +94,8 @@ class ScrollableTextFrame(Frame):
             self.xscroll = AutoHiddenScrollbar(self, orient=HORIZONTAL,
                                                takefocus=False,
                                                command=self.text.xview)
+            self.xscroll.grid(row=1, column=0, sticky=EW)
             self.text['xscrollcommand'] = self.xscroll.set
-            self.xscroll.grid(row=1, column=0, sticky=E+W)
         elif wrap != NONE and self.xscroll is not None:
             self.text['xscrollcommand'] = ''
             self.xscroll.grid_forget()

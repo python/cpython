@@ -33,6 +33,7 @@ from idlelib.codecontext import CodeContext
 from idlelib.parenmatch import ParenMatch
 from idlelib.format import FormatParagraph
 from idlelib.squeezer import Squeezer
+from idlelib.textview import ScrollableTextFrame
 
 changes = ConfigChanges()
 # Reload changed options in the following classes.
@@ -194,7 +195,7 @@ class ConfigDialog(Toplevel):
 
     def destroy(self):
         global font_sample_text
-        font_sample_text = self.fontpage.font_sample.get('1.0', 'end')
+        font_sample_text = self.fontpage.font_sample.text.get('1.0', 'end')
         self.grab_release()
         super().destroy()
 
@@ -556,8 +557,11 @@ class FontPage(Frame):
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
         # frame_sample.
-        self.font_sample = Text(frame_sample, width=20, height=20)
-        self.font_sample.insert(END, font_sample_text)
+        # self.font_sample = Text(frame_sample, width=20, height=20)
+        # self.font_sample.insert(END, font_sample_text)
+        self.font_sample = ScrollableTextFrame(frame_sample)
+        self.font_sample.text.config(wrap='word', width=1, height=1)
+        self.font_sample.text.insert('1.0', font_sample_text)
         # frame_indent.
         indent_title = Label(
                 frame_indent, justify=LEFT,
@@ -568,8 +572,9 @@ class FontPage(Frame):
 
         # Grid and pack widgets:
         self.columnconfigure(1, weight=1)
+        self.rowconfigure(2, weight=1)
         frame_font.grid(row=0, column=0, padx=5, pady=5)
-        frame_sample.grid(row=0, column=1, rowspan=2, padx=5, pady=5,
+        frame_sample.grid(row=0, column=1, rowspan=3, padx=5, pady=5,
                           sticky='nsew')
         frame_indent.grid(row=1, column=0, padx=5, pady=5, sticky='ew')
         # frame_font.
@@ -657,7 +662,7 @@ class FontPage(Frame):
         font_name = self.font_name.get()
         font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
         new_font = (font_name, self.font_size.get(), font_weight)
-        self.font_sample['font'] = new_font
+        self.font_sample.text['font'] = new_font
         self.highlight_sample['font'] = new_font
 
     def load_tab_cfg(self):
