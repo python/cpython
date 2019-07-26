@@ -1917,6 +1917,12 @@ class ZipFile:
             return fp.read()
 
     def open(self, name, mode="r", pwd=None, *, force_zip64=False):
+        return self._open(
+            name, mode=mode, pwd=pwd, force_zip64=force_zip64
+        )
+
+    def _open(self, name, mode="r", pwd=None, *, force_zip64=False,
+              **kwargs):
         """Return file-like object for 'name'.
 
         name is a string for the file name within the ZIP file, or a ZipInfo
@@ -1958,33 +1964,41 @@ class ZipFile:
             zinfo = self.getinfo(name)
 
         if mode == 'w':
-            return self._open_to_write(zinfo, force_zip64=force_zip64)
+            return self._open_to_write(
+                zinfo, force_zip64=force_zip64, **kwargs
+            )
 
         if self._writing:
             raise ValueError("Can't read from the ZIP file while there "
                     "is an open writing handle on it. "
                     "Close the writing handle before trying to read.")
 
-        return self._open_to_read(mode, zinfo, pwd)
+        return self._open_to_read(mode, zinfo, pwd, **kwargs)
 
     def get_decrypter(self, zinfo, pwd):
         if zinfo.is_encrypted:
             return CRCZipDecrypter(zinfo, pwd)
 
-    def _open_to_read(self, mode, zinfo, pwd):
+    def get_zipextfile(self, zef_file, mode, zinfo, pwd, **kwargs):
+        decrypter = self.get_decrypter(zinfo, pwd)
+        return self.zipextfile_cls(zef_file, mode, zinfo, decrypter, True)
+
+    def _open_to_read(self, mode, zinfo, pwd, **kwargs):
         # Open for reading:
         self._fileRefCnt += 1
 
         zef_file = _SharedFile(self.fp, zinfo.header_offset,
                                self._fpclose, self._lock, lambda: self._writing)
         try:
-            decrypter = self.get_decrypter(zinfo, pwd)
-            return self.zipextfile_cls(zef_file, mode, zinfo, decrypter, True)
-        except:
+            return self.get_zipextfile(zef_file, mode, zinfo, pwd, **kwargs)
+        except:  # noqa
             zef_file.close()
             raise
 
-    def _open_to_write(self, zinfo, force_zip64=False):
+    def get_zipwritefile(self, zinfo, zip64, **kwargs):
+        return self.zipwritefile_cls(self, zinfo, zip64)
+
+    def _open_to_write(self, zinfo, force_zip64=False, **kwargs):
         if force_zip64 and not self._allowZip64:
             raise ValueError(
                 "force_zip64 is True, but allowZip64 was False when opening "
@@ -2022,7 +2036,7 @@ class ZipFile:
         self._writecheck(zinfo)
         self._didModify = True
         self._writing = True
-        return self.zipwritefile_cls(self, zinfo, zip64)
+        return self.get_zipwritefile(zinfo, zip64, **kwargs)
 
     def extract(self, member, path=None, pwd=None):
         """Extract a member from the archive to the current working directory,
