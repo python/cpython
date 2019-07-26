@@ -1,0 +1,2 @@
+Simplify linking of shared libraries on the AIX to be similar to that of a
+System V system.  Patch by Eric N. Vander Weele.
