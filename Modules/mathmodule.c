@@ -2411,12 +2411,10 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     }
     for (i=0 ; i < n ; i++) {
         x = vec[i];
-        assert(Py_IS_FINITE(x) && fabs(x) <= max);
         x /= max;
         x = x*x;
         oldcsum = csum;
         csum += x;
-        assert(csum >= x);
         frac += (oldcsum - csum) + x;
     }
     return max * sqrt(csum - 1.0 + frac);
@@ -2427,8 +2425,8 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 /*[clinic input]
 math.dist
 
-    p: object(subclass_of='&PyTuple_Type')
-    q: object(subclass_of='&PyTuple_Type')
+    p: object
+    q: object
     /
 
 Return the Euclidean distance between two points p and q.
@@ -2448,10 +2446,28 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     double max = 0.0;
     double x, px, qx, result;
     Py_ssize_t i, m, n;
-    int found_nan = 0;
+    int found_nan = 0, p_allocated = 0, q_allocated = 0;
     double diffs_on_stack[NUM_STACK_ELEMS];
     double *diffs = diffs_on_stack;
 
+    if (!PyTuple_Check(p)) {
+        p = PySequence_Tuple(p);
+        if (p == NULL) {
+            return NULL;
+        }
+        p_allocated = 1;
+    }
+    if (!PyTuple_Check(q)) {
+        q = PySequence_Tuple(q);
+        if (q == NULL) {
+            if (p_allocated) {
+                Py_DECREF(p);
+            }
+            return NULL;
+        }
+        q_allocated = 1;
+    }    
+    
     m = PyTuple_GET_SIZE(p);
     n = PyTuple_GET_SIZE(q);
     if (m != n) {
@@ -2482,11 +2498,23 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     if (diffs != diffs_on_stack) {
         PyObject_Free(diffs);
     }
+    if (p_allocated) {
+        Py_DECREF(p);
+    }
+    if (q_allocated) {
+        Py_DECREF(q);
+    }
     return PyFloat_FromDouble(result);
 
   error_exit:
     if (diffs != diffs_on_stack) {
         PyObject_Free(diffs);
+    }
+    if (p_allocated) {
+        Py_DECREF(p);
+    }
+    if (q_allocated) {
+        Py_DECREF(q);
     }
     return NULL;
 }
