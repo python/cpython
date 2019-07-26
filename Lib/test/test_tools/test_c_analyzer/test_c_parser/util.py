@@ -10,6 +10,8 @@ class StrProxy:
         self.value = value
     def __str__(self):
         return self.value
+    def __bool__(self):
+        return bool(self.value)
 
 
 class Object:
