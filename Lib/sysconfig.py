@@ -375,11 +375,6 @@ def _generate_posix_vars():
         if hasattr(e, "strerror"):
             msg = msg + " (%s)" % e.strerror
         raise OSError(msg)
-    # On AIX, there are wrong paths to the linker scripts in the Makefile
-    # -- these paths are relative to the Python source, but when installed
-    # the scripts are in another directory.
-    if _PYTHON_BUILD:
-        vars['BLDSHARED'] = vars['LDSHARED']
 
     # There's a chicken-and-egg situation on OS X with regards to the
     # _sysconfigdata module after the changes introduced by #15298:

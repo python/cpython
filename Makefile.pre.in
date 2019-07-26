@@ -1578,21 +1578,6 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	$(INSTALL_SCRIPT) python-config.py $(DESTDIR)$(LIBPL)/python-config.py
 	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python$(LDVERSION)-config
-	@if [ -s Modules/python.exp -a \
-		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
-		echo; echo "Installing support files for building shared extension modules on AIX:"; \
-		$(INSTALL_DATA) Modules/python.exp		\
-				$(DESTDIR)$(LIBPL)/python.exp;		\
-		echo; echo "$(LIBPL)/python.exp";		\
-		$(INSTALL_SCRIPT) $(srcdir)/Modules/makexp_aix	\
-				$(DESTDIR)$(LIBPL)/makexp_aix;		\
-		echo "$(LIBPL)/makexp_aix";			\
-		$(INSTALL_SCRIPT) Modules/ld_so_aix	\
-				$(DESTDIR)$(LIBPL)/ld_so_aix;		\
-		echo "$(LIBPL)/ld_so_aix";			\
-		echo; echo "See Misc/AIX-NOTES for details.";	\
-	else true; \
-	fi
 
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
@@ -1787,8 +1772,7 @@ distclean: clobber
 	    if test "$$file" != "$(srcdir)/Lib/test/data/README"; then rm "$$file"; fi; \
 	done
 	-rm -f core Makefile Makefile.pre config.status Modules/Setup.local \
-		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
-		Misc/python-embed.pc Misc/python-config.sh
+		Misc/python.pc Misc/python-embed.pc Misc/python-config.sh
 	-rm -f python*-gdb.py
 	# Issue #28258: set LC_ALL to avoid issues with Estonian locale.
 	# Expansion is performed here by shell (spawned by make) itself before

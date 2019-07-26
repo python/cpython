@@ -1,6 +1,5 @@
 # added for local development
 .buildaix/
-Modules/python.exp
 buildaix/
 installp/
 .gitignore
