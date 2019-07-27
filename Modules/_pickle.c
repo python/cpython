@@ -1653,7 +1653,7 @@ _Unpickler_SetInputEncoding(UnpicklerObject *self,
 static int
 _Unpickler_SetBuffers(UnpicklerObject *self, PyObject *buffers)
 {
-    if (buffers == NULL) {
+    if (buffers == NULL || buffers == Py_None) {
         self->buffers = NULL;
     }
     else {
