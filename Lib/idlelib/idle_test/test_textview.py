@@ -82,36 +82,35 @@ class ScrollableTextFrameTest(unittest.TestCase):
         cls.root.destroy()
         del cls.root
 
-    def setUp(self):
-        self.frame = tv.ScrollableTextFrame(root)
-        self.text = self.frame.text
-
-    def tearDown(self):
-        self.frame.update_idletasks()
-        self.frame.destroy()
+    def make_frame(self, wrap=NONE, **kwargs):
+        frame = tv.ScrollableTextFrame(self.root, wrap=wrap, **kwargs)
+        def cleanup_frame():
+            frame.update_idletasks()
+            frame.destroy()
+        self.addCleanup(cleanup_frame)
+        return frame
 
     def test_line1(self):
-        self.text.insert('1.0', 'test text')
-        self.assertEqual(self.text.get('1.0', '1.end'), 'test text')
+        frame = self.make_frame()
+        frame.text.insert('1.0', 'test text')
+        self.assertEqual(frame.text.get('1.0', '1.end'), 'test text')
 
     def test_horiz_scrollbar(self):
         # The horizontal scrollbar should be shown/hidden according to
         # the 'wrap' setting: It should only be shown when 'wrap' is
         # set to NONE.
 
-        # Check initial state.
-        wrap = self.text.cget('wrap')
-        self.assertEqual(self.frame.xscroll is not None, wrap == NONE)
+        # wrap = NONE -> with horizontal scrolling
+        frame = self.make_frame(wrap=NONE)
+        self.assertEqual(frame.text.cget('wrap'), NONE)
+        self.assertIsNotNone(frame.xscroll)
 
-        # Check after updating the 'wrap' setting in various ways.
-        self.text.config(wrap=NONE)
-        self.assertIsNotNone(self.frame.xscroll)
-        self.text.configure(wrap=CHAR)
-        self.assertIsNone(self.frame.xscroll)
-        self.text['wrap'] = NONE
-        self.assertIsNotNone(self.frame.xscroll)
-        self.text['wrap'] = WORD
-        self.assertIsNone(self.frame.xscroll)
+        # wrap != NONE -> no horizontal scrolling
+        for wrap in [CHAR, WORD]:
+            with self.subTest(wrap=wrap):
+                frame = self.make_frame(wrap=wrap)
+                self.assertEqual(frame.text.cget('wrap'), wrap)
+                self.assertIsNone(frame.xscroll)
 
 
 class ViewFrameTest(unittest.TestCase):

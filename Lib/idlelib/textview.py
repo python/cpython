@@ -29,45 +29,25 @@ class AutoHiddenScrollbar(Scrollbar):
         raise TclError(f'{self.__class__.__name__} does not support "place"')
 
 
-def add_config_callback(config_callback):
-    """Class decorator adding a configuration callback for Tk widgets"""
-    def decorator(cls):
-        class WidgetWithConfigHook(cls):
-            def __setitem__(self, key, value):
-                config_callback({key: value})
-                super().__setitem__(key, value)
-
-            def configure(self, cnf=None, **kw):
-                if cnf is not None:
-                    config_callback(cnf)
-                if kw:
-                    config_callback(kw)
-                super().configure(cnf=cnf, **kw)
-
-            config = configure
-
-        update_wrapper(WidgetWithConfigHook, cls, updated=[])
-        return WidgetWithConfigHook
-
-    return decorator
-
-
 class ScrollableTextFrame(Frame):
     """Display text with scrollbar(s)."""
 
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, wrap=NONE, **kwargs):
         """Create a frame for Textview.
 
         master - master widget for this frame
+        wrap - type of text wrapping to use ('word', 'char' or 'none')
+
+        All parameters except for 'wrap' are passed to Frame.__init__().
 
         The Text widget is accessible via the 'text' attribute.
+
+        Note: Changing the wrapping mode of the text widget after
+        instantiation is not supported.
         """
         super().__init__(master, **kwargs)
 
-        @add_config_callback(self._handle_wrap)
-        class TextWithConfigHook(Text):
-            pass
-        text = self.text = TextWithConfigHook(self)
+        text = self.text = Text(self, wrap=wrap)
         self.text.grid(row=0, column=0, sticky=NSEW)
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -79,29 +59,14 @@ class ScrollableTextFrame(Frame):
         self.yscroll.grid(row=0, column=1, sticky=NS)
         text['yscrollcommand'] = self.yscroll.set
 
-        # horizontal scrollbar
-        self.xscroll = None
-        self._set_xscroll(self.text.cget('wrap'))
-
-    def _handle_wrap(self, cnf):
-        if 'wrap' in cnf:
-            self._set_xscroll(cnf['wrap'])
-
-    def _set_xscroll(self, wrap):
-        """show/hide the horizontal scrollbar as per the 'wrap' setting"""
-        text = self.text
-
-        # show the scrollbar only when wrap is set to NONE
-        if wrap == NONE and self.xscroll is None:
+        # horizontal scrollbar - only when wrap is set to NONE
+        if wrap == NONE:
             self.xscroll = AutoHiddenScrollbar(self, orient=HORIZONTAL,
                                                takefocus=False,
                                                command=text.xview)
             self.xscroll.grid(row=1, column=0, sticky=EW)
             text['xscrollcommand'] = self.xscroll.set
-        elif wrap != NONE and self.xscroll is not None:
-            text['xscrollcommand'] = ''
-            self.xscroll.grid_forget()
-            self.xscroll.destroy()
+        else:
             self.xscroll = None
 
 
