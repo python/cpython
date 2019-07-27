@@ -808,7 +808,7 @@ class HighPage(Frame):
                 (*)theme_message: Label
         """
         self.theme_elements = {
-            'Normal Text': ('normal', '00'),
+            'Normal Code or Text': ('normal', '00'),
             'Code Context': ('context', '01'),
             'Python Keywords': ('keyword', '02'),
             'Python Definitions': ('definition', '03'),
@@ -819,10 +819,10 @@ class HighPage(Frame):
             'Found Text': ('hit', '08'),
             'Cursor': ('cursor', '09'),
             'Editor Breakpoint': ('break', '10'),
-            'Shell Normal Text': ('console', '11'),
-            'Shell Error Text': ('error', '12'),
-            'Shell Stdout Text': ('stdout', '13'),
-            'Shell Stderr Text': ('stderr', '14'),
+            'Shell Prompt': ('console', '11'),
+            'Shell Internal Error': ('error', '12'),
+            'Shell User Output': ('stdout', '13'),
+            'Shell User Exception': ('stderr', '14'),
             'Line Number': ('linenumber', '16'),
             }
         self.builtin_name = tracers.add(
