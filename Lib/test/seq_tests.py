@@ -6,6 +6,8 @@ import unittest
 import sys
 import pickle
 from test import support
+from test.support import NONE
+from unittest.mock import ANY
 
 # Various iterables
 # This is used for checking the constructor (here and in test_deque.py)
@@ -221,15 +223,15 @@ class CommonTest(unittest.TestCase):
         self.assertRaises(TypeError, u.__contains__)
 
     def test_contains_fake(self):
-        class AllEq:
-            # Sequences must use rich comparison against each item
-            # (unless "is" is true, or an earlier item answered)
-            # So instances of AllEq must be found in all non-empty sequences.
-            def __eq__(self, other):
-                return True
-            __hash__ = None # Can't meet hash invariant requirements
-        self.assertNotIn(AllEq(), self.type2test([]))
-        self.assertIn(AllEq(), self.type2test([1]))
+        # Sequences must use rich comparison against each item
+        # (unless "is" is true, or an earlier item answered)
+        # So ANY must be found in all non-empty sequences.
+        self.assertNotIn(ANY, self.type2test([]))
+        self.assertIn(ANY, self.type2test([1]))
+        self.assertIn(1, self.type2test([ANY]))
+        self.assertNotIn(NONE, self.type2test([]))
+        self.assertNotIn(ANY, self.type2test([NONE]))
+        self.assertIn(NONE, self.type2test([ANY]))
 
     def test_contains_order(self):
         # Sequences must test in-order.  If a rich comparison has side
@@ -350,6 +352,11 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(a.count(1), 3)
         self.assertEqual(a.count(3), 0)
 
+        self.assertEqual(a.count(ANY), 9)
+        self.assertEqual(self.type2test([ANY, ANY]).count(1), 2)
+        self.assertEqual(self.type2test([ANY, ANY]).count(NONE), 2)
+        self.assertEqual(self.type2test([NONE, NONE]).count(ANY), 0)
+
         self.assertRaises(TypeError, a.count)
 
         class BadExc(Exception):
@@ -377,6 +384,11 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(u.index(0, 3), 3)
         self.assertEqual(u.index(0, 3, 4), 3)
         self.assertRaises(ValueError, u.index, 2, 0, -10)
+
+        self.assertEqual(u.index(ANY), 0)
+        self.assertEqual(self.type2test([ANY, ANY]).index(1), 0)
+        self.assertEqual(self.type2test([ANY, ANY]).index(NONE), 0)
+        self.assertRaises(ValueError, self.type2test([NONE, NONE]).index, ANY)
 
         self.assertRaises(TypeError, u.index)
 

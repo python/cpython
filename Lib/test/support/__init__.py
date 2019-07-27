@@ -3093,6 +3093,13 @@ class FakePath:
             return self.path
 
 
+class NoneEq:
+    def __eq__(self, other):
+        return False
+
+NONE = NoneEq()
+
+
 def maybe_get_event_loop_policy():
     """Return the global event loop policy if one is set, else return None."""
     return asyncio.events._event_loop_policy

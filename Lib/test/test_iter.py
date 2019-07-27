@@ -3,7 +3,8 @@
 import sys
 import unittest
 from test.support import run_unittest, TESTFN, unlink, cpython_only
-from test.support import check_free_after_iterating
+from test.support import check_free_after_iterating, NONE
+from unittest.mock import ANY
 import pickle
 import collections.abc
 
@@ -41,6 +42,14 @@ class IteratingSequenceClass:
     def __iter__(self):
         return BasicIterClass(self.n)
 
+class IteratorProxyClass:
+    def __init__(self, i):
+        self.i = i
+    def __next__(self):
+        return next(self.i)
+    def __iter__(self):
+        return self
+
 class SequenceClass:
     def __init__(self, n):
         self.n = n
@@ -49,6 +58,12 @@ class SequenceClass:
             return i
         else:
             raise IndexError
+
+class SequenceProxyClass:
+    def __init__(self, s):
+        self.s = s
+    def __getitem__(self, i):
+        return self.s[i]
 
 class UnlimitedSequenceClass:
     def __getitem__(self, i):
@@ -634,6 +649,13 @@ class TestCase(unittest.TestCase):
                 self.assertIn(i, sc5)
             for i in "abc", -1, 5, 42.42, (3, 4), [], {1: 1}, 3-12j, sc5:
                 self.assertNotIn(i, sc5)
+
+        self.assertIn(ANY, IteratorProxyClass(iter([1])))
+        self.assertIn(ANY, SequenceProxyClass([1]))
+        self.assertNotIn(ANY, IteratorProxyClass(iter([NONE])))
+        self.assertNotIn(ANY, SequenceProxyClass([NONE]))
+        self.assertIn(NONE, IteratorProxyClass(iter([ANY])))
+        self.assertIn(NONE, SequenceProxyClass([ANY]))
 
         self.assertRaises(TypeError, lambda: 3 in 12)
         self.assertRaises(TypeError, lambda: 3 not in map)
