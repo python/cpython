@@ -853,20 +853,20 @@ class HighPage(Frame):
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
         string_tags=(
-            ('# Click item to select.', 'comment'), ('\n', 'normal'),
+            ('# Click selects item.', 'comment'), ('\n', 'normal'),
             ('code context section', 'context'), ('\n\n', 'normal'),
             ('def', 'keyword'), (' ', 'normal'),
             ('func', 'definition'), ('(param):\n  ', 'normal'),
-            ('"""string"""', 'string'), ('\n  var0 = ', 'normal'),
+            ('"Return None."', 'string'), ('\n  var0 = ', 'normal'),
             ("'string'", 'string'), ('\n  var1 = ', 'normal'),
             ("'selected'", 'hilite'), ('\n  var2 = ', 'normal'),
             ("'found'", 'hit'), ('\n  var3 = ', 'normal'),
             ('list', 'builtin'), ('(', 'normal'),
             ('None', 'keyword'), (')\n', 'normal'),
             ('  breakpoint("line")', 'break'), ('\n\n', 'normal'),
-            ('>>>', 'console'), (' 1000 ', 'normal'),
+            ('>>>', 'console'), (' 3.14**2 ', 'normal'),
             ('| cursor', 'cursor'), ('\n ', 'normal'),
-            ('1000', 'stdout'), ('\n', 'normal'),
+            ('9.8596', 'stdout'), ('\n', 'normal'),
             ('>>>', 'console'), (' a ', 'normal'),
             ('b', 'error'), ('\n', 'normal'),
             ('SyntaxError', 'stderr'), ('\n', 'normal'))
