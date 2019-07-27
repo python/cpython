@@ -854,7 +854,8 @@ class HighPage(Frame):
         text.bind('<B1-Motion>', lambda e: 'break')
         string_tags=(
             ('# Click selects item.', 'comment'), ('\n', 'normal'),
-            ('code context section', 'context'), ('\n\n', 'normal'),
+            ('code context section', 'context'), ('\n', 'normal'),
+            ('| cursor', 'cursor'), ('\n', 'normal'),
             ('def', 'keyword'), (' ', 'normal'),
             ('func', 'definition'), ('(param):\n  ', 'normal'),
             ('"Return None."', 'string'), ('\n  var0 = ', 'normal'),
@@ -864,8 +865,7 @@ class HighPage(Frame):
             ('list', 'builtin'), ('(', 'normal'),
             ('None', 'keyword'), (')\n', 'normal'),
             ('  breakpoint("line")', 'break'), ('\n\n', 'normal'),
-            ('>>>', 'console'), (' 3.14**2 ', 'normal'),
-            ('| cursor', 'cursor'), ('\n ', 'normal'),
+            ('>>>', 'console'), (' 3.14**2\n', 'normal'),
             ('9.8596', 'stdout'), ('\n', 'normal'),
             ('>>>', 'console'), (' a ', 'normal'),
             ('b', 'error'), ('\n', 'normal'),
