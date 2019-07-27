@@ -833,6 +833,10 @@ class MathTests(unittest.TestCase):
                     sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
                 )
 
+        # Test non-tuple inputs
+        self.assertEqual(dist([1.0, 2.0, 3.0], [4.0, 2.0, -1.0]), 5.0)
+        self.assertEqual(dist(iter([1.0, 2.0, 3.0]), iter([4.0, 2.0, -1.0])), 5.0)
+
         # Test allowable types (those with __float__)
         self.assertEqual(dist((14.0, 1.0), (2.0, -4.0)), 13.0)
         self.assertEqual(dist((14, 1), (2, -4)), 13)
@@ -873,8 +877,6 @@ class MathTests(unittest.TestCase):
             dist((1, 2, 3), (4, 5, 6), (7, 8, 9))
         with self.assertRaises(TypeError):         # Scalars not allowed
             dist(1, 2)
-        with self.assertRaises(TypeError):         # Lists not allowed
-            dist([1, 2, 3], [4, 5, 6])
         with self.assertRaises(TypeError):         # Reject values without __float__
             dist((1.1, 'string', 2.2), (1, 2, 3))
         with self.assertRaises(ValueError):        # Check dimension agree

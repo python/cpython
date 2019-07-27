@@ -2427,14 +2427,14 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 /*[clinic input]
 math.dist
 
-    p: object(subclass_of='&PyTuple_Type')
-    q: object(subclass_of='&PyTuple_Type')
+    p: object
+    q: object
     /
 
 Return the Euclidean distance between two points p and q.
 
-The points should be specified as tuples of coordinates.
-Both tuples must be the same size.
+The points should be specified as sequences (or iterables) of
+coordinates.  Both inputs must have the same dimension.
 
 Roughly equivalent to:
     sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
@@ -2442,15 +2442,33 @@ Roughly equivalent to:
 
 static PyObject *
 math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
-/*[clinic end generated code: output=56bd9538d06bbcfe input=937122eaa5f19272]*/
+/*[clinic end generated code: output=56bd9538d06bbcfe input=74e85e1b6092e68e]*/
 {
     PyObject *item;
     double max = 0.0;
     double x, px, qx, result;
     Py_ssize_t i, m, n;
-    int found_nan = 0;
+    int found_nan = 0, p_allocated = 0, q_allocated = 0;
     double diffs_on_stack[NUM_STACK_ELEMS];
     double *diffs = diffs_on_stack;
+
+    if (!PyTuple_Check(p)) {
+        p = PySequence_Tuple(p);
+        if (p == NULL) {
+            return NULL;
+        }
+        p_allocated = 1;
+    }
+    if (!PyTuple_Check(q)) {
+        q = PySequence_Tuple(q);
+        if (q == NULL) {
+            if (p_allocated) {
+                Py_DECREF(p);
+            }
+            return NULL;
+        }
+        q_allocated = 1;
+    }
 
     m = PyTuple_GET_SIZE(p);
     n = PyTuple_GET_SIZE(q);
@@ -2482,11 +2500,23 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     if (diffs != diffs_on_stack) {
         PyObject_Free(diffs);
     }
+    if (p_allocated) {
+        Py_DECREF(p);
+    }
+    if (q_allocated) {
+        Py_DECREF(q);
+    }
     return PyFloat_FromDouble(result);
 
   error_exit:
     if (diffs != diffs_on_stack) {
         PyObject_Free(diffs);
+    }
+    if (p_allocated) {
+        Py_DECREF(p);
+    }
+    if (q_allocated) {
+        Py_DECREF(q);
     }
     return NULL;
 }
