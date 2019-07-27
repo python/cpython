@@ -51,7 +51,7 @@ class BaseSideBar:
 
         _padx, pady = get_widget_padding(self.text)
         self.sidebar_text = tk.Text(self.parent, width=1, wrap=tk.NONE,
-                                    padx=0, pady=pady,
+                                    padx=2, pady=pady,
                                     borderwidth=0, highlightthickness=0)
         self.sidebar_text.config(state=tk.DISABLED)
         self.text['yscrollcommand'] = self.redirect_yscroll_event
