@@ -349,7 +349,7 @@ _undo_delegator_spec = {
 ViewWindow_spec = {
     'file': 'textview',
     'kwds': {'title': 'Test textview',
-             'text': 'The quick brown fox jumps over the lazy dog.\n'*35,
+             'contents': 'The quick brown fox jumps over the lazy dog.\n'*35,
              '_htest': True},
     'msg': "Test for read-only property of text.\n"
            "Select text, scroll window, close"
