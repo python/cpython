@@ -1,0 +1,1 @@
+Add an is_relative_to() in PurePath class to compute a path is relative to the path or not.
