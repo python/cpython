@@ -67,7 +67,7 @@ class ScrollableTextFrame(Frame):
         @add_config_callback(self._handle_wrap)
         class TextWithConfigHook(Text):
             pass
-        self.text = TextWithConfigHook(self)
+        text = self.text = TextWithConfigHook(self)
         self.text.grid(row=0, column=0, sticky=NSEW)
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -75,9 +75,9 @@ class ScrollableTextFrame(Frame):
         # vertical scrollbar
         self.yscroll = AutoHiddenScrollbar(self, orient=VERTICAL,
                                            takefocus=False,
-                                           command=self.text.yview)
+                                           command=text.yview)
         self.yscroll.grid(row=0, column=1, sticky=NS)
-        self.text['yscrollcommand'] = self.yscroll.set
+        text['yscrollcommand'] = self.yscroll.set
 
         # horizontal scrollbar
         self.xscroll = None
@@ -89,15 +89,17 @@ class ScrollableTextFrame(Frame):
 
     def _set_xscroll(self, wrap):
         """show/hide the horizontal scrollbar as per the 'wrap' setting"""
+        text = self.text
+
         # show the scrollbar only when wrap is set to NONE
         if wrap == NONE and self.xscroll is None:
             self.xscroll = AutoHiddenScrollbar(self, orient=HORIZONTAL,
                                                takefocus=False,
-                                               command=self.text.xview)
+                                               command=text.xview)
             self.xscroll.grid(row=1, column=0, sticky=EW)
-            self.text['xscrollcommand'] = self.xscroll.set
+            text['xscrollcommand'] = self.xscroll.set
         elif wrap != NONE and self.xscroll is not None:
-            self.text['xscrollcommand'] = ''
+            text['xscrollcommand'] = ''
             self.xscroll.grid_forget()
             self.xscroll.destroy()
             self.xscroll = None
