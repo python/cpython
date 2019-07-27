@@ -1,0 +1,2 @@
+Allow to load buffer objects with `json.loads()`. Patch by Nikolay Kim
+<fafhrd91@gmail.com>.

@@ -25,7 +25,7 @@ Encoding basic Python object hierarchies::
     >>> io.getvalue()
     '["streaming API"]'
 
-Compact encoding::
+Compact encdetect_encodingoding::
 
     >>> import json
     >>> mydict = {'4': 5, '6': 7}
@@ -242,12 +242,13 @@ _default_decoder = JSONDecoder(object_hook=None, object_pairs_hook=None)
 
 
 def detect_encoding(b):
-    bstartswith = b.startswith
-    if bstartswith((codecs.BOM_UTF32_BE, codecs.BOM_UTF32_LE)):
-        return 'utf-32'
-    if bstartswith((codecs.BOM_UTF16_BE, codecs.BOM_UTF16_LE)):
-        return 'utf-16'
-    if bstartswith(codecs.BOM_UTF8):
+    for prefix in (codecs.BOM_UTF32_BE, codecs.BOM_UTF32_LE):
+        if b[:len(prefix)] == prefix:
+            return 'utf-32'
+    for prefix in (codecs.BOM_UTF16_BE, codecs.BOM_UTF16_LE):
+        if b[:len(prefix)] == prefix:
+            return 'utf-16'
+    if b[:len(codecs.BOM_UTF8)] == codecs.BOM_UTF8:
         return 'utf-8-sig'
 
     if len(b) >= 4:
@@ -337,11 +338,14 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
             raise JSONDecodeError("Unexpected UTF-8 BOM (decode using utf-8-sig)",
                                   s, 0)
     else:
-        if not isinstance(s, (bytes, bytearray)):
-            raise TypeError(f'the JSON object must be str, bytes or bytearray, '
-                            f'not {s.__class__.__name__}')
-        s = s.decode(detect_encoding(s), 'surrogatepass')
-
+        if not isinstance(s, (bytes, bytearray, memoryview)):
+            try:
+                s = memoryview(s)
+            except TypeError:
+                raise TypeError('the JSON object must be str, bytes or '
+                                'bytearray or memoryview compatible object, '
+                                'not {!r}'.format(s.__class__.__name__))
+        s = str(s, detect_encoding(s), 'surrogatepass')
     if "encoding" in kw:
         import warnings
         warnings.warn(
