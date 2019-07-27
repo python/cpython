@@ -5332,6 +5332,8 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
         value = PyObject_GetAttr(v, name);
         if (value == NULL)
             err = -1;
+        else if (skip_leading_underscores && PyModule_Check(value))
+            err = 0;  /* skip modules if no __all__ */
         else if (PyDict_CheckExact(locals))
             err = PyDict_SetItem(locals, name, value);
         else

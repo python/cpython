@@ -2,6 +2,7 @@
 import sys
 
 from pyexpat import *
+from pyexpat import model, errors
 
 # provide pyexpat submodules as xml.parsers.expat submodules
 sys.modules['xml.parsers.expat.model'] = model

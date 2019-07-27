@@ -1,0 +1,2 @@
+Modules from the module's namespace no longer included in *public names* if
+``__all__`` is not defined.

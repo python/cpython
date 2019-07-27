@@ -811,9 +811,14 @@ of strings which are names defined or imported by that module.  The names
 given in ``__all__`` are all considered public and are required to exist.  If
 ``__all__`` is not defined, the set of public names includes all names found
 in the module's namespace which do not begin with an underscore character
-(``'_'``).  ``__all__`` should contain the entire public API. It is intended
-to avoid accidentally exporting items that are not part of the API (such as
-library modules which were imported and used within the module).
+(``'_'``) and corresponding values are not modules (such as library modules
+which were imported and used within the module).  ``__all__`` should contain
+the entire public API.  It is intended to avoid accidentally exporting items
+that are not part of the API.
+
+.. versionchanged:: 3.9
+   Modules from the module's namespace are not included in *public names*
+   if ``__all__`` is not defined.
 
 The wild card form of import --- ``from module import *`` --- is only allowed at
 the module level.  Attempting to use it in class or function definitions will

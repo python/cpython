@@ -99,7 +99,7 @@ class TestPkg(unittest.TestCase):
     def test_2(self):
         hier = [
          ("t2", None),
-         ("t2 __init__.py", "'doc for t2'"),
+         ("t2 __init__.py", "'doc for t2'\nbar = 1\n_baz = 2"),
          ("t2 sub", None),
          ("t2 sub __init__.py", ""),
          ("t2 sub subsub", None),
@@ -118,7 +118,7 @@ class TestPkg(unittest.TestCase):
         s = """
             import t2
             from t2 import *
-            self.assertEqual(dir(), ['self', 'sub', 't2'])
+            self.assertEqual(dir(), ['bar', 'self', 't2'])
             """
         self.run_code(s)
 
@@ -139,7 +139,7 @@ class TestPkg(unittest.TestCase):
 
         s = """
             from t2 import *
-            self.assertEqual(dir(), ['self', 'sub'])
+            self.assertEqual(dir(), ['bar', 'self'])
             """
         self.run_code(s)
 
@@ -183,7 +183,7 @@ class TestPkg(unittest.TestCase):
     def test_5(self):
         hier = [
         ("t5", None),
-        ("t5 __init__.py", "import t5.foo"),
+        ("t5 __init__.py", "import t5.foo\nbar = 1\n_baz = 2"),
         ("t5 string.py", "spam = 1"),
         ("t5 foo.py",
          "from . import string; assert string.spam == 1"),
@@ -193,7 +193,7 @@ class TestPkg(unittest.TestCase):
         import t5
         s = """
             from t5 import *
-            self.assertEqual(dir(), ['foo', 'self', 'string', 't5'])
+            self.assertEqual(dir(), ['bar', 'self'])
             """
         self.run_code(s)
 
@@ -201,7 +201,7 @@ class TestPkg(unittest.TestCase):
         self.assertEqual(fixdir(dir(t5)),
                          ['__cached__', '__doc__', '__file__', '__loader__',
                           '__name__', '__package__', '__path__', '__spec__',
-                          'foo', 'string', 't5'])
+                          '_baz', 'bar', 'foo', 'string', 't5'])
         self.assertEqual(fixdir(dir(t5.foo)),
                          ['__cached__', '__doc__', '__file__', '__loader__',
                           '__name__', '__package__', '__spec__', 'string'])
