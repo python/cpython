@@ -6,12 +6,12 @@ Using mock Text would not change this.  Other mocks are used to retrieve
 information about calls.
 """
 from idlelib import textview as tv
-import unittest
 from test.support import requires
 requires('gui')
 
 import os
-from tkinter import Tk, CHAR, NONE, WORD
+import unittest
+from tkinter import Tk, TclError, CHAR, NONE, WORD
 from tkinter.ttk import Button
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
@@ -68,6 +68,13 @@ class ViewWindowTest(unittest.TestCase):
         del view.destroy  # Unmask real function.
         view.destroy()
 
+
+class AutoHideScrollbarTest(unittest.TestCase):
+    # Method set is tested in ScrollableTextFrameTest
+    def test_forbidden_geometry(self):
+        scroll = tv.AutoHideScrollbar(root)
+        self.assertRaises(TclError, scroll.pack)
+        self.assertRaises(TclError, scroll.place)
 
 class ScrollableTextFrameTest(unittest.TestCase):
 
