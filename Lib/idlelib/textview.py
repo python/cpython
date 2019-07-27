@@ -105,11 +105,11 @@ class ScrollableTextFrame(Frame):
 
 class ViewFrame(Frame):
     "Display TextFrame and Close button."
-    def __init__(self, parent, text, wrap='word'):
+    def __init__(self, parent, contents, wrap='word'):
         """Create a frame for viewing text with a "Close" button.
 
         parent - parent widget for this frame
-        text - text to display
+        contents - text to display
         wrap - type of text wrapping to use ('word', 'char' or 'none')
 
         The Text widget is accessible via the 'text' attribute.
@@ -120,12 +120,12 @@ class ViewFrame(Frame):
         self.bind('<Escape>', self.ok)
         self.textframe = ScrollableTextFrame(self, relief=SUNKEN, height=700)
 
-        self.text = self.textframe.text
-        self.text.configure(wrap=wrap, highlightthickness=0)
-        self.text.insert('1.0', text)
-        color_config(self.text)
-        self.text['state'] = 'disabled'
-        self.text.focus_set()
+        text = self.text = self.textframe.text
+        text.configure(wrap=wrap, highlightthickness=0)
+        text.insert('1.0', contents)
+        color_config(text)
+        text['state'] = 'disabled'
+        text.focus_set()
 
         self.button_ok = button_ok = Button(
                 self, text='Close', command=self.ok, takefocus=False)
@@ -140,7 +140,7 @@ class ViewFrame(Frame):
 class ViewWindow(Toplevel):
     "A simple text viewer dialog for IDLE."
 
-    def __init__(self, parent, title, text, modal=True, wrap=WORD,
+    def __init__(self, parent, title, contents, modal=True, wrap=WORD,
                  *, _htest=False, _utest=False):
         """Show the given text in a scrollable window with a 'close' button.
 
@@ -149,7 +149,7 @@ class ViewWindow(Toplevel):
 
         parent - parent of this dialog
         title - string which is title of popup dialog
-        text - text to display in dialog
+        contents - text to display in dialog
         wrap - type of text wrapping to use ('word', 'char' or 'none')
         _htest - bool; change box location when running htest.
         _utest - bool; don't wait_window when running unittest.
@@ -162,7 +162,7 @@ class ViewWindow(Toplevel):
         self.geometry(f'=750x500+{x}+{y}')
 
         self.title(title)
-        self.viewframe = ViewFrame(self, text, wrap=wrap)
+        self.viewframe = ViewFrame(self, contents, wrap=wrap)
         self.protocol("WM_DELETE_WINDOW", self.ok)
         self.button_ok = button_ok = Button(self, text='Close',
                                             command=self.ok, takefocus=False)
@@ -182,18 +182,18 @@ class ViewWindow(Toplevel):
         self.destroy()
 
 
-def view_text(parent, title, text, modal=True, wrap='word', _utest=False):
+def view_text(parent, title, contents, modal=True, wrap='word', _utest=False):
     """Create text viewer for given text.
 
     parent - parent of this dialog
     title - string which is the title of popup dialog
-    text - text to display in this dialog
+    contents - text to display in this dialog
     wrap - type of text wrapping to use ('word', 'char' or 'none')
     modal - controls if users can interact with other windows while this
             dialog is displayed
     _utest - bool; controls wait_window on unittest
     """
-    return ViewWindow(parent, title, text, modal, wrap=wrap, _utest=_utest)
+    return ViewWindow(parent, title, contents, modal, wrap=wrap, _utest=_utest)
 
 
 def view_file(parent, title, filename, encoding, modal=True, wrap='word',
