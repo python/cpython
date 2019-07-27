@@ -10,7 +10,7 @@ from functools import update_wrapper
 from idlelib.colorizer import color_config
 
 
-class AutoHiddenScrollbar(Scrollbar):
+class AutoHideScrollbar(Scrollbar):
     """A scrollbar that is automatically hidden when not needed.
 
     Only the grid geometry manager is supported.
@@ -48,12 +48,12 @@ class ScrollableTextFrame(Frame):
         super().__init__(master, **kwargs)
 
         text = self.text = Text(self, wrap=wrap)
-        self.text.grid(row=0, column=0, sticky=NSEW)
+        text.grid(row=0, column=0, sticky=NSEW)
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
         # vertical scrollbar
-        self.yscroll = AutoHiddenScrollbar(self, orient=VERTICAL,
+        self.yscroll = AutoHideScrollbar(self, orient=VERTICAL,
                                            takefocus=False,
                                            command=text.yview)
         self.yscroll.grid(row=0, column=1, sticky=NS)
@@ -61,7 +61,7 @@ class ScrollableTextFrame(Frame):
 
         # horizontal scrollbar - only when wrap is set to NONE
         if wrap == NONE:
-            self.xscroll = AutoHiddenScrollbar(self, orient=HORIZONTAL,
+            self.xscroll = AutoHideScrollbar(self, orient=HORIZONTAL,
                                                takefocus=False,
                                                command=text.xview)
             self.xscroll.grid(row=1, column=0, sticky=EW)
