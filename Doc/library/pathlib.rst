@@ -539,6 +539,18 @@ Pure paths provide the following methods and properties:
       ValueError: '/etc/passwd' does not start with '/usr'
 
 
+.. method:: PurePath.is_relative_to(*other)
+
+    Compute the boolean result that this path is relative to the path
+    represented by *other* or not.
+
+      >>> p = PurePosixPath('/etc/passwd')
+      >>> p.is_relative_to('/etc')
+      True
+      >>> p.is_relative_to('/usr')
+      False
+
+
 .. method:: PurePath.with_name(name)
 
    Return a new path with the :attr:`name` changed.  If the original path

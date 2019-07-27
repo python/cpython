@@ -619,6 +619,21 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, p.relative_to, '')
         self.assertRaises(ValueError, p.relative_to, P('a'))
 
+    def test_is_relative_to(self):
+        P = self.cls
+        p = P('a/b')
+        self.assertRaises(TypeError, p.is_relative_to)
+        self.assertRaises(TypeError, p.is_relative_to, b'a')
+        self.assertTrue(p.is_relative_to(P()))
+        # With several args.
+        self.assertTrue(p.is_relative_to('a', 'b'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P('c')))
+        self.assertFalse(p.is_relative_to(P('a/b/c')))
+        self.assertFalse(p.is_relative_to(P('a/c')))
+        self.assertFalse(p.is_relative_to(P('/a')))
+        self.assertFalse(p.is_relative_to('/a'))
+
     def test_pickling_common(self):
         P = self.cls
         p = P('/a/b')
