@@ -2431,8 +2431,8 @@ math.dist
 
 Return the Euclidean distance between two points p and q.
 
-The points should be specified as tuples of coordinates.
-Both tuples must be the same size.
+The points should be specified as sequences (or iterables) of
+coordinates.  Both inputs should should have the same dimension.
 
 Roughly equivalent to:
     sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
@@ -2466,8 +2466,8 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
             return NULL;
         }
         q_allocated = 1;
-    }    
-    
+    }
+
     m = PyTuple_GET_SIZE(p);
     n = PyTuple_GET_SIZE(q);
     if (m != n) {
