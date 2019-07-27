@@ -76,6 +76,7 @@ class AutoHideScrollbarTest(unittest.TestCase):
         self.assertRaises(TclError, scroll.pack)
         self.assertRaises(TclError, scroll.place)
 
+
 class ScrollableTextFrameTest(unittest.TestCase):
 
     @classmethod
