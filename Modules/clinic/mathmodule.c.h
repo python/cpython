@@ -297,8 +297,8 @@ PyDoc_STRVAR(math_dist__doc__,
 "\n"
 "Return the Euclidean distance between two points p and q.\n"
 "\n"
-"The points should be specified as tuples of coordinates.\n"
-"Both tuples must be the same size.\n"
+"The points should be specified as sequences (or iterables) of\n"
+"coordinates.  Both inputs must have the same dimension.\n"
 "\n"
 "Roughly equivalent to:\n"
 "    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))");
@@ -712,4 +712,4 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4125131c06ce153e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f93cfe13ab2fdb4e input=a9049054013a1b77]*/

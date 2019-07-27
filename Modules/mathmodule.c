@@ -2432,7 +2432,7 @@ math.dist
 Return the Euclidean distance between two points p and q.
 
 The points should be specified as sequences (or iterables) of
-coordinates.  Both inputs should should have the same dimension.
+coordinates.  Both inputs must have the same dimension.
 
 Roughly equivalent to:
     sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
@@ -2440,7 +2440,7 @@ Roughly equivalent to:
 
 static PyObject *
 math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
-/*[clinic end generated code: output=56bd9538d06bbcfe input=8c83c07c7a524664]*/
+/*[clinic end generated code: output=56bd9538d06bbcfe input=74e85e1b6092e68e]*/
 {
     PyObject *item;
     double max = 0.0;
