@@ -2440,7 +2440,7 @@ Roughly equivalent to:
 
 static PyObject *
 math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
-/*[clinic end generated code: output=56bd9538d06bbcfe input=937122eaa5f19272]*/
+/*[clinic end generated code: output=56bd9538d06bbcfe input=8c83c07c7a524664]*/
 {
     PyObject *item;
     double max = 0.0;
