@@ -88,10 +88,9 @@ class ViewFrame(Frame):
         self.textframe = ScrollableTextFrame(self, relief=SUNKEN, height=700)
 
         text = self.text = self.textframe.text
-        text.configure(wrap=wrap, highlightthickness=0)
         text.insert('1.0', contents)
+        text.configure(wrap=wrap, highlightthickness=0, state='disabled')
         color_config(text)
-        text['state'] = 'disabled'
         text.focus_set()
 
         self.button_ok = button_ok = Button(
