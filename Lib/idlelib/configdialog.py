@@ -867,8 +867,8 @@ class HighPage(Frame):
             ('  breakpoint("line")', 'break'), ('\n\n', 'normal'),
             ('>>>', 'console'), (' 3.14**2\n', 'normal'),
             ('9.8596', 'stdout'), ('\n', 'normal'),
-            ('>>>', 'console'), (' a ', 'normal'),
-            ('b', 'error'), ('\n', 'normal'),
+            ('>>>', 'console'), (' py ', 'normal'),
+            ('t', 'error'), ('hon\n', 'normal'),
             ('SyntaxError', 'stderr'), ('\n', 'normal'))
         for string, tag in string_tags:
             text.insert(END, string, tag)
