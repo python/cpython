@@ -1,8 +1,11 @@
 from collections import namedtuple
+import os
 import re
 
 from . import util, info
 
+
+CONTINUATION = '\\' + os.linesep
 
 IDENTIFIER = r'(?:\w*[a-zA-Z]\w*)'
 IDENTIFIER_RE = re.compile('^' + IDENTIFIER + '$')
@@ -12,99 +15,6 @@ def _coerce_str(value):
     if not value:
         return ''
     return str(value).strip()
-
-
-def iter_lines(lines, *,
-               _parse_directive=(lambda l: parse_directive(l)),
-               ):
-    """Yield (line, directive, active conditions) for each given line.
-
-    "lines" is expected to be comment-free.  Each line is returned
-    as-is.
-
-    "active conditions" is the set of preprocessor conditions (e.g.
-    "defined()") under which the current line of code will be included
-    in compilation.  That set is derived from every conditional
-    directive block (e.g. "if defined()", "ifdef", "else") containing
-    that line.  That includes nested directives.  Note that the
-    current line does not affect the active conditions for iteself.
-    It only impacts subsequent lines.  That applies to directives
-    that close blocks (e.g. "endif") just as much as conditional
-    directvies.  Also note that "else" and "elseif" directives
-    update the active conditions (for later lines), rather than
-    adding to them.
-
-    If a directive has line continuations then each line is returned
-    with a "directive" of True, except for the last line, which has
-    the directive object like normal.
-    """
-    ifdefs = []
-    def _recompute_conditions(directive):
-        if directive.kind in ('if', 'ifdef', 'ifndef'):
-            ifdefs.append(
-                    ([], directive.condition))
-        elif directive.kind == 'elseif':
-            if ifdefs:
-                negated, active = ifdefs.pop()
-                if active:
-                    negated.append(active)
-            else:
-                negated = []
-            ifdefs.append(
-                    (negated, directive.condition))
-        elif directive.kind == 'else':
-            if ifdefs:
-                negated, active = ifdefs.pop()
-                if active:
-                    negated.append(active)
-                ifdefs.append(
-                        (negated, None))
-        elif directive.kind == 'endif':
-            if ifdefs:
-                ifdefs.pop()
-
-        conditions = []
-        for negated, active in ifdefs:
-            for condition in negated:
-                conditions.append(f'! ({condition})')
-            if active:
-                conditions.append(active)
-        return tuple(conditions)
-
-    incomment = False
-    conditions = ()
-    directive = None
-    for line in lines:
-        if directive:
-            directive += ' ' + line.strip()
-        else:
-            stripped = line.strip()
-            if not stripped.startswith('#'):
-                yield line, None, conditions
-                continue
-            directive = '#' + stripped[1:].lstrip()
-
-        if directive.endswith('\\'):
-            directive = directive[:-1]
-            yield line, True, conditions
-        else:
-            while '  ' in directive:
-                directive = directive.replace('  ', ' ')
-            directive = _parse_directive(directive)
-            yield line, directive, conditions
-            last = None
-            if directive.kind in ('else', 'endif'):
-                conditions = _recompute_conditions(directive)
-            elif isinstance(directive, IfDirective):
-                conditions = _recompute_conditions(directive)
-            directive = None
-
-
-def run(filename, *,
-        _gcc=(lambda f: _gcc(f)),
-        ):
-    """Return the text of the given file after running the preprocessor."""
-    return _gcc(filename)
 
 
 #############################
@@ -156,6 +66,18 @@ DEFINE_RE = re.compile(DEFINE, re.VERBOSE)
 
 def parse_directive(line):
     """Return the appropriate directive for the given line."""
+    line = line.strip()
+    if line.startswith('#'):
+        line = line[1:].lstrip()
+        line = '#' + line
+    directive = line
+    #directive = '#' + line
+    while '  ' in directive:
+        directive = directive.replace('  ', ' ')
+    return _parse_directive(directive)
+
+
+def _parse_directive(line):
     m = DEFINE_RE.match(line)
     if m:
         name, args, text = m.groups()
@@ -422,7 +344,131 @@ class OtherDirective(PreprocessorDirective,
 
 
 #############################
-# GCC preprocessor (platform-specific)
+# iterating lines
+
+def _recompute_conditions(directive, ifstack):
+    if directive.kind in ('if', 'ifdef', 'ifndef'):
+        ifstack.append(
+                ([], directive.condition))
+    elif directive.kind == 'elseif':
+        if ifstack:
+            negated, active = ifstack.pop()
+            if active:
+                negated.append(active)
+        else:
+            negated = []
+        ifstack.append(
+                (negated, directive.condition))
+    elif directive.kind == 'else':
+        if ifstack:
+            negated, active = ifstack.pop()
+            if active:
+                negated.append(active)
+            ifstack.append(
+                    (negated, None))
+    elif directive.kind == 'endif':
+        if ifstack:
+            ifstack.pop()
+
+    conditions = []
+    for negated, active in ifstack:
+        for condition in negated:
+            conditions.append(f'! ({condition})')
+        if active:
+            conditions.append(active)
+    return tuple(conditions)
+
+
+def _iter_clean_lines(lines):
+    lines = iter(enumerate(lines, 1))
+    for lno, line in lines:
+        # Handle line continuations.
+        while line.endswith(CONTINUATION):
+            try:
+                lno, _line = next(lines)
+            except StopIteration:
+                break
+            line = line[:-len(CONTINUATION)] + ' ' + _line
+
+        # Deal with comments.
+        after = line
+        line = ''
+        while True:
+            # Look for a comment.
+            before, begin, remainder = after.partition('/*')
+            if '//' in before:
+                before, _, _ = before.partition('//')
+                line += before + ' '  # per the C99 spec
+                break
+            line += before
+            if not begin:
+                break
+            line += ' '  # per the C99 spec
+
+            # Go until we find the end of the comment.
+            _, end, after = remainder.partition('*/')
+            while not end:
+                try:
+                    lno, remainder = next(lines)
+                except StopIteration:
+                    raise Exception('unterminated comment')
+                _, end, after = remainder.partition('*/')
+
+        yield lno, line
+
+
+def iter_lines(lines, *,
+                   _iter_clean_lines=_iter_clean_lines,
+                   _parse_directive=_parse_directive,
+                   _recompute_conditions=_recompute_conditions,
+                   ):
+    """Yield (lno, line, directive, active conditions) for each given line.
+
+    This is effectively a subset of the operations taking place in
+    translation phases 2-4 from the C99 spec (ISO/IEC 9899:TC2); see
+    section 5.1.1.2.  Line continuations are removed and comments
+    replaced with a single space.  (In both cases "lno" will be the last
+    line involved.)  Otherwise each line is returned as-is.
+
+    "lno" is the (1-indexed) line number for the line.
+
+    "directive" will be a PreprocessorDirective or None, depending on
+    whether or not there is a directive on the line.
+
+    "active conditions" is the set of preprocessor conditions (e.g.
+    "defined()") under which the current line of code will be included
+    in compilation.  That set is derived from every conditional
+    directive block (e.g. "if defined()", "ifdef", "else") containing
+    that line.  That includes nested directives.  Note that the
+    current line does not affect the active conditions for iteself.
+    It only impacts subsequent lines.  That applies to directives
+    that close blocks (e.g. "endif") just as much as conditional
+    directvies.  Also note that "else" and "elseif" directives
+    update the active conditions (for later lines), rather than
+    adding to them.
+    """
+    ifstack = []
+    conditions = ()
+    for lno, line in _iter_clean_lines(lines):
+        stripped = line.strip()
+        if not stripped.startswith('#'):
+            yield lno, line, None, conditions
+            continue
+
+        directive = '#' + stripped[1:].lstrip()
+        while '  ' in directive:
+            directive = directive.replace('  ', ' ')
+        directive = _parse_directive(directive)
+        yield lno, line, directive, conditions
+
+        if directive.kind in ('else', 'endif'):
+            conditions = _recompute_conditions(directive, ifstack)
+        elif isinstance(directive, IfDirective):
+            conditions = _recompute_conditions(directive, ifstack)
+
+
+#############################
+# running (platform-specific?)
 
 def _gcc(filename, *,
          _get_argv=(lambda: _get_gcc_argv()),
@@ -455,3 +501,10 @@ def _get_gcc_argv(*,
     argv = shlex.split(gcc.strip())
     cflags = shlex.split(cflags.strip())
     return argv + cflags
+
+
+def run(filename, *,
+        _gcc=_gcc,
+        ):
+    """Return the text of the given file after running the preprocessor."""
+    return _gcc(filename)
