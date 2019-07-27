@@ -15,6 +15,7 @@ import re
 import io
 import contextlib
 from test import support
+from test.support import LARGEST
 
 try:
     import gzip
@@ -546,13 +547,12 @@ class DateTimeTestCase(unittest.TestCase):
         self.assertTrue(dtime == mock.ANY)
         self.assertFalse(dtime != mock.ANY)
 
-        largest = support.LargestObject()
-        self.assertFalse(dtime == largest)
-        self.assertTrue(dtime != largest)
-        self.assertTrue(dtime < largest)
-        self.assertTrue(dtime <= largest)
-        self.assertFalse(dtime > largest)
-        self.assertFalse(dtime >= largest)
+        self.assertFalse(dtime == LARGEST)
+        self.assertTrue(dtime != LARGEST)
+        self.assertTrue(dtime < LARGEST)
+        self.assertTrue(dtime <= LARGEST)
+        self.assertFalse(dtime > LARGEST)
+        self.assertFalse(dtime >= LARGEST)
 
 
 class BinaryTestCase(unittest.TestCase):

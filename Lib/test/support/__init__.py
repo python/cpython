@@ -3094,19 +3094,28 @@ class FakePath:
 
 
 @functools.total_ordering
-class LargestObject:
+class _LARGEST:
+    """
+    Object that is greater than anything (except itself).
+    """
     def __eq__(self, other):
-        return isinstance(other, LargestObject)
+        return isinstance(other, _LARGEST)
     def __lt__(self, other):
         return False
 
+LARGEST = _LARGEST()
+
 @functools.total_ordering
-class SmallestObject:
+class _SMALLEST:
+    """
+    Object that is less than anything (except itself).
+    """
     def __eq__(self, other):
-        return isinstance(other, SmallestObject)
+        return isinstance(other, _SMALLEST)
     def __gt__(self, other):
         return False
 
+SMALLEST = _SMALLEST()
 
 def maybe_get_event_loop_policy():
     """Return the global event loop policy if one is set, else return None."""

@@ -32,6 +32,7 @@ from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import LARGEST
 
 
 def tearDownModule():
@@ -2375,13 +2376,12 @@ class TimerTests(unittest.TestCase):
         self.assertFalse(h1 == ())
         self.assertTrue(h1 != ())
 
-        largest = support.LargestObject()
-        self.assertTrue(h1 < largest)
-        self.assertFalse(h1 > largest)
-        self.assertTrue(h1 <= largest)
-        self.assertFalse(h1 >= largest)
-        self.assertFalse(h1 == largest)
-        self.assertTrue(h1 != largest)
+        self.assertTrue(h1 < LARGEST)
+        self.assertFalse(h1 > LARGEST)
+        self.assertTrue(h1 <= LARGEST)
+        self.assertFalse(h1 >= LARGEST)
+        self.assertFalse(h1 == LARGEST)
+        self.assertTrue(h1 != LARGEST)
 
         self.assertTrue(h1 == mock.ANY)
         self.assertFalse(h1 != mock.ANY)

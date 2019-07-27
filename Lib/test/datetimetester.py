@@ -2,11 +2,8 @@
 
 See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
 """
-from test.support import is_resource_enabled
-
 import itertools
 import bisect
-
 import copy
 import decimal
 import sys
@@ -23,6 +20,7 @@ from array import array
 from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
+from test.support import is_resource_enabled, LARGEST
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -53,18 +51,6 @@ OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
 # XXX Copied from test_float.
 INF = float("inf")
 NAN = float("nan")
-
-
-class ComparesEqualClass(object):
-    """
-    A class that is always equal to whatever you compare it to.
-    """
-
-    def __eq__(self, other):
-        return True
-
-    def __ne__(self, other):
-        return False
 
 
 #############################################################################
@@ -355,13 +341,12 @@ class TestTimeZone(unittest.TestCase):
         self.assertFalse(timezone(ZERO) ==  None)
 
         tz = timezone(ZERO)
-        largest = support.LargestObject()
-        self.assertTrue(tz < largest)
-        self.assertFalse(tz > largest)
-        self.assertTrue(tz <= largest)
-        self.assertFalse(tz >= largest)
-        self.assertFalse(tz == largest)
-        self.assertTrue(tz != largest)
+        self.assertTrue(tz < LARGEST)
+        self.assertFalse(tz > LARGEST)
+        self.assertTrue(tz <= LARGEST)
+        self.assertFalse(tz >= LARGEST)
+        self.assertFalse(tz == LARGEST)
+        self.assertTrue(tz != LARGEST)
 
         self.assertTrue(tz == ANY)
         self.assertFalse(tz != ANY)
@@ -434,13 +419,12 @@ class HarmlessMixedComparison:
 
         # If the other class explicitly defines ordering
         # relative to our class, it is allowed to do so
-        largest = support.LargestObject()
-        self.assertTrue(me < largest)
-        self.assertFalse(me > largest)
-        self.assertTrue(me <= largest)
-        self.assertFalse(me >= largest)
-        self.assertFalse(me == largest)
-        self.assertTrue(me != largest)
+        self.assertTrue(me < LARGEST)
+        self.assertFalse(me > LARGEST)
+        self.assertTrue(me <= LARGEST)
+        self.assertFalse(me >= LARGEST)
+        self.assertFalse(me == LARGEST)
+        self.assertTrue(me != LARGEST)
 
     def test_harmful_mixed_comparison(self):
         me = self.theclass(1, 1, 1)
