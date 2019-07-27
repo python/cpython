@@ -54,16 +54,16 @@ class ScrollableTextFrame(Frame):
 
         # vertical scrollbar
         self.yscroll = AutoHideScrollbar(self, orient=VERTICAL,
-                                           takefocus=False,
-                                           command=text.yview)
+                                         takefocus=False,
+                                         command=text.yview)
         self.yscroll.grid(row=0, column=1, sticky=NS)
         text['yscrollcommand'] = self.yscroll.set
 
         # horizontal scrollbar - only when wrap is set to NONE
         if wrap == NONE:
             self.xscroll = AutoHideScrollbar(self, orient=HORIZONTAL,
-                                               takefocus=False,
-                                               command=text.xview)
+                                             takefocus=False,
+                                             command=text.xview)
             self.xscroll.grid(row=1, column=0, sticky=EW)
             text['xscrollcommand'] = self.xscroll.set
         else:
