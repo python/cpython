@@ -33,6 +33,7 @@ from idlelib.codecontext import CodeContext
 from idlelib.parenmatch import ParenMatch
 from idlelib.format import FormatParagraph
 from idlelib.squeezer import Squeezer
+from idlelib.textview import ScrollableTextFrame
 
 changes = ConfigChanges()
 # Reload changed options in the following classes.
@@ -556,7 +557,9 @@ class FontPage(Frame):
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
         # frame_sample.
-        self.font_sample = Text(frame_sample, width=20, height=20)
+        font_sample_frame = ScrollableTextFrame(frame_sample)
+        self.font_sample = font_sample_frame.text
+        self.font_sample.config(wrap=NONE, width=1, height=1)
         self.font_sample.insert(END, font_sample_text)
         # frame_indent.
         indent_title = Label(
@@ -568,8 +571,9 @@ class FontPage(Frame):
 
         # Grid and pack widgets:
         self.columnconfigure(1, weight=1)
+        self.rowconfigure(2, weight=1)
         frame_font.grid(row=0, column=0, padx=5, pady=5)
-        frame_sample.grid(row=0, column=1, rowspan=2, padx=5, pady=5,
+        frame_sample.grid(row=0, column=1, rowspan=3, padx=5, pady=5,
                           sticky='nsew')
         frame_indent.grid(row=1, column=0, padx=5, pady=5, sticky='ew')
         # frame_font.
@@ -582,7 +586,7 @@ class FontPage(Frame):
         self.sizelist.pack(side=LEFT, anchor=W)
         self.bold_toggle.pack(side=LEFT, anchor=W, padx=20)
         # frame_sample.
-        self.font_sample.pack(expand=TRUE, fill=BOTH)
+        font_sample_frame.pack(expand=TRUE, fill=BOTH)
         # frame_indent.
         indent_title.pack(side=TOP, anchor=W, padx=5)
         self.indent_scale.pack(side=TOP, padx=5, fill=X)
@@ -840,9 +844,11 @@ class HighPage(Frame):
         frame_theme = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                  text=' Highlighting Theme ')
         # frame_custom.
-        text = self.highlight_sample = Text(
-                frame_custom, relief=SOLID, borderwidth=1,
-                font=('courier', 12, ''), cursor='hand2', width=21, height=13,
+        sample_frame = ScrollableTextFrame(
+                frame_custom, relief=SOLID, borderwidth=1)
+        text = self.highlight_sample = sample_frame.text
+        text.configure(
+                font=('courier', 12, ''), cursor='hand2', width=1, height=1,
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
@@ -868,7 +874,7 @@ class HighPage(Frame):
         for texttag in text_and_tags:
             text.insert(END, texttag[0], texttag[1])
         n_lines = len(text.get('1.0', END).splitlines())
-        for lineno in range(1, n_lines + 1):
+        for lineno in range(1, n_lines):
             text.insert(f'{lineno}.0',
                         f'{lineno:{len(str(n_lines))}d} ',
                         'linenumber')
@@ -920,9 +926,9 @@ class HighPage(Frame):
         frame_custom.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_theme.pack(side=TOP, padx=5, pady=5, fill=X)
         # frame_custom.
-        self.frame_color_set.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=X)
+        self.frame_color_set.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_fg_bg_toggle.pack(side=TOP, padx=5, pady=0)
-        self.highlight_sample.pack(
+        sample_frame.pack(
                 side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         self.button_set_color.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=4)
         self.targetlist.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=3)
