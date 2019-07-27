@@ -628,9 +628,9 @@ class ZipInfo (object):
     def get_central_directory_kwargs(self):
         min_version = 0
         # Strip the zip 64 extra block if present
-        extra_data = _strip_extra(self.extra, (EXTRA_ZIP64,))
+        extra = _strip_extra(self.extra, (EXTRA_ZIP64,))
 
-        (zip64_extra_data,
+        (zip64_extra,
          file_size,
          compress_size,
          header_offset,
@@ -642,7 +642,7 @@ class ZipInfo (object):
         # There are reports that windows 7 can only read zip 64 archives if the
         # zip 64 extra block is the first extra block present. So we make sure
         # the zip 64 block is first.
-        extra_data = zip64_extra_data + extra_data
+        extra = zip64_extra + extra
 
         if self.compress_type == ZIP_BZIP2:
             min_version = max(BZIP2_VERSION, min_version)
@@ -671,7 +671,7 @@ class ZipInfo (object):
             "internal_attr": self.internal_attr,
             "external_attr": self.external_attr,
             "header_offset": header_offset,
-            "extra_data": extra_data,
+            "extra": extra,
             "comment": self.comment,
         }
 
@@ -680,7 +680,7 @@ class ZipInfo (object):
                                   flag_bits, compress_type, dostime, dosdate,
                                   crc, compress_size, file_size, disk_start,
                                   internal_attr, external_attr, header_offset,
-                                  extra_data, comment):
+                                  extra, comment):
         try:
             centdir = struct.pack(
                 structCentralDir,
@@ -697,7 +697,7 @@ class ZipInfo (object):
                 compress_size,
                 file_size,
                 len(filename),
-                len(extra_data),
+                len(extra),
                 len(comment),
                 disk_start,
                 internal_attr,
@@ -713,11 +713,11 @@ class ZipInfo (object):
                    create_system, extract_version, reserved,
                    flag_bits, compress_type, dostime, dosdate,
                    crc, compress_size, file_size,
-                   len(filename), len(extra_data), len(comment),
+                   len(filename), len(extra), len(comment),
                    disk_start, internal_attr, external_attr,
                    header_offset), file=sys.stderr)
             raise
-        return centdir + filename + extra_data + comment
+        return centdir + filename + extra + comment
 
     def central_directory(self):
         params = self.get_central_directory_kwargs()
@@ -844,7 +844,10 @@ class BaseDecrypter:
     def start_decrypt(self, fileobj):
         """Initialise or reset the decrypter.
 
-        Returns the number of bytes in the "encryption header" section.
+        Returns the number of bytes used for encryption that should be excluded
+        from the _compress_size counter (eg. the "encryption header" section
+        and any bytes after the "file data" used for encryption, such as the
+        HMAC value for winzip's AES encryption).
 
         By the end of this method fileobj should be at the start of the
         "file data" section.
@@ -1275,13 +1278,14 @@ class ZipExtFile(io.BufferedIOBase):
 
             # self._decrypter is responsible for reading the
             # "encryption header" section if present.
-            encryption_header_length = self._decrypter.start_decrypt(self._fileobj)
+            encryption_header_footer_length = self._decrypter.start_decrypt(self._fileobj)
             # By here, self._fileobj should be at the start of the "file data"
             # section.
 
             # Adjust read size for encrypted files by the length of the
-            # "encryption header" section.
-            self._compress_left -= encryption_header_length
+            # "encryption header" section and any bytes after the encrypted
+            # data.
+            self._compress_left -= encryption_header_footer_length
 
     def __repr__(self):
         result = ['<%s.%s' % (self.__class__.__module__,
@@ -1579,16 +1583,19 @@ class _ZipWriteFile(io.BufferedIOBase):
         self._fileobj.write(data)
         return nbytes
 
+    def flush_data(self):
+        if self._compressor:
+            buf = self._compressor.flush()
+            self._compress_size += len(buf)
+            self._fileobj.write(buf)
+
     def close(self):
         if self.closed:
             return
         try:
             super().close()
+            self.flush_data()
             # Flush any data from the compressor, and update header info
-            if self._compressor:
-                buf = self._compressor.flush()
-                self._compress_size += len(buf)
-                self._fileobj.write(buf)
             self._zinfo.compress_size = self._compress_size
             self._zinfo.CRC = self._crc
             self._zinfo.file_size = self._file_size
