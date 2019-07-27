@@ -64,7 +64,7 @@ class ScrollableTextFrame(Frame):
         """
         super().__init__(master, **kwargs)
 
-        @add_config_callback(self._config_callback)
+        @add_config_callback(self._handle_wrap)
         class TextWithConfigHook(Text):
             pass
         self.text = TextWithConfigHook(self)
@@ -81,13 +81,13 @@ class ScrollableTextFrame(Frame):
 
         # horizontal scrollbar
         self.xscroll = None
-        self._set_wrapping(self.text.cget('wrap'))
+        self._set_xscroll(self.text.cget('wrap'))
 
-    def _config_callback(self, cnf):
+    def _handle_wrap(self, cnf):
         if 'wrap' in cnf:
-            self._set_wrapping(cnf['wrap'])
+            self._set_xscroll(cnf['wrap'])
 
-    def _set_wrapping(self, wrap):
+    def _set_xscroll(self, wrap):
         """show/hide the horizontal scrollbar as per the 'wrap' setting"""
         # show the scrollbar only when wrap is set to NONE
         if wrap == NONE and self.xscroll is None:
