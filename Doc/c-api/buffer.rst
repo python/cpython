@@ -478,7 +478,7 @@ Buffer-related functions
 .. c:function:: int PyBuffer_ToContiguous(void *buf, Py_buffer *src, Py_ssize_t len, char order)
 
    Copy *len* bytes from *src* to its contiguous representation in *buf*.
-   *order* can be ``'C'`` or ``'F'`` (for C-style or Fortran-style ordering).
+   *order* can be ``'C'`` or ``'F'`` or ``'A'`` (for C-style or Fortran-style ordering or either one).
    ``0`` is returned on success, ``-1`` on error.
 
    This function fails if *len* != *src->len*.
