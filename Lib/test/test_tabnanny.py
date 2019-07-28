@@ -234,7 +234,7 @@ class TestCheck(TestCase):
     def test_when_no_file(self):
         """A python file which does not exist actually in system."""
         path = 'no_file.py'
-        err = (f"{path!r}: I/O Error: [Errno {errno.ENOENT}] "
+        err = (f"{path!r}: I/O Error: [Errno {errno.errorcode[errno.ENOENT]}] "
               f"{os.strerror(errno.ENOENT)}: {path!r}\n")
         self.verify_tabnanny_check(path, err=err)
 

@@ -1285,6 +1285,13 @@ class ExceptionTests(unittest.TestCase):
                 next(i)
                 next(i)
 
+    def test_OSError_errno_error_message(self):
+        # The symbolic errno name should be shown in the error message of
+        # OSError and its subclasses.
+        with self.assertRaisesRegex(OSError,
+                f'Errno {errno.errorcode[errno.ENOENT]}'):
+            open('non-existent')
+
 
 class ImportErrorTests(unittest.TestCase):
 

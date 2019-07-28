@@ -1115,23 +1115,51 @@ OSError_str(PyOSErrorObject *self)
                                     self->winerror ? self->winerror: Py_None,
                                     self->strerror ? self->strerror: Py_None);
 #endif
+    PyObject *str = self->myerrno;
+    static PyObject *errorcodedict;
+    // Try to obtain the symbolic errno name (e.g., ENOENT).
+    if (str != NULL) {
+        if (errorcodedict == NULL) {
+            PyObject *errnomod = PyImport_ImportModule("errno");
+            if (errnomod == NULL) {
+                PyErr_Clear();
+                goto skip;
+            }
+            else {
+                _Py_IDENTIFIER(errorcode);
+                errorcodedict = _PyObject_GetAttrId(errnomod,
+                                                    &PyId_errorcode);
+                Py_DECREF(errnomod);
+                if (errorcodedict == NULL) {
+                    PyErr_Clear();
+                    goto skip;
+                }
+            }
+        }
+        PyObject *errnostr = PyDict_GetItem(errorcodedict, str);
+        if (errnostr != NULL) {
+            str = errnostr;
+        }
+    }
+
+skip:
     if (self->filename) {
         if (self->filename2) {
             return PyUnicode_FromFormat("[Errno %S] %S: %R -> %R",
-                                        OR_NONE(self->myerrno),
+                                        OR_NONE(str),
                                         OR_NONE(self->strerror),
                                         self->filename,
                                         self->filename2);
         } else {
             return PyUnicode_FromFormat("[Errno %S] %S: %R",
-                                        OR_NONE(self->myerrno),
+                                        OR_NONE(str),
                                         OR_NONE(self->strerror),
                                         self->filename);
         }
     }
-    if (self->myerrno && self->strerror)
-        return PyUnicode_FromFormat("[Errno %S] %S",
-                                    self->myerrno, self->strerror);
+    if (str && self->strerror) {
+        return PyUnicode_FromFormat("[Errno %S] %S", str, self->strerror);
+    }
     return BaseException_str((PyBaseExceptionObject *)self);
 }
 
