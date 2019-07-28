@@ -1,1 +1,1 @@
-Add an is_relative_to() in PurePath class to compute a path is relative to the path or not.
+Add :meth:`is_relative_to` in :class:`PurePath` to determine whether or not one path is relative to another.

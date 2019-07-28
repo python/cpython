@@ -541,14 +541,16 @@ Pure paths provide the following methods and properties:
 
 .. method:: PurePath.is_relative_to(*other)
 
-    Compute the boolean result that this path is relative to the path
-    represented by *other* or not.
+   Return the boolean result that this path is relative to *other* path.
 
-      >>> p = PurePosixPath('/etc/passwd')
+      >>> from pathlib import PurePath
+      >>> p = PurePath('/etc/passwd')
       >>> p.is_relative_to('/etc')
       True
       >>> p.is_relative_to('/usr')
       False
+
+   .. versionadded:: 3.9
 
 
 .. method:: PurePath.with_name(name)
