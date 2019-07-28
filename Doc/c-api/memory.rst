@@ -472,7 +472,7 @@ Customize Memory Allocators
       if the GIL is held when functions of :c:data:`PYMEM_DOMAIN_OBJ` and
       :c:data:`PYMEM_DOMAIN_MEM` domains are called.
 
-   .. versionchanged:: 3.8.0
+   .. versionchanged:: 3.8
       Byte patterns ``0xCB`` (``CLEANBYTE``), ``0xDB`` (``DEADBYTE``) and
       ``0xFB`` (``FORBIDDENBYTE``) have been replaced with ``0xCD``, ``0xDD``
       and ``0xFD`` to use the same values than Windows CRT debug ``malloc()``
