@@ -808,7 +808,7 @@ class HighPage(Frame):
                 (*)theme_message: Label
         """
         self.theme_elements = {
-            'Normal Text': ('normal', '00'),
+            'Normal Code or Text': ('normal', '00'),
             'Code Context': ('context', '01'),
             'Python Keywords': ('keyword', '02'),
             'Python Definitions': ('definition', '03'),
@@ -819,10 +819,10 @@ class HighPage(Frame):
             'Found Text': ('hit', '08'),
             'Cursor': ('cursor', '09'),
             'Editor Breakpoint': ('break', '10'),
-            'Shell Normal Text': ('console', '11'),
-            'Shell Error Text': ('error', '12'),
-            'Shell Stdout Text': ('stdout', '13'),
-            'Shell Stderr Text': ('stderr', '14'),
+            'Shell Prompt': ('console', '11'),
+            'Error Text': ('error', '12'),
+            'Shell User Output': ('stdout', '13'),
+            'Shell User Exception': ('stderr', '14'),
             'Line Number': ('linenumber', '16'),
             }
         self.builtin_name = tracers.add(
@@ -852,27 +852,26 @@ class HighPage(Frame):
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
-        text_and_tags=(
-            ('\n', 'normal'),
-            ('#you can click here', 'comment'), ('\n', 'normal'),
-            ('#to choose items', 'comment'), ('\n', 'normal'),
-            ('code context section', 'context'), ('\n\n', 'normal'),
+        string_tags=(
+            ('# Click selects item.', 'comment'), ('\n', 'normal'),
+            ('code context section', 'context'), ('\n', 'normal'),
+            ('| cursor', 'cursor'), ('\n', 'normal'),
             ('def', 'keyword'), (' ', 'normal'),
             ('func', 'definition'), ('(param):\n  ', 'normal'),
-            ('"""string"""', 'string'), ('\n  var0 = ', 'normal'),
+            ('"Return None."', 'string'), ('\n  var0 = ', 'normal'),
             ("'string'", 'string'), ('\n  var1 = ', 'normal'),
             ("'selected'", 'hilite'), ('\n  var2 = ', 'normal'),
             ("'found'", 'hit'), ('\n  var3 = ', 'normal'),
             ('list', 'builtin'), ('(', 'normal'),
             ('None', 'keyword'), (')\n', 'normal'),
             ('  breakpoint("line")', 'break'), ('\n\n', 'normal'),
-            (' error ', 'error'), (' ', 'normal'),
-            ('cursor |', 'cursor'), ('\n ', 'normal'),
-            ('shell', 'console'), (' ', 'normal'),
-            ('stdout', 'stdout'), (' ', 'normal'),
-            ('stderr', 'stderr'), ('\n\n', 'normal'))
-        for texttag in text_and_tags:
-            text.insert(END, texttag[0], texttag[1])
+            ('>>>', 'console'), (' 3.14**2\n', 'normal'),
+            ('9.8596', 'stdout'), ('\n', 'normal'),
+            ('>>>', 'console'), (' pri ', 'normal'),
+            ('n', 'error'), ('t(\n', 'normal'),
+            ('SyntaxError', 'stderr'), ('\n', 'normal'))
+        for string, tag in string_tags:
+            text.insert(END, string, tag)
         n_lines = len(text.get('1.0', END).splitlines())
         for lineno in range(1, n_lines):
             text.insert(f'{lineno}.0',
