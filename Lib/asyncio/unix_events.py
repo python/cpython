@@ -1243,7 +1243,7 @@ class ThreadedChildWatcher(AbstractChildWatcher):
     It doesn't require subscription on POSIX signal
     but a thread creation is not free.
 
-    The watcher has O(1) complexity, its perfomance doesn't depend
+    The watcher has O(1) complexity, its performance doesn't depend
     on amount of spawn processes.
     """
 

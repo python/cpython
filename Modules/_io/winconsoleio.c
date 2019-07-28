@@ -205,7 +205,7 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self)
     int rc;
     _Py_IDENTIFIER(close);
     res = _PyObject_CallMethodIdOneArg((PyObject*)&PyRawIOBase_Type,
-                                       &PyId_close, self);
+                                       &PyId_close, (PyObject*)self);
     if (!self->closehandle) {
         self->handle = INVALID_HANDLE_VALUE;
         return res;

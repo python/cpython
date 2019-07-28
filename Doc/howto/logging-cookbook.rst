@@ -948,6 +948,41 @@ This variant shows how you can e.g. apply configuration for particular loggers
 machinery in the main process (even though the logging events are generated in
 the worker processes) to direct the messages to the appropriate destinations.
 
+Using concurrent.futures.ProcessPoolExecutor
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you want to use :class:`concurrent.futures.ProcessPoolExecutor` to start
+your worker processes, you need to create the queue slightly differently.
+Instead of
+
+.. code-block:: python
+
+   queue = multiprocessing.Queue(-1)
+
+you should use
+
+.. code-block:: python
+
+   queue = multiprocessing.Manager().Queue(-1)  # also works with the examples above
+
+and you can then replace the worker creation from this::
+
+    workers = []
+    for i in range(10):
+        worker = multiprocessing.Process(target=worker_process,
+                                         args=(queue, worker_configurer))
+        workers.append(worker)
+        worker.start()
+    for w in workers:
+        w.join()
+
+to this (remembering to first import :mod:`concurrent.futures`)::
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
+        for i in range(10):
+            executor.submit(worker_process, queue, worker_configurer)
+
+
 Using file rotation
 -------------------
 
@@ -2709,3 +2744,216 @@ And if we want less:
 
 In this case, the commands don't print anything to the console, since nothing
 at ``WARNING`` level or above is logged by them.
+
+.. _qt-gui:
+
+A Qt GUI for logging
+--------------------
+
+A question that comes up from time to time is about how to log to a GUI
+application. The `Qt <https://www.qt.io/>`_ framework is a popular
+cross-platform UI framework with Python bindings using `PySide2
+<https://pypi.org/project/PySide2/>`_ or `PyQt5
+<https://pypi.org/project/PyQt5/>`_ libraries.
+
+The following example shows how to log to a Qt GUI. This introduces a simple
+``QtHandler`` class which takes a callable, which should be a slot in the main
+thread that does GUI updates. A worker thread is also created to show how you
+can log to the GUI from both the UI itself (via a button for manual logging)
+as well as a worker thread doing work in the background (here, just random
+short delays).
+
+The worker thread is implemented using Qt's ``QThread`` class rather than the
+:mod:`threading` module, as there are circumstances where one has to use
+``QThread``, which offers better integration with other ``Qt`` components.
+
+The code should work with recent releases of either ``PySide2`` or ``PyQt5``.
+You should be able to adapt the approach to earlier versions of Qt. Please
+refer to the comments in the code for more detailed information.
+
+.. code-block:: python3
+
+    import datetime
+    import logging
+    import random
+    import sys
+    import time
+
+    # Deal with minor differences between PySide2 and PyQt5
+    try:
+        from PySide2 import QtCore, QtGui, QtWidgets
+        Signal = QtCore.Signal
+        Slot = QtCore.Slot
+    except ImportError:
+        from PyQt5 import QtCore, QtGui, QtWidgets
+        Signal = QtCore.pyqtSignal
+        Slot = QtCore.pyqtSlot
+
+    logger = logging.getLogger(__name__)
+
+    #
+    # Signals need to be contained in a QObject or subclass in order to be correctly
+    # initialized.
+    #
+    class Signaller(QtCore.QObject):
+        signal = Signal(str)
+
+    #
+    # Output to a Qt GUI is only supposed to happen on the main thread. So, this
+    # handler is designed to take a slot function which is set up to run in the main
+    # thread. In this example, the function takes a single argument which is a
+    # formatted log message. You can attach a formatter instance which formats a
+    # LogRecord however you like, or change the slot function to take some other
+    # value derived from the LogRecord.
+    #
+    # You specify the slot function to do whatever GUI updates you want. The handler
+    # doesn't know or care about specific UI elements.
+    #
+    class QtHandler(logging.Handler):
+        def __init__(self, slotfunc, *args, **kwargs):
+            super(QtHandler, self).__init__(*args, **kwargs)
+            self.signaller = Signaller()
+            self.signaller.signal.connect(slotfunc)
+
+        def emit(self, record):
+            s = self.format(record)
+            self.signaller.signal.emit(s)
+
+    #
+    # This example uses QThreads, which means that the threads at the Python level
+    # are named something like "Dummy-1". The function below gets the Qt name of the
+    # current thread.
+    #
+    def ctname():
+        return QtCore.QThread.currentThread().objectName()
+
+    #
+    # This worker class represents work that is done in a thread separate to the
+    # main thread. The way the thread is kicked off to do work is via a button press
+    # that connects to a slot in the worker.
+    #
+    # Because the default threadName value in the LogRecord isn't much use, we add
+    # a qThreadName which contains the QThread name as computed above, and pass that
+    # value in an "extra" dictionary which is used to update the LogRecord with the
+    # QThread name.
+    #
+    # This example worker just outputs messages sequentially, interspersed with
+    # random delays of the order of a few seconds.
+    #
+    class Worker(QtCore.QObject):
+        @Slot()
+        def start(self):
+            extra = {'qThreadName': ctname() }
+            logger.debug('Started work', extra=extra)
+            i = 1
+            # Let the thread run until interrupted. This allows reasonably clean
+            # thread termination.
+            while not QtCore.QThread.currentThread().isInterruptionRequested():
+                delay = 0.5 + random.random() * 2
+                time.sleep(delay)
+                logger.debug('Message after delay of %3.1f: %d', delay, i, extra=extra)
+                i += 1
+
+    #
+    # Implement a simple UI for this cookbook example. This contains:
+    #
+    # * A read-only text edit window which holds formatted log messages
+    # * A button to start work and log stuff in a separate thread
+    # * A button to log something from the main thread
+    # * A button to clear the log window
+    #
+    class Window(QtWidgets.QWidget):
+
+        def __init__(self, app):
+            super(Window, self).__init__()
+            self.app = app
+            self.textedit = te = QtWidgets.QTextEdit(self)
+            # Set whatever the default monospace font is for the platform
+            f = QtGui.QFont('nosuchfont')
+            f.setStyleHint(f.Monospace)
+            te.setFont(f)
+            te.setReadOnly(True)
+            PB = QtWidgets.QPushButton
+            self.work_button = PB('Start background work', self)
+            self.log_button = PB('Log a message at a random level', self)
+            self.clear_button = PB('Clear log window', self)
+            self.handler = h = QtHandler(self.update_status)
+            # Remember to use qThreadName rather than threadName in the format string.
+            fs = '%(asctime)s %(qThreadName)-12s %(levelname)-8s %(message)s'
+            formatter = logging.Formatter(f)
+            h.setFormatter(formatter)
+            logger.addHandler(h)
+            # Set up to terminate the QThread when we exit
+            app.aboutToQuit.connect(self.force_quit)
+
+            # Lay out all the widgets
+            layout = QtWidgets.QVBoxLayout(self)
+            layout.addWidget(te)
+            layout.addWidget(self.work_button)
+            layout.addWidget(self.log_button)
+            layout.addWidget(self.clear_button)
+            self.setFixedSize(900, 400)
+
+            # Connect the non-worker slots and signals
+            self.log_button.clicked.connect(self.manual_update)
+            self.clear_button.clicked.connect(self.clear_display)
+
+            # Start a new worker thread and connect the slots for the worker
+            self.start_thread()
+            self.work_button.clicked.connect(self.worker.start)
+            # Once started, the button should be disabled
+            self.work_button.clicked.connect(lambda : self.work_button.setEnabled(False))
+
+        def start_thread(self):
+            self.worker = Worker()
+            self.worker_thread = QtCore.QThread()
+            self.worker.setObjectName('Worker')
+            self.worker_thread.setObjectName('WorkerThread')  # for qThreadName
+            self.worker.moveToThread(self.worker_thread)
+            # This will start an event loop in the worker thread
+            self.worker_thread.start()
+
+        def kill_thread(self):
+            # Just tell the worker to stop, then tell it to quit and wait for that
+            # to happen
+            self.worker_thread.requestInterruption()
+            if self.worker_thread.isRunning():
+                self.worker_thread.quit()
+                self.worker_thread.wait()
+            else:
+                print('worker has already exited.')
+
+        def force_quit(self):
+            # For use when the window is closed
+            if self.worker_thread.isRunning():
+                self.kill_thread()
+
+        # The functions below update the UI and run in the main thread because
+        # that's where the slots are set up
+
+        @Slot(str)
+        def update_status(self, status):
+            self.textedit.append(status)
+
+        @Slot()
+        def manual_update(self):
+            levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
+                      logging.CRITICAL)
+            level = random.choice(levels)
+            extra = {'qThreadName': ctname() }
+            logger.log(level, 'Manually logged!', extra=extra)
+
+        @Slot()
+        def clear_display(self):
+            self.textedit.clear()
+
+    def main():
+        QtCore.QThread.currentThread().setObjectName('MainThread')
+        logging.getLogger().setLevel(logging.DEBUG)
+        app = QtWidgets.QApplication(sys.argv)
+        example = Window(app)
+        example.show()
+        sys.exit(app.exec_())
+
+    if __name__=='__main__':
+        main()

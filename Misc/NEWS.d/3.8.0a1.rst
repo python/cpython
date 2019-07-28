@@ -1358,7 +1358,7 @@ Improved syntax error messages for unbalanced parentheses.
 .. section: Core and Builtins
 
 The list constructor will pre-size and not over-allocate when the input
-lenght is known.
+length is known.
 
 ..
 

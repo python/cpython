@@ -37,6 +37,9 @@ class Something(object):
     def smeth(a, b, c, d=None): pass
 
 
+def something(a): pass
+
+
 class MockTest(unittest.TestCase):
 
     def test_all(self):
@@ -1808,6 +1811,26 @@ class MockTest(unittest.TestCase):
                 self.assertEqual(m.mock_calls, call().foo().call_list())
 
 
+    def test_attach_mock_patch_autospec(self):
+        parent = Mock()
+
+        with mock.patch(f'{__name__}.something', autospec=True) as mock_func:
+            self.assertEqual(mock_func.mock._extract_mock_name(), 'something')
+            parent.attach_mock(mock_func, 'child')
+            parent.child(1)
+            something(2)
+            mock_func(3)
+
+            parent_calls = [call.child(1), call.child(2), call.child(3)]
+            child_calls = [call(1), call(2), call(3)]
+            self.assertEqual(parent.mock_calls, parent_calls)
+            self.assertEqual(parent.child.mock_calls, child_calls)
+            self.assertEqual(something.mock_calls, child_calls)
+            self.assertEqual(mock_func.mock_calls, child_calls)
+            self.assertIn('mock.child', repr(parent.child.mock))
+            self.assertEqual(mock_func.mock._extract_mock_name(), 'mock.child')
+
+
     def test_attribute_deletion(self):
         for mock in (Mock(), MagicMock(), NonCallableMagicMock(),
                      NonCallableMock()):
@@ -1891,6 +1914,20 @@ class MockTest(unittest.TestCase):
 
         self.assertRaises(TypeError, mock.child, 1)
         self.assertEqual(mock.mock_calls, [call.child(1, 2)])
+        self.assertIn('mock.child', repr(mock.child.mock))
+
+    def test_parent_propagation_with_autospec_attach_mock(self):
+
+        def foo(a, b): pass
+
+        parent = Mock()
+        parent.attach_mock(create_autospec(foo, name='bar'), 'child')
+        parent.child(1, 2)
+
+        self.assertRaises(TypeError, parent.child, 1)
+        self.assertEqual(parent.child.mock_calls, [call.child(1, 2)])
+        self.assertIn('mock.child', repr(parent.child.mock))
+
 
     def test_isinstance_under_settrace(self):
         # bpo-36593 : __class__ is not set for a class that has __class__
