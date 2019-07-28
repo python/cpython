@@ -83,6 +83,7 @@ class DistInfoPkg(OnSysPath, SiteDir):
             "entry_points.txt": """
                 [entries]
                 main = mod:main
+                ns:sub = mod:main
             """
             },
         "mod.py": """
