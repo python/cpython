@@ -1435,7 +1435,7 @@ an :term:`importer`.
 
    :exc:`ImportError` is raised if **name** is a relative module name but
    package is a false value (e.g. ``None`` or the empty string).
-   :exc:`ValueError` is also raised a relative name would escape its containing
+   :exc:`ImportError` is also raised a relative name would escape its containing
    package (e.g. requesting ``..bacon`` from within the ``spam`` package).
 
    .. versionadded:: 3.3

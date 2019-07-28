@@ -1,1 +1,1 @@
-Update differing exception between buildints and importlib
+Update differing exception between :meth:`builtins.__import__` and :meth:`importli.__import__`.
