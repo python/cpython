@@ -214,6 +214,19 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
     return blocks;
 }
 
+/* Perform basic peephole optimizations to components of a code object.
+   The consts object should still be in list form to allow new constants
+   to be appended.
+
+   To keep the optimizer simple, it bails when the lineno table has complex
+   encoding for gaps >= 255.
+
+   Optimizations are restricted to simple transformations occurring within a
+   single basic block.  All transformations keep the code size the same or
+   smaller.  For those that reduce size, the gaps are initially filled with
+   NOPs.  Later those NOPs are removed and the jump addresses retargeted in
+   a single pass. */
+
 static PyObject *
 optimize_bytecode_once(PyObject *code, PyObject* consts, PyObject *names,
                        PyObject *lnotab_obj)
@@ -528,19 +541,6 @@ optimize_bytecode_once(PyObject *code, PyObject* consts, PyObject *names,
     PyMem_Free(codestr);
     return code;
 }
-
-/* Perform basic peephole optimizations to components of a code object.
-   The consts object should still be in list form to allow new constants
-   to be appended.
-
-   To keep the optimizer simple, it bails when the lineno table has complex
-   encoding for gaps >= 255.
-
-   Optimizations are restricted to simple transformations occurring within a
-   single basic block.  All transformations keep the code size the same or
-   smaller.  For those that reduce size, the gaps are initially filled with
-   NOPs.  Later those NOPs are removed and the jump addresses retargeted in
-   a single pass. */
 
 PyObject *
 PyCode_Optimize(PyObject *code, PyObject *consts, PyObject *names,
