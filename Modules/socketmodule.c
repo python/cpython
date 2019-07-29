@@ -7683,7 +7683,7 @@ PyInit__socket(void)
     PyModule_AddIntConstant(m, "CAN_BCM_RX_ANNOUNCE_RESUME", RX_ANNOUNCE_RESUME);
     PyModule_AddIntConstant(m, "CAN_BCM_TX_RESET_MULTI_IDX", TX_RESET_MULTI_IDX);
     PyModule_AddIntConstant(m, "CAN_BCM_RX_RTR_FRAME", RX_RTR_FRAME);
-#ifdef  CAN_FD_FRAME
+#ifdef CAN_FD_FRAME
     /* CAN_FD_FRAME was only introduced in the 4.8.x kernel series */
     PyModule_AddIntConstant(m, "CAN_BCM_CAN_FD_FRAME", CAN_FD_FRAME);
 #endif
