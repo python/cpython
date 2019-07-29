@@ -3,6 +3,30 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-37692: Improve highlight config sample with example shell
+interaction and better labels for shell elements.
+
+bpo-37628: Settings dialog no longer expands with font size.
+The font and highlight sample boxes gain scrollbars instead.
+
+bpo-17535: Add optional line numbers for IDLE editor windows.
+
+bpo-37627: Initialize the Customize Run dialog with the command line
+arguments most recently entered before.  The user can optionally edit
+before submitting them.
+
+bpo-33610: Code context always shows the correct context when toggled on.
+
+bpo-36390: Gather Format menu functions into format.py.  Combine
+paragraph.py, rstrip.py, and format methods from editor.py.
+
+bpo-37530: Optimize code context to reduce unneeded background activity.
+Font and highlight changes now occur along with text changes instead
+of after a random delay.
+
+bpo-27452: Cleanup config.py by inlining RemoveFile and simplifying
+the handling of __file__ in CreateConfigHandlers/
+
 bpo-26806: To compensate for stack frames added by IDLE and avoid
 possible problems with low recursion limits, add 30 to limits in the
 user code execution process.  Subtract 30 when reporting recursion
