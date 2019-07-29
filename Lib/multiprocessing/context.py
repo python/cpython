@@ -63,6 +63,7 @@ class BaseContext(object):
     def process_factory(self, *args, **kwargs):
         p = self._Process(*args, **kwargs)
         p._ctx = self.get_context()
+        return p
 
     def Manager(self):
         '''Returns a manager associated with a running server process
