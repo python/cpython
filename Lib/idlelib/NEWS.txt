@@ -1,5 +1,5 @@
-What's New in IDLE 3.7.4
-Released on 2019-06-24?
+What's New in IDLE 3.7.5
+Released on 2019-09-30?
 ======================================
 
 
@@ -26,6 +26,11 @@ of after a random delay.
 
 bpo-27452: Cleanup config.py by inlining RemoveFile and simplifying
 the handling of __file__ in CreateConfigHandlers/
+
+
+What's New in IDLE 3.7.4
+Released on 2019-07-08
+======================================
 
 bpo-26806: To compensate for stack frames added by IDLE and avoid
 possible problems with low recursion limits, add 30 to limits in the
