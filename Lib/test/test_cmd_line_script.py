@@ -613,6 +613,20 @@ class CmdLineTest(unittest.TestCase):
             self.assertNotIn("\f", text)
             self.assertIn("\n    1 + 1 = 2\n    ^", text)
 
+    def test_syntaxerror_multi_line_fstring(self):
+        script = 'foo = f"""{}\nfoo"""\n'
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            self.assertEqual(
+                stderr.splitlines()[-3:],
+                [
+                    b'    foo = f"""{}',
+                    b'          ^',
+                    b'SyntaxError: f-string: empty expression not allowed',
+                ],
+            )
+
     def test_consistent_sys_path_for_direct_execution(self):
         # This test case ensures that the following all give the same
         # sys.path configuration:
