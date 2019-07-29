@@ -1440,6 +1440,10 @@ an :term:`importer`.
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.9
+      Raises :exc:`ImportError` instead of :exc:`ValueError` as equal in
+      :meth:`builtin.__import__`.
+
 .. function:: find_spec(name, package=None)
 
    Find the :term:`spec <module spec>` for a module, optionally relative to
