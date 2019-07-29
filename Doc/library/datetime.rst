@@ -401,7 +401,7 @@ systems.
 
 .. class:: date(year, month, day)
 
-   All arguments are required.  Arguments may be integers, in the following
+   All arguments are required.  Arguments have to be integers in the following
    ranges:
 
    * ``MINYEAR <= year <= MAXYEAR``
