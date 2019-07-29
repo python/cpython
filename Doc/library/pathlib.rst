@@ -462,6 +462,20 @@ Pure paths provide the following methods and properties:
       True
 
 
+.. method:: PurePath.is_relative_to(*other)
+
+   Return whether or not this path is relative to the *other* path.
+
+      >>> from pathlib import PurePath
+      >>> p = PurePath('/etc/passwd')
+      >>> p.is_relative_to('/etc')
+      True
+      >>> p.is_relative_to('/usr')
+      False
+
+   .. versionadded:: 3.9
+
+
 .. method:: PurePath.is_reserved()
 
    With :class:`PureWindowsPath`, return ``True`` if the path is considered
@@ -537,20 +551,6 @@ Pure paths provide the following methods and properties:
         File "pathlib.py", line 694, in relative_to
           .format(str(self), str(formatted)))
       ValueError: '/etc/passwd' does not start with '/usr'
-
-
-.. method:: PurePath.is_relative_to(*other)
-
-   Return the boolean result that this path is relative to *other* path.
-
-      >>> from pathlib import PurePath
-      >>> p = PurePath('/etc/passwd')
-      >>> p.is_relative_to('/etc')
-      True
-      >>> p.is_relative_to('/usr')
-      False
-
-   .. versionadded:: 3.9
 
 
 .. method:: PurePath.with_name(name)
