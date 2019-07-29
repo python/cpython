@@ -125,6 +125,7 @@ if (-not $skipupload) {
 
     & $plink -batch $user@$server chgrp downloads $d*
     & $plink -batch $user@$server chmod g-x,o+r $d*
+    & $pscp -ls "$user@${server}:$d"
 }
 
 if (-not $skippurge) {
