@@ -21,6 +21,7 @@
         (ABSOLUTE_JUMP(_Py_OPCODE(arr[i])) ? 0 : i+1))
 #define ISBASICBLOCK(blocks, start, end) \
     (blocks[start]==blocks[end])
+#define MAX_BYTECODE_OPT_ITERS 5
 
 
 /* Scans back N consecutive LOAD_CONST instructions, skipping NOPs,
@@ -545,11 +546,10 @@ PyObject *
 PyCode_Optimize(PyObject *code, PyObject *consts, PyObject *names,
                 PyObject *lnotab_obj)
 {
-    PyObject* bytecode = NULL;
+    PyObject *bytecode = code;
     PyObject *old_bytecode = code;
     int compare_bytecode;
-    do {
-        bytecode = old_bytecode;
+    for (unsigned int i = 0; i < MAX_BYTECODE_OPT_ITERS; ++i) {
         bytecode = optimize_bytecode_once(bytecode, consts, names, lnotab_obj);
         if (!bytecode) {
             if (old_bytecode != code) {
@@ -562,10 +562,13 @@ PyCode_Optimize(PyObject *code, PyObject *consts, PyObject *names,
             Py_DECREF(old_bytecode);
         }
         if (compare_bytecode == -1) {
-            break;
+            return NULL;
         }
         old_bytecode = bytecode;
-    } while (compare_bytecode);
+        if (!compare_bytecode) {
+            break;
+        }
+    }
 
     return bytecode;
 }
