@@ -2638,6 +2638,12 @@ def skip_unless_xattr(test):
     msg = "no non-broken extended attribute support"
     return test if ok else unittest.skip(msg)(test)
 
+def skip_if_pgo_task(test):
+    """Skip decorator for tests that should not run in PGO task"""
+    ok = not PGO
+    msg = "Not run for PGO task"
+    return test if ok else unittest.skip(msg)(test)
+
 _bind_nix_socket_error = None
 def skip_unless_bind_unix_socket(test):
     """Decorator for tests requiring a functional bind() for unix sockets."""
