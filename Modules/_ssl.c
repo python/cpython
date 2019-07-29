@@ -5544,7 +5544,9 @@ parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
 }
 
 static HCERTSTORE
-ssl_collect_certificates(const char *store_name)
+ssl_collect_certificates(const char *store_name,
+                         DWORD *system_stores, size_t system_stores_count,
+                         HCERTSTORE *system_store_handles)
 {
 /* this function collects the system certificate stores listed in
  * system_stores into a collection certificate store for being
@@ -5553,14 +5555,6 @@ ssl_collect_certificates(const char *store_name)
  */
 
     HCERTSTORE hCollectionStore = NULL, hSystemStore = NULL;
-    static DWORD system_stores[] = {
-        CERT_SYSTEM_STORE_LOCAL_MACHINE,
-        CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
-        CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
-        CERT_SYSTEM_STORE_CURRENT_USER,
-        CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY,
-        CERT_SYSTEM_STORE_SERVICES,
-        CERT_SYSTEM_STORE_USERS};
     size_t i, storesAdded;
     BOOL result;
 
@@ -5570,12 +5564,14 @@ ssl_collect_certificates(const char *store_name)
         return NULL;
     }
     storesAdded = 0;
-    for (i = 0; i < sizeof(system_stores) / sizeof(DWORD); i++) {
+    for (i = 0; i < system_stores_count; i++) {
+        system_store_handles[i] = NULL;
         hSystemStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0,
                                      (HCRYPTPROV)NULL,
                                      CERT_STORE_READONLY_FLAG |
                                      system_stores[i], store_name);
         if (hSystemStore) {
+            system_store_handles[i] = hSystemStore;
             result = CertAddStoreToCollection(hCollectionStore, hSystemStore,
                                      CERT_PHYSICAL_STORE_ADD_ENABLE_FLAG, 0);
             if (result) {
@@ -5626,12 +5622,26 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     PCCERT_CONTEXT pCertCtx = NULL;
     PyObject *keyusage = NULL, *cert = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
+    static DWORD system_stores[] = {
+        CERT_SYSTEM_STORE_LOCAL_MACHINE,
+        CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
+        CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
+        CERT_SYSTEM_STORE_CURRENT_USER,
+        CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY,
+        CERT_SYSTEM_STORE_SERVICES,
+        CERT_SYSTEM_STORE_USERS};
+    BOOL success;
+    size_t i, system_stores_count = sizeof(system_stores) / sizeof(DWORD);
+    HCERTSTORE system_store_handles[sizeof(system_stores) / sizeof(DWORD)];
 
     result = PyList_New(0);
     if (result == NULL) {
         return NULL;
     }
-    hCollectionStore = ssl_collect_certificates(store_name);
+    hCollectionStore = ssl_collect_certificates(store_name,
+                                                system_stores,
+                                                system_stores_count,
+                                                system_store_handles);
     if (hCollectionStore == NULL) {
         Py_DECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
@@ -5686,10 +5696,20 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     Py_XDECREF(keyusage);
     Py_XDECREF(tup);
 
-    /* CERT_CLOSE_STORE_FORCE_FLAG forces freeing of memory for all contexts
-       associated with the store, in this case our collection store and the
-       associated system stores. */
-    if (!CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG)) {
+    /* When a collection store and its sibling stores are closed
+       with CertCloseStore using CERT_CLOSE_STORE_FORCE_FLAG,
+       the collection store must be closed before its sibling stores.
+      (https://docs.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certaddstoretocollection) */
+    success = CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG);
+    for (i = 0; i < system_stores_count; i++) {
+        if (system_store_handles[i] == NULL) {
+            continue;
+        }
+        if (!CertCloseStore(system_store_handles[i], CERT_CLOSE_STORE_FORCE_FLAG)) {
+            success = 0;
+        }
+    }
+    if (!success) {
         /* This error case might shadow another exception.*/
         Py_XDECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
@@ -5718,12 +5738,26 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
     PCCRL_CONTEXT pCrlCtx = NULL;
     PyObject *crl = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
+    static DWORD system_stores[] = {
+        CERT_SYSTEM_STORE_LOCAL_MACHINE,
+        CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
+        CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
+        CERT_SYSTEM_STORE_CURRENT_USER,
+        CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY,
+        CERT_SYSTEM_STORE_SERVICES,
+        CERT_SYSTEM_STORE_USERS};
+    BOOL success;
+    size_t i, system_stores_count = sizeof(system_stores) / sizeof(DWORD);
+    HCERTSTORE system_store_handles[sizeof(system_stores) / sizeof(DWORD)];
 
     result = PyList_New(0);
     if (result == NULL) {
         return NULL;
     }
-    hCollectionStore = ssl_collect_certificates(store_name);
+    hCollectionStore = ssl_collect_certificates(store_name,
+                                                system_stores,
+                                                system_stores_count,
+                                                system_store_handles);
     if (hCollectionStore == NULL) {
         Py_DECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
@@ -5767,10 +5801,20 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
     Py_XDECREF(enc);
     Py_XDECREF(tup);
 
-    /* CERT_CLOSE_STORE_FORCE_FLAG forces freeing of memory for all contexts
-       associated with the store, in this case our collection store and the
-       associated system stores. */
-    if (!CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG)) {
+    /* When a collection store and its sibling stores are closed
+       with CertCloseStore using CERT_CLOSE_STORE_FORCE_FLAG,
+       the collection store must be closed before its sibling stores.
+      (https://docs.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certaddstoretocollection) */
+    success = CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG);
+    for (i = 0; i < system_stores_count; i++) {
+        if (system_store_handles[i] == NULL) {
+            continue;
+        }
+        if (!CertCloseStore(system_store_handles[i], CERT_CLOSE_STORE_FORCE_FLAG)) {
+            success = 0;
+        }
+    }
+    if (!success) {
         /* This error case might shadow another exception.*/
         Py_XDECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
