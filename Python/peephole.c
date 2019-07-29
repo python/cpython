@@ -542,11 +542,11 @@ optimize_bytecode_once(PyObject *code, PyObject* consts, PyObject *names,
    a single pass. */
 
 PyObject *
-PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
+PyCode_Optimize(PyObject *code, PyObject *consts, PyObject *names,
                 PyObject *lnotab_obj)
 {
     PyObject* bytecode = NULL;
-    PyObject* old_bytecode = code;
+    PyObject *old_bytecode = code;
     int compare_bytecode;
     do {
         bytecode = old_bytecode;
