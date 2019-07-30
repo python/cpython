@@ -1441,8 +1441,9 @@ an :term:`importer`.
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.9
-      Raises :exc:`ImportError` instead of :exc:`ValueError` as equal in
-      :meth:`builtin.__import__`.
+      To improve consistency with import statements, raise
+      :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
+      import attempts.
 
 .. function:: find_spec(name, package=None)
 
