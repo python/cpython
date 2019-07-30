@@ -1,0 +1,6 @@
+The ``$(EXTRA_CFLAGS)`` are appended to ``$(CFLAGS_NODIST)`` and not only to
+``$(CFLAGS)``. This makes sure that any conflicting ``$(EXTRA_CFLAGS)`` are
+used at the end of the flags chain and hence take precedence.
+
+For example ``CFLAGS_NODIST="-O2" EXTRA_CFLAGS="-Og"`` now results in an
+optimized build instead of the debug one.
