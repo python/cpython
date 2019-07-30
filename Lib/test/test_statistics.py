@@ -14,6 +14,7 @@ import pickle
 import random
 import sys
 import unittest
+from test import support
 
 from decimal import Decimal
 from fractions import Fraction
@@ -2462,6 +2463,7 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(X.cdf(float('Inf')), 1.0)
         self.assertTrue(math.isnan(X.cdf(float('NaN'))))
 
+    @support.skip_if_pgo_task
     def test_inv_cdf(self):
         NormalDist = statistics.NormalDist
 
