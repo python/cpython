@@ -1026,7 +1026,7 @@ Subject: the first part of this is short,
 , ,
  but_the_second_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line_all_by_itself""")
 
-    def test_trailing_splitable_on_overlong_unsplittable(self):
+    def test_trailing_splittable_on_overlong_unsplittable(self):
         eq = self.ndiffAssertEqual
         h = Header('this_part_does_not_fit_within_maxlinelen_and_thus_should_'
             'be_on_a_line_all_by_itself;')
