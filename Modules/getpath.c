@@ -95,7 +95,7 @@
  * process to find the installed Python tree.
  *
  * An embedding application can use Py_SetPath() to override all of
- * these authomatic path computations.
+ * these automatic path computations.
  *
  * NOTE: Windows MSVC builds use PC/getpathp.c instead!
  */

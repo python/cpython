@@ -345,7 +345,7 @@ class BasicTest(BaseTest):
         """
         Test that the multiprocessing is able to spawn.
         """
-        # Issue bpo-36342: Instanciation of a Pool object imports the
+        # Issue bpo-36342: Instantiation of a Pool object imports the
         # multiprocessing.synchronize module. Skip the test if this module
         # cannot be imported.
         import_module('multiprocessing.synchronize')
