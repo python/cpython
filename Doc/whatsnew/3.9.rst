@@ -118,6 +118,13 @@ pprint
 :mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
 (Contributed by Carl Bordum Hansen in :issue:`37376`.)
 
+importlib
+---------
+
+To improve consistency with import statements, func:`importlib.util.resolve_name`
+now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
+import attempts.
+(Contributed by Ngalim Siregar in :issue:`37444`)
 
 Optimizations
 =============
@@ -176,4 +183,10 @@ Porting to Python 3.9
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+Changes in the Python API
+-------------------------
 
+* func:`importlib.util.resolve_name` now raises :exc:`ImportError` where
+  it previously raised :exc:`ValueError`. Callers catching the specific
+  exception type and supporting both Python 3.9 and earlier versions will
+  need to catch both: ``except (ImportError, ValueError):``
