@@ -8741,4 +8741,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=b3ae8afd275ea5cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e001c855e011720 input=a9049054013a1b77]*/
