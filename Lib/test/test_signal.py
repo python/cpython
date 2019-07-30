@@ -291,7 +291,7 @@ class WakeupSignalTests(unittest.TestCase):
             if ('Exception ignored when trying to write to the signal wakeup fd'
                 not in err):
                 raise AssertionError(err)
-            if f'OSError: [Errno {errno.errorcode[errno.EBADF]}]' not in err:
+            if 'OSError: [Errno EBADF]' not in err:
                 raise AssertionError(err)
         else:
             raise AssertionError("ZeroDivisionError not raised")

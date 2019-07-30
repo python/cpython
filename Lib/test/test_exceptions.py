@@ -292,8 +292,7 @@ class ExceptionTests(unittest.TestCase):
             w = OSError(9, 'foo', 'bar')
             self.assertEqual(w.errno, 9)
             self.assertEqual(w.winerror, None)
-            self.assertEqual(str(w),
-                f"[Errno {errno.errorcode[errno.EBADF]}] foo: 'bar'")
+            self.assertEqual(str(w), "[Errno EBADF] foo: 'bar'")
             # ERROR_PATH_NOT_FOUND (win error 3) becomes ENOENT (2)
             w = OSError(0, 'foo', 'bar', 3)
             self.assertEqual(w.errno, 2)
@@ -1289,8 +1288,7 @@ class ExceptionTests(unittest.TestCase):
     def test_OSError_errno_error_message(self):
         # The symbolic errno name should be shown in the error message of
         # OSError and its subclasses.
-        with self.assertRaisesRegex(OSError,
-                f'Errno {errno.errorcode[errno.ENOENT]}'):
+        with self.assertRaisesRegex(OSError, 'Errno ENOENT'):
             open('non-existent')
 
 
