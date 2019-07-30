@@ -2281,6 +2281,7 @@ class AbstractPickleTests(unittest.TestCase):
     FRAME_SIZE_MIN = 4
     FRAME_SIZE_TARGET = 64 * 1024
 
+    @support.skip_if_pgo_task
     def check_frame_opcodes(self, pickled):
         """
         Check the arguments of FRAME opcodes in a protocol 4+ pickle.
@@ -2328,6 +2329,7 @@ class AbstractPickleTests(unittest.TestCase):
         elif frameless_start is not None:
             self.assertLess(pos - frameless_start, self.FRAME_SIZE_MIN)
 
+    @support.skip_if_pgo_task
     def test_framing_many_objects(self):
         obj = list(range(10**5))
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
@@ -2417,6 +2419,7 @@ class AbstractPickleTests(unittest.TestCase):
                                 count_opcode(pickle.FRAME, pickled))
                 self.assertEqual(obj, self.loads(some_frames_pickle))
 
+    @support.skip_if_pgo_task
     def test_framed_write_sizes_with_delayed_writer(self):
         class ChunkAccumulator:
             """Accumulate pickler output in a list of raw chunks."""
