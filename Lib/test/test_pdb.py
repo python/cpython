@@ -983,7 +983,7 @@ def test_pdb_return_command_for_coroutine():
 
 def test_pdb_until_command_for_generator():
     """Testing no unwindng stack on yield for generators
-       for "until" command if target breakpoing is not reached
+       for "until" command if target breakpoint is not reached
 
     >>> def test_gen():
     ...     yield 0
@@ -1027,7 +1027,7 @@ def test_pdb_until_command_for_generator():
 
 def test_pdb_until_command_for_coroutine():
     """Testing no unwindng stack for coroutines
-       for "until" command if target breakpoing is not reached
+       for "until" command if target breakpoint is not reached
 
     >>> import asyncio
 
