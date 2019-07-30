@@ -2281,7 +2281,6 @@ class AbstractPickleTests(unittest.TestCase):
     FRAME_SIZE_MIN = 4
     FRAME_SIZE_TARGET = 64 * 1024
 
-    @support.skip_if_pgo_task
     def check_frame_opcodes(self, pickled):
         """
         Check the arguments of FRAME opcodes in a protocol 4+ pickle.
