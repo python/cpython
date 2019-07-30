@@ -6112,7 +6112,7 @@ os.sched_getscheduler
     pid: pid_t
     /
 
-Get the scheduling policy for the process identifiedy by pid.
+Get the scheduling policy for the process identified by pid.
 
 Passing 0 for pid returns the scheduling policy for the calling process.
 [clinic start generated code]*/
