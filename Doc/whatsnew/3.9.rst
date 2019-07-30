@@ -121,7 +121,7 @@ pprint
 importlib
 ---------
 
-To improve consistency with import statements, func:`importlib.util.resolve_name`
+To improve consistency with import statements, :func:`importlib.util.resolve_name`
 now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
 import attempts.
 (Contributed by Ngalim Siregar in :issue:`37444`)
@@ -186,7 +186,7 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
-* func:`importlib.util.resolve_name` now raises :exc:`ImportError` where
+* :func:`importlib.util.resolve_name` now raises :exc:`ImportError` where
   it previously raised :exc:`ValueError`. Callers catching the specific
   exception type and supporting both Python 3.9 and earlier versions will
   need to catch both: ``except (ImportError, ValueError):``
