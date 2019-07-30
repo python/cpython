@@ -1033,7 +1033,7 @@ Subject: the first part of this is short,
         eq(h.encode(), "this_part_does_not_fit_within_maxlinelen_and_thus_should_"
             "be_on_a_line_all_by_itself;")
 
-    def test_trailing_splitable_on_overlong_unsplittable_with_leading_splitable(self):
+    def test_trailing_splittable_on_overlong_unsplittable_with_leading_splittable(self):
         eq = self.ndiffAssertEqual
         h = Header('; '
             'this_part_does_not_fit_within_maxlinelen_and_thus_should_'
