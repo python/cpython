@@ -1,2 +1,2 @@
-`MozillaCookieJar` is now compatible with curl and wget cookiejar file
+:class:`http.cookiejar.MozillaCookieJar` is now compatible with curl and wget cookiejar file
 format. Contributed by Jérémie Detrey.
