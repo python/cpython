@@ -1,0 +1,2 @@
+Update :mod:`DefaultCookiePolicy` in `http.cookiejar` to check expiry with
+current timestamp.
