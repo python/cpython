@@ -6,6 +6,7 @@ import operator
 import struct
 from test import support
 from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_ok
 
 #
 #  First, we test that we can generate trees from valid source fragments,
@@ -986,6 +987,14 @@ class OtherParserCase(unittest.TestCase):
         # See bug #12264
         with self.assertRaises(TypeError):
             parser.expr("a", "b")
+
+
+class TestDeprecation(unittest.TestCase):
+    def test_deprecation_message(self):
+        code = "def f():\n  import parser\n\nf()"
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertIn(b'<string>:2: DeprecationWarning', err)
+
 
 if __name__ == "__main__":
     unittest.main()
