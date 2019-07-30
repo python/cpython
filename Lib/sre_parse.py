@@ -432,11 +432,9 @@ def _escape(source, escape, state):
 def _uniq(items):
     if len(set(items)) == len(items):
         return items
-    newitems = []
-    for item in items:
-        if item not in newitems:
-            newitems.append(item)
-    return newitems
+    seen_items = set()
+    seen_items_add = seen_items.add
+    return [item for item in items if not (item in seen_items or seen_items_add(item))]
 
 def _parse_sub(source, state, verbose, nested):
     # parse an alternation: a|b|c
