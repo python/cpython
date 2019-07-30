@@ -375,7 +375,7 @@ Constants
    .. availability:: Linux >= 2.6.25.
 
    .. note::
-   The :data:`CAN_BCM_CAN_FD_FRAME` flag is only available on Linux >= 4.8.
+      The :data:`CAN_BCM_CAN_FD_FRAME` flag is only available on Linux >= 4.8.
 
    .. versionadded:: 3.4
 
