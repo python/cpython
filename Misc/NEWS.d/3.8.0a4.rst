@@ -904,7 +904,7 @@ only enabled by ``--findleaks``. The check now also works with
 .. nonce: B8-ghi
 .. section: Tests
 
-When using mulitprocessing mode (-jN), regrtest now better reports errors if
+When using multiprocessing mode (-jN), regrtest now better reports errors if
 a worker process fails, and it exits immediately on a worker thread failure
 or when interrupted.
 

@@ -1369,7 +1369,7 @@ PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
         return 0;
     }
     else
-        /* a is not completely initilized yet; follow tp_base */
+        /* a is not completely initialized yet; follow tp_base */
         return type_is_subtype_base_chain(a, b);
 }
 

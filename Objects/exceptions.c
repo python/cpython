@@ -405,7 +405,7 @@ static PyTypeObject _PyExc_BaseException = {
     BaseException_new,          /* tp_new */
 };
 /* the CPython API expects exceptions to be (PyObject *) - both a hold-over
-from the previous implmentation and also allowing Python objects to be used
+from the previous implementation and also allowing Python objects to be used
 in the API */
 PyObject *PyExc_BaseException = (PyObject *)&_PyExc_BaseException;
 
