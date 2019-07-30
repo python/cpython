@@ -1793,7 +1793,7 @@ class GenPage(Frame):
         """Return frame of widgets for General tab.
 
         Enable users to provisionally change general options. Function
-        load_general_cfg intializes tk variables and helplist using
+        load_general_cfg initializes tk variables and helplist using
         idleConf.  Radiobuttons startup_shell_on and startup_editor_on
         set var startup_edit. Radiobuttons save_ask_on and save_auto_on
         set var autosave. Entry boxes win_width_int and win_height_int
