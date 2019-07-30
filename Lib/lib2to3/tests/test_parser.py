@@ -531,7 +531,7 @@ class TestSetLiteral(GrammarTest):
 
 # Adapted from Python 3's Lib/test/test_unicode_identifiers.py and
 # Lib/test/test_tokenize.py:TokenizeTest.test_non_ascii_identifiers
-class TestIdentfier(GrammarTest):
+class TestIdentifier(GrammarTest):
     def test_non_ascii_identifiers(self):
         self.validate("Örter = 'places'\ngrün = 'green'")
         self.validate("蟒 = a蟒 = 锦蛇 = 1")

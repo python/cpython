@@ -556,7 +556,7 @@ class FlowControlMixin(protocols.Protocol):
             # Avoid inheritance from FlowControlMixin
             # Copy-paste the code to your project
             # if you need flow control helpers
-            warnings.warn(f"{self.__class__} should be instaniated "
+            warnings.warn(f"{self.__class__} should be instantiated "
                           "by asyncio internals only, "
                           "please avoid its creation from user code",
                           DeprecationWarning)

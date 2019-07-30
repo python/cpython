@@ -6112,14 +6112,14 @@ os.sched_getscheduler
     pid: pid_t
     /
 
-Get the scheduling policy for the process identifiedy by pid.
+Get the scheduling policy for the process identified by pid.
 
 Passing 0 for pid returns the scheduling policy for the calling process.
 [clinic start generated code]*/
 
 static PyObject *
 os_sched_getscheduler_impl(PyObject *module, pid_t pid)
-/*[clinic end generated code: output=dce4c0bd3f1b34c8 input=5f14cfd1f189e1a0]*/
+/*[clinic end generated code: output=dce4c0bd3f1b34c8 input=8d99dac505485ac8]*/
 {
     int policy;
 

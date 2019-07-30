@@ -833,7 +833,7 @@ import_add_module(PyThreadState *tstate, PyObject *name)
     }
     else {
         m = PyObject_GetItem(modules, name);
-        // For backward-comaptibility we copy the behavior
+        // For backward-compatibility we copy the behavior
         // of PyDict_GetItemWithError().
         if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
             _PyErr_Clear(tstate);

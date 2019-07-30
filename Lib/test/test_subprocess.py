@@ -1500,7 +1500,7 @@ class RunFuncTestCase(BaseTestCase):
     def test_run_with_pathlike_path(self):
         # bpo-31961: test run(pathlike_object)
         # the name of a command that can be run without
-        # any argumenets that exit fast
+        # any arguments that exit fast
         prog = 'tree.com' if mswindows else 'ls'
         path = shutil.which(prog)
         if path is None:

@@ -830,7 +830,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
                Instead we start using an Array node, which has
                simpler (faster) implementation at the expense of
-               having prealocated 32 pointers for its keys/values
+               having preallocated 32 pointers for its keys/values
                pairs.
 
                Small hamt objects (<30 keys) usually don't have any

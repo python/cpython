@@ -262,7 +262,7 @@ class MockTest(unittest.TestCase):
 
         ret_val = mock(sentinel.Arg)
         self.assertTrue(mock.called, "called not set")
-        self.assertEqual(mock.call_count, 1, "call_count incoreect")
+        self.assertEqual(mock.call_count, 1, "call_count incorrect")
         self.assertEqual(mock.call_args, ((sentinel.Arg,), {}),
                          "call_args not set")
         self.assertEqual(mock.call_args.args, (sentinel.Arg,),

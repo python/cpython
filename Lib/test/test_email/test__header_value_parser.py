@@ -297,7 +297,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             [],
             '')
 
-    def test_get_unstructured_invaild_ew(self):
+    def test_get_unstructured_invalid_ew(self):
         self._test_get_x(self._get_unst,
             '=?test val',
             '=?test val',

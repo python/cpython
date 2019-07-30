@@ -828,7 +828,7 @@ output_markup(SubString *field_name, SubString *format_spec,
         tmp = NULL;
     }
 
-    /* if needed, recurively compute the format_spec */
+    /* if needed, recursively compute the format_spec */
     if (format_spec_needs_expanding) {
         tmp = build_string(format_spec, args, kwargs, recursion_depth-1,
                            auto_number);

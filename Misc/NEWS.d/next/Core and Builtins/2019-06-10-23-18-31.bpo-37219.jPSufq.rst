@@ -1,1 +1,1 @@
-Remove errorneous optimization for empty set differences.
+Remove erroneous optimization for empty set differences.

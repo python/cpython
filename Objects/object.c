@@ -2072,7 +2072,7 @@ _PyTrash_thread_deposit_object(PyObject *op)
     tstate->trash_delete_later = op;
 }
 
-/* Dealloccate all the objects in the _PyTrash_delete_later list.  Called when
+/* Deallocate all the objects in the _PyTrash_delete_later list.  Called when
  * the call-stack unwinds again.
  */
 void

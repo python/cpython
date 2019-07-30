@@ -285,4 +285,4 @@ The pyproject property file defines all of the build settings for each
 project, with some projects overriding certain specific values. The GUI
 doesn't always reflect the correct settings and may confuse the user
 with false information, especially for settings that automatically adapt
-for diffirent configurations.
+for different configurations.
