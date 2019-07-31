@@ -596,7 +596,7 @@ class HelpFormatter(object):
             try:
                 formats = ['%s' for _ in range(action.nargs)]
             except TypeError:
-                raise ValueError("invalid nargs value")
+                raise ValueError("invalid nargs value") from None
             result = ' '.join(formats) % get_metavar(action.nargs)
         return result
 
