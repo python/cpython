@@ -14,10 +14,10 @@ def what(file, h=None):
         if h is None:
             if isinstance(file, (str, PathLike)):
                 f = open(file, 'rb')
-                h = f.read()
+                h = f.read(32)
             else:
                 location = file.tell()
-                h = file.read()
+                h = file.read(32)
                 file.seek(location)
         for tf in tests:
             res = tf(h, f)
@@ -35,8 +35,8 @@ def what(file, h=None):
 tests = []
 
 def test_jpeg(h, f):
-    """JPEG data in JFIF or Exif format"""
-    if h.startswith(b'\xFF\xD8') and h.endswith(b'\xFF\xD9'):
+    """JPEG data """
+    if h.startswith(b'\xFF\xD8'):
         return 'jpeg'
 
 tests.append(test_jpeg)
