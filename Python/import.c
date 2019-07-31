@@ -390,8 +390,33 @@ import_get_module(PyThreadState *tstate, PyObject *name)
 PyObject *
 PyImport_GetModule(PyObject *name)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    return import_get_module(tstate, name);
+   PyThreadState *tstate = _PyThreadState_GET();
+   PyObject *mod = NULL;
+   PyInterpreterState *interp = tstate->interp;
+
+   mod = import_get_module(tstate, name);
+   if (mod != NULL && mod != Py_None) {
+       _Py_IDENTIFIER(__spec__);
+       _Py_IDENTIFIER(_lock_unlock_module);
+       PyObject *spec;
+
+       /* Optimization: only call _bootstrap._lock_unlock_module() if
+          __spec__._initializing is true.
+          NOTE: because of this, initializing must be set *before*
+          stuffing the new module in sys.modules.
+        */
+       spec = _PyObject_GetAttrId(mod, &PyId___spec__);
+       if (_PyModuleSpec_IsInitializing(spec)) {
+           PyObject *value = _PyObject_CallMethodIdOneArg(
+               interp->importlib, &PyId__lock_unlock_module, name);
+           if (value == NULL) {
+               Py_DECREF(spec);
+           }
+           Py_DECREF(value);
+       }
+       Py_XDECREF(spec);
+   }
+   return mod;
 }
 
 
