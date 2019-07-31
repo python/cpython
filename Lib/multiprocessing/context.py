@@ -41,7 +41,6 @@ class BaseContext(object):
     parent_process = staticmethod(process.parent_process)
     active_children = staticmethod(process.active_children)
     _reducer = None
-    _custom_reduction_enabled = False
 
     def cpu_count(self):
         '''Returns the number of CPUs in the system'''
@@ -53,7 +52,7 @@ class BaseContext(object):
 
     @property
     def Process(self):
-        if not self._custom_reduction_enabled:
+        if self._reducer is None:
             # Ensure backward compatibility by returning a class when no
             # custom reducer was specified
             return self._Process
@@ -61,8 +60,7 @@ class BaseContext(object):
             return self.process_factory
 
     def process_factory(self, *args, **kwargs):
-        p = self._Process(*args, **kwargs)
-        p._ctx = self.get_context()
+        p = self._Process(*args, reducer=self.get_reducer(), **kwargs)
         return p
 
     def Manager(self):
@@ -232,16 +230,16 @@ class BaseContext(object):
     def get_reducer(self):
         '''Controls how objects will be reduced to a form that can be
         shared with other processes.'''
-        ctx = self.get_context()
-        reducer = ctx._reducer
+        # It does not matter that _reducer binds to self or self.get_context()
+        # as self.set_start_method() can only be called once.
+        reducer = self._reducer
         if reducer is None:
             return reduction
         return reducer
 
     def set_reducer(self, reduction):
-        ctx = self.get_context()
         if reduction is original_reducer:
-            ctx._reducer = None
+            self._reducer = None
             return
 
         if not isinstance(reduction, original_reducer.AbstractReducer):
@@ -252,8 +250,7 @@ class BaseContext(object):
                             "multiprocessing.reduction.AbstractPickler "
                             "in the get_pickler_class() method")
 
-        ctx._reducer = reduction
-        ctx._custom_reduction_enabled = True
+        self._reducer = reduction
 
     def _check_available(self):
         pass
@@ -265,10 +262,8 @@ class BaseContext(object):
 class Process(process.BaseProcess):
     _start_method = None
     @staticmethod
-    def _Popen(process_obj, ctx=None):
-        if ctx is None:
-            ctx = _default_context.get_context()
-        return ctx.Process._Popen(process_obj, ctx)
+    def _Popen(process_obj):
+        return _default_context.get_context()._Process._Popen(process_obj)
 
 class DefaultContext(BaseContext):
     _Process = Process
@@ -318,23 +313,23 @@ if sys.platform != 'win32':
     class ForkProcess(process.BaseProcess):
         _start_method = 'fork'
         @staticmethod
-        def _Popen(process_obj, ctx=None):
+        def _Popen(process_obj):
             from .popen_fork import Popen
-            return Popen(process_obj, ctx=ctx)
+            return Popen(process_obj)
 
     class SpawnProcess(process.BaseProcess):
         _start_method = 'spawn'
         @staticmethod
-        def _Popen(process_obj, ctx=None):
+        def _Popen(process_obj):
             from .popen_spawn_posix import Popen
-            return Popen(process_obj, ctx=ctx)
+            return Popen(process_obj)
 
     class ForkServerProcess(process.BaseProcess):
         _start_method = 'forkserver'
         @staticmethod
-        def _Popen(process_obj, ctx=None):
+        def _Popen(process_obj):
             from .popen_forkserver import Popen
-            return Popen(process_obj, ctx=ctx)
+            return Popen(process_obj)
 
     class ForkContext(BaseContext):
         _name = 'fork'

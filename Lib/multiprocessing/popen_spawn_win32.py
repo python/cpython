@@ -43,7 +43,7 @@ class Popen(object):
     '''
     method = 'spawn'
 
-    def __init__(self, process_obj, ctx=None):
+    def __init__(self, process_obj):
         prep_data = spawn.get_preparation_data(process_obj._name)
 
         # read end of pipe will be duplicated by the child process
@@ -52,7 +52,6 @@ class Popen(object):
         # bpo-33929: Previously, the read end of pipe was "stolen" by the child
         # process, but it leaked a handle if the child process had been
         # terminated before it could steal the handle from the parent process.
-        self.ctx = ctx or multiprocessing.get_context()
         rhandle, whandle = _winapi.CreatePipe(None, 0)
         wfd = msvcrt.open_osfhandle(whandle, 0)
         cmd = spawn.get_command_line(parent_pid=os.getpid(),
@@ -92,8 +91,8 @@ class Popen(object):
             # send information to child
             set_spawning_popen(self)
             try:
-                self.ctx.get_reducer().dump(prep_data, to_child)
-                self.ctx.get_reducer().dump(process_obj, to_child)
+                process_obj.reducer.dump(prep_data, to_child)
+                process_obj.reducer.dump(process_obj, to_child)
             finally:
                 set_spawning_popen(None)
 

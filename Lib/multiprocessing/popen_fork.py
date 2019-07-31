@@ -13,11 +13,10 @@ __all__ = ['Popen']
 class Popen(object):
     method = 'fork'
 
-    def __init__(self, process_obj, ctx=None):
+    def __init__(self, process_obj):
         util._flush_std_streams()
         self.returncode = None
         self.finalizer = None
-        self.ctx = ctx or multiprocessing.get_context()
         self._launch(process_obj)
 
     def duplicate_for_child(self, fd):
