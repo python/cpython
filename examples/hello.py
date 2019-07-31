@@ -1,0 +1,1 @@
+drukuj("Hello, world!")
