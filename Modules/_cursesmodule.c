@@ -3120,7 +3120,7 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
         wchar_t buffer[2];
         if (PyUnicode_AsWideChar(obj, buffer, 2) != 1) {
             PyErr_Format(PyExc_TypeError,
-                         "expect bytes or str of length 1, or int, "
+                         "expect str of length 1 or int, "
                          "got a str of length %zi",
                          PyUnicode_GET_LENGTH(obj));
             return 0;
@@ -3147,7 +3147,7 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "expect bytes or str of length 1, or int, got %s",
+                     "expect str of length 1 or int, got %s",
                      Py_TYPE(obj)->tp_name);
         return 0;
     }
