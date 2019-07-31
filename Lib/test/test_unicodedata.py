@@ -14,6 +14,10 @@ from test.support import script_helper
 encoding = 'utf-8'
 errors = 'surrogatepass'
 
+def all_chars():
+    '''Each Unicode codepoint, as a one-character string.'''
+    for codepoint in range(0x110000):
+        yield chr(codepoint)
 
 ### Run tests
 
@@ -101,6 +105,14 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
             h.update(''.join(data).encode("ascii"))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
+
+    def test_isspace_invariant(self):
+        for char in all_chars():
+            bidirectional = self.db.bidirectional(char)
+            category = self.db.category(char)
+            self.assertEqual(char.isspace(),
+                             (bidirectional in ('WS', 'B', 'S')
+                              or category == 'Zs'))
 
     def test_digit(self):
         self.assertEqual(self.db.digit('A', None), None)

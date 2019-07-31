@@ -12,7 +12,6 @@ import operator
 import struct
 import sys
 import textwrap
-import unicodedata
 import unittest
 import warnings
 from test import support, string_tests
@@ -618,13 +617,6 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequalnofix(True, '\u2000', 'isspace')
         self.checkequalnofix(True, '\u200a', 'isspace')
         self.checkequalnofix(False, '\u2014', 'isspace')
-        for i in range(0x10000):
-            char = chr(i)
-            bidirectional = unicodedata.bidirectional(char)
-            category = unicodedata.category(char)
-            self.assertEqual(char.isspace(),
-                             (bidirectional in ('WS', 'B', 'S')
-                              or category == 'Zs'))
         # There are no non-BMP whitespace chars as of Unicode 12.
         for ch in ['\U00010401', '\U00010427', '\U00010429', '\U0001044E',
                    '\U0001F40D', '\U0001F46F']:
