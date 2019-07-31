@@ -430,11 +430,7 @@ def _escape(source, escape, state):
     raise source.error("bad escape %s" % escape, len(escape))
 
 def _uniq(items):
-    if len(set(items)) == len(items):
-        return items
-    seen_items = set()
-    seen_items_add = seen_items.add
-    return [item for item in items if not (item in seen_items or seen_items_add(item))]
+    return list(dict.fromkeys(items))
 
 def _parse_sub(source, state, verbose, nested):
     # parse an alternation: a|b|c
