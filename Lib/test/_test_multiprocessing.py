@@ -5562,7 +5562,7 @@ class _TestCustomReducer(BaseTestCase):
 
 class CustomContext(multiprocessing.context.BaseContext):
     _name = "custom"
-    Process = multiprocessing.get_context().Process
+    _Process = multiprocessing.get_context().Process
 
 
 class _TestCustomReducerWithContext(BaseTestCase):
@@ -5594,7 +5594,7 @@ class _TestCustomReducerWithContext(BaseTestCase):
 
         queue = self.custom_ctx.Queue()
         p = self.custom_ctx.Process(target=self._put_and_get_in_queue,
-            args=(queue,), ctx=self.custom_ctx)
+                                    args=(queue,))
         p.start()
         element = queue.get(timeout=TIMEOUT)
         self.assertEqual(element, "Something")
