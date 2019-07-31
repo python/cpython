@@ -1194,19 +1194,29 @@ class Path(PurePath):
         return io.open(self, mode, buffering, encoding, errors, newline,
                        opener=self._opener)
 
-    def read_bytes(self):
+    def _read(self, f, size):
+        if size > 0:
+            return f.read(size)
+        elif size < 0:
+            size = -size
+            f.seek(0, os.SEEK_END)
+            f.seek(f.tell() - size, os.SEEK_SET)
+            return f.read(size)
+        return f.read()
+    
+    def read_bytes(self, size=0):
         """
         Open the file in bytes mode, read it, and close the file.
         """
         with self.open(mode='rb') as f:
-            return f.read()
+            return self._read(f, size)
 
-    def read_text(self, encoding=None, errors=None):
+    def read_text(self, size=0, encoding=None, errors=None):
         """
         Open the file in text mode, read it, and close the file.
         """
         with self.open(mode='r', encoding=encoding, errors=errors) as f:
-            return f.read()
+            return self._read(f, size)
 
     def write_bytes(self, data):
         """
