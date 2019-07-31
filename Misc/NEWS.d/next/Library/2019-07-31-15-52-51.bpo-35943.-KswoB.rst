@@ -1,0 +1,1 @@
+Added optimization to prevent `PyImport_GetModule()` from returning partially-initialized module.
