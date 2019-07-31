@@ -20,7 +20,11 @@ from . import context
 #
 
 __all__ = [x for x in dir(context._default_context) if not x.startswith('_')]
-globals().update((name, getattr(context._default_context, name)) for name in __all__)
+
+
+def __getattr__(name: str):
+    return getattr(context._default_context, name)
+
 
 #
 # XXX These should not really be documented or public.
