@@ -468,6 +468,32 @@ gettext
 Added :func:`~gettext.pgettext` and its variants.
 (Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
 
+
+idlelib and IDLE
+----------------
+
+Output over N lines (50 by default) is squeezed down to a button.
+N can be changed in the PyShell section of the General page of the
+Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
+right clicking on the output.  Squeezed output can be expanded in place
+by double-clicking the button or into the clipboard or a separate window
+by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
+
+Add "Run Customized" to the Run menu to run a module with customized
+settings. Any command line arguments entered are added to sys.argv.
+They also re-appear in the box for the next customized run.  One can also
+suppress the normal Shell main module restart.  (Contributed by Cheryl
+Sabella, Terry Jan Reedy, and others in :issue:`5680` and :issue:`37627`.)
+
+Add optional line numbers for IDLE editor windows. Windows
+open without line numbers unless set otherwise in the General
+tab of the configuration dialog.  Line numbers for an existing
+window are shown and hidden in the Options menu.
+(Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
+
+The changes above have been backported to 3.7 maintenance releases.
+
+
 inspect
 -------
 
@@ -482,6 +508,7 @@ for :func:`property`, :func:`classmethod`, and :func:`staticmethod`::
       def __init__(self, bit_rate, duration):
           self.bit_rate = round(bit_rate / 1000.0, 1)
           self.duration = ceil(duration)
+
 
 io
 --
