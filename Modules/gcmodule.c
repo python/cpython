@@ -962,11 +962,11 @@ clear_freelists(void)
     (void)PyContext_ClearFreeList();
 }
 
-// This function is called at start of collect() if DEBUG_STATS is enabled.
+// Show stats for objects in each gennerations.
 static void
-show_stats(struct _gc_runtime_state *state, int generation)
+show_stats_each_generations(struct _gc_runtime_state *state)
 {
-    char buf[512];
+    char buf[100];
     size_t pos = 0;
 
     for (int i = 0; i < NUM_GENERATIONS && pos < sizeof(buf); i++) {
@@ -975,10 +975,9 @@ show_stats(struct _gc_runtime_state *state, int generation)
     }
 
     PySys_WriteStderr(
-        "gc: collecting generation %d...\n"
         "gc: objects in each generation:%s\n"
         "gc: objects in permanent generation: %zd\n",
-        generation, buf, gc_list_size(&state->permanent_generation.head));
+        buf, gc_list_size(&state->permanent_generation.head));
 }
 
 /* This is the main function.  Read this to understand how the
@@ -998,7 +997,8 @@ collect(struct _gc_runtime_state *state, int generation,
     _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
 
     if (state->debug & DEBUG_STATS) {
-        show_stats(state, generation);
+        PySys_WriteStderr("gc: collecting generation %d...\n", generation);
+        show_stats_each_generations(state);
         t1 = _PyTime_GetMonotonicClock();
     }
 
