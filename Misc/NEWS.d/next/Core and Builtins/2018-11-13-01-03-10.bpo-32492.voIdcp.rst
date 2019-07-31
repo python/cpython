@@ -1,2 +1,0 @@
-Speed up :class:`namedtuple` attribute access by 1.6x using a C fast-path
-for the name descriptors. Patch by Pablo Galindo.

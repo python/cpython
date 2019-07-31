@@ -1,4 +1,0 @@
-#coding:latin1
-
-
-

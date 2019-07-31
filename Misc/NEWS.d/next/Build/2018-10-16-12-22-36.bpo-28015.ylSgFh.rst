@@ -1,1 +1,0 @@
-Have --with-lto works correctly with clang.

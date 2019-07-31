@@ -1,3 +1,0 @@
-fuzz_builtin_float
-fuzz_builtin_int
-fuzz_builtin_unicode

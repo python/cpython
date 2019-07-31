@@ -1,2 +1,0 @@
-Document that IDLE's shell has no line limit. A program that runs
-indefinitely can overfill memory.

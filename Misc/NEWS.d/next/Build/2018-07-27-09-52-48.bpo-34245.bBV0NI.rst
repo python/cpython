@@ -1,2 +1,0 @@
-The Python shared library is now installed with write permission (mode 0755),
-which is the standard way of installing such libraries.

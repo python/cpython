@@ -1,2 +1,0 @@
-Allow annotated names in module namespace that are declared global before
-the annotation happens. Patch by Pablo Galindo.
