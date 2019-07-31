@@ -72,10 +72,35 @@ three`` at the command line::
    >>> print(sys.argv)
    ['demo.py', 'one', 'two', 'three']
 
-The :mod:`getopt` module processes *sys.argv* using the conventions of the Unix
-:func:`getopt` function.  More powerful and flexible command line processing is
-provided by the :mod:`argparse` module.
+The :mod:`argparse` module provides a mechanism to process command line arguments,
+It should always be preferred over directly processing ``sys.argv`` manually.
 
+Take, for example, the below snippet of code::
+
+   >>> import argparse
+   >>> parser = argparse.ArgumentParser(description='An argparse example.')
+   >>> parser.add_argument('name', help='The name of someone to greet.')
+   >>> args = parser.parse_args()
+   >>> print(f'Hello, {args.name}!')
+
+The three lines of code needed for creating the command line argument formula
+are simple to read and understand and are easy to extend in terms of your
+applications functionality.
+
+What if you wanted to provide a default value?
+
+::
+
+   >>> from getpass import getuser
+   >>> parser.add_argument('name', nargs='?', default=getuser(), help='The name of someone to greet.')
+
+How about if you wanted to control how verbose you are with your output?
+
+::
+
+  >>> parser.add_argument('--verbose', '-v', action='count')
+  >>> greeting = ["Hi", "Hello", "Greetings! its very nice to meet you"][args.verbose % 3]
+  >>> print(f'{greeting}, {args.name}')
 
 .. _tut-stderr:
 
