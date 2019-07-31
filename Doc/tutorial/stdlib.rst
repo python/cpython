@@ -72,7 +72,7 @@ three`` at the command line::
    >>> print(sys.argv)
    ['demo.py', 'one', 'two', 'three']
 
-The :mod:`argparse` module provides a mechanism to process command line arguments,
+The :mod:`argparse` module provides a mechanism to process command line arguments.
 It should always be preferred over directly processing ``sys.argv`` manually.
 
 Take, for example, the below snippet of code::
