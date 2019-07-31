@@ -477,7 +477,8 @@ Buffer-related functions
 
 .. c:function:: void* PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices)
 
-   Return the memory area pointer by the *indices* for the *view* buffer given.
+   Get the memory area pointed to by the *indices* inside the given *view*.
+   *indices* must point to an array of ``view->ndim`` indices.
 
 
 .. c:function:: int PyBuffer_ToContiguous(void *buf, Py_buffer *src, Py_ssize_t len, char order)
