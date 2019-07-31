@@ -1700,6 +1700,12 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(display_name[3].comments, ['with trailing comment'])
         self.assertEqual(display_name.display_name, 'simple phrase.')
 
+    def test_get_display_name_bpo_32178(self):
+        display_name = self._test_get_x(
+            parser.get_display_name,
+            ':Foo ', '', '', [errors.InvalidHeaderDefect], ':Foo ')
+        self.assertEqual(display_name.value, '')
+
     # get_name_addr
 
     def test_get_name_addr_angle_addr_only(self):
