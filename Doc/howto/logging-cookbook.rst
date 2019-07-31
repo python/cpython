@@ -2760,8 +2760,8 @@ The following example shows how to log to a Qt GUI. This introduces a simple
 ``QtHandler`` class which takes a callable, which should be a slot in the main
 thread that does GUI updates. A worker thread is also created to show how you
 can log to the GUI from both the UI itself (via a button for manual logging)
-as well as a worker thread doing work in the background (here, just random
-short delays).
+as well as a worker thread doing work in the background (here, just logging
+messages at random levels with random short delays in between).
 
 The worker thread is implemented using Qt's ``QThread`` class rather than the
 :mod:`threading` module, as there are circumstances where one has to use
@@ -2769,7 +2769,7 @@ The worker thread is implemented using Qt's ``QThread`` class rather than the
 
 The code should work with recent releases of either ``PySide2`` or ``PyQt5``.
 You should be able to adapt the approach to earlier versions of Qt. Please
-refer to the comments in the code for more detailed information.
+refer to the comments in the code snippet for more detailed information.
 
 .. code-block:: python3
 
@@ -2789,22 +2789,24 @@ refer to the comments in the code for more detailed information.
         Signal = QtCore.pyqtSignal
         Slot = QtCore.pyqtSlot
 
+
     logger = logging.getLogger(__name__)
+
 
     #
     # Signals need to be contained in a QObject or subclass in order to be correctly
     # initialized.
     #
     class Signaller(QtCore.QObject):
-        signal = Signal(str)
+        signal = Signal(str, logging.LogRecord)
 
     #
     # Output to a Qt GUI is only supposed to happen on the main thread. So, this
     # handler is designed to take a slot function which is set up to run in the main
-    # thread. In this example, the function takes a single argument which is a
-    # formatted log message. You can attach a formatter instance which formats a
-    # LogRecord however you like, or change the slot function to take some other
-    # value derived from the LogRecord.
+    # thread. In this example, the function takes a string argument which is a
+    # formatted log message, and the log record which generated it. The formatted
+    # string is just a convenience - you could format a string for output any way
+    # you like in the slot function itself.
     #
     # You specify the slot function to do whatever GUI updates you want. The handler
     # doesn't know or care about specific UI elements.
@@ -2817,7 +2819,7 @@ refer to the comments in the code for more detailed information.
 
         def emit(self, record):
             s = self.format(record)
-            self.signaller.signal.emit(s)
+            self.signaller.signal.emit(s, record)
 
     #
     # This example uses QThreads, which means that the threads at the Python level
@@ -2826,6 +2828,13 @@ refer to the comments in the code for more detailed information.
     #
     def ctname():
         return QtCore.QThread.currentThread().objectName()
+
+
+    #
+    # Used to generate random levels for logging.
+    #
+    LEVELS = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
+              logging.CRITICAL)
 
     #
     # This worker class represents work that is done in a thread separate to the
@@ -2851,7 +2860,8 @@ refer to the comments in the code for more detailed information.
             while not QtCore.QThread.currentThread().isInterruptionRequested():
                 delay = 0.5 + random.random() * 2
                 time.sleep(delay)
-                logger.debug('Message after delay of %3.1f: %d', delay, i, extra=extra)
+                level = random.choice(LEVELS)
+                logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
                 i += 1
 
     #
@@ -2864,10 +2874,18 @@ refer to the comments in the code for more detailed information.
     #
     class Window(QtWidgets.QWidget):
 
+        COLORS = {
+            logging.DEBUG: 'black',
+            logging.INFO: 'blue',
+            logging.WARNING: 'orange',
+            logging.ERROR: 'red',
+            logging.CRITICAL: 'purple',
+        }
+
         def __init__(self, app):
             super(Window, self).__init__()
             self.app = app
-            self.textedit = te = QtWidgets.QTextEdit(self)
+            self.textedit = te = QtWidgets.QPlainTextEdit(self)
             # Set whatever the default monospace font is for the platform
             f = QtGui.QFont('nosuchfont')
             f.setStyleHint(f.Monospace)
@@ -2880,7 +2898,7 @@ refer to the comments in the code for more detailed information.
             self.handler = h = QtHandler(self.update_status)
             # Remember to use qThreadName rather than threadName in the format string.
             fs = '%(asctime)s %(qThreadName)-12s %(levelname)-8s %(message)s'
-            formatter = logging.Formatter(f)
+            formatter = logging.Formatter(fs)
             h.setFormatter(formatter)
             logger.addHandler(h)
             # Set up to terminate the QThread when we exit
@@ -2932,20 +2950,24 @@ refer to the comments in the code for more detailed information.
         # that's where the slots are set up
 
         @Slot(str)
-        def update_status(self, status):
-            self.textedit.append(status)
+        def update_status(self, status, record):
+            color = self.COLORS.get(record.levelno, 'black')
+            s = '<pre><font color="%s">%s</font></pre>' % (color, status)
+            self.textedit.appendHtml(s)
 
         @Slot()
         def manual_update(self):
-            levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
-                      logging.CRITICAL)
-            level = random.choice(levels)
+            # This function uses the formatted message passed in, but also uses
+            # information from the record to format the message in an appropriate
+            # color according to its severity (level).
+            level = random.choice(LEVELS)
             extra = {'qThreadName': ctname() }
             logger.log(level, 'Manually logged!', extra=extra)
 
         @Slot()
         def clear_display(self):
             self.textedit.clear()
+
 
     def main():
         QtCore.QThread.currentThread().setObjectName('MainThread')
