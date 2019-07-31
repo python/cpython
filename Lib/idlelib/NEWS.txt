@@ -38,6 +38,10 @@ run dialogs.
 bpo-37321: Both subprocess connection error messages now refer to
 the 'Startup failure' section of the IDLE doc.
 
+bpo-37177: Properly attach search dialogs to their main window so
+that they behave like other dialogs and do not get hidden behind
+their main window.
+
 bpo-37039: Adjust "Zoom Height" to individual screens by momentarily
 maximizing the window on first use with a particular screen.  Changing
 screen settings may invalidate the saved height.  While a window is
@@ -45,6 +49,10 @@ maximized, "Zoom Height" has no effect.
 
 bpo-35763: Make calltip reminder about '/' meaning positional-only less
 obtrusive by only adding it when there is room on the first line.
+
+bpo-5680: Add 'Run Customized' to the Run menu to run a module with
+customized settings. Any command line arguments entered are added
+to sys.argv. One can suppress the normal Shell main module restart.
 
 bpo-35610: Replace now redundant editor.context_use_ps1 with
 .prompt_last_line.  This finishes change started in bpo-31858.
@@ -84,6 +92,9 @@ corresponding argument of .close().  In IDLE, both have always been
 None or False since 2007.
 
 bpo-36096: Make colorizer state variables instance-only.
+
+bpo-32129: Avoid blurry IDLE application icon on macOS with Tk 8.6.
+Patch by Kevin Walzer.
 
 bpo-24310: Document settings dialog font tab sample.
 
