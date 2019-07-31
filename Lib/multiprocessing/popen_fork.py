@@ -1,7 +1,6 @@
 import os
 import signal
 
-import multiprocessing
 from . import util
 
 __all__ = ['Popen']
