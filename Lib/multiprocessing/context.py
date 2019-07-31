@@ -363,13 +363,13 @@ else:
     class SpawnProcess(process.BaseProcess):
         _start_method = 'spawn'
         @staticmethod
-        def _Popen(process_obj, ctx=None):
+        def _Popen(process_obj,):
             from .popen_spawn_win32 import Popen
-            return Popen(process_obj, ctx)
+            return Popen(process_obj)
 
     class SpawnContext(BaseContext):
         _name = 'spawn'
-        Process = SpawnProcess
+        _Process = SpawnProcess
 
     _concrete_contexts = {
         'spawn': SpawnContext(),

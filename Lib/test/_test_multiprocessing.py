@@ -5605,7 +5605,8 @@ class _TestCustomReducerWithContext(BaseTestCase):
         self.assertEqual(p.exitcode, 0)
         self.assertEqual(element, "Something")
         self.assertEqual(self.custom_spy['loads'], 1)
-        self.assertEqual(self.custom_spy['dump'], 1)
+        # Fork and spawn call this different ammount of times
+        self.assertGreaterEqual(self.custom_spy['dump'], 1)
         self.assertEqual(self.default_spy['loads'], 0)
         self.assertEqual(self.default_spy['dump'], 0)
 
