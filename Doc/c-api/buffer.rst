@@ -475,6 +475,12 @@ Buffer-related functions
    (*order* is ``'A'``).  Return ``0`` otherwise.  This function always succeeds.
 
 
+.. c:function:: void* PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices)
+
+   Get the memory area pointed to by the *indices* inside the given *view*.
+   *indices* must point to an array of ``view->ndim`` indices.
+
+
 .. c:function:: int PyBuffer_ToContiguous(void *buf, Py_buffer *src, Py_ssize_t len, char order)
 
    Copy *len* bytes from *src* to its contiguous representation in *buf*.
