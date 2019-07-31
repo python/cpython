@@ -7656,6 +7656,8 @@ PyInit__socket(void)
 #endif
 #ifdef HAVE_LINUX_CAN_BCM_H
     PyModule_AddIntMacro(m, CAN_BCM);
+
+    /* BCM opcodes */
     PyModule_AddIntConstant(m, "CAN_BCM_TX_SETUP", TX_SETUP);
     PyModule_AddIntConstant(m, "CAN_BCM_TX_DELETE", TX_DELETE);
     PyModule_AddIntConstant(m, "CAN_BCM_TX_READ", TX_READ);
@@ -7668,6 +7670,23 @@ PyInit__socket(void)
     PyModule_AddIntConstant(m, "CAN_BCM_RX_STATUS", RX_STATUS);
     PyModule_AddIntConstant(m, "CAN_BCM_RX_TIMEOUT", RX_TIMEOUT);
     PyModule_AddIntConstant(m, "CAN_BCM_RX_CHANGED", RX_CHANGED);
+
+    /* BCM flags */
+    PyModule_AddIntConstant(m, "CAN_BCM_SETTIMER", SETTIMER);
+    PyModule_AddIntConstant(m, "CAN_BCM_STARTTIMER", STARTTIMER);
+    PyModule_AddIntConstant(m, "CAN_BCM_TX_COUNTEVT", TX_COUNTEVT);
+    PyModule_AddIntConstant(m, "CAN_BCM_TX_ANNOUNCE", TX_ANNOUNCE);
+    PyModule_AddIntConstant(m, "CAN_BCM_TX_CP_CAN_ID", TX_CP_CAN_ID);
+    PyModule_AddIntConstant(m, "CAN_BCM_RX_FILTER_ID", RX_FILTER_ID);
+    PyModule_AddIntConstant(m, "CAN_BCM_RX_CHECK_DLC", RX_CHECK_DLC);
+    PyModule_AddIntConstant(m, "CAN_BCM_RX_NO_AUTOTIMER", RX_NO_AUTOTIMER);
+    PyModule_AddIntConstant(m, "CAN_BCM_RX_ANNOUNCE_RESUME", RX_ANNOUNCE_RESUME);
+    PyModule_AddIntConstant(m, "CAN_BCM_TX_RESET_MULTI_IDX", TX_RESET_MULTI_IDX);
+    PyModule_AddIntConstant(m, "CAN_BCM_RX_RTR_FRAME", RX_RTR_FRAME);
+#ifdef CAN_FD_FRAME
+    /* CAN_FD_FRAME was only introduced in the 4.8.x kernel series */
+    PyModule_AddIntConstant(m, "CAN_BCM_CAN_FD_FRAME", CAN_FD_FRAME);
+#endif
 #endif
 #ifdef SOL_RDS
     PyModule_AddIntMacro(m, SOL_RDS);

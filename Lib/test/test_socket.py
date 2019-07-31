@@ -1908,6 +1908,19 @@ class BasicCANTest(unittest.TestCase):
         socket.CAN_BCM_RX_TIMEOUT   # cyclic message is absent
         socket.CAN_BCM_RX_CHANGED   # updated CAN frame (detected content change)
 
+        # flags
+        socket.CAN_BCM_SETTIMER
+        socket.CAN_BCM_STARTTIMER
+        socket.CAN_BCM_TX_COUNTEVT
+        socket.CAN_BCM_TX_ANNOUNCE
+        socket.CAN_BCM_TX_CP_CAN_ID
+        socket.CAN_BCM_RX_FILTER_ID
+        socket.CAN_BCM_RX_CHECK_DLC
+        socket.CAN_BCM_RX_NO_AUTOTIMER
+        socket.CAN_BCM_RX_ANNOUNCE_RESUME
+        socket.CAN_BCM_TX_RESET_MULTI_IDX
+        socket.CAN_BCM_RX_RTR_FRAME
+
     def testCreateSocket(self):
         with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
             pass
