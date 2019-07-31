@@ -483,7 +483,7 @@ Add "Run Customized" to the Run menu to run a module with customized
 settings. Any command line arguments entered are added to sys.argv.
 They also re-appear in the box for the next customized run.  One can also
 suppress the normal Shell main module restart.  (Contributed by Cheryl
-Sabella, Terry Jan Reedy, and others in :issues:`5680` and `37627` .)
+Sabella, Terry Jan Reedy, and others in :issue:`5680` and :issue:`37627`.)
 
 Add optional line numbers for IDLE editor windows. Windows
 open without line numbers unless set otherwise in the General
