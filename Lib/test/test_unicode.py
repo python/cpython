@@ -17,9 +17,35 @@ import warnings
 from test import support, string_tests
 from test.support.script_helper import assert_python_failure
 
-MAX_UNICODE = sys.maxunicode
-LAST_CHAR = chr(MAX_UNICODE)
-INVALID_CODEPOINT = MAX_UNICODE + 1
+# First invalid code point past the valid range
+INVALID_CODEPOINT = sys.maxunicode + 1
+
+# Characters in the ASCII range (U+0000-U+007f)
+ASCII_CHAR = "a"
+ASCII_LAST_CHAR = "\x7f"
+# Characters in the UCS1 ("latin1") range (U+0000-U+00ff),
+# but not in the ASCII range
+UCS1_CHAR = "\xe9"
+UCS1_LAST_CHAR = "\xff"
+# Characters in UCS2 ("BMP") range (U+0000-U+FFFF),
+# but not in the UCS1 range
+UCS2_CHAR = "\u20ac"  # euro sign
+UCS2_LAST_CHAR = "\uffff"
+# Characters in UCS4 ("Astral") range (U+0000-U+FFFF),
+# but not in the UCS2 range
+UCS4_CHAR = '\U0001F355'  # slice of pizza
+UCS4_LAST_CHAR = chr(sys.maxunicode)
+
+# Test characters of the ASCII range (U+0000-U+007f)
+ASCII_CHARS = ("\x00", ASCII_CHAR, ASCII_LAST_CHAR)
+# Test characters of the UCS1 range (U+0000-U+00ff), but not in ASCII range
+UCS1_ONLY_CHARS = ("\x80", UCS1_CHAR, UCS1_LAST_CHAR)
+# Test characters of the UCS1 range (U+0000-U+00ff)
+UCS1_CHARS = ASCII_CHARS + UCS1_ONLY_CHARS
+# Test characters of the Basic Multilingual Plane (U+0000-U+ffff)
+BMP_CHARS = UCS1_CHARS + ("\u0100", UCS2_CHAR, UCS2_LAST_CHAR)
+# Test characters of the full Unicode Character Set (U+0000-U+10ffff)
+FULL_UCS_CHARS = BMP_CHARS + ('\U00010000', UCS4_CHAR, UCS4_LAST_CHAR)
 
 
 # Error handling (bad decoder return)
@@ -346,12 +372,13 @@ class UnicodeTest(string_tests.CommonTest,
                          "[]")
         self.assertEqual("[a]".translate(str.maketrans({'a': 'XXX'})),
                          "[XXX]")
-        self.assertEqual("[a]".translate(str.maketrans({'a': '\xe9'})),
-                         "[\xe9]")
         self.assertEqual('axb'.translate(str.maketrans({'a': None, 'b': '123'})),
                          "x123")
-        self.assertEqual('axb'.translate(str.maketrans({'a': None, 'b': '\xe9'})),
-                         "x\xe9")
+        for ch in UCS1_ONLY_CHARS:
+            self.assertEqual("[a]".translate(str.maketrans({'a': ch})),
+                             f"[{ch}]")
+            self.assertEqual('axb'.translate(str.maketrans({'a': None, 'b': ch})),
+                             f"x{ch}")
 
         # test non-ASCII (don't take the fast-path)
         self.assertEqual("[a]".translate(str.maketrans({'a': '<\xe9>'})),
@@ -366,9 +393,8 @@ class UnicodeTest(string_tests.CommonTest,
                          "[<\u20ac>\xe9]")
 
         # invalid Unicode characters
-        invalid_char = INVALID_CODEPOINT
-        for before in "a\xe9\u20ac" + LAST_CHAR:
-            mapping = str.maketrans({before: invalid_char})
+        for before in FULL_UCS_CHARS:
+            mapping = str.maketrans({before: INVALID_CODEPOINT})
             text = "[%s]" % before
             self.assertRaises(ValueError, text.translate, mapping)
 
@@ -647,8 +673,9 @@ class UnicodeTest(string_tests.CommonTest,
 
     def test_isascii(self):
         super().test_isascii()
-        self.assertFalse("\u20ac".isascii())
-        self.assertFalse(LAST_CHAR.isascii())
+        for ch in FULL_UCS_CHARS:
+            self.assertEqual(ch.isascii(), ord(ch) < 0x80,
+                             hex(ord(ch)))
 
     def test_isdecimal(self):
         self.checkequalnofix(False, '', 'isdecimal')
@@ -866,13 +893,15 @@ class UnicodeTest(string_tests.CommonTest,
 
     def test_center(self):
         string_tests.CommonTest.test_center(self)
-        ch = LAST_CHAR
-        self.assertEqual('x'.center(2, ch),
-                         'x' + ch)
-        self.assertEqual('x'.center(3, ch),
-                         ch + 'x' + ch)
-        self.assertEqual('x'.center(4, ch),
-                         ch + 'x' + ch + ch)
+        for ch1 in FULL_UCS_CHARS:
+            for ch2 in FULL_UCS_CHARS:
+                with self.subTest(ch1=ch1, ch2=ch2):
+                    self.assertEqual(ch1.center(2, ch2),
+                                     ch1 + ch2)
+                    self.assertEqual(ch1.center(3, ch2),
+                                     ch2 + ch1 + ch2)
+                    self.assertEqual(ch1.center(4, ch2),
+                                     ch2 + ch1 + ch2 + ch2)
 
     @unittest.skipUnless(sys.maxsize == 2**31 - 1, "requires 32-bit system")
     @support.cpython_only
@@ -1398,8 +1427,10 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('%F' % INF, 'INF')
 
         # PEP 393
-        self.assertEqual('%.1s' % "a\xe9\u20ac", 'a')
-        self.assertEqual('%.2s' % "a\xe9\u20ac", 'a\xe9')
+        text = ''.join(FULL_UCS_CHARS)
+        for length in range(len(text)):
+            fmt = f'%.{length}s'
+            self.assertEqual(fmt % text, text[:length])
 
         #issue 19995
         class PseudoInt:
@@ -1509,7 +1540,7 @@ class UnicodeTest(string_tests.CommonTest,
             'unicode remains unicode'
         )
 
-        for text in ('ascii', '\xe9', '\u20ac', LAST_CHAR):
+        for text in FULL_UCS_CHARS:
             subclass = StrSubclass(text)
             self.assertEqual(str(subclass), text)
             self.assertEqual(len(subclass), len(text))
@@ -2137,7 +2168,7 @@ class UnicodeTest(string_tests.CommonTest,
         # UTF-8 must be roundtrip safe for all code points
         # (except surrogates, which are forbidden).
         u = ''.join(map(chr, list(range(0, 0xd800)) +
-                             list(range(0xe000, MAX_UNICODE + 1))))
+                             list(range(0xe000, sys.maxunicode + 1))))
         for encoding in ('utf-8',):
             self.assertEqual(str(u.encode(encoding),encoding), u)
 
@@ -2227,6 +2258,7 @@ class UnicodeTest(string_tests.CommonTest,
         y = br'\U00100000'
         x = y.decode("raw-unicode-escape").encode("raw-unicode-escape")
         self.assertEqual(x, y)
+
         y = br'\U00010000'
         x = y.decode("raw-unicode-escape").encode("raw-unicode-escape")
         self.assertEqual(x, y)
@@ -2303,7 +2335,7 @@ class UnicodeTest(string_tests.CommonTest,
             ascii_struct_size = 24
             compact_struct_size = 36
 
-        for char in ('a', '\xe9', '\u20ac', LAST_CHAR):
+        for char in FULL_UCS_CHARS:
             code = ord(char)
             if code < 0x100:
                 char_size = 1  # sizeof(Py_UCS1)
@@ -2369,19 +2401,7 @@ class UnicodeTest(string_tests.CommonTest,
     def test_compare(self):
         # Issue #17615
         N = 10
-        ascii = 'a' * N
-        ascii2 = 'z' * N
-        latin = '\x80' * N
-        latin2 = '\xff' * N
-        bmp = '\u0100' * N
-        bmp2 = '\uffff' * N
-        astral = '\U00100000' * N
-        astral2 = LAST_CHAR * N
-        strings = (
-            ascii, ascii2,
-            latin, latin2,
-            bmp, bmp2,
-            astral, astral2)
+        strings = tuple(ch * N for ch in FULL_UCS_CHARS)
         for text1, text2 in itertools.combinations(strings, 2):
             equal = (text1 is text2)
             self.assertEqual(text1 == text2, equal)
@@ -2403,6 +2423,15 @@ class UnicodeTest(string_tests.CommonTest,
 
                 self.assertTrue(copy1 <= copy2)
                 self.assertTrue(copy2 >= copy2)
+
+        ascii = ASCII_CHAR * N
+        ascii2 = ASCII_LAST_CHAR  * N
+        latin = UCS1_CHAR * N
+        latin2 = UCS1_LAST_CHAR * N
+        bmp = UCS2_CHAR * N
+        bmp2 = UCS2_LAST_CHAR * N
+        astral = UCS4_CHAR  * N
+        astral2 = UCS4_LAST_CHAR * N
 
         self.assertTrue(ascii < ascii2)
         self.assertTrue(ascii < latin)
@@ -2542,8 +2571,8 @@ class CAPITest(unittest.TestCase):
         # test "%c"
         check_format('\uabcd',
                      b'%c', c_int(0xabcd))
-        check_format(chr(MAX_UNICODE),
-                     b'%c', c_int(MAX_UNICODE))
+        check_format(chr(sys.maxunicode),
+                     b'%c', c_int(sys.maxunicode))
         with self.assertRaises(OverflowError):
             PyUnicode_FromFormat(b'%c', c_int(INVALID_CODEPOINT))
         # Issue #18183
@@ -2712,8 +2741,9 @@ class CAPITest(unittest.TestCase):
                      b'%100.80x', c_int(0x123))
 
         # test %A
-        check_format(r"%%A:'abc\xe9\uabcd\U%08x'" % ord(LAST_CHAR),
-                     b'%%A:%A', 'abc\xe9\uabcd' + LAST_CHAR)
+        check_format(r"%%A:'abc\x%02x\u%04x\U%08x'"
+                     % (ord(UCS1_CHAR), ord(UCS2_CHAR), ord(UCS4_CHAR)),
+                     b'%%A:%A', 'abc' + UCS1_CHAR + UCS2_CHAR + UCS4_CHAR)
 
         # test %V
         check_format('repr=abc',
@@ -2773,7 +2803,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(size, 7)
         self.assertEqual(wchar, 'abc\0def\0')
 
-        nonbmp = LAST_CHAR
+        nonbmp = UCS4_CHAR
         if sizeof(c_wchar) == 2:
             buflen = 3
             nchar = 2
@@ -2799,7 +2829,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(size, 7)
         self.assertEqual(wchar, 'abc\0def\0')
 
-        nonbmp = LAST_CHAR
+        nonbmp = UCS4_CHAR
         if sizeof(c_wchar) == 2:
             nchar = 2
         else: # sizeof(c_wchar) == 4
