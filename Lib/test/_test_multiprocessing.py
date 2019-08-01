@@ -5569,7 +5569,7 @@ class _TestCustomReducer(BaseTestCase):
         queue.get(timeout=TIMEOUT)
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
-    def _test_queue_custom_reducer(self):
+    def test_queue_custom_reducer(self):
         for reducer_cls in [
                 SpyReducerWithPickler,
                 SpyReducerWithUnpickler,
@@ -5680,7 +5680,6 @@ class _TestCustomReducerWithContext(BaseTestCase):
                 self.assertEqual(element, "Something")
                 self._check_pickler_hits(custom_reducer, default_reducer)
 
-
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     def test_listener_custom_reduction_custom_context(self):
         for reducer_cls in [
@@ -5703,7 +5702,6 @@ class _TestCustomReducerWithContext(BaseTestCase):
                 if self.TYPE == 'processes':
                     self.assertRaises(OSError, l.accept)
                 self._check_pickler_hits(custom_reducer, default_reducer)
-
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     def test_queue_custom_reducer_over_default_context(self):
