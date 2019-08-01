@@ -54,6 +54,11 @@ my_getallocationgranularity (void)
 #include <sys/mman.h>
 #include <sys/stat.h>
 
+#ifdef __APPLE__
+#include <mach/vm_statistics.h>
+#  define MAP_ANON_ID 244
+#endif
+
 #if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
 static int
 my_getpagesize(void)
@@ -1212,6 +1217,10 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 #ifdef MAP_ANONYMOUS
         /* BSD way to map anonymous memory */
         flags |= MAP_ANONYMOUS;
+#ifdef __APPLE__
+        /* Darwin allows to tag anonymous memory */
+        fd = VM_MAKE_TAG(MAP_ANON_ID);
+#endif
 
         /* VxWorks only supports MAP_ANONYMOUS with MAP_PRIVATE flag */
 #ifdef __VXWORKS__
