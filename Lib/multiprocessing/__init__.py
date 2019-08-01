@@ -22,7 +22,7 @@ from . import context
 __all__ = [x for x in dir(context._default_context) if not x.startswith('_')]
 
 
-def __getattr__(name: str):
+def __getattr__(name):
     return getattr(context._default_context, name)
 
 

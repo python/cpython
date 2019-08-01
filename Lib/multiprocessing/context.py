@@ -58,11 +58,10 @@ class BaseContext(object):
             # custom reducer was specified
             return self._Process
         else:
-            return self.process_factory
+            return self.process
 
-    def process_factory(self, *args, **kwargs):
-        p = self._Process(*args, reducer=self.get_reducer(), **kwargs)
-        return p
+    def process(self, *args, **kwargs):
+        return self._Process(*args, reducer=self.get_reducer(), **kwargs)
 
     def Manager(self):
         '''Returns a manager associated with a running server process
@@ -231,8 +230,6 @@ class BaseContext(object):
     def get_reducer(self):
         '''Controls how objects will be reduced to a form that can be
         shared with other processes.'''
-        # It does not matter that _reducer binds to self or self.get_context()
-        # as self.set_start_method() can only be called once.
         reducer = self._reducer
         if reducer is None:
             return reduction
