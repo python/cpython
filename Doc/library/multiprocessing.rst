@@ -1211,7 +1211,7 @@ the reduction mechanism:
 
 .. currentmodule:: multiprocessing.reduction
 
-.. class:: AbstractPickler()
+.. class:: AbstractPickler(file, protocol)
 
    Base class that can be implemented in order to override
    serialization methods of the reduction machinery used by multiprocessing.
