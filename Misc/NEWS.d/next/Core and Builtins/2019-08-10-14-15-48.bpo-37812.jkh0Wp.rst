@@ -1,0 +1,6 @@
+The "small int" optimization is now unconditionally enabled.  This
+optimization was introduced in Python 1.0.1, and means that :class:`int`
+values from -5 to 256 are pre-initialized rather than constructed on demand.
+The option was always enabled unless certain never-documented preprocessor
+macros were defined to 0 at build time; now it is always enabled,
+simplifying the logic.  Patch by Greg Price.
