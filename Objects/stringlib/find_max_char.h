@@ -54,7 +54,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 #define MAX_CHAR_ASCII 0x7f
 #define MAX_CHAR_UCS1  0xff
 #define MAX_CHAR_UCS2  0xffff
-#define MAX_CHAR_UCS4  0x10ffff
+#define MAX_CHAR_UCS4  MAX_UNICODE
 
 Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
