@@ -5561,7 +5561,25 @@ class _TestCustomReducer(BaseTestCase):
 
                 self._check_pickler_hits(reducer)
 
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_process_custom_reducer(self):
+        sm = multiprocessing.get_start_method()
+        if sm == 'fork':
+            # The fork method does send data to new Process objects
+            self.skipTest('test not appropriate for {}'.format(sm))
 
+        # It is not possible to customize unpickling of Process objects data
+        # -- we would need to send to the new process which Unpickler to use,
+        # which itself would require to unpickle this information before
+        # unpickling anyting else... using which Unpickler?
+        # Thus, just test the SpyReducer that customizes pickling.
+        reducer = SpyReducerWithPickler()
+        self.context.set_reducer(reducer)
+        p = self.context.Process(target=id, args=(2, ))
+        p.start()
+        p.join()
+        self.assertEqual(p.exitcode, 0)
+        self._check_pickler_hits(reducer)
 
     @classmethod
     def _put_and_get_in_queue(cls, queue,):
@@ -5616,7 +5634,7 @@ class _TestCustomReducer(BaseTestCase):
 
 class CustomContext(multiprocessing.context.BaseContext):
     _name = "custom"
-    _Process = multiprocessing.get_context().Process
+    _Process = multiprocessing.Process
 
 
 class _TestCustomReducerWithContext(BaseTestCase):
@@ -5650,6 +5668,24 @@ class _TestCustomReducerWithContext(BaseTestCase):
     def _put_and_get_in_queue(cls, queue):
         queue.put("Something")
         queue.get(timeout=TIMEOUT)
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_process_custom_reducer_over_custom_context(self):
+        sm = multiprocessing.get_start_method()
+        if sm == 'fork':
+            # The fork method does send data to new Process objects
+            self.skipTest('test not appropriate for {}'.format(sm))
+
+        default_reducer = SpyReducerWithPickler()
+        custom_reducer = SpyReducerWithPickler()
+
+        self.default_ctx.set_reducer(default_reducer)
+        self.custom_ctx.set_reducer(custom_reducer)
+        p = self.custom_ctx.Process(target=id, args=(2, ))
+        p.start()
+        p.join()
+        self.assertEqual(p.exitcode, 0)
+        self._check_pickler_hits(custom_reducer, default_reducer)
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     def test_queue_custom_reducer_over_custom_context(self):
@@ -5729,6 +5765,21 @@ class _TestCustomReducerWithContext(BaseTestCase):
                 close_queue(queue)
                 self._check_pickler_hits(default_reducer, custom_reducer)
 
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_process_custom_reducer_over_default_context(self):
+        sm = multiprocessing.get_start_method()
+        if sm == 'fork':
+            # The fork method does send data to new Process objects
+            self.skipTest('test not appropriate for {}'.format(sm))
+
+        default_reducer = SpyReducerWithPickler()
+        custom_reducer = SpyReducerWithPickler()
+        self.default_ctx.set_reducer(default_reducer)
+        p = self.default_ctx.Process(target=id, args=(2, ))
+        p.start()
+        p.join()
+        self.assertEqual(p.exitcode, 0)
+        self._check_pickler_hits(default_reducer, custom_reducer)
 
 class _TestCustomReducerInvalidParameters(BaseTestCase):
     def test_setting_invalid_reducer(self):
