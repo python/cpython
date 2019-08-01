@@ -417,7 +417,6 @@ class SMTP:
 
     def docmd(self, cmd, args=""):
         """Send a command, and return its response code."""
-
         self.putcmd(cmd, args)
         return self.getreply()
 
