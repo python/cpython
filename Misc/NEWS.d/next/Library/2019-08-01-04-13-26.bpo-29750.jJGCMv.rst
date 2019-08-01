@@ -1,0 +1,1 @@
+Let smtplib support non-ASCII passwords
