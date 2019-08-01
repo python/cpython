@@ -1274,9 +1274,12 @@ version 2 to be able to communicate with a Python 2.x programs.::
    from multiprocessing.reduction import AbstractReducer, AbstractPickler
 
    class PicklerProtocol2(AbstractPickler):
-       @classmethod
-       def dumps(cls, obj, protocol=2):
-           return super().dumps(obj, protocol=protocol)
+       def __init__(self, file, protocol=2, **kwargs):
+           super().__init__(file, protocol, **kwargs)
+
+       def dump(self, obj):
+           return super().dump(obj)
+
 
    class PickleProtocol2Reducer(AbstractReducer):
        def get_pickler_class(self):
