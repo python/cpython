@@ -1212,29 +1212,48 @@ the reduction mechanism:
 .. currentmodule:: multiprocessing.reduction
 
 .. class:: AbstractPickler()
-   Abstract base class that can be implemented in order to override specidifc
-   methods of the reduction machinery used by multiprocessing.
+
+   Base class that can be implemented in order to override
+   serialization methods of the reduction machinery used by multiprocessing.
 
    .. method:: dump(obj)
+
       Write a pickled representation of obj to the open file.
 
-      Defaults to :meth:`pickle.Pickle.dump`
+      Defaults to :meth:`pickle.Pickler.dump`
 
-   .. classmethod:: loads(bytes_object, *, fix_imports=True, encoding="ASCII", errors="strict")
-      Read a pickled object hierarchy from a bytes object and return the reconstituted
-      object hierarchy specified therein.
+.. class:: AbstractUnpickler(bytes_object, *, fix_imports=True, encoding="ASCII", errors="strict")
 
-      Defaults to :func:`pickle.loads`
+   Base class that can be implemented in order to override
+   multiprocessing's default unserialization mechanism.
+
+   .. method:: load()
+
+      Read a pickled object hierarchy from the open file and return the
+      reconstituted object hierarchy specified therein.
+
+      Defaults to :meth:`pickle.Unpickler.load`
 
 .. class:: AbstractReducer()
 
-   Abstract base class that can be implemented in order to replace the standard
-   reduction mechanism used in multiprocessing
+   Base class providing access to custom ``Pickler`` and ``Unpickler``
+   classes to be used by ``multiprocessing`` when serializing objects.
 
    .. method:: get_pickler_class():
 
-      This method must return an subclass of :class:`pickler.Pickler` to be used by
-      the multiprocessing reducer mechanism.
+      This method must return an subclass of :class:`AbstractPickler` to be used
+      by ``multiprocessing`` when serializing objects.
+
+   .. method:: get_unpickler_class():
+
+      This method must return an subclass of :class:`AbstractUnpickler` to be used
+      by ``multiprocessing`` when unserializing objects.
+
+
+Note that both methods of the :class:`AbstractReducer` are optional. If
+:meth:`get_pickler_class` (resp.  :meth:`get_unpickler_class`) is not
+implemented, multiprocessing will fallback to the :class:`pickle.Pickler`
+(resp. :class:`pickle.Unpickler`) class to serialize objects.
 
 .. currentmodule:: multiprocessing
 
@@ -1242,7 +1261,7 @@ the reduction mechanism:
 
    Sets a reduction instance to be used for serialization and deserialization
    by the module primitive internals. **reduction** must be an instance of a
-   subclass of :class:`multiprocessing.reduction.AbstractReducer`.
+   subclass of :class:`AbstractReducer`.
 
 .. method:: get_reducer()
 
