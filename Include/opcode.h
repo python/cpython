@@ -128,6 +128,7 @@ extern "C" {
 #define CALL_METHOD             161
 #define CALL_FINALLY            162
 #define POP_FINALLY             163
+#define ASSERT_RAISE            164
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
    entering an except handler. It is not an opcode but we define it here

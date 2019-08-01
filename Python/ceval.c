@@ -2242,6 +2242,19 @@ main_loop:
             }
         }
 
+        case TARGET(ASSERT_RAISE): {
+            assert(!_PyErr_Occurred(tstate));
+            if (oparg) {
+                PyObject *msg = POP();
+                _PyErr_Format(tstate, PyExc_AssertionError, "%S", msg);
+                Py_DECREF(msg);
+            }
+            else {
+                _PyErr_SetObject(tstate, PyExc_AssertionError, NULL);
+            }
+            goto error;
+        }
+
         case TARGET(LOAD_BUILD_CLASS): {
             _Py_IDENTIFIER(__build_class__);
 

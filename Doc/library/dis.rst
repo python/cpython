@@ -752,6 +752,14 @@ iterations of the loop.
      from the block stack.
 
 
+.. opcode:: ASSERT_RAISE (argc)
+
+   Raises :exc:`AssertionError`.  *argc* is ``1`` when there is an argument to
+   pass to :exc:`AssertionError`.  Used by the :keyword:`assert` statement.
+
+   .. versionadded:: 3.9
+
+
 .. opcode:: LOAD_BUILD_CLASS
 
    Pushes :func:`builtins.__build_class__` onto the stack.  It is later called

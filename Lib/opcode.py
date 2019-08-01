@@ -212,5 +212,6 @@ name_op('LOAD_METHOD', 160)
 def_op('CALL_METHOD', 161)
 jrel_op('CALL_FINALLY', 162)
 def_op('POP_FINALLY', 163)
+def_op('ASSERT_RAISE', 164)
 
 del def_op, name_op, jrel_op, jabs_op
