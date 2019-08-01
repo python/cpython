@@ -86,7 +86,7 @@ Take, for example, the below snippet of code::
    >>> greeting = ["Hi", "Hello", "Greetings! its very nice to meet you"][args.verbose % 3]
    >>> print(f'{greeting}, {args.name}')
    >>> if not args.verbose:
-   >>>     print('Try running this again with multiple `-v` flags!')
+   >>>     print('Try running this again with multiple "-v" flags!')
 
 .. _tut-stderr:
 
