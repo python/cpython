@@ -1114,15 +1114,9 @@ collect(struct _gc_runtime_state *state, int generation,
     }
     if (state->debug & DEBUG_STATS) {
         double d = _PyTime_AsSecondsDouble(_PyTime_GetMonotonicClock() - t1);
-
-        if (m == 0 && n == 0) {
-            PySys_WriteStderr("gc: done, %.4fs elapsed\n", d);
-        }
-        else {
-            PySys_WriteStderr(
-                "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
-                n+m, n, d);
-        }
+        PySys_FormatStderr(
+            "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
+            n+m, n, d);
     }
 
     /* Append instances in the uncollectable set to a Python
