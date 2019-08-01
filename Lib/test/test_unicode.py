@@ -625,7 +625,7 @@ class UnicodeTest(string_tests.CommonTest,
 
     @support.requires_resource('cpu')
     def test_isspace_invariant(self):
-        for codepoint in range(0x110000):
+        for codepoint in range(sys.maxunicode + 1):
             char = chr(codepoint)
             bidirectional = unicodedata.bidirectional(char)
             category = unicodedata.category(char)
