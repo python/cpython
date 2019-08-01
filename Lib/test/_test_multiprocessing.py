@@ -5489,7 +5489,7 @@ class SpyReducerWithPickler(SpyReducerBase):
         spy = self.spy
         class Pickler(multiprocessing.reduction.AbstractPickler):
             def dump(self, obj, protocol=None):
-                spy["dump"] += 1
+                spy["dump"] = 1
                 super().dump(obj)
         return Pickler
 
@@ -5502,7 +5502,7 @@ class SpyReducerWithUnpickler(SpyReducerBase):
 
         class Unpickler(multiprocessing.reduction.AbstractUnpickler):
             def load(self):
-                spy["load"] += 1
+                spy["load"] = 1
                 return super().load()
         return Unpickler
 
@@ -5640,9 +5640,8 @@ class _TestCustomReducerWithContext(BaseTestCase):
         custom_unpickler = (
             reducer.get_unpickler_class() is not reduction.AbstractUnpickler)
 
-
-        self.assertGreaterEqual(reducer.spy['dump'], int(custom_pickler))
-        self.assertGreaterEqual(reducer.spy['load'], int(custom_unpickler))
+        self.assertEqual(reducer.spy['dump'], int(custom_pickler))
+        self.assertEqual(reducer.spy['load'], int(custom_unpickler))
 
         self.assertEqual(alternative_reducer.spy['dump'], 0)
         self.assertEqual(alternative_reducer.spy['load'], 0)
