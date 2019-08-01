@@ -90,8 +90,9 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 extern "C" {
 #endif
 
-/* Maximum code point of Unicode 6.0: 0x10ffff (1,114,111) */
+/* Maximum code point of Unicode 12.0: 0x10ffff (1,114,111) */
 #define MAX_UNICODE 0x10ffff
+#define MAX_UNICODE_RANGE "range(0x110000)"
 
 #ifdef Py_DEBUG
 #  define _PyUnicode_CHECK(op) _PyUnicode_CheckConsistency(op, 0)
@@ -469,13 +470,13 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
 }
 
 
-/* The max unicode value is always 0x10FFFF while using the PEP-393 API.
+/* The max unicode value is always MAX_UNICODE while using the PEP-393 API.
    This function is kept for backward compatibility with the old API. */
 Py_UNICODE
 PyUnicode_GetMax(void)
 {
 #ifdef Py_UNICODE_WIDE
-    return 0x10FFFF;
+    return MAX_UNICODE;
 #else
     /* This is actually an illegal character, so it should
        not be passed to unichr. */
@@ -2771,7 +2772,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         int ordinal = va_arg(*vargs, int);
         if (ordinal < 0 || ordinal > MAX_UNICODE) {
             PyErr_SetString(PyExc_OverflowError,
-                            "character argument not in range(0x110000)");
+                            "character argument not in " MAX_UNICODE_RANGE);
             return NULL;
         }
         if (_PyUnicodeWriter_WriteCharInline(writer, ordinal) < 0)
@@ -3209,7 +3210,7 @@ PyUnicode_FromOrdinal(int ordinal)
 {
     if (ordinal < 0 || ordinal > MAX_UNICODE) {
         PyErr_SetString(PyExc_ValueError,
-                        "chr() arg not in range(0x110000)");
+                        "chr() arg not in " MAX_UNICODE_RANGE);
         return NULL;
     }
 
@@ -5562,13 +5563,13 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
             endinpos = ((const char *)e) - starts;
         }
         else {
-            if (ch < 0x110000) {
+            if (ch <= MAX_UNICODE) {
                 if (_PyUnicodeWriter_WriteCharInline(&writer, ch) < 0)
                     goto onError;
                 q += 4;
                 continue;
             }
-            errmsg = "code point not in range(0x110000)";
+            errmsg = "code point not in " MAX_UNICODE_RANGE;
             startinpos = ((const char *)q) - starts;
             endinpos = startinpos + 4;
         }
@@ -13677,7 +13678,7 @@ _PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
     {
     case PyUnicode_1BYTE_KIND: maxchar = 0xff; break;
     case PyUnicode_2BYTE_KIND: maxchar = 0xffff; break;
-    case PyUnicode_4BYTE_KIND: maxchar = 0x10ffff; break;
+    case PyUnicode_4BYTE_KIND: maxchar = MAX_UNICODE; break;
     default:
         Py_UNREACHABLE();
     }
@@ -14496,7 +14497,7 @@ formatchar(PyObject *v)
 
         if (x < 0 || x > MAX_UNICODE) {
             PyErr_SetString(PyExc_OverflowError,
-                            "%c arg not in range(0x110000)");
+                            "%c arg not in " MAX_UNICODE_RANGE);
             return (Py_UCS4) -1;
         }
 

@@ -220,10 +220,10 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
             }
             ch = (ch << 18) + (ch2 << 12) + (ch3 << 6) + ch4 -
                  ((0xF0 << 18) + (0x80 << 12) + (0x80 << 6) + 0x80);
-            assert ((ch > 0xFFFF) && (ch <= 0x10FFFF));
+            assert ((ch > 0xFFFF) && (ch <= MAX_UNICODE));
             s += 4;
             if (STRINGLIB_MAX_CHAR <= 0xFFFF ||
-                (STRINGLIB_MAX_CHAR < 0x10FFFF && ch > STRINGLIB_MAX_CHAR))
+                (STRINGLIB_MAX_CHAR < MAX_UNICODE && ch > STRINGLIB_MAX_CHAR))
                 /* Out-of-range */
                 goto Return;
             *p++ = ch;
