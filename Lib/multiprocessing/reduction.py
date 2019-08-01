@@ -62,6 +62,10 @@ class AbstractPickler(ForkingPickler):
     pass
 
 
+class AbstractUnpickler(pickle.Unpickler):
+    pass
+
+
 def register(type_, reduce_):
     return ForkingPickler.register(type_, reduce_)
 
@@ -306,9 +310,11 @@ class AbstractReducer(metaclass=abc.ABCMeta):
                  hasattr(socket, 'SCM_RIGHTS') and
                  hasattr(socket.socket, 'sendmsg')))
 
-    @abc.abstractmethod
     def get_pickler_class(self):
-        pass
+        return AbstractPickler
+
+    def get_unpickler_class(self):
+        return AbstractUnpickler
 
     def register(self, type_, reduce_):
         return self.get_pickler_class().register(type_, reduce_)
@@ -320,5 +326,8 @@ class AbstractReducer(metaclass=abc.ABCMeta):
         return self.get_pickler_class().dumps(obj, protocol=protocol)
 
     def loads(self, s, *, fix_imports=True, encoding="ASCII", errors="strict"):
-        return self.get_pickler_class().loads(s, fix_imports=fix_imports,
-                                              encoding=encoding, errors=errors)
+        unpickler_cls = self.get_unpickler_class()
+        file = io.BytesIO(s)
+        unpickler = unpickler_cls(
+            file, fix_imports=fix_imports, encoding=encoding, errors=errors)
+        return unpickler.load()

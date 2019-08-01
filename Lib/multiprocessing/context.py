@@ -1,5 +1,6 @@
 import os
 import pickle
+import _pickle
 import sys
 import threading
 
@@ -249,6 +250,12 @@ class BaseContext(object):
             raise TypeError("Custom reducers must return an subclass of "
                             "multiprocessing.reduction.AbstractPickler "
                             "in the get_pickler_class() method")
+        if not issubclass(reduction.get_unpickler_class(),
+                          original_reducer.AbstractUnpickler):
+            raise TypeError(
+                "Custom reducers must return an subclass of "
+                "multiprocessing.reduction.AbstractUnpickler in the "
+                "get_unpickler_class() method")
 
         self._reducer = reduction
 
