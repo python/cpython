@@ -113,8 +113,9 @@ class Variable(_NTBase,
     """Information about a single variable declaration."""
 
     __slots__ = ()
+    _OBJ_CONDITIONS = {}
 
-    def __new__(cls, filename, funcname, name, vartype):
+    def __new__(cls, filename, funcname, name, vartype, conditions=None):
         self = super().__new__(
                 cls,
                 filename=str(filename) if filename else None,
@@ -122,6 +123,8 @@ class Variable(_NTBase,
                 name=str(name) if name else None,
                 vartype=normalize_vartype(vartype) if vartype else None,
                 )
+        cls._OBJ_CONDITIONS[id(self)] = tuple(str(s) if s else None
+                                              for s in conditions or ())
         return self
 
     def validate(self):
@@ -135,6 +138,10 @@ class Variable(_NTBase,
             elif field not in ('filename', 'vartype'):
                 if not NAME_RE.match(value):
                     raise ValueError(f'{field} must be a name, got {value!r}')
+
+    @property
+    def conditions(self):
+        return self._OBJ_CONDITIONS[id(self)]
 
     @property
     def isstatic(self):
