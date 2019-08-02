@@ -1377,6 +1377,33 @@ class PdbTestCase(unittest.TestCase):
             if save_home is not None:
                 os.environ['HOME'] = save_home
 
+    def test_readrc_home_twice(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb(readrc=True).set_trace()
+
+            print('hello')
+        """)
+
+        with support.temp_cwd() as cur_dir:
+            with patch.dict(os.environ, {'HOME': cur_dir}):
+                with open('.pdbrc', 'w') as f:
+                    f.write("invalid\n")
+
+                with open('main.py', 'w') as f:
+                    f.write(script)
+
+                cmd = [sys.executable, 'main.py']
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stdin=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                with proc:
+                    stdout, stderr = proc.communicate(b'q\n')
+                    output = stdout.decode()
+                    self.assertEqual(output.count('NameError'), 1)
+
     def test_header(self):
         stdout = StringIO()
         header = 'Nobody expects... blah, blah, blah'

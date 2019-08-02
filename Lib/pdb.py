@@ -163,18 +163,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Read $HOME/.pdbrc and ./.pdbrc
         self.rcLines = []
         if readrc:
+            readrcFiles = []
             if 'HOME' in os.environ:
                 envHome = os.environ['HOME']
+                readrcFiles.append(os.path.join(envHome, ".pdbrc"))
+            if not readrcFiles or envHome != os.getcwd():
+                readrcFiles.append(".pdbrc")
+            for rcPath in readrcFiles:
                 try:
-                    with open(os.path.join(envHome, ".pdbrc")) as rcFile:
+                    with open(rcPath) as rcFile:
                         self.rcLines.extend(rcFile)
                 except OSError:
                     pass
-            try:
-                with open(".pdbrc") as rcFile:
-                    self.rcLines.extend(rcFile)
-            except OSError:
-                pass
 
         self.commands = {} # associates a command list to breakpoint numbers
         self.commands_doprompt = {} # for each bp num, tells if the prompt
