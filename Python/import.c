@@ -386,12 +386,12 @@ import_get_module(PyThreadState *tstate, PyObject *name)
     return m;
 }
 
+
 static int
 import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
 {
     PyInterpreterState *interp = tstate->interp;
     PyObject *spec;
-    PyObject *value = NULL;
 
     _Py_IDENTIFIER(__spec__);
     _Py_IDENTIFIER(_lock_unlock_module);
@@ -403,98 +403,16 @@ import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
     */
     spec = _PyObject_GetAttrId(mod, &PyId___spec__);
     if (_PyModuleSpec_IsInitializing(spec)) {
-        value = _PyObject_CallMethodIdOneArg(
+        PyObject *value = _PyObject_CallMethodIdOneArg(
             interp->importlib, &PyId__lock_unlock_module, name);
         if (value == NULL) {
             Py_DECREF(spec);
             return -1;
         }
-        else {
-            return 0;
-        }
         Py_DECREF(value);
     }
     Py_XDECREF(spec);
     return 0;
-}
-
-
-/* Remove importlib frames from the traceback,
- * except in Verbose mode. */
-static void
-remove_importlib_frames(PyThreadState *tstate)
-{
-    const char *importlib_filename = "<frozen importlib._bootstrap>";
-    const char *external_filename = "<frozen importlib._bootstrap_external>";
-    const char *remove_frames = "_call_with_frames_removed";
-    int always_trim = 0;
-    int in_importlib = 0;
-    PyObject *exception, *value, *base_tb, *tb;
-    PyObject **prev_link, **outer_link = NULL;
-
-    /* Synopsis: if it's an ImportError, we trim all importlib chunks
-       from the traceback. We always trim chunks
-       which end with a call to "_call_with_frames_removed". */
-
-    _PyErr_Fetch(tstate, &exception, &value, &base_tb);
-    if (!exception || tstate->interp->config.verbose) {
-        goto done;
-    }
-
-    if (PyType_IsSubtype((PyTypeObject *) exception,
-                         (PyTypeObject *) PyExc_ImportError))
-        always_trim = 1;
-
-    prev_link = &base_tb;
-    tb = base_tb;
-    while (tb != NULL) {
-        PyTracebackObject *traceback = (PyTracebackObject *)tb;
-        PyObject *next = (PyObject *) traceback->tb_next;
-        PyFrameObject *frame = traceback->tb_frame;
-        PyCodeObject *code = frame->f_code;
-        int now_in_importlib;
-
-        assert(PyTraceBack_Check(tb));
-        now_in_importlib = _PyUnicode_EqualToASCIIString(code->co_filename, importlib_filename) ||
-                           _PyUnicode_EqualToASCIIString(code->co_filename, external_filename);
-        if (now_in_importlib && !in_importlib) {
-            /* This is the link to this chunk of importlib tracebacks */
-            outer_link = prev_link;
-        }
-        in_importlib = now_in_importlib;
-
-        if (in_importlib &&
-            (always_trim ||
-             _PyUnicode_EqualToASCIIString(code->co_name, remove_frames))) {
-            Py_XINCREF(next);
-            Py_XSETREF(*outer_link, next);
-            prev_link = outer_link;
-        }
-        else {
-            prev_link = (PyObject **) &traceback->tb_next;
-        }
-        tb = next;
-    }
-done:
-    _PyErr_Restore(tstate, exception, value, base_tb);
-}
-
-
-PyObject *
-PyImport_GetModule(PyObject *name)
-{
-   PyThreadState *tstate = _PyThreadState_GET();
-   PyObject *mod = NULL;
-
-   mod = import_get_module(tstate, name);
-   if (mod != NULL && mod != Py_None) {
-       int value = import_ensure_initialized(tstate, mod, name);
-       if (value == -1) {
-            remove_importlib_frames(tstate);
-            return NULL;
-       }
-   }
-   return mod; 
 }
 
 
@@ -1564,6 +1482,7 @@ PyImport_ImportModule(const char *name)
     return result;
 }
 
+
 /* Import a module without blocking
  *
  * At first it tries to fetch the module from sys.modules. If the module was
@@ -1577,6 +1496,67 @@ PyObject *
 PyImport_ImportModuleNoBlock(const char *name)
 {
     return PyImport_ImportModule(name);
+}
+
+
+/* Remove importlib frames from the traceback,
+ * except in Verbose mode. */
+static void
+remove_importlib_frames(PyThreadState *tstate)
+{
+    const char *importlib_filename = "<frozen importlib._bootstrap>";
+    const char *external_filename = "<frozen importlib._bootstrap_external>";
+    const char *remove_frames = "_call_with_frames_removed";
+    int always_trim = 0;
+    int in_importlib = 0;
+    PyObject *exception, *value, *base_tb, *tb;
+    PyObject **prev_link, **outer_link = NULL;
+
+    /* Synopsis: if it's an ImportError, we trim all importlib chunks
+       from the traceback. We always trim chunks
+       which end with a call to "_call_with_frames_removed". */
+
+    _PyErr_Fetch(tstate, &exception, &value, &base_tb);
+    if (!exception || tstate->interp->config.verbose) {
+        goto done;
+    }
+
+    if (PyType_IsSubtype((PyTypeObject *) exception,
+                         (PyTypeObject *) PyExc_ImportError))
+        always_trim = 1;
+
+    prev_link = &base_tb;
+    tb = base_tb;
+    while (tb != NULL) {
+        PyTracebackObject *traceback = (PyTracebackObject *)tb;
+        PyObject *next = (PyObject *) traceback->tb_next;
+        PyFrameObject *frame = traceback->tb_frame;
+        PyCodeObject *code = frame->f_code;
+        int now_in_importlib;
+
+        assert(PyTraceBack_Check(tb));
+        now_in_importlib = _PyUnicode_EqualToASCIIString(code->co_filename, importlib_filename) ||
+                           _PyUnicode_EqualToASCIIString(code->co_filename, external_filename);
+        if (now_in_importlib && !in_importlib) {
+            /* This is the link to this chunk of importlib tracebacks */
+            outer_link = prev_link;
+        }
+        in_importlib = now_in_importlib;
+
+        if (in_importlib &&
+            (always_trim ||
+             _PyUnicode_EqualToASCIIString(code->co_name, remove_frames))) {
+            Py_XINCREF(next);
+            Py_XSETREF(*outer_link, next);
+            prev_link = outer_link;
+        }
+        else {
+            prev_link = (PyObject **) &traceback->tb_next;
+        }
+        tb = next;
+    }
+done:
+    _PyErr_Restore(tstate, exception, value, base_tb);
 }
 
 
@@ -1803,6 +1783,23 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 }
 
 PyObject *
+PyImport_GetModule(PyObject *name)
+{
+   PyThreadState *tstate = _PyThreadState_GET();
+   PyObject *mod = NULL;
+
+   mod = import_get_module(tstate, name);
+   if (mod != NULL && mod != Py_None) {
+       if (import_ensure_initialized(tstate, mod, name) < 0) {
+            Py_XDECREF(mod);
+            remove_importlib_frames(tstate);
+            return NULL;
+       }
+   }
+   return mod;
+}
+
+PyObject *
 PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                  PyObject *locals, PyObject *fromlist,
                                  int level)
@@ -1857,8 +1854,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
 
     if (mod != NULL && mod != Py_None) {
-        int value = import_ensure_initialized(tstate, mod, abs_name);
-        if (value == -1) {
+        if (import_ensure_initialized(tstate, mod, name) < 0) {
             goto error;
         }
     }
