@@ -7422,8 +7422,11 @@ decode_code_page_stateful(int code_page,
     do
     {
 #ifdef NEED_RETRY
-        if (size > INT_MAX) {
-            chunk_size = INT_MAX;
+        /* INT_MAX is the theoretical largest chunk, but INT_MAX / 4
+           performs better and avoids partial characters overrunning the
+           length limit in MultiByteToWideChar on Windows */
+        if (size > INT_MAX / 4) {
+            chunk_size = INT_MAX / 4;
             final = 0;
             done = 0;
         }
@@ -7827,10 +7830,11 @@ encode_code_page(int code_page,
     do
     {
 #ifdef NEED_RETRY
-        /* UTF-16 encoding may double the size, so use only INT_MAX/2
-           chunks. */
-        if (len > INT_MAX/2) {
-            chunk_len = INT_MAX/2;
+        /* UTF-16 encoding may double the size, so use at most
+           INT_MAX/2 chunks. INT_MAX/4 performs better and avoids
+           trying to allocate more than 2GiB in one go */
+        if (len > INT_MAX / 4) {
+            chunk_len = INT_MAX / 4;
             done = 0;
         }
         else
