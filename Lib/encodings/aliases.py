@@ -203,6 +203,11 @@ aliases = {
     'cp_gr'              : 'cp869',
     'csibm869'           : 'cp869',
     'ibm869'             : 'cp869',
+    
+    # cp874 codec
+    '874'                : 'cp874',
+    'ms874'              : 'cp874',
+    'windows_874'        : 'cp874',
 
     # cp932 codec
     '932'                : 'cp932',
