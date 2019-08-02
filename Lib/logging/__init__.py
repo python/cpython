@@ -2024,7 +2024,7 @@ def getLogger(name=None):
 
     If no name is specified, return the root logger.
     """
-    if not name or name == root.name:
+    if not name or isinstance(name, str) and name == root.name:
         return root
     return Logger.manager.getLogger(name)
 
