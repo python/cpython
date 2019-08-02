@@ -68,7 +68,7 @@ pyshell.py        # Start IDLE, manage shell, complete editor window
 query.py          # Query user for information
 redirector.py     # Intercept widget subcommands (for percolator) (nim).
 replace.py        # Search and replace pattern in text.
-rpc.py            # Commuicate between idle and user processes (nim).
+rpc.py            # Communicate between idle and user processes (nim).
 rstrip.py         # Strip trailing whitespace.
 run.py            # Manage user code execution subprocess.
 runscript.py      # Check and run user code.
@@ -80,7 +80,7 @@ stackviewer.py    # View stack after exception.
 statusbar.py      # Define status bar for windows (nim).
 tabbedpages.py    # Define tabbed pages widget (nim).
 textview.py       # Define read-only text widget (nim).
-tree.py           # Define tree widger, used in browsers (nim).
+tree.py           # Define tree widget, used in browsers (nim).
 undo.py           # Manage undo stack.
 windows.py        # Manage window list and define listed top level.
 zoomheight.py     # Zoom window to full height of screen.
@@ -97,7 +97,7 @@ Text
 CREDITS.txt  # not maintained, displayed by About IDLE
 HISTORY.txt  # NEWS up to July 2001
 NEWS.txt     # commits, displayed by About IDLE
-README.txt   # this file, displeyed by About IDLE
+README.txt   # this file, displayed by About IDLE
 TODO.txt     # needs review
 extend.txt   # about writing extensions
 help.html    # copy of idle.html in docs, displayed by IDLE Help
@@ -166,7 +166,7 @@ Shell  # pyshell
 
 Debug (Shell only)
   Go to File/Line
-  debugger         # debugger, debugger_r, PyShell.toggle_debuger
+  debugger         # debugger, debugger_r, PyShell.toggle_debugger
   Stack Viewer     # stackviewer, PyShell.open_stack_viewer
   Auto-open Stack Viewer  # stackviewer
 

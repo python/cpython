@@ -255,9 +255,10 @@ TCLTK_INCLUDES=	@TCLTK_INCLUDES@
 TCLTK_LIBS=	@TCLTK_LIBS@
 
 # The task to run while instrumented when building the profile-opt target.
-# We exclude unittests with -x that take a rediculious amount of time to
-# run in the instrumented training build or do not provide much value.
-PROFILE_TASK=-m test.regrtest --pgo
+# To speed up profile generation, we don't run the full unit test suite
+# by default. The default is "-m test --pgo". To run more tests, use
+# PROFILE_TASK="-m test --pgo-extended"
+PROFILE_TASK=	@PROFILE_TASK@
 
 # report files for gcov / lcov coverage report
 COVERAGE_INFO=	$(abs_builddir)/coverage.info
@@ -1054,6 +1055,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/abstract.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
+		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
 		$(srcdir)/Include/cpython/interpreteridobject.h \
 		$(srcdir)/Include/cpython/object.h \
@@ -1077,6 +1079,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
+		$(srcdir)/Include/internal/pycore_import.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_object.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
@@ -1101,6 +1104,11 @@ TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
 TESTTIMEOUT=	1200
 
 .PHONY: test testall testuniversal buildbottest pythoninfo
+
+# Remove "test_python_*" directories of previous failed test jobs.
+# Pass TESTOPTS options because it can contain --tempdir option.
+cleantest: build_all
+	$(TESTRUNNER) $(TESTOPTS) --cleanup
 
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
@@ -1424,6 +1432,7 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 			*CVS) ;; \
 			*.py[co]) ;; \
 			*.orig) ;; \
+			*wininst-*.exe) ;; \
 			*~) ;; \
 			*) \
 				if test -d $$i; then continue; fi; \

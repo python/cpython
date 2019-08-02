@@ -86,6 +86,9 @@ always available.
    The native equivalent of this function is :c:func:`PySys_Audit`. Using the
    native function is preferred when possible.
 
+   See the :ref:`audit events table <audit-events>` for all events raised by
+   ``CPython``.
+
    .. versionadded:: 3.8
 
 
@@ -166,7 +169,7 @@ always available.
 
    This function should be used for internal and specialized purposes only.
 
-   .. audit-event:: sys._current_frames
+   .. audit-event:: sys._current_frames "" sys._current_frames
 
 
 .. function:: breakpointhook()
@@ -551,14 +554,6 @@ always available.
    .. versionadded:: 3.7
 
 
-.. function:: getcheckinterval()
-
-   Return the interpreter's "check interval"; see :func:`setcheckinterval`.
-
-   .. deprecated:: 3.2
-      Use :func:`getswitchinterval` instead.
-
-
 .. function:: getdefaultencoding()
 
    Return the name of the current default string encoding used by the Unicode
@@ -675,7 +670,7 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   .. audit-event:: sys._getframe
+   .. audit-event:: sys._getframe "" sys._getframe
 
    .. impl-detail::
 
@@ -880,6 +875,10 @@ always available.
 
    .. versionadded:: 3.3
 
+   .. note::
+
+      The addition of new required attributes must go through the normal PEP
+      process. See :pep:`421` for more information.
 
 .. data:: int_info
 
@@ -909,6 +908,12 @@ always available.
    <tut-interactive>`.  This is done after the :envvar:`PYTHONSTARTUP` file is
    read, so that you can set this hook there.  The :mod:`site` module
    :ref:`sets this <rlcompleter-config>`.
+
+   .. audit-event:: cpython.run_interactivehook hook sys.__interactivehook__
+
+      Raises an :ref:`auditing event <auditing>`
+      ``cpython.run_interactivehook`` with the hook object as the argument when
+      the hook is called on startup.
 
    .. versionadded:: 3.4
 
@@ -1141,21 +1146,6 @@ always available.
    implement a dynamic prompt.
 
 
-.. function:: setcheckinterval(interval)
-
-   Set the interpreter's "check interval".  This integer value determines how often
-   the interpreter checks for periodic things such as thread switches and signal
-   handlers.  The default is ``100``, meaning the check is performed every 100
-   Python virtual instructions. Setting it to a larger value may increase
-   performance for programs using threads.  Setting it to a value ``<=`` 0 checks
-   every virtual instruction, maximizing responsiveness as well as overhead.
-
-   .. deprecated:: 3.2
-      This function doesn't have an effect anymore, as the internal logic for
-      thread switching and asynchronous tasks has been rewritten.  Use
-      :func:`setswitchinterval` instead.
-
-
 .. function:: setdlopenflags(n)
 
    Set the flags used by the interpreter for :c:func:`dlopen` calls, such as when
@@ -1190,7 +1180,7 @@ always available.
    ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
    on the event type.
 
-   .. audit-event:: sys.setprofile
+   .. audit-event:: sys.setprofile "" sys.setprofile
 
    The events have the following meaning:
 
@@ -1312,7 +1302,7 @@ always available.
 
    For more information on code and frame objects, refer to :ref:`types`.
 
-   .. audit-event:: sys.settrace
+   .. audit-event:: sys.settrace "" sys.settrace
 
    .. impl-detail::
 
@@ -1334,9 +1324,9 @@ always available.
    first time. The *finalizer* will be called when an asynchronous generator
    is about to be garbage collected.
 
-   .. audit-event:: sys.set_asyncgen_hooks_firstiter
+   .. audit-event:: sys.set_asyncgen_hooks_firstiter "" sys.set_asyncgen_hooks
 
-   .. audit-event:: sys.set_asyncgen_hooks_finalizer
+   .. audit-event:: sys.set_asyncgen_hooks_finalizer "" sys.set_asyncgen_hooks
 
    Two auditing events are raised because the underlying API consists of two
    calls, each of which must raise its own event.

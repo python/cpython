@@ -41,6 +41,11 @@ class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
         ep = entries['main']
         self.assertEqual(ep.load().__name__, "main")
 
+    def test_entrypoint_with_colon_in_name(self):
+        entries = dict(entry_points()['entries'])
+        ep = entries['ns:sub']
+        self.assertEqual(ep.value, 'mod:main')
+
     def test_resolve_without_attr(self):
         ep = EntryPoint(
             name='ep',
@@ -159,8 +164,16 @@ class DiscoveryTests(fixtures.EggInfoPkg,
 
 
 class DirectoryTest(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
-    def test(self):
+    def test_egg_info(self):
         # make an `EGG-INFO` directory that's unrelated
         self.site_dir.joinpath('EGG-INFO').mkdir()
         # used to crash with `IsADirectoryError`
-        self.assertIsNone(version('unknown-package'))
+        with self.assertRaises(PackageNotFoundError):
+            version('unknown-package')
+
+    def test_egg(self):
+        egg = self.site_dir.joinpath('foo-3.6.egg')
+        egg.mkdir()
+        with self.add_sys_path(egg):
+            with self.assertRaises(PackageNotFoundError):
+                version('foo')

@@ -527,8 +527,8 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
     unsigned long long flag;
 
     if (self->decoder != Py_None) {
-        PyObject *state = PyObject_CallMethodObjArgs(self->decoder,
-           _PyIO_str_getstate, NULL);
+        PyObject *state = _PyObject_CallMethodNoArgs(self->decoder,
+           _PyIO_str_getstate);
         if (state == NULL)
             return NULL;
         if (!PyTuple_Check(state)) {
@@ -601,7 +601,7 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
     self->seennl = 0;
     self->pendingcr = 0;
     if (self->decoder != Py_None)
-        return PyObject_CallMethodObjArgs(self->decoder, _PyIO_str_reset, NULL);
+        return _PyObject_CallMethodNoArgs(self->decoder, _PyIO_str_reset);
     else
         Py_RETURN_NONE;
 }
@@ -862,7 +862,7 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
     PyObject *res;
     int r;
 
-    res = _PyObject_CallMethodId(self->buffer, &PyId_readable, NULL);
+    res = _PyObject_CallMethodIdNoArgs(self->buffer, &PyId_readable);
     if (res == NULL)
         return -1;
 
@@ -917,7 +917,7 @@ _textiowrapper_set_encoder(textio *self, PyObject *codec_info,
     PyObject *res;
     int r;
 
-    res = _PyObject_CallMethodId(self->buffer, &PyId_writable, NULL);
+    res = _PyObject_CallMethodIdNoArgs(self->buffer, &PyId_writable);
     if (res == NULL)
         return -1;
 
@@ -963,8 +963,8 @@ _textiowrapper_fix_encoder_state(textio *self)
 
     self->encoding_start_of_stream = 1;
 
-    PyObject *cookieObj = PyObject_CallMethodObjArgs(
-        self->buffer, _PyIO_str_tell, NULL);
+    PyObject *cookieObj = _PyObject_CallMethodNoArgs(
+        self->buffer, _PyIO_str_tell);
     if (cookieObj == NULL) {
         return -1;
     }
@@ -977,8 +977,8 @@ _textiowrapper_fix_encoder_state(textio *self)
 
     if (cmp == 0) {
         self->encoding_start_of_stream = 0;
-        PyObject *res = PyObject_CallMethodObjArgs(
-            self->encoder, _PyIO_str_setstate, _PyLong_Zero, NULL);
+        PyObject *res = _PyObject_CallMethodOneArg(
+            self->encoder, _PyIO_str_setstate, _PyLong_Zero);
         if (res == NULL) {
             return -1;
         }
@@ -987,6 +987,46 @@ _textiowrapper_fix_encoder_state(textio *self)
 
     return 0;
 }
+
+static int
+io_check_errors(PyObject *errors)
+{
+    assert(errors != NULL && errors != Py_None);
+
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+#ifndef Py_DEBUG
+    /* In release mode, only check in development mode (-X dev) */
+    if (!interp->config.dev_mode) {
+        return 0;
+    }
+#else
+    /* Always check in debug mode */
+#endif
+
+    /* Avoid calling PyCodec_LookupError() before the codec registry is ready:
+       before_PyUnicode_InitEncodings() is called. */
+    if (!interp->fs_codec.encoding) {
+        return 0;
+    }
+
+    Py_ssize_t name_length;
+    const char *name = PyUnicode_AsUTF8AndSize(errors, &name_length);
+    if (name == NULL) {
+        return -1;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character in errors");
+        return -1;
+    }
+    PyObject *handler = PyCodec_LookupError(name);
+    if (handler != NULL) {
+        Py_DECREF(handler);
+        return 0;
+    }
+    return -1;
+}
+
+
 
 /*[clinic input]
 _io.TextIOWrapper.__init__
@@ -1057,6 +1097,9 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
             errors->ob_type->tp_name);
         return -1;
     }
+    else if (io_check_errors(errors)) {
+        return -1;
+    }
 
     if (validate_newline(newline) < 0) {
         return -1;
@@ -1083,7 +1126,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         state = IO_STATE();
         if (state == NULL)
             goto error;
-        fileno = _PyObject_CallMethodId(buffer, &PyId_fileno, NULL);
+        fileno = _PyObject_CallMethodIdNoArgs(buffer, &PyId_fileno);
         /* Ignore only AttributeError and UnsupportedOperation */
         if (fileno == NULL) {
             if (PyErr_ExceptionMatches(PyExc_AttributeError) ||
@@ -1112,8 +1155,8 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         PyObject *locale_module = _PyIO_get_locale_module(state);
         if (locale_module == NULL)
             goto catch_ImportError;
-        self->encoding = _PyObject_CallMethodIdObjArgs(
-            locale_module, &PyId_getpreferredencoding, Py_False, NULL);
+        self->encoding = _PyObject_CallMethodIdOneArg(
+            locale_module, &PyId_getpreferredencoding, Py_False);
         Py_DECREF(locale_module);
         if (self->encoding == NULL) {
           catch_ImportError:
@@ -1198,7 +1241,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         }
     }
 
-    res = _PyObject_CallMethodId(buffer, &PyId_seekable, NULL);
+    res = _PyObject_CallMethodIdNoArgs(buffer, &PyId_seekable);
     if (res == NULL)
         goto error;
     r = PyObject_IsTrue(res);
@@ -1343,7 +1386,7 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
         return NULL;
     }
 
-    PyObject *res = PyObject_CallMethodObjArgs((PyObject *)self, _PyIO_str_flush, NULL);
+    PyObject *res = _PyObject_CallMethodNoArgs((PyObject *)self, _PyIO_str_flush);
     if (res == NULL) {
         return NULL;
     }
@@ -1482,7 +1525,7 @@ _io_TextIOWrapper_detach_impl(textio *self)
 {
     PyObject *buffer, *res;
     CHECK_ATTACHED(self);
-    res = PyObject_CallMethodObjArgs((PyObject *)self, _PyIO_str_flush, NULL);
+    res = _PyObject_CallMethodNoArgs((PyObject *)self, _PyIO_str_flush);
     if (res == NULL)
         return NULL;
     Py_DECREF(res);
@@ -1554,8 +1597,7 @@ _textiowrapper_writeflush(textio *self)
 
     PyObject *ret;
     do {
-        ret = PyObject_CallMethodObjArgs(self->buffer,
-                                         _PyIO_str_write, b, NULL);
+        ret = _PyObject_CallMethodOneArg(self->buffer, _PyIO_str_write, b);
     } while (ret == NULL && _PyIO_trap_eintr());
     Py_DECREF(b);
     if (ret == NULL)
@@ -1625,8 +1667,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         self->encoding_start_of_stream = 0;
     }
     else
-        b = PyObject_CallMethodObjArgs(self->encoder,
-                                       _PyIO_str_encode, text, NULL);
+        b = _PyObject_CallMethodOneArg(self->encoder, _PyIO_str_encode, text);
 
     Py_DECREF(text);
     if (b == NULL)
@@ -1677,7 +1718,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     }
 
     if (needflush) {
-        ret = PyObject_CallMethodObjArgs(self->buffer, _PyIO_str_flush, NULL);
+        ret = _PyObject_CallMethodNoArgs(self->buffer, _PyIO_str_flush);
         if (ret == NULL)
             return NULL;
         Py_DECREF(ret);
@@ -1687,7 +1728,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     Py_CLEAR(self->snapshot);
 
     if (self->decoder) {
-        ret = _PyObject_CallMethodId(self->decoder, &PyId_reset, NULL);
+        ret = _PyObject_CallMethodIdNoArgs(self->decoder, &PyId_reset);
         if (ret == NULL)
             return NULL;
         Py_DECREF(ret);
@@ -1767,9 +1808,8 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
         /* To prepare for tell(), we need to snapshot a point in the file
          * where the decoder's input buffer is empty.
          */
-
-        PyObject *state = PyObject_CallMethodObjArgs(self->decoder,
-                                                     _PyIO_str_getstate, NULL);
+        PyObject *state = _PyObject_CallMethodNoArgs(self->decoder,
+                                                     _PyIO_str_getstate);
         if (state == NULL)
             return -1;
         /* Given this, we know there was a valid snapshot point
@@ -1809,9 +1849,9 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
     if (chunk_size == NULL)
         goto fail;
 
-    input_chunk = PyObject_CallMethodObjArgs(self->buffer,
+    input_chunk = _PyObject_CallMethodOneArg(self->buffer,
         (self->has_read1 ? _PyIO_str_read1: _PyIO_str_read),
-        chunk_size, NULL);
+        chunk_size);
     Py_DECREF(chunk_size);
     if (input_chunk == NULL)
         goto fail;
@@ -1892,7 +1932,7 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
 
     if (n < 0) {
         /* Read everything */
-        PyObject *bytes = _PyObject_CallMethodId(self->buffer, &PyId_read, NULL);
+        PyObject *bytes = _PyObject_CallMethodIdNoArgs(self->buffer, &PyId_read);
         PyObject *decoded;
         if (bytes == NULL)
             goto fail;
@@ -2353,7 +2393,7 @@ _textiowrapper_decoder_setstate(textio *self, cookie_type *cookie)
        utf-16, that we are expecting a BOM).
     */
     if (cookie->start_pos == 0 && cookie->dec_flags == 0)
-        res = PyObject_CallMethodObjArgs(self->decoder, _PyIO_str_reset, NULL);
+        res = _PyObject_CallMethodNoArgs(self->decoder, _PyIO_str_reset);
     else
         res = _PyObject_CallMethodId(self->decoder, &PyId_setstate,
                                      "((yi))", "", cookie->dec_flags);
@@ -2368,12 +2408,12 @@ _textiowrapper_encoder_reset(textio *self, int start_of_stream)
 {
     PyObject *res;
     if (start_of_stream) {
-        res = PyObject_CallMethodObjArgs(self->encoder, _PyIO_str_reset, NULL);
+        res = _PyObject_CallMethodNoArgs(self->encoder, _PyIO_str_reset);
         self->encoding_start_of_stream = 1;
     }
     else {
-        res = PyObject_CallMethodObjArgs(self->encoder, _PyIO_str_setstate,
-                                         _PyLong_Zero, NULL);
+        res = _PyObject_CallMethodOneArg(self->encoder, _PyIO_str_setstate,
+                                        _PyLong_Zero);
         self->encoding_start_of_stream = 0;
     }
     if (res == NULL)
@@ -2433,7 +2473,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
          * sync the underlying buffer with the current position.
          */
         Py_DECREF(cookieObj);
-        cookieObj = _PyObject_CallMethodId((PyObject *)self, &PyId_tell, NULL);
+        cookieObj = _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_tell);
         if (cookieObj == NULL)
             goto fail;
         break;
@@ -2449,7 +2489,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         }
 
-        res = _PyObject_CallMethodId((PyObject *)self, &PyId_flush, NULL);
+        res = _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_flush);
         if (res == NULL)
             goto fail;
         Py_DECREF(res);
@@ -2457,7 +2497,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         textiowrapper_set_decoded_chars(self, NULL);
         Py_CLEAR(self->snapshot);
         if (self->decoder) {
-            res = _PyObject_CallMethodId(self->decoder, &PyId_reset, NULL);
+            res = _PyObject_CallMethodIdNoArgs(self->decoder, &PyId_reset);
             if (res == NULL)
                 goto fail;
             Py_DECREF(res);
@@ -2497,7 +2537,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         goto fail;
     }
 
-    res = PyObject_CallMethodObjArgs((PyObject *)self, _PyIO_str_flush, NULL);
+    res = _PyObject_CallMethodNoArgs((PyObject *)self, _PyIO_str_flush);
     if (res == NULL)
         goto fail;
     Py_DECREF(res);
@@ -2512,8 +2552,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
     posobj = PyLong_FromOff_t(cookie.start_pos);
     if (posobj == NULL)
         goto fail;
-    res = PyObject_CallMethodObjArgs(self->buffer,
-                                     _PyIO_str_seek, posobj, NULL);
+    res = _PyObject_CallMethodOneArg(self->buffer, _PyIO_str_seek, posobj);
     Py_DECREF(posobj);
     if (res == NULL)
         goto fail;
@@ -2620,12 +2659,12 @@ _io_TextIOWrapper_tell_impl(textio *self)
 
     if (_textiowrapper_writeflush(self) < 0)
         return NULL;
-    res = _PyObject_CallMethodId((PyObject *)self, &PyId_flush, NULL);
+    res = _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_flush);
     if (res == NULL)
         goto fail;
     Py_DECREF(res);
 
-    posobj = _PyObject_CallMethodId(self->buffer, &PyId_tell, NULL);
+    posobj = _PyObject_CallMethodIdNoArgs(self->buffer, &PyId_tell);
     if (posobj == NULL)
         goto fail;
 
@@ -2661,15 +2700,15 @@ _io_TextIOWrapper_tell_impl(textio *self)
     chars_to_skip = self->decoded_chars_used;
 
     /* Decoder state will be restored at the end */
-    saved_state = PyObject_CallMethodObjArgs(self->decoder,
-                                             _PyIO_str_getstate, NULL);
+    saved_state = _PyObject_CallMethodNoArgs(self->decoder,
+                                             _PyIO_str_getstate);
     if (saved_state == NULL)
         goto fail;
 
 #define DECODER_GETSTATE() do { \
         PyObject *dec_buffer; \
-        PyObject *_state = PyObject_CallMethodObjArgs(self->decoder, \
-            _PyIO_str_getstate, NULL); \
+        PyObject *_state = _PyObject_CallMethodNoArgs(self->decoder, \
+            _PyIO_str_getstate); \
         if (_state == NULL) \
             goto fail; \
         if (!PyTuple_Check(_state)) { \
@@ -2795,7 +2834,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     }
 
 finally:
-    res = _PyObject_CallMethodIdObjArgs(self->decoder, &PyId_setstate, saved_state, NULL);
+    res = _PyObject_CallMethodIdOneArg(self->decoder, &PyId_setstate, saved_state);
     Py_DECREF(saved_state);
     if (res == NULL)
         return NULL;
@@ -2809,7 +2848,7 @@ fail:
     if (saved_state) {
         PyObject *type, *value, *traceback;
         PyErr_Fetch(&type, &value, &traceback);
-        res = _PyObject_CallMethodIdObjArgs(self->decoder, &PyId_setstate, saved_state, NULL);
+        res = _PyObject_CallMethodIdOneArg(self->decoder, &PyId_setstate, saved_state);
         _PyErr_ChainExceptions(type, value, traceback);
         Py_DECREF(saved_state);
         Py_XDECREF(res);
@@ -2831,12 +2870,12 @@ _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos)
 
     CHECK_ATTACHED(self)
 
-    res = PyObject_CallMethodObjArgs((PyObject *) self, _PyIO_str_flush, NULL);
+    res = _PyObject_CallMethodNoArgs((PyObject *)self, _PyIO_str_flush);
     if (res == NULL)
         return NULL;
     Py_DECREF(res);
 
-    return PyObject_CallMethodObjArgs(self->buffer, _PyIO_str_truncate, pos, NULL);
+    return _PyObject_CallMethodOneArg(self->buffer, _PyIO_str_truncate, pos);
 }
 
 static PyObject *
@@ -2920,7 +2959,7 @@ _io_TextIOWrapper_fileno_impl(textio *self)
 /*[clinic end generated code: output=21490a4c3da13e6c input=c488ca83d0069f9b]*/
 {
     CHECK_ATTACHED(self);
-    return _PyObject_CallMethodId(self->buffer, &PyId_fileno, NULL);
+    return _PyObject_CallMethodIdNoArgs(self->buffer, &PyId_fileno);
 }
 
 /*[clinic input]
@@ -2932,7 +2971,7 @@ _io_TextIOWrapper_seekable_impl(textio *self)
 /*[clinic end generated code: output=ab223dbbcffc0f00 input=8b005ca06e1fca13]*/
 {
     CHECK_ATTACHED(self);
-    return _PyObject_CallMethodId(self->buffer, &PyId_seekable, NULL);
+    return _PyObject_CallMethodIdNoArgs(self->buffer, &PyId_seekable);
 }
 
 /*[clinic input]
@@ -2944,7 +2983,7 @@ _io_TextIOWrapper_readable_impl(textio *self)
 /*[clinic end generated code: output=72ff7ba289a8a91b input=0704ea7e01b0d3eb]*/
 {
     CHECK_ATTACHED(self);
-    return _PyObject_CallMethodId(self->buffer, &PyId_readable, NULL);
+    return _PyObject_CallMethodIdNoArgs(self->buffer, &PyId_readable);
 }
 
 /*[clinic input]
@@ -2956,7 +2995,7 @@ _io_TextIOWrapper_writable_impl(textio *self)
 /*[clinic end generated code: output=a728c71790d03200 input=c41740bc9d8636e8]*/
 {
     CHECK_ATTACHED(self);
-    return _PyObject_CallMethodId(self->buffer, &PyId_writable, NULL);
+    return _PyObject_CallMethodIdNoArgs(self->buffer, &PyId_writable);
 }
 
 /*[clinic input]
@@ -2968,7 +3007,7 @@ _io_TextIOWrapper_isatty_impl(textio *self)
 /*[clinic end generated code: output=12be1a35bace882e input=fb68d9f2c99bbfff]*/
 {
     CHECK_ATTACHED(self);
-    return _PyObject_CallMethodId(self->buffer, &PyId_isatty, NULL);
+    return _PyObject_CallMethodIdNoArgs(self->buffer, &PyId_isatty);
 }
 
 /*[clinic input]
@@ -2984,7 +3023,7 @@ _io_TextIOWrapper_flush_impl(textio *self)
     self->telling = self->seekable;
     if (_textiowrapper_writeflush(self) < 0)
         return NULL;
-    return _PyObject_CallMethodId(self->buffer, &PyId_flush, NULL);
+    return _PyObject_CallMethodIdNoArgs(self->buffer, &PyId_flush);
 }
 
 /*[clinic input]
@@ -3013,21 +3052,21 @@ _io_TextIOWrapper_close_impl(textio *self)
     else {
         PyObject *exc = NULL, *val, *tb;
         if (self->finalizing) {
-            res = _PyObject_CallMethodIdObjArgs(self->buffer,
-                                                &PyId__dealloc_warn,
-                                                self, NULL);
+            res = _PyObject_CallMethodIdOneArg(self->buffer,
+                                              &PyId__dealloc_warn,
+                                              (PyObject *)self);
             if (res)
                 Py_DECREF(res);
             else
                 PyErr_Clear();
         }
-        res = _PyObject_CallMethodId((PyObject *)self, &PyId_flush, NULL);
+        res = _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_flush);
         if (res == NULL)
             PyErr_Fetch(&exc, &val, &tb);
         else
             Py_DECREF(res);
 
-        res = _PyObject_CallMethodId(self->buffer, &PyId_close, NULL);
+        res = _PyObject_CallMethodIdNoArgs(self->buffer, &PyId_close);
         if (exc != NULL) {
             _PyErr_ChainExceptions(exc, val, tb);
             Py_CLEAR(res);
@@ -3049,8 +3088,8 @@ textiowrapper_iternext(textio *self)
         line = _textiowrapper_readline(self, -1);
     }
     else {
-        line = PyObject_CallMethodObjArgs((PyObject *)self,
-                                           _PyIO_str_readline, NULL);
+        line = _PyObject_CallMethodNoArgs((PyObject *)self,
+                                          _PyIO_str_readline);
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "

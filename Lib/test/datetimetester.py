@@ -53,6 +53,19 @@ OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
 INF = float("inf")
 NAN = float("nan")
 
+
+class ComparesEqualClass(object):
+    """
+    A class that is always equal to whatever you compare it to.
+    """
+
+    def __eq__(self, other):
+        return True
+
+    def __ne__(self, other):
+        return False
+
+
 #############################################################################
 # module tests
 
@@ -398,6 +411,13 @@ class HarmlessMixedComparison:
 
         self.assertIn(me, [1, 20, [], me])
         self.assertIn([], [me, 1, 20, []])
+
+        # Comparison to objects of unsupported types should return
+        # NotImplemented which falls back to the right hand side's __eq__
+        # method. In this case, ComparesEqualClass.__eq__ always returns True.
+        # ComparesEqualClass.__ne__ always returns False.
+        self.assertTrue(me == ComparesEqualClass())
+        self.assertFalse(me != ComparesEqualClass())
 
     def test_harmful_mixed_comparison(self):
         me = self.theclass(1, 1, 1)
@@ -2501,6 +2521,7 @@ class TestDateTime(TestDate):
                 self.assertEqual(expected, got)
 
         strptime = self.theclass.strptime
+
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
         self.assertEqual(
@@ -2534,6 +2555,40 @@ class TestDateTime(TestDate):
 
         with self.assertRaises(ValueError): strptime("-2400", "%z")
         with self.assertRaises(ValueError): strptime("-000", "%z")
+
+    def test_strptime_single_digit(self):
+        # bpo-34903: Check that single digit dates and times are allowed.
+
+        strptime = self.theclass.strptime
+
+        with self.assertRaises(ValueError):
+            # %y does require two digits.
+            newdate = strptime('01/02/3 04:05:06', '%d/%m/%y %H:%M:%S')
+        dt1 = self.theclass(2003, 2, 1, 4, 5, 6)
+        dt2 = self.theclass(2003, 1, 2, 4, 5, 6)
+        dt3 = self.theclass(2003, 2, 1, 0, 0, 0)
+        dt4 = self.theclass(2003, 1, 25, 0, 0, 0)
+        inputs = [
+            ('%d', '1/02/03 4:5:6', '%d/%m/%y %H:%M:%S', dt1),
+            ('%m', '01/2/03 4:5:6', '%d/%m/%y %H:%M:%S', dt1),
+            ('%H', '01/02/03 4:05:06', '%d/%m/%y %H:%M:%S', dt1),
+            ('%M', '01/02/03 04:5:06', '%d/%m/%y %H:%M:%S', dt1),
+            ('%S', '01/02/03 04:05:6', '%d/%m/%y %H:%M:%S', dt1),
+            ('%j', '2/03 04am:05:06', '%j/%y %I%p:%M:%S',dt2),
+            ('%I', '02/03 4am:05:06', '%j/%y %I%p:%M:%S',dt2),
+            ('%w', '6/04/03', '%w/%U/%y', dt3),
+            # %u requires a single digit.
+            ('%W', '6/4/2003', '%u/%W/%Y', dt3),
+            ('%V', '6/4/2003', '%u/%V/%G', dt4),
+        ]
+        for reason, string, format, target in inputs:
+            reason = 'test single digit ' + reason
+            with self.subTest(reason=reason,
+                              string=string,
+                              format=format,
+                              target=target):
+                newdate = strptime(string, format)
+                self.assertEqual(newdate, target, msg=reason)
 
     def test_more_timetuple(self):
         # This tests fields beyond those tested by the TestDate.test_timetuple.

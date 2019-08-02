@@ -26,24 +26,6 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
     PyObject *const *values,
     PyObject *kwnames);
 
-/* Convert (args, nargs, kwargs: dict) into a (stack, nargs, kwnames: tuple).
-
-   Return 0 on success, raise an exception and return -1 on error.
-
-   Write the new stack into *p_stack. If *p_stack is differen than args, it
-   must be released by PyMem_Free().
-
-   The stack uses borrowed references.
-
-   The type of keyword keys is not checked, these checks should be done
-   later (ex: _PyArg_ParseStackAndKeywords). */
-PyAPI_FUNC(int) _PyStack_UnpackDict(
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs,
-    PyObject *const **p_stack,
-    PyObject **p_kwnames);
-
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
    array is used to pass positional arguments to call functions of the
@@ -80,6 +62,7 @@ PyVectorcall_NARGS(size_t n)
 static inline vectorcallfunc
 _PyVectorcall_Function(PyObject *callable)
 {
+    assert(callable != NULL);
     PyTypeObject *tp = Py_TYPE(callable);
     if (!PyType_HasFeature(tp, _Py_TPFLAGS_HAVE_VECTORCALL)) {
         return NULL;
@@ -152,11 +135,42 @@ _PyObject_CallNoArg(PyObject *func) {
     return _PyObject_Vectorcall(func, NULL, 0, NULL);
 }
 
+static inline PyObject *
+_PyObject_CallOneArg(PyObject *func, PyObject *arg)
+{
+    assert(arg != NULL);
+    PyObject *_args[2];
+    PyObject **args = _args + 1;  // For PY_VECTORCALL_ARGUMENTS_OFFSET
+    args[0] = arg;
+    return _PyObject_Vectorcall(func, args,
+                                1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+}
+
 PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(
     PyObject *callable,
     PyObject *obj,
     PyObject *args,
     PyObject *kwargs);
+
+PyAPI_FUNC(PyObject *) _PyObject_VectorcallMethod(
+    PyObject *name, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames);
+
+static inline PyObject *
+_PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)
+{
+    return _PyObject_VectorcallMethod(name, &self,
+           1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+}
+
+static inline PyObject *
+_PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
+{
+    assert(arg != NULL);
+    PyObject *args[2] = {self, arg};
+    return _PyObject_VectorcallMethod(name, args,
+           2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+}
 
 /* Like PyObject_CallMethod(), but expect a _Py_Identifier*
    as the method name. */
@@ -173,6 +187,34 @@ PyAPI_FUNC(PyObject *) _PyObject_CallMethodIdObjArgs(
     PyObject *obj,
     struct _Py_Identifier *name,
     ...);
+
+static inline PyObject *
+_PyObject_VectorcallMethodId(
+    _Py_Identifier *name, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+    if (!oname) {
+        return NULL;
+    }
+    return _PyObject_VectorcallMethod(oname, args, nargsf, kwnames);
+}
+
+static inline PyObject *
+_PyObject_CallMethodIdNoArgs(PyObject *self, _Py_Identifier *name)
+{
+    return _PyObject_VectorcallMethodId(name, &self,
+           1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+}
+
+static inline PyObject *
+_PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg)
+{
+    assert(arg != NULL);
+    PyObject *args[2] = {self, arg};
+    return _PyObject_VectorcallMethodId(name, args,
+           2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+}
 
 PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
 

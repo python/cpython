@@ -289,6 +289,7 @@ class IMAP4:
         # (which is used by socket.create_connection()) expects None
         # as a default value for host.
         host = None if not self.host else self.host
+        sys.audit("imaplib.open", self, self.host, self.port)
         return socket.create_connection((host, self.port))
 
     def open(self, host = '', port = IMAP4_PORT):
@@ -318,6 +319,7 @@ class IMAP4:
 
     def send(self, data):
         """Send data to remote."""
+        sys.audit("imaplib.send", self, data)
         self.sock.sendall(data)
 
 
@@ -500,7 +502,7 @@ class IMAP4:
     def enable(self, capability):
         """Send an RFC5161 enable string to the server.
 
-        (typ, [data]) = <intance>.enable(capability)
+        (typ, [data]) = <instance>.enable(capability)
         """
         if 'ENABLE' not in self.capabilities:
             raise IMAP4.error("Server does not support ENABLE")

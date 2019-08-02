@@ -182,6 +182,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
         va_list args;
         va_start(args, argFormat);
         eventArgs = Py_VaBuildValue(argFormat, args);
+        va_end(args);
         if (eventArgs && !PyTuple_Check(eventArgs)) {
             PyObject *argTuple = PyTuple_Pack(1, eventArgs);
             Py_DECREF(eventArgs);
@@ -580,7 +581,7 @@ sys_displayhook_unencodable(PyThreadState *tstate, PyObject *outf, PyObject *o)
 
     buffer = _PyObject_GetAttrId(outf, &PyId_buffer);
     if (buffer) {
-        result = _PyObject_CallMethodIdObjArgs(buffer, &PyId_write, encoded, NULL);
+        result = _PyObject_CallMethodIdOneArg(buffer, &PyId_write, encoded);
         Py_DECREF(buffer);
         Py_DECREF(encoded);
         if (result == NULL)
@@ -1024,56 +1025,6 @@ sys_getprofile_impl(PyObject *module)
     return temp;
 }
 
-/*[clinic input]
-sys.setcheckinterval
-
-    n: int
-    /
-
-Set the async event check interval to n instructions.
-
-This tells the Python interpreter to check for asynchronous events
-every n instructions.
-
-This also affects how often thread switches occur.
-[clinic start generated code]*/
-
-static PyObject *
-sys_setcheckinterval_impl(PyObject *module, int n)
-/*[clinic end generated code: output=3f686cef07e6e178 input=7a35b17bf22a6227]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "sys.getcheckinterval() and sys.setcheckinterval() "
-                     "are deprecated.  Use sys.setswitchinterval() "
-                     "instead.", 1) < 0) {
-        return NULL;
-    }
-
-    PyThreadState *tstate = _PyThreadState_GET();
-    tstate->interp->check_interval = n;
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
-sys.getcheckinterval
-
-Return the current check interval; see sys.setcheckinterval().
-[clinic start generated code]*/
-
-static PyObject *
-sys_getcheckinterval_impl(PyObject *module)
-/*[clinic end generated code: output=1b5060bf2b23a47c input=4b6589cbcca1db4e]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "sys.getcheckinterval() and sys.setcheckinterval() "
-                     "are deprecated.  Use sys.getswitchinterval() "
-                     "instead.", 1) < 0) {
-        return NULL;
-    }
-
-    PyThreadState *tstate = _PyThreadState_GET();
-    return PyLong_FromLong(tstate->interp->check_interval);
-}
 
 /*[clinic input]
 sys.setswitchinterval
@@ -1211,7 +1162,7 @@ static PyTypeObject AsyncGenHooksType;
 PyDoc_STRVAR(asyncgen_hooks_doc,
 "asyncgen_hooks\n\
 \n\
-A struct sequence providing information about asynhronous\n\
+A struct sequence providing information about asynchronous\n\
 generators hooks.  The attributes are read only.");
 
 static PyStructSequence_Field asyncgen_hooks_fields[] = {
@@ -1828,44 +1779,6 @@ sys_call_tracing_impl(PyObject *module, PyObject *func, PyObject *funcargs)
     return _PyEval_CallTracing(func, funcargs);
 }
 
-/*[clinic input]
-sys.callstats
-
-Return a tuple of function call statistics.
-
-A tuple is returned only if CALL_PROFILE was defined when Python was
-built.  Otherwise, this returns None.
-
-When enabled, this function returns detailed, implementation-specific
-details about the number of function calls executed. The return value
-is a 11-tuple where the entries in the tuple are counts of:
-0. all function calls
-1. calls to PyFunction_Type objects
-2. PyFunction calls that do not create an argument tuple
-3. PyFunction calls that do not create an argument tuple
-   and bypass PyEval_EvalCodeEx()
-4. PyMethod calls
-5. PyMethod calls on bound methods
-6. PyType calls
-7. PyCFunction calls
-8. generator calls
-9. All other calls
-10. Number of stack pops performed by call_function()
-[clinic start generated code]*/
-
-static PyObject *
-sys_callstats_impl(PyObject *module)
-/*[clinic end generated code: output=edc4a74957fa8def input=d447d8d224d5d175]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                      "sys.callstats() has been deprecated in Python 3.7 "
-                      "and will be removed in the future", 1) < 0) {
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -1959,7 +1872,6 @@ static PyMethodDef sys_methods[] = {
     {"audit",           (PyCFunction)(void(*)(void))sys_audit, METH_FASTCALL, audit_doc },
     {"breakpointhook",  (PyCFunction)(void(*)(void))sys_breakpointhook,
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
-    SYS_CALLSTATS_METHODDEF
     SYS__CLEAR_TYPE_CACHE_METHODDEF
     SYS__CURRENT_FRAMES_METHODDEF
     SYS_DISPLAYHOOK_METHODDEF
@@ -1989,8 +1901,6 @@ static PyMethodDef sys_methods[] = {
     SYS_INTERN_METHODDEF
     SYS_IS_FINALIZING_METHODDEF
     SYS_MDEBUG_METHODDEF
-    SYS_SETCHECKINTERVAL_METHODDEF
-    SYS_GETCHECKINTERVAL_METHODDEF
     SYS_SETSWITCHINTERVAL_METHODDEF
     SYS_GETSWITCHINTERVAL_METHODDEF
     SYS_SETDLOPENFLAGS_METHODDEF
@@ -2429,7 +2339,6 @@ getrefcount() -- return the reference count for an object (plus one :-)\n\
 getrecursionlimit() -- return the max recursion depth for the interpreter\n\
 getsizeof() -- return the size of an object in bytes\n\
 gettrace() -- get the global debug tracing function\n\
-setcheckinterval() -- control how often the interpreter checks for events\n\
 setdlopenflags() -- set the flags to be used for dlopen() calls\n\
 setprofile() -- set the global profiling function\n\
 setrecursionlimit() -- set the max recursion depth for the interpreter\n\
@@ -2941,6 +2850,7 @@ _PySys_InitMain(_PyRuntimeState *runtime, PyThreadState *tstate)
     COPY_LIST("path", config->module_search_paths);
 
     SET_SYS_FROM_WSTR("executable", config->executable);
+    SET_SYS_FROM_WSTR("_base_executable", config->base_executable);
     SET_SYS_FROM_WSTR("prefix", config->prefix);
     SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
     SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
@@ -3036,10 +2946,10 @@ error:
 /* Create sys module without all attributes: _PySys_InitMain() should be called
    later to add remaining attributes. */
 PyStatus
-_PySys_Create(_PyRuntimeState *runtime, PyInterpreterState *interp,
+_PySys_Create(_PyRuntimeState *runtime, PyThreadState *tstate,
               PyObject **sysmod_p)
 {
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyInterpreterState *interp = tstate->interp;
 
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
@@ -3201,30 +3111,15 @@ PySys_SetArgv(int argc, wchar_t **argv)
 static int
 sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
 {
-    PyObject *writer = NULL, *result = NULL;
-    int err;
-
     if (file == NULL)
         return -1;
-
-    writer = _PyObject_GetAttrId(file, &PyId_write);
-    if (writer == NULL)
-        goto error;
-
-    result = PyObject_CallFunctionObjArgs(writer, unicode, NULL);
+    assert(unicode != NULL);
+    PyObject *result = _PyObject_CallMethodIdOneArg(file, &PyId_write, unicode);
     if (result == NULL) {
-        goto error;
-    } else {
-        err = 0;
-        goto finally;
+        return -1;
     }
-
-error:
-    err = -1;
-finally:
-    Py_XDECREF(writer);
-    Py_XDECREF(result);
-    return err;
+    Py_DECREF(result);
+    return 0;
 }
 
 static int

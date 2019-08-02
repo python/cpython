@@ -12,7 +12,7 @@ import platform
 import random
 import struct
 import sys
-import sysconfig
+
 
 eps = 1E-05
 NAN = float('nan')
@@ -468,6 +468,8 @@ class MathTests(unittest.TestCase):
             self.assertRaises(ValueError, math.cos, NINF)
         self.assertTrue(math.isnan(math.cos(NAN)))
 
+    @unittest.skipIf(sys.platform == 'win32' and platform.machine() in ('ARM', 'ARM64'),
+                    "Windows UCRT is off by 2 ULP this test requires accuracy within 1 ULP")
     def testCosh(self):
         self.assertRaises(TypeError, math.cosh)
         self.ftest('cosh(0)', math.cosh(0), 1)
@@ -831,6 +833,10 @@ class MathTests(unittest.TestCase):
                     sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
                 )
 
+        # Test non-tuple inputs
+        self.assertEqual(dist([1.0, 2.0, 3.0], [4.0, 2.0, -1.0]), 5.0)
+        self.assertEqual(dist(iter([1.0, 2.0, 3.0]), iter([4.0, 2.0, -1.0])), 5.0)
+
         # Test allowable types (those with __float__)
         self.assertEqual(dist((14.0, 1.0), (2.0, -4.0)), 13.0)
         self.assertEqual(dist((14, 1), (2, -4)), 13)
@@ -871,8 +877,6 @@ class MathTests(unittest.TestCase):
             dist((1, 2, 3), (4, 5, 6), (7, 8, 9))
         with self.assertRaises(TypeError):         # Scalars not allowed
             dist(1, 2)
-        with self.assertRaises(TypeError):         # Lists not allowed
-            dist([1, 2, 3], [4, 5, 6])
         with self.assertRaises(TypeError):         # Reject values without __float__
             dist((1.1, 'string', 2.2), (1, 2, 3))
         with self.assertRaises(ValueError):        # Check dimension agree
@@ -1873,7 +1877,7 @@ class IsCloseTests(unittest.TestCase):
     def testPerm(self):
         perm = math.perm
         factorial = math.factorial
-        # Test if factorial defintion is satisfied
+        # Test if factorial definition is satisfied
         for n in range(100):
             for k in range(n + 1):
                 self.assertEqual(perm(n, k),
@@ -1937,7 +1941,7 @@ class IsCloseTests(unittest.TestCase):
     def testComb(self):
         comb = math.comb
         factorial = math.factorial
-        # Test if factorial defintion is satisfied
+        # Test if factorial definition is satisfied
         for n in range(100):
             for k in range(n + 1):
                 self.assertEqual(comb(n, k), factorial(n)

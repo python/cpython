@@ -1293,6 +1293,14 @@ else
   DEF_MAKE_RULE="all"
 fi
 
+AC_ARG_VAR(PROFILE_TASK, Python args for PGO generation task)
+AC_MSG_CHECKING(PROFILE_TASK)
+if test -z "$PROFILE_TASK"
+then
+	PROFILE_TASK='-m test --pgo'
+fi
+AC_MSG_RESULT($PROFILE_TASK)
+
 # Make llvm-relatec checks work on systems where llvm tools are not installed with their
 # normal names in the default $PATH (ie: Ubuntu).  They exist under the
 # non-suffixed name in their versioned llvm directory.
@@ -2682,6 +2690,14 @@ then
 	# -u libsys_s pulls in all symbols in libsys
 	Darwin/*)
 		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
+
+		# Issue #18075: the default maximum stack size (8MBytes) is too
+		# small for the default recursion limit. Increase the stack size
+		# to ensure that tests don't crash
+		# Note: This matches the value of THREAD_STACK_SIZE in
+		# thread_pthread.h
+		LINKFORSHARED="-Wl,-stack_size,1000000 $LINKFORSHARED"
+
 		if test "$enable_framework"
 		then
 			LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'

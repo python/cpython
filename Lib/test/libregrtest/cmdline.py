@@ -264,7 +264,9 @@ def _create_parser():
                        help='only write the name of test cases that will be run'
                             ' , don\'t execute them')
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
-                       help='enable Profile Guided Optimization training')
+                       help='enable Profile Guided Optimization (PGO) training')
+    group.add_argument('--pgo-extended', action='store_true',
+                       help='enable extended PGO training (slower training)')
     group.add_argument('--fail-env-changed', action='store_true',
                        help='if a test file alters the environment, mark '
                             'the test as failed')
@@ -272,8 +274,10 @@ def _create_parser():
     group.add_argument('--junit-xml', dest='xmlpath', metavar='FILENAME',
                        help='writes JUnit-style XML results to the specified '
                             'file')
-    group.add_argument('--tempdir', dest='tempdir', metavar='PATH',
+    group.add_argument('--tempdir', metavar='PATH',
                        help='override the working directory for the test run')
+    group.add_argument('--cleanup', action='store_true',
+                       help='remove old test_python_* directories')
     return parser
 
 
@@ -342,6 +346,8 @@ def _parse_args(args, **kwargs):
         parser.error("-G/--failfast needs either -v or -W")
     if ns.pgo and (ns.verbose or ns.verbose2 or ns.verbose3):
         parser.error("--pgo/-v don't go together!")
+    if ns.pgo_extended:
+        ns.pgo = True  # pgo_extended implies pgo
 
     if ns.nowindows:
         print("Warning: the --nowindows (-n) option is deprecated. "

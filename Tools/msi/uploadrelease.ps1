@@ -92,6 +92,7 @@ if (-not $skipupload) {
     & $plink -batch $user@$server chgrp downloads $d
     & $plink -batch $user@$server chmod g-x,o+rx $d
     & $pscp -batch $chm.FullName "$user@${server}:$d"
+    if (-not $?) { throw "Failed to upload $chm" }
 
     $dirs = gci "$build" -Directory
     if ($embed) {
@@ -107,6 +108,7 @@ if (-not $skipupload) {
 
         if ($exe) {
             & $pscp -batch $exe.FullName "$user@${server}:$d"
+            if (-not $?) { throw "Failed to upload $exe" }
         }
 
         if ($msi) {
@@ -115,6 +117,7 @@ if (-not $skipupload) {
             & $plink -batch $user@$server chgrp downloads $sd
             & $plink -batch $user@$server chmod g-x,o+rx $sd
             & $pscp -batch $msi.FullName "$user@${server}:$sd"
+            if (-not $?) { throw "Failed to upload $msi" }
             & $plink -batch $user@$server chgrp downloads $sd*
             & $plink -batch $user@$server chmod g-x,o+r $sd*
         }
@@ -122,6 +125,7 @@ if (-not $skipupload) {
 
     & $plink -batch $user@$server chgrp downloads $d*
     & $plink -batch $user@$server chmod g-x,o+r $d*
+    & $pscp -ls "$user@${server}:$d"
 }
 
 if (-not $skippurge) {
@@ -164,5 +168,4 @@ if (-not $skiphash) {
         Out-String -Width 4096
     $hashes | clip
     $hashes
-    popd
 }

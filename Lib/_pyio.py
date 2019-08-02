@@ -36,6 +36,8 @@ BlockingIOError = BlockingIOError
 # Does io.IOBase finalizer log the exception if the close() method fails?
 # The exception is ignored silently by default in release build.
 _IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
+# Does open() check its 'errors' argument?
+_CHECK_ERRORS = _IOBASE_EMITS_UNRAISABLE
 
 
 def open(file, mode="r", buffering=-1, encoding=None, errors=None,
@@ -1571,7 +1573,7 @@ class FileIO(RawIOBase):
                     raise IsADirectoryError(errno.EISDIR,
                                             os.strerror(errno.EISDIR), file)
             except AttributeError:
-                # Ignore the AttribueError if stat.S_ISDIR or errno.EISDIR
+                # Ignore the AttributeError if stat.S_ISDIR or errno.EISDIR
                 # don't exist.
                 pass
             self._blksize = getattr(fdfstat, 'st_blksize', 0)
@@ -2022,6 +2024,8 @@ class TextIOWrapper(TextIOBase):
         else:
             if not isinstance(errors, str):
                 raise ValueError("invalid errors: %r" % errors)
+            if _CHECK_ERRORS:
+                codecs.lookup_error(errors)
 
         self._buffer = buffer
         self._decoded_chars = ''  # buffer for text returned from decoder

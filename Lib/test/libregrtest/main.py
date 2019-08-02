@@ -17,6 +17,7 @@ from test.libregrtest.runtest import (
     INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
     PROGRESS_MIN_TIME, format_test_result, is_failed)
 from test.libregrtest.setup import setup_tests
+from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
 
@@ -173,7 +174,19 @@ class Regrtest:
         # Strip .py extensions.
         removepy(ns.args)
 
-        return ns
+        if ns.huntrleaks:
+            warmup, repetitions, _ = ns.huntrleaks
+            if warmup < 1 or repetitions < 1:
+                msg = ("Invalid values for the --huntrleaks/-R parameters. The "
+                       "number of warmups and repetitions must be at least 1 "
+                       "each (1:1).")
+                print(msg, file=sys.stderr, flush=True)
+                sys.exit(2)
+
+        if ns.tempdir:
+            ns.tempdir = os.path.expanduser(ns.tempdir)
+
+        self.ns = ns
 
     def find_tests(self, tests):
         self.tests = tests
@@ -201,6 +214,10 @@ class Regrtest:
                         self.tests.append(match.group())
 
         removepy(self.tests)
+
+        if self.ns.pgo:
+            # add default PGO tests if no tests are specified
+            setup_pgo_tests(self.ns)
 
         stdtests = STDTESTS[:]
         nottests = NOTTESTS.copy()
@@ -537,7 +554,7 @@ class Regrtest:
             for s in ET.tostringlist(root):
                 f.write(s)
 
-    def create_temp_dir(self):
+    def set_temp_dir(self):
         if self.ns.tempdir:
             self.tmp_dir = self.ns.tempdir
 
@@ -558,6 +575,8 @@ class Regrtest:
                 self.tmp_dir = tempfile.gettempdir()
 
         self.tmp_dir = os.path.abspath(self.tmp_dir)
+
+    def create_temp_dir(self):
         os.makedirs(self.tmp_dir, exist_ok=True)
 
         # Define a writable temp dir that will be used as cwd while running
@@ -565,14 +584,33 @@ class Regrtest:
         # testing (see the -j option).
         pid = os.getpid()
         if self.worker_test_name is not None:
-            test_cwd = 'worker_{}'.format(pid)
+            test_cwd = 'test_python_worker_{}'.format(pid)
         else:
             test_cwd = 'test_python_{}'.format(pid)
         test_cwd = os.path.join(self.tmp_dir, test_cwd)
         return test_cwd
 
+    def cleanup(self):
+        import glob
+
+        path = os.path.join(self.tmp_dir, 'test_python_*')
+        print("Cleanup %s directory" % self.tmp_dir)
+        for name in glob.glob(path):
+            if os.path.isdir(name):
+                print("Remove directory: %s" % name)
+                support.rmtree(name)
+            else:
+                print("Remove file: %s" % name)
+                support.unlink(name)
+
     def main(self, tests=None, **kwargs):
-        self.ns = self.parse_args(kwargs)
+        self.parse_args(kwargs)
+
+        self.set_temp_dir()
+
+        if self.ns.cleanup:
+            self.cleanup()
+            sys.exit(0)
 
         test_cwd = self.create_temp_dir()
 
@@ -597,15 +635,6 @@ class Regrtest:
         return None
 
     def _main(self, tests, kwargs):
-        if self.ns.huntrleaks:
-            warmup, repetitions, _ = self.ns.huntrleaks
-            if warmup < 1 or repetitions < 1:
-                msg = ("Invalid values for the --huntrleaks/-R parameters. The "
-                       "number of warmups and repetitions must be at least 1 "
-                       "each (1:1).")
-                print(msg, file=sys.stderr, flush=True)
-                sys.exit(2)
-
         if self.worker_test_name is not None:
             from test.libregrtest.runtest_mp import run_tests_worker
             run_tests_worker(self.ns, self.worker_test_name)
@@ -614,6 +643,7 @@ class Regrtest:
             input("Press any key to continue...")
 
         support.PGO = self.ns.pgo
+        support.PGO_EXTENDED = self.ns.pgo_extended
 
         setup_tests(self.ns)
 

@@ -1688,7 +1688,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 return NULL;
         }
     }
-    return arguments(posargs, posonlyargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
+    return arguments(posonlyargs, posargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
 }
 
 static expr_ty
@@ -2645,7 +2645,7 @@ ast_for_binop(struct compiling *c, const node *n)
             return NULL;
 
         tmp_result = BinOp(result, newoperator, tmp,
-                           LINENO(next_oper), next_oper->n_col_offset,
+                           LINENO(n), n->n_col_offset,
                            CHILD(n, i * 2 + 2)->n_end_lineno,
                            CHILD(n, i * 2 + 2)->n_end_col_offset,
                            c->c_arena);
@@ -5256,7 +5256,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     *str += 1;
 
     /* If we're in = mode (detected by non-NULL expr_text), and have no format
-       spec and no explict conversion, set the conversion to 'r'. */
+       spec and no explicit conversion, set the conversion to 'r'. */
     if (*expr_text && format_spec == NULL && conversion == -1) {
         conversion = 'r';
     }

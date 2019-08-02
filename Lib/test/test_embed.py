@@ -5,7 +5,6 @@ import unittest
 from collections import namedtuple
 import json
 import os
-import platform
 import re
 import subprocess
 import sys
@@ -58,7 +57,8 @@ class EmbeddingTestsMixin:
     def tearDown(self):
         os.chdir(self.oldcwd)
 
-    def run_embedded_interpreter(self, *args, env=None):
+    def run_embedded_interpreter(self, *args, env=None,
+                                 timeout=None, returncode=0, input=None):
         """Runs a test in the embedded interpreter"""
         cmd = [self.test_exe]
         cmd.extend(args)
@@ -74,18 +74,18 @@ class EmbeddingTestsMixin:
                              universal_newlines=True,
                              env=env)
         try:
-            (out, err) = p.communicate()
+            (out, err) = p.communicate(input=input, timeout=timeout)
         except:
             p.terminate()
             p.wait()
             raise
-        if p.returncode != 0 and support.verbose:
+        if p.returncode != returncode and support.verbose:
             print(f"--- {cmd} failed ---")
             print(f"stdout:\n{out}")
             print(f"stderr:\n{err}")
             print(f"------")
 
-        self.assertEqual(p.returncode, 0,
+        self.assertEqual(p.returncode, returncode,
                          "bad returncode %d, stderr is %r" %
                          (p.returncode, err))
         return out, err
@@ -362,6 +362,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pythonpath_env': None,
         'home': None,
         'executable': GET_DEFAULT_CONFIG,
+        'base_executable': GET_DEFAULT_CONFIG,
 
         'prefix': GET_DEFAULT_CONFIG,
         'base_prefix': GET_DEFAULT_CONFIG,
@@ -534,14 +535,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if expected['stdio_errors'] is self.GET_DEFAULT_CONFIG:
                 expected['stdio_errors'] = 'surrogateescape'
 
+        if sys.platform == 'win32':
+            default_executable = self.test_exe
+        elif expected['program_name'] is not self.GET_DEFAULT_CONFIG:
+            default_executable = os.path.abspath(expected['program_name'])
+        else:
+            default_executable = os.path.join(os.getcwd(), '_testembed')
         if expected['executable'] is self.GET_DEFAULT_CONFIG:
-            if sys.platform == 'win32':
-                expected['executable'] = self.test_exe
-            else:
-                if expected['program_name'] is not self.GET_DEFAULT_CONFIG:
-                    expected['executable'] = os.path.abspath(expected['program_name'])
-                else:
-                    expected['executable'] = os.path.join(os.getcwd(), '_testembed')
+            expected['executable'] = default_executable
+        if expected['base_executable'] is self.GET_DEFAULT_CONFIG:
+            expected['base_executable'] = default_executable
         if expected['program_name'] is self.GET_DEFAULT_CONFIG:
             expected['program_name'] = './_testembed'
 
@@ -693,10 +696,19 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             'pycache_prefix': 'conf_pycache_prefix',
             'program_name': './conf_program_name',
-            'argv': ['-c', 'arg2'],
+            'argv': ['-c', 'arg2', ],
             'parse_argv': 1,
-            'xoptions': ['xoption1=3', 'xoption2=', 'xoption3'],
-            'warnoptions': ['error::ResourceWarning', 'default::BytesWarning'],
+            'xoptions': [
+                'config_xoption1=3',
+                'config_xoption2=',
+                'config_xoption3',
+                'cmdline_xoption',
+            ],
+            'warnoptions': [
+                'config_warnoption',
+                'cmdline_warnoption',
+                'default::BytesWarning',
+            ],
             'run_command': 'pass\n',
 
             'site_import': 0,
@@ -805,9 +817,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         preconfig = {
             'allocator': PYMEM_ALLOCATOR_DEBUG,
         }
+        script_abspath = os.path.abspath('script.py')
         config = {
-            'argv': ['script.py'],
-            'run_filename': 'script.py',
+            'argv': [script_abspath],
+            'run_filename': script_abspath,
             'dev_mode': 1,
             'faulthandler': 1,
             'warnoptions': ['default'],
@@ -943,6 +956,37 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_audit_subinterpreter(self):
         self.run_embedded_interpreter("test_audit_subinterpreter")
 
+    def test_audit_run_command(self):
+        self.run_embedded_interpreter("test_audit_run_command", timeout=3, returncode=1)
+
+    def test_audit_run_file(self):
+        self.run_embedded_interpreter("test_audit_run_file", timeout=3, returncode=1)
+
+    def test_audit_run_interactivehook(self):
+        startup = os.path.join(self.oldcwd, support.TESTFN) + ".py"
+        with open(startup, "w", encoding="utf-8") as f:
+            print("import sys", file=f)
+            print("sys.__interactivehook__ = lambda: None", file=f)
+        try:
+            env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
+            self.run_embedded_interpreter("test_audit_run_interactivehook", timeout=5,
+                                          returncode=10, env=env)
+        finally:
+            os.unlink(startup)
+
+    def test_audit_run_startup(self):
+        startup = os.path.join(self.oldcwd, support.TESTFN) + ".py"
+        with open(startup, "w", encoding="utf-8") as f:
+            print("pass", file=f)
+        try:
+            env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
+            self.run_embedded_interpreter("test_audit_run_startup", timeout=5,
+                                          returncode=10, env=env)
+        finally:
+            os.unlink(startup)
+
+    def test_audit_run_stdin(self):
+        self.run_embedded_interpreter("test_audit_run_stdin", timeout=3, returncode=1)
 
 if __name__ == "__main__":
     unittest.main()

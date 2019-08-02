@@ -2333,8 +2333,7 @@ bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
 {
     PyObject *result = _PyBytes_FromHex(string, 0);
     if (type != &PyBytes_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallFunctionObjArgs((PyObject *)type,
-                                                       result, NULL));
+        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 }

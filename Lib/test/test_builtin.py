@@ -1592,6 +1592,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, x.translate, b"1", 1)
         self.assertRaises(TypeError, x.translate, b"1"*256, 1)
 
+    def test_bytearray_extend_error(self):
+        array = bytearray()
+        bad_iter = map(int, "X")
+        self.assertRaises(ValueError, array.extend, bad_iter)
+
     def test_construct_singletons(self):
         for const in None, Ellipsis, NotImplemented:
             tp = type(const)

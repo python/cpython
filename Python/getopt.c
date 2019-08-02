@@ -20,7 +20,7 @@
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * Nevertheless, I would like to know about bugs in this library or
- * suggestions for improvment.  Send bug reports and feedback to
+ * suggestions for improvement.  Send bug reports and feedback to
  * davegottner@delphi.com.
  *---------------------------------------------------------------------------*/
 

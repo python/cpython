@@ -1,9 +1,8 @@
 import dis
 import unittest
-import types
-import textwrap
 
 from test.bytecode_helper import BytecodeTestCase
+
 
 def count_instr_recursively(f, opname):
     count = 0
@@ -420,6 +419,14 @@ class TestTranforms(BytecodeTestCase):
                 return 1
             return 0
         self.assertEqual(f(), 1)
+
+    def test_if_with_if_expression(self):
+        # Check bpo-37289
+        def f(x):
+            if (True if x else False):
+                return True
+            return False
+        self.assertTrue(f(True))
 
 
 class TestBuglets(unittest.TestCase):

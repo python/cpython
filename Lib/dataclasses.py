@@ -1189,7 +1189,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
             raise TypeError(f'Invalid field: {item!r}')
 
         if not isinstance(name, str) or not name.isidentifier():
-            raise TypeError(f'Field names must be valid identifers: {name!r}')
+            raise TypeError(f'Field names must be valid identifiers: {name!r}')
         if keyword.iskeyword(name):
             raise TypeError(f'Field names must not be keywords: {name!r}')
         if name in seen:
@@ -1206,7 +1206,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                      unsafe_hash=unsafe_hash, frozen=frozen)
 
 
-def replace(obj, **changes):
+def replace(obj, /, **changes):
     """Return a new object replacing specified fields with new values.
 
     This is especially useful for frozen classes.  Example usage:

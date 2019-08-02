@@ -95,7 +95,7 @@
  * process to find the installed Python tree.
  *
  * An embedding application can use Py_SetPath() to override all of
- * these authomatic path computations.
+ * these automatic path computations.
  *
  * NOTE: Windows MSVC builds use PC/getpathp.c instead!
  */
@@ -240,7 +240,7 @@ static PyStatus
 joinpath(wchar_t *buffer, const wchar_t *stuff, size_t buflen)
 {
     size_t n, k;
-    if (stuff[0] != SEP) {
+    if (!_Py_isabs(stuff)) {
         n = wcslen(buffer);
         if (n >= buflen) {
             return PATHLEN_ERR();
@@ -283,7 +283,7 @@ safe_wcscpy(wchar_t *dst, const wchar_t *src, size_t n)
 static PyStatus
 copy_absolute(wchar_t *path, const wchar_t *p, size_t pathlen)
 {
-    if (p[0] == SEP) {
+    if (_Py_isabs(p)) {
         if (safe_wcscpy(path, p, pathlen) < 0) {
             return PATHLEN_ERR();
         }
@@ -312,7 +312,7 @@ copy_absolute(wchar_t *path, const wchar_t *p, size_t pathlen)
 static PyStatus
 absolutize(wchar_t *path, size_t path_len)
 {
-    if (path[0] == SEP) {
+    if (_Py_isabs(path)) {
         return _PyStatus_OK();
     }
 
@@ -761,7 +761,7 @@ calculate_program_full_path(const PyConfig *config,
       * absolutize() should help us out below
       */
     else if(0 == _NSGetExecutablePath(execpath, &nsexeclength) &&
-            execpath[0] == SEP)
+            (wchar_t)execpath[0] == SEP)
     {
         size_t len;
         wchar_t *path = Py_DecodeLocale(execpath, &len);
@@ -815,7 +815,7 @@ calculate_program_full_path(const PyConfig *config,
     else {
         program_full_path[0] = '\0';
     }
-    if (program_full_path[0] != SEP && program_full_path[0] != '\0') {
+    if (!_Py_isabs(program_full_path) && program_full_path[0] != '\0') {
         status = absolutize(program_full_path, program_full_path_len);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
@@ -916,7 +916,7 @@ calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_pat
     const size_t buflen = Py_ARRAY_LENGTH(tmpbuffer);
     int linklen = _Py_wreadlink(program_full_path, tmpbuffer, buflen);
     while (linklen != -1) {
-        if (tmpbuffer[0] == SEP) {
+        if (_Py_isabs(tmpbuffer)) {
             /* tmpbuffer should never be longer than MAXPATHLEN,
                but extra check does not hurt */
             if (safe_wcscpy(calculate->argv0_path, tmpbuffer, argv0_path_len) < 0) {
@@ -1046,7 +1046,7 @@ calculate_module_search_path(const PyConfig *config,
     while (1) {
         wchar_t *delim = wcschr(defpath, DELIM);
 
-        if (defpath[0] != SEP) {
+        if (!_Py_isabs(defpath)) {
             /* Paths are relative to prefix */
             bufsz += prefixsz;
         }
@@ -1088,7 +1088,7 @@ calculate_module_search_path(const PyConfig *config,
     while (1) {
         wchar_t *delim = wcschr(defpath, DELIM);
 
-        if (defpath[0] != SEP) {
+        if (!_Py_isabs(defpath)) {
             wcscat(buf, prefix);
             if (prefixsz >= 2 && prefix[prefixsz - 2] != SEP &&
                 defpath[0] != (delim ? DELIM : L'\0'))

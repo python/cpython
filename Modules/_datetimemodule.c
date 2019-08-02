@@ -1237,8 +1237,7 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
     if (tzinfo == Py_None)
         Py_RETURN_NONE;
 
-    result = _PyObject_CallMethodIdObjArgs(tzinfo, &PyId_tzname,
-                                           tzinfoarg, NULL);
+    result = _PyObject_CallMethodIdOneArg(tzinfo, &PyId_tzname, tzinfoarg);
 
     if (result == NULL || result == Py_None)
         return result;
@@ -1659,7 +1658,7 @@ time_time(void)
     if (time != NULL) {
         _Py_IDENTIFIER(time);
 
-        result = _PyObject_CallMethodId(time, &PyId_time, NULL);
+        result = _PyObject_CallMethodIdNoArgs(time, &PyId_time);
         Py_DECREF(time);
     }
     return result;
@@ -1693,8 +1692,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
         return NULL;
     }
 
-    result = _PyObject_CallMethodIdObjArgs(time, &PyId_struct_time,
-                                           args, NULL);
+    result = _PyObject_CallMethodIdOneArg(time, &PyId_struct_time, args);
     Py_DECREF(time);
     Py_DECREF(args);
     return result;
@@ -1918,7 +1916,7 @@ get_float_as_integer_ratio(PyObject *floatobj)
     PyObject *ratio;
 
     assert(floatobj && PyFloat_Check(floatobj));
-    ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
+    ratio = _PyObject_CallMethodIdNoArgs(floatobj, &PyId_as_integer_ratio);
     if (ratio == NULL) {
         return NULL;
     }
@@ -2894,8 +2892,7 @@ date_today(PyObject *cls, PyObject *dummy)
      * time.time() delivers; if someone were gonzo about optimization,
      * date.today() could get away with plain C time().
      */
-    result = _PyObject_CallMethodIdObjArgs(cls, &PyId_fromtimestamp,
-                                           time, NULL);
+    result = _PyObject_CallMethodIdOneArg(cls, &PyId_fromtimestamp, time);
     Py_DECREF(time);
     return result;
 }
@@ -3162,7 +3159,7 @@ date_isoformat(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 date_str(PyDateTime_Date *self)
 {
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, NULL);
+    return _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_isoformat);
 }
 
 
@@ -3188,7 +3185,7 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
                                       &format))
         return NULL;
 
-    tuple = _PyObject_CallMethodId((PyObject *)self, &PyId_timetuple, NULL);
+    tuple = _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_timetuple);
     if (tuple == NULL)
         return NULL;
     result = wrap_strftime((PyObject *)self, format, tuple,
@@ -3209,8 +3206,8 @@ date_format(PyDateTime_Date *self, PyObject *args)
     if (PyUnicode_GetLength(format) == 0)
         return PyObject_Str((PyObject *)self);
 
-    return _PyObject_CallMethodIdObjArgs((PyObject *)self, &PyId_strftime,
-                                         format, NULL);
+    return _PyObject_CallMethodIdOneArg((PyObject *)self, &PyId_strftime,
+                                        format);
 }
 
 /* ISO methods. */
@@ -4175,7 +4172,7 @@ time_repr(PyDateTime_Time *self)
 static PyObject *
 time_str(PyDateTime_Time *self)
 {
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, NULL);
+    return _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_isoformat);
 }
 
 static PyObject *
@@ -5960,7 +5957,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 
     temp = (PyObject *)result;
     result = (PyDateTime_DateTime *)
-        _PyObject_CallMethodIdObjArgs(tzinfo, &PyId_fromutc, temp, NULL);
+        _PyObject_CallMethodIdOneArg(tzinfo, &PyId_fromutc, temp);
     Py_DECREF(temp);
 
     return result;

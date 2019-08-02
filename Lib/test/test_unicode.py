@@ -11,9 +11,11 @@ import itertools
 import operator
 import struct
 import sys
+import textwrap
 import unittest
 import warnings
 from test import support, string_tests
+from test.support.script_helper import assert_python_failure
 
 # Error handling (bad decoder return)
 def search_function(encoding):
@@ -2436,6 +2438,66 @@ class UnicodeTest(string_tests.CommonTest,
         support.check_free_after_iterating(self, iter, str)
         support.check_free_after_iterating(self, reversed, str)
 
+    def test_check_encoding_errors(self):
+        # bpo-37388: str(bytes) and str.decode() must check encoding and errors
+        # arguments in dev mode
+        encodings = ('ascii', 'utf8', 'latin1')
+        invalid = 'Boom, Shaka Laka, Boom!'
+        code = textwrap.dedent(f'''
+            import sys
+            encodings = {encodings!r}
+
+            for data in (b'', b'short string'):
+                try:
+                    str(data, encoding={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(21)
+
+                try:
+                    str(data, errors={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(22)
+
+                for encoding in encodings:
+                    try:
+                        str(data, encoding, errors={invalid!r})
+                    except LookupError:
+                        pass
+                    else:
+                        sys.exit(22)
+
+            for data in ('', 'short string'):
+                try:
+                    data.encode(encoding={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(23)
+
+                try:
+                    data.encode(errors={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(24)
+
+                for encoding in encodings:
+                    try:
+                        data.encode(encoding, errors={invalid!r})
+                    except LookupError:
+                        pass
+                    else:
+                        sys.exit(24)
+
+            sys.exit(10)
+        ''')
+        proc = assert_python_failure('-X', 'dev', '-c', code)
+        self.assertEqual(proc.rc, 10, proc)
+
 
 class CAPITest(unittest.TestCase):
 
@@ -2756,6 +2818,34 @@ class CAPITest(unittest.TestCase):
             s = '\0'.join([s, s])
             self.assertEqual(unicode_asucs4(s, len(s), 1), s+'\0')
             self.assertEqual(unicode_asucs4(s, len(s), 0), s+'\uffff')
+
+    # Test PyUnicode_AsUTF8()
+    @support.cpython_only
+    def test_asutf8(self):
+        from _testcapi import unicode_asutf8
+
+        bmp = '\u0100'
+        bmp2 = '\uffff'
+        nonbmp = chr(0x10ffff)
+
+        self.assertEqual(unicode_asutf8(bmp), b'\xc4\x80')
+        self.assertEqual(unicode_asutf8(bmp2), b'\xef\xbf\xbf')
+        self.assertEqual(unicode_asutf8(nonbmp), b'\xf4\x8f\xbf\xbf')
+        self.assertRaises(UnicodeEncodeError, unicode_asutf8, 'a\ud800b\udfffc')
+
+    # Test PyUnicode_AsUTF8AndSize()
+    @support.cpython_only
+    def test_asutf8andsize(self):
+        from _testcapi import unicode_asutf8andsize
+
+        bmp = '\u0100'
+        bmp2 = '\uffff'
+        nonbmp = chr(0x10ffff)
+
+        self.assertEqual(unicode_asutf8andsize(bmp), (b'\xc4\x80', 2))
+        self.assertEqual(unicode_asutf8andsize(bmp2), (b'\xef\xbf\xbf', 3))
+        self.assertEqual(unicode_asutf8andsize(nonbmp), (b'\xf4\x8f\xbf\xbf', 4))
+        self.assertRaises(UnicodeEncodeError, unicode_asutf8andsize, 'a\ud800b\udfffc')
 
     # Test PyUnicode_FindChar()
     @support.cpython_only

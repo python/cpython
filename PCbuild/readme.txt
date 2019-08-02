@@ -184,7 +184,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.21.0.0, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.28.0.0, which is itself built by sqlite3.vcxproj
     Homepage:
         http://www.sqlite.org/
 _tkinter
@@ -285,4 +285,4 @@ The pyproject property file defines all of the build settings for each
 project, with some projects overriding certain specific values. The GUI
 doesn't always reflect the correct settings and may confuse the user
 with false information, especially for settings that automatically adapt
-for diffirent configurations.
+for different configurations.
