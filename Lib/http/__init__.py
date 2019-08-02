@@ -59,7 +59,7 @@ class HTTPStatus(IntEnum):
     TEMPORARY_REDIRECT = (307, 'Temporary Redirect',
         'Object moved temporarily -- see URI list')
     PERMANENT_REDIRECT = (308, 'Permanent Redirect',
-        'Object moved temporarily -- see URI list')
+        'Object moved permanently -- see URI list')
 
     # client error
     BAD_REQUEST = (400, 'Bad Request',
