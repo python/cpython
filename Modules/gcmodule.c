@@ -962,6 +962,25 @@ clear_freelists(void)
     (void)PyContext_ClearFreeList();
 }
 
+// Show stats for objects in each gennerations.
+static void
+show_stats_each_generations(struct _gc_runtime_state *state)
+{
+    char buf[100];
+    size_t pos = 0;
+
+    for (int i = 0; i < NUM_GENERATIONS && pos < sizeof(buf); i++) {
+        pos += PyOS_snprintf(buf+pos, sizeof(buf)-pos,
+                             " %"PY_FORMAT_SIZE_T"d",
+                             gc_list_size(GEN_HEAD(state, i)));
+    }
+
+    PySys_FormatStderr(
+        "gc: objects in each generation:%s\n"
+        "gc: objects in permanent generation: %zd\n",
+        buf, gc_list_size(&state->permanent_generation.head));
+}
+
 /* This is the main function.  Read this to understand how the
  * collection process works. */
 static Py_ssize_t
@@ -979,17 +998,9 @@ collect(struct _gc_runtime_state *state, int generation,
     _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
 
     if (state->debug & DEBUG_STATS) {
-        PySys_WriteStderr("gc: collecting generation %d...\n",
-                          generation);
-        PySys_WriteStderr("gc: objects in each generation:");
-        for (i = 0; i < NUM_GENERATIONS; i++)
-            PySys_FormatStderr(" %zd",
-                              gc_list_size(GEN_HEAD(state, i)));
-        PySys_WriteStderr("\ngc: objects in permanent generation: %zd",
-                         gc_list_size(&state->permanent_generation.head));
+        PySys_WriteStderr("gc: collecting generation %d...\n", generation);
+        show_stats_each_generations(state);
         t1 = _PyTime_GetMonotonicClock();
-
-        PySys_WriteStderr("\n");
     }
 
     if (PyDTrace_GC_START_ENABLED())
@@ -1103,16 +1114,10 @@ collect(struct _gc_runtime_state *state, int generation,
             debug_cycle("uncollectable", FROM_GC(gc));
     }
     if (state->debug & DEBUG_STATS) {
-        _PyTime_t t2 = _PyTime_GetMonotonicClock();
-
-        if (m == 0 && n == 0)
-            PySys_WriteStderr("gc: done");
-        else
-            PySys_FormatStderr(
-                "gc: done, %zd unreachable, %zd uncollectable",
-                n+m, n);
-        PySys_WriteStderr(", %.4fs elapsed\n",
-                          _PyTime_AsSecondsDouble(t2 - t1));
+        double d = _PyTime_AsSecondsDouble(_PyTime_GetMonotonicClock() - t1);
+        PySys_FormatStderr(
+            "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
+            n+m, n, d);
     }
 
     /* Append instances in the uncollectable set to a Python
