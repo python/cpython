@@ -397,9 +397,9 @@ import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
     _Py_IDENTIFIER(_lock_unlock_module);
 
     /* Optimization: only call _bootstrap._lock_unlock_module() if
-        __spec__._initializing is true.
-        NOTE: because of this, initializing must be set *before*
-        stuffing the new module in sys.modules.
+       __spec__._initializing is true.
+       NOTE: because of this, initializing must be set *before*
+       stuffing the new module in sys.modules.
     */
     spec = _PyObject_GetAttrId(mod, &PyId___spec__);
     if (_PyModuleSpec_IsInitializing(spec)) {
@@ -1785,18 +1785,18 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 PyObject *
 PyImport_GetModule(PyObject *name)
 {
-   PyThreadState *tstate = _PyThreadState_GET();
-   PyObject *mod = NULL;
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *mod = NULL;
 
-   mod = import_get_module(tstate, name);
-   if (mod != NULL && mod != Py_None) {
-       if (import_ensure_initialized(tstate, mod, name) < 0) {
-            Py_XDECREF(mod);
+    mod = import_get_module(tstate, name);
+    if (mod != NULL && mod != Py_None) {
+        if (import_ensure_initialized(tstate, mod, name) < 0) {
+            Py_DECREF(mod);
             remove_importlib_frames(tstate);
             return NULL;
-       }
-   }
-   return mod;
+        }
+    }
+    return mod;
 }
 
 PyObject *
