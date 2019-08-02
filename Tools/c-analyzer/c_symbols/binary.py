@@ -3,18 +3,18 @@ import shutil
 import sys
 
 from c_parser import info, util
-from . import local
+from . import source
 
 
 #PYTHON = os.path.join(REPO_ROOT, 'python')
 PYTHON = sys.executable
 
 
-def iter_binary(dirnames, binary=PYTHON, *,
-                _file_exists=os.path.exists,
-                _find_local_symbol=local.find_symbol,
-                _iter_symbols_nm=(lambda b, fls: _iter_symbols_nm(b, fls)),
-                ):
+def iter_symbols(dirnames, binary=PYTHON, *,
+                 _file_exists=os.path.exists,
+                 _find_local_symbol=source.find_symbol,
+                 _iter_symbols_nm=(lambda b, fls: _iter_symbols_nm(b, fls)),
+                 ):
     """Yield a Symbol for each symbol found in the binary."""
     if not _file_exists(binary):
         raise Exception('executable missing (need to build it first?)')

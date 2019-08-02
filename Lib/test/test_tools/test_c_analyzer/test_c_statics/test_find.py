@@ -55,8 +55,8 @@ class _Base(unittest.TestCase):
         self._add_static(static, funcs)
         return static, supported
 
-    def _iter_statics(self, *args):
-        self.calls.append(('_iter_statics', args))
+    def _iter_statics(self, dirnames, kind=None):
+        self.calls.append(('_iter_statics', (dirnames, kind)))
         return iter(self._return_iter_statics or ())
 
     def _is_supported(self, static, ignored=None, known=None):
@@ -104,7 +104,7 @@ class StaticsTest(_Base):
         self.assertEqual(self.calls, [
             ('_load_ignored', ('ignored.tsv',)),
             ('_load_known', ('known.tsv',)),
-            ('_iter_statics', (dirs,)),
+            ('_iter_statics', (dirs, None)),
             ] + [('_is_supported', (v, set(), set()))
                  for v, _ in expected])
 
