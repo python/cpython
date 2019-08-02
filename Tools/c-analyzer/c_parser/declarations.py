@@ -276,3 +276,20 @@ def _iter_locals(lines, *,
                         if name:
                             yield (name, vartype)
                 compound.extend(bodies)
+
+
+def iter_all(dirnames):
+    """Yield a Declaration for each one found.
+
+    If there are duplicates, due to preprocessor conditionals, then
+    they are checked to make sure they are the same.
+    """
+    raise NotImplementedError
+
+
+def iter_preprocessed(dirnames):
+    """Yield a Declaration for each one found.
+
+    All source files are run through the preprocessor first.
+    """
+    raise NotImplementedError

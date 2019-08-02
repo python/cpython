@@ -135,3 +135,11 @@ class Variable(_NTBase,
             elif field not in ('filename', 'vartype'):
                 if not NAME_RE.match(value):
                     raise ValueError(f'{field} must be a name, got {value!r}')
+
+    @property
+    def isstatic(self):
+        return 'static' in self.vartype.split()
+
+    @property
+    def isconst(self):
+        return 'const' in self.vartype.split()

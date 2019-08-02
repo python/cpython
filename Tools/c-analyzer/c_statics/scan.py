@@ -1,4 +1,4 @@
-from c_parser import info
+from c_parser import info, declarations
 from c_symbols import binary as b_symbols, source as s_symbols
 
 
@@ -20,8 +20,19 @@ def statics_from_symbols(dirnames, iter_symbols):
                 )
 
 
+def statics_from_declarations(dirnames, iter_declarations):
+    """Yield a Variable for each static variable declaration."""
+    for decl in iter_declarations(dirnames):
+        if not isinstance(decl, info.Variable):
+            continue
+        if decl.isstatic:
+            continue
+        yield decl
+
+
 def iter_statics(dirnames, kind=None, *,
                  _from_symbols=statics_from_symbols,
+                 _from_declarations=statics_from_declarations,
                  ):
     """Yield a Variable for each one found in the files."""
     kind = kind or 'platform'
@@ -31,8 +42,8 @@ def iter_statics(dirnames, kind=None, *,
     elif kind == 'platform':
         return _from_symbols(dirnames, b_symbols.iter_symbols)
     elif kind == 'declarations':
-        raise NotImplementedError
+        return _from_declarations(dirnames, declarations.iter_all)
     elif kind == 'preprocessed':
-        raise NotImplementedError
+        return _from_declarations(dirnames, declarations.iter_preprocessed)
     else:
         raise ValueError(f'unsupported kind {kind!r}')
