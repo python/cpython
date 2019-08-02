@@ -8,7 +8,8 @@ from . import (
 
 
 def cmd_check(cmd, dirs=SOURCE_DIRS, *,
-              ignored=IGNORED_FILE, known=KNOWN_FILE,
+              ignored=IGNORED_FILE,
+              known=KNOWN_FILE,
               _find=find.statics,
               _show=show.basic,
               _print=print,
@@ -32,7 +33,8 @@ def cmd_check(cmd, dirs=SOURCE_DIRS, *,
 
 
 def cmd_show(cmd, dirs=SOURCE_DIRS, *,
-             ignored=IGNORED_FILE, known=KNOWN_FILE,
+             ignored=IGNORED_FILE,
+             known=KNOWN_FILE,
              _find=find.statics,
              _show=show.basic,
              _print=print,
