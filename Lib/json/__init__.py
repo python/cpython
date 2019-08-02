@@ -25,7 +25,7 @@ Encoding basic Python object hierarchies::
     >>> io.getvalue()
     '["streaming API"]'
 
-Compact encdetect_encodingoding::
+Compact encoding::
 
     >>> import json
     >>> mydict = {'4': 5, '6': 7}
