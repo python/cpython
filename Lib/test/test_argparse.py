@@ -4263,7 +4263,6 @@ class TestHelpSubparsersWithHelpOrdering(HelpTestCase):
 
 
 class TestHelpMetavarTypeFormatter(HelpTestCase):
-    """"""
 
     def custom_type(string):
         return string
@@ -5149,6 +5148,35 @@ class TestAddArgumentMetavar(TestCase):
 
     def test_nargs_3_metavar_length3(self):
         self.do_test_no_exception(nargs=3, metavar=("1", "2", "3"))
+
+
+class TestInvalidNargs(TestCase):
+
+    EXPECTED_INVALID_MESSAGE = "invalid nargs value"
+    EXPECTED_RANGE_MESSAGE = ("nargs for store actions must be != 0; if you "
+                              "have nothing to store, actions such as store "
+                              "true or store const may be more appropriate")
+
+    def do_test_range_exception(self, nargs):
+        parser = argparse.ArgumentParser()
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument("--foo", nargs=nargs)
+        self.assertEqual(cm.exception.args[0], self.EXPECTED_RANGE_MESSAGE)
+
+    def do_test_invalid_exception(self, nargs):
+        parser = argparse.ArgumentParser()
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument("--foo", nargs=nargs)
+        self.assertEqual(cm.exception.args[0], self.EXPECTED_INVALID_MESSAGE)
+
+    # Unit tests for different values of nargs
+
+    def test_nargs_alphabetic(self):
+        self.do_test_invalid_exception(nargs='a')
+        self.do_test_invalid_exception(nargs="abcd")
+
+    def test_nargs_zero(self):
+        self.do_test_range_exception(nargs=0)
 
 # ============================
 # from argparse import * tests
