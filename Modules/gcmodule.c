@@ -971,10 +971,11 @@ show_stats_each_generations(struct _gc_runtime_state *state)
 
     for (int i = 0; i < NUM_GENERATIONS && pos < sizeof(buf); i++) {
         pos += PyOS_snprintf(buf+pos, sizeof(buf)-pos,
-                             " %zd", gc_list_size(GEN_HEAD(state, i)));
+                             " %"PY_FORMAT_SIZE_T"d",
+                             gc_list_size(GEN_HEAD(state, i)));
     }
 
-    PySys_WriteStderr(
+    PySys_FormatStderr(
         "gc: objects in each generation:%s\n"
         "gc: objects in permanent generation: %zd\n",
         buf, gc_list_size(&state->permanent_generation.head));
