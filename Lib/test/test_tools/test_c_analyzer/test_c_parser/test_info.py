@@ -5,7 +5,7 @@ from .util import PseudoStr, StrProxy, Object
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
     from c_parser.info import (
-        normalize_vartype, Symbol, StaticVar,
+        normalize_vartype, Symbol, Variable,
         )
 
 
@@ -212,7 +212,7 @@ class SymbolTests(unittest.TestCase):
                     symbol.validate()  # This does not fail.
 
 
-class StaticVarTests(unittest.TestCase):
+class VariableTests(unittest.TestCase):
 
     VALID_ARGS = (
             'x/y/z/spam.c',
@@ -220,11 +220,11 @@ class StaticVarTests(unittest.TestCase):
             'eggs',
             'int',
             )
-    VALID_KWARGS = dict(zip(StaticVar._fields, VALID_ARGS))
+    VALID_KWARGS = dict(zip(Variable._fields, VALID_ARGS))
     VALID_EXPECTED = VALID_ARGS
 
     def test_init_typical_global(self):
-        static = StaticVar(
+        static = Variable(
                 filename='x/y/z/spam.c',
                 funcname=None,
                 name='eggs',
@@ -239,7 +239,7 @@ class StaticVarTests(unittest.TestCase):
                 ))
 
     def test_init_typical_local(self):
-        static = StaticVar(
+        static = Variable(
                 filename='x/y/z/spam.c',
                 funcname='func',
                 name='eggs',
@@ -254,7 +254,7 @@ class StaticVarTests(unittest.TestCase):
                 ))
 
     def test_coercion_typical(self):
-        static = StaticVar(
+        static = Variable(
                 filename='x/y/z/spam.c',
                 funcname='func',
                 name='eggs',
@@ -271,7 +271,7 @@ class StaticVarTests(unittest.TestCase):
     def test_init_all_missing(self):
         for value in ('', None):
             with self.subTest(repr(value)):
-                static = StaticVar(
+                static = Variable(
                         filename=value,
                         funcname=value,
                         name=value,
@@ -314,15 +314,15 @@ class StaticVarTests(unittest.TestCase):
             ]
         for summary, kwargs, expected in tests:
             with self.subTest(summary):
-                static = StaticVar(**kwargs)
+                static = Variable(**kwargs)
 
-                for field in StaticVar._fields:
+                for field in Variable._fields:
                     value = getattr(static, field)
                     self.assertIs(type(value), str)
                 self.assertEqual(tuple(static), expected)
 
     def test_iterable(self):
-        static = StaticVar(**self.VALID_KWARGS)
+        static = Variable(**self.VALID_KWARGS)
 
         filename, funcname, name, vartype = static
 
@@ -331,7 +331,7 @@ class StaticVarTests(unittest.TestCase):
             self.assertEqual(value, expected)
 
     def test_fields(self):
-        static = StaticVar('a', 'b', 'z', 'x')
+        static = Variable('a', 'b', 'z', 'x')
 
         self.assertEqual(static.filename, 'a')
         self.assertEqual(static.funcname, 'b')
@@ -339,7 +339,7 @@ class StaticVarTests(unittest.TestCase):
         self.assertEqual(static.vartype, 'x')
 
     def test_validate_typical(self):
-        static = StaticVar(
+        static = Variable(
                 filename='x/y/z/spam.c',
                 funcname='func',
                 name='eggs',
@@ -349,9 +349,9 @@ class StaticVarTests(unittest.TestCase):
         static.validate()  # This does not fail.
 
     def test_validate_missing_field(self):
-        for field in StaticVar._fields:
+        for field in Variable._fields:
             with self.subTest(field):
-                static = StaticVar(**self.VALID_KWARGS)
+                static = Variable(**self.VALID_KWARGS)
                 static = static._replace(**{field: None})
 
                 if field == 'funcname':
@@ -381,7 +381,7 @@ class StaticVarTests(unittest.TestCase):
             for value in invalid:
                 seen.add(value)
                 with self.subTest(f'{field}={value!r}'):
-                    static = StaticVar(**self.VALID_KWARGS)
+                    static = Variable(**self.VALID_KWARGS)
                     static = static._replace(**{field: value})
 
                     with self.assertRaises(ValueError):
@@ -391,7 +391,7 @@ class StaticVarTests(unittest.TestCase):
             valid = seen - set(invalid)
             for value in valid:
                 with self.subTest(f'{field}={value!r}'):
-                    static = StaticVar(**self.VALID_KWARGS)
+                    static = Variable(**self.VALID_KWARGS)
                     static = static._replace(**{field: value})
 
                     static.validate()  # This does not fail.

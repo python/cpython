@@ -45,11 +45,11 @@ class StaticsFromSymbolsTests(_Base):
         found = list(statics_from_symbols(['dir1'], self.iter_symbols))
 
         self.assertEqual(found, [
-            info.StaticVar('dir1/spam.c', None, 'var1', '???'),
-            info.StaticVar('dir1/spam.c', None, 'var2', '???'),
-            info.StaticVar('dir1/spam.c', None, 'var3', '???'),
-            info.StaticVar('dir1/spam.c', 'func2', 'var4', '???'),
-            info.StaticVar('dir1/eggs.c', None, 'var1', '???'),
+            info.Variable('dir1/spam.c', None, 'var1', '???'),
+            info.Variable('dir1/spam.c', None, 'var2', '???'),
+            info.Variable('dir1/spam.c', None, 'var3', '???'),
+            info.Variable('dir1/spam.c', 'func2', 'var4', '???'),
+            info.Variable('dir1/eggs.c', None, 'var1', '???'),
             ])
         self.assertEqual(self.calls, [
             ('iter_symbols', (['dir1'],)),
@@ -76,11 +76,11 @@ class IterStaticsTests(_Base):
 
     def test_typical(self):
         expected = [
-            info.StaticVar('dir1/spam.c', None, 'var1', '???'),
-            info.StaticVar('dir1/spam.c', None, 'var2', '???'),
-            info.StaticVar('dir1/spam.c', None, 'var3', '???'),
-            info.StaticVar('dir1/spam.c', 'func2', 'var4', '???'),
-            info.StaticVar('dir1/eggs.c', None, 'var1', '???'),
+            info.Variable('dir1/spam.c', None, 'var1', '???'),
+            info.Variable('dir1/spam.c', None, 'var2', '???'),
+            info.Variable('dir1/spam.c', None, 'var3', '???'),
+            info.Variable('dir1/spam.c', 'func2', 'var4', '???'),
+            info.Variable('dir1/eggs.c', None, 'var1', '???'),
             ]
         self._return_from_symbols = expected
 

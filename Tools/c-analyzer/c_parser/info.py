@@ -108,9 +108,9 @@ class Symbol(_NTBase,
         # declaration can be not set.
 
 
-class StaticVar(_NTBase,
-                namedtuple('StaticVar', 'filename funcname name vartype')):
-    """Information about a single static variable."""
+class Variable(_NTBase,
+               namedtuple('Variable', 'filename funcname name vartype')):
+    """Information about a single variable declaration."""
 
     __slots__ = ()
 

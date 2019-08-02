@@ -6,13 +6,13 @@ from c_symbols import binary as b_symbols, source as s_symbols
 # still be useful for tool validation.
 
 def statics_from_symbols(dirnames, iter_symbols):
-    """Yield a StaticVar for each found symbol."""
+    """Yield a Variable for each found symbol (static only)."""
     for symbol in iter_symbols(dirnames):
         if symbol.kind is not info.Symbol.KIND.VARIABLE:
             continue
         if symbol.external:
             continue
-        yield info.StaticVar(
+        yield info.Variable(
                 filename=symbol.filename,
                 funcname=symbol.funcname or None,
                 name=symbol.name,
@@ -23,12 +23,16 @@ def statics_from_symbols(dirnames, iter_symbols):
 def iter_statics(dirnames, kind=None, *,
                  _from_symbols=statics_from_symbols,
                  ):
-    """Yield a StaticVar for each one found in the files."""
+    """Yield a Variable for each one found in the files."""
     kind = kind or 'platform'
 
     if kind == 'symbols':
         return _from_symbols(dirnames, s_symbols.iter_symbols)
     elif kind == 'platform':
         return _from_symbols(dirnames, b_symbols.iter_symbols)
-    else:
+    elif kind == 'declarations':
         raise NotImplementedError
+    elif kind == 'preprocessed':
+        raise NotImplementedError
+    else:
+        raise ValueError(f'unsupported kind {kind!r}')
