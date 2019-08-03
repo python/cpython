@@ -632,7 +632,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     /* Adjust the size according to the alignment requirements */
     size = ((size + total_align - 1) / total_align) * total_align;
 
-    stgdict->ffi_type_pointer.alignment = Py_SAFE_DOWNCAST(total_align,
+    stgdict->ffi_type_pointer.alignment = _Py_DOWNCAST(total_align,
                                                            Py_ssize_t,
                                                            unsigned short);
     stgdict->ffi_type_pointer.size = size;

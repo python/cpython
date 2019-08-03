@@ -601,7 +601,7 @@ itertools_teedataobject_impl(PyTypeObject *type, PyObject *it,
         Py_INCREF(tdo->values[i]);
     }
     /* len <= LINKCELLS < INT_MAX */
-    tdo->numread = Py_SAFE_DOWNCAST(len, Py_ssize_t, int);
+    tdo->numread = _Py_DOWNCAST(len, Py_ssize_t, int);
 
     if (len == LINKCELLS) {
         if (next != Py_None) {

@@ -203,7 +203,7 @@ w_pstring(const char *s, Py_ssize_t n, WFILE *p)
 static void
 w_short_pstring(const char *s, Py_ssize_t n, WFILE *p)
 {
-    w_byte(Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char), p);
+    w_byte(_Py_DOWNCAST(n, Py_ssize_t, unsigned char), p);
     w_string(s, n, p);
 }
 

@@ -116,7 +116,7 @@ _pysqlite_long_from_int64(sqlite_int64 value)
     if (value > LONG_MAX || value < LONG_MIN)
         return PyLong_FromLongLong(value);
 # endif
-    return PyLong_FromLong(Py_SAFE_DOWNCAST(value, sqlite_int64, long));
+    return PyLong_FromLong(_Py_DOWNCAST(value, sqlite_int64, long));
 }
 
 sqlite_int64

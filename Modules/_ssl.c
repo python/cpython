@@ -951,7 +951,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     }
     SSL_set_app_data(self->ssl, self);
     if (sock) {
-        SSL_set_fd(self->ssl, Py_SAFE_DOWNCAST(sock->sock_fd, SOCKET_T, int));
+        SSL_set_fd(self->ssl, _Py_DOWNCAST(sock->sock_fd, SOCKET_T, int));
     } else {
         /* BIOs are reference counted and SSL_set_bio borrows our reference.
          * To prevent a double free in memory_bio_dealloc() we need to take an
@@ -2293,7 +2293,7 @@ PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout)
 
     /* Wait until the socket becomes ready */
     PySSL_BEGIN_ALLOW_THREADS
-    nfds = Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int);
+    nfds = _Py_DOWNCAST(s->sock_fd+1, SOCKET_T, int);
     if (writing)
         rc = select(nfds, NULL, &fds, NULL, &tv);
     else

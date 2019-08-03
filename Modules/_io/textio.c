@@ -2781,7 +2781,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
 
     /* Note our initial start point. */
     cookie.start_pos += skip_bytes;
-    cookie.chars_to_skip = Py_SAFE_DOWNCAST(chars_to_skip, Py_ssize_t, int);
+    cookie.chars_to_skip = _Py_DOWNCAST(chars_to_skip, Py_ssize_t, int);
     if (chars_to_skip == 0)
         goto finally;
 
@@ -2841,7 +2841,7 @@ finally:
     Py_DECREF(res);
 
     /* The returned cookie corresponds to the last safe start point. */
-    cookie.chars_to_skip = Py_SAFE_DOWNCAST(chars_to_skip, Py_ssize_t, int);
+    cookie.chars_to_skip = _Py_DOWNCAST(chars_to_skip, Py_ssize_t, int);
     return textiowrapper_build_cookie(&cookie);
 
 fail:

@@ -2443,7 +2443,7 @@ Fail:
     i = -1;
 Return:
     Py_DECREF(it);
-    return Py_SAFE_DOWNCAST(i, Py_ssize_t, int);
+    return _Py_DOWNCAST(i, Py_ssize_t, int);
 }
 
 static int

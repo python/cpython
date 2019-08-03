@@ -724,7 +724,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         }
         PyErr_Format(PyExc_TypeError,
                      "Don't know how to convert parameter %d",
-                     Py_SAFE_DOWNCAST(index, Py_ssize_t, int));
+                     _Py_DOWNCAST(index, Py_ssize_t, int));
         return -1;
     }
 }
@@ -1178,7 +1178,7 @@ PyObject *_ctypes_callproc(PPROC pProc,
 
     if (-1 == _call_function_pointer(flags, pProc, avalues, atypes,
                                      rtype, resbuf,
-                                     Py_SAFE_DOWNCAST(argcount,
+                                     _Py_DOWNCAST(argcount,
                                                       Py_ssize_t,
                                                       int)))
         goto cleanup;

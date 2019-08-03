@@ -1404,7 +1404,7 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
         return 0;
     i = &c->u->u_curblock->b_instr[off];
     i->i_opcode = opcode;
-    i->i_oparg = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
+    i->i_oparg = _Py_DOWNCAST(oparg, Py_ssize_t, int);
     compiler_set_lineno(c, off);
     return 1;
 }
@@ -5846,7 +5846,7 @@ makecode(struct compiler *c, struct assembler *a)
 
     nlocals = PyDict_GET_SIZE(c->u->u_varnames);
     assert(nlocals < INT_MAX);
-    nlocals_int = Py_SAFE_DOWNCAST(nlocals, Py_ssize_t, int);
+    nlocals_int = _Py_DOWNCAST(nlocals, Py_ssize_t, int);
 
     flags = compute_code_flags(c);
     if (flags < 0)
@@ -5865,9 +5865,9 @@ makecode(struct compiler *c, struct assembler *a)
         goto error;
     }
 
-    posonlyargcount = Py_SAFE_DOWNCAST(c->u->u_posonlyargcount, Py_ssize_t, int);
-    posorkeywordargcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
-    kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
+    posonlyargcount = _Py_DOWNCAST(c->u->u_posonlyargcount, Py_ssize_t, int);
+    posorkeywordargcount = _Py_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
+    kwonlyargcount = _Py_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
     maxdepth = stackdepth(c);
     if (maxdepth < 0) {
         goto error;

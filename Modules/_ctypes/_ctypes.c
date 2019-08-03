@@ -2580,7 +2580,7 @@ unique_key(CDataObject *target, Py_ssize_t index)
     size_t bytes_left;
 
     Py_BUILD_ASSERT(sizeof(string) - 1 > sizeof(Py_ssize_t) * 2);
-    cp += sprintf(cp, "%x", Py_SAFE_DOWNCAST(index, Py_ssize_t, int));
+    cp += sprintf(cp, "%x", _Py_DOWNCAST(index, Py_ssize_t, int));
     while (target->b_base) {
         bytes_left = sizeof(string) - (cp - string) - 1;
         /* Hex format needs 2 characters per byte */
@@ -2589,7 +2589,7 @@ unique_key(CDataObject *target, Py_ssize_t index)
                             "ctypes object structure too deep");
             return NULL;
         }
-        cp += sprintf(cp, ":%x", Py_SAFE_DOWNCAST(target->b_index, Py_ssize_t, int));
+        cp += sprintf(cp, ":%x", _Py_DOWNCAST(target->b_index, Py_ssize_t, int));
         target = target->b_base;
     }
     return PyUnicode_FromStringAndSize(string, cp-string);
@@ -3333,7 +3333,7 @@ _check_outarg_type(PyObject *arg, Py_ssize_t index)
 
     PyErr_Format(PyExc_TypeError,
                  "'out' parameter %d must be a pointer type, not %s",
-                 Py_SAFE_DOWNCAST(index, Py_ssize_t, int),
+                 _Py_DOWNCAST(index, Py_ssize_t, int),
                  PyType_Check(arg) ?
                  ((PyTypeObject *)arg)->tp_name :
              Py_TYPE(arg)->tp_name);
@@ -4058,9 +4058,9 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
         return NULL;
 
     if (converters) {
-        int required = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(converters),
+        int required = _Py_DOWNCAST(PyTuple_GET_SIZE(converters),
                                         Py_ssize_t, int);
-        int actual = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(callargs),
+        int actual = _Py_DOWNCAST(PyTuple_GET_SIZE(callargs),
                                       Py_ssize_t, int);
 
         if ((dict->flags & FUNCFLAG_CDECL) == FUNCFLAG_CDECL) {

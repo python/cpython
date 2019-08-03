@@ -385,7 +385,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         cc = FFI_STDCALL;
 #endif
     result = ffi_prep_cif(&p->cif, cc,
-                          Py_SAFE_DOWNCAST(nArgs, Py_ssize_t, int),
+                          _Py_DOWNCAST(nArgs, Py_ssize_t, int),
                           _ctypes_get_ffi_type(restype),
                           &p->atypes[0]);
     if (result != FFI_OK) {

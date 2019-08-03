@@ -930,7 +930,7 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
     /* Return up to n bytes.  If at least one byte is buffered, we
        only return buffered bytes.  Otherwise, we do one raw read. */
 
-    have = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
+    have = _Py_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (have > 0) {
         n = Py_MIN(have, n);
         res = _bufferedreader_read_fast(self, n);
@@ -966,7 +966,7 @@ _buffered_readinto_generic(buffered *self, Py_buffer *buffer, char readinto1)
 
     CHECK_INITIALIZED(self)
 
-    n = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
+    n = _Py_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (n > 0) {
         if (n >= buffer->len) {
             memcpy(buffer->buf, self->buffer + self->pos, buffer->len);
@@ -1080,7 +1080,7 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
     /* First, try to find a line in the buffer. This can run unlocked because
        the calls to the C API are simple enough that they can't trigger
        any thread switch. */
-    n = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
+    n = _Py_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (limit >= 0 && n > limit)
         n = limit;
     start = self->buffer + self->pos;
@@ -1495,7 +1495,7 @@ _bufferedreader_fill_buffer(buffered *self)
 {
     Py_ssize_t start, len, n;
     if (VALID_READ_BUFFER(self))
-        start = Py_SAFE_DOWNCAST(self->read_end, Py_off_t, Py_ssize_t);
+        start = _Py_DOWNCAST(self->read_end, Py_off_t, Py_ssize_t);
     else
         start = 0;
     len = self->buffer_size - start;
@@ -1514,7 +1514,7 @@ _bufferedreader_read_all(buffered *self)
     PyObject *res = NULL, *data = NULL, *tmp = NULL, *chunks = NULL, *readall;
 
     /* First copy what we have in the current buffer. */
-    current_size = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
+    current_size = _Py_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (current_size) {
         data = PyBytes_FromStringAndSize(
             self->buffer + self->pos, current_size);
@@ -1604,7 +1604,7 @@ _bufferedreader_read_fast(buffered *self, Py_ssize_t n)
 {
     Py_ssize_t current_size;
 
-    current_size = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
+    current_size = _Py_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (n <= current_size) {
         /* Fast path: the data to read is fully buffered. */
         PyObject *res = PyBytes_FromStringAndSize(self->buffer + self->pos, n);
@@ -1625,7 +1625,7 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
     Py_ssize_t current_size, remaining, written;
     char *out;
 
-    current_size = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
+    current_size = _Py_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (n <= current_size)
         return _bufferedreader_read_fast(self, n);
 
@@ -1720,7 +1720,7 @@ _bufferedreader_peek_unlocked(buffered *self)
 {
     Py_ssize_t have, r;
 
-    have = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
+    have = _Py_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     /* Constraints:
        1. we don't want to advance the file position.
        2. we don't want to lose block alignment, so we can't shift the buffer
@@ -1862,7 +1862,7 @@ _bufferedwriter_flush_unlocked(buffered *self)
     while (self->write_pos < self->write_end) {
         n = _bufferedwriter_raw_write(self,
             self->buffer + self->write_pos,
-            Py_SAFE_DOWNCAST(self->write_end - self->write_pos,
+            _Py_DOWNCAST(self->write_end - self->write_pos,
                              Py_off_t, Py_ssize_t));
         if (n == -1) {
             goto error;
@@ -1874,7 +1874,7 @@ _bufferedwriter_flush_unlocked(buffered *self)
         }
         self->write_pos += n;
         self->raw_pos = self->write_pos;
-        written += Py_SAFE_DOWNCAST(n, Py_off_t, Py_ssize_t);
+        written += _Py_DOWNCAST(n, Py_off_t, Py_ssize_t);
         /* Partial writes can return successfully when interrupted by a
            signal (see write(2)).  We must run signal handlers before
            blocking another time, possibly indefinitely. */
@@ -1931,7 +1931,7 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
         self->pos = 0;
         self->raw_pos = 0;
     }
-    avail = Py_SAFE_DOWNCAST(self->buffer_size - self->pos, Py_off_t, Py_ssize_t);
+    avail = _Py_DOWNCAST(self->buffer_size - self->pos, Py_off_t, Py_ssize_t);
     if (buffer->len <= avail) {
         memcpy(self->buffer + self->pos, buffer->buf, buffer->len);
         if (!VALID_WRITE_BUFFER(self) || self->write_pos > self->pos) {
@@ -1955,13 +1955,13 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
         /* Make some place by shifting the buffer. */
         assert(VALID_WRITE_BUFFER(self));
         memmove(self->buffer, self->buffer + self->write_pos,
-                Py_SAFE_DOWNCAST(self->write_end - self->write_pos,
+                _Py_DOWNCAST(self->write_end - self->write_pos,
                                  Py_off_t, Py_ssize_t));
         self->write_end -= self->write_pos;
         self->raw_pos -= self->write_pos;
         self->pos -= self->write_pos;
         self->write_pos = 0;
-        avail = Py_SAFE_DOWNCAST(self->buffer_size - self->write_end,
+        avail = _Py_DOWNCAST(self->buffer_size - self->write_end,
                                  Py_off_t, Py_ssize_t);
         if (buffer->len <= avail) {
             /* Everything can be buffered */

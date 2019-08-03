@@ -133,7 +133,7 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
         if (len > (Py_ssize_t)MUNCH_SIZE)
             process = MUNCH_SIZE;
         else
-            process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
+            process = _Py_DOWNCAST(len, Py_ssize_t, unsigned int);
         if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
             _setException(PyExc_ValueError);
             break;

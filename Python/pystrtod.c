@@ -614,7 +614,7 @@ ensure_decimal_point(char* buffer, size_t buf_size, int precision)
     digits_start = p;
     while (*p && Py_ISDIGIT(*p))
         ++p;
-    digit_count = Py_SAFE_DOWNCAST(p - digits_start, Py_ssize_t, int);
+    digit_count = _Py_DOWNCAST(p - digits_start, Py_ssize_t, int);
 
     if (*p == '.') {
         if (Py_ISDIGIT(*(p+1))) {
@@ -681,7 +681,7 @@ ensure_decimal_point(char* buffer, size_t buf_size, int precision)
            repr/str builtins and those never want an upper case 'E' */
         written = PyOS_snprintf(p, buf_avail, "e%+.02d", digit_count-1);
         if (!(0 <= written &&
-              written < Py_SAFE_DOWNCAST(buf_avail, size_t, int)))
+              written < _Py_DOWNCAST(buf_avail, size_t, int)))
             /* output truncated, or something else bad happened */
             return NULL;
         remove_trailing_zeros(buffer);

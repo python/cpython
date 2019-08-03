@@ -42,7 +42,7 @@ Used in:  Py_ARITHMETIC_RIGHT_SHIFT
 
 Py_DEBUG
 Meaning:  Extra checks compiled in for debug mode.
-Used in:  Py_SAFE_DOWNCAST
+Used in:  _Py_DOWNCAST
 
 **************************************************************************/
 
@@ -309,17 +309,17 @@ extern "C" {
  */
 #define Py_FORCE_EXPANSION(X) X
 
-/* Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW)
+/* _Py_DOWNCAST(VALUE, WIDE, NARROW)
  * Cast VALUE to type NARROW from type WIDE.  In Py_DEBUG mode, this
  * assert-fails if any information is lost.
  * Caution:
  *    VALUE may be evaluated more than once.
  */
 #ifdef Py_DEBUG
-#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
+#define _Py_DOWNCAST(VALUE, WIDE, NARROW) \
     (assert((WIDE)(NARROW)(VALUE) == (VALUE)), (NARROW)(VALUE))
 #else
-#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
+#define _Py_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
 #endif
 
 /* Py_SET_ERRNO_ON_MATH_ERROR(x)

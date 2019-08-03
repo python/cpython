@@ -7389,7 +7389,7 @@ decode_code_page_errors(UINT code_page,
     assert(out - *buf <= *bufsize);
     *bufsize = out - *buf;
     /* (in - startin) <= size and size is an int */
-    ret = Py_SAFE_DOWNCAST(in - startin, Py_ssize_t, int);
+    ret = _Py_DOWNCAST(in - startin, Py_ssize_t, int);
 
 error:
     Py_XDECREF(encoding_obj);

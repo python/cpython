@@ -1143,7 +1143,7 @@ find_syllable(const char *str, int *len, int *pos, int count, int column)
     *len = -1;
     for (i = 0; i < count; i++) {
         const char *s = hangul_syllables[i][column];
-        len1 = Py_SAFE_DOWNCAST(strlen(s), size_t, int);
+        len1 = _Py_DOWNCAST(strlen(s), size_t, int);
         if (len1 <= *len)
             continue;
         if (strncmp(str, s, len1) == 0) {

@@ -320,7 +320,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         lineno = type == STRING ? tok->first_lineno : tok->lineno;
         line_start = type == STRING ? tok->multi_line_start : tok->line_start;
         if (a != NULL && a >= line_start) {
-            col_offset = Py_SAFE_DOWNCAST(a - line_start,
+            col_offset = _Py_DOWNCAST(a - line_start,
                                           intptr_t, int);
         }
         else {
@@ -328,7 +328,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         }
 
         if (b != NULL && b >= tok->line_start) {
-            end_col_offset = Py_SAFE_DOWNCAST(b - tok->line_start,
+            end_col_offset = _Py_DOWNCAST(b - tok->line_start,
                                               intptr_t, int);
         }
         else {

@@ -592,7 +592,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                     *retDataBuf = (BYTE*)PyUnicode_AsWideCharString(value, &len);
                     if (*retDataBuf == NULL)
                         return FALSE;
-                    *retDataSize = Py_SAFE_DOWNCAST(
+                    *retDataSize = _Py_DOWNCAST(
                         (len + 1) * sizeof(wchar_t),
                         Py_ssize_t, DWORD);
                 }
@@ -631,7 +631,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                     wstr = PyUnicode_AsUnicodeAndSize(t, &len);
                     if (wstr == NULL)
                         return FALSE;
-                    size += Py_SAFE_DOWNCAST((len + 1) * sizeof(wchar_t),
+                    size += _Py_DOWNCAST((len + 1) * sizeof(wchar_t),
                                              size_t, DWORD);
                 }
 
@@ -688,7 +688,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                     PyErr_NoMemory();
                     return FALSE;
                 }
-                *retDataSize = Py_SAFE_DOWNCAST(view.len, Py_ssize_t, DWORD);
+                *retDataSize = _Py_DOWNCAST(view.len, Py_ssize_t, DWORD);
                 memcpy(*retDataBuf, view.buf, view.len);
                 PyBuffer_Release(&view);
             }

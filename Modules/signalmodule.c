@@ -281,7 +281,7 @@ trip_signal(int sig_num)
     */
 
 #ifdef MS_WINDOWS
-    fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
+    fd = _Py_DOWNCAST(wakeup.fd, SOCKET_T, int);
 #else
     fd = wakeup.fd;
 #endif
@@ -792,7 +792,7 @@ PySignal_SetWakeupFd(int fd)
         fd = -1;
 
 #ifdef MS_WINDOWS
-    old_fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
+    old_fd = _Py_DOWNCAST(wakeup.fd, SOCKET_T, int);
 #else
     old_fd = wakeup.fd;
 #endif

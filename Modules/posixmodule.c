@@ -3958,7 +3958,7 @@ os__getvolumepathname_impl(PyObject *module, path_t *path)
 
     Py_BEGIN_ALLOW_THREADS
     ret = GetVolumePathNameW(path->wide, mountpath,
-                             Py_SAFE_DOWNCAST(buflen, size_t, DWORD));
+                             _Py_DOWNCAST(buflen, size_t, DWORD));
     Py_END_ALLOW_THREADS
 
     if (!ret) {
@@ -6189,7 +6189,7 @@ convert_sched_param(PyObject *param, struct sched_param *res)
         PyErr_SetString(PyExc_OverflowError, "sched_priority out of range");
         return 0;
     }
-    res->sched_priority = Py_SAFE_DOWNCAST(priority, long, int);
+    res->sched_priority = _Py_DOWNCAST(priority, long, int);
     return 1;
 }
 #endif /* defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM) */

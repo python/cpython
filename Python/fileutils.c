@@ -832,7 +832,7 @@ FILE_TIME_to_time_t_nsec(FILETIME *in_ptr, time_t *time_out, int* nsec_out)
     __int64 in;
     memcpy(&in, in_ptr, sizeof(in));
     *nsec_out = (int)(in % 10000000) * 100; /* FILETIME is in units of 100 nsec. */
-    *time_out = Py_SAFE_DOWNCAST((in / 10000000) - secs_between_epochs, __int64, time_t);
+    *time_out = _Py_DOWNCAST((in / 10000000) - secs_between_epochs, __int64, time_t);
 }
 
 void

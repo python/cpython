@@ -814,10 +814,10 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
     /* See if the socket is ready */
     Py_BEGIN_ALLOW_THREADS;
     if (writing)
-        n = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
+        n = select(_Py_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
                    NULL, &fds, &efds, tvp);
     else
-        n = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
+        n = select(_Py_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
                    &fds, NULL, &efds, tvp);
     Py_END_ALLOW_THREADS;
 #endif

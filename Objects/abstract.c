@@ -2088,7 +2088,7 @@ PySequence_Contains(PyObject *seq, PyObject *ob)
     if (sqm != NULL && sqm->sq_contains != NULL)
         return (*sqm->sq_contains)(seq, ob);
     result = _PySequence_IterSearch(seq, ob, PY_ITERSEARCH_CONTAINS);
-    return Py_SAFE_DOWNCAST(result, Py_ssize_t, int);
+    return _Py_DOWNCAST(result, Py_ssize_t, int);
 }
 
 /* Backwards compatibility */
