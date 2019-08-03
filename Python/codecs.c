@@ -50,7 +50,7 @@ int PyCodec_Register(PyObject *search_function)
 }
 
 /* Convert a string to a normalized Python string: all characters are
-   converted to lower case, spaces are replaced with underscores. */
+   converted to lower case, spaces and hyphens are replaced with underscores. */
 
 static
 PyObject *normalizestring(const char *string)
@@ -70,8 +70,8 @@ PyObject *normalizestring(const char *string)
         return PyErr_NoMemory();
     for (i = 0; i < len; i++) {
         char ch = string[i];
-        if (ch == ' ')
-            ch = '-';
+        if (ch == ' ' || ch == '-')
+            ch = '_';
         else
             ch = Py_TOLOWER(Py_CHARMASK(ch));
         p[i] = ch;
