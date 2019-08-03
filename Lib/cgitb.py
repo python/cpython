@@ -43,6 +43,8 @@ Content-Type: text/html
 </table> </table> </table> </table> </table> </font> </font> </font>'''
 
 __UNDEF__ = []                          # a special sentinel object
+__GETATTR_FAILED__ = '<em>&lt;ungettable attribute&gt;</em>'
+__HTML_REPR_FAILED__ = '<em>&lt;unreprable value&gt;</em>'
 def small(text):
     if text:
         return '<small>' + text + '</small>'
@@ -74,8 +76,31 @@ def lookup(name, frame, locals):
                 return 'builtin', builtins[name]
         else:
             if hasattr(builtins, name):
-                return 'builtin', getattr(builtins, name)
+                return 'builtin', _safe_getattr(builtins, name)
     return None, __UNDEF__
+
+class _safe_call:
+    def __init__(self, func, failval):
+        self.func = func
+        self.failval = failval
+    def __call__(self, *args):
+        if len(args) == 1 and (
+                args[0] is __HTML_REPR_FAILED__
+                or args[0] is __GETATTR_FAILED__
+                ):
+            return args[0]
+        try:
+            return self.func(*args)
+        except:
+            return self.failval
+
+def _pydoc_repr(value, sub='html'):
+    return getattr(pydoc, 'html').repr(value)
+
+_safe_getattr = _safe_call(getattr, __GETATTR_FAILED__)
+_safe_html_repr = _safe_call(_pydoc_repr, __HTML_REPR_FAILED__)
+_safe_text_repr = _safe_call(lambda x: _pydoc_repr(x, 'text'),
+                             'unprintable value')
 
 def scanvars(reader, frame, locals):
     """Scan one logical line of Python and look up values of variables used."""
@@ -85,7 +110,7 @@ def scanvars(reader, frame, locals):
         if ttype == tokenize.NAME and token not in keyword.kwlist:
             if lasttoken == '.':
                 if parent is not __UNDEF__:
-                    value = getattr(parent, token, __UNDEF__)
+                    value = _safe_getattr(parent, token, __UNDEF__)
                     vars.append((prefix + token, prefix, value))
             else:
                 where, value = lookup(token, frame, locals)
@@ -127,7 +152,7 @@ function calls leading up to the error, in the order they occurred.</p>'''
             call = 'in ' + strong(pydoc.html.escape(func))
             if func != "<module>":
                 call += inspect.formatargvalues(args, varargs, varkw, locals,
-                    formatvalue=lambda value: '=' + pydoc.html.repr(value))
+                    formatvalue=lambda value: '=' + _safe_html_repr(value))
 
         highlight = {}
         def reader(lnum=[lnum]):
@@ -161,7 +186,7 @@ function calls leading up to the error, in the order they occurred.</p>'''
                     name = strong(name)
                 else:
                     name = where + strong(name.split('.')[-1])
-                dump.append('%s&nbsp;= %s' % (name, pydoc.html.repr(value)))
+                dump.append('%s&nbsp;= %s' % (name, _safe_html_repr(value)))
             else:
                 dump.append(name + ' <em>undefined</em>')
 
@@ -174,7 +199,7 @@ function calls leading up to the error, in the order they occurred.</p>'''
                                 pydoc.html.escape(str(evalue)))]
     for name in dir(evalue):
         if name[:1] == '_': continue
-        value = pydoc.html.repr(getattr(evalue, name))
+        value = _safe_html_repr(_safe_getattr(evalue, name))
         exception.append('\n<br>%s%s&nbsp;=\n%s' % (indent, name, value))
 
     return head + ''.join(frames) + ''.join(exception) + '''
@@ -211,7 +236,7 @@ function calls leading up to the error, in the order they occurred.
             call = 'in ' + func
             if func != "<module>":
                 call += inspect.formatargvalues(args, varargs, varkw, locals,
-                    formatvalue=lambda value: '=' + pydoc.text.repr(value))
+                    formatvalue=lambda value: '=' + _safe_text_repr(value))
 
         highlight = {}
         def reader(lnum=[lnum]):
@@ -235,7 +260,7 @@ function calls leading up to the error, in the order they occurred.
             if value is not __UNDEF__:
                 if where == 'global': name = 'global ' + name
                 elif where != 'local': name = where + name.split('.')[-1]
-                dump.append('%s = %s' % (name, pydoc.text.repr(value)))
+                dump.append('%s = %s' % (name, _safe_text_repr(value)))
             else:
                 dump.append(name + ' undefined')
 
@@ -244,7 +269,7 @@ function calls leading up to the error, in the order they occurred.
 
     exception = ['%s: %s' % (str(etype), str(evalue))]
     for name in dir(evalue):
-        value = pydoc.text.repr(getattr(evalue, name))
+        value = _safe_text_repr(_safe_getattr(evalue, name))
         exception.append('\n%s%s = %s' % (" "*4, name, value))
 
     return head + ''.join(frames) + ''.join(exception) + '''
