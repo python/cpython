@@ -1968,7 +1968,6 @@ _Py_is_reparse_link(IN const wchar_t *path, IN ULONG reparse_tag,
     wchar_t *normpath = NULL;
     wchar_t *mountpath = NULL;
 
-    // Default:
     *is_link = FALSE;
 
     if (reparse_tag == IO_REPARSE_TAG_SYMLINK) {

@@ -7643,7 +7643,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     PyObject *result;
     BOOL is_link;
     USHORT pname_len;
-        
+
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
     reparse_point_handle = CreateFileW(
@@ -7678,7 +7678,8 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     }
 
     if (!_Py_is_reparse_link(path->wide, rdb->ReparseTag, &is_link, TRUE)) {
-        return path_error(path);
+        return PyErr_SetExcFromWindowsErrWithFilenameObject(
+            PyExc_WindowsError, GetLastError(), path);
     }
     if (!is_link) {
         PyErr_SetString(PyExc_ValueError,
@@ -12512,7 +12513,8 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
 
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
     if (!_Py_is_reparse_link(joined_path, reparse_tag, &is_link, TRUE)) {
-        PyErr_SetFromWindowsErr(GetLastError());
+        PyErr_SetExcFromWindowsErrWithFilenameObject(
+            PyExc_WindowsError, GetLastError(), entry->path);
         goto error;
     }
     _Py_attribute_data_to_stat(&file_info, is_link, &entry->win32_lstat);
