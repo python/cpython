@@ -1,0 +1,1 @@
+Increase the ``hover_delay`` in IDLE's test_tooltip.

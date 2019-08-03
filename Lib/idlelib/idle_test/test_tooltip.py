@@ -102,6 +102,7 @@ class HovertipTest(unittest.TestCase):
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
     def test_showtip_on_mouse_enter_hover_delay(self):
+        # Fragile test -- see issue 35771.
         tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=100)
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
@@ -110,7 +111,7 @@ class HovertipTest(unittest.TestCase):
         self.button.event_generate('<Enter>', x=0, y=0)
         root_update()
         self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
-        time.sleep(0.1)
+        time.sleep(0.15)
         root_update()
         self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
@@ -136,7 +137,7 @@ class HovertipTest(unittest.TestCase):
         root_update()
         self.button.event_generate('<Leave>', x=0, y=0)
         root_update()
-        time.sleep(0.1)
+        time.sleep(0.15)
         root_update()
         self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
         self.assertEqual(tooltip.showtip.call_args_list, [])
