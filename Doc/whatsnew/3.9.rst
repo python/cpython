@@ -75,6 +75,12 @@ New Features
 Other Language Changes
 ======================
 
+* :func:`builtins.__import__` now raises :exc:`ImportError` instead of
+  :exc:`ValueError` as used to occur when a relative import went past
+  its top-level package.
+  (Contributed by Ngalim Siregar in :issue:`37444`.)
+
+
 * Python now gets the absolute path of the script filename specified on
   the command line (ex: ``python3 script.py``): the ``__file__`` attribute of
   the ``__main__`` module, ``sys.argv[0]`` and ``sys.path[0]`` become an
@@ -118,6 +124,13 @@ pprint
 :mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
 (Contributed by Carl Bordum Hansen in :issue:`37376`.)
 
+importlib
+---------
+
+To improve consistency with import statements, :func:`importlib.util.resolve_name`
+now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
+import attempts.
+(Contributed by Ngalim Siregar in :issue:`37444`.)
 
 Optimizations
 =============
@@ -180,4 +193,11 @@ Porting to Python 3.9
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+Changes in the Python API
+-------------------------
 
+* :func:`builtins.__import__` and :func:`importlib.util.resolve_name` now raise
+  :exc:`ImportError` where it previously raised :exc:`ValueError`. Callers
+  catching the specific exception type and supporting both Python 3.9 and
+  earlier versions will need to catch both:
+  ``except (ImportError, ValueError):``

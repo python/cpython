@@ -1671,7 +1671,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             goto error;
         }
         else if (last_dot == -1) {
-            _PyErr_SetString(tstate, PyExc_ValueError,
+            _PyErr_SetString(tstate, PyExc_ImportError,
                              "attempted relative import beyond top-level "
                              "package");
             goto error;

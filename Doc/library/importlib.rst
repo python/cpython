@@ -1433,12 +1433,17 @@ an :term:`importer`.
    ``importlib.util.resolve_name('sys', __package__)`` without doing a
    check to see if the **package** argument is needed.
 
-   :exc:`ValueError` is raised if **name** is a relative module name but
-   package is a false value (e.g. ``None`` or the empty string).
-   :exc:`ValueError` is also raised a relative name would escape its containing
+   :exc:`ImportError` is raised if **name** is a relative module name but
+   **package** is a false value (e.g. ``None`` or the empty string).
+   :exc:`ImportError` is also raised a relative name would escape its containing
    package (e.g. requesting ``..bacon`` from within the ``spam`` package).
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.9
+      To improve consistency with import statements, raise
+      :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
+      import attempts.
 
 .. function:: find_spec(name, package=None)
 
