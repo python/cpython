@@ -1,0 +1,3 @@
+Add definition of THREAD_STACK_SIZE for AIX in Python/thread_pthread.h
+The default thread stacksize caused crashes with the default recursion limit
+Patch by M Felt
