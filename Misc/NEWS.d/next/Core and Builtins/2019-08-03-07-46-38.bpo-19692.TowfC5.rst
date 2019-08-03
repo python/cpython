@@ -1,0 +1,1 @@
+Rename :meth:`Py_SAFE_DOWNCAST` to :meth:`_Py_DOWNCAST`
