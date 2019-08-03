@@ -460,7 +460,7 @@ PyOS_AfterFork(void)
 void _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
 void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
                                 BOOL, struct _Py_stat_struct *);
-PyAPI_FUNC(int) _Py_is_reparse_link(const wchar_t*, ULONG, BOOL*, BOOL);
+int _Py_is_reparse_link(const wchar_t*, ULONG, BOOL*, BOOL);
 #endif
 
 #ifdef MS_WINDOWS

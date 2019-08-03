@@ -1981,6 +1981,9 @@ _Py_is_reparse_link(IN const wchar_t *path, IN ULONG reparse_tag,
         success = FALSE;
 
         buflen = GetFullPathNameW(path, 0, NULL, NULL);
+        if (!buflen) {
+            goto cleanup;
+        }
         normpath = PyMem_RawMalloc(buflen * sizeof(wchar_t));
         /* Volume path should be shorter than entire path */
         mountpath = PyMem_RawMalloc(buflen * sizeof(wchar_t));
