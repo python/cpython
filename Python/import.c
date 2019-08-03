@@ -1786,7 +1786,7 @@ PyObject *
 PyImport_GetModule(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *mod = NULL;
+    PyObject *mod;
 
     mod = import_get_module(tstate, name);
     if (mod != NULL && mod != Py_None) {
