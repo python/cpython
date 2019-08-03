@@ -1044,10 +1044,11 @@ class _BaseNetwork(_IPAddressBase):
 
         Returns:
             A boolean, True if the address is not reserved per
-            iana-ipv4-special-registry or iana-ipv6-special-registry.
+            iana-ipv4-special-registry or iana-ipv6-special-registry
+            and is not a multicast address.
 
         """
-        return not self.is_private
+        return (not self.is_private and not self.is_multicast)
 
     @property
     def is_unspecified(self):
@@ -1282,7 +1283,9 @@ class IPv4Address(_BaseV4, _BaseAddress):
     @property
     @functools.lru_cache()
     def is_global(self):
-        return self not in self._constants._public_network and not self.is_private
+        return (self not in self._constants._public_network and
+                not self.is_private and
+                not self.is_multicast)
 
     @property
     def is_multicast(self):
@@ -1471,7 +1474,8 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         """
         return (not (self.network_address in IPv4Network('100.64.0.0/10') and
                     self.broadcast_address in IPv4Network('100.64.0.0/10')) and
-                not self.is_private)
+                not self.is_private and
+                not self.is_multicast)
 
 
 class _IPv4Constants:
@@ -1905,10 +1909,10 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
         Returns:
             A boolean, true if the address is not reserved per
-            iana-ipv6-special-registry.
+            iana-ipv6-special-registry and is not a multicast address
 
         """
-        return not self.is_private
+        return (not self.is_private and not self.is_multicast)
 
     @property
     def is_unspecified(self):
