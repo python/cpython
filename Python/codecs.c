@@ -73,7 +73,7 @@ PyObject *normalizestring(const char *string)
         if (ch == ' ')
             ch = '-';
         else
-            ch = Py_TOLOWER(Py_CHARMASK(ch));
+            ch = Py_TOLOWER(ch);
         p[i] = ch;
     }
     p[i] = '\0';
