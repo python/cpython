@@ -79,7 +79,7 @@ Other Language Changes
   :exc:`ValueError` as used to occur when a relative import went past
   its top-level package.
   (Contributed by Ngalim Siregar in :issue:`37444`.)
-  
+
 
 * Python now gets the absolute path of the script filename specified on
   the command line (ex: ``python3 script.py``): the ``__file__`` attribute of
@@ -192,7 +192,7 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
-* :func:`builtins.__import__` and:func:`importlib.util.resolve_name` now raise
+* :func:`builtins.__import__` and :func:`importlib.util.resolve_name` now raise
   :exc:`ImportError` where it previously raised :exc:`ValueError`. Callers
   catching the specific exception type and supporting both Python 3.9 and
   earlier versions will need to catch both:
