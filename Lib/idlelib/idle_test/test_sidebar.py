@@ -240,7 +240,6 @@ class LineNumbersTest(unittest.TestCase):
         self.assert_sidebar_n_lines(1)
         self.assertEqual(get_width(), 1)
 
-    @unittest.skipIf(platform == 'darwin', 'test tk version dependent')
     def test_click_selection(self):
         self.linenumber.show_sidebar()
         self.text.insert('1.0', 'one\ntwo\nthree\nfour\n')
@@ -254,7 +253,6 @@ class LineNumbersTest(unittest.TestCase):
 
         self.assertEqual(self.get_selection(), ('2.0', '3.0'))
 
-    @unittest.skipIf(platform == 'darwin', 'test tk version dependent')
     def test_drag_selection_down(self):
         self.linenumber.show_sidebar()
         self.text.insert('1.0', 'one\ntwo\nthree\nfour\nfive\n')
@@ -274,7 +272,6 @@ class LineNumbersTest(unittest.TestCase):
         self.root.update()
         self.assertEqual(self.get_selection(), ('2.0', '5.0'))
 
-    @unittest.skipIf(platform == 'darwin', 'test tk version dependent')
     def test_drag_selection_up(self):
         self.linenumber.show_sidebar()
         self.text.insert('1.0', 'one\ntwo\nthree\nfour\nfive\n')

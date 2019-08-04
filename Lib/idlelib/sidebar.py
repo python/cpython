@@ -207,7 +207,7 @@ class LineNumbers(BaseSideBar):
         start_line = None
         def b1_mousedown_handler(event):
             # select the entire line
-            lineno = self.editwin.getlineno(f"@0,{event.y}")
+            lineno = int(float(self.sidebar_text.index(f"@0,{event.y}")))
             self.text.tag_remove("sel", "1.0", "end")
             self.text.tag_add("sel", f"{lineno}.0", f"{lineno+1}.0")
             self.text.mark_set("insert", f"{lineno+1}.0")
@@ -225,7 +225,7 @@ class LineNumbers(BaseSideBar):
 
         def drag_update_selection_and_insert_mark(y_coord):
             """Helper function for drag and selection event handlers."""
-            lineno = self.editwin.getlineno(f"@0,{y_coord}")
+            lineno = int(float(self.sidebar_text.index(f"@0,{y_coord}")))
             a, b = sorted([start_line, lineno])
             self.text.tag_remove("sel", "1.0", "end")
             self.text.tag_add("sel", f"{a}.0", f"{b+1}.0")
