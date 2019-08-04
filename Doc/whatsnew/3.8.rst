@@ -1228,11 +1228,6 @@ The following features and APIs have been removed from Python 3.8:
 * Removed the ``doctype()`` method of :class:`~xml.etree.ElementTree.XMLParser`.
   (Contributed by Serhiy Storchaka in :issue:`29209`.)
 
-* The abstract base classes in :mod:`collections.abc` no longer are
-  exposed in the regular :mod:`collections` module.  This will help
-  create a clearer distinction between the concrete classes and the abstract
-  base classes.
-
 * "unicode_internal" codec is removed.
   (Contributed by Inada Naoki in :issue:`36297`.)
 
