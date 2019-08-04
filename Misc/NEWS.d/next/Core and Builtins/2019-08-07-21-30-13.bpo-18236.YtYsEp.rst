@@ -1,0 +1,4 @@
+The definition of "whitespace" provided by :meth:`str.isspace` and
+:c:func:`Py_UNICODE_ISSPACE` now follows Unicode's ``White_Space`` property.
+This has the effect that the four characters ``\x1c``, ``\x1d``, ``\x1e``,
+``\x1f`` are no longer treated as whitespace.  Patch by Greg Price.

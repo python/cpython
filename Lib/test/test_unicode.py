@@ -625,13 +625,21 @@ class UnicodeTest(string_tests.CommonTest,
 
     @support.requires_resource('cpu')
     def test_isspace_invariant(self):
+        '''
+        Before Python 3.9, `str.isspace` used a certain formula
+        combining the General Category and the Bidirectional Class.
+
+        Since Python 3.9, we use the White_Space property that Unicode
+        now provides.  Check that these differ only on U+001C..U+001F .
+        '''
         for codepoint in range(sys.maxunicode + 1):
             char = chr(codepoint)
             bidirectional = unicodedata.bidirectional(char)
             category = unicodedata.category(char)
             self.assertEqual(char.isspace(),
-                             (bidirectional in ('WS', 'B', 'S')
-                              or category == 'Zs'))
+                             ((bidirectional in ('WS', 'B', 'S')
+                               or category == 'Zs')
+                              and codepoint not in range(0x1c, 0x20)))
 
     def test_isalnum(self):
         super().test_isalnum()
@@ -704,6 +712,21 @@ class UnicodeTest(string_tests.CommonTest,
         for ch in ['\U00011065', '\U0001D7F6', '\U00011066',
                    '\U000104A0', '\U0001F107']:
             self.assertTrue(ch.isnumeric(), '{!a} is numeric.'.format(ch))
+
+    def test_bytes_consistency(self):
+        '''Check str and bytes agree on character properties within ASCII.'''
+        for codepoint in range(0x80):
+            char = chr(codepoint)
+            byte = bytes([codepoint])
+            # Including the codepoint in the tuple gets it printed on failure.
+            self.assertEqual(
+                (codepoint, char.islower(), char.isupper(), char.isalpha(),
+                 char.isdigit(), char.isalnum(), char.isspace()),
+                (codepoint, byte.islower(), byte.isupper(), byte.isalpha(),
+                 byte.isdigit(), byte.isalnum(), byte.isspace()))
+            self.assertEqual(
+                (codepoint, ord(char.lower()), ord(char.upper())),
+                (codepoint, ord(byte.lower()), ord(byte.upper())))
 
     def test_isidentifier(self):
         self.assertTrue("a".isidentifier())

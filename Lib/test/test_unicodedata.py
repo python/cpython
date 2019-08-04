@@ -17,7 +17,7 @@ from test.support import open_urlresource, requires_resource, script_helper
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = 'e728278035eb76cf92d86f07852266b0433f16a5'
+    expectedchecksum = 'd0652da04440a4ea690fbd6fd3bf79af39090547'
 
     @requires_resource('cpu')
     def test_method_checksum(self):
