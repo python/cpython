@@ -204,10 +204,19 @@ class LineNumbers(BaseSideBar):
                 bind_mouse_event(event_name,
                                  target_event_name=f'<Button-{button}>')
 
+        # This is set by b1_mousedown_handler() and read by
+        # drag_update_selection_and_insert_mark(), to know where dragging
+        # began.
         start_line = None
+        # These are set by b1_motion_handler() and read by selection_handler().
+        # last_y is passed this way since the mouse Y-coordinate is not
+        # available on selection event objects.  last_yview is passed this way
+        # to recognize scrolling while the mouse isn't moving.
+        last_y = last_yview = None
+
         def b1_mousedown_handler(event):
             # select the entire line
-            lineno = self.editwin.getlineno(f"@0,{event.y}")
+            lineno = int(float(self.sidebar_text.index(f"@0,{event.y}")))
             self.text.tag_remove("sel", "1.0", "end")
             self.text.tag_add("sel", f"{lineno}.0", f"{lineno+1}.0")
             self.text.mark_set("insert", f"{lineno+1}.0")
@@ -217,15 +226,20 @@ class LineNumbers(BaseSideBar):
             start_line = lineno
         self.sidebar_text.bind('<Button-1>', b1_mousedown_handler)
 
-        # These are set by b1_motion_handler() and read by selection_handler();
-        # see below.  last_y is passed this way since the mouse Y-coordinate
-        # is not available on selection event objects.  last_yview is passed
-        # this way to recognize scrolling while the mouse isn't moving.
-        last_y = last_yview = None
+        def b1_mouseup_handler(event):
+            # On mouse up, we're no longer dragging.  Set the shared persistent
+            # variables to None to represent this.
+            nonlocal start_line
+            nonlocal last_y
+            nonlocal last_yview
+            start_line = None
+            last_y = None
+            last_yview = None
+        self.sidebar_text.bind('<ButtonRelease-1>', b1_mouseup_handler)
 
         def drag_update_selection_and_insert_mark(y_coord):
             """Helper function for drag and selection event handlers."""
-            lineno = self.editwin.getlineno(f"@0,{y_coord}")
+            lineno = int(float(self.sidebar_text.index(f"@0,{y_coord}")))
             a, b = sorted([start_line, lineno])
             self.text.tag_remove("sel", "1.0", "end")
             self.text.tag_add("sel", f"{a}.0", f"{b+1}.0")
@@ -253,6 +267,9 @@ class LineNumbers(BaseSideBar):
         # while the mouse isn't moving, leading to the above fix not scrolling
         # properly.
         def selection_handler(event):
+            if last_yview is None:
+                # This logic is only needed while dragging.
+                return
             yview = self.sidebar_text.yview()
             if yview != last_yview:
                 self.text.yview_moveto(yview[0])
