@@ -104,7 +104,7 @@ What platform-specific GUI toolkits exist for Python?
 ========================================================
 
 By installing the `PyObjc Objective-C bridge
-<https://pythonhosted.org/pyobjc/>`_, Python programs can use Mac OS X's
+<https://pypi.org/project/pyobjc/>`_, Python programs can use Mac OS X's
 Cocoa libraries.
 
 :ref:`Pythonwin <windows-faq>` by Mark Hammond includes an interface to the

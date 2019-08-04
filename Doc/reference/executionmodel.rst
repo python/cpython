@@ -243,7 +243,7 @@ re-entering the offending piece of code from the top).
 
 When an exception is not handled at all, the interpreter terminates execution of
 the program, or returns to its interactive main loop.  In either case, it prints
-a stack backtrace, except when the exception is :exc:`SystemExit`.
+a stack traceback, except when the exception is :exc:`SystemExit`.
 
 Exceptions are identified by class instances.  The :keyword:`except` clause is
 selected depending on the class of the instance: it must reference the class of

@@ -1,31 +1,28 @@
-# We import importlib *ASAP* in order to test #15386
-import importlib
+import builtins
+import contextlib
+import errno
+import glob
 import importlib.util
 from importlib._bootstrap_external import _get_sourcefile
-import builtins
 import marshal
 import os
-import platform
 import py_compile
 import random
 import shutil
-import subprocess
 import stat
+import subprocess
 import sys
+import textwrap
 import threading
 import time
 import unittest
-import unittest.mock as mock
-import textwrap
-import errno
-import contextlib
-import glob
+from unittest import mock
 
 import test.support
 from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
-    make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
-    unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
+    TESTFN, forget, is_jython,
+    make_legacy_pyc, rmtree, swap_attr, swap_item, temp_umask,
+    unlink, unload, cpython_only, TESTFN_UNENCODABLE,
     temp_dir, DirsOnSysPath)
 from test.support import script_helper
 from test.test_importlib.util import uncache
@@ -674,12 +671,7 @@ func_filename = func.__code__.co_filename
         foreign_code = importlib.import_module.__code__
         pos = constants.index(1)
         constants[pos] = foreign_code
-        code = type(code)(code.co_argcount, code.co_kwonlyargcount,
-                          code.co_nlocals, code.co_stacksize,
-                          code.co_flags, code.co_code, tuple(constants),
-                          code.co_names, code.co_varnames, code.co_filename,
-                          code.co_name, code.co_firstlineno, code.co_lnotab,
-                          code.co_freevars, code.co_cellvars)
+        code = code.replace(co_consts=tuple(constants))
         with open(self.compiled_name, "wb") as f:
             f.write(header)
             marshal.dump(code, f)

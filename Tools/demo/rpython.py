@@ -19,7 +19,7 @@ def main():
     port = PORT
     i = host.find(':')
     if i >= 0:
-        port = int(port[i+1:])
+        port = int(host[i+1:])
         host = host[:i]
     command = ' '.join(sys.argv[2:])
     with socket(AF_INET, SOCK_STREAM) as s:

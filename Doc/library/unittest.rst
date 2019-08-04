@@ -510,7 +510,8 @@ that is broken and will fail, but shouldn't be counted as a failure on a
 :class:`TestResult`.
 
 Skipping a test is simply a matter of using the :func:`skip` :term:`decorator`
-or one of its conditional variants.
+or one of its conditional variants, calling :meth:`TestCase.skipTest` within a
+:meth:`~TestCase.setUp` or test method, or raising :exc:`SkipTest` directly.
 
 Basic skipping looks like this::
 
@@ -531,16 +532,23 @@ Basic skipping looks like this::
            # windows specific testing code
            pass
 
+       def test_maybe_skipped(self):
+           if not external_resource_available():
+               self.skipTest("external resource not available")
+           # test code that depends on the external resource
+           pass
+
 This is the output of running the example above in verbose mode::
 
    test_format (__main__.MyTestCase) ... skipped 'not supported in this library version'
    test_nothing (__main__.MyTestCase) ... skipped 'demonstrating skipping'
+   test_maybe_skipped (__main__.MyTestCase) ... skipped 'external resource not available'
    test_windows_support (__main__.MyTestCase) ... skipped 'requires Windows'
 
    ----------------------------------------------------------------------
-   Ran 3 tests in 0.005s
+   Ran 4 tests in 0.005s
 
-   OK (skipped=3)
+   OK (skipped=4)
 
 Classes can be skipped just like methods::
 
@@ -568,7 +576,7 @@ the test unless the passed object has a certain attribute::
            return lambda func: func
        return unittest.skip("{!r} doesn't have {!r}".format(obj, attr))
 
-The following decorators implement test skipping and expected failures:
+The following decorators and exception implement test skipping and expected failures:
 
 .. decorator:: skip(reason)
 
@@ -1419,7 +1427,7 @@ Test cases
          :class:`TextTestResult` in Python 3.2.
 
 
-   .. method:: addCleanup(function, *args, **kwargs)
+   .. method:: addCleanup(function, /, *args, **kwargs)
 
       Add a function to be called after :meth:`tearDown` to cleanup resources
       used during the test. Functions will be called in reverse order to the
@@ -1448,7 +1456,7 @@ Test cases
 
       .. versionadded:: 3.1
 
-   .. classmethod:: addClassCleanup(function, *args, **kwargs)
+   .. classmethod:: addClassCleanup(function, /, *args, **kwargs)
 
       Add a function to be called after :meth:`tearDownClass` to cleanup
       resources used during the test class. Functions will be called in reverse
@@ -2305,7 +2313,7 @@ To add cleanup code that must be run even in the case of an exception, use
 ``addModuleCleanup``:
 
 
-.. function:: addModuleCleanup(function, *args, **kwargs)
+.. function:: addModuleCleanup(function, /, *args, **kwargs)
 
    Add a function to be called after :func:`tearDownModule` to cleanup
    resources used during the test class. Functions will be called in reverse

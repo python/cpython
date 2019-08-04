@@ -50,7 +50,7 @@ default title and context menu.
 
 On macOS, there is one application menu.  It dynamically changes according
 to the window currently selected.  It has an IDLE menu, and some entries
-described below are moved around to conform to Apple guidlines.
+described below are moved around to conform to Apple guidelines.
 
 File menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -207,8 +207,12 @@ Strip trailing whitespace
 Run menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. _python-shell:
+
 Python Shell
    Open or wake up the Python Shell window.
+
+.. _check-module:
 
 Check Module
    Check the syntax of the module currently open in the Editor window. If the
@@ -217,14 +221,24 @@ Check Module
    there is a syntax error, the approximate location is indicated in the
    Editor window.
 
+.. _run-module:
+
 Run Module
-   Do Check Module (above).  If no error, restart the shell to clean the
+   Do :ref:`Check Module <check-module>`.  If no error, restart the shell to clean the
    environment, then execute the module.  Output is displayed in the Shell
    window.  Note that output requires use of ``print`` or ``write``.
    When execution is complete, the Shell retains focus and displays a prompt.
    At this point, one may interactively explore the result of execution.
    This is similar to executing a file with ``python -i file`` at a command
    line.
+
+.. _run-custom:
+
+Run... Customized
+   Same as :ref:`Run Module <run-module>`, but run the module with customized
+   settings.  *Command Line Arguments* extend :data:`sys.argv` as if passed
+   on a command line. The module can be run in the Shell without restarting.
+
 
 Shell menu (Shell window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -276,20 +290,32 @@ Options menu (Shell and Editor)
 Configure IDLE
    Open a configuration dialog and change preferences for the following:
    fonts, indentation, keybindings, text color themes, startup windows and
-   size, additional help sources, and extensions.  On macOS,  open the
+   size, additional help sources, and extensions.  On macOS, open the
    configuration dialog by selecting Preferences in the application
-   menu. For more, see
+   menu. For more details, see
    :ref:`Setting preferences <preferences>` under Help and preferences.
 
-Zoom/Restore Height
-   Toggles the window between normal size and maximum height. The initial size
-   defaults to 40 lines by 80 chars unless changed on the General tab of the
-   Configure IDLE dialog.
+   Most configuration options apply to all windows or all future windows.
+   The option items below only apply to the active window.
 
 Show/Hide Code Context (Editor Window only)
    Open a pane at the top of the edit window which shows the block context
    of the code which has scrolled above the top of the window.  See
-   :ref:`Code Context <code-context>` in the Editing and Navigation section below.
+   :ref:`Code Context <code-context>` in the Editing and Navigation section
+   below.
+
+Show/Hide Line Numbers (Editor Window only)
+   Open a column to the left of the edit window which shows the number
+   of each line of text.  The default is off, which may be changed in the
+   preferences (see :ref:`Setting preferences <preferences>`).
+
+Zoom/Restore Height
+   Toggles the window between normal size and maximum height. The initial size
+   defaults to 40 lines by 80 chars unless changed on the General tab of the
+   Configure IDLE dialog.  The maximum height for a screen is determined by
+   momentarily maximizing a window the first time one is zoomed on the screen.
+   Changing screen settings may invalidate the saved height.  This toggle has
+   no effect when a window is maximized.
 
 Window menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -696,9 +722,16 @@ or ``print`` or ``write`` to sys.stdout or sys.stderr,
 IDLE should be started in a command line window.  The secondary subprocess
 will then be attached to that window for input and output.
 
+The IDLE code running in the execution process adds frames to the call stack
+that would not be there otherwise.  IDLE wraps ``sys.getrecursionlimit`` and
+``sys.setrecursionlimit`` to reduce the effect of the additional stack frames.
+
 If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
 IDLE's changes are lost and input from the keyboard and output to the screen
 will not work correctly.
+
+When user code raises SystemExit either directly or by calling sys.exit, IDLE
+returns to a Shell prompt instead of exiting.
 
 User output in Shell
 ^^^^^^^^^^^^^^^^^^^^
@@ -724,11 +757,9 @@ to begin after the next tab stop. (They occur every 8 'characters').  Newline
 characters cause following text to appear on a new line.  Other control
 characters are ignored or displayed as a space, box, or something else,
 depending on the operating system and font.  (Moving the text cursor through
-such output with arrow keys may exhibit some surprising spacing behavior.)
+such output with arrow keys may exhibit some surprising spacing behavior.) ::
 
-.. code-block:: none
-
-   >>> s = 'a\tb\a<\x02><\r>\bc\nd'
+   >>> s = 'a\tb\a<\x02><\r>\bc\nd'  # Enter 22 chars.
    >>> len(s)
    14
    >>> s  # Display repr(s)
@@ -771,7 +802,7 @@ facilitate development of tkinter programs.  Enter ``import tkinter as tk;
 root = tk.Tk()`` in standard Python and nothing appears.  Enter the same
 in IDLE and a tk window appears.  In standard Python, one must also enter
 ``root.update()`` to see the window.  IDLE does the equivalent in the
-background, about 20 times a second, which is about every 50 milleseconds.
+background, about 20 times a second, which is about every 50 milliseconds.
 Next enter ``b = tk.Button(root, text='button'); b.pack()``.  Again,
 nothing visibly changes in standard Python until one enters ``root.update()``.
 

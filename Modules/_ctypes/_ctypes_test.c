@@ -87,7 +87,7 @@ EXPORT(void)testfunc_array(int values[4])
 EXPORT(long double)testfunc_Ddd(double a, double b)
 {
     long double result = (long double)(a * b);
-    printf("testfunc_Ddd(%p, %p)\n", &a, &b);
+    printf("testfunc_Ddd(%p, %p)\n", (void *)&a, (void *)&b);
     printf("testfunc_Ddd(%g, %g)\n", a, b);
     return result;
 }
@@ -95,7 +95,7 @@ EXPORT(long double)testfunc_Ddd(double a, double b)
 EXPORT(long double)testfunc_DDD(long double a, long double b)
 {
     long double result = a * b;
-    printf("testfunc_DDD(%p, %p)\n", &a, &b);
+    printf("testfunc_DDD(%p, %p)\n", (void *)&a, (void *)&b);
     printf("testfunc_DDD(%Lg, %Lg)\n", a, b);
     return result;
 }
@@ -103,7 +103,7 @@ EXPORT(long double)testfunc_DDD(long double a, long double b)
 EXPORT(int)testfunc_iii(int a, int b)
 {
     int result = a * b;
-    printf("testfunc_iii(%p, %p)\n", &a, &b);
+    printf("testfunc_iii(%p, %p)\n", (void *)&a, (void *)&b);
     return result;
 }
 
@@ -361,7 +361,7 @@ static void _xxx_init(void *(*Xalloc)(int), void (*Xfree)(void *))
 {
     void *ptr;
 
-    printf("_xxx_init got %p %p\n", Xalloc, Xfree);
+    printf("_xxx_init got %p %p\n", (void *)Xalloc, (void *)Xfree);
     printf("calling\n");
     ptr = Xalloc(32);
     Xfree(ptr);
@@ -424,30 +424,6 @@ struct BITS {
      short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
 #endif
 };
-
-EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
-{
-    switch (name) {
-    case 'A': bits->A = value; break;
-    case 'B': bits->B = value; break;
-    case 'C': bits->C = value; break;
-    case 'D': bits->D = value; break;
-    case 'E': bits->E = value; break;
-    case 'F': bits->F = value; break;
-    case 'G': bits->G = value; break;
-    case 'H': bits->H = value; break;
-    case 'I': bits->I = value; break;
-#ifdef SIGNED_SHORT_BITFIELDS
-    case 'M': bits->M = value; break;
-    case 'N': bits->N = value; break;
-    case 'O': bits->O = value; break;
-    case 'P': bits->P = value; break;
-    case 'Q': bits->Q = value; break;
-    case 'R': bits->R = value; break;
-    case 'S': bits->S = value; break;
-#endif
-    }
-}
 
 EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
 {

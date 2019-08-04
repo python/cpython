@@ -160,7 +160,8 @@ Functions for sequences
 
    The *weights* or *cum_weights* can use any numeric type that interoperates
    with the :class:`float` values returned by :func:`random` (that includes
-   integers, floats, and fractions but excludes decimals).
+   integers, floats, and fractions but excludes decimals).  Weights are
+   assumed to be non-negative.
 
    For a given seed, the :func:`choices` function with equal weighting
    typically produces a different sequence than repeated calls to
@@ -309,6 +310,11 @@ be found in any statistics text.
 
 Alternative Generator
 ---------------------
+
+.. class:: Random([seed])
+
+   Class that implements the default pseudo-random number generator used by the
+   :mod:`random` module.
 
 .. class:: SystemRandom([seed])
 

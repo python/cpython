@@ -7,18 +7,21 @@ averages, variance, and standard deviation.
 Calculating averages
 --------------------
 
-==================  =============================================
+==================  ==================================================
 Function            Description
-==================  =============================================
+==================  ==================================================
 mean                Arithmetic mean (average) of data.
+fmean               Fast, floating point arithmetic mean.
+geometric_mean      Geometric mean of data.
 harmonic_mean       Harmonic mean of data.
 median              Median (middle value) of data.
 median_low          Low median of data.
 median_high         High median of data.
 median_grouped      Median, or 50th percentile, of grouped data.
 mode                Mode (most common value) of data.
-multimode           List of modes (most common values of data)
-==================  =============================================
+multimode           List of modes (most common values of data).
+quantiles           Divide data into intervals with equal probability.
+==================  ==================================================
 
 Calculate the arithmetic mean ("the average") of data:
 
@@ -77,11 +80,25 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 
 """
 
-__all__ = [ 'StatisticsError', 'NormalDist',
-            'pstdev', 'pvariance', 'stdev', 'variance',
-            'median',  'median_low', 'median_high', 'median_grouped',
-            'mean', 'mode', 'multimode', 'harmonic_mean', 'fmean',
-          ]
+__all__ = [
+    'NormalDist',
+    'StatisticsError',
+    'fmean',
+    'geometric_mean',
+    'harmonic_mean',
+    'mean',
+    'median',
+    'median_grouped',
+    'median_high',
+    'median_low',
+    'mode',
+    'multimode',
+    'pstdev',
+    'pvariance',
+    'quantiles',
+    'stdev',
+    'variance',
+]
 
 import math
 import numbers
@@ -300,8 +317,9 @@ def mean(data):
     assert count == n
     return _convert(total/n, T)
 
+
 def fmean(data):
-    """ Convert data to floats and compute the arithmetic mean.
+    """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
     The result is highly accurate but not as perfect as mean().
@@ -309,24 +327,43 @@ def fmean(data):
 
     >>> fmean([3.5, 4.0, 5.25])
     4.25
-
     """
     try:
         n = len(data)
     except TypeError:
         # Handle iterators that do not define __len__().
         n = 0
-        def count(x):
+        def count(iterable):
             nonlocal n
-            n += 1
-            return x
-        total = fsum(map(count, data))
+            for n, x in enumerate(iterable, start=1):
+                yield x
+        total = fsum(count(data))
     else:
         total = fsum(data)
     try:
         return total / n
     except ZeroDivisionError:
         raise StatisticsError('fmean requires at least one data point') from None
+
+
+def geometric_mean(data):
+    """Convert data to floats and compute the geometric mean.
+
+    Raises a StatisticsError if the input dataset is empty,
+    if it contains a zero, or if it contains a negative value.
+
+    No special efforts are made to achieve exact results.
+    (However, this may change in the future.)
+
+    >>> round(geometric_mean([54, 24, 36]), 9)
+    36.0
+    """
+    try:
+        return exp(fmean(map(log, data)))
+    except ValueError:
+        raise StatisticsError('geometric mean requires a non-empty dataset '
+                              ' containing positive numbers') from None
+
 
 def harmonic_mean(data):
     """Return the harmonic mean of data.
@@ -525,22 +562,104 @@ def mode(data):
 
 
 def multimode(data):
-    """ Return a list of the most frequently occurring values.
+    """Return a list of the most frequently occurring values.
 
-        Will return more than one result if there are multiple modes
-        or an empty list if *data* is empty.
+    Will return more than one result if there are multiple modes
+    or an empty list if *data* is empty.
 
-        >>> multimode('aabbbbbbbbcc')
-        ['b']
-        >>> multimode('aabbbbccddddeeffffgg')
-        ['b', 'd', 'f']
-        >>> multimode('')
-        []
-
+    >>> multimode('aabbbbbbbbcc')
+    ['b']
+    >>> multimode('aabbbbccddddeeffffgg')
+    ['b', 'd', 'f']
+    >>> multimode('')
+    []
     """
     counts = Counter(iter(data)).most_common()
     maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
     return list(map(itemgetter(0), mode_items))
+
+
+# Notes on methods for computing quantiles
+# ----------------------------------------
+#
+# There is no one perfect way to compute quantiles.  Here we offer
+# two methods that serve common needs.  Most other packages
+# surveyed offered at least one or both of these two, making them
+# "standard" in the sense of "widely-adopted and reproducible".
+# They are also easy to explain, easy to compute manually, and have
+# straight-forward interpretations that aren't surprising.
+
+# The default method is known as "R6", "PERCENTILE.EXC", or "expected
+# value of rank order statistics". The alternative method is known as
+# "R7", "PERCENTILE.INC", or "mode of rank order statistics".
+
+# For sample data where there is a positive probability for values
+# beyond the range of the data, the R6 exclusive method is a
+# reasonable choice.  Consider a random sample of nine values from a
+# population with a uniform distribution from 0.0 to 100.0.  The
+# distribution of the third ranked sample point is described by
+# betavariate(alpha=3, beta=7) which has mode=0.250, median=0.286, and
+# mean=0.300.  Only the latter (which corresponds with R6) gives the
+# desired cut point with 30% of the population falling below that
+# value, making it comparable to a result from an inv_cdf() function.
+
+# For describing population data where the end points are known to
+# be included in the data, the R7 inclusive method is a reasonable
+# choice.  Instead of the mean, it uses the mode of the beta
+# distribution for the interior points.  Per Hyndman & Fan, "One nice
+# property is that the vertices of Q7(p) divide the range into n - 1
+# intervals, and exactly 100p% of the intervals lie to the left of
+# Q7(p) and 100(1 - p)% of the intervals lie to the right of Q7(p)."
+
+# If needed, other methods could be added.  However, for now, the
+# position is that fewer options make for easier choices and that
+# external packages can be used for anything more advanced.
+
+def quantiles(dist, /, *, n=4, method='exclusive'):
+    """Divide *dist* into *n* continuous intervals with equal probability.
+
+    Returns a list of (n - 1) cut points separating the intervals.
+
+    Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
+    Set *n* to 100 for percentiles which gives the 99 cuts points that
+    separate *dist* in to 100 equal sized groups.
+
+    The *dist* can be any iterable containing sample data or it can be
+    an instance of a class that defines an inv_cdf() method.  For sample
+    data, the cut points are linearly interpolated between data points.
+
+    If *method* is set to *inclusive*, *dist* is treated as population
+    data.  The minimum value is treated as the 0th percentile and the
+    maximum value is treated as the 100th percentile.
+    """
+    if n < 1:
+        raise StatisticsError('n must be at least 1')
+    if hasattr(dist, 'inv_cdf'):
+        return [dist.inv_cdf(i / n) for i in range(1, n)]
+    data = sorted(dist)
+    ld = len(data)
+    if ld < 2:
+        raise StatisticsError('must have at least two data points')
+    if method == 'inclusive':
+        m = ld - 1
+        result = []
+        for i in range(1, n):
+            j = i * m // n
+            delta = i*m - j*n
+            interpolated = (data[j] * (n - delta) + data[j+1] * delta) / n
+            result.append(interpolated)
+        return result
+    if method == 'exclusive':
+        m = ld + 1
+        result = []
+        for i in range(1, n):
+            j = i * m // n                               # rescale i to m/n
+            j = 1 if j < 1 else ld-1 if j > ld-1 else j  # clamp to 1 .. ld-1
+            delta = i*m - j*n                            # exact integer math
+            interpolated = (data[j-1] * (n - delta) + data[j] * delta) / n
+            result.append(interpolated)
+        return result
+    raise ValueError(f'Unknown method: {method!r}')
 
 
 # === Measures of spread ===
@@ -702,61 +821,66 @@ def pstdev(data, mu=None):
     except AttributeError:
         return math.sqrt(var)
 
+
 ## Normal Distribution #####################################################
 
 class NormalDist:
-    'Normal distribution of a random variable'
+    "Normal distribution of a random variable"
     # https://en.wikipedia.org/wiki/Normal_distribution
     # https://en.wikipedia.org/wiki/Variance#Properties
 
-    __slots__ = {'mu': 'Arithmetic mean of a normal distribution',
-                 'sigma': 'Standard deviation of a normal distribution'}
+    __slots__ = {
+        '_mu': 'Arithmetic mean of a normal distribution',
+        '_sigma': 'Standard deviation of a normal distribution',
+    }
 
     def __init__(self, mu=0.0, sigma=1.0):
-        'NormalDist where mu is the mean and sigma is the standard deviation.'
+        "NormalDist where mu is the mean and sigma is the standard deviation."
         if sigma < 0.0:
             raise StatisticsError('sigma must be non-negative')
-        self.mu = mu
-        self.sigma = sigma
+        self._mu = mu
+        self._sigma = sigma
 
     @classmethod
     def from_samples(cls, data):
-        'Make a normal distribution instance from sample data.'
+        "Make a normal distribution instance from sample data."
         if not isinstance(data, (list, tuple)):
             data = list(data)
         xbar = fmean(data)
         return cls(xbar, stdev(data, xbar))
 
-    def samples(self, n, seed=None):
-        'Generate *n* samples for a given mean and standard deviation.'
+    def samples(self, n, *, seed=None):
+        "Generate *n* samples for a given mean and standard deviation."
         gauss = random.gauss if seed is None else random.Random(seed).gauss
-        mu, sigma = self.mu, self.sigma
+        mu, sigma = self._mu, self._sigma
         return [gauss(mu, sigma) for i in range(n)]
 
     def pdf(self, x):
-        'Probability density function.  P(x <= X < x+dx) / dx'
-        variance = self.sigma ** 2.0
+        "Probability density function.  P(x <= X < x+dx) / dx"
+        variance = self._sigma ** 2.0
         if not variance:
             raise StatisticsError('pdf() not defined when sigma is zero')
-        return exp((x - self.mu)**2.0 / (-2.0*variance)) / sqrt(tau * variance)
+        return exp((x - self._mu)**2.0 / (-2.0*variance)) / sqrt(tau*variance)
 
     def cdf(self, x):
-        'Cumulative distribution function.  P(X <= x)'
-        if not self.sigma:
+        "Cumulative distribution function.  P(X <= x)"
+        if not self._sigma:
             raise StatisticsError('cdf() not defined when sigma is zero')
-        return 0.5 * (1.0 + erf((x - self.mu) / (self.sigma * sqrt(2.0))))
+        return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * sqrt(2.0))))
 
     def inv_cdf(self, p):
-        '''Inverse cumulative distribution function.  x : P(X <= x) = p
+        """Inverse cumulative distribution function.  x : P(X <= x) = p
 
-        Finds the value of the random variable such that the probability of the
-        variable being less than or equal to that value equals the given probability.
+        Finds the value of the random variable such that the probability of
+        the variable being less than or equal to that value equals the given
+        probability.
 
-        This function is also called the percent point function or quantile function.
-        '''
-        if (p <= 0.0 or p >= 1.0):
+        This function is also called the percent point function or quantile
+        function.
+        """
+        if p <= 0.0 or p >= 1.0:
             raise StatisticsError('p must be in the range 0.0 < p < 1.0')
-        if self.sigma <= 0.0:
+        if self._sigma <= 0.0:
             raise StatisticsError('cdf() not defined when sigma at or below zero')
 
         # There is no closed-form solution to the inverse CDF for the normal
@@ -785,7 +909,7 @@ class NormalDist:
                          4.23133_30701_60091_1252e+1) * r +
                          1.0)
             x = num / den
-            return self.mu + (x * self.sigma)
+            return self._mu + (x * self._sigma)
         r = p if q <= 0.0 else 1.0 - p
         r = sqrt(-log(r))
         if r <= 5.0:
@@ -827,10 +951,10 @@ class NormalDist:
         x = num / den
         if q < 0.0:
             x = -x
-        return self.mu + (x * self.sigma)
+        return self._mu + (x * self._sigma)
 
     def overlap(self, other):
-        '''Compute the overlapping coefficient (OVL) between two normal distributions.
+        """Compute the overlapping coefficient (OVL) between two normal distributions.
 
         Measures the agreement between two normal probability distributions.
         Returns a value between 0.0 and 1.0 giving the overlapping area in
@@ -840,7 +964,7 @@ class NormalDist:
             >>> N2 = NormalDist(3.2, 2.0)
             >>> N1.overlap(N2)
             0.8035050657330205
-        '''
+        """
         # See: "The overlapping coefficient as a measure of agreement between
         # probability distributions and point estimation of the overlap of two
         # normal densities" -- Henry F. Inman and Edwin L. Bradley Jr
@@ -848,38 +972,38 @@ class NormalDist:
         if not isinstance(other, NormalDist):
             raise TypeError('Expected another NormalDist instance')
         X, Y = self, other
-        if (Y.sigma, Y.mu) < (X.sigma, X.mu):   # sort to assure commutativity
+        if (Y._sigma, Y._mu) < (X._sigma, X._mu):   # sort to assure commutativity
             X, Y = Y, X
         X_var, Y_var = X.variance, Y.variance
         if not X_var or not Y_var:
             raise StatisticsError('overlap() not defined when sigma is zero')
         dv = Y_var - X_var
-        dm = fabs(Y.mu - X.mu)
+        dm = fabs(Y._mu - X._mu)
         if not dv:
-            return 1.0 - erf(dm / (2.0 * X.sigma * sqrt(2.0)))
-        a = X.mu * Y_var - Y.mu * X_var
-        b = X.sigma * Y.sigma * sqrt(dm**2.0 + dv * log(Y_var / X_var))
+            return 1.0 - erf(dm / (2.0 * X._sigma * sqrt(2.0)))
+        a = X._mu * Y_var - Y._mu * X_var
+        b = X._sigma * Y._sigma * sqrt(dm**2.0 + dv * log(Y_var / X_var))
         x1 = (a + b) / dv
         x2 = (a - b) / dv
         return 1.0 - (fabs(Y.cdf(x1) - X.cdf(x1)) + fabs(Y.cdf(x2) - X.cdf(x2)))
 
     @property
     def mean(self):
-        'Arithmetic mean of the normal distribution.'
-        return self.mu
+        "Arithmetic mean of the normal distribution."
+        return self._mu
 
     @property
     def stdev(self):
-        'Standard deviation of the normal distribution.'
-        return self.sigma
+        "Standard deviation of the normal distribution."
+        return self._sigma
 
     @property
     def variance(self):
-        'Square of the standard deviation.'
-        return self.sigma ** 2.0
+        "Square of the standard deviation."
+        return self._sigma ** 2.0
 
     def __add__(x1, x2):
-        '''Add a constant or another NormalDist instance.
+        """Add a constant or another NormalDist instance.
 
         If *other* is a constant, translate mu by the constant,
         leaving sigma unchanged.
@@ -887,13 +1011,13 @@ class NormalDist:
         If *other* is a NormalDist, add both the means and the variances.
         Mathematically, this works only if the two distributions are
         independent or if they are jointly normally distributed.
-        '''
+        """
         if isinstance(x2, NormalDist):
-            return NormalDist(x1.mu + x2.mu, hypot(x1.sigma, x2.sigma))
-        return NormalDist(x1.mu + x2, x1.sigma)
+            return NormalDist(x1._mu + x2._mu, hypot(x1._sigma, x2._sigma))
+        return NormalDist(x1._mu + x2, x1._sigma)
 
     def __sub__(x1, x2):
-        '''Subtract a constant or another NormalDist instance.
+        """Subtract a constant or another NormalDist instance.
 
         If *other* is a constant, translate by the constant mu,
         leaving sigma unchanged.
@@ -901,51 +1025,55 @@ class NormalDist:
         If *other* is a NormalDist, subtract the means and add the variances.
         Mathematically, this works only if the two distributions are
         independent or if they are jointly normally distributed.
-        '''
+        """
         if isinstance(x2, NormalDist):
-            return NormalDist(x1.mu - x2.mu, hypot(x1.sigma, x2.sigma))
-        return NormalDist(x1.mu - x2, x1.sigma)
+            return NormalDist(x1._mu - x2._mu, hypot(x1._sigma, x2._sigma))
+        return NormalDist(x1._mu - x2, x1._sigma)
 
     def __mul__(x1, x2):
-        '''Multiply both mu and sigma by a constant.
+        """Multiply both mu and sigma by a constant.
 
         Used for rescaling, perhaps to change measurement units.
         Sigma is scaled with the absolute value of the constant.
-        '''
-        return NormalDist(x1.mu * x2, x1.sigma * fabs(x2))
+        """
+        return NormalDist(x1._mu * x2, x1._sigma * fabs(x2))
 
     def __truediv__(x1, x2):
-        '''Divide both mu and sigma by a constant.
+        """Divide both mu and sigma by a constant.
 
         Used for rescaling, perhaps to change measurement units.
         Sigma is scaled with the absolute value of the constant.
-        '''
-        return NormalDist(x1.mu / x2, x1.sigma / fabs(x2))
+        """
+        return NormalDist(x1._mu / x2, x1._sigma / fabs(x2))
 
     def __pos__(x1):
-        'Return a copy of the instance.'
-        return NormalDist(x1.mu, x1.sigma)
+        "Return a copy of the instance."
+        return NormalDist(x1._mu, x1._sigma)
 
     def __neg__(x1):
-        'Negates mu while keeping sigma the same.'
-        return NormalDist(-x1.mu, x1.sigma)
+        "Negates mu while keeping sigma the same."
+        return NormalDist(-x1._mu, x1._sigma)
 
     __radd__ = __add__
 
     def __rsub__(x1, x2):
-        'Subtract a NormalDist from a constant or another NormalDist.'
+        "Subtract a NormalDist from a constant or another NormalDist."
         return -(x1 - x2)
 
     __rmul__ = __mul__
 
     def __eq__(x1, x2):
-        'Two NormalDist objects are equal if their mu and sigma are both equal.'
+        "Two NormalDist objects are equal if their mu and sigma are both equal."
         if not isinstance(x2, NormalDist):
             return NotImplemented
-        return (x1.mu, x2.sigma) == (x2.mu, x2.sigma)
+        return (x1._mu, x2._sigma) == (x2._mu, x2._sigma)
+
+    def __hash__(self):
+        "NormalDist objects hash equal if their mu and sigma are both equal."
+        return hash((self._mu, self._sigma))
 
     def __repr__(self):
-        return f'{type(self).__name__}(mu={self.mu!r}, sigma={self.sigma!r})'
+        return f'{type(self).__name__}(mu={self._mu!r}, sigma={self._sigma!r})'
 
 
 if __name__ == '__main__':
@@ -962,8 +1090,8 @@ if __name__ == '__main__':
     g2 = NormalDist(-5, 25)
 
     # Test scaling by a constant
-    assert (g1 * 5 / 5).mu == g1.mu
-    assert (g1 * 5 / 5).sigma == g1.sigma
+    assert (g1 * 5 / 5).mean == g1.mean
+    assert (g1 * 5 / 5).stdev == g1.stdev
 
     n = 100_000
     G1 = g1.samples(n)
@@ -987,8 +1115,8 @@ if __name__ == '__main__':
         print(NormalDist.from_samples(map(func, repeat(const), G1)))
 
     def assert_close(G1, G2):
-        assert isclose(G1.mu, G1.mu, rel_tol=0.01), (G1, G2)
-        assert isclose(G1.sigma, G2.sigma, rel_tol=0.01), (G1, G2)
+        assert isclose(G1.mean, G1.mean, rel_tol=0.01), (G1, G2)
+        assert isclose(G1.stdev, G2.stdev, rel_tol=0.01), (G1, G2)
 
     X = NormalDist(-105, 73)
     Y = NormalDist(31, 47)

@@ -2,7 +2,7 @@
 Contents are subject to revision at any time, without notice.
 
 
-Help => About IDLE: diplay About Idle dialog
+Help => About IDLE: display About Idle dialog
 
 <to be moved here from help_about.py>
 
@@ -257,7 +257,7 @@ def copy_strip():
     same, help.html can be backported.  The internal Python version
     number is not displayed.  If maintenance idle.rst diverges from
     the master version, then instead of backporting help.html from
-    master, repeat the proceedure above to generate a maintenance
+    master, repeat the procedure above to generate a maintenance
     version.
     """
     src = join(abspath(dirname(dirname(dirname(__file__)))),

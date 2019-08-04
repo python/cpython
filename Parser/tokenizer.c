@@ -2,7 +2,6 @@
 /* Tokenizer implementation */
 
 #include "Python.h"
-#include "pgenheaders.h"
 
 #include <ctype.h>
 #include <assert.h>
@@ -957,6 +956,7 @@ tok_nextc(struct tok_state *tok)
             while (!done) {
                 Py_ssize_t curstart = tok->start == NULL ? -1 :
                           tok->start - tok->buf;
+                Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
                 Py_ssize_t curvalid = tok->inp - tok->buf;
                 Py_ssize_t newsize = curvalid + BUFSIZ;
                 char *newbuf = tok->buf;
@@ -969,6 +969,7 @@ tok_nextc(struct tok_state *tok)
                 }
                 tok->buf = newbuf;
                 tok->cur = tok->buf + cur;
+                tok->multi_line_start = tok->buf + cur_multi_line_start;
                 tok->line_start = tok->cur;
                 tok->inp = tok->buf + curvalid;
                 tok->end = tok->buf + newsize;
@@ -984,7 +985,8 @@ tok_nextc(struct tok_state *tok)
                         return EOF;
                     /* Last line does not end in \n,
                        fake one */
-                    strcpy(tok->inp, "\n");
+                    if (tok->inp[-1] != '\n')
+                        strcpy(tok->inp, "\n");
                 }
                 tok->inp = strchr(tok->inp, '\0');
                 done = tok->inp[-1] == '\n';
@@ -1269,20 +1271,22 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             /* This is a type comment if we matched all of type_comment_prefix. */
             if (!*prefix) {
                 int is_type_ignore = 1;
+                const char *ignore_end = p + 6;
                 tok_backup(tok, c);  /* don't eat the newline or EOF */
 
                 type_start = p;
 
-                is_type_ignore = tok->cur >= p + 6 && memcmp(p, "ignore", 6) == 0;
-                p += 6;
-                while (is_type_ignore && p < tok->cur) {
-                    if (*p == '#')
-                        break;
-                    is_type_ignore = is_type_ignore && (*p == ' ' || *p == '\t');
-                    p++;
-                }
+                /* A TYPE_IGNORE is "type: ignore" followed by the end of the token
+                 * or anything ASCII and non-alphanumeric. */
+                is_type_ignore = (
+                    tok->cur >= ignore_end && memcmp(p, "ignore", 6) == 0
+                    && !(tok->cur > ignore_end
+                         && ((unsigned char)ignore_end[0] >= 128 || Py_ISALNUM(ignore_end[0]))));
 
                 if (is_type_ignore) {
+                    *p_start = (char *) ignore_end;
+                    *p_end = tok->cur;
+
                     /* If this type ignore is the only thing on the line, consume the newline also. */
                     if (blankline) {
                         tok_nextc(tok);
@@ -1677,6 +1681,14 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             tok->done = E_LINECONT;
             tok->cur = tok->inp;
             return ERRORTOKEN;
+        }
+        c = tok_nextc(tok);
+        if (c == EOF) {
+            tok->done = E_EOF;
+            tok->cur = tok->inp;
+            return ERRORTOKEN;
+        } else {
+            tok_backup(tok, c);
         }
         tok->cont_line = 1;
         goto again; /* Read next line */
