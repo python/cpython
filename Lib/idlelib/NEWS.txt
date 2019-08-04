@@ -3,6 +3,9 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-37748: Reorder the Run menu.  Put the most common choice,
+Run Module, at the top.
+
 bpo-37692: Improve highlight config sample with example shell
 interaction and better labels for shell elements.
 
