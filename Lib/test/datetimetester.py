@@ -2,11 +2,8 @@
 
 See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
 """
-from test.support import is_resource_enabled
-
 import itertools
 import bisect
-
 import copy
 import decimal
 import sys
@@ -22,6 +19,7 @@ from array import array
 from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
+from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -52,18 +50,6 @@ OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
 # XXX Copied from test_float.
 INF = float("inf")
 NAN = float("nan")
-
-
-class ComparesEqualClass(object):
-    """
-    A class that is always equal to whatever you compare it to.
-    """
-
-    def __eq__(self, other):
-        return True
-
-    def __ne__(self, other):
-        return False
 
 
 #############################################################################
@@ -353,6 +339,18 @@ class TestTimeZone(unittest.TestCase):
         self.assertTrue(timezone(ZERO) != None)
         self.assertFalse(timezone(ZERO) ==  None)
 
+        tz = timezone(ZERO)
+        self.assertTrue(tz == ALWAYS_EQ)
+        self.assertFalse(tz != ALWAYS_EQ)
+        self.assertTrue(tz < LARGEST)
+        self.assertFalse(tz > LARGEST)
+        self.assertTrue(tz <= LARGEST)
+        self.assertFalse(tz >= LARGEST)
+        self.assertFalse(tz < SMALLEST)
+        self.assertTrue(tz > SMALLEST)
+        self.assertFalse(tz <= SMALLEST)
+        self.assertTrue(tz >= SMALLEST)
+
     def test_aware_datetime(self):
         # test that timezone instances can be used by datetime
         t = datetime(1, 1, 1)
@@ -414,10 +412,21 @@ class HarmlessMixedComparison:
 
         # Comparison to objects of unsupported types should return
         # NotImplemented which falls back to the right hand side's __eq__
-        # method. In this case, ComparesEqualClass.__eq__ always returns True.
-        # ComparesEqualClass.__ne__ always returns False.
-        self.assertTrue(me == ComparesEqualClass())
-        self.assertFalse(me != ComparesEqualClass())
+        # method. In this case, ALWAYS_EQ.__eq__ always returns True.
+        # ALWAYS_EQ.__ne__ always returns False.
+        self.assertTrue(me == ALWAYS_EQ)
+        self.assertFalse(me != ALWAYS_EQ)
+
+        # If the other class explicitly defines ordering
+        # relative to our class, it is allowed to do so
+        self.assertTrue(me < LARGEST)
+        self.assertFalse(me > LARGEST)
+        self.assertTrue(me <= LARGEST)
+        self.assertFalse(me >= LARGEST)
+        self.assertFalse(me < SMALLEST)
+        self.assertTrue(me > SMALLEST)
+        self.assertFalse(me <= SMALLEST)
+        self.assertTrue(me >= SMALLEST)
 
     def test_harmful_mixed_comparison(self):
         me = self.theclass(1, 1, 1)
@@ -1581,29 +1590,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(their != our, True)
         self.assertRaises(TypeError, lambda: our < their)
         self.assertRaises(TypeError, lambda: their < our)
-
-        # However, if the other class explicitly defines ordering
-        # relative to our class, it is allowed to do so
-
-        class LargerThanAnything:
-            def __lt__(self, other):
-                return False
-            def __le__(self, other):
-                return isinstance(other, LargerThanAnything)
-            def __eq__(self, other):
-                return isinstance(other, LargerThanAnything)
-            def __gt__(self, other):
-                return not isinstance(other, LargerThanAnything)
-            def __ge__(self, other):
-                return True
-
-        their = LargerThanAnything()
-        self.assertEqual(our == their, False)
-        self.assertEqual(their == our, False)
-        self.assertEqual(our != their, True)
-        self.assertEqual(their != our, True)
-        self.assertEqual(our < their, True)
-        self.assertEqual(their < our, False)
 
     def test_bool(self):
         # All dates are considered true.
@@ -3781,8 +3767,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertRaises(ValueError, base.replace, microsecond=1000000)
 
     def test_mixed_compare(self):
-        t1 = time(1, 2, 3)
-        t2 = time(1, 2, 3)
+        t1 = self.theclass(1, 2, 3)
+        t2 = self.theclass(1, 2, 3)
         self.assertEqual(t1, t2)
         t2 = t2.replace(tzinfo=None)
         self.assertEqual(t1, t2)
