@@ -19,7 +19,7 @@ from array import array
 from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
-from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST
+from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -340,15 +340,16 @@ class TestTimeZone(unittest.TestCase):
         self.assertFalse(timezone(ZERO) ==  None)
 
         tz = timezone(ZERO)
+        self.assertTrue(tz == ALWAYS_EQ)
+        self.assertFalse(tz != ALWAYS_EQ)
         self.assertTrue(tz < LARGEST)
         self.assertFalse(tz > LARGEST)
         self.assertTrue(tz <= LARGEST)
         self.assertFalse(tz >= LARGEST)
-        self.assertFalse(tz == LARGEST)
-        self.assertTrue(tz != LARGEST)
-
-        self.assertTrue(tz == ALWAYS_EQ)
-        self.assertFalse(tz != ALWAYS_EQ)
+        self.assertFalse(tz < SMALLEST)
+        self.assertTrue(tz > SMALLEST)
+        self.assertFalse(tz <= SMALLEST)
+        self.assertTrue(tz >= SMALLEST)
 
     def test_aware_datetime(self):
         # test that timezone instances can be used by datetime
@@ -422,8 +423,10 @@ class HarmlessMixedComparison:
         self.assertFalse(me > LARGEST)
         self.assertTrue(me <= LARGEST)
         self.assertFalse(me >= LARGEST)
-        self.assertFalse(me == LARGEST)
-        self.assertTrue(me != LARGEST)
+        self.assertFalse(me < SMALLEST)
+        self.assertTrue(me > SMALLEST)
+        self.assertFalse(me <= SMALLEST)
+        self.assertTrue(me >= SMALLEST)
 
     def test_harmful_mixed_comparison(self):
         me = self.theclass(1, 1, 1)
