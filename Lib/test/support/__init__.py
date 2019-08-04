@@ -113,7 +113,7 @@ __all__ = [
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
-    "ALWAYS_EQ", "LARGEST", "SMALLEST"
+    "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST"
     ]
 
 class Error(Exception):
@@ -3114,6 +3114,17 @@ class _ALWAYS_EQ:
         return False
 
 ALWAYS_EQ = _ALWAYS_EQ()
+
+class _NEVER_EQ:
+    """
+    Object that is not equal to anything.
+    """
+    def __eq__(self, other):
+        return False
+    def __ne__(self, other):
+        return True
+
+NEVER_EQ = _NEVER_EQ()
 
 @functools.total_ordering
 class _LARGEST:
