@@ -356,10 +356,27 @@ The :mod:`test.support` module defines the following constants:
 
    Check for presence of docstrings.
 
+
 .. data:: TEST_HTTP_URL
 
    Define the URL of a dedicated HTTP server for the network tests.
 
+
+.. data:: ALWAYS_EQ
+
+   Object that is equal to anything.  Used to test mixed type comparison.
+
+
+.. data:: LARGEST
+
+   Object that is greater than anything (except itself).
+   Used to test mixed type comparison.
+
+
+.. data:: SMALLEST
+
+   Object that is less than anything (except itself).
+   Used to test mixed type comparison.
 
 
 The :mod:`test.support` module defines the following functions:
