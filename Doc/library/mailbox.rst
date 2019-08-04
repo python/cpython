@@ -81,7 +81,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    enters and releases it and :meth:`close` when the :keyword:`with` statement
    exits.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.9
       Support for the :keyword:`with` statement was added.
 
    :class:`Mailbox` instances have the following methods:

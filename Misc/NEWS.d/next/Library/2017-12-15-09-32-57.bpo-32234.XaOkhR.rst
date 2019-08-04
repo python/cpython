@@ -1,2 +1,2 @@
-Mailbox instances can be used in the context manager. The Mailbox is locked
+Mailbox instances can be used as a context manager. The Mailbox is locked
 at enter and unlocked and closed at exit.
