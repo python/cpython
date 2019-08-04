@@ -3,8 +3,7 @@
 import sys
 import unittest
 from test.support import run_unittest, TESTFN, unlink, cpython_only
-from test.support import check_free_after_iterating, NONE
-from unittest.mock import ANY
+from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
 import pickle
 import collections.abc
 
@@ -650,12 +649,12 @@ class TestCase(unittest.TestCase):
             for i in "abc", -1, 5, 42.42, (3, 4), [], {1: 1}, 3-12j, sc5:
                 self.assertNotIn(i, sc5)
 
-        self.assertIn(ANY, IteratorProxyClass(iter([1])))
-        self.assertIn(ANY, SequenceProxyClass([1]))
-        self.assertNotIn(ANY, IteratorProxyClass(iter([NONE])))
-        self.assertNotIn(ANY, SequenceProxyClass([NONE]))
-        self.assertIn(NONE, IteratorProxyClass(iter([ANY])))
-        self.assertIn(NONE, SequenceProxyClass([ANY]))
+        self.assertIn(ALWAYS_EQ, IteratorProxyClass(iter([1])))
+        self.assertIn(ALWAYS_EQ, SequenceProxyClass([1]))
+        self.assertNotIn(ALWAYS_EQ, IteratorProxyClass(iter([NEVER_EQ])))
+        self.assertNotIn(ALWAYS_EQ, SequenceProxyClass([NEVER_EQ]))
+        self.assertIn(NEVER_EQ, IteratorProxyClass(iter([ALWAYS_EQ])))
+        self.assertIn(NEVER_EQ, SequenceProxyClass([ALWAYS_EQ]))
 
         self.assertRaises(TypeError, lambda: 3 in 12)
         self.assertRaises(TypeError, lambda: 3 not in map)

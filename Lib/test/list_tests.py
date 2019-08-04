@@ -7,8 +7,7 @@ import os
 from functools import cmp_to_key
 
 from test import support, seq_tests
-from test.support import NONE
-from unittest.mock import ANY
+from test.support import ALWAYS_EQ, NEVER_EQ
 
 
 class CommonTest(seq_tests.CommonTest):
@@ -332,18 +331,18 @@ class CommonTest(seq_tests.CommonTest):
         self.assertRaises(TypeError, a.remove)
 
         a = self.type2test([1, 2])
-        self.assertRaises(ValueError, a.remove, NONE)
+        self.assertRaises(ValueError, a.remove, NEVER_EQ)
         self.assertEqual(a, [1, 2])
-        a.remove(ANY)
+        a.remove(ALWAYS_EQ)
         self.assertEqual(a, [2])
-        a = self.type2test([ANY])
+        a = self.type2test([ALWAYS_EQ])
         a.remove(1)
         self.assertEqual(a, [])
-        a = self.type2test([ANY])
-        a.remove(NONE)
+        a = self.type2test([ALWAYS_EQ])
+        a.remove(NEVER_EQ)
         self.assertEqual(a, [])
-        a = self.type2test([NONE])
-        self.assertRaises(ValueError, a.remove, ANY)
+        a = self.type2test([NEVER_EQ])
+        self.assertRaises(ValueError, a.remove, ALWAYS_EQ)
 
         class BadExc(Exception):
             pass

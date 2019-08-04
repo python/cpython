@@ -830,7 +830,8 @@ Refactor class variables to instance variables in colorizer.
 .. nonce: WbaRJW
 .. section: IDLE
 
-Increase test coverage of idlelib.autocomplete by 30%.
+Increase test coverage of idlelib.autocomplete by 30%. Patch by Louie
+Lu
 
 ..
 
