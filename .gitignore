@@ -74,6 +74,7 @@ PCbuild/arm32/
 PCbuild/arm64/
 PCbuild/obj/
 PCbuild/win32/
+Tools/unicode/data/
 .purify
 __pycache__
 autom4te.cache

@@ -886,15 +886,19 @@ def merge_old_version(version, new, old):
                         normalization_changes))
 
 
+DATA_DIR = os.path.join('Tools', 'unicode', 'data')
+
 def open_data(template, version):
-    local = template % ('-'+version,)
+    local = os.path.join(DATA_DIR, template % ('-'+version,))
     if not os.path.exists(local):
         import urllib.request
         if version == '3.2.0':
             # irregular url structure
-            url = 'http://www.unicode.org/Public/3.2-Update/' + local
+            url = ('http://www.unicode.org/Public/3.2-Update/'+template) % ('-'+version,)
         else:
             url = ('http://www.unicode.org/Public/%s/ucd/'+template) % (version, '')
+        if not os.path.exists(DATA_DIR):
+            os.mkdir(DATA_DIR)
         urllib.request.urlretrieve(url, filename=local)
     if local.endswith('.txt'):
         return open(local, encoding='utf-8')
