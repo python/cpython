@@ -76,11 +76,51 @@ New Features
 Assignment expressions
 ----------------------
 
-There is new syntax (the "walrus operator", ``:=``) to assign values
-to variables as part of an expression.  Example::
+There is new syntax ``:=`` that assigns values to variables as part of a larger
+expression. It is affectionately known as "walrus operator" due to
+its resemblance to `the eyes and tusks of a walrus
+<https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg>`_.
+
+In this example, the assignment expression helps avoid calling
+:func:`len` twice::
 
   if (n := len(a)) > 10:
       print(f"List is too long ({n} elements, expected <= 10)")
+
+A similar benefit arises during regular expression matching where
+match objects are needed twice, once to test whether a match
+occurred and another to extract a subgroup::
+
+  discount = 0.0
+  if (mo := re.search(r'(\d+)% discount', advertisement)):
+      discount = float(mo.group(1)) / 100.0
+
+The operator is also useful with while-loops that compute
+a value to test loop termination and then need that same
+value again in the body of the loop::
+
+  # Loop over fixed length blocks
+  while (block := f.read(256)) != '':
+      process(block)
+
+Another motivating use case arises in list comprehensions where
+a value computed in a filtering condition is also needed in
+the expression body::
+
+   [clean_name.title() for name in names
+    if (clean_name := normalize('NFC', name)) in allowed_names]
+
+Try to limit use of the walrus operator to clean cases that reduce
+complexity and improve readability.  When combined with other features
+like f-strings or conditional expressions, it is easy to go over-board
+with code that is challenging to decipher::
+
+  # Cryptic assignment expression embedded in a conditional expression
+  binomial_coefficient = [(c := c * (n - k + 1) // k if k else 1) for k in range(n+1)]
+
+  # Visually confusing assignment expression embedded in an f-string
+  for angle in range(360):
+    print(f'{angle=}\N{degree sign} {(theta:=radians(angle))=:.3f} {sin(theta)=:.3f}')
 
 See :pep:`572` for a full description.
 
