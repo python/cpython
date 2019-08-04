@@ -10,10 +10,8 @@ import threading
 import time
 import random
 
-from unittest.mock import ANY
-
 from test import support
-from test.support import script_helper
+from test.support import script_helper, ALWAYS_EQ
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None
@@ -798,8 +796,8 @@ class ReferencesTestCase(TestBase):
         self.assertFalse(a != d)
         self.assertFalse(a == x)
         self.assertTrue(a != x)
-        self.assertTrue(a == ANY)
-        self.assertFalse(a != ANY)
+        self.assertTrue(a == ALWAYS_EQ)
+        self.assertFalse(a != ALWAYS_EQ)
         del x, y, z
         gc.collect()
         for r in a, b, c:
@@ -1110,7 +1108,7 @@ class WeakMethodTestCase(unittest.TestCase):
         _ne(b, f)
         # Compare with different types
         _ne(a, x.some_method)
-        _eq(a, ANY)
+        _eq(a, ALWAYS_EQ)
         del x, y, z
         gc.collect()
         # Dead WeakMethods compare by identity

@@ -1,8 +1,8 @@
 import unittest
 import gc
-from unittest.mock import ANY
 from tkinter import (Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl,
                      TclError)
+from test.support import ALWAYS_EQ
 
 
 class Var(Variable):
@@ -70,7 +70,7 @@ class TestVariable(TestBase):
         self.assertNotEqual(v1, V())
 
         self.assertNotEqual(v1, object())
-        self.assertEqual(v1, ANY)
+        self.assertEqual(v1, ALWAYS_EQ)
 
     def test_invalid_name(self):
         with self.assertRaises(TypeError):

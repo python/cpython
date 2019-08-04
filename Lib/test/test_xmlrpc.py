@@ -15,7 +15,7 @@ import re
 import io
 import contextlib
 from test import support
-from test.support import LARGEST
+from test.support import ALWAYS_EQ, LARGEST, SMALLEST
 
 try:
     import gzip
@@ -544,15 +544,16 @@ class DateTimeTestCase(unittest.TestCase):
         with self.assertRaises(TypeError):
             dtime >= dtuple
 
-        self.assertTrue(dtime == mock.ANY)
-        self.assertFalse(dtime != mock.ANY)
-
-        self.assertFalse(dtime == LARGEST)
-        self.assertTrue(dtime != LARGEST)
+        self.assertTrue(dtime == ALWAYS_EQ)
+        self.assertFalse(dtime != ALWAYS_EQ)
         self.assertTrue(dtime < LARGEST)
-        self.assertTrue(dtime <= LARGEST)
         self.assertFalse(dtime > LARGEST)
+        self.assertTrue(dtime <= LARGEST)
         self.assertFalse(dtime >= LARGEST)
+        self.assertFalse(dtime < SMALLEST)
+        self.assertTrue(dtime > SMALLEST)
+        self.assertFalse(dtime <= SMALLEST)
+        self.assertTrue(dtime >= SMALLEST)
 
 
 class BinaryTestCase(unittest.TestCase):
