@@ -30,8 +30,9 @@ import os
 import sys
 import zipfile
 
-from textwrap import dedent
 from functools import partial
+from textwrap import dedent
+from typing import *
 
 SCRIPT = sys.argv[0]
 VERSION = "3.3"
@@ -903,6 +904,32 @@ def open_data(template, version):
         return open(local, 'rb')
 
 
+class UcdFile:
+    '''
+    A file in the standard format of the UCD.
+
+    See: https://www.unicode.org/reports/tr44/#Format_Conventions
+
+    Note that, as described there, the Unihan data files have their
+    own separate format.
+    '''
+
+    def __init__(self, template: str, version: str) -> None:
+        self.template = template
+        self.version = version
+
+    def records(self) -> Iterator[List[str]]:
+        with open_data(self.template, self.version) as file:
+            for line in file:
+                line = line.split('#', 1)[0].strip()
+                if not line:
+                    continue
+                yield [field.strip() for field in line.split(';')]
+
+    def __iter__(self) -> Iterator[List[str]]:
+        return self.records()
+
+
 # --------------------------------------------------------------------
 # the following support code is taken from the unidb utilities
 # Copyright (c) 1999-2000 by Secret Labs AB
@@ -922,14 +949,9 @@ class UnicodeData:
                  cjk_check=True):
         self.changed = []
         table = [None] * 0x110000
-        with open_data(UNICODE_DATA, version) as file:
-            while 1:
-                s = file.readline()
-                if not s:
-                    break
-                s = s.strip().split(";")
-                char = int(s[0], 16)
-                table[char] = s
+        for s in UcdFile(UNICODE_DATA, version):
+            char = int(s[0], 16)
+            table[char] = s
 
         cjk_ranges_found = []
 
@@ -968,17 +990,12 @@ class UnicodeData:
             # in order to take advantage of the compression and lookup
             # algorithms used for the other characters
             pua_index = NAME_ALIASES_START
-            with open_data(NAME_ALIASES, version) as file:
-                for s in file:
-                    s = s.strip()
-                    if not s or s.startswith('#'):
-                        continue
-                    char, name, abbrev = s.split(';')
-                    char = int(char, 16)
-                    self.aliases.append((name, char))
-                    # also store the name in the PUA 1
-                    self.table[pua_index][1] = name
-                    pua_index += 1
+            for char, name, abbrev in UcdFile(NAME_ALIASES, version):
+                char = int(char, 16)
+                self.aliases.append((name, char))
+                # also store the name in the PUA 1
+                self.table[pua_index][1] = name
+                pua_index += 1
             assert pua_index - NAME_ALIASES_START == len(self.aliases)
 
             self.named_sequences = []
@@ -988,50 +1005,32 @@ class UnicodeData:
 
             assert pua_index < NAMED_SEQUENCES_START
             pua_index = NAMED_SEQUENCES_START
-            with open_data(NAMED_SEQUENCES, version) as file:
-                for s in file:
-                    s = s.strip()
-                    if not s or s.startswith('#'):
-                        continue
-                    name, chars = s.split(';')
-                    chars = tuple(int(char, 16) for char in chars.split())
-                    # check that the structure defined in makeunicodename is OK
-                    assert 2 <= len(chars) <= 4, "change the Py_UCS2 array size"
-                    assert all(c <= 0xFFFF for c in chars), ("use Py_UCS4 in "
-                        "the NamedSequence struct and in unicodedata_lookup")
-                    self.named_sequences.append((name, chars))
-                    # also store these in the PUA 1
-                    self.table[pua_index][1] = name
-                    pua_index += 1
+            for name, chars in UcdFile(NAMED_SEQUENCES, version):
+                chars = tuple(int(char, 16) for char in chars.split())
+                # check that the structure defined in makeunicodename is OK
+                assert 2 <= len(chars) <= 4, "change the Py_UCS2 array size"
+                assert all(c <= 0xFFFF for c in chars), ("use Py_UCS4 in "
+                    "the NamedSequence struct and in unicodedata_lookup")
+                self.named_sequences.append((name, chars))
+                # also store these in the PUA 1
+                self.table[pua_index][1] = name
+                pua_index += 1
             assert pua_index - NAMED_SEQUENCES_START == len(self.named_sequences)
 
         self.exclusions = {}
-        with open_data(COMPOSITION_EXCLUSIONS, version) as file:
-            for s in file:
-                s = s.strip()
-                if not s:
-                    continue
-                if s[0] == '#':
-                    continue
-                char = int(s.split()[0],16)
-                self.exclusions[char] = 1
+        for char, in UcdFile(COMPOSITION_EXCLUSIONS, version):
+            char = int(char, 16)
+            self.exclusions[char] = 1
 
         widths = [None] * 0x110000
-        with open_data(EASTASIAN_WIDTH, version) as file:
-            for s in file:
-                s = s.strip()
-                if not s:
-                    continue
-                if s[0] == '#':
-                    continue
-                s = s.split()[0].split(';')
-                if '..' in s[0]:
-                    first, last = [int(c, 16) for c in s[0].split('..')]
-                    chars = list(range(first, last+1))
-                else:
-                    chars = [int(s[0], 16)]
-                for char in chars:
-                    widths[char] = s[1]
+        for s in UcdFile(EASTASIAN_WIDTH, version):
+            if '..' in s[0]:
+                first, last = [int(c, 16) for c in s[0].split('..')]
+                chars = list(range(first, last+1))
+            else:
+                chars = [int(s[0], 16)]
+            for char in chars:
+                widths[char] = s[1]
 
         for i in range(0, 0x110000):
             if table[i] is not None:
@@ -1041,38 +1040,27 @@ class UnicodeData:
             if table[i] is not None:
                 table[i].append(set())
 
-        with open_data(DERIVED_CORE_PROPERTIES, version) as file:
-            for s in file:
-                s = s.split('#', 1)[0].strip()
-                if not s:
-                    continue
+        for r, p in UcdFile(DERIVED_CORE_PROPERTIES, version):
+            if ".." in r:
+                first, last = [int(c, 16) for c in r.split('..')]
+                chars = list(range(first, last+1))
+            else:
+                chars = [int(r, 16)]
+            for char in chars:
+                if table[char]:
+                    # Some properties (e.g. Default_Ignorable_Code_Point)
+                    # apply to unassigned code points; ignore them
+                    table[char][-1].add(p)
 
-                r, p = s.split(";")
-                r = r.strip()
-                p = p.strip()
-                if ".." in r:
-                    first, last = [int(c, 16) for c in r.split('..')]
-                    chars = list(range(first, last+1))
-                else:
-                    chars = [int(r, 16)]
-                for char in chars:
-                    if table[char]:
-                        # Some properties (e.g. Default_Ignorable_Code_Point)
-                        # apply to unassigned code points; ignore them
-                        table[char][-1].add(p)
-
-        with open_data(LINE_BREAK, version) as file:
-            for s in file:
-                s = s.partition('#')[0]
-                s = [i.strip() for i in s.split(';')]
-                if len(s) < 2 or s[1] not in MANDATORY_LINE_BREAKS:
-                    continue
-                if '..' not in s[0]:
-                    first = last = int(s[0], 16)
-                else:
-                    first, last = [int(c, 16) for c in s[0].split('..')]
-                for char in range(first, last+1):
-                    table[char][-1].add('Line_Break')
+        for s in UcdFile(LINE_BREAK, version):
+            if len(s) < 2 or s[1] not in MANDATORY_LINE_BREAKS:
+                continue
+            if '..' not in s[0]:
+                first = last = int(s[0], 16)
+            else:
+                first, last = [int(c, 16) for c in s[0].split('..')]
+            for char in range(first, last+1):
+                table[char][-1].add('Line_Break')
 
         # We only want the quickcheck properties
         # Format: NF?_QC; Y(es)/N(o)/M(aybe)
@@ -1083,23 +1071,19 @@ class UnicodeData:
         # for older versions, and no delta records will be created.
         quickchecks = [0] * 0x110000
         qc_order = 'NFD_QC NFKD_QC NFC_QC NFKC_QC'.split()
-        with open_data(DERIVEDNORMALIZATION_PROPS, version) as file:
-            for s in file:
-                if '#' in s:
-                    s = s[:s.index('#')]
-                s = [i.strip() for i in s.split(';')]
-                if len(s) < 2 or s[1] not in qc_order:
-                    continue
-                quickcheck = 'MN'.index(s[2]) + 1 # Maybe or No
-                quickcheck_shift = qc_order.index(s[1])*2
-                quickcheck <<= quickcheck_shift
-                if '..' not in s[0]:
-                    first = last = int(s[0], 16)
-                else:
-                    first, last = [int(c, 16) for c in s[0].split('..')]
-                for char in range(first, last+1):
-                    assert not (quickchecks[char]>>quickcheck_shift)&3
-                    quickchecks[char] |= quickcheck
+        for s in UcdFile(DERIVEDNORMALIZATION_PROPS, version):
+            if len(s) < 2 or s[1] not in qc_order:
+                continue
+            quickcheck = 'MN'.index(s[2]) + 1 # Maybe or No
+            quickcheck_shift = qc_order.index(s[1])*2
+            quickcheck <<= quickcheck_shift
+            if '..' not in s[0]:
+                first = last = int(s[0], 16)
+            else:
+                first, last = [int(c, 16) for c in s[0].split('..')]
+            for char in range(first, last+1):
+                assert not (quickchecks[char]>>quickcheck_shift)&3
+                quickchecks[char] |= quickcheck
         for i in range(0, 0x110000):
             if table[i] is not None:
                 table[i].append(quickchecks[i])
@@ -1122,34 +1106,26 @@ class UnicodeData:
             # Patch the numeric field
             if table[i] is not None:
                 table[i][8] = value
+
         sc = self.special_casing = {}
-        with open_data(SPECIAL_CASING, version) as file:
-            for s in file:
-                s = s[:-1].split('#', 1)[0]
-                if not s:
-                    continue
-                data = s.split("; ")
-                if data[4]:
-                    # We ignore all conditionals (since they depend on
-                    # languages) except for one, which is hardcoded. See
-                    # handle_capital_sigma in unicodeobject.c.
-                    continue
-                c = int(data[0], 16)
-                lower = [int(char, 16) for char in data[1].split()]
-                title = [int(char, 16) for char in data[2].split()]
-                upper = [int(char, 16) for char in data[3].split()]
-                sc[c] = (lower, title, upper)
+        for data in UcdFile(SPECIAL_CASING, version):
+            if data[4]:
+                # We ignore all conditionals (since they depend on
+                # languages) except for one, which is hardcoded. See
+                # handle_capital_sigma in unicodeobject.c.
+                continue
+            c = int(data[0], 16)
+            lower = [int(char, 16) for char in data[1].split()]
+            title = [int(char, 16) for char in data[2].split()]
+            upper = [int(char, 16) for char in data[3].split()]
+            sc[c] = (lower, title, upper)
+
         cf = self.case_folding = {}
         if version != '3.2.0':
-            with open_data(CASE_FOLDING, version) as file:
-                for s in file:
-                    s = s[:-1].split('#', 1)[0]
-                    if not s:
-                        continue
-                    data = s.split("; ")
-                    if data[1] in "CF":
-                        c = int(data[0], 16)
-                        cf[c] = [int(char, 16) for char in data[2].split()]
+            for data in UcdFile(CASE_FOLDING, version):
+                if data[1] in "CF":
+                    c = int(data[0], 16)
+                    cf[c] = [int(char, 16) for char in data[2].split()]
 
     def uselatin1(self):
         # restrict character range to ISO Latin 1
