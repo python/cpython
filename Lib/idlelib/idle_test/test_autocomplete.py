@@ -215,7 +215,6 @@ class AutoCompleteTest(unittest.TestCase):
 
         # Test files.
         self.text.insert('1.0', '"t')
-        # When run under regrtest, not comp_lists[0] (small)
         self.assertTrue(acp.open_completions(ac.TAB))
         self.text.delete('1.0', 'end')
 
