@@ -791,8 +791,12 @@ is_normalized(PyObject *self, PyObject *input, int nfc, int k)
     if (self && UCD_Check(self))
         return NO;
 
-    /* The two quickcheck bits at this shift mean 0=Yes, 1=Maybe, 2=No,
-       as described in http://unicode.org/reports/tr15/#Annex8. */
+    /* This is an implementation of the following algorithm:
+       https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms
+       See there for background.
+    */
+
+    /* The two quickcheck bits at this shift mean 0=Yes, 1=Maybe, 2=No. */
     quickcheck_mask = 3 << ((nfc ? 4 : 0) + (k ? 2 : 0));
 
     i = 0;
