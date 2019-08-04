@@ -913,9 +913,3 @@ which incur interpreter overhead.
            result.append(pool[-1-n])
        return tuple(result)
 
-Note, many of the above recipes can be optimized by replacing global lookups
-with local variables defined as default values.  For example, the
-*dotproduct* recipe can be written as::
-
-   def dotproduct(vec1, vec2, sum=sum, map=map, mul=operator.mul):
-       return sum(map(mul, vec1, vec2))
