@@ -210,16 +210,6 @@ including lines within multiline strings.</dd>
 </div>
 <div class="section" id="run-menu-editor-window-only">
 <span id="index-2"></span><h3>Run menu (Editor window only)<a class="headerlink" href="#run-menu-editor-window-only" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils" id="python-shell">
-<dt>Python Shell</dt><dd>Open or wake up the Python Shell window.</dd>
-</dl>
-<dl class="docutils" id="check-module">
-<dt>Check Module</dt><dd>Check the syntax of the module currently open in the Editor window. If the
-module has not been saved IDLE will either prompt the user to save or
-autosave, as selected in the General tab of the Idle Settings dialog.  If
-there is a syntax error, the approximate location is indicated in the
-Editor window.</dd>
-</dl>
 <dl class="docutils" id="run-module">
 <dt>Run Module</dt><dd>Do <a class="reference internal" href="#check-module"><span class="std std-ref">Check Module</span></a>.  If no error, restart the shell to clean the
 environment, then execute the module.  Output is displayed in the Shell
@@ -233,6 +223,16 @@ line.</dd>
 <dt>Run… Customized</dt><dd>Same as <a class="reference internal" href="#run-module"><span class="std std-ref">Run Module</span></a>, but run the module with customized
 settings.  <em>Command Line Arguments</em> extend <a class="reference internal" href="sys.html#sys.argv" title="sys.argv"><code class="xref py py-data docutils literal notranslate"><span class="pre">sys.argv</span></code></a> as if passed
 on a command line. The module can be run in the Shell without restarting.</dd>
+</dl>
+<dl class="docutils" id="check-module">
+<dt>Check Module</dt><dd>Check the syntax of the module currently open in the Editor window. If the
+module has not been saved IDLE will either prompt the user to save or
+autosave, as selected in the General tab of the Idle Settings dialog.  If
+there is a syntax error, the approximate location is indicated in the
+Editor window.</dd>
+</dl>
+<dl class="docutils" id="python-shell">
+<dt>Python Shell</dt><dd>Open or wake up the Python Shell window.</dd>
 </dl>
 </div>
 <div class="section" id="shell-menu-shell-window-only">
@@ -268,23 +268,26 @@ access to locals and globals.</dd>
 <dl class="docutils">
 <dt>Configure IDLE</dt><dd>Open a configuration dialog and change preferences for the following:
 fonts, indentation, keybindings, text color themes, startup windows and
-size, additional help sources, and extensions.  On macOS,  open the
+size, additional help sources, and extensions.  On macOS, open the
 configuration dialog by selecting Preferences in the application
-menu. For more, see
-<a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a> under Help and preferences.
-Most configuration options apply to all windows or all future windows.
-The option items below only apply to the active window.</dd>
+menu. For more details, see
+<a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a> under Help and preferences.</dd>
+</dl>
+<p>Most configuration options apply to all windows or all future windows.
+The option items below only apply to the active window.</p>
+<dl class="docutils">
 <dt>Show/Hide Code Context (Editor Window only)</dt><dd>Open a pane at the top of the edit window which shows the block context
 of the code which has scrolled above the top of the window.  See
-<a class="reference internal" href="#code-context"><span class="std std-ref">Code Context</span></a> in the Editing and Navigation section below.</dd>
-<dt>Line Numbers (Editor Window only)</dt><dd>Open a column to the left of the edit window which shows the linenumber
-of each line of text.  The default is off unless configured on
-(see <a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a>).</dd>
+<a class="reference internal" href="#code-context"><span class="std std-ref">Code Context</span></a> in the Editing and Navigation section
+below.</dd>
+<dt>Show/Hide Line Numbers (Editor Window only)</dt><dd>Open a column to the left of the edit window which shows the number
+of each line of text.  The default is off, which may be changed in the
+preferences (see <a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a>).</dd>
 <dt>Zoom/Restore Height</dt><dd>Toggles the window between normal size and maximum height. The initial size
 defaults to 40 lines by 80 chars unless changed on the General tab of the
 Configure IDLE dialog.  The maximum height for a screen is determined by
 momentarily maximizing a window the first time one is zoomed on the screen.
-Changing screen settings may invalidate the saved height.  This toogle has
+Changing screen settings may invalidate the saved height.  This toggle has
 no effect when a window is maximized.</dd>
 </dl>
 </div>
@@ -900,7 +903,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Jul 23, 2019.
+    Last updated on Aug 04, 2019.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 
