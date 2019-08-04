@@ -367,6 +367,12 @@ The :mod:`test.support` module defines the following constants:
    Object that is equal to anything.  Used to test mixed type comparison.
 
 
+.. data:: NEVER_EQ
+
+   Object that is not equal to anything (even to :data:`ALWAYS_EQ`).
+   Used to test mixed type comparison.
+
+
 .. data:: LARGEST
 
    Object that is greater than anything (except itself).
