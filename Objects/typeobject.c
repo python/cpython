@@ -5170,6 +5170,11 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
             !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
         {
             type->tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
+            /* Also inherit tp_vectorcall if tp_call of the
+            * metaclass is type.__call__ */
+            if (Py_TYPE(type)->tp_call == PyType_Type.tp_call) {
+                type->tp_vectorcall = base->tp_vectorcall;
+            }
         }
         COPYSLOT(tp_call);
     }
