@@ -113,6 +113,7 @@ __all__ = [
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
+    "ALWAYS_EQ", "LARGEST", "SMALLEST"
     ]
 
 class Error(Exception):
@@ -3093,7 +3094,7 @@ class FakePath:
             return self.path
 
 
-class _ANY:
+class _ALWAYS_EQ:
     """
     Object that is equal to anything.
     """
@@ -3102,7 +3103,7 @@ class _ANY:
     def __ne__(self, other):
         return False
 
-ANY = _ANY()
+ALWAYS_EQ = _ALWAYS_EQ()
 
 @functools.total_ordering
 class _LARGEST:
