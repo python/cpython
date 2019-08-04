@@ -691,6 +691,12 @@ Itertools Recipes
 This section shows recipes for creating an extended toolset using the existing
 itertools as building blocks.
 
+Substantially all of these recipes and many, many others can be installed from
+the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
+on the Python Package Index::
+
+    pip install more-itertools
+
 The extended tools offer the same high performance as the underlying toolset.
 The superior memory performance is kept by processing elements one at a time
 rather than bringing the whole iterable into memory all at once. Code volume is
