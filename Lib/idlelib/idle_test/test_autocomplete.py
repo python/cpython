@@ -61,10 +61,10 @@ class AutoCompleteTest(unittest.TestCase):
     def test_force_open_completions_event(self):
         # Call _open_completions and break.
         acp = self.autocomplete
-        o_cs = Func()
-        acp.open_completions = o_cs
+        open_c = Func()
+        acp.open_completions = open_c
         self.assertEqual(acp.force_open_completions_event('event'), 'break')
-        self.assertEqual(o_cs.args[0], ac.FORCE)
+        self.assertEqual(open_c.args[0], ac.FORCE)
 
     def test_autocomplete_event(self):
         Equal = self.assertEqual
@@ -82,20 +82,20 @@ class AutoCompleteTest(unittest.TestCase):
 
         # If active autocomplete window, complete() and 'break'.
         self.text.insert('1.0', 're.')
-        acp.autocompletewindow = m = Mock()
-        m.is_active = Mock(return_value=True)
+        acp.autocompletewindow = mock = Mock()
+        mock.is_active = Mock(return_value=True)
         Equal(acp.autocomplete_event(ev), 'break')
-        m.complete.assert_called_once()
+        mock.complete.assert_called_once()
         acp.autocompletewindow = None
 
         # If no active autocomplete window, open_completions(), None/break.
-        o_cs = Func(result=False)
-        acp.open_completions = o_cs
+        open_c = Func(result=False)
+        acp.open_completions = open_c
         Equal(acp.autocomplete_event(ev), None)
-        Equal(o_cs.args[0], ac.TAB)
-        o_cs.result = True
+        Equal(open_c.args[0], ac.TAB)
+        open_c.result = True
         Equal(acp.autocomplete_event(ev), 'break')
-        Equal(o_cs.args[0], ac.TAB)
+        Equal(open_c.args[0], ac.TAB)
 
     def test_try_open_completions_event(self):
         Equal = self.assertEqual
@@ -137,8 +137,8 @@ class AutoCompleteTest(unittest.TestCase):
     def test_delayed_open_completions(self):
         Equal = self.assertEqual
         acp = self.autocomplete
-        o_c = Func()
-        acp.open_completions = o_c
+        open_c = Func()
+        acp.open_completions = open_c
         self.text.insert('1.0', '"dict.')
 
         # Set autocomplete._delayed_completion_id to None.
@@ -147,12 +147,12 @@ class AutoCompleteTest(unittest.TestCase):
         acp._delayed_completion_index = self.text.index('insert+1c')
         acp._delayed_open_completions('dummy')
         self.assertIsNone(acp._delayed_completion_id)
-        Equal(acp.open_completions.called, 0)
+        Equal(open_c.called, 0)
 
         # Text index unchanged, call open_completions.
         acp._delayed_completion_index = self.text.index('insert')
         acp._delayed_open_completions((1, 2, 3, ac.FILES))
-        self.assertEqual(acp.open_completions.args[0], (1, 2, 3, ac.FILES))
+        self.assertEqual(open_c.args[0], (1, 2, 3, ac.FILES))
 
     def test_oc_cancel_comment(self):
         none = self.assertIsNone
