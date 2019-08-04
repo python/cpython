@@ -4,18 +4,60 @@
 extern "C" {
 #endif
 
-#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "cpython/initconfig.h"
+#include "fileobject.h"
 #include "pystate.h"
 #include "pythread.h"
+#include "sysmodule.h"
 
-#include "pycore_ceval.h"
+#include "pycore_gil.h"   /* _gil_runtime_state  */
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"
 #include "pycore_warnings.h"
 
+
+/* ceval state */
+
+struct _pending_calls {
+    int finishing;
+    PyThread_type_lock lock;
+    /* Request for running pending calls. */
+    _Py_atomic_int calls_to_do;
+    /* Request for looking at the `async_exc` field of the current
+       thread state.
+       Guarded by the GIL. */
+    int async_exc;
+#define NPENDINGCALLS 32
+    struct {
+        int (*func)(void *);
+        void *arg;
+    } calls[NPENDINGCALLS];
+    int first;
+    int last;
+};
+
+struct _ceval_runtime_state {
+    int recursion_limit;
+    /* Records whether tracing is on for any thread.  Counts the number
+       of threads for which tstate->c_tracefunc is non-NULL, so if the
+       value is 0, we know we don't have to check this thread's
+       c_tracefunc.  This speeds up the if statement in
+       PyEval_EvalFrameEx() after fast_next_opcode. */
+    int tracing_possible;
+    /* This single variable consolidates all requests to break out of
+       the fast path in the eval loop. */
+    _Py_atomic_int eval_breaker;
+    /* Request for dropping the GIL */
+    _Py_atomic_int gil_drop_request;
+    struct _pending_calls pending;
+    /* Request for checking signals. */
+    _Py_atomic_int signals_pending;
+    struct _gil_runtime_state gil;
+};
 
 /* interpreter state */
 
@@ -29,16 +71,16 @@ struct _is {
 
     int64_t id;
     int64_t id_refcount;
+    int requires_idref;
     PyThread_type_lock id_mutex;
+
+    int finalizing;
 
     PyObject *modules;
     PyObject *modules_by_index;
     PyObject *sysdict;
     PyObject *builtins;
     PyObject *importlib;
-
-    /* Used in Python/sysmodule.c. */
-    int check_interval;
 
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
@@ -52,13 +94,21 @@ struct _is {
     PyObject *codec_search_cache;
     PyObject *codec_error_registry;
     int codecs_initialized;
-    int fscodec_initialized;
 
-    _PyCoreConfig core_config;
-    _PyMainInterpreterConfig config;
+    /* fs_codec.encoding is initialized to NULL.
+       Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
+    struct {
+        char *encoding;   /* Filesystem encoding (encoded to UTF-8) */
+        char *errors;     /* Filesystem errors (encoded to UTF-8) */
+        _Py_error_handler error_handler;
+    } fs_codec;
+
+    PyConfig config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
+
+    PyObject *dict;  /* Stores per-interpreter state */
 
     PyObject *builtins_copy;
     PyObject *import_func;
@@ -78,6 +128,10 @@ struct _is {
     PyObject *pyexitmodule;
 
     uint64_t tstate_next_unique_id;
+
+    struct _warnings_runtime_state warnings;
+
+    PyObject *audit_hooks;
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
@@ -87,65 +141,11 @@ PyAPI_FUNC(void) _PyInterpreterState_IDIncref(struct _is *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
 
 
-/* cross-interpreter data */
-
-struct _xid;
-
-// _PyCrossInterpreterData is similar to Py_buffer as an effectively
-// opaque struct that holds data outside the object machinery.  This
-// is necessary to pass safely between interpreters in the same process.
-typedef struct _xid {
-    // data is the cross-interpreter-safe derivation of a Python object
-    // (see _PyObject_GetCrossInterpreterData).  It will be NULL if the
-    // new_object func (below) encodes the data.
-    void *data;
-    // obj is the Python object from which the data was derived.  This
-    // is non-NULL only if the data remains bound to the object in some
-    // way, such that the object must be "released" (via a decref) when
-    // the data is released.  In that case the code that sets the field,
-    // likely a registered "crossinterpdatafunc", is responsible for
-    // ensuring it owns the reference (i.e. incref).
-    PyObject *obj;
-    // interp is the ID of the owning interpreter of the original
-    // object.  It corresponds to the active interpreter when
-    // _PyObject_GetCrossInterpreterData() was called.  This should only
-    // be set by the cross-interpreter machinery.
-    //
-    // We use the ID rather than the PyInterpreterState to avoid issues
-    // with deleted interpreters.
-    int64_t interp;
-    // new_object is a function that returns a new object in the current
-    // interpreter given the data.  The resulting object (a new
-    // reference) will be equivalent to the original object.  This field
-    // is required.
-    PyObject *(*new_object)(struct _xid *);
-    // free is called when the data is released.  If it is NULL then
-    // nothing will be done to free the data.  For some types this is
-    // okay (e.g. bytes) and for those types this field should be set
-    // to NULL.  However, for most the data was allocated just for
-    // cross-interpreter use, so it must be freed when
-    // _PyCrossInterpreterData_Release is called or the memory will
-    // leak.  In that case, at the very least this field should be set
-    // to PyMem_RawFree (the default if not explicitly set to NULL).
-    // The call will happen with the original interpreter activated.
-    void (*free)(void *);
-} _PyCrossInterpreterData;
-
-typedef int (*crossinterpdatafunc)(PyObject *, _PyCrossInterpreterData *);
-PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
-
-PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
-PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
-PyAPI_FUNC(void) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
-
 /* cross-interpreter data registry */
 
 /* For now we use a global registry of shareable classes.  An
    alternative would be to add a tp_* slot for a class's
    crossinterpdatafunc. It would be simpler and more efficient. */
-
-PyAPI_FUNC(int) _PyCrossInterpreterData_Register_Class(PyTypeObject *, crossinterpdatafunc);
-PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
 
 struct _xidregitem;
 
@@ -155,6 +155,13 @@ struct _xidregitem {
     struct _xidregitem *next;
 };
 
+/* runtime audit hook state */
+
+typedef struct _Py_AuditHookEntry {
+    struct _Py_AuditHookEntry *next;
+    Py_AuditHookFunction hookCFunction;
+    void *userData;
+} _Py_AuditHookEntry;
 
 /* GIL state */
 
@@ -183,8 +190,15 @@ struct _gilstate_runtime_state {
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
-    int initialized;
+    /* Is Python pre-initialized? Set to 1 by Py_PreInitialize() */
+    int pre_initialized;
+
+    /* Is Python core initialized? Set to 1 by _Py_InitializeCore() */
     int core_initialized;
+
+    /* Is Python fully initialized? Set to 1 by Py_Initialize() */
+    int initialized;
+
     PyThreadState *finalizing;
 
     struct pyinterpreters {
@@ -207,35 +221,49 @@ typedef struct pyruntimestate {
         struct _xidregitem *head;
     } xidregistry;
 
+    unsigned long main_thread;
+
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
 
     struct _gc_runtime_state gc;
-    struct _warnings_runtime_state warnings;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
+
+    PyPreConfig preconfig;
+
+    Py_OpenCodeHookFunction open_code_hook;
+    void *open_code_userdata;
+    _Py_AuditHookEntry *audit_hook_head;
 
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
-#define _PyRuntimeState_INIT {.initialized = 0, .core_initialized = 0}
+#define _PyRuntimeState_INIT \
+    {.pre_initialized = 0, .core_initialized = 0, .initialized = 0}
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
-PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *);
-PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
+PyAPI_FUNC(PyStatus) _PyRuntimeState_Init(_PyRuntimeState *runtime);
+PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *runtime);
+PyAPI_FUNC(void) _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime);
 
 /* Initialize _PyRuntimeState.
    Return NULL on success, or return an error message on failure. */
-PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
+PyAPI_FUNC(PyStatus) _PyRuntime_Initialize(void);
 
-#define _Py_CURRENTLY_FINALIZING(tstate) \
-    (_PyRuntime.finalizing == tstate)
+PyAPI_FUNC(void) _PyRuntime_Finalize(void);
+
+#define _Py_CURRENTLY_FINALIZING(runtime, tstate) \
+    (runtime->finalizing == tstate)
 
 
 /* Variable and macro for in-line access to current thread
    and interpreter state */
+
+#define _PyRuntimeState_GetThreadState(runtime) \
+    ((PyThreadState*)_Py_atomic_load_relaxed(&(runtime)->gilstate.tstate_current))
 
 /* Get the current Python thread state.
 
@@ -246,8 +274,7 @@ PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
    The caller must hold the GIL.
 
    See also PyThreadState_Get() and PyThreadState_GET(). */
-#define _PyThreadState_GET() \
-    ((PyThreadState*)_Py_atomic_load_relaxed(&_PyRuntime.gilstate.tstate_current))
+#define _PyThreadState_GET() _PyRuntimeState_GetThreadState(&_PyRuntime)
 
 /* Redefine PyThreadState_GET() as an alias to _PyThreadState_GET() */
 #undef PyThreadState_GET
@@ -266,8 +293,24 @@ PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 
 /* Other */
 
-PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *);
-PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(void);
+PyAPI_FUNC(void) _PyThreadState_Init(
+    _PyRuntimeState *runtime,
+    PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
+    _PyRuntimeState *runtime,
+    PyThreadState *tstate);
+
+PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
+    struct _gilstate_runtime_state *gilstate,
+    PyThreadState *newts);
+
+PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
+PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
+
+/* Used by _PyImport_Cleanup() */
+extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
+
+PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);
 
 #ifdef __cplusplus
 }

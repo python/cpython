@@ -1,0 +1,2 @@
+Make calltip reminder about '/' meaning positional-only less obtrusive by
+only adding it when there is room on the first line.

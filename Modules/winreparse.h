@@ -45,6 +45,11 @@ typedef struct {
     FIELD_OFFSET(_Py_REPARSE_DATA_BUFFER, GenericReparseBuffer)
 #define _Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE  ( 16 * 1024 )
 
+// Defined in WinBase.h in 'recent' versions of Windows 10 SDK
+#ifndef SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
+#define SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE 0x2
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -324,8 +324,10 @@ static char *JoinedStr_fields[]={
     "values",
 };
 static PyTypeObject *Constant_type;
+_Py_IDENTIFIER(kind);
 static char *Constant_fields[]={
     "value",
+    "kind",
 };
 static PyTypeObject *Attribute_type;
 _Py_IDENTIFIER(attr);
@@ -467,12 +469,14 @@ static char *ExceptHandler_fields[]={
 };
 static PyTypeObject *arguments_type;
 static PyObject* ast2obj_arguments(void*);
+_Py_IDENTIFIER(posonlyargs);
 _Py_IDENTIFIER(vararg);
 _Py_IDENTIFIER(kwonlyargs);
 _Py_IDENTIFIER(kw_defaults);
 _Py_IDENTIFIER(kwarg);
 _Py_IDENTIFIER(defaults);
 static char *arguments_fields[]={
+    "posonlyargs",
     "args",
     "vararg",
     "kwonlyargs",
@@ -518,8 +522,10 @@ static char *withitem_fields[]={
 static PyTypeObject *type_ignore_type;
 static PyObject* ast2obj_type_ignore(void*);
 static PyTypeObject *TypeIgnore_type;
+_Py_IDENTIFIER(tag);
 static char *TypeIgnore_fields[]={
     "lineno",
+    "tag",
 };
 
 
@@ -634,10 +640,10 @@ static PyTypeObject AST_type = {
     sizeof(AST_object),
     0,
     (destructor)ast_dealloc, /* tp_dealloc */
-    0,                       /* tp_print */
+    0,                       /* tp_vectorcall_offset */
     0,                       /* tp_getattr */
     0,                       /* tp_setattr */
-    0,                       /* tp_reserved */
+    0,                       /* tp_as_async */
     0,                       /* tp_repr */
     0,                       /* tp_as_number */
     0,                       /* tp_as_sequence */
@@ -950,7 +956,7 @@ static int init_types(void)
     if (!FormattedValue_type) return 0;
     JoinedStr_type = make_type("JoinedStr", expr_type, JoinedStr_fields, 1);
     if (!JoinedStr_type) return 0;
-    Constant_type = make_type("Constant", expr_type, Constant_fields, 1);
+    Constant_type = make_type("Constant", expr_type, Constant_fields, 2);
     if (!Constant_type) return 0;
     Attribute_type = make_type("Attribute", expr_type, Attribute_fields, 3);
     if (!Attribute_type) return 0;
@@ -1139,7 +1145,7 @@ static int init_types(void)
     ExceptHandler_type = make_type("ExceptHandler", excepthandler_type,
                                    ExceptHandler_fields, 3);
     if (!ExceptHandler_type) return 0;
-    arguments_type = make_type("arguments", &AST_type, arguments_fields, 6);
+    arguments_type = make_type("arguments", &AST_type, arguments_fields, 7);
     if (!arguments_type) return 0;
     if (!add_attributes(arguments_type, NULL, 0)) return 0;
     arg_type = make_type("arg", &AST_type, arg_fields, 3);
@@ -1158,7 +1164,7 @@ static int init_types(void)
     if (!type_ignore_type) return 0;
     if (!add_attributes(type_ignore_type, NULL, 0)) return 0;
     TypeIgnore_type = make_type("TypeIgnore", type_ignore_type,
-                                TypeIgnore_fields, 1);
+                                TypeIgnore_fields, 2);
     if (!TypeIgnore_type) return 0;
     initialized = 1;
     return 1;
@@ -2287,8 +2293,8 @@ JoinedStr(asdl_seq * values, int lineno, int col_offset, int end_lineno, int
 }
 
 expr_ty
-Constant(constant value, int lineno, int col_offset, int end_lineno, int
-         end_col_offset, PyArena *arena)
+Constant(constant value, string kind, int lineno, int col_offset, int
+         end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2301,6 +2307,7 @@ Constant(constant value, int lineno, int col_offset, int end_lineno, int
         return NULL;
     p->kind = Constant_kind;
     p->v.Constant.value = value;
+    p->v.Constant.kind = kind;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -2566,13 +2573,15 @@ ExceptHandler(expr_ty type, identifier name, asdl_seq * body, int lineno, int
 }
 
 arguments_ty
-arguments(asdl_seq * args, arg_ty vararg, asdl_seq * kwonlyargs, asdl_seq *
-          kw_defaults, arg_ty kwarg, asdl_seq * defaults, PyArena *arena)
+arguments(asdl_seq * posonlyargs, asdl_seq * args, arg_ty vararg, asdl_seq *
+          kwonlyargs, asdl_seq * kw_defaults, arg_ty kwarg, asdl_seq *
+          defaults, PyArena *arena)
 {
     arguments_ty p;
     p = (arguments_ty)PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
+    p->posonlyargs = posonlyargs;
     p->args = args;
     p->vararg = vararg;
     p->kwonlyargs = kwonlyargs;
@@ -2657,14 +2666,20 @@ withitem(expr_ty context_expr, expr_ty optional_vars, PyArena *arena)
 }
 
 type_ignore_ty
-TypeIgnore(int lineno, PyArena *arena)
+TypeIgnore(int lineno, string tag, PyArena *arena)
 {
     type_ignore_ty p;
+    if (!tag) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field tag is required for TypeIgnore");
+        return NULL;
+    }
     p = (type_ignore_ty)PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
     p->kind = TypeIgnore_kind;
     p->v.TypeIgnore.lineno = lineno;
+    p->v.TypeIgnore.tag = tag;
     return p;
 }
 
@@ -3507,6 +3522,11 @@ ast2obj_expr(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_value, value) == -1)
             goto failed;
         Py_DECREF(value);
+        value = ast2obj_string(o->v.Constant.kind);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_kind, value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     case Attribute_kind:
         result = PyType_GenericNew(Attribute_type, NULL, NULL);
@@ -3941,6 +3961,11 @@ ast2obj_arguments(void* _o)
 
     result = PyType_GenericNew(arguments_type, NULL, NULL);
     if (!result) return NULL;
+    value = ast2obj_list(o->posonlyargs, ast2obj_arg);
+    if (!value) goto failed;
+    if (_PyObject_SetAttrId(result, &PyId_posonlyargs, value) == -1)
+        goto failed;
+    Py_DECREF(value);
     value = ast2obj_list(o->args, ast2obj_arg);
     if (!value) goto failed;
     if (_PyObject_SetAttrId(result, &PyId_args, value) == -1)
@@ -4131,6 +4156,11 @@ ast2obj_type_ignore(void* _o)
         value = ast2obj_int(o->v.TypeIgnore.lineno);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_lineno, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_string(o->v.TypeIgnore.tag);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_tag, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -7224,6 +7254,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     }
     if (isinstance) {
         constant value;
+        string kind;
 
         if (_PyObject_LookupAttrId(obj, &PyId_value, &tmp) < 0) {
             return 1;
@@ -7238,8 +7269,21 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Constant(value, lineno, col_offset, end_lineno, end_col_offset,
-                        arena);
+        if (_PyObject_LookupAttrId(obj, &PyId_kind, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            kind = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &kind, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = Constant(value, kind, lineno, col_offset, end_lineno,
+                        end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8244,6 +8288,7 @@ int
 obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
 {
     PyObject* tmp = NULL;
+    asdl_seq* posonlyargs;
     asdl_seq* args;
     arg_ty vararg;
     asdl_seq* kwonlyargs;
@@ -8251,6 +8296,36 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
     arg_ty kwarg;
     asdl_seq* defaults;
 
+    if (_PyObject_LookupAttrId(obj, &PyId_posonlyargs, &tmp) < 0) {
+        return 1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"posonlyargs\" missing from arguments");
+        return 1;
+    }
+    else {
+        int res;
+        Py_ssize_t len;
+        Py_ssize_t i;
+        if (!PyList_Check(tmp)) {
+            PyErr_Format(PyExc_TypeError, "arguments field \"posonlyargs\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+            goto failed;
+        }
+        len = PyList_GET_SIZE(tmp);
+        posonlyargs = _Py_asdl_seq_new(len, arena);
+        if (posonlyargs == NULL) goto failed;
+        for (i = 0; i < len; i++) {
+            arg_ty val;
+            res = obj2ast_arg(PyList_GET_ITEM(tmp, i), &val, arena);
+            if (res != 0) goto failed;
+            if (len != PyList_GET_SIZE(tmp)) {
+                PyErr_SetString(PyExc_RuntimeError, "arguments field \"posonlyargs\" changed size during iteration");
+                goto failed;
+            }
+            asdl_seq_SET(posonlyargs, i, val);
+        }
+        Py_CLEAR(tmp);
+    }
     if (_PyObject_LookupAttrId(obj, &PyId_args, &tmp) < 0) {
         return 1;
     }
@@ -8397,8 +8472,8 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         }
         Py_CLEAR(tmp);
     }
-    *out = arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults,
-                     arena);
+    *out = arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults, kwarg,
+                     defaults, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -8653,6 +8728,7 @@ obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena* arena)
     }
     if (isinstance) {
         int lineno;
+        string tag;
 
         if (_PyObject_LookupAttrId(obj, &PyId_lineno, &tmp) < 0) {
             return 1;
@@ -8667,7 +8743,20 @@ obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = TypeIgnore(lineno, arena);
+        if (_PyObject_LookupAttrId(obj, &PyId_tag, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"tag\" missing from TypeIgnore");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &tag, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = TypeIgnore(lineno, tag, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8691,6 +8780,8 @@ PyInit__ast(void)
     if (!m) return NULL;
     d = PyModule_GetDict(m);
     if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;
+    if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)
+        return NULL;
     if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)
         return NULL;
     if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)
@@ -8904,6 +8995,10 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
     PyObject *req_type[3];
     char *req_name[] = {"Module", "Expression", "Interactive"};
     int isinstance;
+
+    if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
+        return NULL;
+    }
 
     req_type[0] = (PyObject*)Module_type;
     req_type[1] = (PyObject*)Expression_type;

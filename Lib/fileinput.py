@@ -8,9 +8,9 @@ Typical use is:
 
 This iterates over the lines of all files listed in sys.argv[1:],
 defaulting to sys.stdin if the list is empty.  If a filename is '-' it
-is also replaced by sys.stdin.  To specify an alternative list of
-filenames, pass it as the argument to input().  A single file name is
-also allowed.
+is also replaced by sys.stdin and the optional arguments mode and
+openhook are ignored.  To specify an alternative list of filenames,
+pass it as the argument to input().  A single file name is also allowed.
 
 Functions filename(), lineno() return the filename and cumulative line
 number of the line that has just been read; filelineno() returns its
@@ -80,8 +80,7 @@ __all__ = ["input", "close", "nextfile", "filename", "lineno", "filelineno",
 
 _state = None
 
-def input(files=None, inplace=False, backup="", bufsize=0,
-          mode="r", openhook=None):
+def input(files=None, inplace=False, backup="", *, mode="r", openhook=None):
     """Return an instance of the FileInput class, which can be iterated.
 
     The parameters are passed to the constructor of the FileInput class.
@@ -91,7 +90,7 @@ def input(files=None, inplace=False, backup="", bufsize=0,
     global _state
     if _state and _state._file:
         raise RuntimeError("input() already active")
-    _state = FileInput(files, inplace, backup, bufsize, mode, openhook)
+    _state = FileInput(files, inplace, backup, mode=mode, openhook=openhook)
     return _state
 
 def close():
@@ -173,7 +172,7 @@ def isstdin():
     return _state.isstdin()
 
 class FileInput:
-    """FileInput([files[, inplace[, backup[, bufsize, [, mode[, openhook]]]]]])
+    """FileInput([files[, inplace[, backup]]], *, mode=None, openhook=None)
 
     Class FileInput is the implementation of the module; its methods
     filename(), lineno(), fileline(), isfirstline(), isstdin(), fileno(),
@@ -185,7 +184,7 @@ class FileInput:
     sequential order; random access and readline() cannot be mixed.
     """
 
-    def __init__(self, files=None, inplace=False, backup="", bufsize=0,
+    def __init__(self, files=None, inplace=False, backup="", *,
                  mode="r", openhook=None):
         if isinstance(files, str):
             files = (files,)
@@ -201,10 +200,6 @@ class FileInput:
         self._files = files
         self._inplace = inplace
         self._backup = backup
-        if bufsize:
-            import warnings
-            warnings.warn('bufsize is deprecated and ignored',
-                          DeprecationWarning, stacklevel=2)
         self._savestdout = None
         self._output = None
         self._filename = None
@@ -222,6 +217,7 @@ class FileInput:
             warnings.warn("'U' mode is deprecated",
                           DeprecationWarning, 2)
         self._mode = mode
+        self._write_mode = mode.replace('r', 'w') if 'U' not in mode else 'w'
         if openhook:
             if inplace:
                 raise ValueError("FileInput cannot use an opening hook in inplace mode")
@@ -348,14 +344,14 @@ class FileInput:
                 try:
                     perm = os.fstat(self._file.fileno()).st_mode
                 except OSError:
-                    self._output = open(self._filename, "w")
+                    self._output = open(self._filename, self._write_mode)
                 else:
                     mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
                     if hasattr(os, 'O_BINARY'):
                         mode |= os.O_BINARY
 
                     fd = os.open(self._filename, mode, perm)
-                    self._output = os.fdopen(fd, "w")
+                    self._output = os.fdopen(fd, self._write_mode)
                     try:
                         os.chmod(self._filename, perm)
                     except OSError:

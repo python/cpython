@@ -2113,7 +2113,7 @@ Build
 - Issue #21285: Refactor and fix curses configure check to always search
   in a ncursesw directory.
 
-- Issue #15234: For BerkelyDB and Sqlite, only add the found library and
+- Issue #15234: For BerkeleyDB and Sqlite, only add the found library and
   include directories if they aren't already being searched. This avoids
   an explicit runtime library dependency.
 

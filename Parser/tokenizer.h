@@ -64,6 +64,13 @@ struct tok_state {
     const char* input; /* Tokenizer's newline translated copy of the string. */
 
     int type_comments;      /* Whether to look for type comments */
+
+    /* async/await related fields (still needed depending on feature_version) */
+    int async_hacks;     /* =1 if async/await aren't always keywords */
+    int async_def;        /* =1 if tokens are inside an 'async def' body. */
+    int async_def_indent; /* Indentation level of the outermost 'async def'. */
+    int async_def_nl;     /* =1 if the outermost 'async def' had at least one
+                             NEWLINE token after it. */
 };
 
 extern struct tok_state *PyTokenizer_FromString(const char *, int);
@@ -72,6 +79,8 @@ extern struct tok_state *PyTokenizer_FromFile(FILE *, const char*,
                                               const char *, const char *);
 extern void PyTokenizer_Free(struct tok_state *);
 extern int PyTokenizer_Get(struct tok_state *, char **, char **);
+
+#define tok_dump _Py_tok_dump
 
 #ifdef __cplusplus
 }

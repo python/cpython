@@ -109,7 +109,7 @@ tests = [
     ('(?s)a.b', 'a\nb', SUCCEED, 'found', 'a\nb'),
     ('(?s)a.*b', 'acc\nccb', SUCCEED, 'found', 'acc\nccb'),
     ('(?s)a.{4,5}b', 'acc\nccb', SUCCEED, 'found', 'acc\nccb'),
-    ('(?s)a.b', 'a\nb', SUCCEED, 'found', 'a\nb'),
+    ('(?s)a.b', 'a\rb', SUCCEED, 'found', 'a\rb'),
 
     (')', '', SYNTAX_ERROR),           # Unmatched right bracket
     ('', '', SUCCEED, 'found', ''),    # Empty pattern

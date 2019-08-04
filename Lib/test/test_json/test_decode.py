@@ -95,5 +95,9 @@ class TestDecode:
         d = self.json.JSONDecoder()
         self.assertRaises(ValueError, d.raw_decode, 'a'*42, -50000)
 
+    def test_deprecated_encode(self):
+        with self.assertWarns(DeprecationWarning):
+            self.loads('{}', encoding='fake')
+
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass

@@ -21,17 +21,6 @@ PyAPI_FUNC(void) PyErr_GetExcInfo(PyObject **, PyObject **, PyObject **);
 PyAPI_FUNC(void) PyErr_SetExcInfo(PyObject *, PyObject *, PyObject *);
 #endif
 
-#if defined(__clang__) || \
-    (defined(__GNUC__) && \
-     ((__GNUC__ >= 3) || \
-      (__GNUC__ == 2) && (__GNUC_MINOR__ >= 5)))
-#  define _Py_NO_RETURN __attribute__((__noreturn__))
-#elif defined(_MSC_VER)
-#  define _Py_NO_RETURN __declspec(noreturn)
-#else
-#  define _Py_NO_RETURN
-#endif
-
 /* Defined in Python/pylifecycle.c */
 PyAPI_FUNC(void) _Py_NO_RETURN Py_FatalError(const char *message);
 

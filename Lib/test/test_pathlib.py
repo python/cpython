@@ -1221,7 +1221,8 @@ class _BasePathTest(object):
     #  |-- dirE  # No permissions
     #  |-- fileA
     #  |-- linkA -> fileA
-    #  `-- linkB -> dirB
+    #  |-- linkB -> dirB
+    #  `-- brokenLinkLoop -> brokenLinkLoop
     #
 
     def setUp(self):
@@ -1252,6 +1253,8 @@ class _BasePathTest(object):
             self.dirlink(os.path.join('..', 'dirB'), join('dirA', 'linkC'))
             # This one goes upwards, creating a loop.
             self.dirlink(os.path.join('..', 'dirB'), join('dirB', 'linkD'))
+            # Broken symlink (pointing to itself).
+            os.symlink('brokenLinkLoop',  join('brokenLinkLoop'))
 
     if os.name == 'nt':
         # Workaround for http://bugs.python.org/issue13772.
@@ -1384,7 +1387,7 @@ class _BasePathTest(object):
         paths = set(it)
         expected = ['dirA', 'dirB', 'dirC', 'dirE', 'fileA']
         if support.can_symlink():
-            expected += ['linkA', 'linkB', 'brokenLink']
+            expected += ['linkA', 'linkB', 'brokenLink', 'brokenLinkLoop']
         self.assertEqual(paths, { P(BASE, q) for q in expected })
 
     @support.skip_unless_symlink
@@ -1465,6 +1468,7 @@ class _BasePathTest(object):
                   'fileA',
                   'linkA',
                   'linkB',
+                  'brokenLinkLoop',
                   }
         self.assertEqual(given, {p / x for x in expect})
 
@@ -1635,6 +1639,11 @@ class _BasePathTest(object):
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
+    def test_unlink_missing_ok(self):
+        p = self.cls(BASE) / 'fileAAA'
+        self.assertFileNotFound(p.unlink)
+        p.unlink(missing_ok=True)
+
     def test_rmdir(self):
         p = self.cls(BASE) / 'dirA'
         for q in p.iterdir():
@@ -1642,6 +1651,25 @@ class _BasePathTest(object):
         p.rmdir()
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
+
+    def test_link_to(self):
+        P = self.cls(BASE)
+        p = P / 'fileA'
+        size = p.stat().st_size
+        # linking to another path.
+        q = P / 'dirA' / 'fileAA'
+        try:
+            p.link_to(q)
+        except PermissionError as e:
+            self.skipTest('os.link(): %s' % e)
+        self.assertEqual(q.stat().st_size, size)
+        self.assertEqual(os.path.samefile(p, q), True)
+        self.assertTrue(p.stat)
+        # Linking to a str of a relative path.
+        r = rel_join('fileAAA')
+        q.link_to(r)
+        self.assertEqual(os.stat(r).st_size, size)
+        self.assertTrue(q.stat)
 
     def test_rename(self):
         P = self.cls(BASE)

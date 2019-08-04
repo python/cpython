@@ -1,4 +1,0 @@
-The :meth:`~object.__index__` special method will be used instead of
-:meth:`~object.__int__` for implicit conversion of Python numbers to C
-integers.  Using the ``__int__()`` method in implicit conversions has been
-deprecated.

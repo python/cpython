@@ -6,6 +6,7 @@ Note: test_regrtest cannot be run twice in parallel.
 
 import contextlib
 import faulthandler
+import glob
 import io
 import os.path
 import platform
@@ -21,7 +22,7 @@ from test import support
 from test.libregrtest import utils
 
 
-Py_DEBUG = hasattr(sys, 'getobjects')
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 
@@ -108,7 +109,7 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertTrue(ns.quiet)
                 self.assertEqual(ns.verbose, 0)
 
-    def test_slow(self):
+    def test_slowest(self):
         for opt in '-o', '--slowest':
             with self.subTest(opt=opt):
                 ns = libregrtest._parse_args([opt])
@@ -254,9 +255,7 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.checkError([opt], 'expected one argument')
                 self.checkError([opt, 'foo'], 'invalid int value')
                 self.checkError([opt, '2', '-T'], "don't go together")
-                self.checkError([opt, '2', '-l'], "don't go together")
                 self.checkError([opt, '0', '-T'], "don't go together")
-                self.checkError([opt, '0', '-l'], "don't go together")
 
     def test_coverage(self):
         for opt in '-T', '--coverage':
@@ -453,8 +452,8 @@ class BaseTestCase(unittest.TestCase):
             regex = list_regex('%s re-run test%s', rerun)
             self.check_line(output, regex)
             self.check_line(output, "Re-running failed tests in verbose mode")
-            for name in rerun:
-                regex = "Re-running test %r in verbose mode" % name
+            for test_name in rerun:
+                regex = f"Re-running {test_name} in verbose mode"
                 self.check_line(output, regex)
 
         if no_test_ran:
@@ -486,7 +485,7 @@ class BaseTestCase(unittest.TestCase):
             result.append('SUCCESS')
         result = ', '.join(result)
         if rerun:
-            self.check_line(output, 'Tests result: %s' % result)
+            self.check_line(output, 'Tests result: FAILURE')
             result = 'FAILURE then %s' % result
 
         self.check_line(output, 'Tests result: %s' % result)
@@ -501,7 +500,7 @@ class BaseTestCase(unittest.TestCase):
         if not input:
             input = ''
         if 'stderr' not in kw:
-            kw['stderr'] = subprocess.PIPE
+            kw['stderr'] = subprocess.STDOUT
         proc = subprocess.run(args,
                               universal_newlines=True,
                               input=input,
@@ -529,6 +528,31 @@ class BaseTestCase(unittest.TestCase):
         args = [sys.executable, '-X', 'faulthandler', '-I', *args]
         proc = self.run_command(args, **kw)
         return proc.stdout
+
+
+class CheckActualTests(BaseTestCase):
+    """
+    Check that regrtest appears to find the expected set of tests.
+    """
+
+    def test_finds_expected_number_of_tests(self):
+        args = ['-Wd', '-E', '-bb', '-m', 'test.regrtest', '--list-tests']
+        output = self.run_python(args)
+        rough_number_of_tests_found = len(output.splitlines())
+        actual_testsuite_glob = os.path.join(os.path.dirname(__file__),
+                                             'test*.py')
+        rough_counted_test_py_files = len(glob.glob(actual_testsuite_glob))
+        # We're not trying to duplicate test finding logic in here,
+        # just give a rough estimate of how many there should be and
+        # be near that.  This is a regression test to prevent mishaps
+        # such as https://bugs.python.org/issue37667 in the future.
+        # If you need to change the values in here during some
+        # mythical future test suite reorganization, don't go
+        # overboard with logic and keep that goal in mind.
+        self.assertGreater(rough_number_of_tests_found,
+                           rough_counted_test_py_files*9//10,
+                           msg='Unexpectedly low number of tests found in:\n'
+                           f'{", ".join(output.splitlines())}')
 
 
 class ProgramsTestCase(BaseTestCase):
@@ -618,7 +642,11 @@ class ProgramsTestCase(BaseTestCase):
         # Tools\buildbot\test.bat
         script = os.path.join(ROOT_DIR, 'Tools', 'buildbot', 'test.bat')
         test_args = ['--testdir=%s' % self.tmptestdir]
-        if platform.architecture()[0] == '64bit':
+        if platform.machine() == 'ARM64':
+            test_args.append('-arm64') # ARM 64-bit build
+        elif platform.machine() == 'ARM':
+            test_args.append('-arm32')   # 32-bit ARM build
+        elif platform.architecture()[0] == '64bit':
             test_args.append('-x64')   # 64-bit build
         if not Py_DEBUG:
             test_args.append('+d')     # Release build, use python.exe
@@ -631,7 +659,11 @@ class ProgramsTestCase(BaseTestCase):
         if not os.path.isfile(script):
             self.skipTest(f'File "{script}" does not exist')
         rt_args = ["-q"]             # Quick, don't run tests twice
-        if platform.architecture()[0] == '64bit':
+        if platform.machine() == 'ARM64':
+            rt_args.append('-arm64') # ARM 64-bit build
+        elif platform.machine() == 'ARM':
+            rt_args.append('-arm32')   # 32-bit ARM build
+        elif platform.architecture()[0] == '64bit':
             rt_args.append('-x64')   # 64-bit build
         if Py_DEBUG:
             rt_args.append('-d')     # Debug build, use python_d.exe
@@ -780,22 +812,23 @@ class ArgsTestCase(BaseTestCase):
                  % (self.TESTNAME_REGEX, len(tests)))
         self.check_line(output, regex)
 
-    def test_slow_interrupted(self):
+    def test_slowest_interrupted(self):
         # Issue #25373: test --slowest with an interrupted test
         code = TEST_INTERRUPTED
         test = self.create_test("sigint", code=code)
 
         for multiprocessing in (False, True):
-            if multiprocessing:
-                args = ("--slowest", "-j2", test)
-            else:
-                args = ("--slowest", test)
-            output = self.run_tests(*args, exitcode=130)
-            self.check_executed_tests(output, test,
-                                      omitted=test, interrupted=True)
+            with self.subTest(multiprocessing=multiprocessing):
+                if multiprocessing:
+                    args = ("--slowest", "-j2", test)
+                else:
+                    args = ("--slowest", test)
+                output = self.run_tests(*args, exitcode=130)
+                self.check_executed_tests(output, test,
+                                          omitted=test, interrupted=True)
 
-            regex = ('10 slowest tests:\n')
-            self.check_line(output, regex)
+                regex = ('10 slowest tests:\n')
+                self.check_line(output, regex)
 
     def test_coverage(self):
         # test --coverage
@@ -914,13 +947,13 @@ class ArgsTestCase(BaseTestCase):
                                 testname)
         self.assertEqual(output.splitlines(), all_methods)
 
+    @support.cpython_only
     def test_crashed(self):
         # Any code which causes a crash
         code = 'import faulthandler; faulthandler._sigsegv()'
         crash_test = self.create_test(name="crash", code=code)
-        ok_test = self.create_test(name="ok")
 
-        tests = [crash_test, ok_test]
+        tests = [crash_test]
         output = self.run_tests("-j2", *tests, exitcode=2)
         self.check_executed_tests(output, tests, failed=crash_test,
                                   randomize=True)
@@ -990,6 +1023,7 @@ class ArgsTestCase(BaseTestCase):
                                   fail_env_changed=True)
 
     def test_rerun_fail(self):
+        # FAILURE then FAILURE
         code = textwrap.dedent("""
             import unittest
 
@@ -1003,6 +1037,26 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=2)
         self.check_executed_tests(output, [testname],
                                   failed=testname, rerun=testname)
+
+    def test_rerun_success(self):
+        # FAILURE then SUCCESS
+        code = textwrap.dedent("""
+            import builtins
+            import unittest
+
+            class Tests(unittest.TestCase):
+                failed = False
+
+                def test_fail_once(self):
+                    if not hasattr(builtins, '_test_failed'):
+                        builtins._test_failed = True
+                        self.fail("bug")
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-w", testname, exitcode=0)
+        self.check_executed_tests(output, [testname],
+                                  rerun=testname)
 
     def test_no_tests_ran(self):
         code = textwrap.dedent("""
@@ -1067,6 +1121,81 @@ class ArgsTestCase(BaseTestCase):
                                 "-m", "test_other_bug", exitcode=0)
         self.check_executed_tests(output, [testname, testname2],
                                   no_test_ran=[testname])
+
+    @support.cpython_only
+    def test_findleaks(self):
+        code = textwrap.dedent(r"""
+            import _testcapi
+            import gc
+            import unittest
+
+            @_testcapi.with_tp_del
+            class Garbage:
+                def __tp_del__(self):
+                    pass
+
+            class Tests(unittest.TestCase):
+                def test_garbage(self):
+                    # create an uncollectable object
+                    obj = Garbage()
+                    obj.ref_cycle = obj
+                    obj = None
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("--fail-env-changed", testname, exitcode=3)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=[testname],
+                                  fail_env_changed=True)
+
+        # --findleaks is now basically an alias to --fail-env-changed
+        output = self.run_tests("--findleaks", testname, exitcode=3)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=[testname],
+                                  fail_env_changed=True)
+
+    def test_unraisable_exc(self):
+        # --fail-env-changed must catch unraisable exception
+        code = textwrap.dedent(r"""
+            import unittest
+            import weakref
+
+            class MyObject:
+                pass
+
+            def weakref_callback(obj):
+                raise Exception("weakref callback bug")
+
+            class Tests(unittest.TestCase):
+                def test_unraisable_exc(self):
+                    obj = MyObject()
+                    ref = weakref.ref(obj, weakref_callback)
+                    # call weakref_callback() which logs
+                    # an unraisable exception
+                    obj = None
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("--fail-env-changed", "-v", testname, exitcode=3)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=[testname],
+                                  fail_env_changed=True)
+        self.assertIn("Warning -- Unraisable exception", output)
+
+    def test_cleanup(self):
+        dirname = os.path.join(self.tmptestdir, "test_python_123")
+        os.mkdir(dirname)
+        filename = os.path.join(self.tmptestdir, "test_python_456")
+        open(filename, "wb").close()
+        names = [dirname, filename]
+
+        cmdargs = ['-m', 'test',
+                   '--tempdir=%s' % self.tmptestdir,
+                   '--cleanup']
+        self.run_python(cmdargs)
+
+        for name in names:
+            self.assertFalse(os.path.exists(name), name)
 
 
 class TestUtils(unittest.TestCase):

@@ -228,7 +228,7 @@ class TestBasicOps:
             choices([], cum_weights=[], k=5)
 
     def test_choices_subnormal(self):
-        # Subnormal weights would occassionally trigger an IndexError
+        # Subnormal weights would occasionally trigger an IndexError
         # in choices() when the value returned by random() was large
         # enough to make `random() * total` round up to the total.
         # See https://bugs.python.org/msg275594 for more detail.
@@ -719,7 +719,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         c = self.gen.choices(range(n), cum_weights=range(1, n+1), k=10000)
         self.assertEqual(a, c)
 
-        # Amerian Roulette
+        # American Roulette
         population = ['Red', 'Black', 'Green']
         weights = [18, 18, 2]
         cum_weights = [18, 36, 38]

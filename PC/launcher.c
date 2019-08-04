@@ -718,7 +718,7 @@ invoke_child(wchar_t * executable, wchar_t * suffix, wchar_t * cmdline)
         }
         child_command = calloc(child_command_size, sizeof(wchar_t));
         if (child_command == NULL)
-            error(RC_CREATE_PROCESS, L"unable to allocate %d bytes for child command.",
+            error(RC_CREATE_PROCESS, L"unable to allocate %zd bytes for child command.",
                   child_command_size);
         if (no_suffix)
             _snwprintf_s(child_command, child_command_size,
@@ -1139,7 +1139,7 @@ static PYC_MAGIC magic_values[] = {
     { 3320, 3351, L"3.5" },
     { 3360, 3379, L"3.6" },
     { 3390, 3399, L"3.7" },
-    { 3400, 3409, L"3.8" },
+    { 3400, 3410, L"3.8" },
     { 0 }
 };
 
@@ -1189,7 +1189,7 @@ maybe_handle_shebang(wchar_t ** argv, wchar_t * cmdline)
 
     if (rc == 0) {
         read = fread(buffer, sizeof(char), BUFSIZE, fp);
-        debug(L"maybe_handle_shebang: read %d bytes\n", read);
+        debug(L"maybe_handle_shebang: read %zd bytes\n", read);
         fclose(fp);
 
         if ((read >= 4) && (buffer[3] == '\n') && (buffer[2] == '\r')) {
@@ -1209,7 +1209,7 @@ maybe_handle_shebang(wchar_t ** argv, wchar_t * cmdline)
             bom = BOMs; /* points to UTF-8 entry - the default */
         }
         else {
-            debug(L"maybe_handle_shebang: BOM found, code page %d\n",
+            debug(L"maybe_handle_shebang: BOM found, code page %u\n",
                   bom->code_page);
             start = &buffer[bom->length];
         }
