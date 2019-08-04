@@ -129,7 +129,7 @@ class AutoCompleteTest(unittest.TestCase):
         acp.text.after_cancel = cancel
         trycompletions()
         Equal(acp._delayed_completion_index, text.index('insert'))
-        Equal(cancel.args, (cb1,))  
+        Equal(cancel.args, (cb1,))
         Equal(after.args,
               (acp.popupwait, acp._delayed_open_completions, ac.TRY_F))
         Equal(acp._delayed_completion_id, 'after2')
