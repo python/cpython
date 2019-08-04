@@ -236,7 +236,7 @@ method_check_args(PyObject *func, PyObject *const *args, Py_ssize_t nargs, PyObj
 {
     assert(!PyErr_Occurred());
     if (nargs < 1) {
-        PyObject *funcstr = PyObject_FunctionStr(func);
+        PyObject *funcstr = _PyObject_FunctionStr(func);
         if (funcstr != NULL) {
             PyErr_Format(PyExc_TypeError,
                          "%U needs an argument", funcstr);
@@ -250,7 +250,7 @@ method_check_args(PyObject *func, PyObject *const *args, Py_ssize_t nargs, PyObj
         return -1;
     }
     if (kwnames && PyTuple_GET_SIZE(kwnames)) {
-        PyObject *funcstr = PyObject_FunctionStr(func);
+        PyObject *funcstr = _PyObject_FunctionStr(func);
         if (funcstr != NULL) {
             PyErr_Format(PyExc_TypeError,
                          "%U takes no keyword arguments", funcstr);
@@ -375,7 +375,7 @@ method_vectorcall_NOARGS(
         return NULL;
     }
     if (nargs != 1) {
-        PyObject *funcstr = PyObject_FunctionStr(func);
+        PyObject *funcstr = _PyObject_FunctionStr(func);
         if (funcstr != NULL) {
             PyErr_Format(PyExc_TypeError,
                 "%U takes no arguments (%zd given)", funcstr, nargs-1);
@@ -401,7 +401,7 @@ method_vectorcall_O(
         return NULL;
     }
     if (nargs != 2) {
-        PyObject *funcstr = PyObject_FunctionStr(func);
+        PyObject *funcstr = _PyObject_FunctionStr(func);
         if (funcstr != NULL) {
             PyErr_Format(PyExc_TypeError,
                 "%U takes exactly one argument (%zd given)",

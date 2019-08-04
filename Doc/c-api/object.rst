@@ -197,7 +197,7 @@ Object Protocol
       does not silently discard an active exception.
 
 
-.. c:function:: PyObject* PyObject_FunctionStr(PyObject *func)
+.. c:function:: PyObject* _PyObject_FunctionStr(PyObject *func)
 
    Return a user-friendly string representation of the function-like object
    *func*. This returns ``func.__qualname__ + "()"`` if there is a

@@ -665,14 +665,14 @@ PyObject_Bytes(PyObject *v)
 
 
 /*
-def PyObject_FunctionStr(f):
+def _PyObject_FunctionStr(f):
     try:
         return f.__qualname__ + "()"
     except Exception:
         return type(f).__name__ + " object"
 */
 PyObject *
-PyObject_FunctionStr(PyObject *f)
+_PyObject_FunctionStr(PyObject *f)
 {
     _Py_IDENTIFIER(__qualname__);
     PyObject *name = _PyObject_GetAttrId(f, &PyId___qualname__);
@@ -683,8 +683,6 @@ PyObject_FunctionStr(PyObject *f)
     }
     /* __qualname__ lookup failed */
     if (!PyErr_ExceptionMatches(PyExc_Exception)) {
-        /* An exception not inheriting from Exception, like KeyboardInterrupt.
-         * Propagate it. */
         return NULL;
     }
     PyErr_Clear();

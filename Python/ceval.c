@@ -5344,7 +5344,7 @@ check_args_iterable(PyThreadState *tstate, PyObject *func, PyObject *args)
         /* check_args_iterable() may be called with a live exception,
          * clear it. */
         PyErr_Clear();
-        PyObject *funcstr = PyObject_FunctionStr(func);
+        PyObject *funcstr = _PyObject_FunctionStr(func);
         if (funcstr != NULL) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "%U argument after * must be an iterable, not %.200s",
