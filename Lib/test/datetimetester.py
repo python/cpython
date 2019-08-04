@@ -13,14 +13,13 @@ import random
 import re
 import struct
 import unittest
-from unittest.mock import ANY
 
 from array import array
 
 from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
-from test.support import is_resource_enabled, LARGEST
+from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -341,15 +340,16 @@ class TestTimeZone(unittest.TestCase):
         self.assertFalse(timezone(ZERO) ==  None)
 
         tz = timezone(ZERO)
+        self.assertTrue(tz == ALWAYS_EQ)
+        self.assertFalse(tz != ALWAYS_EQ)
         self.assertTrue(tz < LARGEST)
         self.assertFalse(tz > LARGEST)
         self.assertTrue(tz <= LARGEST)
         self.assertFalse(tz >= LARGEST)
-        self.assertFalse(tz == LARGEST)
-        self.assertTrue(tz != LARGEST)
-
-        self.assertTrue(tz == ANY)
-        self.assertFalse(tz != ANY)
+        self.assertFalse(tz < SMALLEST)
+        self.assertTrue(tz > SMALLEST)
+        self.assertFalse(tz <= SMALLEST)
+        self.assertTrue(tz >= SMALLEST)
 
     def test_aware_datetime(self):
         # test that timezone instances can be used by datetime
@@ -412,10 +412,10 @@ class HarmlessMixedComparison:
 
         # Comparison to objects of unsupported types should return
         # NotImplemented which falls back to the right hand side's __eq__
-        # method. In this case, ANY.__eq__ always returns True.
-        # ANY.__ne__ always returns False.
-        self.assertTrue(me == ANY)
-        self.assertFalse(me != ANY)
+        # method. In this case, ALWAYS_EQ.__eq__ always returns True.
+        # ALWAYS_EQ.__ne__ always returns False.
+        self.assertTrue(me == ALWAYS_EQ)
+        self.assertFalse(me != ALWAYS_EQ)
 
         # If the other class explicitly defines ordering
         # relative to our class, it is allowed to do so
@@ -423,8 +423,10 @@ class HarmlessMixedComparison:
         self.assertFalse(me > LARGEST)
         self.assertTrue(me <= LARGEST)
         self.assertFalse(me >= LARGEST)
-        self.assertFalse(me == LARGEST)
-        self.assertTrue(me != LARGEST)
+        self.assertFalse(me < SMALLEST)
+        self.assertTrue(me > SMALLEST)
+        self.assertFalse(me <= SMALLEST)
+        self.assertTrue(me >= SMALLEST)
 
     def test_harmful_mixed_comparison(self):
         me = self.theclass(1, 1, 1)

@@ -113,6 +113,7 @@ __all__ = [
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
+    "ALWAYS_EQ", "LARGEST", "SMALLEST"
     ]
 
 class Error(Exception):
@@ -972,6 +973,10 @@ SAVEDCWD = os.getcwd()
 # Set by libregrtest/main.py so we can skip tests that are not
 # useful for PGO
 PGO = False
+
+# Set by libregrtest/main.py if we are running the extended (time consuming)
+# PGO task.  If this is True, PGO is also True.
+PGO_EXTENDED = False
 
 @contextlib.contextmanager
 def temp_dir(path=None, quiet=False):
@@ -2638,6 +2643,12 @@ def skip_unless_xattr(test):
     msg = "no non-broken extended attribute support"
     return test if ok else unittest.skip(msg)(test)
 
+def skip_if_pgo_task(test):
+    """Skip decorator for tests not run in (non-extended) PGO task"""
+    ok = not PGO or PGO_EXTENDED
+    msg = "Not run for (non-extended) PGO task"
+    return test if ok else unittest.skip(msg)(test)
+
 _bind_nix_socket_error = None
 def skip_unless_bind_unix_socket(test):
     """Decorator for tests requiring a functional bind() for unix sockets."""
@@ -3092,6 +3103,17 @@ class FakePath:
         else:
             return self.path
 
+
+class _ALWAYS_EQ:
+    """
+    Object that is equal to anything.
+    """
+    def __eq__(self, other):
+        return True
+    def __ne__(self, other):
+        return False
+
+ALWAYS_EQ = _ALWAYS_EQ()
 
 @functools.total_ordering
 class _LARGEST:
