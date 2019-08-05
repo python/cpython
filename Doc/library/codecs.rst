@@ -780,8 +780,8 @@ compatible with the Python codec registry.
       Read all lines available on the input stream and return them as a list of
       lines.
 
-      Line-endings are implemented using the codec's decoder method and are
-      included in the list entries if *keepends* is true.
+      Line-endings are implemented using the codec's :meth:`decode` method and
+      are included in the list entries if *keepends* is true.
 
       *sizehint*, if given, is passed as the *size* argument to the stream's
       :meth:`read` method.
