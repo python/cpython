@@ -1,2 +1,2 @@
-Archives created by the ``zipfile`` module can now use LZMA compression
+Archives created by the :mod:`zipfile` module can now use LZMA compression
 presets.
