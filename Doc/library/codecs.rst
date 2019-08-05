@@ -568,7 +568,7 @@ define in order to be compatible with the Python codec registry.
       implementation should make sure that ``0`` is the most common
       state. (States that are more complicated than integers can be converted
       into an integer by marshaling/pickling the state and encoding the bytes
-      of the resulting string into an integer).
+      of the resulting string into an integer.)
 
 
    .. method:: setstate(state)
