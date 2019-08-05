@@ -1,0 +1,1 @@
+Remove an unnecssary Py_XINCREF in classobject.c.

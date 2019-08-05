@@ -6,7 +6,7 @@ Worse, this can cause IDLE to become very slow, even to the point of being
 completely unusable.
 
 This extension will automatically replace long texts with a small button.
-Double-cliking this button will remove it and insert the original text instead.
+Double-clicking this button will remove it and insert the original text instead.
 Middle-clicking will copy the text to the clipboard. Right-clicking will open
 the text in a separate viewing window.
 

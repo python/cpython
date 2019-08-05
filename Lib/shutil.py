@@ -49,8 +49,8 @@ if os.name == 'posix':
 elif _WINDOWS:
     import nt
 
-COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 16 * 1024
-_HAS_SENDFILE = posix and hasattr(os, "sendfile")
+COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
+_USE_CP_SENDFILE = hasattr(os, "sendfile") and sys.platform.startswith("linux")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
@@ -111,7 +111,7 @@ def _fastcopy_fcopyfile(fsrc, fdst, flags):
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
     high-performance sendfile(2) syscall.
-    This should work on Linux >= 2.6.33 and Solaris only.
+    This should work on Linux >= 2.6.33 only.
     """
     # Note: copyfileobj() is left alone in order to not introduce any
     # unexpected breakage. Possible risks by using zero-copy calls
@@ -122,7 +122,7 @@ def _fastcopy_sendfile(fsrc, fdst):
     #   GzipFile (which decompresses data), HTTPResponse (which decodes
     #   chunks).
     # - possibly others (e.g. encrypted fs/partition?)
-    global _HAS_SENDFILE
+    global _USE_CP_SENDFILE
     try:
         infd = fsrc.fileno()
         outfd = fdst.fileno()
@@ -152,7 +152,7 @@ def _fastcopy_sendfile(fsrc, fdst):
                 # sendfile() on this platform (probably Linux < 2.6.33)
                 # does not support copies between regular files (only
                 # sockets).
-                _HAS_SENDFILE = False
+                _USE_CP_SENDFILE = False
                 raise _GiveupOnFastCopy(err)
 
             if err.errno == errno.ENOSPC:  # filesystem is full
@@ -187,9 +187,11 @@ def _copyfileobj_readinto(fsrc, fdst, length=COPY_BUFSIZE):
             else:
                 fdst_write(mv)
 
-def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
+def copyfileobj(fsrc, fdst, length=0):
     """copy data from file-like object fsrc to file-like object fdst"""
     # Localize variable access to minimize overhead.
+    if not length:
+        length = COPY_BUFSIZE
     fsrc_read = fsrc.read
     fdst_write = fdst.write
     while True:
@@ -258,8 +260,8 @@ def copyfile(src, dst, *, follow_symlinks=True):
                     return dst
                 except _GiveupOnFastCopy:
                     pass
-            # Linux / Solaris
-            elif _HAS_SENDFILE:
+            # Linux
+            elif _USE_CP_SENDFILE:
                 try:
                     _fastcopy_sendfile(fsrc, fdst)
                     return dst
@@ -288,10 +290,8 @@ def copymode(src, dst, *, follow_symlinks=True):
             stat_func, chmod_func = os.lstat, os.lchmod
         else:
             return
-    elif hasattr(os, 'chmod'):
-        stat_func, chmod_func = _stat, os.chmod
     else:
-        return
+        stat_func, chmod_func = _stat, os.chmod
 
     st = stat_func(src)
     chmod_func(dst, stat.S_IMODE(st.st_mode))
@@ -309,7 +309,7 @@ if hasattr(os, 'listxattr'):
         try:
             names = os.listxattr(src, follow_symlinks=follow_symlinks)
         except OSError as e:
-            if e.errno not in (errno.ENOTSUP, errno.ENODATA):
+            if e.errno not in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
                 raise
             return
         for name in names:
@@ -317,7 +317,8 @@ if hasattr(os, 'listxattr'):
                 value = os.getxattr(src, name, follow_symlinks=follow_symlinks)
                 os.setxattr(dst, name, value, follow_symlinks=follow_symlinks)
             except OSError as e:
-                if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA):
+                if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA,
+                                   errno.EINVAL):
                     raise
 else:
     def _copyxattr(*args, **kwargs):
@@ -359,6 +360,9 @@ def copystat(src, dst, *, follow_symlinks=True):
     mode = stat.S_IMODE(st.st_mode)
     lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
         follow_symlinks=follow)
+    # We must copy extended attributes before the file is (potentially)
+    # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
+    _copyxattr(src, dst, follow_symlinks=follow)
     try:
         lookup("chmod")(dst, mode, follow_symlinks=follow)
     except NotImplementedError:
@@ -382,7 +386,6 @@ def copystat(src, dst, *, follow_symlinks=True):
                     break
             else:
                 raise
-    _copyxattr(src, dst, follow_symlinks=follow)
 
 def copy(src, dst, *, follow_symlinks=True):
     """Copy data and mode bits ("cp src dst"). Return the file's destination.
@@ -472,7 +475,7 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                          dirs_exist_ok=dirs_exist_ok)
             else:
                 # Will raise a SpecialFileError for unsupported file types
-                copy_function(srcentry, dstname)
+                copy_function(srcobj, dstname)
         # catch the Error from the recursive copytree so that we can
         # continue with other files
         except Error as err:
@@ -527,6 +530,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     function that supports the same signature (like copy()) can be used.
 
     """
+    sys.audit("shutil.copytree", src, dst)
     with os.scandir(src) as entries:
         return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
                          ignore=ignore, copy_function=copy_function,
@@ -581,11 +585,16 @@ def _rmtree_safe_fd(topfd, path, onerror):
         fullname = os.path.join(path, entry.name)
         try:
             is_dir = entry.is_dir(follow_symlinks=False)
-            if is_dir:
-                orig_st = entry.stat(follow_symlinks=False)
-                is_dir = stat.S_ISDIR(orig_st.st_mode)
         except OSError:
             is_dir = False
+        else:
+            if is_dir:
+                try:
+                    orig_st = entry.stat(follow_symlinks=False)
+                    is_dir = stat.S_ISDIR(orig_st.st_mode)
+                except OSError:
+                    onerror(os.lstat, fullname, sys.exc_info())
+                    continue
         if is_dir:
             try:
                 dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)
@@ -632,6 +641,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
     is false and onerror is None, an exception is raised.
 
     """
+    sys.audit("shutil.rmtree", path)
     if ignore_errors:
         def onerror(*args):
             pass
@@ -957,6 +967,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     'owner' and 'group' are used when creating a tar archive. By default,
     uses the current owner and group.
     """
+    sys.audit("shutil.make_archive", base_name, format, root_dir, base_dir)
     save_cwd = os.getcwd()
     if root_dir is not None:
         if logger is not None:
@@ -1279,6 +1290,15 @@ def get_terminal_size(fallback=(80, 24)):
 
     return os.terminal_size((columns, lines))
 
+
+# Check that a given file can be accessed with the correct mode.
+# Additionally check that `file` is not a directory, as on Windows
+# directories pass the os.access check.
+def _access_check(fn, mode):
+    return (os.path.exists(fn) and os.access(fn, mode)
+            and not os.path.isdir(fn))
+
+
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     """Given a command, mode, and a PATH string, return the path which
     conforms to the given mode on the PATH, or None if there is no such
@@ -1289,13 +1309,6 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     path.
 
     """
-    # Check that a given file can be accessed with the correct mode.
-    # Additionally check that `file` is not a directory, as on Windows
-    # directories pass the os.access check.
-    def _access_check(fn, mode):
-        return (os.path.exists(fn) and os.access(fn, mode)
-                and not os.path.isdir(fn))
-
     # If we're given a path with a directory part, look it up directly rather
     # than referring to PATH directories. This includes checking relative to the
     # current directory, e.g. ./script
@@ -1304,19 +1317,42 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
             return cmd
         return None
 
+    use_bytes = isinstance(cmd, bytes)
+
     if path is None:
-        path = os.environ.get("PATH", os.defpath)
+        path = os.environ.get("PATH", None)
+        if path is None:
+            try:
+                path = os.confstr("CS_PATH")
+            except (AttributeError, ValueError):
+                # os.confstr() or CS_PATH is not available
+                path = os.defpath
+        # bpo-35755: Don't use os.defpath if the PATH environment variable is
+        # set to an empty string
+
+    # PATH='' doesn't match, whereas PATH=':' looks in the current directory
     if not path:
         return None
-    path = path.split(os.pathsep)
+
+    if use_bytes:
+        path = os.fsencode(path)
+        path = path.split(os.fsencode(os.pathsep))
+    else:
+        path = os.fsdecode(path)
+        path = path.split(os.pathsep)
 
     if sys.platform == "win32":
         # The current directory takes precedence on Windows.
-        if not os.curdir in path:
-            path.insert(0, os.curdir)
+        curdir = os.curdir
+        if use_bytes:
+            curdir = os.fsencode(curdir)
+        if curdir not in path:
+            path.insert(0, curdir)
 
         # PATHEXT is necessary to check on Windows.
         pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
+        if use_bytes:
+            pathext = [os.fsencode(ext) for ext in pathext]
         # See if the given file matches any of the expected path extensions.
         # This will allow us to short circuit when given "python.exe".
         # If it does match, only test that one, otherwise we have to try

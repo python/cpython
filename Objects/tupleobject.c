@@ -46,7 +46,7 @@ static void
 show_track(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    if (!interp->core_config.show_alloc_count) {
+    if (!interp->config.show_alloc_count) {
         return;
     }
 
@@ -240,7 +240,7 @@ tupledealloc(PyTupleObject *op)
     Py_ssize_t i;
     Py_ssize_t len =  Py_SIZE(op);
     PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_SAFE_BEGIN(op)
+    Py_TRASHCAN_BEGIN(op, tupledealloc)
     if (len > 0) {
         i = len;
         while (--i >= 0)
@@ -259,7 +259,7 @@ tupledealloc(PyTupleObject *op)
     }
     Py_TYPE(op)->tp_free((PyObject *)op);
 done:
-    Py_TRASHCAN_SAFE_END(op)
+    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -403,8 +403,7 @@ tuplecontains(PyTupleObject *a, PyObject *el)
     int cmp;
 
     for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(a); ++i)
-        cmp = PyObject_RichCompareBool(el, PyTuple_GET_ITEM(a, i),
-                                           Py_EQ);
+        cmp = PyObject_RichCompareBool(PyTuple_GET_ITEM(a, i), el, Py_EQ);
     return cmp;
 }
 
@@ -419,14 +418,26 @@ tupleitem(PyTupleObject *a, Py_ssize_t i)
     return a->ob_item[i];
 }
 
+PyObject *
+_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
+{
+    PyTupleObject *tuple = (PyTupleObject *)PyTuple_New(n);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    PyObject **dst = tuple->ob_item;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = src[i];
+        Py_INCREF(item);
+        dst[i] = item;
+    }
+    return (PyObject *)tuple;
+}
+
 static PyObject *
 tupleslice(PyTupleObject *a, Py_ssize_t ilow,
            Py_ssize_t ihigh)
 {
-    PyTupleObject *np;
-    PyObject **src, **dest;
-    Py_ssize_t i;
-    Py_ssize_t len;
     if (ilow < 0)
         ilow = 0;
     if (ihigh > Py_SIZE(a))
@@ -437,18 +448,7 @@ tupleslice(PyTupleObject *a, Py_ssize_t ilow,
         Py_INCREF(a);
         return (PyObject *)a;
     }
-    len = ihigh - ilow;
-    np = (PyTupleObject *)PyTuple_New(len);
-    if (np == NULL)
-        return NULL;
-    src = a->ob_item + ilow;
-    dest = np->ob_item;
-    for (i = 0; i < len; i++) {
-        PyObject *v = src[i];
-        Py_INCREF(v);
-        dest[i] = v;
-    }
-    return (PyObject *)np;
+    return _PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
 }
 
 PyObject *
@@ -752,7 +752,8 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
         return tupleitem(self, i);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelength, cur, i;
+        Py_ssize_t start, stop, step, slicelength, i;
+        size_t cur;
         PyObject* result;
         PyObject* it;
         PyObject **src, **dest;
@@ -828,10 +829,10 @@ PyTypeObject PyTuple_Type = {
     sizeof(PyTupleObject) - sizeof(PyObject *),
     sizeof(PyObject *),
     (destructor)tupledealloc,                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)tuplerepr,                        /* tp_repr */
     0,                                          /* tp_as_number */
     &tuple_as_sequence,                         /* tp_as_sequence */
@@ -1065,10 +1066,10 @@ PyTypeObject PyTupleIter_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)tupleiter_dealloc,              /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

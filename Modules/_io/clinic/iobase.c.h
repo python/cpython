@@ -242,7 +242,11 @@ exit:
 PyDoc_STRVAR(_io__IOBase_writelines__doc__,
 "writelines($self, lines, /)\n"
 "--\n"
-"\n");
+"\n"
+"Write a list of lines to stream.\n"
+"\n"
+"Line separators are not added, so it is usual for each of the\n"
+"lines provided to have a line separator at the end.");
 
 #define _IO__IOBASE_WRITELINES_METHODDEF    \
     {"writelines", (PyCFunction)_io__IOBase_writelines, METH_O, _io__IOBase_writelines__doc__},
@@ -311,4 +315,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=60e43a7cbd9f314e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=61b6ea7153ef9940 input=a9049054013a1b77]*/

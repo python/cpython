@@ -351,7 +351,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See http://www.unicode.org/Public/10.0.0/ucd/extracted/DerivedNumericType.txt
+   See http://www.unicode.org/Public/12.1.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -1114,7 +1114,7 @@ Notes:
    item is removed and returned.
 
 (3)
-   ``remove`` raises :exc:`ValueError` when *x* is not found in *s*.
+   :meth:`remove` raises :exc:`ValueError` when *x* is not found in *s*.
 
 (4)
    The :meth:`reverse` method modifies the sequence in place for economy of
@@ -1124,7 +1124,9 @@ Notes:
 (5)
    :meth:`clear` and :meth:`!copy` are included for consistency with the
    interfaces of mutable containers that don't support slicing operations
-   (such as :class:`dict` and :class:`set`)
+   (such as :class:`dict` and :class:`set`). :meth:`!copy` is not part of the
+   :class:`collections.abc.MutableSequence` ABC, but most concrete
+   mutable sequence classes provide it.
 
    .. versionadded:: 3.3
       :meth:`clear` and :meth:`!copy` methods.
@@ -1509,6 +1511,10 @@ expression support in the :mod:`re` module).
    Return a copy of the string with its first character capitalized and the
    rest lowercased.
 
+   .. versionchanged:: 3.8
+      The first character is now put into titlecase rather than uppercase.
+      This means that characters like digraphs will only have their first
+      letter capitalized, instead of the full character.
 
 .. method:: str.casefold()
 
@@ -1553,8 +1559,15 @@ expression support in the :mod:`re` module).
    :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
    list of possible encodings, see section :ref:`standard-encodings`.
 
+   By default, the *errors* argument is not checked for best performances, but
+   only used at the first encoding error. Enable the development mode
+   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+
    .. versionchanged:: 3.1
       Support for keyword arguments added.
+
+   .. versionchanged:: 3.9
+      The *errors* is now checked in development mode and in debug mode.
 
 
 .. method:: str.endswith(suffix[, start[, end]])
@@ -2052,8 +2065,7 @@ expression support in the :mod:`re` module).
         >>> import re
         >>> def titlecase(s):
         ...     return re.sub(r"[A-Za-z]+('[A-Za-z]+)?",
-        ...                   lambda mo: mo.group(0)[0].upper() +
-        ...                              mo.group(0)[1:].lower(),
+        ...                   lambda mo: mo.group(0).capitalize(),
         ...                   s)
         ...
         >>> titlecase("they're bill's friends.")
@@ -2399,7 +2411,25 @@ data and are closely related to string objects in a variety of other ways.
       >>> b'\xf0\xf1\xf2'.hex()
       'f0f1f2'
 
+      If you want to make the hex string easier to read, you can specify a
+      single character separator *sep* parameter to include in the output.
+      By default between each byte.  A second optional *bytes_per_sep*
+      parameter controls the spacing.  Positive values calculate the
+      separator position from the right, negative values from the left.
+
+      >>> value = b'\xf0\xf1\xf2'
+      >>> value.hex('-')
+      'f0-f1-f2'
+      >>> value.hex('_', 2)
+      'f0_f1f2'
+      >>> b'UUDDLRLRAB'.hex(' ', -4)
+      '55554444 4c524c52 4142'
+
       .. versionadded:: 3.5
+
+      .. versionchanged:: 3.8
+         :meth:`bytes.hex` now supports optional *sep* and *bytes_per_sep*
+         parameters to insert separators between bytes in the hex output.
 
 Since bytes objects are sequences of integers (akin to a tuple), for a bytes
 object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes
@@ -2552,6 +2582,10 @@ arbitrary binary data.
    :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
    list of possible encodings, see section :ref:`standard-encodings`.
 
+   By default, the *errors* argument is not checked for best performances, but
+   only used at the first decoding error. Enable the development mode
+   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+
    .. note::
 
       Passing the *encoding* argument to :class:`str` allows decoding any
@@ -2560,6 +2594,9 @@ arbitrary binary data.
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
+
+   .. versionchanged:: 3.9
+      The *errors* is now checked in development mode and in debug mode.
 
 
 .. method:: bytes.endswith(suffix[, start[, end]])
@@ -2696,8 +2733,8 @@ arbitrary binary data.
    containing the part before the separator, the separator itself or its
    bytearray copy, and the part after the separator.
    If the separator is not found, return a 3-tuple
-   containing a copy of the original sequence, followed by two empty bytes or
-   bytearray objects.
+   containing two empty bytes or bytearray objects, followed by a copy of the
+   original sequence.
 
    The separator to search for may be any :term:`bytes-like object`.
 
@@ -2713,8 +2750,8 @@ arbitrary binary data.
    The prefix(es) to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.translate(table, delete=b'')
-            bytearray.translate(table, delete=b'')
+.. method:: bytes.translate(table, /, delete=b'')
+            bytearray.translate(table, /, delete=b'')
 
    Return a copy of the bytes or bytearray object where all bytes occurring in
    the optional argument *delete* are removed, and the remaining bytes have
@@ -3778,7 +3815,7 @@ copying.
          >>> z.nbytes
          48
 
-      Cast 1D/unsigned char to 2D/unsigned long::
+      Cast 1D/unsigned long to 2D/unsigned long::
 
          >>> buf = struct.pack("L"*6, *list(range(6)))
          >>> x = memoryview(buf)
@@ -4020,7 +4057,7 @@ The constructors for both classes work the same:
 
    .. method:: copy()
 
-      Return a new set with a shallow copy of *s*.
+      Return a shallow copy of the set.
 
 
    Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
@@ -4251,7 +4288,10 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       Create a new dictionary with keys from *iterable* and values set to *value*.
 
       :meth:`fromkeys` is a class method that returns a new dictionary. *value*
-      defaults to ``None``.
+      defaults to ``None``.  All of the values refer to just a single instance,
+      so it generally doesn't make sense for *value* to be a mutable object
+      such as an empty list.  To get distinct values, use a :ref:`dict
+      comprehension <dict>` instead.
 
    .. method:: get(key[, default])
 

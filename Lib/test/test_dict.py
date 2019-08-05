@@ -470,6 +470,33 @@ class DictTest(unittest.TestCase):
             for i in d:
                 d[i+1] = 1
 
+    def test_mutating_iteration_delete(self):
+        # change dict content during iteration
+        d = {}
+        d[0] = 0
+        with self.assertRaises(RuntimeError):
+            for i in d:
+                del d[0]
+                d[0] = 0
+
+    def test_mutating_iteration_delete_over_values(self):
+        # change dict content during iteration
+        d = {}
+        d[0] = 0
+        with self.assertRaises(RuntimeError):
+            for i in d.values():
+                del d[0]
+                d[0] = 0
+
+    def test_mutating_iteration_delete_over_items(self):
+        # change dict content during iteration
+        d = {}
+        d[0] = 0
+        with self.assertRaises(RuntimeError):
+            for i in d.items():
+                del d[0]
+                d[0] = 0
+
     def test_mutating_lookup(self):
         # changing dict during a lookup (issue #14417)
         class NastyKey:

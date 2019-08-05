@@ -7,9 +7,9 @@ work. One should use importlib as the public-facing version of this module.
 
 """
 #
-# IMPORTANT: Whenever making changes to this module, be sure to run
-# a top-level make in order to get the frozen version of the module
-# updated. Not doing so will result in the Makefile to fail for
+# IMPORTANT: Whenever making changes to this module, be sure to run a top-level
+# `make regen-importlib` followed by `make` in order to get the frozen version
+# of the module updated. Not doing so will result in the Makefile to fail for
 # all others who don't have a ./python around to freeze the module
 # in the early stages of compilation.
 #
@@ -873,7 +873,7 @@ def _resolve_name(name, package, level):
     """Resolve a relative module name to an absolute one."""
     bits = package.rsplit('.', level - 1)
     if len(bits) < level:
-        raise ValueError('attempted relative import beyond top-level package')
+        raise ImportError('attempted relative import beyond top-level package')
     base = bits[0]
     return '{}.{}'.format(base, name) if name else base
 

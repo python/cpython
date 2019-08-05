@@ -37,6 +37,20 @@ class TestUserObjects(unittest.TestCase):
                 b=b.__name__,
             ),
         )
+
+    def _copy_test(self, obj):
+        # Test internal copy
+        obj_copy = obj.copy()
+        self.assertIsNot(obj.data, obj_copy.data)
+        self.assertEqual(obj.data, obj_copy.data)
+
+        # Test copy.copy
+        obj.test = [1234]  # Make sure instance vars are also copied.
+        obj_copy = copy.copy(obj)
+        self.assertIsNot(obj.data, obj_copy.data)
+        self.assertEqual(obj.data, obj_copy.data)
+        self.assertIs(obj.test, obj_copy.test)
+
     def test_str_protocol(self):
         self._superset_test(UserString, str)
 
@@ -45,6 +59,16 @@ class TestUserObjects(unittest.TestCase):
 
     def test_dict_protocol(self):
         self._superset_test(UserDict, dict)
+
+    def test_list_copy(self):
+        obj = UserList()
+        obj.append(123)
+        self._copy_test(obj)
+
+    def test_dict_copy(self):
+        obj = UserDict()
+        obj[123] = "abc"
+        self._copy_test(obj)
 
 
 ################################################################################
@@ -112,6 +136,20 @@ class TestChainMap(unittest.TestCase):
         self.assertEqual(f.parents.maps, [{'c':30}, {'a':1, 'b':2}])   # check parents
         self.assertEqual(f['b'], 5)                                    # find first in chain
         self.assertEqual(f.parents['b'], 2)                            # look beyond maps[0]
+
+    def test_ordering(self):
+        # Combined order matches a series of dict updates from last to first.
+        # This test relies on the ordering of the underlying dicts.
+
+        baseline = {'music': 'bach', 'art': 'rembrandt'}
+        adjustments = {'art': 'van gogh', 'opera': 'carmen'}
+
+        cm = ChainMap(adjustments, baseline)
+
+        combined = baseline.copy()
+        combined.update(adjustments)
+
+        self.assertEqual(list(combined.items()), list(cm.items()))
 
     def test_constructor(self):
         self.assertEqual(ChainMap().maps, [{}])                        # no-args --> one new dict
@@ -234,18 +272,18 @@ class TestNamedTuple(unittest.TestCase):
 
     def test_defaults(self):
         Point = namedtuple('Point', 'x y', defaults=(10, 20))              # 2 defaults
-        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point._field_defaults, {'x': 10, 'y': 20})
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
         self.assertEqual(Point(), (10, 20))
 
         Point = namedtuple('Point', 'x y', defaults=(20,))                 # 1 default
-        self.assertEqual(Point._fields_defaults, {'y': 20})
+        self.assertEqual(Point._field_defaults, {'y': 20})
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
 
         Point = namedtuple('Point', 'x y', defaults=())                     # 0 defaults
-        self.assertEqual(Point._fields_defaults, {})
+        self.assertEqual(Point._field_defaults, {})
         self.assertEqual(Point(1, 2), (1, 2))
         with self.assertRaises(TypeError):
             Point(1)
@@ -262,21 +300,21 @@ class TestNamedTuple(unittest.TestCase):
             Point = namedtuple('Point', 'x y', defaults=False)
 
         Point = namedtuple('Point', 'x y', defaults=None)                   # default is None
-        self.assertEqual(Point._fields_defaults, {})
+        self.assertEqual(Point._field_defaults, {})
         self.assertIsNone(Point.__new__.__defaults__, None)
         self.assertEqual(Point(10, 20), (10, 20))
         with self.assertRaises(TypeError):                                  # catch too few args
             Point(10)
 
         Point = namedtuple('Point', 'x y', defaults=[10, 20])               # allow non-tuple iterable
-        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point._field_defaults, {'x': 10, 'y': 20})
         self.assertEqual(Point.__new__.__defaults__, (10, 20))
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
         self.assertEqual(Point(), (10, 20))
 
         Point = namedtuple('Point', 'x y', defaults=iter([10, 20]))         # allow plain iterator
-        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point._field_defaults, {'x': 10, 'y': 20})
         self.assertEqual(Point.__new__.__defaults__, (10, 20))
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
@@ -386,8 +424,8 @@ class TestNamedTuple(unittest.TestCase):
 
         self.assertIsInstance(p, tuple)
         self.assertEqual(p, (11, 22))                                       # matches a real tuple
-        self.assertEqual(tuple(p), (11, 22))                                # coercable to a real tuple
-        self.assertEqual(list(p), [11, 22])                                 # coercable to a list
+        self.assertEqual(tuple(p), (11, 22))                                # coercible to a real tuple
+        self.assertEqual(list(p), [11, 22])                                 # coercible to a list
         self.assertEqual(max(p), 22)                                        # iterable
         self.assertEqual(max(*p), 22)                                       # star-able
         x, y = p
@@ -558,6 +596,15 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point.x.__get__(p), 11)
         self.assertRaises(AttributeError, Point.x.__set__, p, 33)
         self.assertRaises(AttributeError, Point.x.__delete__, p)
+
+        class NewPoint(tuple):
+            x = pickle.loads(pickle.dumps(Point.x))
+            y = pickle.loads(pickle.dumps(Point.y))
+
+        np = NewPoint([1, 2])
+
+        self.assertEqual(np.x, 1)
+        self.assertEqual(np.y, 2)
 
 
 ################################################################################
@@ -1866,6 +1913,63 @@ class TestCounter(unittest.TestCase):
         self.assertRaises(TypeError, Counter, 42)
         self.assertRaises(TypeError, Counter, (), ())
         self.assertRaises(TypeError, Counter.__init__)
+
+    def test_order_preservation(self):
+        # Input order dictates items() order
+        self.assertEqual(list(Counter('abracadabra').items()),
+               [('a', 5), ('b', 2), ('r', 2), ('c', 1), ('d', 1)])
+        # letters with same count:   ^----------^         ^---------^
+
+        # Verify retention of order even when all counts are equal
+        self.assertEqual(list(Counter('xyzpdqqdpzyx').items()),
+               [('x', 2), ('y', 2), ('z', 2), ('p', 2), ('d', 2), ('q', 2)])
+
+        # Input order dictates elements() order
+        self.assertEqual(list(Counter('abracadabra simsalabim').elements()),
+                ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'b', 'b', 'b','r',
+                 'r', 'c', 'd', ' ', 's', 's', 'i', 'i', 'm', 'm', 'l'])
+
+        # Math operations order first by the order encountered in the left
+        # operand and then by the order encounted in the right operand.
+        ps = 'aaabbcdddeefggghhijjjkkl'
+        qs = 'abbcccdeefffhkkllllmmnno'
+        order = {letter: i for i, letter in enumerate(dict.fromkeys(ps + qs))}
+        def correctly_ordered(seq):
+            'Return true if the letters occur in the expected order'
+            positions = [order[letter] for letter in seq]
+            return positions == sorted(positions)
+
+        p, q = Counter(ps), Counter(qs)
+        self.assertTrue(correctly_ordered(+p))
+        self.assertTrue(correctly_ordered(-p))
+        self.assertTrue(correctly_ordered(p + q))
+        self.assertTrue(correctly_ordered(p - q))
+        self.assertTrue(correctly_ordered(p | q))
+        self.assertTrue(correctly_ordered(p & q))
+
+        p, q = Counter(ps), Counter(qs)
+        p += q
+        self.assertTrue(correctly_ordered(p))
+
+        p, q = Counter(ps), Counter(qs)
+        p -= q
+        self.assertTrue(correctly_ordered(p))
+
+        p, q = Counter(ps), Counter(qs)
+        p |= q
+        self.assertTrue(correctly_ordered(p))
+
+        p, q = Counter(ps), Counter(qs)
+        p &= q
+        self.assertTrue(correctly_ordered(p))
+
+        p, q = Counter(ps), Counter(qs)
+        p.update(q)
+        self.assertTrue(correctly_ordered(p))
+
+        p, q = Counter(ps), Counter(qs)
+        p.subtract(q)
+        self.assertTrue(correctly_ordered(p))
 
     def test_update(self):
         c = Counter()

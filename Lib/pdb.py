@@ -141,6 +141,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                  nosigint=False, readrc=True):
         bdb.Bdb.__init__(self, skip=skip)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
+        sys.audit("pdb.Pdb")
         if stdout:
             self.use_rawinput = 0
         self.prompt = '(Pdb) '
@@ -159,16 +160,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.allow_kbdint = False
         self.nosigint = nosigint
 
-        # Read $HOME/.pdbrc and ./.pdbrc
+        # Read ~/.pdbrc and ./.pdbrc
         self.rcLines = []
         if readrc:
-            if 'HOME' in os.environ:
-                envHome = os.environ['HOME']
-                try:
-                    with open(os.path.join(envHome, ".pdbrc")) as rcFile:
-                        self.rcLines.extend(rcFile)
-                except OSError:
-                    pass
+            try:
+                with open(os.path.expanduser('~/.pdbrc')) as rcFile:
+                    self.rcLines.extend(rcFile)
+            except OSError:
+                pass
             try:
                 with open(".pdbrc") as rcFile:
                     self.rcLines.extend(rcFile)
@@ -491,8 +490,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Collect globals and locals.  It is usually not really sensible to also
         # complete builtins, and they clutter the namespace quite heavily, so we
         # leave them out.
-        ns = self.curframe.f_globals.copy()
-        ns.update(self.curframe_locals)
+        ns = {**self.curframe.f_globals, **self.curframe_locals}
         if '.' in text:
             # Walk an attribute chain up to the last part, similar to what
             # rlcompleter does.  This will bail if any of the parts are not
@@ -1096,7 +1094,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         p = Pdb(self.completekey, self.stdin, self.stdout)
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
-        sys.call_tracing(p.run, (arg, globals, locals))
+        try:
+            sys.call_tracing(p.run, (arg, globals, locals))
+        except Exception:
+            exc_info = sys.exc_info()[:2]
+            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
         self.message("LEAVING RECURSIVE DEBUGGER")
         sys.settrace(self.trace_dispatch)
         self.lastcmd = p.lastcmd
@@ -1129,9 +1131,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         co = self.curframe.f_code
         dict = self.curframe_locals
-        n = co.co_argcount
-        if co.co_flags & 4: n = n+1
-        if co.co_flags & 8: n = n+1
+        n = co.co_argcount + co.co_kwonlyargcount
+        if co.co_flags & inspect.CO_VARARGS: n = n+1
+        if co.co_flags & inspect.CO_VARKEYWORDS: n = n+1
         for i in range(n):
             name = co.co_varnames[i]
             if name in dict:
@@ -1373,8 +1375,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Start an interactive interpreter whose global namespace
         contains all the (global and local) names found in the current scope.
         """
-        ns = self.curframe.f_globals.copy()
-        ns.update(self.curframe_locals)
+        ns = {**self.curframe.f_globals, **self.curframe_locals}
         code.interact("*interactive*", local=ns)
 
     def do_alias(self, arg):

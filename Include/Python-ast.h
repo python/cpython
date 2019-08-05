@@ -17,7 +17,7 @@ typedef struct _stmt *stmt_ty;
 typedef struct _expr *expr_ty;
 
 typedef enum _expr_context { Load=1, Store=2, Del=3, AugLoad=4, AugStore=5,
-                             Param=6, NamedStore=7 } expr_context_ty;
+                             Param=6 } expr_context_ty;
 
 typedef struct _slice *slice_ty;
 
@@ -338,6 +338,7 @@ struct _expr {
 
         struct {
             constant value;
+            string kind;
         } Constant;
 
         struct {
@@ -425,6 +426,7 @@ struct _excepthandler {
 };
 
 struct _arguments {
+    asdl_seq *posonlyargs;
     asdl_seq *args;
     arg_ty vararg;
     asdl_seq *kwonlyargs;
@@ -464,6 +466,7 @@ struct _type_ignore {
     union {
         struct {
             int lineno;
+            string tag;
         } TypeIgnore;
 
     } v;
@@ -642,9 +645,9 @@ expr_ty _Py_FormattedValue(expr_ty value, int conversion, expr_ty format_spec,
 #define JoinedStr(a0, a1, a2, a3, a4, a5) _Py_JoinedStr(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_JoinedStr(asdl_seq * values, int lineno, int col_offset, int
                       end_lineno, int end_col_offset, PyArena *arena);
-#define Constant(a0, a1, a2, a3, a4, a5) _Py_Constant(a0, a1, a2, a3, a4, a5)
-expr_ty _Py_Constant(constant value, int lineno, int col_offset, int
-                     end_lineno, int end_col_offset, PyArena *arena);
+#define Constant(a0, a1, a2, a3, a4, a5, a6) _Py_Constant(a0, a1, a2, a3, a4, a5, a6)
+expr_ty _Py_Constant(constant value, string kind, int lineno, int col_offset,
+                     int end_lineno, int end_col_offset, PyArena *arena);
 #define Attribute(a0, a1, a2, a3, a4, a5, a6, a7) _Py_Attribute(a0, a1, a2, a3, a4, a5, a6, a7)
 expr_ty _Py_Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
                       lineno, int col_offset, int end_lineno, int
@@ -683,10 +686,11 @@ excepthandler_ty _Py_ExceptHandler(expr_ty type, identifier name, asdl_seq *
                                    body, int lineno, int col_offset, int
                                    end_lineno, int end_col_offset, PyArena
                                    *arena);
-#define arguments(a0, a1, a2, a3, a4, a5, a6) _Py_arguments(a0, a1, a2, a3, a4, a5, a6)
-arguments_ty _Py_arguments(asdl_seq * args, arg_ty vararg, asdl_seq *
-                           kwonlyargs, asdl_seq * kw_defaults, arg_ty kwarg,
-                           asdl_seq * defaults, PyArena *arena);
+#define arguments(a0, a1, a2, a3, a4, a5, a6, a7) _Py_arguments(a0, a1, a2, a3, a4, a5, a6, a7)
+arguments_ty _Py_arguments(asdl_seq * posonlyargs, asdl_seq * args, arg_ty
+                           vararg, asdl_seq * kwonlyargs, asdl_seq *
+                           kw_defaults, arg_ty kwarg, asdl_seq * defaults,
+                           PyArena *arena);
 #define arg(a0, a1, a2, a3, a4, a5, a6, a7) _Py_arg(a0, a1, a2, a3, a4, a5, a6, a7)
 arg_ty _Py_arg(identifier arg, expr_ty annotation, string type_comment, int
                lineno, int col_offset, int end_lineno, int end_col_offset,
@@ -698,8 +702,8 @@ alias_ty _Py_alias(identifier name, identifier asname, PyArena *arena);
 #define withitem(a0, a1, a2) _Py_withitem(a0, a1, a2)
 withitem_ty _Py_withitem(expr_ty context_expr, expr_ty optional_vars, PyArena
                          *arena);
-#define TypeIgnore(a0, a1) _Py_TypeIgnore(a0, a1)
-type_ignore_ty _Py_TypeIgnore(int lineno, PyArena *arena);
+#define TypeIgnore(a0, a1, a2) _Py_TypeIgnore(a0, a1, a2)
+type_ignore_ty _Py_TypeIgnore(int lineno, string tag, PyArena *arena);
 
 PyObject* PyAST_mod2obj(mod_ty t);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);

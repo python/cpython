@@ -18,12 +18,14 @@ typedef struct {
     PyObject *fn;
     PyObject *args;
     PyObject *kw;
-    PyObject *dict;
+    PyObject *dict;        /* __dict__ */
     PyObject *weakreflist; /* List of weak references */
-    int use_fastcall;
+    vectorcallfunc vectorcall;
 } partialobject;
 
 static PyTypeObject partial_type;
+
+static void partial_setvectorcall(partialobject *pto);
 
 static PyObject *
 partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
@@ -107,8 +109,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    pto->use_fastcall = _PyObject_HasFastCall(func);
-
+    partial_setvectorcall(pto);
     return (PyObject *)pto;
 }
 
@@ -126,77 +127,107 @@ partial_dealloc(partialobject *pto)
     Py_TYPE(pto)->tp_free(pto);
 }
 
-static PyObject *
-partial_fastcall(partialobject *pto, PyObject **args, Py_ssize_t nargs,
-                 PyObject *kwargs)
+
+/* Merging keyword arguments using the vectorcall convention is messy, so
+ * if we would need to do that, we stop using vectorcall and fall back
+ * to using partial_call() instead. */
+_Py_NO_INLINE static PyObject *
+partial_vectorcall_fallback(partialobject *pto, PyObject *const *args,
+                            size_t nargsf, PyObject *kwnames)
 {
+    pto->vectorcall = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    return _PyObject_MakeTpCall((PyObject *)pto, args, nargs, kwnames);
+}
+
+static PyObject *
+partial_vectorcall(partialobject *pto, PyObject *const *args,
+                   size_t nargsf, PyObject *kwnames)
+{
+    /* pto->kw is mutable, so need to check every time */
+    if (PyDict_GET_SIZE(pto->kw)) {
+        return partial_vectorcall_fallback(pto, args, nargsf, kwnames);
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    Py_ssize_t nargs_total = nargs;
+    if (kwnames != NULL) {
+        nargs_total += PyTuple_GET_SIZE(kwnames);
+    }
+
+    PyObject **pto_args = _PyTuple_ITEMS(pto->args);
+    Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
+
+    /* Fast path if we're called without arguments */
+    if (nargs_total == 0) {
+        return _PyObject_Vectorcall(pto->fn, pto_args, pto_nargs, NULL);
+    }
+
+    /* Fast path using PY_VECTORCALL_ARGUMENTS_OFFSET to prepend a single
+     * positional argument */
+    if (pto_nargs == 1 && (nargsf & PY_VECTORCALL_ARGUMENTS_OFFSET)) {
+        PyObject **newargs = (PyObject **)args - 1;
+        PyObject *tmp = newargs[0];
+        newargs[0] = pto_args[0];
+        PyObject *ret = _PyObject_Vectorcall(pto->fn, newargs, nargs + 1, kwnames);
+        newargs[0] = tmp;
+        return ret;
+    }
+
+    Py_ssize_t newnargs_total = pto_nargs + nargs_total;
+
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject *ret;
-    PyObject **stack, **stack_buf = NULL;
-    Py_ssize_t nargs2, pto_nargs;
+    PyObject **stack;
 
-    pto_nargs = PyTuple_GET_SIZE(pto->args);
-    nargs2 = pto_nargs + nargs;
-
-    if (pto_nargs == 0) {
-        stack = args;
-    }
-    else if (nargs == 0) {
-        stack = _PyTuple_ITEMS(pto->args);
+    if (newnargs_total <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
+        stack = small_stack;
     }
     else {
-        if (nargs2 <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
-            stack = small_stack;
+        stack = PyMem_Malloc(newnargs_total * sizeof(PyObject *));
+        if (stack == NULL) {
+            PyErr_NoMemory();
+            return NULL;
         }
-        else {
-            stack_buf = PyMem_Malloc(nargs2 * sizeof(PyObject *));
-            if (stack_buf == NULL) {
-                PyErr_NoMemory();
-                return NULL;
-            }
-            stack = stack_buf;
-        }
-
-        /* use borrowed references */
-        memcpy(stack,
-               _PyTuple_ITEMS(pto->args),
-               pto_nargs * sizeof(PyObject*));
-        memcpy(&stack[pto_nargs],
-               args,
-               nargs * sizeof(PyObject*));
     }
 
-    ret = _PyObject_FastCallDict(pto->fn, stack, nargs2, kwargs);
-    PyMem_Free(stack_buf);
+    /* Copy to new stack, using borrowed references */
+    memcpy(stack, pto_args, pto_nargs * sizeof(PyObject*));
+    memcpy(stack + pto_nargs, args, nargs_total * sizeof(PyObject*));
+
+    ret = _PyObject_Vectorcall(pto->fn, stack, pto_nargs + nargs, kwnames);
+    if (stack != small_stack) {
+        PyMem_Free(stack);
+    }
     return ret;
 }
 
-static PyObject *
-partial_call_impl(partialobject *pto, PyObject *args, PyObject *kwargs)
+/* Set pto->vectorcall depending on the parameters of the partial object */
+static void
+partial_setvectorcall(partialobject *pto)
 {
-    PyObject *ret, *args2;
-
-    /* Note: tupleconcat() is optimized for empty tuples */
-    args2 = PySequence_Concat(pto->args, args);
-    if (args2 == NULL) {
-        return NULL;
+    if (_PyVectorcall_Function(pto->fn) == NULL) {
+        /* Don't use vectorcall if the underlying function doesn't support it */
+        pto->vectorcall = NULL;
     }
-    assert(PyTuple_Check(args2));
-
-    ret = PyObject_Call(pto->fn, args2, kwargs);
-    Py_DECREF(args2);
-    return ret;
+    /* We could have a special case if there are no arguments,
+     * but that is unlikely (why use partial without arguments?),
+     * so we don't optimize that */
+    else {
+        pto->vectorcall = (vectorcallfunc)partial_vectorcall;
+    }
 }
+
 
 static PyObject *
 partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
 {
-    PyObject *kwargs2, *res;
+    assert(PyCallable_Check(pto->fn));
+    assert(PyTuple_Check(pto->args));
+    assert(PyDict_Check(pto->kw));
 
-    assert (PyCallable_Check(pto->fn));
-    assert (PyTuple_Check(pto->args));
-    assert (PyDict_Check(pto->kw));
-
+    /* Merge keywords */
+    PyObject *kwargs2;
     if (PyDict_GET_SIZE(pto->kw) == 0) {
         /* kwargs can be NULL */
         kwargs2 = kwargs;
@@ -219,16 +250,16 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
         }
     }
 
+    /* Merge positional arguments */
+    /* Note: tupleconcat() is optimized for empty tuples */
+    PyObject *args2 = PySequence_Concat(pto->args, args);
+    if (args2 == NULL) {
+        Py_XDECREF(kwargs2);
+        return NULL;
+    }
 
-    if (pto->use_fastcall) {
-        res = partial_fastcall(pto,
-                               _PyTuple_ITEMS(args),
-                               PyTuple_GET_SIZE(args),
-                               kwargs2);
-    }
-    else {
-        res = partial_call_impl(pto, args, kwargs2);
-    }
+    PyObject *res = PyObject_Call(pto->fn, args2, kwargs2);
+    Py_DECREF(args2);
     Py_XDECREF(kwargs2);
     return res;
 }
@@ -365,11 +396,11 @@ partial_setstate(partialobject *pto, PyObject *state)
         Py_INCREF(dict);
 
     Py_INCREF(fn);
-    pto->use_fastcall = _PyObject_HasFastCall(fn);
     Py_SETREF(pto->fn, fn);
     Py_SETREF(pto->args, fnargs);
     Py_SETREF(pto->kw, kw);
     Py_XSETREF(pto->dict, dict);
+    partial_setvectorcall(pto);
     Py_RETURN_NONE;
 }
 
@@ -386,10 +417,10 @@ static PyTypeObject partial_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)partial_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
+    offsetof(partialobject, vectorcall),/* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)partial_repr,             /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -401,7 +432,8 @@ static PyTypeObject partial_type = {
     PyObject_GenericSetAttr,            /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+        Py_TPFLAGS_BASETYPE |
+        _Py_TPFLAGS_HAVE_VECTORCALL,    /* tp_flags */
     partial_doc,                        /* tp_doc */
     (traverseproc)partial_traverse,     /* tp_traverse */
     0,                                  /* tp_clear */
@@ -478,10 +510,10 @@ static PyTypeObject keyobject_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)keyobject_dealloc,      /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -626,10 +658,13 @@ functools_reduce(PyObject *self, PyObject *args)
         if (result == NULL)
             result = op2;
         else {
-            PyTuple_SetItem(args, 0, result);
-            PyTuple_SetItem(args, 1, op2);
-            if ((result = PyEval_CallObject(func, args)) == NULL)
+            /* Update the args tuple in-place */
+            assert(args->ob_refcnt == 1);
+            Py_XSETREF(_PyTuple_ITEMS(args)[0], result);
+            Py_XSETREF(_PyTuple_ITEMS(args)[1], op2);
+            if ((result = PyObject_Call(func, args, NULL)) == NULL) {
                 goto Fail;
+            }
         }
     }
 
@@ -661,6 +696,26 @@ sequence is empty.");
 
 /* lru_cache object **********************************************************/
 
+/* There are four principal algorithmic differences from the pure python version:
+
+   1). The C version relies on the GIL instead of having its own reentrant lock.
+
+   2). The prev/next link fields use borrowed references.
+
+   3). For a full cache, the pure python version rotates the location of the
+       root entry so that it never has to move individual links and it can
+       limit updates to just the key and result fields.  However, in the C
+       version, links are temporarily removed while the cache dict updates are
+       occurring. Afterwards, they are appended or prepended back into the
+       doubly-linked lists.
+
+   4)  In the Python version, the _HashSeq class is used to prevent __hash__
+       from being called more than once.  In the C version, the "known hash"
+       variants of dictionary calls as used to the same effect.
+
+*/
+
+
 /* this object is used delimit args and keywords in the cache keys */
 static PyObject *kwd_mark = NULL;
 
@@ -689,10 +744,10 @@ static PyTypeObject lru_list_elem_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)lru_list_elem_dealloc,  /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -730,8 +785,10 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
     PyObject *key, *keyword, *value;
     Py_ssize_t key_size, pos, key_pos, kwds_size;
 
+    kwds_size = kwds ? PyDict_GET_SIZE(kwds) : 0;
+
     /* short path, key will match args anyway, which is a tuple */
-    if (!typed && !kwds) {
+    if (!typed && !kwds_size) {
         if (PyTuple_GET_SIZE(args) == 1) {
             key = PyTuple_GET_ITEM(args, 0);
             if (PyUnicode_CheckExact(key) || PyLong_CheckExact(key)) {
@@ -744,9 +801,6 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
         Py_INCREF(args);
         return args;
     }
-
-    kwds_size = kwds ? PyDict_GET_SIZE(kwds) : 0;
-    assert(kwds_size >= 0);
 
     key_size = PyTuple_GET_SIZE(args);
     if (kwds_size)
@@ -1009,14 +1063,15 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     link = self->root.next;
     lru_cache_extract_link(link);
     /* Remove it from the cache.
-       The cache dict holds one reference to the link,
-       and the linked list holds yet one reference to it. */
+       The cache dict holds one reference to the link.
+       We created one other reference when the link was created.
+       The linked list only has borrowed references. */
     popresult = _PyDict_Pop_KnownHash(self->cache, link->key,
                                       link->hash, Py_None);
     if (popresult == Py_None) {
         /* Getting here means that the user function call or another
            thread has already removed the old key from the dictionary.
-           This link is now an orpan.  Since we don't want to leave the
+           This link is now an orphan.  Since we don't want to leave the
            cache in an inconsistent state, we don't restore the link. */
         Py_DECREF(popresult);
         Py_DECREF(link);
@@ -1048,7 +1103,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
        prev and next fields set to valid values.   We have to wait
        for successful insertion in the cache dict before adding the
        link to the linked list.  Otherwise, the potentially reentrant
-       __eq__ call could cause the then ophan link to be visited. */
+       __eq__ call could cause the then orphan link to be visited. */
     if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                   hash) < 0) {
         /* Somehow the cache dict update failed.  We no longer can
@@ -1299,10 +1354,10 @@ static PyTypeObject lru_cache_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)lru_cache_dealloc,      /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1313,7 +1368,8 @@ static PyTypeObject lru_cache_type = {
     0,                                  /* tp_getattro */
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+    Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_METHOD_DESCRIPTOR,
                                         /* tp_flags */
     lru_cache_doc,                      /* tp_doc */
     (traverseproc)lru_cache_tp_traverse,/* tp_traverse */

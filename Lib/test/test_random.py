@@ -228,7 +228,7 @@ class TestBasicOps:
             choices([], cum_weights=[], k=5)
 
     def test_choices_subnormal(self):
-        # Subnormal weights would occassionally trigger an IndexError
+        # Subnormal weights would occasionally trigger an IndexError
         # in choices() when the value returned by random() was large
         # enough to make `random() * total` round up to the total.
         # See https://bugs.python.org/msg275594 for more detail.
@@ -268,9 +268,8 @@ class TestBasicOps:
                  ("randv2_64.pck", 866),
                  ("randv3.pck", 343)]
         for file, value in files:
-            f = open(support.findfile(file),"rb")
-            r = pickle.load(f)
-            f.close()
+            with open(support.findfile(file),"rb") as f:
+                r = pickle.load(f)
             self.assertEqual(int(r.random()*1000), value)
 
     def test_bug_9025(self):
@@ -720,7 +719,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         c = self.gen.choices(range(n), cum_weights=range(1, n+1), k=10000)
         self.assertEqual(a, c)
 
-        # Amerian Roulette
+        # American Roulette
         population = ['Red', 'Black', 'Green']
         weights = [18, 18, 2]
         cum_weights = [18, 36, 38]

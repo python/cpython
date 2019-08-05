@@ -4,6 +4,8 @@
 An Introduction to Distutils
 ****************************
 
+.. include:: ./_setuptools_disclaimer.rst
+
 This document covers using the Distutils to distribute your Python modules,
 concentrating on the role of developer/distributor: if you're looking for
 information on installing Python modules, you should refer to the

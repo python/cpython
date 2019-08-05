@@ -6,7 +6,8 @@
 
 [CVE-2019-5010] Fix a NULL pointer deref in ssl module. The cert parser did
 not handle CRL distribution points with empty DP or URI correctly. A
-malicious or buggy certificate can result into segfault.
+malicious or buggy certificate can result into segfault. Vulnerability
+(TALOS-2018-0758) reported by Colin Read and Nicolas Edet of Cisco.
 
 ..
 
@@ -549,7 +550,7 @@ The *lineno* and *col_offset* attributes of the AST for decorated function
 and class refer now to the position of the corresponding ``def``, ``async
 def`` and ``class`` instead of the position of the first decorator. This
 leads to more correct line reporting in tracing. This is the only case when
-the position of child AST nodes can preceed the position of the parent AST
+the position of child AST nodes can precede the position of the parent AST
 node.
 
 ..
@@ -1357,7 +1358,7 @@ Improved syntax error messages for unbalanced parentheses.
 .. section: Core and Builtins
 
 The list constructor will pre-size and not over-allocate when the input
-lenght is known.
+length is known.
 
 ..
 
@@ -1844,7 +1845,7 @@ parameter.
 .. nonce: LT_qL8
 .. section: Library
 
-:class:`asyncio.ProactorEventLoop` now catchs and logs send errors when the
+:class:`asyncio.ProactorEventLoop` now catches and logs send errors when the
 self-pipe is full.
 
 ..
@@ -2053,7 +2054,7 @@ Speed-up building enums by value, e.g. http.HTTPStatus(200).
 .. section: Library
 
 random.gammavariate(1.0, beta) now computes the same result as
-random.expovariate(1.0 / beta).  This synchonizes the two algorithms and
+random.expovariate(1.0 / beta).  This synchronizes the two algorithms and
 eliminates some idiosyncrasies in the old implementation.  It does however
 produce a difference stream of random variables than it used to.
 
@@ -2269,7 +2270,7 @@ last release was in 2000. Mac OS 9 last release was in 2001.
 .. nonce: laV_IE
 .. section: Library
 
-:func:`~distutils.utils.check_environ` of :mod:`distutils.utils` now catchs
+:func:`~distutils.utils.check_environ` of :mod:`distutils.utils` now catches
 :exc:`KeyError` on calling :func:`pwd.getpwuid`: don't create the ``HOME``
 environment variable in this case.
 
@@ -2365,7 +2366,7 @@ running external programs like ``cmd /c ver``.
 
 Previously, calling the strftime() method on a datetime object with a
 trailing '%' in the format string would result in an exception. However,
-this only occured when the datetime C module was being used; the python
+this only occurred when the datetime C module was being used; the python
 implementation did not match this behavior. Datetime is now PEP-399
 compliant, and will not throw an exception on a trailing '%'.
 
@@ -4449,7 +4450,7 @@ data_received() being called before connection_made().
 
 :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
 :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
-fast-copy syscalls on Linux, Solaris and macOS in order to copy the file
+fast-copy syscalls on Linux and macOS in order to copy the file
 more efficiently. On Windows :func:`shutil.copyfile` uses a bigger default
 buffer size (1 MiB instead of 16 KiB) and a :func:`memoryview`-based variant
 of :func:`shutil.copyfileobj` is used. The speedup for copying a 512MiB file
@@ -5277,7 +5278,7 @@ Improved error handling and fixed a reference leak in
 .. nonce: zncfvW
 .. section: Library
 
-Deleting a key from a read-only dbm database raises module specfic error
+Deleting a key from a read-only dbm database raises module specific error
 instead of KeyError.
 
 ..
@@ -7953,15 +7954,6 @@ prevent it from truncating the last character.
 
 ..
 
-.. bpo: 35555
-.. date: 2018-12-21-18-44-30
-.. nonce: M58_K3
-.. section: macOS
-
-Gray out Code Context menu entry when it's not applicable.
-
-..
-
 .. bpo: 35401
 .. date: 2018-12-09-13-56-49
 .. nonce: n8B7X1
@@ -8163,6 +8155,15 @@ Add Previous/Next History entries to Shell menu.
 .. section: IDLE
 
 Squeezer now properly counts wrapped lines before newlines.
+
+..
+
+.. bpo: 35555
+.. date: 2018-12-21-18-44-30
+.. nonce: M58_K3
+.. section: IDLE
+
+Gray out Code Context menu entry when it's not applicable.
 
 ..
 
@@ -8673,7 +8674,7 @@ Argument Clinic now has non-bitwise unsigned int converters.
 .. nonce: Q3Dwns
 .. section: Tools/Demos
 
-python-gdb now catchs ``UnicodeDecodeError`` exceptions when calling
+python-gdb now catches ``UnicodeDecodeError`` exceptions when calling
 ``string()``.
 
 ..
@@ -8683,7 +8684,7 @@ python-gdb now catchs ``UnicodeDecodeError`` exceptions when calling
 .. nonce: 2YfdwI
 .. section: Tools/Demos
 
-python-gdb now catchs ValueError on read_var(): when Python has no debug
+python-gdb now catches ValueError on read_var(): when Python has no debug
 symbols for example.
 
 ..

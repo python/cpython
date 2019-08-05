@@ -734,10 +734,10 @@ static PyTypeObject AST_type = {
     sizeof(AST_object),
     0,
     (destructor)ast_dealloc, /* tp_dealloc */
-    0,                       /* tp_print */
+    0,                       /* tp_vectorcall_offset */
     0,                       /* tp_getattr */
     0,                       /* tp_setattr */
-    0,                       /* tp_reserved */
+    0,                       /* tp_as_async */
     0,                       /* tp_repr */
     0,                       /* tp_as_number */
     0,                       /* tp_as_sequence */
@@ -1000,6 +1000,8 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("if (!m) return NULL;", 1)
         self.emit("d = PyModule_GetDict(m);", 1)
         self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)', 1)
+        self.emit("return NULL;", 2)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)', 1)
         self.emit("return NULL;", 2)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)', 1)
@@ -1194,6 +1196,10 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
     char *req_name[] = {"Module", "Expression", "Interactive"};
     int isinstance;
 
+    if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
+        return NULL;
+    }
+
     req_type[0] = (PyObject*)Module_type;
     req_type[1] = (PyObject*)Expression_type;
     req_type[2] = (PyObject*)Interactive_type;
@@ -1307,9 +1313,9 @@ if __name__ == "__main__":
     for o, v in opts:
         if o == '-h':
             H_FILE = v
-        if o == '-c':
+        elif o == '-c':
             C_FILE = v
-        if o == '-d':
+        elif o == '-d':
             dump_module = True
     if H_FILE and C_FILE:
         print('Must specify exactly one output file')

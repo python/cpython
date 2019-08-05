@@ -361,8 +361,8 @@ _range_error(const formatdef *f, int is_unsigned)
 
    [bln][up]_TYPE
 
-   [bln] distiguishes among big-endian, little-endian and native.
-   [pu] distiguishes between pack (to struct) and unpack (from struct).
+   [bln] distinguishes among big-endian, little-endian and native.
+   [pu] distinguishes between pack (to struct) and unpack (from struct).
    TYPE is one of char, byte, ubyte, etc.
 */
 
@@ -1669,10 +1669,10 @@ static PyTypeObject unpackiter_type = {
     sizeof(unpackiterobject),                   /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)unpackiter_dealloc,             /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -2029,10 +2029,10 @@ PyTypeObject PyStructType = {
     sizeof(PyStructObject),
     0,
     (destructor)s_dealloc,      /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -2088,14 +2088,17 @@ cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
             return 0;
     }
 
-    s_object = PyDict_GetItem(cache, fmt);
+    s_object = PyDict_GetItemWithError(cache, fmt);
     if (s_object != NULL) {
         Py_INCREF(s_object);
         *ptr = (PyStructObject *)s_object;
         return Py_CLEANUP_SUPPORTED;
     }
+    else if (PyErr_Occurred()) {
+        return 0;
+    }
 
-    s_object = PyObject_CallFunctionObjArgs((PyObject *)(&PyStructType), fmt, NULL);
+    s_object = _PyObject_CallOneArg((PyObject *)(&PyStructType), fmt);
     if (s_object != NULL) {
         if (PyDict_GET_SIZE(cache) >= MAXCACHE)
             PyDict_Clear(cache);

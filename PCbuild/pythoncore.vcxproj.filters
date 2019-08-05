@@ -81,13 +81,19 @@
     <ClInclude Include="..\Include\context.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\coreconfig.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\cpython\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\dictobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\fileobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\import.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\initconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\object.h">
@@ -102,7 +108,16 @@
     <ClInclude Include="..\Include\cpython\pylifecycle.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\pymem.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\pystate.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\sysmodule.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\traceback.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\tupleobject.h">
@@ -165,6 +180,9 @@
     <ClInclude Include="..\Include\internal\pycore_atomic.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_code.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_ceval.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -186,10 +204,19 @@
     <ClInclude Include="..\Include\internal\pycore_hamt.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_import.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_initconfig.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pyerrors.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pyhash.h">
@@ -202,6 +229,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pystate.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_traceback.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_tupleobject.h">
@@ -229,9 +259,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\memoryobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\metagrammar.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\methodobject.h">
@@ -267,10 +294,7 @@
     <ClInclude Include="..\Include\patchlevel.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pgen.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\pgenheaders.h">
+    <ClInclude Include="..\Include\picklebufobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\py_curses.h">
@@ -484,6 +508,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\namespaceobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\interpreteridobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Modules\hashtable.h">
@@ -803,6 +830,9 @@
     <ClCompile Include="..\Objects\obmalloc.c">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\picklebufobject.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\rangeobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
@@ -833,22 +863,10 @@
     <ClCompile Include="..\Parser\acceler.c">
       <Filter>Parser</Filter>
     </ClCompile>
-    <ClCompile Include="..\Parser\bitset.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\firstsets.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\grammar.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
     <ClCompile Include="..\Parser\grammar1.c">
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\listnode.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\metagrammar.c">
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\myreadline.c">
@@ -911,9 +929,6 @@
     <ClCompile Include="..\Python\compile.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\coreconfig.c">
-      <Filter>Python</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\context.h">
       <Filter>Python</Filter>
     </ClCompile>
@@ -968,6 +983,9 @@
     <ClCompile Include="..\Python\importdl.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\initconfig.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\marshal.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -984,6 +1002,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\peephole.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\preconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pyarena.c">
@@ -1053,6 +1074,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\namespaceobject.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\interpreteridobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_opcode.c">

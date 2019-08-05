@@ -55,17 +55,17 @@ def process(filename, listnames):
     except IOError as msg:
         sys.stderr.write("Can't open: %s\n" % msg)
         return 1
-    g = tokenize.generate_tokens(fp.readline)
-    lastrow = None
-    for type, token, (row, col), end, line in g:
-        if token in ("/", "/="):
-            if listnames:
-                print(filename)
-                break
-            if row != lastrow:
-                lastrow = row
-                print("%s:%d:%s" % (filename, row, line), end=' ')
-    fp.close()
+    with fp:
+        g = tokenize.generate_tokens(fp.readline)
+        lastrow = None
+        for type, token, (row, col), end, line in g:
+            if token in ("/", "/="):
+                if listnames:
+                    print(filename)
+                    break
+                if row != lastrow:
+                    lastrow = row
+                    print("%s:%d:%s" % (filename, row, line), end=' ')
 
 def processdir(dir, listnames):
     try:

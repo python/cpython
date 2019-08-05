@@ -356,7 +356,7 @@ Module-level decorators, classes, and functions
          def add_one(self):
              return self.x + 1
 
-.. function:: replace(instance, **changes)
+.. function:: replace(instance, /, **changes)
 
    Creates a new object of the same type of ``instance``, replacing
    fields with values from ``changes``.  If ``instance`` is not a Data
