@@ -427,7 +427,7 @@ This module offers the following functions:
    *key* is an already open key, or one of the predefined
    :ref:`HKEY_* constants <hkey-constants>`.
 
-   Will generally raise :exc:`NotImplemented` if executed on a 32-bit
+   Will generally raise :exc:`NotImplementedError` if executed on a 32-bit
    operating system.
 
    If the key is not on the reflection list, the function succeeds but has no
@@ -442,7 +442,7 @@ This module offers the following functions:
    *key* is an already open key, or one of the predefined
    :ref:`HKEY_* constants <hkey-constants>`.
 
-   Will generally raise :exc:`NotImplemented` if executed on a 32-bit
+   Will generally raise :exc:`NotImplementedError` if executed on a 32-bit
    operating system.
 
    Restoring reflection for a key does not affect reflection of any subkeys.
@@ -457,7 +457,7 @@ This module offers the following functions:
 
    Returns ``True`` if reflection is disabled.
 
-   Will generally raise :exc:`NotImplemented` if executed on a 32-bit
+   Will generally raise :exc:`NotImplementedError` if executed on a 32-bit
    operating system.
 
 
