@@ -443,10 +443,30 @@ Other Language Changes
 * Added new ``replace()`` method to the code type (:class:`types.CodeType`).
   (Contributed by Victor Stinner in :issue:`37032`.)
 
-* For integers, the three-argument form of the :func:`pow` function now permits
-  the exponent to be negative in the case where the base is relatively prime to
-  the modulus. It then computes a modular inverse to the base when the exponent
-  is ``-1``, and a suitable power of that inverse for other negative exponents.
+* For integers, the three-argument form of the :func:`pow` function now
+  permits the exponent to be negative in the case where the base is
+  relatively prime to the modulus. It then computes a modular inverse to
+  the base when the exponent is ``-1``, and a suitable power of that
+  inverse for other negative exponents.  For example, to compute the
+  `modular multiplicative inverse
+  <https://en.wikipedia.org/wiki/Modular_multiplicative_inverse>`_ of 38
+  in modulo 137, write::
+
+    >>> pow(38, -1, 137)
+    119
+    >>> 119 * 38 % 137
+    1
+
+  Modular inverses arise in the solution of `linear Diophantine
+  equations <https://en.wikipedia.org/wiki/Diophantine_equation>`_.
+  For example, to find integer solutions for ``4258𝑥 + 147𝑦 = 369``,
+  first rewrite as ``4258𝑥 ≡ 369 (mod 147)`` then solve:
+
+    >>> x = 369 * pow(4258, -1, 147) % 147
+    >>> y = (4258 * x - 369) // -147
+    >>> 4258 * x + 147 * y
+    369
+
   (Contributed by Mark Dickinson in :issue:`36027`.)
 
 * When dictionary comprehensions are evaluated, the key is now evaluated before
