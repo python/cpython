@@ -115,16 +115,7 @@ the expression body::
     if (clean_name := normalize('NFC', name)) in allowed_names]
 
 Try to limit use of the walrus operator to clean cases that reduce
-complexity and improve readability.  When combined with other features
-like f-strings or conditional expressions, it is easy to go over-board
-with code that is challenging to decipher::
-
-  # Cryptic assignment expression embedded in a conditional expression
-  binomial_coefficient = [(c := c * (n - k + 1) // k if k else 1) for k in range(n+1)]
-
-  # Visually confusing assignment expression embedded in an f-string
-  for angle in range(360):
-    print(f'{angle=}\N{degree sign} {(theta:=radians(angle))=:.3f} {sin(theta)=:.3f}')
+complexity and improve readability.
 
 See :pep:`572` for a full description.
 
