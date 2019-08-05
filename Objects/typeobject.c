@@ -5072,7 +5072,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
      (basebase == NULL || base->SLOT != basebase->SLOT))
 
 #define COPYSLOT(SLOT) \
-    if (!type->SLOT && SLOTDEFINED(SLOT)) type->SLOT = base->SLOT
+    if (!type->SLOT && base->SLOT) type->SLOT = base->SLOT
 
 #define COPYASYNC(SLOT) COPYSLOT(tp_as_async->SLOT)
 #define COPYNUM(SLOT) COPYSLOT(tp_as_number->SLOT)
