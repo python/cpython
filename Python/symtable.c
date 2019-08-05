@@ -973,6 +973,13 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
         return 0;
     }
     prev = st->st_cur;
+    /* bpo-37757: For now, disallow *all* assignment expressions in the
+     * outermost iterator expression of a comprehension, even those inside
+     * a nested comprehension or a lambda expression.
+     */
+    if (prev) {
+        ste->ste_comp_iter_expr = prev->ste_comp_iter_expr;
+    }
     /* The entry is owned by the stack. Borrow it for st_cur. */
     Py_DECREF(ste);
     st->st_cur = ste;

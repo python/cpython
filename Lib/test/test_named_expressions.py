@@ -123,8 +123,6 @@ class NamedExpressionInvalidTest(unittest.TestCase):
             ("Unreachable reuse", "[False or (i:=0) for i in range(5)]"),
             ("Unreachable nested reuse",
                 "[(i, j) for i in range(5) for j in range(5) if True or (i:=10)]"),
-            ("Nested comprehension condition", "[i for i in [j for j in range(5) if (j := True)]]"),
-            ("Nested comprehension body", "[i for i in [(j := True) for j in range(5)]]"),
         ]
         for case, code in cases:
             with self.subTest(case=case):
@@ -148,8 +146,11 @@ class NamedExpressionInvalidTest(unittest.TestCase):
             ("Top level", "[i for i in (i := range(5))]"),
             ("Inside container", "[i for i in (2, 3, i := range(5))]"),
             ("Different name", "[i for i in (j := range(5))]"),
+            ("Lambda expression", "[i for i in (lambda:(j := range(5)))()]"),
             ("Inner loop", "[i for i in range(5) for j in (i := range(5))]"),
             ("Nested comprehension", "[i for i in [j for j in (k := range(5))]]"),
+            ("Nested comprehension condition", "[i for i in [j for j in range(5) if (j := True)]]"),
+            ("Nested comprehension body", "[i for i in [(j := True) for j in range(5)]]"),
         ]
         for case, code in cases:
             with self.subTest(case=case):
