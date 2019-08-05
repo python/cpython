@@ -39,6 +39,9 @@ class BuildTestCase(support.TempdirManager,
 
         for name in names:
             subcmd = cmd.get_finalized_command(name)
+            if getattr(subcmd, '_unsupported', False):
+                # command is not supported on this build
+                continue
             self.assertTrue(subcmd.skip_build,
                             '%s should take --skip-build from bdist' % name)
 

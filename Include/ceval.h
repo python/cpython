@@ -48,10 +48,12 @@ PyAPI_FUNC(PyObject *) PyEval_GetGlobals(void);
 PyAPI_FUNC(PyObject *) PyEval_GetLocals(void);
 PyAPI_FUNC(struct _frame *) PyEval_GetFrame(void);
 
+#ifndef Py_LIMITED_API
+/* Helper to look up a builtin object */
+PyAPI_FUNC(PyObject *) _PyEval_GetBuiltinId(_Py_Identifier *);
 /* Look at the current frame's (if any) code's co_flags, and turn on
    the corresponding compiler flags in cf->cf_flags.  Return 1 if any
    flag was set, else return 0. */
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyEval_MergeCompilerFlags(PyCompilerFlags *cf);
 #endif
 

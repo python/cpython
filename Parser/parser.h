@@ -7,7 +7,7 @@ extern "C" {
 
 /* Parser interface */
 
-#define MAXSTACK 1500
+#define MAXSTACK 1700
 
 typedef struct {
     int              s_state;       /* State in current DFA */
@@ -32,7 +32,9 @@ typedef struct {
 
 parser_state *PyParser_New(grammar *g, int start);
 void PyParser_Delete(parser_state *ps);
-int PyParser_AddToken(parser_state *ps, int type, char *str, int lineno, int col_offset,
+int PyParser_AddToken(parser_state *ps, int type, char *str,
+                      int lineno, int col_offset,
+                      int end_lineno, int end_col_offset,
                       int *expected_ret);
 void PyGrammar_AddAccelerators(grammar *g);
 

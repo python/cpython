@@ -30,6 +30,10 @@
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
+/* Define to 1 if your system stores words within floats with the most
+   significant word first */
+#undef FLOAT_WORDS_BIGENDIAN
+
 /* Define if flock needs to be linked with bsd library. */
 #undef FLOCK_NEEDS_LIBBSD
 
@@ -142,6 +146,9 @@
 
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
+
+/* Define if you have the crypt_r() function. */
+#undef HAVE_CRYPT_R
 
 /* Define to 1 if you have the `ctermid' function. */
 #undef HAVE_CTERMID
@@ -403,6 +410,12 @@
 /* Define to 1 if you have the `getentropy' function. */
 #undef HAVE_GETENTROPY
 
+/* Define to 1 if you have the `getgrgid_r' function. */
+#undef HAVE_GETGRGID_R
+
+/* Define to 1 if you have the `getgrnam_r' function. */
+#undef HAVE_GETGRNAM_R
+
 /* Define to 1 if you have the `getgrouplist' function. */
 #undef HAVE_GETGROUPLIST
 
@@ -456,6 +469,12 @@
 
 /* Define to 1 if you have the `getpwent' function. */
 #undef HAVE_GETPWENT
+
+/* Define to 1 if you have the `getpwnam_r' function. */
+#undef HAVE_GETPWNAM_R
+
+/* Define to 1 if you have the `getpwuid_r' function. */
+#undef HAVE_GETPWUID_R
 
 /* Define to 1 if the getrandom() function is available */
 #undef HAVE_GETRANDOM
@@ -599,6 +618,9 @@
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
 
+/* Define to 1 if you have the <linux/qrtr.h> header file. */
+#undef HAVE_LINUX_QRTR_H
+
 /* Define to 1 if you have the <linux/random.h> header file. */
 #undef HAVE_LINUX_RANDOM_H
 
@@ -709,6 +731,9 @@
 
 /* Define to 1 if you have the `posix_spawn' function. */
 #undef HAVE_POSIX_SPAWN
+
+/* Define to 1 if you have the `posix_spawnp' function. */
+#undef HAVE_POSIX_SPAWNP
 
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
@@ -1273,9 +1298,6 @@
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
 
-/* Define if log1p(-0.) is 0. rather than -0. */
-#undef LOG1P_DROPS_ZERO_SIGN
-
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
    */
 #undef MAJOR_IN_MKDEV
@@ -1409,9 +1431,6 @@
 /* Define if you can safely include both <sys/select.h> and <sys/time.h>
    (which you can't on SCO ODT 3.0). */
 #undef SYS_SELECT_WITH_SYS_TIME
-
-/* Define if tanh(-0.) is -0., or if platform doesn't have signed zeros */
-#undef TANH_PRESERVES_ZERO_SIGN
 
 /* Library needed by timemodule.c: librt may be needed for clock_gettime() */
 #undef TIMEMODULE_LIB

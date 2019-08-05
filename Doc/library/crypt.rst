@@ -91,7 +91,7 @@ The :mod:`crypt` module defines the following functions:
    may be available on all platforms), or a full encrypted password
    including salt, as returned by this function.  If *salt* is not
    provided, the strongest method will be used (as returned by
-   :func:`methods`.
+   :func:`methods`).
 
    Checking a password is usually done by passing the plain-text password
    as *word* and the full results of a previous :func:`crypt` call,

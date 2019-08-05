@@ -144,7 +144,8 @@ class PyclbrTest(TestCase):
 
     def test_easy(self):
         self.checkModule('pyclbr')
-        self.checkModule('ast')
+        # XXX: Metaclasses are not supported
+        # self.checkModule('ast')
         self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
                                             "DocTestCase", '_DocTestSuite'))
         self.checkModule('difflib', ignore=("Match",))

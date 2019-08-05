@@ -268,6 +268,8 @@ hyphenated words; only then will long words be broken if necessary, unless
       .. versionadded:: 3.4
 
 
+   .. index:: single: ...; placeholder
+
    .. attribute:: placeholder
 
       (default: ``' [...]'``) String that will appear at the end of the output

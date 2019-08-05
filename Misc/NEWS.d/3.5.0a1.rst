@@ -75,8 +75,8 @@ NotImplemented.  Original patch by Martin Panter.
 .. nonce: HQelge
 .. section: Core and Builtins
 
-Fixed a crash in str.decode() when error handler returned replacment string
-longer than mailformed input data.
+Fixed a crash in str.decode() when error handler returned replacement string
+longer than malformed input data.
 
 ..
 
@@ -998,7 +998,7 @@ written in the standard.
 .. nonce: 9-UJRs
 .. section: Library
 
-In the disutils' check command, fix parsing of reST with code or code-block
+In the distutils' check command, fix parsing of reST with code or code-block
 directives.
 
 ..
@@ -2706,8 +2706,8 @@ Added support for the "xztar" format in the shutil module.
 .. nonce: ZLsRil
 .. section: Library
 
-Don't force 3rd party C extensions to be built with -Werror=declaration-
-after-statement.
+Don't force 3rd party C extensions to be built with
+-Werror=declaration-after-statement.
 
 ..
 
@@ -2877,7 +2877,7 @@ closed socket. repr(socket.socket) already works fine.
 .. nonce: nkBNci
 .. section: Library
 
-Reprs of most Python implemened classes now contain actual class name
+Reprs of most Python implemented classes now contain actual class name
 instead of hardcoded one.
 
 ..
@@ -3036,7 +3036,7 @@ by Phil Elson.
 
 os.read() now uses a :c:func:`Py_ssize_t` type instead of :c:type:`int` for
 the size to support reading more than 2 GB at once. On Windows, the size is
-truncted to INT_MAX. As any call to os.read(), the OS may read less bytes
+truncated to INT_MAX. As any call to os.read(), the OS may read less bytes
 than the number of requested bytes.
 
 ..
@@ -3555,7 +3555,7 @@ created for every test class.
 .. nonce: kfV0wm
 .. section: Library
 
-Fix PEP 3118 format strings on ctypes objects with a nontrivial shape.
+Fix :pep:`3118` format strings on ctypes objects with a nontrivial shape.
 
 ..
 
@@ -4464,8 +4464,8 @@ Improve repr of inspect.Signature and inspect.Parameter.
 .. nonce: DFMEgN
 .. section: Library
 
-Fix inspect.getcallargs() to raise correct TypeError for missing keyword-
-only arguments. Patch by Jeremiah Lowin.
+Fix inspect.getcallargs() to raise correct TypeError for missing
+keyword-only arguments. Patch by Jeremiah Lowin.
 
 ..
 
@@ -4824,7 +4824,7 @@ tests.
 .. nonce: kqetng
 .. section: IDLE
 
-Change default paragraph width to 72, the PEP 8 recommendation.
+Change default paragraph width to 72, the :pep:`8` recommendation.
 
 ..
 
@@ -5059,8 +5059,8 @@ Anticipated fixes to support OS X versions > 10.9.
 .. nonce: KAl7aO
 .. section: Build
 
-Prevent possible segfaults and other random failures of python --generate-
-posix-vars in pybuilddir.txt build target.
+Prevent possible segfaults and other random failures of python
+--generate-posix-vars in pybuilddir.txt build target.
 
 ..
 
@@ -5759,7 +5759,7 @@ Add support for ``yield from`` to 2to3.
 .. nonce: dpFbyZ
 .. section: Tools/Demos
 
-Add support for the PEP 465 matrix multiplication operator to 2to3.
+Add support for the :pep:`465` matrix multiplication operator to 2to3.
 
 ..
 

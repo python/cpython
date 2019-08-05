@@ -116,6 +116,9 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 zinfo = ZipInfo(name, time.localtime(mtime))
                 zinfo.compress_type = self.compression
                 z.writestr(zinfo, data)
+            comment = kw.get("comment", None)
+            if comment is not None:
+                z.comment = comment
 
         stuff = kw.get("stuff", None)
         if stuff is not None:
@@ -539,23 +542,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             z.close()
             os.remove(TEMP_ZIP)
 
-    def test_issue31291(self):
-        # There shouldn't be an assertion failure in get_data().
-        class FunnyStr(str):
-            def replace(self, old, new):
-                return 42
-        z = ZipFile(TEMP_ZIP, "w")
-        try:
-            name = "test31291.dat"
-            data = b'foo'
-            z.writestr(name, data)
-            z.close()
-            zi = zipimport.zipimporter(TEMP_ZIP)
-            self.assertEqual(data, zi.get_data(FunnyStr(name)))
-        finally:
-            z.close()
-            os.remove(TEMP_ZIP)
-
     def testImporterAttr(self):
         src = """if 1:  # indent hack
         def get_file():
@@ -677,42 +663,27 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
         zipimport.zipimporter(filename)
         zipimport.zipimporter(os.fsencode(filename))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             zipimport.zipimporter(bytearray(os.fsencode(filename)))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             zipimport.zipimporter(memoryview(os.fsencode(filename)))
 
-    @support.cpython_only
-    def testUninitializedZipimporter(self):
-        # The interpreter shouldn't crash in case of calling methods of an
-        # uninitialized zipimport.zipimporter object.
-        zi = zipimport.zipimporter.__new__(zipimport.zipimporter)
-        self.assertRaises(ValueError, zi.find_module, 'foo')
-        self.assertRaises(ValueError, zi.find_loader, 'foo')
-        self.assertRaises(ValueError, zi.load_module, 'foo')
-        self.assertRaises(ValueError, zi.get_filename, 'foo')
-        self.assertRaises(ValueError, zi.is_package, 'foo')
-        self.assertRaises(ValueError, zi.get_data, 'foo')
-        self.assertRaises(ValueError, zi.get_code, 'foo')
-        self.assertRaises(ValueError, zi.get_source, 'foo')
+    def testComment(self):
+        files = {TESTMOD + ".py": (NOW, test_src)}
+        self.doTest(".py", files, TESTMOD, comment=b"comment")
+
+    def testBeginningCruftAndComment(self):
+        files = {TESTMOD + ".py": (NOW, test_src)}
+        self.doTest(".py", files, TESTMOD, stuff=b"cruft" * 64, comment=b"hi")
+
+    def testLargestPossibleComment(self):
+        files = {TESTMOD + ".py": (NOW, test_src)}
+        self.doTest(".py", files, TESTMOD, comment=b"c" * ((1 << 16) - 1))
 
 
 @support.requires_zlib
 class CompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
-
-    @support.cpython_only
-    def test_issue31602(self):
-        # There shouldn't be an assertion failure in zipimporter.get_source()
-        # in case of a bad zlib.decompress().
-        def bad_decompress(*args):
-            return None
-        with ZipFile(TEMP_ZIP, 'w') as zip_file:
-            self.addCleanup(support.unlink, TEMP_ZIP)
-            zip_file.writestr('bar.py', b'print("hello world")', ZIP_DEFLATED)
-        zi = zipimport.zipimporter(TEMP_ZIP)
-        with support.swap_attr(zlib, 'decompress', bad_decompress):
-            self.assertRaises(TypeError, zi.get_source, 'bar')
 
 
 class BadFileZipImportTestCase(unittest.TestCase):

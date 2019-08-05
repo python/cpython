@@ -1865,12 +1865,12 @@ SyntaxError: assignment to yield expression not possible
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):
   ...
-SyntaxError: can't assign to yield expression
+SyntaxError: cannot assign to yield expression
 
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):
   ...
-SyntaxError: can't assign to yield expression
+SyntaxError: cannot assign to yield expression
 
 
 Now check some throw() conditions:

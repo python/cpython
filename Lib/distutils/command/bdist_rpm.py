@@ -58,7 +58,7 @@ class bdist_rpm(Command):
          "RPM \"vendor\" (eg. \"Joe Blow <joe@example.com>\") "
          "[default: maintainer or author from setup script]"),
         ('packager=', None,
-         "RPM packager (eg. \"Jane Doe <jane@example.net>\")"
+         "RPM packager (eg. \"Jane Doe <jane@example.net>\") "
          "[default: vendor]"),
         ('doc-files=', None,
          "list of documentation files (space or comma-separated)"),

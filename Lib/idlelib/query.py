@@ -1,6 +1,5 @@
 """
 Dialogs that query users and verify the answer before accepting.
-Use ttk widgets, limiting use to tcl/tk 8.5+, as in IDLE 3.6+.
 
 Query is the generic base class for a popup dialog.
 The user must either enter a valid answer or close the dialog.

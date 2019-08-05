@@ -30,7 +30,7 @@ if sys.platform != 'win32':
     WINEXE = False
     WINSERVICE = False
 else:
-    WINEXE = (sys.platform == 'win32' and getattr(sys, 'frozen', False))
+    WINEXE = getattr(sys, 'frozen', False)
     WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
 
 if WINSERVICE:

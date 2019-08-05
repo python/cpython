@@ -610,7 +610,7 @@ logger, a console handler, and a simple formatter using Python code::
     # 'application' code
     logger.debug('debug message')
     logger.info('info message')
-    logger.warn('warn message')
+    logger.warning('warn message')
     logger.error('error message')
     logger.critical('critical message')
 
@@ -640,7 +640,7 @@ the names of the objects::
     # 'application' code
     logger.debug('debug message')
     logger.info('info message')
-    logger.warn('warn message')
+    logger.warning('warn message')
     logger.error('error message')
     logger.critical('critical message')
 
@@ -695,15 +695,15 @@ noncoders to easily modify the logging properties.
 .. warning:: The :func:`fileConfig` function takes a default parameter,
    ``disable_existing_loggers``, which defaults to ``True`` for reasons of
    backward compatibility. This may or may not be what you want, since it
-   will cause any loggers existing before the :func:`fileConfig` call to
-   be disabled unless they (or an ancestor) are explicitly named in the
-   configuration.  Please refer to the reference documentation for more
+   will cause any non-root loggers existing before the :func:`fileConfig`
+   call to be disabled unless they (or an ancestor) are explicitly named in
+   the configuration. Please refer to the reference documentation for more
    information, and specify ``False`` for this parameter if you wish.
 
    The dictionary passed to :func:`dictConfig` can also specify a Boolean
    value with key ``disable_existing_loggers``, which if not specified
    explicitly in the dictionary also defaults to being interpreted as
-   ``True``.  This leads to the logger-disabling behaviour described above,
+   ``True``. This leads to the logger-disabling behaviour described above,
    which may not be what you want - in which case, provide the key
    explicitly with a value of ``False``.
 
@@ -750,9 +750,9 @@ the new dictionary-based approach:
         level: DEBUG
         handlers: [console]
         propagate: no
-      root:
-        level: DEBUG
-        handlers: [console]
+    root:
+      level: DEBUG
+      handlers: [console]
 
 For more information about logging using a dictionary, see
 :ref:`logging-config-api`.
@@ -802,7 +802,7 @@ the best default behaviour.
 If for some reason you *don't* want these messages printed in the absence of
 any logging configuration, you can attach a do-nothing handler to the top-level
 logger for your library. This avoids the message being printed, since a handler
-will be always be found for the library's events: it just doesn't produce any
+will always be found for the library's events: it just doesn't produce any
 output. If the library user configures logging for application use, presumably
 that configuration will add some handlers, and if levels are suitably
 configured then logging calls made in library code will send output to those
@@ -971,7 +971,7 @@ provided:
 
 The :class:`NullHandler`, :class:`StreamHandler` and :class:`FileHandler`
 classes are defined in the core logging package. The other handlers are
-defined in a sub- module, :mod:`logging.handlers`. (There is also another
+defined in a sub-module, :mod:`logging.handlers`. (There is also another
 sub-module, :mod:`logging.config`, for configuration functionality.)
 
 Logged messages are formatted for presentation through instances of the

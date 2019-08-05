@@ -82,10 +82,10 @@ class DumbDBMTestCase(unittest.TestCase):
         self.init_db()
         f = dumbdbm.open(_fname, 'r')
         self.read_helper(f)
-        with self.assertRaisesRegex(ValueError,
+        with self.assertRaisesRegex(dumbdbm.error,
                                    'The database is opened for reading only'):
             f[b'g'] = b'x'
-        with self.assertRaisesRegex(ValueError,
+        with self.assertRaisesRegex(dumbdbm.error,
                                    'The database is opened for reading only'):
             del f[b'a']
         # get() works as in the dict interface

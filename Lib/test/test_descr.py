@@ -13,6 +13,11 @@ import weakref
 from copy import deepcopy
 from test import support
 
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
 
 class OperatorsTest(unittest.TestCase):
 
@@ -4756,6 +4761,22 @@ order (MRO) for bases """
         func.__qualname__ = "qualname"
         self.assertRegex(repr(method),
             r"<bound method qualname of <object object at .*>>")
+
+    @unittest.skipIf(_testcapi is None, 'need the _testcapi module')
+    def test_bpo25750(self):
+        # bpo-25750: calling a descriptor (implemented as built-in
+        # function with METH_FASTCALL) should not crash CPython if the
+        # descriptor deletes itself from the class.
+        class Descr:
+            __get__ = _testcapi.bad_get
+
+        class X:
+            descr = Descr()
+            def __new__(cls):
+                cls.descr = None
+                # Create this large list to corrupt some unused memory
+                cls.lst = [2**i for i in range(10000)]
+        X.descr
 
 
 class DictProxyTests(unittest.TestCase):

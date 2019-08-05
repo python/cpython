@@ -3190,6 +3190,24 @@ class CodePageTest(unittest.TestCase):
             codec = codecs.lookup('cp123')
             self.assertEqual(codec.name, 'mbcs')
 
+    @support.bigmemtest(size=2**31, memuse=7, dry_run=False)
+    def test_large_input(self):
+        # Test input longer than INT_MAX.
+        # Input should contain undecodable bytes before and after
+        # the INT_MAX limit.
+        encoded = (b'01234567' * (2**28-1) +
+                   b'\x85\x86\xea\xeb\xec\xef\xfc\xfd\xfe\xff')
+        self.assertEqual(len(encoded), 2**31+2)
+        decoded = codecs.code_page_decode(932, encoded, 'surrogateescape', True)
+        self.assertEqual(decoded[1], len(encoded))
+        del encoded
+        self.assertEqual(len(decoded[0]), decoded[1])
+        self.assertEqual(decoded[0][:10], '0123456701')
+        self.assertEqual(decoded[0][-20:],
+                         '6701234567'
+                         '\udc85\udc86\udcea\udceb\udcec'
+                         '\udcef\udcfc\udcfd\udcfe\udcff')
+
 
 class ASCIITest(unittest.TestCase):
     def test_encode(self):
@@ -3290,9 +3308,9 @@ class LocaleCodecTest(unittest.TestCase):
                     expected = text.encode(self.ENCODING, errors)
                 except UnicodeEncodeError:
                     with self.assertRaises(RuntimeError) as cm:
-                        self.encode(self.SURROGATES)
+                        self.encode(text, errors)
                     errmsg = str(cm.exception)
-                    self.assertTrue(errmsg.startswith("encode error: pos=0, reason="), errmsg)
+                    self.assertRegex(errmsg, r"encode error: pos=[0-9]+, reason=")
                 else:
                     encoded = self.encode(text, errors)
                     self.assertEqual(encoded, expected)
@@ -3314,6 +3332,11 @@ class LocaleCodecTest(unittest.TestCase):
                 raise
 
         self.check_encode_strings("surrogatepass")
+
+    def test_encode_unsupported_error_handler(self):
+        with self.assertRaises(ValueError) as cm:
+            self.encode('', 'backslashreplace')
+        self.assertEqual(str(cm.exception), 'unsupported error handler')
 
     def decode(self, encoded, errors="strict"):
         return _testcapi.DecodeLocaleEx(encoded, 0, errors)
@@ -3369,6 +3392,11 @@ class LocaleCodecTest(unittest.TestCase):
                 raise
 
         self.check_decode_strings("surrogatepass")
+
+    def test_decode_unsupported_error_handler(self):
+        with self.assertRaises(ValueError) as cm:
+            self.decode(b'', 'backslashreplace')
+        self.assertEqual(str(cm.exception), 'unsupported error handler')
 
 
 if __name__ == "__main__":

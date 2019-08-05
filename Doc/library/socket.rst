@@ -161,7 +161,7 @@ created.  Socket addresses are represented as follows:
 
   - *feat* and *mask* are unsigned 32bit integers.
 
-  Availability Linux 2.6.38, some algorithm types require more recent Kernels.
+  .. availability:: Linux 2.6.38, some algorithm types require more recent Kernels.
 
   .. versionadded:: 3.6
 
@@ -169,14 +169,36 @@ created.  Socket addresses are represented as follows:
   their hosts. The sockets are represented as a ``(CID, port)`` tuple
   where the context ID or CID and port are integers.
 
-  Availability: Linux >= 4.8 QEMU >= 2.8 ESX >= 4.0 ESX Workstation >= 6.5
+  .. availability:: Linux >= 4.8 QEMU >= 2.8 ESX >= 4.0 ESX Workstation >= 6.5.
 
   .. versionadded:: 3.7
 
-- Certain other address families (:const:`AF_PACKET`, :const:`AF_CAN`)
-  support specific representations.
+- :const:`AF_PACKET` is a low-level interface directly to network devices.
+  The packets are represented by the tuple
+  ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
-  .. XXX document them!
+  - *ifname* - String specifying the device name.
+  - *proto* - An in network-byte-order integer specifying the Ethernet
+    protocol number.
+  - *pkttype* - Optional integer specifying the packet type:
+
+    - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
+    - ``PACKET_BROADCAST`` - Physical-layer broadcast packet.
+    - ``PACKET_MULTIHOST`` - Packet sent to a physical-layer multicast address.
+    - ``PACKET_OTHERHOST`` - Packet to some other host that has been caught by
+      a device driver in promiscuous mode.
+    - ``PACKET_OUTGOING`` - Packet originating from the local host that is
+      looped back to a packet socket.
+  - *hatype* - Optional integer specifying the ARP hardware address type.
+  - *addr* - Optional bytes-like object specifying the hardware physical
+    address, whose interpretation depends on the device.
+
+- :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
+  with services running on co-processors in Qualcomm platforms. The address
+  family is represented as a ``(node, port)`` tuple where the *node* and *port*
+  are non-negative integers.
+
+  .. versionadded:: 3.8
 
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
@@ -291,7 +313,7 @@ Constants
       `Secure File Descriptor Handling <http://udrepper.livejournal.com/20407.html>`_
       for a more thorough explanation.
 
-   Availability: Linux >= 2.6.27.
+   .. availability:: Linux >= 2.6.27.
 
    .. versionadded:: 3.2
 
@@ -339,7 +361,7 @@ Constants
    Many constants of these forms, documented in the Linux documentation, are
    also defined in the socket module.
 
-   Availability: Linux >= 2.6.25.
+   .. availability:: Linux >= 2.6.25.
 
    .. versionadded:: 3.3
 
@@ -350,7 +372,7 @@ Constants
    Broadcast manager constants, documented in the Linux documentation, are also
    defined in the socket module.
 
-   Availability: Linux >= 2.6.25.
+   .. availability:: Linux >= 2.6.25.
 
    .. versionadded:: 3.4
 
@@ -362,7 +384,7 @@ Constants
 
    This constant is documented in the Linux documentation.
 
-   Availability: Linux >= 3.6.
+   .. availability:: Linux >= 3.6.
 
    .. versionadded:: 3.5
 
@@ -371,9 +393,19 @@ Constants
    CAN_ISOTP, in the CAN protocol family, is the ISO-TP (ISO 15765-2) protocol.
    ISO-TP constants, documented in the Linux documentation.
 
-   Availability: Linux >= 2.6.25
+   .. availability:: Linux >= 2.6.25.
 
    .. versionadded:: 3.7
+
+
+.. data:: AF_PACKET
+          PF_PACKET
+          PACKET_*
+
+   Many constants of these forms, documented in the Linux documentation, are
+   also defined in the socket module.
+
+   .. availability:: Linux >= 2.2.
 
 
 .. data:: AF_RDS
@@ -384,7 +416,7 @@ Constants
    Many constants of these forms, documented in the Linux documentation, are
    also defined in the socket module.
 
-   Availability: Linux >= 2.6.30.
+   .. availability:: Linux >= 2.6.30.
 
    .. versionadded:: 3.3
 
@@ -412,7 +444,7 @@ Constants
 
    Constants for Linux Kernel cryptography.
 
-   Availability: Linux >= 2.6.38.
+   .. availability:: Linux >= 2.6.38.
 
    .. versionadded:: 3.6
 
@@ -424,13 +456,13 @@ Constants
 
    Constants for Linux host/guest communication.
 
-   Availability: Linux >= 4.8.
+   .. availability:: Linux >= 4.8.
 
    .. versionadded:: 3.7
 
 .. data:: AF_LINK
 
-  Availability: BSD, OSX.
+  .. availability:: BSD, OSX.
 
   .. versionadded:: 3.4
 
@@ -456,6 +488,13 @@ Constants
    :const:`HCI_DATA_DIR` are not available for FreeBSD, NetBSD, or
    DragonFlyBSD.
 
+.. data:: AF_QIPCRTR
+
+   Constant for Qualcomm's IPC router protocol, used to communicate with
+   service providing remote processors.
+
+   .. availability:: Linux >= 4.7.
+
 Functions
 ^^^^^^^^^
 
@@ -469,12 +508,12 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),
-   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN` or :const:`AF_RDS`. The
-   socket type should be :const:`SOCK_STREAM` (the default),
-   :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
-   constants. The protocol number is usually zero and may be omitted or in the
-   case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`
+   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN`, :const:`AF_PACKET`,
+   or :const:`AF_RDS`. The socket type should be :const:`SOCK_STREAM` (the
+   default), :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other
+   ``SOCK_`` constants. The protocol number is usually zero and may be omitted
+   or in the case where the address family is :const:`AF_CAN` the protocol
+   should be one of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`.
 
    If *fileno* is specified, the values for *family*, *type*, and *proto* are
    auto-detected from the specified file descriptor.  Auto-detection can be
@@ -579,7 +618,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    Instantiate a socket from data obtained from the :meth:`socket.share`
    method.  The socket is assumed to be in blocking mode.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionadded:: 3.3
 
@@ -826,7 +865,7 @@ The :mod:`socket` module also offers various network-related services:
    both the value of *address_family* and the underlying implementation of
    :c:func:`inet_pton`.
 
-   Availability: Unix (maybe not all platforms), Windows.
+   .. availability:: Unix (maybe not all platforms), Windows.
 
    .. versionchanged:: 3.4
       Windows support added
@@ -846,7 +885,7 @@ The :mod:`socket` module also offers various network-related services:
    length for the specified address family, :exc:`ValueError` will be raised.
    :exc:`OSError` is raised for errors from the call to :func:`inet_ntop`.
 
-   Availability: Unix (maybe not all platforms), Windows.
+   .. availability:: Unix (maybe not all platforms), Windows.
 
    .. versionchanged:: 3.4
       Windows support added
@@ -872,7 +911,7 @@ The :mod:`socket` module also offers various network-related services:
    buffer.  Raises :exc:`OverflowError` if *length* is outside the
    permissible range of values.
 
-   Availability: most Unix platforms, possibly others.
+   .. availability:: most Unix platforms, possibly others.
 
    .. versionadded:: 3.3
 
@@ -893,7 +932,7 @@ The :mod:`socket` module also offers various network-related services:
    amount of ancillary data that can be received, since additional
    data may be able to fit into the padding area.
 
-   Availability: most Unix platforms, possibly others.
+   .. availability:: most Unix platforms, possibly others.
 
    .. versionadded:: 3.3
 
@@ -918,7 +957,7 @@ The :mod:`socket` module also offers various network-related services:
    Set the machine's hostname to *name*.  This will raise an
    :exc:`OSError` if you don't have enough rights.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -929,7 +968,7 @@ The :mod:`socket` module also offers various network-related services:
    (index int, name string) tuples.
    :exc:`OSError` if the system call fails.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -940,7 +979,7 @@ The :mod:`socket` module also offers various network-related services:
    interface name.
    :exc:`OSError` if no interface with the given name exists.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -951,7 +990,7 @@ The :mod:`socket` module also offers various network-related services:
    interface index number.
    :exc:`OSError` if no interface with the given index exists.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1278,7 +1317,7 @@ to sockets.
                   fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
           return msg, list(fds)
 
-   Availability: most Unix platforms, possibly others.
+   .. availability:: most Unix platforms, possibly others.
 
    .. versionadded:: 3.3
 
@@ -1320,7 +1359,7 @@ to sockets.
       >>> [b1, b2, b3]
       [bytearray(b'Mary'), bytearray(b'01 had a 9'), bytearray(b'little lamb---')]
 
-   Availability: most Unix platforms, possibly others.
+   .. availability:: most Unix platforms, possibly others.
 
    .. versionadded:: 3.3
 
@@ -1424,7 +1463,7 @@ to sockets.
       def send_fds(sock, msg, fds):
           return sock.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array("i", fds))])
 
-   Availability: most Unix platforms, possibly others.
+   .. availability:: most Unix platforms, possibly others.
 
    .. versionadded:: 3.3
 
@@ -1438,7 +1477,7 @@ to sockets.
    Specialized version of :meth:`~socket.sendmsg` for :const:`AF_ALG` socket.
    Set mode, IV, AEAD associated data length and flags for :const:`AF_ALG` socket.
 
-   Availability: Linux >= 2.6.38
+   .. availability:: Linux >= 2.6.38.
 
    .. versionadded:: 3.6
 
@@ -1539,7 +1578,7 @@ to sockets.
    Once this method has been called, it is safe to close the socket since
    the operating system has already duplicated it for the target process.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionadded:: 3.3
 

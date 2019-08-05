@@ -41,12 +41,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    the OS default behavior will be used.
 
    For normal use, you should only require the initialization/connect,
-   :meth:`sendmail`, and :meth:`~smtplib.quit` methods.
+   :meth:`sendmail`, and :meth:`SMTP.quit` methods.
    An example is included below.
 
    The :class:`SMTP` class supports the :keyword:`with` statement.  When used
    like this, the SMTP ``QUIT`` command is issued automatically when the
-   :keyword:`with` statement exits.  E.g.::
+   :keyword:`!with` statement exits.  E.g.::
 
     >>> from smtplib import SMTP
     >>> with SMTP("domain.org") as smtp:
@@ -346,7 +346,7 @@ An :class:`SMTP` instance has the following methods:
 
    If optional keyword argument *initial_response_ok* is true,
    ``authobject()`` will be called first with no argument.  It can return the
-   :rfc:`4954` "initial response" bytes which will be encoded and sent with
+   :rfc:`4954` "initial response" ASCII ``str`` which will be encoded and sent with
    the ``AUTH`` command as below.  If the ``authobject()`` does not support an
    initial response (e.g. because it requires a challenge), it should return
    ``None`` when called with ``challenge=None``.  If *initial_response_ok* is
@@ -355,7 +355,7 @@ An :class:`SMTP` instance has the following methods:
    If the initial response check returns ``None``, or if *initial_response_ok* is
    false, ``authobject()`` will be called to process the server's challenge
    response; the *challenge* argument it is passed will be a ``bytes``.  It
-   should return ``bytes`` *data* that will be base64 encoded and sent to the
+   should return ASCII ``str`` *data* that will be base64 encoded and sent to the
    server.
 
    The ``SMTP`` class provides ``authobjects`` for the ``CRAM-MD5``, ``PLAIN``,
@@ -419,7 +419,7 @@ An :class:`SMTP` instance has the following methods:
       :exc:`SMTPException`.
 
 
-.. method:: SMTP.sendmail(from_addr, to_addrs, msg, mail_options=[], rcpt_options=[])
+.. method:: SMTP.sendmail(from_addr, to_addrs, msg, mail_options=(), rcpt_options=())
 
    Send mail.  The required arguments are an :rfc:`822` from-address string, a list
    of :rfc:`822` to-address strings (a bare string will be treated as a list with 1
@@ -491,7 +491,7 @@ An :class:`SMTP` instance has the following methods:
 
 
 .. method:: SMTP.send_message(msg, from_addr=None, to_addrs=None, \
-                              mail_options=[], rcpt_options=[])
+                              mail_options=(), rcpt_options=())
 
    This is a convenience method for calling :meth:`sendmail` with the message
    represented by an :class:`email.message.Message` object.  The arguments have

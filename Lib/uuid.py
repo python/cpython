@@ -118,6 +118,8 @@ class UUID:
                     uuid_generate_time_safe(3).
     """
 
+    __slots__ = ('int', 'is_safe', '__weakref__')
+
     def __init__(self, hex=None, bytes=None, bytes_le=None, fields=None,
                        int=None, version=None,
                        *, is_safe=SafeUUID.unknown):
@@ -201,8 +203,23 @@ class UUID:
             # Set the version number.
             int &= ~(0xf000 << 64)
             int |= version << 76
-        self.__dict__['int'] = int
-        self.__dict__['is_safe'] = is_safe
+        object.__setattr__(self, 'int', int)
+        object.__setattr__(self, 'is_safe', is_safe)
+
+    def __getstate__(self):
+        d = {'int': self.int}
+        if self.is_safe != SafeUUID.unknown:
+            # is_safe is a SafeUUID instance.  Return just its value, so that
+            # it can be un-pickled in older Python versions without SafeUUID.
+            d['is_safe'] = self.is_safe.value
+        return d
+
+    def __setstate__(self, state):
+        object.__setattr__(self, 'int', state['int'])
+        # is_safe was added in 3.7; it is also omitted when it is "unknown"
+        object.__setattr__(self, 'is_safe',
+                           SafeUUID(state['is_safe'])
+                           if 'is_safe' in state else SafeUUID.unknown)
 
     def __eq__(self, other):
         if isinstance(other, UUID):
@@ -711,10 +728,10 @@ def uuid1(node=None, clock_seq=None):
 
     global _last_timestamp
     import time
-    nanoseconds = int(time.time() * 1e9)
+    nanoseconds = time.time_ns()
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
-    timestamp = int(nanoseconds/100) + 0x01b21dd213814000
+    timestamp = nanoseconds // 100 + 0x01b21dd213814000
     if _last_timestamp is not None and timestamp <= _last_timestamp:
         timestamp = _last_timestamp + 1
     _last_timestamp = timestamp

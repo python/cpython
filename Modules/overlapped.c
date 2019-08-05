@@ -127,8 +127,10 @@ initialize_function_pointers(void)
     closesocket(s);
 
     /* On WinXP we will have Py_CancelIoEx == NULL */
+    Py_BEGIN_ALLOW_THREADS
     hKernel32 = GetModuleHandle("KERNEL32");
     *(FARPROC *)&Py_CancelIoEx = GetProcAddress(hKernel32, "CancelIoEx");
+    Py_END_ALLOW_THREADS
     return 0;
 }
 
@@ -561,6 +563,28 @@ Overlapped_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
+
+/* Note (bpo-32710): OverlappedType.tp_clear is not defined to not release
+   buffers while overlapped are still running, to prevent a crash. */
+static int
+Overlapped_clear(OverlappedObject *self)
+{
+    switch (self->type) {
+    case TYPE_READ:
+    case TYPE_ACCEPT:
+        Py_CLEAR(self->allocated_buffer);
+        break;
+    case TYPE_WRITE:
+    case TYPE_READINTO:
+        if (self->user_buffer.obj) {
+            PyBuffer_Release(&self->user_buffer);
+        }
+        break;
+    }
+    self->type = TYPE_NOT_STARTED;
+    return 0;
+}
+
 static void
 Overlapped_dealloc(OverlappedObject *self)
 {
@@ -594,20 +618,11 @@ Overlapped_dealloc(OverlappedObject *self)
         }
     }
 
-    if (self->overlapped.hEvent != NULL)
+    if (self->overlapped.hEvent != NULL) {
         CloseHandle(self->overlapped.hEvent);
-
-    switch (self->type) {
-    case TYPE_READ:
-    case TYPE_ACCEPT:
-        Py_CLEAR(self->allocated_buffer);
-        break;
-    case TYPE_WRITE:
-    case TYPE_READINTO:
-        if (self->user_buffer.obj)
-            PyBuffer_Release(&self->user_buffer);
-        break;
     }
+
+    Overlapped_clear(self);
     PyObject_Del(self);
     SetLastError(olderr);
 }
@@ -723,7 +738,7 @@ do_ReadFile(OverlappedObject *self, HANDLE handle,
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -826,7 +841,7 @@ do_WSARecv(OverlappedObject *self, HANDLE handle,
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -954,7 +969,7 @@ Overlapped_WriteFile(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -1011,7 +1026,7 @@ Overlapped_WSASend(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -1061,7 +1076,7 @@ Overlapped_AcceptEx(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -1153,7 +1168,7 @@ Overlapped_ConnectEx(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -1192,7 +1207,7 @@ Overlapped_DisconnectEx(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -1247,7 +1262,7 @@ Overlapped_TransmitFile(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -1288,7 +1303,7 @@ Overlapped_ConnectNamedPipe(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_FALSE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -1337,6 +1352,25 @@ Overlapped_getpending(OverlappedObject *self)
     return PyBool_FromLong(!HasOverlappedIoCompleted(&self->overlapped) &&
                            self->type != TYPE_NOT_STARTED);
 }
+
+static int
+Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
+{
+    switch (self->type) {
+    case TYPE_READ:
+    case TYPE_ACCEPT:
+        Py_VISIT(self->allocated_buffer);
+        break;
+    case TYPE_WRITE:
+    case TYPE_READINTO:
+        if (self->user_buffer.obj) {
+            Py_VISIT(&self->user_buffer.obj);
+        }
+        break;
+    }
+    return 0;
+}
+
 
 static PyMethodDef Overlapped_methods[] = {
     {"getresult", (PyCFunction) Overlapped_getresult,
@@ -1408,7 +1442,7 @@ PyTypeObject OverlappedType = {
     /* tp_as_buffer      */ 0,
     /* tp_flags          */ Py_TPFLAGS_DEFAULT,
     /* tp_doc            */ "OVERLAPPED structure wrapper",
-    /* tp_traverse       */ 0,
+    /* tp_traverse       */ (traverseproc)Overlapped_traverse,
     /* tp_clear          */ 0,
     /* tp_richcompare    */ 0,
     /* tp_weaklistoffset */ 0,

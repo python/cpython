@@ -174,12 +174,10 @@ class DateTimeTests(unittest.TestCase):
             '1980-01-01 00:61:00',
             '01-01-1980 00:00:62',
             '01-01-1980T00:00:62',
-            '19800101T250000Z'
-            '1980-01-01 00:00:00 -2500',
+            '19800101T250000Z',
             ]:
             self.assertIsNone(iso2time(test),
-                              "iso2time(%s) is not None\n"
-                              "iso2time(test) %s" % (test, iso2time(test)))
+                              "iso2time(%r)" % test)
 
 
 class HeaderTests(unittest.TestCase):
@@ -983,6 +981,61 @@ class CookieTests(unittest.TestCase):
                 self.assertTrue(
                     c._cookies["www.acme.com"]["/"]["foo2"].secure,
                     "secure cookie registered non-secure")
+
+    def test_secure_block(self):
+        pol = DefaultCookiePolicy()
+        c = CookieJar(policy=pol)
+
+        headers = ["Set-Cookie: session=narf; secure; path=/"]
+        req = urllib.request.Request("https://www.acme.com/")
+        res = FakeResponse(headers, "https://www.acme.com/")
+        c.extract_cookies(res, req)
+        self.assertEqual(len(c), 1)
+
+        req = urllib.request.Request("https://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertTrue(req.has_header("Cookie"))
+
+        req = urllib.request.Request("http://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+        # secure websocket protocol
+        req = urllib.request.Request("wss://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertTrue(req.has_header("Cookie"))
+
+        # non-secure websocket protocol
+        req = urllib.request.Request("ws://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+    def test_custom_secure_protocols(self):
+        pol = DefaultCookiePolicy(secure_protocols=["foos"])
+        c = CookieJar(policy=pol)
+
+        headers = ["Set-Cookie: session=narf; secure; path=/"]
+        req = urllib.request.Request("https://www.acme.com/")
+        res = FakeResponse(headers, "https://www.acme.com/")
+        c.extract_cookies(res, req)
+        self.assertEqual(len(c), 1)
+
+        # test https removed from secure protocol list
+        req = urllib.request.Request("https://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+        req = urllib.request.Request("http://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+        req = urllib.request.Request("foos://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertTrue(req.has_header("Cookie"))
+
+        req = urllib.request.Request("foo://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
 
     def test_quote_cookie_value(self):
         c = CookieJar(policy=DefaultCookiePolicy(rfc2965=True))

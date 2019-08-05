@@ -36,6 +36,7 @@ class _dbm.dbm "dbmobject *" "&Dbmtype"
 
 typedef struct {
     PyObject_HEAD
+    int flags;
     int di_size;        /* -1 means recompute */
     DBM *di_dbm;
 } dbmobject;
@@ -60,9 +61,10 @@ newdbmobject(const char *file, int flags, int mode)
     if (dp == NULL)
         return NULL;
     dp->di_size = -1;
+    dp->flags = flags;
     /* See issue #19296 */
     if ( (dp->di_dbm = dbm_open((char *)file, flags, mode)) == 0 ) {
-        PyErr_SetFromErrno(DbmError);
+        PyErr_SetFromErrnoWithFilename(DbmError, file);
         Py_DECREF(dp);
         return NULL;
     }
@@ -143,13 +145,20 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
     if (w == NULL) {
         if ( dbm_delete(dp->di_dbm, krec) < 0 ) {
             dbm_clearerr(dp->di_dbm);
-            PyErr_SetObject(PyExc_KeyError, v);
+            /* we might get a failure for reasons like file corrupted,
+               but we are not able to distinguish it */
+            if (dp->flags & O_RDWR) {
+                PyErr_SetObject(PyExc_KeyError, v);
+            }
+            else {
+                PyErr_SetString(DbmError, "cannot delete item from database");
+            }
             return -1;
         }
     } else {
         if ( !PyArg_Parse(w, "s#", &drec.dptr, &tmp_size) ) {
             PyErr_SetString(PyExc_TypeError,
-                 "dbm mappings have byte or string elements only");
+                 "dbm mappings have bytes or string elements only");
             return -1;
         }
         drec.dsize = tmp_size;
@@ -335,7 +344,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, const char *key,
     else {
         if ( !PyArg_Parse(default_value, "s#", &val.dptr, &tmp_size) ) {
             PyErr_SetString(PyExc_TypeError,
-                "dbm mappings have byte string elements only");
+                "dbm mappings have bytes or string elements only");
             return NULL;
         }
         val.dsize = tmp_size;

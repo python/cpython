@@ -297,7 +297,7 @@ The following classes are provided:
    Cause requests to go through a proxy. If *proxies* is given, it must be a
    dictionary mapping protocol names to URLs of proxies. The default is to read
    the list of proxies from the environment variables
-   :envvar:`<protocol>_proxy`.  If no proxy environment variables are set, then
+   ``<protocol>_proxy``.  If no proxy environment variables are set, then
    in a Windows environment proxy settings are obtained from the registry's
    Internet Settings section, and in a Mac OS X environment proxy information
    is retrieved from the OS X System Configuration Framework.

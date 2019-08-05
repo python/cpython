@@ -137,7 +137,7 @@ PyDoc_STRVAR(_curses_panel_panel_move__doc__,
 "Move the panel to the screen coordinates (y, x).");
 
 #define _CURSES_PANEL_PANEL_MOVE_METHODDEF    \
-    {"move", (PyCFunction)_curses_panel_panel_move, METH_FASTCALL, _curses_panel_panel_move__doc__},
+    {"move", (PyCFunction)(void(*)(void))_curses_panel_panel_move, METH_FASTCALL, _curses_panel_panel_move__doc__},
 
 static PyObject *
 _curses_panel_panel_move_impl(PyCursesPanelObject *self, int y, int x);
@@ -149,8 +149,25 @@ _curses_panel_panel_move(PyCursesPanelObject *self, PyObject *const *args, Py_ss
     int y;
     int x;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:move",
-        &y, &x)) {
+    if (!_PyArg_CheckPositional("move", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    y = _PyLong_AsInt(args[0]);
+    if (y == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    x = _PyLong_AsInt(args[1]);
+    if (x == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_panel_panel_move_impl(self, y, x);
@@ -196,9 +213,11 @@ _curses_panel_panel_replace(PyCursesPanelObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyCursesWindowObject *win;
 
-    if (!PyArg_Parse(arg, "O!:replace", &PyCursesWindow_Type, &win)) {
+    if (!PyObject_TypeCheck(arg, &PyCursesWindow_Type)) {
+        _PyArg_BadArgument("replace", 0, (&PyCursesWindow_Type)->tp_name, arg);
         goto exit;
     }
+    win = (PyCursesWindowObject *)arg;
     return_value = _curses_panel_panel_replace_impl(self, win);
 
 exit:
@@ -268,9 +287,11 @@ _curses_panel_new_panel(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyCursesWindowObject *win;
 
-    if (!PyArg_Parse(arg, "O!:new_panel", &PyCursesWindow_Type, &win)) {
+    if (!PyObject_TypeCheck(arg, &PyCursesWindow_Type)) {
+        _PyArg_BadArgument("new_panel", 0, (&PyCursesWindow_Type)->tp_name, arg);
         goto exit;
     }
+    win = (PyCursesWindowObject *)arg;
     return_value = _curses_panel_new_panel_impl(module, win);
 
 exit:
@@ -314,4 +335,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=96f627ca0b08b96d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ac1f56e6c3d4cc57 input=a9049054013a1b77]*/

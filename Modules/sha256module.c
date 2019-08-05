@@ -428,12 +428,12 @@ SHA256Type_copy_impl(SHAobject *self)
 /*[clinic input]
 SHA256Type.digest
 
-Return the digest value as a string of binary data.
+Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 SHA256Type_digest_impl(SHAobject *self)
-/*[clinic end generated code: output=46616a5e909fbc3d input=1fb752e58954157d]*/
+/*[clinic end generated code: output=46616a5e909fbc3d input=f1f4cfea5cbde35c]*/
 {
     unsigned char digest[SHA_DIGESTSIZE];
     SHAobject temp;
@@ -529,7 +529,7 @@ static PyMemberDef SHA_members[] = {
 static PyTypeObject SHA224type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_sha256.sha224",   /*tp_name*/
-    sizeof(SHAobject),  /*tp_size*/
+    sizeof(SHAobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
     /* methods */
     SHA_dealloc,        /*tp_dealloc*/
@@ -563,7 +563,7 @@ static PyTypeObject SHA224type = {
 static PyTypeObject SHA256type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_sha256.sha256",   /*tp_name*/
-    sizeof(SHAobject),  /*tp_size*/
+    sizeof(SHAobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
     /* methods */
     SHA_dealloc,        /*tp_dealloc*/

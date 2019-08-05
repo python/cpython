@@ -449,10 +449,12 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
             self.data = bytearray()
             self.fut = loop.create_future()
             self.transport = None
+            self._ready = loop.create_future()
 
         def connection_made(self, transport):
             self.started = True
             self.transport = transport
+            self._ready.set_result(None)
 
         def data_received(self, data):
             self.data.extend(data)
@@ -503,13 +505,11 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
         self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+        self.run_loop(proto._ready)
 
         def cleanup():
-            if proto.transport is not None:
-                # can be None if the task was cancelled before
-                # connection_made callback
-                proto.transport.close()
-                self.run_loop(proto.wait_closed())
+            proto.transport.close()
+            self.run_loop(proto.wait_closed())
 
             server.close()
             self.run_loop(server.wait_closed())
@@ -521,7 +521,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_not_available(self):
         sock, proto = self.prepare()
         with mock.patch('asyncio.unix_events.os', spec=[]):
-            with self.assertRaisesRegex(events.SendfileNotAvailableError,
+            with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                         "os[.]sendfile[(][)] is not available"):
                 self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
                                                               0, None))
@@ -530,7 +530,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_not_a_file(self):
         sock, proto = self.prepare()
         f = object()
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -539,7 +539,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_iobuffer(self):
         sock, proto = self.prepare()
         f = io.BytesIO()
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -549,7 +549,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         sock, proto = self.prepare()
         f = mock.Mock()
         f.fileno.return_value = -1
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -605,7 +605,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         with self.assertRaises(KeyError):
             self.loop._selector.get_key(sock)
         exc = fut.exception()
-        self.assertIsInstance(exc, events.SendfileNotAvailableError)
+        self.assertIsInstance(exc, asyncio.SendfileNotAvailableError)
         self.assertEqual(0, self.file.tell())
 
     def test_sock_sendfile_os_error_next_call(self):
@@ -630,7 +630,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
         fileno = self.file.fileno()
         fut = self.loop.create_future()
-        err = events.SendfileNotAvailableError()
+        err = asyncio.SendfileNotAvailableError()
         with mock.patch('os.sendfile', side_effect=err):
             self.loop._sock_sendfile_native_impl(fut, sock.fileno(),
                                                  sock, fileno,

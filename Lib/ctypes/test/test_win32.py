@@ -55,6 +55,24 @@ class FunctionCallTestCase(unittest.TestCase):
 
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
+class ReturnStructSizesTestCase(unittest.TestCase):
+    def test_sizes(self):
+        dll = CDLL(_ctypes_test.__file__)
+        for i in range(1, 11):
+            fields = [ (f"f{f}", c_char) for f in range(1, i + 1)]
+            class S(Structure):
+                _fields_ = fields
+            f = getattr(dll, f"TestSize{i}")
+            f.restype = S
+            res = f()
+            for i, f in enumerate(fields):
+                value = getattr(res, f[0])
+                expected = bytes([ord('a') + i])
+                self.assertEqual(value, expected)
+
+
+
+@unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class TestWintypes(unittest.TestCase):
     def test_HWND(self):
         from ctypes import wintypes

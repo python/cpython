@@ -184,7 +184,7 @@ ZipFile Objects
 
    ZipFile is also a context manager and therefore supports the
    :keyword:`with` statement.  In the example, *myzip* is closed after the
-   :keyword:`with` statement's suite is finished---even if an exception occurs::
+   :keyword:`!with` statement's suite is finished---even if an exception occurs::
 
       with ZipFile('spam.zip', 'w') as myzip:
           myzip.write('eggs.txt')
@@ -378,7 +378,7 @@ ZipFile Objects
    Return the name of the first bad file, or else return ``None``.
 
    .. versionchanged:: 3.6
-      Calling :meth:`testfile` on a closed ZipFile will raise a
+      Calling :meth:`testzip` on a closed ZipFile will raise a
       :exc:`ValueError`.  Previously, a :exc:`RuntimeError` was raised.
 
 
@@ -392,13 +392,6 @@ ZipFile Objects
    the new entry. Similarly, *compresslevel* will override the constructor if
    given.
    The archive must be open with mode ``'w'``, ``'x'`` or ``'a'``.
-
-   .. note::
-
-      There is no official file name encoding for ZIP files. If you have unicode file
-      names, you must convert them to byte strings in your desired encoding before
-      passing them to :meth:`write`. WinZip interprets all file names as encoded in
-      CP437, also known as DOS Latin.
 
    .. note::
 
@@ -419,7 +412,9 @@ ZipFile Objects
 .. method:: ZipFile.writestr(zinfo_or_arcname, data, compress_type=None, \
                              compresslevel=None)
 
-   Write the string *data* to the archive; *zinfo_or_arcname* is either the file
+   Write a file into the archive.  The contents is *data*, which may be either
+   a :class:`str` or a :class:`bytes` instance; if it is a :class:`str`,
+   it is encoded as UTF-8 first.  *zinfo_or_arcname* is either the file
    name it will be given in the archive, or a :class:`ZipInfo` instance.  If it's
    an instance, at least the filename, date, and time must be given.  If it's a
    name, the date and time is set to the current date and time.
@@ -460,11 +455,11 @@ The following data attributes are also available:
 
 .. attribute:: ZipFile.comment
 
-   The comment text associated with the ZIP file.  If assigning a comment to a
+   The comment associated with the ZIP file as a :class:`bytes` object.
+   If assigning a comment to a
    :class:`ZipFile` instance created with mode ``'w'``, ``'x'`` or ``'a'``,
-   this should be a
-   string no longer than 65535 bytes.  Comments longer than this will be
-   truncated in the written archive when :meth:`close` is called.
+   it should be no longer than 65535 bytes.  Comments longer than this will be
+   truncated.
 
 
 .. _pyzipfile-objects:
@@ -631,13 +626,14 @@ Instances have the following methods and attributes:
 
 .. attribute:: ZipInfo.comment
 
-   Comment for the individual archive member.
+   Comment for the individual archive member as a :class:`bytes` object.
 
 
 .. attribute:: ZipInfo.extra
 
    Expansion field data.  The `PKZIP Application Note`_ contains
-   some comments on the internal structure of the data contained in this string.
+   some comments on the internal structure of the data contained in this
+   :class:`bytes` object.
 
 
 .. attribute:: ZipInfo.create_system

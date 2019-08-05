@@ -216,7 +216,7 @@ class Random(_random.Random):
         if step == 1 and width > 0:
             return istart + self._randbelow(width)
         if step == 1:
-            raise ValueError("empty range for randrange() (%d,%d, %d)" % (istart, istop, width))
+            raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
 
         # Non-unit step argument supplied.
         istep = _int(step)
@@ -333,6 +333,19 @@ class Random(_random.Random):
         # preferred since the list takes less space than the
         # set and it doesn't suffer from frequent reselections.
 
+        # The number of calls to _randbelow() is kept at or near k, the
+        # theoretical minimum.  This is important because running time
+        # is dominated by _randbelow() and because it extracts the
+        # least entropy from the underlying random number generators.
+
+        # Memory requirements are kept to the smaller of a k-length
+        # set or an n-length list.
+
+        # There are other sampling algorithms that do not require
+        # auxiliary memory, but they were rejected because they made
+        # too many calls to _randbelow(), making them slower and
+        # causing them to eat more entropy than necessary.
+
         if isinstance(population, _Set):
             population = tuple(population)
         if not isinstance(population, _Sequence):
@@ -375,6 +388,7 @@ class Random(_random.Random):
         if cum_weights is None:
             if weights is None:
                 _int = int
+                n += 0.0    # convert to float for a small speed improvement
                 return [population[_int(random() * n)] for i in range(k)]
             cum_weights = list(_itertools.accumulate(weights))
         elif weights is not None:
@@ -382,7 +396,7 @@ class Random(_random.Random):
         if len(cum_weights) != n:
             raise ValueError('The number of weights does not match the population')
         bisect = _bisect.bisect
-        total = cum_weights[-1]
+        total = cum_weights[-1] + 0.0   # convert to float
         hi = n - 1
         return [population[bisect(cum_weights, random() * total, 0, hi)]
                 for i in range(k)]
@@ -568,10 +582,7 @@ class Random(_random.Random):
 
         elif alpha == 1.0:
             # expovariate(1/beta)
-            u = random()
-            while u <= 1e-7:
-                u = random()
-            return -_log(u) * beta
+            return -_log(1.0 - random()) * beta
 
         else:   # alpha is between 0 and 1 (exclusive)
 
@@ -704,8 +715,6 @@ class SystemRandom(Random):
         """getrandbits(k) -> x.  Generates an int with k random bits."""
         if k <= 0:
             raise ValueError('number of bits must be greater than zero')
-        if k != int(k):
-            raise TypeError('number of bits should be an integer')
         numbytes = (k + 7) // 8                       # bits / 8 and rounded up
         x = int.from_bytes(_urandom(numbytes), 'big')
         return x >> (numbytes * 8 - k)                # trim excess bits
@@ -728,14 +737,14 @@ def _test_generator(n, func, args):
     sqsum = 0.0
     smallest = 1e10
     largest = -1e10
-    t0 = time.time()
+    t0 = time.perf_counter()
     for i in range(n):
         x = func(*args)
         total += x
         sqsum = sqsum + x*x
         smallest = min(x, smallest)
         largest = max(x, largest)
-    t1 = time.time()
+    t1 = time.perf_counter()
     print(round(t1-t0, 3), 'sec,', end=' ')
     avg = total/n
     stddev = _sqrt(sqsum/n - avg*avg)

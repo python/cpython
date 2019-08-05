@@ -19,6 +19,13 @@ WINEXE = (sys.platform == 'win32' and getattr(sys, 'frozen', False))
 WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
 
 
+def _path_eq(p1, p2):
+    return p1 == p2 or os.path.normcase(p1) == os.path.normcase(p2)
+
+WINENV = (hasattr(sys, '_base_executable') and
+          not _path_eq(sys.executable, sys._base_executable))
+
+
 def _close_handles(*handles):
     for handle in handles:
         _winapi.CloseHandle(handle)
@@ -50,12 +57,23 @@ class Popen(object):
                                      pipe_handle=rhandle)
         cmd = ' '.join('"%s"' % x for x in cmd)
 
+        python_exe = spawn.get_executable()
+
+        # bpo-35797: When running in a venv, we bypass the redirect
+        # executor and launch our base Python.
+        if WINENV and _path_eq(python_exe, sys.executable):
+            python_exe = sys._base_executable
+            env = os.environ.copy()
+            env["__PYVENV_LAUNCHER__"] = sys.executable
+        else:
+            env = None
+
         with open(wfd, 'wb', closefd=True) as to_child:
             # start process
             try:
                 hp, ht, pid, tid = _winapi.CreateProcess(
-                    spawn.get_executable(), cmd,
-                    None, None, False, 0, None, None, None)
+                    python_exe, cmd,
+                    env, None, False, 0, None, None, None)
                 _winapi.CloseHandle(ht)
             except:
                 _winapi.CloseHandle(rhandle)

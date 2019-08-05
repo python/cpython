@@ -10,11 +10,12 @@ import io
 import os
 import socket
 import warnings
+import signal
 
 from . import base_events
 from . import constants
-from . import events
 from . import futures
+from . import exceptions
 from . import protocols
 from . import sslproto
 from . import transports
@@ -88,10 +89,9 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._read_fut.cancel()
             self._read_fut = None
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         if self._sock is not None:
-            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
-                          source=self)
+            _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
@@ -110,7 +110,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._force_close(exc)
 
     def _force_close(self, exc):
-        if self._empty_waiter is not None:
+        if self._empty_waiter is not None and not self._empty_waiter.done():
             if exc is None:
                 self._empty_waiter.set_result(None)
             else:
@@ -282,7 +282,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             self._force_close(exc)
         except OSError as exc:
             self._fatal_error(exc, 'Fatal read error on pipe transport')
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             if not self._closing:
                 raise
         else:
@@ -444,6 +444,11 @@ class _ProactorSocketTransport(_ProactorReadPipeTransport,
 
     _sendfile_compatible = constants._SendfileMode.TRY_NATIVE
 
+    def __init__(self, loop, sock, protocol, waiter=None,
+                 extra=None, server=None):
+        super().__init__(loop, sock, protocol, waiter, extra, server)
+        base_events._set_nodelay(sock)
+
     def _set_extra(self, sock):
         self._extra['socket'] = sock
 
@@ -484,6 +489,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._accept_futures = {}   # socket file descriptor => Future
         proactor.set_loop(self)
         self._make_self_pipe()
+        self_no = self._csock.fileno()
+        signal.set_wakeup_fd(self_no)
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
                                extra=None, server=None):
@@ -524,6 +531,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         if self.is_closed():
             return
 
+        signal.set_wakeup_fd(-1)
         # Call these methods before closing the event loop (before calling
         # BaseEventLoop.close), because they can schedule callbacks with
         # call_soon(), which is forbidden when the event loop is closed.
@@ -555,11 +563,11 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         try:
             fileno = file.fileno()
         except (AttributeError, io.UnsupportedOperation) as err:
-            raise events.SendfileNotAvailableError("not a regular file")
+            raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
         except OSError as err:
-            raise events.SendfileNotAvailableError("not a regular file")
+            raise exceptions.SendfileNotAvailableError("not a regular file")
         blocksize = count if count else fsize
         if not blocksize:
             return 0  # empty file
@@ -608,14 +616,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._ssock.setblocking(False)
         self._csock.setblocking(False)
         self._internal_fds += 1
-        self.call_soon(self._loop_self_reading)
 
     def _loop_self_reading(self, f=None):
         try:
             if f is not None:
                 f.result()  # may raise
             f = self._proactor.recv(self._ssock, 4096)
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             # _close_self_pipe() has been called, stop waiting for data
             return
         except Exception as exc:
@@ -629,7 +636,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             f.add_done_callback(self._loop_self_reading)
 
     def _write_to_self(self):
-        self._csock.send(b'\0')
+        try:
+            self._csock.send(b'\0')
+        except OSError:
+            if self._debug:
+                logger.debug("Fail to write a null byte into the "
+                             "self-pipe socket",
+                             exc_info=True)
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
@@ -666,7 +679,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 elif self._debug:
                     logger.debug("Accept failed on socket %r",
                                  sock, exc_info=True)
-            except futures.CancelledError:
+            except exceptions.CancelledError:
                 sock.close()
             else:
                 self._accept_futures[sock.fileno()] = f

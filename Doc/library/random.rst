@@ -162,6 +162,13 @@ Functions for sequences
    with the :class:`float` values returned by :func:`random` (that includes
    integers, floats, and fractions but excludes decimals).
 
+   For a given seed, the :func:`choices` function with equal weighting
+   typically produces a different sequence than repeated calls to
+   :func:`choice`.  The algorithm used by :func:`choices` uses floating
+   point arithmetic for internal consistency and speed.  The algorithm used
+   by :func:`choice` defaults to integer arithmetic with repeated selections
+   to avoid small biases from round-off error.
+
    .. versionadded:: 3.6
 
 

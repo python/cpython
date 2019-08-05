@@ -60,7 +60,7 @@ The following functions provide locale-independent string to number conversions.
    The conversion is independent of the current locale.
 
    If ``endptr`` is ``NULL``, convert the whole string.  Raise
-   ValueError and return ``-1.0`` if the string is not a valid
+   :exc:`ValueError` and return ``-1.0`` if the string is not a valid
    representation of a floating-point number.
 
    If endptr is not ``NULL``, convert as much of the string as

@@ -40,7 +40,7 @@ The :mod:`wave` module defines the following function and exception:
    the file object.
 
    The :func:`.open` function may be used in a :keyword:`with` statement.  When
-   the :keyword:`with` block completes, the :meth:`Wave_read.close()
+   the :keyword:`!with` block completes, the :meth:`Wave_read.close()
    <wave.Wave_read.close>` or :meth:`Wave_write.close()
    <wave.Wave_write.close()>` method is called.
 

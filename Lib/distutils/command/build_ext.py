@@ -161,9 +161,10 @@ class build_ext(Command):
 
         # Put the Python "system" include dir at the end, so that
         # any local include dirs take precedence.
-        self.include_dirs.append(py_include)
+        self.include_dirs.extend(py_include.split(os.path.pathsep))
         if plat_py_include != py_include:
-            self.include_dirs.append(plat_py_include)
+            self.include_dirs.extend(
+                plat_py_include.split(os.path.pathsep))
 
         self.ensure_string_list('libraries')
         self.ensure_string_list('link_objects')
@@ -365,7 +366,7 @@ class build_ext(Command):
             ext_name, build_info = ext
 
             log.warn("old-style (ext_name, build_info) tuple found in "
-                     "ext_modules for extension '%s'"
+                     "ext_modules for extension '%s' "
                      "-- please convert to Extension instance", ext_name)
 
             if not (isinstance(ext_name, str) and

@@ -1,6 +1,5 @@
 import contextlib
 import sys
-import os
 import unittest
 from test import support
 import time
@@ -147,9 +146,6 @@ class ResourceTest(unittest.TestCase):
     @support.requires_linux_version(2, 6, 36)
     def test_prlimit(self):
         self.assertRaises(TypeError, resource.prlimit)
-        if os.geteuid() != 0:
-            self.assertRaises(PermissionError, resource.prlimit,
-                              1, resource.RLIMIT_AS)
         self.assertRaises(ProcessLookupError, resource.prlimit,
                           -1, resource.RLIMIT_AS)
         limit = resource.getrlimit(resource.RLIMIT_AS)

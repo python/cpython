@@ -45,7 +45,7 @@ PyDoc_STRVAR(_dbm_dbm_get__doc__,
 "Return the value for key if present, otherwise default.");
 
 #define _DBM_DBM_GET_METHODDEF    \
-    {"get", (PyCFunction)_dbm_dbm_get, METH_FASTCALL, _dbm_dbm_get__doc__},
+    {"get", (PyCFunction)(void(*)(void))_dbm_dbm_get, METH_FASTCALL, _dbm_dbm_get__doc__},
 
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, const char *key,
@@ -78,7 +78,7 @@ PyDoc_STRVAR(_dbm_dbm_setdefault__doc__,
 "If key is not in the database, it is inserted with default as the value.");
 
 #define _DBM_DBM_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)_dbm_dbm_setdefault, METH_FASTCALL, _dbm_dbm_setdefault__doc__},
+    {"setdefault", (PyCFunction)(void(*)(void))_dbm_dbm_setdefault, METH_FASTCALL, _dbm_dbm_setdefault__doc__},
 
 static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, const char *key,
@@ -118,7 +118,7 @@ PyDoc_STRVAR(dbmopen__doc__,
 "    (e.g. os.O_RDWR).");
 
 #define DBMOPEN_METHODDEF    \
-    {"open", (PyCFunction)dbmopen, METH_FASTCALL, dbmopen__doc__},
+    {"open", (PyCFunction)(void(*)(void))dbmopen, METH_FASTCALL, dbmopen__doc__},
 
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
@@ -132,13 +132,49 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *flags = "r";
     int mode = 438;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|si:open",
-        &filename, &flags, &mode)) {
+    if (!_PyArg_CheckPositional("open", nargs, 1, 3)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("open", 1, "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    filename = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("open", 2, "str", args[1]);
+        goto exit;
+    }
+    Py_ssize_t flags_length;
+    flags = PyUnicode_AsUTF8AndSize(args[1], &flags_length);
+    if (flags == NULL) {
+        goto exit;
+    }
+    if (strlen(flags) != (size_t)flags_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[2]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = dbmopen_impl(module, filename, flags, mode);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1cba297bc8d7c2c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7f5d30ef5d820b8a input=a9049054013a1b77]*/

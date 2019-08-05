@@ -5,6 +5,7 @@ from test.support import run_unittest, verbose, requires_IEEE_754
 from test import support
 import unittest
 import itertools
+import decimal
 import math
 import os
 import platform
@@ -510,6 +511,10 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.factorial, -1e100)
         self.assertRaises(ValueError, math.factorial, math.pi)
 
+    def testFactorialNonIntegers(self):
+        self.assertRaises(TypeError, math.factorial, decimal.Decimal(5.2))
+        self.assertRaises(TypeError, math.factorial, "5")
+
     # Other implementations may place different upper bounds.
     @support.cpython_only
     def testFactorialHugeInputs(self):
@@ -761,6 +766,9 @@ class MathTests(unittest.TestCase):
             hypot(x=1)
         with self.assertRaises(TypeError):         # Reject values without __float__
             hypot(1.1, 'string', 2.2)
+        int_too_big_for_float = 10 ** (sys.float_info.max_10_exp + 5)
+        with self.assertRaises((ValueError, OverflowError)):
+            hypot(1, int_too_big_for_float)
 
         # Any infinity gives positive infinity.
         self.assertEqual(hypot(INF), INF)
@@ -800,7 +808,8 @@ class MathTests(unittest.TestCase):
         dist = math.dist
         sqrt = math.sqrt
 
-        # Simple exact case
+        # Simple exact cases
+        self.assertEqual(dist((1.0, 2.0, 3.0), (4.0, 2.0, -1.0)), 5.0)
         self.assertEqual(dist((1, 2, 3), (4, 2, -1)), 5.0)
 
         # Test different numbers of arguments (from zero to nine)
@@ -862,6 +871,13 @@ class MathTests(unittest.TestCase):
             dist((1, 2, 3, 4), (5, 6, 7))
         with self.assertRaises(ValueError):        # Check dimension agree
             dist((1, 2, 3), (4, 5, 6, 7))
+        with self.assertRaises(TypeError):         # Rejects invalid types
+            dist("abc", "xyz")
+        int_too_big_for_float = 10 ** (sys.float_info.max_10_exp + 5)
+        with self.assertRaises((ValueError, OverflowError)):
+            dist((1, int_too_big_for_float), (2, 3))
+        with self.assertRaises((ValueError, OverflowError)):
+            dist((2, 3), (1, int_too_big_for_float))
 
         # Verify that the one dimensional case is equivalent to abs()
         for i in range(20):
@@ -1350,8 +1366,6 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.tanh(NAN)))
 
     @requires_IEEE_754
-    @unittest.skipIf(sysconfig.get_config_var('TANH_PRESERVES_ZERO_SIGN') == 0,
-                     "system tanh() function doesn't copy the sign")
     def testTanhSign(self):
         # check that tanh(-0.) == -0. on IEEE 754 systems
         self.assertEqual(math.tanh(-0.), -0.)

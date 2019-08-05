@@ -1,9 +1,13 @@
 """Tests for distutils.spawn."""
-import unittest
-import sys
 import os
+import stat
+import sys
+import unittest
+from unittest import mock
 from test.support import run_unittest, unix_shell
+from test import support as test_support
 
+from distutils.spawn import find_executable
 from distutils.spawn import _nt_quote_args
 from distutils.spawn import spawn
 from distutils.errors import DistutilsExecError
@@ -50,6 +54,47 @@ class SpawnTestCase(support.TempdirManager,
 
         os.chmod(exe, 0o777)
         spawn([exe])  # should work without any error
+
+    def test_find_executable(self):
+        with test_support.temp_dir() as tmp_dir:
+            # use TESTFN to get a pseudo-unique filename
+            program_noeext = test_support.TESTFN
+            # Give the temporary program an ".exe" suffix for all.
+            # It's needed on Windows and not harmful on other platforms.
+            program = program_noeext + ".exe"
+
+            filename = os.path.join(tmp_dir, program)
+            with open(filename, "wb"):
+                pass
+            os.chmod(filename, stat.S_IXUSR)
+
+            # test path parameter
+            rv = find_executable(program, path=tmp_dir)
+            self.assertEqual(rv, filename)
+
+            if sys.platform == 'win32':
+                # test without ".exe" extension
+                rv = find_executable(program_noeext, path=tmp_dir)
+                self.assertEqual(rv, filename)
+
+            # test find in the current directory
+            with test_support.change_cwd(tmp_dir):
+                rv = find_executable(program)
+                self.assertEqual(rv, program)
+
+            # test non-existent program
+            dont_exist_program = "dontexist_" + program
+            rv = find_executable(dont_exist_program , path=tmp_dir)
+            self.assertIsNone(rv)
+
+            # test os.defpath: missing PATH environment variable
+            with test_support.EnvironmentVarGuard() as env:
+                with mock.patch('distutils.spawn.os.defpath', tmp_dir):
+                    env.pop('PATH')
+
+                    rv = find_executable(program)
+                    self.assertEqual(rv, filename)
+
 
 def test_suite():
     return unittest.makeSuite(SpawnTestCase)

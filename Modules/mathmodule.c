@@ -76,6 +76,29 @@ static const double logpi = 1.144729885849400174143427351353058711647;
 static const double sqrtpi = 1.772453850905516027298167483341145182798;
 #endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
 
+
+/* Version of PyFloat_AsDouble() with in-line fast paths
+   for exact floats and integers.  Gives a substantial
+   speed improvement for extracting float arguments.
+*/
+
+#define ASSIGN_DOUBLE(target_var, obj, error_label)        \
+    if (PyFloat_CheckExact(obj)) {                         \
+        target_var = PyFloat_AS_DOUBLE(obj);               \
+    }                                                      \
+    else if (PyLong_CheckExact(obj)) {                     \
+        target_var = PyLong_AsDouble(obj);                 \
+        if (target_var == -1.0 && PyErr_Occurred()) {      \
+            goto error_label;                              \
+        }                                                  \
+    }                                                      \
+    else {                                                 \
+        target_var = PyFloat_AsDouble(obj);                \
+        if (target_var == -1.0 && PyErr_Occurred()) {      \
+            goto error_label;                              \
+        }                                                  \
+    }
+
 static double
 sinpi(double x)
 {
@@ -997,14 +1020,14 @@ math_1_to_int(PyObject *arg, double (*func) (double), int can_overflow)
 }
 
 static PyObject *
-math_2(PyObject *args, double (*func) (double, double), const char *funcname)
+math_2(PyObject *const *args, Py_ssize_t nargs,
+       double (*func) (double, double), const char *funcname)
 {
-    PyObject *ox, *oy;
     double x, y, r;
-    if (! PyArg_UnpackTuple(args, funcname, 2, 2, &ox, &oy))
+    if (!_PyArg_CheckPositional(funcname, nargs, 2, 2))
         return NULL;
-    x = PyFloat_AsDouble(ox);
-    y = PyFloat_AsDouble(oy);
+    x = PyFloat_AsDouble(args[0]);
+    y = PyFloat_AsDouble(args[1]);
     if ((x == -1.0 || y == -1.0) && PyErr_Occurred())
         return NULL;
     errno = 0;
@@ -1042,8 +1065,8 @@ math_2(PyObject *args, double (*func) (double, double), const char *funcname)
     PyDoc_STRVAR(math_##funcname##_doc, docstring);
 
 #define FUNC2(funcname, func, docstring) \
-    static PyObject * math_##funcname(PyObject *self, PyObject *args) { \
-        return math_2(args, func, #funcname); \
+    static PyObject * math_##funcname(PyObject *self, PyObject *const *args, Py_ssize_t nargs) { \
+        return math_2(args, nargs, func, #funcname); \
     }\
     PyDoc_STRVAR(math_##funcname##_doc, docstring);
 
@@ -1323,10 +1346,8 @@ math_fsum(PyObject *module, PyObject *seq)
                 goto _fsum_error;
             break;
         }
-        x = PyFloat_AsDouble(item);
+        ASSIGN_DOUBLE(x, item, error_with_item);
         Py_DECREF(item);
-        if (PyErr_Occurred())
-            goto _fsum_error;
 
         xsave = x;
         for (i = j = 0; j < n; j++) {       /* for y in partials */
@@ -1407,12 +1428,16 @@ math_fsum(PyObject *module, PyObject *seq)
     }
     sum = PyFloat_FromDouble(hi);
 
-_fsum_error:
+  _fsum_error:
     PyFPE_END_PROTECT(hi)
     Py_DECREF(iter);
     if (p != ps)
         PyMem_Free(p);
     return sum;
+
+  error_with_item:
+    Py_DECREF(item);
+    goto _fsum_error;
 }
 
 #undef NUM_PARTIALS
@@ -1656,7 +1681,7 @@ math_factorial(PyObject *module, PyObject *arg)
 {
     long x;
     int overflow;
-    PyObject *result, *odd_part, *two_valuation;
+    PyObject *result, *odd_part, *two_valuation, *pyint_form;
 
     if (PyFloat_Check(arg)) {
         PyObject *lx;
@@ -1672,8 +1697,14 @@ math_factorial(PyObject *module, PyObject *arg)
         x = PyLong_AsLongAndOverflow(lx, &overflow);
         Py_DECREF(lx);
     }
-    else
-        x = PyLong_AsLongAndOverflow(arg, &overflow);
+    else {
+        pyint_form = PyNumber_Index(arg);
+        if (pyint_form == NULL) {
+            return NULL;
+        }
+        x = PyLong_AsLongAndOverflow(pyint_form, &overflow);
+        Py_DECREF(pyint_form);
+    }
 
     if (x == -1 && PyErr_Occurred()) {
         return NULL;
@@ -2037,7 +2068,7 @@ Given an *n* length *vec* of values and a value *max*, compute:
     max * sqrt(sum((x / max) ** 2 for x in vec))
 
 The value of the *max* variable must be non-negative and
-at least equal to the absolute value of the largest magnitude
+equal to the absolute value of the largest magnitude
 entry in the vector.  If n==0, then *max* should be 0.0.
 If an infinity is present in the vec, *max* should be INF.
 
@@ -2074,7 +2105,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     if (found_nan) {
         return Py_NAN;
     }
-    if (max == 0.0 || n == 1) {
+    if (max == 0.0 || n <= 1) {
         return max;
     }
     for (i=0 ; i < n ; i++) {
@@ -2131,28 +2162,14 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     if (n > NUM_STACK_ELEMS) {
         diffs = (double *) PyObject_Malloc(n * sizeof(double));
         if (diffs == NULL) {
-            return NULL;
+            return PyErr_NoMemory();
         }
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(p, i);
-        if (PyFloat_CheckExact(item)) {
-            px = PyFloat_AS_DOUBLE(item);
-        } else {
-            px = PyFloat_AsDouble(item);
-            if (px == -1.0 && PyErr_Occurred()) {
-                goto error_exit;
-            }
-        }
+        ASSIGN_DOUBLE(px, item, error_exit);
         item = PyTuple_GET_ITEM(q, i);
-        if (PyFloat_CheckExact(item)) {
-            qx = PyFloat_AS_DOUBLE(item);
-        } else {
-            qx = PyFloat_AsDouble(item);
-            if (qx == -1.0 && PyErr_Occurred()) {
-                goto error_exit;
-            }
-        }
+        ASSIGN_DOUBLE(qx, item, error_exit);
         x = fabs(px - qx);
         diffs[i] = x;
         found_nan |= Py_IS_NAN(x);
@@ -2175,9 +2192,9 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
 
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
-math_hypot(PyObject *self, PyObject *args)
+math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    Py_ssize_t i, n;
+    Py_ssize_t i;
     PyObject *item;
     double max = 0.0;
     double x, result;
@@ -2185,22 +2202,15 @@ math_hypot(PyObject *self, PyObject *args)
     double coord_on_stack[NUM_STACK_ELEMS];
     double *coordinates = coord_on_stack;
 
-    n = PyTuple_GET_SIZE(args);
-    if (n > NUM_STACK_ELEMS) {
-        coordinates = (double *) PyObject_Malloc(n * sizeof(double));
-        if (coordinates == NULL)
-            return NULL;
-    }
-    for (i=0 ; i<n ; i++) {
-        item = PyTuple_GET_ITEM(args, i);
-        if (PyFloat_CheckExact(item)) {
-            x = PyFloat_AS_DOUBLE(item);
-        } else {
-            x = PyFloat_AsDouble(item);
-            if (x == -1.0 && PyErr_Occurred()) {
-                goto error_exit;
-            }
+    if (nargs > NUM_STACK_ELEMS) {
+        coordinates = (double *) PyObject_Malloc(nargs * sizeof(double));
+        if (coordinates == NULL) {
+            return PyErr_NoMemory();
         }
+    }
+    for (i = 0; i < nargs; i++) {
+        item = args[i];
+        ASSIGN_DOUBLE(x, item, error_exit);
         x = fabs(x);
         coordinates[i] = x;
         found_nan |= Py_IS_NAN(x);
@@ -2208,7 +2218,7 @@ math_hypot(PyObject *self, PyObject *args)
             max = x;
         }
     }
-    result = vector_norm(n, coordinates, max, found_nan);
+    result = vector_norm(nargs, coordinates, max, found_nan);
     if (coordinates != coord_on_stack) {
         PyObject_Free(coordinates);
     }
@@ -2490,10 +2500,10 @@ static PyMethodDef math_methods[] = {
     {"asin",            math_asin,      METH_O,         math_asin_doc},
     {"asinh",           math_asinh,     METH_O,         math_asinh_doc},
     {"atan",            math_atan,      METH_O,         math_atan_doc},
-    {"atan2",           math_atan2,     METH_VARARGS,   math_atan2_doc},
+    {"atan2",           (PyCFunction)(void(*)(void))math_atan2,     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
     MATH_CEIL_METHODDEF
-    {"copysign",        math_copysign,  METH_VARARGS,   math_copysign_doc},
+    {"copysign",        (PyCFunction)(void(*)(void))math_copysign,  METH_FASTCALL,  math_copysign_doc},
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
@@ -2510,7 +2520,7 @@ static PyMethodDef math_methods[] = {
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
     MATH_GCD_METHODDEF
-    {"hypot",           math_hypot,     METH_VARARGS,   math_hypot_doc},
+    {"hypot",           (PyCFunction)(void(*)(void))math_hypot,     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
@@ -2524,7 +2534,7 @@ static PyMethodDef math_methods[] = {
     MATH_MODF_METHODDEF
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
-    {"remainder",       math_remainder, METH_VARARGS,   math_remainder_doc},
+    {"remainder",       (PyCFunction)(void(*)(void))math_remainder, METH_FASTCALL,  math_remainder_doc},
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},

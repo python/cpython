@@ -117,7 +117,7 @@ ConfigDialog_spec = {
            "font face of the text in the area below it.\nIn the "
            "'Highlighting' tab, try different color schemes. Clicking "
            "items in the sample program should update the choices above it."
-           "\nIn the 'Keys', 'General' and 'Extensions' tabs, test settings"
+           "\nIn the 'Keys', 'General' and 'Extensions' tabs, test settings "
            "of interest."
            "\n[Ok] to close the dialog.[Apply] to apply the settings and "
            "and [Cancel] to revert all changes.\nRe-run the test to ensure "
@@ -141,18 +141,17 @@ _editor_window_spec = {
            "Best to close editor first."
     }
 
-# Update once issue21519 is resolved.
 GetKeysDialog_spec = {
     'file': 'config_key',
     'kwds': {'title': 'Test keybindings',
              'action': 'find-again',
-             'currentKeySequences': [''] ,
+             'current_key_sequences': [['<Control-Key-g>', '<Key-F3>', '<Control-Key-G>']],
              '_htest': True,
              },
     'msg': "Test for different key modifier sequences.\n"
            "<nothing> is invalid.\n"
            "No modifier key is invalid.\n"
-           "Shift key with [a-z],[0-9], function key, move key, tab, space"
+           "Shift key with [a-z],[0-9], function key, move key, tab, space "
            "is invalid.\nNo validity checking if advanced key binding "
            "entry is used."
     }
@@ -163,7 +162,7 @@ _grep_dialog_spec = {
     'msg': "Click the 'Show GrepDialog' button.\n"
            "Test the various 'Find-in-files' functions.\n"
            "The results should be displayed in a new '*Output*' window.\n"
-           "'Right-click'->'Goto file/line' anywhere in the search results "
+           "'Right-click'->'Go to file/line' anywhere in the search results "
            "should open that file \nin a new EditorWindow."
     }
 
@@ -234,7 +233,7 @@ _percolator_spec = {
     'file': 'percolator',
     'kwds': {},
     'msg': "There are two tracers which can be toggled using a checkbox.\n"
-           "Toggling a tracer 'on' by checking it should print tracer"
+           "Toggling a tracer 'on' by checking it should print tracer "
            "output to the console or to the IDLE shell.\n"
            "If both the tracers are 'on', the output from the tracer which "
            "was switched 'on' later, should be printed first\n"
@@ -335,7 +334,7 @@ ViewWindow_spec = {
 _widget_redirector_spec = {
     'file': 'redirector',
     'kwds': {},
-    'msg': "Every text insert should be printed to the console."
+    'msg': "Every text insert should be printed to the console "
            "or the IDLE shell."
     }
 

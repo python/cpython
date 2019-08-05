@@ -70,10 +70,10 @@ static PyMethodDef spamlist_methods[] = {
         PyDoc_STR("setstate(state)")},
     /* These entries differ only in the flags; they are used by the tests
        in test.test_descr. */
-    {"classmeth", (PyCFunction)spamlist_specialmeth,
+    {"classmeth", (PyCFunction)(void(*)(void))spamlist_specialmeth,
         METH_VARARGS | METH_KEYWORDS | METH_CLASS,
         PyDoc_STR("classmeth(*args, **kw)")},
-    {"staticmeth", (PyCFunction)spamlist_specialmeth,
+    {"staticmeth", (PyCFunction)(void(*)(void))spamlist_specialmeth,
         METH_VARARGS | METH_KEYWORDS | METH_STATIC,
         PyDoc_STR("staticmeth(*args, **kw)")},
     {NULL,      NULL},
@@ -89,7 +89,7 @@ spamlist_init(spamlistobject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-spamlist_state_get(spamlistobject *self)
+spamlist_state_get(spamlistobject *self, void *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(self->state);
 }

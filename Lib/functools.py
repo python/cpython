@@ -13,10 +13,6 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
            'partialmethod', 'singledispatch', 'singledispatchmethod']
 
-try:
-    from _functools import reduce
-except ImportError:
-    pass
 from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
@@ -227,6 +223,45 @@ except ImportError:
 
 
 ################################################################################
+### reduce() sequence to a single item
+################################################################################
+
+_initial_missing = object()
+
+def reduce(function, sequence, initial=_initial_missing):
+    """
+    reduce(function, sequence[, initial]) -> value
+
+    Apply a function of two arguments cumulatively to the items of a sequence,
+    from left to right, so as to reduce the sequence to a single value.
+    For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
+    ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items
+    of the sequence in the calculation, and serves as a default when the
+    sequence is empty.
+    """
+
+    it = iter(sequence)
+
+    if initial is _initial_missing:
+        try:
+            value = next(it)
+        except StopIteration:
+            raise TypeError("reduce() of empty sequence with no initial value") from None
+    else:
+        value = initial
+
+    for element in it:
+        value = function(value, element)
+
+    return value
+
+try:
+    from _functools import reduce
+except ImportError:
+    pass
+
+
+################################################################################
 ### partial() argument application
 ################################################################################
 
@@ -388,6 +423,12 @@ class partialmethod(object):
     def __isabstractmethod__(self):
         return getattr(self.func, "__isabstractmethod__", False)
 
+# Helper functions
+
+def _unwrap_partial(func):
+    while isinstance(func, partial):
+        func = func.func
+    return func
 
 ################################################################################
 ### LRU Cache function decorator
@@ -413,7 +454,7 @@ class _HashedSeq(list):
 
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
-             fasttypes = {int, str, frozenset, type(None)},
+             fasttypes = {int, str},
              tuple=tuple, type=type, len=len):
     """Make a cache key from optionally typed positional and keyword arguments
 
@@ -469,8 +510,11 @@ def lru_cache(maxsize=128, typed=False):
 
     # Early detection of an erroneous call to @lru_cache without any arguments
     # resulting in the inner function being passed to maxsize instead of an
-    # integer or None.
-    if maxsize is not None and not isinstance(maxsize, int):
+    # integer or None.  Negative maxsize is treated as 0.
+    if isinstance(maxsize, int):
+        if maxsize < 0:
+            maxsize = 0
+    elif maxsize is not None:
         raise TypeError('Expected maxsize to be an integer or None')
 
     def decorating_function(user_function):
@@ -497,10 +541,10 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
     if maxsize == 0:
 
         def wrapper(*args, **kwds):
-            # No caching -- just a statistics update after a successful call
+            # No caching -- just a statistics update
             nonlocal misses
-            result = user_function(*args, **kwds)
             misses += 1
+            result = user_function(*args, **kwds)
             return result
 
     elif maxsize is None:
@@ -513,9 +557,9 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
             if result is not sentinel:
                 hits += 1
                 return result
+            misses += 1
             result = user_function(*args, **kwds)
             cache[key] = result
-            misses += 1
             return result
 
     else:
@@ -537,6 +581,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     link[NEXT] = root
                     hits += 1
                     return result
+                misses += 1
             result = user_function(*args, **kwds)
             with lock:
                 if key in cache:
@@ -574,7 +619,6 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     # Use the cache_len bound method instead of the len() function
                     # which could potentially be wrapped in an lru_cache itself.
                     full = (cache_len() >= maxsize)
-                misses += 1
             return result
 
     def cache_info():
