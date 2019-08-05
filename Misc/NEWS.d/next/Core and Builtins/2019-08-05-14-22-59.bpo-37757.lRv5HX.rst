@@ -1,0 +1,3 @@
+PEP 572: As described in the PEP, assignment expressions now raised
+TargetScopeError when their interaction with comprehension scoping results
+in an ambiguous target scope.
