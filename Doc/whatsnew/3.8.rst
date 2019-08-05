@@ -42,21 +42,25 @@
    This saves the maintainer the effort of going through the Mercurial log
    when researching a change.
 
-This article explains the new features in Python 3.8, compared to 3.7.
+:Editor: Raymond Hettinger
 
+This article explains the new features in Python 3.8, compared to 3.7.
 For full details, see the :ref:`changelog <changelog>`.
 
-.. note::
+Prerelease users should be aware that this document is currently in
+draft form. It will be updated as Python 3.8 moves towards release, so
+it's worth checking back even after reading earlier versions. Some
+notable items not yet covered are:
 
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.8 moves towards release,
-   so it's worth checking back even after reading earlier versions.
+* :pep:`578` - Runtime audit hooks for potentially sensitive operations
+* ``python -m asyncio`` runs a natively async REPL
 
-   Some notable items not yet covered here:
+.. testsetup::
 
-   * :pep:`578` - Runtime audit hooks for potentially sensitive operations
-   * ``python -m asyncio`` runs a natively async REPL
-   * ...
+   from datetime import date
+   from math import cos, radians
+   import re
+   import math
 
 
 Summary -- Release highlights
@@ -76,11 +80,42 @@ New Features
 Assignment expressions
 ----------------------
 
-There is new syntax (the "walrus operator", ``:=``) to assign values
-to variables as part of an expression.  Example::
+There is new syntax ``:=`` that assigns values to variables as part of a larger
+expression. It is affectionately known as "walrus operator" due to
+its resemblance to `the eyes and tusks of a walrus
+<https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg>`_.
+
+In this example, the assignment expression helps avoid calling
+:func:`len` twice::
 
   if (n := len(a)) > 10:
       print(f"List is too long ({n} elements, expected <= 10)")
+
+A similar benefit arises during regular expression matching where
+match objects are needed twice, once to test whether a match
+occurred and another to extract a subgroup::
+
+  discount = 0.0
+  if (mo := re.search(r'(\d+)% discount', advertisement)):
+      discount = float(mo.group(1)) / 100.0
+
+The operator is also useful with while-loops that compute
+a value to test loop termination and then need that same
+value again in the body of the loop::
+
+  # Loop over fixed length blocks
+  while (block := f.read(256)) != '':
+      process(block)
+
+Another motivating use case arises in list comprehensions where
+a value computed in a filtering condition is also needed in
+the expression body::
+
+   [clean_name.title() for name in names
+    if (clean_name := normalize('NFC', name)) in allowed_names]
+
+Try to limit use of the walrus operator to clean cases that reduce
+complexity and improve readability.
 
 See :pep:`572` for a full description.
 
@@ -92,20 +127,69 @@ See :pep:`572` for a full description.
 Positional-only parameters
 --------------------------
 
-There is new syntax (``/``) to indicate that some function parameters
-must be specified positionally (i.e., cannot be used as keyword
-arguments).  This is the same notation as shown by ``help()`` for
-functions implemented in C (produced by Larry Hastings' "Argument
-Clinic" tool).  Example::
+There is a new function parameter syntax ``/`` to indicate that some
+function parameters must be specified positionally and cannot be used as
+keyword arguments.  This is the same notation shown by ``help()`` for C
+functions annotated with Larry Hastings' `Argument Clinic
+<https://docs.python.org/3/howto/clinic.html>`_ tool.
+
+In the following example, parameters *a* and *b* are positional-only,
+while *c* or *d* can be positional or keyword, and *e* or *f* are
+required to be keywords::
+
+  def f(a, b, /, c, d, *, e, f):
+      print(a, b, c, d, e, f)
+
+The following is a valid call::
+
+  f(10, 20, 30, d=40, e=50, f=60)
+
+However, these are invalid calls::
+
+  f(10, b=20, c=30, d=40, e=50, f=60)   # b cannot be a keyword argument
+  f(10, 20, 30, 40, 50, f=60)           # e must be a keyword argument
+
+One use case for this notation is that it allows pure Python functions
+to fully emulate behaviors of existing C coded functions.  For example,
+the built-in :func:`pow` function does not accept keyword arguments::
 
   def pow(x, y, z=None, /):
-      r = x**y
-      if z is not None:
-          r %= z
-      return r
+      "Emulate the built in pow() function"
+      r = x ** y
+      return r if z is None else r%z
 
-Now ``pow(2, 10)`` and ``pow(2, 10, 17)`` are valid calls, but
-``pow(x=2, y=10)`` and ``pow(2, 10, z=17)`` are invalid.
+Another use case is to preclude keyword arguments when the parameter
+name is not helpful.  For example, the builtin :func:`len` function has
+the signature ``len(obj, /)``.  This precludes awkward calls such as::
+
+  len(obj='hello')  # The "obj" keyword argument impairs readability
+
+A further benefit of marking a parameter as positional-only is that it
+allows the parameter name to be changed in the future without risk of
+breaking client code.  For example, in the :mod:`statistics` module, the
+parameter name *dist* may be changed in the future.  This was made
+possible with the following function specification::
+
+  def quantiles(dist, /, *, n=4, method='exclusive')
+      ...
+
+Since the parameters to the left of ``/`` are not exposed as possible
+keywords, the parameters names remain available for use in ``**kwargs``::
+
+  >>> def f(a, b, /, **kwargs):
+  ...     print(a, b, kwargs)
+  ...
+  >>> f(10, 20, a=1, b=2, c=3)         # a and b are used in two ways
+  10 20 {'a': 1, 'b': 2, 'c': 3}
+
+This greatly simplifies the implementation of functions and methods
+that need to accept arbitrary keyword arguments.  For example, here
+is an except from code in the :mod:`collections` module::
+
+  class Counter(dict):
+
+      def __init__(self, iterable=None, /, **kwds):
+          # Note "iterable" is a possible keyword argument
 
 See :pep:`570` for a full description.
 
@@ -174,17 +258,31 @@ Android and Cygwin, whose cases are handled by the script);
 this change is backward incompatible on purpose.
 (Contributed by Victor Stinner in :issue:`36721`.)
 
-f-strings now support =  for quick and easy debugging
------------------------------------------------------
 
-Add ``=`` specifier to f-strings. ``f'{expr=}'`` expands
-to the text of the expression, an equal sign, then the repr of the
-evaluated expression.  So::
+f-strings support ``=`` for self-documenting expressions and debugging
+----------------------------------------------------------------------
 
-  x = 3
-  print(f'{x*9 + 15=}')
+Added an ``=`` specifier to :term:`f-string`\s. An f-string such as
+``f'{expr=}'`` will expand to the text of the expression, an equal sign,
+then the representation of the evaluated expression.  For example:
 
-Would print ``x*9 + 15=42``.
+  >>> user = 'eric_idle'
+  >>> member_since = date(1975, 7, 31)
+  >>> f'{user=} {member_since=}'
+  "user='eric_idle' member_since=datetime.date(1975, 7, 31)"
+
+The usual :ref:`f-string format specifiers <f-strings>` allow more
+control over how the result of the expression is displayed::
+
+  >>> delta = date.today() - member_since
+  >>> f'{user=!s}  {delta.days=:,d}'
+  'user=eric_idle  delta.days=16,075'
+
+The ``=`` specifier will display the whole expression so that
+calculations can be shown::
+
+  >>> print(f'{theta=}  {cos(radians(theta))=:.3f}')
+  theta=30  cos(radians(theta))=0.866
 
 (Contributed by Eric V. Smith and Larry Hastings in :issue:`36817`.)
 
@@ -295,7 +393,13 @@ Other Language Changes
   or :meth:`~object.__complex__` is not available.
   (Contributed by Serhiy Storchaka in :issue:`20092`.)
 
-* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
+* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`::
+
+    >>> notice = 'Copyright © 2019'
+    >>> copyright_year_pattern = re.compile(r'\N{copyright sign}\s*(\d{4})')
+    >>> int(copyright_year_pattern.search(notice).group(1))
+    2019
+
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
 * Dict and dictviews are now iterable in reversed insertion order using
@@ -343,10 +447,30 @@ Other Language Changes
 * Added new ``replace()`` method to the code type (:class:`types.CodeType`).
   (Contributed by Victor Stinner in :issue:`37032`.)
 
-* For integers, the three-argument form of the :func:`pow` function now permits
-  the exponent to be negative in the case where the base is relatively prime to
-  the modulus. It then computes a modular inverse to the base when the exponent
-  is ``-1``, and a suitable power of that inverse for other negative exponents.
+* For integers, the three-argument form of the :func:`pow` function now
+  permits the exponent to be negative in the case where the base is
+  relatively prime to the modulus. It then computes a modular inverse to
+  the base when the exponent is ``-1``, and a suitable power of that
+  inverse for other negative exponents.  For example, to compute the
+  `modular multiplicative inverse
+  <https://en.wikipedia.org/wiki/Modular_multiplicative_inverse>`_ of 38
+  modulo 137, write::
+
+    >>> pow(38, -1, 137)
+    119
+    >>> 119 * 38 % 137
+    1
+
+  Modular inverses arise in the solution of `linear Diophantine
+  equations <https://en.wikipedia.org/wiki/Diophantine_equation>`_.
+  For example, to find integer solutions for ``4258𝑥 + 147𝑦 = 369``,
+  first rewrite as ``4258𝑥 ≡ 369 (mod 147)`` then solve:
+
+    >>> x = 369 * pow(4258, -1, 147) % 147
+    >>> y = (4258 * x - 369) // -147
+    >>> 4258 * x + 147 * y
+    369
+
   (Contributed by Mark Dickinson in :issue:`36027`.)
 
 * When dictionary comprehensions are evaluated, the key is now evaluated before
@@ -576,7 +700,14 @@ Formerly, it only supported the 2-D case.
 
 Added new function, :func:`math.prod`, as analogous function to :func:`sum`
 that returns the product of a 'start' value (default: 1) times an iterable of
-numbers. (Contributed by Pablo Galindo in :issue:`35606`)
+numbers::
+
+    >>> prior = 0.8
+    >>> likelihoods = [0.625, 0.84, 0.30]
+    >>> (link: http://math.prod) math.prod(likelihoods, start=prior)
+    0.126
+
+(Contributed by Pablo Galindo in :issue:`35606`)
 
 Added new function :func:`math.isqrt` for computing integer square roots.
 (Contributed by Mark Dickinson in :issue:`36887`.)
@@ -1357,7 +1488,7 @@ Changes in the Python API
 * :func:`shutil.copyfile` default buffer size on Windows was changed from
   16 KiB to 1 MiB.
 
-* ``PyGC_Head`` struct is changed completely.  All code touched the
+* The ``PyGC_Head`` struct has changed completely.  All code that touched the
   struct member should be rewritten.  (See :issue:`33597`)
 
 * The ``PyInterpreterState`` struct has been moved into the "internal"
