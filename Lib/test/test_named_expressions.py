@@ -104,7 +104,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
             exec(code, {}, {})
 
-    def test_named_expression_invalid_18(self):
+    def test_named_expression_invalid_in_class_body(self):
         code = """class Foo():
             [(42, 1 + ((( j := i )))) for i in range(5)]
         """
@@ -112,6 +112,50 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         with self.assertRaisesRegex(TargetScopeError,
             "named expression within a comprehension cannot be used in a class body"):
             exec(code, {}, {})
+
+    def test_named_expression_invalid_rebinding_comprehension_iteration_variable(self):
+        cases = [
+            ("Local reuse", "[i := 0 for i in range(5)]"),
+            ("Nested reuse", "[[(j := 0) for i in range(5)] for j in range(5)]"),
+            ("Reuse inner loop target", "[(j := 0) for i in range(5) for j in range(5)]"),
+            ("Unpacking reuse", "[i := 0 for i, j in [(0, 1)]]"),
+            ("Reuse in loop condition", "[i+1 for i in range(5) if (i := 0)]"),
+            ("Unreachable reuse", "[False or (i:=0) for i in range(5)]"),
+            ("Unreachable nested reuse",
+                "[(i, j) for i in range(5) for j in range(5) if True or (i:=10)]"),
+            ("Nested comprehension condition", "[i for i in [j for j in range(5) if (j := True)]]"),
+            ("Nested comprehension body", "[i for i in [(j := True) for j in range(5)]]"),
+        ]
+        for case, code in cases:
+            with self.subTest(case=case):
+                with self.assertRaisesRegex(TargetScopeError,
+                    "named expression cannot rebind comprehension iteration variable"):
+                    exec(code, {}, {})
+
+    def test_named_expression_invalid_rebinding_comprehension_inner_loop(self):
+        cases = [
+            ("Inner reuse", "[i for i in range(5) if (j := 0) for j in range(5)]"),
+            ("Inner unpacking reuse", "[i for i in range(5) if (j := 0) for j, k in [(0, 1)]]"),
+        ]
+        for case, code in cases:
+            with self.subTest(case=case):
+                with self.assertRaisesRegex(TargetScopeError,
+                    "comprehension inner loop cannot rebind named expression target"):
+                    exec(code, {}, {})
+
+    def test_named_expression_invalid_comprehension_iterator_expression(self):
+        cases = [
+            ("Top level", "[i for i in (i := range(5))]"),
+            ("Inside container", "[i for i in (2, 3, i := range(5))]"),
+            ("Different name", "[i for i in (j := range(5))]"),
+            ("Inner loop", "[i for i in range(5) for j in (i := range(5))]"),
+            ("Nested comprehension", "[i for i in [j for j in (k := range(5))]]"),
+        ]
+        for case, code in cases:
+            with self.subTest(case=case):
+                with self.assertRaisesRegex(TargetScopeError,
+                    "named expression cannot be used in comprehension iterator expression"):
+                    exec(code, {}, {})
 
 
 class NamedExpressionAssignmentTest(unittest.TestCase):
@@ -304,39 +348,6 @@ print(a)"""
         res = [j := i for i in range(5)]
 
         self.assertEqual(res, [0, 1, 2, 3, 4])
-        self.assertEqual(j, 4)
-
-    def test_named_expression_scope_12(self):
-        res = [i := i for i in range(5)]
-
-        self.assertEqual(res, [0, 1, 2, 3, 4])
-        self.assertEqual(i, 4)
-
-    def test_named_expression_scope_13(self):
-        res = [i := 0 for i, j in [(1, 2), (3, 4)]]
-
-        self.assertEqual(res, [0, 0])
-        self.assertEqual(i, 0)
-
-    def test_named_expression_scope_14(self):
-        res = [(i := 0, j := 1) for i, j in [(1, 2), (3, 4)]]
-
-        self.assertEqual(res, [(0, 1), (0, 1)])
-        self.assertEqual(i, 0)
-        self.assertEqual(j, 1)
-
-    def test_named_expression_scope_15(self):
-        res = [(i := i, j := j) for i, j in [(1, 2), (3, 4)]]
-
-        self.assertEqual(res, [(1, 2), (3, 4)])
-        self.assertEqual(i, 3)
-        self.assertEqual(j, 4)
-
-    def test_named_expression_scope_16(self):
-        res = [(i := j, j := i) for i, j in [(1, 2), (3, 4)]]
-
-        self.assertEqual(res, [(2, 2), (4, 4)])
-        self.assertEqual(i, 4)
         self.assertEqual(j, 4)
 
     def test_named_expression_scope_17(self):
