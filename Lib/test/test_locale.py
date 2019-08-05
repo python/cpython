@@ -527,7 +527,7 @@ class TestMiscellaneous(unittest.TestCase):
             self.skipTest('test needs Turkish locale')
         loc = locale.getlocale(locale.LC_CTYPE)
         if verbose:
-            print('testing with %a' % (loc,), end=' ', flush=True)
+            print('testing with %a...' % (loc,), end=' ', flush=True)
         locale.setlocale(locale.LC_CTYPE, loc)
         self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
 
