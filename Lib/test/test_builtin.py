@@ -162,7 +162,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, __import__, 'sys', name='sys')
         # relative import with no parent package, issue37409
         self.assertRaises(ImportError, __import__, '',
-                          {'__package__': None, '__name__': '__main__'},
+                          {'__package__': None, '__spec__': None, '__name__': '__main__'},
                           {}, ('foo',), 1)
         # embedded null character
         self.assertRaises(ModuleNotFoundError, __import__, 'string\x00')
