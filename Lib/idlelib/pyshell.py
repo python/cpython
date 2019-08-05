@@ -858,6 +858,7 @@ class PyShell(OutputWindow):
 
     # New classes
     from idlelib.history import History
+    from idlelib.sidebar import ShellSidebar
 
     def __init__(self, flist=None):
         if use_subprocess:
@@ -925,6 +926,9 @@ class PyShell(OutputWindow):
         self.history = self.History(self.text)
         #
         self.pollinterval = 50  # millisec
+
+        self.shell_sidebar = self.ShellSidebar(self)
+        self.shell_sidebar.show_sidebar()
 
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(shell_only=True)
