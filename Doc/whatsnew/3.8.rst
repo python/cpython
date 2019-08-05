@@ -55,6 +55,11 @@ notable items not yet covered are:
 * :pep:`578` - Runtime audit hooks for potentially sensitive operations
 * ``python -m asyncio`` runs a natively async REPL
 
+.. testsetup::
+
+   from datetime import date
+   from math import cos, radians
+
 
 Summary -- Release highlights
 =============================
