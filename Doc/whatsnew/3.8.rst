@@ -59,6 +59,7 @@ notable items not yet covered are:
 
    from datetime import date
    from math import cos, radians
+   import re
 
 
 Summary -- Release highlights
@@ -400,7 +401,13 @@ Other Language Changes
   or :meth:`~object.__complex__` is not available.
   (Contributed by Serhiy Storchaka in :issue:`20092`.)
 
-* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
+* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`::
+
+    >>> notice = 'Copyright © 2019'
+    >>> copyright_year_pattern = re.compile(r'\N{copyright sign}\s*(\d{4})')
+    >>> int(copyright_year_pattern.search(notice).group(1))
+    2019
+
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
 * Dict and dictviews are now iterable in reversed insertion order using
