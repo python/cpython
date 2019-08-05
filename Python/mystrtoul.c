@@ -99,7 +99,7 @@ PyOS_strtoul(const char *str, char **ptr, int base)
     int ovlimit;       /* required digits to overflow */
 
     /* skip leading white space */
-    while (*str && Py_ISSPACE(Py_CHARMASK(*str)))
+    while (*str && Py_ISSPACE(*str))
         ++str;
 
     /* check for leading 0b, 0o or 0x for auto-base or base 16 */
@@ -138,7 +138,7 @@ PyOS_strtoul(const char *str, char **ptr, int base)
                 /* skip all zeroes... */
                 while (*str == '0')
                     ++str;
-                while (Py_ISSPACE(Py_CHARMASK(*str)))
+                while (Py_ISSPACE(*str))
                     ++str;
                 if (ptr)
                     *ptr = (char *)str;
@@ -266,7 +266,7 @@ PyOS_strtol(const char *str, char **ptr, int base)
     unsigned long uresult;
     char sign;
 
-    while (*str && Py_ISSPACE(Py_CHARMASK(*str)))
+    while (*str && Py_ISSPACE(*str))
         str++;
 
     sign = *str;
