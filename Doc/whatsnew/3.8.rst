@@ -132,20 +132,69 @@ See :pep:`572` for a full description.
 Positional-only parameters
 --------------------------
 
-There is new syntax (``/``) to indicate that some function parameters
-must be specified positionally (i.e., cannot be used as keyword
-arguments).  This is the same notation as shown by ``help()`` for
-functions implemented in C (produced by Larry Hastings' "Argument
-Clinic" tool).  Example::
+There is a new function parameter syntax ``/`` to indicate that some
+function parameters must be specified positionally and cannot be used as
+keyword arguments.  This is the same notation shown by ``help()`` for C
+functions annotated with Larry Hastings' `Argument Clinic
+<https://docs.python.org/3/howto/clinic.html>`_ tool.
+
+In the following example, parameters *a* and *b* are positional-only,
+while *c* or *d* can be positional or keyword, and *e* or *f* are
+required to be keywords::
+
+  def f(a, b, \, c, d, *, e, f):
+      print(a, b, c, d, e, f)
+
+The following is a valid call::
+
+  f(10, 20, 30, d=40, e=50, f=60)
+
+However, these are invalid calls::
+
+  f(10, b=20, c=30, d=40, e=50, f=60)   # b cannot be a keyword argument
+  f(10, 20, 30, 40, 50, f=60)           # e must be a keyword argument
+
+One use case for this notation is that it allows pure Python functions
+to fully emulate behaviors of existing C coded functions.  For example,
+the built-in :func:`pow` function does not accept keyword arguments::
 
   def pow(x, y, z=None, /):
-      r = x**y
-      if z is not None:
-          r %= z
-      return r
+      "Emulate the built in pow() function"
+      r = x ** y
+      return r if z is None else r%z
 
-Now ``pow(2, 10)`` and ``pow(2, 10, 17)`` are valid calls, but
-``pow(x=2, y=10)`` and ``pow(2, 10, z=17)`` are invalid.
+Another use case is to preclude keyword arguments when the parameter
+name is not helpful.  For example, the builtin :func:`len` function has
+the signature ``len(obj, /)``.  This precludes awkward calls such as::
+
+  len(obj='hello')  # The "obj" keyword argument impairs readability
+
+A further benefit of marking a parameter as positional-only is that it
+allows the parameter name to be changed in the future without risk of
+breaking client code.  For example, in the :mod:`statistics` module, the
+parameter name *dist* may be changed in the future.  This was made
+possible with the following function specification::
+
+  def quantiles(dist, /, *, n=4, method='exclusive')
+      ...
+
+Since the parameters to the left of ``/`` are not exposed as possible
+keywords, the parameters names remain available for use in ``**kwargs``::
+
+  >>> def f(a, b, /, **kwargs):
+  ...     print(a, b, kwargs)
+  ...
+  >>> f(10, 20, a=1, b=2, c=3)         # a and b are used in two ways
+  10 20 {'a': 1, 'b': 2, 'c': 3}
+
+This greatly simplifies the implementation of functions and methods
+that need to accept arbitrary keyword arguments.  For example, here
+is an except from code in the :mod:`collections` module::
+
+  class Counter(dict):
+
+      def __init__(self, iterable=None, /, **kwds):
+          # Note "iterable" is a possible keyword argument
 
 See :pep:`570` for a full description.
 
