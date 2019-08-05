@@ -433,16 +433,21 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
     }
     while (1) {
         /* Find the end of the string or the next escape */
-        Py_UCS4 c = 0;
-        for (next = end; next < len; next++) {
-            c = PyUnicode_READ(kind, buf, next);
-            if (c == '"' || c == '\\') {
-                break;
+        Py_UCS4 c;
+        {
+            // Use tight scope variable to help register allocation.
+            Py_UCS4 d = 0;
+            for (next = end; next < len; next++) {
+                d = PyUnicode_READ(kind, buf, next);
+                if (d == '"' || d == '\\') {
+                    break;
+                }
+                if (d <= 0x1f && strict) {
+                    raise_errmsg("Invalid control character at", pystr, next);
+                    goto bail;
+                }
             }
-            else if (c <= 0x1f && strict) {
-                raise_errmsg("Invalid control character at", pystr, next);
-                goto bail;
-            }
+            c = d;
         }
         if (!(c == '"' || c == '\\')) {
             raise_errmsg("Unterminated string starting at", pystr, begin);
