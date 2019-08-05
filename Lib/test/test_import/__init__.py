@@ -776,7 +776,7 @@ class RelativeImportTests(unittest.TestCase):
         self.assertRaises(TypeError, check_relative)
 
     def test_import_shadowed_by_global(self):
-        # Regression test for https://bugs.python.org/issue37409
+        # bpo-37409
         script_helper.assert_python_failure('-W', 'ignore', '-c',
             "foo = 1; from . import foo")
 
