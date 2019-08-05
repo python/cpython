@@ -260,17 +260,31 @@ Android and Cygwin, whose cases are handled by the script);
 this change is backward incompatible on purpose.
 (Contributed by Victor Stinner in :issue:`36721`.)
 
-f-strings now support =  for quick and easy debugging
------------------------------------------------------
 
-Add ``=`` specifier to f-strings. ``f'{expr=}'`` expands
-to the text of the expression, an equal sign, then the repr of the
-evaluated expression.  So::
+f-strings support ``=`` for self-documenting expressions and debugging
+----------------------------------------------------------------------
 
-  x = 3
-  print(f'{x*9 + 15=}')
+Added an ``=`` specifier to :term:`f-string`\s. An f-string such as
+``f'{expr=}'`` will expand to the text of the expression, an equal sign,
+then the representation of the evaluated expression.  For example:
 
-Would print ``x*9 + 15=42``.
+  >>> user = 'eric_idle'
+  >>> member_since = date(1975, 7, 31)
+  >>> f'{user=} {member_since=}'
+  "user='eric_idle' member_since=datetime.date(1975, 7, 31)"
+
+The usual :ref:`f-string format specifiers <f-strings>` allow more
+control over how the result of the expression is displayed::
+
+  >>> delta = date.today() - member_since
+  >>> f'{user=!s}  {delta.days=:,d}'
+  'user=eric_idle  delta.days=16,075'
+
+The ``=`` specifier will display the whole expression so that
+calculations can be shown::
+
+  >>> print(f'{theta=}  {cos(radians(theta))=:.3f}')
+  theta=30  cos(radians(theta))=0.866
 
 (Contributed by Eric V. Smith and Larry Hastings in :issue:`36817`.)
 
