@@ -60,6 +60,7 @@ notable items not yet covered are:
    from datetime import date
    from math import cos, radians
    import re
+   import math
 
 
 Summary -- Release highlights
@@ -708,7 +709,14 @@ Formerly, it only supported the 2-D case.
 
 Added new function, :func:`math.prod`, as analogous function to :func:`sum`
 that returns the product of a 'start' value (default: 1) times an iterable of
-numbers. (Contributed by Pablo Galindo in :issue:`35606`)
+numbers::
+
+    >>> prior = 0.8
+    >>> likelihoods = [0.625, 0.84, 0.30]
+    >>> (link: http://math.prod) math.prod(likelihoods, start=prior)
+    0.126
+
+(Contributed by Pablo Galindo in :issue:`35606`)
 
 Added new function :func:`math.isqrt` for computing integer square roots.
 (Contributed by Mark Dickinson in :issue:`36887`.)
