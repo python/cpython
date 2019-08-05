@@ -163,7 +163,7 @@ class BuiltinTest(unittest.TestCase):
         # relative import with no parent package, issue37409
         self.assertRaises(ImportError, __import__, '',
                           {'__package__': None, '__spec__': None, '__name__': '__main__'},
-                          {}, ('foo',), 1)
+                          locals={}, fromlist=('foo',), level=1)
         # embedded null character
         self.assertRaises(ModuleNotFoundError, __import__, 'string\x00')
 
