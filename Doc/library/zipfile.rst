@@ -225,7 +225,7 @@ ZipFile Objects
       The *strict_timestamps* keyword-only argument
 
    .. versionchanged:: 3.8
-      Add support for using LZMA presets with the  *compresslevel* parameter.
+      Add support for using LZMA presets with the *compresslevel* parameter.
 
 
 .. method:: ZipFile.close()
