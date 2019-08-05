@@ -1145,7 +1145,7 @@ particular, the following variants typically exist:
 | iso2022_kr      | csiso2022kr, iso2022kr,        | Korean                         |
 |                 | iso-2022-kr                    |                                |
 +-----------------+--------------------------------+--------------------------------+
-| latin_1         | iso-8859-1, iso8859-1, 8859,   | West Europe                    |
+| latin_1         | iso-8859-1, iso8859-1, 8859,   | Western Europe                 |
 |                 | cp819, latin, latin1, L1       |                                |
 +-----------------+--------------------------------+--------------------------------+
 | iso8859_2       | iso-8859-2, latin2, L2         | Central and Eastern Europe     |
