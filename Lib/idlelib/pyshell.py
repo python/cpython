@@ -55,6 +55,7 @@ from idlelib.filelist import FileList
 from idlelib.outwin import OutputWindow
 from idlelib import rpc
 from idlelib.run import idle_formatwarning, PseudoInputFile, PseudoOutputFile
+from idlelib.textview import view_text
 from idlelib.undo import UndoDelegator
 
 HOST = '127.0.0.1' # python execution server on localhost loopback
@@ -906,17 +907,25 @@ class PyShell(OutputWindow):
             sys.stderr = self.stderr
             sys.stdin = self.stdin
         try:
-            # page help() text to shell.
-            import pydoc # import must be done here to capture i/o rebinding.
-            # XXX KBK 27Dec07 use text viewer someday, but must work w/o subproc
-            pydoc.pager = pydoc.plainpager
-        except:
+            import pydoc  # import must be done here to capture i/o rebinding.
+            pydoc.pager = self.pager
+        except Exception:
             sys.stderr = sys.__stderr__
             raise
         #
         self.history = self.History(self.text)
         #
         self.pollinterval = 50  # millisec
+
+    def pager(self, text):
+        """pydoc.pager compatible callback for showing help() output."""
+        import pydoc  # Import here to avoid i/o binding issues.
+        text = pydoc.plain(text)  # Remove fancy pydoc formatting.
+        try:
+            title, text = text.split(':\n\n', 1)
+        except ValueError:
+            title = "Help"
+        view_text(self.text, title, text, modal=False)
 
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(shell_only=True)
