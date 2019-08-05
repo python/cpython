@@ -144,7 +144,7 @@ In the following example, parameters *a* and *b* are positional-only,
 while *c* or *d* can be positional or keyword, and *e* or *f* are
 required to be keywords::
 
-  def f(a, b, \, c, d, *, e, f):
+  def f(a, b, /, c, d, *, e, f):
       print(a, b, c, d, e, f)
 
 The following is a valid call::
