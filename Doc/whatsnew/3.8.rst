@@ -454,7 +454,7 @@ Other Language Changes
   inverse for other negative exponents.  For example, to compute the
   `modular multiplicative inverse
   <https://en.wikipedia.org/wiki/Modular_multiplicative_inverse>`_ of 38
-  in modulo 137, write::
+  modulo 137, write::
 
     >>> pow(38, -1, 137)
     119
