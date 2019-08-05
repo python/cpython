@@ -178,8 +178,8 @@ ZipFile Objects
    When using :const:`ZIP_BZIP2` integers ``1`` through ``9`` are accepted
    (see :class:`bz2 <bz2.BZ2File>` for more information).
    When using :const:`ZIP_LZMA` integers ``0`` through ``9`` are accepted,
-   as are the values ``0 | lzma.PRESET_EXTREME`` through ``9 | lzma.PRESET_EXTREME``.
-   (see :class:`lzma <lzma.LZMACompressor>` for more information)
+   as are the values ``0 | lzma.PRESET_EXTREME`` through ``9 | lzma.PRESET_EXTREME``
+   (see :class:`lzma <lzma.LZMACompressor>` for more information).
 
    The *strict_timestamps* argument, when set to ``False``, allows to
    zip files older than 1980-01-01 at the cost of setting the
