@@ -1470,7 +1470,7 @@ functions can be used directly if desired.
 .. module:: encodings.mbcs
    :synopsis: Windows ANSI codepage
 
-Encode operand according to the ANSI codepage (CP_ACP).
+This module implements the ANSI codepage (CP_ACP).
 
 .. availability:: Windows only.
 
@@ -1489,7 +1489,7 @@ Encode operand according to the ANSI codepage (CP_ACP).
    :synopsis: UTF-8 codec with BOM signature
 .. moduleauthor:: Walter Dörwald
 
-This module implements a variant of the UTF-8 codec: On encoding a UTF-8 encoded
+This module implements a variant of the UTF-8 codec: on encoding a UTF-8 encoded
 BOM will be prepended to the UTF-8 encoded bytes. For the stateful encoder this
 is only done once (on the first write to the byte stream).  For decoding an
 optional UTF-8 encoded BOM at the start of the data will be skipped.
