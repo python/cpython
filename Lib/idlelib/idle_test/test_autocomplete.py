@@ -240,8 +240,9 @@ class AutoCompleteTest(unittest.TestCase):
         with patch.dict('__main__.__dict__', {'__all__': ['a', 'b']}):
             s, b = acp.fetch_completions('', ac.ATTRS)
             self.assertEqual(s, ['a', 'b'])
-            self.assertIn('__name__', b)    # From __main__.__dict__
-            self.assertIn('sum', b)         # From __main__.__builtins__.__dict__
+            self.assertIn('__name__', b)  # From __main__.__dict__.
+            self.assertIn('sum', b)       # From __main__.__builtins__.__dict__.
+            self.assertIn('and', b)       # From keyword.kwlist.
 
         # Test attributes with name entity.
         mock = Mock()

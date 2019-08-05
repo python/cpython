@@ -4,6 +4,7 @@ Either on demand or after a user-selected delay after a key character,
 pop up a list of candidates.
 """
 import __main__
+import keyword
 import os
 import string
 import sys
@@ -175,6 +176,7 @@ class AutoComplete:
                     namespace = {**__main__.__builtins__.__dict__,
                                  **__main__.__dict__}
                     bigl = eval("dir()", namespace)
+                    bigl.extend(keyword.kwlist)
                     bigl.sort()
                     if "__all__" in bigl:
                         smalll = sorted(eval("__all__", namespace))
