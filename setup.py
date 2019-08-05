@@ -634,7 +634,8 @@ class PyBuildExt(build_ext):
         for env_var, arg_name, dir_list in (
                 ('LDFLAGS', '-R', self.compiler.runtime_library_dirs),
                 ('LDFLAGS', '-L', self.compiler.library_dirs),
-                ('CPPFLAGS', '-I', self.compiler.include_dirs)):
+                ('CPPFLAGS', '-I', self.compiler.include_dirs),
+                ('CPPFLAGS', '-isystem', self.compiler.include_dirs)):
             env_val = sysconfig.get_config_var(env_var)
             if env_val:
                 parser = argparse.ArgumentParser()
