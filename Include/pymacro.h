@@ -102,4 +102,15 @@
 
 #define Py_UNREACHABLE() abort()
 
+
+/* If we're using GCC, use __builtin_expect() */
+#if defined(__GNUC__) && (__GNUC__ > 2)
+#  define Py_UNLIKELY(value) __builtin_expect(!!(value), 0)
+#  define Py_LIKELY(value) __builtin_expect(!!(value), 1)
+#else
+#  define Py_UNLIKELY(value) (!!(value))
+#  define Py_LIKELY(value) (!!(value))
+#endif
+
+
 #endif /* Py_PYMACRO_H */

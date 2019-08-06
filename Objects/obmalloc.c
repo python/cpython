@@ -710,16 +710,6 @@ PyObject_Free(void *ptr)
 }
 
 
-/* If we're using GCC, use __builtin_expect() to reduce overhead of
-   the valgrind checks */
-#if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
-#  define UNLIKELY(value) __builtin_expect((value), 0)
-#  define LIKELY(value) __builtin_expect((value), 1)
-#else
-#  define UNLIKELY(value) (value)
-#  define LIKELY(value) (value)
-#endif
-
 #ifdef WITH_PYMALLOC
 
 #ifdef WITH_VALGRIND
@@ -1431,7 +1421,7 @@ address_in_range(void *p, poolp pool)
 static void
 pymalloc_pool_extend(poolp pool, uint size)
 {
-    if (UNLIKELY(pool->nextoffset <= pool->maxnextoffset)) {
+    if (Py_UNLIKELY(pool->nextoffset <= pool->maxnextoffset)) {
         /* There is room for another block. */
         pool->freeblock = (block*)pool + pool->nextoffset;
         pool->nextoffset += INDEX2SIZE(size);
@@ -1456,7 +1446,7 @@ allocate_from_new_pool(uint size)
     /* There isn't a pool of the right size class immediately
      * available:  use a free pool.
      */
-    if (UNLIKELY(usable_arenas == NULL)) {
+    if (Py_UNLIKELY(usable_arenas == NULL)) {
         /* No arena has a free pool:  allocate a new arena. */
 #ifdef WITH_MEMORY_LIMITS
         if (narenas_currently_allocated >= MAX_ARENAS) {
@@ -1491,11 +1481,11 @@ allocate_from_new_pool(uint size)
 
     /* Try to get a cached free pool. */
     poolp pool = usable_arenas->freepools;
-    if (LIKELY(pool != NULL)) {
+    if (Py_LIKELY(pool != NULL)) {
         /* Unlink from cached pools. */
         usable_arenas->freepools = pool->nextpool;
         usable_arenas->nfreepools--;
-        if (UNLIKELY(usable_arenas->nfreepools == 0)) {
+        if (Py_UNLIKELY(usable_arenas->nfreepools == 0)) {
             /* Wholly allocated:  remove. */
             assert(usable_arenas->freepools == NULL);
             assert(usable_arenas->nextarena == NULL ||
@@ -1590,18 +1580,18 @@ static inline void*
 pymalloc_alloc(void *ctx, size_t nbytes)
 {
 #ifdef WITH_VALGRIND
-    if (UNLIKELY(running_on_valgrind == -1)) {
+    if (Py_UNLIKELY(running_on_valgrind == -1)) {
         running_on_valgrind = RUNNING_ON_VALGRIND;
     }
-    if (UNLIKELY(running_on_valgrind)) {
+    if (Py_UNLIKELY(running_on_valgrind)) {
         return NULL;
     }
 #endif
 
-    if (UNLIKELY(nbytes == 0)) {
+    if (Py_UNLIKELY(nbytes == 0)) {
         return NULL;
     }
-    if (UNLIKELY(nbytes > SMALL_REQUEST_THRESHOLD)) {
+    if (Py_UNLIKELY(nbytes > SMALL_REQUEST_THRESHOLD)) {
         return NULL;
     }
 
@@ -1609,7 +1599,7 @@ pymalloc_alloc(void *ctx, size_t nbytes)
     poolp pool = usedpools[size + size];
     block *bp;
 
-    if (LIKELY(pool != pool->nextpool)) {
+    if (Py_LIKELY(pool != pool->nextpool)) {
         /*
          * There is a used pool for this size class.
          * Pick up the head block of its free list.
@@ -1618,7 +1608,7 @@ pymalloc_alloc(void *ctx, size_t nbytes)
         bp = pool->freeblock;
         assert(bp != NULL);
 
-        if (UNLIKELY((pool->freeblock = *(block **)bp) == NULL)) {
+        if (Py_UNLIKELY((pool->freeblock = *(block **)bp) == NULL)) {
             // Reached the end of the free list, try to extend it.
             pymalloc_pool_extend(pool, size);
         }
@@ -1638,7 +1628,7 @@ static void *
 _PyObject_Malloc(void *ctx, size_t nbytes)
 {
     void* ptr = pymalloc_alloc(ctx, nbytes);
-    if (LIKELY(ptr != NULL)) {
+    if (Py_LIKELY(ptr != NULL)) {
         return ptr;
     }
 
@@ -1657,7 +1647,7 @@ _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
     size_t nbytes = nelem * elsize;
 
     void* ptr = pymalloc_alloc(ctx, nbytes);
-    if (LIKELY(ptr != NULL)) {
+    if (Py_LIKELY(ptr != NULL)) {
         memset(ptr, 0, nbytes);
         return ptr;
     }
@@ -1857,13 +1847,13 @@ pymalloc_free(void *ctx, void *p)
     assert(p != NULL);
 
 #ifdef WITH_VALGRIND
-    if (UNLIKELY(running_on_valgrind > 0)) {
+    if (Py_UNLIKELY(running_on_valgrind > 0)) {
         return 0;
     }
 #endif
 
     poolp pool = POOL_ADDR(p);
-    if (UNLIKELY(!address_in_range(p, pool))) {
+    if (Py_UNLIKELY(!address_in_range(p, pool))) {
         return 0;
     }
     /* We allocated this address. */
@@ -1880,7 +1870,7 @@ pymalloc_free(void *ctx, void *p)
     pool->freeblock = (block *)p;
     pool->ref.count--;
 
-    if (UNLIKELY(lastfree == NULL)) {
+    if (Py_UNLIKELY(lastfree == NULL)) {
         /* Pool was full, so doesn't currently live in any list:
          * link it to the front of the appropriate usedpools[] list.
          * This mimics LRU pool usage for new allocations and
@@ -1894,7 +1884,7 @@ pymalloc_free(void *ctx, void *p)
     /* freeblock wasn't NULL, so the pool wasn't full,
      * and the pool is in a usedpools[] list.
      */
-    if (LIKELY(pool->ref.count != 0)) {
+    if (Py_LIKELY(pool->ref.count != 0)) {
         /* pool isn't empty:  leave it in usedpools */
         return 1;
     }
@@ -1917,7 +1907,7 @@ _PyObject_Free(void *ctx, void *p)
         return;
     }
 
-    if (UNLIKELY(!pymalloc_free(ctx, p))) {
+    if (Py_UNLIKELY(!pymalloc_free(ctx, p))) {
         /* pymalloc didn't allocate this address */
         PyMem_RawFree(p);
         raw_allocated_blocks--;
@@ -1945,7 +1935,7 @@ pymalloc_realloc(void *ctx, void **newptr_p, void *p, size_t nbytes)
 
 #ifdef WITH_VALGRIND
     /* Treat running_on_valgrind == -1 the same as 0 */
-    if (UNLIKELY(running_on_valgrind > 0)) {
+    if (Py_UNLIKELY(running_on_valgrind > 0)) {
         return 0;
     }
 #endif
