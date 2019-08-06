@@ -581,8 +581,8 @@ class Executive(object):
     def get_the_calltip(self, name):
         return self.calltip.fetch_tip(name)
 
-    def get_the_completion_list(self, what, mode):
-        return self.autocomplete.fetch_completions(what, mode)
+    def get_the_completion_list(self, what, start, mode):
+        return self.autocomplete.fetch_completions(what, start, mode)
 
     def stackviewer(self, flist_oid=None):
         if self.usr_exc_info:
