@@ -4975,7 +4975,7 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
     Py_ssize_t nargs = oparg - nkwargs;
     PyObject **stack = (*pp_stack) - nargs - nkwargs;
 
-    if (tstate->use_tracing) {
+    if (Py_UNLIKELY(tstate->use_tracing)) {
         x = trace_call_function(tstate, func, stack, nargs, kwnames);
     }
     else {

@@ -64,7 +64,7 @@ _PyVectorcall_Function(PyObject *callable)
 {
     assert(callable != NULL);
     PyTypeObject *tp = Py_TYPE(callable);
-    if (!PyType_HasFeature(tp, _Py_TPFLAGS_HAVE_VECTORCALL)) {
+    if (!Py_LIKELY(PyType_HasFeature(tp, _Py_TPFLAGS_HAVE_VECTORCALL))) {
         return NULL;
     }
     assert(PyCallable_Check(callable));
