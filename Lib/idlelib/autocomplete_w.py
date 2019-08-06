@@ -2,16 +2,22 @@
 An auto-completion window for IDLE, used by the autocomplete extension
 """
 import platform
+import re
 
-from tkinter import *
+from tkinter import EventType, Listbox, TclError, Toplevel
+from tkinter import BOTH, END, LEFT, RIGHT, VERTICAL, Y
 from tkinter.ttk import Scrollbar
 
-from idlelib.autocomplete import FILES, ATTRS
+from idlelib.autocomplete import FILES, ATTRS, DICTKEYS
 from idlelib.multicall import MC_SHIFT
+
+
+__all__ = ['AutoCompleteWindow']
+
 
 HIDE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-hide>>"
 HIDE_FOCUS_OUT_SEQUENCE = "<FocusOut>"
-HIDE_SEQUENCES = (HIDE_FOCUS_OUT_SEQUENCE, "<ButtonPress>")
+HIDE_SEQUENCES = (HIDE_FOCUS_OUT_SEQUENCE, "<ButtonPress>", "<Key-Escape>")
 KEYPRESS_VIRTUAL_EVENT_NAME = "<<autocompletewindow-keypress>>"
 # We need to bind event beyond <Key> so that the function will be called
 # before the default specific IDLE function
@@ -23,6 +29,19 @@ KEYRELEASE_SEQUENCE = "<KeyRelease>"
 LISTUPDATE_SEQUENCE = "<B1-ButtonRelease>"
 WINCONFIG_SEQUENCE = "<Configure>"
 DOUBLECLICK_SEQUENCE = "<B1-Double-ButtonRelease>"
+
+
+_quote_re = re.compile(r"""["']""")
+
+
+def _find_first_quote(string_):
+    """Return the index of the first quote in a string.
+
+    If no quotes are found, returns -1.
+    """
+    match = _quote_re.search(string_)
+    return match.start() if match is not None else -1
+
 
 class AutoCompleteWindow:
 
@@ -50,9 +69,6 @@ class AutoCompleteWindow:
         # The last typed start, used so that when the selection changes,
         # the new start will be as close as possible to the last typed one.
         self.lasttypedstart = None
-        # Do we have an indication that the user wants the completion window
-        # (for example, he clicked the list)
-        self.userwantswindow = None
         # event ids
         self.hideid = self.keypressid = self.listupdateid = \
             self.winconfigid = self.keyreleaseid = self.doubleclickid = None
@@ -92,11 +108,13 @@ class AutoCompleteWindow:
         """Assuming that s is the prefix of a string in self.completions,
         return the longest string which is a prefix of all the strings which
         s is a prefix of them. If s is not a prefix of a string, return s.
+
+        Returns the completed string and the number of possible completions.
         """
         first = self._binary_search(s)
         if self.completions[first][:len(s)] != s:
             # There is not even one completion which s is a prefix of.
-            return s
+            return s, 0
         # Find the end of the range of completions where s is a prefix of.
         i = first + 1
         j = len(self.completions)
@@ -108,8 +126,9 @@ class AutoCompleteWindow:
                 i = m + 1
         last = i-1
 
-        if first == last: # only one possible completion
-            return self.completions[first]
+        if first == last:  # only one possible completion
+            completed = self.completions[first]
+            return completed, 1
 
         # We should return the maximum prefix of first and last
         first_comp = self.completions[first]
@@ -118,7 +137,12 @@ class AutoCompleteWindow:
         i = len(s)
         while i < min_len and first_comp[i] == last_comp[i]:
             i += 1
-        return first_comp[:i]
+        return first_comp[:i], last - first + 1
+
+    def _finalize_completion(self, completion):
+        if self.mode == DICTKEYS and _find_first_quote(completion) >= 0:
+            return completion + ']'
+        return completion
 
     def _selection_changed(self):
         """Call when the selection of the Listbox has changed.
@@ -158,7 +182,40 @@ class AutoCompleteWindow:
                 self.listbox.select_set(self._binary_search(self.start))
                 self._selection_changed()
 
-    def show_window(self, comp_lists, index, complete, mode, userWantsWin):
+    @classmethod
+    def _quote_closes_literal(cls, start, quotechar):
+        """Check whether the typed quote character closes an str literal.
+
+        Note that start doesn't include the typed character.
+        """
+        quote_index = _find_first_quote(start)
+        if not (quote_index >= 0 and start[quote_index] == quotechar):
+            return False
+
+        # Recognize triple-quote literals.
+        if start[quote_index:quote_index + 3] == quotechar * 3:
+            # The start string must end with two such quotes.
+            if start[-2:] != quotechar * 2:
+                return False
+            quote = quotechar * 3
+        else:
+            quote = quotechar
+
+        # The start string must be long enough.
+        if len(start) - quote_index < len(quote) * 2 - 1:
+            return False
+
+        # If there was an odd number of back-slashes just before
+        # the closing quote(s), then the quote hasn't been closed.
+        i = len(start) - (len(quote) - 1)
+        while (
+                i >= quote_index + len(quote) + 2 and
+                start[i - 2:i] == '\\\\'
+        ):
+            i -= 2
+        return start[i - 1] != '\\'
+
+    def show_window(self, comp_lists, index, complete, mode):
         """Show the autocomplete list, bind events.
 
         If complete is True, complete the text, and if there is exactly
@@ -170,16 +227,11 @@ class AutoCompleteWindow:
         self.startindex = self.widget.index(index)
         self.start = self.widget.get(self.startindex, "insert")
         if complete:
-            completed = self._complete_string(self.start)
+            completion, n_possible = self._complete_string(self.start)
             start = self.start
-            self._change_start(completed)
-            i = self._binary_search(completed)
-            if self.completions[i] == completed and \
-               (i == len(self.completions)-1 or
-                self.completions[i+1][:len(completed)] != completed):
-                # There is exactly one matching completion
-                return completed == start
-        self.userwantswindow = userWantsWin
+            if n_possible == 1:
+                self._change_start(self._finalize_completion(completion))
+                return completion == start
         self.lasttypedstart = self.start
 
         # Put widgets in place
@@ -295,17 +347,20 @@ class AutoCompleteWindow:
             elif event.type == EventType.ButtonPress:
                 # ButtonPress event only bind to self.widget
                 self.hide_window()
+            elif event.type == EventType.KeyPress and event.keysym == 'Escape':
+                self.hide_window()
+                return "break"
 
     def listselect_event(self, event):
         if self.is_active():
-            self.userwantswindow = True
             cursel = int(self.listbox.curselection()[0])
             self._change_start(self.completions[cursel])
 
     def doubleclick_event(self, event):
         # Put the selected completion in the text, and close the list
         cursel = int(self.listbox.curselection()[0])
-        self._change_start(self.completions[cursel])
+        completion = self.completions[cursel]
+        self._change_start(self._finalize_completion(completion))
         self.hide_window()
 
     def keypress_event(self, event):
@@ -352,22 +407,70 @@ class AutoCompleteWindow:
               ("period", "space", "parenleft", "parenright", "bracketleft",
                "bracketright")) or \
              (self.mode == FILES and keysym in
-              ("slash", "backslash", "quotedbl", "apostrophe")) \
+              ("slash", "backslash", "quotedbl",
+               "quoteright", "apostrophe")) \
              and not (state & ~MC_SHIFT):
             # If start is a prefix of the selection, but is not '' when
             # completing file names, put the whole
             # selected completion. Anyway, close the list.
             cursel = int(self.listbox.curselection()[0])
-            if self.completions[cursel][:len(self.start)] == self.start \
-               and (self.mode == ATTRS or self.start):
-                self._change_start(self.completions[cursel])
+            completion = self.completions[cursel]
+            if (
+                    completion.startswith(self.start) and
+                    not (self.mode == FILES and not self.start)
+            ):
+                self._change_start(completion)
             self.hide_window()
             return None
+
+        elif (
+                self.mode == DICTKEYS and
+                keysym in (
+                    "quotedbl", "quoteright", "apostrophe", "bracketright"
+                )
+        ):
+            # Close the completion window if completing a dict key and a
+            # str/bytes literal closing quote has been typed.
+            keysym2char = {
+                "quotedbl": '"',
+                "quoteright": "'",
+                "apostrophe": "'",
+                "bracketright": "]",
+            }
+            char = keysym2char[keysym]
+            if char in "'\"":
+                if self._quote_closes_literal(self.start, char):
+                    # We'll let the event through, so the final quote char
+                    # will be added by the Text widget receiving the event.
+                    self.hide_window()
+                    return None
+            elif char == "]":
+                # Close the completion list unless the closing bracket is
+                # typed inside a string literal.
+                has_quote = _find_first_quote(self.start) >= 0
+                if (not has_quote) or self.start in self.completions:
+                    if not has_quote:
+                        cursel = int(self.listbox.curselection()[0])
+                        completion = self.completions[cursel]
+                        if completion.startswith(self.start):
+                            self._change_start(completion)
+
+                    # We'll let the event through, so the closing bracket char
+                    # will be added by the Text widget receiving the event.
+                    self.hide_window()
+                    return None
+
+            # This is normal editing of text.
+            self._change_start(self.start + char)
+            self.lasttypedstart = self.start
+            self.listbox.select_clear(0, int(self.listbox.curselection()[0]))
+            self.listbox.select_set(self._binary_search(self.start))
+            self._selection_changed()
+            return "break"
 
         elif keysym in ("Home", "End", "Prior", "Next", "Up", "Down") and \
              not state:
             # Move the selection in the listbox
-            self.userwantswindow = True
             cursel = int(self.listbox.curselection()[0])
             if keysym == "Home":
                 newsel = 0
@@ -396,12 +499,12 @@ class AutoCompleteWindow:
             if self.lastkey_was_tab:
                 # two tabs in a row; insert current selection and close acw
                 cursel = int(self.listbox.curselection()[0])
-                self._change_start(self.completions[cursel])
+                completion = self.completions[cursel]
+                self._change_start(self._finalize_completion(completion))
                 self.hide_window()
                 return "break"
             else:
                 # first tab; let AutoComplete handle the completion
-                self.userwantswindow = True
                 self.lastkey_was_tab = True
                 return None
 
@@ -436,7 +539,10 @@ class AutoCompleteWindow:
         return self.autocompletewindow is not None
 
     def complete(self):
-        self._change_start(self._complete_string(self.start))
+        completion, n_possible = self._complete_string(self.start)
+        if n_possible == 1:
+            completion = self._finalize_completion(completion)
+        self._change_start(completion)
         # The selection doesn't change.
 
     def hide_window(self):

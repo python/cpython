@@ -475,10 +475,10 @@ Completions
 ^^^^^^^^^^^
 
 Completions are supplied, when requested and available, for module
-names, attributes of classes or functions, or filenames.  Each request
-method displays a completion box with existing names.  (See tab
-completions below for an exception.) For any box, change the name
-being completed and the item highlighted in the box by
+names, attributes of classes or functions, dict keys or filenames.
+Each request method displays a completion box with existing names.
+(See tab completions below for an exception.) For any box, change
+the name being completed and the item highlighted in the box by
 typing and deleting characters; by hitting :kbd:`Up`, :kbd:`Down`,
 :kbd:`PageUp`, :kbd:`PageDown`, :kbd:`Home`, and :kbd:`End` keys;
 and by a single click within the box.  Close the box with :kbd:`Escape`,
@@ -489,8 +489,8 @@ One way to open a box is to type a key character and wait for a
 predefined interval.  This defaults to 2 seconds; customize it
 in the settings dialog.  (To prevent auto popups, set the delay to a
 large number of milliseconds, such as 100000000.) For imported module
-names or class or function attributes, type '.'.
-For filenames in the root directory, type :data:`os.sep` or
+names or class or function attributes, type '.'.  For dict keys, type
+'['.  For filenames in the root directory, type :data:`os.sep` or
 :data:`os.altsep` immediately after an opening quote.  (On Windows,
 one can specify a drive first.)  Move into subdirectories by typing a
 directory name and a separator.
