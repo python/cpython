@@ -2,7 +2,7 @@
 /* Module object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 static Py_ssize_t max_module_number;
@@ -590,13 +590,15 @@ _PyModule_ClearDict(PyObject *d)
     Py_ssize_t pos;
     PyObject *key, *value;
 
+    int verbose = _PyInterpreterState_GET_UNSAFE()->config.verbose;
+
     /* First, clear only names starting with a single underscore */
     pos = 0;
     while (PyDict_Next(d, &pos, &key, &value)) {
         if (value != Py_None && PyUnicode_Check(key)) {
             if (PyUnicode_READ_CHAR(key, 0) == '_' &&
                 PyUnicode_READ_CHAR(key, 1) != '_') {
-                if (Py_VerboseFlag > 1) {
+                if (verbose > 1) {
                     const char *s = PyUnicode_AsUTF8(key);
                     if (s != NULL)
                         PySys_WriteStderr("#   clear[1] %s\n", s);
@@ -617,7 +619,7 @@ _PyModule_ClearDict(PyObject *d)
             if (PyUnicode_READ_CHAR(key, 0) != '_' ||
                 !_PyUnicode_EqualToASCIIString(key, "__builtins__"))
             {
-                if (Py_VerboseFlag > 1) {
+                if (verbose > 1) {
                     const char *s = PyUnicode_AsUTF8(key);
                     if (s != NULL)
                         PySys_WriteStderr("#   clear[2] %s\n", s);
@@ -675,8 +677,10 @@ module___init___impl(PyModuleObject *self, PyObject *name, PyObject *doc)
 static void
 module_dealloc(PyModuleObject *m)
 {
+    int verbose = _PyInterpreterState_GET_UNSAFE()->config.verbose;
+
     PyObject_GC_UnTrack(m);
-    if (Py_VerboseFlag && m->md_name) {
+    if (verbose && m->md_name) {
         PySys_FormatStderr("# destroy %S\n", m->md_name);
     }
     if (m->md_weaklist != NULL)
@@ -698,6 +702,27 @@ module_repr(PyModuleObject *m)
     return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
 }
 
+/* Check if the "_initializing" attribute of the module spec is set to true.
+   Clear the exception and return 0 if spec is NULL.
+ */
+int
+_PyModuleSpec_IsInitializing(PyObject *spec)
+{
+    if (spec != NULL) {
+        _Py_IDENTIFIER(_initializing);
+        PyObject *value = _PyObject_GetAttrId(spec, &PyId__initializing);
+        if (value != NULL) {
+            int initializing = PyObject_IsTrue(value);
+            Py_DECREF(value);
+            if (initializing >= 0) {
+                return initializing;
+            }
+        }
+    }
+    PyErr_Clear();
+    return 0;
+}
+
 static PyObject*
 module_getattro(PyModuleObject *m, PyObject *name)
 {
@@ -711,14 +736,29 @@ module_getattro(PyModuleObject *m, PyObject *name)
         _Py_IDENTIFIER(__getattr__);
         getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
         if (getattr) {
-            PyObject* stack[1] = {name};
-            return _PyObject_FastCall(getattr, stack, 1);
+            return _PyObject_CallOneArg(getattr, name);
         }
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
-            PyErr_Format(PyExc_AttributeError,
-                        "module '%U' has no attribute '%U'", mod_name, name);
+            _Py_IDENTIFIER(__spec__);
+            Py_INCREF(mod_name);
+            PyObject *spec = _PyDict_GetItemId(m->md_dict, &PyId___spec__);
+            Py_XINCREF(spec);
+            if (_PyModuleSpec_IsInitializing(spec)) {
+                PyErr_Format(PyExc_AttributeError,
+                             "partially initialized "
+                             "module '%U' has no attribute '%U' "
+                             "(most likely due to a circular import)",
+                             mod_name, name);
+            }
+            else {
+                PyErr_Format(PyExc_AttributeError,
+                             "module '%U' has no attribute '%U'",
+                             mod_name, name);
+            }
+            Py_XDECREF(spec);
+            Py_DECREF(mod_name);
             return NULL;
         }
     }
@@ -755,16 +795,17 @@ static PyObject *
 module_dir(PyObject *self, PyObject *args)
 {
     _Py_IDENTIFIER(__dict__);
+    _Py_IDENTIFIER(__dir__);
     PyObject *result = NULL;
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
 
     if (dict != NULL) {
         if (PyDict_Check(dict)) {
-            PyObject *dirfunc = PyDict_GetItemString(dict, "__dir__");
+            PyObject *dirfunc = _PyDict_GetItemIdWithError(dict, &PyId___dir__);
             if (dirfunc) {
                 result = _PyObject_CallNoArg(dirfunc);
             }
-            else {
+            else if (!PyErr_Occurred()) {
                 result = PyDict_Keys(dict);
             }
         }
@@ -793,10 +834,10 @@ PyTypeObject PyModule_Type = {
     sizeof(PyModuleObject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)module_dealloc,                 /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)module_repr,                      /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

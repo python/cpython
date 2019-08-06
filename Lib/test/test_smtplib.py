@@ -19,7 +19,7 @@ import threading
 
 import unittest
 from test import support, mock_socket
-from test.support import HOST, HOSTv4, HOSTv6
+from test.support import HOST
 from test.support import threading_setup, threading_cleanup, join_thread
 from unittest.mock import Mock
 
@@ -805,7 +805,7 @@ class SimSMTPChannel(smtpd.SMTPChannel):
             try:
                 user, hashed_pass = logpass.split()
             except ValueError as e:
-                self.push('535 Splitting response {!r} into user and password'
+                self.push('535 Splitting response {!r} into user and password '
                           'failed: {}'.format(logpass, e))
                 return False
             valid_hashed_pass = hmac.HMAC(

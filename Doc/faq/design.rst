@@ -24,14 +24,16 @@ programmers will encounter a fragment of code like this::
    z++;
 
 Only the ``x++`` statement is executed if the condition is true, but the
-indentation leads you to believe otherwise.  Even experienced C programmers will
-sometimes stare at it a long time wondering why ``y`` is being decremented even
+indentation leads many to believe otherwise.  Even experienced C programmers will
+sometimes stare at it a long time wondering as to why ``y`` is being decremented even
 for ``x > y``.
 
 Because there are no begin/end brackets, Python is much less prone to
 coding-style conflicts.  In C there are many different ways to place the braces.
-If you're used to reading and writing code that uses one style, you will feel at
-least slightly uneasy when reading (or being required to write) another style.
+After becoming used to reading and writing code using a particular style,
+it is normal to feel somewhat uneasy when reading (or being required to write)
+in a different one.
+
 
 Many coding styles place begin/end brackets on a line by themselves.  This makes
 programs considerably longer and wastes valuable screen space, making it harder
@@ -528,7 +530,7 @@ Some unacceptable solutions that have been proposed:
      mydict = {[1, 2]: '12'}
      print(mydict[[1, 2]])
 
-  would raise a KeyError exception because the id of the ``[1, 2]`` used in the
+  would raise a :exc:`KeyError` exception because the id of the ``[1, 2]`` used in the
   second line differs from that in the first line.  In other words, dictionary
   keys should be compared using ``==``, not using :keyword:`is`.
 
@@ -639,11 +641,11 @@ to the end of some internal list; an interface specification cannot test that
 your :meth:`append` implementation will actually do this correctly, but it's
 trivial to check this property in a test suite.
 
-Writing test suites is very helpful, and you might want to design your code with
-an eye to making it easily tested.  One increasingly popular technique,
-test-directed development, calls for writing parts of the test suite first,
-before you write any of the actual code.  Of course Python allows you to be
-sloppy and not write test cases at all.
+Writing test suites is very helpful, and you might want to design your code to
+make it easily tested. One increasingly popular technique, test-driven
+development, calls for writing parts of the test suite first, before you write
+any of the actual code.  Of course Python allows you to be sloppy and not write
+test cases at all.
 
 
 Why is there no goto?

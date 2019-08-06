@@ -70,7 +70,7 @@ The module defines the following exception and functions:
    size required by the format, as reflected by :func:`calcsize`.
 
 
-.. function:: unpack_from(format, buffer, offset=0)
+.. function:: unpack_from(format, /, buffer, offset=0)
 
    Unpack from *buffer* starting at position *offset*, according to the format
    string *format*.  The result is a tuple even if it contains exactly one
@@ -116,6 +116,13 @@ Byte Order, Size, and Alignment
 By default, C types are represented in the machine's native format and byte
 order, and properly aligned by skipping pad bytes if necessary (according to the
 rules used by the C compiler).
+
+.. index::
+   single: @ (at); in struct format strings
+   single: = (equals); in struct format strings
+   single: < (less); in struct format strings
+   single: > (greater); in struct format strings
+   single: ! (exclamation); in struct format strings
 
 Alternatively, the first character of the format string can be used to indicate
 the byte order, size and alignment of the packed data, according to the
@@ -240,6 +247,8 @@ platform-dependent.
 Notes:
 
 (1)
+   .. index:: single: ? (question mark); in struct format strings
+
    The ``'?'`` conversion code corresponds to the :c:type:`_Bool` type defined by
    C99. If this type is not available, it is simulated using a :c:type:`char`. In
    standard mode, it is always represented by one byte.
@@ -321,6 +330,8 @@ smaller.  The bytes of the string follow.  If the string passed in to
 are used.  Note that for :func:`unpack`, the ``'p'`` format character consumes
 ``count`` bytes, but that the string returned can never contain more than 255
 bytes.
+
+.. index:: single: ? (question mark); in struct format strings
 
 For the ``'?'`` format character, the return value is either :const:`True` or
 :const:`False`. When packing, the truth value of the argument object is used.

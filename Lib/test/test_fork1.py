@@ -10,8 +10,7 @@ import time
 import unittest
 
 from test.fork_wait import ForkWait
-from test.support import (reap_children, get_attribute,
-                          import_module, verbose)
+from test.support import reap_children, get_attribute, verbose
 
 
 # Skip test if fork does not exist.

@@ -1,8 +1,21 @@
 #ifndef Py_FILEUTILS_H
 #define Py_FILEUTILS_H
-
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
+    const char *arg,
+    size_t *size);
+
+PyAPI_FUNC(char*) Py_EncodeLocale(
+    const wchar_t *text,
+    size_t *error_pos);
+
+PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
+    const wchar_t *text,
+    size_t *error_pos);
 #endif
 
 
@@ -20,47 +33,7 @@ typedef enum {
 } _Py_error_handler;
 
 PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);
-#endif
 
-
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
-PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
-    const char *arg,
-    size_t *size);
-
-PyAPI_FUNC(char*) Py_EncodeLocale(
-    const wchar_t *text,
-    size_t *error_pos);
-
-PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
-    const wchar_t *text,
-    size_t *error_pos);
-#endif
-
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
-    const char *arg,
-    Py_ssize_t arglen,
-    wchar_t **wstr,
-    size_t *wlen,
-    const char **reason,
-    _Py_error_handler errors);
-
-PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
-    const wchar_t *text,
-    char **str,
-    size_t *error_pos,
-    const char **reason,
-    int raw_malloc,
-    _Py_error_handler errors);
-
-PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
-    const char *arg,
-    Py_ssize_t arglen);
-#endif
-
-
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
 PyAPI_FUNC(int) _Py_DecodeLocaleEx(
     const char *arg,
     wchar_t **wstr,
@@ -167,19 +140,31 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(
 PyAPI_FUNC(int) _Py_wreadlink(
     const wchar_t *path,
     wchar_t *buf,
-    size_t bufsiz);
+    /* Number of characters of 'buf' buffer
+       including the trailing NUL character */
+    size_t buflen);
 #endif
 
 #ifdef HAVE_REALPATH
 PyAPI_FUNC(wchar_t*) _Py_wrealpath(
     const wchar_t *path,
     wchar_t *resolved_path,
-    size_t resolved_path_size);
+    /* Number of characters of 'resolved_path' buffer
+       including the trailing NUL character */
+    size_t resolved_path_len);
 #endif
+
+#ifndef MS_WINDOWS
+PyAPI_FUNC(int) _Py_isabs(const wchar_t *path);
+#endif
+
+PyAPI_FUNC(int) _Py_abspath(const wchar_t *path, wchar_t **abspath_p);
 
 PyAPI_FUNC(wchar_t*) _Py_wgetcwd(
     wchar_t *buf,
-    size_t size);
+    /* Number of characters of 'buf' buffer
+       including the trailing NUL character */
+    size_t buflen);
 
 PyAPI_FUNC(int) _Py_get_inheritable(int fd);
 
@@ -197,20 +182,9 @@ PyAPI_FUNC(int) _Py_get_blocking(int fd);
 PyAPI_FUNC(int) _Py_set_blocking(int fd, int blocking);
 #endif   /* !MS_WINDOWS */
 
-PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
-    PyObject **decimal_point,
-    PyObject **thousands_sep,
-    const char **grouping);
-
 #endif   /* Py_LIMITED_API */
-
-
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(int) _Py_GetForceASCII(void);
-#endif
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif /* !Py_FILEUTILS_H */

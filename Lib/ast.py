@@ -27,12 +27,25 @@
 from _ast import *
 
 
-def parse(source, filename='<unknown>', mode='exec'):
+def parse(source, filename='<unknown>', mode='exec', *,
+          type_comments=False, feature_version=None):
     """
     Parse the source into an AST node.
     Equivalent to compile(source, filename, mode, PyCF_ONLY_AST).
+    Pass type_comments=True to get back type comments where the syntax allows.
     """
-    return compile(source, filename, mode, PyCF_ONLY_AST)
+    flags = PyCF_ONLY_AST
+    if type_comments:
+        flags |= PyCF_TYPE_COMMENTS
+    if isinstance(feature_version, tuple):
+        major, minor = feature_version  # Should be a 2-tuple.
+        assert major == 3
+        feature_version = minor
+    elif feature_version is None:
+        feature_version = -1
+    # Else it should be an int giving the minor version for 3.x.
+    return compile(source, filename, mode, flags,
+                   _feature_version=feature_version)
 
 
 def literal_eval(node_or_string):
@@ -115,10 +128,10 @@ def dump(node, annotate_fields=True, include_attributes=False):
 
 def copy_location(new_node, old_node):
     """
-    Copy source location (`lineno` and `col_offset` attributes) from
-    *old_node* to *new_node* if possible, and return *new_node*.
+    Copy source location (`lineno`, `col_offset`, `end_lineno`, and `end_col_offset`
+    attributes) from *old_node* to *new_node* if possible, and return *new_node*.
     """
-    for attr in 'lineno', 'col_offset':
+    for attr in 'lineno', 'col_offset', 'end_lineno', 'end_col_offset':
         if attr in old_node._attributes and attr in new_node._attributes \
            and hasattr(old_node, attr):
             setattr(new_node, attr, getattr(old_node, attr))
@@ -133,31 +146,44 @@ def fix_missing_locations(node):
     recursively where not already set, by setting them to the values of the
     parent node.  It works recursively starting at *node*.
     """
-    def _fix(node, lineno, col_offset):
+    def _fix(node, lineno, col_offset, end_lineno, end_col_offset):
         if 'lineno' in node._attributes:
             if not hasattr(node, 'lineno'):
                 node.lineno = lineno
             else:
                 lineno = node.lineno
+        if 'end_lineno' in node._attributes:
+            if not hasattr(node, 'end_lineno'):
+                node.end_lineno = end_lineno
+            else:
+                end_lineno = node.end_lineno
         if 'col_offset' in node._attributes:
             if not hasattr(node, 'col_offset'):
                 node.col_offset = col_offset
             else:
                 col_offset = node.col_offset
+        if 'end_col_offset' in node._attributes:
+            if not hasattr(node, 'end_col_offset'):
+                node.end_col_offset = end_col_offset
+            else:
+                end_col_offset = node.end_col_offset
         for child in iter_child_nodes(node):
-            _fix(child, lineno, col_offset)
-    _fix(node, 1, 0)
+            _fix(child, lineno, col_offset, end_lineno, end_col_offset)
+    _fix(node, 1, 0, 1, 0)
     return node
 
 
 def increment_lineno(node, n=1):
     """
-    Increment the line number of each node in the tree starting at *node* by *n*.
-    This is useful to "move code" to a different location in a file.
+    Increment the line number and end line number of each node in the tree
+    starting at *node* by *n*. This is useful to "move code" to a different
+    location in a file.
     """
     for child in walk(node):
         if 'lineno' in child._attributes:
             child.lineno = getattr(child, 'lineno', 0) + n
+        if 'end_lineno' in child._attributes:
+            child.end_lineno = getattr(child, 'end_lineno', 0) + n
     return node
 
 
@@ -211,6 +237,77 @@ def get_docstring(node, clean=True):
         import inspect
         text = inspect.cleandoc(text)
     return text
+
+
+def _splitlines_no_ff(source):
+    """Split a string into lines ignoring form feed and other chars.
+
+    This mimics how the Python parser splits source code.
+    """
+    idx = 0
+    lines = []
+    next_line = ''
+    while idx < len(source):
+        c = source[idx]
+        next_line += c
+        idx += 1
+        # Keep \r\n together
+        if c == '\r' and idx < len(source) and source[idx] == '\n':
+            next_line += '\n'
+            idx += 1
+        if c in '\r\n':
+            lines.append(next_line)
+            next_line = ''
+
+    if next_line:
+        lines.append(next_line)
+    return lines
+
+
+def _pad_whitespace(source):
+    """Replace all chars except '\f\t' in a line with spaces."""
+    result = ''
+    for c in source:
+        if c in '\f\t':
+            result += c
+        else:
+            result += ' '
+    return result
+
+
+def get_source_segment(source, node, *, padded=False):
+    """Get source code segment of the *source* that generated *node*.
+
+    If some location information (`lineno`, `end_lineno`, `col_offset`,
+    or `end_col_offset`) is missing, return None.
+
+    If *padded* is `True`, the first line of a multi-line statement will
+    be padded with spaces to match its original position.
+    """
+    try:
+        lineno = node.lineno - 1
+        end_lineno = node.end_lineno - 1
+        col_offset = node.col_offset
+        end_col_offset = node.end_col_offset
+    except AttributeError:
+        return None
+
+    lines = _splitlines_no_ff(source)
+    if end_lineno == lineno:
+        return lines[lineno].encode()[col_offset:end_col_offset].decode()
+
+    if padded:
+        padding = _pad_whitespace(lines[lineno].encode()[:col_offset].decode())
+    else:
+        padding = ''
+
+    first = padding + lines[lineno].encode()[col_offset:].decode()
+    last = lines[end_lineno].encode()[:end_col_offset].decode()
+    lines = lines[lineno+1:end_lineno]
+
+    lines.insert(0, first)
+    lines.append(last)
+    return ''.join(lines)
 
 
 def walk(node):
@@ -346,7 +443,10 @@ class _ABC(type):
             except AttributeError:
                 return False
             else:
-                return type(value) in _const_types[cls]
+                return (
+                    isinstance(value, _const_types[cls]) and
+                    not isinstance(value, _const_types_not.get(cls, ()))
+                )
         return type.__instancecheck__(cls, inst)
 
 def _new(cls, *args, **kwargs):
@@ -383,4 +483,7 @@ _const_types = {
     Bytes: (bytes,),
     NameConstant: (type(None), bool),
     Ellipsis: (type(...),),
+}
+_const_types_not = {
+    Num: (bool,),
 }

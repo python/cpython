@@ -1,3 +1,13 @@
+#ifndef Py_BUILD_CORE_MODULE
+#  define Py_BUILD_CORE_MODULE
+#endif
+
+/* Always enable assertion (even in release mode) */
+#undef NDEBUG
+
+#include <Python.h>
+#include "pycore_initconfig.h"   /* _PyConfig_InitCompatConfig() */
+#include "pycore_pystate.h"      /* _PyRuntime */
 #include <Python.h>
 #include "pythread.h"
 #include <inttypes.h>
@@ -139,6 +149,9 @@ static int test_forced_io_encoding(void)
 
 static int test_pre_initialization_api(void)
 {
+    /* the test doesn't support custom memory allocators */
+    putenv("PYTHONMALLOC=");
+
     /* Leading "./" ensures getpath.c can still find the standard library */
     _Py_EMBED_PREINIT_CHECK("Checking Py_DecodeLocale\n");
     wchar_t *program = Py_DecodeLocale("./spam", NULL);
@@ -235,6 +248,9 @@ static void bpo20891_thread(void *lockp)
 
 static int test_bpo20891(void)
 {
+    /* the test doesn't support custom memory allocators */
+    putenv("PYTHONMALLOC=");
+
     /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
        calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
        call PyEval_InitThreads() for us in this case. */
@@ -279,7 +295,9 @@ static int test_initialize_twice(void)
 static int test_initialize_pymain(void)
 {
     wchar_t *argv[] = {L"PYTHON", L"-c",
-                       L"import sys; print(f'Py_Main() after Py_Initialize: sys.argv={sys.argv}')",
+                       (L"import sys; "
+                        L"print(f'Py_Main() after Py_Initialize: "
+                        L"sys.argv={sys.argv}')"),
                        L"arg2"};
     _testembed_Py_Initialize();
 
@@ -295,108 +313,106 @@ static int test_initialize_pymain(void)
 static void
 dump_config(void)
 {
-#define ASSERT_EQUAL(a, b) \
-    if ((a) != (b)) { \
-        printf("ERROR: %s != %s (%i != %i)\n", #a, #b, (a), (b)); \
-        exit(1); \
-    }
-#define ASSERT_STR_EQUAL(a, b) \
-    if ((a) == NULL || (b == NULL) || wcscmp((a), (b)) != 0) { \
-        printf("ERROR: %s != %s ('%ls' != '%ls')\n", #a, #b, (a), (b)); \
-        exit(1); \
-    }
-
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    _PyCoreConfig *config = &interp->core_config;
-
-    printf("install_signal_handlers = %i\n", config->install_signal_handlers);
-
-    printf("use_environment = %i\n", config->use_environment);
-    ASSERT_EQUAL(config->use_environment, !Py_IgnoreEnvironmentFlag);
-
-    printf("use_hash_seed = %i\n", config->use_hash_seed);
-    printf("hash_seed = %lu\n", config->hash_seed);
-
-    printf("allocator = %s\n", config->allocator);
-
-    printf("dev_mode = %i\n", config->dev_mode);
-    printf("faulthandler = %i\n", config->faulthandler);
-    printf("tracemalloc = %i\n", config->tracemalloc);
-    printf("import_time = %i\n", config->import_time);
-    printf("show_ref_count = %i\n", config->show_ref_count);
-    printf("show_alloc_count = %i\n", config->show_alloc_count);
-    printf("dump_refs = %i\n", config->dump_refs);
-    printf("malloc_stats = %i\n", config->malloc_stats);
-
-    printf("filesystem_encoding = %s\n", config->filesystem_encoding);
-    printf("filesystem_errors = %s\n", config->filesystem_errors);
-    printf("coerce_c_locale = %i\n", config->coerce_c_locale);
-    printf("coerce_c_locale_warn = %i\n", config->coerce_c_locale_warn);
-    printf("utf8_mode = %i\n", config->utf8_mode);
-
-    printf("pycache_prefix = %ls\n", config->pycache_prefix);
-    printf("program_name = %ls\n", config->program_name);
-    ASSERT_STR_EQUAL(config->program_name, Py_GetProgramName());
-
-    printf("argc = %i\n", config->argc);
-    printf("argv = [");
-    for (int i=0; i < config->argc; i++) {
-        if (i) {
-            printf(", ");
-        }
-        printf("\"%ls\"", config->argv[i]);
-    }
-    printf("]\n");
-
-    printf("program = %ls\n", config->program);
-    /* FIXME: test xoptions */
-    /* FIXME: test warnoptions */
-    /* FIXME: test module_search_path_env */
-    /* FIXME: test home */
-    /* FIXME: test module_search_paths */
-    /* FIXME: test executable */
-    /* FIXME: test prefix */
-    /* FIXME: test base_prefix */
-    /* FIXME: test exec_prefix */
-    /* FIXME: test base_exec_prefix */
-    /* FIXME: test dll_path */
-
-    printf("isolated = %i\n", config->isolated);
-    ASSERT_EQUAL(config->isolated, Py_IsolatedFlag);
-    printf("site_import = %i\n", config->site_import);
-    printf("bytes_warning = %i\n", config->bytes_warning);
-    printf("inspect = %i\n", config->inspect);
-    printf("interactive = %i\n", config->interactive);
-    printf("optimization_level = %i\n", config->optimization_level);
-    printf("parser_debug = %i\n", config->parser_debug);
-    printf("write_bytecode = %i\n", config->write_bytecode);
-    printf("verbose = %i\n", config->verbose);
-    ASSERT_EQUAL(config->verbose, Py_VerboseFlag);
-    printf("quiet = %i\n", config->quiet);
-    printf("user_site_directory = %i\n", config->user_site_directory);
-    printf("buffered_stdio = %i\n", config->buffered_stdio);
-    ASSERT_EQUAL(config->buffered_stdio, !Py_UnbufferedStdioFlag);
-    printf("stdio_encoding = %s\n", config->stdio_encoding);
-    printf("stdio_errors = %s\n", config->stdio_errors);
-
-    /* FIXME: test legacy_windows_fs_encoding */
-    /* FIXME: test legacy_windows_stdio */
-
-    printf("_install_importlib = %i\n", config->_install_importlib);
-    printf("_check_hash_pycs_mode = %s\n", config->_check_hash_pycs_mode);
-    printf("_frozen = %i\n", config->_frozen);
-
-#undef ASSERT_EQUAL
-#undef ASSERT_STR_EQUAL
+    (void) PyRun_SimpleStringFlags(
+        "import _testinternalcapi, json; "
+        "print(json.dumps(_testinternalcapi.get_configs()))",
+        0);
 }
 
 
-static int test_init_default_config(void)
+static int test_init_initialize_config(void)
 {
     _testembed_Py_Initialize();
     dump_config();
     Py_Finalize();
     return 0;
+}
+
+
+static void config_set_string(PyConfig *config, wchar_t **config_str, const wchar_t *str)
+{
+    PyStatus status = PyConfig_SetString(config, config_str, str);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(config);
+        Py_ExitStatusException(status);
+    }
+}
+
+
+static void config_set_argv(PyConfig *config, Py_ssize_t argc, wchar_t * const *argv)
+{
+    PyStatus status = PyConfig_SetArgv(config, argc, argv);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(config);
+        Py_ExitStatusException(status);
+    }
+}
+
+
+static void
+config_set_wide_string_list(PyConfig *config, PyWideStringList *list,
+                            Py_ssize_t length, wchar_t **items)
+{
+    PyStatus status = PyConfig_SetWideStringList(config, list, length, items);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(config);
+        Py_ExitStatusException(status);
+    }
+}
+
+
+static void config_set_program_name(PyConfig *config)
+{
+    /* Use path starting with "./" avoids a search along the PATH */
+    const wchar_t *program_name = L"./_testembed";
+    config_set_string(config, &config->program_name, program_name);
+}
+
+
+static void init_from_config_clear(PyConfig *config)
+{
+    PyStatus status = Py_InitializeFromConfig(config);
+    PyConfig_Clear(config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+}
+
+
+static int check_init_compat_config(int preinit)
+{
+    PyStatus status;
+
+    if (preinit) {
+        PyPreConfig preconfig;
+        _PyPreConfig_InitCompatConfig(&preconfig);
+
+        status = Py_PreInitialize(&preconfig);
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
+    }
+
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_preinit_compat_config(void)
+{
+    return check_init_compat_config(1);
+}
+
+
+static int test_init_compat_config(void)
+{
+    return check_init_compat_config(0);
 }
 
 
@@ -451,8 +467,25 @@ static int test_init_global_config(void)
 
 static int test_init_from_config(void)
 {
-    /* Test _Py_InitializeFromConfig() */
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    PyStatus status;
+
+    PyPreConfig preconfig;
+    _PyPreConfig_InitCompatConfig(&preconfig);
+
+    putenv("PYTHONMALLOC=malloc_debug");
+    preconfig.allocator = PYMEM_ALLOCATOR_MALLOC;
+
+    putenv("PYTHONUTF8=0");
+    Py_UTF8Mode = 0;
+    preconfig.utf8_mode = 1;
+
+    status = Py_PreInitialize(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
     config.install_signal_handlers = 0;
 
     /* FIXME: test use_environment */
@@ -460,9 +493,6 @@ static int test_init_from_config(void)
     putenv("PYTHONHASHSEED=42");
     config.use_hash_seed = 1;
     config.hash_seed = 123;
-
-    putenv("PYTHONMALLOC=malloc");
-    config.allocator = "malloc_debug";
 
     /* dev_mode=1 is tested in test_init_dev_mode() */
 
@@ -482,23 +512,40 @@ static int test_init_from_config(void)
     putenv("PYTHONMALLOCSTATS=0");
     config.malloc_stats = 1;
 
-    /* FIXME: test coerce_c_locale and coerce_c_locale_warn */
-
-    putenv("PYTHONUTF8=0");
-    Py_UTF8Mode = 0;
-    config.utf8_mode = 1;
-
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
-    config.pycache_prefix = L"conf_pycache_prefix";
+    config_set_string(&config, &config.pycache_prefix, L"conf_pycache_prefix");
 
     Py_SetProgramName(L"./globalvar");
-    config.program_name = L"./conf_program_name";
+    config_set_string(&config, &config.program_name, L"./conf_program_name");
 
-    /* FIXME: test argc/argv */
-    config.program = L"conf_program";
-    /* FIXME: test xoptions */
-    /* FIXME: test warnoptions */
-    /* FIXME: test module_search_path_env */
+    wchar_t* argv[] = {
+        L"python3",
+        L"-W",
+        L"cmdline_warnoption",
+        L"-X",
+        L"cmdline_xoption",
+        L"-c",
+        L"pass",
+        L"arg2",
+    };
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config.parse_argv = 1;
+
+    wchar_t* xoptions[3] = {
+        L"config_xoption1=3",
+        L"config_xoption2=",
+        L"config_xoption3",
+    };
+    config_set_wide_string_list(&config, &config.xoptions,
+                                Py_ARRAY_LENGTH(xoptions), xoptions);
+
+    wchar_t* warnoptions[1] = {
+        L"config_warnoption",
+    };
+    config_set_wide_string_list(&config, &config.warnoptions,
+                                Py_ARRAY_LENGTH(warnoptions), warnoptions);
+
+    /* FIXME: test pythonpath_env */
     /* FIXME: test home */
     /* FIXME: test path config: module_search_path .. dll_path */
 
@@ -532,39 +579,85 @@ static int test_init_from_config(void)
     Py_QuietFlag = 0;
     config.quiet = 1;
 
+    config.configure_c_stdio = 1;
+
     putenv("PYTHONUNBUFFERED=");
     Py_UnbufferedStdioFlag = 0;
     config.buffered_stdio = 0;
 
     putenv("PYTHONIOENCODING=cp424");
     Py_SetStandardStreamEncoding("ascii", "ignore");
-    config.stdio_encoding = "iso8859-1";
-    config.stdio_errors = "replace";
+#ifdef MS_WINDOWS
+    /* Py_SetStandardStreamEncoding() sets Py_LegacyWindowsStdioFlag to 1.
+       Force it to 0 through the config. */
+    config.legacy_windows_stdio = 0;
+#endif
+    config_set_string(&config, &config.stdio_encoding, L"iso8859-1");
+    config_set_string(&config, &config.stdio_errors, L"replace");
 
     putenv("PYTHONNOUSERSITE=");
     Py_NoUserSiteDirectory = 0;
     config.user_site_directory = 0;
 
-    config._check_hash_pycs_mode = "always";
+    config_set_string(&config, &config.check_hash_pycs_mode, L"always");
 
     Py_FrozenFlag = 0;
-    config._frozen = 1;
+    config.pathconfig_warnings = 0;
 
-    _PyInitError err = _Py_InitializeFromConfig(&config);
-    /* Don't call _PyCoreConfig_Clear() since all strings are static */
-    if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
-    }
+    init_from_config_clear(&config);
+
     dump_config();
     Py_Finalize();
     return 0;
 }
 
 
-static void test_init_env_putenvs(void)
+static int check_init_parse_argv(int parse_argv)
+{
+    PyStatus status;
+
+    PyConfig config;
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    config.parse_argv = parse_argv;
+
+    wchar_t* argv[] = {
+        L"./argv0",
+        L"-E",
+        L"-c",
+        L"pass",
+        L"arg1",
+        L"-v",
+        L"arg3",
+    };
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_parse_argv(void)
+{
+    return check_init_parse_argv(1);
+}
+
+
+static int test_init_dont_parse_argv(void)
+{
+    return check_init_parse_argv(0);
+}
+
+
+static void set_most_env_vars(void)
 {
     putenv("PYTHONHASHSEED=42");
-    putenv("PYTHONMALLOC=malloc_debug");
+    putenv("PYTHONMALLOC=malloc");
     putenv("PYTHONTRACEMALLOC=2");
     putenv("PYTHONPROFILEIMPORTTIME=1");
     putenv("PYTHONMALLOCSTATS=1");
@@ -577,23 +670,24 @@ static void test_init_env_putenvs(void)
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     putenv("PYTHONNOUSERSITE=1");
     putenv("PYTHONFAULTHANDLER=1");
-    putenv("PYTHONDEVMODE=1");
     putenv("PYTHONIOENCODING=iso8859-1:replace");
-    /* FIXME: test PYTHONWARNINGS */
-    /* FIXME: test PYTHONEXECUTABLE */
-    /* FIXME: test PYTHONHOME */
-    /* FIXME: test PYTHONDEBUG */
-    /* FIXME: test PYTHONDUMPREFS */
-    /* FIXME: test PYTHONCOERCECLOCALE */
-    /* FIXME: test PYTHONPATH */
 }
 
 
-static int test_init_env(void)
+static void set_all_env_vars(void)
+{
+    set_most_env_vars();
+
+    putenv("PYTHONWARNINGS=EnvVar");
+    putenv("PYTHONPATH=/my/path");
+}
+
+
+static int test_init_compat_env(void)
 {
     /* Test initialization from environment variables */
     Py_IgnoreEnvironmentFlag = 0;
-    test_init_env_putenvs();
+    set_all_env_vars();
     _testembed_Py_Initialize();
     dump_config();
     Py_Finalize();
@@ -601,25 +695,364 @@ static int test_init_env(void)
 }
 
 
-static int test_init_isolated(void)
+static int test_init_python_env(void)
 {
-    /* Test _PyCoreConfig.isolated=1 */
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    PyStatus status;
 
-    /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    config.coerce_c_locale = 0;
-    config.utf8_mode = 0;
-    /* Use path starting with "./" avoids a search along the PATH */
-    config.program_name = L"./_testembed";
+    set_all_env_vars();
+
+    PyConfig config;
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static void set_all_env_vars_dev_mode(void)
+{
+    putenv("PYTHONMALLOC=");
+    putenv("PYTHONFAULTHANDLER=");
+    putenv("PYTHONDEVMODE=1");
+}
+
+
+static int test_init_env_dev_mode(void)
+{
+    /* Test initialization from environment variables */
+    Py_IgnoreEnvironmentFlag = 0;
+    set_all_env_vars_dev_mode();
+    _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_env_dev_mode_alloc(void)
+{
+    /* Test initialization from environment variables */
+    Py_IgnoreEnvironmentFlag = 0;
+    set_all_env_vars_dev_mode();
+    putenv("PYTHONMALLOC=malloc");
+    _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_isolated_flag(void)
+{
+    PyStatus status;
+
+    /* Test PyConfig.isolated=1 */
+    PyConfig config;
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
 
     Py_IsolatedFlag = 0;
     config.isolated = 1;
 
-    test_init_env_putenvs();
-    _PyInitError err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+    config_set_program_name(&config);
+    set_all_env_vars();
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+/* PyPreConfig.isolated=1, PyConfig.isolated=0 */
+static int test_preinit_isolated1(void)
+{
+    PyStatus status;
+
+    PyPreConfig preconfig;
+    _PyPreConfig_InitCompatConfig(&preconfig);
+    preconfig.isolated = 1;
+
+    status = Py_PreInitialize(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
     }
+
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    set_all_env_vars();
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+/* PyPreConfig.isolated=0, PyConfig.isolated=1 */
+static int test_preinit_isolated2(void)
+{
+    PyStatus status;
+
+    PyPreConfig preconfig;
+    _PyPreConfig_InitCompatConfig(&preconfig);
+    preconfig.isolated = 0;
+
+    status = Py_PreInitialize(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    /* Test PyConfig.isolated=1 */
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+
+    Py_IsolatedFlag = 0;
+    config.isolated = 1;
+
+    config_set_program_name(&config);
+    set_all_env_vars();
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_preinit_dont_parse_argv(void)
+{
+    PyStatus status;
+
+    PyPreConfig preconfig;
+    PyPreConfig_InitIsolatedConfig(&preconfig);
+
+    preconfig.isolated = 0;
+
+    /* -X dev must be ignored by isolated preconfiguration */
+    wchar_t *argv[] = {L"python3",
+                       L"-E",
+                       L"-I",
+                       L"-X", L"dev",
+                       L"-X", L"utf8",
+                       L"script.py"};
+    status = Py_PreInitializeFromArgs(&preconfig, Py_ARRAY_LENGTH(argv), argv);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    PyConfig config;
+
+    status = PyConfig_InitIsolatedConfig(&config);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+
+    config.isolated = 0;
+
+    /* Pre-initialize implicitly using argv: make sure that -X dev
+       is used to configure the allocation in preinitialization */
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_preinit_parse_argv(void)
+{
+    PyStatus status;
+    PyConfig config;
+
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+
+    /* Pre-initialize implicitly using argv: make sure that -X dev
+       is used to configure the allocation in preinitialization */
+    wchar_t *argv[] = {L"python3", L"-X", L"dev", L"script.py"};
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+
+
+static void set_all_global_config_variables(void)
+{
+    Py_IsolatedFlag = 0;
+    Py_IgnoreEnvironmentFlag = 0;
+    Py_BytesWarningFlag = 2;
+    Py_InspectFlag = 1;
+    Py_InteractiveFlag = 1;
+    Py_OptimizeFlag = 1;
+    Py_DebugFlag = 1;
+    Py_VerboseFlag = 1;
+    Py_QuietFlag = 1;
+    Py_FrozenFlag = 0;
+    Py_UnbufferedStdioFlag = 1;
+    Py_NoSiteFlag = 1;
+    Py_DontWriteBytecodeFlag = 1;
+    Py_NoUserSiteDirectory = 1;
+#ifdef MS_WINDOWS
+    Py_LegacyWindowsStdioFlag = 1;
+#endif
+}
+
+
+static int check_preinit_isolated_config(int preinit)
+{
+    PyStatus status;
+    PyPreConfig *rt_preconfig;
+
+    /* environment variables must be ignored */
+    set_all_env_vars();
+
+    /* global configuration variables must be ignored */
+    set_all_global_config_variables();
+
+    if (preinit) {
+        PyPreConfig preconfig;
+        PyPreConfig_InitIsolatedConfig(&preconfig);
+
+        status = Py_PreInitialize(&preconfig);
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
+
+        rt_preconfig = &_PyRuntime.preconfig;
+        assert(rt_preconfig->isolated == 1);
+        assert(rt_preconfig->use_environment == 0);
+    }
+
+    PyConfig config;
+    status = PyConfig_InitIsolatedConfig(&config);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+
+    rt_preconfig = &_PyRuntime.preconfig;
+    assert(rt_preconfig->isolated == 1);
+    assert(rt_preconfig->use_environment == 0);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_preinit_isolated_config(void)
+{
+    return check_preinit_isolated_config(1);
+}
+
+
+static int test_init_isolated_config(void)
+{
+    return check_preinit_isolated_config(0);
+}
+
+
+static int check_init_python_config(int preinit)
+{
+    PyStatus status;
+
+    /* global configuration variables must be ignored */
+    set_all_global_config_variables();
+    Py_IsolatedFlag = 1;
+    Py_IgnoreEnvironmentFlag = 1;
+    Py_FrozenFlag = 1;
+    Py_UnbufferedStdioFlag = 1;
+    Py_NoSiteFlag = 1;
+    Py_DontWriteBytecodeFlag = 1;
+    Py_NoUserSiteDirectory = 1;
+#ifdef MS_WINDOWS
+    Py_LegacyWindowsStdioFlag = 1;
+#endif
+
+    if (preinit) {
+        PyPreConfig preconfig;
+        PyPreConfig_InitPythonConfig(&preconfig);
+
+        status = Py_PreInitialize(&preconfig);
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
+    }
+
+    PyConfig config;
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_preinit_python_config(void)
+{
+    return check_init_python_config(1);
+}
+
+
+static int test_init_python_config(void)
+{
+    return check_init_python_config(0);
+}
+
+
+static int test_init_dont_configure_locale(void)
+{
+    PyStatus status;
+
+    PyPreConfig preconfig;
+    PyPreConfig_InitPythonConfig(&preconfig);
+    preconfig.configure_locale = 0;
+    preconfig.coerce_c_locale = 1;
+    preconfig.coerce_c_locale_warn = 1;
+
+    status = Py_PreInitialize(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    PyConfig config;
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+
     dump_config();
     Py_Finalize();
     return 0;
@@ -628,18 +1061,395 @@ static int test_init_isolated(void)
 
 static int test_init_dev_mode(void)
 {
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    PyStatus status;
+    PyConfig config;
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
     putenv("PYTHONFAULTHANDLER=");
     putenv("PYTHONMALLOC=");
     config.dev_mode = 1;
-    config.program_name = L"./_testembed";
-    _PyInitError err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
-    }
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+
     dump_config();
     Py_Finalize();
     return 0;
+}
+
+static PyObject *_open_code_hook(PyObject *path, void *data)
+{
+    if (PyUnicode_CompareWithASCIIString(path, "$$test-filename") == 0) {
+        return PyLong_FromVoidPtr(data);
+    }
+    PyObject *io = PyImport_ImportModule("_io");
+    if (!io) {
+        return NULL;
+    }
+    return PyObject_CallMethod(io, "open", "Os", path, "rb");
+}
+
+static int test_open_code_hook(void)
+{
+    int result = 0;
+
+    /* Provide a hook */
+    result = PyFile_SetOpenCodeHook(_open_code_hook, &result);
+    if (result) {
+        printf("Failed to set hook\n");
+        return 1;
+    }
+    /* A second hook should fail */
+    result = PyFile_SetOpenCodeHook(_open_code_hook, &result);
+    if (!result) {
+        printf("Should have failed to set second hook\n");
+        return 2;
+    }
+
+    Py_IgnoreEnvironmentFlag = 0;
+    _testembed_Py_Initialize();
+    result = 0;
+
+    PyObject *r = PyFile_OpenCode("$$test-filename");
+    if (!r) {
+        PyErr_Print();
+        result = 3;
+    } else {
+        void *cmp = PyLong_AsVoidPtr(r);
+        Py_DECREF(r);
+        if (cmp != &result) {
+            printf("Did not get expected result from hook\n");
+            result = 4;
+        }
+    }
+
+    if (!result) {
+        PyObject *io = PyImport_ImportModule("_io");
+        PyObject *r = io
+            ? PyObject_CallMethod(io, "open_code", "s", "$$test-filename")
+            : NULL;
+        if (!r) {
+            PyErr_Print();
+            result = 5;
+        } else {
+            void *cmp = PyLong_AsVoidPtr(r);
+            Py_DECREF(r);
+            if (cmp != &result) {
+                printf("Did not get expected result from hook\n");
+                result = 6;
+            }
+        }
+        Py_XDECREF(io);
+    }
+
+    Py_Finalize();
+    return result;
+}
+
+static int _audit_hook(const char *event, PyObject *args, void *userdata)
+{
+    if (strcmp(event, "_testembed.raise") == 0) {
+        PyErr_SetString(PyExc_RuntimeError, "Intentional error");
+        return -1;
+    } else if (strcmp(event, "_testembed.set") == 0) {
+        if (!PyArg_ParseTuple(args, "n", userdata)) {
+            return -1;
+        }
+        return 0;
+    }
+    return 0;
+}
+
+static int _test_audit(Py_ssize_t setValue)
+{
+    Py_ssize_t sawSet = 0;
+
+    Py_IgnoreEnvironmentFlag = 0;
+    PySys_AddAuditHook(_audit_hook, &sawSet);
+    _testembed_Py_Initialize();
+
+    if (PySys_Audit("_testembed.raise", NULL) == 0) {
+        printf("No error raised");
+        return 1;
+    }
+    if (PySys_Audit("_testembed.nop", NULL) != 0) {
+        printf("Nop event failed");
+        /* Exception from above may still remain */
+        PyErr_Clear();
+        return 2;
+    }
+    if (!PyErr_Occurred()) {
+        printf("Exception not preserved");
+        return 3;
+    }
+    PyErr_Clear();
+
+    if (PySys_Audit("_testembed.set", "n", setValue) != 0) {
+        PyErr_Print();
+        printf("Set event failed");
+        return 4;
+    }
+
+    if (sawSet != 42) {
+        printf("Failed to see *userData change\n");
+        return 5;
+    }
+    return 0;
+}
+
+static int test_audit(void)
+{
+    int result = _test_audit(42);
+    Py_Finalize();
+    return result;
+}
+
+static volatile int _audit_subinterpreter_interpreter_count = 0;
+
+static int _audit_subinterpreter_hook(const char *event, PyObject *args, void *userdata)
+{
+    printf("%s\n", event);
+    if (strcmp(event, "cpython.PyInterpreterState_New") == 0) {
+        _audit_subinterpreter_interpreter_count += 1;
+    }
+    return 0;
+}
+
+static int test_audit_subinterpreter(void)
+{
+    Py_IgnoreEnvironmentFlag = 0;
+    PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
+    _testembed_Py_Initialize();
+
+    Py_NewInterpreter();
+    Py_NewInterpreter();
+    Py_NewInterpreter();
+
+    Py_Finalize();
+
+    switch (_audit_subinterpreter_interpreter_count) {
+        case 3: return 0;
+        case 0: return -1;
+        default: return _audit_subinterpreter_interpreter_count;
+    }
+}
+
+typedef struct {
+    const char* expected;
+    int exit;
+} AuditRunCommandTest;
+
+static int _audit_hook_run(const char *eventName, PyObject *args, void *userData)
+{
+    AuditRunCommandTest *test = (AuditRunCommandTest*)userData;
+    if (strcmp(eventName, test->expected)) {
+        return 0;
+    }
+
+    if (test->exit) {
+        PyObject *msg = PyUnicode_FromFormat("detected %s(%R)", eventName, args);
+        if (msg) {
+            printf("%s\n", PyUnicode_AsUTF8(msg));
+            Py_DECREF(msg);
+        }
+        exit(test->exit);
+    }
+
+    PyErr_Format(PyExc_RuntimeError, "detected %s(%R)", eventName, args);
+    return -1;
+}
+
+static int test_audit_run_command(void)
+{
+    AuditRunCommandTest test = {"cpython.run_command"};
+    wchar_t *argv[] = {L"./_testembed", L"-c", L"pass"};
+
+    Py_IgnoreEnvironmentFlag = 0;
+    PySys_AddAuditHook(_audit_hook_run, (void*)&test);
+
+    return Py_Main(Py_ARRAY_LENGTH(argv), argv);
+}
+
+static int test_audit_run_file(void)
+{
+    AuditRunCommandTest test = {"cpython.run_file"};
+    wchar_t *argv[] = {L"./_testembed", L"filename.py"};
+
+    Py_IgnoreEnvironmentFlag = 0;
+    PySys_AddAuditHook(_audit_hook_run, (void*)&test);
+
+    return Py_Main(Py_ARRAY_LENGTH(argv), argv);
+}
+
+static int run_audit_run_test(int argc, wchar_t **argv, void *test)
+{
+    PyStatus status;
+    PyConfig config;
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+    config.argv.length = argc;
+    config.argv.items = argv;
+    config.parse_argv = 1;
+    config.program_name = argv[0];
+    config.interactive = 1;
+    config.isolated = 0;
+    config.use_environment = 1;
+    config.quiet = 1;
+
+    PySys_AddAuditHook(_audit_hook_run, test);
+
+    status = Py_InitializeFromConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    return Py_RunMain();
+}
+
+static int test_audit_run_interactivehook(void)
+{
+    AuditRunCommandTest test = {"cpython.run_interactivehook", 10};
+    wchar_t *argv[] = {L"./_testembed"};
+    return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
+}
+
+static int test_audit_run_startup(void)
+{
+    AuditRunCommandTest test = {"cpython.run_startup", 10};
+    wchar_t *argv[] = {L"./_testembed"};
+    return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
+}
+
+static int test_audit_run_stdin(void)
+{
+    AuditRunCommandTest test = {"cpython.run_stdin"};
+    wchar_t *argv[] = {L"./_testembed"};
+    return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
+}
+
+static int test_init_read_set(void)
+{
+    PyStatus status;
+    PyConfig config;
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    status = PyConfig_SetBytesString(&config, &config.program_name,
+                                     "./init_read_set");
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
+    status = PyConfig_Read(&config);
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
+    status = PyWideStringList_Append(&config.module_search_paths,
+                                     L"init_read_set_path");
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
+    /* override executable computed by PyConfig_Read() */
+    config_set_string(&config, &config.executable, L"my_executable");
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+
+fail:
+    Py_ExitStatusException(status);
+}
+
+
+static void configure_init_main(PyConfig *config)
+{
+    wchar_t* argv[] = {
+        L"python3", L"-c",
+        (L"import _testinternalcapi, json; "
+         L"print(json.dumps(_testinternalcapi.get_configs()))"),
+        L"arg2"};
+
+    config->parse_argv = 1;
+
+    config_set_argv(config, Py_ARRAY_LENGTH(argv), argv);
+    config_set_string(config, &config->program_name, L"./python3");
+}
+
+
+static int test_init_run_main(void)
+{
+    PyStatus status;
+    PyConfig config;
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+    configure_init_main(&config);
+    init_from_config_clear(&config);
+
+    return Py_RunMain();
+}
+
+
+static int test_init_main(void)
+{
+    PyStatus status;
+    PyConfig config;
+
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+    configure_init_main(&config);
+    config._init_main = 0;
+    init_from_config_clear(&config);
+
+    /* sys.stdout don't exist yet: it is created by _Py_InitializeMain() */
+    int res = PyRun_SimpleString(
+        "import sys; "
+        "print('Run Python code before _Py_InitializeMain', "
+               "file=sys.stderr)");
+    if (res < 0) {
+        exit(1);
+    }
+
+    status = _Py_InitializeMain();
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    return Py_RunMain();
+}
+
+
+static int test_run_main(void)
+{
+    PyStatus status;
+    PyConfig config;
+
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+
+    wchar_t *argv[] = {L"python3", L"-c",
+                       (L"import sys; "
+                        L"print(f'Py_RunMain(): sys.argv={sys.argv}')"),
+                       L"arg2"};
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config_set_string(&config, &config.program_name, L"./python3");
+    init_from_config_clear(&config);
+
+    return Py_RunMain();
 }
 
 
@@ -662,20 +1472,48 @@ struct TestCase
 };
 
 static struct TestCase TestCases[] = {
-    { "forced_io_encoding", test_forced_io_encoding },
-    { "repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters },
-    { "pre_initialization_api", test_pre_initialization_api },
-    { "pre_initialization_sys_options", test_pre_initialization_sys_options },
-    { "bpo20891", test_bpo20891 },
-    { "initialize_twice", test_initialize_twice },
-    { "initialize_pymain", test_initialize_pymain },
-    { "init_default_config", test_init_default_config },
-    { "init_global_config", test_init_global_config },
-    { "init_from_config", test_init_from_config },
-    { "init_env", test_init_env },
-    { "init_dev_mode", test_init_dev_mode },
-    { "init_isolated", test_init_isolated },
-    { NULL, NULL }
+    {"test_forced_io_encoding", test_forced_io_encoding},
+    {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
+    {"test_pre_initialization_api", test_pre_initialization_api},
+    {"test_pre_initialization_sys_options", test_pre_initialization_sys_options},
+    {"test_bpo20891", test_bpo20891},
+    {"test_initialize_twice", test_initialize_twice},
+    {"test_initialize_pymain", test_initialize_pymain},
+    {"test_init_initialize_config", test_init_initialize_config},
+    {"test_preinit_compat_config", test_preinit_compat_config},
+    {"test_init_compat_config", test_init_compat_config},
+    {"test_init_global_config", test_init_global_config},
+    {"test_init_from_config", test_init_from_config},
+    {"test_init_parse_argv", test_init_parse_argv},
+    {"test_init_dont_parse_argv", test_init_dont_parse_argv},
+    {"test_init_compat_env", test_init_compat_env},
+    {"test_init_python_env", test_init_python_env},
+    {"test_init_env_dev_mode", test_init_env_dev_mode},
+    {"test_init_env_dev_mode_alloc", test_init_env_dev_mode_alloc},
+    {"test_init_dont_configure_locale", test_init_dont_configure_locale},
+    {"test_init_dev_mode", test_init_dev_mode},
+    {"test_init_isolated_flag", test_init_isolated_flag},
+    {"test_preinit_isolated_config", test_preinit_isolated_config},
+    {"test_init_isolated_config", test_init_isolated_config},
+    {"test_preinit_python_config", test_preinit_python_config},
+    {"test_init_python_config", test_init_python_config},
+    {"test_preinit_isolated1", test_preinit_isolated1},
+    {"test_preinit_isolated2", test_preinit_isolated2},
+    {"test_preinit_parse_argv", test_preinit_parse_argv},
+    {"test_preinit_dont_parse_argv", test_preinit_dont_parse_argv},
+    {"test_init_read_set", test_init_read_set},
+    {"test_init_run_main", test_init_run_main},
+    {"test_init_main", test_init_main},
+    {"test_run_main", test_run_main},
+    {"test_open_code_hook", test_open_code_hook},
+    {"test_audit", test_audit},
+    {"test_audit_subinterpreter", test_audit_subinterpreter},
+    {"test_audit_run_command", test_audit_run_command},
+    {"test_audit_run_file", test_audit_run_file},
+    {"test_audit_run_interactivehook", test_audit_run_interactivehook},
+    {"test_audit_run_startup", test_audit_run_startup},
+    {"test_audit_run_stdin", test_audit_run_stdin},
+    {NULL, NULL}
 };
 
 int main(int argc, char *argv[])

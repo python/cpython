@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 
 import sys
+if __name__ == "__main__":
+    sys.modules['idlelib.pyshell'] = sys.modules['__main__']
 
 try:
     from tkinter import *
@@ -38,6 +40,7 @@ from platform import python_version
 import re
 import socket
 import subprocess
+from textwrap import TextWrapper
 import threading
 import time
 import tokenize
@@ -415,10 +418,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # run from the IDLE source directory.
         del_exitf = idleConf.GetOption('main', 'General', 'delete-exitfunc',
                                        default=False, type='bool')
-        if __name__ == 'idlelib.pyshell':
-            command = "__import__('idlelib.run').run.main(%r)" % (del_exitf,)
-        else:
-            command = "__import__('run').main(%r)" % (del_exitf,)
+        command = "__import__('idlelib.run').run.main(%r)" % (del_exitf,)
         return [sys.executable] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
@@ -824,10 +824,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def display_no_subprocess_error(self):
         tkMessageBox.showerror(
-            "Subprocess Startup Error",
-            "IDLE's subprocess didn't make connection.  Either IDLE can't "
-            "start a subprocess or personal firewall software is blocking "
-            "the connection.",
+            "Subprocess Connection Error",
+            "IDLE's subprocess didn't make connection.\n"
+            "See the 'Startup failure' section of the IDLE doc, online at\n"
+            "https://docs.python.org/3/library/idle.html#startup-failure",
             parent=self.tkconsole.text)
 
     def display_executing_dialog(self):
@@ -860,6 +860,8 @@ class PyShell(OutputWindow):
     rmenu_specs = OutputWindow.rmenu_specs + [
         ("Squeeze", "<<squeeze-current-text>>"),
     ]
+
+    allow_line_numbers = False
 
     # New classes
     from idlelib.history import History
@@ -898,6 +900,9 @@ class PyShell(OutputWindow):
         if use_subprocess:
             text.bind("<<view-restart>>", self.view_restart_mark)
             text.bind("<<restart-shell>>", self.restart_shell)
+        squeezer = self.Squeezer(self)
+        text.bind("<<squeeze-current-text>>",
+                  squeezer.squeeze_current_text_event)
 
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
@@ -1273,6 +1278,14 @@ class PyShell(OutputWindow):
         self.set_line_and_column()
         self.io.reset_undo()
 
+    def show_warning(self, msg):
+        width = self.interp.tkconsole.width
+        wrapper = TextWrapper(width=width, tabsize=8, expand_tabs=True)
+        wrapped_msg = '\n'.join(wrapper.wrap(msg))
+        if not wrapped_msg.endswith('\n'):
+            wrapped_msg += '\n'
+        self.per.bottom.insert("iomark linestart", wrapped_msg, "stderr")
+
     def resetoutput(self):
         source = self.text.get("iomark", "end-1c")
         if self.history:
@@ -1483,7 +1496,7 @@ def main():
     if system() == 'Windows':
         iconfile = os.path.join(icondir, 'idle.ico')
         root.wm_iconbitmap(default=iconfile)
-    else:
+    elif not macosx.isAquaTk():
         ext = '.png' if TkVersion >= 8.6 else '.gif'
         iconfiles = [os.path.join(icondir, 'idle_%d%s' % (size, ext))
                      for size in (16, 32, 48)]
@@ -1541,12 +1554,20 @@ def main():
             shell.interp.execfile(script)
     elif shell:
         # If there is a shell window and no cmd or script in progress,
-        # check for problematic OS X Tk versions and print a warning
-        # message in the IDLE shell window; this is less intrusive
-        # than always opening a separate window.
+        # check for problematic issues and print warning message(s) in
+        # the IDLE shell window; this is less intrusive than always
+        # opening a separate window.
+
+        # Warn if using a problematic OS X Tk version.
         tkversionwarning = macosx.tkVersionWarning(root)
         if tkversionwarning:
-            shell.interp.runcommand("print('%s')" % tkversionwarning)
+            shell.show_warning(tkversionwarning)
+
+        # Warn if the "Prefer tabs when opening documents" system
+        # preference is set to "Always".
+        prefer_tabs_preference_warning = macosx.preferTabsPreferenceWarning()
+        if prefer_tabs_preference_warning:
+            shell.show_warning(prefer_tabs_preference_warning)
 
     while flist.inversedict:  # keep IDLE running while files are open.
         root.mainloop()
@@ -1554,7 +1575,6 @@ def main():
     capture_warnings(False)
 
 if __name__ == "__main__":
-    sys.modules['pyshell'] = sys.modules['__main__']
     main()
 
 capture_warnings(False)  # Make sure turned off; see issue 18081

@@ -21,12 +21,16 @@
 #include <dirent.h>
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+# include <sanitizer/msan_interface.h>
+#endif
+
 #if defined(__ANDROID__) && __ANDROID_API__ < 21 && !defined(SYS_getdents64)
 # include <sys/linux-syscalls.h>
 # define SYS_getdents64  __NR_getdents64
 #endif
 
-#if defined(sun)
+#if defined(__sun) && defined(__SVR4)
 /* readdir64 is used to work around Solaris 9 bug 6395699. */
 # define readdir readdir64
 # define dirent dirent64
@@ -56,7 +60,7 @@ _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
 
     if (need_to_reenable_gc) {
         PyErr_Fetch(&exctype, &val, &tb);
-        result = _PyObject_CallMethodId(gc_module, &PyId_enable, NULL);
+        result = _PyObject_CallMethodIdNoArgs(gc_module, &PyId_enable);
         if (exctype != NULL) {
             PyErr_Restore(exctype, val, tb);
         }
@@ -287,6 +291,9 @@ _close_open_fds_safe(int start_fd, PyObject* py_fds_to_keep)
                                 sizeof(buffer))) > 0) {
             struct linux_dirent64 *entry;
             int offset;
+#ifdef _Py_MEMORY_SANITIZER
+            __msan_unpoison(buffer, bytes);
+#endif
             for (offset = 0; offset < bytes; offset += entry->d_reclen) {
                 int fd;
                 entry = (struct linux_dirent64 *)(buffer + offset);
@@ -599,7 +606,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         gc_module = PyImport_ImportModule("gc");
         if (gc_module == NULL)
             return NULL;
-        result = _PyObject_CallMethodId(gc_module, &PyId_isenabled, NULL);
+        result = _PyObject_CallMethodIdNoArgs(gc_module, &PyId_isenabled);
         if (result == NULL) {
             Py_DECREF(gc_module);
             return NULL;
@@ -610,7 +617,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             Py_DECREF(gc_module);
             return NULL;
         }
-        result = _PyObject_CallMethodId(gc_module, &PyId_disable, NULL);
+        result = _PyObject_CallMethodIdNoArgs(gc_module, &PyId_disable);
         if (result == NULL) {
             Py_DECREF(gc_module);
             return NULL;

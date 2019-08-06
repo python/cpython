@@ -51,8 +51,8 @@ The module defines the following functions:
 
 .. function:: tcsendbreak(fd, duration)
 
-   Send a break on file descriptor *fd*.  A zero *duration* sends a break for 0.25
-   --0.5 seconds; a nonzero *duration* has a system dependent meaning.
+   Send a break on file descriptor *fd*.  A zero *duration* sends a break for
+   0.25--0.5 seconds; a nonzero *duration* has a system dependent meaning.
 
 
 .. function:: tcdrain(fd)

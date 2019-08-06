@@ -18,17 +18,32 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"real", "imag", NULL};
-    static _PyArg_Parser _parser = {"|OO:complex", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "complex", 0};
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *r = _PyLong_Zero;
     PyObject *i = NULL;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &r, &i)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        r = fastargs[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    i = fastargs[1];
+skip_optional_pos:
     return_value = complex_new_impl(type, r, i);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5017b2458bdc4ecd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a0fe23fdbdc9b06b input=a9049054013a1b77]*/

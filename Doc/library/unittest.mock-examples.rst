@@ -166,6 +166,15 @@ You use the :data:`call` object to construct lists for comparing with
     >>> mock.mock_calls == expected
     True
 
+However, parameters to calls that return mocks are not recorded, which means it is not
+possible to track nested calls where the parameters used to create ancestors are important:
+
+    >>> m = Mock()
+    >>> m.factory(important=True).deliver()
+    <Mock name='mock.factory().deliver()' id='...'>
+    >>> m.mock_calls[-1] == call.factory(important=False).deliver()
+    True
+
 
 Setting Return Values and Attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -839,7 +848,7 @@ Here's an example implementation:
 
     >>> from copy import deepcopy
     >>> class CopyingMock(MagicMock):
-    ...     def __call__(self, *args, **kwargs):
+    ...     def __call__(self, /, *args, **kwargs):
     ...         args = deepcopy(args)
     ...         kwargs = deepcopy(kwargs)
     ...         return super(CopyingMock, self).__call__(*args, **kwargs)
@@ -1033,7 +1042,7 @@ that it takes arbitrary keyword arguments (``**kwargs``) which are then passed
 onto the mock constructor:
 
     >>> class Subclass(MagicMock):
-    ...     def _get_child_mock(self, **kwargs):
+    ...     def _get_child_mock(self, /, **kwargs):
     ...         return MagicMock(**kwargs)
     ...
     >>> mymock = Subclass()

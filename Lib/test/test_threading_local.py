@@ -1,3 +1,4 @@
+import sys
 import unittest
 from doctest import DocTestSuite
 from test import support

@@ -1,28 +1,28 @@
-# We import importlib *ASAP* in order to test #15386
-import importlib
+import builtins
+import contextlib
+import errno
+import glob
 import importlib.util
 from importlib._bootstrap_external import _get_sourcefile
-import builtins
 import marshal
 import os
-import platform
 import py_compile
 import random
+import shutil
 import stat
+import subprocess
 import sys
+import textwrap
 import threading
 import time
 import unittest
-import unittest.mock as mock
-import textwrap
-import errno
-import contextlib
+from unittest import mock
 
 import test.support
 from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
-    make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
-    unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
+    TESTFN, forget, is_jython,
+    make_legacy_pyc, rmtree, swap_attr, swap_item, temp_umask,
+    unlink, unload, cpython_only, TESTFN_UNENCODABLE,
     temp_dir, DirsOnSysPath)
 from test.support import script_helper
 from test.test_importlib.util import uncache
@@ -460,6 +460,51 @@ class ImportTests(unittest.TestCase):
         finally:
             del sys.path[0]
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows-specific")
+    def test_dll_dependency_import(self):
+        from _winapi import GetModuleFileName
+        dllname = GetModuleFileName(sys.dllhandle)
+        pydname = importlib.util.find_spec("_sqlite3").origin
+        depname = os.path.join(
+            os.path.dirname(pydname),
+            "sqlite3{}.dll".format("_d" if "_d" in pydname else ""))
+
+        with test.support.temp_dir() as tmp:
+            tmp2 = os.path.join(tmp, "DLLs")
+            os.mkdir(tmp2)
+
+            pyexe = os.path.join(tmp, os.path.basename(sys.executable))
+            shutil.copy(sys.executable, pyexe)
+            shutil.copy(dllname, tmp)
+            for f in glob.glob(os.path.join(sys.prefix, "vcruntime*.dll")):
+                shutil.copy(f, tmp)
+
+            shutil.copy(pydname, tmp2)
+
+            env = None
+            env = {k.upper(): os.environ[k] for k in os.environ}
+            env["PYTHONPATH"] = tmp2 + ";" + os.path.dirname(os.__file__)
+
+            # Test 1: import with added DLL directory
+            subprocess.check_call([
+                pyexe, "-Sc", ";".join([
+                    "import os",
+                    "p = os.add_dll_directory({!r})".format(
+                        os.path.dirname(depname)),
+                    "import _sqlite3",
+                    "p.close"
+                ])],
+                stderr=subprocess.STDOUT,
+                env=env,
+                cwd=os.path.dirname(pyexe))
+
+            # Test 2: import with DLL adjacent to PYD
+            shutil.copy(depname, tmp2)
+            subprocess.check_call([pyexe, "-Sc", "import _sqlite3"],
+                                    stderr=subprocess.STDOUT,
+                                    env=env,
+                                    cwd=os.path.dirname(pyexe))
+
 
 @skip_if_dont_write_bytecode
 class FilePermissionTests(unittest.TestCase):
@@ -626,12 +671,7 @@ func_filename = func.__code__.co_filename
         foreign_code = importlib.import_module.__code__
         pos = constants.index(1)
         constants[pos] = foreign_code
-        code = type(code)(code.co_argcount, code.co_kwonlyargcount,
-                          code.co_nlocals, code.co_stacksize,
-                          code.co_flags, code.co_code, tuple(constants),
-                          code.co_names, code.co_varnames, code.co_filename,
-                          code.co_name, code.co_firstlineno, code.co_lnotab,
-                          code.co_freevars, code.co_cellvars)
+        code = code.replace(co_consts=tuple(constants))
         with open(self.compiled_name, "wb") as f:
             f.write(header)
             marshal.dump(code, f)
@@ -1270,6 +1310,19 @@ class CircularImportTests(unittest.TestCase):
             import test.test_import.data.circular_imports.binding
         except ImportError:
             self.fail('circular import with binding a submodule to a name failed')
+
+    def test_crossreference1(self):
+        import test.test_import.data.circular_imports.use
+        import test.test_import.data.circular_imports.source
+
+    def test_crossreference2(self):
+        with self.assertRaises(AttributeError) as cm:
+            import test.test_import.data.circular_imports.source
+        errmsg = str(cm.exception)
+        self.assertIn('test.test_import.data.circular_imports.source', errmsg)
+        self.assertIn('spam', errmsg)
+        self.assertIn('partially initialized module', errmsg)
+        self.assertIn('circular import', errmsg)
 
 
 if __name__ == '__main__':

@@ -3,13 +3,14 @@ from test import support
 import builtins
 import contextlib
 import copy
-from functools import partial
 import io
 import os
 import pickle
 import shutil
 import subprocess
 import sys
+import weakref
+from unittest import mock
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
@@ -461,8 +462,7 @@ class BaseTestUUID:
         with unittest.mock.patch.multiple(
             self.uuid,
             _node=None,  # Ignore any cached node value.
-            _NODE_GETTERS_WIN32=[too_large_getter],
-            _NODE_GETTERS_UNIX=[too_large_getter],
+            _GETTERS=[too_large_getter],
         ):
             node = self.uuid.getnode()
         self.assertTrue(0 < node < (1 << 48), '%012x' % node)
@@ -568,6 +568,23 @@ class BaseTestUUID:
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
+    def test_uuid1_time(self):
+        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
+             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+             mock.patch.object(self.uuid, '_last_timestamp', None), \
+             mock.patch.object(self.uuid, 'getnode', return_value=93328246233727), \
+             mock.patch('time.time_ns', return_value=1545052026752910643), \
+             mock.patch('random.getrandbits', return_value=5317): # guaranteed to be random
+            u = self.uuid.uuid1()
+            self.assertEqual(u, self.uuid.UUID('a7a55b92-01fc-11e9-94c5-54e1acf6da7f'))
+
+        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
+             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+             mock.patch.object(self.uuid, '_last_timestamp', None), \
+             mock.patch('time.time_ns', return_value=1545052026752910643):
+            u = self.uuid.uuid1(node=93328246233727, clock_seq=5317)
+            self.assertEqual(u, self.uuid.UUID('a7a55b92-01fc-11e9-94c5-54e1acf6da7f'))
+
     def test_uuid3(self):
         equal = self.assertEqual
 
@@ -640,6 +657,11 @@ class BaseTestUUID:
 
             self.assertNotEqual(parent_value, child_value)
 
+    def test_uuid_weakref(self):
+        # bpo-35701: check that weak referencing to a UUID object can be created
+        strong = self.uuid.uuid4()
+        weak = weakref.ref(strong)
+        self.assertIs(strong, weak())
 
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
@@ -650,7 +672,7 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 
 
 class BaseTestInternals:
-    uuid = None
+    _uuid = py_uuid
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_find_mac(self):
@@ -685,27 +707,32 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         self.assertTrue(0 < node < (1 << 48),
                         "%s is not an RFC 4122 node ID" % hex)
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._ifconfig_getnode in _uuid._GETTERS,
+        "ifconfig is not used for introspection on this platform")
     def test_ifconfig_getnode(self):
         node = self.uuid._ifconfig_getnode()
         self.check_node(node, 'ifconfig')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._ip_getnode in _uuid._GETTERS,
+        "ip is not used for introspection on this platform")
     def test_ip_getnode(self):
         node = self.uuid._ip_getnode()
         self.check_node(node, 'ip')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._arp_getnode in _uuid._GETTERS,
+        "arp is not used for introspection on this platform")
     def test_arp_getnode(self):
         node = self.uuid._arp_getnode()
         self.check_node(node, 'arp')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._lanscan_getnode in _uuid._GETTERS,
+        "lanscan is not used for introspection on this platform")
     def test_lanscan_getnode(self):
         node = self.uuid._lanscan_getnode()
         self.check_node(node, 'lanscan')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._netstat_getnode in _uuid._GETTERS,
+        "netstat is not used for introspection on this platform")
     def test_netstat_getnode(self):
         node = self.uuid._netstat_getnode()
         self.check_node(node, 'netstat')

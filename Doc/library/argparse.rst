@@ -182,6 +182,10 @@ ArgumentParser objects
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
 
+   .. versionchanged:: 3.8
+      In previous versions, *allow_abbrev* also disabled grouping of short
+      flags such as ``-vv`` to mean ``-v -v``.
+
 The following sections describe how each of these are used.
 
 
@@ -797,6 +801,15 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args(['--version'])
     PROG 2.0
 
+* ``'extend'`` - This stores a list, and extends each argument value to the
+  list.
+  Example usage::
+
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
+    >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
+    Namespace(foo=['f1', 'f2', 'f3', 'f4'])
+
 You may also specify an arbitrary action by passing an Action subclass or
 other object that implements the same interface.  The recommended way to do
 this is to extend :class:`Action`, overriding the ``__call__`` method
@@ -844,6 +857,8 @@ values are:
   Note that ``nargs=1`` produces a list of one item.  This is different from
   the default, in which the item is produced by itself.
 
+.. index:: single: ? (question mark); in argparse module
+
 * ``'?'``. One argument will be consumed from the command line if possible, and
   produced as a single item.  If no command-line argument is present, the value from
   default_ will be produced.  Note that for optional arguments, there is an
@@ -876,6 +891,8 @@ values are:
      Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>,
                outfile=<_io.TextIOWrapper name='<stdout>' encoding='UTF-8'>)
 
+.. index:: single: * (asterisk); in argparse module
+
 * ``'*'``.  All command-line arguments present are gathered into a list.  Note that
   it generally doesn't make much sense to have more than one positional argument
   with ``nargs='*'``, but multiple optional arguments with ``nargs='*'`` is
@@ -887,6 +904,8 @@ values are:
      >>> parser.add_argument('baz', nargs='*')
      >>> parser.parse_args('a b --foo x y --bar 1 2'.split())
      Namespace(bar=['1', '2'], baz=['a', 'b'], foo=['x', 'y'])
+
+.. index:: single: + (plus); in argparse module
 
 * ``'+'``. Just like ``'*'``, all command-line args present are gathered into a
   list.  Additionally, an error message will be generated if there wasn't at

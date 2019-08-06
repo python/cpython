@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. index::
    single: buffer protocol
@@ -198,7 +198,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       indicates that no de-referencing should occur (striding in a contiguous
       memory block).
 
-      If all suboffsets are negative (i.e. no de-referencing is needed, then
+      If all suboffsets are negative (i.e. no de-referencing is needed), then
       this field must be NULL (the default value).
 
       This type of array representation is used by the Python Imaging Library
@@ -355,8 +355,10 @@ If :c:member:`~Py_buffer.strides` is *NULL*, the array is interpreted as
 a standard n-dimensional C-array. Otherwise, the consumer must access an
 n-dimensional array as follows:
 
-   ``ptr = (char *)buf + indices[0] * strides[0] + ... + indices[n-1] * strides[n-1]``
-   ``item = *((typeof(item) *)ptr);``
+.. code-block:: c
+
+   ptr = (char *)buf + indices[0] * strides[0] + ... + indices[n-1] * strides[n-1];
+   item = *((typeof(item) *)ptr);
 
 
 As noted above, :c:member:`~Py_buffer.buf` can point to any location within
@@ -429,7 +431,7 @@ Buffer-related functions
 
    Return ``1`` if *obj* supports the buffer interface otherwise ``0``.  When ``1`` is
    returned, it doesn't guarantee that :c:func:`PyObject_GetBuffer` will
-   succeed.
+   succeed.  This function always succeeds.
 
 
 .. c:function:: int PyObject_GetBuffer(PyObject *exporter, Py_buffer *view, int flags)
@@ -470,7 +472,13 @@ Buffer-related functions
 
    Return ``1`` if the memory defined by the *view* is C-style (*order* is
    ``'C'``) or Fortran-style (*order* is ``'F'``) :term:`contiguous` or either one
-   (*order* is ``'A'``).  Return ``0`` otherwise.
+   (*order* is ``'A'``).  Return ``0`` otherwise.  This function always succeeds.
+
+
+.. c:function:: void* PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices)
+
+   Get the memory area pointed to by the *indices* inside the given *view*.
+   *indices* must point to an array of ``view->ndim`` indices.
 
 
 .. c:function:: int PyBuffer_ToContiguous(void *buf, Py_buffer *src, Py_ssize_t len, char order)

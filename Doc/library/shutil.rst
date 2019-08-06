@@ -54,7 +54,7 @@ Directory and files operations
    *dst* and return *dst* in the most efficient way possible.
    *src* and *dst* are path names given as strings.
 
-   *dst* must be the complete target file name; look at :func:`shutil.copy`
+   *dst* must be the complete target file name; look at :func:`~shutil.copy`
    for a copy that accepts a target directory path.  If *src* and *dst*
    specify the same file, :exc:`SameFileError` is raised.
 
@@ -177,7 +177,7 @@ Directory and files operations
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
    Identical to :func:`~shutil.copy` except that :func:`copy2`
-   also attempts to preserve all file metadata.
+   also attempts to preserve file metadata.
 
    When *follow_symlinks* is false, and *src* is a symbolic
    link, :func:`copy2` attempts to copy all metadata from the
@@ -209,14 +209,16 @@ Directory and files operations
 
 
 .. function:: copytree(src, dst, symlinks=False, ignore=None, \
-              copy_function=copy2, ignore_dangling_symlinks=False)
+              copy_function=copy2, ignore_dangling_symlinks=False, \
+              dirs_exist_ok=False)
 
-   Recursively copy an entire directory tree rooted at *src*, returning the
-   destination directory.  The destination
-   directory, named by *dst*, must not already exist; it will be created as
-   well as missing parent directories.  Permissions and times of directories
-   are copied with :func:`copystat`, individual files are copied using
-   :func:`shutil.copy2`.
+   Recursively copy an entire directory tree rooted at *src* to a directory
+   named *dst* and return the destination directory. *dirs_exist_ok* dictates
+   whether to raise an exception in case *dst* or any missing parent directory
+   already exists.
+
+   Permissions and times of directories are copied with :func:`copystat`,
+   individual files are copied using :func:`~shutil.copy2`.
 
    If *symlinks* is true, symbolic links in the source tree are represented as
    symbolic links in the new tree and the metadata of the original links will
@@ -244,8 +246,10 @@ Directory and files operations
 
    If *copy_function* is given, it must be a callable that will be used to copy
    each file. It will be called with the source path and the destination path
-   as arguments. By default, :func:`shutil.copy2` is used, but any function
-   that supports the same signature (like :func:`shutil.copy`) can be used.
+   as arguments. By default, :func:`~shutil.copy2` is used, but any function
+   that supports the same signature (like :func:`~shutil.copy`) can be used.
+
+   .. audit-event:: shutil.copytree src,dst shutil.copytree
 
    .. versionchanged:: 3.3
       Copy metadata when *symlinks* is false.
@@ -261,6 +265,9 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
+   .. versionadded:: 3.8
+      The *dirs_exist_ok* parameter.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 
@@ -290,6 +297,8 @@ Directory and files operations
    *path*, will be the path name passed to *function*.  The third parameter,
    *excinfo*, will be the exception information returned by
    :func:`sys.exc_info`.  Exceptions raised by *onerror* will not be caught.
+
+   .. audit-event:: shutil.rmtree path shutil.rmtree
 
    .. versionchanged:: 3.3
       Added a symlink attack resistant version that is used automatically
@@ -391,6 +400,9 @@ Directory and files operations
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.8
+      The :class:`bytes` type is now accepted.  If *cmd* type is
+      :class:`bytes`, the result type is also :class:`bytes`.
 
 .. exception:: Error
 
@@ -412,11 +424,10 @@ the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
 
 On macOS `fcopyfile`_ is used to copy the file content (not metadata).
 
-On Linux, Solaris and other POSIX platforms where :func:`os.sendfile` supports
-copies between 2 regular file descriptors :func:`os.sendfile` is used.
+On Linux :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
-instead of 16 KiB) and a :func:`memoryview`-based variant of
+instead of 64 KiB) and a :func:`memoryview`-based variant of
 :func:`shutil.copyfileobj` is used.
 
 If the fast-copy operation fails and no data was written in the destination
@@ -551,6 +562,12 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    The *verbose* argument is unused and deprecated.
 
+   .. audit-event:: shutil.make_archive base_name,format,root_dir,base_dir shutil.make_archive
+
+   .. versionchanged:: 3.8
+      The modern pax (POSIX.1-2001) format is now used instead of
+      the legacy GNU format for archives created with ``format="tar"``.
+
 
 .. function:: get_archive_formats()
 
@@ -560,7 +577,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    By default :mod:`shutil` provides these formats:
 
    - *zip*: ZIP file (if the :mod:`zlib` module is available).
-   - *tar*: uncompressed tar file.
+   - *tar*: Uncompressed tar file. Uses POSIX.1-2001 pax format for new archives.
    - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
    - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
    - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).

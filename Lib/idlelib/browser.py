@@ -29,9 +29,10 @@ def transform_children(child_dict, modname=None):
     The dictionary maps names to pyclbr information objects.
     Filter out imported objects.
     Augment class names with bases.
-    Sort objects by line number.
+    The insertion order of the dictonary is assumed to have been in line
+    number order, so sorting is not necessary.
 
-    The current tree only calls this once per child_dic as it saves
+    The current tree only calls this once per child_dict as it saves
     TreeItems once created.  A future tree and tests might violate this,
     so a check prevents multiple in-place augmentations.
     """
@@ -51,7 +52,7 @@ def transform_children(child_dict, modname=None):
                     supers.append(sname)
                 obj.name += '({})'.format(', '.join(supers))
             obs.append(obj)
-    return sorted(obs, key=lambda o: o.lineno)
+    return obs
 
 
 class ModuleBrowser:

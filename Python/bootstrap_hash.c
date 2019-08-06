@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_initconfig.h"
 #ifdef MS_WINDOWS
 #  include <windows.h>
 /* All sample MSDN wincrypt programs include the header below. It is at least
@@ -18,6 +19,10 @@
 #  if !defined(HAVE_GETRANDOM) && defined(HAVE_GETRANDOM_SYSCALL)
 #    include <sys/syscall.h>
 #  endif
+#endif
+
+#ifdef _Py_MEMORY_SANITIZER
+#  include <sanitizer/msan_interface.h>
 #endif
 
 #ifdef Py_DEBUG
@@ -51,8 +56,6 @@ error:
 static int
 win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
 {
-    Py_ssize_t chunk;
-
     if (hCryptProv == 0)
     {
         if (win32_urandom_init(raise) == -1) {
@@ -62,8 +65,8 @@ win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
 
     while (size > 0)
     {
-        chunk = size > INT_MAX ? INT_MAX : size;
-        if (!CryptGenRandom(hCryptProv, (DWORD)chunk, buffer))
+        DWORD chunk = (DWORD)Py_MIN(size, PY_DWORD_MAX);
+        if (!CryptGenRandom(hCryptProv, chunk, buffer))
         {
             /* CryptGenRandom() failed */
             if (raise) {
@@ -112,7 +115,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
     flags = blocking ? 0 : GRND_NONBLOCK;
     dest = buffer;
     while (0 < size) {
-#ifdef sun
+#if defined(__sun) && defined(__SVR4)
         /* Issue #26735: On Solaris, getrandom() is limited to returning up
            to 1024 bytes. Call it multiple times if more bytes are
            requested. */
@@ -143,6 +146,11 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
         else {
             n = syscall(SYS_getrandom, dest, n, flags);
         }
+#  ifdef _Py_MEMORY_SANITIZER
+        if (n > 0) {
+             __msan_unpoison(dest, n);
+        }
+#  endif
 #endif
 
         if (n < 0) {
@@ -155,7 +163,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
             }
 
             /* getrandom(GRND_NONBLOCK) fails with EAGAIN if the system urandom
-               is not initialiazed yet. For _PyRandom_Init(), we ignore the
+               is not initialized yet. For _PyRandom_Init(), we ignore the
                error and fall back on reading /dev/urandom which never blocks,
                even if the system urandom is not initialized yet:
                see the PEP 524. */
@@ -257,7 +265,7 @@ py_getentropy(char *buffer, Py_ssize_t size, int raise)
     }
     return 1;
 }
-#endif /* defined(HAVE_GETENTROPY) && !defined(sun) */
+#endif /* defined(HAVE_GETENTROPY) && !(defined(__sun) && defined(__SVR4)) */
 
 
 static struct {
@@ -539,14 +547,14 @@ _PyOS_URandomNonblock(void *buffer, Py_ssize_t size)
 }
 
 
-_PyInitError
-_Py_HashRandomization_Init(const _PyCoreConfig *config)
+PyStatus
+_Py_HashRandomization_Init(const PyConfig *config)
 {
     void *secret = &_Py_HashSecret;
     Py_ssize_t secret_size = sizeof(_Py_HashSecret_t);
 
     if (_Py_HashSecret_Initialized) {
-        return _Py_INIT_OK();
+        return _PyStatus_OK();
     }
     _Py_HashSecret_Initialized = 1;
 
@@ -571,11 +579,11 @@ _Py_HashRandomization_Init(const _PyCoreConfig *config)
            pyurandom() is non-blocking mode (blocking=0): see the PEP 524. */
         res = pyurandom(secret, secret_size, 0, 0);
         if (res < 0) {
-            return _Py_INIT_USER_ERR("failed to get random numbers "
-                                     "to initialize Python");
+            return _PyStatus_ERR("failed to get random numbers "
+                                "to initialize Python");
         }
     }
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 }
 
 

@@ -22,8 +22,6 @@ if sys.platform == 'win32':
 
 import asyncio
 from asyncio import log
-from asyncio import base_events
-from asyncio import events
 from asyncio import unix_events
 from test.test_asyncio import utils as test_utils
 
@@ -449,10 +447,12 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
             self.data = bytearray()
             self.fut = loop.create_future()
             self.transport = None
+            self._ready = loop.create_future()
 
         def connection_made(self, transport):
             self.started = True
             self.transport = transport
+            self._ready.set_result(None)
 
         def data_received(self, data):
             self.data.extend(data)
@@ -503,13 +503,11 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
         self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+        self.run_loop(proto._ready)
 
         def cleanup():
-            if proto.transport is not None:
-                # can be None if the task was cancelled before
-                # connection_made callback
-                proto.transport.close()
-                self.run_loop(proto.wait_closed())
+            proto.transport.close()
+            self.run_loop(proto.wait_closed())
 
             server.close()
             self.run_loop(server.wait_closed())
@@ -977,11 +975,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.assertFalse(self.loop.readers)
         self.assertEqual(bytearray(), tr._buffer)
         self.assertTrue(tr.is_closing())
-        m_logexc.assert_called_with(
-            test_utils.MockPattern(
-                'Fatal write error on pipe transport'
-                '\nprotocol:.*\ntransport:.*'),
-            exc_info=(OSError, MOCK_ANY, MOCK_ANY))
+        m_logexc.assert_not_called()
         self.assertEqual(1, tr._conn_lost)
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(err)
@@ -1086,6 +1080,8 @@ class AbstractChildWatcherTests(unittest.TestCase):
             NotImplementedError, watcher.attach_loop, f)
         self.assertRaises(
             NotImplementedError, watcher.close)
+        self.assertRaises(
+            NotImplementedError, watcher.is_active)
         self.assertRaises(
             NotImplementedError, watcher.__enter__)
         self.assertRaises(
@@ -1788,15 +1784,6 @@ class ChildWatcherTestsMixin:
                 if isinstance(self.watcher, asyncio.FastChildWatcher):
                     self.assertFalse(self.watcher._zombies)
 
-    @waitpid_mocks
-    def test_add_child_handler_with_no_loop_attached(self, m):
-        callback = mock.Mock()
-        with self.create_watcher() as watcher:
-            with self.assertRaisesRegex(
-                    RuntimeError,
-                    'the child watcher does not have a loop attached'):
-                watcher.add_child_handler(100, callback)
-
 
 class SafeChildWatcherTests (ChildWatcherTestsMixin, test_utils.TestCase):
     def create_watcher(self):
@@ -1813,17 +1800,16 @@ class PolicyTests(unittest.TestCase):
     def create_policy(self):
         return asyncio.DefaultEventLoopPolicy()
 
-    def test_get_child_watcher(self):
+    def test_get_default_child_watcher(self):
         policy = self.create_policy()
         self.assertIsNone(policy._watcher)
 
         watcher = policy.get_child_watcher()
-        self.assertIsInstance(watcher, asyncio.SafeChildWatcher)
+        self.assertIsInstance(watcher, asyncio.ThreadedChildWatcher)
 
         self.assertIs(policy._watcher, watcher)
 
         self.assertIs(watcher, policy.get_child_watcher())
-        self.assertIsNone(watcher._loop)
 
     def test_get_child_watcher_after_set(self):
         policy = self.create_policy()
@@ -1832,18 +1818,6 @@ class PolicyTests(unittest.TestCase):
         policy.set_child_watcher(watcher)
         self.assertIs(policy._watcher, watcher)
         self.assertIs(watcher, policy.get_child_watcher())
-
-    def test_get_child_watcher_with_mainloop_existing(self):
-        policy = self.create_policy()
-        loop = policy.get_event_loop()
-
-        self.assertIsNone(policy._watcher)
-        watcher = policy.get_child_watcher()
-
-        self.assertIsInstance(watcher, asyncio.SafeChildWatcher)
-        self.assertIs(watcher._loop, loop)
-
-        loop.close()
 
     def test_get_child_watcher_thread(self):
 
@@ -1860,6 +1834,7 @@ class PolicyTests(unittest.TestCase):
             policy.get_event_loop().close()
 
         policy = self.create_policy()
+        policy.set_child_watcher(asyncio.SafeChildWatcher())
 
         th = threading.Thread(target=f)
         th.start()
@@ -1869,7 +1844,11 @@ class PolicyTests(unittest.TestCase):
         policy = self.create_policy()
         loop = policy.get_event_loop()
 
-        watcher = policy.get_child_watcher()
+        # Explicitly setup SafeChildWatcher,
+        # default ThreadedChildWatcher has no _loop property
+        watcher = asyncio.SafeChildWatcher()
+        policy.set_child_watcher(watcher)
+        watcher.attach_loop(loop)
 
         self.assertIs(watcher._loop, loop)
 

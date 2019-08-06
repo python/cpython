@@ -1,7 +1,6 @@
 /* AST Optimizer */
 #include "Python.h"
 #include "Python-ast.h"
-#include "node.h"
 #include "ast.h"
 
 
@@ -440,7 +439,8 @@ astfold_body(asdl_seq *stmts, PyArena *ctx_, int optimize_)
             return 0;
         }
         asdl_seq_SET(values, 0, st->v.Expr.value);
-        expr_ty expr = JoinedStr(values, st->lineno, st->col_offset, ctx_);
+        expr_ty expr = JoinedStr(values, st->lineno, st->col_offset,
+                                 st->end_lineno, st->end_col_offset, ctx_);
         if (!expr) {
             return 0;
         }

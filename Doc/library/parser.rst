@@ -25,11 +25,11 @@ from this.  This is better than trying to parse and modify an arbitrary Python
 code fragment as a string because parsing is performed in a manner identical to
 the code forming the application.  It is also faster.
 
-.. note::
+.. warning::
 
-   From Python 2.5 onward, it's much more convenient to cut in at the Abstract
-   Syntax Tree (AST) generation and compilation stage, using the :mod:`ast`
-   module.
+   The parser module is deprecated and will be removed in future versions of
+   Python. For the majority of use cases you can leverage the Abstract Syntax
+   Tree (AST) generation and compilation stage, using the :mod:`ast` module.
 
 There are a few things to note about this module which are important to making
 use of the data structures created.  This is not a tutorial on editing the parse
@@ -63,7 +63,7 @@ of the production as recognized in the input string: these are always sequences
 which have the same form as the parent.  An important aspect of this structure
 which should be noted is that keywords used to identify the parent node type,
 such as the keyword :keyword:`if` in an :const:`if_stmt`, are included in the
-node tree without any special treatment.  For example, the :keyword:`if` keyword
+node tree without any special treatment.  For example, the :keyword:`!if` keyword
 is represented by the tuple ``(1, 'if')``, where ``1`` is the numeric value
 associated with all :const:`NAME` tokens, including variable and function names
 defined by the user.  In an alternate form returned when line number information

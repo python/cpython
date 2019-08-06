@@ -133,10 +133,7 @@ def decode(in_file, out_file=None, mode=None, quiet=False):
             out_file = sys.stdout.buffer
         elif isinstance(out_file, str):
             fp = open(out_file, 'wb')
-            try:
-                os.path.chmod(out_file, mode)
-            except AttributeError:
-                pass
+            os.chmod(out_file, mode)
             out_file = fp
             opened_files.append(out_file)
         #

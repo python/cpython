@@ -9,7 +9,7 @@ Copyright (c) Corporation for National Research Initiatives.
    ------------------------------------------------------------------------ */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "ucnhash.h"
 #include <ctype.h>
 
@@ -99,41 +99,38 @@ PyObject *normalizestring(const char *string)
 
 PyObject *_PyCodec_Lookup(const char *encoding)
 {
-    PyObject *result, *args = NULL, *v;
-    Py_ssize_t i, len;
-
     if (encoding == NULL) {
         PyErr_BadArgument();
-        goto onError;
+        return NULL;
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
-        goto onError;
+    if (interp->codec_search_path == NULL && _PyCodecRegistry_Init()) {
+        return NULL;
+    }
 
     /* Convert the encoding to a normalized Python string: all
        characters are converted to lower case, spaces and hyphens are
        replaced with underscores. */
-    v = normalizestring(encoding);
-    if (v == NULL)
-        goto onError;
+    PyObject *v = normalizestring(encoding);
+    if (v == NULL) {
+        return NULL;
+    }
     PyUnicode_InternInPlace(&v);
 
     /* First, try to lookup the name in the registry dictionary */
-    result = PyDict_GetItem(interp->codec_search_cache, v);
+    PyObject *result = PyDict_GetItemWithError(interp->codec_search_cache, v);
     if (result != NULL) {
         Py_INCREF(result);
         Py_DECREF(v);
         return result;
     }
+    else if (PyErr_Occurred()) {
+        goto onError;
+    }
 
     /* Next, scan the search functions in order of registration */
-    args = PyTuple_New(1);
-    if (args == NULL)
-        goto onError;
-    PyTuple_SET_ITEM(args,0,v);
-
-    len = PyList_Size(interp->codec_search_path);
+    const Py_ssize_t len = PyList_Size(interp->codec_search_path);
     if (len < 0)
         goto onError;
     if (len == 0) {
@@ -143,13 +140,14 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         goto onError;
     }
 
+    Py_ssize_t i;
     for (i = 0; i < len; i++) {
         PyObject *func;
 
         func = PyList_GetItem(interp->codec_search_path, i);
         if (func == NULL)
             goto onError;
-        result = PyEval_CallObject(func, args);
+        result = _PyObject_CallOneArg(func, v);
         if (result == NULL)
             goto onError;
         if (result == Py_None) {
@@ -176,11 +174,11 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         Py_DECREF(result);
         goto onError;
     }
-    Py_DECREF(args);
+    Py_DECREF(v);
     return result;
 
  onError:
-    Py_XDECREF(args);
+    Py_DECREF(v);
     return NULL;
 }
 
@@ -319,7 +317,7 @@ PyObject *codec_getstreamcodec(const char *encoding,
     if (errors != NULL)
         streamcodec = PyObject_CallFunction(codeccls, "Os", stream, errors);
     else
-        streamcodec = PyObject_CallFunctionObjArgs(codeccls, stream, NULL);
+        streamcodec = _PyObject_CallOneArg(codeccls, stream);
     Py_DECREF(codecs);
     return streamcodec;
 }
@@ -418,7 +416,7 @@ _PyCodec_EncodeInternal(PyObject *object,
     if (args == NULL)
         goto onError;
 
-    result = PyEval_CallObject(encoder, args);
+    result = PyObject_Call(encoder, args, NULL);
     if (result == NULL) {
         wrap_codec_error("encoding", encoding);
         goto onError;
@@ -464,7 +462,7 @@ _PyCodec_DecodeInternal(PyObject *object,
     if (args == NULL)
         goto onError;
 
-    result = PyEval_CallObject(decoder,args);
+    result = PyObject_Call(decoder, args, NULL);
     if (result == NULL) {
         wrap_codec_error("decoding", encoding);
         goto onError;
@@ -646,11 +644,13 @@ PyObject *PyCodec_LookupError(const char *name)
 
     if (name==NULL)
         name = "strict";
-    handler = PyDict_GetItemString(interp->codec_error_registry, name);
-    if (!handler)
-        PyErr_Format(PyExc_LookupError, "unknown error handler name '%.400s'", name);
-    else
+    handler = _PyDict_GetItemStringWithError(interp->codec_error_registry, name);
+    if (handler) {
         Py_INCREF(handler);
+    }
+    else if (!PyErr_Occurred()) {
+        PyErr_Format(PyExc_LookupError, "unknown error handler name '%.400s'", name);
+    }
     return handler;
 }
 

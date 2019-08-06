@@ -91,14 +91,12 @@ class TestSupport(unittest.TestCase):
             support.rmtree('__pycache__')
 
     def test_HOST(self):
-        s = socket.socket()
-        s.bind((support.HOST, 0))
+        s = socket.create_server((support.HOST, 0))
         s.close()
 
     def test_find_unused_port(self):
         port = support.find_unused_port()
-        s = socket.socket()
-        s.bind((support.HOST, port))
+        s = socket.create_server((support.HOST, port))
         s.close()
 
     def test_bind_port(self):
@@ -405,7 +403,7 @@ class TestSupport(unittest.TestCase):
                              ("unittest.result", "unittest.case",
                               "unittest.suite", "unittest.loader",
                               "unittest.main", "unittest.runner",
-                              "unittest.signals"),
+                              "unittest.signals", "unittest.async_case"),
                              extra=extra,
                              blacklist=blacklist)
 
@@ -456,7 +454,7 @@ class TestSupport(unittest.TestCase):
         # pending child process
         support.reap_children()
 
-    def check_options(self, args, func):
+    def check_options(self, args, func, expected=None):
         code = f'from test.support import {func}; print(repr({func}()))'
         cmd = [sys.executable, *args, '-c', code]
         env = {key: value for key, value in os.environ.items()
@@ -466,7 +464,9 @@ class TestSupport(unittest.TestCase):
                               stderr=subprocess.DEVNULL,
                               universal_newlines=True,
                               env=env)
-        self.assertEqual(proc.stdout.rstrip(), repr(args))
+        if expected is None:
+            expected = args
+        self.assertEqual(proc.stdout.rstrip(), repr(expected))
         self.assertEqual(proc.returncode, 0)
 
     def test_args_from_interpreter_flags(self):
@@ -482,6 +482,7 @@ class TestSupport(unittest.TestCase):
             ['-v'],
             ['-b'],
             ['-q'],
+            ['-I'],
             # same option multiple times
             ['-bb'],
             ['-vvv'],
@@ -499,6 +500,9 @@ class TestSupport(unittest.TestCase):
         ):
             with self.subTest(opts=opts):
                 self.check_options(opts, 'args_from_interpreter_flags')
+
+        self.check_options(['-I', '-E', '-s'], 'args_from_interpreter_flags',
+                           ['-I'])
 
     def test_optim_args_from_interpreter_flags(self):
         # Test test.support.optim_args_from_interpreter_flags()

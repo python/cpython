@@ -224,6 +224,8 @@ Module functions and constants
    More information about this feature, including a list of recognized options, can
    be found in the `SQLite URI documentation <https://www.sqlite.org/uri.html>`_.
 
+   .. audit-event:: sqlite3.connect database sqlite3.connect
+
    .. versionchanged:: 3.4
       Added the *uri* parameter.
 
@@ -537,6 +539,7 @@ Connection Objects
          with open('dump.sql', 'w') as f:
              for line in con.iterdump():
                  f.write('%s\n' % line)
+         con.close()
 
 
    .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=0.250)
@@ -573,8 +576,11 @@ Connection Objects
              print(f'Copied {total-remaining} of {total} pages...')
 
          con = sqlite3.connect('existing_db.db')
-         with sqlite3.connect('backup.db') as bck:
+         bck = sqlite3.connect('backup.db')
+         with bck:
              con.backup(bck, pages=1, progress=progress)
+         bck.close()
+         con.close()
 
       Example 2, copy an existing database into a transient copy::
 
@@ -597,6 +603,9 @@ Cursor Objects
 .. class:: Cursor
 
    A :class:`Cursor` instance has the following attributes and methods.
+
+   .. index:: single: ? (question mark); in SQL statements
+   .. index:: single: : (colon); in SQL statements
 
    .. method:: execute(sql[, parameters])
 

@@ -1,3 +1,0 @@
-Implement ``asyncio.StreamWriter.awrite`` and
-``asyncio.StreamWriter.aclose()`` coroutines.  Methods are needed for
-providing a consistent stream API with control flow switched on by default.

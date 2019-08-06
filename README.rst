@@ -1,4 +1,4 @@
-This is Python version 3.8.0 alpha 0
+This is Python version 3.9.0 alpha 0
 ====================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
@@ -22,9 +22,7 @@ This is Python version 3.8.0 alpha 0
    :target: https://python.zulipchat.com
 
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
-reserved.
+Copyright (c) 2001-2019 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -65,16 +63,16 @@ On Unix, Linux, BSD, macOS, and Cygwin::
     make test
     sudo make install
 
-This will install Python as python3.
+This will install Python as ``python3``.
 
 You can pass many options to the configure script; run ``./configure --help``
 to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
 elsewhere it's just ``python``.
 
 If you are running on macOS with the latest updates installed, make sure to install
-openSSL or some other SSL software along with Homebrew or another package manager.
-If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more 
-information. 
+OpenSSL or some other SSL software along with Homebrew or another package manager.
+If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more
+information.
 
 On macOS, if you have configured Python with ``--enable-framework``, you
 should use ``make frameworkinstall`` to do the installation.  Note that this
@@ -94,7 +92,7 @@ For example::
     make test
 
 (This will fail if you *also* built at the top-level directory.  You should do
-a ``make clean`` at the toplevel first.)
+a ``make clean`` at the top-level first.)
 
 To get an optimized build of Python, ``configure --enable-optimizations``
 before you run ``make``.  This sets the default make targets up to enable
@@ -142,20 +140,20 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.8 <https://docs.python.org/3.8/whatsnew/3.8.html>`_ document.  For a more
+3.9 <https://docs.python.org/3.9/whatsnew/3.9.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/master>`_.
 
-If you want to install multiple versions of Python see the section below
+If you want to install multiple versions of Python, see the section below
 entitled "Installing multiple versions".
 
 
 Documentation
 -------------
 
-`Documentation for Python 3.8 <https://docs.python.org/3.8/>`_ is online,
+`Documentation for Python 3.9 <https://docs.python.org/3.9/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -214,8 +212,8 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.8 with 3.8 being the
-primary version, you would execute ``make install`` in your 3.8 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.9 with 3.9 being the
+primary version, you would execute ``make install`` in your 3.9 build directory
 and ``make altinstall`` in the others.
 
 
@@ -245,15 +243,13 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`569` for Python 3.8 release details.
+See :pep:`596` for Python 3.9 release details.
 
 
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
-reserved.
+Copyright (c) 2001-2019 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 

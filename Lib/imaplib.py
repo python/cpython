@@ -272,6 +272,9 @@ class IMAP4:
         return self
 
     def __exit__(self, *args):
+        if self.state == "LOGOUT":
+            return
+
         try:
             self.logout()
         except OSError:
@@ -286,6 +289,7 @@ class IMAP4:
         # (which is used by socket.create_connection()) expects None
         # as a default value for host.
         host = None if not self.host else self.host
+        sys.audit("imaplib.open", self, self.host, self.port)
         return socket.create_connection((host, self.port))
 
     def open(self, host = '', port = IMAP4_PORT):
@@ -315,6 +319,7 @@ class IMAP4:
 
     def send(self, data):
         """Send data to remote."""
+        sys.audit("imaplib.send", self, data)
         self.sock.sendall(data)
 
 
@@ -497,7 +502,7 @@ class IMAP4:
     def enable(self, capability):
         """Send an RFC5161 enable string to the server.
 
-        (typ, [data]) = <intance>.enable(capability)
+        (typ, [data]) = <instance>.enable(capability)
         """
         if 'ENABLE' not in self.capabilities:
             raise IMAP4.error("Server does not support ENABLE")
@@ -625,11 +630,8 @@ class IMAP4:
         Returns server 'BYE' response.
         """
         self.state = 'LOGOUT'
-        try: typ, dat = self._simple_command('LOGOUT')
-        except: typ, dat = 'NO', ['%s: %s' % sys.exc_info()[:2]]
+        typ, dat = self._simple_command('LOGOUT')
         self.shutdown()
-        if 'BYE' in self.untagged_responses:
-            return 'BYE', self.untagged_responses['BYE']
         return typ, dat
 
 
@@ -1012,16 +1014,17 @@ class IMAP4:
 
 
     def _command_complete(self, name, tag):
+        logout = (name == 'LOGOUT')
         # BYE is expected after LOGOUT
-        if name != 'LOGOUT':
+        if not logout:
             self._check_bye()
         try:
-            typ, data = self._get_tagged_response(tag)
+            typ, data = self._get_tagged_response(tag, expect_bye=logout)
         except self.abort as val:
             raise self.abort('command: %s => %s' % (name, val))
         except self.error as val:
             raise self.error('command: %s => %s' % (name, val))
-        if name != 'LOGOUT':
+        if not logout:
             self._check_bye()
         if typ == 'BAD':
             raise self.error('%s command error: %s %s' % (name, typ, data))
@@ -1117,7 +1120,7 @@ class IMAP4:
         return resp
 
 
-    def _get_tagged_response(self, tag):
+    def _get_tagged_response(self, tag, expect_bye=False):
 
         while 1:
             result = self.tagged_commands[tag]
@@ -1125,9 +1128,15 @@ class IMAP4:
                 del self.tagged_commands[tag]
                 return result
 
+            if expect_bye:
+                typ = 'BYE'
+                bye = self.untagged_responses.pop(typ, None)
+                if bye is not None:
+                    # Server replies to the "LOGOUT" command with "BYE"
+                    return (typ, bye)
+
             # If we've seen a BYE at this point, the socket will be
             # closed, so report the BYE now.
-
             self._check_bye()
 
             # Some have reported "unexpected response" exceptions.
@@ -1277,7 +1286,7 @@ if HAVE_SSL:
                                  "exclusive")
             if keyfile is not None or certfile is not None:
                 import warnings
-                warnings.warn("keyfile and certfile are deprecated, use a"
+                warnings.warn("keyfile and certfile are deprecated, use a "
                               "custom ssl_context instead", DeprecationWarning, 2)
             self.keyfile = keyfile
             self.certfile = certfile

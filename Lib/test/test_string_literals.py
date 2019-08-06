@@ -31,7 +31,6 @@ import os
 import sys
 import shutil
 import tempfile
-import warnings
 import unittest
 
 
@@ -62,6 +61,8 @@ def byte(i):
 
 
 class TestLiterals(unittest.TestCase):
+
+    from test.support import check_syntax_warning
 
     def setUp(self):
         self.save_path = sys.path[:]
@@ -112,21 +113,7 @@ class TestLiterals(unittest.TestCase):
             with self.assertWarns(SyntaxWarning):
                 self.assertEqual(eval(r"'\%c'" % b), '\\' + chr(b))
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always', category=SyntaxWarning)
-            eval("'''\n\\z'''")
-        self.assertEqual(len(w), 1)
-        self.assertEqual(w[0].filename, '<string>')
-        self.assertEqual(w[0].lineno, 2)
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('error', category=SyntaxWarning)
-            with self.assertRaises(SyntaxError) as cm:
-                eval("'''\n\\z'''")
-            exc = cm.exception
-        self.assertEqual(w, [])
-        self.assertEqual(exc.filename, '<string>')
-        self.assertEqual(exc.lineno, 2)
+        self.check_syntax_warning("'''\n\\z'''")
 
     def test_eval_str_raw(self):
         self.assertEqual(eval(""" r'x' """), 'x')
@@ -161,21 +148,7 @@ class TestLiterals(unittest.TestCase):
             with self.assertWarns(SyntaxWarning):
                 self.assertEqual(eval(r"b'\%c'" % b), b'\\' + bytes([b]))
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always', category=SyntaxWarning)
-            eval("b'''\n\\z'''")
-        self.assertEqual(len(w), 1)
-        self.assertEqual(w[0].filename, '<string>')
-        self.assertEqual(w[0].lineno, 2)
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('error', category=SyntaxWarning)
-            with self.assertRaises(SyntaxError) as cm:
-                eval("b'''\n\\z'''")
-            exc = cm.exception
-        self.assertEqual(w, [])
-        self.assertEqual(exc.filename, '<string>')
-        self.assertEqual(exc.lineno, 2)
+        self.check_syntax_warning("b'''\n\\z'''")
 
     def test_eval_bytes_raw(self):
         self.assertEqual(eval(""" br'x' """), b'x')

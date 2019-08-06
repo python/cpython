@@ -2,7 +2,7 @@
 /* Traceback implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 
 #include "code.h"
 #include "frameobject.h"
@@ -163,11 +163,11 @@ static void
 tb_dealloc(PyTracebackObject *tb)
 {
     PyObject_GC_UnTrack(tb);
-    Py_TRASHCAN_SAFE_BEGIN(tb)
+    Py_TRASHCAN_BEGIN(tb, tb_dealloc)
     Py_XDECREF(tb->tb_next);
     Py_XDECREF(tb->tb_frame);
     PyObject_GC_Del(tb);
-    Py_TRASHCAN_SAFE_END(tb)
+    Py_TRASHCAN_END
 }
 
 static int
@@ -178,11 +178,12 @@ tb_traverse(PyTracebackObject *tb, visitproc visit, void *arg)
     return 0;
 }
 
-static void
+static int
 tb_clear(PyTracebackObject *tb)
 {
     Py_CLEAR(tb->tb_next);
     Py_CLEAR(tb->tb_frame);
+    return 0;
 }
 
 PyTypeObject PyTraceBack_Type = {
@@ -191,10 +192,10 @@ PyTypeObject PyTraceBack_Type = {
     sizeof(PyTracebackObject),
     0,
     (destructor)tb_dealloc, /*tp_dealloc*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,    /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     0,                  /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
@@ -226,13 +227,24 @@ PyTypeObject PyTraceBack_Type = {
     tb_new,                                     /* tp_new */
 };
 
+
+PyObject*
+_PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
+{
+    assert(tb_next == NULL || PyTraceBack_Check(tb_next));
+    assert(frame != NULL);
+
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti,
+                         PyFrame_GetLineNumber(frame));
+}
+
+
 int
 PyTraceBack_Here(PyFrameObject *frame)
 {
     PyObject *exc, *val, *tb, *newtb;
     PyErr_Fetch(&exc, &val, &tb);
-    newtb = tb_create_raw((PyTracebackObject *)tb, frame, frame->f_lasti,
-                          PyFrame_GetLineNumber(frame));
+    newtb = _PyTraceBack_FromFrame(tb, frame);
     if (newtb == NULL) {
         _PyErr_ChainExceptions(exc, val, tb);
         return -1;
@@ -418,7 +430,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     if (fob == NULL) {
         PyErr_Clear();
 
-        res = _PyObject_CallMethodId(binary, &PyId_close, NULL);
+        res = _PyObject_CallMethodIdNoArgs(binary, &PyId_close);
         Py_DECREF(binary);
         if (res)
             Py_DECREF(res);
@@ -438,7 +450,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
             break;
         }
     }
-    res = _PyObject_CallMethodId(fob, &PyId_close, NULL);
+    res = _PyObject_CallMethodIdNoArgs(fob, &PyId_close);
     if (res)
         Py_DECREF(res);
     else

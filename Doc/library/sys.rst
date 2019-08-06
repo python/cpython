@@ -16,7 +16,35 @@ always available.
    On POSIX systems where Python was built with the standard ``configure``
    script, this contains the ABI flags as specified by :pep:`3149`.
 
+   .. versionchanged:: 3.8
+      Default flags became an empty string (``m`` flag for pymalloc has been
+      removed).
+
    .. versionadded:: 3.2
+
+
+.. function:: addaudithook(hook)
+
+   Adds the callable *hook* to the collection of active auditing hooks for the
+   current interpreter.
+
+   When an auditing event is raised through the :func:`sys.audit` function, each
+   hook will be called in the order it was added with the event name and the
+   tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
+   called first, followed by hooks added in the current interpreter.
+
+   Calling this function will trigger an event for all existing hooks, and if
+   any raise an exception derived from :class:`Exception`, the add will be
+   silently ignored. As a result, callers cannot assume that their hook has been
+   added unless they control all existing hooks.
+
+   .. versionadded:: 3.8
+
+   .. impl-detail::
+
+      When tracing is enabled, Python hooks are only traced if the callable has
+      a ``__cantrace__`` member that is set to a true value. Otherwise, trace
+      functions will not see the hook.
 
 
 .. data:: argv
@@ -29,6 +57,39 @@ always available.
 
    To loop over the standard input, or the list of files given on the
    command line, see the :mod:`fileinput` module.
+
+   .. note::
+      On Unix, command line arguments are passed by bytes from OS.  Python decodes
+      them with filesystem encoding and "surrogateescape" error handler.
+      When you need original bytes, you can get it by
+      ``[os.fsencode(arg) for arg in sys.argv]``.
+
+
+.. _auditing:
+
+.. function:: audit(event, *args)
+
+   .. index:: single: auditing
+
+   Raises an auditing event with any active hooks. The event name is a string
+   identifying the event and its associated schema, which is the number and
+   types of arguments. The schema for a given event is considered public and
+   stable API and should not be modified between releases.
+
+   This function will raise the first exception raised by any hook. In general,
+   these errors should not be handled and should terminate the process as
+   quickly as possible.
+
+   Hooks are added using the :func:`sys.addaudithook` or
+   :c:func:`PySys_AddAuditHook` functions.
+
+   The native equivalent of this function is :c:func:`PySys_Audit`. Using the
+   native function is preferred when possible.
+
+   See the :ref:`audit events table <audit-events>` for all events raised by
+   ``CPython``.
+
+   .. versionadded:: 3.8
 
 
 .. data:: base_exec_prefix
@@ -107,6 +168,8 @@ always available.
    code examines the frame.
 
    This function should be used for internal and specialized purposes only.
+
+   .. audit-event:: sys._current_frames "" sys._current_frames
 
 
 .. function:: breakpointhook()
@@ -242,16 +305,23 @@ always available.
    before the program exits.  The handling of such top-level exceptions can be
    customized by assigning another three-argument function to ``sys.excepthook``.
 
+   .. seealso::
+
+      The :func:`sys.unraisablehook` function handles unraisable exceptions
+      and the :func:`threading.excepthook` function handles exception raised
+      by :func:`threading.Thread.run`.
+
 
 .. data:: __breakpointhook__
           __displayhook__
           __excepthook__
+          __unraisablehook__
 
    These objects contain the original values of ``breakpointhook``,
-   ``displayhook``, and ``excepthook`` at the start of the program.  They are
-   saved so that ``breakpointhook``, ``displayhook`` and ``excepthook`` can be
-   restored in case they happen to get replaced with broken or alternative
-   objects.
+   ``displayhook``, ``excepthook``, and ``unraisablehook`` at the start of the
+   program.  They are saved so that ``breakpointhook``, ``displayhook`` and
+   ``excepthook``, ``unraisablehook`` can be restored in case they happen to
+   get replaced with broken or alternative objects.
 
    .. versionadded:: 3.7
       __breakpointhook__
@@ -484,14 +554,6 @@ always available.
    .. versionadded:: 3.7
 
 
-.. function:: getcheckinterval()
-
-   Return the interpreter's "check interval"; see :func:`setcheckinterval`.
-
-   .. deprecated:: 3.2
-      Use :func:`getswitchinterval` instead.
-
-
 .. function:: getdefaultencoding()
 
    Return the name of the current default string encoding used by the Unicode
@@ -524,12 +586,16 @@ always available.
 
    * In the UTF-8 mode, the encoding is ``utf-8`` on any platform.
 
-   * On Mac OS X, the encoding is ``'utf-8'``.
+   * On macOS, the encoding is ``'utf-8'``.
 
    * On Unix, the encoding is the locale encoding.
 
    * On Windows, the encoding may be ``'utf-8'`` or ``'mbcs'``, depending
      on user configuration.
+
+   * On Android, the encoding is ``'utf-8'``.
+
+   * On VxWorks, the encoding is ``'utf-8'``.
 
    .. versionchanged:: 3.2
       :func:`getfilesystemencoding` result cannot be ``None`` anymore.
@@ -603,6 +669,8 @@ always available.
    given, return the frame object that many calls below the top of the stack.  If
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
+
+   .. audit-event:: sys._getframe "" sys._getframe
 
    .. impl-detail::
 
@@ -703,29 +771,13 @@ always available.
 .. function:: get_coroutine_origin_tracking_depth()
 
    Get the current coroutine origin tracking depth, as set by
-   func:`set_coroutine_origin_tracking_depth`.
+   :func:`set_coroutine_origin_tracking_depth`.
 
    .. versionadded:: 3.7
 
    .. note::
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
-
-
-.. function:: get_coroutine_wrapper()
-
-   Returns ``None``, or a wrapper set by :func:`set_coroutine_wrapper`.
-
-   .. versionadded:: 3.5
-      See :pep:`492` for more details.
-
-   .. note::
-      This function has been added on a provisional basis (see :pep:`411`
-      for details.)  Use it only for debugging purposes.
-
-   .. deprecated:: 3.7
-      The coroutine wrapper functionality has been deprecated, and
-      will be removed in 3.8. See :issue:`32591` for details.
 
 
 .. data:: hash_info
@@ -823,6 +875,10 @@ always available.
 
    .. versionadded:: 3.3
 
+   .. note::
+
+      The addition of new required attributes must go through the normal PEP
+      process. See :pep:`421` for more information.
 
 .. data:: int_info
 
@@ -852,6 +908,12 @@ always available.
    <tut-interactive>`.  This is done after the :envvar:`PYTHONSTARTUP` file is
    read, so that you can set this hook there.  The :mod:`site` module
    :ref:`sets this <rlcompleter-config>`.
+
+   .. audit-event:: cpython.run_interactivehook hook sys.__interactivehook__
+
+      Raises an :ref:`auditing event <auditing>`
+      ``cpython.run_interactivehook`` with the hook object as the argument when
+      the hook is called on startup.
 
    .. versionadded:: 3.4
 
@@ -1004,7 +1066,7 @@ always available.
    This string contains a platform identifier that can be used to append
    platform-specific components to :data:`sys.path`, for instance.
 
-   For Unix systems, except on Linux, this is the lowercased OS name as
+   For Unix systems, except on Linux and AIX, this is the lowercased OS name as
    returned by ``uname -s`` with the first part of the version as returned by
    ``uname -r`` appended, e.g. ``'sunos5'`` or ``'freebsd8'``, *at the time
    when Python was built*.  Unless you want to test for a specific system
@@ -1014,21 +1076,30 @@ always available.
           # FreeBSD-specific code here...
       elif sys.platform.startswith('linux'):
           # Linux-specific code here...
+      elif sys.platform.startswith('aix'):
+          # AIX-specific code here...
 
    For other systems, the values are:
 
    ================ ===========================
    System           ``platform`` value
    ================ ===========================
+   AIX              ``'aix'``
    Linux            ``'linux'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
-   Mac OS X         ``'darwin'``
+   macOS            ``'darwin'``
    ================ ===========================
 
    .. versionchanged:: 3.3
       On Linux, :attr:`sys.platform` doesn't contain the major version anymore.
       It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.  Since
+      older Python versions include the version number, it is recommended to
+      always use the ``startswith`` idiom presented above.
+
+   .. versionchanged:: 3.8
+      On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+      It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.  Since
       older Python versions include the version number, it is recommended to
       always use the ``startswith`` idiom presented above.
 
@@ -1064,6 +1135,8 @@ always available.
    .. index::
       single: interpreter prompts
       single: prompts, interpreter
+      single: >>>; interpreter prompt
+      single: ...; interpreter prompt
 
    Strings specifying the primary and secondary prompt of the interpreter.  These
    are only defined if the interpreter is in interactive mode.  Their initial
@@ -1071,21 +1144,6 @@ always available.
    assigned to either variable, its :func:`str` is re-evaluated each time the
    interpreter prepares to read a new interactive command; this can be used to
    implement a dynamic prompt.
-
-
-.. function:: setcheckinterval(interval)
-
-   Set the interpreter's "check interval".  This integer value determines how often
-   the interpreter checks for periodic things such as thread switches and signal
-   handlers.  The default is ``100``, meaning the check is performed every 100
-   Python virtual instructions. Setting it to a larger value may increase
-   performance for programs using threads.  Setting it to a value ``<=`` 0 checks
-   every virtual instruction, maximizing responsiveness as well as overhead.
-
-   .. deprecated:: 3.2
-      This function doesn't have an effect anymore, as the internal logic for
-      thread switching and asynchronous tasks has been rewritten.  Use
-      :func:`setswitchinterval` instead.
 
 
 .. function:: setdlopenflags(n)
@@ -1121,6 +1179,8 @@ always available.
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
    ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
    on the event type.
+
+   .. audit-event:: sys.setprofile "" sys.setprofile
 
    The events have the following meaning:
 
@@ -1183,8 +1243,8 @@ always available.
 
    Set the system's trace function, which allows you to implement a Python
    source code debugger in Python.  The function is thread-specific; for a
-   debugger to support multiple threads, it must be registered using
-   :func:`settrace` for each thread being debugged.
+   debugger to support multiple threads, it must register a trace function using
+   :func:`settrace` for each thread being debugged or use :func:`threading.settrace`.
 
    Trace functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
@@ -1242,6 +1302,8 @@ always available.
 
    For more information on code and frame objects, refer to :ref:`types`.
 
+   .. audit-event:: sys.settrace "" sys.settrace
+
    .. impl-detail::
 
       The :func:`settrace` function is intended only for implementing debuggers,
@@ -1261,6 +1323,13 @@ always available.
    callable will be called when an asynchronous generator is iterated for the
    first time. The *finalizer* will be called when an asynchronous generator
    is about to be garbage collected.
+
+   .. audit-event:: sys.set_asyncgen_hooks_firstiter "" sys.set_asyncgen_hooks
+
+   .. audit-event:: sys.set_asyncgen_hooks_finalizer "" sys.set_asyncgen_hooks
+
+   Two auditing events are raised because the underlying API consists of two
+   calls, each of which must raise its own event.
 
    .. versionadded:: 3.6
       See :pep:`525` for more details, and for a reference example of a
@@ -1293,49 +1362,6 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
 
-.. function:: set_coroutine_wrapper(wrapper)
-
-   Allows intercepting creation of :term:`coroutine` objects (only ones that
-   are created by an :keyword:`async def` function; generators decorated with
-   :func:`types.coroutine` or :func:`asyncio.coroutine` will not be
-   intercepted).
-
-   The *wrapper* argument must be either:
-
-   * a callable that accepts one argument (a coroutine object);
-   * ``None``, to reset the wrapper.
-
-   If called twice, the new wrapper replaces the previous one.  The function
-   is thread-specific.
-
-   The *wrapper* callable cannot define new coroutines directly or indirectly::
-
-        def wrapper(coro):
-            async def wrap(coro):
-                return await coro
-            return wrap(coro)
-        sys.set_coroutine_wrapper(wrapper)
-
-        async def foo():
-            pass
-
-        # The following line will fail with a RuntimeError, because
-        # ``wrapper`` creates a ``wrap(coro)`` coroutine:
-        foo()
-
-   See also :func:`get_coroutine_wrapper`.
-
-   .. versionadded:: 3.5
-      See :pep:`492` for more details.
-
-   .. note::
-      This function has been added on a provisional basis (see :pep:`411`
-      for details.)  Use it only for debugging purposes.
-
-   .. deprecated:: 3.7
-      The coroutine wrapper functionality has been deprecated, and
-      will be removed in 3.8. See :issue:`32591` for details.
-
 .. function:: _enablelegacywindowsfsencoding()
 
    Changes the default filesystem encoding and errors mode to 'mbcs' and
@@ -1366,13 +1392,30 @@ always available.
    returned by the :func:`open` function.  Their parameters are chosen as
    follows:
 
-   * The character encoding is platform-dependent.  Under Windows, if the stream
-     is interactive (that is, if its :meth:`isatty` method returns ``True``), the
-     console codepage is used, otherwise the ANSI code page.  Under other
-     platforms, the locale encoding is used (see :meth:`locale.getpreferredencoding`).
+   * The character encoding is platform-dependent.  Non-Windows
+     platforms use the locale encoding (see
+     :meth:`locale.getpreferredencoding()`).
 
-     Under all platforms though, you can override this value by setting the
-     :envvar:`PYTHONIOENCODING` environment variable before starting Python.
+     On Windows, UTF-8 is used for the console device.  Non-character
+     devices such as disk files and pipes use the system locale
+     encoding (i.e. the ANSI codepage).  Non-console character
+     devices such as NUL (i.e. where isatty() returns True) use the
+     value of the console input and output codepages at startup,
+     respectively for stdin and stdout/stderr. This defaults to the
+     system locale encoding if the process is not initially attached
+     to a console.
+
+     The special behaviour of the console can be overridden
+     by setting the environment variable PYTHONLEGACYWINDOWSSTDIO
+     before starting Python. In that case, the console codepages are
+     used as for any other character device.
+
+     Under all platforms, you can override the character encoding by
+     setting the :envvar:`PYTHONIOENCODING` environment variable before
+     starting Python or by using the new :option:`-X` ``utf8`` command
+     line option and :envvar:`PYTHONUTF8` environment variable.  However,
+     for the Windows console, this only applies when
+     :envvar:`PYTHONLEGACYWINDOWSSTDIO` is also set.
 
    * When interactive, ``stdout`` and ``stderr`` streams are line-buffered.
      Otherwise, they are block-buffered like regular text files.  You can
@@ -1448,6 +1491,41 @@ always available.
    The default is ``1000``.  When set to ``0`` or less, all traceback information
    is suppressed and only the exception type and value are printed.
 
+
+.. function:: unraisablehook(unraisable, /)
+
+   Handle an unraisable exception.
+
+   Called when an exception has occurred but there is no way for Python to
+   handle it. For example, when a destructor raises an exception or during
+   garbage collection (:func:`gc.collect`).
+
+   The *unraisable* argument has the following attributes:
+
+   * *exc_type*: Exception type.
+   * *exc_value*: Exception value, can be ``None``.
+   * *exc_traceback*: Exception traceback, can be ``None``.
+   * *err_msg*: Error message, can be ``None``.
+   * *object*: Object causing the exception, can be ``None``.
+
+   The default hook formats *err_msg* and *object* as:
+   ``f'{err_msg}: {object!r}'``; use "Exception ignored in" error message
+   if *err_msg* is ``None``.
+
+   :func:`sys.unraisablehook` can be overridden to control how unraisable
+   exceptions are handled.
+
+   Storing *exc_value* using a custom hook can create a reference cycle. It
+   should be cleared explicitly to break the reference cycle when the
+   exception is no longer needed.
+
+   Storing *object* using a custom hook can resurrect it if it is set to an
+   object which is being finalized. Avoid storing *object* after the custom
+   hook completes to avoid resurrecting objects.
+
+   See also :func:`excepthook` which handles uncaught exceptions.
+
+   .. versionadded:: 3.8
 
 .. data:: version
 

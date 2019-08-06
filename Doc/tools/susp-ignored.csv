@@ -14,7 +14,7 @@ faq/programming,,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,
 faq/programming,,::,for x in sequence[::-1]:
 faq/programming,,:reduce,"print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
 faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
-faq/windows,,:bd8afb90ebf2,"Python 3.3.0 (v3.3.0:bd8afb90ebf2, Sep 29 2012, 10:55:48) [MSC v.1600 32 bit (Intel)] on win32"
+faq/windows,,:d48eceb,"Python 3.6.4 (v3.6.4:d48eceb, Dec 19 2017, 06:04:45) [MSC v.1900 32 bit (Intel)] on win32"
 howto/curses,,:black,"colors when it activates color mode.  They are: 0:black, 1:red,"
 howto/curses,,:red,"colors when it activates color mode.  They are: 0:black, 1:red,"
 howto/curses,,:green,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
@@ -81,6 +81,7 @@ howto/ipaddress,,::,IPv6Address('2001:db8::ffff:ffff')
 howto/ipaddress,,:ffff,IPv6Address('2001:db8::ffff:ffff')
 howto/logging,,:And,"WARNING:And this, too"
 howto/logging,,:And,"WARNING:root:And this, too"
+howto/logging,,:And,"ERROR:root:And non-ASCII stuff, too, like "
 howto/logging,,:Doing,INFO:root:Doing something
 howto/logging,,:Finished,INFO:root:Finished
 howto/logging,,:logger,severity:logger name:message
@@ -90,6 +91,7 @@ howto/logging,,:root,DEBUG:root:This message should go to the log file
 howto/logging,,:root,INFO:root:Doing something
 howto/logging,,:root,INFO:root:Finished
 howto/logging,,:root,INFO:root:So should this
+howto/logging,,:root,"ERROR:root:And non-ASCII stuff, too, like "
 howto/logging,,:root,INFO:root:Started
 howto/logging,,:root,"WARNING:root:And this, too"
 howto/logging,,:root,WARNING:root:Look before you leap!
@@ -178,9 +180,17 @@ library/pathlib,,:Program,>>> PureWindowsPath('c:Program Files/').anchor
 library/pdb,,:lineno,filename:lineno
 library/pickle,,:memory,"conn = sqlite3.connect("":memory:"")"
 library/posix,,`,"CFLAGS=""`getconf LFS_CFLAGS`"" OPT=""-g -O2 $CFLAGS"""
-library/pprint,,::,"'Programming Language :: Python :: 2 :: Only'],"
 library/pprint,,::,"'Programming Language :: Python :: 2.6',"
 library/pprint,,::,"'Programming Language :: Python :: 2.7',"
+library/pprint,,::,"'classifiers': ['Development Status :: 3 - Alpha',"
+library/pprint,,::,"'Intended Audience :: Developers',"
+library/pprint,,::,"'License :: OSI Approved :: MIT License',"
+library/pprint,,::,"'Programming Language :: Python :: 2',"
+library/pprint,,::,"'Programming Language :: Python :: 3',"
+library/pprint,,::,"'Programming Language :: Python :: 3.2',"
+library/pprint,,::,"'Programming Language :: Python :: 3.3',"
+library/pprint,,::,"'Programming Language :: Python :: 3.4',"
+library/pprint,,::,"'Topic :: Software Development :: Build Tools'],"
 library/profile,,:lineno,filename:lineno(function)
 library/pyexpat,,:elem1,<py:elem1 />
 library/pyexpat,,:py,"xmlns:py = ""http://www.python.org/ns/"">"
@@ -207,8 +217,7 @@ library/stdtypes,,::,>>> hash(v[::-2]) == hash(b'abcefg'[::-2])
 library/stdtypes,,:len,s[len(s):len(s)]
 library/stdtypes,,::,>>> y = m[::2]
 library/stdtypes,,::,>>> z = y[::-2]
-library/subprocess,,`,"output=`dmesg | grep hda`"
-library/subprocess,,`,"output=`mycmd myarg`"
+library/string,,`,"!""#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
 library/tarfile,,:bz2,
 library/tarfile,,:compression,filemode[:compression]
 library/tarfile,,:gz,
@@ -227,6 +236,8 @@ library/urllib.request,,:close,Connection:close
 library/urllib.request,,:port,:port
 library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
 library/urllib.request,,:password,"""joe:password@python.org"""
+library/urllib.parse,,:scheme,<URL:scheme://host/path>
+library/urllib.parse,,:scheme,URL:scheme://host/path
 library/uuid,,:uuid,urn:uuid:12345678-1234-5678-1234-567812345678
 library/venv,,:param,":param nodist: If True, setuptools and pip are not installed into the"
 library/venv,,:param,":param progress: If setuptools or pip are installed, the progress of the"
@@ -326,7 +337,6 @@ library/zipapp,,:main,"$ python -m zipapp myapp -m ""myapp:main"""
 library/zipapp,,:fn,"pkg.mod:fn"
 library/zipapp,,:callable,"pkg.module:callable"
 library/stdtypes,,::,>>> m[::2].tolist()
-library/sys,,`,# ``wrapper`` creates a ``wrap(coro)`` coroutine:
 whatsnew/3.5,,:root,'WARNING:root:warning\n'
 whatsnew/3.5,,:warning,'WARNING:root:warning\n'
 whatsnew/3.5,,::,>>> addr6 = ipaddress.IPv6Address('::1')
@@ -341,3 +351,5 @@ whatsnew/3.7,,::,error::BytesWarning
 whatsnew/changelog,,::,error::BytesWarning
 whatsnew/changelog,,::,default::BytesWarning
 whatsnew/changelog,,::,default::DeprecationWarning
+library/importlib.metadata,,:main,"EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')"
+library/importlib.metadata,,`,of directories ``path`` (defaults to sys.path).

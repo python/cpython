@@ -217,7 +217,7 @@ exist in parallel; over time, this compatibility should be phased out.
 
 On the Python side, there should be no downside to this change.
 
-On the C API side, PEP 393 is fully backward compatible.  The legacy API
+On the C API side, :pep:`393` is fully backward compatible.  The legacy API
 should remain available at least five years.  Applications using the legacy
 API will not fully benefit of the memory reduction, or - worse - may use
 a bit more memory, because Python may have to maintain two versions of each
@@ -2082,7 +2082,7 @@ Add a new :class:`types.MappingProxyType` class: Read-only proxy of a mapping.
 
 
 The new functions :func:`types.new_class` and :func:`types.prepare_class` provide support
-for PEP 3115 compliant dynamic type creation. (:issue:`14588`)
+for :pep:`3115` compliant dynamic type creation. (:issue:`14588`)
 
 
 unittest
@@ -2396,7 +2396,7 @@ Porting Python code
   case of working with :term:`path entry finders <path entry finder>`.
 
 * :mod:`pkgutil` has been converted to use :mod:`importlib` internally. This
-  eliminates many edge cases where the old behaviour of the PEP 302 import
+  eliminates many edge cases where the old behaviour of the :pep:`302` import
   emulation failed to match the behaviour of the real import system. The
   import emulation itself is still present, but is now deprecated. The
   :func:`pkgutil.iter_importers` and :func:`pkgutil.walk_packages` functions
@@ -2472,7 +2472,7 @@ Porting C code
   functions using this type are deprecated (but will stay available for
   at least five years).  If you were using low-level Unicode APIs to
   construct and access unicode objects and you want to benefit of the
-  memory footprint reduction provided by PEP 393, you have to convert
+  memory footprint reduction provided by :pep:`393`, you have to convert
   your code to the new :doc:`Unicode API <../c-api/unicode>`.
 
   However, if you only have been using high-level functions such as

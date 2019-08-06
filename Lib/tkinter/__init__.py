@@ -32,12 +32,12 @@ tk.mainloop()
 
 import enum
 import sys
+import types
 
 import _tkinter # If this fails your Python may not be configured for Tk
 TclError = _tkinter.TclError
 from tkinter.constants import *
 import re
-
 
 wantobjects = 1
 
@@ -4124,6 +4124,15 @@ class PhotoImage(Image):
             args = args + ('-from',) + tuple(from_coords)
         self.tk.call(args)
 
+    def transparency_get(self, x, y):
+        """Return True if the pixel at x,y is transparent."""
+        return self.tk.getboolean(self.tk.call(
+            self.name, 'transparency', 'get', x, y))
+
+    def transparency_set(self, x, y, boolean):
+        """Set the transparency of the pixel at x,y."""
+        self.tk.call(self.name, 'transparency', 'set', x, y, boolean)
+
 
 class BitmapImage(Image):
     """Widget which can display images in XBM format."""
@@ -4559,6 +4568,10 @@ def _test():
     root.deiconify()
     root.mainloop()
 
+
+__all__ = [name for name, obj in globals().items()
+           if not name.startswith('_') and not isinstance(obj, types.ModuleType)
+           and name not in {'wantobjects'}]
 
 if __name__ == '__main__':
     _test()

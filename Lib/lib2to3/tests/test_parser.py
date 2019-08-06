@@ -531,7 +531,7 @@ class TestSetLiteral(GrammarTest):
 
 # Adapted from Python 3's Lib/test/test_unicode_identifiers.py and
 # Lib/test/test_tokenize.py:TokenizeTest.test_non_ascii_identifiers
-class TestIdentfier(GrammarTest):
+class TestIdentifier(GrammarTest):
     def test_non_ascii_identifiers(self):
         self.validate("Örter = 'places'\ngrün = 'green'")
         self.validate("蟒 = a蟒 = 锦蛇 = 1")
@@ -620,6 +620,18 @@ class TestLiterals(GrammarTest):
                     "6f630fad67cda0ee1fb1f562db3aa53e")
             """
         self.validate(s)
+
+
+class TestPickleableException(unittest.TestCase):
+    def test_ParseError(self):
+        err = ParseError('msg', 2, None, (1, 'context'))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            err2 = pickle.loads(pickle.dumps(err, protocol=proto))
+            self.assertEqual(err.args, err2.args)
+            self.assertEqual(err.msg, err2.msg)
+            self.assertEqual(err.type, err2.type)
+            self.assertEqual(err.value, err2.value)
+            self.assertEqual(err.context, err2.context)
 
 
 def diff_texts(a, b, filename):

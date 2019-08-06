@@ -1,2 +1,0 @@
-Fix inspect module polluted ``sys.modules`` when parsing
-``__text_signature__`` of callable.

@@ -200,6 +200,23 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.8
 
+- :const:`IPPROTO_UDPLITE` is a variant of UDP which allows you to specify
+  what portion of a packet is covered with the checksum. It adds two socket
+  options that you can change.
+  ``self.setsockopt(IPPROTO_UDPLITE, UDPLITE_SEND_CSCOV, length)`` will
+  change what portion of outgoing packets are covered by the checksum and
+  ``self.setsockopt(IPPROTO_UDPLITE, UDPLITE_RECV_CSCOV, length)`` will
+  filter out packets which cover too little of their data. In both cases
+  ``length`` should be in ``range(8, 2**16, 8)``.
+
+  Such a socket should be constructed with
+  ``socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE)`` for IPv4 or
+  ``socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDPLITE)`` for IPv6.
+
+  .. availability:: Linux >= 2.6.20, FreeBSD >= 10.1-RELEASE
+
+  .. versionadded:: 3.9
+
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
 returned from the DNS resolution.  The socket address will be resolved
@@ -374,13 +391,16 @@ Constants
 
    .. availability:: Linux >= 2.6.25.
 
+   .. note::
+      The :data:`CAN_BCM_CAN_FD_FRAME` flag is only available on Linux >= 4.8.
+
    .. versionadded:: 3.4
 
 .. data:: CAN_RAW_FD_FRAMES
 
    Enables CAN FD support in a CAN_RAW socket. This is disabled by default.
    This allows your application to send both CAN and CAN FD frames; however,
-   you one must accept both CAN and CAN FD frames when reading from the socket.
+   you must accept both CAN and CAN FD frames when reading from the socket.
 
    This constant is documented in the Linux documentation.
 
@@ -526,6 +546,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
+   .. audit-event:: socket.__new__ self,family,type,protocol socket.socket
+
    .. versionchanged:: 3.3
       The AF_CAN family was added.
       The AF_RDS family was added.
@@ -595,6 +617,50 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.2
       *source_address* was added.
 
+.. function:: create_server(address, *, family=AF_INET, backlog=None, reuse_port=False, dualstack_ipv6=False)
+
+   Convenience function which creates a TCP socket bound to *address* (a 2-tuple
+   ``(host, port)``) and return the socket object.
+
+   *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
+   *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``
+   a default reasonable value is chosen.
+   *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
+
+   If *dualstack_ipv6* is true and the platform supports it the socket will
+   be able to accept both IPv4 and IPv6 connections, else it will raise
+   :exc:`ValueError`. Most POSIX platforms and Windows are supposed to support
+   this functionality.
+   When this functionality is enabled the address returned by
+   :meth:`socket.getpeername` when an IPv4 connection occurs will be an IPv6
+   address represented as an IPv4-mapped IPv6 address.
+   If *dualstack_ipv6* is false it will explicitly disable this functionality
+   on platforms that enable it by default (e.g. Linux).
+   This parameter can be used in conjunction with :func:`has_dualstack_ipv6`:
+
+   ::
+
+     import socket
+
+     addr = ("", 8080)  # all interfaces, port 8080
+     if socket.has_dualstack_ipv6():
+         s = socket.create_server(addr, family=socket.AF_INET6, dualstack_ipv6=True)
+     else:
+         s = socket.create_server(addr)
+
+   .. note::
+    On POSIX platforms the :data:`SO_REUSEADDR` socket option is set in order to
+    immediately reuse previous sockets which were bound on the same *address*
+    and remained in TIME_WAIT state.
+
+   .. versionadded:: 3.8
+
+.. function:: has_dualstack_ipv6()
+
+   Return ``True`` if the platform supports creating a TCP socket which can
+   handle both IPv4 and IPv6 connections.
+
+   .. versionadded:: 3.8
 
 .. function:: fromfd(fd, family, type, proto=0)
 
@@ -674,6 +740,8 @@ The :mod:`socket` module also offers various network-related services:
    :const:`AF_INET6`), and is meant to be passed to the :meth:`socket.connect`
    method.
 
+   .. audit-event:: socket.getaddrinfo host,port,family,type,protocol socket.getaddrinfo
+
    The following example fetches address information for a hypothetical TCP
    connection to ``example.org`` on port 80 (results may differ on your
    system if IPv6 isn't enabled)::
@@ -709,6 +777,8 @@ The :mod:`socket` module also offers various network-related services:
    interface. :func:`gethostbyname` does not support IPv6 name resolution, and
    :func:`getaddrinfo` should be used instead for IPv4/v6 dual stack support.
 
+   .. audit-event:: socket.gethostbyname hostname socket.gethostbyname
+
 
 .. function:: gethostbyname_ex(hostname)
 
@@ -721,11 +791,15 @@ The :mod:`socket` module also offers various network-related services:
    resolution, and :func:`getaddrinfo` should be used instead for IPv4/v6 dual
    stack support.
 
+   .. audit-event:: socket.gethostbyname hostname socket.gethostbyname_ex
+
 
 .. function:: gethostname()
 
    Return a string containing the hostname of the machine where  the Python
    interpreter is currently executing.
+
+   .. audit-event:: socket.gethostname "" socket.gethostname
 
    Note: :func:`gethostname` doesn't always return the fully qualified domain
    name; use :func:`getfqdn` for that.
@@ -741,6 +815,8 @@ The :mod:`socket` module also offers various network-related services:
    domain name, use the function :func:`getfqdn`. :func:`gethostbyaddr` supports
    both IPv4 and IPv6.
 
+   .. audit-event:: socket.gethostbyaddr ip_address socket.gethostbyaddr
+
 
 .. function:: getnameinfo(sockaddr, flags)
 
@@ -751,6 +827,10 @@ The :mod:`socket` module also offers various network-related services:
 
    For IPv6 addresses, ``%scope`` is appended to the host part if *sockaddr*
    contains meaningful *scopeid*. Usually this happens for multicast addresses.
+
+   For more information about *flags* you can consult :manpage:`getnameinfo(3)`.
+
+   .. audit-event:: socket.getnameinfo sockaddr socket.getnameinfo
 
 .. function:: getprotobyname(protocolname)
 
@@ -767,12 +847,16 @@ The :mod:`socket` module also offers various network-related services:
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
 
+   .. audit-event:: socket.getservbyname servicename,protocolname socket.getservbyname
+
 
 .. function:: getservbyport(port[, protocolname])
 
    Translate an Internet port number and protocol name to a service name for that
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
+
+   .. audit-event:: socket.getservbyport port,protocolname socket.getservbyport
 
 
 .. function:: ntohl(x)
@@ -957,6 +1041,8 @@ The :mod:`socket` module also offers various network-related services:
    Set the machine's hostname to *name*.  This will raise an
    :exc:`OSError` if you don't have enough rights.
 
+   .. audit-event:: socket.sethostname name socket.sethostname
+
    .. availability:: Unix.
 
    .. versionadded:: 3.3
@@ -968,9 +1054,12 @@ The :mod:`socket` module also offers various network-related services:
    (index int, name string) tuples.
    :exc:`OSError` if the system call fails.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.8
+      Windows support was added.
 
 
 .. function:: if_nametoindex(if_name)
@@ -979,9 +1068,12 @@ The :mod:`socket` module also offers various network-related services:
    interface name.
    :exc:`OSError` if no interface with the given name exists.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.8
+      Windows support was added.
 
 
 .. function:: if_indextoname(if_index)
@@ -990,9 +1082,12 @@ The :mod:`socket` module also offers various network-related services:
    interface index number.
    :exc:`OSError` if no interface with the given index exists.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.8
+      Windows support was added.
 
 
 .. _socket-objects:
@@ -1032,6 +1127,7 @@ to sockets.
    Bind the socket to *address*.  The socket must not already be bound. (The format
    of *address* depends on the address family --- see above.)
 
+   .. audit-event:: socket.bind self,address socket.socket.bind
 
 .. method:: socket.close()
 
@@ -1069,6 +1165,8 @@ to sockets.
    :exc:`InterruptedError` exception if the connection is interrupted by a
    signal (or the exception raised by the signal handler).
 
+   .. audit-event:: socket.connect self,address socket.socket.connect
+
    .. versionchanged:: 3.5
       The method now waits until the connection completes instead of raising an
       :exc:`InterruptedError` exception if the connection is interrupted by a
@@ -1085,6 +1183,7 @@ to sockets.
    :c:data:`errno` variable.  This is useful to support, for example, asynchronous
    connects.
 
+   .. audit-event:: socket.connect self,address socket.socket.connect_ex
 
 .. method:: socket.detach()
 
@@ -1426,6 +1525,8 @@ to sockets.
    bytes sent. (The format of *address* depends on the address family --- see
    above.)
 
+   .. audit-event:: socket.sendto self,address socket.socket.sendto
+
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise
       an exception, the method now retries the system call instead of raising
@@ -1464,6 +1565,8 @@ to sockets.
           return sock.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array("i", fds))])
 
    .. availability:: most Unix platforms, possibly others.
+
+   .. audit-event:: socket.sendmsg self,address socket.socket.sendmsg
 
    .. versionadded:: 3.3
 
@@ -1777,7 +1880,6 @@ sends traffic to the first one connected successfully. ::
        s.sendall(b'Hello, world')
        data = s.recv(1024)
    print('Received', repr(data))
-
 
 The next example shows how to write a very simple network sniffer with raw
 sockets on Windows. The example requires administrator privileges to modify

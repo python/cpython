@@ -8,9 +8,9 @@ import tempfile
 __all__ = ["version", "bootstrap"]
 
 
-_SETUPTOOLS_VERSION = "39.0.1"
+_SETUPTOOLS_VERSION = "41.0.1"
 
-_PIP_VERSION = "10.0.1"
+_PIP_VERSION = "19.2.1"
 
 _PROJECTS = [
     ("setuptools", _SETUPTOOLS_VERSION),
@@ -72,6 +72,8 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
     """
     if altinstall and default_pip:
         raise ValueError("Cannot use altinstall and default_pip together")
+
+    sys.audit("ensurepip.bootstrap", root)
 
     _disable_pip_configuration_settings()
 

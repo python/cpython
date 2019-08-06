@@ -1352,7 +1352,7 @@ shelve
 ------
 
 :class:`~shelve.Shelf` instances may now be used in :keyword:`with` statements,
-and will be automatically closed at the end of the :keyword:`with` block.
+and will be automatically closed at the end of the :keyword:`!with` block.
 (Contributed by Filip Gruszczyński in :issue:`13896`.)
 
 
@@ -1452,10 +1452,10 @@ in :issue:`18143`.)
 
 :class:`~ssl.SSLContext` has a new method,
 :meth:`~ssl.SSLContext.cert_store_stats`, that reports the number of loaded
-``X.509`` certs, ``X.509 CA`` certs, and certificate revocation lists (``crl``\
-s), as well as a :meth:`~ssl.SSLContext.get_ca_certs` method that returns a
-list of the loaded ``CA`` certificates.  (Contributed by Christian Heimes in
-:issue:`18147`.)
+``X.509`` certs, ``X.509 CA`` certs, and certificate revocation lists
+(``crl``\ s), as well as a :meth:`~ssl.SSLContext.get_ca_certs` method that
+returns a list of the loaded ``CA`` certificates.  (Contributed by Christian
+Heimes in :issue:`18147`.)
 
 If OpenSSL 0.9.8 or later is available, :class:`~ssl.SSLContext` has a new
 attribute :attr:`~ssl.SSLContext.verify_flags` that can be used to control the

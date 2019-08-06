@@ -201,9 +201,11 @@ The Mock Class
 
 .. testsetup::
 
+    import asyncio
+    import inspect
     import unittest
     from unittest.mock import sentinel, DEFAULT, ANY
-    from unittest.mock import patch, call, Mock, MagicMock, PropertyMock
+    from unittest.mock import patch, call, Mock, MagicMock, PropertyMock, AsyncMock
     from unittest.mock import mock_open
 
 :class:`Mock` is a flexible mock object intended to replace the use of stubs and
@@ -609,9 +611,11 @@ the *new_callable* argument to :func:`patch`.
 
         This is either ``None`` (if the mock hasn't been called), or the
         arguments that the mock was last called with. This will be in the
-        form of a tuple: the first member is any ordered arguments the mock
-        was called with (or an empty tuple) and the second member is any
-        keyword arguments (or an empty dictionary).
+        form of a tuple: the first member, which can also be accessed through
+        the ``args`` property, is any ordered arguments the mock was
+        called with (or an empty tuple) and the second member, which can
+        also be accessed through the ``kwargs`` property, is any keyword
+        arguments (or an empty dictionary).
 
             >>> mock = Mock(return_value=None)
             >>> print(mock.call_args)
@@ -626,9 +630,17 @@ the *new_callable* argument to :func:`patch`.
             call(3, 4)
             >>> mock.call_args == ((3, 4),)
             True
+            >>> mock.call_args.args
+            (3, 4)
+            >>> mock.call_args.kwargs
+            {}
             >>> mock(3, 4, 5, key='fish', next='w00t!')
             >>> mock.call_args
             call(3, 4, 5, key='fish', next='w00t!')
+            >>> mock.call_args.args
+            (3, 4, 5)
+            >>> mock.call_args.kwargs
+            {'key': 'fish', 'next': 'w00t!'}
 
         :attr:`call_args`, along with members of the lists :attr:`call_args_list`,
         :attr:`method_calls` and :attr:`mock_calls` are :data:`call` objects.
@@ -702,6 +714,19 @@ the *new_callable* argument to :func:`patch`.
         unpacked as tuples to get at the individual arguments. See
         :ref:`calls as tuples <calls-as-tuples>`.
 
+        .. note::
+
+            The way :attr:`mock_calls` are recorded means that where nested
+            calls are made, the parameters of ancestor calls are not recorded
+            and so will always compare equal:
+
+                >>> mock = MagicMock()
+                >>> mock.top(a=3).bottom()
+                <MagicMock name='mock.top().bottom()' id='...'>
+                >>> mock.mock_calls
+                [call.top(a=3), call.top().bottom()]
+                >>> mock.mock_calls[-1] == call.top(a=-1).bottom()
+                True
 
     .. attribute:: __class__
 
@@ -826,6 +851,217 @@ object::
     >>> m.foo
     3
     >>> p.assert_called_once_with()
+
+
+.. class:: AsyncMock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
+
+  An asynchronous version of :class:`Mock`. The :class:`AsyncMock` object will
+  behave so the object is recognized as an async function, and the result of a
+  call is an awaitable.
+
+    >>> mock = AsyncMock()
+    >>> asyncio.iscoroutinefunction(mock)
+    True
+    >>> inspect.isawaitable(mock())  # doctest: +SKIP
+    True
+
+  The result of ``mock()`` is an async function which will have the outcome
+  of ``side_effect`` or ``return_value``:
+
+  - if ``side_effect`` is a function, the async function will return the
+    result of that function,
+  - if ``side_effect`` is an exception, the async function will raise the
+    exception,
+  - if ``side_effect`` is an iterable, the async function will return the
+    next value of the iterable, however, if the sequence of result is
+    exhausted, ``StopIteration`` is raised immediately,
+  - if ``side_effect`` is not defined, the async function will return the
+    value defined by ``return_value``, hence, by default, the async function
+    returns a new :class:`AsyncMock` object.
+
+
+  Setting the *spec* of a :class:`Mock` or :class:`MagicMock` to an async function
+  will result in a coroutine object being returned after calling.
+
+    >>> async def async_func(): pass
+    ...
+    >>> mock = MagicMock(async_func)
+    >>> mock
+    <MagicMock spec='function' id='...'>
+    >>> mock()  # doctest: +SKIP
+    <coroutine object AsyncMockMixin._mock_call at ...>
+
+  .. method:: assert_awaited()
+
+      Assert that the mock was awaited at least once.
+
+          >>> mock = AsyncMock()
+          >>> async def main():
+          ...     await mock()
+          ...
+          >>> asyncio.run(main())
+          >>> mock.assert_awaited()
+          >>> mock_2 = AsyncMock()
+          >>> mock_2.assert_awaited()
+          Traceback (most recent call last):
+          ...
+          AssertionError: Expected mock to have been awaited.
+
+  .. method:: assert_awaited_once()
+
+      Assert that the mock was awaited exactly once.
+
+        >>> mock = AsyncMock()
+        >>> async def main():
+        ...     await mock()
+        ...
+        >>> asyncio.run(main())
+        >>> mock.assert_awaited_once()
+        >>> asyncio.run(main())
+        >>> mock.method.assert_awaited_once()
+        Traceback (most recent call last):
+        ...
+        AssertionError: Expected mock to have been awaited once. Awaited 2 times.
+
+  .. method:: assert_awaited_with(*args, **kwargs)
+
+      Assert that the last await was with the specified arguments.
+
+        >>> mock = AsyncMock()
+        >>> async def main(*args, **kwargs):
+        ...     await mock(*args, **kwargs)
+        ...
+        >>> asyncio.run(main('foo', bar='bar'))
+        >>> mock.assert_awaited_with('foo', bar='bar')
+        >>> mock.assert_awaited_with('other')
+        Traceback (most recent call last):
+        ...
+        AssertionError: expected call not found.
+        Expected: mock('other')
+        Actual: mock('foo', bar='bar')
+
+  .. method:: assert_awaited_once_with(*args, **kwargs)
+
+      Assert that the mock was awaited exactly once and with the specified
+      arguments.
+
+        >>> mock = AsyncMock()
+        >>> async def main(*args, **kwargs):
+        ...     await mock(*args, **kwargs)
+        ...
+        >>> asyncio.run(main('foo', bar='bar'))
+        >>> mock.assert_awaited_once_with('foo', bar='bar')
+        >>> asyncio.run(main('foo', bar='bar'))
+        >>> mock.assert_awaited_once_with('foo', bar='bar')
+        Traceback (most recent call last):
+        ...
+        AssertionError: Expected mock to have been awaited once. Awaited 2 times.
+
+  .. method:: assert_any_await(*args, **kwargs)
+
+      Assert the mock has ever been awaited with the specified arguments.
+
+        >>> mock = AsyncMock()
+        >>> async def main(*args, **kwargs):
+        ...     await mock(*args, **kwargs)
+        ...
+        >>> asyncio.run(main('foo', bar='bar'))
+        >>> asyncio.run(main('hello'))
+        >>> mock.assert_any_await('foo', bar='bar')
+        >>> mock.assert_any_await('other')
+        Traceback (most recent call last):
+        ...
+        AssertionError: mock('other') await not found
+
+  .. method:: assert_has_awaits(calls, any_order=False)
+
+      Assert the mock has been awaited with the specified calls.
+      The :attr:`await_args_list` list is checked for the awaits.
+
+      If *any_order* is False (the default) then the awaits must be
+      sequential. There can be extra calls before or after the
+      specified awaits.
+
+      If *any_order* is True then the awaits can be in any order, but
+      they must all appear in :attr:`await_args_list`.
+
+        >>> mock = AsyncMock()
+        >>> async def main(*args, **kwargs):
+        ...     await mock(*args, **kwargs)
+        ...
+        >>> calls = [call("foo"), call("bar")]
+        >>> mock.assert_has_calls(calls)
+        Traceback (most recent call last):
+        ...
+        AssertionError: Calls not found.
+        Expected: [call('foo'), call('bar')]
+        >>> asyncio.run(main('foo'))
+        >>> asyncio.run(main('bar'))
+        >>> mock.assert_has_calls(calls)
+
+  .. method:: assert_not_awaited()
+
+    Assert that the mock was never awaited.
+
+        >>> mock = AsyncMock()
+        >>> mock.assert_not_awaited()
+
+  .. method:: reset_mock(*args, **kwargs)
+
+    See :func:`Mock.reset_mock`. Also sets :attr:`await_count` to 0,
+    :attr:`await_args` to None, and clears the :attr:`await_args_list`.
+
+  .. attribute:: await_count
+
+    An integer keeping track of how many times the mock object has been awaited.
+
+      >>> mock = AsyncMock()
+      >>> async def main():
+      ...     await mock()
+      ...
+      >>> asyncio.run(main())
+      >>> mock.await_count
+      1
+      >>> asyncio.run(main())
+      >>> mock.await_count
+      2
+
+  .. attribute:: await_args
+
+    This is either ``None`` (if the mock hasn’t been awaited), or the arguments that
+    the mock was last awaited with. Functions the same as :attr:`Mock.call_args`.
+
+      >>> mock = AsyncMock()
+      >>> async def main(*args):
+      ...     await mock(*args)
+      ...
+      >>> mock.await_args
+      >>> asyncio.run(main('foo'))
+      >>> mock.await_args
+      call('foo')
+      >>> asyncio.run(main('bar'))
+      >>> mock.await_args
+      call('bar')
+
+
+  .. attribute:: await_args_list
+
+    This is a list of all the awaits made to the mock object in sequence (so the
+    length of the list is the number of times it has been awaited). Before any
+    awaits have been made it is an empty list.
+
+      >>> mock = AsyncMock()
+      >>> async def main(*args):
+      ...     await mock(*args)
+      ...
+      >>> mock.await_args_list
+      []
+      >>> asyncio.run(main('foo'))
+      >>> mock.await_args_list
+      [call('foo')]
+      >>> asyncio.run(main('bar'))
+      >>> mock.await_args_list
+      [call('foo'), call('bar')]
 
 
 Calling
@@ -1106,13 +1342,13 @@ patch
     Instead of ``autospec=True`` you can pass ``autospec=some_object`` to use an
     arbitrary object as the spec instead of the one being replaced.
 
-    By default :func:`patch` will fail to replace attributes that don't exist. If
-    you pass in ``create=True``, and the attribute doesn't exist, patch will
-    create the attribute for you when the patched function is called, and
-    delete it again afterwards. This is useful for writing tests against
-    attributes that your production code creates at runtime. It is off by
-    default because it can be dangerous. With it switched on you can write
-    passing tests against APIs that don't actually exist!
+    By default :func:`patch` will fail to replace attributes that don't exist.
+    If you pass in ``create=True``, and the attribute doesn't exist, patch will
+    create the attribute for you when the patched function is called, and delete
+    it again after the patched function has exited. This is useful for writing
+    tests against attributes that your production code creates at runtime. It is
+    off by default because it can be dangerous. With it switched on you can
+    write passing tests against APIs that don't actually exist!
 
     .. note::
 
@@ -1234,6 +1470,27 @@ into a :func:`patch` call using ``**``::
       ...
     KeyError
 
+By default, attempting to patch a function in a module (or a method or an
+attribute in a class) that does not exist will fail with :exc:`AttributeError`::
+
+    >>> @patch('sys.non_existing_attribute', 42)
+    ... def test():
+    ...     assert sys.non_existing_attribute == 42
+    ...
+    >>> test()
+    Traceback (most recent call last):
+      ...
+    AttributeError: <module 'sys' (built-in)> does not have the attribute 'non_existing'
+
+but adding ``create=True`` in the call to :func:`patch` will make the previous example
+work as expected::
+
+    >>> @patch('sys.non_existing_attribute', 42, create=True)
+    ... def test(mock_stdout):
+    ...     assert sys.non_existing_attribute == 42
+    ...
+    >>> test()
+
 
 patch.object
 ~~~~~~~~~~~~
@@ -1299,15 +1556,24 @@ patch.dict
     decorator. When used as a class decorator :func:`patch.dict` honours
     ``patch.TEST_PREFIX`` for choosing which methods to wrap.
 
+    .. versionchanged:: 3.8
+
+        :func:`patch.dict` now returns the patched dictionary when used as a context
+        manager.
+
 :func:`patch.dict` can be used to add members to a dictionary, or simply let a test
 change a dictionary, and ensure the dictionary is restored when the test
 ends.
 
     >>> foo = {}
-    >>> with patch.dict(foo, {'newkey': 'newvalue'}):
+    >>> with patch.dict(foo, {'newkey': 'newvalue'}) as patched_foo:
     ...     assert foo == {'newkey': 'newvalue'}
+    ...     assert patched_foo == {'newkey': 'newvalue'}
+    ...     # You can add, update or delete keys of foo (or patched_foo, it's the same dict)
+    ...     patched_foo['spam'] = 'eggs'
     ...
     >>> assert foo == {}
+    >>> assert patched_foo == {}
 
     >>> import os
     >>> with patch.dict('os.environ', {'newkey': 'newvalue'}):
@@ -1406,7 +1672,7 @@ passed by keyword *after* any of the standard arguments created by :func:`patch`
     >>> test_function()
 
 If :func:`patch.multiple` is used as a context manager, the value returned by the
-context manger is a dictionary where created mocks are keyed by name::
+context manager is a dictionary where created mocks are keyed by name::
 
     >>> with patch.multiple('__main__', thing=DEFAULT, other=DEFAULT) as values:
     ...     assert 'other' in repr(values['other'])
@@ -1688,7 +1954,7 @@ The full list of supported magic methods is:
 * Container methods: ``__getitem__``, ``__setitem__``, ``__delitem__``,
   ``__contains__``, ``__len__``, ``__iter__``, ``__reversed__``
   and ``__missing__``
-* Context manager: ``__enter__`` and ``__exit__``
+* Context manager: ``__enter__``, ``__exit__``, ``__aenter__`` and ``__aexit__``
 * Unary numeric methods: ``__neg__``, ``__pos__`` and ``__invert__``
 * The numeric methods (including right hand and in-place variants):
   ``__add__``, ``__sub__``, ``__mul__``, ``__matmul__``, ``__div__``, ``__truediv__``,
@@ -1699,6 +1965,14 @@ The full list of supported magic methods is:
 * Descriptor methods: ``__get__``, ``__set__`` and ``__delete__``
 * Pickling: ``__reduce__``, ``__reduce_ex__``, ``__getinitargs__``,
   ``__getnewargs__``, ``__getstate__`` and ``__setstate__``
+* File system path representation: ``__fspath__``
+* Asynchronous iteration methods: ``__aiter__`` and ``__anext__``
+
+.. versionchanged:: 3.8
+   Added support for :func:`os.PathLike.__fspath__`.
+
+.. versionchanged:: 3.8
+   Added support for ``__aenter__``, ``__aexit__``, ``__aiter__`` and ``__anext__``.
 
 
 The following methods exist but are *not* supported as they are either in use
@@ -1762,6 +2036,7 @@ Methods and their defaults:
 * ``__len__``: 0
 * ``__iter__``: iter([])
 * ``__exit__``: False
+* ``__aexit__``: False
 * ``__complex__``: 1j
 * ``__float__``: 1.0
 * ``__bool__``: True
@@ -1949,14 +2224,13 @@ arguments are a dictionary:
     >>> m = MagicMock(return_value=None)
     >>> m(1, 2, 3, arg='one', arg2='two')
     >>> kall = m.call_args
-    >>> args, kwargs = kall
-    >>> args
+    >>> kall.args
     (1, 2, 3)
-    >>> kwargs
+    >>> kall.kwargs
     {'arg': 'one', 'arg2': 'two'}
-    >>> args is kall[0]
+    >>> kall.args is kall[0]
     True
-    >>> kwargs is kall[1]
+    >>> kall.kwargs is kall[1]
     True
 
     >>> m = MagicMock()

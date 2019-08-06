@@ -19,18 +19,19 @@ def _is_descriptor(obj):
 
 def _is_dunder(name):
     """Returns True if a __dunder__ name, False otherwise."""
-    return (name[:2] == name[-2:] == '__' and
-            name[2:3] != '_' and
-            name[-3:-2] != '_' and
-            len(name) > 4)
+    return (len(name) > 4 and
+            name[:2] == name[-2:] == '__' and
+            name[2] != '_' and
+            name[-3] != '_')
 
 
 def _is_sunder(name):
     """Returns True if a _sunder_ name, False otherwise."""
-    return (name[0] == name[-1] == '_' and
+    return (len(name) > 2 and
+            name[0] == name[-1] == '_' and
             name[1:2] != '_' and
-            name[-2:-1] != '_' and
-            len(name) > 2)
+            name[-2:-1] != '_')
+
 
 def _make_class_unpicklable(cls):
     """Make the given class un-picklable."""
@@ -150,7 +151,7 @@ class EnumMeta(type):
         _order_ = classdict.pop('_order_', None)
 
         # check for illegal enum names (any others?)
-        invalid_names = set(enum_members) & {'mro', }
+        invalid_names = set(enum_members) & {'mro', ''}
         if invalid_names:
             raise ValueError('Invalid enum member name: {0}'.format(
                 ','.join(invalid_names)))
@@ -419,7 +420,7 @@ class EnumMeta(type):
         if module is None:
             try:
                 module = sys._getframe(2).f_globals['__name__']
-            except (AttributeError, ValueError) as exc:
+            except (AttributeError, ValueError, KeyError) as exc:
                 pass
         if module is None:
             _make_class_unpicklable(enum_class)
@@ -462,12 +463,6 @@ class EnumMeta(type):
         module_globals.update(cls.__members__)
         module_globals[name] = cls
         return cls
-
-    def _convert(cls, *args, **kwargs):
-        import warnings
-        warnings.warn("_convert is deprecated and will be removed in 3.9, use "
-                      "_convert_ instead.", DeprecationWarning, stacklevel=2)
-        return cls._convert_(*args, **kwargs)
 
     @staticmethod
     def _get_mixins_(bases):
@@ -563,8 +558,10 @@ class Enum(metaclass=EnumMeta):
         # by-value search for a matching enum member
         # see if it's in the reverse mapping (for hashable values)
         try:
-            if value in cls._value2member_map_:
-                return cls._value2member_map_[value]
+            return cls._value2member_map_[value]
+        except KeyError:
+            # Not found, no need to do long O(n) search
+            pass
         except TypeError:
             # not there, now do long search -- O(n) behavior
             for member in cls._member_map_.values():
@@ -580,7 +577,7 @@ class Enum(metaclass=EnumMeta):
         if isinstance(result, cls):
             return result
         else:
-            ve_exc = ValueError("%r is not a valid %s" % (value, cls.__name__))
+            ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
             if result is None and exc is None:
                 raise ve_exc
             elif exc is None:
@@ -602,7 +599,7 @@ class Enum(metaclass=EnumMeta):
 
     @classmethod
     def _missing_(cls, value):
-        raise ValueError("%r is not a valid %s" % (value, cls.__name__))
+        raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
 
     def __repr__(self):
         return "<%s.%s: %r>" % (
@@ -625,8 +622,9 @@ class Enum(metaclass=EnumMeta):
         # we can get strange results with the Enum name showing up instead of
         # the value
 
-        # pure Enum branch
-        if self._member_type_ is object:
+        # pure Enum branch, or branch with __str__ explicitly overridden
+        str_overridden = type(self).__str__ != Enum.__str__
+        if self._member_type_ is object or str_overridden:
             cls = str
             val = str(self)
         # mix-in branch
@@ -708,7 +706,7 @@ class Flag(Enum):
             # verify all bits are accounted for
             _, extra_flags = _decompose(cls, value)
             if extra_flags:
-                raise ValueError("%r is not a valid %s" % (value, cls.__name__))
+                raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
             # construct a singleton enum pseudo-member
             pseudo_member = object.__new__(cls)
             pseudo_member._name_ = None
@@ -782,7 +780,7 @@ class IntFlag(int, Flag):
     @classmethod
     def _missing_(cls, value):
         if not isinstance(value, int):
-            raise ValueError("%r is not a valid %s" % (value, cls.__name__))
+            raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
         new_member = cls._create_pseudo_member_(value)
         return new_member
 

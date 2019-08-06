@@ -16,6 +16,9 @@ Is there a source code level debugger with breakpoints, single-stepping, etc.?
 
 Yes.
 
+Several debuggers for Python are described below, and the built-in function
+:func:`breakpoint` allows you to drop into any of them.
+
 The pdb module is a simple but adequate console-mode debugger for Python. It is
 part of the standard Python library, and is :mod:`documented in the Library
 Reference Manual <pdb>`. You can also write your own debugger by using the code
@@ -551,8 +554,8 @@ desired effect in a number of ways.
 5) Or bundle up values in a class instance::
 
       class callByRef:
-          def __init__(self, **args):
-              for (key, value) in args.items():
+          def __init__(self, /, **args):
+              for key, value in args.items():
                   setattr(self, key, value)
 
       def func4(args):
@@ -738,7 +741,7 @@ Is it possible to write obfuscated one-liners in Python?
 --------------------------------------------------------
 
 Yes.  Usually this is done by nesting :keyword:`lambda` within
-:keyword:`lambda`.  See the following three examples, due to Ulf Bartelt::
+:keyword:`!lambda`.  See the following three examples, due to Ulf Bartelt::
 
    from functools import reduce
 
@@ -765,6 +768,37 @@ Yes.  Usually this is done by nesting :keyword:`lambda` within
    #        |____________________________ range on x axis
 
 Don't try this at home, kids!
+
+
+.. _faq-positional-only-arguments:
+
+What does the slash(/) in the parameter list of a function mean?
+----------------------------------------------------------------
+
+A slash in the argument list of a function denotes that the parameters prior to
+it are positional-only.  Positional-only parameters are the ones without an
+externally-usable name.  Upon calling a function that accepts positional-only
+parameters, arguments are mapped to parameters based solely on their position.
+For example, :func:`pow` is a function that accepts positional-only parameters.
+Its documentation looks like this::
+
+   >>> help(pow)
+   Help on built-in function pow in module builtins:
+
+   pow(x, y, z=None, /)
+      Equivalent to x**y (with two arguments) or x**y % z (with three arguments)
+
+      Some types, such as ints, are able to use a more efficient algorithm when
+      invoked using the three argument form.
+
+The slash at the end of the parameter list means that all three parameters are
+positional-only. Thus, calling :func:`pow` with keyword arguments would lead to
+an error::
+
+   >>> pow(x=3, y=4)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: pow() takes no keyword arguments
 
 
 Numbers and strings
@@ -1316,9 +1350,6 @@ The ``__iadd__`` succeeds, and thus the list is extended, but even though
 ``result`` points to the same object that ``a_tuple[0]`` already points to,
 that final assignment still results in an error, because tuples are immutable.
 
-
-Dictionaries
-============
 
 I want to do a complicated sort: can you do a Schwartzian Transform in Python?
 ------------------------------------------------------------------------------

@@ -23,6 +23,9 @@ try:
 except ImportError:
     _tkinter = None
 '''
+
+manpages_url = 'https://manpages.debian.org/{path}'
+
 # General substitutions.
 project = 'Python'
 copyright = '2001-%s, Python Software Foundation' % time.strftime('%Y')
@@ -41,13 +44,20 @@ today_fmt = '%B %d, %Y'
 # By default, highlight as Python 3.
 highlight_language = 'python3'
 
-# Require Sphinx 1.2 for build.
-needs_sphinx = '1.2'
+# Minimum version of sphinx required
+needs_sphinx = '1.8'
 
 # Ignore any .rst files in the venv/ directory.
 venvdir = os.getenv('VENVDIR', 'venv')
 exclude_patterns = [venvdir+'/*', 'README.rst']
 
+# Disable Docutils smartquotes for several translations
+smartquotes_excludes = {
+    'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
+}
+
+# Avoid a warning with Sphinx >= 2.0
+master_doc = 'contents'
 
 # Options for HTML output
 # -----------------------
