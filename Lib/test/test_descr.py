@@ -4870,20 +4870,39 @@ class DictProxyTests(unittest.TestCase):
         self.assertIn("'meth':", repr(vars(self.C)))
 
     def test_iter_keys(self):
-        # Testing dict-proxy iterkeys...
+        # Testing dictproxy iterkeys...
         keys = [ key for key in self.C.__dict__.iterkeys() ]
         keys.sort()
         self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
             '__weakref__', 'meth'])
 
     def test_iter_values(self):
-        # Testing dict-proxy itervalues...
+        # Testing dictproxy itervalues...
         values = [ values for values in self.C.__dict__.itervalues() ]
         self.assertEqual(len(values), 5)
 
     def test_iter_items(self):
-        # Testing dict-proxy iteritems...
+        # Testing dictproxy iteritems...
         keys = [ key for (key, value) in self.C.__dict__.iteritems() ]
+        keys.sort()
+        self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
+            '__weakref__', 'meth'])
+
+    def test_view_keys(self):
+        # Testing dictproxy viewkeys...
+        keys = [ key for key in self.C.__dict__.viewkeys() ]
+        keys.sort()
+        self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
+            '__weakref__', 'meth'])
+
+    def test_view_values(self):
+        # Testing dictproxy viewvalues...
+        values = [ values for values in self.C.__dict__.viewvalues() ]
+        self.assertEqual(len(values), 5)
+
+    def test_view_items(self):
+        # Testing dictproxy viewitems...
+        keys = [ key for (key, value) in self.C.__dict__.viewitems() ]
         keys.sort()
         self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
             '__weakref__', 'meth'])

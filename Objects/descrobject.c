@@ -788,6 +788,24 @@ proxy_iteritems(proxyobject *pp)
 {
     return PyObject_CallMethod(pp->dict, "iteritems", NULL);
 }
+
+static PyObject *
+proxy_viewkeys(proxyobject *pp)
+{
+    return PyObject_CallMethod(pp->dict, "viewkeys", NULL);
+}
+
+static PyObject *
+proxy_viewvalues(proxyobject *pp)
+{
+    return PyObject_CallMethod(pp->dict, "viewvalues", NULL);
+}
+
+static PyObject *
+proxy_viewitems(proxyobject *pp)
+{
+    return PyObject_CallMethod(pp->dict, "viewitems", NULL);
+}
 static PyObject *
 proxy_copy(proxyobject *pp)
 {
@@ -813,6 +831,13 @@ static PyMethodDef proxy_methods[] = {
     {"iteritems", (PyCFunction)proxy_iteritems,  METH_NOARGS,
      PyDoc_STR("D.iteritems() ->"
                " an iterator over the (key, value) items of D")},
+    {"viewkeys",  (PyCFunction)proxy_viewkeys,   METH_NOARGS,
+     PyDoc_STR("D.viewkeys() -> a view over the keys of D")},
+    {"viewvalues",(PyCFunction)proxy_viewvalues, METH_NOARGS,
+     PyDoc_STR("D.viewvalues() -> a view over the values of D")},
+    {"viewitems", (PyCFunction)proxy_viewitems,  METH_NOARGS,
+     PyDoc_STR("D.viewitems() ->"
+               " an view over the (key, value) items of D")},
     {"copy",      (PyCFunction)proxy_copy,       METH_NOARGS,
      PyDoc_STR("D.copy() -> a shallow copy of D")},
     {0}
