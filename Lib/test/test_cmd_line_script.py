@@ -474,7 +474,7 @@ class CmdLineTest(unittest.TestCase):
             ('os.path', br'loader.*cannot handle'),
             ('importlib', br'No module named.*'
                 br'is a package and cannot be directly executed'),
-            ('importlib.nonexistant', br'No module named'),
+            ('importlib.nonexistent', br'No module named'),
             ('.unittest', br'Relative module names not supported'),
         )
         for name, regex in tests:

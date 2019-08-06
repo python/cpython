@@ -3482,7 +3482,7 @@ class AbstractHookTests(unittest.TestCase):
 
                 self.assertEqual(new_f, 5)
                 self.assertEqual(some_str, 'some str')
-                # math.log does not have its usual reducer overriden, so the
+                # math.log does not have its usual reducer overridden, so the
                 # custom reduction callback should silently direct the pickler
                 # to the default pickling by attribute, by returning
                 # NotImplemented

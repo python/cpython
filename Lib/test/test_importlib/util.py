@@ -443,7 +443,7 @@ def create_package(file, path, is_package=True, contents=()):
                 yield entry
 
     name = 'testingpackage'
-    # Unforunately importlib.util.module_from_spec() was not introduced until
+    # Unfortunately importlib.util.module_from_spec() was not introduced until
     # Python 3.5.
     module = types.ModuleType(name)
     loader = Reader()

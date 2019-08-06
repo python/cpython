@@ -38,7 +38,7 @@ class Bdb:
         """Return canonical form of filename.
 
         For real filenames, the canonical form is a case-normalized (on
-        case insenstive filesystems) absolute path.  'Filenames' with
+        case insensitive filesystems) absolute path.  'Filenames' with
         angle brackets, such as "<stdin>", generated in interactive
         mode, are returned unchanged.
         """

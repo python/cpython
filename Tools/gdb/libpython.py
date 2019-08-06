@@ -1303,7 +1303,7 @@ class PyUnicodeObjectPtr(PyObjectPtr):
                         ucs = ch + ch2
                         i += 1
 
-                # Unfortuately, Python 2's unicode type doesn't seem
+                # Unfortunately, Python 2's unicode type doesn't seem
                 # to expose the "isprintable" method
                 printable = _unichr_is_printable(ucs)
                 if printable:

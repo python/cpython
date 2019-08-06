@@ -119,7 +119,7 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
  * configure script.
  *
  * - FNV is available on all platforms and architectures.
- * - SIPHASH24 only works on plaforms that don't require aligned memory for integers.
+ * - SIPHASH24 only works on platforms that don't require aligned memory for integers.
  * - With EXTERNAL embedders can provide an alternative implementation with::
  *
  *     PyHash_FuncDef PyHash_Func = {...};

@@ -117,7 +117,7 @@ find_signature(const char *name, const char *doc)
 #define SIGNATURE_END_MARKER         ")\n--\n\n"
 #define SIGNATURE_END_MARKER_LENGTH  6
 /*
- * skips past the end of the docstring's instrospection signature.
+ * skips past the end of the docstring's introspection signature.
  * (assumes doc starts with a valid signature prefix.)
  */
 static const char *

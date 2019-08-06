@@ -1231,7 +1231,7 @@ Library
 - Issue #22448: Improve canceled timer handles cleanup to prevent
   unbound memory usage. Patch by Joshua Moore-Oliva.
 
-- Issue #23009: Make sure selectors.EpollSelecrtor.select() works when no
+- Issue #23009: Make sure selectors.EpollSelector.select() works when no
   FD is registered.
 
 IDLE
@@ -16660,7 +16660,7 @@ Core and Builtins
   Exception (KeyboardInterrupt, and SystemExit) propagate instead of
   ignoring them.
 
-- #3021 Exception reraising sematics have been significantly improved.  However,
+- #3021 Exception reraising semantics have been significantly improved.  However,
   f_exc_type, f_exc_value, and f_exc_traceback cannot be accessed from Python
   code anymore.
 

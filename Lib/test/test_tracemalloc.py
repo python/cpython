@@ -885,7 +885,7 @@ class TestCommandLine(unittest.TestCase):
             return
         if b'PYTHONTRACEMALLOC: invalid number of frames' in stderr:
             return
-        self.fail(f"unexpeced output: {stderr!a}")
+        self.fail(f"unexpected output: {stderr!a}")
 
 
     def test_env_var_invalid(self):
@@ -914,7 +914,7 @@ class TestCommandLine(unittest.TestCase):
             return
         if b'-X tracemalloc=NFRAME: invalid number of frames' in stderr:
             return
-        self.fail(f"unexpeced output: {stderr!a}")
+        self.fail(f"unexpected output: {stderr!a}")
 
     def test_sys_xoptions_invalid(self):
         for nframe in INVALID_NFRAME:
