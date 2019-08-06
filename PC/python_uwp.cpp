@@ -15,15 +15,15 @@
 
 #ifdef PYTHONW
 #ifdef _DEBUG
-const wchar_t *PROGNAME = L"pythonw_d" ".exe";
+const wchar_t *PROGNAME = L"pythonw_d.exe";
 #else
-const wchar_t *PROGNAME = L"pythonw" ".exe";
+const wchar_t *PROGNAME = L"pythonw.exe";
 #endif
 #else
 #ifdef _DEBUG
-const wchar_t *PROGNAME = L"python_d" ".exe";
+const wchar_t *PROGNAME = L"python_d.exe";
 #else
-const wchar_t *PROGNAME = L"python" ".exe";
+const wchar_t *PROGNAME = L"python.exe";
 #endif
 #endif
 
