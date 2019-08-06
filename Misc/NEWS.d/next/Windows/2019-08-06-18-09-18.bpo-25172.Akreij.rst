@@ -1,1 +1,1 @@
-Trying to import the crypt module on Windows will result in an ImportError with a message explaining that the module isn't supported on Windows. On other platforms, if the underlying _crypt module is not available, the ImportError will include a message explaining the problem.
+Trying to import the :mod:`crypt` module on Windows will result in an :exc:`ImportError` with a message explaining that the module isn't supported on Windows. On other platforms, if the underlying ``_crypt`` module is not available, the ImportError will include a message explaining the problem.
