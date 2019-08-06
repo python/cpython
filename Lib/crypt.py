@@ -9,7 +9,7 @@ except ModuleNotFoundError:
         raise ImportError("The crypt module is not supported on Windows")
     else:
         raise ImportError("The required _crypt module was not built as part of CPython")
-        
+
 import string as _string
 from random import SystemRandom as _SystemRandom
 from collections import namedtuple as _namedtuple
