@@ -775,7 +775,7 @@ class RelativeImportTests(unittest.TestCase):
         ns = dict(__package__=object())
         self.assertRaises(TypeError, check_relative)
 
-    def test_import_shadowed_by_global(self):
+    def test_parentless_import_shadowed_by_global(self):
         # bpo-37409
         script_helper.assert_python_failure('-W', 'ignore', '-c',
             "foo = 1; from . import foo")
