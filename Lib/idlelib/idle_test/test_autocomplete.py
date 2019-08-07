@@ -176,7 +176,6 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertIsNone(acp.open_completions(ac.TAB))
         self.assertEqual(fetch.called, 2)
 
-
     def test_open_completions_none(self):
         # Test other two None returns.
         none = self.assertIsNone
@@ -255,6 +254,20 @@ class FetchCompletionsTest(unittest.TestCase):
             self.assertEqual(s, ['monty', 'python'])
             self.assertEqual(b, ['.hidden', 'monty', 'python'])
 
+    def test_dict_keys(self):
+        # Test that fetch_completions returns 2 identical lists, containing all
+        # keys of the dict of type str or bytes.
+        acp = self.autocomplete
+
+        # Test attributes with name entity.
+        mock = Mock()
+        mock._private = Mock()
+        test_dict = {'one': 1, b'two': 2, 3: 3}
+        with patch.dict('__main__.__dict__', {'test_dict': test_dict}):
+            s, b = acp.fetch_completions('test_dict', ac.DICTKEYS)
+        self.assertEqual(s, b)
+        self.assertEqual(s, ['one', b'two'])
+
     def test_get_entity(self):
         # Test that a name is in the namespace of sys.modules and
         # __main__.__dict__.
@@ -277,22 +290,35 @@ class FetchCompletionsTest(unittest.TestCase):
             with self.assertRaises(NameError):
                 acp.get_entity('doesnt_exist')
 
-    def test_open_completions(self):
-        # Test completions of files and attributes.
+
+class OpenCompletionsTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.root = Mock()
+        cls.text = mock_tk.Text()
+        cls.editor = DummyEditwin(cls.root, cls.text)
+
+    def setUp(self):
+        self.autocomplete = ac.AutoComplete(self.editor)
+        self.mock_acw = None
+
+    def tearDown(self):
+        self.text.delete('1.0', 'end')
+
+    def make_acw(self):
+        self.mock_acw = Mock()
+        self.mock_acw.show_window = Mock(
+            return_value=False, spec=acw.AutoCompleteWindow.show_window)
+        return self.mock_acw
+
+    def test_open_completions_files(self):
         acp = self.autocomplete
 
-        mock_acw = None
-        def make_acw():
-            nonlocal mock_acw
-            mock_acw = Mock()
-            mock_acw.show_window = Mock(return_value=False,
-                                        spec=acw.AutoCompleteWindow.show_window)
-            return mock_acw
-
-        # Test attributes
         self.text.insert('1.0', 'int.')
-        with patch.object(acp, '_make_autocomplete_window', make_acw):
+        with patch.object(acp, '_make_autocomplete_window', self.make_acw):
             acp.open_completions(ac.TAB)
+        mock_acw = self.mock_acw
+
         self.assertIs(acp.autocompletewindow, mock_acw)
         mock_acw.show_window.assert_called_once()
         comp_lists, index, complete, mode, userWantsWin = \
@@ -302,22 +328,50 @@ class FetchCompletionsTest(unittest.TestCase):
         self.assertIn('bit_length', comp_lists[1])
         self.assertNotIn('__index__', comp_lists[0])
         self.assertIn('__index__', comp_lists[1])
-        self.text.delete('1.0', 'end')
 
-        # Test files.
+    def test_open_completions_attrs(self):
+        acp = self.autocomplete
+
         self.text.insert('1.0', '"t')
         def _listdir(path):
             return ['.hidden', 'monty', 'python']
-        with patch.object(acp, '_make_autocomplete_window', make_acw):
+        with patch.object(acp, '_make_autocomplete_window', self.make_acw):
             with patch('os.listdir', _listdir):
-                acp.open_completions(ac.FORCE)
+                acp.open_completions(ac.TAB)
+        mock_acw = self.mock_acw
+
         mock_acw.show_window.assert_called_once()
         comp_lists, index, complete, mode, userWantsWin = \
             mock_acw.show_window.call_args[0]
         self.assertEqual(mode, ac.FILES)
         self.assertEqual(comp_lists[0], ['monty', 'python'])
         self.assertEqual(comp_lists[1], ['.hidden', 'monty', 'python'])
-        self.text.delete('1.0', 'end')
+
+    def test_open_completions_dict_keys(self):
+        # Note that dict key completion lists also include variables from
+        # the global namespace.
+        acp = self.autocomplete
+
+        for quote in ['"', "'", '"""', "'''"]:
+            with self.subTest(quote=quote):
+                self.text.insert('1.0', f'test_dict[{quote}')
+                test_dict = {'one': 1, b'two': 2, 3: 3}
+                with patch.object(acp, '_make_autocomplete_window',
+                                  self.make_acw):
+                    with patch.dict('__main__.__dict__',
+                                    {'test_dict': test_dict}):
+                        acp.open_completions(ac.TAB)
+                mock_acw = self.mock_acw
+
+                mock_acw.show_window.assert_called_once()
+                comp_lists, index, complete, mode, userWantsWin = \
+                    mock_acw.show_window.call_args[0]
+                self.assertEqual(mode, ac.DICTKEYS)
+                self.assertLess(set(comp_lists[0]), set(comp_lists[1]))
+                expected = [f'{quote}one{quote}', f'b{quote}two{quote}']
+                self.assertLess(set(expected), set(comp_lists[0]))
+                self.assertLess(set(expected), set(comp_lists[1]))
+                self.text.delete('1.0', 'end')
 
 
 if __name__ == '__main__':
