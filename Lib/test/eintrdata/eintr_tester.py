@@ -10,7 +10,9 @@ sub-second periodicity (contrarily to signal()).
 
 import contextlib
 import faulthandler
+import fcntl
 import os
+import platform
 import select
 import signal
 import socket
@@ -20,7 +22,6 @@ import time
 import unittest
 
 from test import support
-android_not_root = support.android_not_root
 
 @contextlib.contextmanager
 def kill_on_error(proc):
@@ -45,24 +46,28 @@ class EINTRBaseTest(unittest.TestCase):
     # sleep_time > signal_period
     sleep_time = 0.2
 
-    @classmethod
-    def setUpClass(cls):
-        cls.orig_handler = signal.signal(signal.SIGALRM, lambda *args: None)
-        signal.setitimer(signal.ITIMER_REAL, cls.signal_delay,
-                         cls.signal_period)
+    def sighandler(self, signum, frame):
+        self.signals += 1
 
-        # Issue #25277: Use faulthandler to try to debug a hang on FreeBSD
+    def setUp(self):
+        self.signals = 0
+        self.orig_handler = signal.signal(signal.SIGALRM, self.sighandler)
+        signal.setitimer(signal.ITIMER_REAL, self.signal_delay,
+                         self.signal_period)
+
+        # Use faulthandler as watchdog to debug when a test hangs
+        # (timeout of 10 minutes)
         if hasattr(faulthandler, 'dump_traceback_later'):
-            faulthandler.dump_traceback_later(10 * 60, exit=True)
+            faulthandler.dump_traceback_later(10 * 60, exit=True,
+                                              file=sys.__stderr__)
 
-    @classmethod
-    def stop_alarm(cls):
+    @staticmethod
+    def stop_alarm():
         signal.setitimer(signal.ITIMER_REAL, 0, 0)
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.stop_alarm()
-        signal.signal(signal.SIGALRM, cls.orig_handler)
+    def tearDown(self):
+        self.stop_alarm()
+        signal.signal(signal.SIGALRM, self.orig_handler)
         if hasattr(faulthandler, 'cancel_dump_traceback_later'):
             faulthandler.cancel_dump_traceback_later()
 
@@ -280,12 +285,9 @@ class SocketEINTRTest(EINTRBaseTest):
         self._test_send(lambda sock, data: sock.sendmsg([data]))
 
     def test_accept(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock = socket.create_server((support.HOST, 0))
         self.addCleanup(sock.close)
-
-        sock.bind((support.HOST, 0))
         port = sock.getsockname()[1]
-        sock.listen()
 
         code = '\n'.join((
             'import socket, time',
@@ -312,14 +314,16 @@ class SocketEINTRTest(EINTRBaseTest):
     # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=203162
     @support.requires_freebsd_version(10, 3)
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'needs mkfifo()')
-    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def _test_open(self, do_open_close_reader, do_open_close_writer):
         filename = support.TESTFN
 
         # Use a fifo: until the child opens it for reading, the parent will
         # block when trying to open it for writing.
         support.unlink(filename)
-        os.mkfifo(filename)
+        try:
+            os.mkfifo(filename)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
         self.addCleanup(support.unlink, filename)
 
         code = '\n'.join((
@@ -343,16 +347,18 @@ class SocketEINTRTest(EINTRBaseTest):
         fp = open(path, 'w')
         fp.close()
 
+    @unittest.skipIf(sys.platform == "darwin",
+                     "hangs under macOS; see bpo-25234, bpo-35363")
     def test_open(self):
         self._test_open("fp = open(path, 'r')\nfp.close()",
                         self.python_open)
 
-    @unittest.skipIf(sys.platform == 'darwin', "hangs under OS X; see issue #25234")
     def os_open(self, path):
         fd = os.open(path, os.O_WRONLY)
         os.close(fd)
 
-    @unittest.skipIf(sys.platform == "darwin", "hangs under OS X; see issue #25234")
+    @unittest.skipIf(sys.platform == "darwin",
+                     "hangs under macOS; see bpo-25234, bpo-35363")
     def test_os_open(self):
         self._test_open("fd = os.open(path, os.O_RDONLY)\nos.close(fd)",
                         self.os_open)
@@ -371,59 +377,55 @@ class TimeEINTRTest(EINTRBaseTest):
 
 
 @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
+# bpo-30320: Need pthread_sigmask() to block the signal, otherwise the test
+# is vulnerable to a race condition between the child and the parent processes.
+@unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                     'need signal.pthread_sigmask()')
 class SignalEINTRTest(EINTRBaseTest):
     """ EINTR tests for the signal module. """
 
-    @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
-                         'need signal.sigtimedwait()')
-    def test_sigtimedwait(self):
-        t0 = time.monotonic()
-        signal.sigtimedwait([signal.SIGUSR1], self.sleep_time)
-        dt = time.monotonic() - t0
-        self.assertGreaterEqual(dt, self.sleep_time)
-
-    @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
-                         'need signal.sigwaitinfo()')
-    def test_sigwaitinfo(self):
-        # Issue #25277, #25868: give a few milliseconds to the parent process
-        # between os.write() and signal.sigwaitinfo() to works around a race
-        # condition
-        self.sleep_time = 0.100
-
+    def check_sigwait(self, wait_func):
         signum = signal.SIGUSR1
         pid = os.getpid()
 
         old_handler = signal.signal(signum, lambda *args: None)
         self.addCleanup(signal.signal, signum, old_handler)
 
-        rpipe, wpipe = os.pipe()
-
         code = '\n'.join((
             'import os, time',
             'pid = %s' % os.getpid(),
             'signum = %s' % int(signum),
             'sleep_time = %r' % self.sleep_time,
-            'rpipe = %r' % rpipe,
-            'os.read(rpipe, 1)',
-            'os.close(rpipe)',
             'time.sleep(sleep_time)',
             'os.kill(pid, signum)',
         ))
 
+        old_mask = signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
+        self.addCleanup(signal.pthread_sigmask, signal.SIG_UNBLOCK, [signum])
+
         t0 = time.monotonic()
-        proc = self.subprocess(code, pass_fds=(rpipe,))
-        os.close(rpipe)
+        proc = self.subprocess(code)
         with kill_on_error(proc):
-            # sync child-parent
-            os.write(wpipe, b'x')
-            os.close(wpipe)
-
-            # parent
-            signal.sigwaitinfo([signum])
+            wait_func(signum)
             dt = time.monotonic() - t0
-            self.assertEqual(proc.wait(), 0)
 
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.assertEqual(proc.wait(), 0)
+
+    @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
+                         'need signal.sigwaitinfo()')
+    def test_sigwaitinfo(self):
+        def wait_func(signum):
+            signal.sigwaitinfo([signum])
+
+        self.check_sigwait(wait_func)
+
+    @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
+                         'need signal.sigwaitinfo()')
+    def test_sigtimedwait(self):
+        def wait_func(signum):
+            signal.sigtimedwait([signum], 120.0)
+
+        self.check_sigwait(wait_func)
 
 
 @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
@@ -483,14 +485,46 @@ class SelectEINTRTest(EINTRBaseTest):
         self.assertGreaterEqual(dt, self.sleep_time)
 
 
-def test_main():
-    support.run_unittest(
-        OSEINTRTest,
-        SocketEINTRTest,
-        TimeEINTRTest,
-        SignalEINTRTest,
-        SelectEINTRTest)
+class FNTLEINTRTest(EINTRBaseTest):
+    def _lock(self, lock_func, lock_name):
+        self.addCleanup(support.unlink, support.TESTFN)
+        code = '\n'.join((
+            "import fcntl, time",
+            "with open('%s', 'wb') as f:" % support.TESTFN,
+            "   fcntl.%s(f, fcntl.LOCK_EX)" % lock_name,
+            "   time.sleep(%s)" % self.sleep_time))
+        start_time = time.monotonic()
+        proc = self.subprocess(code)
+        with kill_on_error(proc):
+            with open(support.TESTFN, 'wb') as f:
+                while True:  # synchronize the subprocess
+                    dt = time.monotonic() - start_time
+                    if dt > 60.0:
+                        raise Exception("failed to sync child in %.1f sec" % dt)
+                    try:
+                        lock_func(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        lock_func(f, fcntl.LOCK_UN)
+                        time.sleep(0.01)
+                    except BlockingIOError:
+                        break
+                # the child locked the file just a moment ago for 'sleep_time' seconds
+                # that means that the lock below will block for 'sleep_time' minus some
+                # potential context switch delay
+                lock_func(f, fcntl.LOCK_EX)
+                dt = time.monotonic() - start_time
+                self.assertGreaterEqual(dt, self.sleep_time)
+                self.stop_alarm()
+            proc.wait()
+
+    # Issue 35633: See https://bugs.python.org/issue35633#msg333662
+    # skip test rather than accept PermissionError from all platforms
+    @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
+    def test_lockf(self):
+        self._lock(fcntl.lockf, "lockf")
+
+    def test_flock(self):
+        self._lock(fcntl.flock, "flock")
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

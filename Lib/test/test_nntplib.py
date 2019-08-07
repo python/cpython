@@ -6,6 +6,9 @@ import unittest
 import functools
 import contextlib
 import os.path
+import re
+import threading
+
 from test import support
 from nntplib import NNTP, GroupInfo
 import nntplib
@@ -14,13 +17,17 @@ try:
     import ssl
 except ImportError:
     ssl = None
-try:
-    import threading
-except ImportError:
-    threading = None
+
 
 TIMEOUT = 30
 certfile = os.path.join(os.path.dirname(__file__), 'keycert3.pem')
+
+if ssl is not None:
+    SSLError = ssl.SSLError
+else:
+    class SSLError(Exception):
+        """Non-existent exception class when we lack SSL support."""
+        reason = "This will never be raised."
 
 # TODO:
 # - test the `file` arg to more commands
@@ -166,6 +173,7 @@ class NetworkedNNTPTestsMixin:
         # XXX this could exceptionally happen...
         self.assertNotIn(article.lines[-1], (b".", b".\n", b".\r\n"))
 
+    @unittest.skipIf(True, "FIXME: see bpo-32128")
     def test_article_head_body(self):
         resp, count, first, last, name = self.server.group(self.GROUP_NAME)
         # Try to find an available article
@@ -261,17 +269,29 @@ class NetworkedNNTPTestsMixin:
                 return False
             return True
 
-        with self.NNTP_CLASS(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False) as server:
-            self.assertTrue(is_connected())
-            self.assertTrue(server.help())
-        self.assertFalse(is_connected())
+        try:
+            with self.NNTP_CLASS(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False) as server:
+                self.assertTrue(is_connected())
+                self.assertTrue(server.help())
+            self.assertFalse(is_connected())
 
-        with self.NNTP_CLASS(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False) as server:
-            server.quit()
-        self.assertFalse(is_connected())
+            with self.NNTP_CLASS(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False) as server:
+                server.quit()
+            self.assertFalse(is_connected())
+        except SSLError as ssl_err:
+            # matches "[SSL: DH_KEY_TOO_SMALL] dh key too small"
+            if re.search(r'(?i)KEY.TOO.SMALL', ssl_err.reason):
+                raise unittest.SkipTest(f"Got {ssl_err} connecting "
+                                        f"to {self.NNTP_HOST!r}")
+            raise
 
 
 NetworkedNNTPTestsMixin.wrap_methods()
+
+
+EOF_ERRORS = (EOFError,)
+if ssl is not None:
+    EOF_ERRORS += (ssl.SSLEOFError,)
 
 
 class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
@@ -286,7 +306,18 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     def setUpClass(cls):
         support.requires("network")
         with support.transient_internet(cls.NNTP_HOST):
-            cls.server = cls.NNTP_CLASS(cls.NNTP_HOST, timeout=TIMEOUT, usenetrc=False)
+            try:
+                cls.server = cls.NNTP_CLASS(cls.NNTP_HOST, timeout=TIMEOUT,
+                                            usenetrc=False)
+            except SSLError as ssl_err:
+                # matches "[SSL: DH_KEY_TOO_SMALL] dh key too small"
+                if re.search(r'(?i)KEY.TOO.SMALL', ssl_err.reason):
+                    raise unittest.SkipTest(f"{cls} got {ssl_err} connecting "
+                                            f"to {cls.NNTP_HOST!r}")
+                raise
+            except EOF_ERRORS:
+                raise unittest.SkipTest(f"{cls} got EOF error on connecting "
+                                        f"to {cls.NNTP_HOST!r}")
 
     @classmethod
     def tearDownClass(cls):
@@ -1510,7 +1541,7 @@ class MockSslTests(MockSocketTests):
     def nntp_class(*pos, **kw):
         return nntplib.NNTP_SSL(*pos, ssl_context=bypass_context, **kw)
 
-@unittest.skipUnless(threading, 'requires multithreading')
+
 class LocalServerTests(unittest.TestCase):
     def setUp(self):
         sock = socket.socket()

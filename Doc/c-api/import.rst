@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _importing:
 
@@ -204,6 +204,13 @@ Importing Modules
    Return the dictionary used for the module administration (a.k.a.
    ``sys.modules``).  Note that this is a per-interpreter variable.
 
+.. c:function:: PyObject* PyImport_GetModule(PyObject *name)
+
+   Return the already imported module with the given name.  If the
+   module has not been imported yet then returns NULL but does not set
+   an error.  Returns NULL and sets an error if the lookup failed.
+
+   .. versionadded:: 3.7
 
 .. c:function:: PyObject* PyImport_GetImporter(PyObject *path)
 
@@ -214,21 +221,6 @@ Importing Modules
    this tells our caller that the :term:`path based finder` could not find a
    finder for this path item. Cache the result in :data:`sys.path_importer_cache`.
    Return a new reference to the finder object.
-
-
-.. c:function:: void _PyImport_Init()
-
-   Initialize the import mechanism.  For internal use only.
-
-
-.. c:function:: void PyImport_Cleanup()
-
-   Empty the module table.  For internal use only.
-
-
-.. c:function:: void _PyImport_Fini()
-
-   Finalize the import mechanism.  For internal use only.
 
 
 .. c:function:: int PyImport_ImportFrozenModuleObject(PyObject *name)

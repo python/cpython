@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _unicodeobjects:
 
@@ -22,14 +22,14 @@ in the Unicode object.  The :c:type:`Py_UNICODE*` representation is deprecated
 and inefficient; it should be avoided in performance- or memory-sensitive
 situations.
 
-Due to the transition between the old APIs and the new APIs, unicode objects
+Due to the transition between the old APIs and the new APIs, Unicode objects
 can internally be in two states depending on how they were created:
 
-* "canonical" unicode objects are all objects created by a non-deprecated
-  unicode API.  They use the most efficient representation allowed by the
+* "canonical" Unicode objects are all objects created by a non-deprecated
+  Unicode API.  They use the most efficient representation allowed by the
   implementation.
 
-* "legacy" unicode objects have been created through one of the deprecated
+* "legacy" Unicode objects have been created through one of the deprecated
   APIs (typically :c:func:`PyUnicode_FromUnicode`) and only bear the
   :c:type:`Py_UNICODE*` representation; you will have to call
   :c:func:`PyUnicode_READY` on them before calling any other API.
@@ -152,7 +152,7 @@ access internal read-only data of Unicode objects:
 
 .. c:function:: void* PyUnicode_DATA(PyObject *o)
 
-   Return a void pointer to the raw unicode buffer.  *o* has to be a Unicode
+   Return a void pointer to the raw Unicode buffer.  *o* has to be a Unicode
    object in the "canonical" representation (not checked).
 
    .. versionadded:: 3.3
@@ -430,7 +430,7 @@ APIs:
 .. c:function:: PyObject* PyUnicode_FromFormat(const char *format, ...)
 
    Take a C :c:func:`printf`\ -style *format* string and a variable number of
-   arguments, calculate the size of the resulting Python unicode string and return
+   arguments, calculate the size of the resulting Python Unicode string and return
    a string with the values formatted into it.  The variable arguments must be C
    types and must correspond exactly to the format characters in the *format*
    ASCII-encoded string. The following format characters are allowed:
@@ -451,44 +451,44 @@ APIs:
    | :attr:`%c`        | int                 | A single character,            |
    |                   |                     | represented as a C int.        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%d`        | int                 | Exactly equivalent to          |
-   |                   |                     | ``printf("%d")``.              |
+   | :attr:`%d`        | int                 | Equivalent to                  |
+   |                   |                     | ``printf("%d")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%u`        | unsigned int        | Exactly equivalent to          |
-   |                   |                     | ``printf("%u")``.              |
+   | :attr:`%u`        | unsigned int        | Equivalent to                  |
+   |                   |                     | ``printf("%u")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%ld`       | long                | Exactly equivalent to          |
-   |                   |                     | ``printf("%ld")``.             |
+   | :attr:`%ld`       | long                | Equivalent to                  |
+   |                   |                     | ``printf("%ld")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%li`       | long                | Exactly equivalent to          |
-   |                   |                     | ``printf("%li")``.             |
+   | :attr:`%li`       | long                | Equivalent to                  |
+   |                   |                     | ``printf("%li")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lu`       | unsigned long       | Exactly equivalent to          |
-   |                   |                     | ``printf("%lu")``.             |
+   | :attr:`%lu`       | unsigned long       | Equivalent to                  |
+   |                   |                     | ``printf("%lu")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lld`      | long long           | Exactly equivalent to          |
-   |                   |                     | ``printf("%lld")``.            |
+   | :attr:`%lld`      | long long           | Equivalent to                  |
+   |                   |                     | ``printf("%lld")``. [1]_       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lli`      | long long           | Exactly equivalent to          |
-   |                   |                     | ``printf("%lli")``.            |
+   | :attr:`%lli`      | long long           | Equivalent to                  |
+   |                   |                     | ``printf("%lli")``. [1]_       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%llu`      | unsigned long long  | Exactly equivalent to          |
-   |                   |                     | ``printf("%llu")``.            |
+   | :attr:`%llu`      | unsigned long long  | Equivalent to                  |
+   |                   |                     | ``printf("%llu")``. [1]_       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zd`       | Py_ssize_t          | Exactly equivalent to          |
-   |                   |                     | ``printf("%zd")``.             |
+   | :attr:`%zd`       | Py_ssize_t          | Equivalent to                  |
+   |                   |                     | ``printf("%zd")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zi`       | Py_ssize_t          | Exactly equivalent to          |
-   |                   |                     | ``printf("%zi")``.             |
+   | :attr:`%zi`       | Py_ssize_t          | Equivalent to                  |
+   |                   |                     | ``printf("%zi")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zu`       | size_t              | Exactly equivalent to          |
-   |                   |                     | ``printf("%zu")``.             |
+   | :attr:`%zu`       | size_t              | Equivalent to                  |
+   |                   |                     | ``printf("%zu")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%i`        | int                 | Exactly equivalent to          |
-   |                   |                     | ``printf("%i")``.              |
+   | :attr:`%i`        | int                 | Equivalent to                  |
+   |                   |                     | ``printf("%i")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%x`        | int                 | Exactly equivalent to          |
-   |                   |                     | ``printf("%x")``.              |
+   | :attr:`%x`        | int                 | Equivalent to                  |
+   |                   |                     | ``printf("%x")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%s`        | const char\*        | A null-terminated C character  |
    |                   |                     | array.                         |
@@ -504,9 +504,9 @@ APIs:
    | :attr:`%A`        | PyObject\*          | The result of calling          |
    |                   |                     | :func:`ascii`.                 |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%U`        | PyObject\*          | A unicode object.              |
+   | :attr:`%U`        | PyObject\*          | A Unicode object.              |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%V`        | PyObject\*,         | A unicode object (which may be |
+   | :attr:`%V`        | PyObject\*,         | A Unicode object (which may be |
    |                   | const char\*        | *NULL*) and a null-terminated  |
    |                   |                     | C character array as a second  |
    |                   |                     | parameter (which will be used, |
@@ -529,6 +529,9 @@ APIs:
       ``"%V"`` (if the ``PyObject*`` argument is NULL), and a number of
       characters for ``"%A"``, ``"%U"``, ``"%S"``, ``"%R"`` and ``"%V"``
       (if the ``PyObject*`` argument is not NULL).
+
+   .. [1] For integer specifiers (d, u, ld, li, lu, lld, lli, llu, zd, zi,
+      zu, i, x): the 0-conversion flag has effect even when a precision is given.
 
    .. versionchanged:: 3.2
       Support for ``"%lld"`` and ``"%llu"`` added.
@@ -757,7 +760,8 @@ system.
                                                         Py_ssize_t len, \
                                                         const char *errors)
 
-   Decode a string from the current locale encoding. The supported
+   Decode a string from UTF-8 on Android and VxWorks, or from the current
+   locale encoding on other platforms. The supported
    error handlers are ``"strict"`` and ``"surrogateescape"``
    (:pep:`383`). The decoder uses ``"strict"`` error handler if
    *errors* is ``NULL``.  *str* must end with a null character but
@@ -767,11 +771,19 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
+   This function ignores the Python UTF-8 mode.
+
    .. seealso::
 
       The :c:func:`Py_DecodeLocale` function.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.7
+      The function now also uses the current locale encoding for the
+      ``surrogateescape`` error handler, except on Android. Previously, :c:func:`Py_DecodeLocale`
+      was used for the ``surrogateescape``, and the current locale encoding was
+      used for ``strict``.
 
 
 .. c:function:: PyObject* PyUnicode_DecodeLocale(const char *str, const char *errors)
@@ -784,7 +796,8 @@ system.
 
 .. c:function:: PyObject* PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 
-   Encode a Unicode object to the current locale encoding. The
+   Encode a Unicode object to UTF-8 on Android and VxWorks, or to the current
+   locale encoding on other platforms. The
    supported error handlers are ``"strict"`` and ``"surrogateescape"``
    (:pep:`383`). The encoder uses ``"strict"`` error handler if
    *errors* is ``NULL``. Return a :class:`bytes` object. *unicode* cannot
@@ -794,11 +807,20 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
+   This function ignores the Python UTF-8 mode.
+
    .. seealso::
 
       The :c:func:`Py_EncodeLocale` function.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.7
+      The function now also uses the current locale encoding for the
+      ``surrogateescape`` error handler, except on Android. Previously,
+      :c:func:`Py_EncodeLocale`
+      was used for the ``surrogateescape``, and the current locale encoding was
+      used for ``strict``.
 
 
 File System Encoding
@@ -913,7 +935,7 @@ wchar_t Support
    Return *NULL* on failure.
 
 
-.. c:function:: Py_ssize_t PyUnicode_AsWideChar(PyUnicodeObject *unicode, wchar_t *w, Py_ssize_t size)
+.. c:function:: Py_ssize_t PyUnicode_AsWideChar(PyObject *unicode, wchar_t *w, Py_ssize_t size)
 
    Copy the Unicode object contents into the :c:type:`wchar_t` buffer *w*.  At most
    *size* :c:type:`wchar_t` characters are copied (excluding a possibly trailing
@@ -931,15 +953,21 @@ wchar_t Support
    Convert the Unicode object to a wide character string. The output string
    always ends with a null character. If *size* is not *NULL*, write the number
    of wide characters (excluding the trailing null termination character) into
-   *\*size*.
+   *\*size*. Note that the resulting :c:type:`wchar_t` string might contain
+   null characters, which would cause the string to be truncated when used with
+   most C functions. If *size* is *NULL* and the :c:type:`wchar_t*` string
+   contains null characters a :exc:`ValueError` is raised.
 
    Returns a buffer allocated by :c:func:`PyMem_Alloc` (use
-   :c:func:`PyMem_Free` to free it) on success. On error, returns *NULL*,
-   *\*size* is undefined and raises a :exc:`MemoryError`. Note that the
-   resulting :c:type:`wchar_t` string might contain null characters, which
-   would cause the string to be truncated when used with most C functions.
+   :c:func:`PyMem_Free` to free it) on success. On error, returns *NULL*
+   and *\*size* is undefined. Raises a :exc:`MemoryError` if memory allocation
+   is failed.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.7
+      Raises a :exc:`ValueError` if *size* is *NULL* and the :c:type:`wchar_t*`
+      string contains null characters.
 
 
 .. _builtincodecs:
@@ -1318,7 +1346,7 @@ These are the "Raw Unicode Escape" codec APIs:
 
 
 .. c:function:: PyObject* PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s, \
-                              Py_ssize_t size, const char *errors)
+                              Py_ssize_t size)
 
    Encode the :c:type:`Py_UNICODE` buffer of the given *size* using Raw-Unicode-Escape
    and return a bytes object.  Return *NULL* if an exception was raised by the codec.
@@ -1487,8 +1515,8 @@ the user settings on the machine running the codec.
    Return *NULL* if an exception was raised by the codec.
 
 
-.. c:function:: PyObject* PyUnicode_DecodeMBCSStateful(const char *s, int size, \
-                              const char *errors, int *consumed)
+.. c:function:: PyObject* PyUnicode_DecodeMBCSStateful(const char *s, Py_ssize_t size, \
+                              const char *errors, Py_ssize_t *consumed)
 
    If *consumed* is *NULL*, behave like :c:func:`PyUnicode_DecodeMBCS`. If
    *consumed* is not *NULL*, :c:func:`PyUnicode_DecodeMBCSStateful` will not decode
@@ -1642,7 +1670,7 @@ They all return *NULL* or ``-1`` if an exception occurs.
 
 .. c:function:: int PyUnicode_CompareWithASCIIString(PyObject *uni, const char *string)
 
-   Compare a unicode object, *uni*, with *string* and return ``-1``, ``0``, ``1`` for less
+   Compare a Unicode object, *uni*, with *string* and return ``-1``, ``0``, ``1`` for less
    than, equal, and greater than, respectively. It is best to pass only
    ASCII-encoded strings, but the function interprets the input string as
    ISO-8859-1 if it contains non-ASCII characters.
@@ -1652,7 +1680,7 @@ They all return *NULL* or ``-1`` if an exception occurs.
 
 .. c:function:: PyObject* PyUnicode_RichCompare(PyObject *left,  PyObject *right,  int op)
 
-   Rich compare two unicode strings and return one of the following:
+   Rich compare two Unicode strings and return one of the following:
 
    * ``NULL`` in case an exception was raised
    * :const:`Py_True` or :const:`Py_False` for successful comparisons
@@ -1680,7 +1708,7 @@ They all return *NULL* or ``-1`` if an exception occurs.
 .. c:function:: void PyUnicode_InternInPlace(PyObject **string)
 
    Intern the argument *\*string* in place.  The argument must be the address of a
-   pointer variable pointing to a Python unicode string object.  If there is an
+   pointer variable pointing to a Python Unicode string object.  If there is an
    existing interned string that is the same as *\*string*, it sets *\*string* to
    it (decrementing the reference count of the old string object and incrementing
    the reference count of the interned string object), otherwise it leaves
@@ -1693,6 +1721,6 @@ They all return *NULL* or ``-1`` if an exception occurs.
 .. c:function:: PyObject* PyUnicode_InternFromString(const char *v)
 
    A combination of :c:func:`PyUnicode_FromString` and
-   :c:func:`PyUnicode_InternInPlace`, returning either a new unicode string
+   :c:func:`PyUnicode_InternInPlace`, returning either a new Unicode string
    object that has been interned, or a new ("owned") reference to an earlier
    interned string object with the same value.

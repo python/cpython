@@ -8,7 +8,7 @@ from distutils.file_util import move_file, copy_file
 from distutils import log
 from distutils.tests import support
 from distutils.errors import DistutilsFileError
-from test.support import run_unittest
+from test.support import run_unittest, unlink
 
 class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
 
@@ -80,6 +80,14 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
     def test_copy_file_hard_link(self):
         with open(self.source, 'w') as f:
             f.write('some content')
+        # Check first that copy_file() will not fall back on copying the file
+        # instead of creating the hard link.
+        try:
+            os.link(self.source, self.target)
+        except OSError as e:
+            self.skipTest('os.link: %s' % e)
+        else:
+            unlink(self.target)
         st = os.stat(self.source)
         copy_file(self.source, self.target, link='hard')
         st2 = os.stat(self.source)

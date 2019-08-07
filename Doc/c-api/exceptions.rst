@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _exceptionhandling:
@@ -53,8 +53,12 @@ Printing and clearing
 .. c:function:: void PyErr_PrintEx(int set_sys_last_vars)
 
    Print a standard traceback to ``sys.stderr`` and clear the error indicator.
-   Call this function only when the error indicator is set.  (Otherwise it will
-   cause a fatal error!)
+   **Unless** the error is a ``SystemExit``, in that case no traceback is
+   printed and the Python process will exit with the error code specified by
+   the ``SystemExit`` instance.
+
+   Call this function **only** when the error indicator is set.  Otherwise it
+   will cause a fatal error!
 
    If *set_sys_last_vars* is nonzero, the variables :data:`sys.last_type`,
    :data:`sys.last_value` and :data:`sys.last_traceback` will be set to the
@@ -68,6 +72,9 @@ Printing and clearing
 
 .. c:function:: void PyErr_WriteUnraisable(PyObject *obj)
 
+   Call :func:`sys.unraisablehook` using the current exception and *obj*
+   argument.
+
    This utility function prints a warning message to ``sys.stderr`` when an
    exception has been set but it is impossible for the interpreter to actually
    raise the exception.  It is used, for example, when an exception occurs in an
@@ -76,6 +83,8 @@ Printing and clearing
    The function is called with a single argument *obj* that identifies the context
    in which the unraisable exception occurred. If possible,
    the repr of *obj* will be printed in the warning message.
+
+   An exception must be set when calling this function.
 
 
 Raising exceptions
@@ -186,34 +195,42 @@ NULL pointer for use in a ``return`` statement.
    then it constructs a tuple object whose first item is the *ierr* value and whose
    second item is the corresponding error message (gotten from
    :c:func:`FormatMessage`), and then calls ``PyErr_SetObject(PyExc_WindowsError,
-   object)``. This function always returns *NULL*. Availability: Windows.
+   object)``. This function always returns *NULL*.
+
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErr(PyObject *type, int ierr)
 
    Similar to :c:func:`PyErr_SetFromWindowsErr`, with an additional parameter
-   specifying the exception type to be raised. Availability: Windows.
+   specifying the exception type to be raised.
+
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErrWithFilename(int ierr, const char *filename)
 
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, but the
    filename is given as a C string.  *filename* is decoded from the filesystem
-   encoding (:func:`os.fsdecode`).  Availability: Windows.
+   encoding (:func:`os.fsdecode`).
+
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenameObject(PyObject *type, int ierr, PyObject *filename)
 
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, with an
    additional parameter specifying the exception type to be raised.
-   Availability: Windows.
+
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenameObjects(PyObject *type, int ierr, PyObject *filename, PyObject *filename2)
 
    Similar to :c:func:`PyErr_SetExcFromWindowsErrWithFilenameObject`,
    but accepts a second filename object.
-   Availability: Windows.
+
+   .. availability:: Windows.
 
    .. versionadded:: 3.4
 
@@ -221,7 +238,9 @@ NULL pointer for use in a ``return`` statement.
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilename(PyObject *type, int ierr, const char *filename)
 
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilename`, with an additional
-   parameter specifying the exception type to be raised. Availability: Windows.
+   parameter specifying the exception type to be raised.
+
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
@@ -291,22 +310,17 @@ an error value).
    is the function calling :c:func:`PyErr_WarnEx`, 2 is  the function above that,
    and so forth.
 
-   Warning categories must be subclasses of :c:data:`Warning`; the default warning
-   category is :c:data:`RuntimeWarning`.  The standard Python warning categories are
-   available as global variables whose names are ``PyExc_`` followed by the Python
-   exception name. These have the type :c:type:`PyObject\*`; they are all class
-   objects. Their names are :c:data:`PyExc_Warning`, :c:data:`PyExc_UserWarning`,
-   :c:data:`PyExc_UnicodeWarning`, :c:data:`PyExc_DeprecationWarning`,
-   :c:data:`PyExc_SyntaxWarning`, :c:data:`PyExc_RuntimeWarning`, and
-   :c:data:`PyExc_FutureWarning`.  :c:data:`PyExc_Warning` is a subclass of
-   :c:data:`PyExc_Exception`; the other warning categories are subclasses of
-   :c:data:`PyExc_Warning`.
+   Warning categories must be subclasses of :c:data:`PyExc_Warning`;
+   :c:data:`PyExc_Warning` is a subclass of :c:data:`PyExc_Exception`;
+   the default warning category is :c:data:`PyExc_RuntimeWarning`. The standard
+   Python warning categories are available as global variables whose names are
+   enumerated at :ref:`standardwarningcategories`.
 
    For information about warning control, see the documentation for the
    :mod:`warnings` module and the :option:`-W` option in the command line
    documentation.  There is no C API for warning control.
 
-.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *msg, PyObject *name, PyObject *path)
+.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg, PyObject *name, PyObject *path)
 
    Much like :c:func:`PyErr_SetImportError` but this function allows for
    specifying a subclass of :exc:`ImportError` to raise.
@@ -505,13 +519,13 @@ Signal Handling
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   This function simulates the effect of a :const:`SIGINT` signal arriving --- the
-   next time :c:func:`PyErr_CheckSignals` is called,  :exc:`KeyboardInterrupt` will
-   be raised.  It may be called without holding the interpreter lock.
+   Simulate the effect of a :const:`SIGINT` signal arriving. The next time
+   :c:func:`PyErr_CheckSignals` is called,  the Python signal handler for
+   :const:`SIGINT` will be called.
 
-   .. % XXX This was described as obsolete, but is used in
-   .. % _thread.interrupt_main() (used from IDLE), so it's still needed.
-
+   If :const:`SIGINT` isn't handled by Python (it was set to
+   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
+   nothing.
 
 .. c:function:: int PySignal_SetWakeupFd(int fd)
 
@@ -795,6 +809,7 @@ the variables:
    single: PyExc_SystemError
    single: PyExc_SystemExit
    single: PyExc_TabError
+   single: PyExc_TargetScopeError
    single: PyExc_TimeoutError
    single: PyExc_TypeError
    single: PyExc_UnboundLocalError
@@ -896,6 +911,8 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_TabError`                | :exc:`TabError`                 |          |
 +-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_TargetScopeError`        | :exc:`TargetScopeError`         |          |
++-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_TimeoutError`            | :exc:`TimeoutError`             |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_TypeError`               | :exc:`TypeError`                |          |
@@ -963,8 +980,10 @@ Notes:
    Only defined on Windows; protect code that uses this by testing that the
    preprocessor macro ``MS_WINDOWS`` is defined.
 
-Standard Warnings
-=================
+.. _standardwarningcategories:
+
+Standard Warning Categories
+===========================
 
 All standard Python warning categories are available as global variables whose
 names are ``PyExc_`` followed by the Python exception name. These have the type
@@ -974,7 +993,7 @@ the variables:
 .. index::
    single: PyExc_Warning
    single: PyExc_BytesWarning
-   single: PyExc_DepricationWarning
+   single: PyExc_DeprecationWarning
    single: PyExc_FutureWarning
    single: PyExc_ImportWarning
    single: PyExc_PendingDeprecationWarning
@@ -997,7 +1016,7 @@ the variables:
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ImportWarning`            | :exc:`ImportWarning`            |          |
 +------------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_PendingDepricationWarning`| :exc:`PendingDeprecationWarning`|          |
+| :c:data:`PyExc_PendingDeprecationWarning`| :exc:`PendingDeprecationWarning`|          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ResourceWarning`          | :exc:`ResourceWarning`          |          |
 +------------------------------------------+---------------------------------+----------+

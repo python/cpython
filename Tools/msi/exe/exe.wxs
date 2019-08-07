@@ -3,10 +3,10 @@
     <Product Id="*" Language="!(loc.LCID)" Name="!(loc.Title)" Version="$(var.Version)" Manufacturer="!(loc.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
         <Package InstallerVersion="300" Compressed="yes" InstallScope="perUser" Platform="$(var.Platform)" />
         <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
-        
+
         <PropertyRef Id="UpgradeTable" />
         <PropertyRef Id="REGISTRYKEY" />
-        
+
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="exe_python" Primary="yes" />
             <ComponentGroupRef Id="exe_reg" Primary="yes" />
@@ -14,7 +14,7 @@
             <ComponentGroupRef Id="exe_icons" />
             <ComponentRef Id="OptionalFeature" />
         </Feature>
-            
+
         <Feature Id="Shortcuts" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="exe_python" />
             <Component Id="exe_shortcut" Directory="MenuDir" Guid="*">

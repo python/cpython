@@ -12,7 +12,7 @@ methods are taken from the PythonCard example
 scripts for turtle-graphics.
 """
 from turtle import *
-from time import sleep, clock
+from time import sleep, perf_counter as clock
 
 class CurvesTurtle(Pen):
     # example derived from

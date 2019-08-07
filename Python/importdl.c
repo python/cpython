@@ -103,6 +103,11 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     if (name_unicode == NULL) {
         return NULL;
     }
+    if (!PyUnicode_Check(name_unicode)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "spec.name must be a string");
+        goto error;
+    }
 
     name = get_encoded_name(name_unicode, &hook_prefix);
     if (name == NULL) {
@@ -113,6 +118,11 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     path = PyObject_GetAttrString(spec, "origin");
     if (path == NULL)
         goto error;
+
+    if (PySys_Audit("import", "OOOOO", name_unicode, path,
+                    Py_None, Py_None, Py_None) < 0) {
+        return NULL;
+    }
 
 #ifdef MS_WINDOWS
     exportfunc = _PyImport_FindSharedFuncptrWindows(hook_prefix, name_buf,
@@ -215,7 +225,8 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     else
         Py_INCREF(path);
 
-    if (_PyImport_FixupExtensionObject(m, name_unicode, path) < 0)
+    PyObject *modules = PyImport_GetModuleDict();
+    if (_PyImport_FixupExtensionObject(m, name_unicode, path, modules) < 0)
         goto error;
 
     Py_DECREF(name_unicode);

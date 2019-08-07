@@ -83,7 +83,7 @@ class Stats:
             columns.update(self.stats[ext])
         cols = sorted(columns)
         colwidth = {}
-        colwidth["ext"] = max([len(ext) for ext in exts])
+        colwidth["ext"] = max(map(len, exts))
         minwidth = 6
         self.stats["TOTAL"] = {}
         for col in cols:

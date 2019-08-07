@@ -42,12 +42,16 @@ In addition to size-limiting tools, the module also provides a decorator for
 detecting recursive calls to :meth:`__repr__` and substituting a placeholder
 string instead.
 
+
+.. index:: single: ...; placeholder
+
 .. decorator:: recursive_repr(fillvalue="...")
 
    Decorator for :meth:`__repr__` methods to detect recursive calls within the
    same thread.  If a recursive call is made, the *fillvalue* is returned,
    otherwise, the usual :meth:`__repr__` call is made.  For example:
 
+        >>> from reprlib import recursive_repr
         >>> class MyList(list):
         ...     @recursive_repr()
         ...     def __repr__(self):

@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _veryhigh:
@@ -40,6 +40,13 @@ the same library that the Python runtime is using.
    Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
    function will not return ``1``, but exit the process, as long as
    ``Py_InspectFlag`` is not set.
+
+
+.. c:function:: int Py_BytesMain(int argc, char **argv)
+
+   Similar to :c:func:`Py_Main` but *argv* is an array of bytes strings.
+
+   .. versionadded:: 3.8
 
 
 .. c:function:: int PyRun_AnyFile(FILE *fp, const char *filename)
@@ -109,6 +116,10 @@ the same library that the Python runtime is using.
    (:func:`sys.getfilesystemencoding`).  If *closeit* is true, the file is
    closed before PyRun_SimpleFileExFlags returns.
 
+   .. note::
+      On Windows, *fp* should be opened as binary mode (e.g. ``fopen(filename, "rb")``.
+      Otherwise, Python may not handle script file with LF line ending correctly.
+
 
 .. c:function:: int PyRun_InteractiveOne(FILE *fp, const char *filename)
 
@@ -141,7 +152,8 @@ the same library that the Python runtime is using.
    Read and execute statements from a file associated with an interactive device
    until EOF is reached.  The user will be prompted using ``sys.ps1`` and
    ``sys.ps2``.  *filename* is decoded from the filesystem encoding
-   (:func:`sys.getfilesystemencoding`).  Returns ``0`` at EOF.
+   (:func:`sys.getfilesystemencoding`).  Returns ``0`` at EOF or a negative
+   number upon failure.
 
 
 .. c:var:: int (*PyOS_InputHook)(void)
@@ -300,12 +312,12 @@ the same library that the Python runtime is using.
    set to *NULL*.
 
 
-.. c:function:: PyObject* PyEval_EvalCodeEx(PyObject *co, PyObject *globals, PyObject *locals, PyObject **args, int argcount, PyObject **kws, int kwcount, PyObject **defs, int defcount, PyObject *kwdefs, PyObject *closure)
+.. c:function:: PyObject* PyEval_EvalCodeEx(PyObject *co, PyObject *globals, PyObject *locals, PyObject *const *args, int argcount, PyObject *const *kws, int kwcount, PyObject *const *defs, int defcount, PyObject *kwdefs, PyObject *closure)
 
    Evaluate a precompiled code object, given a particular environment for its
    evaluation.  This environment consists of a dictionary of global variables,
    a mapping object of local variables, arrays of arguments, keywords and
-   defaults, a dictionary of default values for :ref:`keyword-only\
+   defaults, a dictionary of default values for :ref:`keyword-only
    <keyword-only_parameter>` arguments and a closure tuple of cells.
 
 
@@ -323,12 +335,12 @@ the same library that the Python runtime is using.
 
 .. c:function:: PyObject* PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
-   This is the main, unvarnished function of Python interpretation.  It is
-   literally 2000 lines long.  The code object associated with the execution
-   frame *f* is executed, interpreting bytecode and executing calls as needed.
-   The additional *throwflag* parameter can mostly be ignored - if true, then
-   it causes an exception to immediately be thrown; this is used for the
-   :meth:`~generator.throw` methods of generator objects.
+   This is the main, unvarnished function of Python interpretation.  The code
+   object associated with the execution frame *f* is executed, interpreting
+   bytecode and executing calls as needed.  The additional *throwflag*
+   parameter can mostly be ignored - if true, then it causes an exception
+   to immediately be thrown; this is used for the :meth:`~generator.throw`
+   methods of generator objects.
 
    .. versionchanged:: 3.4
       This function now includes a debug assertion to help ensure that it
@@ -376,11 +388,22 @@ the same library that the Python runtime is using.
 
    Whenever ``PyCompilerFlags *flags`` is *NULL*, :attr:`cf_flags` is treated as
    equal to ``0``, and any modification due to ``from __future__ import`` is
-   discarded.  ::
+   discarded.
 
-      struct PyCompilerFlags {
-          int cf_flags;
-      }
+   .. c:member:: int cf_flags
+
+      Compiler flags.
+
+   .. c:member:: int cf_feature_version
+
+      *cf_feature_version* is the minor Python version. It should be
+      initialized to ``PY_MINOR_VERSION``.
+
+      The field is ignored by default, it is used if and only if
+      ``PyCF_ONLY_AST`` flag is set in *cf_flags*.
+
+   .. versionchanged:: 3.8
+      Added *cf_feature_version* field.
 
 
 .. c:var:: int CO_FUTURE_DIVISION

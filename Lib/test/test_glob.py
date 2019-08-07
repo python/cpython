@@ -49,10 +49,10 @@ class GlobTests(unittest.TestCase):
             pattern = os.path.join(*parts)
         p = os.path.join(self.tempdir, pattern)
         res = glob.glob(p, **kwargs)
-        self.assertEqual(list(glob.iglob(p, **kwargs)), res)
+        self.assertCountEqual(glob.iglob(p, **kwargs), res)
         bres = [os.fsencode(x) for x in res]
-        self.assertEqual(glob.glob(os.fsencode(p), **kwargs), bres)
-        self.assertEqual(list(glob.iglob(os.fsencode(p), **kwargs)), bres)
+        self.assertCountEqual(glob.glob(os.fsencode(p), **kwargs), bres)
+        self.assertCountEqual(glob.iglob(os.fsencode(p), **kwargs), bres)
         return res
 
     def assertSequencesEqual_noorder(self, l1, l2):

@@ -28,7 +28,7 @@
 #define RC_NO_PYTHON        103
 #define RC_NO_MEMORY        104
 /*
- * SCRIPT_WRAPPER is used to choose between two variants of an executable built
+ * SCRIPT_WRAPPER is used to choose one of the variants of an executable built
  * from this source file. If not defined, the PEP 397 Python launcher is built;
  * if defined, a script launcher of the type used by setuptools is built, which
  * looks for a script name related to the executable name and runs that script
@@ -39,6 +39,15 @@
  */
 #if defined(SCRIPT_WRAPPER)
 #define RC_NO_SCRIPT        105
+#endif
+/*
+ * VENV_REDIRECT is used to choose the variant that looks for an adjacent or
+ * one-level-higher pyvenv.cfg, and uses its "home" property to locate and
+ * launch the original python.exe.
+ */
+#if defined(VENV_REDIRECT)
+#define RC_NO_VENV_CFG      106
+#define RC_BAD_VENV_CFG     107
 #endif
 
 /* Just for now - static definition */
@@ -61,6 +70,7 @@ debug(wchar_t * format, ...)
     if (log_fp != NULL) {
         va_start(va, format);
         vfwprintf_s(log_fp, format, va);
+        va_end(va);
     }
 }
 
@@ -83,6 +93,7 @@ error(int rc, wchar_t * format, ... )
 
     va_start(va, format);
     len = _vsnwprintf_s(message, MSGSIZE, _TRUNCATE, format, va);
+    va_end(va);
 
     if (rc == 0) {  /* a Windows error */
         winerror(GetLastError(), win_message, MSGSIZE);
@@ -95,7 +106,7 @@ error(int rc, wchar_t * format, ... )
 #if !defined(_WINDOWS)
     fwprintf(stderr, L"%ls\n", message);
 #else
-    MessageBox(NULL, message, TEXT("Python Launcher is sorry to say ..."),
+    MessageBoxW(NULL, message, L"Python Launcher is sorry to say ...",
                MB_OK);
 #endif
     exit(rc);
@@ -129,6 +140,17 @@ static wchar_t * get_env(wchar_t * key)
     return buf;
 }
 
+#if defined(_DEBUG)
+#if defined(_WINDOWS)
+
+#define PYTHON_EXECUTABLE L"pythonw_d.exe"
+
+#else
+
+#define PYTHON_EXECUTABLE L"python_d.exe"
+
+#endif
+#else
 #if defined(_WINDOWS)
 
 #define PYTHON_EXECUTABLE L"pythonw.exe"
@@ -137,6 +159,7 @@ static wchar_t * get_env(wchar_t * key)
 
 #define PYTHON_EXECUTABLE L"python.exe"
 
+#endif
 #endif
 
 #define MAX_VERSION_SIZE    4
@@ -169,11 +192,11 @@ static size_t num_installed_pythons = 0;
 
 static wchar_t * location_checks[] = {
     L"\\",
-    L"\\PCBuild\\win32\\",
-    L"\\PCBuild\\amd64\\",
-    // To support early 32bit versions of Python that stuck the build binaries
-    // directly in PCBuild...
-    L"\\PCBuild\\",
+    L"\\PCbuild\\win32\\",
+    L"\\PCbuild\\amd64\\",
+    /* To support early 32bit versions of Python that stuck the build binaries
+    * directly in PCbuild... */
+    L"\\PCbuild\\",
     NULL
 };
 
@@ -234,7 +257,7 @@ locate_pythons_for_key(HKEY root, REGSAM flags)
                 status = RegOpenKeyExW(root, ip_path, 0, flags, &ip_key);
                 if (status != ERROR_SUCCESS) {
                     winerror(status, message, MSGSIZE);
-                    // Note: 'message' already has a trailing \n
+                    /* Note: 'message' already has a trailing \n*/
                     debug(L"%ls\\%ls: %ls", key_name, ip_path, message);
                     continue;
                 }
@@ -340,12 +363,12 @@ static void
 locate_all_pythons()
 {
 #if defined(_M_X64)
-    // If we are a 64bit process, first hit the 32bit keys.
+    /* If we are a 64bit process, first hit the 32bit keys. */
     debug(L"locating Pythons in 32bit registry\n");
     locate_pythons_for_key(HKEY_CURRENT_USER, KEY_READ | KEY_WOW64_32KEY);
     locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ | KEY_WOW64_32KEY);
 #else
-    // If we are a 32bit process on a 64bit Windows, first hit the 64bit keys.
+    /* If we are a 32bit process on a 64bit Windows, first hit the 64bit keys.*/
     BOOL f64 = FALSE;
     if (IsWow64Process(GetCurrentProcess(), &f64) && f64) {
         debug(L"locating Pythons in 64bit registry\n");
@@ -353,7 +376,7 @@ locate_all_pythons()
         locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ | KEY_WOW64_64KEY);
     }
 #endif
-    // now hit the "native" key for this process bittedness.
+    /* now hit the "native" key for this process bittedness. */
     debug(L"locating Pythons in native registry\n");
     locate_pythons_for_key(HKEY_CURRENT_USER, KEY_READ);
     locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ);
@@ -370,8 +393,14 @@ find_python_by_version(wchar_t const * wanted_ver)
     size_t wlen = wcslen(wanted_ver);
     int bits = 0;
 
-    if (wcsstr(wanted_ver, L"-32"))
+    if (wcsstr(wanted_ver, L"-32")) {
         bits = 32;
+        wlen -= wcslen(L"-32");
+    }
+    else if (wcsstr(wanted_ver, L"-64")) { /* Added option to select 64 bit explicitly */
+        bits = 64;
+        wlen -= wcslen(L"-64");
+    }
     for (i = 0; i < num_installed_pythons; i++, ip++) {
         n = wcslen(ip->version);
         if (n > wlen)
@@ -608,14 +637,16 @@ run_child(wchar_t * cmdline)
     PROCESS_INFORMATION pi;
 
 #if defined(_WINDOWS)
-    // When explorer launches a Windows (GUI) application, it displays
-    // the "app starting" (the "pointer + hourglass") cursor for a number
-    // of seconds, or until the app does something UI-ish (eg, creating a
-    // window, or fetching a message).  As this launcher doesn't do this
-    // directly, that cursor remains even after the child process does these
-    // things.  We avoid that by doing a simple post+get message.
-    // See http://bugs.python.org/issue17290 and
-    // https://bitbucket.org/vinay.sajip/pylauncher/issue/20/busy-cursor-for-a-long-time-when-running
+    /*
+    When explorer launches a Windows (GUI) application, it displays
+    the "app starting" (the "pointer + hourglass") cursor for a number
+    of seconds, or until the app does something UI-ish (eg, creating a
+    window, or fetching a message).  As this launcher doesn't do this
+    directly, that cursor remains even after the child process does these
+    things.  We avoid that by doing a simple post+get message.
+    See http://bugs.python.org/issue17290 and
+    https://bitbucket.org/vinay.sajip/pylauncher/issue/20/busy-cursor-for-a-long-time-when-running
+    */
     MSG msg;
 
     PostMessage(0, 0, 0, 0);
@@ -635,7 +666,7 @@ run_child(wchar_t * cmdline)
     if (!ok)
         error(RC_CREATE_PROCESS, L"Job information setting failed");
     memset(&si, 0, sizeof(si));
-    si.cb = sizeof(si);
+    GetStartupInfoW(&si);
     ok = safe_duplicate_handle(GetStdHandle(STD_INPUT_HANDLE), &si.hStdInput);
     if (!ok)
         error(RC_NO_STD_HANDLES, L"stdin duplication failed");
@@ -687,7 +718,7 @@ invoke_child(wchar_t * executable, wchar_t * suffix, wchar_t * cmdline)
         }
         child_command = calloc(child_command_size, sizeof(wchar_t));
         if (child_command == NULL)
-            error(RC_CREATE_PROCESS, L"unable to allocate %d bytes for child command.",
+            error(RC_CREATE_PROCESS, L"unable to allocate %zd bytes for child command.",
                   child_command_size);
         if (no_suffix)
             _snwprintf_s(child_command, child_command_size,
@@ -1040,32 +1071,49 @@ find_terminator(char * buffer, int len, BOM *bom)
 static BOOL
 validate_version(wchar_t * p)
 {
-    BOOL result = TRUE;
+    /*
+    Version information should start with the major version,
+    Optionally followed by a period and a minor version,
+    Optionally followed by a minus and one of 32 or 64.
+    Valid examples:
+      2
+      3
+      2.7
+      3.6
+      2.7-32
+      The intent is to add to the valid patterns:
+      3.10
+      3-32
+      3.6-64
+      3-64
+    */
+    BOOL result = (p != NULL); /* Default to False if null pointer. */
 
-    if (!isdigit(*p))               /* expect major version */
-        result = FALSE;
-    else if (*++p) {                /* more to do */
-        if (*p != L'.')             /* major/minor separator */
+    result = result && iswdigit(*p);  /* Result = False if first string element is not a digit. */
+
+    while (result && iswdigit(*p))   /* Require a major version */
+        ++p;  /* Skip all leading digit(s) */
+    if (result && (*p == L'.'))     /* Allow . for major minor separator.*/
+    {
+        result = iswdigit(*++p);     /* Must be at least one digit */
+        while (result && iswdigit(*++p)) ; /* Skip any more Digits */
+    }
+    if (result && (*p == L'-')) {   /* Allow - for Bits Separator */
+        switch(*++p){
+        case L'3':                            /* 3 is OK */
+            result = (*++p == L'2') && !*++p; /* only if followed by 2 and ended.*/
+            break;
+        case L'6':                            /* 6 is OK */
+            result = (*++p == L'4') && !*++p; /* only if followed by 4 and ended.*/
+            break;
+        default:
             result = FALSE;
-        else {
-            ++p;
-            if (!isdigit(*p))       /* expect minor version */
-                result = FALSE;
-            else {
-                ++p;
-                if (*p) {           /* more to do */
-                    if (*p != L'-')
-                        result = FALSE;
-                    else {
-                        ++p;
-                        if ((*p != '3') && (*++p != '2') && !*++p)
-                            result = FALSE;
-                    }
-                }
-            }
+            break;
         }
     }
+    result = result && !*p; /* Must have reached EOS */
     return result;
+
 }
 
 typedef struct {
@@ -1091,6 +1139,7 @@ static PYC_MAGIC magic_values[] = {
     { 3320, 3351, L"3.5" },
     { 3360, 3379, L"3.6" },
     { 3390, 3399, L"3.7" },
+    { 3400, 3410, L"3.8" },
     { 0 }
 };
 
@@ -1140,7 +1189,7 @@ maybe_handle_shebang(wchar_t ** argv, wchar_t * cmdline)
 
     if (rc == 0) {
         read = fread(buffer, sizeof(char), BUFSIZE, fp);
-        debug(L"maybe_handle_shebang: read %d bytes\n", read);
+        debug(L"maybe_handle_shebang: read %zd bytes\n", read);
         fclose(fp);
 
         if ((read >= 4) && (buffer[3] == '\n') && (buffer[2] == '\r')) {
@@ -1160,7 +1209,7 @@ maybe_handle_shebang(wchar_t ** argv, wchar_t * cmdline)
             bom = BOMs; /* points to UTF-8 entry - the default */
         }
         else {
-            debug(L"maybe_handle_shebang: BOM found, code page %d\n",
+            debug(L"maybe_handle_shebang: BOM found, code page %u\n",
                   bom->code_page);
             start = &buffer[bom->length];
         }
@@ -1346,6 +1395,170 @@ get_version_info(wchar_t * version_text, size_t size)
     }
 }
 
+static void
+show_help_text(wchar_t ** argv)
+{
+    wchar_t version_text [MAX_PATH];
+#if defined(_M_X64)
+    BOOL canDo64bit = TRUE;
+#else
+    /* If we are a 32bit process on a 64bit Windows, first hit the 64bit keys. */
+    BOOL canDo64bit = FALSE;
+    IsWow64Process(GetCurrentProcess(), &canDo64bit);
+#endif
+
+    get_version_info(version_text, MAX_PATH);
+    fwprintf(stdout, L"\
+Python Launcher for Windows Version %ls\n\n", version_text);
+    fwprintf(stdout, L"\
+usage:\n\
+%ls [launcher-args] [python-args] script [script-args]\n\n", argv[0]);
+    fputws(L"\
+Launcher arguments:\n\n\
+-2     : Launch the latest Python 2.x version\n\
+-3     : Launch the latest Python 3.x version\n\
+-X.Y   : Launch the specified Python version\n", stdout);
+    if (canDo64bit) {
+        fputws(L"\
+     The above all default to 64 bit if a matching 64 bit python is present.\n\
+-X.Y-32: Launch the specified 32bit Python version\n\
+-X-32  : Launch the latest 32bit Python X version\n\
+-X.Y-64: Launch the specified 64bit Python version\n\
+-X-64  : Launch the latest 64bit Python X version", stdout);
+    }
+    fputws(L"\n-0  --list       : List the available pythons", stdout);
+    fputws(L"\n-0p --list-paths : List with paths", stdout);
+    fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
+    fflush(stdout);
+}
+
+static BOOL
+show_python_list(wchar_t ** argv)
+{
+    /*
+     * Display options -0
+     */
+    INSTALLED_PYTHON * result = NULL;
+    INSTALLED_PYTHON * ip = installed_pythons; /* List of installed pythons */
+    INSTALLED_PYTHON * defpy = locate_python(L"", FALSE);
+    size_t i = 0;
+    wchar_t *p = argv[1];
+    wchar_t *fmt = L"\n -%ls-%d"; /* print VER-BITS */
+    wchar_t *defind = L" *"; /* Default indicator */
+
+    /*
+    * Output informational messages to stderr to keep output
+    * clean for use in pipes, etc.
+    */
+    fwprintf(stderr,
+             L"Installed Pythons found by %s Launcher for Windows", argv[0]);
+    if (!_wcsicmp(p, L"-0p") || !_wcsicmp(p, L"--list-paths")) /* Show path? */
+        fmt = L"\n -%ls-%d\t%ls"; /* print VER-BITS path */
+
+    if (num_installed_pythons == 0) /* We have somehow got here without searching for pythons */
+        locate_all_pythons(); /* Find them, Populates installed_pythons */
+
+    if (num_installed_pythons == 0) /* No pythons found */
+        fwprintf(stderr, L"\nNo Installed Pythons Found!");
+    else
+    {
+        for (i = 0; i < num_installed_pythons; i++, ip++) {
+            fwprintf(stdout, fmt, ip->version, ip->bits, ip->executable);
+            /* If there is a default indicate it */
+            if ((defpy != NULL) && !_wcsicmp(ip->executable, defpy->executable))
+                fwprintf(stderr, defind);
+        }
+    }
+
+    if ((defpy == NULL) && (num_installed_pythons > 0))
+        /* We have pythons but none is the default */
+        fwprintf(stderr, L"\n\nCan't find a Default Python.\n\n");
+    else
+        fwprintf(stderr, L"\n\n"); /* End with a blank line */
+    return FALSE; /* If this has been called we cannot continue */
+}
+
+#if defined(VENV_REDIRECT)
+
+static int
+find_home_value(const char *buffer, const char **start, DWORD *length)
+{
+    for (const char *s = strstr(buffer, "home"); s; s = strstr(s + 1, "\nhome")) {
+        if (*s == '\n') {
+            ++s;
+        }
+        for (int i = 4; i > 0 && *s; --i, ++s);
+
+        while (*s && iswspace(*s)) {
+            ++s;
+        }
+        if (*s != L'=') {
+            continue;
+        }
+
+        do {
+            ++s;
+        } while (*s && iswspace(*s));
+
+        *start = s;
+        char *nl = strchr(s, '\n');
+        if (nl) {
+            *length = (DWORD)((ptrdiff_t)nl - (ptrdiff_t)s);
+        } else {
+            *length = (DWORD)strlen(s);
+        }
+        return 1;
+    }
+    return 0;
+}
+#endif
+
+static wchar_t *
+wcsdup_pad(const wchar_t *s, int padding, int *newlen)
+{
+    size_t len = wcslen(s);
+    len += 1 + padding;
+    wchar_t *r = (wchar_t *)malloc(len * sizeof(wchar_t));
+    if (!r) {
+        return NULL;
+    }
+    if (wcscpy_s(r, len, s)) {
+        free(r);
+        return NULL;
+    }
+    *newlen = len < MAXINT ? (int)len : MAXINT;
+    return r;
+}
+
+static wchar_t *
+get_process_name()
+{
+    DWORD bufferLen = MAX_PATH;
+    DWORD len = bufferLen;
+    wchar_t *r = NULL;
+
+    while (!r) {
+        r = (wchar_t *)malloc(bufferLen * sizeof(wchar_t));
+        if (!r) {
+            error(RC_NO_MEMORY, L"out of memory");
+            return NULL;
+        }
+        len = GetModuleFileNameW(NULL, r, bufferLen);
+        if (len == 0) {
+            free(r);
+            error(0, L"Failed to get module name");
+            return NULL;
+        } else if (len == bufferLen &&
+                   GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+            free(r);
+            r = NULL;
+            bufferLen *= 2;
+        }
+    }
+
+    return r;
+}
+
 static int
 process(int argc, wchar_t ** argv)
 {
@@ -1353,22 +1566,27 @@ process(int argc, wchar_t ** argv)
     wchar_t * command;
     wchar_t * executable;
     wchar_t * p;
+    wchar_t * argv0;
     int rc = 0;
-    size_t plen;
     INSTALLED_PYTHON * ip;
     BOOL valid;
     DWORD size, attrs;
-    HRESULT hr;
     wchar_t message[MSGSIZE];
-    wchar_t version_text [MAX_PATH];
     void * version_data;
     VS_FIXEDFILEINFO * file_info;
     UINT block_size;
-    int index;
-#if defined(SCRIPT_WRAPPER)
+#if defined(VENV_REDIRECT)
+    wchar_t * venv_cfg_path;
     int newlen;
+#elif defined(SCRIPT_WRAPPER)
     wchar_t * newcommand;
     wchar_t * av[2];
+    int newlen;
+    HRESULT hr;
+    int index;
+#else
+    HRESULT hr;
+    int index;
 #endif
 
     setvbuf(stderr, (char *)NULL, _IONBF, 0);
@@ -1386,6 +1604,7 @@ process(int argc, wchar_t ** argv)
 #else
     debug(L"launcher executable: Console\n");
 #endif
+#if !defined(VENV_REDIRECT)
     /* Get the local appdata folder (non-roaming) */
     hr = SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA,
                           NULL, 0, appdata_ini_path);
@@ -1394,9 +1613,7 @@ process(int argc, wchar_t ** argv)
         appdata_ini_path[0] = L'\0';
     }
     else {
-        plen = wcslen(appdata_ini_path);
-        p = &appdata_ini_path[plen];
-        wcsncpy_s(p, MAX_PATH - plen, L"\\py.ini", _TRUNCATE);
+        wcsncat_s(appdata_ini_path, MAX_PATH, L"\\py.ini", _TRUNCATE);
         attrs = GetFileAttributesW(appdata_ini_path);
         if (attrs == INVALID_FILE_ATTRIBUTES) {
             debug(L"File '%ls' non-existent\n", appdata_ini_path);
@@ -1405,8 +1622,9 @@ process(int argc, wchar_t ** argv)
             debug(L"Using local configuration file '%ls'\n", appdata_ini_path);
         }
     }
-    plen = GetModuleFileNameW(NULL, launcher_ini_path, MAX_PATH);
-    size = GetFileVersionInfoSizeW(launcher_ini_path, &size);
+#endif
+    argv0 = get_process_name();
+    size = GetFileVersionInfoSizeW(argv0, &size);
     if (size == 0) {
         winerror(GetLastError(), message, MSGSIZE);
         debug(L"GetFileVersionInfoSize failed: %ls\n", message);
@@ -1414,7 +1632,7 @@ process(int argc, wchar_t ** argv)
     else {
         version_data = malloc(size);
         if (version_data) {
-            valid = GetFileVersionInfoW(launcher_ini_path, 0, size,
+            valid = GetFileVersionInfoW(argv0, 0, size,
                                         version_data);
             if (!valid)
                 debug(L"GetFileVersionInfo failed: %X\n", GetLastError());
@@ -1431,15 +1649,51 @@ process(int argc, wchar_t ** argv)
             free(version_data);
         }
     }
+
+#if defined(VENV_REDIRECT)
+    /* Allocate some extra space for new filenames */
+    venv_cfg_path = wcsdup_pad(argv0, 32, &newlen);
+    if (!venv_cfg_path) {
+        error(RC_NO_MEMORY, L"Failed to copy module name");
+    }
+    p = wcsrchr(venv_cfg_path, L'\\');
+
+    if (p == NULL) {
+        error(RC_NO_VENV_CFG, L"No pyvenv.cfg file");
+    }
+    p[0] = L'\0';
+    wcscat_s(venv_cfg_path, newlen, L"\\pyvenv.cfg");
+    attrs = GetFileAttributesW(venv_cfg_path);
+    if (attrs == INVALID_FILE_ATTRIBUTES) {
+        debug(L"File '%ls' non-existent\n", venv_cfg_path);
+        p[0] = '\0';
+        p = wcsrchr(venv_cfg_path, L'\\');
+        if (p != NULL) {
+            p[0] = '\0';
+            wcscat_s(venv_cfg_path, newlen, L"\\pyvenv.cfg");
+            attrs = GetFileAttributesW(venv_cfg_path);
+            if (attrs == INVALID_FILE_ATTRIBUTES) {
+                debug(L"File '%ls' non-existent\n", venv_cfg_path);
+                error(RC_NO_VENV_CFG, L"No pyvenv.cfg file");
+            }
+        }
+    }
+    debug(L"Using venv configuration file '%ls'\n", venv_cfg_path);
+#else
+    /* Allocate some extra space for new filenames */
+    if (wcscpy_s(launcher_ini_path, MAX_PATH, argv0)) {
+        error(RC_NO_MEMORY, L"Failed to copy module name");
+    }
     p = wcsrchr(launcher_ini_path, L'\\');
+
     if (p == NULL) {
         debug(L"GetModuleFileNameW returned value has no backslash: %ls\n",
               launcher_ini_path);
         launcher_ini_path[0] = L'\0';
     }
     else {
-        wcsncpy_s(p, MAX_PATH - (p - launcher_ini_path), L"\\py.ini",
-                  _TRUNCATE);
+        p[0] = L'\0';
+        wcscat_s(launcher_ini_path, MAX_PATH, L"\\py.ini");
         attrs = GetFileAttributesW(launcher_ini_path);
         if (attrs == INVALID_FILE_ATTRIBUTES) {
             debug(L"File '%ls' non-existent\n", launcher_ini_path);
@@ -1448,9 +1702,21 @@ process(int argc, wchar_t ** argv)
             debug(L"Using global configuration file '%ls'\n", launcher_ini_path);
         }
     }
+#endif
 
     command = skip_me(GetCommandLineW());
     debug(L"Called with command line: %ls\n", command);
+
+#if !defined(VENV_REDIRECT)
+    /* bpo-35811: The __PYVENV_LAUNCHER__ variable is used to
+     * override sys.executable and locate the original prefix path. 
+     * However, if it is silently inherited by a non-venv Python
+     * process, that process will believe it is running in the venv
+     * still. This is the only place where *we* can clear it (that is,
+     * when py.exe is being used to launch Python), so we do.
+     */
+    SetEnvironmentVariableW(L"__PYVENV_LAUNCHER__", NULL);
+#endif
 
 #if defined(SCRIPT_WRAPPER)
     /* The launcher is being used in "script wrapper" mode.
@@ -1483,6 +1749,55 @@ process(int argc, wchar_t ** argv)
         command = newcommand;
         valid = FALSE;
     }
+#elif defined(VENV_REDIRECT)
+    {
+        FILE *f;
+        char buffer[4096]; /* 4KB should be enough for anybody */
+        char *start;
+        DWORD len, cch, cch_actual;
+        size_t cb;
+        if (_wfopen_s(&f, venv_cfg_path, L"r")) {
+            error(RC_BAD_VENV_CFG, L"Cannot read '%ls'", venv_cfg_path);
+        }
+        cb = fread_s(buffer, sizeof(buffer), sizeof(buffer[0]),
+                     sizeof(buffer) / sizeof(buffer[0]), f);
+        fclose(f);
+
+        if (!find_home_value(buffer, &start, &len)) {
+            error(RC_BAD_VENV_CFG, L"Cannot find home in '%ls'",
+                  venv_cfg_path);
+        }
+
+        cch = MultiByteToWideChar(CP_UTF8, 0, start, len, NULL, 0);
+        if (!cch) {
+            error(0, L"Cannot determine memory for home path");
+        }
+        cch += (DWORD)wcslen(PYTHON_EXECUTABLE) + 1 + 1; /* include sep and null */
+        executable = (wchar_t *)malloc(cch * sizeof(wchar_t));
+        if (executable == NULL) {
+            error(RC_NO_MEMORY, L"A memory allocation failed");
+        }
+        cch_actual = MultiByteToWideChar(CP_UTF8, 0, start, len, executable, cch);
+        if (!cch_actual) {
+            error(RC_BAD_VENV_CFG, L"Cannot decode home path in '%ls'",
+                  venv_cfg_path);
+        }
+        if (executable[cch_actual - 1] != L'\\') {
+            executable[cch_actual++] = L'\\';
+            executable[cch_actual] = L'\0';
+        }
+        if (wcscat_s(executable, cch, PYTHON_EXECUTABLE)) {
+            error(RC_BAD_VENV_CFG, L"Cannot create executable path from '%ls'",
+                  venv_cfg_path);
+        }
+        if (GetFileAttributesW(executable) == INVALID_FILE_ATTRIBUTES) {
+            error(RC_NO_PYTHON, L"No Python at '%ls'", executable);
+        }
+        if (!SetEnvironmentVariableW(L"__PYVENV_LAUNCHER__", argv0)) {
+            error(0, L"Failed to set launcher environment");
+        }
+        valid = 1;
+    }
 #else
     if (argc <= 1) {
         valid = FALSE;
@@ -1490,13 +1805,24 @@ process(int argc, wchar_t ** argv)
     }
     else {
         p = argv[1];
-        plen = wcslen(p);
-        valid = (*p == L'-') && validate_version(&p[1]);
+        if ((argc == 2) && // list version args
+            (!wcsncmp(p, L"-0", wcslen(L"-0")) ||
+            !wcsncmp(p, L"--list", wcslen(L"--list"))))
+        {
+            show_python_list(argv);
+            return rc;
+        }
+        valid = valid && (*p == L'-') && validate_version(&p[1]);
         if (valid) {
             ip = locate_python(&p[1], FALSE);
             if (ip == NULL)
+            {
+                fwprintf(stdout, \
+                         L"Python %ls not found!\n", &p[1]);
+                valid = show_python_list(argv);
                 error(RC_NO_PYTHON, L"Requested Python version (%ls) not \
-installed", &p[1]);
+installed, use -0 for available pythons", &p[1]);
+            }
             executable = ip->executable;
             command += wcslen(p);
             command = skip_whitespace(command);
@@ -1515,44 +1841,31 @@ installed", &p[1]);
 #endif
 
     if (!valid) {
-        /* Look for an active virtualenv */
-        executable = find_python_by_venv();
-
-        /* If we didn't find one, look for the default Python */
-        if (executable == NULL) {
-            ip = locate_python(L"", FALSE);
-            if (ip == NULL)
-                error(RC_NO_PYTHON, L"Can't find a default Python.");
-            executable = ip->executable;
+        if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help")))
+            show_help_text(argv);
+        if ((argc == 2) &&
+            (!_wcsicmp(p, L"-0") || !_wcsicmp(p, L"--list") ||
+            !_wcsicmp(p, L"-0p") || !_wcsicmp(p, L"--list-paths")))
+        {
+            executable = NULL; /* Info call only */
         }
-        if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help"))) {
-#if defined(_M_X64)
-            BOOL canDo64bit = TRUE;
-#else
-    // If we are a 32bit process on a 64bit Windows, first hit the 64bit keys.
-            BOOL canDo64bit = FALSE;
-            IsWow64Process(GetCurrentProcess(), &canDo64bit);
-#endif
+        else {
+            /* Look for an active virtualenv */
+            executable = find_python_by_venv();
 
-            get_version_info(version_text, MAX_PATH);
-            fwprintf(stdout, L"\
-Python Launcher for Windows Version %ls\n\n", version_text);
-            fwprintf(stdout, L"\
-usage: %ls [ launcher-arguments ] [ python-arguments ] script [ script-arguments ]\n\n", argv[0]);
-            fputws(L"\
-Launcher arguments:\n\n\
--2     : Launch the latest Python 2.x version\n\
--3     : Launch the latest Python 3.x version\n\
--X.Y   : Launch the specified Python version\n", stdout);
-            if (canDo64bit) {
-                fputws(L"\
--X.Y-32: Launch the specified 32bit Python version", stdout);
+            /* If we didn't find one, look for the default Python */
+            if (executable == NULL) {
+                ip = locate_python(L"", FALSE);
+                if (ip == NULL)
+                    error(RC_NO_PYTHON, L"Can't find a default Python.");
+                executable = ip->executable;
             }
-            fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
-            fflush(stdout);
         }
     }
-    invoke_child(executable, NULL, command);
+    if (executable != NULL)
+        invoke_child(executable, NULL, command);
+    else
+        rc = RC_NO_PYTHON;
     return rc;
 }
 

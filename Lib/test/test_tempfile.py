@@ -8,6 +8,7 @@ import sys
 import re
 import warnings
 import contextlib
+import stat
 import weakref
 from unittest import mock
 
@@ -15,12 +16,6 @@ import unittest
 from test import support
 from test.support import script_helper
 
-
-if hasattr(os, 'stat'):
-    import stat
-    has_stat = 1
-else:
-    has_stat = 0
 
 has_textmode = (tempfile._text_openflags != tempfile._bin_openflags)
 has_spawnl = hasattr(os, 'spawnl')
@@ -77,7 +72,6 @@ class BaseTestCase(unittest.TestCase):
 
     def tearDown(self):
         self._warnings_manager.__exit__(None, None, None)
-
 
     def nameCheck(self, name, dir, pre, suf):
         (ndir, nbase) = os.path.split(name)
@@ -184,12 +178,15 @@ class TestRandomNameSequence(BaseTestCase):
         try:
             pid = os.fork()
             if not pid:
+                # child process
                 os.close(read_fd)
                 os.write(write_fd, next(self.r).encode("ascii"))
                 os.close(write_fd)
                 # bypass the normal exit handlers- leave those to
                 # the parent.
                 os._exit(0)
+
+            # parent process
             parent_value = next(self.r)
             child_value = os.read(read_fd, len(parent_value)).decode("ascii")
         finally:
@@ -200,6 +197,10 @@ class TestRandomNameSequence(BaseTestCase):
                     os.kill(pid, signal.SIGKILL)
                 except OSError:
                     pass
+
+                # Read the process exit status to avoid zombie process
+                os.waitpid(pid, 0)
+
             os.close(read_fd)
             os.close(write_fd)
         self.assertNotEqual(child_value, parent_value)
@@ -273,13 +274,12 @@ class TestGetDefaultTempdir(BaseTestCase):
                         tempfile._get_default_tempdir()
                     self.assertEqual(os.listdir(our_temp_directory), [])
 
-                open = io.open
                 def bad_writer(*args, **kwargs):
-                    fp = open(*args, **kwargs)
+                    fp = orig_open(*args, **kwargs)
                     fp.write = raise_OSError
                     return fp
 
-                with support.swap_attr(io, "open", bad_writer):
+                with support.swap_attr(io, "open", bad_writer) as orig_open:
                     # test again with failing write()
                     with self.assertRaises(FileNotFoundError):
                         tempfile._get_default_tempdir()
@@ -428,7 +428,6 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
-    @unittest.skipUnless(has_stat, 'os.stat not available')
     def test_file_mode(self):
         # _mkstemp_inner creates files with the proper mode
 
@@ -574,9 +573,8 @@ class TestGetTempDir(BaseTestCase):
         # sneaky: just instantiate a NamedTemporaryFile, which
         # defaults to writing into the directory returned by
         # gettempdir.
-        file = tempfile.NamedTemporaryFile()
-        file.write(b"blat")
-        file.close()
+        with tempfile.NamedTemporaryFile() as file:
+            file.write(b"blat")
 
     def test_same_thing(self):
         # gettempdir always returns the same object
@@ -733,7 +731,6 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
-    @unittest.skipUnless(has_stat, 'os.stat not available')
     def test_mode(self):
         # mkdtemp creates directories with the proper mode
 
@@ -893,9 +890,8 @@ class TestNamedTemporaryFile(BaseTestCase):
         # A NamedTemporaryFile is deleted when closed
         dir = tempfile.mkdtemp()
         try:
-            f = tempfile.NamedTemporaryFile(dir=dir)
-            f.write(b'blat')
-            f.close()
+            with tempfile.NamedTemporaryFile(dir=dir) as f:
+                f.write(b'blat')
             self.assertFalse(os.path.exists(f.name),
                         "NamedTemporaryFile %s exists after close" % f.name)
         finally:
@@ -1089,6 +1085,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
             f.newlines
         with self.assertRaises(AttributeError):
             f.encoding
+        with self.assertRaises(AttributeError):
+            f.errors
 
         f.write(b'x')
         self.assertTrue(f._rolled)
@@ -1098,6 +1096,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
             f.newlines
         with self.assertRaises(AttributeError):
             f.encoding
+        with self.assertRaises(AttributeError):
+            f.errors
 
     def test_text_mode(self):
         # Creating a SpooledTemporaryFile with a text mode should produce
@@ -1114,6 +1114,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertIsNone(f.name)
         self.assertIsNone(f.newlines)
         self.assertIsNone(f.encoding)
+        self.assertIsNone(f.errors)
 
         f.write("xyzzy\n")
         f.seek(0)
@@ -1127,10 +1128,12 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertIsNotNone(f.name)
         self.assertEqual(f.newlines, os.linesep)
         self.assertIsNotNone(f.encoding)
+        self.assertIsNotNone(f.errors)
 
     def test_text_newline_and_encoding(self):
         f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10,
-                                          newline='', encoding='utf-8')
+                                          newline='', encoding='utf-8',
+                                          errors='ignore')
         f.write("\u039B\r\n")
         f.seek(0)
         self.assertEqual(f.read(), "\u039B\r\n")
@@ -1139,6 +1142,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertIsNone(f.name)
         self.assertIsNone(f.newlines)
         self.assertIsNone(f.encoding)
+        self.assertIsNone(f.errors)
 
         f.write("\u039B" * 20 + "\r\n")
         f.seek(0)
@@ -1148,6 +1152,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertIsNotNone(f.name)
         self.assertIsNotNone(f.newlines)
         self.assertEqual(f.encoding, 'utf-8')
+        self.assertEqual(f.errors, 'ignore')
 
     def test_context_manager_before_rollover(self):
         # A SpooledTemporaryFile can be used as a context manager
@@ -1207,8 +1212,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         f.write(b'abcdefg\n')
         f.truncate(20)
         self.assertTrue(f._rolled)
-        if has_stat:
-            self.assertEqual(os.fstat(f.fileno()).st_size, 20)
+        self.assertEqual(os.fstat(f.fileno()).st_size, 20)
 
 
 if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
@@ -1293,18 +1297,24 @@ class NulledModules:
 class TestTemporaryDirectory(BaseTestCase):
     """Test TemporaryDirectory()."""
 
-    def do_create(self, dir=None, pre="", suf="", recurse=1):
+    def do_create(self, dir=None, pre="", suf="", recurse=1, dirs=1, files=1):
         if dir is None:
             dir = tempfile.gettempdir()
         tmp = tempfile.TemporaryDirectory(dir=dir, prefix=pre, suffix=suf)
         self.nameCheck(tmp.name, dir, pre, suf)
-        # Create a subdirectory and some files
-        if recurse:
-            d1 = self.do_create(tmp.name, pre, suf, recurse-1)
-            d1.name = None
-        with open(os.path.join(tmp.name, "test.txt"), "wb") as f:
-            f.write(b"Hello world!")
+        self.do_create2(tmp.name, recurse, dirs, files)
         return tmp
+
+    def do_create2(self, path, recurse=1, dirs=1, files=1):
+        # Create subdirectories and some files
+        if recurse:
+            for i in range(dirs):
+                name = os.path.join(path, "dir%d" % i)
+                os.mkdir(name)
+                self.do_create2(name, recurse-1, dirs, files)
+        for i in range(files):
+            with open(os.path.join(path, "test%d.txt" % i), "wb") as f:
+                f.write(b"Hello world!")
 
     def test_mkdtemp_failure(self):
         # Check no additional exception if mkdtemp fails
@@ -1345,7 +1355,7 @@ class TestTemporaryDirectory(BaseTestCase):
                          "TemporaryDirectory %s exists after cleanup" % d1.name)
         self.assertTrue(os.path.exists(d2.name),
                         "Directory pointed to by a symlink was deleted")
-        self.assertEqual(os.listdir(d2.name), ['test.txt'],
+        self.assertEqual(os.listdir(d2.name), ['test0.txt'],
                          "Contents of the directory pointed to by a symlink "
                          "were deleted")
         d2.cleanup()
@@ -1380,7 +1390,7 @@ class TestTemporaryDirectory(BaseTestCase):
 
                     tmp2 = os.path.join(tmp.name, 'test_dir')
                     os.mkdir(tmp2)
-                    with open(os.path.join(tmp2, "test.txt"), "w") as f:
+                    with open(os.path.join(tmp2, "test0.txt"), "w") as f:
                         f.write("Hello world!")
 
                     {mod}.tmp = tmp
@@ -1447,6 +1457,33 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertTrue(os.path.exists(name))
             self.assertEqual(name, d.name)
         self.assertFalse(os.path.exists(name))
+
+    def test_modes(self):
+        for mode in range(8):
+            mode <<= 6
+            with self.subTest(mode=format(mode, '03o')):
+                d = self.do_create(recurse=3, dirs=2, files=2)
+                with d:
+                    # Change files and directories mode recursively.
+                    for root, dirs, files in os.walk(d.name, topdown=False):
+                        for name in files:
+                            os.chmod(os.path.join(root, name), mode)
+                        os.chmod(root, mode)
+                    d.cleanup()
+                self.assertFalse(os.path.exists(d.name))
+
+    @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.lchflags')
+    def test_flags(self):
+        flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
+        d = self.do_create(recurse=3, dirs=2, files=2)
+        with d:
+            # Change files and directories flags recursively.
+            for root, dirs, files in os.walk(d.name, topdown=False):
+                for name in files:
+                    os.chflags(os.path.join(root, name), flags)
+                os.chflags(root, flags)
+            d.cleanup()
+        self.assertFalse(os.path.exists(d.name))
 
 
 if __name__ == "__main__":

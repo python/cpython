@@ -1,8 +1,7 @@
 from xmlrpc.server import DocXMLRPCServer
 import http.client
 import sys
-from test import support
-threading = support.import_module('threading')
+import threading
 import unittest
 
 def make_request_and_skipIf(condition, reason):

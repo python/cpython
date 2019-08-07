@@ -102,8 +102,8 @@ import warnings
 from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
     urlparse, urlsplit, urljoin, unwrap, quote, unquote,
-    splittype, splithost, splitport, splituser, splitpasswd,
-    splitattr, splitquery, splitvalue, splittag, to_bytes,
+    _splittype, _splithost, _splitport, _splituser, _splitpasswd,
+    _splitattr, _splitquery, _splitvalue, _splittag, _to_bytes,
     unquote_to_bytes, urlunparse)
 from urllib.response import addinfourl, addclosehook
 
@@ -198,7 +198,7 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
     global _opener
     if cafile or capath or cadefault:
         import warnings
-        warnings.warn("cafile, cpath and cadefault are deprecated, use a "
+        warnings.warn("cafile, capath and cadefault are deprecated, use a "
                       "custom context instead.", DeprecationWarning, 2)
         if context is not None:
             raise ValueError(
@@ -242,7 +242,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
     Returns a tuple containing the path to the newly created
     data file as well as the resulting HTTPMessage object.
     """
-    url_type, path = splittype(url)
+    url_type, path = _splittype(url)
 
     with contextlib.closing(urlopen(url, data)) as fp:
         headers = fp.info()
@@ -350,7 +350,7 @@ class Request:
     def full_url(self, url):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self._full_url = unwrap(url)
-        self._full_url, self.fragment = splittag(self._full_url)
+        self._full_url, self.fragment = _splittag(self._full_url)
         self._parse()
 
     @full_url.deleter
@@ -378,10 +378,10 @@ class Request:
         self.data = None
 
     def _parse(self):
-        self.type, rest = splittype(self._full_url)
+        self.type, rest = _splittype(self._full_url)
         if self.type is None:
             raise ValueError("unknown url type: %r" % self.full_url)
-        self.host, self.selector = splithost(rest)
+        self.host, self.selector = _splithost(rest)
         if self.host:
             self.host = unquote(self.host)
 
@@ -426,8 +426,7 @@ class Request:
         self.unredirected_hdrs.pop(header_name, None)
 
     def header_items(self):
-        hdrs = self.unredirected_hdrs.copy()
-        hdrs.update(self.headers)
+        hdrs = {**self.unredirected_hdrs, **self.headers}
         return list(hdrs.items())
 
 class OpenerDirector:
@@ -522,6 +521,7 @@ class OpenerDirector:
             meth = getattr(processor, meth_name)
             req = meth(req)
 
+        sys.audit('urllib.Request', req.full_url, req.data, req.headers, req.get_method())
         response = self._open(req, data)
 
         # post-process response
@@ -683,8 +683,8 @@ class HTTPRedirectHandler(BaseHandler):
         newurl = newurl.replace(' ', '%20')
 
         CONTENT_HEADERS = ("content-length", "content-type")
-        newheaders = dict((k, v) for k, v in req.headers.items()
-                          if k.lower() not in CONTENT_HEADERS)
+        newheaders = {k: v for k, v in req.headers.items()
+                      if k.lower() not in CONTENT_HEADERS}
         return Request(newurl,
                        headers=newheaders,
                        origin_req_host=req.origin_req_host,
@@ -768,7 +768,7 @@ def _parse_proxy(proxy):
     According to RFC 3986, having an authority component means the URL must
     have two slashes after the scheme.
     """
-    scheme, r_scheme = splittype(proxy)
+    scheme, r_scheme = _splittype(proxy)
     if not r_scheme.startswith("/"):
         # authority
         scheme = None
@@ -783,9 +783,9 @@ def _parse_proxy(proxy):
         if end == -1:
             end = None
         authority = r_scheme[2:end]
-    userinfo, hostport = splituser(authority)
+    userinfo, hostport = _splituser(authority)
     if userinfo is not None:
-        user, password = splitpasswd(userinfo)
+        user, password = _splitpasswd(userinfo)
     else:
         user = password = None
     return scheme, user, password, hostport
@@ -845,7 +845,7 @@ class HTTPPasswordMgr:
             self.passwd[realm] = {}
         for default_port in True, False:
             reduced_uri = tuple(
-                [self.reduce_uri(u, default_port) for u in uri])
+                self.reduce_uri(u, default_port) for u in uri)
             self.passwd[realm][reduced_uri] = (user, passwd)
 
     def find_user_password(self, realm, authuri):
@@ -872,7 +872,7 @@ class HTTPPasswordMgr:
             scheme = None
             authority = uri
             path = '/'
-        host, port = splitport(authority)
+        host, port = _splitport(authority)
         if default_port and port is None and scheme is not None:
             dport = {"http": 80,
                      "https": 443,
@@ -1261,8 +1261,8 @@ class AbstractHTTPHandler(BaseHandler):
 
         sel_host = host
         if request.has_proxy():
-            scheme, sel = splittype(request.selector)
-            sel_host, sel_path = splithost(sel)
+            scheme, sel = _splittype(request.selector)
+            sel_host, sel_path = _splithost(sel)
         if not request.has_header('Host'):
             request.add_unredirected_header('Host', sel_host)
         for name, value in self.parent.addheaders:
@@ -1286,8 +1286,8 @@ class AbstractHTTPHandler(BaseHandler):
         h.set_debuglevel(self._debuglevel)
 
         headers = dict(req.unredirected_hdrs)
-        headers.update(dict((k, v) for k, v in req.headers.items()
-                            if k not in headers))
+        headers.update({k: v for k, v in req.headers.items()
+                        if k not in headers})
 
         # TODO(jhylton): Should this be redesigned to handle
         # persistent connections?
@@ -1299,7 +1299,7 @@ class AbstractHTTPHandler(BaseHandler):
         # So make sure the connection gets closed after the (only)
         # request.
         headers["Connection"] = "close"
-        headers = dict((name.title(), val) for name, val in headers.items())
+        headers = {name.title(): val for name, val in headers.items()}
 
         if req._tunnel_host:
             tunnel_headers = {}
@@ -1478,7 +1478,7 @@ class FileHandler(BaseHandler):
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
             if host:
-                host, port = splitport(host)
+                host, port = _splitport(host)
             if not host or \
                 (not port and _safe_gethostbyname(host) in self.get_names()):
                 if host:
@@ -1487,7 +1487,6 @@ class FileHandler(BaseHandler):
                     origurl = 'file://' + filename
                 return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
-            # users shouldn't expect OSErrors coming from urlopen()
             raise URLError(exp)
         raise URLError('file not on local host')
 
@@ -1504,16 +1503,16 @@ class FTPHandler(BaseHandler):
         host = req.host
         if not host:
             raise URLError('ftp error: no host given')
-        host, port = splitport(host)
+        host, port = _splitport(host)
         if port is None:
             port = ftplib.FTP_PORT
         else:
             port = int(port)
 
         # username/password handling
-        user, host = splituser(host)
+        user, host = _splituser(host)
         if user:
-            user, passwd = splitpasswd(user)
+            user, passwd = _splitpasswd(user)
         else:
             passwd = None
         host = unquote(host)
@@ -1524,7 +1523,7 @@ class FTPHandler(BaseHandler):
             host = socket.gethostbyname(host)
         except OSError as msg:
             raise URLError(msg)
-        path, attrs = splitattr(req.selector)
+        path, attrs = _splitattr(req.selector)
         dirs = path.split('/')
         dirs = list(map(unquote, dirs))
         dirs, file = dirs[:-1], dirs[-1]
@@ -1534,7 +1533,7 @@ class FTPHandler(BaseHandler):
             fw = self.connect_ftp(user, passwd, host, port, dirs, req.timeout)
             type = file and 'I' or 'D'
             for attr in attrs:
-                attr, value = splitvalue(attr)
+                attr, value = _splitvalue(attr)
                 if attr.lower() == 'type' and \
                    value in ('a', 'A', 'i', 'I', 'd', 'D'):
                     type = value.upper()
@@ -1657,14 +1656,10 @@ else:
         of the 'file' scheme; not recommended for general use."""
         return quote(pathname)
 
-# This really consists of two pieces:
-# (1) a class which handles opening of all sorts of URLs
-#     (plus assorted utilities etc.)
-# (2) a set of functions for parsing URLs
-# XXX Should these be separated out into different modules?
-
 
 ftpcache = {}
+
+
 class URLopener:
     """Class to open URLs.
     This is a class rather than just a subroutine because we may need
@@ -1732,26 +1727,26 @@ class URLopener:
     # External interface
     def open(self, fullurl, data=None):
         """Use URLopener().open(file) instead of open(file, 'r')."""
-        fullurl = unwrap(to_bytes(fullurl))
+        fullurl = unwrap(_to_bytes(fullurl))
         fullurl = quote(fullurl, safe="%/:=&?~#+!$,;'@()*[]|")
         if self.tempcache and fullurl in self.tempcache:
             filename, headers = self.tempcache[fullurl]
             fp = open(filename, 'rb')
             return addinfourl(fp, headers, fullurl)
-        urltype, url = splittype(fullurl)
+        urltype, url = _splittype(fullurl)
         if not urltype:
             urltype = 'file'
         if urltype in self.proxies:
             proxy = self.proxies[urltype]
-            urltype, proxyhost = splittype(proxy)
-            host, selector = splithost(proxyhost)
+            urltype, proxyhost = _splittype(proxy)
+            host, selector = _splithost(proxyhost)
             url = (host, fullurl) # Signal special case to open_*()
         else:
             proxy = None
         name = 'open_' + urltype
         self.type = urltype
         name = name.replace('-', '_')
-        if not hasattr(self, name):
+        if not hasattr(self, name) or name == 'open_local_file':
             if proxy:
                 return self.open_unknown_proxy(proxy, fullurl, data)
             else:
@@ -1768,28 +1763,28 @@ class URLopener:
 
     def open_unknown(self, fullurl, data=None):
         """Overridable interface to open unknown URL type."""
-        type, url = splittype(fullurl)
+        type, url = _splittype(fullurl)
         raise OSError('url error', 'unknown url type', type)
 
     def open_unknown_proxy(self, proxy, fullurl, data=None):
         """Overridable interface to open unknown URL type."""
-        type, url = splittype(fullurl)
+        type, url = _splittype(fullurl)
         raise OSError('url error', 'invalid proxy for %s' % type, proxy)
 
     # External interface
     def retrieve(self, url, filename=None, reporthook=None, data=None):
         """retrieve(url) returns (filename, headers) for a local object
         or (tempfilename, headers) for a remote object."""
-        url = unwrap(to_bytes(url))
+        url = unwrap(_to_bytes(url))
         if self.tempcache and url in self.tempcache:
             return self.tempcache[url]
-        type, url1 = splittype(url)
+        type, url1 = _splittype(url)
         if filename is None and (not type or type == 'file'):
             try:
                 fp = self.open_local_file(url1)
                 hdrs = fp.info()
                 fp.close()
-                return url2pathname(splithost(url1)[1]), hdrs
+                return url2pathname(_splithost(url1)[1]), hdrs
             except OSError as msg:
                 pass
         fp = self.open(url, data)
@@ -1798,11 +1793,10 @@ class URLopener:
             if filename:
                 tfp = open(filename, 'wb')
             else:
-                import tempfile
-                garbage, path = splittype(url)
-                garbage, path = splithost(path or "")
-                path, garbage = splitquery(path or "")
-                path, garbage = splitattr(path or "")
+                garbage, path = _splittype(url)
+                garbage, path = _splithost(path or "")
+                path, garbage = _splitquery(path or "")
+                path, garbage = _splitattr(path or "")
                 suffix = os.path.splitext(path)[1]
                 (fd, filename) = tempfile.mkstemp(suffix)
                 self.__tempfiles.append(filename)
@@ -1859,25 +1853,25 @@ class URLopener:
         user_passwd = None
         proxy_passwd= None
         if isinstance(url, str):
-            host, selector = splithost(url)
+            host, selector = _splithost(url)
             if host:
-                user_passwd, host = splituser(host)
+                user_passwd, host = _splituser(host)
                 host = unquote(host)
             realhost = host
         else:
             host, selector = url
             # check whether the proxy contains authorization information
-            proxy_passwd, host = splituser(host)
+            proxy_passwd, host = _splituser(host)
             # now we proceed with the url we want to obtain
-            urltype, rest = splittype(selector)
+            urltype, rest = _splittype(selector)
             url = rest
             user_passwd = None
             if urltype.lower() != 'http':
                 realhost = None
             else:
-                realhost, rest = splithost(rest)
+                realhost, rest = _splithost(rest)
                 if realhost:
-                    user_passwd, realhost = splituser(realhost)
+                    user_passwd, realhost = _splituser(realhost)
                 if user_passwd:
                     selector = "%s://%s%s" % (urltype, realhost, rest)
                 if proxy_bypass(realhost):
@@ -1983,7 +1977,7 @@ class URLopener:
         """Use local file."""
         import email.utils
         import mimetypes
-        host, file = splithost(url)
+        host, file = _splithost(url)
         localname = url2pathname(file)
         try:
             stats = os.stat(localname)
@@ -2000,7 +1994,7 @@ class URLopener:
             if file[:1] == '/':
                 urlfile = 'file://' + file
             return addinfourl(open(localname, 'rb'), headers, urlfile)
-        host, port = splitport(host)
+        host, port = _splitport(host)
         if (not port
            and socket.gethostbyname(host) in ((localhost(),) + thishost())):
             urlfile = file
@@ -2016,11 +2010,11 @@ class URLopener:
         if not isinstance(url, str):
             raise URLError('ftp error: proxy support for ftp protocol currently not implemented')
         import mimetypes
-        host, path = splithost(url)
+        host, path = _splithost(url)
         if not host: raise URLError('ftp error: no host given')
-        host, port = splitport(host)
-        user, host = splituser(host)
-        if user: user, passwd = splitpasswd(user)
+        host, port = _splitport(host)
+        user, host = _splituser(host)
+        if user: user, passwd = _splitpasswd(user)
         else: passwd = None
         host = unquote(host)
         user = unquote(user or '')
@@ -2031,7 +2025,7 @@ class URLopener:
             port = ftplib.FTP_PORT
         else:
             port = int(port)
-        path, attrs = splitattr(path)
+        path, attrs = _splitattr(path)
         path = unquote(path)
         dirs = path.split('/')
         dirs, file = dirs[:-1], dirs[-1]
@@ -2053,7 +2047,7 @@ class URLopener:
             if not file: type = 'D'
             else: type = 'I'
             for attr in attrs:
-                attr, value = splitvalue(attr)
+                attr, value = _splitvalue(attr)
                 if attr.lower() == 'type' and \
                    value in ('a', 'A', 'i', 'I', 'd', 'D'):
                     type = value.upper()
@@ -2236,11 +2230,11 @@ class FancyURLopener(URLopener):
             return getattr(self,name)(url, realm, data)
 
     def retry_proxy_http_basic_auth(self, url, realm, data=None):
-        host, selector = splithost(url)
+        host, selector = _splithost(url)
         newurl = 'http://' + host + selector
         proxy = self.proxies['http']
-        urltype, proxyhost = splittype(proxy)
-        proxyhost, proxyselector = splithost(proxyhost)
+        urltype, proxyhost = _splittype(proxy)
+        proxyhost, proxyselector = _splithost(proxyhost)
         i = proxyhost.find('@') + 1
         proxyhost = proxyhost[i:]
         user, passwd = self.get_user_passwd(proxyhost, realm, i)
@@ -2254,11 +2248,11 @@ class FancyURLopener(URLopener):
             return self.open(newurl, data)
 
     def retry_proxy_https_basic_auth(self, url, realm, data=None):
-        host, selector = splithost(url)
+        host, selector = _splithost(url)
         newurl = 'https://' + host + selector
         proxy = self.proxies['https']
-        urltype, proxyhost = splittype(proxy)
-        proxyhost, proxyselector = splithost(proxyhost)
+        urltype, proxyhost = _splittype(proxy)
+        proxyhost, proxyselector = _splithost(proxyhost)
         i = proxyhost.find('@') + 1
         proxyhost = proxyhost[i:]
         user, passwd = self.get_user_passwd(proxyhost, realm, i)
@@ -2272,7 +2266,7 @@ class FancyURLopener(URLopener):
             return self.open(newurl, data)
 
     def retry_http_basic_auth(self, url, realm, data=None):
-        host, selector = splithost(url)
+        host, selector = _splithost(url)
         i = host.find('@') + 1
         host = host[i:]
         user, passwd = self.get_user_passwd(host, realm, i)
@@ -2286,7 +2280,7 @@ class FancyURLopener(URLopener):
             return self.open(newurl, data)
 
     def retry_https_basic_auth(self, url, realm, data=None):
-        host, selector = splithost(url)
+        host, selector = _splithost(url)
         i = host.find('@') + 1
         host = host[i:]
         user, passwd = self.get_user_passwd(host, realm, i)
@@ -2508,7 +2502,7 @@ def proxy_bypass_environment(host, proxies=None):
     if no_proxy == '*':
         return 1
     # strip port off host
-    hostonly, port = splitport(host)
+    hostonly, port = _splitport(host)
     # check if the host ends with any of the DNS suffixes
     no_proxy_list = [proxy.strip() for proxy in no_proxy.split(',')]
     for name in no_proxy_list:
@@ -2539,7 +2533,7 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
     """
     from fnmatch import fnmatch
 
-    hostonly, port = splitport(host)
+    hostonly, port = _splitport(host)
 
     def ip2num(ipAddr):
         parts = ipAddr.split('.')
@@ -2693,7 +2687,7 @@ elif os.name == 'nt':
         if not proxyEnable or not proxyOverride:
             return 0
         # try to make a host list from name and IP address.
-        rawHost, port = splitport(host)
+        rawHost, port = _splitport(host)
         host = [rawHost]
         try:
             addr = socket.gethostbyname(rawHost)

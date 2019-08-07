@@ -47,6 +47,9 @@ class TrivialTests(unittest.TestCase):
     def test_trivial(self):
         # A couple trivial tests
 
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         self.assertRaises(ValueError, urllib.request.urlopen, 'bogus url')
 
         # XXX Name hacking to get this to work on Windows.
@@ -57,10 +60,8 @@ class TrivialTests(unittest.TestCase):
         else:
             file_url = "file://%s" % fname
 
-        f = urllib.request.urlopen(file_url)
-
-        f.read()
-        f.close()
+        with urllib.request.urlopen(file_url) as f:
+            f.read()
 
     def test_parse_http_list(self):
         tests = [
@@ -848,7 +849,6 @@ class HandlerTests(unittest.TestCase):
             req = Request(url)
             try:
                 h.file_open(req)
-            # XXXX remove OSError when bug fixed
             except urllib.error.URLError:
                 self.assertFalse(ftp)
             else:
@@ -1293,6 +1293,10 @@ class HandlerTests(unittest.TestCase):
 
     def test_redirect_no_path(self):
         # Issue 14132: Relative redirect strips original path
+
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         real_class = http.client.HTTPConnection
         response1 = b"HTTP/1.1 302 Found\r\nLocation: ?query\r\n\r\n"
         http.client.HTTPConnection = test_urllib.fakehttp(response1)

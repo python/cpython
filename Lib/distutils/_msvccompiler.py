@@ -17,6 +17,7 @@ import os
 import shutil
 import stat
 import subprocess
+import winreg
 
 from distutils.errors import DistutilsExecError, DistutilsPlatformError, \
                              CompileError, LibError, LinkError
@@ -24,10 +25,9 @@ from distutils.ccompiler import CCompiler, gen_lib_options
 from distutils import log
 from distutils.util import get_platform
 
-import winreg
 from itertools import count
 
-def _find_vcvarsall(plat_spec):
+def _find_vc2015():
     try:
         key = winreg.OpenKeyEx(
             winreg.HKEY_LOCAL_MACHINE,
@@ -38,9 +38,9 @@ def _find_vcvarsall(plat_spec):
         log.debug("Visual C++ is not registered")
         return None, None
 
+    best_version = 0
+    best_dir = None
     with key:
-        best_version = 0
-        best_dir = None
         for i in count():
             try:
                 v, vc_dir, vt = winreg.EnumValue(key, i)
@@ -53,25 +53,87 @@ def _find_vcvarsall(plat_spec):
                     continue
                 if version >= 14 and version > best_version:
                     best_version, best_dir = version, vc_dir
-        if not best_version:
-            log.debug("No suitable Visual C++ version found")
-            return None, None
+    return best_version, best_dir
 
-        vcvarsall = os.path.join(best_dir, "vcvarsall.bat")
-        if not os.path.isfile(vcvarsall):
-            log.debug("%s cannot be found", vcvarsall)
-            return None, None
+def _find_vc2017():
+    """Returns "15, path" based on the result of invoking vswhere.exe
+    If no install is found, returns "None, None"
 
+    The version is returned to avoid unnecessarily changing the function
+    result. It may be ignored when the path is not None.
+
+    If vswhere.exe is not available, by definition, VS 2017 is not
+    installed.
+    """
+    import json
+
+    root = os.environ.get("ProgramFiles(x86)") or os.environ.get("ProgramFiles")
+    if not root:
+        return None, None
+
+    try:
+        path = subprocess.check_output([
+            os.path.join(root, "Microsoft Visual Studio", "Installer", "vswhere.exe"),
+            "-latest",
+            "-prerelease",
+            "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+            "-property", "installationPath",
+            "-products", "*",
+        ], encoding="mbcs", errors="strict").strip()
+    except (subprocess.CalledProcessError, OSError, UnicodeDecodeError):
+        return None, None
+
+    path = os.path.join(path, "VC", "Auxiliary", "Build")
+    if os.path.isdir(path):
+        return 15, path
+
+    return None, None
+
+PLAT_SPEC_TO_RUNTIME = {
+    'x86' : 'x86',
+    'x86_amd64' : 'x64',
+    'x86_arm' : 'arm',
+    'x86_arm64' : 'arm64'
+}
+
+def _find_vcvarsall(plat_spec):
+    _, best_dir = _find_vc2017()
+    vcruntime = None
+
+    if plat_spec in PLAT_SPEC_TO_RUNTIME:
+        vcruntime_plat = PLAT_SPEC_TO_RUNTIME[plat_spec]
+    else:
+        vcruntime_plat = 'x64' if 'amd64' in plat_spec else 'x86'
+
+    if best_dir:
+        vcredist = os.path.join(best_dir, "..", "..", "redist", "MSVC", "**",
+            vcruntime_plat, "Microsoft.VC141.CRT", "vcruntime140.dll")
+        try:
+            import glob
+            vcruntime = glob.glob(vcredist, recursive=True)[-1]
+        except (ImportError, OSError, LookupError):
+            vcruntime = None
+
+    if not best_dir:
+        best_version, best_dir = _find_vc2015()
+        if best_version:
+            vcruntime = os.path.join(best_dir, 'redist', vcruntime_plat,
+                "Microsoft.VC140.CRT", "vcruntime140.dll")
+
+    if not best_dir:
+        log.debug("No suitable Visual C++ version found")
+        return None, None
+
+    vcvarsall = os.path.join(best_dir, "vcvarsall.bat")
+    if not os.path.isfile(vcvarsall):
+        log.debug("%s cannot be found", vcvarsall)
+        return None, None
+
+    if not vcruntime or not os.path.isfile(vcruntime):
+        log.debug("%s cannot be found", vcruntime)
         vcruntime = None
-        vcruntime_spec = _VCVARS_PLAT_TO_VCRUNTIME_REDIST.get(plat_spec)
-        if vcruntime_spec:
-            vcruntime = os.path.join(best_dir,
-                vcruntime_spec.format(best_version))
-            if not os.path.isfile(vcruntime):
-                log.debug("%s cannot be found", vcruntime)
-                vcruntime = None
 
-        return vcvarsall, vcruntime
+    return vcvarsall, vcruntime
 
 def _get_vc_env(plat_spec):
     if os.getenv("DISTUTILS_USE_SDK"):
@@ -128,14 +190,8 @@ def _find_exe(exe, paths=None):
 PLAT_TO_VCVARS = {
     'win32' : 'x86',
     'win-amd64' : 'x86_amd64',
-}
-
-# A map keyed by get_platform() return values to the file under
-# the VC install directory containing the vcruntime redistributable.
-_VCVARS_PLAT_TO_VCRUNTIME_REDIST = {
-    'x86' : 'redist\\x86\\Microsoft.VC{0}0.CRT\\vcruntime{0}0.dll',
-    'amd64' : 'redist\\x64\\Microsoft.VC{0}0.CRT\\vcruntime{0}0.dll',
-    'x86_amd64' : 'redist\\x64\\Microsoft.VC{0}0.CRT\\vcruntime{0}0.dll',
+    'win-arm32' : 'x86_arm',
+    'win-arm64' : 'x86_arm64'
 }
 
 # A set containing the DLLs that are guaranteed to be available for
@@ -211,11 +267,11 @@ class MSVCCompiler(CCompiler) :
 
         for dir in vc_env.get('include', '').split(os.pathsep):
             if dir:
-                self.add_include_dir(dir)
+                self.add_include_dir(dir.rstrip(os.sep))
 
         for dir in vc_env.get('lib', '').split(os.pathsep):
             if dir:
-                self.add_library_dir(dir)
+                self.add_library_dir(dir.rstrip(os.sep))
 
         self.preprocess_options = None
         # If vcruntime_redist is available, link against it dynamically. Otherwise,

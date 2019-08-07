@@ -1,6 +1,5 @@
 """
 Dialogs that query users and verify the answer before accepting.
-Use ttk widgets, limiting use to tcl/tk 8.5+, as in IDLE 3.6+.
 
 Query is the generic base class for a popup dialog.
 The user must either enter a valid answer or close the dialog.
@@ -22,10 +21,11 @@ Subclass HelpSource gets menu item and path for additions to Help menu.
 
 import importlib
 import os
+import shlex
 from sys import executable, platform  # Platform is set for one test.
 
-from tkinter import Toplevel, StringVar, W, E, S
-from tkinter.ttk import Frame, Button, Entry, Label
+from tkinter import Toplevel, StringVar, BooleanVar, W, E, S
+from tkinter.ttk import Frame, Button, Entry, Label, Checkbutton
 from tkinter import filedialog
 from tkinter.font import Font
 
@@ -36,10 +36,10 @@ class Query(Toplevel):
     """
     def __init__(self, parent, title, message, *, text0='', used_names={},
                  _htest=False, _utest=False):
-        """Create popup, do not return until tk widget destroyed.
+        """Create modal popup, return when destroyed.
 
-        Additional subclass init must be done before calling this
-        unless  _utest=True is passed to suppress wait_window().
+        Additional subclass init must be done before this unless
+        _utest=True is passed to suppress wait_window().
 
         title - string, title of popup dialog
         message - string, informational message to display
@@ -48,15 +48,17 @@ class Query(Toplevel):
         _htest - bool, change box location when running htest
         _utest - bool, leave window hidden and not modal
         """
-        Toplevel.__init__(self, parent)
-        self.withdraw()  # Hide while configuring, especially geometry.
-        self.parent = parent
-        self.title(title)
+        self.parent = parent  # Needed for Font call.
         self.message = message
         self.text0 = text0
         self.used_names = used_names
+
+        Toplevel.__init__(self, parent)
+        self.withdraw()  # Hide while configuring, especially geometry.
+        self.title(title)
         self.transient(parent)
         self.grab_set()
+
         windowingsystem = self.tk.call('tk', 'windowingsystem')
         if windowingsystem == 'aqua':
             try:
@@ -69,9 +71,9 @@ class Query(Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.bind('<Key-Return>', self.ok)
         self.bind("<KP_Enter>", self.ok)
-        self.resizable(height=False, width=False)
+
         self.create_widgets()
-        self.update_idletasks()  # Needed here for winfo_reqwidth below.
+        self.update_idletasks()  # Need here for winfo_reqwidth below.
         self.geometry(  # Center dialog over parent (or below htest box).
                 "+%d+%d" % (
                     parent.winfo_rootx() +
@@ -80,12 +82,19 @@ class Query(Toplevel):
                     ((parent.winfo_height()/2 - self.winfo_reqheight()/2)
                     if not _htest else 150)
                 ) )
+        self.resizable(height=False, width=False)
+
         if not _utest:
             self.deiconify()  # Unhide now that geometry set.
             self.wait_window()
 
-    def create_widgets(self):  # Call from override, if any.
-        # Bind to self widgets needed for entry_ok or unittest.
+    def create_widgets(self, ok_text='OK'):  # Do not replace.
+        """Create entry (rows, extras, buttons.
+
+        Entry stuff on rows 0-2, spanning cols 0-2.
+        Buttons on row 99, cols 1, 2.
+        """
+        # Bind to self the widgets needed for entry_ok or unittest.
         self.frame = frame = Frame(self, padding=10)
         frame.grid(column=0, row=0, sticky='news')
         frame.grid_columnconfigure(0, weight=1)
@@ -99,18 +108,23 @@ class Query(Toplevel):
                                exists=True, root=self.parent)
         self.entry_error = Label(frame, text=' ', foreground='red',
                                  font=self.error_font)
-        self.button_ok = Button(
-                frame, text='OK', default='active', command=self.ok)
-        self.button_cancel = Button(
-                frame, text='Cancel', command=self.cancel)
-
         entrylabel.grid(column=0, row=0, columnspan=3, padx=5, sticky=W)
         self.entry.grid(column=0, row=1, columnspan=3, padx=5, sticky=W+E,
                         pady=[10,0])
         self.entry_error.grid(column=0, row=2, columnspan=3, padx=5,
                               sticky=W+E)
+
+        self.create_extra()
+
+        self.button_ok = Button(
+                frame, text=ok_text, default='active', command=self.ok)
+        self.button_cancel = Button(
+                frame, text='Cancel', command=self.cancel)
+
         self.button_ok.grid(column=1, row=99, padx=5)
         self.button_cancel.grid(column=2, row=99, padx=5)
+
+    def create_extra(self): pass  # Override to add widgets.
 
     def showerror(self, message, widget=None):
         #self.bell(displayof=self)
@@ -142,6 +156,10 @@ class Query(Toplevel):
         "Set dialog result to None and destroy tk widget."
         self.result = None
         self.destroy()
+
+    def destroy(self):
+        self.grab_release()
+        super().destroy()
 
 
 class SectionName(Query):
@@ -223,8 +241,8 @@ class HelpSource(Query):
                 parent, title, message, text0=menuitem,
                 used_names=used_names, _htest=_htest, _utest=_utest)
 
-    def create_widgets(self):
-        super().create_widgets()
+    def create_extra(self):
+        "Add path widjets to rows 10-12."
         frame = self.frame
         pathlabel = Label(frame, anchor='w', justify='left',
                           text='Help File Path: Enter URL or browse for file')
@@ -299,10 +317,60 @@ class HelpSource(Query):
         path = self.path_ok()
         return None if name is None or path is None else (name, path)
 
+class CustomRun(Query):
+    """Get settings for custom run of module.
+
+    1. Command line arguments to extend sys.argv.
+    2. Whether to restart Shell or not.
+    """
+    # Used in runscript.run_custom_event
+
+    def __init__(self, parent, title, *, cli_args=[],
+                 _htest=False, _utest=False):
+        """cli_args is a list of strings.
+
+        The list is assigned to the default Entry StringVar.
+        The strings are displayed joined by ' ' for display.
+        """
+        message = 'Command Line Arguments for sys.argv:'
+        super().__init__(
+                parent, title, message, text0=cli_args,
+                _htest=_htest, _utest=_utest)
+
+    def create_extra(self):
+        "Add run mode on rows 10-12."
+        frame = self.frame
+        self.restartvar = BooleanVar(self, value=True)
+        restart = Checkbutton(frame, variable=self.restartvar, onvalue=True,
+                              offvalue=False, text='Restart shell')
+        self.args_error = Label(frame, text=' ', foreground='red',
+                                font=self.error_font)
+
+        restart.grid(column=0, row=10, columnspan=3, padx=5, sticky='w')
+        self.args_error.grid(column=0, row=12, columnspan=3, padx=5,
+                             sticky='we')
+
+    def cli_args_ok(self):
+        "Validity check and parsing for command line arguments."
+        cli_string = self.entry.get().strip()
+        try:
+            cli_args = shlex.split(cli_string, posix=True)
+        except ValueError as err:
+            self.showerror(str(err))
+            return None
+        return cli_args
+
+    def entry_ok(self):
+        "Return apparently valid (cli_args, restart) or None"
+        self.entry_error['text'] = ''
+        cli_args = self.cli_args_ok()
+        restart = self.restartvar.get()
+        return None if cli_args is None else (cli_args, restart)
+
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_query', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_query', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
-    run(Query, HelpSource)
+    run(Query, HelpSource, CustomRun)

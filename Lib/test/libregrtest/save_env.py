@@ -1,3 +1,4 @@
+import asyncio
 import builtins
 import locale
 import logging
@@ -5,12 +6,11 @@ import os
 import shutil
 import sys
 import sysconfig
+import threading
+import urllib.request
 import warnings
 from test import support
-try:
-    import threading
-except ImportError:
-    threading = None
+from test.libregrtest.utils import print_warning
 try:
     import _multiprocessing, multiprocessing.process
 except ImportError:
@@ -68,7 +68,25 @@ class saved_test_environment:
                  'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
                  'files', 'locale', 'warnings.showwarning',
                  'shutil_archive_formats', 'shutil_unpack_formats',
+                 'asyncio.events._event_loop_policy',
+                 'urllib.requests._url_tempfiles', 'urllib.requests._opener',
                 )
+
+    def get_urllib_requests__url_tempfiles(self):
+        return list(urllib.request._url_tempfiles)
+    def restore_urllib_requests__url_tempfiles(self, tempfiles):
+        for filename in tempfiles:
+            support.unlink(filename)
+
+    def get_urllib_requests__opener(self):
+        return urllib.request._opener
+    def restore_urllib_requests__opener(self, opener):
+        urllib.request._opener = opener
+
+    def get_asyncio_events__event_loop_policy(self):
+        return support.maybe_get_event_loop_policy()
+    def restore_asyncio_events__event_loop_policy(self, policy):
+        asyncio.set_event_loop_policy(policy)
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -181,13 +199,9 @@ class saved_test_environment:
     # Controlling dangling references to Thread objects can make it easier
     # to track reference leaks.
     def get_threading__dangling(self):
-        if not threading:
-            return None
         # This copies the weakrefs without making any strong reference
         return threading._dangling.copy()
     def restore_threading__dangling(self, saved):
-        if not threading:
-            return
         threading._dangling.clear()
         threading._dangling.update(saved)
 
@@ -268,7 +282,13 @@ class saved_test_environment:
     def __exit__(self, exc_type, exc_val, exc_tb):
         saved_values = self.saved_values
         del self.saved_values
-        support.gc_collect()  # Some resources use weak references
+
+        # Some resources use weak references
+        support.gc_collect()
+
+        # Read support.environment_altered, set by support helper functions
+        self.changed |= support.environment_altered
+
         for name, get, restore in self.resource_info():
             current = get()
             original = saved_values.pop(name)
@@ -277,9 +297,7 @@ class saved_test_environment:
                 self.changed = True
                 restore(original)
                 if not self.quiet and not self.pgo:
-                    print(f"Warning -- {name} was modified by {self.testname}",
+                    print_warning(f"{name} was modified by {self.testname}")
+                    print(f"  Before: {original}\n  After:  {current} ",
                           file=sys.stderr, flush=True)
-                    if self.verbose > 1:
-                        print(f"  Before: {original}\n  After:  {current} ",
-                              file=sys.stderr, flush=True)
         return False

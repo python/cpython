@@ -753,3 +753,11 @@ example, with the region of uncertainty B[4], B[5], B[6], there are 4
 locations:  before B[4], between B[4] and B[5], between B[5] and B[6], and
 after B[6].  In general, across 2**(k-1)-1 elements, there are 2**(k-1)
 locations.  That's why k-1 binary searches are necessary and sufficient.
+
+OPTIMIZATION OF INDIVIDUAL COMPARISONS
+As noted above, even the simplest Python comparison triggers a large pile of
+C-level pointer dereferences, conditionals, and function calls.  This can be
+partially mitigated by pre-scanning the data to determine whether the data is
+homogenous with respect to type.  If so, it is sometimes possible to
+substitute faster type-specific comparisons for the slower, generic
+PyObject_RichCompareBool.

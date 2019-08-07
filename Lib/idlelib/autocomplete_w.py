@@ -1,14 +1,17 @@
 """
 An auto-completion window for IDLE, used by the autocomplete extension
 """
-from tkinter import *
-from tkinter.ttk import Scrollbar
+import platform
 
-from idlelib.autocomplete import COMPLETE_FILES, COMPLETE_ATTRIBUTES
+from tkinter import *
+from tkinter.ttk import Frame, Scrollbar
+
+from idlelib.autocomplete import FILES, ATTRS
 from idlelib.multicall import MC_SHIFT
 
 HIDE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-hide>>"
-HIDE_SEQUENCES = ("<FocusOut>", "<ButtonPress>")
+HIDE_FOCUS_OUT_SEQUENCE = "<FocusOut>"
+HIDE_SEQUENCES = (HIDE_FOCUS_OUT_SEQUENCE, "<ButtonPress>")
 KEYPRESS_VIRTUAL_EVENT_NAME = "<<autocompletewindow-keypress>>"
 # We need to bind event beyond <Key> so that the function will be called
 # before the default specific IDLE function
@@ -36,8 +39,7 @@ class AutoCompleteWindow:
         self.completions = None
         # A list with more completions, or None
         self.morecompletions = None
-        # The completion mode. Either autocomplete.COMPLETE_ATTRIBUTES or
-        # autocomplete.COMPLETE_FILES
+        # The completion mode, either autocomplete.ATTRS or .FILES.
         self.mode = None
         # The current completion start, on the text box (a string)
         self.start = None
@@ -70,8 +72,8 @@ class AutoCompleteWindow:
 
     def _binary_search(self, s):
         """Find the first index in self.completions where completions[i] is
-        greater or equal to s, or the last index if there is no such
-        one."""
+        greater or equal to s, or the last index if there is no such.
+        """
         i = 0; j = len(self.completions)
         while j > i:
             m = (i + j) // 2
@@ -84,7 +86,8 @@ class AutoCompleteWindow:
     def _complete_string(self, s):
         """Assuming that s is the prefix of a string in self.completions,
         return the longest string which is a prefix of all the strings which
-        s is a prefix of them. If s is not a prefix of a string, return s."""
+        s is a prefix of them. If s is not a prefix of a string, return s.
+        """
         first = self._binary_search(s)
         if self.completions[first][:len(s)] != s:
             # There is not even one completion which s is a prefix of.
@@ -113,8 +116,10 @@ class AutoCompleteWindow:
         return first_comp[:i]
 
     def _selection_changed(self):
-        """Should be called when the selection of the Listbox has changed.
-        Updates the Listbox display and calls _change_start."""
+        """Call when the selection of the Listbox has changed.
+
+        Updates the Listbox display and calls _change_start.
+        """
         cursel = int(self.listbox.curselection()[0])
 
         self.listbox.see(cursel)
@@ -150,8 +155,10 @@ class AutoCompleteWindow:
 
     def show_window(self, comp_lists, index, complete, mode, userWantsWin):
         """Show the autocomplete list, bind events.
-        If complete is True, complete the text, and if there is exactly one
-        matching completion, don't open a list."""
+
+        If complete is True, complete the text, and if there is exactly
+        one matching completion, don't open a list.
+        """
         # Handle the start we already have
         self.completions, self.morecompletions = comp_lists
         self.mode = mode
@@ -186,7 +193,7 @@ class AutoCompleteWindow:
             pass
         self.scrollbar = scrollbar = Scrollbar(acw, orient=VERTICAL)
         self.listbox = listbox = Listbox(acw, yscrollcommand=scrollbar.set,
-                                         exportselection=False, bg="white")
+                                         exportselection=False)
         for item in self.completions:
             listbox.insert(END, item)
         self.origselforeground = listbox.cget("selectforeground")
@@ -201,10 +208,12 @@ class AutoCompleteWindow:
         self._selection_changed()
 
         # bind events
-        self.hideid = self.widget.bind(HIDE_VIRTUAL_EVENT_NAME,
-                                       self.hide_event)
+        self.hideaid = acw.bind(HIDE_VIRTUAL_EVENT_NAME, self.hide_event)
+        self.hidewid = self.widget.bind(HIDE_VIRTUAL_EVENT_NAME, self.hide_event)
+        acw.event_add(HIDE_VIRTUAL_EVENT_NAME, HIDE_FOCUS_OUT_SEQUENCE)
         for seq in HIDE_SEQUENCES:
             self.widget.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
+
         self.keypressid = self.widget.bind(KEYPRESS_VIRTUAL_EVENT_NAME,
                                            self.keypress_event)
         for seq in KEYPRESS_SEQUENCES:
@@ -240,9 +249,37 @@ class AutoCompleteWindow:
             new_y -= acw_height
         acw.wm_geometry("+%d+%d" % (new_x, new_y))
 
-    def hide_event(self, event):
-        if self.is_active():
+        if platform.system().startswith('Windows'):
+            # See issue 15786. When on Windows platform, Tk will misbehave
+            # to call winconfig_event multiple times, we need to prevent this,
+            # otherwise mouse button double click will not be able to used.
+            acw.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
+            self.winconfigid = None
+
+    def _hide_event_check(self):
+        if not self.autocompletewindow:
+            return
+
+        try:
+            if not self.autocompletewindow.focus_get():
+                self.hide_window()
+        except KeyError:
+            # See issue 734176, when user click on menu, acw.focus_get()
+            # will get KeyError.
             self.hide_window()
+
+    def hide_event(self, event):
+        # Hide autocomplete list if it exists and does not have focus or
+        # mouse click on widget / text area.
+        if self.is_active():
+            if event.type == EventType.FocusOut:
+                # On Windows platform, it will need to delay the check for
+                # acw.focus_get() when click on acw, otherwise it will return
+                # None and close the window
+                self.widget.after(1, self._hide_event_check)
+            elif event.type == EventType.ButtonPress:
+                # ButtonPress event only bind to self.widget
+                self.hide_window()
 
     def listselect_event(self, event):
         if self.is_active():
@@ -267,7 +304,7 @@ class AutoCompleteWindow:
         if keysym != "Tab":
             self.lastkey_was_tab = False
         if (len(keysym) == 1 or keysym in ("underscore", "BackSpace")
-            or (self.mode == COMPLETE_FILES and keysym in
+            or (self.mode == FILES and keysym in
                 ("period", "minus"))) \
            and not (state & ~MC_SHIFT):
             # Normal editing of text
@@ -292,13 +329,14 @@ class AutoCompleteWindow:
             return "break"
 
         elif keysym == "Return":
+            self.complete()
             self.hide_window()
-            return None
+            return 'break'
 
-        elif (self.mode == COMPLETE_ATTRIBUTES and keysym in
+        elif (self.mode == ATTRS and keysym in
               ("period", "space", "parenleft", "parenright", "bracketleft",
                "bracketright")) or \
-             (self.mode == COMPLETE_FILES and keysym in
+             (self.mode == FILES and keysym in
               ("slash", "backslash", "quotedbl", "apostrophe")) \
              and not (state & ~MC_SHIFT):
             # If start is a prefix of the selection, but is not '' when
@@ -306,7 +344,7 @@ class AutoCompleteWindow:
             # selected completion. Anyway, close the list.
             cursel = int(self.listbox.curselection()[0])
             if self.completions[cursel][:len(self.start)] == self.start \
-               and (self.mode == COMPLETE_ATTRIBUTES or self.start):
+               and (self.mode == ATTRS or self.start):
                 self._change_start(self.completions[cursel])
             self.hide_window()
             return None
@@ -391,10 +429,15 @@ class AutoCompleteWindow:
             return
 
         # unbind events
+        self.autocompletewindow.event_delete(HIDE_VIRTUAL_EVENT_NAME,
+                                             HIDE_FOCUS_OUT_SEQUENCE)
         for seq in HIDE_SEQUENCES:
             self.widget.event_delete(HIDE_VIRTUAL_EVENT_NAME, seq)
-        self.widget.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideid)
-        self.hideid = None
+
+        self.autocompletewindow.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideaid)
+        self.widget.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hidewid)
+        self.hideaid = None
+        self.hidewid = None
         for seq in KEYPRESS_SEQUENCES:
             self.widget.event_delete(KEYPRESS_VIRTUAL_EVENT_NAME, seq)
         self.widget.unbind(KEYPRESS_VIRTUAL_EVENT_NAME, self.keypressid)
@@ -405,8 +448,12 @@ class AutoCompleteWindow:
         self.keyreleaseid = None
         self.listbox.unbind(LISTUPDATE_SEQUENCE, self.listupdateid)
         self.listupdateid = None
-        self.autocompletewindow.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
-        self.winconfigid = None
+        if self.winconfigid:
+            self.autocompletewindow.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
+            self.winconfigid = None
+
+        # Re-focusOn frame.text (See issue #15786)
+        self.widget.focus_set()
 
         # destroy widgets
         self.scrollbar.destroy()
@@ -415,3 +462,10 @@ class AutoCompleteWindow:
         self.listbox = None
         self.autocompletewindow.destroy()
         self.autocompletewindow = None
+
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_autocomplete_w', verbosity=2, exit=False)
+
+# TODO: autocomplete/w htest here

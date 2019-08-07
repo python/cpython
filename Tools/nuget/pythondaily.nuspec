@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>pythondaily</id>
+    <title>Python (Daily build)</title>
+    <authors>Python Software Foundation</authors>
+    <version>0.0.0.0</version>
+    <license type="file">tools\LICENSE.txt</license>
+    <projectUrl>https://www.python.org/</projectUrl>
+    <description>Installs an unsigned, untested build of Python for test purposes only.</description>
+    <iconUrl>https://www.python.org/static/favicon.ico</iconUrl>
+    <tags>python</tags>
+  </metadata>
+  <files>
+    <file src="**\*" exclude="python.props" target="tools" />
+    <file src="python.props" target="build\native" />
+  </files>
+</package>

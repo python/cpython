@@ -77,10 +77,10 @@ class OSSAudioDevTests(unittest.TestCase):
         # set parameters based on .au file headers
         dsp.setparameters(AFMT_S16_NE, nchannels, rate)
         self.assertTrue(abs(expected_time - 3.51) < 1e-2, expected_time)
-        t1 = time.time()
+        t1 = time.monotonic()
         dsp.write(data)
         dsp.close()
-        t2 = time.time()
+        t2 = time.monotonic()
         elapsed_time = t2 - t1
 
         percent_diff = (abs(elapsed_time - expected_time) / expected_time) * 100

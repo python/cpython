@@ -50,7 +50,9 @@
 
 This article explains the new features in Python 3.2 as compared to 3.1.  It
 focuses on a few highlights and gives a few examples.  For full details, see the
-`Misc/NEWS <https://hg.python.org/cpython/file/3.2/Misc/NEWS>`_ file.
+`Misc/NEWS
+<https://github.com/python/cpython/blob/076ca6c3c8df3030307e548d9be792ce3c1c6eea/Misc/NEWS>`_
+file.
 
 .. seealso::
 
@@ -969,10 +971,10 @@ sites do not finish before midnight, the barrier times-out and the ballots are
 sealed and deposited in a queue for later handling.
 
 See `Barrier Synchronization Patterns
-<https://parlab.eecs.berkeley.edu/wiki/_media/patterns/paraplop_g1_3.pdf>`_ for
-more examples of how barriers can be used in parallel computing.  Also, there is
+<http://osl.cs.illinois.edu/media/papers/karmani-2009-barrier_synchronization_pattern.pdf>`_
+for more examples of how barriers can be used in parallel computing.  Also, there is
 a simple but thorough explanation of barriers in `The Little Book of Semaphores
-<http://greenteapress.com/semaphores/downey08semaphores.pdf>`_, *section 3.6*.
+<https://greenteapress.com/semaphores/LittleBookOfSemaphores.pdf>`_, *section 3.6*.
 
 (Contributed by Kristján Valur Jónsson with an API review by Jeffrey Yasskin in
 :issue:`8777`.)
@@ -1062,13 +1064,16 @@ The :func:`~math.erf` function computes a probability integral or `Gaussian
 error function <https://en.wikipedia.org/wiki/Error_function>`_.  The
 complementary error function, :func:`~math.erfc`, is ``1 - erf(x)``:
 
->>> from math import erf, erfc, sqrt
->>> erf(1.0/sqrt(2.0))   # portion of normal distribution within 1 standard deviation
-0.682689492137086
->>> erfc(1.0/sqrt(2.0))  # portion of normal distribution outside 1 standard deviation
-0.31731050786291404
->>> erf(1.0/sqrt(2.0)) + erfc(1.0/sqrt(2.0))
-1.0
+.. doctest::
+   :options: +SKIP
+
+   >>> from math import erf, erfc, sqrt
+   >>> erf(1.0/sqrt(2.0))   # portion of normal distribution within 1 standard deviation
+   0.682689492137086
+   >>> erfc(1.0/sqrt(2.0))  # portion of normal distribution outside 1 standard deviation
+   0.31731050786291404
+   >>> erf(1.0/sqrt(2.0)) + erfc(1.0/sqrt(2.0))
+   1.0
 
 The :func:`~math.gamma` function is a continuous extension of the factorial
 function.  See https://en.wikipedia.org/wiki/Gamma_function for details.  Because
@@ -1384,7 +1389,7 @@ guaranteed not to block when :func:`select.select` says a pipe is ready
 for writing.
 
 >>> import select
->>> select.PIPE_BUF
+>>> select.PIPE_BUF  # doctest: +SKIP
 512
 
 (Available on Unix systems. Patch by Sébastien Sablé in :issue:`9862`)
@@ -1640,7 +1645,7 @@ for secure (encrypted, authenticated) internet connections:
 * The :func:`ssl.wrap_socket` constructor function now takes a *ciphers*
   argument.  The *ciphers* string lists the allowed encryption algorithms using
   the format described in the `OpenSSL documentation
-  <https://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
 
 * When linked against recent versions of OpenSSL, the :mod:`ssl` module now
   supports the Server Name Indication extension to the TLS protocol, allowing
@@ -2509,9 +2514,9 @@ repository.  This distributed version control system should make it easier for
 members of the community to create and share external changesets.  See
 :pep:`385` for details.
 
-To learn to use the new version control system, see the `tutorial by Joel
-Spolsky <http://hginit.com>`_ or the `Guide to Mercurial Workflows
-<https://www.mercurial-scm.org/guide>`_.
+To learn to use the new version control system, see the `Quick Start
+<https://www.mercurial-scm.org/wiki/QuickStart>`_ or the `Guide to
+Mercurial Workflows <https://www.mercurial-scm.org/guide>`_.
 
 
 Build and C API Changes

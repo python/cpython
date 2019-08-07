@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 
 import sys
+if __name__ == "__main__":
+    sys.modules['idlelib.pyshell'] = sys.modules['__main__']
 
 try:
     from tkinter import *
@@ -8,37 +10,48 @@ except ImportError:
     print("** IDLE can't import Tkinter.\n"
           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     raise SystemExit(1)
+
+# Valid arguments for the ...Awareness call below are defined in the following.
+# https://msdn.microsoft.com/en-us/library/windows/desktop/dn280512(v=vs.85).aspx
+if sys.platform == 'win32':
+    try:
+        import ctypes
+        PROCESS_SYSTEM_DPI_AWARE = 1
+        ctypes.OleDLL('shcore').SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
+    except (ImportError, AttributeError, OSError):
+        pass
+
 import tkinter.messagebox as tkMessageBox
 if TkVersion < 8.5:
     root = Tk()  # otherwise create root in main
     root.withdraw()
+    from idlelib.run import fix_scaling
+    fix_scaling(root)
     tkMessageBox.showerror("Idle Cannot Start",
             "Idle requires tcl/tk 8.5+, not %s." % TkVersion,
             parent=root)
     raise SystemExit(1)
 
 from code import InteractiveInterpreter
-import getopt
 import linecache
 import os
 import os.path
-from platform import python_version, system
+from platform import python_version
 import re
 import socket
 import subprocess
+from textwrap import TextWrapper
 import threading
 import time
 import tokenize
 import warnings
 
-from idlelib import testing  # bool value
 from idlelib.colorizer import ColorDelegator
 from idlelib.config import idleConf
 from idlelib import debugger
 from idlelib import debugger_r
 from idlelib.editor import EditorWindow, fixwordbreaks
 from idlelib.filelist import FileList
-from idlelib import macosx
 from idlelib.outwin import OutputWindow
 from idlelib import rpc
 from idlelib.run import idle_formatwarning, PseudoInputFile, PseudoOutputFile
@@ -120,8 +133,8 @@ class PyShellEditorWindow(EditorWindow):
         self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
-        self.breakpointPath = os.path.join(idleConf.GetUserCfgDir(),
-                                           'breakpoints.lst')
+        self.breakpointPath = os.path.join(
+                idleConf.userdir, 'breakpoints.lst')
         # whenever a file is changed, restore breakpoints
         def filename_changed_hook(old_hook=self.io.filename_change_hook,
                                   self=self):
@@ -405,10 +418,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # run from the IDLE source directory.
         del_exitf = idleConf.GetOption('main', 'General', 'delete-exitfunc',
                                        default=False, type='bool')
-        if __name__ == 'idlelib.pyshell':
-            command = "__import__('idlelib.run').run.main(%r)" % (del_exitf,)
-        else:
-            command = "__import__('run').main(%r)" % (del_exitf,)
+        command = "__import__('idlelib.run').run.main(%r)" % (del_exitf,)
         return [sys.executable] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
@@ -636,6 +646,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if source is None:
             with tokenize.open(filename) as fp:
                 source = fp.read()
+                if use_subprocess:
+                    source = (f"__file__ = r'''{os.path.abspath(filename)}'''\n"
+                              + source + "\ndel __file__")
         try:
             code = compile(source, filename, "exec")
         except (OverflowError, SyntaxError):
@@ -811,10 +824,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def display_no_subprocess_error(self):
         tkMessageBox.showerror(
-            "Subprocess Startup Error",
-            "IDLE's subprocess didn't make connection.  Either IDLE can't "
-            "start a subprocess or personal firewall software is blocking "
-            "the connection.",
+            "Subprocess Connection Error",
+            "IDLE's subprocess didn't make connection.\n"
+            "See the 'Startup failure' section of the IDLE doc, online at\n"
+            "https://docs.python.org/3/library/idle.html#startup-failure",
             parent=self.tkconsole.text)
 
     def display_executing_dialog(self):
@@ -839,10 +852,16 @@ class PyShell(OutputWindow):
         ("edit", "_Edit"),
         ("debug", "_Debug"),
         ("options", "_Options"),
-        ("windows", "_Window"),
+        ("window", "_Window"),
         ("help", "_Help"),
     ]
 
+    # Extend right-click context menu
+    rmenu_specs = OutputWindow.rmenu_specs + [
+        ("Squeeze", "<<squeeze-current-text>>"),
+    ]
+
+    allow_line_numbers = False
 
     # New classes
     from idlelib.history import History
@@ -858,15 +877,17 @@ class PyShell(OutputWindow):
             fixwordbreaks(root)
             root.withdraw()
             flist = PyShellFileList(root)
-        #
+
         OutputWindow.__init__(self, flist, None, None)
-        #
-##        self.config(usetabs=1, indentwidth=8, context_use_ps1=1)
+
         self.usetabs = True
         # indentwidth must be 8 when using tabs.  See note in EditorWindow:
         self.indentwidth = 8
-        self.context_use_ps1 = True
-        #
+
+        self.sys_ps1 = sys.ps1 if hasattr(sys, 'ps1') else '>>> '
+        self.prompt_last_line = self.sys_ps1.split('\n')[-1]
+        self.prompt = self.sys_ps1  # Changes when debug active
+
         text = self.text
         text.configure(wrap="char")
         text.bind("<<newline-and-indent>>", self.enter_callback)
@@ -879,7 +900,10 @@ class PyShell(OutputWindow):
         if use_subprocess:
             text.bind("<<view-restart>>", self.view_restart_mark)
             text.bind("<<restart-shell>>", self.restart_shell)
-        #
+        squeezer = self.Squeezer(self)
+        text.bind("<<squeeze-current-text>>",
+                  squeezer.squeeze_current_text_event)
+
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
@@ -895,7 +919,7 @@ class PyShell(OutputWindow):
         try:
             # page help() text to shell.
             import pydoc # import must be done here to capture i/o rebinding.
-            # XXX KBK 27Dec07 use TextViewer someday, but must work w/o subproc
+            # XXX KBK 27Dec07 use text viewer someday, but must work w/o subproc
             pydoc.pager = pydoc.plainpager
         except:
             sys.stderr = sys.__stderr__
@@ -952,7 +976,7 @@ class PyShell(OutputWindow):
                 debugger_r.close_remote_debugger(self.interp.rpcclt)
             self.resetoutput()
             self.console.write("[DEBUG OFF]\n")
-            sys.ps1 = ">>> "
+            self.prompt = self.sys_ps1
             self.showprompt()
         self.set_debugger_indicator()
 
@@ -964,7 +988,7 @@ class PyShell(OutputWindow):
             dbg_gui = debugger.Debugger(self)
         self.interp.setdebugger(dbg_gui)
         dbg_gui.load_breakpoints()
-        sys.ps1 = "[DEBUG ON]\n>>> "
+        self.prompt = "[DEBUG ON]\n" + self.sys_ps1
         self.showprompt()
         self.set_debugger_indicator()
 
@@ -1018,7 +1042,7 @@ class PyShell(OutputWindow):
         return self.shell_title
 
     COPYRIGHT = \
-          'Type "copyright", "credits" or "license()" for more information.'
+          'Type "help", "copyright", "credits" or "license()" for more information.'
 
     def begin(self):
         self.text.mark_set("iomark", "insert")
@@ -1249,14 +1273,18 @@ class PyShell(OutputWindow):
 
     def showprompt(self):
         self.resetoutput()
-        try:
-            s = str(sys.ps1)
-        except:
-            s = ""
-        self.console.write(s)
+        self.console.write(self.prompt)
         self.text.mark_set("insert", "end-1c")
         self.set_line_and_column()
         self.io.reset_undo()
+
+    def show_warning(self, msg):
+        width = self.interp.tkconsole.width
+        wrapper = TextWrapper(width=width, tabsize=8, expand_tabs=True)
+        wrapped_msg = '\n'.join(wrapper.wrap(msg))
+        if not wrapped_msg.endswith('\n'):
+            wrapped_msg += '\n'
+        self.per.bottom.insert("iomark linestart", wrapped_msg, "stderr")
 
     def resetoutput(self):
         source = self.text.get("iomark", "end-1c")
@@ -1371,6 +1399,11 @@ echo "import sys; print(sys.argv)" | idle - "foobar"
 """
 
 def main():
+    import getopt
+    from platform import system
+    from idlelib import testing  # bool value
+    from idlelib import macosx
+
     global flist, root, use_subprocess
 
     capture_warnings(True)
@@ -1455,13 +1488,15 @@ def main():
         NoDefaultRoot()
     root = Tk(className="Idle")
     root.withdraw()
+    from idlelib.run import fix_scaling
+    fix_scaling(root)
 
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')
     if system() == 'Windows':
         iconfile = os.path.join(icondir, 'idle.ico')
         root.wm_iconbitmap(default=iconfile)
-    else:
+    elif not macosx.isAquaTk():
         ext = '.png' if TkVersion >= 8.6 else '.gif'
         iconfiles = [os.path.join(icondir, 'idle_%d%s' % (size, ext))
                      for size in (16, 32, 48)]
@@ -1519,12 +1554,20 @@ def main():
             shell.interp.execfile(script)
     elif shell:
         # If there is a shell window and no cmd or script in progress,
-        # check for problematic OS X Tk versions and print a warning
-        # message in the IDLE shell window; this is less intrusive
-        # than always opening a separate window.
+        # check for problematic issues and print warning message(s) in
+        # the IDLE shell window; this is less intrusive than always
+        # opening a separate window.
+
+        # Warn if using a problematic OS X Tk version.
         tkversionwarning = macosx.tkVersionWarning(root)
         if tkversionwarning:
-            shell.interp.runcommand("print('%s')" % tkversionwarning)
+            shell.show_warning(tkversionwarning)
+
+        # Warn if the "Prefer tabs when opening documents" system
+        # preference is set to "Always".
+        prefer_tabs_preference_warning = macosx.preferTabsPreferenceWarning()
+        if prefer_tabs_preference_warning:
+            shell.show_warning(prefer_tabs_preference_warning)
 
     while flist.inversedict:  # keep IDLE running while files are open.
         root.mainloop()
@@ -1532,7 +1575,6 @@ def main():
     capture_warnings(False)
 
 if __name__ == "__main__":
-    sys.modules['pyshell'] = sys.modules['__main__']
     main()
 
 capture_warnings(False)  # Make sure turned off; see issue 18081

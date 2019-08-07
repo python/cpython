@@ -15,6 +15,7 @@ from distutils.errors import (
 
 import unittest
 from test import support
+from test.support.script_helper import assert_python_ok
 
 # http://bugs.python.org/issue4373
 # Don't load the xx module more than once.
@@ -26,16 +27,27 @@ class BuildExtTestCase(TempdirManager,
                        unittest.TestCase):
     def setUp(self):
         # Create a simple test environment
-        # Note that we're making changes to sys.path
         super(BuildExtTestCase, self).setUp()
         self.tmp_dir = self.mkdtemp()
-        self.sys_path = sys.path, sys.path[:]
-        sys.path.append(self.tmp_dir)
         import site
         self.old_user_base = site.USER_BASE
         site.USER_BASE = self.mkdtemp()
         from distutils.command import build_ext
         build_ext.USER_BASE = site.USER_BASE
+
+        # bpo-30132: On Windows, a .pdb file may be created in the current
+        # working directory. Create a temporary working directory to cleanup
+        # everything at the end of the test.
+        change_cwd = support.change_cwd(self.tmp_dir)
+        change_cwd.__enter__()
+        self.addCleanup(change_cwd.__exit__, None, None, None)
+
+    def tearDown(self):
+        import site
+        site.USER_BASE = self.old_user_base
+        from distutils.command import build_ext
+        build_ext.USER_BASE = self.old_user_base
+        super(BuildExtTestCase, self).tearDown()
 
     def build_ext(self, *args, **kwargs):
         return build_ext(*args, **kwargs)
@@ -70,30 +82,34 @@ class BuildExtTestCase(TempdirManager,
         else:
             ALREADY_TESTED = type(self).__name__
 
-        import xx
+        code = textwrap.dedent(f"""
+            tmp_dir = {self.tmp_dir!r}
 
-        for attr in ('error', 'foo', 'new', 'roj'):
-            self.assertTrue(hasattr(xx, attr))
+            import sys
+            import unittest
+            from test import support
 
-        self.assertEqual(xx.foo(2, 5), 7)
-        self.assertEqual(xx.foo(13,15), 28)
-        self.assertEqual(xx.new().demo(), None)
-        if support.HAVE_DOCSTRINGS:
-            doc = 'This is a template module just for instruction.'
-            self.assertEqual(xx.__doc__, doc)
-        self.assertIsInstance(xx.Null(), xx.Null)
-        self.assertIsInstance(xx.Str(), xx.Str)
+            sys.path.insert(0, tmp_dir)
+            import xx
 
-    def tearDown(self):
-        # Get everything back to normal
-        support.unload('xx')
-        sys.path = self.sys_path[0]
-        sys.path[:] = self.sys_path[1]
-        import site
-        site.USER_BASE = self.old_user_base
-        from distutils.command import build_ext
-        build_ext.USER_BASE = self.old_user_base
-        super(BuildExtTestCase, self).tearDown()
+            class Tests(unittest.TestCase):
+                def test_xx(self):
+                    for attr in ('error', 'foo', 'new', 'roj'):
+                        self.assertTrue(hasattr(xx, attr))
+
+                    self.assertEqual(xx.foo(2, 5), 7)
+                    self.assertEqual(xx.foo(13,15), 28)
+                    self.assertEqual(xx.new().demo(), None)
+                    if support.HAVE_DOCSTRINGS:
+                        doc = 'This is a template module just for instruction.'
+                        self.assertEqual(xx.__doc__, doc)
+                    self.assertIsInstance(xx.Null(), xx.Null)
+                    self.assertIsInstance(xx.Str(), xx.Str)
+
+
+            unittest.main()
+        """)
+        assert_python_ok('-c', code)
 
     def test_solaris_enable_shared(self):
         dist = Distribution({'name': 'xx'})
@@ -170,10 +186,12 @@ class BuildExtTestCase(TempdirManager,
         cmd.finalize_options()
 
         py_include = sysconfig.get_python_inc()
-        self.assertIn(py_include, cmd.include_dirs)
+        for p in py_include.split(os.path.pathsep):
+            self.assertIn(p, cmd.include_dirs)
 
         plat_py_include = sysconfig.get_python_inc(plat_specific=1)
-        self.assertIn(plat_py_include, cmd.include_dirs)
+        for p in plat_py_include.split(os.path.pathsep):
+            self.assertIn(p, cmd.include_dirs)
 
         # make sure cmd.libraries is turned into a list
         # if it's a string

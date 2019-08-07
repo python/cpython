@@ -107,7 +107,7 @@ headers.
    method if it wishes to set additional attributes beyond those provided by
    ``BaseHeader`` itself.  Such an ``init`` method should look like this::
 
-       def init(self, *args, **kw):
+       def init(self, /, *args, **kw):
            self._myattr = kw.pop('myattr')
            super().init(*args, **kw)
 
@@ -321,19 +321,26 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
 
     The default mappings are:
 
-      :subject:         UniqueUnstructuredHeader
-      :date:            UniqueDateHeader
-      :resent-date:     DateHeader
-      :orig-date:       UniqueDateHeader
-      :sender:          UniqueSingleAddressHeader
-      :resent-sender:   SingleAddressHeader
-      :to:              UniqueAddressHeader
-      :resent-to:       AddressHeader
-      :cc:              UniqueAddressHeader
-      :resent-cc:       AddressHeader
-      :from:            UniqueAddressHeader
-      :resent-from:     AddressHeader
-      :reply-to:        UniqueAddressHeader
+      :subject:                   UniqueUnstructuredHeader
+      :date:                      UniqueDateHeader
+      :resent-date:               DateHeader
+      :orig-date:                 UniqueDateHeader
+      :sender:                    UniqueSingleAddressHeader
+      :resent-sender:             SingleAddressHeader
+      :to:                        UniqueAddressHeader
+      :resent-to:                 AddressHeader
+      :cc:                        UniqueAddressHeader
+      :resent-cc:                 AddressHeader
+      :bcc:                       UniqueAddressHeader
+      :resent-bcc:                AddressHeader
+      :from:                      UniqueAddressHeader
+      :resent-from:               AddressHeader
+      :reply-to:                  UniqueAddressHeader
+      :mime-version:              MIMEVersionHeader
+      :content-type:              ContentTypeHeader
+      :content-disposition:       ContentDispositionHeader
+      :content-transfer-encoding: ContentTransferEncodingHeader
+      :message-id:                MessageIDHeader
 
     ``HeaderRegistry`` has the following methods:
 
@@ -451,5 +458,5 @@ construct structured values to assign to specific headers.
 
 .. rubric:: Footnotes
 
-.. [1] Oringally added in 3.3 as a :term:`provisional module <provisional
+.. [1] Originally added in 3.3 as a :term:`provisional module <provisional
        package>`

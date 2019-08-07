@@ -149,7 +149,7 @@ class InternalFunctionsTest(unittest.TestCase):
         # but when passing a single state, it can be anything
         valid = {'opt': [[1, 'value']]}
         self.assertEqual(ttk._format_mapdict(valid), ('-opt', '1 value'))
-        # special attention to single states which evalute to False
+        # special attention to single states which evaluate to False
         for stateval in (None, 0, False, '', set()): # just some samples
             valid = {'opt': [(stateval, 'value')]}
             self.assertEqual(ttk._format_mapdict(valid),
@@ -251,7 +251,7 @@ class InternalFunctionsTest(unittest.TestCase):
         self.assertEqual(ttk._format_layoutlist([])[0], '')
 
         # _format_layoutlist always expects the second item (in every item)
-        # to act like a dict (except when the value evalutes to False).
+        # to act like a dict (except when the value evaluates to False).
         self.assertRaises(AttributeError,
             ttk._format_layoutlist, [('a', 'b')])
 

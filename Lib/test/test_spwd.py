@@ -67,8 +67,6 @@ class TestSpwdNonRoot(unittest.TestCase):
                 spwd.getspnam(name)
         except KeyError as exc:
             self.skipTest("spwd entry %r doesn't exist: %s" % (name, exc))
-        else:
-            self.assertEqual(str(cm.exception), '[Errno 13] Permission denied')
 
 
 if __name__ == "__main__":

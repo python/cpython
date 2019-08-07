@@ -3,7 +3,42 @@ import unittest
 
 from test.bytecode_helper import BytecodeTestCase
 
+
+def count_instr_recursively(f, opname):
+    count = 0
+    for instr in dis.get_instructions(f):
+        if instr.opname == opname:
+            count += 1
+    if hasattr(f, '__code__'):
+        f = f.__code__
+    for c in f.co_consts:
+        if hasattr(c, 'co_code'):
+            count += count_instr_recursively(c, opname)
+    return count
+
+
 class TestTranforms(BytecodeTestCase):
+
+    def check_jump_targets(self, code):
+        instructions = list(dis.get_instructions(code))
+        targets = {instr.offset: instr for instr in instructions}
+        for instr in instructions:
+            if 'JUMP_' not in instr.opname:
+                continue
+            tgt = targets[instr.argval]
+            # jump to unconditional jump
+            if tgt.opname in ('JUMP_ABSOLUTE', 'JUMP_FORWARD'):
+                self.fail(f'{instr.opname} at {instr.offset} '
+                          f'jumps to {tgt.opname} at {tgt.offset}')
+            # unconditional jump to RETURN_VALUE
+            if (instr.opname in ('JUMP_ABSOLUTE', 'JUMP_FORWARD') and
+                tgt.opname == 'RETURN_VALUE'):
+                self.fail(f'{instr.opname} at {instr.offset} '
+                          f'jumps to {tgt.opname} at {tgt.offset}')
+            # JUMP_IF_*_OR_POP jump to conditional jump
+            if '_OR_POP' in instr.opname and 'JUMP_IF_' in tgt.opname:
+                self.fail(f'{instr.opname} at {instr.offset} '
+                          f'jumps to {tgt.opname} at {tgt.offset}')
 
     def test_unot(self):
         # UNARY_NOT POP_JUMP_IF_FALSE  -->  POP_JUMP_IF_TRUE'
@@ -175,8 +210,15 @@ class TestTranforms(BytecodeTestCase):
         self.assertInBytecode(code, 'LOAD_CONST', 'b')
 
         # Verify that large sequences do not result from folding
-        code = compile('a="x"*1000', '', 'single')
+        code = compile('a="x"*10000', '', 'single')
+        self.assertInBytecode(code, 'LOAD_CONST', 10000)
+        self.assertNotIn("x"*10000, code.co_consts)
+        code = compile('a=1<<1000', '', 'single')
         self.assertInBytecode(code, 'LOAD_CONST', 1000)
+        self.assertNotIn(1<<1000, code.co_consts)
+        code = compile('a=2**1000', '', 'single')
+        self.assertInBytecode(code, 'LOAD_CONST', 1000)
+        self.assertNotIn(2**1000, code.co_consts)
 
     def test_binary_subscr_on_unicode(self):
         # valid code get optimized
@@ -239,12 +281,68 @@ class TestTranforms(BytecodeTestCase):
     def test_elim_jump_to_return(self):
         # JUMP_FORWARD to RETURN -->  RETURN
         def f(cond, true_value, false_value):
-            return true_value if cond else false_value
+            # Intentionally use two-line expression to test issue37213.
+            return (true_value if cond
+                    else false_value)
+        self.check_jump_targets(f)
         self.assertNotInBytecode(f, 'JUMP_FORWARD')
         self.assertNotInBytecode(f, 'JUMP_ABSOLUTE')
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
         self.assertEqual(len(returns), 2)
+
+    def test_elim_jump_to_uncond_jump(self):
+        # POP_JUMP_IF_FALSE to JUMP_FORWARD --> POP_JUMP_IF_FALSE to non-jump
+        def f():
+            if a:
+                # Intentionally use two-line expression to test issue37213.
+                if (c
+                    or d):
+                    foo()
+            else:
+                baz()
+        self.check_jump_targets(f)
+
+    def test_elim_jump_to_uncond_jump2(self):
+        # POP_JUMP_IF_FALSE to JUMP_ABSOLUTE --> POP_JUMP_IF_FALSE to non-jump
+        def f():
+            while a:
+                # Intentionally use two-line expression to test issue37213.
+                if (c
+                    or d):
+                    a = foo()
+        self.check_jump_targets(f)
+
+    def test_elim_jump_to_uncond_jump3(self):
+        # Intentionally use two-line expressions to test issue37213.
+        # JUMP_IF_FALSE_OR_POP to JUMP_IF_FALSE_OR_POP --> JUMP_IF_FALSE_OR_POP to non-jump
+        def f(a, b, c):
+            return ((a and b)
+                    and c)
+        self.check_jump_targets(f)
+        self.assertEqual(count_instr_recursively(f, 'JUMP_IF_FALSE_OR_POP'), 2)
+        # JUMP_IF_TRUE_OR_POP to JUMP_IF_TRUE_OR_POP --> JUMP_IF_TRUE_OR_POP to non-jump
+        def f(a, b, c):
+            return ((a or b)
+                    or c)
+        self.check_jump_targets(f)
+        self.assertEqual(count_instr_recursively(f, 'JUMP_IF_TRUE_OR_POP'), 2)
+        # JUMP_IF_FALSE_OR_POP to JUMP_IF_TRUE_OR_POP --> POP_JUMP_IF_FALSE to non-jump
+        def f(a, b, c):
+            return ((a and b)
+                    or c)
+        self.check_jump_targets(f)
+        self.assertNotInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
+        self.assertInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
+        self.assertInBytecode(f, 'POP_JUMP_IF_FALSE')
+        # JUMP_IF_TRUE_OR_POP to JUMP_IF_FALSE_OR_POP --> POP_JUMP_IF_TRUE to non-jump
+        def f(a, b, c):
+            return ((a or b)
+                    and c)
+        self.check_jump_targets(f)
+        self.assertNotInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
+        self.assertInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
+        self.assertInBytecode(f, 'POP_JUMP_IF_TRUE')
 
     def test_elim_jump_after_return1(self):
         # Eliminate dead code: jumps immediately after returns can't be reached
@@ -261,7 +359,7 @@ class TestTranforms(BytecodeTestCase):
         self.assertNotInBytecode(f, 'JUMP_ABSOLUTE')
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
-        self.assertEqual(len(returns), 6)
+        self.assertLessEqual(len(returns), 6)
 
     def test_elim_jump_after_return2(self):
         # Eliminate dead code: jumps immediately after returns can't be reached
@@ -275,7 +373,7 @@ class TestTranforms(BytecodeTestCase):
         self.assertEqual(len(returns), 1)
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
-        self.assertEqual(len(returns), 2)
+        self.assertLessEqual(len(returns), 2)
 
     def test_make_function_doesnt_bail(self):
         def f():
@@ -303,6 +401,32 @@ class TestTranforms(BytecodeTestCase):
                 self.assertFalse(instr.opname.startswith('UNARY_'))
                 self.assertFalse(instr.opname.startswith('BINARY_'))
                 self.assertFalse(instr.opname.startswith('BUILD_'))
+
+    def test_in_literal_list(self):
+        def containtest():
+            return x in [a, b]
+        self.assertEqual(count_instr_recursively(containtest, 'BUILD_LIST'), 0)
+
+    def test_iterate_literal_list(self):
+        def forloop():
+            for x in [a, b]:
+                pass
+        self.assertEqual(count_instr_recursively(forloop, 'BUILD_LIST'), 0)
+
+    def test_condition_with_binop_with_bools(self):
+        def f():
+            if True or False:
+                return 1
+            return 0
+        self.assertEqual(f(), 1)
+
+    def test_if_with_if_expression(self):
+        # Check bpo-37289
+        def f(x):
+            if (True if x else False):
+                return True
+            return False
+        self.assertTrue(f(True))
 
 
 class TestBuglets(unittest.TestCase):

@@ -3,11 +3,45 @@ import gc
 import pickle
 import sys
 import unittest
-import warnings
 import weakref
 import inspect
 
 from test import support
+
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
+
+# This tests to make sure that if a SIGINT arrives just before we send into a
+# yield from chain, the KeyboardInterrupt is raised in the innermost
+# generator (see bpo-30039).
+@unittest.skipUnless(_testcapi is not None and
+                     hasattr(_testcapi, "raise_SIGINT_then_send_None"),
+                     "needs _testcapi.raise_SIGINT_then_send_None")
+class SignalAndYieldFromTest(unittest.TestCase):
+
+    def generator1(self):
+        return (yield from self.generator2())
+
+    def generator2(self):
+        try:
+            yield
+        except KeyboardInterrupt:
+            return "PASSED"
+        else:
+            return "FAILED"
+
+    def test_raise_and_yield_from(self):
+        gen = self.generator1()
+        gen.send(None)
+        try:
+            _testcapi.raise_SIGINT_then_send_None(gen)
+        except BaseException as _exc:
+            exc = _exc
+        self.assertIs(type(exc), StopIteration)
+        self.assertEqual(exc.value, "PASSED")
 
 
 class FinalizationTest(unittest.TestCase):
@@ -236,25 +270,15 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(next(g), "done")
         self.assertEqual(sys.exc_info(), (None, None, None))
 
-    def test_stopiteration_warning(self):
+    def test_stopiteration_error(self):
         # See also PEP 479.
 
         def gen():
             raise StopIteration
             yield
 
-        with self.assertRaises(StopIteration), \
-             self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
-
+        with self.assertRaisesRegex(RuntimeError, 'raised StopIteration'):
             next(gen())
-
-        with self.assertRaisesRegex(DeprecationWarning,
-                                    "generator .* raised StopIteration"), \
-             warnings.catch_warnings():
-
-            warnings.simplefilter('error')
-            next(gen())
-
 
     def test_tutorial_stopiteration(self):
         # Raise StopIteration" stops the generator too:
@@ -267,13 +291,7 @@ class ExceptionTest(unittest.TestCase):
         g = f()
         self.assertEqual(next(g), 1)
 
-        with self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
-            with self.assertRaises(StopIteration):
-                next(g)
-
-        with self.assertRaises(StopIteration):
-            # This time StopIteration isn't raised from the generator's body,
-            # hence no warning.
+        with self.assertRaisesRegex(RuntimeError, 'raised StopIteration'):
             next(g)
 
     def test_return_tuple(self):
@@ -1429,7 +1447,7 @@ class Knights:
             # If we create a square with one exit, we must visit it next;
             # else somebody else will have to visit it, and since there's
             # only one adjacent, there won't be a way to leave it again.
-            # Finelly, if we create more than one free square with a
+            # Finally, if we create more than one free square with a
             # single exit, we can only move to one of them next, leaving
             # the other one a dead end.
             ne0 = ne1 = 0
@@ -1487,7 +1505,7 @@ class Knights:
                 succs[final].remove(corner)
                 add_to_successors(this)
 
-        # Generate moves 3 thru m*n-1.
+        # Generate moves 3 through m*n-1.
         def advance(len=len):
             # If some successor has only one exit, must take it.
             # Else favor successors with fewer exits.
@@ -1509,7 +1527,7 @@ class Knights:
                         yield i
                     add_to_successors(i)
 
-        # Generate moves 3 thru m*n-1.  Alternative version using a
+        # Generate moves 3 through m*n-1.  Alternative version using a
         # stronger (but more expensive) heuristic to order successors.
         # Since the # of backtracking levels is m*n, a poor move early on
         # can take eons to undo.  Smallest square board for which this
@@ -1801,13 +1819,7 @@ Yield by itself yields None:
 [None]
 
 
-
-An obscene abuse of a yield expression within a generator expression:
-
->>> list((yield 21) for i in range(4))
-[21, None, 21, None, 21, None, 21, None]
-
-And a more sane, but still weird usage:
+Yield is allowed only in the outermost iterable in generator expression:
 
 >>> def f(): list(i for i in [(yield 26)])
 >>> type(f())
@@ -1852,12 +1864,12 @@ SyntaxError: assignment to yield expression not possible
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):
   ...
-SyntaxError: can't assign to yield expression
+SyntaxError: cannot assign to yield expression
 
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):
   ...
-SyntaxError: can't assign to yield expression
+SyntaxError: cannot assign to yield expression
 
 
 Now check some throw() conditions:
@@ -2038,15 +2050,17 @@ RuntimeError: generator ignored GeneratorExit
 
 Our ill-behaved code should be invoked during GC:
 
->>> import sys, io
->>> old, sys.stderr = sys.stderr, io.StringIO()
->>> g = f()
->>> next(g)
->>> del g
->>> "RuntimeError: generator ignored GeneratorExit" in sys.stderr.getvalue()
+>>> with support.catch_unraisable_exception() as cm:
+...     g = f()
+...     next(g)
+...     del g
+...
+...     cm.unraisable.exc_type == RuntimeError
+...     "generator ignored GeneratorExit" in str(cm.unraisable.exc_value)
+...     cm.unraisable.exc_traceback is not None
 True
->>> sys.stderr = old
-
+True
+True
 
 And errors thrown during closing should propagate:
 
@@ -2074,10 +2088,6 @@ enclosing function a generator:
 <class 'generator'>
 
 >>> def f(): lambda x=(yield): 1
->>> type(f())
-<class 'generator'>
-
->>> def f(): x=(i for i in (yield) if (yield))
 >>> type(f())
 <class 'generator'>
 
@@ -2147,25 +2157,21 @@ explicitly, without generators. We do have to redirect stderr to avoid
 printing warnings and to doublecheck that we actually tested what we wanted
 to test.
 
->>> import sys, io
->>> old = sys.stderr
->>> try:
-...     sys.stderr = io.StringIO()
-...     class Leaker:
-...         def __del__(self):
-...             def invoke(message):
-...                 raise RuntimeError(message)
-...             invoke("test")
+>>> from test import support
+>>> class Leaker:
+...     def __del__(self):
+...         def invoke(message):
+...             raise RuntimeError(message)
+...         invoke("del failed")
 ...
+>>> with support.catch_unraisable_exception() as cm:
 ...     l = Leaker()
 ...     del l
-...     err = sys.stderr.getvalue().strip()
-...     "Exception ignored in" in err
-...     "RuntimeError: test" in err
-...     "Traceback" in err
-...     "in invoke" in err
-... finally:
-...     sys.stderr = old
+...
+...     cm.unraisable.object == Leaker.__del__
+...     cm.unraisable.exc_type == RuntimeError
+...     str(cm.unraisable.exc_value) == "del failed"
+...     cm.unraisable.exc_traceback is not None
 True
 True
 True

@@ -34,10 +34,7 @@ between conformable Python objects and XML on the wire.
 
 .. class:: ServerProxy(uri, transport=None, encoding=None, verbose=False, \
                        allow_none=False, use_datetime=False, \
-                       use_builtin_types=False, *, context=None)
-
-   .. versionchanged:: 3.3
-      The *use_builtin_types* flag was added.
+                       use_builtin_types=False, *, headers=(), context=None)
 
    A :class:`ServerProxy` instance is an object that manages communication with a
    remote XML-RPC server.  The required first argument is a URI (Uniform Resource
@@ -59,8 +56,17 @@ between conformable Python objects and XML on the wire.
    presented as :class:`bytes` objects; this flag is false by default.
    :class:`datetime.datetime`, :class:`bytes` and :class:`bytearray` objects
    may be passed to calls.
+   The *headers* parameter is an optional sequence of HTTP headers to send with
+   each request, expressed as a sequence of 2-tuples representing the header
+   name and value. (e.g. `[('Header-Name', 'value')]`).
    The obsolete *use_datetime* flag is similar to *use_builtin_types* but it
    applies only to date/time values.
+
+.. versionchanged:: 3.3
+    The *use_builtin_types* flag was added.
+
+.. versionchanged:: 3.8
+    The *headers* parameter was added.
 
    Both the HTTP and HTTPS transports support the URL syntax extension for HTTP
    Basic Authentication: ``http://user:pass@host:port/path``.  The  ``user:pass``
@@ -145,7 +151,7 @@ between conformable Python objects and XML on the wire.
 
    .. versionchanged:: 3.6
       Added support of type tags with prefixes (e.g. ``ex:nil``).
-      Added support of unmarsalling additional types used by Apache XML-RPC
+      Added support of unmarshalling additional types used by Apache XML-RPC
       implementation for numerics: ``i1``, ``i2``, ``i8``, ``biginteger``,
       ``float`` and ``bigdecimal``.
       See http://ws.apache.org/xmlrpc/types.html for a description.
@@ -328,7 +334,7 @@ Binary Objects
       Write the XML-RPC base 64 encoding of this binary item to the *out* stream object.
 
       The encoded data will have newlines every 76 characters as per
-      `RFC 2045 section 6.8 <https://tools.ietf.org/html/rfc2045#section-6.8>`_,
+      :rfc:`RFC 2045 section 6.8 <2045#section-6.8>`,
       which was the de facto standard base64 specification when the
       XML-RPC spec was written.
 

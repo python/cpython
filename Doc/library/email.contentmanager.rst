@@ -126,9 +126,6 @@ Currently the email package provides only one concrete content manager,
                set_content(msg, <'EmailMessage'>, cte=None, \
                            disposition=None, filename=None, cid=None, \
                            params=None, headers=None)
-               set_content(msg, <'list'>, subtype='mixed', \
-                           disposition=None, filename=None, cid=None, \
-                           params=None, headers=None)
 
        Add headers and payload to *msg*:
 
@@ -144,12 +141,6 @@ Currently the email package provides only one concrete content manager,
              specified or ``rfc822`` if it is not.  If *subtype* is
              ``partial``, raise an error (``bytes`` objects must be used to
              construct ``message/partial`` parts).
-           * For *<'list'>*, which should be a list of
-             :class:`~email.message.EmailMessage` objects, set the ``maintype``
-             to ``multipart``, and the ``subtype`` to *subtype* if it is
-             specified, and ``mixed`` if it is not.  If the message parts in
-             the *<'list'>* have :mailheader:`MIME-Version` headers, remove
-             them.
 
        If *charset* is provided (which is valid only for ``str``), encode the
        string to bytes using the specified character set.  The default is
@@ -157,7 +148,7 @@ Currently the email package provides only one concrete content manager,
        MIME charset name, use the standard charset instead.
 
        If *cte* is set, encode the payload using the specified content transfer
-       encoding, and set the :mailheader:`Content-Transfer-Endcoding` header to
+       encoding, and set the :mailheader:`Content-Transfer-Encoding` header to
        that value.  Possible values for *cte* are ``quoted-printable``,
        ``base64``, ``7bit``, ``8bit``, and ``binary``.  If the input cannot be
        encoded in the specified encoding (for example, specifying a *cte* of
@@ -203,5 +194,5 @@ Currently the email package provides only one concrete content manager,
 
 .. rubric:: Footnotes
 
-.. [1] Oringally added in 3.4 as a :term:`provisional module <provisional
+.. [1] Originally added in 3.4 as a :term:`provisional module <provisional
        package>`

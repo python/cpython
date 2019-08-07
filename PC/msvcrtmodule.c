@@ -33,14 +33,20 @@
 #endif
 
 /*[python input]
-class intptr_t_converter(CConverter):
-    type = 'intptr_t'
-    format_unit = '"_Py_PARSE_INTPTR"'
+class HANDLE_converter(CConverter):
+    type = 'void *'
+    format_unit = '"_Py_PARSE_UINTPTR"'
 
-class handle_return_converter(long_return_converter):
-    type = 'intptr_t'
-    cast = '(void *)'
-    conversion_fn = 'PyLong_FromVoidPtr'
+class HANDLE_return_converter(CReturnConverter):
+    type = 'void *'
+
+    def render(self, function, data):
+        self.declare(data)
+        self.err_occurred_if(
+            "_return_value == NULL || _return_value == INVALID_HANDLE_VALUE",
+            data)
+        data.return_conversion.append(
+            'return_value = PyLong_FromVoidPtr(_return_value);\n')
 
 class byte_char_return_converter(CReturnConverter):
     type = 'int'
@@ -59,7 +65,7 @@ class wchar_t_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = PyUnicode_FromOrdinal(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=b59f1663dba11997]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=d102511df3cda2eb]*/
 
 /*[clinic input]
 module msvcrt
@@ -82,7 +88,7 @@ msvcrt_heapmin_impl(PyObject *module)
 /*[clinic end generated code: output=1ba00f344782dc19 input=82e1771d21bde2d8]*/
 {
     if (_heapmin() != 0)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
 
     Py_RETURN_NONE;
 }
@@ -96,7 +102,7 @@ msvcrt.locking
 
 Lock part of a file based on file descriptor fd from the C runtime.
 
-Raises IOError on failure. The locked region of the file extends from
+Raises OSError on failure. The locked region of the file extends from
 the current file position for nbytes bytes, and may continue beyond
 the end of the file. mode must be one of the LK_* constants listed
 below. Multiple regions in a file may be locked at the same time, but
@@ -106,7 +112,7 @@ individually.
 
 static PyObject *
 msvcrt_locking_impl(PyObject *module, int fd, int mode, long nbytes)
-/*[clinic end generated code: output=a4a90deca9785a03 input=d9f13f0f6a713ba7]*/
+/*[clinic end generated code: output=a4a90deca9785a03 input=e97bd15fc4a04fef]*/
 {
     int err;
 
@@ -116,7 +122,7 @@ msvcrt_locking_impl(PyObject *module, int fd, int mode, long nbytes)
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     if (err != 0)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
 
     Py_RETURN_NONE;
 }
@@ -144,7 +150,7 @@ msvcrt_setmode_impl(PyObject *module, int fd, int flags)
     flags = _setmode(fd, flags);
     _Py_END_SUPPRESS_IPH
     if (flags == -1)
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
 
     return flags;
 }
@@ -152,7 +158,7 @@ msvcrt_setmode_impl(PyObject *module, int fd, int flags)
 /*[clinic input]
 msvcrt.open_osfhandle -> long
 
-    handle: intptr_t
+    handle: HANDLE
     flags: int
     /
 
@@ -164,34 +170,34 @@ to os.fdopen() to create a file object.
 [clinic start generated code]*/
 
 static long
-msvcrt_open_osfhandle_impl(PyObject *module, intptr_t handle, int flags)
-/*[clinic end generated code: output=cede871bf939d6e3 input=cb2108bbea84514e]*/
+msvcrt_open_osfhandle_impl(PyObject *module, void *handle, int flags)
+/*[clinic end generated code: output=b2fb97c4b515e4e6 input=d5db190a307cf4bb]*/
 {
     int fd;
 
     _Py_BEGIN_SUPPRESS_IPH
-    fd = _open_osfhandle(handle, flags);
+    fd = _open_osfhandle((intptr_t)handle, flags);
     _Py_END_SUPPRESS_IPH
     if (fd == -1)
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
 
     return fd;
 }
 
 /*[clinic input]
-msvcrt.get_osfhandle -> handle
+msvcrt.get_osfhandle -> HANDLE
 
     fd: int
     /
 
 Return the file handle for the file descriptor fd.
 
-Raises IOError if fd is not recognized.
+Raises OSError if fd is not recognized.
 [clinic start generated code]*/
 
-static intptr_t
+static void *
 msvcrt_get_osfhandle_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=7ce761dd0de2b503 input=c7d18d02c8017ec1]*/
+/*[clinic end generated code: output=aca01dfe24637374 input=5fcfde9b17136aa2]*/
 {
     intptr_t handle = -1;
 
@@ -199,9 +205,9 @@ msvcrt_get_osfhandle_impl(PyObject *module, int fd)
     handle = _get_osfhandle(fd);
     _Py_END_SUPPRESS_IPH
     if (handle == -1)
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
 
-    return handle;
+    return (HANDLE)handle;
 }
 
 /* Console I/O */
@@ -353,13 +359,13 @@ msvcrt_ungetch_impl(PyObject *module, char char_value)
 /*[clinic end generated code: output=c6942a0efa119000 input=22f07ee9001bbf0f]*/
 {
     int res;
-    
+
     _Py_BEGIN_SUPPRESS_IPH
     res = _ungetch(char_value);
     _Py_END_SUPPRESS_IPH
 
     if (res == EOF)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
 }
 
@@ -383,16 +389,16 @@ msvcrt_ungetwch_impl(PyObject *module, int unicode_char)
     _Py_END_SUPPRESS_IPH
 
     if (res == WEOF)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
 }
 
 #ifdef _DEBUG
 /*[clinic input]
-msvcrt.CrtSetReportFile -> long
+msvcrt.CrtSetReportFile -> HANDLE
 
     type: int
-    file: int
+    file: HANDLE
     /
 
 Wrapper around _CrtSetReportFile.
@@ -400,14 +406,14 @@ Wrapper around _CrtSetReportFile.
 Only available on Debug builds.
 [clinic start generated code]*/
 
-static long
-msvcrt_CrtSetReportFile_impl(PyObject *module, int type, int file)
-/*[clinic end generated code: output=df291c7fe032eb68 input=bb8f721a604fcc45]*/
+static void *
+msvcrt_CrtSetReportFile_impl(PyObject *module, int type, void *file)
+/*[clinic end generated code: output=9393e8c77088bbe9 input=290809b5f19e65b9]*/
 {
-    long res;
+    HANDLE res;
 
     _Py_BEGIN_SUPPRESS_IPH
-    res = (long)_CrtSetReportFile(type, (_HFILE)file);
+    res = _CrtSetReportFile(type, file);
     _Py_END_SUPPRESS_IPH
 
     return res;
@@ -435,7 +441,7 @@ msvcrt_CrtSetReportMode_impl(PyObject *module, int type, int mode)
     res = _CrtSetReportMode(type, mode);
     _Py_END_SUPPRESS_IPH
     if (res == -1)
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
     return res;
 }
 
@@ -540,6 +546,20 @@ insertint(PyObject *d, char *name, int value)
     }
 }
 
+static void
+insertptr(PyObject *d, char *name, void *value)
+{
+    PyObject *v = PyLong_FromVoidPtr(value);
+    if (v == NULL) {
+        /* Don't bother reporting this error */
+        PyErr_Clear();
+    }
+    else {
+        PyDict_SetItemString(d, name, v);
+        Py_DECREF(v);
+    }
+}
+
 PyMODINIT_FUNC
 PyInit_msvcrt(void)
 {
@@ -568,9 +588,9 @@ PyInit_msvcrt(void)
     insertint(d, "CRTDBG_MODE_FILE", _CRTDBG_MODE_FILE);
     insertint(d, "CRTDBG_MODE_WNDW", _CRTDBG_MODE_WNDW);
     insertint(d, "CRTDBG_REPORT_MODE", _CRTDBG_REPORT_MODE);
-    insertint(d, "CRTDBG_FILE_STDERR", (int)_CRTDBG_FILE_STDERR);
-    insertint(d, "CRTDBG_FILE_STDOUT", (int)_CRTDBG_FILE_STDOUT);
-    insertint(d, "CRTDBG_REPORT_FILE", (int)_CRTDBG_REPORT_FILE);
+    insertptr(d, "CRTDBG_FILE_STDERR", _CRTDBG_FILE_STDERR);
+    insertptr(d, "CRTDBG_FILE_STDOUT", _CRTDBG_FILE_STDOUT);
+    insertptr(d, "CRTDBG_REPORT_FILE", _CRTDBG_REPORT_FILE);
 #endif
 
     /* constants for the crt versions */

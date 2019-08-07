@@ -10,8 +10,8 @@
 
 --------------
 
-This module is always available.  It provides access to the mathematical
-functions defined by the C standard.
+This module provides access to the mathematical functions defined by the C
+standard.
 
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
@@ -36,20 +36,44 @@ Number-theoretic and representation functions
    :class:`~numbers.Integral` value.
 
 
+.. function:: comb(n, k)
+
+   Return the number of ways to choose *k* items from *n* items without repetition
+   and without order.
+
+   Evaluates to ``n! / (k! * (n - k)!)`` when ``k <= n`` and evaluates
+   to zero when ``k > n``.
+
+   Also called the binomial coefficient because it is equivalent
+   to the coefficient of k-th term in polynomial expansion of the
+   expression ``(1 + x) ** n``.
+
+   Raises :exc:`TypeError` if either of the arguments are not integers.
+   Raises :exc:`ValueError` if either of the arguments are negative.
+
+   .. versionadded:: 3.8
+
+
 .. function:: copysign(x, y)
 
    Return a float with the magnitude (absolute value) of *x* but the sign of
    *y*.  On platforms that support signed zeros, ``copysign(1.0, -0.0)``
    returns *-1.0*.
 
+
 .. function:: fabs(x)
 
    Return the absolute value of *x*.
 
+
 .. function:: factorial(x)
 
-   Return *x* factorial.  Raises :exc:`ValueError` if *x* is not integral or
+   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
+
+   .. deprecated:: 3.9
+      Accepting floats with integral values (like ``5.0``) is deprecated.
+
 
 .. function:: floor(x)
 
@@ -163,6 +187,20 @@ Number-theoretic and representation functions
    Return ``True`` if *x* is a NaN (not a number), and ``False`` otherwise.
 
 
+.. function:: isqrt(n)
+
+   Return the integer square root of the nonnegative integer *n*. This is the
+   floor of the exact square root of *n*, or equivalently the greatest integer
+   *a* such that *a*\ ² |nbsp| ≤ |nbsp| *n*.
+
+   For some applications, it may be more convenient to have the least integer
+   *a* such that *n* |nbsp| ≤ |nbsp| *a*\ ², or in other words the ceiling of
+   the exact square root of *n*. For positive *n*, this can be computed using
+   ``a = 1 + isqrt(n - 1)``.
+
+   .. versionadded:: 3.8
+
+
 .. function:: ldexp(x, i)
 
    Return ``x * (2**i)``.  This is essentially the inverse of function
@@ -175,11 +213,61 @@ Number-theoretic and representation functions
    of *x* and are floats.
 
 
+.. function:: perm(n, k=None)
+
+   Return the number of ways to choose *k* items from *n* items
+   without repetition and with order.
+
+   Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
+   to zero when ``k > n``.
+
+   If *k* is not specified or is None, then *k* defaults to *n*
+   and the function returns ``n!``.
+
+   Raises :exc:`TypeError` if either of the arguments are not integers.
+   Raises :exc:`ValueError` if either of the arguments are negative.
+
+   .. versionadded:: 3.8
+
+
+.. function:: prod(iterable, *, start=1)
+
+   Calculate the product of all the elements in the input *iterable*.
+   The default *start* value for the product is ``1``.
+
+   When the iterable is empty, return the start value.  This function is
+   intended specifically for use with numeric values and may reject
+   non-numeric types.
+
+   .. versionadded:: 3.8
+
+
+.. function:: remainder(x, y)
+
+   Return the IEEE 754-style remainder of *x* with respect to *y*.  For
+   finite *x* and finite nonzero *y*, this is the difference ``x - n*y``,
+   where ``n`` is the closest integer to the exact value of the quotient ``x /
+   y``.  If ``x / y`` is exactly halfway between two consecutive integers, the
+   nearest *even* integer is used for ``n``.  The remainder ``r = remainder(x,
+   y)`` thus always satisfies ``abs(r) <= 0.5 * abs(y)``.
+
+   Special cases follow IEEE 754: in particular, ``remainder(x, math.inf)`` is
+   *x* for any finite *x*, and ``remainder(x, 0)`` and
+   ``remainder(math.inf, x)`` raise :exc:`ValueError` for any non-NaN *x*.
+   If the result of the remainder operation is zero, that zero will have
+   the same sign as *x*.
+
+   On platforms using IEEE 754 binary floating-point, the result of this
+   operation is always exactly representable: no rounding error is introduced.
+
+   .. versionadded:: 3.7
+
+
 .. function:: trunc(x)
 
    Return the :class:`~numbers.Real` value *x* truncated to an
    :class:`~numbers.Integral` (usually an integer). Delegates to
-   ``x.__trunc__()``.
+   :meth:`x.__trunc__() <object.__trunc__>`.
 
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
@@ -199,12 +287,15 @@ Power and logarithmic functions
 
 .. function:: exp(x)
 
-   Return e raised to the power *x*, where e = 2.718281... is the base
-   of natural logarithms.
+   Return *e* raised to the power *x*, where *e* = 2.718281... is the base
+   of natural logarithms.  This is usually more accurate than ``math.e ** x``
+   or ``pow(math.e, x)``.
+
 
 .. function:: expm1(x)
 
-   Return ``e**x - 1``.  For small floats *x*, the subtraction in ``exp(x) - 1``
+   Return *e* raised to the power *x*, minus 1.  Here *e* is the base of natural
+   logarithms.  For small floats *x*, the subtraction in ``exp(x) - 1``
    can result in a `significant loss of precision
    <https://en.wikipedia.org/wiki/Loss_of_significance>`_\; the :func:`expm1`
    function provides a way to compute this quantity to full precision::
@@ -269,23 +360,26 @@ Power and logarithmic functions
 
    Return the square root of *x*.
 
+
 Trigonometric functions
 -----------------------
 
-
 .. function:: acos(x)
 
-   Return the arc cosine of *x*, in radians.
+   Return the arc cosine of *x*, in radians. The result is between ``0`` and
+   ``pi``.
 
 
 .. function:: asin(x)
 
-   Return the arc sine of *x*, in radians.
+   Return the arc sine of *x*, in radians. The result is between ``-pi/2`` and
+   ``pi/2``.
 
 
 .. function:: atan(x)
 
-   Return the arc tangent of *x*, in radians.
+   Return the arc tangent of *x*, in radians. The result is between ``-pi/2`` and
+   ``pi/2``.
 
 
 .. function:: atan2(y, x)
@@ -303,10 +397,32 @@ Trigonometric functions
    Return the cosine of *x* radians.
 
 
-.. function:: hypot(x, y)
+.. function:: dist(p, q)
 
-   Return the Euclidean norm, ``sqrt(x*x + y*y)``. This is the length of the vector
-   from the origin to point ``(x, y)``.
+   Return the Euclidean distance between two points *p* and *q*, each
+   given as a sequence (or iterable) of coordinates.  The two points
+   must have the same dimension.
+
+   Roughly equivalent to::
+
+       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+
+   .. versionadded:: 3.8
+
+
+.. function:: hypot(*coordinates)
+
+   Return the Euclidean norm, ``sqrt(sum(x**2 for x in coordinates))``.
+   This is the length of the vector from the origin to the point
+   given by the coordinates.
+
+   For a two dimensional point ``(x, y)``, this is equivalent to computing
+   the hypotenuse of a right triangle using the Pythagorean theorem,
+   ``sqrt(x*x + y*y)``.
+
+   .. versionchanged:: 3.8
+      Added support for n-dimensional points. Formerly, only the two
+      dimensional case was supported.
 
 
 .. function:: sin(x)
@@ -318,9 +434,9 @@ Trigonometric functions
 
    Return the tangent of *x* radians.
 
+
 Angular conversion
 ------------------
-
 
 .. function:: degrees(x)
 
@@ -330,6 +446,7 @@ Angular conversion
 .. function:: radians(x)
 
    Convert angle *x* from degrees to radians.
+
 
 Hyperbolic functions
 --------------------
@@ -419,22 +536,24 @@ Constants
 
 .. data:: pi
 
-   The mathematical constant π = 3.141592..., to available precision.
+   The mathematical constant *π* = 3.141592..., to available precision.
 
 
 .. data:: e
 
-   The mathematical constant e = 2.718281..., to available precision.
+   The mathematical constant *e* = 2.718281..., to available precision.
+
 
 .. data:: tau
 
-   The mathematical constant τ = 6.283185..., to available precision.
-   Tau is a circle constant equal to 2π, the ratio of a circle's circumference to
+   The mathematical constant *τ* = 6.283185..., to available precision.
+   Tau is a circle constant equal to 2\ *π*, the ratio of a circle's circumference to
    its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
    Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
-   `Tau day <http://tauday.com/>`_ by eating twice as much pie!
+   `Tau day <https://tauday.com/>`_ by eating twice as much pie!
 
    .. versionadded:: 3.6
+
 
 .. data:: inf
 
@@ -475,3 +594,6 @@ Constants
 
    Module :mod:`cmath`
       Complex number versions of many of these functions.
+
+.. |nbsp| unicode:: 0xA0
+   :trim:

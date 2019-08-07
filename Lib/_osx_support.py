@@ -17,7 +17,7 @@ __all__ = [
 _UNIVERSAL_CONFIG_VARS = ('CFLAGS', 'LDFLAGS', 'CPPFLAGS', 'BASECFLAGS',
                             'BLDSHARED', 'LDSHARED', 'CC', 'CXX',
                             'PY_CFLAGS', 'PY_LDFLAGS', 'PY_CPPFLAGS',
-                            'PY_CORE_CFLAGS')
+                            'PY_CORE_CFLAGS', 'PY_CORE_LDFLAGS')
 
 # configuration variables that may contain compiler calls
 _COMPILER_CONFIG_VARS = ('BLDSHARED', 'LDSHARED', 'CC', 'CXX')
@@ -210,7 +210,7 @@ def _remove_universal_flags(_config_vars):
         # Do not alter a config var explicitly overridden by env var
         if cv in _config_vars and cv not in os.environ:
             flags = _config_vars[cv]
-            flags = re.sub(r'-arch\s+\w+\s', ' ', flags, re.ASCII)
+            flags = re.sub(r'-arch\s+\w+\s', ' ', flags, flags=re.ASCII)
             flags = re.sub('-isysroot [^ \t]*', ' ', flags)
             _save_modified_value(_config_vars, cv, flags)
 

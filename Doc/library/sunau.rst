@@ -59,11 +59,6 @@ The :mod:`sunau` module defines the following functions:
    or ``'wb'`` returns an :class:`AU_write` object.
 
 
-.. function:: openfp(file, mode)
-
-   A synonym for :func:`.open`, maintained for backwards compatibility.
-
-
 The :mod:`sunau` module defines the following exception:
 
 .. exception:: Error
@@ -118,7 +113,7 @@ AU_read objects, as returned by :func:`.open` above, have the following methods:
 
 .. method:: AU_read.getnchannels()
 
-   Returns number of audio channels (1 for mone, 2 for stereo).
+   Returns number of audio channels (1 for mono, 2 for stereo).
 
 
 .. method:: AU_read.getsampwidth()

@@ -103,7 +103,8 @@ def py_scanstring(s, end, strict=True,
         try:
             esc = s[end]
         except IndexError:
-            raise JSONDecodeError("Unterminated string starting at", s, begin)
+            raise JSONDecodeError("Unterminated string starting at",
+                                  s, begin) from None
         # If not a unicode escape sequence, must be in the lookup table
         if esc != 'u':
             try:
@@ -291,10 +292,8 @@ class JSONDecoder(object):
         ``object_pairs_hook``, if specified will be called with the result of
         every JSON object decoded with an ordered list of pairs.  The return
         value of ``object_pairs_hook`` will be used instead of the ``dict``.
-        This feature can be used to implement custom decoders that rely on the
-        order that the key and value pairs are decoded (for example,
-        collections.OrderedDict will remember the order of insertion). If
-        ``object_hook`` is also defined, the ``object_pairs_hook`` takes
+        This feature can be used to implement custom decoders.
+        If ``object_hook`` is also defined, the ``object_pairs_hook`` takes
         priority.
 
         ``parse_float``, if specified, will be called with the string
@@ -316,7 +315,6 @@ class JSONDecoder(object):
         characters will be allowed inside strings.  Control characters in
         this context are those with character codes in the 0-31 range,
         including ``'\\t'`` (tab), ``'\\n'``, ``'\\r'`` and ``'\\0'``.
-
         """
         self.object_hook = object_hook
         self.parse_float = parse_float or float

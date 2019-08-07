@@ -96,6 +96,8 @@ class PlaySoundTest(unittest.TestCase):
         self.assertRaises(TypeError, winsound.PlaySound, "bad",
                           winsound.SND_MEMORY)
         self.assertRaises(TypeError, winsound.PlaySound, 1, 0)
+        # embedded null character
+        self.assertRaises(ValueError, winsound.PlaySound, 'bad\0', 0)
 
     def test_keyword_args(self):
         safe_PlaySound(flags=winsound.SND_ALIAS, sound="SystemExit")

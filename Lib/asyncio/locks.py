@@ -1,13 +1,15 @@
 """Synchronization primitives."""
 
-__all__ = ['Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore']
+__all__ = ('Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore')
 
 import collections
+import types
+import warnings
 
-from . import compat
 from . import events
 from . import futures
-from .coroutines import coroutine
+from . import exceptions
+from .import coroutines
 
 
 class _ContextManager:
@@ -22,6 +24,10 @@ class _ContextManager:
     while failing loudly when accidentally using:
 
         with lock:
+            <block>
+
+    Deprecated, use 'async with' statement:
+        async with lock:
             <block>
     """
 
@@ -50,7 +56,7 @@ class _ContextManagerMixin:
         # always raises; that's how the with-statement works.
         pass
 
-    @coroutine
+    @types.coroutine
     def __iter__(self):
         # This is not a coroutine.  It is meant to enable the idiom:
         #
@@ -64,26 +70,37 @@ class _ContextManagerMixin:
         #         <block>
         #     finally:
         #         lock.release()
+        # Deprecated, use 'async with' statement:
+        #     async with lock:
+        #         <block>
+        warnings.warn("'with (yield from lock)' is deprecated "
+                      "use 'async with lock' instead",
+                      DeprecationWarning, stacklevel=2)
         yield from self.acquire()
         return _ContextManager(self)
 
-    if compat.PY35:
+    # The flag is needed for legacy asyncio.iscoroutine()
+    __iter__._is_coroutine = coroutines._is_coroutine
 
-        def __await__(self):
-            # To make "with await lock" work.
-            yield from self.acquire()
-            return _ContextManager(self)
+    async def __acquire_ctx(self):
+        await self.acquire()
+        return _ContextManager(self)
 
-        @coroutine
-        def __aenter__(self):
-            yield from self.acquire()
-            # We have no use for the "as ..."  clause in the with
-            # statement for locks.
-            return None
+    def __await__(self):
+        warnings.warn("'with await lock' is deprecated "
+                      "use 'async with lock' instead",
+                      DeprecationWarning, stacklevel=2)
+        # To make "with await lock" work.
+        return self.__acquire_ctx().__await__()
 
-        @coroutine
-        def __aexit__(self, exc_type, exc, tb):
-            self.release()
+    async def __aenter__(self):
+        await self.acquire()
+        # We have no use for the "as ..."  clause in the with
+        # statement for locks.
+        return None
+
+    async def __aexit__(self, exc_type, exc, tb):
+        self.release()
 
 
 class Lock(_ContextManagerMixin):
@@ -108,16 +125,16 @@ class Lock(_ContextManagerMixin):
     release() call resets the state to unlocked; first coroutine which
     is blocked in acquire() is being processed.
 
-    acquire() is a coroutine and should be called with 'yield from'.
+    acquire() is a coroutine and should be called with 'await'.
 
-    Locks also support the context management protocol.  '(yield from lock)'
-    should be used as the context manager expression.
+    Locks also support the asynchronous context management protocol.
+    'async with lock' statement should be used.
 
     Usage:
 
         lock = Lock()
         ...
-        yield from lock
+        await lock.acquire()
         try:
             ...
         finally:
@@ -127,13 +144,13 @@ class Lock(_ContextManagerMixin):
 
         lock = Lock()
         ...
-        with (yield from lock):
+        async with lock:
              ...
 
     Lock objects can be tested for locking state:
 
         if not lock.locked():
-           yield from lock
+           await lock.acquire()
         else:
            # lock is acquired
            ...
@@ -141,7 +158,7 @@ class Lock(_ContextManagerMixin):
     """
 
     def __init__(self, *, loop=None):
-        self._waiters = collections.deque()
+        self._waiters = None
         self._locked = False
         if loop is not None:
             self._loop = loop
@@ -152,32 +169,44 @@ class Lock(_ContextManagerMixin):
         res = super().__repr__()
         extra = 'locked' if self._locked else 'unlocked'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     def locked(self):
         """Return True if lock is acquired."""
         return self._locked
 
-    @coroutine
-    def acquire(self):
+    async def acquire(self):
         """Acquire a lock.
 
         This method blocks until the lock is unlocked, then sets it to
         locked and returns True.
         """
-        if not self._locked and all(w.cancelled() for w in self._waiters):
+        if (not self._locked and (self._waiters is None or
+                all(w.cancelled() for w in self._waiters))):
             self._locked = True
             return True
 
+        if self._waiters is None:
+            self._waiters = collections.deque()
         fut = self._loop.create_future()
         self._waiters.append(fut)
+
+        # Finally block should be called before the CancelledError
+        # handling as we don't want CancelledError to call
+        # _wake_up_first() and attempt to wake up itself.
         try:
-            yield from fut
-            self._locked = True
-            return True
-        finally:
-            self._waiters.remove(fut)
+            try:
+                await fut
+            finally:
+                self._waiters.remove(fut)
+        except exceptions.CancelledError:
+            if not self._locked:
+                self._wake_up_first()
+            raise
+
+        self._locked = True
+        return True
 
     def release(self):
         """Release a lock.
@@ -192,13 +221,24 @@ class Lock(_ContextManagerMixin):
         """
         if self._locked:
             self._locked = False
-            # Wake up the first waiter who isn't cancelled.
-            for fut in self._waiters:
-                if not fut.done():
-                    fut.set_result(True)
-                    break
+            self._wake_up_first()
         else:
             raise RuntimeError('Lock is not acquired.')
+
+    def _wake_up_first(self):
+        """Wake up the first waiter if it isn't done."""
+        if not self._waiters:
+            return
+        try:
+            fut = next(iter(self._waiters))
+        except StopIteration:
+            return
+
+        # .done() necessarily means that a waiter will wake up later on and
+        # either take the lock, or, if it was cancelled and lock wasn't
+        # taken already, will hit this again and wake up a new waiter.
+        if not fut.done():
+            fut.set_result(True)
 
 
 class Event:
@@ -222,8 +262,8 @@ class Event:
         res = super().__repr__()
         extra = 'set' if self._value else 'unset'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     def is_set(self):
         """Return True if and only if the internal flag is true."""
@@ -247,8 +287,7 @@ class Event:
         to true again."""
         self._value = False
 
-    @coroutine
-    def wait(self):
+    async def wait(self):
         """Block until the internal flag is true.
 
         If the internal flag is true on entry, return True
@@ -261,7 +300,7 @@ class Event:
         fut = self._loop.create_future()
         self._waiters.append(fut)
         try:
-            yield from fut
+            await fut
             return True
         finally:
             self._waiters.remove(fut)
@@ -300,11 +339,10 @@ class Condition(_ContextManagerMixin):
         res = super().__repr__()
         extra = 'locked' if self.locked() else 'unlocked'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
-    @coroutine
-    def wait(self):
+    async def wait(self):
         """Wait until notified.
 
         If the calling coroutine has not acquired the lock when this
@@ -323,22 +361,25 @@ class Condition(_ContextManagerMixin):
             fut = self._loop.create_future()
             self._waiters.append(fut)
             try:
-                yield from fut
+                await fut
                 return True
             finally:
                 self._waiters.remove(fut)
 
         finally:
             # Must reacquire lock even if wait is cancelled
+            cancelled = False
             while True:
                 try:
-                    yield from self.acquire()
+                    await self.acquire()
                     break
-                except futures.CancelledError:
-                    pass
+                except exceptions.CancelledError:
+                    cancelled = True
 
-    @coroutine
-    def wait_for(self, predicate):
+            if cancelled:
+                raise exceptions.CancelledError
+
+    async def wait_for(self, predicate):
         """Wait until a predicate becomes true.
 
         The predicate should be a callable which result will be
@@ -347,7 +388,7 @@ class Condition(_ContextManagerMixin):
         """
         result = predicate()
         while not result:
-            yield from self.wait()
+            await self.wait()
             result = predicate()
         return result
 
@@ -411,11 +452,10 @@ class Semaphore(_ContextManagerMixin):
 
     def __repr__(self):
         res = super().__repr__()
-        extra = 'locked' if self.locked() else 'unlocked,value:{}'.format(
-            self._value)
+        extra = 'locked' if self.locked() else f'unlocked, value:{self._value}'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     def _wake_up_next(self):
         while self._waiters:
@@ -428,8 +468,7 @@ class Semaphore(_ContextManagerMixin):
         """Returns True if semaphore can not be acquired immediately."""
         return self._value == 0
 
-    @coroutine
-    def acquire(self):
+    async def acquire(self):
         """Acquire a semaphore.
 
         If the internal counter is larger than zero on entry,
@@ -442,7 +481,7 @@ class Semaphore(_ContextManagerMixin):
             fut = self._loop.create_future()
             self._waiters.append(fut)
             try:
-                yield from fut
+                await fut
             except:
                 # See the similar code in Queue.get.
                 fut.cancel()

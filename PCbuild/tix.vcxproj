@@ -37,6 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C5A3E7FB-9695-4B2E-960B-1D9F43F1E555}</ProjectGuid>
     <RootNamespace>tix</RootNamespace>
+    <SupportSigning>true</SupportSigning>
   </PropertyGroup>
 
   <Import Project="python.props" />
@@ -49,28 +50,30 @@
     <TargetPath>$(tixDLLPath)</TargetPath>
   </PropertyGroup>
   
-  <ItemGroup>
-    <ExpectedOutputs Include="$(TargetPath)" />
-  </ItemGroup>
-  
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   
   <PropertyGroup>
     <TixDirs>BUILDDIRTOP="$(BuildDirTop)" TCL_DIR="$(tclDir.TrimEnd(`\`))" TK_DIR="$(tkDir.TrimEnd(`\`))" INSTALL_DIR="$(OutDir.TrimEnd(`\`))"</TixDirs>
     <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUG=1 NODEBUG=0 TCL_DBGX=g TK_DBGX=g</DebugFlags>
     <DebugFlags Condition="'$(Configuration)' != 'Debug'">DEBUG=0 NODEBUG=1</DebugFlags>
+    <CFlags>-c -W3 -nologo -MD -wd4028 -wd4090 -wd4244 -wd4267 -wd4312</CFlags>
     <NMakeBuildCommandLine>setlocal
-@(ExpectedOutputs->'if not exist "%(FullPath)" goto build','
-')
-goto :eof
-:build
 set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tixDir)win"
-nmake /nologo -f makefile.vc MACHINE=$(TclMachine) $(DebugFlags) $(TclShortVersions) $(TixDirs) all install
+nmake /nologo -f makefile.vc MACHINE=$(TclMachine) cflags="$(CFlags)" $(DebugFlags) $(TclShortVersions) $(TixDirs) all install
+copy /Y ..\license.terms "$(OutDir)\tixlicense.terms"
 </NMakeBuildCommandLine>
     <NMakeCleanCommandLine>rmdir /q/s "$(OutDir.TrimEnd(`\`))"</NMakeCleanCommandLine>
   </PropertyGroup>
   
+  <Target Name="SignFiles" AfterTargets="Build" Condition="$(_SignCommand) != ''">
+    <ItemGroup>
+      <FilesToSign Include="$(OutDir)\bin\*.exe" />
+      <FilesToSign Include="$(OutDir)\bin\*.dll" />
+    </ItemGroup>
+    <Exec Command="$(_SignCommand) &quot;%(FilesToSign.FullPath)&quot;" ContinueOnError="true" />
+  </Target>
+
   <ItemGroup>
     <ProjectReference Include="tcl.vcxproj">
       <Project>{b5fd6f1d-129e-4bff-9340-03606fac7283}</Project>

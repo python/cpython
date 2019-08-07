@@ -25,7 +25,7 @@ there.
 
 What you get after installing is a number of things:
 
-* A :file:`MacPython 3.6` folder in your :file:`Applications` folder. In here
+* A :file:`Python 3.9` folder in your :file:`Applications` folder. In here
   you find IDLE, the development environment that is a standard part of official
   Python distributions; PythonLauncher, which handles double-clicking Python
   scripts from the Finder; and the "Build Applet" tool, which allows you to
@@ -66,7 +66,7 @@ number of standard Unix command line editors, :program:`vim` and
 :program:`BBEdit` or :program:`TextWrangler` from Bare Bones Software (see
 http://www.barebones.com/products/bbedit/index.html) are good choices, as is
 :program:`TextMate` (see https://macromates.com/). Other editors include
-:program:`Gvim` (http://macvim.org) and :program:`Aquamacs`
+:program:`Gvim` (http://macvim-dev.github.io/macvim/) and :program:`Aquamacs`
 (http://aquamacs.org/).
 
 To run your script from the Terminal window you must make sure that
@@ -93,7 +93,7 @@ aware of: programs that talk to the Aqua window manager (in other words,
 anything that has a GUI) need to be run in a special way. Use :program:`pythonw`
 instead of :program:`python` to start such scripts.
 
-With Python 3.6, you can use either :program:`python` or :program:`pythonw`.
+With Python 3.9, you can use either :program:`python` or :program:`pythonw`.
 
 
 Configuration
@@ -117,7 +117,7 @@ The IDE
 
 MacPython ships with the standard IDLE development environment. A good
 introduction to using IDLE can be found at
-https://hkn.eecs.berkeley.edu/~dyoo/python/idle_intro/index.html.
+http://www.hashcollision.org/hkn/python/idle_intro/index.html.
 
 
 .. _mac-package-manager:
@@ -141,7 +141,7 @@ There are several options for building GUI applications on the Mac with Python.
 
 *PyObjC* is a Python binding to Apple's Objective-C/Cocoa framework, which is
 the foundation of most modern Mac development. Information on PyObjC is
-available from https://pythonhosted.org/pyobjc/.
+available from https://pypi.org/project/pyobjc/.
 
 The standard Python GUI toolkit is :mod:`tkinter`, based on the cross-platform
 Tk toolkit (https://www.tcl.tk). An Aqua-native version of Tk is bundled with OS
@@ -149,7 +149,7 @@ X by Apple, and the latest version can be downloaded and installed from
 https://www.activestate.com; it can also be built from source.
 
 *wxPython* is another popular cross-platform GUI toolkit that runs natively on
-Mac OS X. Packages and documentation are available from http://www.wxpython.org.
+Mac OS X. Packages and documentation are available from https://www.wxpython.org.
 
 *PyQt* is another popular cross-platform GUI toolkit that runs natively on Mac
 OS X. More information can be found at

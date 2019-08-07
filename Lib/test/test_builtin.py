@@ -1,6 +1,7 @@
 # Python test set -- built-in functions
 
 import ast
+import asyncio
 import builtins
 import collections
 import decimal
@@ -17,9 +18,17 @@ import traceback
 import types
 import unittest
 import warnings
+from contextlib import ExitStack
+from inspect import CO_COROUTINE
+from itertools import product
+from textwrap import dedent
+from types import AsyncGeneratorType, FunctionType
 from operator import neg
-from test.support import TESTFN, unlink, check_warnings
+from test.support import (
+    EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink,
+    maybe_get_event_loop_policy)
 from test.support.script_helper import assert_python_ok
+from unittest.mock import MagicMock, patch
 try:
     import pty, signal
 except ImportError:
@@ -151,6 +160,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, __import__, 1, 2, 3, 4)
         self.assertRaises(ValueError, __import__, '')
         self.assertRaises(TypeError, __import__, 'sys', name='sys')
+        # embedded null character
+        self.assertRaises(ModuleNotFoundError, __import__, 'string\x00')
 
     def test_abs(self):
         # int
@@ -326,19 +337,22 @@ class BuiltinTest(unittest.TestCase):
 
         codestr = '''def f():
         """doc"""
+        debug_enabled = False
+        if __debug__:
+            debug_enabled = True
         try:
             assert False
         except AssertionError:
-            return (True, f.__doc__)
+            return (True, f.__doc__, debug_enabled, __debug__)
         else:
-            return (False, f.__doc__)
+            return (False, f.__doc__, debug_enabled, __debug__)
         '''
         def f(): """doc"""
-        values = [(-1, __debug__, f.__doc__),
-                  (0, True, 'doc'),
-                  (1, False, 'doc'),
-                  (2, False, None)]
-        for optval, debugval, docstring in values:
+        values = [(-1, __debug__, f.__doc__, __debug__, __debug__),
+                  (0, True, 'doc', True, True),
+                  (1, False, 'doc', False, False),
+                  (2, False, None, False, False)]
+        for optval, *expected in values:
             # test both direct compilation and compilation via AST
             codeobjs = []
             codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
@@ -348,7 +362,74 @@ class BuiltinTest(unittest.TestCase):
                 ns = {}
                 exec(code, ns)
                 rv = ns['f']()
-                self.assertEqual(rv, (debugval, docstring))
+                self.assertEqual(rv, tuple(expected))
+
+    def test_compile_top_level_await(self):
+        """Test whether code some top level await can be compiled.
+
+        Make sure it compiles only with the PyCF_ALLOW_TOP_LEVEL_AWAIT flag
+        set, and make sure the generated code object has the CO_COROUTINE flag
+        set in order to execute it with  `await eval(.....)` instead of exec,
+        or via a FunctionType.
+        """
+
+        # helper function just to check we can run top=level async-for
+        async def arange(n):
+            for i in range(n):
+                yield i
+
+        modes = ('single', 'exec')
+        code_samples = [
+            '''a = await asyncio.sleep(0, result=1)''',
+            '''async for i in arange(1):
+                   a = 1''',
+            '''async with asyncio.Lock() as l:
+                   a = 1'''
+        ]
+        policy = maybe_get_event_loop_policy()
+        try:
+            for mode, code_sample in product(modes, code_samples):
+                source = dedent(code_sample)
+                with self.assertRaises(
+                        SyntaxError, msg=f"source={source} mode={mode}"):
+                    compile(source, '?', mode)
+
+                co = compile(source,
+                             '?',
+                             mode,
+                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+
+                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                 msg=f"source={source} mode={mode}")
+
+                # test we can create and  advance a function type
+                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                async_f = FunctionType(co, globals_)
+                asyncio.run(async_f())
+                self.assertEqual(globals_['a'], 1)
+
+                # test we can await-eval,
+                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                asyncio.run(eval(co, globals_))
+                self.assertEqual(globals_['a'], 1)
+        finally:
+            asyncio.set_event_loop_policy(policy)
+
+    def test_compile_async_generator(self):
+        """
+        With the PyCF_ALLOW_TOP_LEVEL_AWAIT flag added in 3.8, we want to
+        make sure AsyncGenerators are still properly not marked with the
+        CO_COROUTINE flag.
+        """
+        code = dedent("""async def ticker():
+                for i in range(10):
+                    yield i
+                    await asyncio.sleep(0)""")
+
+        co = compile(code, '?', 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        glob = {}
+        exec(co, glob)
+        self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
     def test_delattr(self):
         sys.spam = 1
@@ -770,10 +851,18 @@ class BuiltinTest(unittest.TestCase):
             def __len__(self):
                 return 4.5
         self.assertRaises(TypeError, len, FloatLen())
+        class NegativeLen:
+            def __len__(self):
+                return -10
+        self.assertRaises(ValueError, len, NegativeLen())
         class HugeLen:
             def __len__(self):
                 return sys.maxsize + 1
         self.assertRaises(OverflowError, len, HugeLen())
+        class HugeNegativeLen:
+            def __len__(self):
+                return -sys.maxsize-10
+        self.assertRaises(ValueError, len, HugeNegativeLen())
         class NoLenMethod(object): pass
         self.assertRaises(TypeError, len, NoLenMethod())
 
@@ -889,6 +978,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(max((), default=1, key=neg), 1)
         self.assertEqual(max((1, 2), default=3, key=neg), 1)
 
+        self.assertEqual(max((1, 2), key=None), 2)
+
         data = [random.randrange(200) for i in range(100)]
         keys = dict((elem, random.randrange(50)) for elem in data)
         f = keys.__getitem__
@@ -940,6 +1031,8 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertEqual(min((), default=1, key=neg), 1)
         self.assertEqual(min((1, 2), default=1, key=neg), 2)
+
+        self.assertEqual(min((1, 2), key=None), 1)
 
         data = [random.randrange(200) for i in range(100)]
         keys = dict((elem, random.randrange(50)) for elem in data)
@@ -1002,6 +1095,11 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(fp.read(300), 'XXX'*100)
             self.assertEqual(fp.read(1000), 'YYY'*100)
 
+        # embedded null bytes and characters
+        self.assertRaises(ValueError, open, 'a\x00b')
+        self.assertRaises(ValueError, open, b'a\x00b')
+
+    @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_open_default_encoding(self):
         old_environ = dict(os.environ)
         try:
@@ -1097,7 +1195,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertAlmostEqual(pow(-1, 0.5), 1j)
         self.assertAlmostEqual(pow(-1, 1/3), 0.5 + 0.8660254037844386j)
 
-        self.assertRaises(ValueError, pow, -1, -2, 3)
+        # See test_pow for additional tests for three-argument pow.
+        self.assertEqual(pow(-1, -2, 3), 1)
         self.assertRaises(ValueError, pow, 1, 2, 0)
 
         self.assertRaises(TypeError, pow)
@@ -1271,6 +1370,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(sum(Squares(10)), 285)
         self.assertEqual(sum(iter(Squares(10))), 285)
         self.assertEqual(sum([[1], [2], [3]], []), [1, 2, 3])
+
+        self.assertEqual(sum(range(10), 1000), 1045)
+        self.assertEqual(sum(range(10), start=1000), 1045)
 
         self.assertRaises(TypeError, sum)
         self.assertRaises(TypeError, sum, 42)
@@ -1490,12 +1592,123 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, x.translate, b"1", 1)
         self.assertRaises(TypeError, x.translate, b"1"*256, 1)
 
+    def test_bytearray_extend_error(self):
+        array = bytearray()
+        bad_iter = map(int, "X")
+        self.assertRaises(ValueError, array.extend, bad_iter)
+
     def test_construct_singletons(self):
         for const in None, Ellipsis, NotImplemented:
             tp = type(const)
             self.assertIs(tp(), const)
             self.assertRaises(TypeError, tp, 1, 2)
             self.assertRaises(TypeError, tp, a=1, b=2)
+
+
+class TestBreakpoint(unittest.TestCase):
+    def setUp(self):
+        # These tests require a clean slate environment.  For example, if the
+        # test suite is run with $PYTHONBREAKPOINT set to something else, it
+        # will mess up these tests.  Similarly for sys.breakpointhook.
+        # Cleaning the slate here means you can't use breakpoint() to debug
+        # these tests, but I think that's okay.  Just use pdb.set_trace() if
+        # you must.
+        self.resources = ExitStack()
+        self.addCleanup(self.resources.close)
+        self.env = self.resources.enter_context(EnvironmentVarGuard())
+        del self.env['PYTHONBREAKPOINT']
+        self.resources.enter_context(
+            swap_attr(sys, 'breakpointhook', sys.__breakpointhook__))
+
+    def test_breakpoint(self):
+        with patch('pdb.set_trace') as mock:
+            breakpoint()
+        mock.assert_called_once()
+
+    def test_breakpoint_with_breakpointhook_set(self):
+        my_breakpointhook = MagicMock()
+        sys.breakpointhook = my_breakpointhook
+        breakpoint()
+        my_breakpointhook.assert_called_once_with()
+
+    def test_breakpoint_with_breakpointhook_reset(self):
+        my_breakpointhook = MagicMock()
+        sys.breakpointhook = my_breakpointhook
+        breakpoint()
+        my_breakpointhook.assert_called_once_with()
+        # Reset the hook and it will not be called again.
+        sys.breakpointhook = sys.__breakpointhook__
+        with patch('pdb.set_trace') as mock:
+            breakpoint()
+            mock.assert_called_once_with()
+        my_breakpointhook.assert_called_once_with()
+
+    def test_breakpoint_with_args_and_keywords(self):
+        my_breakpointhook = MagicMock()
+        sys.breakpointhook = my_breakpointhook
+        breakpoint(1, 2, 3, four=4, five=5)
+        my_breakpointhook.assert_called_once_with(1, 2, 3, four=4, five=5)
+
+    def test_breakpoint_with_passthru_error(self):
+        def my_breakpointhook():
+            pass
+        sys.breakpointhook = my_breakpointhook
+        self.assertRaises(TypeError, breakpoint, 1, 2, 3, four=4, five=5)
+
+    @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
+    def test_envar_good_path_builtin(self):
+        self.env['PYTHONBREAKPOINT'] = 'int'
+        with patch('builtins.int') as mock:
+            breakpoint('7')
+            mock.assert_called_once_with('7')
+
+    @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
+    def test_envar_good_path_other(self):
+        self.env['PYTHONBREAKPOINT'] = 'sys.exit'
+        with patch('sys.exit') as mock:
+            breakpoint()
+            mock.assert_called_once_with()
+
+    @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
+    def test_envar_good_path_noop_0(self):
+        self.env['PYTHONBREAKPOINT'] = '0'
+        with patch('pdb.set_trace') as mock:
+            breakpoint()
+            mock.assert_not_called()
+
+    def test_envar_good_path_empty_string(self):
+        # PYTHONBREAKPOINT='' is the same as it not being set.
+        self.env['PYTHONBREAKPOINT'] = ''
+        with patch('pdb.set_trace') as mock:
+            breakpoint()
+            mock.assert_called_once_with()
+
+    @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
+    def test_envar_unimportable(self):
+        for envar in (
+                '.', '..', '.foo', 'foo.', '.int', 'int.',
+                '.foo.bar', '..foo.bar', '/./',
+                'nosuchbuiltin',
+                'nosuchmodule.nosuchcallable',
+                ):
+            with self.subTest(envar=envar):
+                self.env['PYTHONBREAKPOINT'] = envar
+                mock = self.resources.enter_context(patch('pdb.set_trace'))
+                w = self.resources.enter_context(check_warnings(quiet=True))
+                breakpoint()
+                self.assertEqual(
+                    str(w.message),
+                    f'Ignoring unimportable $PYTHONBREAKPOINT: "{envar}"')
+                self.assertEqual(w.category, RuntimeWarning)
+                mock.assert_not_called()
+
+    def test_envar_ignored_when_hook_is_set(self):
+        self.env['PYTHONBREAKPOINT'] = 'sys.exit'
+        with patch('sys.exit') as mock:
+            sys.breakpointhook = int
+            breakpoint()
+            mock.assert_not_called()
+
 
 @unittest.skipUnless(pty, "the pty and signal modules must be available")
 class PtyTests(unittest.TestCase):
@@ -1554,6 +1767,10 @@ class PtyTests(unittest.TestCase):
             self.fail("got %d lines in pipe but expected 2, child output was:\n%s"
                       % (len(lines), child_output))
         os.close(fd)
+
+        # Wait until the child process completes
+        os.waitpid(pid, 0)
+
         return lines
 
     def check_input_tty(self, prompt, terminal_input, stdio_encoding=None):
@@ -1830,6 +2047,15 @@ class TestType(unittest.TestCase):
             type('A', (B,), {'__slots__': '__dict__'})
         with self.assertRaises(TypeError):
             type('A', (B,), {'__slots__': '__weakref__'})
+
+    def test_namespace_order(self):
+        # bpo-34320: namespace should preserve order
+        od = collections.OrderedDict([('a', 1), ('b', 2)])
+        od.move_to_end('a')
+        expected = list(od.items())
+
+        C = type('C', (), od)
+        self.assertEqual(list(C.__dict__.items())[:2], [('b', 2), ('a', 1)])
 
 
 def load_tests(loader, tests, pattern):

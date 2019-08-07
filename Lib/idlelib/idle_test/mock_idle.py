@@ -6,28 +6,33 @@ Attributes and methods will be added as needed for tests.
 from idlelib.idle_test.mock_tk import Text
 
 class Func:
-    '''Mock function captures args and returns result set by test.
+    '''Record call, capture args, return/raise result set by test.
 
-    Attributes:
-    self.called - records call even if no args, kwds passed.
-    self.result - set by init, returned by call.
-    self.args - captures positional arguments.
-    self.kwds - captures keyword arguments.
+    When mock function is called, set or use attributes:
+    self.called - increment call number even if no args, kwds passed.
+    self.args - capture positional arguments.
+    self.kwds - capture keyword arguments.
+    self.result - return or raise value set in __init__.
+    self.return_self - return self instead, to mock query class return.
 
-    Most common use will probably be to mock methods.
+    Most common use will probably be to mock instance methods.
+    Given class instance, can set and delete as instance attribute.
     Mock_tk.Var and Mbox_func are special variants of this.
     '''
-    def __init__(self, result=None):
-        self.called = False
+    def __init__(self, result=None, return_self=False):
+        self.called = 0
         self.result = result
+        self.return_self = return_self
         self.args = None
         self.kwds = None
     def __call__(self, *args, **kwds):
-        self.called = True
+        self.called += 1
         self.args = args
         self.kwds = kwds
         if isinstance(self.result, BaseException):
             raise self.result
+        elif self.return_self:
+            return self
         else:
             return self.result
 

@@ -51,7 +51,6 @@ class PyPIRCCommand(Command):
         if os.path.exists(rc):
             self.announce('Using PyPI login from %s' % rc)
             repository = self.repository or self.DEFAULT_REPOSITORY
-            realm = self.realm or self.DEFAULT_REALM
 
             config = RawConfigParser()
             config.read(rc)

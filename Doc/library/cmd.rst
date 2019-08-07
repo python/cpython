@@ -61,6 +61,10 @@ A :class:`Cmd` instance has the following methods:
 
    An end-of-file on input is passed back as the string ``'EOF'``.
 
+   .. index::
+      single: ? (question mark); in a command interpreter
+      single: ! (exclamation); in a command interpreter
+
    An interpreter instance will recognize a command name ``foo`` if and only if it
    has a method :meth:`do_foo`.  As a special case, a line beginning with the
    character ``'?'`` is dispatched to the method :meth:`do_help`.  As another
@@ -266,10 +270,10 @@ immediate playback::
             'Draw circle with given radius an options extent and steps:  CIRCLE 50'
             circle(*parse(arg))
         def do_position(self, arg):
-            'Print the current turle position:  POSITION'
+            'Print the current turtle position:  POSITION'
             print('Current position is %d %d\n' % position())
         def do_heading(self, arg):
-            'Print the current turle heading in degrees:  HEADING'
+            'Print the current turtle heading in degrees:  HEADING'
             print('Current heading is %d\n' % (heading(),))
         def do_color(self, arg):
             'Set the color:  COLOR BLUE'

@@ -48,8 +48,8 @@ else:
     sys.modules['importlib._bootstrap_external'] = _bootstrap_external
 
 # To simplify imports in test code
-_w_long = _bootstrap_external._w_long
-_r_long = _bootstrap_external._r_long
+_pack_uint32 = _bootstrap_external._pack_uint32
+_unpack_uint32 = _bootstrap_external._unpack_uint32
 
 # Fully bootstrapped at this point, import whatever you like, circular
 # dependencies and startup overhead minimisation permitting :)
@@ -164,6 +164,8 @@ def reload(module):
             pkgpath = None
         target = module
         spec = module.__spec__ = _bootstrap._find_spec(name, pkgpath, target)
+        if spec is None:
+            raise ModuleNotFoundError(f"spec not found for the module {name!r}", name=name)
         _bootstrap._exec(spec, module)
         # The module may have replaced itself in sys.modules!
         return sys.modules[name]

@@ -223,7 +223,7 @@ class install(Command):
 
     def finalize_options(self):
         """Finalizes options."""
-        # This method (and its pliant slaves, like 'finalize_unix()',
+        # This method (and its helpers, like 'finalize_unix()',
         # 'finalize_other()', and 'select_scheme()') is where the default
         # installation directories for modules, extension modules, and
         # anything else we care to install from a Python module

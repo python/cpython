@@ -271,6 +271,10 @@ property:
 Methods and properties
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. testsetup::
+
+   from pathlib import PurePosixPath, PureWindowsPath
+
 Pure paths provide the following methods and properties:
 
 .. data:: PurePath.drive
@@ -555,7 +559,8 @@ Pure paths provide the following methods and properties:
 .. method:: PurePath.with_suffix(suffix)
 
    Return a new path with the :attr:`suffix` changed.  If the original path
-   doesn't have a suffix, the new *suffix* is appended instead::
+   doesn't have a suffix, the new *suffix* is appended instead.  If the
+   *suffix* is an empty string, the original suffix is removed::
 
       >>> p = PureWindowsPath('c:/Downloads/pathlib.tar.gz')
       >>> p.with_suffix('.bz2')
@@ -563,6 +568,9 @@ Pure paths provide the following methods and properties:
       >>> p = PureWindowsPath('README')
       >>> p.with_suffix('.txt')
       PureWindowsPath('README.txt')
+      >>> p = PureWindowsPath('README.txt')
+      >>> p.with_suffix('')
+      PureWindowsPath('README')
 
 
 .. _concrete-paths:
@@ -630,7 +638,17 @@ Methods
 
 Concrete paths provide the following methods in addition to pure paths
 methods.  Many of these methods can raise an :exc:`OSError` if a system
-call fails (for example because the path doesn't exist):
+call fails (for example because the path doesn't exist).
+
+.. versionchanged:: 3.8
+
+   :meth:`~Path.exists()`, :meth:`~Path.is_dir()`, :meth:`~Path.is_file()`,
+   :meth:`~Path.is_mount()`, :meth:`~Path.is_symlink()`,
+   :meth:`~Path.is_block_device()`, :meth:`~Path.is_char_device()`,
+   :meth:`~Path.is_fifo()`, :meth:`~Path.is_socket()` now return ``False``
+   instead of raising an exception for paths that contain characters
+   unrepresentable at the OS level.
+
 
 .. classmethod:: Path.cwd()
 
@@ -656,6 +674,8 @@ call fails (for example because the path doesn't exist):
 
    Return information about this path (similarly to :func:`os.stat`).
    The result is looked up at each call to this method.
+
+   ::
 
       >>> p = Path('setup.py')
       >>> p.stat().st_size
@@ -708,7 +728,7 @@ call fails (for example because the path doesn't exist):
 
 .. method:: Path.glob(pattern)
 
-   Glob the given *pattern* in the directory represented by this path,
+   Glob the given relative *pattern* in the directory represented by this path,
    yielding all matching files (of any kind)::
 
       >>> sorted(Path('.').glob('*.py'))
@@ -753,6 +773,18 @@ call fails (for example because the path doesn't exist):
 
    ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
+
+
+.. method:: Path.is_mount()
+
+   Return ``True`` if the path is a :dfn:`mount point`: a point in a
+   file system where a different file system has been mounted.  On POSIX, the
+   function checks whether *path*'s parent, :file:`path/..`, is on a different
+   device than *path*, or whether :file:`path/..` and *path* point to the same
+   i-node on the same device --- this should detect mount points for all Unix
+   and POSIX variants.  Not implemented on Windows.
+
+   .. versionadded:: 3.7
 
 
 .. method:: Path.is_symlink()
@@ -893,7 +925,8 @@ call fails (for example because the path doesn't exist):
       >>> p.read_text()
       'Text file contents'
 
-   The optional parameters have the same meaning as in :func:`open`.
+   The file is opened and then closed. The optional parameters have the same
+   meaning as in :func:`open`.
 
    .. versionadded:: 3.5
 
@@ -943,12 +976,12 @@ call fails (for example because the path doesn't exist):
    is raised.
 
    .. versionadded:: 3.6
-      The *strict* argument.
+      The *strict* argument (pre-3.6 behavior is strict).
 
 .. method:: Path.rglob(pattern)
 
-   This is like calling :meth:`Path.glob` with "``**``" added in front of the
-   given *pattern*:
+   This is like calling :func:`Path.glob` with "``**/``" added in front of the
+   given relative *pattern*::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),
@@ -972,6 +1005,8 @@ call fails (for example because the path doesn't exist):
    An :exc:`OSError` can be raised if either file cannot be accessed for some
    reason.
 
+   ::
+
       >>> p = Path('spam')
       >>> q = Path('eggs')
       >>> p.samefile(q)
@@ -987,6 +1022,8 @@ call fails (for example because the path doesn't exist):
    Make this path a symbolic link to *target*.  Under Windows,
    *target_is_directory* must be true (default ``False``) if the link's target
    is a directory.  Under POSIX, *target_is_directory*'s value is ignored.
+
+   ::
 
       >>> p = Path('mylink')
       >>> p.symlink_to('setup.py')
@@ -1011,10 +1048,26 @@ call fails (for example because the path doesn't exist):
    otherwise :exc:`FileExistsError` is raised.
 
 
-.. method:: Path.unlink()
+.. method:: Path.unlink(missing_ok=False)
 
    Remove this file or symbolic link.  If the path points to a directory,
    use :func:`Path.rmdir` instead.
+
+   If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
+   raised if the path does not exist.
+
+   If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
+   ignored (same behavior as the POSIX ``rm -f`` command).
+
+   .. versionchanged:: 3.8
+      The *missing_ok* parameter was added.
+
+
+.. method:: Path.link_to(target)
+
+   Create a hard link pointing to a path named *target*.
+
+   .. versionchanged:: 3.8
 
 
 .. method:: Path.write_bytes(data)
@@ -1045,3 +1098,43 @@ call fails (for example because the path doesn't exist):
       'Text file contents'
 
    .. versionadded:: 3.5
+
+Correspondence to tools in the :mod:`os` module
+-----------------------------------------------
+
+Below is a table mapping various :mod:`os` functions to their corresponding
+:class:`PurePath`/:class:`Path` equivalent.
+
+.. note::
+
+   Although :func:`os.path.relpath` and :meth:`PurePath.relative_to` have some
+   overlapping use-cases, their semantics differ enough to warrant not
+   considering them equivalent.
+
+====================================   ==============================
+os and os.path                         pathlib
+====================================   ==============================
+:func:`os.path.abspath`                :meth:`Path.resolve`
+:func:`os.chmod`                       :meth:`Path.chmod`
+:func:`os.mkdir`                       :meth:`Path.mkdir`
+:func:`os.rename`                      :meth:`Path.rename`
+:func:`os.replace`                     :meth:`Path.replace`
+:func:`os.rmdir`                       :meth:`Path.rmdir`
+:func:`os.remove`, :func:`os.unlink`   :meth:`Path.unlink`
+:func:`os.getcwd`                      :func:`Path.cwd`
+:func:`os.path.exists`                 :meth:`Path.exists`
+:func:`os.path.expanduser`             :meth:`Path.expanduser` and
+                                       :meth:`Path.home`
+:func:`os.path.isdir`                  :meth:`Path.is_dir`
+:func:`os.path.isfile`                 :meth:`Path.is_file`
+:func:`os.path.islink`                 :meth:`Path.is_symlink`
+:func:`os.stat`                        :meth:`Path.stat`,
+                                       :meth:`Path.owner`,
+                                       :meth:`Path.group`
+:func:`os.path.isabs`                  :meth:`PurePath.is_absolute`
+:func:`os.path.join`                   :func:`PurePath.joinpath`
+:func:`os.path.basename`               :data:`PurePath.name`
+:func:`os.path.dirname`                :data:`PurePath.parent`
+:func:`os.path.samefile`               :meth:`Path.samefile`
+:func:`os.path.splitext`               :data:`PurePath.suffix`
+====================================   ==============================

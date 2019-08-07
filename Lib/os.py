@@ -23,7 +23,7 @@ and opendir), and leave all pathname manipulation to os.path
 
 #'
 import abc
-import sys, errno
+import sys
 import stat as st
 
 _names = sys.builtin_module_names
@@ -327,7 +327,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     from os.path import join, getsize
     for root, dirs, files in os.walk('python/Lib/email'):
         print(root, "consumes", end="")
-        print(sum([getsize(join(root, name)) for name in files]), end="")
+        print(sum(getsize(join(root, name)) for name in files), end="")
         print("bytes in", len(files), "non-directory files")
         if 'CVS' in dirs:
             dirs.remove('CVS')  # don't visit CVS directories
@@ -446,7 +446,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         import os
         for root, dirs, files, rootfd in os.fwalk('python/Lib/email'):
             print(root, "consumes", end="")
-            print(sum([os.stat(name, dir_fd=rootfd).st_size for name in files]),
+            print(sum(os.stat(name, dir_fd=rootfd).st_size for name in files),
                   end="")
             print("bytes in", len(files), "non-directory files")
             if 'CVS' in dirs:
@@ -525,12 +525,6 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
 
     __all__.append("fwalk")
 
-# Make sure os.environ exists, at least
-try:
-    environ
-except NameError:
-    environ = {}
-
 def execl(file, *args):
     """execl(file, *args)
 
@@ -590,12 +584,10 @@ def _execvpe(file, args, env=None):
         argrest = (args,)
         env = environ
 
-    head, tail = path.split(file)
-    if head:
+    if path.dirname(file):
         exec_func(file, *argrest)
         return
-    last_exc = saved_exc = None
-    saved_tb = None
+    saved_exc = None
     path_list = get_exec_path(env)
     if name != 'nt':
         file = fsencode(file)
@@ -604,16 +596,15 @@ def _execvpe(file, args, env=None):
         fullname = path.join(dir, file)
         try:
             exec_func(fullname, *argrest)
+        except (FileNotFoundError, NotADirectoryError) as e:
+            last_exc = e
         except OSError as e:
             last_exc = e
-            tb = sys.exc_info()[2]
-            if (e.errno != errno.ENOENT and e.errno != errno.ENOTDIR
-                and saved_exc is None):
+            if saved_exc is None:
                 saved_exc = e
-                saved_tb = tb
-    if saved_exc:
-        raise saved_exc.with_traceback(saved_tb)
-    raise last_exc.with_traceback(tb)
+    if saved_exc is not None:
+        raise saved_exc
+    raise last_exc
 
 
 def get_exec_path(env=None):
@@ -697,7 +688,9 @@ class _Environ(MutableMapping):
             raise KeyError(key) from None
 
     def __iter__(self):
-        for key in self._data:
+        # list() from dict object is an atomic operation
+        keys = list(self._data)
+        for key in keys:
             yield self.decodekey(key)
 
     def __len__(self):
@@ -892,7 +885,7 @@ If mode == P_WAIT return the process's exit code if it exits normally;
 otherwise return -SIG, where SIG is the signal that killed it. """
         return _spawnvef(mode, file, args, env, execve)
 
-    # Note: spawnvp[e] is't currently supported on Windows
+    # Note: spawnvp[e] isn't currently supported on Windows
 
     def spawnvp(mode, file, args):
         """spawnvp(mode, file, args) -> integer
@@ -1077,3 +1070,40 @@ class PathLike(abc.ABC):
     @classmethod
     def __subclasshook__(cls, subclass):
         return hasattr(subclass, '__fspath__')
+
+
+if name == 'nt':
+    class _AddedDllDirectory:
+        def __init__(self, path, cookie, remove_dll_directory):
+            self.path = path
+            self._cookie = cookie
+            self._remove_dll_directory = remove_dll_directory
+        def close(self):
+            self._remove_dll_directory(self._cookie)
+            self.path = None
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            self.close()
+        def __repr__(self):
+            if self.path:
+                return "<AddedDllDirectory({!r})>".format(self.path)
+            return "<AddedDllDirectory()>"
+
+    def add_dll_directory(path):
+        """Add a path to the DLL search path.
+
+        This search path is used when resolving dependencies for imported
+        extension modules (the module itself is resolved through sys.path),
+        and also by ctypes.
+
+        Remove the directory by calling close() on the returned object or
+        using it in a with statement.
+        """
+        import nt
+        cookie = nt._add_dll_directory(path)
+        return _AddedDllDirectory(
+            path,
+            cookie,
+            nt._remove_dll_directory
+        )

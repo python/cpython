@@ -420,9 +420,9 @@ def dedent(text):
 
     Note that tabs and spaces are both treated as whitespace, but they
     are not equal: the lines "  hello" and "\\thello" are
-    considered to have no common leading whitespace.  (This behaviour is
-    new in Python 2.5; older versions of this module incorrectly
-    expanded tabs before searching for common leading whitespace.)
+    considered to have no common leading whitespace.
+
+    Entirely blank lines are normalized to a newline character.
     """
     # Look for the longest leading string of spaces and tabs common to
     # all lines.
@@ -450,8 +450,6 @@ def dedent(text):
                 if x != y:
                     margin = margin[:i]
                     break
-            else:
-                margin = margin[:len(indent)]
 
     # sanity check (testing/debugging only)
     if 0 and margin:

@@ -1,25 +1,23 @@
-"""Test SearchDialog class in idlelib.search.py"""
+"Test search, coverage 69%."
 
-# Does not currently test the event handler wrappers.
-# A usage test should simulate clicks and check hilighting.
-# Tests need to be coordinated with SearchDialogBase tests
-# to avoid duplication.
-
+from idlelib import search
+import unittest
 from test.support import requires
 requires('gui')
+from tkinter import Tk, Text, BooleanVar
+from idlelib import searchengine
 
-import unittest
-import tkinter as tk
-from tkinter import BooleanVar
-import idlelib.searchengine as se
-import idlelib.search as sd
+# Does not currently test the event handler wrappers.
+# A usage test should simulate clicks and check highlighting.
+# Tests need to be coordinated with SearchDialogBase tests
+# to avoid duplication.
 
 
 class SearchDialogTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.root = tk.Tk()
+        cls.root = Tk()
 
     @classmethod
     def tearDownClass(cls):
@@ -27,10 +25,10 @@ class SearchDialogTest(unittest.TestCase):
         del cls.root
 
     def setUp(self):
-        self.engine = se.SearchEngine(self.root)
-        self.dialog = sd.SearchDialog(self.root, self.engine)
+        self.engine = searchengine.SearchEngine(self.root)
+        self.dialog = search.SearchDialog(self.root, self.engine)
         self.dialog.bell = lambda: None
-        self.text = tk.Text(self.root)
+        self.text = Text(self.root)
         self.text.insert('1.0', 'Hello World!')
 
     def test_find_again(self):

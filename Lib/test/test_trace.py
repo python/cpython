@@ -2,6 +2,7 @@ import os
 import sys
 from test.support import TESTFN, rmtree, unlink, captured_stdout
 from test.support.script_helper import assert_python_ok, assert_python_failure
+import textwrap
 import unittest
 
 import trace
@@ -69,10 +70,26 @@ def traced_func_calling_generator():
 def traced_doubler(num):
     return num * 2
 
+def traced_capturer(*args, **kwargs):
+    return args, kwargs
+
 def traced_caller_list_comprehension():
     k = 10
     mylist = [traced_doubler(i) for i in range(k)]
     return mylist
+
+def traced_decorated_function():
+    def decorator1(f):
+        return f
+    def decorator_fabric():
+        def decorator2(f):
+            return f
+        return decorator2
+    @decorator1
+    @decorator_fabric()
+    def func():
+        pass
+    func()
 
 
 class TracedClass(object):
@@ -163,7 +180,7 @@ class TestLineCounts(unittest.TestCase):
         firstlineno_called = get_firstlineno(traced_doubler)
         expected = {
             (self.my_py_filename, firstlineno_calling + 1): 1,
-            # List compehentions work differently in 3.x, so the count
+            # List comprehensions work differently in 3.x, so the count
             # below changed compared to 2.x.
             (self.my_py_filename, firstlineno_calling + 2): 12,
             (self.my_py_filename, firstlineno_calling + 3): 1,
@@ -171,6 +188,24 @@ class TestLineCounts(unittest.TestCase):
         }
         self.assertEqual(self.tracer.results().counts, expected)
 
+    def test_traced_decorated_function(self):
+        self.tracer.runfunc(traced_decorated_function)
+
+        firstlineno = get_firstlineno(traced_decorated_function)
+        expected = {
+            (self.my_py_filename, firstlineno + 1): 1,
+            (self.my_py_filename, firstlineno + 2): 1,
+            (self.my_py_filename, firstlineno + 3): 1,
+            (self.my_py_filename, firstlineno + 4): 1,
+            (self.my_py_filename, firstlineno + 5): 1,
+            (self.my_py_filename, firstlineno + 6): 1,
+            (self.my_py_filename, firstlineno + 7): 1,
+            (self.my_py_filename, firstlineno + 8): 1,
+            (self.my_py_filename, firstlineno + 9): 1,
+            (self.my_py_filename, firstlineno + 10): 1,
+            (self.my_py_filename, firstlineno + 11): 1,
+        }
+        self.assertEqual(self.tracer.results().counts, expected)
 
     def test_linear_methods(self):
         # XXX todo: later add 'static_method_linear' and 'class_method_linear'
@@ -187,6 +222,7 @@ class TestLineCounts(unittest.TestCase):
                 (self.my_py_filename, firstlineno + 1): 1,
             }
             self.assertEqual(tracer.results().counts, expected)
+
 
 class TestRunExecCounts(unittest.TestCase):
     """A simple sanity test of line-counting, via runctx (exec)"""
@@ -237,6 +273,14 @@ class TestFuncs(unittest.TestCase):
         }
         self.assertEqual(self.tracer.results().calledfuncs, expected)
 
+    def test_arg_errors(self):
+        res = self.tracer.runfunc(traced_capturer, 1, 2, self=3, func=4)
+        self.assertEqual(res, ((1, 2), {'self': 3, 'func': 4}))
+        with self.assertRaises(TypeError):
+            self.tracer.runfunc(func=traced_capturer, arg=1)
+        with self.assertRaises(TypeError):
+            self.tracer.runfunc()
+
     def test_loop_caller_importing(self):
         self.tracer.runfunc(traced_func_importing_caller, 1)
 
@@ -259,6 +303,18 @@ class TestFuncs(unittest.TestCase):
             self.filemod + ('TracedClass.inst_method_calling',): 1,
             self.filemod + ('TracedClass.inst_method_linear',): 1,
             self.filemod + ('traced_func_linear',): 1,
+        }
+        self.assertEqual(self.tracer.results().calledfuncs, expected)
+
+    def test_traced_decorated_function(self):
+        self.tracer.runfunc(traced_decorated_function)
+
+        expected = {
+            self.filemod + ('traced_decorated_function',): 1,
+            self.filemod + ('decorator_fabric',): 1,
+            self.filemod + ('decorator2',): 1,
+            self.filemod + ('decorator1',): 1,
+            self.filemod + ('func',): 1,
         }
         self.assertEqual(self.tracer.results().calledfuncs, expected)
 
@@ -365,11 +421,59 @@ class Test_Ignore(unittest.TestCase):
         # Matched before.
         self.assertTrue(ignore.names(jn('bar', 'baz.py'), 'baz'))
 
+# Created for Issue 31908 -- CLI utility not writing cover files
+class TestCoverageCommandLineOutput(unittest.TestCase):
+
+    codefile = 'tmp.py'
+    coverfile = 'tmp.cover'
+
+    def setUp(self):
+        with open(self.codefile, 'w') as f:
+            f.write(textwrap.dedent('''\
+                x = 42
+                if []:
+                    print('unreachable')
+            '''))
+
+    def tearDown(self):
+        unlink(self.codefile)
+        unlink(self.coverfile)
+
+    def test_cover_files_written_no_highlight(self):
+        # Test also that the cover file for the trace module is not created
+        # (issue #34171).
+        tracedir = os.path.dirname(os.path.abspath(trace.__file__))
+        tracecoverpath = os.path.join(tracedir, 'trace.cover')
+        unlink(tracecoverpath)
+
+        argv = '-m trace --count'.split() + [self.codefile]
+        status, stdout, stderr = assert_python_ok(*argv)
+        self.assertEqual(stderr, b'')
+        self.assertFalse(os.path.exists(tracecoverpath))
+        self.assertTrue(os.path.exists(self.coverfile))
+        with open(self.coverfile) as f:
+            self.assertEqual(f.read(),
+                "    1: x = 42\n"
+                "    1: if []:\n"
+                "           print('unreachable')\n"
+            )
+
+    def test_cover_files_written_with_highlight(self):
+        argv = '-m trace --count --missing'.split() + [self.codefile]
+        status, stdout, stderr = assert_python_ok(*argv)
+        self.assertTrue(os.path.exists(self.coverfile))
+        with open(self.coverfile) as f:
+            self.assertEqual(f.read(), textwrap.dedent('''\
+                    1: x = 42
+                    1: if []:
+                >>>>>>     print('unreachable')
+            '''))
+
 class TestCommandLine(unittest.TestCase):
 
     def test_failures(self):
         _errors = (
-            (b'filename is missing: required with the main options', '-l', '-T'),
+            (b'progname is missing: required with the main options', '-l', '-T'),
             (b'cannot specify both --listfuncs and (--trace or --count)', '-lc'),
             (b'argument -R/--no-report: not allowed with argument -r/--report', '-rR'),
             (b'must specify one of --trace, --count, --report, --listfuncs, or --trackcalls', '-g'),
@@ -386,6 +490,43 @@ class TestCommandLine(unittest.TestCase):
             fd.write("a = 1\n")
             status, stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN)
             self.assertIn(b'functions called:', stdout)
+
+    def test_sys_argv_list(self):
+        with open(TESTFN, 'w') as fd:
+            self.addCleanup(unlink, TESTFN)
+            fd.write("import sys\n")
+            fd.write("print(type(sys.argv))\n")
+
+        status, direct_stdout, stderr = assert_python_ok(TESTFN)
+        status, trace_stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN)
+        self.assertIn(direct_stdout.strip(), trace_stdout)
+
+    def test_count_and_summary(self):
+        filename = f'{TESTFN}.py'
+        coverfilename = f'{TESTFN}.cover'
+        with open(filename, 'w') as fd:
+            self.addCleanup(unlink, filename)
+            self.addCleanup(unlink, coverfilename)
+            fd.write(textwrap.dedent("""\
+                x = 1
+                y = 2
+
+                def f():
+                    return x + y
+
+                for i in range(10):
+                    f()
+            """))
+        status, stdout, _ = assert_python_ok('-m', 'trace', '-cs', filename)
+        stdout = stdout.decode()
+        self.assertEqual(status, 0)
+        self.assertIn('lines   cov%   module   (path)', stdout)
+        self.assertIn(f'6   100%   {TESTFN}   ({filename})', stdout)
+
+    def test_run_as_module(self):
+        assert_python_ok('-m', 'trace', '-l', '--module', 'timeit', '-n', '1')
+        assert_python_failure('-m', 'trace', '-l', '--module', 'not_a_module_zzz')
+
 
 if __name__ == '__main__':
     unittest.main()

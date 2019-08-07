@@ -6,15 +6,17 @@ Nick Mathewson
 import unittest
 from test import support
 
-import sys, os
+import os
+import stat
+import sys
 import uu
 import io
 
-plaintext = b"The smooth-scaled python crept over the sleeping dog\n"
+plaintext = b"The symbols on top of your keyboard are !@#$%^&*()_+|~\n"
 
 encodedtext = b"""\
-M5&AE('-M;V]T:\"US8V%L960@<'ET:&]N(&-R97!T(&]V97(@=&AE('-L965P
-(:6YG(&1O9PH """
+M5&AE('-Y;6)O;',@;VX@=&]P(&]F('EO=7(@:V5Y8F]A<F0@87)E("% (R0E
+*7B8J*"E?*WQ^"@  """
 
 # Stolen from io.py
 class FakeIO(io.TextIOWrapper):
@@ -44,9 +46,14 @@ class FakeIO(io.TextIOWrapper):
         return self.buffer.getvalue().decode(self._encoding, self._errors)
 
 
-def encodedtextwrapped(mode, filename):
-    return (bytes("begin %03o %s\n" % (mode, filename), "ascii") +
-            encodedtext + b"\n \nend\n")
+def encodedtextwrapped(mode, filename, backtick=False):
+    if backtick:
+        res = (bytes("begin %03o %s\n" % (mode, filename), "ascii") +
+               encodedtext.replace(b' ', b'`') + b"\n`\nend\n")
+    else:
+        res = (bytes("begin %03o %s\n" % (mode, filename), "ascii") +
+               encodedtext + b"\n \nend\n")
+    return res
 
 class UUTest(unittest.TestCase):
 
@@ -59,20 +66,27 @@ class UUTest(unittest.TestCase):
         out = io.BytesIO()
         uu.encode(inp, out, "t1", 0o644)
         self.assertEqual(out.getvalue(), encodedtextwrapped(0o644, "t1"))
+        inp = io.BytesIO(plaintext)
+        out = io.BytesIO()
+        uu.encode(inp, out, "t1", backtick=True)
+        self.assertEqual(out.getvalue(), encodedtextwrapped(0o666, "t1", True))
+        with self.assertRaises(TypeError):
+            uu.encode(inp, out, "t1", 0o644, True)
 
     def test_decode(self):
-        inp = io.BytesIO(encodedtextwrapped(0o666, "t1"))
-        out = io.BytesIO()
-        uu.decode(inp, out)
-        self.assertEqual(out.getvalue(), plaintext)
-        inp = io.BytesIO(
-            b"UUencoded files may contain many lines,\n" +
-            b"even some that have 'begin' in them.\n" +
-            encodedtextwrapped(0o666, "t1")
-        )
-        out = io.BytesIO()
-        uu.decode(inp, out)
-        self.assertEqual(out.getvalue(), plaintext)
+        for backtick in True, False:
+            inp = io.BytesIO(encodedtextwrapped(0o666, "t1", backtick=backtick))
+            out = io.BytesIO()
+            uu.decode(inp, out)
+            self.assertEqual(out.getvalue(), plaintext)
+            inp = io.BytesIO(
+                b"UUencoded files may contain many lines,\n" +
+                b"even some that have 'begin' in them.\n" +
+                encodedtextwrapped(0o666, "t1", backtick=backtick)
+            )
+            out = io.BytesIO()
+            uu.decode(inp, out)
+            self.assertEqual(out.getvalue(), plaintext)
 
     def test_truncatedinput(self):
         inp = io.BytesIO(b"begin 644 t1\n" + encodedtext)
@@ -94,25 +108,33 @@ class UUTest(unittest.TestCase):
 
     def test_garbage_padding(self):
         # Issue #22406
-        encodedtext = (
+        encodedtext1 = (
             b"begin 644 file\n"
             # length 1; bits 001100 111111 111111 111111
             b"\x21\x2C\x5F\x5F\x5F\n"
             b"\x20\n"
             b"end\n"
         )
+        encodedtext2 = (
+            b"begin 644 file\n"
+            # length 1; bits 001100 111111 111111 111111
+            b"\x21\x2C\x5F\x5F\x5F\n"
+            b"\x60\n"
+            b"end\n"
+        )
         plaintext = b"\x33"  # 00110011
 
-        with self.subTest("uu.decode()"):
-            inp = io.BytesIO(encodedtext)
-            out = io.BytesIO()
-            uu.decode(inp, out, quiet=True)
-            self.assertEqual(out.getvalue(), plaintext)
+        for encodedtext in encodedtext1, encodedtext2:
+            with self.subTest("uu.decode()"):
+                inp = io.BytesIO(encodedtext)
+                out = io.BytesIO()
+                uu.decode(inp, out, quiet=True)
+                self.assertEqual(out.getvalue(), plaintext)
 
-        with self.subTest("uu_codec"):
-            import codecs
-            decoded = codecs.decode(encodedtext, "uu_codec")
-            self.assertEqual(decoded, plaintext)
+            with self.subTest("uu_codec"):
+                import codecs
+                decoded = codecs.decode(encodedtext, "uu_codec")
+                self.assertEqual(decoded, plaintext)
 
 class UUStdIOTest(unittest.TestCase):
 
@@ -142,119 +164,79 @@ class UUStdIOTest(unittest.TestCase):
 
 class UUFileTest(unittest.TestCase):
 
-    def _kill(self, f):
-        # close and remove file
-        if f is None:
-            return
-        try:
-            f.close()
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except:
-            pass
-        try:
-            os.unlink(f.name)
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except:
-            pass
-
     def setUp(self):
         self.tmpin  = support.TESTFN + "i"
         self.tmpout = support.TESTFN + "o"
-
-    def tearDown(self):
-        del self.tmpin
-        del self.tmpout
+        self.addCleanup(support.unlink, self.tmpin)
+        self.addCleanup(support.unlink, self.tmpout)
 
     def test_encode(self):
-        fin = fout = None
-        try:
-            support.unlink(self.tmpin)
-            fin = open(self.tmpin, 'wb')
+        with open(self.tmpin, 'wb') as fin:
             fin.write(plaintext)
-            fin.close()
 
-            fin = open(self.tmpin, 'rb')
-            fout = open(self.tmpout, 'wb')
-            uu.encode(fin, fout, self.tmpin, mode=0o644)
-            fin.close()
-            fout.close()
+        with open(self.tmpin, 'rb') as fin:
+            with open(self.tmpout, 'wb') as fout:
+                uu.encode(fin, fout, self.tmpin, mode=0o644)
 
-            fout = open(self.tmpout, 'rb')
+        with open(self.tmpout, 'rb') as fout:
             s = fout.read()
-            fout.close()
-            self.assertEqual(s, encodedtextwrapped(0o644, self.tmpin))
+        self.assertEqual(s, encodedtextwrapped(0o644, self.tmpin))
 
-            # in_file and out_file as filenames
-            uu.encode(self.tmpin, self.tmpout, self.tmpin, mode=0o644)
-            fout = open(self.tmpout, 'rb')
+        # in_file and out_file as filenames
+        uu.encode(self.tmpin, self.tmpout, self.tmpin, mode=0o644)
+        with open(self.tmpout, 'rb') as fout:
             s = fout.read()
-            fout.close()
-            self.assertEqual(s, encodedtextwrapped(0o644, self.tmpin))
-
-        finally:
-            self._kill(fin)
-            self._kill(fout)
+        self.assertEqual(s, encodedtextwrapped(0o644, self.tmpin))
 
     def test_decode(self):
-        f = None
-        try:
-            support.unlink(self.tmpin)
-            f = open(self.tmpin, 'wb')
+        with open(self.tmpin, 'wb') as f:
             f.write(encodedtextwrapped(0o644, self.tmpout))
-            f.close()
 
-            f = open(self.tmpin, 'rb')
+        with open(self.tmpin, 'rb') as f:
             uu.decode(f)
-            f.close()
 
-            f = open(self.tmpout, 'rb')
+        with open(self.tmpout, 'rb') as f:
             s = f.read()
-            f.close()
-            self.assertEqual(s, plaintext)
-            # XXX is there an xp way to verify the mode?
-        finally:
-            self._kill(f)
+        self.assertEqual(s, plaintext)
+        # XXX is there an xp way to verify the mode?
 
     def test_decode_filename(self):
-        f = None
-        try:
-            support.unlink(self.tmpin)
-            f = open(self.tmpin, 'wb')
+        with open(self.tmpin, 'wb') as f:
             f.write(encodedtextwrapped(0o644, self.tmpout))
-            f.close()
 
-            uu.decode(self.tmpin)
+        uu.decode(self.tmpin)
 
-            f = open(self.tmpout, 'rb')
+        with open(self.tmpout, 'rb') as f:
             s = f.read()
-            f.close()
-            self.assertEqual(s, plaintext)
-        finally:
-            self._kill(f)
+        self.assertEqual(s, plaintext)
 
     def test_decodetwice(self):
         # Verify that decode() will refuse to overwrite an existing file
-        f = None
-        try:
-            f = io.BytesIO(encodedtextwrapped(0o644, self.tmpout))
-
-            f = open(self.tmpin, 'rb')
+        with open(self.tmpin, 'wb') as f:
+            f.write(encodedtextwrapped(0o644, self.tmpout))
+        with open(self.tmpin, 'rb') as f:
             uu.decode(f)
-            f.close()
 
-            f = open(self.tmpin, 'rb')
+        with open(self.tmpin, 'rb') as f:
             self.assertRaises(uu.Error, uu.decode, f)
-            f.close()
-        finally:
-            self._kill(f)
 
-def test_main():
-    support.run_unittest(UUTest,
-                              UUStdIOTest,
-                              UUFileTest,
-                              )
+    def test_decode_mode(self):
+        # Verify that decode() will set the given mode for the out_file
+        expected_mode = 0o444
+        with open(self.tmpin, 'wb') as f:
+            f.write(encodedtextwrapped(expected_mode, self.tmpout))
+
+        # make file writable again, so it can be removed (Windows only)
+        self.addCleanup(os.chmod, self.tmpout, expected_mode | stat.S_IWRITE)
+
+        with open(self.tmpin, 'rb') as f:
+            uu.decode(f)
+
+        self.assertEqual(
+            stat.S_IMODE(os.stat(self.tmpout).st_mode),
+            expected_mode
+        )
+
 
 if __name__=="__main__":
-    test_main()
+    unittest.main()

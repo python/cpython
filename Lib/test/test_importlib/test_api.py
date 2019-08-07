@@ -197,8 +197,6 @@ class FindLoaderPEP302Tests(FindLoaderTests):
 
 class ReloadTests:
 
-    """Test module reloading for builtin and extension modules."""
-
     def test_reload_modules(self):
         for mod in ('tokenize', 'time', 'marshal'):
             with self.subTest(module=mod):
@@ -307,6 +305,7 @@ class ReloadTests:
                     expected = {'__name__': name,
                                 '__package__': name,
                                 '__doc__': None,
+                                '__file__': None,
                                 }
                     os.mkdir(name)
                     with open(bad_path, 'w') as init_file:
@@ -318,8 +317,9 @@ class ReloadTests:
                     spec = ns.pop('__spec__')
                     ns.pop('__builtins__', None)  # An implementation detail.
                     self.assertEqual(spec.name, name)
-                    self.assertIs(spec.loader, None)
-                    self.assertIsNot(loader, None)
+                    self.assertIsNotNone(spec.loader)
+                    self.assertIsNotNone(loader)
+                    self.assertEqual(spec.loader, loader)
                     self.assertEqual(set(path),
                                      set([os.path.dirname(bad_path)]))
                     with self.assertRaises(AttributeError):
@@ -361,6 +361,18 @@ class ReloadTests:
             reloaded = self.init.reload(ham)
             self.assertIs(reloaded, ham)
 
+    def test_module_missing_spec(self):
+        #Test that reload() throws ModuleNotFounderror when reloading
+        # a module who's missing a spec. (bpo-29851)
+        name = 'spam'
+        with test_util.uncache(name):
+            module = sys.modules[name] = types.ModuleType(name)
+            # Sanity check by attempting an import.
+            module = self.init.import_module(name)
+            self.assertIsNone(module.__spec__)
+            with self.assertRaises(ModuleNotFoundError):
+                self.init.reload(module)
+
 
 (Frozen_ReloadTests,
  Source_ReloadTests
@@ -394,7 +406,7 @@ class InvalidateCacheTests:
         # There should be no issues if the method is not defined.
         key = 'gobbledeegook'
         sys.path_importer_cache[key] = None
-        self.addCleanup(lambda: sys.path_importer_cache.__delitem__(key))
+        self.addCleanup(lambda: sys.path_importer_cache.pop(key, None))
         self.init.invalidate_caches()  # Shouldn't trigger an exception.
 
 

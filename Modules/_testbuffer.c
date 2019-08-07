@@ -8,13 +8,13 @@
 
 
 /* struct module */
-PyObject *structmodule = NULL;
-PyObject *Struct = NULL;
-PyObject *calcsize = NULL;
+static PyObject *structmodule = NULL;
+static PyObject *Struct = NULL;
+static PyObject *calcsize = NULL;
 
 /* cache simple format string */
 static const char *simple_fmt = "B";
-PyObject *simple_format = NULL;
+static PyObject *simple_format = NULL;
 #define SIMPLE_FORMAT(fmt) (fmt == NULL || strcmp(fmt, "B") == 0)
 #define FIX_FORMAT(fmt) (fmt == NULL ? "B" : fmt)
 
@@ -1531,7 +1531,7 @@ ndarray_getbuf(NDArrayObject *self, Py_buffer *view, int flags)
     return 0;
 }
 
-static int
+static void
 ndarray_releasebuf(NDArrayObject *self, Py_buffer *view)
 {
     if (!ND_IS_CONSUMER(self)) {
@@ -1539,8 +1539,6 @@ ndarray_releasebuf(NDArrayObject *self, Py_buffer *view)
         if (--ndbuf->exports == 0 && ndbuf != self->head)
             ndbuf_delete(self, ndbuf);
     }
-
-    return 0;
 }
 
 static PyBufferProcs ndarray_as_buffer = {
@@ -1715,10 +1713,10 @@ init_slice(Py_buffer *base, PyObject *key, int dim)
 {
     Py_ssize_t start, stop, step, slicelength;
 
-    if (PySlice_GetIndicesEx(key, base->shape[dim],
-                             &start, &stop, &step, &slicelength) < 0) {
+    if (PySlice_Unpack(key, &start, &stop, &step) < 0) {
         return -1;
     }
+    slicelength = PySlice_AdjustIndices(base->shape[dim], &start, &stop, step);
 
 
     if (base->suboffsets == NULL || dim == 0) {
@@ -1935,9 +1933,10 @@ slice_indices(PyObject *self, PyObject *args)
             "first argument must be a slice object");
         return NULL;
     }
-    if (PySlice_GetIndicesEx(key, len, &s[0], &s[1], &s[2], &s[3]) < 0) {
+    if (PySlice_Unpack(key, &s[0], &s[1], &s[2]) < 0) {
         return NULL;
     }
+    s[3] = PySlice_AdjustIndices(len, &s[0], &s[1], s[2]);
 
     ret = PyTuple_New(4);
     if (ret == NULL)
@@ -2037,7 +2036,7 @@ static PyObject *
 ndarray_get_readonly(NDArrayObject *self, void *closure)
 {
     Py_buffer *base = &self->head->base;
-    return PyLong_FromLong(base->readonly);
+    return PyBool_FromLong(base->readonly);
 }
 
 static PyObject *
@@ -2353,7 +2352,7 @@ out:
 }
 
 static PyObject *
-get_sizeof_void_p(PyObject *self)
+get_sizeof_void_p(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromSize_t(sizeof(void *));
 }
@@ -2634,7 +2633,7 @@ static PyMethodDef ndarray_methods [] =
 {
     { "tolist", ndarray_tolist, METH_NOARGS, NULL },
     { "tobytes", ndarray_tobytes, METH_NOARGS, NULL },
-    { "push", (PyCFunction)ndarray_push, METH_VARARGS|METH_KEYWORDS, NULL },
+    { "push", (PyCFunction)(void(*)(void))ndarray_push, METH_VARARGS|METH_KEYWORDS, NULL },
     { "pop", ndarray_pop, METH_NOARGS, NULL },
     { "add_suboffsets", ndarray_add_suboffsets, METH_NOARGS, NULL },
     { "memoryview_from_buffer", ndarray_memoryview_from_buffer, METH_NOARGS, NULL },
@@ -2647,10 +2646,10 @@ static PyTypeObject NDArray_Type = {
     sizeof(NDArrayObject),       /* Basic object size */
     0,                           /* Item size for varobject */
     (destructor)ndarray_dealloc, /* tp_dealloc */
-    0,                           /* tp_print */
+    0,                           /* tp_vectorcall_offset */
     0,                           /* tp_getattr */
     0,                           /* tp_setattr */
-    0,                           /* tp_compare */
+    0,                           /* tp_as_async */
     0,                           /* tp_repr */
     0,                           /* tp_as_number */
     &ndarray_as_sequence,        /* tp_as_sequence */
@@ -2767,10 +2766,10 @@ static PyTypeObject StaticArray_Type = {
     sizeof(StaticArrayObject),       /* Basic object size */
     0,                               /* Item size for varobject */
     (destructor)staticarray_dealloc, /* tp_dealloc */
-    0,                               /* tp_print */
+    0,                               /* tp_vectorcall_offset */
     0,                               /* tp_getattr */
     0,                               /* tp_setattr */
-    0,                               /* tp_compare */
+    0,                               /* tp_as_async */
     0,                               /* tp_repr */
     0,                               /* tp_as_number */
     0,                               /* tp_as_sequence */
@@ -2806,7 +2805,7 @@ static PyTypeObject StaticArray_Type = {
 static struct PyMethodDef _testbuffer_functions[] = {
     {"slice_indices", slice_indices, METH_VARARGS, NULL},
     {"get_pointer", get_pointer, METH_VARARGS, NULL},
-    {"get_sizeof_void_p", (PyCFunction)get_sizeof_void_p, METH_NOARGS, NULL},
+    {"get_sizeof_void_p", get_sizeof_void_p, METH_NOARGS, NULL},
     {"get_contiguous", get_contiguous, METH_VARARGS, NULL},
     {"py_buffer_to_contiguous", py_buffer_to_contiguous, METH_VARARGS, NULL},
     {"is_contiguous", is_contiguous, METH_VARARGS, NULL},

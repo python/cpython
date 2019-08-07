@@ -1,0 +1,1 @@
+Rewrite ``_PyObject_IsFreed()`` unit tests.

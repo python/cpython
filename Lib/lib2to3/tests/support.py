@@ -15,7 +15,13 @@ test_dir = os.path.dirname(__file__)
 proj_dir = os.path.normpath(os.path.join(test_dir, ".."))
 grammar_path = os.path.join(test_dir, "..", "Grammar.txt")
 grammar = pgen2_driver.load_grammar(grammar_path)
+grammar_no_print_statement = pgen2_driver.load_grammar(grammar_path)
+del grammar_no_print_statement.keywords["print"]
 driver = pgen2_driver.Driver(grammar, convert=pytree.convert)
+driver_no_print_statement = pgen2_driver.Driver(
+    grammar_no_print_statement,
+    convert=pytree.convert
+)
 
 def parse_string(string):
     return driver.parse_string(reformat(string), debug=True)

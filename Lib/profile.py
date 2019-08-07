@@ -25,10 +25,8 @@
 
 
 import sys
-import os
 import time
 import marshal
-from optparse import OptionParser
 
 __all__ = ["run", "runctx", "Profile"]
 
@@ -179,7 +177,7 @@ class Profile:
         self.t = self.get_time()
         self.simulate_call('profiler')
 
-    # Heavily optimized dispatch routine for os.times() timer
+    # Heavily optimized dispatch routine for time.process_time() timer
 
     def trace_dispatch(self, frame, event, arg):
         timer = self.timer
@@ -197,7 +195,7 @@ class Profile:
             self.t = r[0] + r[1] - t # put back unrecorded delta
 
     # Dispatch routine for best timer program (return = scalar, fastest if
-    # an integer but float works too -- and time.clock() relies on that).
+    # an integer but float works too -- and time.process_time() relies on that).
 
     def trace_dispatch_i(self, frame, event, arg):
         timer = self.timer
@@ -427,7 +425,7 @@ class Profile:
         return self
 
     # This method is more useful to profile a single function call.
-    def runcall(self, func, *args, **kw):
+    def runcall(self, func, /, *args, **kw):
         self.set_cmd(repr(func))
         sys.setprofile(self.dispatcher)
         try:
@@ -552,11 +550,16 @@ class Profile:
 #****************************************************************************
 
 def main():
-    usage = "profile.py [-o output_file_path] [-s sort] scriptfile [arg] ..."
+    import os
+    from optparse import OptionParser
+
+    usage = "profile.py [-o output_file_path] [-s sort] [-m module | scriptfile] [arg] ..."
     parser = OptionParser(usage=usage)
     parser.allow_interspersed_args = False
     parser.add_option('-o', '--outfile', dest="outfile",
         help="Save stats to <outfile>", default=None)
+    parser.add_option('-m', dest="module", action="store_true",
+        help="Profile a library module.", default=False)
     parser.add_option('-s', '--sort', dest="sort",
         help="Sort order when printing to stdout, based on pstats.Stats class",
         default=-1)
@@ -569,16 +572,24 @@ def main():
     sys.argv[:] = args
 
     if len(args) > 0:
-        progname = args[0]
-        sys.path.insert(0, os.path.dirname(progname))
-        with open(progname, 'rb') as fp:
-            code = compile(fp.read(), progname, 'exec')
-        globs = {
-            '__file__': progname,
-            '__name__': '__main__',
-            '__package__': None,
-            '__cached__': None,
-        }
+        if options.module:
+            import runpy
+            code = "run_module(modname, run_name='__main__')"
+            globs = {
+                'run_module': runpy.run_module,
+                'modname': args[0]
+            }
+        else:
+            progname = args[0]
+            sys.path.insert(0, os.path.dirname(progname))
+            with open(progname, 'rb') as fp:
+                code = compile(fp.read(), progname, 'exec')
+            globs = {
+                '__file__': progname,
+                '__name__': '__main__',
+                '__package__': None,
+                '__cached__': None,
+            }
         runctx(code, globs, None, options.outfile, options.sort)
     else:
         parser.print_usage()

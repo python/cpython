@@ -5,17 +5,13 @@ import os
 import signal
 import subprocess
 import sys
+import sysconfig
 from test import support
-from test.support import script_helper, is_android, requires_android_level
+from test.support import script_helper, is_android
 import tempfile
 import unittest
 from textwrap import dedent
 
-try:
-    import threading
-    HAVE_THREADS = True
-except ImportError:
-    HAVE_THREADS = False
 try:
     import _testcapi
 except ImportError:
@@ -23,6 +19,17 @@ except ImportError:
 
 TIMEOUT = 0.5
 MS_WINDOWS = (os.name == 'nt')
+_cflags = sysconfig.get_config_var('CFLAGS') or ''
+_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+UB_SANITIZER = (
+    '-fsanitize=undefined' in _cflags or
+    '--with-undefined-behavior-sanitizer' in _config_args
+)
+MEMORY_SANITIZER = (
+    '-fsanitize=memory' in _cflags or
+    '--with-memory-sanitizer' in _config_args
+)
+
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
     regex = header
@@ -33,6 +40,11 @@ def expected_traceback(lineno1, lineno2, header, min_count=1):
     else:
         return '^' + regex + '$'
 
+def skip_segfault_on_android(test):
+    # Issue #32138: Raising SIGSEGV on Android may not cause a crash.
+    return unittest.skipIf(is_android,
+                           'raising SIGSEGV on Android is unreliable')(test)
+
 @contextmanager
 def temporary_filename():
     filename = tempfile.mktemp()
@@ -40,10 +52,6 @@ def temporary_filename():
         yield filename
     finally:
         support.unlink(filename)
-
-def requires_raise(test):
-    return (test if not is_android else
-                   requires_android_level(24, 'raise() is buggy')(test))
 
 class FaultHandlerTests(unittest.TestCase):
     def get_output(self, code, filename=None, fd=None):
@@ -97,7 +105,7 @@ class FaultHandlerTests(unittest.TestCase):
         else:
             header = 'Stack'
         regex = r"""
-            ^{fatal_error}
+            (?m)^{fatal_error}
 
             {header} \(most recent call first\):
               File "<string>", line {lineno} in <module>
@@ -144,7 +152,7 @@ class FaultHandlerTests(unittest.TestCase):
                 3,
                 'access violation')
 
-    @requires_raise
+    @skip_segfault_on_android
     def test_sigsegv(self):
         self.check_fatal_error("""
             import faulthandler
@@ -154,7 +162,6 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @unittest.skipIf(not HAVE_THREADS, 'need threads')
     def test_fatal_error_c_thread(self):
         self.check_fatal_error("""
             import faulthandler
@@ -187,32 +194,30 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGBUS'), 'need signal.SIGBUS')
-    @requires_raise
+    @skip_segfault_on_android
     def test_sigbus(self):
         self.check_fatal_error("""
-            import _testcapi
             import faulthandler
             import signal
 
             faulthandler.enable()
-            _testcapi.raise_signal(signal.SIGBUS)
+            signal.raise_signal(signal.SIGBUS)
             """,
-            6,
+            5,
             'Bus error')
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGILL'), 'need signal.SIGILL')
-    @requires_raise
+    @skip_segfault_on_android
     def test_sigill(self):
         self.check_fatal_error("""
-            import _testcapi
             import faulthandler
             import signal
 
             faulthandler.enable()
-            _testcapi.raise_signal(signal.SIGILL)
+            signal.raise_signal(signal.SIGILL)
             """,
-            6,
+            5,
             'Illegal instruction')
 
     def test_fatal_error(self):
@@ -231,7 +236,7 @@ class FaultHandlerTests(unittest.TestCase):
             2,
             'xyz')
 
-    @unittest.skipIf(sys.platform.startswith('openbsd') and HAVE_THREADS,
+    @unittest.skipIf(sys.platform.startswith('openbsd'),
                      "Issue #12868: sigaltstack() doesn't work on "
                      "OpenBSD if Python is compiled with pthread")
     @unittest.skipIf(not hasattr(faulthandler, '_stack_overflow'),
@@ -246,7 +251,7 @@ class FaultHandlerTests(unittest.TestCase):
             '(?:Segmentation fault|Bus error)',
             other_regex='unable to raise a stack overflow')
 
-    @requires_raise
+    @skip_segfault_on_android
     def test_gil_released(self):
         self.check_fatal_error("""
             import faulthandler
@@ -256,7 +261,9 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @requires_raise
+    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
+                     "sanitizer builds change crashing process output.")
+    @skip_segfault_on_android
     def test_enable_file(self):
         with temporary_filename() as filename:
             self.check_fatal_error("""
@@ -271,7 +278,9 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
-    @requires_raise
+    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
+                     "sanitizer builds change crashing process output.")
+    @skip_segfault_on_android
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
             fd = fp.fileno()
@@ -285,7 +294,7 @@ class FaultHandlerTests(unittest.TestCase):
                 'Segmentation fault',
                 fd=fd)
 
-    @requires_raise
+    @skip_segfault_on_android
     def test_enable_single_thread(self):
         self.check_fatal_error("""
             import faulthandler
@@ -296,7 +305,7 @@ class FaultHandlerTests(unittest.TestCase):
             'Segmentation fault',
             all_threads=False)
 
-    @requires_raise
+    @skip_segfault_on_android
     def test_disable(self):
         code = """
             import faulthandler
@@ -336,13 +345,9 @@ class FaultHandlerTests(unittest.TestCase):
     def test_disabled_by_default(self):
         # By default, the module should be disabled
         code = "import faulthandler; print(faulthandler.is_enabled())"
-        args = filter(None, (sys.executable,
-                             "-E" if sys.flags.ignore_environment else "",
-                             "-c", code))
-        env = os.environ.copy()
-        env.pop("PYTHONFAULTHANDLER", None)
+        args = (sys.executable, "-E", "-c", code)
         # don't use assert_python_ok() because it always enables faulthandler
-        output = subprocess.check_output(args, env=env)
+        output = subprocess.check_output(args)
         self.assertEqual(output.rstrip(), b"False")
 
     def test_sys_xoptions(self):
@@ -361,15 +366,17 @@ class FaultHandlerTests(unittest.TestCase):
         # empty env var
         code = "import faulthandler; print(faulthandler.is_enabled())"
         args = (sys.executable, "-c", code)
-        env = os.environ.copy()
+        env = dict(os.environ)
         env['PYTHONFAULTHANDLER'] = ''
+        env['PYTHONDEVMODE'] = ''
         # don't use assert_python_ok() because it always enables faulthandler
         output = subprocess.check_output(args, env=env)
         self.assertEqual(output.rstrip(), b"False")
 
         # non-empty env var
-        env = os.environ.copy()
+        env = dict(os.environ)
         env['PYTHONFAULTHANDLER'] = '1'
+        env['PYTHONDEVMODE'] = ''
         output = subprocess.check_output(args, env=env)
         self.assertEqual(output.rstrip(), b"True")
 
@@ -406,7 +413,7 @@ class FaultHandlerTests(unittest.TestCase):
         if filename:
             lineno = 9
         elif fd is not None:
-            lineno = 12
+            lineno = 11
         else:
             lineno = 14
         expected = [
@@ -456,7 +463,6 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertEqual(trace, expected)
         self.assertEqual(exitcode, 0)
 
-    @unittest.skipIf(not HAVE_THREADS, 'need threads')
     def check_dump_traceback_threads(self, filename):
         """
         Call explicitly dump_traceback(all_threads=True) and check the output.
@@ -754,6 +760,62 @@ class FaultHandlerTests(unittest.TestCase):
                 3,
                 name)
 
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_ignore_exception(self):
+        for exc_code in (
+            0xE06D7363,   # MSC exception ("Emsc")
+            0xE0434352,   # COM Callable Runtime exception ("ECCR")
+        ):
+            code = f"""
+                    import faulthandler
+                    faulthandler.enable()
+                    faulthandler._raise_exception({exc_code})
+                    """
+            code = dedent(code)
+            output, exitcode = self.get_output(code)
+            self.assertEqual(output, [])
+            self.assertEqual(exitcode, exc_code)
+
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_raise_nonfatal_exception(self):
+        # These exceptions are not strictly errors. Letting
+        # faulthandler display the traceback when they are
+        # raised is likely to result in noise. However, they
+        # may still terminate the process if there is no
+        # handler installed for them (which there typically
+        # is, e.g. for debug messages).
+        for exc in (
+            0x00000000,
+            0x34567890,
+            0x40000000,
+            0x40001000,
+            0x70000000,
+            0x7FFFFFFF,
+        ):
+            output, exitcode = self.get_output(f"""
+                import faulthandler
+                faulthandler.enable()
+                faulthandler._raise_exception(0x{exc:x})
+                """
+            )
+            self.assertEqual(output, [])
+            # On Windows older than 7 SP1, the actual exception code has
+            # bit 29 cleared.
+            self.assertIn(exitcode,
+                          (exc, exc & ~0x10000000))
+
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_disable_windows_exc_handler(self):
+        code = dedent("""
+            import faulthandler
+            faulthandler.enable()
+            faulthandler.disable()
+            code = faulthandler._EXCEPTION_ACCESS_VIOLATION
+            faulthandler._raise_exception(code)
+        """)
+        output, exitcode = self.get_output(code)
+        self.assertEqual(output, [])
+        self.assertEqual(exitcode, 0xC0000005)
 
 
 if __name__ == "__main__":

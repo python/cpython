@@ -73,6 +73,7 @@ import sys
 import os
 import builtins
 import _sitebuiltins
+import io
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -104,11 +105,11 @@ def abs_paths():
             continue   # don't mess with a PEP 302-supplied __file__
         try:
             m.__file__ = os.path.abspath(m.__file__)
-        except (AttributeError, OSError):
+        except (AttributeError, OSError, TypeError):
             pass
         try:
             m.__cached__ = os.path.abspath(m.__cached__)
-        except (AttributeError, OSError):
+        except (AttributeError, OSError, TypeError):
             pass
 
 
@@ -124,7 +125,7 @@ def removeduppaths():
         # if they only differ in case); turn relative paths into absolute
         # paths.
         dir, dircase = makepath(dir)
-        if not dircase in known_paths:
+        if dircase not in known_paths:
             L.append(dir)
             known_paths.add(dircase)
     sys.path[:] = L
@@ -156,7 +157,7 @@ def addpackage(sitedir, name, known_paths):
         reset = False
     fullname = os.path.join(sitedir, name)
     try:
-        f = open(fullname, "r")
+        f = io.TextIOWrapper(io.open_code(fullname))
     except OSError:
         return
     with f:
@@ -234,6 +235,46 @@ def check_enableusersite():
 
     return True
 
+
+# NOTE: sysconfig and it's dependencies are relatively large but site module
+# needs very limited part of them.
+# To speedup startup time, we have copy of them.
+#
+# See https://bugs.python.org/issue29585
+
+# Copy of sysconfig._getuserbase()
+def _getuserbase():
+    env_base = os.environ.get("PYTHONUSERBASE", None)
+    if env_base:
+        return env_base
+
+    def joinuser(*args):
+        return os.path.expanduser(os.path.join(*args))
+
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or "~"
+        return joinuser(base, "Python")
+
+    if sys.platform == "darwin" and sys._framework:
+        return joinuser("~", "Library", sys._framework,
+                        "%d.%d" % sys.version_info[:2])
+
+    return joinuser("~", ".local")
+
+
+# Same to sysconfig.get_path('purelib', os.name+'_user')
+def _get_path(userbase):
+    version = sys.version_info
+
+    if os.name == 'nt':
+        return f'{userbase}\\Python{version[0]}{version[1]}\\site-packages'
+
+    if sys.platform == 'darwin' and sys._framework:
+        return f'{userbase}/lib/python/site-packages'
+
+    return f'{userbase}/lib/python{version[0]}.{version[1]}/site-packages'
+
+
 def getuserbase():
     """Returns the `user base` directory path.
 
@@ -242,11 +283,10 @@ def getuserbase():
     it.
     """
     global USER_BASE
-    if USER_BASE is not None:
-        return USER_BASE
-    from sysconfig import get_config_var
-    USER_BASE = get_config_var('userbase')
+    if USER_BASE is None:
+        USER_BASE = _getuserbase()
     return USER_BASE
+
 
 def getusersitepackages():
     """Returns the user-specific site-packages directory path.
@@ -255,20 +295,11 @@ def getusersitepackages():
     function will also set it.
     """
     global USER_SITE
-    user_base = getuserbase() # this will also set USER_BASE
+    userbase = getuserbase() # this will also set USER_BASE
 
-    if USER_SITE is not None:
-        return USER_SITE
+    if USER_SITE is None:
+        USER_SITE = _get_path(userbase)
 
-    from sysconfig import get_path
-
-    if sys.platform == 'darwin':
-        from sysconfig import get_config_var
-        if get_config_var('PYTHONFRAMEWORK'):
-            USER_SITE = get_path('purelib', 'osx_framework_user')
-            return USER_SITE
-
-    USER_SITE = get_path('purelib', '%s_user' % os.name)
     return USER_SITE
 
 def addusersitepackages(known_paths):
@@ -310,15 +341,6 @@ def getsitepackages(prefixes=None):
         else:
             sitepackages.append(prefix)
             sitepackages.append(os.path.join(prefix, "lib", "site-packages"))
-        if sys.platform == "darwin":
-            # for framework builds *only* we add the standard Apple
-            # locations.
-            from sysconfig import get_config_var
-            framework = get_config_var("PYTHONFRAMEWORK")
-            if framework:
-                sitepackages.append(
-                        os.path.join("/Library", framework,
-                            '%d.%d' % sys.version_info[:2], "site-packages"))
     return sitepackages
 
 def addsitepackages(known_paths, prefixes=None):
@@ -416,9 +438,18 @@ def enablerlcompleter():
                                    '.python_history')
             try:
                 readline.read_history_file(history)
-            except IOError:
+            except OSError:
                 pass
-            atexit.register(readline.write_history_file, history)
+
+            def write_history():
+                try:
+                    readline.write_history_file(history)
+                except (FileNotFoundError, PermissionError):
+                    # home directory does not exist or is not writable
+                    # https://bugs.python.org/issue19891
+                    pass
+
+            atexit.register(write_history)
 
     sys.__interactivehook__ = register_readline
 
@@ -427,7 +458,7 @@ def venv(known_paths):
 
     env = os.environ
     if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in env:
-        executable = os.environ['__PYVENV_LAUNCHER__']
+        executable = sys._base_executable = os.environ['__PYVENV_LAUNCHER__']
     else:
         executable = sys.executable
     exe_dir, _ = os.path.split(os.path.abspath(executable))

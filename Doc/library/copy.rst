@@ -22,7 +22,7 @@ Interface summary:
    Return a shallow copy of *x*.
 
 
-.. function:: deepcopy(x)
+.. function:: deepcopy(x[, memo])
 
    Return a deep copy of *x*.
 
@@ -47,12 +47,12 @@ copy operations:
 * Recursive objects (compound objects that, directly or indirectly, contain a
   reference to themselves) may cause a recursive loop.
 
-* Because deep copy copies *everything* it may copy too much, e.g.,
-  even administrative data structures that should be shared even between copies.
+* Because deep copy copies everything it may copy too much, such as data
+  which is intended to be shared between copies.
 
 The :func:`deepcopy` function avoids these problems by:
 
-* keeping a "memo" dictionary of objects already copied during the current
+* keeping a ``memo`` dictionary of objects already copied during the current
   copying pass; and
 
 * letting user-defined classes override the copying operation or the set of
@@ -82,7 +82,7 @@ In order for a class to define its own copy implementation, it can define
 special methods :meth:`__copy__` and :meth:`__deepcopy__`.  The former is called
 to implement the shallow copy operation; no additional arguments are passed.
 The latter is called to implement the deep copy operation; it is passed one
-argument, the memo dictionary.  If the :meth:`__deepcopy__` implementation needs
+argument, the ``memo`` dictionary.  If the :meth:`__deepcopy__` implementation needs
 to make a deep copy of a component, it should call the :func:`deepcopy` function
 with the component as first argument and the memo dictionary as second argument.
 

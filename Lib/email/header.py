@@ -36,11 +36,11 @@ ecre = re.compile(r'''
   =\?                   # literal =?
   (?P<charset>[^?]*?)   # non-greedy up to the next ? is the charset
   \?                    # literal ?
-  (?P<encoding>[qb])    # either a "q" or a "b", case insensitive
+  (?P<encoding>[qQbB])  # either a "q" or a "b", case insensitive
   \?                    # literal ?
   (?P<encoded>.*?)      # non-greedy up to the next ?= is the encoded string
   \?=                   # literal ?=
-  ''', re.VERBOSE | re.IGNORECASE | re.MULTILINE)
+  ''', re.VERBOSE | re.MULTILINE)
 
 # Field name regexp, including trailing colon, but not separating whitespace,
 # according to RFC 2822.  Character range is from tilde to exclamation mark.
@@ -431,7 +431,7 @@ class _ValueFormatter:
         if end_of_line != (' ', ''):
             self._current_line.push(*end_of_line)
         if len(self._current_line) > 0:
-            if self._current_line.is_onlyws():
+            if self._current_line.is_onlyws() and self._lines:
                 self._lines[-1] += str(self._current_line)
             else:
                 self._lines.append(str(self._current_line))

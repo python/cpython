@@ -44,67 +44,50 @@ functions.  The functions mirror definitions in the Python C header files.
 
 The token constants are:
 
-.. data:: ENDMARKER
-          NAME
-          NUMBER
-          STRING
-          NEWLINE
-          INDENT
-          DEDENT
-          LPAR
-          RPAR
-          LSQB
-          RSQB
-          COLON
-          COMMA
-          SEMI
-          PLUS
-          MINUS
-          STAR
-          SLASH
-          VBAR
-          AMPER
-          LESS
-          GREATER
-          EQUAL
-          DOT
-          PERCENT
-          LBRACE
-          RBRACE
-          EQEQUAL
-          NOTEQUAL
-          LESSEQUAL
-          GREATEREQUAL
-          TILDE
-          CIRCUMFLEX
-          LEFTSHIFT
-          RIGHTSHIFT
-          DOUBLESTAR
-          PLUSEQUAL
-          MINEQUAL
-          STAREQUAL
-          SLASHEQUAL
-          PERCENTEQUAL
-          AMPEREQUAL
-          VBAREQUAL
-          CIRCUMFLEXEQUAL
-          LEFTSHIFTEQUAL
-          RIGHTSHIFTEQUAL
-          DOUBLESTAREQUAL
-          DOUBLESLASH
-          DOUBLESLASHEQUAL
-          AT
-          ATEQUAL
-          RARROW
-          ELLIPSIS
-          OP
-          AWAIT
-          ASYNC
-          ERRORTOKEN
-          N_TOKENS
-          NT_OFFSET
+.. include:: token-list.inc
 
-   .. versionchanged:: 3.5
-      Added :data:`AWAIT` and :data:`ASYNC` tokens. Starting with
-      Python 3.7, "async" and "await" will be tokenized as :data:`NAME`
-      tokens, and :data:`AWAIT` and :data:`ASYNC` will be removed.
+The following token type values aren't used by the C tokenizer but are needed for
+the :mod:`tokenize` module.
+
+.. data:: COMMENT
+
+   Token value used to indicate a comment.
+
+
+.. data:: NL
+
+   Token value used to indicate a non-terminating newline.  The
+   :data:`NEWLINE` token indicates the end of a logical line of Python code;
+   ``NL`` tokens are generated when a logical line of code is continued over
+   multiple physical lines.
+
+
+.. data:: ENCODING
+
+   Token value that indicates the encoding used to decode the source bytes
+   into text. The first token returned by :func:`tokenize.tokenize` will
+   always be an ``ENCODING`` token.
+
+
+.. data:: TYPE_COMMENT
+
+   Token value indicating that a type comment was recognized.  Such
+   tokens are only produced when :func:`ast.parse()` is invoked with
+   ``type_comments=True``.
+
+
+.. versionchanged:: 3.5
+   Added :data:`AWAIT` and :data:`ASYNC` tokens.
+
+.. versionchanged:: 3.7
+   Added :data:`COMMENT`, :data:`NL` and :data:`ENCODING` tokens.
+
+.. versionchanged:: 3.7
+   Removed :data:`AWAIT` and :data:`ASYNC` tokens. "async" and "await" are
+   now tokenized as :data:`NAME` tokens.
+
+.. versionchanged:: 3.8
+   Added :data:`TYPE_COMMENT`.
+   Added :data:`AWAIT` and :data:`ASYNC` tokens back (they're needed
+   to support parsing older Python versions for :func:`ast.parse` with
+   ``feature_version`` set to 6 or lower).

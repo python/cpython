@@ -1,0 +1,7 @@
+fuzz_builtin_float
+fuzz_builtin_int
+fuzz_builtin_unicode
+fuzz_json_loads
+fuzz_sre_compile
+fuzz_sre_match
+fuzz_csv_reader

@@ -59,11 +59,11 @@ the persistent dictionary on disk, if feasible).
 from pickle import Pickler, Unpickler
 from io import BytesIO
 
-import collections
+import collections.abc
 
 __all__ = ["Shelf", "BsdDbShelf", "DbfilenameShelf", "open"]
 
-class _ClosedDict(collections.MutableMapping):
+class _ClosedDict(collections.abc.MutableMapping):
     'Marker for a closed dict.  Access attempts raise a ValueError.'
 
     def closed(self, *args):
@@ -74,7 +74,7 @@ class _ClosedDict(collections.MutableMapping):
         return '<Closed Dictionary>'
 
 
-class Shelf(collections.MutableMapping):
+class Shelf(collections.abc.MutableMapping):
     """Base class for shelf implementations.
 
     This is initialized with a dictionary-like object.
@@ -235,7 +235,7 @@ def open(filename, flag='c', protocol=None, writeback=False):
     filename and more than one file may be created.  The optional flag
     parameter has the same interpretation as the flag parameter of
     dbm.open(). The optional protocol parameter specifies the
-    version of the pickle protocol (0, 1, or 2).
+    version of the pickle protocol.
 
     See the module's __doc__ string for an overview of the interface.
     """

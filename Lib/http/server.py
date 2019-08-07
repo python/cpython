@@ -83,11 +83,10 @@ XXX To do:
 __version__ = "0.6"
 
 __all__ = [
-    "HTTPServer", "BaseHTTPRequestHandler",
+    "HTTPServer", "ThreadingHTTPServer", "BaseHTTPRequestHandler",
     "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler",
 ]
 
-import argparse
 import copy
 import datetime
 import email.utils
@@ -104,6 +103,7 @@ import socketserver
 import sys
 import time
 import urllib.parse
+from functools import partial
 
 from http import HTTPStatus
 
@@ -138,6 +138,10 @@ class HTTPServer(socketserver.TCPServer):
         host, port = self.server_address[:2]
         self.server_name = socket.getfqdn(host)
         self.server_port = port
+
+
+class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
+    daemon_threads = True
 
 
 class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
@@ -470,7 +474,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             })
             body = content.encode('UTF-8', 'replace')
             self.send_header("Content-Type", self.error_content_type)
-            self.send_header('Content-Length', int(len(body)))
+            self.send_header('Content-Length', str(len(body)))
         self.end_headers()
 
         if self.command != 'HEAD' and body:
@@ -635,6 +639,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     server_version = "SimpleHTTP/" + __version__
 
+    def __init__(self, *args, directory=None, **kwargs):
+        if directory is None:
+            directory = os.getcwd()
+        self.directory = directory
+        super().__init__(*args, **kwargs)
+
     def do_GET(self):
         """Serve a GET request."""
         f = self.send_head()
@@ -682,6 +692,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             else:
                 return self.list_directory(path)
         ctype = self.guess_type(path)
+        # check for trailing "/" which should return 404. See Issue17324
+        # The test for this was added in test_httpserver.py
+        # However, some OS platforms accept a trailingSlash as a filename
+        # See discussion on python-dev and Issue34711 regarding
+        # parseing and rejection of filenames with a trailing slash
+        if path.endswith("/"):
+            self.send_error(HTTPStatus.NOT_FOUND, "File not found")
+            return None
         try:
             f = open(path, 'rb')
         except OSError:
@@ -711,7 +729,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                             fs.st_mtime, datetime.timezone.utc)
                         # remove microseconds, like in If-Modified-Since
                         last_modif = last_modif.replace(microsecond=0)
-                        
+
                         if last_modif <= ims:
                             self.send_response(HTTPStatus.NOT_MODIFIED)
                             self.end_headers()
@@ -721,7 +739,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", ctype)
             self.send_header("Content-Length", str(fs[6]))
-            self.send_header("Last-Modified", 
+            self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
             self.end_headers()
             return f
@@ -807,7 +825,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         path = posixpath.normpath(path)
         words = path.split('/')
         words = filter(None, words)
-        path = os.getcwd()
+        path = self.directory
         for word in words:
             if os.path.dirname(word) or word in (os.curdir, os.pardir):
                 # Ignore components that are not a simple file/directory name
@@ -1206,20 +1224,34 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 self.log_message("CGI script exited OK")
 
 
+def _get_best_family(*address):
+    infos = socket.getaddrinfo(
+        *address,
+        type=socket.SOCK_STREAM,
+        flags=socket.AI_PASSIVE,
+    )
+    family, type, proto, canonname, sockaddr = next(iter(infos))
+    return family, sockaddr
+
+
 def test(HandlerClass=BaseHTTPRequestHandler,
-         ServerClass=HTTPServer, protocol="HTTP/1.0", port=8000, bind=""):
+         ServerClass=ThreadingHTTPServer,
+         protocol="HTTP/1.0", port=8000, bind=None):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
 
     """
-    server_address = (bind, port)
+    ServerClass.address_family, addr = _get_best_family(bind, port)
 
     HandlerClass.protocol_version = protocol
-    with ServerClass(server_address, HandlerClass) as httpd:
-        sa = httpd.socket.getsockname()
-        serve_message = "Serving HTTP on {host} port {port} (http://{host}:{port}/) ..."
-        print(serve_message.format(host=sa[0], port=sa[1]))
+    with ServerClass(addr, HandlerClass) as httpd:
+        host, port = httpd.socket.getsockname()[:2]
+        url_host = f'[{host}]' if ':' in host else host
+        print(
+            f"Serving HTTP on {host} port {port} "
+            f"(http://{url_host}:{port}/) ..."
+        )
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
@@ -1227,12 +1259,17 @@ def test(HandlerClass=BaseHTTPRequestHandler,
             sys.exit(0)
 
 if __name__ == '__main__':
+    import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--cgi', action='store_true',
                        help='Run as CGI Server')
-    parser.add_argument('--bind', '-b', default='', metavar='ADDRESS',
+    parser.add_argument('--bind', '-b', metavar='ADDRESS',
                         help='Specify alternate bind address '
                              '[default: all interfaces]')
+    parser.add_argument('--directory', '-d', default=os.getcwd(),
+                        help='Specify alternative directory '
+                        '[default:current directory]')
     parser.add_argument('port', action='store',
                         default=8000, type=int,
                         nargs='?',
@@ -1241,5 +1278,6 @@ if __name__ == '__main__':
     if args.cgi:
         handler_class = CGIHTTPRequestHandler
     else:
-        handler_class = SimpleHTTPRequestHandler
+        handler_class = partial(SimpleHTTPRequestHandler,
+                                directory=args.directory)
     test(HandlerClass=handler_class, port=args.port, bind=args.bind)
