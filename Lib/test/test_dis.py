@@ -1,7 +1,7 @@
 # Minimal tests for dis module
 
 from test.support import captured_stdout
-from test.bytecode_helper import BytecodeTestCase
+from test.support.bytecode_helper import BytecodeTestCase
 import unittest
 import sys
 import dis
