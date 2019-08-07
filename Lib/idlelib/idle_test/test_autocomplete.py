@@ -10,7 +10,7 @@ import __main__
 import idlelib.autocomplete as ac
 import idlelib.autocomplete_w as acw
 from idlelib.idle_test.mock_idle import Func
-from idlelib.idle_test.mock_tk import Event
+import idlelib.idle_test.mock_tk as mock_tk
 
 
 class DummyEditwin:
@@ -71,7 +71,7 @@ class AutoCompleteTest(unittest.TestCase):
         acp = self.autocomplete
 
         # Result of autocomplete event: If modified tab, None.
-        ev = Event(mc_state=True)
+        ev = mock_tk.Event(mc_state=True)
         self.assertIsNone(acp.autocomplete_event(ev))
         del ev.mc_state
 
@@ -162,7 +162,7 @@ class AutoCompleteTest(unittest.TestCase):
         acp._delayed_completion_id = 'after'
         after = Func(result='after')
         acp.text.after_cancel = after
-        self.text.insert(1.0, '# comment')
+        self.text.insert('1.0', '# comment')
         none(acp.open_completions(ac.TAB))  # From 'else' after 'elif'.
         none(acp._delayed_completion_id)
 
@@ -183,60 +183,41 @@ class AutoCompleteTest(unittest.TestCase):
         acp = self.autocomplete
 
         # No object for attributes or need call not allowed.
-        self.text.insert(1.0, '.')
+        self.text.insert('1.0', '.')
         none(acp.open_completions(ac.TAB))
         self.text.insert('insert', ' int().')
         none(acp.open_completions(ac.TAB))
 
         # Blank or quote trigger 'if complete ...'.
-        self.text.delete(1.0, 'end')
+        self.text.delete('1.0', 'end')
         self.assertFalse(acp.open_completions(ac.TAB))
         self.text.insert('1.0', '"')
         self.assertFalse(acp.open_completions(ac.TAB))
         self.text.delete('1.0', 'end')
 
-    class dummy_acw():
-        __init__ = Func()
-        show_window = Func(result=False)
-        hide_window = Func()
 
-    def test_open_completions(self):
-        # Test completions of files and attributes.
-        acp = self.autocomplete
-        fetch = Func(result=(['tem'],['tem', '_tem']))
-        acp.fetch_completions = fetch
-        def make_acw(): return self.dummy_acw()
-        acp._make_autocomplete_window = make_acw
+class FetchCompletionsTest(unittest.TestCase):
+    def setUp(self):
+        self.root = Mock()
+        self.text = mock_tk.Text()
+        self.editor = DummyEditwin(self.root, self.text)
+        self.autocomplete = ac.AutoComplete(self.editor)
 
-        self.text.insert('1.0', 'int.')
-        acp.open_completions(ac.TAB)
-        self.assertIsInstance(acp.autocompletewindow, self.dummy_acw)
-        self.text.delete('1.0', 'end')
-
-        # Test files.
-        self.text.insert('1.0', '"t')
-        self.assertTrue(acp.open_completions(ac.TAB))
-        self.text.delete('1.0', 'end')
-
-    def test_fetch_completions(self):
+    def test_attrs(self):
         # Test that fetch_completions returns 2 lists:
-        # For attribute completion, a large list containing all variables, and
-        # a small list containing non-private variables.
-        # For file completion, a large list containing all files in the path,
-        # and a small list containing files that do not start with '.'.
+        # 1. a small list containing all non-private variables
+        # 2. a big list containing all variables
         acp = self.autocomplete
-        small, large = acp.fetch_completions(
-                '', ac.ATTRS)
-        if __main__.__file__ != ac.__file__:
-            self.assertNotIn('AutoComplete', small)  # See issue 36405.
 
         # Test attributes
         s, b = acp.fetch_completions('', ac.ATTRS)
-        self.assertLess(len(small), len(large))
-        self.assertTrue(all(filter(lambda x: x.startswith('_'), s)))
-        self.assertTrue(any(filter(lambda x: x.startswith('_'), b)))
+        self.assertLess(set(s), set(b))
+        self.assertTrue(all([not x.startswith('_') for x in s]))
 
-        # Test smalll should respect to __all__.
+        if __main__.__file__ != ac.__file__:
+            self.assertNotIn('AutoComplete', s)  # See issue 36405.
+
+        # Test smalll should respect __all__.
         with patch.dict('__main__.__dict__', {'__all__': ['a', 'b']}):
             s, b = acp.fetch_completions('', ac.ATTRS)
             self.assertEqual(s, ['a', 'b'])
@@ -250,10 +231,15 @@ class AutoCompleteTest(unittest.TestCase):
             s, b = acp.fetch_completions('foo', ac.ATTRS)
             self.assertNotIn('_private', s)
             self.assertIn('_private', b)
-            self.assertEqual(s, [i for i in sorted(dir(mock)) if i[:1] != '_'])
+            self.assertEqual(s, [i for i in sorted(dir(mock)) if i[0] != '_'])
             self.assertEqual(b, sorted(dir(mock)))
 
-        # Test files
+    def test_files(self):
+        # Test that fetch_completions returns 2 lists:
+        # 1. a small list containing files that do not start with '.'.
+        # 2. a big list containing all files in the path
+        acp = self.autocomplete
+
         def _listdir(path):
             # This will be patch and used in fetch_completions.
             if path == '.':
@@ -273,24 +259,65 @@ class AutoCompleteTest(unittest.TestCase):
         # Test that a name is in the namespace of sys.modules and
         # __main__.__dict__.
         acp = self.autocomplete
-        Equal = self.assertEqual
 
-        Equal(acp.get_entity('int'), int)
+        self.assertEqual(acp.get_entity('int'), int)
 
         # Test name from sys.modules.
         mock = Mock()
         with patch.dict('sys.modules', {'tempfile': mock}):
-            Equal(acp.get_entity('tempfile'), mock)
+            self.assertEqual(acp.get_entity('tempfile'), mock)
 
         # Test name from __main__.__dict__.
         di = {'foo': 10, 'bar': 20}
         with patch.dict('__main__.__dict__', {'d': di}):
-            Equal(acp.get_entity('d'), di)
+            self.assertEqual(acp.get_entity('d'), di)
 
         # Test name not in namespace.
         with patch.dict('__main__.__dict__', {}):
             with self.assertRaises(NameError):
-                acp.get_entity('not_exist')
+                acp.get_entity('doesnt_exist')
+
+    def test_open_completions(self):
+        # Test completions of files and attributes.
+        acp = self.autocomplete
+
+        mock_acw = None
+        def make_acw():
+            nonlocal mock_acw
+            mock_acw = Mock()
+            mock_acw.show_window = Mock(return_value=False,
+                                        spec=acw.AutoCompleteWindow.show_window)
+            return mock_acw
+
+        # Test attributes
+        self.text.insert('1.0', 'int.')
+        with patch.object(acp, '_make_autocomplete_window', make_acw):
+            acp.open_completions(ac.TAB)
+        self.assertIs(acp.autocompletewindow, mock_acw)
+        mock_acw.show_window.assert_called_once()
+        comp_lists, index, complete, mode, userWantsWin = \
+            mock_acw.show_window.call_args[0]
+        self.assertEqual(mode, ac.ATTRS)
+        self.assertIn('bit_length', comp_lists[0])
+        self.assertIn('bit_length', comp_lists[1])
+        self.assertNotIn('__index__', comp_lists[0])
+        self.assertIn('__index__', comp_lists[1])
+        self.text.delete('1.0', 'end')
+
+        # Test files.
+        self.text.insert('1.0', '"t')
+        def _listdir(path):
+            return ['.hidden', 'monty', 'python']
+        with patch.object(acp, '_make_autocomplete_window', make_acw):
+            with patch('os.listdir', _listdir):
+                acp.open_completions(ac.FORCE)
+        mock_acw.show_window.assert_called_once()
+        comp_lists, index, complete, mode, userWantsWin = \
+            mock_acw.show_window.call_args[0]
+        self.assertEqual(mode, ac.FILES)
+        self.assertEqual(comp_lists[0], ['monty', 'python'])
+        self.assertEqual(comp_lists[1], ['.hidden', 'monty', 'python'])
+        self.text.delete('1.0', 'end')
 
 
 if __name__ == '__main__':

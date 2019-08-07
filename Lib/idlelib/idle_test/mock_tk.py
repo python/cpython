@@ -3,6 +3,8 @@
 A gui object is anything with a master or parent parameter, which is
 typically required in spite of what the doc strings say.
 """
+import re
+
 
 class Event:
     '''Minimal mock with attributes for testing event handlers.
@@ -131,52 +133,99 @@ class Text:
         if isinstance(index, (float, bytes)):
             index = str(index)
         try:
-            index=index.lower()
+            index = index.lower().strip()
         except AttributeError:
             raise TclError('bad text index "%s"' % index) from None
 
-        lastline =  len(self.data) - 1  # same as number of text lines
-        if index == 'insert':
-            return lastline, len(self.data[lastline]) - 1
-        elif index == 'end':
-            return self._endex(endflag)
+        def clamp(value, min_val, max_val):
+            return max(min_val, min(max_val, value))
 
-        line, char = index.split('.')
-        line = int(line)
+        lastline = len(self.data) - 1  # same as number of text lines
 
-        # Out of bounds line becomes first or last ('end') index
-        if line < 1:
-            return 1, 0
-        elif line > lastline:
-            return self._endex(endflag)
+        first_part = re.match(r'^[^-+\s]+', index).group(0)
 
-        linelength = len(self.data[line])  -1  # position before/at \n
-        if char.endswith(' lineend') or char == 'end':
-            return line, linelength
-            # Tk requires that ignored chars before ' lineend' be valid int
+        if first_part == 'insert':
+            line, char = lastline, len(self.data[lastline]) - 1
+        elif first_part == 'end':
+            line, char = self._endex(endflag)
+        else:
+            line_str, char_str = first_part.split('.')
+            line = int(line_str)
 
-        # Out of bounds char becomes first or last index of line
-        char = int(char)
-        if char < 0:
-            char = 0
-        elif char > linelength:
-            char = linelength
+            # Out of bounds line becomes first or last ('end') index
+            if line < 1:
+                line, char = 1, 0
+            elif line > lastline:
+                line, char = self._endex(endflag)
+            else:
+                linelength = len(self.data[line])
+                if char_str == 'end':
+                    char = linelength - 1
+                else:
+                    char = clamp(int(char_str), 0, linelength - 1)
+
+        part_matches = list(re.finditer(r'''
+            (?:
+                ([-+]\s*[1-9][0-9]*)
+                \s*
+                (?:(display|any)\s+)?
+                (chars|char|cha|ch|c|
+                 indices|indice|indic|indi|ind|in|i|
+                 lines|line|lin|li|l)
+            |
+                linestart|lineend|wordstart|wordend
+            )
+            (?=[-+]|\s|$)
+            ''', index[len(first_part):], re.VERBOSE))
+
+        for m in part_matches:
+            part = m.group(0)
+
+            if part == 'lineend':
+                linelength = len(self.data[line]) - 1
+                char = linelength
+            elif part == 'linestart':
+                char = 0
+            elif part == 'wordstart':
+                raise NotImplementedError
+            elif part == 'wordend':
+                raise NotImplementedError
+            else:
+                number, submod, type = m.groups()
+                delta = int(number)
+                if type[0] in ('c', 'i'):
+                    # chars / indices
+                    char += delta
+                    if char < 0:
+                        while line > 0:
+                            line -= 1
+                            char += len(self.data[line])
+                    elif char >= len(self.data[line]):
+                        while line < lastline:
+                            char -= len(self.data[line])
+                else:
+                    assert type[0] == 'l'
+                    # lines
+                    line += delta
+                    line = clamp(line, 1, lastline)
+                linelength = len(self.data[line])
+                char = clamp(char, 0, linelength - 1)
+
         return line, char
 
     def _endex(self, endflag):
-        '''Return position for 'end' or line overflow corresponding to endflag.
+        """Return position for 'end' or line overflow corresponding to endflag.
 
-       -1: position before terminal \n; for .insert(), .delete
-       0: position after terminal \n; for .get, .delete index 1
-       1: same viewed as beginning of non-existent next line (for .index)
-       '''
+        -1: position before terminal \n; for .insert(), .delete
+        0: position after terminal \n; for .get, .delete index 1
+        1: same viewed as beginning of non-existent next line (for .index)
+        """
         n = len(self.data)
         if endflag == 1:
             return n, 0
         else:
             n -= 1
             return n, len(self.data[n]) + endflag
-
 
     def insert(self, index, chars):
         "Insert chars before the character at index."
@@ -192,7 +241,6 @@ class Text:
         self.data[line] = before + chars[0]
         self.data[line+1:line+1] = chars[1:]
         self.data[line+len(chars)-1] += after
-
 
     def get(self, index1, index2=None):
         "Return slice from index1 to index2 (default is 'index1+1')."
@@ -211,7 +259,6 @@ class Text:
                 lines.append(self.data[i])
             lines.append(self.data[endline][:endchar])
             return ''.join(lines)
-
 
     def delete(self, index1, index2=None):
         '''Delete slice from index1 to index2 (default is 'index1+1').
@@ -276,6 +323,9 @@ class Text:
     def tag_remove(self, tagName, index1, index2=None):
         "Remove tag tagName from all characters between index1 and index2."
         pass
+
+    def tag_prevrange(self, tagName, index1, index2=None):
+        return ()
 
     # The following Text methods affect the graphics screen and return None.
     # Doing nothing should always be sufficient for tests.
