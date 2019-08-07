@@ -8,6 +8,7 @@ import functools
 import importlib.util
 import io
 import os
+import pathlib
 import posixpath
 import shutil
 import stat
@@ -2228,11 +2229,18 @@ class Path:
 
     @staticmethod
     def _add_implied_dirs(names):
-        return names + [
+        subdirs = list(set([
             name + "/"
             for name in map(posixpath.dirname, names)
             if name and name + "/" not in names
-        ]
+        ]))
+        missing_dirs = set()
+        for sd in list(subdirs):
+            for p in pathlib.PurePath(sd).parents:
+                if str(p) not in [".", "/"] and str(p) + "/" not in subdirs:
+                    missing_dirs.add(str(p) + "/")
+        subdirs.extend(list(missing_dirs))
+        return names + subdirs
 
     @property
     def parent(self):
