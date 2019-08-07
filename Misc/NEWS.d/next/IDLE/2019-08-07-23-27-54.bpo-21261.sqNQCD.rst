@@ -1,0 +1,1 @@
+IDLE's shell auto-completion completes dict keys of type str and bytes.
