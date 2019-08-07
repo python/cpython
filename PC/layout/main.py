@@ -153,9 +153,15 @@ def get_layout(ns):
                 yield "libs/" + n + ".lib", lib
 
     if ns.include_appxmanifest:
+        yield from in_build("python_uwp.exe", new_name="python{}".format(VER_DOT))
+        yield from in_build("pythonw_uwp.exe", new_name="pythonw{}".format(VER_DOT))
+        # For backwards compatibility, but we don't reference these ourselves.
         yield from in_build("python_uwp.exe", new_name="python")
         yield from in_build("pythonw_uwp.exe", new_name="pythonw")
     else:
+        yield from in_build("python.exe", new_name="python{}".format(VER_DOT))
+        yield from in_build("pythonw.exe", new_name="pythonw{}".format(VER_DOT))
+        # For backwards compatibility, but we don't reference these ourselves.
         yield from in_build("python.exe", new_name="python")
         yield from in_build("pythonw.exe", new_name="pythonw")
 
@@ -163,9 +169,9 @@ def get_layout(ns):
 
     if ns.include_launchers and ns.include_appxmanifest:
         if ns.include_pip:
-            yield from in_build("python_uwp.exe", new_name="pip")
+            yield from in_build("python_uwp.exe", new_name="pip{}".format(VER_DOT))
         if ns.include_idle:
-            yield from in_build("pythonw_uwp.exe", new_name="idle")
+            yield from in_build("pythonw_uwp.exe", new_name="idle{}".format(VER_DOT))
 
     if ns.include_stable:
         yield from in_build(PYTHON_STABLE_DLL_NAME)
