@@ -209,7 +209,7 @@ class AutoComplete:
                 for x in bytes_comps
             ]
 
-        return itertools.chain(str_comps, bytes_comps)
+        return list(itertools.chain(str_comps, bytes_comps))
 
     def open_completions(self, args):
         """Find the completions and create the AutoCompleteWindow.
@@ -273,21 +273,25 @@ class AutoComplete:
 
         if complete and not comp_what and not comp_start:
             return None
-        comp_lists = self.fetch_completions(comp_what, comp_start, mode)
+        comp_lists = self.fetch_completions(comp_what, mode)
         if mode == DICTKEYS:
+            assert comp_lists[0] == comp_lists[1]
+            reprs = self.dict_str_key_reprs(comp_start, comp_lists[0])
             # if hp.is_in_string():
             #     sep_index = max(0, *(comp_start.rfind(sep) for sep in SEPS))
             #     file_comp_what = comp_start[sep_index:]
             #     extra_comp_lists = self.fetch_completions(file_comp_what, FILES)
             # elif hp.is_in_code():
             if hp.is_in_code():
-                extra_comp_lists = self.fetch_completions("", "", ATTRS)
-                if comp_lists[0] is comp_lists[1]:
-                    comp_lists = comp_lists[0], list(comp_lists[1])
+                comp_lists = (reprs, list(reprs))
+                extra_comp_lists = self.fetch_completions("", ATTRS)
                 comp_lists[0].extend(extra_comp_lists[0])
                 comp_lists[0].sort()
                 comp_lists[1].extend(extra_comp_lists[1])
                 comp_lists[1].sort()
+            else:
+                reprs.sort()
+                comp_lists = (reprs, list(reprs))
         if not comp_lists[0]:
             return None
         self.autocompletewindow = self._make_autocomplete_window()
@@ -295,7 +299,7 @@ class AutoComplete:
                 comp_lists, "insert-%dc" % len(comp_start),
                 complete, mode, wantwin)
 
-    def fetch_completions(self, what, start, mode):
+    def fetch_completions(self, what, mode):
         """Return a pair of lists of completions for something. The first list
         is a sublist of the second. Both are sorted.
 
@@ -313,7 +317,7 @@ class AutoComplete:
             rpcclt = None
         if rpcclt:
             return rpcclt.remotecall("exec", "get_the_completion_list",
-                                     (what, start, mode), {})
+                                     (what, mode), {})
         else:
             if mode == ATTRS:
                 if what == "":
@@ -354,8 +358,7 @@ class AutoComplete:
                     keys = entity.keys() if isinstance(entity, dict) else []
                 except:
                     return [], []
-                str_keys = [k for k in keys if type(k) in (bytes, str)]
-                smalll = bigl = sorted(self.dict_str_key_reprs(start, str_keys))
+                smalll = bigl = [k for k in keys if type(k) in (bytes, str)]
 
             if not smalll:
                 smalll = bigl
