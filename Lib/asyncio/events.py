@@ -124,9 +124,9 @@ class TimerHandle(Handle):
         return NotImplemented
 
     def __le__(self, other):
-        if isinstance(other, TimerHandle) and self._when < other._when:
-            return True
-        return self.__eq__(other)
+        if isinstance(other, TimerHandle):
+            return self._when < other._when or self.__eq__(other)
+        return NotImplemented
 
     def __gt__(self, other):
         if isinstance(other, TimerHandle):
@@ -134,9 +134,9 @@ class TimerHandle(Handle):
         return NotImplemented
 
     def __ge__(self, other):
-        if isinstance(other, TimerHandle) and self._when > other._when:
-            return True
-        return self.__eq__(other)
+        if isinstance(other, TimerHandle):
+            return self._when > other._when or self.__eq__(other)
+        return NotImplemented
 
     def __eq__(self, other):
         if isinstance(other, TimerHandle):
