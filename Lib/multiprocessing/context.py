@@ -58,9 +58,9 @@ class BaseContext(object):
             # custom reducer was specified
             return self._Process
         else:
-            return self.process
+            return self._process
 
-    def process(self, *args, **kwargs):
+    def _process(self, *args, **kwargs):
         return self._Process(*args, reducer=self.get_reducer(), **kwargs)
 
     def Manager(self):

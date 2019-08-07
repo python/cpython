@@ -12,7 +12,6 @@ from . import connection
 from . import process
 from . import resource_tracker
 from . import context
-from .context import reduction
 from . import spawn
 from . import util
 
