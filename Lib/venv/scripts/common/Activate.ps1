@@ -16,7 +16,7 @@ script is located within.
 .Parameter Prompt
 The prompt prefix to display when this virtual environment is activated. By
 default, this prompt is the name of the virtual environment folder (VenvDir)
-surrounded by parenthesis and followed by a single space (ie. '(.venv) ').
+surrounded by parentheses and followed by a single space (ie. '(.venv) ').
 
 .Example
 Activate.ps1
@@ -35,7 +35,7 @@ Activates the Python virtual environment located in the specified location.
 Activate.ps1 -Prompt "MyPython"
 Activates the Python virtual environment that contains the Activate.ps1 script,
 and prefixes the current prompt with the specified string (surrounded in
-parenthesis) while the virtual environment is active.
+parentheses) while the virtual environment is active.
 
 
 #>
@@ -100,7 +100,7 @@ function global:deactivate ([switch]$NonDestructive) {
 
 <#
 .Description
-Get-PyVenvCfgOverrides parses the values from the pyvenv.cfg file located in the
+Get-PyVenvConfig parses the values from the pyvenv.cfg file located in the
 given folder, and returns them in a map.
 
 For each line in the pyvenv.cfg file, if that line can be parsed into exactly
@@ -114,7 +114,7 @@ stripped from the value before being captured.
 .Parameter ConfigDir
 Path to the directory that contains the `pyvenv.cfg` file.
 #>
-function Get-PyVenvCfgOverrides(
+function Get-PyVenvConfig(
     [String]
     $ConfigDir
 ) {
@@ -123,11 +123,13 @@ function Get-PyVenvCfgOverrides(
     # Ensure the file exists, and issue a warning if it doesn't (but still allow the function to continue).
     $pyvenvConfigPath = Join-Path -Resolve -Path $ConfigDir -ChildPath 'pyvenv.cfg' -ErrorAction Continue
 
+    # An empty map will be returned if no config file is found.
+    $pyvenvConfig = @{ }
+
     if ($pyvenvConfigPath) {
 
         Write-Verbose "File exists, parse `key = value` lines"
         $pyvenvConfigContent = Get-Content -Path $pyvenvConfigPath
-        $pyvenvConfig = @{ }
 
         $pyvenvConfigContent | ForEach-Object {
             $keyval = $PSItem -split "\s*=\s*", 2
@@ -172,7 +174,7 @@ if ($VenvDir) {
 
 # Next, read the `pyvenv.cfg` file to determine any required value such
 # as `prompt`.
-$pyvenvCfg = Get-PyVenvCfgOverrides -ConfigDir $VenvDir
+$pyvenvCfg = Get-PyVenvConfig -ConfigDir $VenvDir
 
 # Next, set the prompt from the command line, or the config file, or
 # just use the name of the virtual environment folder.
