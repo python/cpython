@@ -51,9 +51,9 @@ A small number of constants live in the built-in namespace.  They are:
       See :exc:`NotImplementedError` for details on when to use it.
 
    .. versionchanged:: 3.9
-      Evaluating `NotImplemented` in a boolean context is deprecated. While it
-      currently evaluates as true, it will emit a DeprecationWarning. It will
-      raise a TypeError in a future version of Python.
+      Evaluating ``NotImplemented`` in a boolean context is deprecated. While
+      it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
+      It will raise a :exc:`TypeError` in a future version of Python.
 
 
 .. index:: single: ...; ellipsis literal
