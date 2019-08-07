@@ -156,7 +156,7 @@ REGISTRY = {
             "SysVersion": VER_DOT,
             "Version": "{}.{}.{}".format(VER_MAJOR, VER_MINOR, VER_MICRO),
             "InstallPath": {
-                "": "[{{AppVPackageRoot}}]",
+                "": "[{AppVPackageRoot}]",
                 "ExecutablePath": "[{{AppVPackageRoot}}]\\python{}.exe".format(VER_DOT),
                 "WindowedExecutablePath": "[{{AppVPackageRoot}}]\\pythonw{}.exe".format(VER_DOT),
             },
