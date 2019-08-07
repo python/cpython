@@ -1311,11 +1311,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    ``Py_NotImplemented``, if another error occurred it must return *NULL* and
    set an exception condition.
 
-   This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_hash`:
-   a subtype inherits :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` when
-   the subtype's :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both
-   *NULL*.
-
    The following constants are defined to be used as the third argument for
    :c:member:`~PyTypeObject.tp_richcompare` and for :c:func:`PyObject_RichCompare`:
 
