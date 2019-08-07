@@ -498,7 +498,7 @@ class Pool(object):
                 return
 
             if task is None:
-                util.debug('result handler ignoring extra sentinel')
+                util.debug('result handler got extra sentinel')
                 sentinel_counter += 1
                 continue
             job, i, obj = task
