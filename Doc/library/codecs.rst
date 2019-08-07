@@ -841,8 +841,8 @@ The design is such that one can use the factory functions returned by the
    code calling :meth:`read` and :meth:`write`, while *Reader* and *Writer*
    work on the backend — the data in *stream*.
 
-   You can use these objects to do transparent transcodings from e.g. Latin-1
-   to UTF-8 and back.
+   You can use these objects to do transparent transcodings, e.g., from Latin-1
+	to UTF-8 and back.
 
    The *stream* argument must be a file-like object.
 
@@ -1293,7 +1293,7 @@ encodings.
 | raw_unicode_escape |         | Latin-1 encoding with     |
 |                    |         | ``\uXXXX`` and            |
 |                    |         | ``\UXXXXXXXX`` for other  |
-|                    |         | code points. Existing     |
+|                    |         | code points.  Existing    |
 |                    |         | backslashes are not       |
 |                    |         | escaped in any way.       |
 |                    |         | It is used in the Python  |
@@ -1301,7 +1301,7 @@ encodings.
 +--------------------+---------+---------------------------+
 | undefined          |         | Raises an exception for   |
 |                    |         | all conversions, even     |
-|                    |         | empty strings. The error  |
+|                    |         | empty strings.  The error |
 |                    |         | handler is ignored.       |
 +--------------------+---------+---------------------------+
 | unicode_escape     |         | Encoding suitable as the  |
@@ -1309,8 +1309,8 @@ encodings.
 |                    |         | literal in ASCII-encoded  |
 |                    |         | Python source code,       |
 |                    |         | except that quotes are    |
-|                    |         | not escaped. Decodes from |
-|                    |         | Latin-1 source code.      |
+|                    |         | not escaped.  Decodes     |
+|                    |         | from Latin-1 source code. |
 |                    |         | Beware that Python source |
 |                    |         | code actually uses UTF-8  |
 |                    |         | by default.               |
@@ -1438,7 +1438,7 @@ names (:mod:`http.client` then also transparently sends an IDNA hostname in the
 :mailheader:`Host` field if it sends that field at all).
 
 When receiving host names from the wire (such as in reverse name lookup), no
-automatic conversion to Unicode is performed: Applications wishing to present
+automatic conversion to Unicode is performed: applications wishing to present
 such host names to the user should decode them to Unicode.
 
 The module :mod:`encodings.idna` also implements the nameprep procedure, which
@@ -1489,7 +1489,7 @@ This module implements the ANSI codepage (CP_ACP).
    :synopsis: UTF-8 codec with BOM signature
 .. moduleauthor:: Walter Dörwald
 
-This module implements a variant of the UTF-8 codec: on encoding a UTF-8 encoded
-BOM will be prepended to the UTF-8 encoded bytes. For the stateful encoder this
-is only done once (on the first write to the byte stream).  For decoding an
+This module implements a variant of the UTF-8 codec.  On encoding, a UTF-8 encoded
+BOM will be prepended to the UTF-8 encoded bytes.  For the stateful encoder this
+is only done once (on the first write to the byte stream).  On decoding, an
 optional UTF-8 encoded BOM at the start of the data will be skipped.
