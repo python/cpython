@@ -103,8 +103,10 @@
 #define Py_UNREACHABLE() abort()
 
 
-/* If we're using GCC, use __builtin_expect() */
-#if defined(__GNUC__) && (__GNUC__ > 2)
+/* If we are using GCC, use __builtin_expect(). There is no need to check
+ * the GCC version since old versions that don't have __builtin_expect()
+ * can't compile CPython anyway */
+#if defined(__GNUC__)
 #  define Py_UNLIKELY(value) __builtin_expect(!!(value), 0)
 #  define Py_LIKELY(value) __builtin_expect(!!(value), 1)
 #else
