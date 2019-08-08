@@ -695,7 +695,10 @@ if 1:
     def test_stack_overflow(self):
         # bpo-31113: Stack overflow when compile a long sequence of
         # complex statements.
-        compile("if a: b\n" * 200000, "<dummy>", "exec")
+        try:
+            compile("if a: b\n" * 200000, "<dummy>", "exec")
+        except MemoryError:
+            pass
 
     # Multiple users rely on the fact that CPython does not generate
     # bytecode for dead code blocks. See bpo-37500 for more context.

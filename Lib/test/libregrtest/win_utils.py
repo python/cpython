@@ -25,6 +25,7 @@ class WindowsLoadTracker():
 
     def __init__(self):
         self.load = 0.0
+        self.p = None
         self.start()
 
     def start(self):
