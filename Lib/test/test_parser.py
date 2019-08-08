@@ -1,5 +1,9 @@
 import copy
-import parser
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', 'The parser module is deprecated',
+                            DeprecationWarning)
+    import parser
 import pickle
 import unittest
 import operator
