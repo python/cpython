@@ -127,7 +127,7 @@ class AutoComplete:
     @classmethod
     def dict_key_reprs(cls, comp_start, comp_list):
         """Customized repr() for str and bytes.
-        
+
         This retains the prefix and quote type of the completed partial
         str/bytes literal, if they exist.
         """
