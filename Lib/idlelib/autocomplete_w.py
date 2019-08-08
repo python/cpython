@@ -4,10 +4,14 @@ An auto-completion window for IDLE, used by the autocomplete extension
 import platform
 
 from tkinter import *
-from tkinter.ttk import Frame, Scrollbar
+from tkinter.ttk import Scrollbar
 
 from idlelib.autocomplete import FILES, ATTRS
 from idlelib.multicall import MC_SHIFT
+
+
+__all__ = ['AutoCompleteWindow']
+
 
 HIDE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-hide>>"
 HIDE_FOCUS_OUT_SEQUENCE = "<FocusOut>"
@@ -52,8 +56,8 @@ class AutoCompleteWindow:
         # (for example, he clicked the list)
         self.userwantswindow = None
         # event ids
-        self.hideid = self.keypressid = self.listupdateid = self.winconfigid \
-        = self.keyreleaseid = self.doubleclickid                         = None
+        self.hideid = self.keypressid = self.listupdateid = \
+            self.winconfigid = self.keyreleaseid = self.doubleclickid = None
         # Flag set if last keypress was a tab
         self.lastkey_was_tab = False
 
