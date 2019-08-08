@@ -2307,8 +2307,8 @@ class CompatiblePathTest(unittest.TestCase):
     class CompatPath:
         """
         Minimum viable class to test PurePath compatibility.
-        Simply uses the division operator to join a given 
-        string and the string value of another object with 
+        Simply uses the division operator to join a given
+        string and the string value of another object with
         a forward slash.
         """
         def __init__(self, string):
