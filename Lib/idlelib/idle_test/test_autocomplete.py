@@ -1,7 +1,8 @@
 "Test autocomplete, coverage 93%."
 
+import itertools
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, DEFAULT
 from test.support import requires
 from tkinter import Tk, Text
 import os
@@ -166,40 +167,15 @@ class AutoCompleteTest(unittest.TestCase):
         none(acp.open_completions(ac.TAB))  # From 'else' after 'elif'.
         none(acp._delayed_completion_id)
 
-    def test_oc_no_list(self):
-        acp = self.autocomplete
-        fetch = Func(result=([],[]))
-        acp.fetch_completions = fetch
-        self.text.insert('1.0', 'object')
-        self.assertIsNone(acp.open_completions(ac.TAB))
-        self.text.insert('insert', '.')
-        self.assertIsNone(acp.open_completions(ac.TAB))
-        self.assertEqual(fetch.called, 2)
-
-    def test_open_completions_none(self):
-        # Test other two None returns.
-        none = self.assertIsNone
-        acp = self.autocomplete
-
-        # No object for attributes or need call not allowed.
-        self.text.insert('1.0', '.')
-        none(acp.open_completions(ac.TAB))
-        self.text.insert('insert', ' int().')
-        none(acp.open_completions(ac.TAB))
-
-        # Blank or quote trigger 'if complete ...'.
-        self.text.delete('1.0', 'end')
-        self.assertFalse(acp.open_completions(ac.TAB))
-        self.text.insert('1.0', '"')
-        self.assertFalse(acp.open_completions(ac.TAB))
-        self.text.delete('1.0', 'end')
-
 
 class FetchCompletionsTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.root = Mock()
+        cls.text = mock_tk.Text(cls.root)
+        cls.editor = DummyEditwin(cls.root, cls.text)
+
     def setUp(self):
-        self.root = Mock()
-        self.text = mock_tk.Text()
-        self.editor = DummyEditwin(self.root, self.text)
         self.autocomplete = ac.AutoComplete(self.editor)
 
     def test_attrs(self):
@@ -295,7 +271,7 @@ class OpenCompletionsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.root = Mock()
-        cls.text = mock_tk.Text()
+        cls.text = mock_tk.Text(cls.root)
         cls.editor = DummyEditwin(cls.root, cls.text)
 
     def setUp(self):
@@ -347,15 +323,16 @@ class OpenCompletionsTest(unittest.TestCase):
         self.assertEqual(comp_lists[0], ['monty', 'python'])
         self.assertEqual(comp_lists[1], ['.hidden', 'monty', 'python'])
 
-    def test_open_completions_dict_keys(self):
+    def test_open_completions_dict_keys_only_opening_quote(self):
         # Note that dict key completion lists also include variables from
         # the global namespace.
         acp = self.autocomplete
 
+        test_dict = {'one': 1, b'two': 2, 3: 3}
+
         for quote in ['"', "'", '"""', "'''"]:
             with self.subTest(quote=quote):
                 self.text.insert('1.0', f'test_dict[{quote}')
-                test_dict = {'one': 1, b'two': 2, 3: 3}
                 with patch.object(acp, '_make_autocomplete_window',
                                   self.make_acw):
                     with patch.dict('__main__.__dict__',
@@ -372,6 +349,291 @@ class OpenCompletionsTest(unittest.TestCase):
                 self.assertLess(set(expected), set(comp_lists[0]))
                 self.assertLess(set(expected), set(comp_lists[1]))
                 self.text.delete('1.0', 'end')
+
+    def test_open_completions_dict_keys_no_opening_quote(self):
+        # Note that dict key completion lists also include variables from
+        # the global namespace.
+        acp = self.autocomplete
+
+        test_dict = {'one': 1, b'two': 2, 3: 3}
+
+        self.text.insert('1.0', f'test_dict[')
+        with patch.object(acp, '_make_autocomplete_window',
+                          self.make_acw):
+            with patch.dict('__main__.__dict__',
+                            {'test_dict': test_dict}):
+                acp.open_completions(ac.TAB)
+        mock_acw = self.mock_acw
+
+        mock_acw.show_window.assert_called_once()
+        comp_lists, index, complete, mode, userWantsWin = \
+            mock_acw.show_window.call_args[0]
+        self.assertEqual(mode, ac.DICTKEYS)
+        self.assertLess(set(comp_lists[0]), set(comp_lists[1]))
+        expected = [f'"one"', f'b"two"']
+        self.assertLess(set(expected), set(comp_lists[0]))
+        self.assertLess(set(expected), set(comp_lists[1]))
+        self.text.delete('1.0', 'end')
+
+    def test_no_list(self):
+        acp = self.autocomplete
+        fetch = Func(result=([],[]))
+        acp.fetch_completions = fetch
+        none = self.assertIsNone
+        oc = acp.open_completions
+        self.text.insert('1.0', 'object')
+        none(oc(ac.TAB))
+        self.text.insert('insert', '.')
+        none(oc(ac.TAB))
+        self.assertEqual(fetch.called, 2)
+
+    def test_none(self):
+        # Test other two None returns.
+        none = self.assertIsNone
+        acp = self.autocomplete
+        oc = acp.open_completions
+
+        # No object for attributes or need call not allowed.
+        self.text.insert('1.0', '.')
+        none(oc(ac.TAB))
+        self.text.insert('insert', ' int().')
+        none(oc(ac.TAB))
+
+        # Blank or quote trigger 'if complete ...'.
+        self.text.delete('1.0', 'end')
+        self.assertFalse(oc(ac.TAB))
+        self.text.insert('1.0', '"')
+        self.assertFalse(oc(ac.TAB))
+        self.text.delete('1.0', 'end')
+
+
+class ShowWindowTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.root = Mock()
+        cls.text = mock_tk.Text(cls.root)
+        cls.editor = DummyEditwin(cls.root, cls.text)
+
+    def setUp(self):
+        self.autocomplete = ac.AutoComplete(self.editor)
+
+        patcher = patch.multiple(acw,
+                                 Toplevel=DEFAULT,
+                                 Scrollbar=DEFAULT,
+                                 Listbox=mock_tk.Listbox)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_complete_dict_key_single_match(self):
+        acp = self.autocomplete
+
+        test_dict = {'one': 1, b'two': 2, 3: 3}
+
+        for quote, args in itertools.product(
+                ['"', "'", '"""', "'''"],
+                [ac.TAB, ac.FORCE]
+        ):
+            for text in [f'test_dict[{quote}', f'test_dict[{quote}o']:
+                with self.subTest(quote=quote, args=args, text=text):
+                    self.text.delete('1.0', 'end')
+                    self.text.insert('1.0', text)
+                    with patch.dict('__main__.__dict__',
+                                    {'test_dict': test_dict}):
+                        result = acp.open_completions(args)
+
+                    self.assertEqual(result, True)
+                    # With one possible completion, the text should be updated
+                    # only if the 'complete' flag is true.
+                    expected_text = \
+                        text if not args[1] else f'test_dict[{quote}one{quote}]'
+                    self.assertEqual(self.text.get('1.0', '1.end'),
+                                     expected_text)
+
+    def test_complete_dict_key_multiple_matches(self):
+        acp = self.autocomplete
+
+        test_dict = {'twelve': 12, 'two': 2}
+
+        for quote, args in itertools.product(
+                ['"', "'", '"""', "'''"],
+                [ac.TAB, ac.FORCE]
+        ):
+            for text in [f'test_dict[{quote}', f'test_dict[{quote}t']:
+                with self.subTest(quote=quote, text=text, args=args):
+                    self.text.delete('1.0', 'end')
+                    self.text.insert('1.0', text)
+                    with patch.dict('__main__.__dict__',
+                                    {'test_dict': test_dict}):
+                        result = acp.open_completions(args)
+
+                    self.assertEqual(result, True)
+                    # With more than one possible completion, the text
+                    # should not be changed.
+                    self.assertEqual(self.text.get('1.0', '1.end'), text)
+
+    def test_complete_dict_key_no_matches(self):
+        acp = self.autocomplete
+
+        test_dict = {'one': 12, 'two': 2}
+
+        for quote, args in itertools.product(
+                ['"', "'", '"""', "'''"],
+                [ac.TAB, ac.FORCE]
+        ):
+            for text in [f'test_dict[b{quote}', f'test_dict[b{quote}t']:
+                with self.subTest(quote=quote, text=text, args=args):
+                    self.text.delete('1.0', 'end')
+                    self.text.insert('1.0', text)
+                    with patch.dict('__main__.__dict__',
+                                    {'test_dict': test_dict}):
+                        result = acp.open_completions(args)
+
+                    self.assertEqual(result, True)
+                    # With no possible completions, the text
+                    # should not be changed.
+                    self.assertEqual(self.text.get('1.0', '1.end'), text)
+
+
+class TestQuoteClosesLiteral(unittest.TestCase):
+    def check(self, start, quotechar):
+        return acw.AutoCompleteWindow._quote_closes_literal(start, quotechar)
+        
+    def test_true_cases(self):
+        true_cases = [
+            # (start, quotechar)
+            (f'{prefix}{quote}{content}{quote[:-1]}', quote[0])
+            for prefix in ('', 'b', 'rb', 'u')
+            for quote in ('"', "'", '"""', "'''")
+            for content in ('', 'a', 'abc', '\\'*2, f'\\{quote[0]}', '\\n')
+        ]
+        
+        for (start, quotechar) in true_cases:
+            with self.subTest(start=start, quotechar=quotechar):
+                self.assertTrue(self.check(start, quotechar))
+
+    def test_false_cases(self):
+        false_cases = [
+            # (start, quotechar)
+            (f'{prefix}{quote}{content}', quote[0])
+            for prefix in ('', 'b', 'rb', 'u')
+            for quote in ('"', "'", '"""', "'''")
+            for content in ('\\', 'a\\', 'ab\\', '\\'*3, '\\'*5, 'ab\\\\\\')
+        ]
+
+        # test different quote char
+        false_cases.extend([
+            ('"', "'"),
+            ('"abc', "'"),
+            ('"""', "'"),
+            ('"""abc', "'"),
+            ("'", '"'),
+            ("'abc", '"'),
+            ("'''", '"'),
+            ("'''abc", '"'),
+        ])
+
+        # test not yet closed triple-quotes
+        for q in ['"', "'"]:
+            false_cases.extend([
+                (f"{q*3}", q),
+                (f"{q*4}", q),
+                (f"{q*3}\\{q}", q),
+                (f"{q*3}\\{q*2}", q),
+                (f"{q*3}\\\\\\{q*2}", q),
+                (f"{q*3}abc", q),
+                (f"{q*3}abc{q}", q),
+                (f"{q*3}abc\\{q}", q),
+                (f"{q*3}abc\\{q*2}", q),
+                (f"{q*3}abc\\\\\\{q*2}", q),
+            ])
+
+        for (start, quotechar) in false_cases:
+            with self.subTest(start=start, quotechar=quotechar):
+                self.assertFalse(self.check(start, quotechar))
+
+
+class TestDictKeyReprs(unittest.TestCase):
+    def call(self, comp_start, comp_list):
+        return ac.AutoComplete._dict_key_reprs(comp_start, comp_list)
+
+    def check(self, comp_start, comp_list, expected):
+        self.assertEqual(self.call(comp_start, comp_list), expected)
+
+    def test_empty_strings(self):
+        self.check('', [''], ['""'])
+        self.check('', [b''], ['b""'])
+        self.check('', ['', b''], ['""', 'b""'])
+
+    def test_empty_strings_with_only_prefix(self):
+        self.check('b', [''], ['""'])
+        self.check('b', [b''], ['b""'])
+
+        self.check('r', [''], ['r""'])
+        self.check('rb', [b''], ['rb""'])
+        self.check('br', [b''], ['br""'])
+        self.check('rb', [''], ['r""'])
+        self.check('br', [''], ['r""'])
+
+        self.check('u', [''], ['u""'])
+        self.check('u', [b''], ['b""'])
+
+    def test_empty_strings_with_only_quotes(self):
+        self.check('"', [''], ['""'])
+        self.check("'", [''], ["''"])
+        self.check('"""', [''], ['""""""'])
+        self.check("'''", [''], ["''''''"])
+
+        self.check('"', [b''], ['b""'])
+        self.check("'", [b''], ["b''"])
+        self.check('"""', [b''], ['b""""""'])
+        self.check("'''", [b''], ["b''''''"])
+
+    def test_backslash_escape(self):
+        self.check('"', ['ab\\c'], [r'"ab\\c"'])
+        self.check('"', ['ab\\\\c'], [r'"ab\\\\c"'])
+        self.check('"', ['ab\\nc'], [r'"ab\\nc"'])
+
+    def test_quote_escape(self):
+        self.check('"', ['"', "'"], [r'"\""', '"\'"'])
+        self.check("'", ['"', "'"], ["'\"'", r"'\''"])
+        self.check('"""', ['"', "'"], [r'"""\""""', '"""\'"""'])
+        self.check("'''", ['"', "'"], ["'''\"'''", r"'''\''''"])
+
+        # With triple quotes, only a final single quote should be escaped.
+        self.check('"""', ['"ab'], ['""""ab"""'])
+        self.check('"""', ['a"b'], ['"""a"b"""'])
+        self.check('"""', ['ab"'], ['"""ab\\""""'])
+        self.check('"""', ['ab""'], ['"""ab"\\""""'])
+
+        self.check("'''", ["'ab"], ["''''ab'''"])
+        self.check("'''", ["a'b"], ["'''a'b'''"])
+        self.check("'''", ["ab'"], ["'''ab\\''''"])
+        self.check("'''", ["ab''"], ["'''ab'\\''''"])
+
+        # Identical single quotes should be escaped.
+        self.check('"', ['ab"c'], [r'"ab\"c"'])
+        self.check("'", ["ab'c"], [r"'ab\'c'"])
+
+        # Different single quotes shouldn't be escaped.
+        self.check('"', ["ab'c"], ['"ab\'c"'])
+        self.check("'", ['ab"c'], ["'ab\"c'"])
+
+    def test_control_char_escape(self):
+        custom_escapes = {0: '\\0', 9: '\\t', 10: '\\n', 13: '\\r'}
+        for ord_ in range(14):
+            with self.subTest(ord_=ord_):
+                escape = custom_escapes.get(ord_, f'\\x{ord_:02x}')
+                self.check('"', [chr(ord_), bytes([ord_])],
+                           [f'"{escape}"', f'b"{escape}"'])
+
+    def test_high_bytes_value_escape(self):
+        self.check('"', [b'\x80'], [r'b"\x80"'])
+        self.check('"', [b'\xc3'], [r'b"\xc3"'])
+        self.check('"', [b'\xff'], [r'b"\xff"'])
+        self.check('"', [b'\x80\xc3\xff'], [r'b"\x80\xc3\xff"'])
+
+        # Such characters should only be escaped in bytes, not str.
+        self.check('"', ['\x80\xc3\xff'], ['"\x80\xc3\xff"'])
 
 
 if __name__ == '__main__':

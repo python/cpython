@@ -95,23 +95,37 @@ class AutoComplete:
     _dict_str_key_prefix_re = re.compile(r'\s*(br|rb|fr|rf|b|f|r|u|)', re.I)
 
     @classmethod
-    def is_completing_dict_key(cls, hp, curline):
+    def _is_completing_dict_key(cls, hp, curline):
         if hp.is_in_string():
+            # hp.indexbracket is an opening quote;
+            # check if the bracket before it is '['.
+            if hp.indexbracket == 0:
+                return None
             opening_bracket_idx = hp.bracketing[hp.indexbracket - 1][0]
             if hp.rawtext[opening_bracket_idx] != '[':
                 return None
+            # The completion start is everything from the '[', except initial
+            # whitespace. Check that it's a valid beginning of a str/bytes
+            # literal.
             opening_quote_idx = hp.bracketing[hp.indexbracket][0]
             m = cls._dict_str_key_prefix_re.fullmatch(
                 hp.rawtext[opening_bracket_idx+1:opening_quote_idx])
             if m is None:
                 return None
-            comp_start = m.group(1) + hp.rawtext[opening_quote_idx:hp.indexinrawtext]
+            comp_start = \
+                m.group(1) + hp.rawtext[opening_quote_idx:hp.indexinrawtext]
         elif hp.is_in_code():
+            # This checks the the last bracket is an opener,
+            # and also avoids an edge-case exception.
             if not hp.isopener[hp.indexbracket]:
                 return None
+            # Check if the last opening bracket a '['.
             opening_bracket_idx = hp.bracketing[hp.indexbracket][0]
             if hp.rawtext[opening_bracket_idx] != '[':
                 return None
+            # We want to complete str/bytes dict keys only if the existing
+            # completion start could be the beginning of a literal. Note
+            # that an empty or all-whitespace completion start is acceptable.
             m = cls._dict_str_key_prefix_re.fullmatch(
                 hp.rawtext[opening_bracket_idx + 1:hp.indexinrawtext])
             if m is None:
@@ -125,7 +139,7 @@ class AutoComplete:
         return comp_what, comp_start
 
     @classmethod
-    def dict_key_reprs(cls, comp_start, comp_list):
+    def _dict_key_reprs(cls, comp_start, comp_list):
         """Customized repr() for str and bytes.
 
         This retains the prefix and quote type of the completed partial
@@ -138,9 +152,8 @@ class AutoComplete:
         if prefix_match is not None:
             prefix = prefix_match.group(1)
             post_prefix = comp_start[prefix_match.end():]
-            lowercase_prefix = prefix.lower()
 
-            is_raw = 'r' in lowercase_prefix
+            is_raw = 'r' in prefix.lower()
             if post_prefix:
                 quote_type_candidate = post_prefix[0]
                 if quote_type_candidate not in "'\"":
@@ -150,63 +163,92 @@ class AutoComplete:
                 else:
                     quote_type = quote_type_candidate
         else:
-            prefix = lowercase_prefix = ''
+            prefix = ''
 
         # Prepare the prefixes to use for the reprs.
+        bytes_prefix = re.sub(r'[fu]', '', prefix, flags=re.I)
+        if 'b' not in bytes_prefix.lower():
+            bytes_prefix += 'b'
         prefix = prefix.replace('b', '').replace('B', '')
-        bytes_prefix = (prefix + 'b') if lowercase_prefix in ('', 'r') else 'b'
 
         # Prepare escaping utilities.
         escape_re = re.compile(r'[\0-\15]')
-        escapes = {chr(x): f'\\{x}' for x in range(7)}
-        escapes.update({
-            7: '\\a',
-            8: '\\b',
-            9: '\\t',
-            10: '\\n',
-            11: '\\v',
-            12: '\\f',
-            13: '\\r',
-        })
+        escapes = {ord_: f'\\x{ord_:02x}' for ord_ in range(14)}
+        escapes.update({0: '\\0', 9: '\\t', 10: '\\n', 13: '\\r'})
+        def control_char_escape(match):
+            return escapes[ord(match.group())]
         high_byte_escape_re = re.compile(r'[\x80-\xff]')
-        def high_byte_sub(char):
+        def high_byte_sub(match):
             """escaping for bytes values above 127"""
-            return f'\\x{ord(char):x}'
+            return f'\\x{ord(match.group()):x}'
 
         # Split the completions into lists of str and bytes.
-        str_comps = (c for c in comp_list if type(c) == str)
+        str_comps = [c for c in comp_list if type(c) == str]
         bytes_comps = (c for c in comp_list if type(c) == bytes)
 
         # Create reprs for the str objects.
         str_repr_template = f"{prefix}{quote_type}{{}}{quote_type}"
-        str_comps = (x.replace(quote_type, '\\'+quote_type) for x in str_comps)
         if not is_raw:
-            str_comps = (escape_re.sub(escapes.__getitem__, x) for x in str_comps)
-            str_comps = (str_repr_template.format(x) for x in str_comps)
+            # Escape back-slashes.
+            str_comps = [x.replace('\\', '\\\\') for x in str_comps]
+        # Escape quotes.
+        str_comps = [x.replace(quote_type, '\\'+quote_type) for x in str_comps]
+        if len(quote_type) == 3:
+            # With triple-quotes, we need to escape the final character if it
+            # is a single quote of the same kind.
+            str_comps = [
+                (x[:-1] + '\\' + x[-1]) if x[-1:] == quote_type[0] else x
+                for x in str_comps
+            ]
+        if not is_raw:
+            # Escape control characters.
+            str_comps = [escape_re.sub(control_char_escape, x)
+                         for x in str_comps]
+            str_comps = [str_repr_template.format(x) for x in str_comps]
         else:
+            # Format as raw literals (r"...") except when there are control
+            # characters which must be escaped.
+            non_raw_prefix = prefix.replace('r', '').replace('R', '')
+            non_raw_template = f"{non_raw_prefix}{quote_type}{{}}{quote_type}"
             str_comps = (
                 str_repr_template.format(x)
                 if escape_re.search(x) is None
-                else f"{prefix.replace('r', '').replace('R', '')}{quote_type}{escape_re.sub(escapes.__getitem__, x)}{quote_type}"
+                else non_raw_template.format(
+                    escape_re.sub(control_char_escape, x))
                 for x in str_comps
             )
 
         # Create reprs for the bytes objects.
         bytes_repr_template = f"{bytes_prefix}{quote_type}{{}}{quote_type}"
         bytes_comps = (x.decode('latin-1') for x in bytes_comps)
-        bytes_comps = (x.replace(quote_type, '\\'+quote_type) for x in bytes_comps)
         if not is_raw:
-            bytes_comps = (escape_re.sub(escapes.__getitem__, x) for x in bytes_comps)
-            bytes_comps = (high_byte_escape_re.sub(high_byte_sub, x) for x in bytes_comps)
+            # Escape back-slashes.
+            bytes_comps = (x.replace('\\', '\\\\') for x in bytes_comps)
+        # Escape quotes.
+        bytes_comps = (
+            x.replace(quote_type, '\\'+quote_type) for x in bytes_comps)
+        if not is_raw:
+            # Escape control characters.
+            bytes_comps = (
+                escape_re.sub(control_char_escape, x) for x in bytes_comps)
+            # Escape high-value characters.
+            bytes_comps = (
+                high_byte_escape_re.sub(high_byte_sub, x) for x in bytes_comps)
             bytes_comps = (bytes_repr_template.format(x) for x in bytes_comps)
         else:
+            # Format as raw literals (br"...") except when there are control
+            # characters or high-value characters which must be escaped.
+            non_raw_template = f"b{quote_type}{{}}{quote_type}"
             bytes_comps = (
                 bytes_repr_template.format(x)
                 if (
                     escape_re.search(x) is None and
                     high_byte_escape_re.search(x) is None
                 )
-                else f"b{quote_type}{high_byte_escape_re.sub(high_byte_sub, escape_re.sub(escapes.__getitem__, x))}{quote_type}"
+                else non_raw_template.format(
+                    high_byte_escape_re.sub(
+                        high_byte_sub, escape_re.sub(control_char_escape, x))
+                )
                 for x in bytes_comps
             )
 
@@ -230,7 +272,7 @@ class AutoComplete:
         i = j = len(curline)
 
         if mode in (None, DICTKEYS):
-            comp_what_and_start = self.is_completing_dict_key(hp, curline)
+            comp_what_and_start = self._is_completing_dict_key(hp, curline)
             if comp_what_and_start is not None:
                 comp_what, comp_start = comp_what_and_start
                 if comp_what and (evalfuncs or '(' not in comp_what):
@@ -277,7 +319,7 @@ class AutoComplete:
         comp_lists = self.fetch_completions(comp_what, mode)
         if mode == DICTKEYS:
             assert comp_lists[0] == comp_lists[1]
-            reprs = self.dict_key_reprs(comp_start, comp_lists[0])
+            reprs = self._dict_key_reprs(comp_start, comp_lists[0])
 
             if hp.is_in_code():
                 # Add variables in the global namespace to the comp lists.

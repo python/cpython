@@ -3,6 +3,7 @@
 A gui object is anything with a master or parent parameter, which is
 typically required in spite of what the doc strings say.
 """
+from bisect import bisect_left, bisect_right
 import re
 
 
@@ -89,7 +90,91 @@ class Test(unittest.TestCase):
 
 from _tkinter import TclError
 
-class Text:
+class Misc:
+    def destroy(self):
+        pass
+
+    def configure(self, cnf=None, **kw):
+        pass
+
+    config = configure
+
+    def cget(self, key):
+        pass
+
+    __getitem__ = cget
+
+    def __setitem__(self, key, value):
+        self.configure({key: value})
+
+    def bind(sequence=None, func=None, add=None):
+        "Bind to this widget at event sequence a call to function func."
+        pass
+
+    def unbind(self, sequence, funcid=None):
+        """Unbind for this widget for event SEQUENCE  the
+        function identified with FUNCID."""
+        pass
+
+    def event_add(self, virtual, *sequences):
+        """Bind a virtual event VIRTUAL (of the form <<Name>>)
+        to an event SEQUENCE such that the virtual event is triggered
+        whenever SEQUENCE occurs."""
+        pass
+
+    def event_delete(self, virtual, *sequences):
+        """Unbind a virtual event VIRTUAL from SEQUENCE."""
+        pass
+
+    def event_generate(self, sequence, **kw):
+        """Generate an event SEQUENCE. Additional
+        keyword arguments specify parameter of the event
+        (e.g. x, y, rootx, rooty)."""
+        pass
+
+    def event_info(self, virtual=None):
+        """Return a list of all virtual events or the information
+        about the SEQUENCE bound to the virtual event VIRTUAL."""
+        pass
+
+    def focus_set(self):
+        pass
+
+
+class Widget(Misc):
+    def pack_configure(self, cnf={}, **kw):
+        pass
+    pack = configure = config = pack_configure
+
+    def pack_forget(self):
+        pass
+    forget = pack_forget
+
+    def pack_info(self):
+        pass
+    info = pack_info
+
+
+class YView:
+    """Mix-in class for querying and changing the vertical position
+    of a widget's window."""
+
+    def yview(self, *args):
+        """Query and change the vertical position of the view."""
+        pass
+
+    def yview_moveto(self, fraction):
+        """Adjusts the view in the window so that FRACTION of the
+        total height of the canvas is off-screen to the top."""
+        pass
+
+    def yview_scroll(self, number, what):
+        """Shift the y-view according to NUMBER which is measured in
+        "units" or "pages" (WHAT)."""
+        pass
+
+
+class Text(Widget, YView):
     """A semi-functional non-gui replacement for tkinter.Text text editors.
 
     The mock's data model is that a text is a list of \n-terminated lines.
@@ -127,7 +212,7 @@ class Text:
         * 'line.char lineend', where lineend='lineend' (and char is ignored);
         * 'line.end', where end='end' (same as above);
         * 'insert', the positions before terminal \n;
-        * 'end', whose meaning depends on the endflag passed to ._endex.
+        * 'end', whose meaning depends on the endflag passed to ._index.
         * 'sel.first' or 'sel.last', where sel is a tag -- not implemented.
         """
         if isinstance(index, (float, bytes)):
@@ -340,14 +425,122 @@ class Text:
         "Scroll screen to make the character at INDEX is visible."
         pass
 
-    #  The following is a Misc method inherited by Text.
-    # It should properly go in a Misc mock, but is included here for now.
-
-    def bind(sequence=None, func=None, add=None):
-        "Bind to this widget at event sequence a call to function func."
-        pass
 
 class Entry:
     "Mock for tkinter.Entry."
     def focus_set(self):
         pass
+
+
+class Listbox(Widget, YView):
+    def __init__(self, master=None, cnf={}, **kw):
+        self._items = []
+        self._selection = []
+
+    def _normalize_first_last(self, first, last):
+        first = self._index(first)
+        last = first if last is None else self._index(last)
+        if not (0 <= first < len(self._items)):
+            raise IndexError()
+        if not (0 <= last < len(self._items)):
+            raise IndexError()
+        return first, last
+
+    def _index(self, index, end_after_last=False):
+        if index == 'end':
+            index = len(self._items) - (0 if end_after_last else 1)
+        elif index in ('active', 'anchor'):
+            raise NotImplementedError()
+        elif isinstance(index, str) and index.startswith('@'):
+            raise NotImplementedError()
+        else:
+            if not isinstance(index, int):
+                raise ValueError()
+        return index
+
+    def curselection(self):
+        """Return the indices of currently selected item."""
+        return list(self._selection)
+
+    def delete(self, first, last=None):
+        """Delete items from FIRST to LAST (included)."""
+        first, last = self._normalize_first_last(first, last)
+
+        if last < first:
+            return
+        self.selection_clear(first, last)
+        self._items[first:last+1] = []
+        sel_idx = bisect_left(self._selection, first)
+        for i in range(sel_idx, len(self._selection)):
+            self._selection[i] -= (last - first + 1)
+
+    def get(self, first, last=None):
+        """Get list of items from FIRST to LAST (included)."""
+        first, last = self._normalize_first_last(first, last)
+
+        if last < first:
+            return []
+        return self._items[first:last + 1]
+
+    def index(self, index):
+        """Return index of item identified with INDEX."""
+        index = self._index(index, end_after_last=True)
+        if not index >= 0:
+            raise IndexError
+        if index > len(self._items):
+            index = len(self._items)
+        return index
+
+    def insert(self, index, *elements):
+        """Insert ELEMENTS at INDEX."""
+        index = self._index(index, end_after_last=True)
+        if not index >= 0:
+            raise IndexError
+        self._items[index:index] = list(elements)
+        sel_index = bisect_left(self._selection, index)
+        for i in range(sel_index, len(self._selection)):
+            self._selection[i] += len(elements)
+        return ""
+
+    def see(self, index):
+        """Scroll such that INDEX is visible."""
+        index = self._index(index)
+        pass
+
+    def selection_clear(self, first, last=None):
+        """Clear the selection from FIRST to LAST (included)."""
+        first, last = self._normalize_first_last(first, last)
+
+        if last < first:
+            return []
+        first_sel_idx = bisect_left(self._selection, first)
+        last_sel_idx = bisect_right(self._selection, last)
+        self._selection[first_sel_idx:last_sel_idx] = []
+
+    select_clear = selection_clear
+
+    def selection_includes(self, index):
+        """Return 1 if INDEX is part of the selection."""
+        index = self._index(index)
+        if not (0 <= index < len(self._items)):
+            raise IndexError()
+        return index in self._selection
+
+    select_includes = selection_includes
+
+    def selection_set(self, first, last=None):
+        """Set the selection from FIRST to LAST (included) without
+        changing the currently selected elements."""
+        first, last = self._normalize_first_last(first, last)
+
+        if last < first:
+            return []
+        first_sel_idx = bisect_left(self._selection, first)
+        last_sel_idx = bisect_right(self._selection, last)
+        self._selection[first_sel_idx:last_sel_idx] = list(range(first, last+1))
+
+    select_set = selection_set
+
+    def size(self):
+        """Return the number of elements in the listbox."""
+        return len(self._items)
