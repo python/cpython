@@ -1352,6 +1352,11 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, threading, ('threading', '_thread'),
                              extra=extra, blacklist=blacklist)
 
+    def test_without_join(self):
+        # Test that a thread without join does not leak references.
+        # Use a debug build and run "python -m test -R: test_threading"
+        threading.Thread().start()
+
 
 class InterruptMainTests(unittest.TestCase):
     def test_interrupt_main_subthread(self):
