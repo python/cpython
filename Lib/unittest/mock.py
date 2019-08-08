@@ -2358,12 +2358,10 @@ class _Call(tuple):
 
 
     def __eq__(self, other):
-        if other is ANY:
-            return True
         try:
             len_other = len(other)
         except TypeError:
-            return False
+            return NotImplemented
 
         self_name = ''
         if len(self) == 2:

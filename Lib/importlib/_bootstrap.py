@@ -371,7 +371,7 @@ class ModuleSpec:
                     self.cached == other.cached and
                     self.has_location == other.has_location)
         except AttributeError:
-            return False
+            return NotImplemented
 
     @property
     def cached(self):
