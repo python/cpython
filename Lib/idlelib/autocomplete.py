@@ -18,17 +18,18 @@ from idlelib.hyperparser import HyperParser
 
 # Tuples passed to open_completions.
 #       EvalFunc, Complete, WantWin, Mode
-FORCE = True,     False,    True,    None   # Control-Space.
-TAB   = False,    True,     True,    None   # Tab.
-TRY_A = False,    False,    False,   ATTRS  # '.' for attributes.
-TRY_F = False,    False,    False,   FILES  # '/' in quotes for file name.
+FORCE = True,     False,    True,    None      # Control-Space.
+TAB   = False,    True,     True,    None      # Tab.
+TRY_A = False,    False,    False,   ATTRS     # '.' for attributes.
+TRY_D = False,    False,    False,   DICTKEYS  # '[' for dict keys.
+TRY_F = False,    False,    False,   FILES     # '/' in quotes for file name.
 
 # This string includes all chars that may be in an identifier.
 # TODO Update this here and elsewhere.
 ID_CHARS = string.ascii_letters + string.digits + "_"
 
 SEPS = f"{os.sep}{os.altsep if os.altsep else ''}"
-TRIGGERS = f".{SEPS}"
+TRIGGERS = f".[{SEPS}"
 
 class AutoComplete:
 
@@ -76,10 +77,10 @@ class AutoComplete:
             return "break" if opened else None
 
     def try_open_completions_event(self, event=None):
-        "(./) Open completion list after pause with no movement."
+        r"""(./\[) Open completion list after pause with no movement."""
         lastchar = self.text.get("insert-1c")
         if lastchar in TRIGGERS:
-            args = TRY_A if lastchar == "." else TRY_F
+            args = {".": TRY_A, "[": TRY_D}.get(lastchar, TRY_F)
             self._delayed_completion_index = self.text.index("insert")
             if self._delayed_completion_id is not None:
                 self.text.after_cancel(self._delayed_completion_id)

@@ -292,7 +292,8 @@ class EditorWindow(object):
         # (This probably needs to be done once in the process.)
         text.event_add('<<autocomplete>>', '<Key-Tab>')
         text.event_add('<<try-open-completions>>', '<KeyRelease-period>',
-                       '<KeyRelease-slash>', '<KeyRelease-backslash>')
+                       '<KeyRelease-slash>', '<KeyRelease-backslash>',
+                       '<KeyRelease-bracketleft>')
         text.event_add('<<try-open-calltip>>', '<KeyRelease-parenleft>')
         text.event_add('<<refresh-calltip>>', '<KeyRelease-parenright>')
         text.event_add('<<paren-closed>>', '<KeyRelease-parenright>',

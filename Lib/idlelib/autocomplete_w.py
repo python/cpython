@@ -391,30 +391,13 @@ class AutoCompleteWindow:
                "bracketright")) or \
              (self.mode == FILES and keysym in
               ("slash", "backslash", "quotedbl",
-               "quoteright", "apostrophe")) or \
-             (self.mode == DICTKEYS and keysym in
-              ("quotedbl", "quoteright", "apostrophe", "bracketright")) \
+               "quoteright", "apostrophe")) \
              and not (state & ~MC_SHIFT):
             # If start is a prefix of the selection, but is not '' when
             # completing file names, put the whole
             # selected completion. Anyway, close the list.
             cursel = int(self.listbox.curselection()[0])
             completion = self.completions[cursel]
-            # Close the completion window if completing a dict key and a
-            # str/bytes literal closing quote has been typed.
-            if self.mode == DICTKEYS and keysym in (
-                    "quotedbl", "quoteright", "apostrophe"):
-                quotechar = {
-                    "quotedbl": '"',
-                    "quoteright": "'",
-                    "apostrophe": "'",
-                }[keysym]
-                if self._quote_closes_literal(self.start, quotechar):
-                    # We'll let the event through, so the final quote
-                    # char will be added by the Text widget receiving
-                    # the event.
-                    self.hide_window()
-                    return None
             if (
                     completion.startswith(self.start) and
                     not (self.mode == FILES and not self.start)
@@ -422,6 +405,51 @@ class AutoCompleteWindow:
                 self._change_start(completion)
             self.hide_window()
             return None
+
+        elif (
+                self.mode == DICTKEYS and
+                keysym in (
+                    "quotedbl", "quoteright", "apostrophe", "bracketright"
+                )
+        ):
+            # Close the completion window if completing a dict key and a
+            # str/bytes literal closing quote has been typed.
+            keysym2char = {
+                "quotedbl": '"',
+                "quoteright": "'",
+                "apostrophe": "'",
+                "bracketright": "]",
+            }
+            char = keysym2char[keysym]
+            if char in "'\"":
+                if self._quote_closes_literal(self.start, char):
+                    # We'll let the event through, so the final quote char
+                    # will be added by the Text widget receiving the event.
+                    self.hide_window()
+                    return None
+            elif char == "]":
+                # Close the completion list unless the closing bracket is
+                # typed inside a string literal.
+                has_quote = _find_first_quote(self.start) >= 0
+                if (not has_quote) or self.start in self.completions:
+                    if not has_quote:
+                        cursel = int(self.listbox.curselection()[0])
+                        completion = self.completions[cursel]
+                        if completion.startswith(self.start):
+                            self._change_start(completion)
+
+                    # We'll let the event through, so the closing bracket char
+                    # will be added by the Text widget receiving the event.
+                    self.hide_window()
+                    return None
+
+            # This is normal editing of text.
+            self._change_start(self.start + char)
+            self.lasttypedstart = self.start
+            self.listbox.select_clear(0, int(self.listbox.curselection()[0]))
+            self.listbox.select_set(self._binary_search(self.start))
+            self._selection_changed()
+            return "break"
 
         elif keysym in ("Home", "End", "Prior", "Next", "Up", "Down") and \
              not state:

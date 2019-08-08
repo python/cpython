@@ -72,7 +72,7 @@ class AutoCompleteTest(unittest.TestCase):
         acp = self.autocomplete
 
         # Result of autocomplete event: If modified tab, None.
-        ev = mock_tk.Event(mc_state=True)
+        ev = mock_tk.Event(keysym='Tab', mc_state=True)
         self.assertIsNone(acp.autocomplete_event(ev))
         del ev.mc_state
 
@@ -105,6 +105,8 @@ class AutoCompleteTest(unittest.TestCase):
         trycompletions = acp.try_open_completions_event
         after = Func(result='after1')
         acp.text.after = after
+        cancel = Func()
+        acp.text.after_cancel = cancel
 
         # If no text or trigger, after not called.
         trycompletions()
@@ -114,6 +116,7 @@ class AutoCompleteTest(unittest.TestCase):
         Equal(after.called, 0)
 
         # Attribute needed, no existing callback.
+        text.delete('1.0', 'end')
         text.insert('insert', ' re.')
         acp._delayed_completion_id = None
         trycompletions()
@@ -124,16 +127,28 @@ class AutoCompleteTest(unittest.TestCase):
         Equal(cb1, 'after1')
 
         # File needed, existing callback cancelled.
+        text.delete('1.0', 'end')
         text.insert('insert', ' "./Lib/')
         after.result = 'after2'
-        cancel = Func()
-        acp.text.after_cancel = cancel
         trycompletions()
         Equal(acp._delayed_completion_index, text.index('insert'))
         Equal(cancel.args, (cb1,))
         Equal(after.args,
               (acp.popupwait, acp._delayed_open_completions, ac.TRY_F))
-        Equal(acp._delayed_completion_id, 'after2')
+        cb2 = acp._delayed_completion_id
+        Equal(cb2, 'after2')
+
+        # Dict key needed, existing callback cancelled.
+        text.delete('1.0', 'end')
+        text.insert('insert', '{"a": 1}[')
+        after.result = 'after3'
+        trycompletions()
+        Equal(acp._delayed_completion_index, text.index('insert'))
+        Equal(cancel.args, (cb2,))
+        Equal(after.args,
+              (acp.popupwait, acp._delayed_open_completions, ac.TRY_D))
+        cb3 = acp._delayed_completion_id
+        Equal(cb3, 'after3')
 
     def test_delayed_open_completions(self):
         Equal = self.assertEqual
