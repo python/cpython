@@ -9,6 +9,7 @@ from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
+from test.support import ALWAYS_EQ
 from datetime import timedelta
 
 
@@ -1509,13 +1510,10 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(list(map(int, Color)), [1, 2, 3])
 
     def test_equality(self):
-        class AlwaysEqual:
-            def __eq__(self, other):
-                return True
         class OrdinaryEnum(Enum):
             a = 1
-        self.assertEqual(AlwaysEqual(), OrdinaryEnum.a)
-        self.assertEqual(OrdinaryEnum.a, AlwaysEqual())
+        self.assertEqual(ALWAYS_EQ, OrdinaryEnum.a)
+        self.assertEqual(OrdinaryEnum.a, ALWAYS_EQ)
 
     def test_ordered_mixin(self):
         class OrderedEnum(Enum):
