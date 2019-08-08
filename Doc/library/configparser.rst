@@ -136,6 +136,26 @@ sections [1]_.  Note also that keys in sections are
 case-insensitive and stored in lowercase [1]_.
 
 
+If we need to read several configurations, each one having more priority than the previous one, we can use the same :class:`ConfigParser` instance to override previous defined data and keep not redefined data.
+
+.. doctest::
+
+   >>> config = configparser.ConfigParser()
+   >>> config.read('example.ini')
+   ['example.ini']
+   >>> config['topsecret.server.com']['Port']
+   '50022'
+   >>> config.read_string("[topsecret.server.com]\nPort=48484")
+   >>> config['topsecret.server.com']['Port']
+   '48484'
+   >>> config.read_dict({"topsecret.server.com": {"Port": 21212}})
+   >>> config['topsecret.server.com']['Port']
+   '21212'
+   >>> config['topsecret.server.com']['ForwardX11']
+   'no'
+
+This behaviour is equivalent to a :meth:`ConfigParser.read` call with several files passed to ``filenames`` parameter.
+
 Supported Datatypes
 -------------------
 
