@@ -3123,6 +3123,8 @@ class _NEVER_EQ:
         return False
     def __ne__(self, other):
         return True
+    def __hash__(self):
+        return 1
 
 NEVER_EQ = _NEVER_EQ()
 

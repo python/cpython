@@ -4,6 +4,7 @@ import unittest
 import sys
 import pickle
 import itertools
+from test.support import ALWAYS_EQ
 
 # pure Python implementations (3 args only), for comparison
 def pyrange(start, stop, step):
@@ -289,11 +290,7 @@ class RangeTest(unittest.TestCase):
         self.assertRaises(ValueError, range(1, 2**100, 2).index, 2**87)
         self.assertEqual(range(1, 2**100, 2).index(2**87+1), 2**86)
 
-        class AlwaysEqual(object):
-            def __eq__(self, other):
-                return True
-        always_equal = AlwaysEqual()
-        self.assertEqual(range(10).index(always_equal), 0)
+        self.assertEqual(range(10).index(ALWAYS_EQ), 0)
 
     def test_user_index_method(self):
         bignum = 2*sys.maxsize
@@ -344,11 +341,7 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(range(1, 2**100, 2).count(2**87), 0)
         self.assertEqual(range(1, 2**100, 2).count(2**87+1), 1)
 
-        class AlwaysEqual(object):
-            def __eq__(self, other):
-                return True
-        always_equal = AlwaysEqual()
-        self.assertEqual(range(10).count(always_equal), 10)
+        self.assertEqual(range(10).count(ALWAYS_EQ), 10)
 
         self.assertEqual(len(range(sys.maxsize, sys.maxsize+10)), 10)
 
@@ -429,9 +422,7 @@ class RangeTest(unittest.TestCase):
         self.assertIn(True, range(3))
         self.assertIn(1+0j, range(3))
 
-        class C1:
-            def __eq__(self, other): return True
-        self.assertIn(C1(), range(3))
+        self.assertIn(ALWAYS_EQ, range(3))
 
         # Objects are never coerced into other types for comparison.
         class C2:
