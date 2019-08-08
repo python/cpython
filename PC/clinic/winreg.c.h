@@ -1029,7 +1029,7 @@ PyDoc_STRVAR(winreg_DisableReflectionKey__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"Will generally raise NotImplemented if executed on a 32bit OS.\n"
+"Will generally raise NotImplementedError if executed on a 32bit OS.\n"
 "\n"
 "If the key is not on the reflection list, the function succeeds but has\n"
 "no effect.  Disabling reflection for a key does not affect reflection\n"
@@ -1065,7 +1065,7 @@ PyDoc_STRVAR(winreg_EnableReflectionKey__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"Will generally raise NotImplemented if executed on a 32bit OS.\n"
+"Will generally raise NotImplementedError if executed on a 32bit OS.\n"
 "Restoring reflection for a key does not affect reflection of any\n"
 "subkeys.");
 
@@ -1099,7 +1099,7 @@ PyDoc_STRVAR(winreg_QueryReflectionKey__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"Will generally raise NotImplemented if executed on a 32bit OS.");
+"Will generally raise NotImplementedError if executed on a 32bit OS.");
 
 #define WINREG_QUERYREFLECTIONKEY_METHODDEF    \
     {"QueryReflectionKey", (PyCFunction)winreg_QueryReflectionKey, METH_O, winreg_QueryReflectionKey__doc__},
@@ -1121,4 +1121,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1204d20c543b5b4a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=015afbbd690eb59d input=a9049054013a1b77]*/

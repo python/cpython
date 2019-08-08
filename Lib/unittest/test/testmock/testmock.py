@@ -3,6 +3,7 @@ import re
 import sys
 import tempfile
 
+from test.support import ALWAYS_EQ
 import unittest
 from unittest.test.testmock.support import is_instance
 from unittest import mock
@@ -35,6 +36,9 @@ class Something(object):
 
     @staticmethod
     def smeth(a, b, c, d=None): pass
+
+
+def something(a): pass
 
 
 class MockTest(unittest.TestCase):
@@ -259,7 +263,7 @@ class MockTest(unittest.TestCase):
 
         ret_val = mock(sentinel.Arg)
         self.assertTrue(mock.called, "called not set")
-        self.assertEqual(mock.call_count, 1, "call_count incoreect")
+        self.assertEqual(mock.call_count, 1, "call_count incorrect")
         self.assertEqual(mock.call_args, ((sentinel.Arg,), {}),
                          "call_args not set")
         self.assertEqual(mock.call_args.args, (sentinel.Arg,),
@@ -319,6 +323,8 @@ class MockTest(unittest.TestCase):
         self.assertFalse(mm != mock.ANY)
         self.assertTrue(mock.ANY == mm)
         self.assertFalse(mock.ANY != mm)
+        self.assertTrue(mm == ALWAYS_EQ)
+        self.assertFalse(mm != ALWAYS_EQ)
 
         call1 = mock.call(mock.MagicMock())
         call2 = mock.call(mock.ANY)
@@ -326,6 +332,11 @@ class MockTest(unittest.TestCase):
         self.assertFalse(call1 != call2)
         self.assertTrue(call2 == call1)
         self.assertFalse(call2 != call1)
+
+        self.assertTrue(call1 == ALWAYS_EQ)
+        self.assertFalse(call1 != ALWAYS_EQ)
+        self.assertFalse(call1 == 1)
+        self.assertTrue(call1 != 1)
 
 
     def test_assert_called_with(self):
@@ -1808,6 +1819,26 @@ class MockTest(unittest.TestCase):
                 self.assertEqual(m.mock_calls, call().foo().call_list())
 
 
+    def test_attach_mock_patch_autospec(self):
+        parent = Mock()
+
+        with mock.patch(f'{__name__}.something', autospec=True) as mock_func:
+            self.assertEqual(mock_func.mock._extract_mock_name(), 'something')
+            parent.attach_mock(mock_func, 'child')
+            parent.child(1)
+            something(2)
+            mock_func(3)
+
+            parent_calls = [call.child(1), call.child(2), call.child(3)]
+            child_calls = [call(1), call(2), call(3)]
+            self.assertEqual(parent.mock_calls, parent_calls)
+            self.assertEqual(parent.child.mock_calls, child_calls)
+            self.assertEqual(something.mock_calls, child_calls)
+            self.assertEqual(mock_func.mock_calls, child_calls)
+            self.assertIn('mock.child', repr(parent.child.mock))
+            self.assertEqual(mock_func.mock._extract_mock_name(), 'mock.child')
+
+
     def test_attribute_deletion(self):
         for mock in (Mock(), MagicMock(), NonCallableMagicMock(),
                      NonCallableMock()):
@@ -1891,6 +1922,20 @@ class MockTest(unittest.TestCase):
 
         self.assertRaises(TypeError, mock.child, 1)
         self.assertEqual(mock.mock_calls, [call.child(1, 2)])
+        self.assertIn('mock.child', repr(mock.child.mock))
+
+    def test_parent_propagation_with_autospec_attach_mock(self):
+
+        def foo(a, b): pass
+
+        parent = Mock()
+        parent.attach_mock(create_autospec(foo, name='bar'), 'child')
+        parent.child(1, 2)
+
+        self.assertRaises(TypeError, parent.child, 1)
+        self.assertEqual(parent.child.mock_calls, [call.child(1, 2)])
+        self.assertIn('mock.child', repr(parent.child.mock))
+
 
     def test_isinstance_under_settrace(self):
         # bpo-36593 : __class__ is not set for a class that has __class__

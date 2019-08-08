@@ -300,7 +300,7 @@ PyStatus
 PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
 {
     if (list->length == PY_SSIZE_T_MAX) {
-        /* lenght+1 would overflow */
+        /* length+1 would overflow */
         return _PyStatus_NO_MEMORY();
     }
 
@@ -1068,7 +1068,7 @@ config_init_program_name(PyConfig *config)
        or rather, to work around Apple's overly strict requirements of
        the process name. However, we still need a usable sys.executable,
        so the actual executable path is passed in an environment variable.
-       See Lib/plat-mac/bundlebuiler.py for details about the bootstrap
+       See Lib/plat-mac/bundlebuilder.py for details about the bootstrap
        script. */
     const char *p = config_get_env(config, "PYTHONEXECUTABLE");
     if (p != NULL) {

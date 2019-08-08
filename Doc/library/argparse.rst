@@ -182,6 +182,10 @@ ArgumentParser objects
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
 
+   .. versionchanged:: 3.8
+      In previous versions, *allow_abbrev* also disabled grouping of short
+      flags such as ``-vv`` to mean ``-v -v``.
+
 The following sections describe how each of these are used.
 
 
