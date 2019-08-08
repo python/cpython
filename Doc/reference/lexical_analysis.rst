@@ -595,7 +595,8 @@ unrecognized escapes for bytes literals.
 
    .. versionchanged:: 3.6
       Unrecognized escape sequences produce a :exc:`DeprecationWarning`.  In
-      Python 3.9 they will be a :exc:`SyntaxWarning`.
+      a future Python version they will be a :exc:`SyntaxWarning` and
+      eventually a :exc:`SyntaxError`.
 
 Even in a raw literal, quotes can be escaped with a backslash, but the
 backslash remains in the result; for example, ``r"\""`` is a valid string
