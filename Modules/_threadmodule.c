@@ -1195,12 +1195,22 @@ This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
 static void
-release_sentinel(void *wr_raw)
+release_sentinel(void *data)
 {
-    PyObject *wr = _PyObject_CAST(wr_raw);
+    PyObject *wr = ((PyObject **)data)[0];
     /* Tricky: this function is called when the current thread state
        is being deleted.  Therefore, only simple C code can safely
        execute here. */
+    lockobject * shutdown_locks_lock = (lockobject *) ((PyObject **)data)[1];
+    PyObject * shutdown_locks = ((PyObject **)data)[2];
+    assert(wr != NULL && PyWeakref_CheckRefExact(wr));
+    assert(shutdown_locks_lock != NULL && Py_TYPE(shutdown_locks_lock) == &Locktype);
+    assert(shutdown_locks != NULL && Py_TYPE(shutdown_locks) == &PySet_Type);
+    ((PyObject **)data)[0] = NULL;
+    ((PyObject **)data)[1] = NULL;
+    ((PyObject **)data)[2] = NULL;
+    PyMem_FREE(data);
+
     PyObject *obj = PyWeakref_GET_OBJECT(wr);
     lockobject *lock;
     if (obj != Py_None) {
@@ -1210,27 +1220,51 @@ release_sentinel(void *wr_raw)
             PyThread_release_lock(lock->lock_lock);
             lock->locked = 0;
         }
+        PyThread_acquire_lock(shutdown_locks_lock->lock_lock, WAIT_LOCK);
+        shutdown_locks_lock->locked = 1;
+        if (PySet_Discard(shutdown_locks, obj) == -1) {
+            PyErr_Clear();
+        }
+        PyThread_release_lock(shutdown_locks_lock->lock_lock);
+        shutdown_locks_lock->locked = 0;
     }
     /* Deallocating a weakref with a NULL callback only calls
        PyObject_GC_Del(), which can't call any Python code. */
     Py_DECREF(wr);
+    /* Usually at least the module "threading" holds another reference to
+       these objects. */
+    if (Py_REFCNT(shutdown_locks_lock) > 1)
+        Py_DECREF(shutdown_locks_lock);
+    if (Py_REFCNT(shutdown_locks) > 1)
+        Py_DECREF(shutdown_locks);
 }
 
 static PyObject *
-thread__set_sentinel(PyObject *self, PyObject *Py_UNUSED(ignored))
+thread__set_sentinel(PyObject *self, PyObject *args)
 {
     PyObject *wr;
     PyThreadState *tstate = PyThreadState_Get();
     lockobject *lock;
+    PyObject *shutdown_locks_lock;
+    PyObject *shutdown_locks;
+    PyObject **data;
+
+    if (!PyArg_UnpackTuple(args, "thread__set_sentinel", 2, 2,
+            &shutdown_locks_lock, &shutdown_locks)) {
+        return NULL;
+    }
 
     if (tstate->on_delete_data != NULL) {
         /* We must support the re-creation of the lock from a
            fork()ed child. */
         assert(tstate->on_delete == &release_sentinel);
-        wr = (PyObject *) tstate->on_delete_data;
+        data = (PyObject **) tstate->on_delete_data;
         tstate->on_delete = NULL;
         tstate->on_delete_data = NULL;
-        Py_DECREF(wr);
+        Py_XDECREF(data[0]);
+        Py_XDECREF(data[1]);
+        Py_XDECREF(data[2]);
+        PyMem_FREE(data);
     }
     lock = newlockobject();
     if (lock == NULL)
@@ -1242,13 +1276,28 @@ thread__set_sentinel(PyObject *self, PyObject *Py_UNUSED(ignored))
         Py_DECREF(lock);
         return NULL;
     }
-    tstate->on_delete_data = (void *) wr;
+
+    /* We can't use a tuple, because we can't deallocate the tuple without
+       a valid thread state. */
+    data = PyMem_NEW(PyObject *, 3);
+    if (data == NULL) {
+        Py_DECREF(lock);
+        Py_DECREF(wr);
+        return NULL;
+    }
+    data[0] = wr;
+    Py_INCREF(shutdown_locks_lock);
+    data[1] = shutdown_locks_lock;
+    Py_INCREF(shutdown_locks);
+    data[2] = shutdown_locks;
+
+    tstate->on_delete_data = (void *) data;
     tstate->on_delete = &release_sentinel;
     return (PyObject *) lock;
 }
 
 PyDoc_STRVAR(_set_sentinel_doc,
-"_set_sentinel() -> lock\n\
+"_set_sentinel(shutdown_locks_lock, shutdown_locks) -> lock\n\
 \n\
 Set a sentinel lock that will be released when the current thread\n\
 state is finalized (after it is untied from the interpreter).\n\
@@ -1491,7 +1540,7 @@ static PyMethodDef thread_methods[] = {
     {"stack_size",              (PyCFunction)thread_stack_size,
      METH_VARARGS, stack_size_doc},
     {"_set_sentinel",           thread__set_sentinel,
-     METH_NOARGS, _set_sentinel_doc},
+     METH_VARARGS, _set_sentinel_doc},
     {"_excepthook",              thread_excepthook,
      METH_O, excepthook_doc},
     _THREAD__IS_MAIN_INTERPRETER_METHODDEF
