@@ -278,7 +278,7 @@ class MSVCCompiler(CCompiler) :
         # use /MT[d] to build statically, then switch from libucrt[d].lib to ucrt[d].lib
         # later to dynamically link to ucrtbase but not vcruntime.
         self.compile_options = [
-            '/nologo', '/Ox', '/W3', '/GL', '/DNDEBUG'
+            '/nologo', '/O2', '/W3', '/GL', '/DNDEBUG'
         ]
         self.compile_options.append('/MD' if self._vcruntime_redist else '/MT')
 

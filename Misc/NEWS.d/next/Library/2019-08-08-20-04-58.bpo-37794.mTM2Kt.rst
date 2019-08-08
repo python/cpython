@@ -1,0 +1,1 @@
+:class:`distutils.MSVCCompiler` now uses ``/O2`` switch instead of ``/Ox``.

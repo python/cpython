@@ -400,13 +400,13 @@ class MSVCCompiler(CCompiler) :
 
         self.preprocess_options = None
         if self.__arch == "x86":
-            self.compile_options = [ '/nologo', '/Ox', '/MD', '/W3',
+            self.compile_options = [ '/nologo', '/O2', '/MD', '/W3',
                                      '/DNDEBUG']
             self.compile_options_debug = ['/nologo', '/Od', '/MDd', '/W3',
                                           '/Z7', '/D_DEBUG']
         else:
             # Win64
-            self.compile_options = [ '/nologo', '/Ox', '/MD', '/W3', '/GS-' ,
+            self.compile_options = [ '/nologo', '/O2', '/MD', '/W3', '/GS-' ,
                                      '/DNDEBUG']
             self.compile_options_debug = ['/nologo', '/Od', '/MDd', '/W3', '/GS-',
                                           '/Z7', '/D_DEBUG']
