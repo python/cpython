@@ -512,7 +512,7 @@ class ShowWindowTest(unittest.TestCase):
 class TestQuoteClosesLiteral(unittest.TestCase):
     def check(self, start, quotechar):
         return acw.AutoCompleteWindow._quote_closes_literal(start, quotechar)
-        
+
     def test_true_cases(self):
         true_cases = [
             # (start, quotechar)
@@ -521,7 +521,7 @@ class TestQuoteClosesLiteral(unittest.TestCase):
             for quote in ('"', "'", '"""', "'''")
             for content in ('', 'a', 'abc', '\\'*2, f'\\{quote[0]}', '\\n')
         ]
-        
+
         for (start, quotechar) in true_cases:
             with self.subTest(start=start, quotechar=quotechar):
                 self.assertTrue(self.check(start, quotechar))
