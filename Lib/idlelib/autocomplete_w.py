@@ -11,7 +11,7 @@ from idlelib.multicall import MC_SHIFT
 
 HIDE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-hide>>"
 HIDE_FOCUS_OUT_SEQUENCE = "<FocusOut>"
-HIDE_SEQUENCES = (HIDE_FOCUS_OUT_SEQUENCE, "<ButtonPress>")
+HIDE_SEQUENCES = (HIDE_FOCUS_OUT_SEQUENCE, "<ButtonPress>", "<Key-Escape>")
 KEYPRESS_VIRTUAL_EVENT_NAME = "<<autocompletewindow-keypress>>"
 # We need to bind event beyond <Key> so that the function will be called
 # before the default specific IDLE function
@@ -280,6 +280,9 @@ class AutoCompleteWindow:
             elif event.type == EventType.ButtonPress:
                 # ButtonPress event only bind to self.widget
                 self.hide_window()
+            elif event.type == EventType.KeyPress and event.keysym == 'Escape':
+                self.hide_window()
+                return "break"
 
     def listselect_event(self, event):
         if self.is_active():
