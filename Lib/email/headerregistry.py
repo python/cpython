@@ -97,8 +97,8 @@ class Address:
         return self.addr_spec
 
     def __eq__(self, other):
-        if type(other) != type(self):
-            return False
+        if not isinstance(other, Address):
+            return NotImplemented
         return (self.display_name == other.display_name and
                 self.username == other.username and
                 self.domain == other.domain)
@@ -150,8 +150,8 @@ class Group:
         return "{}:{};".format(disp, adrstr)
 
     def __eq__(self, other):
-        if type(other) != type(self):
-            return False
+        if not isinstance(other, Group):
+            return NotImplemented
         return (self.display_name == other.display_name and
                 self.addresses == other.addresses)
 
