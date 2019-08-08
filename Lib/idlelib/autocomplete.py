@@ -96,7 +96,8 @@ class AutoComplete:
     _dict_str_key_prefix_re = re.compile(r'\s*(br|rb|fr|rf|b|f|r|u|)', re.I)
 
     @classmethod
-    def _is_completing_dict_key(cls, hp, curline):
+    def _is_completing_dict_key(cls, hyper_parser):
+        hp = hyper_parser
         if hp.is_in_string():
             # hp.indexbracket is an opening quote;
             # check if the bracket before it is '['.
@@ -273,7 +274,7 @@ class AutoComplete:
         i = j = len(curline)
 
         if mode in (None, DICTKEYS):
-            comp_what_and_start = self._is_completing_dict_key(hp, curline)
+            comp_what_and_start = self._is_completing_dict_key(hp)
             if comp_what_and_start is not None:
                 comp_what, comp_start = comp_what_and_start
                 if comp_what and (evalfuncs or '(' not in comp_what):
