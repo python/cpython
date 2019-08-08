@@ -1076,7 +1076,7 @@ choices
 ^^^^^^^
 
 Some command-line arguments should be selected from a restricted set of values.
-These can be handled by passing an iterable object as the *choices* keyword
+These can be handled by passing an iterable as the *choices* keyword
 argument to :meth:`~ArgumentParser.add_argument`.  When the command line is
 parsed, argument values will be checked, and an error message will be displayed
 if the argument was not one of the acceptable values::
