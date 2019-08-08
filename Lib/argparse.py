@@ -784,7 +784,7 @@ class Action(_AttributeHolder):
             float, and complex are useful examples of such callables.  If None,
             str is used.
 
-        - choices -- A container of values that should be allowed. If not None,
+        - choices -- An iterable of values that should be allowed. If not None,
             after a command-line argument has been converted to the appropriate
             type, an exception will be raised if it is not a member of this
             collection.
