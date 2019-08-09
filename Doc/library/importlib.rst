@@ -1306,8 +1306,7 @@ find and load modules.
    (:attr:`__loader__`)
 
    The :class:`Loader <importlib.abc.Loader>` that should be used when
-   loading the module.  Finders should always set this.  A ``None`` value
-   is reserved for namespace packages.
+   loading the module.  Finders should always set this.
 
    .. attribute:: origin
 
