@@ -434,9 +434,7 @@ ABC hierarchy::
             For packages, the list of strings specifying where to look for submodules.
             This is used in the same way as :attr:`sys.path`, but just for the package.
             Effectively, it is the indicator that the module is a package.  For
-            non-package modules ``__path__`` is not set.
-            within the package.
-            It is not set on non-package modules.
+            non-package modules, it is not set.
 
         - :attr:`__package__`
             The fully-qualified name of the package under which the module was
@@ -1307,8 +1305,9 @@ find and load modules.
 
    (:attr:`__loader__`)
 
-   The :class:`Loader <importlib.abc.Loader>` that should be used when loading the module.  Finders should
-   always set this.  A ``None`` value is reserved for namespace packages.
+   The :class:`Loader <importlib.abc.Loader>` that should be used when
+   loading the module.  Finders should always set this.  A ``None`` value
+   is reserved for namespace packages.
 
    .. attribute:: origin
 
@@ -1326,19 +1325,15 @@ find and load modules.
    For packages, the Finder must set this to the iterable specifying the
    locations where submodules may be found for the package, even if
    it's just an empty list.
-   For non-package modules this should be set to ``None``.
-   For namespace packages (where :attr:`origin` is ``None``) this
+   For non-package modules, this should be set to ``None``.
+   For namespace packages (where :attr:`origin` is ``None``), this
    is set automatically.
-   within the package (or ``None`` if not a package).  Finders must set
-   this on a package, even if just to an empty list.  For namespace
-   packages (where :attr:`origin` is ``None``) this is set automatically.
 
    .. attribute:: loader_state
 
    The Finder may set this to an object containing additional,
-    module-specific data to use when loading the module.  Otherwise
-    it should be set to ``None``.
-   loader to use when loading the module.  Otherwise it will be ``None``.
+   module-specific data to use when loading the module.  Otherwise it
+   should be set to ``None``.
 
    .. attribute:: cached
 
@@ -1347,7 +1342,6 @@ find and load modules.
    Where a compiled version of the code should be stored (or ``None``).
    This is typically a filename as provided by
    ::func::`importlib.util.cache_from_source`.
-   ``None``).
 
    .. attribute:: parent
 
