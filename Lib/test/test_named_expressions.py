@@ -109,7 +109,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
             [(42, 1 + ((( j := i )))) for i in range(5)]
         """
 
-        with self.assertRaisesRegex(TargetScopeError,
+        with self.assertRaisesRegex(SyntaxError,
             "named expression within a comprehension cannot be used in a class body"):
             exec(code, {}, {})
 
@@ -126,7 +126,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         ]
         for case, code in cases:
             with self.subTest(case=case):
-                with self.assertRaisesRegex(TargetScopeError,
+                with self.assertRaisesRegex(SyntaxError,
                     "named expression cannot rebind comprehension iteration variable"):
                     exec(code, {}, {})
 
@@ -137,7 +137,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         ]
         for case, code in cases:
             with self.subTest(case=case):
-                with self.assertRaisesRegex(TargetScopeError,
+                with self.assertRaisesRegex(SyntaxError,
                     "comprehension inner loop cannot rebind named expression target"):
                     exec(code, {}, {})
 
@@ -154,7 +154,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         ]
         for case, code in cases:
             with self.subTest(case=case):
-                with self.assertRaisesRegex(TargetScopeError,
+                with self.assertRaisesRegex(SyntaxError,
                     "named expression cannot be used in comprehension iterable expression"):
                     exec(code, {}, {})
 

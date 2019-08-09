@@ -1034,7 +1034,7 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
     }
     if (ste->ste_comp_iter_target) {
         if (val & (DEF_GLOBAL | DEF_NONLOCAL)) {
-            PyErr_Format(PyExc_TargetScopeError,
+            PyErr_Format(PyExc_SyntaxError,
                 NAMED_EXPR_COMP_INNER_LOOP_CONFLICT, name);
             PyErr_SyntaxLocationObject(st->st_filename,
                                        ste->ste_lineno,
@@ -1441,7 +1441,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         if (ste->ste_comprehension) {
             long target_in_scope = _PyST_GetSymbol(ste, target_name);
             if (target_in_scope & DEF_COMP_ITER) {
-                PyErr_Format(PyExc_TargetScopeError, NAMED_EXPR_COMP_CONFLICT, target_name);
+                PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_CONFLICT, target_name);
                 PyErr_SyntaxLocationObject(st->st_filename,
                                             e->lineno,
                                             e->col_offset);
@@ -1470,7 +1470,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         }
         /* Disallow usage in ClassBlock */
         if (ste->ste_type == ClassBlock) {
-            PyErr_Format(PyExc_TargetScopeError, NAMED_EXPR_COMP_IN_CLASS, target_name);
+            PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS, target_name);
             PyErr_SyntaxLocationObject(st->st_filename,
                                         e->lineno,
                                         e->col_offset);
@@ -1492,7 +1492,7 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
         /* Evaluating the outermost range expression for a comprehension */
         assert(e->v.NamedExpr.target->kind == Name_kind);
         PyObject *target_name = e->v.NamedExpr.target->v.Name.id;
-        PyErr_Format(PyExc_TargetScopeError, NAMED_EXPR_COMP_ITER_EXPR, target_name);
+        PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_ITER_EXPR, target_name);
         PyErr_SyntaxLocationObject(st->st_filename,
                                     e->lineno,
                                     e->col_offset);
