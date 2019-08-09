@@ -2404,11 +2404,11 @@ def add_dirs(zipfile):
     """
     names = zipfile.namelist()
     subdirs = set([
-        name for name in map(posixpath.dirname, names) 
+        name for name in map(posixpath.dirname, names)
         if name and name + "/" not in names
     ])
     missingdirs = set([
-        str(p) for sd in subdirs 
+        str(p) for sd in subdirs
         for p in pathlib.PurePath(sd).parents
         if str(p) not in {".", "/"}
     ])
@@ -2461,7 +2461,7 @@ def build_abcdef_files():
     zf.filename = "abcdef.zip"
     return zf
 
-    
+
 def build_abde_files():
     """
     Create a zip file with this structure:
@@ -2477,8 +2477,8 @@ def build_abde_files():
     zf.writestr("a.txt", b"content of a")
     zf.writestr("b/d/e.txt", b"content of e")
     zf.filename = "abcdef.zip"
-    return zf    
-        
+    return zf
+
 
 class TestPath(unittest.TestCase):
     def setUp(self):
@@ -2496,12 +2496,12 @@ class TestPath(unittest.TestCase):
             yield build_abcdef_files()
         with self.subTest():
             yield add_dirs(build_abcdef_files())
-            
+
     def zipfile_abde(self):
         with self.subTest():
             yield build_abde_files()
         with self.subTest():
-            yield add_dirs(build_abde_files())             
+            yield add_dirs(build_abde_files())
 
     def zipfile_ondisk(self):
         tmpdir = pathlib.Path(self.fixtures.enter_context(temp_dir()))
@@ -2543,7 +2543,7 @@ class TestPath(unittest.TestCase):
             temp_list = list(d.iterdir())
             assert len(temp_list) == 1
             e, = temp_list
-            assert e.is_file()            
+            assert e.is_file()
 
     def test_iterdir_abde_istype(self):
         for zipfile_abde in self.zipfile_abde():
@@ -2561,8 +2561,8 @@ class TestPath(unittest.TestCase):
             temp_list = list(d.iterdir())
             assert len(temp_list) == 1
             e, = temp_list
-            assert e.is_file()            
-        
+            assert e.is_file()
+
     def test_open(self):
         for zipfile_abcde in self.zipfile_abcde():
             root = zipfile.Path(zipfile_abcde)
