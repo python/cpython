@@ -110,35 +110,35 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         """
 
         with self.assertRaisesRegex(SyntaxError,
-            "named expression within a comprehension cannot be used in a class body"):
+            "assignment expression within a comprehension cannot be used in a class body"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_rebinding_comprehension_iteration_variable(self):
         cases = [
-            ("Local reuse", "[i := 0 for i in range(5)]"),
-            ("Nested reuse", "[[(j := 0) for i in range(5)] for j in range(5)]"),
-            ("Reuse inner loop target", "[(j := 0) for i in range(5) for j in range(5)]"),
-            ("Unpacking reuse", "[i := 0 for i, j in [(0, 1)]]"),
-            ("Reuse in loop condition", "[i+1 for i in range(5) if (i := 0)]"),
-            ("Unreachable reuse", "[False or (i:=0) for i in range(5)]"),
-            ("Unreachable nested reuse",
+            ("Local reuse", 'i', "[i := 0 for i in range(5)]"),
+            ("Nested reuse", 'j', "[[(j := 0) for i in range(5)] for j in range(5)]"),
+            ("Reuse inner loop target", 'j', "[(j := 0) for i in range(5) for j in range(5)]"),
+            ("Unpacking reuse", 'i', "[i := 0 for i, j in [(0, 1)]]"),
+            ("Reuse in loop condition", 'i', "[i+1 for i in range(5) if (i := 0)]"),
+            ("Unreachable reuse", 'i', "[False or (i:=0) for i in range(5)]"),
+            ("Unreachable nested reuse", 'i',
                 "[(i, j) for i in range(5) for j in range(5) if True or (i:=10)]"),
         ]
-        for case, code in cases:
+        for case, target, code in cases:
+            msg = f"assignment expression cannot rebind comprehension iteration variable '{target}'"
             with self.subTest(case=case):
-                with self.assertRaisesRegex(SyntaxError,
-                    "named expression cannot rebind comprehension iteration variable"):
+                with self.assertRaisesRegex(SyntaxError, msg):
                     exec(code, {}, {})
 
     def test_named_expression_invalid_rebinding_comprehension_inner_loop(self):
         cases = [
-            ("Inner reuse", "[i for i in range(5) if (j := 0) for j in range(5)]"),
-            ("Inner unpacking reuse", "[i for i in range(5) if (j := 0) for j, k in [(0, 1)]]"),
+            ("Inner reuse", 'j', "[i for i in range(5) if (j := 0) for j in range(5)]"),
+            ("Inner unpacking reuse", 'j', "[i for i in range(5) if (j := 0) for j, k in [(0, 1)]]"),
         ]
-        for case, code in cases:
+        for case, target, code in cases:
+            msg = f"comprehension inner loop cannot rebind assignment expression target '{target}'"
             with self.subTest(case=case):
-                with self.assertRaisesRegex(SyntaxError,
-                    "comprehension inner loop cannot rebind named expression target"):
+                with self.assertRaisesRegex(SyntaxError, msg):
                     exec(code, {}, {})
 
     def test_named_expression_invalid_comprehension_iterator_expression(self):
@@ -152,10 +152,10 @@ class NamedExpressionInvalidTest(unittest.TestCase):
             ("Nested comprehension condition", "[i for i in [j for j in range(5) if (j := True)]]"),
             ("Nested comprehension body", "[i for i in [(j := True) for j in range(5)]]"),
         ]
+        msg = "assignment expression cannot be used in a comprehension iterable expression"
         for case, code in cases:
             with self.subTest(case=case):
-                with self.assertRaisesRegex(SyntaxError,
-                    "named expression cannot be used in comprehension iterable expression"):
+                with self.assertRaisesRegex(SyntaxError, msg):
                     exec(code, {}, {})
 
 

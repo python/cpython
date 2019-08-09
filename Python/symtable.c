@@ -32,16 +32,16 @@
 #define IMPORT_STAR_WARNING "import * only allowed at module level"
 
 #define NAMED_EXPR_COMP_IN_CLASS \
-"named expression within a comprehension cannot be used in a class body"
+"assignment expression within a comprehension cannot be used in a class body"
 
 #define NAMED_EXPR_COMP_CONFLICT \
-"named expression cannot rebind comprehension iteration variable"
+"assignment expression cannot rebind comprehension iteration variable '%U'"
 
 #define NAMED_EXPR_COMP_INNER_LOOP_CONFLICT \
-"comprehension inner loop cannot rebind named expression target"
+"comprehension inner loop cannot rebind assignment expression target '%U'"
 
 #define NAMED_EXPR_COMP_ITER_EXPR \
-"named expression cannot be used in comprehension iterable expression"
+"assignment expression cannot be used in a comprehension iterable expression"
 
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
@@ -1470,7 +1470,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         }
         /* Disallow usage in ClassBlock */
         if (ste->ste_type == ClassBlock) {
-            PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS, target_name);
+            PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS);
             PyErr_SyntaxLocationObject(st->st_filename,
                                         e->lineno,
                                         e->col_offset);
@@ -1490,9 +1490,7 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
 {
     if (st->st_cur->ste_comp_iter_expr > 0) {
         /* Evaluating the outermost range expression for a comprehension */
-        assert(e->v.NamedExpr.target->kind == Name_kind);
-        PyObject *target_name = e->v.NamedExpr.target->v.Name.id;
-        PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_ITER_EXPR, target_name);
+        PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_ITER_EXPR);
         PyErr_SyntaxLocationObject(st->st_filename,
                                     e->lineno,
                                     e->col_offset);
