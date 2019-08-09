@@ -155,8 +155,9 @@ used to override previously defined properties and retain existing ones.
    >>> config['topsecret.server.com']['ForwardX11']
    'no'
 
+This behaviour is equivalent to a :meth:`ConfigParser.read` call with several
+files passed to ``filenames`` parameter.
 
-This behaviour is equivalent to a :meth:`ConfigParser.read` call with several files passed to ``filenames`` parameter.
 
 Supported Datatypes
 -------------------
