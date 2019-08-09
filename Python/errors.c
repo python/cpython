@@ -26,6 +26,7 @@ extern "C" {
 
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(flush);
 
 
 /* Forward declarations */
@@ -92,7 +93,7 @@ _PyErr_CreateException(PyObject *exception, PyObject *value)
         return PyObject_Call(exception, value, NULL);
     }
     else {
-        return PyObject_CallFunctionObjArgs(exception, value, NULL);
+        return _PyObject_CallOneArg(exception, value);
     }
 }
 
@@ -546,9 +547,8 @@ PyErr_BadArgument(void)
 }
 
 PyObject *
-PyErr_NoMemory(void)
+_PyErr_NoMemory(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     if (Py_TYPE(PyExc_MemoryError) == NULL) {
         /* PyErr_NoMemory() has been called before PyExc_MemoryError has been
            initialized by _PyExc_Init() */
@@ -557,6 +557,13 @@ PyErr_NoMemory(void)
     }
     _PyErr_SetNone(tstate, PyExc_MemoryError);
     return NULL;
+}
+
+PyObject *
+PyErr_NoMemory(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyErr_NoMemory(tstate);
 }
 
 PyObject *
@@ -1254,6 +1261,14 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     if (PyFile_WriteString("\n", file) < 0) {
         return -1;
     }
+
+    /* Explicitly call file.flush() */
+    PyObject *res = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
+    if (!res) {
+        return -1;
+    }
+    Py_DECREF(res);
+
     return 0;
 }
 
@@ -1366,8 +1381,7 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
         hook_args = make_unraisable_hook_args(tstate, exc_type, exc_value,
                                               exc_tb, err_msg, obj);
         if (hook_args != NULL) {
-            PyObject *args[1] = {hook_args};
-            PyObject *res = _PyObject_FastCall(hook, args, 1);
+            PyObject *res = _PyObject_CallOneArg(hook, hook_args);
             Py_DECREF(hook_args);
             if (res != NULL) {
                 Py_DECREF(res);

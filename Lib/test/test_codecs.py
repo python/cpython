@@ -29,7 +29,7 @@ def coding_checker(self, coder):
 
 # On small versions of Windows like Windows IoT or Windows Nano Server not all codepages are present
 def is_code_page_present(cp):
-    from ctypes import POINTER, WINFUNCTYPE, windll, WinError, Structure, WinDLL
+    from ctypes import POINTER, WINFUNCTYPE, WinDLL
     from ctypes.wintypes import BOOL, UINT, BYTE, WCHAR, UINT, DWORD
 
     MAX_LEADBYTES = 12  # 5 ranges, 2 bytes ea., 0 term.
@@ -429,11 +429,18 @@ class ReadTest(MixInCheckStateHandling):
     def test_incremental_surrogatepass(self):
         # Test incremental decoder for surrogatepass handler:
         # see issue #24214
+        # High surrogate
         data = '\uD901'.encode(self.encoding, 'surrogatepass')
         for i in range(1, len(data)):
             dec = codecs.getincrementaldecoder(self.encoding)('surrogatepass')
             self.assertEqual(dec.decode(data[:i]), '')
             self.assertEqual(dec.decode(data[i:], True), '\uD901')
+        # Low surrogate
+        data = '\uDC02'.encode(self.encoding, 'surrogatepass')
+        for i in range(1, len(data)):
+            dec = codecs.getincrementaldecoder(self.encoding)('surrogatepass')
+            self.assertEqual(dec.decode(data[:i]), '')
+            self.assertEqual(dec.decode(data[i:]), '\uDC02')
 
 
 class UTF32Test(ReadTest, unittest.TestCase):
@@ -873,6 +880,23 @@ class UTF8Test(ReadTest, unittest.TestCase):
             b"abc\xed\xa0".decode(self.encoding, "surrogatepass")
         with self.assertRaises(UnicodeDecodeError):
             b"abc\xed\xa0z".decode(self.encoding, "surrogatepass")
+
+    def test_incremental_errors(self):
+        # Test that the incremental decoder can fail with final=False.
+        # See issue #24214
+        cases = [b'\x80', b'\xBF', b'\xC0', b'\xC1', b'\xF5', b'\xF6', b'\xFF']
+        for prefix in (b'\xC2', b'\xDF', b'\xE0', b'\xE0\xA0', b'\xEF',
+                       b'\xEF\xBF', b'\xF0', b'\xF0\x90', b'\xF0\x90\x80',
+                       b'\xF4', b'\xF4\x8F', b'\xF4\x8F\xBF'):
+            for suffix in b'\x7F', b'\xC0':
+                cases.append(prefix + suffix)
+        cases.extend((b'\xE0\x80', b'\xE0\x9F', b'\xED\xA0\x80',
+                      b'\xED\xBF\xBF', b'\xF0\x80', b'\xF0\x8F', b'\xF4\x90'))
+
+        for data in cases:
+            with self.subTest(data=data):
+                dec = codecs.getincrementaldecoder(self.encoding)()
+                self.assertRaises(UnicodeDecodeError, dec.decode, data)
 
 
 class UTF7Test(ReadTest, unittest.TestCase):
@@ -2870,7 +2894,6 @@ class ExceptionChainingTest(unittest.TestCase):
 @unittest.skipUnless(sys.platform == 'win32',
                      'code pages are specific to Windows')
 class CodePageTest(unittest.TestCase):
-    # CP_UTF8 is already tested by CP65001Test
     CP_UTF8 = 65001
 
     def test_invalid_code_page(self):
@@ -3165,6 +3188,31 @@ class StreamRecoderTest(unittest.TestCase):
         text = 'àñé'
         sr.write(text.encode('latin1'))
         self.assertEqual(bio.getvalue(), text.encode('utf-8'))
+
+    def test_seeking_read(self):
+        bio = io.BytesIO('line1\nline2\nline3\n'.encode('utf-16-le'))
+        sr = codecs.EncodedFile(bio, 'utf-8', 'utf-16-le')
+
+        self.assertEqual(sr.readline(), b'line1\n')
+        sr.seek(0)
+        self.assertEqual(sr.readline(), b'line1\n')
+        self.assertEqual(sr.readline(), b'line2\n')
+        self.assertEqual(sr.readline(), b'line3\n')
+        self.assertEqual(sr.readline(), b'')
+
+    def test_seeking_write(self):
+        bio = io.BytesIO('123456789\n'.encode('utf-16-le'))
+        sr = codecs.EncodedFile(bio, 'utf-8', 'utf-16-le')
+
+        # Test that seek() only resets its internal buffer when offset
+        # and whence are zero.
+        sr.seek(2)
+        sr.write(b'\nabc\n')
+        self.assertEqual(sr.readline(), b'789\n')
+        sr.seek(0)
+        self.assertEqual(sr.readline(), b'1\n')
+        self.assertEqual(sr.readline(), b'abc\n')
+        self.assertEqual(sr.readline(), b'789\n')
 
 
 @unittest.skipIf(_testcapi is None, 'need _testcapi module')

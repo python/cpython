@@ -1,1 +1,0 @@
-PEP 591: Add ``Final`` qualifier and ``@final`` decorator to the ``typing`` module.

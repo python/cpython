@@ -909,10 +909,10 @@ PyTypeObject PySetIter_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)setiter_dealloc,                /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -1456,10 +1456,6 @@ PyDoc_STRVAR(isdisjoint_doc,
 static int
 set_difference_update_internal(PySetObject *so, PyObject *other)
 {
-    if (PySet_GET_SIZE(so) == 0) {
-        return 0;
-    }
-
     if ((PyObject *)so == other)
         return set_clear_internal(so);
 
@@ -1533,10 +1529,6 @@ set_difference(PySetObject *so, PyObject *other)
     setentry *entry;
     Py_ssize_t pos = 0, other_size;
     int rv;
-
-    if (PySet_GET_SIZE(so) == 0) {
-        return set_copy(so, NULL);
-    }
 
     if (PyAnySet_Check(other)) {
         other_size = PySet_GET_SIZE(other);
@@ -2118,10 +2110,10 @@ PyTypeObject PySet_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)set_dealloc,            /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)set_repr,                 /* tp_repr */
     &set_as_number,                     /* tp_as_number */
     &set_as_sequence,                   /* tp_as_sequence */
@@ -2216,10 +2208,10 @@ PyTypeObject PyFrozenSet_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)set_dealloc,            /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)set_repr,                 /* tp_repr */
     &frozenset_as_number,               /* tp_as_number */
     &set_as_sequence,                   /* tp_as_sequence */
@@ -2532,10 +2524,10 @@ static PyTypeObject _PySetDummy_Type = {
     0,
     0,
     dummy_dealloc,      /*tp_dealloc*/ /*never called*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     dummy_repr,         /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/

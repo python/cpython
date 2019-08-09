@@ -971,7 +971,7 @@ _FORMATS={
 
 
 def load(fp, *, fmt=None, use_builtin_types=True, dict_type=dict):
-    """Read a .plist file. 'fp' should be (readable) file object.
+    """Read a .plist file. 'fp' should be a readable and binary file object.
     Return the unpacked root object (which usually is a dictionary).
     """
     if fmt is None:
@@ -1002,8 +1002,8 @@ def loads(value, *, fmt=None, use_builtin_types=True, dict_type=dict):
 
 
 def dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False):
-    """Write 'value' to a .plist file. 'fp' should be a (writable)
-    file object.
+    """Write 'value' to a .plist file. 'fp' should be a writable,
+    binary file object.
     """
     if fmt not in _FORMATS:
         raise ValueError("Unsupported format: %r"%(fmt,))

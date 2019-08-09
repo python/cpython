@@ -2425,6 +2425,16 @@ class BaseTaskTests:
 
         self.assertEqual(cvar.get(), -1)
 
+    def test_get_coro(self):
+        loop = asyncio.new_event_loop()
+        coro = coroutine_function()
+        try:
+            task = self.new_task(loop, coro)
+            loop.run_until_complete(task)
+            self.assertIs(task.get_coro(), coro)
+        finally:
+            loop.close()
+
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task
@@ -2765,7 +2775,7 @@ class BaseTaskIntrospectionTests:
         self.assertEqual(asyncio.all_tasks(loop), set())
 
 
-class PyIntrospectionTests(unittest.TestCase, BaseTaskIntrospectionTests):
+class PyIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
     _register_task = staticmethod(tasks._py_register_task)
     _unregister_task = staticmethod(tasks._py_unregister_task)
     _enter_task = staticmethod(tasks._py_enter_task)
@@ -2774,7 +2784,7 @@ class PyIntrospectionTests(unittest.TestCase, BaseTaskIntrospectionTests):
 
 @unittest.skipUnless(hasattr(tasks, '_c_register_task'),
                      'requires the C _asyncio module')
-class CIntrospectionTests(unittest.TestCase, BaseTaskIntrospectionTests):
+class CIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
     if hasattr(tasks, '_c_register_task'):
         _register_task = staticmethod(tasks._c_register_task)
         _unregister_task = staticmethod(tasks._c_unregister_task)
@@ -2789,12 +2799,7 @@ class BaseCurrentLoopTests:
     def setUp(self):
         super().setUp()
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-
-    def tearDown(self):
-        self.loop.close()
-        asyncio.set_event_loop(None)
-        super().tearDown()
+        self.set_event_loop(self.loop)
 
     def new_task(self, coro):
         raise NotImplementedError
@@ -2818,7 +2823,7 @@ class BaseCurrentLoopTests:
         self.assertIsNone(asyncio.current_task(loop=self.loop))
 
 
-class PyCurrentLoopTests(BaseCurrentLoopTests, unittest.TestCase):
+class PyCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
 
     def new_task(self, coro):
         return tasks._PyTask(coro, loop=self.loop)
@@ -2826,7 +2831,7 @@ class PyCurrentLoopTests(BaseCurrentLoopTests, unittest.TestCase):
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
-class CCurrentLoopTests(BaseCurrentLoopTests, unittest.TestCase):
+class CCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
 
     def new_task(self, coro):
         return getattr(tasks, '_CTask')(coro, loop=self.loop)
@@ -3235,7 +3240,7 @@ class SleepTests(test_utils.TestCase):
     def setUp(self):
         super().setUp()
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
+        self.set_event_loop(self.loop)
 
     def tearDown(self):
         self.loop.close()
@@ -3269,7 +3274,7 @@ class WaitTests(test_utils.TestCase):
     def setUp(self):
         super().setUp()
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
+        self.set_event_loop(self.loop)
 
     def tearDown(self):
         self.loop.close()
@@ -3296,7 +3301,7 @@ class CompatibilityTests(test_utils.TestCase):
     def setUp(self):
         super().setUp()
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
+        self.set_event_loop(self.loop)
 
     def tearDown(self):
         self.loop.close()
@@ -3347,7 +3352,9 @@ class CompatibilityTests(test_utils.TestCase):
 
             asyncio.run(old_style_coro())
         """)
-        assert_python_ok("-c", code, PYTHONASYNCIODEBUG="1")
+
+        assert_python_ok("-Wignore::DeprecationWarning", "-c", code,
+                         PYTHONASYNCIODEBUG="1")
 
 
 if __name__ == '__main__':

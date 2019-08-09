@@ -3067,7 +3067,7 @@ Sped up reading encrypted ZIP files by 2 times.
 .. section: Library
 
 Element.getiterator() and the html parameter of XMLParser() were deprecated
-only in the documentation (since Python 3.2 and 3.4 correspondintly). Now
+only in the documentation (since Python 3.2 and 3.4 correspondingly). Now
 using them emits a deprecation warning.
 
 ..

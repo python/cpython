@@ -31,7 +31,6 @@ import os
 import sys
 import shutil
 import tempfile
-import warnings
 import unittest
 
 

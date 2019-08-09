@@ -172,7 +172,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return fd;
     }
 
-    result = _PyObject_CallMethodId(file, &PyId_fileno, NULL);
+    result = _PyObject_CallMethodIdNoArgs(file, &PyId_fileno);
     if (result == NULL)
         return -1;
 
@@ -190,7 +190,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return -1;
     }
 
-    result = _PyObject_CallMethodId(file, &PyId_flush, NULL);
+    result = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
     if (result != NULL)
         Py_DECREF(result);
     else {
@@ -1305,7 +1305,7 @@ faulthandler_init_enable(void)
         return -1;
     }
 
-    PyObject *res = _PyObject_CallMethodId(module, &PyId_enable, NULL);
+    PyObject *res = _PyObject_CallMethodIdNoArgs(module, &PyId_enable);
     Py_DECREF(module);
     if (res == NULL) {
         return -1;

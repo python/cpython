@@ -1,1 +1,0 @@
-Throw a TypeError instead of an AssertionError when using an invalid type annotation with singledispatch.

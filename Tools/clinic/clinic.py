@@ -4900,7 +4900,14 @@ def main(argv):
         sys.exit("Error: clinic.py requires Python 3.3 or greater.")
 
     import argparse
-    cmdline = argparse.ArgumentParser()
+    cmdline = argparse.ArgumentParser(
+        description="""Preprocessor for CPython C files.
+
+The purpose of the Argument Clinic is automating all the boilerplate involved
+with writing argument parsing code for builtins and providing introspection
+signatures ("docstrings") for CPython builtins.
+
+For more information see https://docs.python.org/3/howto/clinic.html""")
     cmdline.add_argument("-f", "--force", action='store_true')
     cmdline.add_argument("-o", "--output", type=str)
     cmdline.add_argument("-v", "--verbose", action='store_true')

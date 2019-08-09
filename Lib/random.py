@@ -100,7 +100,7 @@ class Random(_random.Random):
         self.seed(x)
         self.gauss_next = None
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, /, **kwargs):
         """Control how subclasses generate random integers.
 
         The algorithm a subclass can use depends on the random() and/or

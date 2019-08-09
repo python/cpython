@@ -554,8 +554,8 @@ desired effect in a number of ways.
 5) Or bundle up values in a class instance::
 
       class callByRef:
-          def __init__(self, **args):
-              for (key, value) in args.items():
+          def __init__(self, /, **args):
+              for key, value in args.items():
                   setattr(self, key, value)
 
       def func4(args):
@@ -799,10 +799,6 @@ an error::
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    TypeError: pow() takes no keyword arguments
-
-Note that as of this writing this is only documentational and no valid syntax
-in Python, although there is :pep:`570`, which proposes a syntax for
-position-only parameters in Python.
 
 
 Numbers and strings

@@ -61,7 +61,7 @@ PyFile_GetLine(PyObject *f, int n)
     }
 
     if (n <= 0) {
-        result = _PyObject_CallMethodIdObjArgs(f, &PyId_readline, NULL);
+        result = _PyObject_CallMethodIdNoArgs(f, &PyId_readline);
     }
     else {
         result = _PyObject_CallMethodId(f, &PyId_readline, "i", n);
@@ -136,7 +136,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
         Py_DECREF(writer);
         return -1;
     }
-    result = PyObject_CallFunctionObjArgs(writer, value, NULL);
+    result = _PyObject_CallOneArg(writer, value);
     Py_DECREF(value);
     Py_DECREF(writer);
     if (result == NULL)
@@ -479,10 +479,10 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)stdprinter_repr,                  /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

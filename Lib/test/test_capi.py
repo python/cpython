@@ -8,7 +8,6 @@ import random
 import re
 import subprocess
 import sys
-import sysconfig
 import textwrap
 import threading
 import time
@@ -31,6 +30,7 @@ Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 def testfunction(self):
     """some doc"""
     return self
+
 
 class InstanceMethod:
     id = _testcapi.instancemethod(id)
@@ -175,6 +175,13 @@ class CAPITest(unittest.TestCase):
         o = 42
         o @= m1
         self.assertEqual(o, ("matmul", 42, m1))
+
+    def test_c_type_with_ipow(self):
+        # When the __ipow__ method of a type was implemented in C, using the
+        # modulo param would cause segfaults.
+        o = _testcapi.ipowType()
+        self.assertEqual(o.__ipow__(1), (1, None))
+        self.assertEqual(o.__ipow__(2, 2), (2, 2))
 
     def test_return_null_without_error(self):
         # Issue #23571: A function must not return NULL without setting an
@@ -582,28 +589,29 @@ class PyMemDebugTests(unittest.TestCase):
         code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
         self.check_malloc_without_gil(code)
 
-    def check_pyobject_is_freed(self, func):
-        code = textwrap.dedent('''
+    def check_pyobject_is_freed(self, func_name):
+        code = textwrap.dedent(f'''
             import gc, os, sys, _testcapi
             # Disable the GC to avoid crash on GC collection
             gc.disable()
-            obj = _testcapi.{func}()
-            error = (_testcapi.pyobject_is_freed(obj) == False)
-            # Exit immediately to avoid a crash while deallocating
-            # the invalid object
-            os._exit(int(error))
+            try:
+                _testcapi.{func_name}()
+                # Exit immediately to avoid a crash while deallocating
+                # the invalid object
+                os._exit(0)
+            except _testcapi.error:
+                os._exit(1)
         ''')
-        code = code.format(func=func)
         assert_python_ok('-c', code, PYTHONMALLOC=self.PYTHONMALLOC)
 
-    def test_pyobject_is_freed_uninitialized(self):
-        self.check_pyobject_is_freed('pyobject_uninitialized')
+    def test_pyobject_uninitialized_is_freed(self):
+        self.check_pyobject_is_freed('check_pyobject_uninitialized_is_freed')
 
-    def test_pyobject_is_freed_forbidden_bytes(self):
-        self.check_pyobject_is_freed('pyobject_forbidden_bytes')
+    def test_pyobject_forbidden_bytes_is_freed(self):
+        self.check_pyobject_is_freed('check_pyobject_forbidden_bytes_is_freed')
 
-    def test_pyobject_is_freed_free(self):
-        self.check_pyobject_is_freed('pyobject_freed')
+    def test_pyobject_freed_is_freed(self):
+        self.check_pyobject_is_freed('check_pyobject_freed_is_freed')
 
 
 class PyMemMallocDebugTests(PyMemDebugTests):

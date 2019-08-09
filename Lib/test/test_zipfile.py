@@ -4,9 +4,7 @@ import io
 import os
 import pathlib
 import posixpath
-import shutil
 import struct
-import tempfile
 import time
 import unittest
 import zipfile
@@ -2515,6 +2513,17 @@ class TestPath(unittest.TestCase):
             root = zipfile.Path(zipfile_abcde)
             assert (root / 'a').parent.at == ''
             assert (root / 'a' / 'b').parent.at == 'a/'
+
+    def test_dir_parent(self):
+        for zipfile_abcde in self.zipfile_abcde():
+            root = zipfile.Path(zipfile_abcde)
+            assert (root / 'b').parent.at == ''
+            assert (root / 'b/').parent.at == ''
+
+    def test_missing_dir_parent(self):
+        for zipfile_abcde in self.zipfile_abcde():
+            root = zipfile.Path(zipfile_abcde)
+            assert (root / 'missing dir/').parent.at == ''
 
 if __name__ == "__main__":
     unittest.main()

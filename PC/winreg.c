@@ -355,10 +355,10 @@ PyTypeObject PyHKEY_Type =
     sizeof(PyHKEYObject),
     0,
     PyHKEY_deallocFunc,                 /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     &PyHKEY_NumberMethods,              /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1702,7 +1702,7 @@ winreg.DisableReflectionKey
 
 Disables registry reflection for 32bit processes running on a 64bit OS.
 
-Will generally raise NotImplemented if executed on a 32bit OS.
+Will generally raise NotImplementedError if executed on a 32bit OS.
 
 If the key is not on the reflection list, the function succeeds but has
 no effect.  Disabling reflection for a key does not affect reflection
@@ -1711,7 +1711,7 @@ of any subkeys.
 
 static PyObject *
 winreg_DisableReflectionKey_impl(PyObject *module, HKEY key)
-/*[clinic end generated code: output=830cce504cc764b4 input=a6c9e5ca5410193c]*/
+/*[clinic end generated code: output=830cce504cc764b4 input=70bece2dee02e073]*/
 {
     HMODULE hMod;
     typedef LONG (WINAPI *RDRKFunc)(HKEY);
@@ -1749,14 +1749,14 @@ winreg.EnableReflectionKey
 
 Restores registry reflection for the specified disabled key.
 
-Will generally raise NotImplemented if executed on a 32bit OS.
+Will generally raise NotImplementedError if executed on a 32bit OS.
 Restoring reflection for a key does not affect reflection of any
 subkeys.
 [clinic start generated code]*/
 
 static PyObject *
 winreg_EnableReflectionKey_impl(PyObject *module, HKEY key)
-/*[clinic end generated code: output=86fa1385fdd9ce57 input=7748abbacd1e166a]*/
+/*[clinic end generated code: output=86fa1385fdd9ce57 input=eeae770c6eb9f559]*/
 {
     HMODULE hMod;
     typedef LONG (WINAPI *RERKFunc)(HKEY);
@@ -1794,12 +1794,12 @@ winreg.QueryReflectionKey
 
 Returns the reflection state for the specified key as a bool.
 
-Will generally raise NotImplemented if executed on a 32bit OS.
+Will generally raise NotImplementedError if executed on a 32bit OS.
 [clinic start generated code]*/
 
 static PyObject *
 winreg_QueryReflectionKey_impl(PyObject *module, HKEY key)
-/*[clinic end generated code: output=4e774af288c3ebb9 input=9f325eacb5a65d88]*/
+/*[clinic end generated code: output=4e774af288c3ebb9 input=a98fa51d55ade186]*/
 {
     HMODULE hMod;
     typedef LONG (WINAPI *RQRKFunc)(HKEY, BOOL *);

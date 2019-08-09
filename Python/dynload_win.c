@@ -38,24 +38,6 @@ const char *_PyImport_DynLoadFiletab[] = {
     NULL
 };
 
-/* Case insensitive string compare, to avoid any dependencies on particular
-   C RTL implementations */
-
-static int strcasecmp (const char *string1, const char *string2)
-{
-    int first, second;
-
-    do {
-        first  = tolower(*string1);
-        second = tolower(*string2);
-        string1++;
-        string2++;
-    } while (first && first == second);
-
-    return (first - second);
-}
-
-
 /* Function to return the name of the "python" DLL that the supplied module
    directly imports.  Looks through the list of imported modules and
    returns the first entry that starts with "python" (case sensitive) and
@@ -297,7 +279,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
             import_python = GetPythonImport(hDLL);
 
             if (import_python &&
-                strcasecmp(buffer,import_python)) {
+                _stricmp(buffer,import_python)) {
                 PyErr_Format(PyExc_ImportError,
                              "Module use of %.150s conflicts "
                              "with this version of Python.",

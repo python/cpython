@@ -8,6 +8,14 @@
 #include "structmember.h" /* offsetof */
 #include "pythread.h"
 
+#include "clinic/_threadmodule.c.h"
+
+/*[clinic input]
+module _thread
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=be8dbe5cc4b16df7]*/
+
+
 static PyObject *ThreadError;
 static PyObject *str_dict;
 
@@ -232,10 +240,10 @@ static PyTypeObject Locktype = {
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)lock_dealloc,           /*tp_dealloc*/
-    0,                                  /*tp_print*/
+    0,                                  /*tp_vectorcall_offset*/
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
+    0,                                  /*tp_as_async*/
     (reprfunc)lock_repr,                /*tp_repr*/
     0,                                  /*tp_as_number*/
     0,                                  /*tp_as_sequence*/
@@ -493,10 +501,10 @@ static PyTypeObject RLocktype = {
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)rlock_dealloc,          /*tp_dealloc*/
-    0,                                  /*tp_print*/
+    0,                                  /*tp_vectorcall_offset*/
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
+    0,                                  /*tp_as_async*/
     (reprfunc)rlock_repr,               /*tp_repr*/
     0,                                  /*tp_as_number*/
     0,                                  /*tp_as_sequence*/
@@ -609,10 +617,10 @@ static PyTypeObject localdummytype = {
     /* tp_basicsize      */ sizeof(localdummyobject),
     /* tp_itemsize       */ 0,
     /* tp_dealloc        */ (destructor)localdummy_dealloc,
-    /* tp_print          */ 0,
+    /* tp_vectorcall_offset */ 0,
     /* tp_getattr        */ 0,
     /* tp_setattr        */ 0,
-    /* tp_reserved       */ 0,
+    /* tp_as_async       */ 0,
     /* tp_repr           */ 0,
     /* tp_as_number      */ 0,
     /* tp_as_sequence    */ 0,
@@ -874,10 +882,10 @@ static PyTypeObject localtype = {
     /* tp_basicsize      */ sizeof(localobject),
     /* tp_itemsize       */ 0,
     /* tp_dealloc        */ (destructor)local_dealloc,
-    /* tp_print          */ 0,
+    /* tp_vectorcall_offset */ 0,
     /* tp_getattr        */ 0,
     /* tp_setattr        */ 0,
-    /* tp_reserved       */ 0,
+    /* tp_as_async       */ 0,
     /* tp_repr           */ 0,
     /* tp_as_number      */ 0,
     /* tp_as_sequence    */ 0,
@@ -1002,25 +1010,15 @@ t_bootstrap(void *boot_raw)
     res = PyObject_Call(boot->func, boot->args, boot->keyw);
     if (res == NULL) {
         if (PyErr_ExceptionMatches(PyExc_SystemExit))
+            /* SystemExit is ignored silently */
             PyErr_Clear();
         else {
-            PyObject *file;
-            PyObject *exc, *value, *tb;
-            PySys_WriteStderr(
-                "Unhandled exception in thread started by ");
-            PyErr_Fetch(&exc, &value, &tb);
-            file = _PySys_GetObjectId(&PyId_stderr);
-            if (file != NULL && file != Py_None)
-                PyFile_WriteObject(boot->func, file, 0);
-            else
-                PyObject_Print(boot->func, stderr, 0);
-            PySys_WriteStderr("\n");
-            PyErr_Restore(exc, value, tb);
-            PyErr_PrintEx(0);
+            _PyErr_WriteUnraisableMsg("in thread started by", boot->func);
         }
     }
-    else
+    else {
         Py_DECREF(res);
+    }
     Py_DECREF(boot->func);
     Py_DECREF(boot->args);
     Py_XDECREF(boot->keyw);
@@ -1360,7 +1358,7 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
     _PyErr_Display(file, exc_type, exc_value, exc_traceback);
 
     /* Call file.flush() */
-    PyObject *res = _PyObject_CallMethodId(file, &PyId_flush, NULL);
+    PyObject *res = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
     if (!res) {
         return -1;
     }
@@ -1452,6 +1450,21 @@ PyDoc_STRVAR(excepthook_doc,
 \n\
 Handle uncaught Thread.run() exception.");
 
+/*[clinic input]
+_thread._is_main_interpreter
+
+Return True if the current interpreter is the main Python interpreter.
+[clinic start generated code]*/
+
+static PyObject *
+_thread__is_main_interpreter_impl(PyObject *module)
+/*[clinic end generated code: output=7dd82e1728339adc input=cc1eb00fd4598915]*/
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
+    return PyBool_FromLong(interp == runtime->interpreters.main);
+}
+
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
@@ -1481,6 +1494,7 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, _set_sentinel_doc},
     {"_excepthook",              thread_excepthook,
      METH_O, excepthook_doc},
+    _THREAD__IS_MAIN_INTERPRETER_METHODDEF
     {NULL,                      NULL}           /* sentinel */
 };
 

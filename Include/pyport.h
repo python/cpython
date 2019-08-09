@@ -504,14 +504,18 @@ extern "C" {
 
 /* Py_DEPRECATED(version)
  * Declare a variable, type, or function deprecated.
+ * The macro must be placed before the declaration.
  * Usage:
- *    extern int old_var Py_DEPRECATED(2.3);
- *    typedef int T1 Py_DEPRECATED(2.4);
- *    extern int x() Py_DEPRECATED(2.5);
+ *    Py_DEPRECATED(3.3) extern int old_var;
+ *    Py_DEPRECATED(3.4) typedef int T1;
+ *    Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
  */
 #if defined(__GNUC__) \
     && ((__GNUC__ >= 4) || (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1))
 #define Py_DEPRECATED(VERSION_UNUSED) __attribute__((__deprecated__))
+#elif defined(_MSC_VER)
+#define Py_DEPRECATED(VERSION) __declspec(deprecated( \
+                                          "deprecated in " #VERSION))
 #else
 #define Py_DEPRECATED(VERSION_UNUSED)
 #endif

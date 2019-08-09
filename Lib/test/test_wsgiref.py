@@ -548,32 +548,62 @@ class TestHandler(ErrorHandler):
 
 
 class HandlerTests(TestCase):
-
-    def checkEnvironAttrs(self, handler):
-        env = handler.environ
-        for attr in [
-            'version','multithread','multiprocess','run_once','file_wrapper'
-        ]:
-            if attr=='file_wrapper' and handler.wsgi_file_wrapper is None:
-                continue
-            self.assertEqual(getattr(handler,'wsgi_'+attr),env['wsgi.'+attr])
-
-    def checkOSEnviron(self,handler):
-        empty = {}; setup_testing_defaults(empty)
-        env = handler.environ
-        from os import environ
-        for k,v in environ.items():
-            if k not in empty:
-                self.assertEqual(env[k],v)
-        for k,v in empty.items():
-            self.assertIn(k, env)
+    # testEnviron() can produce long error message
+    maxDiff = 80 * 50
 
     def testEnviron(self):
-        h = TestHandler(X="Y")
-        h.setup_environ()
-        self.checkEnvironAttrs(h)
-        self.checkOSEnviron(h)
-        self.assertEqual(h.environ["X"],"Y")
+        os_environ = {
+            # very basic environment
+            'HOME': '/my/home',
+            'PATH': '/my/path',
+            'LANG': 'fr_FR.UTF-8',
+
+            # set some WSGI variables
+            'SCRIPT_NAME': 'test_script_name',
+            'SERVER_NAME': 'test_server_name',
+        }
+
+        with support.swap_attr(TestHandler, 'os_environ', os_environ):
+            # override X and HOME variables
+            handler = TestHandler(X="Y", HOME="/override/home")
+            handler.setup_environ()
+
+        # Check that wsgi_xxx attributes are copied to wsgi.xxx variables
+        # of handler.environ
+        for attr in ('version', 'multithread', 'multiprocess', 'run_once',
+                     'file_wrapper'):
+            self.assertEqual(getattr(handler, 'wsgi_' + attr),
+                             handler.environ['wsgi.' + attr])
+
+        # Test handler.environ as a dict
+        expected = {}
+        setup_testing_defaults(expected)
+        # Handler inherits os_environ variables which are not overriden
+        # by SimpleHandler.add_cgi_vars() (SimpleHandler.base_env)
+        for key, value in os_environ.items():
+            if key not in expected:
+                expected[key] = value
+        expected.update({
+            # X doesn't exist in os_environ
+            "X": "Y",
+            # HOME is overriden by TestHandler
+            'HOME': "/override/home",
+
+            # overriden by setup_testing_defaults()
+            "SCRIPT_NAME": "",
+            "SERVER_NAME": "127.0.0.1",
+
+            # set by BaseHandler.setup_environ()
+            'wsgi.input': handler.get_stdin(),
+            'wsgi.errors': handler.get_stderr(),
+            'wsgi.version': (1, 0),
+            'wsgi.run_once': False,
+            'wsgi.url_scheme': 'http',
+            'wsgi.multithread': True,
+            'wsgi.multiprocess': True,
+            'wsgi.file_wrapper': util.FileWrapper,
+        })
+        self.assertDictEqual(handler.environ, expected)
 
     def testCGIEnviron(self):
         h = BaseCGIHandler(None,None,None,{})

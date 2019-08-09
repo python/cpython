@@ -197,8 +197,9 @@ process more convenient:
 
 .. function:: dump(obj, file, protocol=None, \*, fix_imports=True, buffer_callback=None)
 
-   Write a pickled representation of *obj* to the open :term:`file object` *file*.
-   This is equivalent to ``Pickler(file, protocol).dump(obj)``.
+   Write the pickled representation of the object *obj* to the open
+   :term:`file object` *file*.  This is equivalent to
+   ``Pickler(file, protocol).dump(obj)``.
 
    Arguments *file*, *protocol*, *fix_imports* and *buffer_callback* have
    the same meaning as in the :class:`Pickler` constructor.
@@ -208,7 +209,7 @@ process more convenient:
 
 .. function:: dumps(obj, protocol=None, \*, fix_imports=True, buffer_callback=None)
 
-   Return the pickled representation of the object as a :class:`bytes` object,
+   Return the pickled representation of the object *obj* as a :class:`bytes` object,
    instead of writing it to a file.
 
    Arguments *protocol*, *fix_imports* and *buffer_callback* have the same
@@ -219,13 +220,13 @@ process more convenient:
 
 .. function:: load(file, \*, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
 
-   Read a pickled object representation from the open :term:`file object`
+   Read the pickled representation of an object from the open :term:`file object`
    *file* and return the reconstituted object hierarchy specified therein.
    This is equivalent to ``Unpickler(file).load()``.
 
    The protocol version of the pickle is detected automatically, so no
-   protocol argument is needed.  Bytes past the pickled object's
-   representation are ignored.
+   protocol argument is needed.  Bytes past the pickled representation
+   of the object are ignored.
 
    Arguments *file*, *fix_imports*, *encoding*, *errors*, *strict* and *buffers*
    have the same meaning as in the :class:`Unpickler` constructor.
@@ -235,12 +236,12 @@ process more convenient:
 
 .. function:: loads(bytes_object, \*, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
 
-   Read a pickled object hierarchy from a :class:`bytes` object and return the
-   reconstituted object hierarchy specified therein.
+   Return the reconstituted object hierarchy of the pickled representation
+   *bytes_object* of an object.
 
    The protocol version of the pickle is detected automatically, so no
-   protocol argument is needed.  Bytes past the pickled object's
-   representation are ignored.
+   protocol argument is needed.  Bytes past the pickled representation
+   of the object are ignored.
 
    Arguments *file*, *fix_imports*, *encoding*, *errors*, *strict* and *buffers*
    have the same meaning as in the :class:`Unpickler` constructor.
@@ -311,7 +312,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
    .. method:: dump(obj)
 
-      Write a pickled representation of *obj* to the open file object given in
+      Write the pickled representation of *obj* to the open file object given in
       the constructor.
 
    .. method:: persistent_id(obj)
@@ -412,9 +413,10 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
    .. method:: load()
 
-      Read a pickled object representation from the open file object given in
-      the constructor, and return the reconstituted object hierarchy specified
-      therein.  Bytes past the pickled object's representation are ignored.
+      Read the pickled representation of an object from the open file object
+      given in the constructor, and return the reconstituted object hierarchy
+      specified therein.  Bytes past the pickled representation of the object
+      are ignored.
 
    .. method:: persistent_load(pid)
 
@@ -437,7 +439,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
       how they can be loaded, potentially reducing security risks. Refer to
       :ref:`pickle-restrict` for details.
 
-      .. audit-event:: pickle.find_class "module name"
+      .. audit-event:: pickle.find_class module,name pickle.Unpickler.find_class
 
 .. class:: PickleBuffer(buffer)
 
@@ -717,13 +719,13 @@ alphanumeric characters (for protocol 0) [#]_ or just an arbitrary object (for
 any newer protocol).
 
 The resolution of such persistent IDs is not defined by the :mod:`pickle`
-module; it will delegate this resolution to the user defined methods on the
+module; it will delegate this resolution to the user-defined methods on the
 pickler and unpickler, :meth:`~Pickler.persistent_id` and
 :meth:`~Unpickler.persistent_load` respectively.
 
-To pickle objects that have an external persistent id, the pickler must have a
+To pickle objects that have an external persistent ID, the pickler must have a
 custom :meth:`~Pickler.persistent_id` method that takes an object as an
-argument and returns either ``None`` or the persistent id for that object.
+argument and returns either ``None`` or the persistent ID for that object.
 When ``None`` is returned, the pickler simply pickles the object as normal.
 When a persistent ID string is returned, the pickler will pickle that object,
 along with a marker so that the unpickler will recognize it as a persistent ID.

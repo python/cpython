@@ -123,7 +123,7 @@ validate_arguments(arguments_ty args)
         && !validate_expr(args->kwarg->annotation, Load)) {
             return 0;
     }
-    if (asdl_seq_LEN(args->defaults) > asdl_seq_LEN(args->args)) {
+    if (asdl_seq_LEN(args->defaults) > asdl_seq_LEN(args->posonlyargs) + asdl_seq_LEN(args->args)) {
         PyErr_SetString(PyExc_ValueError, "more positional defaults than args on arguments");
         return 0;
     }
@@ -786,7 +786,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
     /* borrowed reference */
     c.c_filename = filename;
     c.c_normalize = NULL;
-    c.c_feature_version = flags->cf_feature_version;
+    c.c_feature_version = flags ? flags->cf_feature_version : PY_MINOR_VERSION;
 
     if (TYPE(n) == encoding_decl)
         n = CHILD(n, 0);
@@ -1688,7 +1688,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 return NULL;
         }
     }
-    return arguments(posargs, posonlyargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
+    return arguments(posonlyargs, posargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
 }
 
 static expr_ty
@@ -2645,7 +2645,7 @@ ast_for_binop(struct compiling *c, const node *n)
             return NULL;
 
         tmp_result = BinOp(result, newoperator, tmp,
-                           LINENO(next_oper), next_oper->n_col_offset,
+                           LINENO(n), n->n_col_offset,
                            CHILD(n, i * 2 + 2)->n_end_lineno,
                            CHILD(n, i * 2 + 2)->n_end_col_offset,
                            c->c_arena);
@@ -3398,7 +3398,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         }
         else {
             ch = CHILD(ann, 3);
-            if (TYPE(ch) == testlist) {
+            if (TYPE(ch) == testlist_star_expr) {
                 expr3 = ast_for_testlist(c, ch);
             }
             else {
@@ -3684,9 +3684,6 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                          "unexpected import name: %d", TYPE(n));
             return NULL;
     }
-
-    PyErr_SetString(PyExc_SystemError, "unhandled import name condition");
-    return NULL;
 }
 
 static stmt_ty
@@ -4845,7 +4842,6 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
                      struct compiling *c, const node *n)
 
 {
-    PyCompilerFlags cf;
     node *mod_n;
     mod_ty mod;
     char *str;
@@ -4887,8 +4883,8 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     str[len+1] = ')';
     str[len+2] = 0;
 
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags = PyCF_ONLY_AST;
-    cf.cf_feature_version = PY_MINOR_VERSION;
     mod_n = PyParser_SimpleParseStringFlagsFilename(str, "<fstring>",
                                                     Py_eval_input, 0);
     if (!mod_n) {
@@ -5010,8 +5006,8 @@ fstring_parse(const char **str, const char *end, int raw, int recurse_lvl,
 
    *expression is set to the expression.  For an '=' "debug" expression,
    *expr_text is set to the debug text (the original text of the expression,
-   *including the '=' and any whitespace around it, as a string object).  If
-   *not a debug expression, *expr_text set to NULL. */
+   including the '=' and any whitespace around it, as a string object).  If
+   not a debug expression, *expr_text set to NULL. */
 static int
 fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
                   PyObject **expr_text, expr_ty *expression,
@@ -5038,6 +5034,8 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
        expressions. */
     Py_ssize_t nested_depth = 0;
     char parenstack[MAXLEVEL];
+
+    *expr_text = NULL;
 
     /* Can only nest one level deep. */
     if (recurse_lvl >= 2) {
@@ -5214,8 +5212,6 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         if (!*expr_text) {
             goto error;
         }
-    } else {
-        *expr_text = NULL;
     }
 
     /* Check for a conversion char, if present. */
@@ -5260,7 +5256,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     *str += 1;
 
     /* If we're in = mode (detected by non-NULL expr_text), and have no format
-       spec and no explict conversion, set the conversion to 'r'. */
+       spec and no explicit conversion, set the conversion to 'r'. */
     if (*expr_text && format_spec == NULL && conversion == -1) {
         conversion = 'r';
     }
@@ -5281,6 +5277,7 @@ unexpected_end_of_string:
     /* Falls through to error. */
 
 error:
+    Py_XDECREF(*expr_text);
     return -1;
 
 }
@@ -5603,7 +5600,8 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
 
     /* Parse the f-string. */
     while (1) {
-        PyObject *literal[2] = {NULL, NULL};
+        PyObject *literal = NULL;
+        PyObject *expr_text = NULL;
         expr_ty expression = NULL;
 
         /* If there's a zero length literal in front of the
@@ -5611,34 +5609,23 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
            the f-string, expression will be NULL (unless result == 1,
            see below). */
         int result = fstring_find_literal_and_expr(str, end, raw, recurse_lvl,
-                                                   &literal[0], &literal[1],
+                                                   &literal, &expr_text,
                                                    &expression, c, n);
         if (result < 0)
             return -1;
 
-        /* Add the literals, if any. */
-        for (int i = 0; i < 2; i++) {
-            if (!literal[i]) {
-                /* Do nothing. Just leave last_str alone (and possibly
-                   NULL). */
-            } else if (!state->last_str) {
-                /*  Note that the literal can be zero length, if the
-                    input string is "\\\n" or "\\\r", among others. */
-                state->last_str = literal[i];
-                literal[i] = NULL;
-            } else {
-                /* We have a literal, concatenate it. */
-                assert(PyUnicode_GET_LENGTH(literal[i]) != 0);
-                if (FstringParser_ConcatAndDel(state, literal[i]) < 0)
-                    return -1;
-                literal[i] = NULL;
-            }
+        /* Add the literal, if any. */
+        if (literal && FstringParser_ConcatAndDel(state, literal) < 0) {
+            Py_XDECREF(expr_text);
+            return -1;
+        }
+        /* Add the expr_text, if any. */
+        if (expr_text && FstringParser_ConcatAndDel(state, expr_text) < 0) {
+            return -1;
         }
 
-        /* We've dealt with the literals now. They can't be leaked on further
-           errors. */
-        assert(literal[0] == NULL);
-        assert(literal[1] == NULL);
+        /* We've dealt with the literal and expr_text, their ownership has
+           been transferred to the state object.  Don't look at them again. */
 
         /* See if we should just loop around to get the next literal
            and expression, while ignoring the expression this

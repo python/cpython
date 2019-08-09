@@ -1863,6 +1863,9 @@ Subclasses of :class:`Command` must define the following methods.
 .. module:: distutils.command.bdist_wininst
    :synopsis: Build a Windows installer
 
+.. deprecated:: 3.8
+   Use bdist_wheel (wheel packages) instead.
+
 
 .. % todo
 

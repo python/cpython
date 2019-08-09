@@ -867,6 +867,75 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(bytearray_hex__doc__,
+"hex($self, /, sep=None, bytes_per_sep=1)\n"
+"--\n"
+"\n"
+"Create a str of hexadecimal numbers from a bytearray object.\n"
+"\n"
+"  sep\n"
+"    An optional single character or byte to separate hex bytes.\n"
+"  bytes_per_sep\n"
+"    How many bytes between separators.  Positive values count from the\n"
+"    right, negative values count from the left.\n"
+"\n"
+"Example:\n"
+">>> value = bytearray([0xb9, 0x01, 0xef])\n"
+">>> value.hex()\n"
+"\'b901ef\'\n"
+">>> value.hex(\':\')\n"
+"\'b9:01:ef\'\n"
+">>> value.hex(\':\', 2)\n"
+"\'b9:01ef\'\n"
+">>> value.hex(\':\', -2)\n"
+"\'b901:ef\'");
+
+#define BYTEARRAY_HEX_METHODDEF    \
+    {"hex", (PyCFunction)(void(*)(void))bytearray_hex, METH_FASTCALL|METH_KEYWORDS, bytearray_hex__doc__},
+
+static PyObject *
+bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep, int bytes_per_sep);
+
+static PyObject *
+bytearray_hex(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"sep", "bytes_per_sep", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "hex", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *sep = NULL;
+    int bytes_per_sep = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        sep = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    bytes_per_sep = _PyLong_AsInt(args[1]);
+    if (bytes_per_sep == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = bytearray_hex_impl(self, sep, bytes_per_sep);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(bytearray_reduce__doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -942,4 +1011,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=272fcb836b92da32 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7848247e5469ba1b input=a9049054013a1b77]*/

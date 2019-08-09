@@ -337,6 +337,12 @@ all mutable objects.)  Clashes between duplicate keys are not detected; the last
 datum (textually rightmost in the display) stored for a given key value
 prevails.
 
+.. versionchanged:: 3.8
+   Prior to Python 3.8, in dict comprehensions, the evaluation order of key
+   and value was not well-defined.  In CPython, the value was evaluated before
+   the key.  Starting with 3.8, the key is evaluated before the value, as
+   proposed by :pep:`572`.
+
 
 .. _genexpr:
 
@@ -1563,14 +1569,15 @@ y`` returns ``True`` if ``y.__contains__(x)`` returns a true value, and
 ``False`` otherwise.
 
 For user-defined classes which do not define :meth:`__contains__` but do define
-:meth:`__iter__`, ``x in y`` is ``True`` if some value ``z`` with ``x == z`` is
-produced while iterating over ``y``.  If an exception is raised during the
-iteration, it is as if :keyword:`in` raised that exception.
+:meth:`__iter__`, ``x in y`` is ``True`` if some value ``z``, for which the
+expression ``x is z or x == z`` is true, is produced while iterating over ``y``.
+If an exception is raised during the iteration, it is as if :keyword:`in` raised
+that exception.
 
 Lastly, the old-style iteration protocol is tried: if a class defines
 :meth:`__getitem__`, ``x in y`` is ``True`` if and only if there is a non-negative
-integer index *i* such that ``x == y[i]``, and all lower integer indices do not
-raise :exc:`IndexError` exception.  (If any other exception is raised, it is as
+integer index *i* such that ``x is y[i] or x == y[i]``, and no lower integer index
+raises the :exc:`IndexError` exception.  (If any other exception is raised, it is as
 if :keyword:`in` raised that exception).
 
 .. index::

@@ -542,7 +542,8 @@ class AsyncMockAssert(unittest.TestCase):
 
     def test_assert_awaited_with(self):
         asyncio.run(self._runnable_test())
-        with self.assertRaises(AssertionError):
+        msg = 'expected await not found'
+        with self.assertRaisesRegex(AssertionError, msg):
             self.mock.assert_awaited_with('foo')
 
         asyncio.run(self._runnable_test('foo'))
@@ -580,8 +581,9 @@ class AsyncMockAssert(unittest.TestCase):
     def test_assert_has_awaits_no_order(self):
         calls = [call('NormalFoo'), call('baz')]
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(AssertionError) as cm:
             self.mock.assert_has_awaits(calls)
+        self.assertEqual(len(cm.exception.args), 1)
 
         asyncio.run(self._runnable_test('foo'))
         with self.assertRaises(AssertionError):

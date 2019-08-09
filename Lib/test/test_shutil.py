@@ -124,7 +124,7 @@ def supports_file2file_sendfile():
 
         with open(srcname, "rb") as src:
             with tempfile.NamedTemporaryFile("wb", delete=False) as dst:
-                dstname = f.name
+                dstname = dst.name
                 infd = src.fileno()
                 outfd = dst.fileno()
                 try:
@@ -878,8 +878,9 @@ class TestShutil(unittest.TestCase):
 
         flag = []
         src = tempfile.mkdtemp()
+        self.addCleanup(support.rmtree, src)
         dst = tempfile.mktemp()
-        self.addCleanup(shutil.rmtree, src)
+        self.addCleanup(support.rmtree, dst)
         with open(os.path.join(src, 'foo'), 'w') as f:
             f.close()
         shutil.copytree(src, dst, copy_function=custom_cpfun)
@@ -2315,7 +2316,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
         # Emulate a case where sendfile() only support file->socket
         # fds. In such a case copyfile() is supposed to skip the
         # fast-copy attempt from then on.
-        assert shutil._HAS_SENDFILE
+        assert shutil._USE_CP_SENDFILE
         try:
             with unittest.mock.patch(
                     self.PATCHPOINT,
@@ -2324,13 +2325,13 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
                     with self.assertRaises(_GiveupOnFastCopy):
                         shutil._fastcopy_sendfile(src, dst)
                 assert m.called
-            assert not shutil._HAS_SENDFILE
+            assert not shutil._USE_CP_SENDFILE
 
             with unittest.mock.patch(self.PATCHPOINT) as m:
                 shutil.copyfile(TESTFN, TESTFN2)
                 assert not m.called
         finally:
-            shutil._HAS_SENDFILE = True
+            shutil._USE_CP_SENDFILE = True
 
 
 @unittest.skipIf(not MACOS, 'macOS only')

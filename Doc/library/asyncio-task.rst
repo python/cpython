@@ -842,6 +842,12 @@ Task Object
       The *file* argument is an I/O stream to which the output
       is written; by default output is written to :data:`sys.stderr`.
 
+   .. method:: get_coro()
+
+      Return the coroutine object wrapped by the :class:`Task`.
+
+      .. versionadded:: 3.8
+
    .. method:: get_name()
 
       Return the name of the Task.

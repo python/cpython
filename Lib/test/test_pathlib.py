@@ -2329,5 +2329,46 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             check()
 
 
+class CompatiblePathTest(unittest.TestCase):
+    """
+    Test that a type can be made compatible with PurePath
+    derivatives by implementing division operator overloads.
+    """
+
+    class CompatPath:
+        """
+        Minimum viable class to test PurePath compatibility.
+        Simply uses the division operator to join a given
+        string and the string value of another object with
+        a forward slash.
+        """
+        def __init__(self, string):
+            self.string = string
+
+        def __truediv__(self, other):
+            return type(self)(f"{self.string}/{other}")
+
+        def __rtruediv__(self, other):
+            return type(self)(f"{other}/{self.string}")
+
+    def test_truediv(self):
+        result = pathlib.PurePath("test") / self.CompatPath("right")
+        self.assertIsInstance(result, self.CompatPath)
+        self.assertEqual(result.string, "test/right")
+
+        with self.assertRaises(TypeError):
+            # Verify improper operations still raise a TypeError
+            pathlib.PurePath("test") / 10
+
+    def test_rtruediv(self):
+        result = self.CompatPath("left") / pathlib.PurePath("test")
+        self.assertIsInstance(result, self.CompatPath)
+        self.assertEqual(result.string, "left/test")
+
+        with self.assertRaises(TypeError):
+            # Verify improper operations still raise a TypeError
+            10 / pathlib.PurePath("test")
+
+
 if __name__ == "__main__":
     unittest.main()

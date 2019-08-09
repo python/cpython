@@ -1229,10 +1229,14 @@ os.close(fd)
         self.assertEqual(messages, [])
 
     def test_stream_reader_create_warning(self):
+        with contextlib.suppress(AttributeError):
+            del asyncio.StreamReader
         with self.assertWarns(DeprecationWarning):
             asyncio.StreamReader
 
     def test_stream_writer_create_warning(self):
+        with contextlib.suppress(AttributeError):
+            del asyncio.StreamWriter
         with self.assertWarns(DeprecationWarning):
             asyncio.StreamWriter
 
@@ -1471,10 +1475,14 @@ os.close(fd)
 
     def test_stream_server_close(self):
         server_stream_aborted = False
-        fut = self.loop.create_future()
+        fut1 = self.loop.create_future()
+        fut2 = self.loop.create_future()
 
         async def handle_client(stream):
-            await fut
+            data = await stream.readexactly(4)
+            self.assertEqual(b'data', data)
+            fut1.set_result(None)
+            await fut2
             self.assertEqual(b'', await stream.readline())
             nonlocal server_stream_aborted
             server_stream_aborted = True
@@ -1482,7 +1490,8 @@ os.close(fd)
         async def client(srv):
             addr = srv.sockets[0].getsockname()
             stream = await asyncio.connect(*addr)
-            fut.set_result(None)
+            await stream.write(b'data')
+            await fut2
             self.assertEqual(b'', await stream.readline())
             await stream.close()
 
@@ -1490,23 +1499,29 @@ os.close(fd)
             async with asyncio.StreamServer(handle_client, '127.0.0.1', 0) as server:
                 await server.start_serving()
                 task = asyncio.create_task(client(server))
-                await fut
+                await fut1
+                fut2.set_result(None)
                 await server.close()
                 await task
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-        self.loop.run_until_complete(test())
+        self.loop.run_until_complete(asyncio.wait_for(test(), 60.0))
         self.assertEqual(messages, [])
-        self.assertTrue(fut.done())
+        self.assertTrue(fut1.done())
+        self.assertTrue(fut2.done())
         self.assertTrue(server_stream_aborted)
 
     def test_stream_server_abort(self):
         server_stream_aborted = False
-        fut = self.loop.create_future()
+        fut1 = self.loop.create_future()
+        fut2 = self.loop.create_future()
 
         async def handle_client(stream):
-            await fut
+            data = await stream.readexactly(4)
+            self.assertEqual(b'data', data)
+            fut1.set_result(None)
+            await fut2
             self.assertEqual(b'', await stream.readline())
             nonlocal server_stream_aborted
             server_stream_aborted = True
@@ -1514,7 +1529,8 @@ os.close(fd)
         async def client(srv):
             addr = srv.sockets[0].getsockname()
             stream = await asyncio.connect(*addr)
-            fut.set_result(None)
+            await stream.write(b'data')
+            await fut2
             self.assertEqual(b'', await stream.readline())
             await stream.close()
 
@@ -1522,29 +1538,40 @@ os.close(fd)
             async with asyncio.StreamServer(handle_client, '127.0.0.1', 0) as server:
                 await server.start_serving()
                 task = asyncio.create_task(client(server))
-                await fut
+                await fut1
+                fut2.set_result(None)
                 await server.abort()
                 await task
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-        self.loop.run_until_complete(test())
+        self.loop.run_until_complete(asyncio.wait_for(test(), 60.0))
         self.assertEqual(messages, [])
-        self.assertTrue(fut.done())
+        self.assertTrue(fut1.done())
+        self.assertTrue(fut2.done())
         self.assertTrue(server_stream_aborted)
 
     def test_stream_shutdown_hung_task(self):
         fut1 = self.loop.create_future()
         fut2 = self.loop.create_future()
+        cancelled = self.loop.create_future()
 
         async def handle_client(stream):
-            while True:
-                await asyncio.sleep(0.01)
+            data = await stream.readexactly(4)
+            self.assertEqual(b'data', data)
+            fut1.set_result(None)
+            await fut2
+            try:
+                while True:
+                    await asyncio.sleep(0.01)
+            except asyncio.CancelledError:
+                cancelled.set_result(None)
+                raise
 
         async def client(srv):
             addr = srv.sockets[0].getsockname()
             stream = await asyncio.connect(*addr)
-            fut1.set_result(None)
+            await stream.write(b'data')
             await fut2
             self.assertEqual(b'', await stream.readline())
             await stream.close()
@@ -1557,31 +1584,39 @@ os.close(fd)
                 await server.start_serving()
                 task = asyncio.create_task(client(server))
                 await fut1
-                await server.close()
                 fut2.set_result(None)
+                await server.close()
                 await task
+                await cancelled
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-        self.loop.run_until_complete(test())
+        self.loop.run_until_complete(asyncio.wait_for(test(), 60.0))
         self.assertEqual(messages, [])
         self.assertTrue(fut1.done())
         self.assertTrue(fut2.done())
+        self.assertTrue(cancelled.done())
 
     def test_stream_shutdown_hung_task_prevents_cancellation(self):
         fut1 = self.loop.create_future()
         fut2 = self.loop.create_future()
+        cancelled = self.loop.create_future()
         do_handle_client = True
 
         async def handle_client(stream):
+            data = await stream.readexactly(4)
+            self.assertEqual(b'data', data)
+            fut1.set_result(None)
+            await fut2
             while do_handle_client:
                 with contextlib.suppress(asyncio.CancelledError):
                     await asyncio.sleep(0.01)
+            cancelled.set_result(None)
 
         async def client(srv):
             addr = srv.sockets[0].getsockname()
             stream = await asyncio.connect(*addr)
-            fut1.set_result(None)
+            await stream.write(b'data')
             await fut2
             self.assertEqual(b'', await stream.readline())
             await stream.close()
@@ -1594,20 +1629,22 @@ os.close(fd)
                 await server.start_serving()
                 task = asyncio.create_task(client(server))
                 await fut1
+                fut2.set_result(None)
                 await server.close()
                 nonlocal do_handle_client
                 do_handle_client = False
-                fut2.set_result(None)
                 await task
+                await cancelled
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-        self.loop.run_until_complete(test())
+        self.loop.run_until_complete(asyncio.wait_for(test(), 60.0))
         self.assertEqual(1, len(messages))
         self.assertRegex(messages[0]['message'],
                          "<Task pending .+ ignored cancellation request")
         self.assertTrue(fut1.done())
         self.assertTrue(fut2.done())
+        self.assertTrue(cancelled.done())
 
     def test_sendfile(self):
         messages = []
@@ -1619,22 +1656,25 @@ os.close(fd)
 
         async def serve_callback(stream):
             data = await stream.readline()
-            self.assertEqual(data, b'begin\n')
+            await stream.write(b'ack-' + data)
             data = await stream.readline()
-            self.assertEqual(data, b'data\n')
+            await stream.write(b'ack-' + data)
             data = await stream.readline()
-            self.assertEqual(data, b'end\n')
-            await stream.write(b'done\n')
+            await stream.write(b'ack-' + data)
             await stream.close()
 
         async def do_connect(host, port):
             stream = await asyncio.connect(host, port)
             await stream.write(b'begin\n')
+            data = await stream.readline()
+            self.assertEqual(b'ack-begin\n', data)
             with open(support.TESTFN, 'rb') as fp:
                 await stream.sendfile(fp)
+            data = await stream.readline()
+            self.assertEqual(b'ack-data\n', data)
             await stream.write(b'end\n')
             data = await stream.readline()
-            self.assertEqual(data, b'done\n')
+            self.assertEqual(data, b'ack-end\n')
             await stream.close()
 
         async def test():
@@ -1738,6 +1778,12 @@ os.close(fd)
                 os.close(rpipe)
 
         self.loop.run_until_complete(test())
+
+    def test_stream_ctor_forbidden(self):
+        with self.assertRaisesRegex(RuntimeError,
+                                    "should be instantiated "
+                                    "by asyncio internals only"):
+            asyncio.Stream(asyncio.StreamMode.READWRITE)
 
 
 if __name__ == '__main__':
