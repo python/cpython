@@ -312,7 +312,7 @@ class OpenCompletionsTest(unittest.TestCase):
 
         self.assertIs(acp.autocompletewindow, mock_acw)
         mock_acw.show_window.assert_called_once()
-        comp_lists, index, complete, mode, userWantsWin = \
+        comp_lists, index, complete, mode = \
             mock_acw.show_window.call_args[0]
         self.assertEqual(mode, ac.ATTRS)
         self.assertIn('bit_length', comp_lists[0])
@@ -332,7 +332,7 @@ class OpenCompletionsTest(unittest.TestCase):
         mock_acw = self.mock_acw
 
         mock_acw.show_window.assert_called_once()
-        comp_lists, index, complete, mode, userWantsWin = \
+        comp_lists, index, complete, mode = \
             mock_acw.show_window.call_args[0]
         self.assertEqual(mode, ac.FILES)
         self.assertEqual(comp_lists[0], ['monty', 'python'])
@@ -356,7 +356,7 @@ class OpenCompletionsTest(unittest.TestCase):
                 mock_acw = self.mock_acw
 
                 mock_acw.show_window.assert_called_once()
-                comp_lists, index, complete, mode, userWantsWin = \
+                comp_lists, index, complete, mode = \
                     mock_acw.show_window.call_args[0]
                 self.assertEqual(mode, ac.DICTKEYS)
                 self.assertLess(set(comp_lists[0]), set(comp_lists[1]))
@@ -381,7 +381,7 @@ class OpenCompletionsTest(unittest.TestCase):
         mock_acw = self.mock_acw
 
         mock_acw.show_window.assert_called_once()
-        comp_lists, index, complete, mode, userWantsWin = \
+        comp_lists, index, complete, mode = \
             mock_acw.show_window.call_args[0]
         self.assertEqual(mode, ac.DICTKEYS)
         self.assertLess(set(comp_lists[0]), set(comp_lists[1]))

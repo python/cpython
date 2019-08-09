@@ -60,9 +60,6 @@ class AutoCompleteWindow:
         # The last typed start, used so that when the selection changes,
         # the new start will be as close as possible to the last typed one.
         self.lasttypedstart = None
-        # Do we have an indication that the user wants the completion window
-        # (for example, he clicked the list)
-        self.userwantswindow = None
         # event ids
         self.hideid = self.keypressid = self.listupdateid = \
             self.winconfigid = self.keyreleaseid = self.doubleclickid = None
@@ -206,7 +203,7 @@ class AutoCompleteWindow:
             i -= 2
         return start[i - 1] != '\\'
 
-    def show_window(self, comp_lists, index, complete, mode, userWantsWin):
+    def show_window(self, comp_lists, index, complete, mode):
         """Show the autocomplete list, bind events.
 
         If complete is True, complete the text, and if there is exactly
@@ -223,7 +220,6 @@ class AutoCompleteWindow:
             if n_possible == 1:
                 self._change_start(self._finalize_completion(completion))
                 return completion == start
-        self.userwantswindow = userWantsWin
         self.lasttypedstart = self.start
 
         # Put widgets in place
@@ -335,7 +331,6 @@ class AutoCompleteWindow:
 
     def listselect_event(self, event):
         if self.is_active():
-            self.userwantswindow = True
             cursel = int(self.listbox.curselection()[0])
             self._change_start(self.completions[cursel])
 
@@ -454,7 +449,6 @@ class AutoCompleteWindow:
         elif keysym in ("Home", "End", "Prior", "Next", "Up", "Down") and \
              not state:
             # Move the selection in the listbox
-            self.userwantswindow = True
             cursel = int(self.listbox.curselection()[0])
             if keysym == "Home":
                 newsel = 0
@@ -489,7 +483,6 @@ class AutoCompleteWindow:
                 return "break"
             else:
                 # first tab; let AutoComplete handle the completion
-                self.userwantswindow = True
                 self.lastkey_was_tab = True
                 return None
 

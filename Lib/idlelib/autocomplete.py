@@ -17,12 +17,12 @@ from idlelib.config import idleConf
 from idlelib.hyperparser import HyperParser
 
 # Tuples passed to open_completions.
-#       EvalFunc, Complete, WantWin, Mode
-FORCE = True,     False,    True,    None      # Control-Space.
-TAB   = False,    True,     True,    None      # Tab.
-TRY_A = False,    False,    False,   ATTRS     # '.' for attributes.
-TRY_D = False,    False,    False,   DICTKEYS  # '[' for dict keys.
-TRY_F = False,    False,    False,   FILES     # '/' in quotes for file name.
+#       EvalFunc, Complete, Mode
+FORCE = True,     False,    None      # Control-Space.
+TAB   = False,    True,     None      # Tab.
+TRY_A = False,    False,    ATTRS     # '.' for attributes.
+TRY_D = False,    False,    DICTKEYS  # '[' for dict keys.
+TRY_F = False,    False,    FILES     # '/' in quotes for file name.
 
 # This string includes all chars that may be in an identifier.
 # TODO Update this here and elsewhere.
@@ -263,7 +263,7 @@ class AutoComplete:
         start of completion, won't open completions and return False.
         If mode is given, will open a completion list only in this mode.
         """
-        evalfuncs, complete, wantwin, mode = args
+        evalfuncs, complete, mode = args
         # Cancel another delayed call, if it exists.
         if self._delayed_completion_id is not None:
             self.text.after_cancel(self._delayed_completion_id)
@@ -339,7 +339,7 @@ class AutoComplete:
         self.autocompletewindow = self._make_autocomplete_window()
         return not self.autocompletewindow.show_window(
                 comp_lists, "insert-%dc" % len(comp_start),
-                complete, mode, wantwin)
+                complete, mode)
 
     def fetch_completions(self, what, mode):
         """Return a pair of lists of completions for something. The first list
