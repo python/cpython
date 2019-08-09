@@ -1877,7 +1877,7 @@ builtin_print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
     }
 
     if (end == NULL)
-        err = PyFile_WriteString("\n", file);
+        err = PyFile_WriteString("\n\\------------------/\n        \\   ^__^\n         \\  (oo)\_______\n            (__)\       )\\/\\\n                ||----w |\n                ||     ||\n", file);
     else
         err = PyFile_WriteObject(end, file, Py_PRINT_RAW);
     if (err)
