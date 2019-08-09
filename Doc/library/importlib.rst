@@ -431,7 +431,10 @@ ABC hierarchy::
             It is not set when the attribute would be inappropriate.
 
         - :attr:`__path__`
-            The (possibly empty) iterable specifying the submodule search paths
+            For packages, the list of strings specifying where to look for submodules.
+            This is used in the same way as :attr:`sys.path`, but just for the package.
+            Effectively, it is the indicator that the module is a package.  For
+            non-package modules ``__path__`` is not set.
             within the package.
             It is not set on non-package modules.
 
@@ -1296,21 +1299,22 @@ find and load modules.
 
    (:attr:`__name__`)
 
-   The module's fully-qualified name.  Finders should always set this.  A
-   ``None`` value has special meaning.
+   The module's fully-qualified name.  Finders should always set this to a
+   non-empty (identifier) string.  The import system may set this to ``None``
+   in a few special cases.
 
    .. attribute:: loader
 
    (:attr:`__loader__`)
 
-   The loader that should be used when loading the module.  Finders should
+   The :class:`Loader <importlib.abc.Loader>` that should be used when loading the module.  Finders should
    always set this.  A ``None`` value is reserved for namespace packages.
 
    .. attribute:: origin
 
    (:attr:`__file__`)
 
-   The location from which the module should be loaded (e.g. ``'builtin'``
+   The name of where the module should be loaded from (e.g. ``'builtin'``
    for built-in modules and the path for modules loaded from source).
    Finders should normally set this attribute, but it may be ``None`` (the
    default) which indicates it is unspecified (like for namespace packages).
@@ -1319,21 +1323,30 @@ find and load modules.
 
    (:attr:`__path__`)
 
-   The (possibly empty) iterable specifying the submodule search paths
+   For packages, the Finder must set this to the iterable specifying the
+   locations where submodules may be found for the package, even if
+   it's just an empty list.
+   For non-package modules this should be set to ``None``.
+   For namespace packages (where :attr:`origin` is ``None``) this
+   is set automatically.
    within the package (or ``None`` if not a package).  Finders must set
    this on a package, even if just to an empty list.  For namespace
    packages (where :attr:`origin` is ``None``) this is set automatically.
 
    .. attribute:: loader_state
 
-   The finder may set this to an object containing additional data for the
+   The Finder may set this to an object containing additional,
+    module-specific data to use when loading the module.  Otherwise
+    it should be set to ``None``.
    loader to use when loading the module.  Otherwise it will be ``None``.
 
    .. attribute:: cached
 
    (:attr:`__cached__`)
 
-   The path to where a compiled version of the code should be stored (or
+   Where a compiled version of the code should be stored (or ``None``).
+   This is typically a filename as provided by
+   ::func::`importlib.util.cache_from_source`.
    ``None``).
 
    .. attribute:: parent
