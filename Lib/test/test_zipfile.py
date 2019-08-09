@@ -2529,26 +2529,38 @@ class TestPath(unittest.TestCase):
         for zipfile_abcdef in self.zipfile_abcdef():
             root = zipfile.Path(zipfile_abcdef)
             assert root.is_dir()
-            a, b = root.iterdir()
+            temp_list = list(root.iterdir())
+            assert len(temp_list) == 2
+            a, b = temp_list
             assert a.is_file()
             assert b.is_dir()
-            c, f, d = b.iterdir()
+            temp_list = list(b.iterdir())
+            assert len(temp_list) == 3
+            c, f, d = temp_list
             assert c.is_file()
             assert f.is_file()
             assert d.is_dir()
-            e, = d.iterdir()
+            temp_list = list(d.iterdir())
+            assert len(temp_list) == 1
+            e, = temp_list
             assert e.is_file()            
 
     def test_iterdir_abde_istype(self):
         for zipfile_abde in self.zipfile_abde():
             root = zipfile.Path(zipfile_abde)
             assert root.is_dir()
-            a, b = root.iterdir()
+            temp_list = list(root.iterdir())
+            assert len(temp_list) == 2
+            a, b = temp_list
             assert a.is_file()
             assert b.is_dir()
-            d, = b.iterdir()
+            temp_list = list(b.iterdir())
+            assert len(temp_list) == 1
+            d, = temp_list
             assert d.is_dir()
-            e, = d.iterdir()
+            temp_list = list(d.iterdir())
+            assert len(temp_list) == 1
+            e, = temp_list
             assert e.is_file()            
         
     def test_open(self):
