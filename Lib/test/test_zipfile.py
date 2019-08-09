@@ -2403,10 +2403,19 @@ def add_dirs(zipfile):
     any directories implied by the presence of children.
     """
     names = zipfile.namelist()
+    subdirs = set([
+        name for name in map(posixpath.dirname, names) 
+        if name and name + "/" not in names
+    ])
+    missingdirs = set([
+        str(p) for sd in subdirs 
+        for p in pathlib.PurePath(sd).parents
+        if str(p) not in {".", "/"}
+    ])
+    subdirs.update(missingdirs)
     consume(
         zipfile.writestr(name + "/", b"")
-        for name in map(posixpath.dirname, names)
-        if name and name + "/" not in names
+        for name in subdirs
     )
     return zipfile
 
@@ -2431,6 +2440,46 @@ def build_abcde_files():
     return zf
 
 
+def build_abcdef_files():
+    """
+    Create a zip file with this structure:
+
+    .
+    ├── a.txt
+    └── b
+        ├── c.txt
+        └── d
+        │   └── e.txt
+        └── f.txt
+    """
+    data = io.BytesIO()
+    zf = zipfile.ZipFile(data, "w")
+    zf.writestr("a.txt", b"content of a")
+    zf.writestr("b/c.txt", b"content of c")
+    zf.writestr("b/d/e.txt", b"content of e")
+    zf.writestr("b/f.txt", "content of f")
+    zf.filename = "abcdef.zip"
+    return zf
+
+    
+def build_abde_files():
+    """
+    Create a zip file with this structure:
+
+    .
+    ├── a.txt
+    └── b
+        └── d
+            └── e.txt
+    """
+    data = io.BytesIO()
+    zf = zipfile.ZipFile(data, "w")
+    zf.writestr("a.txt", b"content of a")
+    zf.writestr("b/d/e.txt", b"content of e")
+    zf.filename = "abcdef.zip"
+    return zf    
+        
+
 class TestPath(unittest.TestCase):
     def setUp(self):
         self.fixtures = contextlib.ExitStack()
@@ -2441,6 +2490,18 @@ class TestPath(unittest.TestCase):
             yield build_abcde_files()
         with self.subTest():
             yield add_dirs(build_abcde_files())
+
+    def zipfile_abcdef(self):
+        with self.subTest():
+            yield build_abcdef_files()
+        with self.subTest():
+            yield add_dirs(build_abcdef_files())
+            
+    def zipfile_abde(self):
+        with self.subTest():
+            yield build_abde_files()
+        with self.subTest():
+            yield add_dirs(build_abde_files())             
 
     def zipfile_ondisk(self):
         tmpdir = pathlib.Path(self.fixtures.enter_context(temp_dir()))
@@ -2464,6 +2525,32 @@ class TestPath(unittest.TestCase):
             e, = d.iterdir()
             assert e.is_file()
 
+    def test_iterdir_abcdef_istype(self):
+        for zipfile_abcdef in self.zipfile_abcdef():
+            root = zipfile.Path(zipfile_abcdef)
+            assert root.is_dir()
+            a, b = root.iterdir()
+            assert a.is_file()
+            assert b.is_dir()
+            c, f, d = b.iterdir()
+            assert c.is_file()
+            assert f.is_file()
+            assert d.is_dir()
+            e, = d.iterdir()
+            assert e.is_file()            
+
+    def test_iterdir_abde_istype(self):
+        for zipfile_abde in self.zipfile_abde():
+            root = zipfile.Path(zipfile_abde)
+            assert root.is_dir()
+            a, b = root.iterdir()
+            assert a.is_file()
+            assert b.is_dir()
+            d, = b.iterdir()
+            assert d.is_dir()
+            e, = d.iterdir()
+            assert e.is_file()            
+        
     def test_open(self):
         for zipfile_abcde in self.zipfile_abcde():
             root = zipfile.Path(zipfile_abcde)
