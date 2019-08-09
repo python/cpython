@@ -5920,97 +5920,60 @@ class CapiTest(unittest.TestCase):
         class TimeDeltaSubclass(timedelta):
             pass
 
-        exp_delta = timedelta(26, 55, 99999)
-        exp_delta_s = TimeDeltaSubclass(26, 55, 99999)
+        for klass in [timedelta, TimeDeltaSubclass]:
+            for args in [(26, 55, 99999), (26, 55, 99999)]:
+                d = klass(*args)
+                with self.subTest(cls=klass, date=args):
+                    days, seconds, microseconds = _testcapi.get_fields_from_delta(d)
 
-        days, seconds, microseconds = _testcapi.get_fields_from_delta(exp_delta)
-        days_s, seconds_s, microseconds_s = _testcapi.get_fields_from_delta(exp_delta_s)
-
-        with self.subTest(testname="PyDateTime_DELTA_GET_DAYS"):
-            self.assertEqual(days, exp_delta.days)
-            self.assertEqual(days_s, exp_delta_s.days)
-
-        with self.subTest(testname="PyDateTime_DELTA_GET_SECONDS"):
-            self.assertEqual(seconds, exp_delta.seconds)
-            self.assertEqual(seconds_s, exp_delta_s.seconds)
-
-        with self.subTest(testname="PyDateTime_DELTA_GET_MICROSECONDS"):
-            self.assertEqual(microseconds, exp_delta.microseconds)
-            self.assertEqual(microseconds_s, exp_delta_s.microseconds)
+                    self.assertEqual(days, d.days)
+                    self.assertEqual(seconds, d.seconds)
+                    self.assertEqual(microseconds, d.microseconds)
 
     def test_get_date_object_macros(self):
         class DateSubclass(date):
             pass
 
-        exp_dt = date(2000, 1, 2)
-        exp_dts = DateSubclass(2000, 1, 2)
+        for klass in [date, DateSubclass]:
+            for args in [(2000, 1, 2), (2012, 2, 29)]:
+                d = klass(*args)
+                with self.subTest(cls=klass, date=args):
+                    year, month, day = _testcapi.get_fields_from_date(d)
 
-        year, month, day = _testcapi.get_fields_from_date(exp_dt)
-        year_s, month_s, day_s = _testcapi.get_fields_from_date(exp_dts)
-
-        with self.subTest(testname="PyDateTime_GET_YEAR"):
-            self.assertEqual(year, exp_dt.year)
-            self.assertEqual(year_s, exp_dts.year)
-
-        with self.subTest(testname="PyDateTime_GET_MONTH"):
-            self.assertEqual(month, exp_dt.month)
-            self.assertEqual(month_s, exp_dts.month)
-
-        with self.subTest(testname="PyDateTime_GET_DAY"):
-            self.assertEqual(day, exp_dt.day)
-            self.assertEqual(day_s, exp_dts.day)
+                    self.assertEqual(year, d.year)
+                    self.assertEqual(month, d.month)
+                    self.assertEqual(day, d.day)
 
     def test_get_datetime_object_macros(self):
         class DateTimeSubclass(datetime):
             pass
 
-        exp_dt = datetime(1993, 8, 26, 22, 12, 55, 99999)
-        exp_dts = DateTimeSubclass(1993, 8, 26, 22, 12, 55, 99999)
+        for klass in [datetime, DateTimeSubclass]:
+            for args in [(1993, 8, 26, 22, 12, 55, 99999),
+                         (1993, 8, 26, 22, 12, 55, 99999)]:
+                d = klass(*args)
+                with self.subTest(cls=klass, date=args):
+                    hour, minute, second, microsecond = _testcapi.get_fields_from_datetime(d)
 
-        hour, minute, second, microsecond = _testcapi.get_fields_from_datetime(exp_dt)
-        hour_s, minute_s, second_s, microsecond_s = _testcapi.get_fields_from_datetime(exp_dts)
-
-        with self.subTest(testname="PyDateTime_DATE_GET_HOUR"):
-            self.assertEqual(hour, exp_dt.hour)
-            self.assertEqual(hour_s, exp_dts.hour)
-
-        with self.subTest(testname="PyDateTime_DATE_GET_MINUTE"):
-            self.assertEqual(minute, exp_dt.minute)
-            self.assertEqual(minute_s, exp_dts.minute)
-
-        with self.subTest(testname="PyDateTime_DATE_GET_SECOND"):
-            self.assertEqual(second, exp_dt.second)
-            self.assertEqual(second_s, exp_dts.second)
-
-        with self.subTest(testname="PyDateTime_DATE_GET_MICROSECOND"):
-            self.assertEqual(microsecond, exp_dt.microsecond)
-            self.assertEqual(microsecond_s, exp_dts.microsecond)
+                    self.assertEqual(hour, d.hour)
+                    self.assertEqual(minute, d.minute)
+                    self.assertEqual(second, d.second)
+                    self.assertEqual(microsecond, d.microsecond)
 
     def test_get_time_object_macros(self):
         class TimeSubclass(time):
             pass
 
-        exp_t = time(12, 30, 20, 10)
-        exp_ts = TimeSubclass(12, 30, 20, 10)
+        for klass in [time, TimeSubclass]:
+            for args in [(12, 30, 20, 10), (12, 30, 20, 10)]:
+                d = klass(*args)
+                with self.subTest(cls=klass, date=args):
+                    hour, minute, second, microsecond = _testcapi.get_fields_from_time(d)
 
-        hour, minute, second, microsecond = _testcapi.get_fields_from_time(exp_t)
-        hour_s, minute_s, second_s, microsecond_s = _testcapi.get_fields_from_time(exp_ts)
-
-        with self.subTest(testname="PyDateTime_TIME_GET_HOUR"):
-            self.assertEqual(hour, exp_t.hour)
-            self.assertEqual(hour_s, exp_ts.hour)
-
-        with self.subTest(testname="PyDateTime_TIME_GET_MINUTE"):
-            self.assertEqual(minute, exp_t.minute)
-            self.assertEqual(minute_s, exp_ts.minute)
-
-        with self.subTest(testname="PyDateTime_TIME_GET_SECOND"):
-            self.assertEqual(second, exp_t.second)
-            self.assertEqual(second_s, exp_ts.second)
-
-        with self.subTest(testname="PyDateTime_TIME_GET_MICROSECOND"):
-            self.assertEqual(microsecond, exp_t.microsecond)
-            self.assertEqual(microsecond_s, exp_ts.microsecond)
+                    self.assertEqual(hour, d.hour)
+                    self.assertEqual(minute, d.minute)
+                    self.assertEqual(second, d.second)
+                    self.assertEqual(microsecond, d.microsecond)
 
     def test_timezones_offset_zero(self):
         utc0, utc1, non_utc = _testcapi.get_timezones_offset_zero()

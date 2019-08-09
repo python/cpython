@@ -2588,7 +2588,7 @@ get_datetime_fromtimestamp(PyObject* self, PyObject *args)
 }
 
 static PyObject *
-get_fields_from_date(PyObject* self, PyObject *args)
+get_fields_from_date(PyObject *self, PyObject *args)
 {
     PyObject *obj = NULL;
     PyObject *rv;
@@ -2597,7 +2597,7 @@ get_fields_from_date(PyObject* self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
     }
-    
+
     year = PyDateTime_GET_YEAR(obj);
     month = PyDateTime_GET_MONTH(obj);
     day = PyDateTime_GET_DAY(obj);
@@ -2615,7 +2615,7 @@ get_fields_from_date(PyObject* self, PyObject *args)
 }
 
 static PyObject *
-get_fields_from_datetime(PyObject* self, PyObject *args)
+get_fields_from_datetime(PyObject *self, PyObject *args)
 {
     PyObject *obj = NULL;
     PyObject *rv;
@@ -2644,7 +2644,7 @@ get_fields_from_datetime(PyObject* self, PyObject *args)
 }
 
 static PyObject *
-get_fields_from_time(PyObject* self, PyObject *args)
+get_fields_from_time(PyObject *self, PyObject *args)
 {
     PyObject *obj = NULL;
     PyObject *rv;
@@ -2673,7 +2673,7 @@ get_fields_from_time(PyObject* self, PyObject *args)
 }
 
 static PyObject *
-get_fields_from_delta(PyObject* self, PyObject *args)
+get_fields_from_delta(PyObject *self, PyObject *args)
 {
     PyObject *obj = NULL;
     PyObject *rv;
