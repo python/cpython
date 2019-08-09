@@ -3041,6 +3041,20 @@ class TestMiscellaneous(TestEmailBase):
         self.assertEqual(utils.parseaddr('<>'), ('', ''))
         self.assertEqual(utils.formataddr(utils.parseaddr('<>')), '')
 
+    def test_parseaddr_multiple_domains(self):
+        self.assertEqual(
+            utils.parseaddr('a@b@c'),
+            ('', '')
+        )
+        self.assertEqual(
+            utils.parseaddr('a@b.c@c'),
+            ('', '')
+        )
+        self.assertEqual(
+            utils.parseaddr('a@172.17.0.1@c'),
+            ('', '')
+        )
+
     def test_noquote_dump(self):
         self.assertEqual(
             utils.formataddr(('A Silly Person', 'person@dom.ain')),
