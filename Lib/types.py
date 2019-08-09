@@ -150,29 +150,36 @@ class DynamicClassAttribute:
     """Route attribute access on a class to __getattr__.
 
     This is a descriptor, used to define attributes that act differently when
-    accessed through an instance and through a class.  Instance access remains
-    normal, but access to an attribute through a class will be routed to the
-    class's __getattr__ method; this is done by raising AttributeError.
+    accessed through an instance and through a class.
+
+    Instance access remains normal, but access to an attribute through a class
+    will be routed  to the same arg but with the _cls_attr prefix
+    (if this attr is not present, AttributeError will be raised,
+    routing to __getattr__ method of class type)
 
     This allows one to have properties active on an instance, and have virtual
     attributes on the class with the same name (see Enum for an example).
 
     """
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None, name=None):
         self.fget = fget
         self.fset = fset
         self.fdel = fdel
+
         # next two lines make DynamicClassAttribute act the same as property
         self.__doc__ = doc or fget.__doc__
         self.overwrite_doc = doc is None
         # support for abstract methods
         self.__isabstractmethod__ = bool(getattr(fget, '__isabstractmethod__', False))
+        # define name for class attributes
+        self.instance_attr_name = name or fget.__name__
+        self.class_attr_name = f'_cls_attr{self.instance_attr_name}'
 
-    def __get__(self, instance, ownerclass=None):
+    def __get__(self, instance, ownerclass):
         if instance is None:
             if self.__isabstractmethod__:
                 return self
-            raise AttributeError()
+            return getattr(ownerclass, self.class_attr_name)
         elif self.fget is None:
             raise AttributeError("unreadable attribute")
         return self.fget(instance)
@@ -187,6 +194,9 @@ class DynamicClassAttribute:
             raise AttributeError("can't delete attribute")
         self.fdel(instance)
 
+    def set_class_attr(self, cls, value):
+        setattr(cls, self.class_attr_name, value)
+    
     def getter(self, fget):
         fdoc = fget.__doc__ if self.overwrite_doc else None
         result = type(self)(fget, self.fset, self.fdel, fdoc or self.__doc__)
