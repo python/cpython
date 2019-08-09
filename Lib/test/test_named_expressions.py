@@ -155,7 +155,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         for case, code in cases:
             with self.subTest(case=case):
                 with self.assertRaisesRegex(TargetScopeError,
-                    "named expression cannot be used in comprehension iterator expression"):
+                    "named expression cannot be used in comprehension iterable expression"):
                     exec(code, {}, {})
 
 

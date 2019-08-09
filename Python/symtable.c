@@ -41,7 +41,7 @@
 "comprehension inner loop cannot rebind named expression target"
 
 #define NAMED_EXPR_COMP_ITER_EXPR \
-"named expression cannot be used in comprehension iterator expression"
+"named expression cannot be used in comprehension iterable expression"
 
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
