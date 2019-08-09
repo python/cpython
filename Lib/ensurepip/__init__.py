@@ -2,9 +2,10 @@ import os
 import os.path
 import sys
 import tempfile
+
+from importlib import resources
 from . import _bundled
 
-from importlib.resources import read_binary
 
 
 __all__ = ["version", "bootstrap"]
@@ -98,7 +99,7 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
         additional_paths = []
         for project, version in _PROJECTS:
             wheel_name = "{}-{}-py2.py3-none-any.whl".format(project, version)
-            whl = read_binary(
+            whl = resources.read_binary(
                 _bundled,
                 wheel_name,
             )
