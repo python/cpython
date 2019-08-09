@@ -166,9 +166,7 @@ class EnumMeta(type):
         enum_class._member_map_ = {}                 # name->value map
         enum_class._member_type_ = member_type
 
-        # save DynamicClassAttribute attributes from super classes so we know
-        # if we can take the shortcut of storing members in the class dict
-        dynamic_attributes = {k for c in enum_class.mro()
+        dynamic_attributes = {k: v for c in enum_class.mro()
                               for k, v in c.__dict__.items()
                               if isinstance(v, DynamicClassAttribute)}
 
@@ -199,11 +197,11 @@ class EnumMeta(type):
         for member_name in classdict._member_names:
             value = enum_members[member_name]
             if not isinstance(value, tuple):
-                args = (value, )
+                args = (value,)
             else:
                 args = value
-            if member_type is tuple:   # special case for tuple enums
-                args = (args, )     # wrap it one more time
+            if member_type is tuple:  # special case for tuple enums
+                args = (args,)  # wrap it one more time
             if not use_args:
                 enum_member = __new__(enum_class)
                 if not hasattr(enum_member, '_value_'):
@@ -228,10 +226,15 @@ class EnumMeta(type):
             else:
                 # Aliases don't appear in member names (only in __members__).
                 enum_class._member_names_.append(member_name)
-            # performance boost for any member that would not shadow
-            # a DynamicClassAttribute
-            if member_name not in dynamic_attributes:
+
+            if dynamic_attr := dynamic_attributes.get(member_name, False):
+                # Setting attrs respectively to dynamic attribute so access member_name
+                # through a class will be routed to enum_member
+                # setattr(enum_class, dynamic_attr.class_attr_name, enum_member)
+                dynamic_attr.set_class_attr(enum_class, enum_member)
+            else:
                 setattr(enum_class, member_name, enum_member)
+
             # now add to _member_map_
             enum_class._member_map_[member_name] = enum_member
             try:
@@ -324,22 +327,6 @@ class EnumMeta(type):
         return (['__class__', '__doc__', '__members__', '__module__'] +
                 self._member_names_)
 
-    def __getattr__(cls, name):
-        """Return the enum member matching `name`
-
-        We use __getattr__ instead of descriptors or inserting into the enum
-        class' __dict__ in order to support `name` and `value` being both
-        properties for enum members (which live in the class' __dict__) and
-        enum members themselves.
-
-        """
-        if _is_dunder(name):
-            raise AttributeError(name)
-        try:
-            return cls._member_map_[name]
-        except KeyError:
-            raise AttributeError(name) from None
-
     def __getitem__(cls, name):
         return cls._member_map_[name]
 
@@ -373,8 +360,7 @@ class EnumMeta(type):
         resulting in an inconsistent Enumeration.
 
         """
-        member_map = cls.__dict__.get('_member_map_', {})
-        if name in member_map:
+        if name in cls.__dict__.get('_member_map_', {}):
             raise AttributeError('Cannot reassign members.')
         super().__setattr__(name, value)
 
