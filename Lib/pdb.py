@@ -362,7 +362,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def default(self, line):
         if line[:1] == '!': line = line[1:]
         locals = self.curframe_locals
-        globals = self.curframe.f_globals
+        ns = self.curframe.f_globals.copy()
+        ns.update(locals)
         try:
             code = compile(line + '\n', '<stdin>', 'single')
             save_stdout = sys.stdout
@@ -372,7 +373,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 sys.stdin = self.stdin
                 sys.stdout = self.stdout
                 sys.displayhook = self.displayhook
-                exec(code, globals, locals)
+                exec(code, ns, locals)
             finally:
                 sys.stdout = save_stdout
                 sys.stdin = save_stdin

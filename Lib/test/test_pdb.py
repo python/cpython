@@ -1562,6 +1562,32 @@ class PdbTestCase(unittest.TestCase):
             '(Pdb) ',
         ])
 
+    def test_list_comprehensions(self):
+        script = """
+            def f():
+                mylocal = "init_mylocal"  # noqa: F841
+                import pdb; pdb.Pdb(readrc=False).set_trace()
+                print("SUCCESS")
+
+            f()
+        """
+        commands = """
+            continue
+
+            p "mylocal:" + mylocal
+            ["mylocal_1:%s" % mylocal for x in range(1)]
+            mylocal = 42
+            ["mylocal_2:%s" % mylocal for x in range(1)]
+
+            continue
+        """
+        stdout, stderr = self.run_pdb_module(script, commands)
+        lines = stdout.splitlines()
+        self.assertTrue(any("['mylocal_1:init_mylocal']" in l for l in lines), stdout)
+        self.assertTrue(any("['mylocal_2:42']" in l for l in lines), stdout)
+        self.assertTrue(all("NameError" not in l for l in lines), stdout)
+        self.assertTrue(any("SUCCESS" in l for l in lines), stdout)
+
 def load_tests(*args):
     from test import test_pdb
     suites = [
