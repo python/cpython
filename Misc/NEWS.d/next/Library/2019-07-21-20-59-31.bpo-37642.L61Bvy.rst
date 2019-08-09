@@ -1,0 +1,3 @@
+Allowed the pure Python implementation of :class:`datetime.timezone` to represent
+sub-minute offsets close to minimum and maximum boundaries, specifically in the
+ranges (23:59, 24:00) and (-23:59, 24:00). Patch by Ngalim Siregar

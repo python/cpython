@@ -388,6 +388,31 @@ class TestTimeZone(unittest.TestCase):
         tz_copy = copy.deepcopy(tz)
         self.assertIs(tz_copy, tz)
 
+    def test_offset_boundaries(self):
+        # Test timedeltas close to the boundaries
+        time_deltas = [
+            timedelta(hours=23, minutes=59),
+            timedelta(hours=23, minutes=59, seconds=59),
+            timedelta(hours=23, minutes=59, seconds=59, microseconds=999999),
+        ]
+        time_deltas.extend([-delta for delta in time_deltas])
+
+        for delta in time_deltas:
+            with self.subTest(test_type='good', delta=delta):
+                timezone(delta)
+
+        # Test timedeltas on and outside the boundaries
+        bad_time_deltas = [
+            timedelta(hours=24),
+            timedelta(hours=24, microseconds=1),
+        ]
+        bad_time_deltas.extend([-delta for delta in bad_time_deltas])
+
+        for delta in bad_time_deltas:
+            with self.subTest(test_type='bad', delta=delta):
+                with self.assertRaises(ValueError):
+                    timezone(delta)
+
 
 #############################################################################
 # Base class for testing a particular aspect of timedelta, time, date and
