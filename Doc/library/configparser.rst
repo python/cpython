@@ -136,7 +136,9 @@ sections [1]_.  Note also that keys in sections are
 case-insensitive and stored in lowercase [1]_.
 
 
-If we need to read several configurations, each one having more priority than the previous one, we can use the same :class:`ConfigParser` instance to override previous defined data and keep not redefined data.
+   If it is necessary to read several configurations, with each one having more 
+   priority than the previous one, an instance of :class:`ConfigParser` can be 
+   used to override previously defined properties and retain existing ones.
 
 .. doctest::
 
