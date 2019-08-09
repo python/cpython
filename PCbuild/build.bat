@@ -126,7 +126,8 @@ goto Build
 echo on
 %MSBUILD% "%dir%\pythoncore.vcxproj" /t:KillPython %verbose%^
  /p:Configuration=%conf% /p:Platform=%platf%^
- /p:KillPython=true
+ /p:KillPython=true^
+ %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off
 goto :eof

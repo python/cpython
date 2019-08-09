@@ -81,8 +81,10 @@
     <_RegistryVersion Condition="$(_RegistryVersion) != '' and !$(_RegistryVersion.EndsWith('.0'))">$(_RegistryVersion).0</_RegistryVersion>
 
     <!-- The minimum allowed SDK version to use for building -->
-    <DefaultWindowsSDKVersion>10.0.10586.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion>10.0.14393.0</DefaultWindowsSDKVersion>
+    <!--
     <DefaultWindowsSDKVersion Condition="$([System.Version]::Parse($(_RegistryVersion))) > $([System.Version]::Parse($(DefaultWindowsSDKVersion)))">$(_RegistryVersion)</DefaultWindowsSDKVersion>
+    -->
   </PropertyGroup>
   
   <PropertyGroup Condition="$(WindowsTargetPlatformVersion) == ''">
