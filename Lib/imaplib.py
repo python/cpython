@@ -1209,13 +1209,11 @@ class IMAP4:
             sys.stderr.write('  %s.%02d %s\n' % (tm, (secs*100)%100, s))
             sys.stderr.flush()
 
-        def _dump_ur(self, dict):
-            # Dump untagged responses (in `dict').
-            l = dict.items()
-            if not l: return
-            t = '\n\t\t'
-            l = map(lambda x:'%s: "%s"' % (x[0], x[1][0] and '" "'.join(x[1]) or ''), l)
-            self._mesg('untagged responses dump:%s%s' % (t, t.join(l)))
+        def _dump_ur(self, d):  # @ReservedAssignment
+            # Dump untagged responses (in `d').
+            if d:
+                self._mesg('untagged responses dump:' +
+                           ''.join('\n\t\t%s: %r' % x for x in d.items()))
 
         def _log(self, line):
             # Keep log of last `_cmd_log_len' interactions for debugging.
@@ -1232,11 +1230,6 @@ class IMAP4:
                     self._mesg(*self._cmd_log[i])
                 except:
                     pass
-                i += 1
-                if i >= self._cmd_log_len:
-                    i = 0
-                n -= 1
-
 
 if HAVE_SSL:
 
