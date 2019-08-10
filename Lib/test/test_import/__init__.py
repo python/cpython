@@ -776,7 +776,7 @@ class RelativeImportTests(unittest.TestCase):
         self.assertRaises(TypeError, check_relative)
 
     def test_parentless_import_shadowed_by_global(self):
-        # bpo-37409
+        # Test as if this were done from the REPL where this error most commonly occurs (bpo-37409).
         script_helper.assert_python_failure('-W', 'ignore', '-c',
             "foo = 1; from . import foo")
 
