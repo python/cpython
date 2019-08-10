@@ -828,6 +828,7 @@ class ElementTreeTest(unittest.TestCase):
             b'</html>'
         )
 
+    def test_indent_space(self):
         elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
         ET.indent(elem, space='\t')
         self.assertEqual(
@@ -837,6 +838,18 @@ class ElementTreeTest(unittest.TestCase):
             b'\t\t<p>pre<br />post</p>\n'
             b'\t\t<p>text</p>\n'
             b'\t</body>\n'
+            b'</html>'
+        )
+
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem, space='')
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'<body>\n'
+            b'<p>pre<br />post</p>\n'
+            b'<p>text</p>\n'
+            b'</body>\n'
             b'</html>'
         )
 
@@ -854,6 +867,31 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(
             len({el.tail for el in elem.iter()}),
             len({id(el.tail) for el in elem.iter()}),
+        )
+
+    def test_indent_level(self):
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem, level=2)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'      <body>\n'
+            b'        <p>pre<br />post</p>\n'
+            b'        <p>text</p>\n'
+            b'      </body>\n'
+            b'    </html>'
+        )
+
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem, level=1, space=' ')
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'  <body>\n'
+            b'   <p>pre<br />post</p>\n'
+            b'   <p>text</p>\n'
+            b'  </body>\n'
+            b' </html>'
         )
 
     def test_tostring_default_namespace(self):
