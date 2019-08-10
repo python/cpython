@@ -1687,7 +1687,6 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
     return abs_name;
 
   no_parent_error:
-
     _PyErr_SetString(tstate, PyExc_ImportError,
                      "attempted relative import "
                      "with no known parent package");
