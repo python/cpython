@@ -1298,8 +1298,7 @@ find and load modules.
    (:attr:`__name__`)
 
    The module's fully-qualified name.  Finders should always set this to a
-   non-empty (identifier) string.  The import system may set this to ``None``
-   in a few special cases.
+   non-empty (identifier) string.
 
    .. attribute:: loader
 
