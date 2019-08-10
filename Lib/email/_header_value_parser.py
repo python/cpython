@@ -584,7 +584,7 @@ class DisplayName(Phrase):
             for x in self:
                 if x.token_type == 'quoted-string':
                     quote = True
-        if self and quote:
+        if len(self) != 0 and quote:
             pre = post = ''
             if self[0].token_type=='cfws' or self[0][0].token_type=='cfws':
                 pre = ' '
