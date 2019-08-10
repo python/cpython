@@ -1325,7 +1325,7 @@ find and load modules.
    it's just an empty list.
    For non-package modules, this should be set to ``None``.
    For namespace packages (where :attr:`origin` is ``None``), this
-   is set automatically.
+   is later set to a special object by the import system.
 
    .. attribute:: loader_state
 
@@ -1337,7 +1337,8 @@ find and load modules.
 
    (:attr:`__cached__`)
 
-   Where a compiled version of the code should be stored (or ``None``).
+   (str) Where a compiled version of the code should be stored.  For modules
+   that do not need compiled code stored, ``cached`` should be ``None``.
    This is typically a filename as provided by
    ::func::`importlib.util.cache_from_source`.
 
@@ -1347,7 +1348,8 @@ find and load modules.
 
    (Read-only) The fully-qualified name of the package under which the
    module should be loaded as a submodule (or the empty string for top-level
-   modules).  For packages, it is the same as :attr:`__name__`.
+   modules).  For packages, it is the same as :attr:`__name__` (since in
+   that case ``parent`` relates to the package's `__init__` module).
 
    .. attribute:: has_location
 
