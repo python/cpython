@@ -438,11 +438,11 @@ ABC hierarchy::
 
         - :attr:`__package__`
             The fully-qualified name of the package under which the module was
-            loaded as a submodule (or the empty string for top-level modules).
+            loaded as a submodule (or an empty string for top-level modules).
             For packages, it is the same as :attr:`__name__`.
 
         - :attr:`__loader__`
-            The loader that was used when loading the module.
+            The loader that was used to load the module.
 
         When :meth:`exec_module` is available then backwards-compatible
         functionality is provided.
@@ -1283,8 +1283,8 @@ find and load modules.
    A specification for a module's import-system-related state.  This is
    typically exposed as the module's :attr:`__spec__` attribute.  In the
    descriptions below, the names in parentheses give the corresponding
-   attribute available directly on the module object. For example,
-   ``module.__spec__.origin == module.__file__``.  Note however that while
+   attribute available directly on the module object, e.g.
+   ``module.__spec__.origin == module.__file__``.  Note, however, that while
    the *values* are usually equivalent, they can differ since there is no
    synchronization between the two objects.  For example, it is possible
    to update the module's :attr:`__file__` at runtime and this will not be
