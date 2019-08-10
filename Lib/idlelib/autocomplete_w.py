@@ -31,9 +31,15 @@ DOUBLECLICK_SEQUENCE = "<B1-Double-ButtonRelease>"
 
 
 _quote_re = re.compile(r"""["']""")
-def _find_first_quote(s):
-    m = _quote_re.search(s)
-    return m.start() if m is not None else -1
+
+
+def _find_first_quote(string_):
+    """Return the index of the first quote in a string.
+
+    If no quotes are found, returns -1.
+    """
+    match = _quote_re.search(string_)
+    return match.start() if match is not None else -1
 
 
 class AutoCompleteWindow:
