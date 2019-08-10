@@ -2490,8 +2490,8 @@ class TestPath(unittest.TestCase):
     def zipfile_abcde(self):
         with self.subTest():
             yield build_abcde_files()
-        with self.subTest():
-            yield add_dirs(build_abcde_files())
+        # with self.subTest():
+        #     yield add_dirs(build_abcde_files())
 
     def zipfile_abcdef(self):
         with self.subTest():

@@ -7,6 +7,7 @@ import binascii
 import functools
 import importlib.util
 import io
+import itertools
 import os
 import pathlib
 import posixpath
@@ -2228,20 +2229,37 @@ class Path:
     __truediv__ = joinpath
 
     @staticmethod
+    def unique_everseen(iterable, key=None):
+        "List unique elements, preserving order. Remember all elements ever seen."
+        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
+        # unique_everseen('ABBCcAD', str.lower) --> A B C D
+        seen = set()
+        seen_add = seen.add
+        if key is None:
+            for element in itertools.filterfalse(seen.__contains__, iterable):
+                seen_add(element)
+                yield element
+        else:
+            for element in iterable:
+                k = key(element)
+                if k not in seen:
+                    seen_add(k)
+                    yield element
+
+    @staticmethod
     def _add_implied_dirs(names):
-        subdirs = set(
+        subdirs = list(Path.unique_everseen([
             name + "/"
             for name in map(posixpath.dirname, names)
             if name and name + "/" not in names
-        )
-        missing_dirs = set(
+        ]))
+        missing_dirs = [
             str(p) + "/"
             for sd in subdirs
             for p in pathlib.PurePath(sd).parents
             if str(p) not in {".", "/"} and str(p) + "/" not in subdirs
-        )
-        subdirs.update(missing_dirs)
-        return names + list(subdirs)
+        ]
+        return names + subdirs + missing_dirs
 
     @property
     def parent(self):
