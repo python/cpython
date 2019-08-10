@@ -483,8 +483,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         Py_INCREF(a);
         return (PyObject *)a;
     }
-    if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
-        return PyErr_NoMemory();
+    assert((size_t)Py_SIZE(a) + (size_t)Py_SIZE(b) < PY_SSIZE_T_MAX);
     size = Py_SIZE(a) + Py_SIZE(b);
     np = (PyTupleObject *) PyTuple_New(size);
     if (np == NULL) {
