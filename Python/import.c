@@ -1690,6 +1690,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
     _PyErr_SetString(tstate, PyExc_ImportError,
                      "attempted relative import "
                      "with no known parent package");
+
   error:
 
     Py_XDECREF(package);
