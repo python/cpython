@@ -1337,7 +1337,7 @@ find and load modules.
 
    (:attr:`__cached__`)
 
-   (str) Where a compiled version of the code should be stored.  For modules
+   Where a compiled version of the code should be stored.  For modules
    that do not need compiled code stored, ``cached`` should be ``None``.
    This is typically a filename as provided by
    ::func::`importlib.util.cache_from_source`.
