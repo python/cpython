@@ -2404,12 +2404,12 @@ def add_dirs(zipfile):
     """
     names = zipfile.namelist()
     subdirs = set(
-        name 
+        name
         for name in map(posixpath.dirname, names)
         if name and name + "/" not in names
     )
     missingdirs = set(
-        str(p) 
+        str(p)
         for sd in subdirs
         for p in pathlib.PurePath(sd).parents
         if str(p) not in {".", "/"}
@@ -2490,8 +2490,8 @@ class TestPath(unittest.TestCase):
     def zipfile_abcde(self):
         with self.subTest():
             yield build_abcde_files()
-        # with self.subTest():
-        #     yield add_dirs(build_abcde_files())
+        with self.subTest():
+            yield add_dirs(build_abcde_files())
 
     def zipfile_abcdef(self):
         with self.subTest():
