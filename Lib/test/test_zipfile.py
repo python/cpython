@@ -2403,15 +2403,17 @@ def add_dirs(zipfile):
     any directories implied by the presence of children.
     """
     names = zipfile.namelist()
-    subdirs = set([
-        name for name in map(posixpath.dirname, names)
+    subdirs = set(
+        name 
+        for name in map(posixpath.dirname, names)
         if name and name + "/" not in names
-    ])
-    missingdirs = set([
-        str(p) for sd in subdirs
+    )
+    missingdirs = set(
+        str(p) 
+        for sd in subdirs
         for p in pathlib.PurePath(sd).parents
         if str(p) not in {".", "/"}
-    ])
+    )
     subdirs.update(missingdirs)
     consume(
         zipfile.writestr(name + "/", b"")

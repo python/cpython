@@ -2229,16 +2229,17 @@ class Path:
 
     @staticmethod
     def _add_implied_dirs(names):
-        subdirs = set([
+        subdirs = set(
             name + "/"
             for name in map(posixpath.dirname, names)
             if name and name + "/" not in names
-        ])
-        missing_dirs = set()
-        for sd in list(subdirs):
-            for p in pathlib.PurePath(sd).parents:
-                if str(p) not in {".", "/"} and str(p) + "/" not in subdirs:
-                    missing_dirs.add(str(p) + "/")
+        )
+        missing_dirs = set(
+            str(p) + "/"
+            for sd in subdirs
+            for p in pathlib.PurePath(sd).parents
+            if str(p) not in {".", "/"} and str(p) + "/" not in subdirs
+        )
         subdirs.update(missing_dirs)
         return names + list(subdirs)
 
