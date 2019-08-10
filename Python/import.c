@@ -1692,7 +1692,6 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
                      "with no known parent package");
 
   error:
-
     Py_XDECREF(package);
     return NULL;
 }
