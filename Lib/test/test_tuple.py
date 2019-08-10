@@ -86,11 +86,11 @@ class TupleTest(seq_tests.CommonTest):
                 self.fail(msg)
 
         check_one_exact((), 750394483, 5740354900026072187)
-        check_one_exact((0,), 1214856301, -8753497827991233192)
-        check_one_exact((0, 0), -168982784, -8458139203682520985)
-        check_one_exact((0.5,), 2077348973, -408149959306781352)
+        check_one_exact((0,), 1214856301, 9693246245718318424)
+        check_one_exact((0, 0), 4125984512, 9988604870027030631)
+        check_one_exact((0.5,), 2077348973, 18038594114402770264)
         check_one_exact((0.5, (), (-2, 3, (4, 6))), 714642271,
-                        -1845940830829704396)
+                        16600803242879847220)
 
     # Various tests for hashing of tuples to check that we get few collisions.
     # Does something only if RUN_ALL_HASH_TESTS is true.

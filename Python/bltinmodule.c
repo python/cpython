@@ -1479,7 +1479,7 @@ builtin_hash(PyObject *module, PyObject *obj)
     x = PyObject_Hash(obj);
     if (x == -1)
         return NULL;
-    return PyLong_FromSsize_t(x);
+    return PyLong_FromSize_t(x);
 }
 
 

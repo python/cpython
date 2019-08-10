@@ -117,7 +117,7 @@ class HashTest(unittest.TestCase):
         # check special case for fractions where either the numerator
         # or the denominator is a multiple of _PyHASH_MODULUS
         self.assertEqual(hash(F(1, _PyHASH_MODULUS)), _PyHASH_INF)
-        self.assertEqual(hash(F(-1, 3*_PyHASH_MODULUS)), -_PyHASH_INF)
+        self.assertEqual(hash(F(-1, 3*_PyHASH_MODULUS)), hash(-_PyHASH_INF))
         self.assertEqual(hash(F(7*_PyHASH_MODULUS, 1)), 0)
         self.assertEqual(hash(F(-_PyHASH_MODULUS, 1)), 0)
 

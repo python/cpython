@@ -249,9 +249,9 @@ static PyObject*
 dict_getitem_knownhash(PyObject *self, PyObject *args)
 {
     PyObject *mp, *key, *result;
-    Py_ssize_t hash;
+    unsigned long long hash;
 
-    if (!PyArg_ParseTuple(args, "OOn:dict_getitem_knownhash",
+    if (!PyArg_ParseTuple(args, "OOK:dict_getitem_knownhash",
                           &mp, &key, &hash)) {
         return NULL;
     }

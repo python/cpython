@@ -1,0 +1,2 @@
+Built-in function :func:`hash` and methods :meth:`__hash__` of built-in
+types return now a non-negative number.

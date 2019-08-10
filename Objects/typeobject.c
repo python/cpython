@@ -5868,7 +5868,7 @@ wrap_hashfunc(PyObject *self, PyObject *args, void *wrapped)
     res = (*func)(self);
     if (res == -1 && PyErr_Occurred())
         return NULL;
-    return PyLong_FromSsize_t(res);
+    return PyLong_FromSize_t(res);
 }
 
 static PyObject *
@@ -6492,7 +6492,12 @@ slot_tp_hash(PyObject *self)
        Py_hash_t.  Therefore our transformation must preserve values that
        already lie within this range, to ensure that if x.__hash__() returns
        hash(y) then hash(x) == hash(y). */
-    h = PyLong_AsSsize_t(res);
+    if (Py_SIZE(res) < 0) {
+        h = PyLong_AsSsize_t(res);
+    }
+    else {
+        h = (Py_ssize_t)PyLong_AsSize_t(res);
+    }
     if (h == -1 && PyErr_Occurred()) {
         /* res was not within the range of a Py_hash_t, so we're free to
            use any sufficiently bit-mixing transformation;
