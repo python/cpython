@@ -4,7 +4,8 @@ An auto-completion window for IDLE, used by the autocomplete extension
 import platform
 import re
 
-from tkinter import *
+from tkinter import EventType, Listbox, TclError, Toplevel
+from tkinter import BOTH, END, LEFT, RIGHT, VERTICAL, Y
 from tkinter.ttk import Scrollbar
 
 from idlelib.autocomplete import FILES, ATTRS, DICTKEYS
