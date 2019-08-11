@@ -115,22 +115,7 @@ class Fraction(numbers.Rational):
         self = super(Fraction, cls).__new__(cls)
 
         if denominator is None:
-            if type(numerator) is int:
-                self._numerator = numerator
-                self._denominator = 1
-                return self
-
-            elif isinstance(numerator, numbers.Rational):
-                self._numerator = numerator.numerator
-                self._denominator = numerator.denominator
-                return self
-
-            elif isinstance(numerator, (float, Decimal)):
-                # Exact conversion
-                self._numerator, self._denominator = numerator.as_integer_ratio()
-                return self
-
-            elif isinstance(numerator, str):
+            if isinstance(numerator, str):
                 # Handle construction from strings.
                 m = _RATIONAL_FORMAT.match(numerator)
                 if m is None:
@@ -156,10 +141,13 @@ class Fraction(numbers.Rational):
                             denominator *= 10**-exp
                 if m.group('sign') == '-':
                     numerator = -numerator
-
             else:
-                raise TypeError("argument should be a string "
-                                "or a Rational instance")
+                try:
+                    self._numerator, self._denominator = math.as_integer_ratio(numerator)
+                    return self
+                except TypeError:
+                    raise TypeError("argument should be a string "
+                                    "or a Rational instance")
 
         elif type(numerator) is int is type(denominator):
             pass # *very* normal case

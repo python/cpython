@@ -29,6 +29,17 @@ noted otherwise, all return values are floats.
 Number-theoretic and representation functions
 ---------------------------------------------
 
+.. function:: as_integer_ratio(number)
+
+   Return integer ratio.
+
+   This function returns ``number.as_integer_ratio()`` if the argument has
+   the ``as_integer_ratio()`` method, otherwise it returns a pair
+   ``(number.numerator, number.denominator)``.
+
+   .. versionadded:: 3.9
+
+
 .. function:: ceil(x)
 
    Return the ceiling of *x*, the smallest integer greater than or equal to *x*.

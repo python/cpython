@@ -225,27 +225,11 @@ def _exact_ratio(x):
     x is expected to be an int, Fraction, Decimal or float.
     """
     try:
-        # Optimise the common case of floats. We expect that the most often
-        # used numeric type will be builtin floats, so try to make this as
-        # fast as possible.
-        if type(x) is float or type(x) is Decimal:
-            return x.as_integer_ratio()
-        try:
-            # x may be an int, Fraction, or Integral ABC.
-            return (x.numerator, x.denominator)
-        except AttributeError:
-            try:
-                # x may be a float or Decimal subclass.
-                return x.as_integer_ratio()
-            except AttributeError:
-                # Just give up?
-                pass
+        return math.as_integer_ratio(x)
     except (OverflowError, ValueError):
         # float NAN or INF.
         assert not _isfinite(x)
         return (x, None)
-    msg = "can't convert type '{}' to numerator/denominator"
-    raise TypeError(msg.format(type(x).__name__))
 
 
 def _convert(value, T):

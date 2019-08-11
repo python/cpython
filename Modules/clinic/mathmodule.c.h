@@ -712,4 +712,13 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f93cfe13ab2fdb4e input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(math_as_integer_ratio__doc__,
+"as_integer_ratio($module, x, /)\n"
+"--\n"
+"\n"
+"greatest common divisor of x and y");
+
+#define MATH_AS_INTEGER_RATIO_METHODDEF    \
+    {"as_integer_ratio", (PyCFunction)math_as_integer_ratio, METH_O, math_as_integer_ratio__doc__},
+/*[clinic end generated code: output=f9722232fc321d17 input=a9049054013a1b77]*/

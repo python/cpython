@@ -3306,9 +3306,83 @@ error:
 }
 
 
+/*[clinic input]
+math.as_integer_ratio
+    x: object
+    /
+greatest common divisor of x and y
+[clinic start generated code]*/
+
+static PyObject *
+math_as_integer_ratio(PyObject *module, PyObject *x)
+/*[clinic end generated code: output=1844868fd4efb2f1 input=d7f2e8ffd51c6599]*/
+{
+    _Py_IDENTIFIER(as_integer_ratio);
+    _Py_IDENTIFIER(numerator);
+    _Py_IDENTIFIER(denominator);
+    PyObject *ratio, *as_integer_ratio, *numerator, *denominator;
+
+    if (PyLong_CheckExact(x)) {
+        return PyTuple_Pack(2, x, _PyLong_One);
+    }
+
+    if (_PyObject_LookupAttrId(x, &PyId_as_integer_ratio, &as_integer_ratio) < 0) {
+        return NULL;
+    }
+    if (as_integer_ratio) {
+        ratio = _PyObject_CallNoArg(as_integer_ratio);
+        Py_DECREF(as_integer_ratio);
+        if (ratio == NULL) {
+            return NULL;
+        }
+        if (!PyTuple_Check(ratio)) {
+            PyErr_Format(PyExc_TypeError,
+                        "unexpected return type from as_integer_ratio(): "
+                        "expected tuple, got '%.200s'",
+                        Py_TYPE(ratio)->tp_name);
+            Py_DECREF(ratio);
+            return NULL;
+        }
+        if (PyTuple_GET_SIZE(ratio) != 2) {
+            PyErr_SetString(PyExc_ValueError,
+                            "as_integer_ratio() must return a 2-tuple");
+            Py_DECREF(ratio);
+            return NULL;
+        }
+    }
+    else {
+        if (_PyObject_LookupAttrId(x, &PyId_numerator, &numerator) < 0) {
+            return NULL;
+        }
+        if (numerator == NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "required a number, not '%.200s'",
+                         Py_TYPE(x)->tp_name);
+            return NULL;
+        }
+        if (_PyObject_LookupAttrId(x, &PyId_denominator, &denominator) < 0) {
+            Py_DECREF(numerator);
+            return NULL;
+        }
+        if (denominator == NULL) {
+            Py_DECREF(numerator);
+            PyErr_Format(PyExc_TypeError,
+                         "required a number, not '%.200s'",
+                         Py_TYPE(x)->tp_name);
+            return NULL;
+        }
+        ratio = PyTuple_Pack(2, numerator, denominator);
+        Py_DECREF(numerator);
+        Py_DECREF(denominator);
+    }
+    return ratio;
+}
+
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
+    MATH_AS_INTEGER_RATIO_METHODDEF
     {"asin",            math_asin,      METH_O,         math_asin_doc},
     {"asinh",           math_asinh,     METH_O,         math_asinh_doc},
     {"atan",            math_atan,      METH_O,         math_atan_doc},
