@@ -317,6 +317,11 @@ class TestSuper(unittest.TestCase):
         for i in range(1000):
             super.__init__(sp, int, i)
 
+    def test_super_one_arg_deprecation(self):
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   'Passing 1 argument'):
+            super(int)
+
 
 if __name__ == "__main__":
     unittest.main()

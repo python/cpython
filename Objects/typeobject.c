@@ -7822,6 +7822,12 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "|O!O:super", &PyType_Type, &type, &obj))
         return -1;
 
+    if (PyTuple_GET_SIZE(args) == 1 &&
+        PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "Passing 1 argument to super() is deprecated", 1) < 0) {
+        return -1;
+    }
+
     if (type == NULL) {
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */

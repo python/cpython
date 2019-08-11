@@ -159,6 +159,9 @@ Deprecated
   of Python. For the majority of use cases users can leverage the Abstract Syntax
   Tree (AST) generation and compilation stage, using the :mod:`ast` module.
 
+* Passing a single argument to the :func:`super` function is deprecated.  In
+  future Python versions, this will raise an exception.
+
 
 Removed
 =======

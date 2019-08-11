@@ -1288,7 +1288,7 @@ class SizeofTest(unittest.TestCase):
         # slice
         check(slice(0), size('3P'))
         # super
-        check(super(int), size('3P'))
+        check(super(), size('3P'))
         # tuple
         check((), vsize(''))
         check((1,2,3), vsize('') + 3*self.P)

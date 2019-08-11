@@ -1640,6 +1640,9 @@ are always available.  They are listed here in alphabetical order.
    :func:`super`, see `guide to using super()
    <https://rhettinger.wordpress.com/2011/05/26/super-considered-super/>`_.
 
+   .. deprecated:: 3.9
+      Calling :func:`super` with one argument.
+
 
 .. _func-tuple:
 .. function:: tuple([iterable])
