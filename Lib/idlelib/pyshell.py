@@ -1311,56 +1311,78 @@ class PyShell(OutputWindow):
 
         text = self.text
 
-        idx1 = text.index("iomark linestart")
-        idx2 = text.tag_prevrange("console", idx1)
-        idx = idx2[1] if idx2 and text.compare(idx1, '<', idx2[1]) else idx1
-        buffer = text.get(idx, "iomark")
-        buffer_changed, new_buffer = self._process_control_chars(buffer, s)
+        # Process control characters only for stdout and stderr.
+        if isinstance(tags, str): tags = (tags,)
+        if {"stdout", "stderr"} & set(tags):
+            # Get existing output on the current line.
+            idx1 = text.index("iomark linestart")
+            idx2 = text.tag_prevrange("console", idx1)
+            idx = idx2[1] if idx2 and text.compare(idx2[1], '>', idx1) else idx1
+            existing = text.get(idx, "iomark")
 
+            # Process new output.
+            rewrite, s = self._process_control_chars(existing, s)
+        else:
+            rewrite = False
+
+        # Update text widget.
         text.mark_gravity("iomark", "right")
-        if buffer_changed:
+        if rewrite:
+            # The shell normally rejects deleting before "iomark" (achieved
+            # by wrapping the text widget), so we call the underlying,
+            # unwrapped text widget's delete() method directly.
             self.per.bottom.delete(idx, "iomark")
-        OutputWindow.write(self, new_buffer, tags, "iomark")
+        OutputWindow.write(self, s, tags, "iomark")
         text.mark_gravity("iomark", "left")
 
         if self.canceled:
             self.canceled = 0
             if not use_subprocess:
                 raise KeyboardInterrupt
-        return len(new_buffer) - len(buffer)
+        return len(s) - (len(existing) if rewrite else 0)
 
-    def _process_control_chars(self, buffer, s,
+    def _process_control_chars(self, existing, s,
                                _control_char_re=re.compile(r'[\r\b]')):
-        buffer_idx = buffer_len = orig_buffer_len = len(buffer)
-        buffer = StringIO(buffer)
-        orig_buffer_changed = False
+        buffer_idx = buffer_len = existing_len = len(existing)
+        last_newline_idx = 0
+        buffer = StringIO(existing)
+        existing_changed = False
         idx = 0
         for m in _control_char_re.finditer(s):
             char_idx = m.start()
             if char_idx > idx:
-                buffer.seek(max(0, buffer_idx))
-                buffer.write(s[idx:m.start()])
-                orig_buffer_changed |= buffer_idx < orig_buffer_len
+                new_str = s[idx:m.start()]
+                buffer_idx = max(last_newline_idx, buffer_idx)
+                existing_changed |= buffer_idx < existing_len
+                buffer.seek(buffer_idx)
+                buffer.write(new_str)
+                newline_idx = new_str.rfind('\n')
+                if newline_idx >= 0:
+                    last_newline_idx = buffer_len + newline_idx
                 buffer_idx = buffer_len = buffer.tell()
             if s[char_idx] == '\b':
                 buffer_idx -= 1
             else:  # '\r'
-                buffer_idx = 0
+                buffer_idx = last_newline_idx
             idx = m.end()
+
         if idx == 0:
+            # No control characters in output.
             return False, s
-        if buffer_idx < buffer_len:
-            orig_buffer_changed |= buffer_idx < orig_buffer_len
-            buffer_len = max(0, buffer_idx)
-            buffer.seek(buffer_len)
+
+        # Handle rest of output after final control character.
+        buffer_idx = max(last_newline_idx, buffer_idx)
+        existing_changed |= buffer_idx < existing_len
+        buffer.seek(buffer_idx)
         buffer.write(s[idx:])
-        buffer_len += len(s) - idx
-        if orig_buffer_changed:
+        buffer_len = buffer.tell()
+
+        if existing_changed:
             buffer.seek(0)
             return True, buffer.read(buffer_len)
         else:
-            buffer.seek(orig_buffer_len)
-            return False, buffer.read()
+            buffer.seek(existing_len)
+            return False, buffer.read(buffer_len - existing_len)
 
     def rmenu_check_cut(self):
         try:
