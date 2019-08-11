@@ -440,7 +440,25 @@ Other Language Changes
   and Windows use this to properly terminate scripts in interactive sessions.
   (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
 
-* Added new ``replace()`` method to the code type (:class:`types.CodeType`).
+* Some advanced styles of programming require updating the
+  :class:`types.CodeType` object for an existing function.  Since code
+  objects are immutable, a new code object needs to be created, one
+  that is modeled on the existing code object.  With 19 parameters,
+  this was somewhat tedious.  Now, the new ``replace()`` method makes
+  it possible to create a clone with a few altered parameters.
+
+  Here's an example that alters the :func:`statistics.mean` function to
+  prevent the *data* parameter from being used as a keyword argument::C
+
+    >>> from statistics import mean
+    >>> mean(data=[10, 20, 90])
+    40
+    >>> mean.__code__ = mean.__code__.replace(co_posonlyargcount = 1)
+    >>> mean(data=[10, 20, 90])
+    Traceback (most recent call last):
+      ...
+    TypeError: mean() got some positional-only arguments passed as keyword arguments: 'data'
+
   (Contributed by Victor Stinner in :issue:`37032`.)
 
 * For integers, the three-argument form of the :func:`pow` function now
