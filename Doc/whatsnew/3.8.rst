@@ -415,15 +415,11 @@ Other Language Changes
   and :keyword:`return` statements.
   (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
 
-* The compiler now produces a :exc:`SyntaxWarning` in some cases when a comma
-  is missed before tuple or list.  For example::
-
-     data = [
-         (1, 2, 3) # oops, missing comma!
-         (4, 5, 6)
-     ]
-
-  (Contributed by Serhiy Storchaka in :issue:`15248`.)
+* When a comma is missed in code such as ``[(10, 20) (30, 40)]``, the
+  compiler displays a :exc:`SyntaxWarning` with a helpful suggestion.
+  This improves on just having a :exc:`TypeError` indicating that the
+  first tuple was not callable.  (Contributed by Serhiy Storchaka in
+  :issue:`15248`.)
 
 * Arithmetic operations between subclasses of :class:`datetime.date` or
   :class:`datetime.datetime` and :class:`datetime.timedelta` objects now return
