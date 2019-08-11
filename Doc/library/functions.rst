@@ -706,7 +706,7 @@ are always available.  They are listed here in alphabetical order.
       See :meth:`__hash__` for details.
 
    .. versionchanged:: 3.9
-      :fucn:`hash` returns a non-negative number.
+      :func:`hash` returns a non-negative number.
 
 
 .. function:: help([object])
