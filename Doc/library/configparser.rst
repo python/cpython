@@ -156,7 +156,7 @@ used to override previously defined properties and retain existing ones.
    'no'
 
 This behaviour is equivalent to a :meth:`ConfigParser.read` call with several
-files passed to ``filenames`` parameter.
+files passed to *filenames* parameter.
 
 
 Supported Datatypes
