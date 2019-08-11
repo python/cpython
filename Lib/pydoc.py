@@ -450,7 +450,7 @@ class HTMLRepr(Repr):
             # Backslashes are only literal in the string and are never
             # needed to make any special characters, so show a raw string.
             return 'r' + testrepr[0] + self.escape(test) + testrepr[0]
-        return re.sub(r'((\\[\\abfnrtv\'"]|\\[0-9]..|\\x..|\\u....)+)',
+        return re.sub(r'''((\\[\\abfnrtv'"]|\\[0-9]..|\\x..|\\u....)+)''',
                       r'<font color="#c040c0">\1</font>',
                       self.escape(testrepr))
 

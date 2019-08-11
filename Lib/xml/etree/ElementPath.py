@@ -60,7 +60,8 @@ import re
 
 xpath_tokenizer_re = re.compile(
     r"("
-    r"'[^']*'|\"[^\"]*\"|"
+    r"'[^']*'|"
+    r'"[^"]*"|'
     r"::|"
     r"//?|"
     r"\.\.|"

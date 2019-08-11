@@ -683,11 +683,13 @@ non-important content
                             [r"f'{\'a\'}'",
                              r"f'{\t3}'",
                              r"f'{\}'",
-                             r"rf'{\'a\'}'",
                              r"rf'{\t3}'",
                              r"rf'{\}'",
                              r"""rf'{"\N{LEFT CURLY BRACKET}"}'""",
                              r"f'{\n}'",
+                             ])
+        self.assertAllRaise(SyntaxError, 'invalid syntax',
+                            [r"rf'{\'a\'}'",
                              ])
 
     def test_no_escapes_for_braces(self):

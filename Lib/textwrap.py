@@ -74,7 +74,7 @@ class TextWrapper:
     # splits into
     #   Hello/ /there/ /--/ /you/ /goof-/ball,/ /use/ /the/ /-b/ /option!
     # (after stripping out empty strings).
-    word_punct = r'[\w!"\'&.,?]'
+    word_punct = r'''[\w!"'&.,?]'''
     letter = r'[^\d\W]'
     whitespace = r'[%s]' % re.escape(_whitespace)
     nowhitespace = '[^' + whitespace[1:]
@@ -109,7 +109,7 @@ class TextWrapper:
     # is US-ASCII only (and therefore English-only)
     sentence_end_re = re.compile(r'[a-z]'             # lowercase letter
                                  r'[\.\!\?]'          # sentence-ending punct.
-                                 r'[\"\']?'           # optional end-of-quote
+                                 r'''["']?'''         # optional end-of-quote
                                  r'\Z')               # end of chunk
 
     def __init__(self,

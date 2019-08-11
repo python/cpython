@@ -733,7 +733,7 @@ class DocTestParser:
     # "#doctest:".  Eliminating these false positives would require
     # actually parsing the string; but we limit them by ignoring any
     # line containing "#doctest:" that is *followed* by a quote mark.
-    _OPTION_DIRECTIVE_RE = re.compile(r'#\s*doctest:\s*([^\n\'"]*)$',
+    _OPTION_DIRECTIVE_RE = re.compile(r'''#\s*doctest:\s*([^\n'"]*)$''',
                                       re.MULTILINE)
 
     def _find_options(self, source, name, lineno):
@@ -1105,7 +1105,7 @@ class DocTestFinder:
         if lineno is not None:
             if source_lines is None:
                 return lineno+1
-            pat = re.compile(r'(^|.*:)\s*\w*("|\')')
+            pat = re.compile(r'''(^|.*:)\s*\w*("|')''')
             for lineno in range(lineno, len(source_lines)):
                 if pat.match(source_lines[lineno]):
                     return lineno

@@ -79,15 +79,12 @@ Floatnumber = group(Pointfloat, Expfloat)
 Imagnumber = group(r'[0-9](?:_?[0-9])*[jJ]', Floatnumber + r'[jJ]')
 Number = group(Imagnumber, Floatnumber, Intnumber)
 
-# Return the empty string, plus all of the valid string prefixes.
-def _all_string_prefixes():
-    # The valid string prefixes. Only contain the lower case versions,
+def _string_prefixes(prefixes):
+    # `prefixes` only contains the lower case versions,
     #  and don't contain any permutations (include 'fr', but not
     #  'rf'). The various permutations will be generated.
-    _valid_string_prefixes = ['b', 'r', 'u', 'f', 'br', 'fr']
-    # if we add binary f-strings, add: ['fb', 'fbr']
-    result = {''}
-    for prefix in _valid_string_prefixes:
+    result = set()
+    for prefix in prefixes:
         for t in _itertools.permutations(prefix):
             # create a list with upper and lower versions of each
             #  character
@@ -95,25 +92,39 @@ def _all_string_prefixes():
                 result.add(''.join(u))
     return result
 
+# if we add binary f-strings, add: 'fb', 'fbr'
+_non_raw_string_prefixes = {''} | _string_prefixes(('b', 'u', 'f'))
+_raw_string_prefixes = _string_prefixes(('r', 'br', 'fr'))
+_all_string_prefixes = _non_raw_string_prefixes | _raw_string_prefixes
+
 def _compile(expr):
     return re.compile(expr, re.UNICODE)
 
 # Note that since _all_string_prefixes includes the empty string,
 #  StringPrefix can be the empty string (making it optional).
-StringPrefix = group(*_all_string_prefixes())
+StringPrefix = group(*_all_string_prefixes)
+RawStringPrefix = group(*_raw_string_prefixes)
+NonRawStringPrefix = group(*_non_raw_string_prefixes)
 
 # Tail end of ' string.
-Single = r"[^'\\]*(?:\\.[^'\\]*)*'"
+NonRawSingle = r"[^'\\]*(?:\\.[^'\\]*)*'"
+RawSingle = r"[^']*"
 # Tail end of " string.
-Double = r'[^"\\]*(?:\\.[^"\\]*)*"'
+NonRawDouble = r'[^"\\]*(?:\\.[^"\\]*)*"'
+RawDouble = r'[^"]*'
 # Tail end of ''' string.
-Single3 = r"[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''"
+NonRawSingle3 = r"[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''"
+RawSingle3 = r"[^']*(?:'(?!'')[^']*)*'''"
 # Tail end of """ string.
-Double3 = r'[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""'
-Triple = group(StringPrefix + "'''", StringPrefix + '"""')
+NonRawDouble3 = r'[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""'
+RawDouble3 = r'[^"]*(?:"(?!"")[^"]*)*"""'
+
+Triple = StringPrefix + group("'''", '"""')
 # Single-line ' or " string.
-String = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
-               StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
+String = group(NonRawStringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
+               NonRawStringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*"',
+               RawStringPrefix + r"'[^\n']*'",
+               RawStringPrefix + r'"[^\n"]*"')
 
 # Sorting in reverse order puts the long operators before their prefixes.
 # Otherwise if = came before ==, == would get recognized as two instances
@@ -125,9 +136,13 @@ PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
 
 # First (or only) line of ' or " string.
-ContStr = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
+ContStr = group(NonRawStringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
                 group("'", r'\\\r?\n'),
-                StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
+                RawStringPrefix + r"'[^\n']*" +
+                group("'", r'\\\r?\n'),
+                NonRawStringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
+                group('"', r'\\\r?\n'),
+                RawStringPrefix + r'"[^\n"]*' +
                 group('"', r'\\\r?\n'))
 PseudoExtras = group(r'\\\r?\n|\Z', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
@@ -136,17 +151,22 @@ PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 #  to match the remainder of that string. _prefix can be empty, for
 #  a normal single or triple quoted string (with no prefix).
 endpats = {}
-for _prefix in _all_string_prefixes():
-    endpats[_prefix + "'"] = Single
-    endpats[_prefix + '"'] = Double
-    endpats[_prefix + "'''"] = Single3
-    endpats[_prefix + '"""'] = Double3
+for _prefix in _non_raw_string_prefixes:
+    endpats[_prefix + "'"] = NonRawSingle
+    endpats[_prefix + '"'] = NonRawDouble
+    endpats[_prefix + "'''"] = NonRawSingle3
+    endpats[_prefix + '"""'] = NonRawDouble3
+for _prefix in _raw_string_prefixes:
+    endpats[_prefix + "'"] = RawSingle
+    endpats[_prefix + '"'] = RawDouble
+    endpats[_prefix + "'''"] = RawSingle3
+    endpats[_prefix + '"""'] = RawDouble3
 
 # A set of all of the single and triple quoted string prefixes,
 #  including the opening quotes.
 single_quoted = set()
 triple_quoted = set()
-for t in _all_string_prefixes():
+for t in _all_string_prefixes:
     for u in (t + '"', t + "'"):
         single_quoted.add(u)
     for u in (t + '"""', t + "'''"):

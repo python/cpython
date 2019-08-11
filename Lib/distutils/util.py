@@ -219,7 +219,7 @@ def grok_environment_error (exc, prefix="error: "):
 _wordchars_re = _squote_re = _dquote_re = None
 def _init_regex():
     global _wordchars_re, _squote_re, _dquote_re
-    _wordchars_re = re.compile(r'[^\\\'\"%s ]*' % string.whitespace)
+    _wordchars_re = re.compile(r'''[^\\'"%s ]*''' % string.whitespace)
     _squote_re = re.compile(r"'(?:[^'\\]|\\.)*'")
     _dquote_re = re.compile(r'"(?:[^"\\]|\\.)*"')
 

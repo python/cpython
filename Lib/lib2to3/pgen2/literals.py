@@ -45,7 +45,7 @@ def evalString(s):
     assert s.endswith(q), repr(s[-len(q):])
     assert len(s) >= 2*len(q)
     s = s[len(q):-len(q)]
-    return re.sub(r"\\(\'|\"|\\|[abfnrtv]|x.{0,2}|[0-7]{1,3})", escape, s)
+    return re.sub(r"""\\(['"\\abfnrtv]|x.{0,2}|[0-7]{1,3})""", escape, s)
 
 def test():
     for i in range(256):

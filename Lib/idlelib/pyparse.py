@@ -50,15 +50,15 @@ _junkre = re.compile(r"""
 # Match any flavor of string; the terminating quote is optional
 # so that we're robust in the face of incomplete program text.
 
-_match_stringre = re.compile(r"""
-    \""" [^"\\]* (?:
+_match_stringre = re.compile(r'''
+    """ [^"\\]* (?:
                      (?: \\. | "(?!"") )
                      [^"\\]*
                  )*
-    (?: \""" )?
+    (?: """ )?
 
 |   " [^"\\\n]* (?: \\. [^"\\\n]* )* "?
-
+''' r"""
 |   ''' [^'\\]* (?:
                    (?: \\. | '(?!'') )
                    [^'\\]*

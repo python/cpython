@@ -329,7 +329,7 @@ def unmatched(match):
     return match.string[:start]+match.string[end:]
 
 HEADER_TOKEN_RE =        re.compile(r"^\s*([^=\s;,]+)")
-HEADER_QUOTED_VALUE_RE = re.compile(r"^\s*=\s*\"([^\"\\]*(?:\\.[^\"\\]*)*)\"")
+HEADER_QUOTED_VALUE_RE = re.compile(r'^\s*=\s*"([^"\\]*(?:\\.[^"\\]*)*)"')
 HEADER_VALUE_RE =        re.compile(r"^\s*=\s*([^\s;,]*)")
 HEADER_ESCAPE_RE = re.compile(r"\\(.)")
 def split_header_words(header_values):
@@ -417,7 +417,7 @@ def split_header_words(header_values):
         if pairs: result.append(pairs)
     return result
 
-HEADER_JOIN_ESCAPE_RE = re.compile(r"([\"\\])")
+HEADER_JOIN_ESCAPE_RE = re.compile(r'(["\\])')
 def join_header_words(lists):
     """Do the inverse (almost) of the conversion done by split_header_words.
 
@@ -1242,7 +1242,7 @@ class CookieJar:
     """
 
     non_word_re = re.compile(r"\W")
-    quote_re = re.compile(r"([\"\\])")
+    quote_re = re.compile(r'(["\\])')
     strict_domain_re = re.compile(r"\.?[^.]*")
     domain_re = re.compile(r"[^.]*")
     dots_re = re.compile(r"^\.+")
