@@ -146,8 +146,8 @@ class Fraction(numbers.Rational):
                     self._numerator, self._denominator = math.as_integer_ratio(numerator)
                     return self
                 except TypeError:
-                    raise TypeError("argument should be a string "
-                                    "or a Rational instance")
+                    raise TypeError("argument should be a string or a number, "
+                                    "not %s" % type(numerator).__name__) from None
 
         elif type(numerator) is int is type(denominator):
             pass # *very* normal case
