@@ -217,10 +217,10 @@ class Fraction(numbers.Rational):
         return cls(*dec.as_integer_ratio())
 
     def as_integer_ratio(self):
-        """Return integer ratio.
+        """Return the integer ratio as a tuple.
 
-        Return a pair of integers, whose ratio is exactly equal to the original
-        Fraction and with a positive denominator.
+        Return a tuple of two integers, whose ratio is equal to the original
+        fraction and with a positive denominator.
         """
         return (self._numerator, self._denominator)
 
