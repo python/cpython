@@ -1321,7 +1321,8 @@ class PyShell(OutputWindow):
             existing = text.get(idx, "iomark")
 
             # Process new output.
-            rewrite, s = self._process_control_chars(existing, s)
+            rewrite, s, cursor = self._process_control_chars(existing, s)
+            # TODO: keep and use output cursor position
         else:
             rewrite = False
 
@@ -1342,47 +1343,68 @@ class PyShell(OutputWindow):
         return len(s) - (len(existing) if rewrite else 0)
 
     def _process_control_chars(self, existing, s,
-                               _control_char_re=re.compile(r'[\r\b]')):
-        buffer_idx = buffer_len = existing_len = len(existing)
+                               _control_char_re=re.compile(r'[\r\b]+')):
+        m = _control_char_re.search(s)
+        if m is None:
+            # No control characters in output.
+            last_newline_idx = s.rfind('\n')
+            if last_newline_idx >= 0:
+                cursor = len(s) - last_newline_idx + 1
+            else:
+                cursor = len(existing) + len(s)
+            return False, s, cursor
+
+        cursor = existing_len = len(existing)
         last_newline_idx = 0
         buffer = StringIO(existing)
         existing_changed = False
         idx = 0
-        for m in _control_char_re.finditer(s):
+        while m is not None:
             char_idx = m.start()
             if char_idx > idx:
                 new_str = s[idx:m.start()]
-                buffer_idx = max(last_newline_idx, buffer_idx)
-                existing_changed |= buffer_idx < existing_len
-                buffer.seek(buffer_idx)
-                buffer.write(new_str)
-                newline_idx = new_str.rfind('\n')
-                if newline_idx >= 0:
-                    last_newline_idx = buffer_len + newline_idx
-                buffer_idx = buffer_len = buffer.tell()
-            if s[char_idx] == '\b':
-                buffer_idx -= 1
-            else:  # '\r'
-                buffer_idx = last_newline_idx
+                new_str_first_newline = new_str.find('\n')
+                existing_changed |= cursor < existing_len
+                buffer.seek(cursor)
+                if new_str_first_newline >= 0:
+                    buffer.write(new_str[:new_str_first_newline])
+                    buffer.seek(0, 2)  # seek to end
+                    buffer.write(new_str[new_str_first_newline:])
+                else:
+                    buffer.write(new_str)
+                cursor = buffer.tell()
+                new_str_last_newline = new_str.rfind('\n')
+                if new_str_last_newline >= 0:
+                    last_newline_idx = \
+                        cursor - len(new_str) + new_str_first_newline
+            control_chars = m.group()
+            cursor = max(
+                last_newline_idx,
+                0 if '\r' in control_chars else cursor - len(control_chars),
+            )
             idx = m.end()
 
-        if idx == 0:
-            # No control characters in output.
-            return False, s
+            m = _control_char_re.search(s, idx)
 
         # Handle rest of output after final control character.
-        buffer_idx = max(last_newline_idx, buffer_idx)
-        existing_changed |= buffer_idx < existing_len
-        buffer.seek(buffer_idx)
-        buffer.write(s[idx:])
-        buffer_len = buffer.tell()
+        existing_changed |= cursor < existing_len
+        buffer.seek(cursor)
+        new_str = s[idx:]
+        new_str_first_newline = new_str.find('\n')
+        if new_str_first_newline >= 0:
+            buffer.write(new_str[:new_str_first_newline])
+            buffer.seek(0, 2)  # seek to end
+            buffer.write(new_str[new_str_first_newline:])
+        else:
+            buffer.write(new_str)
+        cursor = buffer.tell()
 
         if existing_changed:
             buffer.seek(0)
-            return True, buffer.read(buffer_len)
+            return True, buffer.read(), cursor - last_newline_idx
         else:
             buffer.seek(existing_len)
-            return False, buffer.read(buffer_len - existing_len)
+            return False, buffer.read(), cursor - last_newline_idx
 
     def rmenu_check_cut(self):
         try:
