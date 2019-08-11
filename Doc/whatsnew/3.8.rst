@@ -528,9 +528,25 @@ New Modules
 ===========
 
 * The new :mod:`importlib.metadata` module provides (provisional) support for
-  reading metadata from third-party packages.  For example, you can extract an
-  installed package's version number, list of entry points, and more.  See
-  :issue:`34632` for additional details.
+  reading metadata from third-party packages.  For example, it can extract an
+  installed package's version number, list of entry points, and more::
+
+    >>> # Note following example requires that the popular "requests"
+    >>> # package has been installed.
+    >>>
+    >>> from importlib.metadata import version, requires, files
+    >>> version('requests')
+    '2.22.0'
+    >>> list(requires('requests'))
+    ['chardet (<3.1.0,>=3.0.2)']
+    >>> list(files('requests'))[:5]
+    [PackagePath('requests-2.22.0.dist-info/INSTALLER'),
+     PackagePath('requests-2.22.0.dist-info/LICENSE'),
+     PackagePath('requests-2.22.0.dist-info/METADATA'),
+     PackagePath('requests-2.22.0.dist-info/RECORD'),
+     PackagePath('requests-2.22.0.dist-info/WHEEL')]
+
+  (Contributed in :issue:`34632` by Barry Warsaw and Jason R. Coombs.)
 
 
 Improved Modules
