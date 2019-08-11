@@ -1295,24 +1295,23 @@ class PyShell(OutputWindow):
         self.text.mark_set("iomark", "end-1c")
         self.set_line_and_column()
 
-    def write(self, s, tags=()):
-        if isinstance(s, str) and len(s) and max(s) > '\uffff':
-            # Tk doesn't support outputting non-BMP characters
-            # Let's assume what printed string is not very long,
-            # find first non-BMP character and construct informative
-            # UnicodeEncodeError exception.
-            for start, char in enumerate(s):
-                if char > '\uffff':
-                    break
-            raise UnicodeEncodeError("UCS-2", char, start, start+1,
-                                     'Non-BMP character not supported in Tk')
-        try:
-            self.text.mark_gravity("iomark", "right")
-            count = OutputWindow.write(self, s, tags, "iomark")
-            self.text.mark_gravity("iomark", "left")
-        except:
-            raise ###pass  # ### 11Aug07 KBK if we are expecting exceptions
-                           # let's find out what they are and be specific.
+    def write(self, s, tags=(),
+              _non_bmp_re=re.compile(r'[\U00010000-\U0010ffff]')):
+        if isinstance(s, str) and s:
+            m = _non_bmp_re.search(s)
+            if m is not None:
+                # Tk doesn't support outputting non-BMP characters
+                # Let's assume what printed string is not very long,
+                # find first non-BMP character and construct informative
+                # UnicodeEncodeError exception.
+                raise UnicodeEncodeError(
+                    "UCS-2", s[m.start()], m.start(), m.start() + 1,
+                    'Non-BMP character not supported in Tk')
+
+        self.text.mark_gravity("iomark", "right")
+        count = OutputWindow.write(self, s, tags, "iomark")
+        self.text.mark_gravity("iomark", "left")
+
         if self.canceled:
             self.canceled = 0
             if not use_subprocess:
