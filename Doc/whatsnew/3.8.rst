@@ -411,8 +411,19 @@ Other Language Changes
   never intended to permit more than a bare name on the left-hand side of a
   keyword argument assignment term. See :issue:`34641`.
 
-* Iterable unpacking is now allowed without parentheses in :keyword:`yield`
-  and :keyword:`return` statements.
+* Generalized iterable unpacking in :keyword:`yield` and
+  :keyword:`return` statements no longer requires enclosing parentheses.
+  This brings the *yield* and *return* syntax into better agreement with
+  normal assignment syntax::
+
+    >>> def parse(family):
+            lastname, *members = family.split()
+            return lastname.upper(), *members
+
+    >>> parse('simpsons homer marge bart lisa sally')
+    ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'sally')
+
+
   (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
 
 * When a comma is missed in code such as ``[(10, 20) (30, 40)]``, the
