@@ -33,6 +33,7 @@ if TkVersion < 8.5:
     raise SystemExit(1)
 
 from code import InteractiveInterpreter
+from io import StringIO
 import linecache
 import os
 import os.path
@@ -1308,15 +1309,58 @@ class PyShell(OutputWindow):
                     "UCS-2", s[m.start()], m.start(), m.start() + 1,
                     'Non-BMP character not supported in Tk')
 
-        self.text.mark_gravity("iomark", "right")
-        count = OutputWindow.write(self, s, tags, "iomark")
-        self.text.mark_gravity("iomark", "left")
+        text = self.text
+
+        idx1 = text.index("iomark linestart")
+        idx2 = text.tag_prevrange("console", idx1)
+        idx = idx2[1] if idx2 and text.compare(idx1, '<', idx2[1]) else idx1
+        buffer = text.get(idx, "iomark")
+        buffer_changed, new_buffer = self._process_control_chars(buffer, s)
+
+        text.mark_gravity("iomark", "right")
+        if buffer_changed:
+            self.per.bottom.delete(idx, "iomark")
+        OutputWindow.write(self, new_buffer, tags, "iomark")
+        text.mark_gravity("iomark", "left")
 
         if self.canceled:
             self.canceled = 0
             if not use_subprocess:
                 raise KeyboardInterrupt
-        return count
+        return len(new_buffer) - len(buffer)
+
+    def _process_control_chars(self, buffer, s,
+                               _control_char_re=re.compile(r'[\r\b]')):
+        buffer_idx = buffer_len = orig_buffer_len = len(buffer)
+        buffer = StringIO(buffer)
+        orig_buffer_changed = False
+        idx = 0
+        for m in _control_char_re.finditer(s):
+            char_idx = m.start()
+            if char_idx > idx:
+                buffer.seek(max(0, buffer_idx))
+                buffer.write(s[idx:m.start()])
+                orig_buffer_changed |= buffer_idx < orig_buffer_len
+                buffer_idx = buffer_len = buffer.tell()
+            if s[char_idx] == '\b':
+                buffer_idx -= 1
+            else:  # '\r'
+                buffer_idx = 0
+            idx = m.end()
+        if idx == 0:
+            return False, s
+        if buffer_idx < buffer_len:
+            orig_buffer_changed |= buffer_idx < orig_buffer_len
+            buffer_len = max(0, buffer_idx)
+            buffer.seek(buffer_len)
+        buffer.write(s[idx:])
+        buffer_len += len(s) - idx
+        if orig_buffer_changed:
+            buffer.seek(0)
+            return True, buffer.read(buffer_len)
+        else:
+            buffer.seek(orig_buffer_len)
+            return False, buffer.read()
 
     def rmenu_check_cut(self):
         try:
