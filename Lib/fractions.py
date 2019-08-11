@@ -216,6 +216,14 @@ class Fraction(numbers.Rational):
                 (cls.__name__, dec, type(dec).__name__))
         return cls(*dec.as_integer_ratio())
 
+    def as_integer_ratio(self):
+        """Return the integer ratio as a tuple.
+
+        Return a tuple of two integers, whose ratio is equal to the
+        Fraction and with a positive denominator.
+        """
+        return (self._numerator, self._denominator)
+
     def limit_denominator(self, max_denominator=1000000):
         """Closest Fraction to self with denominator at most max_denominator.
 
