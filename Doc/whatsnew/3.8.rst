@@ -468,8 +468,30 @@ Other Language Changes
 
   (Contributed by Mark Dickinson in :issue:`36027`.)
 
-* When dictionary comprehensions are evaluated, the key is now evaluated before
-  the value, as proposed by :pep:`572`.
+* Dict comprehensions have been synced-up with dict literals so that the
+  key is computed first and the value second::
+
+    >>> # Dict comprehension
+    >>> cast = {input('role? '): input('actor? ') for i in range(2)}
+    role? King Arthur
+    actor? Chapman
+    role? Black Knight
+    actor? Cleese
+
+    >>> # Dict literal
+    >>> cast = {input('role? '): input('actor? ')}
+    role? Sir Robin
+    actor? Eric Idle
+
+  The guaranteed execution order is helpful with assignment expressions
+  because variables assigned in the key expression will be available in
+  the value expression::
+
+    >>> names = ['Martin von Löwis', 'Łukasz Langa', 'Walter Dörwald']
+    >>> {(n := normalize('NFC', name)).casefold() : n for name in names}
+    {'martin von löwis': 'Martin von Löwis',
+     'łukasz langa': 'Łukasz Langa',
+     'walter dörwald': 'Walter Dörwald'}
 
 
 New Modules
