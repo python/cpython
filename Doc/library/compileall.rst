@@ -185,6 +185,9 @@ Public functions
    .. versionchanged:: 3.7
       The *invalidation_mode* parameter was added.
 
+   .. versionchanged:: 3.7.2
+      The *invalidation_mode* parameter's default value is updated to None.
+
    .. versionchanged:: 3.8
       Setting *workers* to 0 now chooses the optimal number of cores.
 
@@ -254,6 +257,9 @@ Public functions
 
    .. versionchanged:: 3.7
       The *invalidation_mode* parameter was added.
+
+   .. versionchanged:: 3.7.2
+      The *invalidation_mode* parameter's default value is updated to None.
 
 To force a recompile of all the :file:`.py` files in the :file:`Lib/`
 subdirectory and all its subdirectories::
