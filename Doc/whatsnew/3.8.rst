@@ -59,6 +59,7 @@ notable items not yet covered are:
 
    from datetime import date
    from math import cos, radians
+   from unicodedata import normalize
    import re
    import math
 
