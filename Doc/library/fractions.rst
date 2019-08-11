@@ -97,7 +97,7 @@ another rational number, or from a string.
    .. method:: as_integer_ratio()
 
       Return a tuple of two integers, whose ratio is equal
-      to the original fraction and with a positive denominator.
+      to the Fraction and with a positive denominator.
 
       .. versionadded:: 3.8
 
