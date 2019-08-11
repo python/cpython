@@ -561,6 +561,8 @@ class DisplayName(Phrase):
     @property
     def display_name(self):
         res = TokenList(self)
+        if len(res) == 0:
+            return res.value
         if res[0].token_type == 'cfws':
             res.pop(0)
         else:
@@ -582,7 +584,7 @@ class DisplayName(Phrase):
             for x in self:
                 if x.token_type == 'quoted-string':
                     quote = True
-        if quote:
+        if len(self) != 0 and quote:
             pre = post = ''
             if self[0].token_type=='cfws' or self[0][0].token_type=='cfws':
                 pre = ' '
