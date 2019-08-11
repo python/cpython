@@ -448,7 +448,7 @@ Other Language Changes
   it possible to create a clone with a few altered parameters.
 
   Here's an example that alters the :func:`statistics.mean` function to
-  prevent the *data* parameter from being used as a keyword argument::C
+  prevent the *data* parameter from being used as a keyword argument::
 
     >>> from statistics import mean
     >>> mean(data=[10, 20, 90])
