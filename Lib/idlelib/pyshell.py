@@ -1358,23 +1358,26 @@ class PyShell(OutputWindow):
                 raise KeyboardInterrupt
         return len(s) - (len(existing) if rewrite else 0)
 
-    def _process_control_chars(self, existing, string, cursor,
+    @classmethod
+    def _process_control_chars(cls, existing, string, cursor,
                                _control_char_re=re.compile(r'[\r\b]+')):
         m = _control_char_re.search(string)
         if m is None:
             # No control characters in output.
-            rewrite = string and cursor < len(existing)
+            rewrite = bool(string and cursor < len(existing))
             if rewrite:
-                string = existing[:cursor] + string + existing[cursor + len(string):]
-            last_newline_idx = string.rfind('\n')
-            if last_newline_idx >= 0:
-                cursor = len(string) - last_newline_idx + 1
+                res = existing[:cursor] + string + existing[cursor + len(string):]
+            else:
+                res = string
+            last_linestart = string.rfind('\n')
+            if last_linestart >= 0:
+                cursor = len(string) - last_linestart + 1
             else:
                 cursor += len(string)
-            return rewrite, string, cursor
+            return rewrite, res, cursor
 
         existing_len = len(existing)
-        last_newline_idx = 0
+        last_linestart = 0
         buffer = StringIO(existing)
 
         def write(string):
@@ -1407,14 +1410,14 @@ class PyShell(OutputWindow):
             # track of the last newline written.
             new_str_last_newline = string_part.rfind('\n')
             if new_str_last_newline >= 0:
-                last_newline_idx = \
-                    cursor - len(string_part) + new_str_last_newline
+                last_linestart = \
+                    cursor - len(string_part) + new_str_last_newline + 1
 
             # Process a sequence of control characters. This assumes
             # that they are all '\r' and/or '\b' characters.
             control_chars = m.group()
             cursor = max(
-                last_newline_idx,
+                last_linestart,
                 0 if '\r' in control_chars else cursor - len(control_chars),
             )
 
@@ -1428,10 +1431,10 @@ class PyShell(OutputWindow):
 
         if existing_changed:
             buffer.seek(0)
-            return True, buffer.read(), cursor - last_newline_idx
+            return True, buffer.read(), cursor - last_linestart
         else:
             buffer.seek(existing_len)
-            return False, buffer.read(), cursor - last_newline_idx
+            return False, buffer.read(), cursor - last_linestart
 
     def rmenu_check_cut(self):
         try:
