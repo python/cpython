@@ -1020,8 +1020,8 @@ class IMAP4:
             self._check_bye()
         try:
             typ, data = self._get_tagged_response(tag, expect_bye=logout)
-            # if name == "NOOP":
-            #     return typ, data
+            if name == "NOOP":
+                return typ, data
         except self.abort as val:
             raise self.abort('command: %s => %s' % (name, val))
         except self.error as val:
