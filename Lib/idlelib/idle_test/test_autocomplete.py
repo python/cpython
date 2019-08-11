@@ -347,6 +347,7 @@ class OpenCompletionsTest(unittest.TestCase):
 
         for quote in ['"', "'", '"""', "'''"]:
             with self.subTest(quote=quote):
+                self.text.delete('1.0', 'end')
                 self.text.insert('1.0', f'test_dict[{quote}')
                 with patch.object(acp, '_make_autocomplete_window',
                                   self.make_acw):
@@ -363,7 +364,6 @@ class OpenCompletionsTest(unittest.TestCase):
                 expected = [f'{quote}one{quote}', f'b{quote}two{quote}']
                 self.assertLess(set(expected), set(comp_lists[0]))
                 self.assertLess(set(expected), set(comp_lists[1]))
-                self.text.delete('1.0', 'end')
 
     def test_open_completions_dict_keys_no_opening_quote(self):
         # Note that dict key completion lists also include variables from
@@ -388,7 +388,6 @@ class OpenCompletionsTest(unittest.TestCase):
         expected = [f'"one"', f'b"two"']
         self.assertLess(set(expected), set(comp_lists[0]))
         self.assertLess(set(expected), set(comp_lists[1]))
-        self.text.delete('1.0', 'end')
 
     def test_no_list(self):
         acp = self.autocomplete
@@ -409,17 +408,28 @@ class OpenCompletionsTest(unittest.TestCase):
         oc = acp.open_completions
 
         # No object for attributes or need call not allowed.
+        self.text.delete('1.0', 'end')
         self.text.insert('1.0', '.')
         none(oc(ac.TAB))
+        none(oc(ac.TRY_A))
         self.text.insert('insert', ' int().')
         none(oc(ac.TAB))
+        none(oc(ac.TRY_A))
+
+        # Dict keys: No object for keys or need call not allowed.
+        self.text.delete('1.0', 'end')
+        self.text.insert('1.0', '[')
+        none(oc(ac.TAB))
+        none(oc(ac.TRY_D))
+        self.text.insert('insert', ' globals()[')
+        none(oc(ac.TAB))
+        none(oc(ac.TRY_D))
 
         # Blank or quote trigger 'if complete ...'.
         self.text.delete('1.0', 'end')
         self.assertFalse(oc(ac.TAB))
         self.text.insert('1.0', '"')
         self.assertFalse(oc(ac.TAB))
-        self.text.delete('1.0', 'end')
 
 
 class ShowWindowTest(unittest.TestCase):

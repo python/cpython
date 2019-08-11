@@ -280,6 +280,8 @@ class AutoComplete:
                 if comp_what and (evalfuncs or '(' not in comp_what):
                     self._remove_autocomplete_window()
                     mode = DICTKEYS
+                else:
+                    return None
         if mode in (None, FILES) and hp.is_in_string():
             # Find the beginning of the string.
             # fetch_completions will look at the file system to determine
