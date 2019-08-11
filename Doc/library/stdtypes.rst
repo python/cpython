@@ -639,6 +639,8 @@ hexadecimal string representing the same number::
 Hashing of numeric types
 ------------------------
 
+.. XXX Document that the hash is a non-nengative number now.
+
 For numbers ``x`` and ``y``, possibly of different types, it's a requirement
 that ``hash(x) == hash(y)`` whenever ``x == y`` (see the :meth:`__hash__`
 method documentation for more details).  For ease of implementation and
