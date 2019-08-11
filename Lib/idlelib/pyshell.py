@@ -1293,6 +1293,7 @@ class PyShell(OutputWindow):
             self.history.store(source)
         if self.text.get("end-2c") != "\n":
             self.text.insert("end-1c", "\n")
+        self.text.mark_set("outputmark", "end-2c")
         self.text.mark_set("iomark", "end-1c")
         self.set_line_and_column()
 
@@ -1312,29 +1313,44 @@ class PyShell(OutputWindow):
         text = self.text
 
         # Process control characters only for stdout and stderr.
-        if isinstance(tags, str): tags = (tags,)
+        if isinstance(tags, str):
+            tags = (tags,)
+        cursor = "iomark"
         if {"stdout", "stderr"} & set(tags):
             # Get existing output on the current line.
-            idx1 = text.index("iomark linestart")
-            idx2 = text.tag_prevrange("console", idx1)
-            idx = idx2[1] if idx2 and text.compare(idx2[1], '>', idx1) else idx1
-            existing = text.get(idx, "iomark")
+            if not self.executing:
+                cursor = "outputmark"
+            linestart = f"{cursor} linestart"
+            if not self.executing:
+                prompt_end = text.tag_prevrange("console", linestart, cursor)
+                if prompt_end and text.compare(prompt_end[1], '>', linestart):
+                    linestart = prompt_end[1]
+            existing = text.get(linestart, f"{cursor} lineend")
 
             # Process new output.
-            rewrite, s, cursor = self._process_control_chars(existing, s)
-            # TODO: keep and use output cursor position
+            rewrite, s, cursor_col = self._process_control_chars(
+                existing, s, len(text.get(linestart, cursor)),
+            )
         else:
             rewrite = False
+            cursor_col = None
 
         # Update text widget.
-        text.mark_gravity("iomark", "right")
-        if rewrite:
-            # The shell normally rejects deleting before "iomark" (achieved
-            # by wrapping the text widget), so we call the underlying,
-            # unwrapped text widget's delete() method directly.
-            self.per.bottom.delete(idx, "iomark")
-        OutputWindow.write(self, s, tags, "iomark")
-        text.mark_gravity("iomark", "left")
+        text.mark_gravity(cursor, "right")
+        # The shell normally rejects writing and deleting before "iomark"
+        # (achieved by wrapping the text widget), so we temporarily replace
+        # the wrapped text widget object with the unwrapped one.
+        self.text = self.per.bottom
+        try:
+            if rewrite:
+                self.text.delete(linestart, f"{cursor} lineend")
+            OutputWindow.write(self, s, tags, cursor)
+        finally:
+            self.text = text
+
+        if cursor_col is not None:
+            text.mark_set(cursor, f"{cursor} linestart +{cursor_col}c")
+        text.mark_gravity(cursor, "left")
 
         if self.canceled:
             self.canceled = 0
@@ -1342,62 +1358,73 @@ class PyShell(OutputWindow):
                 raise KeyboardInterrupt
         return len(s) - (len(existing) if rewrite else 0)
 
-    def _process_control_chars(self, existing, s,
+    def _process_control_chars(self, existing, string, cursor,
                                _control_char_re=re.compile(r'[\r\b]+')):
-        m = _control_char_re.search(s)
+        m = _control_char_re.search(string)
         if m is None:
             # No control characters in output.
-            last_newline_idx = s.rfind('\n')
+            rewrite = string and cursor < len(existing)
+            if rewrite:
+                string = existing[:cursor] + string + existing[cursor + len(string):]
+            last_newline_idx = string.rfind('\n')
             if last_newline_idx >= 0:
-                cursor = len(s) - last_newline_idx + 1
+                cursor = len(string) - last_newline_idx + 1
             else:
-                cursor = len(existing) + len(s)
-            return False, s, cursor
+                cursor += len(string)
+            return rewrite, string, cursor
 
-        cursor = existing_len = len(existing)
+        existing_len = len(existing)
         last_newline_idx = 0
         buffer = StringIO(existing)
+
+        def write(string):
+            nonlocal cursor, existing_changed
+            existing_changed |= cursor < existing_len
+            buffer.seek(0, 2)  # seek to end
+            end = buffer.tell()
+            buffer.seek(cursor)
+            string_first_newline = string.find('\n')
+            # Split the string only if we have to in order to overwrite
+            # just part of the first line.
+            if (
+                    string_first_newline >= 0 and
+                    cursor + string_first_newline < end
+            ):
+                buffer.write(string[:string_first_newline])
+                buffer.seek(0, 2)  # seek to end
+                buffer.write(string[string_first_newline:])
+            else:
+                buffer.write(string)
+            cursor = buffer.tell()
+
         existing_changed = False
         idx = 0
         while m is not None:
-            char_idx = m.start()
-            if char_idx > idx:
-                new_str = s[idx:m.start()]
-                new_str_first_newline = new_str.find('\n')
-                existing_changed |= cursor < existing_len
-                buffer.seek(cursor)
-                if new_str_first_newline >= 0:
-                    buffer.write(new_str[:new_str_first_newline])
-                    buffer.seek(0, 2)  # seek to end
-                    buffer.write(new_str[new_str_first_newline:])
-                else:
-                    buffer.write(new_str)
-                cursor = buffer.tell()
-                new_str_last_newline = new_str.rfind('\n')
-                if new_str_last_newline >= 0:
-                    last_newline_idx = \
-                        cursor - len(new_str) + new_str_first_newline
+            string_part = string[idx:m.start()]
+            write(string_part)
+
+            # We never write before the last newline, so we must keep
+            # track of the last newline written.
+            new_str_last_newline = string_part.rfind('\n')
+            if new_str_last_newline >= 0:
+                last_newline_idx = \
+                    cursor - len(string_part) + new_str_last_newline
+
+            # Process a sequence of control characters. This assumes
+            # that they are all '\r' and/or '\b' characters.
             control_chars = m.group()
             cursor = max(
                 last_newline_idx,
                 0 if '\r' in control_chars else cursor - len(control_chars),
             )
-            idx = m.end()
 
-            m = _control_char_re.search(s, idx)
+            idx = m.end()
+            m = _control_char_re.search(string, idx)
 
         # Handle rest of output after final control character.
         existing_changed |= cursor < existing_len
         buffer.seek(cursor)
-        new_str = s[idx:]
-        new_str_first_newline = new_str.find('\n')
-        if new_str_first_newline >= 0:
-            buffer.write(new_str[:new_str_first_newline])
-            buffer.seek(0, 2)  # seek to end
-            buffer.write(new_str[new_str_first_newline:])
-        else:
-            buffer.write(new_str)
-        cursor = buffer.tell()
+        write(string[idx:])
 
         if existing_changed:
             buffer.seek(0)
