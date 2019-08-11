@@ -302,6 +302,12 @@ class FractionTest(unittest.TestCase):
             ValueError, "cannot convert NaN to integer ratio",
             F.from_decimal, Decimal("snan"))
 
+    def test_as_integer_ratio(self):
+        self.assertEqual(F(4, 6).as_integer_ratio(), (2, 3))
+        self.assertEqual(F(-4, 6).as_integer_ratio(), (-2, 3))
+        self.assertEqual(F(4, -6).as_integer_ratio(), (-2, 3))
+        self.assertEqual(F(0, 6).as_integer_ratio(), (0, 1))
+
     def testLimitDenominator(self):
         rpi = F('3.1415926535897932')
         self.assertEqual(rpi.limit_denominator(10000), F(355, 113))

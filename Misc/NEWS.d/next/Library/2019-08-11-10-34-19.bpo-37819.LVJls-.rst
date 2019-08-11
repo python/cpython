@@ -1,0 +1,2 @@
+Add Fraction.as_integer_ratio() to match the corresponding methods in bool,
+int, float, and decimal.

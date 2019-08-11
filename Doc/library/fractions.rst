@@ -94,6 +94,13 @@ another rational number, or from a string.
       Denominator of the Fraction in lowest term.
 
 
+   .. method:: as_integer_ratio()
+
+      Return a tuple of two integers, whose ratio is equal
+      to the Fraction and with a positive denominator.
+
+      .. versionadded:: 3.8
+
    .. method:: from_float(flt)
 
       This class method constructs a :class:`Fraction` representing the exact
