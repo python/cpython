@@ -539,7 +539,7 @@ class Executive(object):
         self.rpchandler = rpchandler
         self.locals = __main__.__dict__
         self.calltip = calltip.Calltip()
-        self.autocomplete = autocomplete.AutoComplete()
+        self.autocomplete = autocomplete.AutoComplete(namespace=self.locals)
 
     def runcode(self, code):
         global interruptable
