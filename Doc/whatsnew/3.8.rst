@@ -39,7 +39,7 @@
    module.
    (Contributed by P.Y. Developer in :issue:`12345`.)
 
-   This saves the maintainer the effort of going through the Mercurial log
+   This saves the maintainer the effort of going through the Git log
    when researching a change.
 
 :Editor: Raymond Hettinger
