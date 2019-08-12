@@ -878,6 +878,7 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
     FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
     result->st_nlink = info->nNumberOfLinks;
     result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
+    result->st_reparse_tag = reparse_tag;
     if (reparse_tag == IO_REPARSE_TAG_SYMLINK || reparse_tag == IO_REPARSE_TAG_APPEXECLINK) {
         /* first clear the S_IFMT bits */
         result->st_mode ^= (result->st_mode & S_IFMT);

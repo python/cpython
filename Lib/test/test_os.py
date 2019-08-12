@@ -8,6 +8,7 @@ import codecs
 import contextlib
 import decimal
 import errno
+import fnmatch
 import fractions
 import itertools
 import locale
@@ -2292,7 +2293,6 @@ class ReadlinkTests(unittest.TestCase):
         self.assertEqual(path, self.filelinkb_target)
         self.assertIsInstance(path, bytes)
 
-
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 @support.skip_unless_symlink
 class Win32SymlinkTests(unittest.TestCase):
@@ -2452,6 +2452,32 @@ class Win32SymlinkTests(unittest.TestCase):
                     os.remove(dest)
                 except OSError:
                     pass
+
+    def test_appexeclink(self):
+        root = os.path.expandvars(r'%LOCALAPPDATA%\Microsoft\WindowsApps')
+        aliases = [os.path.join(root, a)
+                   for a in fnmatch.filter(os.listdir(root), '*.exe')]
+        if not aliases:
+            self.skipTest("test requires an app execution alias")
+
+        for alias in aliases:
+            try:
+                st = os.lstat(alias)
+                if stat.S_ISLNK(st.st_mode):
+                    break
+            except OSError:
+                pass
+        else:
+            self.skipTest("test requires an app execution alias")
+        if support.verbose:
+            print("Testing with", alias)
+        self.assertEqual(st.st_reparse_tag, stat.IO_REPARSE_TAG_APPEXECLINK)
+        self.assertTrue(os.path.islink(alias))
+        # we don't know what we have or where it points, so the best we can
+        # check is that it returns something that exists
+        target = os.readlink(alias)
+        self.assertTrue(target)
+        self.assertTrue(os.path.exists(target))
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 class Win32JunctionTests(unittest.TestCase):

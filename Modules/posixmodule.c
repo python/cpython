@@ -1625,6 +1625,7 @@ win32_wchdir(LPCWSTR path)
 */
 #define HAVE_STAT_NSEC 1
 #define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
+#define HAVE_STRUCT_STAT_ST_REPARSE_TAG 1
 
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
@@ -1877,6 +1878,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
     {"st_fstype",  "Type of filesystem"},
 #endif
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+    {"st_reparse_tag", "Windows reparse tag"},
+#endif
     {0}
 };
 
@@ -1926,6 +1930,12 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_FSTYPE_IDX (ST_FILE_ATTRIBUTES_IDX+1)
 #else
 #define ST_FSTYPE_IDX ST_FILE_ATTRIBUTES_IDX
+#endif
+
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+#define ST_REPARSE_TAG_IDX (ST_FSTYPE_IDX+1)
+#else
+#define ST_REPARSE_TAG_IDX ST_FSTYPE_IDX
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
@@ -2154,6 +2164,10 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
    PyStructSequence_SET_ITEM(v, ST_FSTYPE_IDX,
                               PyUnicode_FromString(st->st_fstype));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+    PyStructSequence_SET_ITEM(v, ST_REPARSE_TAG_IDX,
+                              PyLong_FromUnsignedLong(st->st_reparse_tag));
 #endif
 
     if (PyErr_Occurred()) {
