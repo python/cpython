@@ -1301,7 +1301,10 @@ class PyShell(OutputWindow):
 
     def write(self, s, tags=(),
               _non_bmp_re=re.compile(r'[\U00010000-\U0010ffff]')):
-        if isinstance(s, str) and s:
+        if not s:
+            return 0
+
+        if isinstance(s, str):
             m = _non_bmp_re.search(s)
             if m is not None:
                 # Tk doesn't support outputting non-BMP characters
@@ -1323,19 +1326,23 @@ class PyShell(OutputWindow):
             if not self.executing:
                 cursor = "outputmark"
             linestart = f"{cursor} linestart"
+            lineend = f"{cursor} lineend"
             if not self.executing:
                 prompt_end = text.tag_prevrange("console", linestart, cursor)
                 if prompt_end and text.compare(prompt_end[1], '>', linestart):
                     linestart = prompt_end[1]
-            existing = text.get(linestart, f"{cursor} lineend")
+            existing = text.get(linestart, lineend)
 
             # Process new output.
-            rewrite, s, cursor_col = self._process_control_chars(
-                existing, s, len(text.get(linestart, cursor)),
+            cursor_pos_in_existing = len(text.get(linestart, cursor))
+            is_cursor_at_lineend = cursor_pos_in_existing == len(existing)
+            rewrite, s, cursor_back = self._process_control_chars(
+                existing, s, cursor_pos_in_existing,
             )
         else:
+            is_cursor_at_lineend = True
             rewrite = False
-            cursor_col = None
+            cursor_back = 0
 
         # Update text widget.
         text.mark_gravity(cursor, "right")
@@ -1344,47 +1351,42 @@ class PyShell(OutputWindow):
         # the wrapped text widget object with the unwrapped one.
         self.text = self.per.bottom
         try:
-            if rewrite:
-                self.text.delete(linestart, f"{cursor} lineend")
+            if rewrite or not is_cursor_at_lineend:
+                self.text.delete(linestart if rewrite else cursor, lineend)
             OutputWindow.write(self, s, tags, cursor)
         finally:
             self.text = text
 
-        if cursor_col is not None:
-            text.mark_set(cursor, f"{cursor} linestart +{cursor_col}c")
+        if cursor_back > 0:
+            text.mark_set(cursor, f"{cursor} -{cursor_back}c")
         text.mark_gravity(cursor, "left")
 
         if self.canceled:
             self.canceled = 0
             if not use_subprocess:
                 raise KeyboardInterrupt
-        return len(s) - (len(existing) if rewrite else 0)
+        return len(s) - (len(existing) if rewrite else 0) - (0 if is_cursor_at_lineend else len(existing) - cursor_pos_in_existing)
 
     @classmethod
     def _process_control_chars(cls, existing, string, cursor,
                                _control_char_re=re.compile(r'[\r\b]+')):
+        if not string:
+            return False, '', 0
+
         m = _control_char_re.search(string)
         if m is None:
             # No control characters in output.
-            rewrite = bool(string and cursor < len(existing))
-            if rewrite:
-                res = existing[:cursor] + string + existing[cursor + len(string):]
-            else:
-                res = string
-            last_linestart = string.rfind('\n')
-            if last_linestart >= 0:
-                cursor = len(string) - (last_linestart + 1)
-            else:
-                cursor += len(string)
-            return rewrite, res, cursor
+            res = string + existing[cursor + len(string):]
+            return False, res, 0
 
-        existing_len = len(existing)
+        orig_cursor = cursor
         last_linestart = 0
         buffer = StringIO(existing)
+        rewrite = False
 
         def write(string):
-            nonlocal cursor, existing_changed
-            existing_changed |= cursor < existing_len
+            nonlocal buffer, cursor, rewrite
+            rewrite |= cursor < orig_cursor
             buffer.seek(0, 2)  # seek to end
             end = buffer.tell()
             buffer.seek(cursor)
@@ -1402,7 +1404,6 @@ class PyShell(OutputWindow):
                 buffer.write(string)
             cursor = buffer.tell()
 
-        existing_changed = False
         idx = 0
         while m is not None:
             string_part = string[idx:m.start()]
@@ -1427,16 +1428,18 @@ class PyShell(OutputWindow):
             m = _control_char_re.search(string, idx)
 
         # Handle rest of output after final control character.
-        existing_changed |= cursor < existing_len
+        rewrite |= cursor < orig_cursor
         buffer.seek(cursor)
         write(string[idx:])
+        buffer.seek(0, 2)  # seek to end
+        buffer_len = buffer.tell()
 
-        if existing_changed:
+        if rewrite:
             buffer.seek(0)
-            return True, buffer.read(), cursor - last_linestart
+            return True, buffer.read(), buffer_len - cursor
         else:
-            buffer.seek(existing_len)
-            return False, buffer.read(), cursor - last_linestart
+            buffer.seek(orig_cursor)
+            return False, buffer.read(), buffer_len - cursor
 
     def rmenu_check_cut(self):
         try:
