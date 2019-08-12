@@ -1209,7 +1209,7 @@ class FileType(object):
         except OSError as e:
             args = {'filename': string, 'error': e}
             message = _("can't open '%(filename)s': %(error)s")
-            raise ArgumentTypeError(message % (args))
+            raise ArgumentTypeError(message % args)
 
     def __repr__(self):
         args = self._mode, self._bufsize
