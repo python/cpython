@@ -2125,8 +2125,8 @@ def _unique_everseen(iterable, key=None):
 
 
 def _parents(name):
-    """ 
-    for given directory, return a list of parents 
+    """
+    for given directory, return a list of parents
     example: 'b/' returns ['.']
              'b/d/' return ['b', '.']
     """
@@ -2141,9 +2141,9 @@ def _parents(name):
         else:
             subdir_parents.append(".")
             break
-    return subdir_parents       
-    
-        
+    return subdir_parents
+
+
 class Path:
     """
     A pathlib-compatible interface for zip files.
@@ -2264,7 +2264,7 @@ class Path:
         names = self._names()
         return self._next(next_dir if next not in names and next_dir in names else next)
 
-    __truediv__ = joinpath             
+    __truediv__ = joinpath
 
     @staticmethod
     def _add_implied_dirs(names):
