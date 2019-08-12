@@ -2106,6 +2106,44 @@ class PyZipFile(ZipFile):
         return (fname, archivename)
 
 
+def _unique_everseen(iterable, key=None):
+    "List unique elements, preserving order. Remember all elements ever seen."
+    # unique_everseen('AAAABBBCCDAABBB') --> A B C D
+    # unique_everseen('ABBCcAD', str.lower) --> A B C D
+    seen = set()
+    seen_add = seen.add
+    if key is None:
+        for element in itertools.filterfalse(seen.__contains__, iterable):
+            seen_add(element)
+            yield element
+    else:
+        for element in iterable:
+            k = key(element)
+            if k not in seen:
+                seen_add(k)
+                yield element
+
+
+def _parents(name):
+    """ 
+    for given directory, return a list of parents 
+    example: 'b/' returns ['.']
+             'b/d/' return ['b', '.']
+    """
+    subdir_list = [name]
+    subdir_parents = []
+    while True:
+        head, tail = posixpath.split(name)
+        if head:
+            if head + "/" not in subdir_list:
+                subdir_parents.append(head)
+            name = head
+        else:
+            subdir_parents.append(".")
+            break
+    return subdir_parents       
+    
+        
 class Path:
     """
     A pathlib-compatible interface for zip files.
@@ -2226,38 +2264,20 @@ class Path:
         names = self._names()
         return self._next(next_dir if next not in names and next_dir in names else next)
 
-    __truediv__ = joinpath
-
-    @staticmethod
-    def unique_everseen(iterable, key=None):
-        "List unique elements, preserving order. Remember all elements ever seen."
-        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-        # unique_everseen('ABBCcAD', str.lower) --> A B C D
-        seen = set()
-        seen_add = seen.add
-        if key is None:
-            for element in itertools.filterfalse(seen.__contains__, iterable):
-                seen_add(element)
-                yield element
-        else:
-            for element in iterable:
-                k = key(element)
-                if k not in seen:
-                    seen_add(k)
-                    yield element
+    __truediv__ = joinpath             
 
     @staticmethod
     def _add_implied_dirs(names):
-        subdirs = list(Path.unique_everseen([
+        subdirs = list(_unique_everseen([
             name + "/"
             for name in map(posixpath.dirname, names)
             if name and name + "/" not in names
         ]))
         missing_dirs = [
-            str(p) + "/"
+            p + "/"
             for sd in subdirs
-            for p in pathlib.PurePath(sd).parents
-            if str(p) not in {".", "/"} and str(p) + "/" not in subdirs
+            for p in _parents(sd)
+            if p not in {".", "/"} and p + "/" not in subdirs
         ]
         return names + subdirs + missing_dirs
 
