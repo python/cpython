@@ -1,0 +1,2 @@
+Enables :func:`os.readlink` and :func:`os.path.is_link` to recognize app
+execution aliases.

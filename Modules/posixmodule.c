@@ -7800,7 +7800,6 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     HANDLE reparse_point_handle;
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    const wchar_t *print_name;
     PyObject *result;
 
     /* First get a handle to the reparse point */
@@ -7836,18 +7835,34 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         return path_error(path);
     }
 
-    if (rdb->ReparseTag != IO_REPARSE_TAG_SYMLINK)
+    if (rdb->ReparseTag == IO_REPARSE_TAG_SYMLINK)
     {
-        PyErr_SetString(PyExc_ValueError,
-                "not a symbolic link");
+        const wchar_t *print_name;
+        print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
+                     rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
+
+        result = PyUnicode_FromWideChar(print_name,
+                rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
+    }
+    else if (rdb->ReparseTag == IO_REPARSE_TAG_APPEXECLINK)
+    {
+        /* PathBuffer is a null-separated string array.
+           We want to return the third element. */
+        wchar_t *element = &rdb->AppExecLinkBuffer.PathBuffer[0];
+        wchar_t *endOfBuffer = (wchar_t*)&target_buffer[n_bytes_returned];
+        for (int i = 2; i && element < endOfBuffer; --i) {
+            element = &element[wcslen(element) + 1];
+        }
+        if (element < endOfBuffer) {
+            result = PyUnicode_FromWideChar(element, -1);
+        }
+    }
+    else
+    {
+        PyErr_SetString(PyExc_ValueError, "not a symbolic link");
         return NULL;
     }
-    print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                 rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
-
-    result = PyUnicode_FromWideChar(print_name,
-            rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
-    if (path->narrow) {
+    if (result && path->narrow) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
     }
     return result;
