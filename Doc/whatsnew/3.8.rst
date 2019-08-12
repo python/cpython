@@ -464,7 +464,7 @@ Other Language Changes
     >>> from statistics import mean
     >>> mean(data=[10, 20, 90])
     40
-    >>> mean.__code__ = mean.__code__.replace(co_posonlyargcount = 1)
+    >>> mean.__code__ = mean.__code__.replace(co_posonlyargcount=1)
     >>> mean(data=[10, 20, 90])
     Traceback (most recent call last):
       ...
