@@ -1088,16 +1088,6 @@ class Thread:
         self._wait_for_tstate_lock(False)
         return not self._is_stopped
 
-    def isAlive(self):
-        """Return whether the thread is alive.
-
-        This method is deprecated, use is_alive() instead.
-        """
-        import warnings
-        warnings.warn('isAlive() is deprecated, use is_alive() instead',
-                      DeprecationWarning, stacklevel=2)
-        return self.is_alive()
-
     @property
     def daemon(self):
         """A boolean value indicating whether this thread is a daemon thread.
