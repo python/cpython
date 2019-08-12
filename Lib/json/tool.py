@@ -30,12 +30,15 @@ def main():
                         help='sort the output of dictionaries alphabetically by key')
     parser.add_argument('--json-lines', action='store_true', default=False,
                         help='parse input using the jsonlines format')
+    parser.add_argument('--dont-ensure-ascii', action='store_false', default=True,
+                        help='don\'t ensure that output is written in ASCII')
     options = parser.parse_args()
 
     infile = options.infile
     outfile = options.outfile
     sort_keys = options.sort_keys
     json_lines = options.json_lines
+    dont_ensure_ascii = options.dont_ensure_ascii
     with infile, outfile:
         try:
             if json_lines:
@@ -43,7 +46,7 @@ def main():
             else:
                 objs = (json.load(infile), )
             for obj in objs:
-                json.dump(obj, outfile, sort_keys=sort_keys, indent=4)
+                json.dump(obj, outfile, sort_keys=sort_keys, indent=4, ensure_ascii=dont_ensure_ascii)
                 outfile.write('\n')
         except ValueError as e:
             raise SystemExit(e)
