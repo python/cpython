@@ -538,8 +538,11 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
 
    The *style* parameter can be one of '%', '{' or '$' and determines how
    the format string will be merged with its data: using one of %-formatting,
-   :meth:`str.format` or :class:`string.Template`. See :ref:`formatting-styles`
-   for more information on using {- and $-formatting for log messages.
+   :meth:`str.format` or :class:`string.Template`. This only applies to the
+   format string *fmt* (e.g. ``'%(message)s'`` or ``{message}``), not to the
+   actual log messages passed to ``Logger.debug`` etc; see
+   :ref:`formatting-styles` for more information on using {- and $-formatting
+   for log messages.
 
    .. versionchanged:: 3.2
       The *style* parameter was added.
