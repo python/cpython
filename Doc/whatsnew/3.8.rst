@@ -39,7 +39,7 @@
    module.
    (Contributed by P.Y. Developer in :issue:`12345`.)
 
-   This saves the maintainer the effort of going through the Mercurial log
+   This saves the maintainer the effort of going through the Git log
    when researching a change.
 
 :Editor: Raymond Hettinger
@@ -59,6 +59,7 @@ notable items not yet covered are:
 
    from datetime import date
    from math import cos, radians
+   from unicodedata import normalize
    import re
    import math
 
@@ -383,9 +384,13 @@ Other Language Changes
   was lifted.
   (Contributed by Serhiy Storchaka in :issue:`32489`.)
 
-* The :class:`int` type now has a new :meth:`~int.as_integer_ratio` method
-  compatible with the existing :meth:`float.as_integer_ratio` method.
-  (Contributed by Lisa Roach in :issue:`33073`.)
+* The :class:`bool`, :class:`int`, and :class:`fractions.Fraction` types
+  now have an :meth:`~int.as_integer_ratio` method like that found in
+  :class:`float` and :class:`decimal.Decimal`.  This minor API extension
+  makes it possible to write ``numerator, denominator =
+  x.as_integer_ratio()`` and have it work across multiple numeric types.
+  (Contributed by Lisa Roach in :issue:`33073` and Raymond Hettinger in
+  :issue:`37819`.)
 
 * Constructors of :class:`int`, :class:`float` and :class:`complex` will now
   use the :meth:`~object.__index__` special method, if available and the
@@ -410,19 +415,26 @@ Other Language Changes
   never intended to permit more than a bare name on the left-hand side of a
   keyword argument assignment term. See :issue:`34641`.
 
-* Iterable unpacking is now allowed without parentheses in :keyword:`yield`
-  and :keyword:`return` statements.
+* Generalized iterable unpacking in :keyword:`yield` and
+  :keyword:`return` statements no longer requires enclosing parentheses.
+  This brings the *yield* and *return* syntax into better agreement with
+  normal assignment syntax::
+
+    >>> def parse(family):
+            lastname, *members = family.split()
+            return lastname.upper(), *members
+
+    >>> parse('simpsons homer marge bart lisa sally')
+    ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'sally')
+
+
   (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
 
-* The compiler now produces a :exc:`SyntaxWarning` in some cases when a comma
-  is missed before tuple or list.  For example::
-
-     data = [
-         (1, 2, 3) # oops, missing comma!
-         (4, 5, 6)
-     ]
-
-  (Contributed by Serhiy Storchaka in :issue:`15248`.)
+* When a comma is missed in code such as ``[(10, 20) (30, 40)]``, the
+  compiler displays a :exc:`SyntaxWarning` with a helpful suggestion.
+  This improves on just having a :exc:`TypeError` indicating that the
+  first tuple was not callable.  (Contributed by Serhiy Storchaka in
+  :issue:`15248`.)
 
 * Arithmetic operations between subclasses of :class:`datetime.date` or
   :class:`datetime.datetime` and :class:`datetime.timedelta` objects now return
@@ -439,7 +451,25 @@ Other Language Changes
   and Windows use this to properly terminate scripts in interactive sessions.
   (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
 
-* Added new ``replace()`` method to the code type (:class:`types.CodeType`).
+* Some advanced styles of programming require updating the
+  :class:`types.CodeType` object for an existing function.  Since code
+  objects are immutable, a new code object needs to be created, one
+  that is modeled on the existing code object.  With 19 parameters,
+  this was somewhat tedious.  Now, the new ``replace()`` method makes
+  it possible to create a clone with a few altered parameters.
+
+  Here's an example that alters the :func:`statistics.mean` function to
+  prevent the *data* parameter from being used as a keyword argument::
+
+    >>> from statistics import mean
+    >>> mean(data=[10, 20, 90])
+    40
+    >>> mean.__code__ = mean.__code__.replace(co_posonlyargcount=1)
+    >>> mean(data=[10, 20, 90])
+    Traceback (most recent call last):
+      ...
+    TypeError: mean() got some positional-only arguments passed as keyword arguments: 'data'
+
   (Contributed by Victor Stinner in :issue:`37032`.)
 
 * For integers, the three-argument form of the :func:`pow` function now
@@ -468,17 +498,55 @@ Other Language Changes
 
   (Contributed by Mark Dickinson in :issue:`36027`.)
 
-* When dictionary comprehensions are evaluated, the key is now evaluated before
-  the value, as proposed by :pep:`572`.
+* Dict comprehensions have been synced-up with dict literals so that the
+  key is computed first and the value second::
+
+    >>> # Dict comprehension
+    >>> cast = {input('role? '): input('actor? ') for i in range(2)}
+    role? King Arthur
+    actor? Chapman
+    role? Black Knight
+    actor? Cleese
+
+    >>> # Dict literal
+    >>> cast = {input('role? '): input('actor? ')}
+    role? Sir Robin
+    actor? Eric Idle
+
+  The guaranteed execution order is helpful with assignment expressions
+  because variables assigned in the key expression will be available in
+  the value expression::
+
+    >>> names = ['Martin von Löwis', 'Łukasz Langa', 'Walter Dörwald']
+    >>> {(n := normalize('NFC', name)).casefold() : n for name in names}
+    {'martin von löwis': 'Martin von Löwis',
+     'łukasz langa': 'Łukasz Langa',
+     'walter dörwald': 'Walter Dörwald'}
 
 
 New Modules
 ===========
 
 * The new :mod:`importlib.metadata` module provides (provisional) support for
-  reading metadata from third-party packages.  For example, you can extract an
-  installed package's version number, list of entry points, and more.  See
-  :issue:`34632` for additional details.
+  reading metadata from third-party packages.  For example, it can extract an
+  installed package's version number, list of entry points, and more::
+
+    >>> # Note following example requires that the popular "requests"
+    >>> # package has been installed.
+    >>>
+    >>> from importlib.metadata import version, requires, files
+    >>> version('requests')
+    '2.22.0'
+    >>> list(requires('requests'))
+    ['chardet (<3.1.0,>=3.0.2)']
+    >>> list(files('requests'))[:5]
+    [PackagePath('requests-2.22.0.dist-info/INSTALLER'),
+     PackagePath('requests-2.22.0.dist-info/LICENSE'),
+     PackagePath('requests-2.22.0.dist-info/METADATA'),
+     PackagePath('requests-2.22.0.dist-info/RECORD'),
+     PackagePath('requests-2.22.0.dist-info/WHEEL')]
+
+  (Contributed in :issue:`34632` by Barry Warsaw and Jason R. Coombs.)
 
 
 Improved Modules
