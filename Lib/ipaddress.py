@@ -1870,7 +1870,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
         See RFC 4007 for details.
         
         Returns:
-            A string, identifying the zone of the address if specified, else None.
+            A string identifying the zone of the address if specified, else None.
         """
         return self._scope_id
 
