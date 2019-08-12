@@ -1387,22 +1387,25 @@ class PyShell(OutputWindow):
         def write(string):
             nonlocal buffer, cursor, rewrite
             rewrite |= cursor < orig_cursor
+
+            string_first_newline = string.find('\n')
             buffer.seek(0, 2)  # seek to end
             end = buffer.tell()
             buffer.seek(cursor)
-            string_first_newline = string.find('\n')
-            # Split the string only if we have to in order to overwrite
-            # just part of the first line.
             if (
                     string_first_newline >= 0 and
                     cursor + string_first_newline < end
             ):
+                # We must split the string in order to overwrite just
+                # part of the first line.
                 buffer.write(string[:string_first_newline])
                 buffer.seek(0, 2)  # seek to end
                 buffer.write(string[string_first_newline:])
             else:
                 buffer.write(string)
+
             cursor = buffer.tell()
+            return
 
         idx = 0
         while m is not None:
@@ -1429,7 +1432,6 @@ class PyShell(OutputWindow):
 
         # Handle rest of output after final control character.
         rewrite |= cursor < orig_cursor
-        buffer.seek(cursor)
         write(string[idx:])
         buffer.seek(0, 2)  # seek to end
         buffer_len = buffer.tell()
