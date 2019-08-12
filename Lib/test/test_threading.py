@@ -422,8 +422,6 @@ class ThreadTests(BaseTestCase):
         t.setDaemon(True)
         t.getName()
         t.setName("name")
-        with self.assertWarnsRegex(DeprecationWarning, 'use is_alive()'):
-            t.isAlive()
         e = threading.Event()
         e.isSet()
         threading.activeCount()

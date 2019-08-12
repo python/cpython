@@ -186,6 +186,10 @@ Removed
   removed. They were deprecated since Python 3.7.
   (Contributed by Victor Stinner in :issue:`37320`.)
 
+* The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
+  has been removed. It was deprecated since Python 3.8.
+  Use :meth:`~threading.Thread.is_alive()` instead.
+  (Contributed by Dong-hee Na in :issue:`37804`.)
 
 Porting to Python 3.9
 =====================
