@@ -389,7 +389,7 @@ Other Language Changes
   :class:`float` and :class:`decimal.Decimal`.  This minor API extension
   makes it possible to write ``numerator, denominator =
   x.as_integer_ratio()`` and have it work across multiple numeric types.
-  (Contributed by Lisa Roach in :issue:`33073` and Raymond Hettinger is
+  (Contributed by Lisa Roach in :issue:`33073` and Raymond Hettinger in
   :issue:`37819`.)
 
 * Constructors of :class:`int`, :class:`float` and :class:`complex` will now
