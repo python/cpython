@@ -1280,12 +1280,14 @@ class PyShell(OutputWindow):
         self.io.reset_undo()
 
     def show_warning(self, msg):
+        print(f"BEFORE WARNING: iomark={text.index('iomark')}, end={text.index('end')}")
         width = self.interp.tkconsole.width
         wrapper = TextWrapper(width=width, tabsize=8, expand_tabs=True)
         wrapped_msg = '\n'.join(wrapper.wrap(msg))
         if not wrapped_msg.endswith('\n'):
             wrapped_msg += '\n'
         self.per.bottom.insert("iomark linestart", wrapped_msg, "stderr")
+        print(f"AFTER WARNING:  iomark={text.index('iomark')}, end={text.index('end')}")
 
     def resetoutput(self):
         source = self.text.get("iomark", "end-1c")
@@ -1371,7 +1373,7 @@ class PyShell(OutputWindow):
                 res = string
             last_linestart = string.rfind('\n')
             if last_linestart >= 0:
-                cursor = len(string) - last_linestart + 1
+                cursor = len(string) - (last_linestart + 1)
             else:
                 cursor += len(string)
             return rewrite, res, cursor

@@ -90,6 +90,10 @@ class TestProcessControlChars(unittest.TestCase):
         self.check('', 'ab\bc\b', 0, (False, 'ac', 1))
 
     def test_newline(self):
+        self.check('', '\n', 0, (False, '\n', 0))
+        self.check('abc', '\n', 3, (False, '\n', 0))
+
+    def test_newline_and_carriage_return(self):
         self.check('abc', '\n\rdef', 3, (False, '\ndef', 3))
         self.check('abc', 'd\n\ref', 3, (False, 'd\nef', 2))
         self.check('abc', 'de\n\rf', 3, (False, 'de\nf', 1))
