@@ -159,9 +159,6 @@ def get_layout(ns):
         yield from in_build("python_uwp.exe", new_name="python")
         yield from in_build("pythonw_uwp.exe", new_name="pythonw")
     else:
-        yield from in_build("python.exe", new_name="python{}".format(VER_DOT))
-        yield from in_build("pythonw.exe", new_name="pythonw{}".format(VER_DOT))
-        # For backwards compatibility, but we don't reference these ourselves.
         yield from in_build("python.exe", new_name="python")
         yield from in_build("pythonw.exe", new_name="pythonw")
 
