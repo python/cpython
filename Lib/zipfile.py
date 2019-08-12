@@ -9,7 +9,6 @@ import importlib.util
 import io
 import itertools
 import os
-import pathlib
 import posixpath
 import shutil
 import stat
