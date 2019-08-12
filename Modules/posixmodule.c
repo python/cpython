@@ -1730,12 +1730,12 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         if (!attributes_from_dir(path, &info, &reparse_tag))
             /* Very strange. This should not fail now */
             return -1;
-        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (traverse) {
-                /* Should traverse, but could not open reparse point handle */
-                SetLastError(lastError);
-                return -1;
-            }
+        if (traverse &&
+            info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+            reparse_tag == IO_REPARSE_TAG_SYMLINK) {
+            /* Should traverse, but could not open reparse point handle */
+            SetLastError(lastError);
+            return -1;
         }
     } else {
         if (!GetFileInformationByHandle(hFile, &info)) {
@@ -1752,7 +1752,7 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             if (!CloseHandle(hFile))
                 return -1;
 
-            if (traverse) {
+            if (traverse && reparse_tag == IO_REPARSE_TAG_SYMLINK) {
                 /* In order to call GetFinalPathNameByHandle we need to open
                    the file without the reparse handling flag set. */
                 hFile2 = CreateFileW(
@@ -7857,19 +7857,6 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 
         result = PyUnicode_FromWideChar(print_name,
                 rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
-    }
-    else if (rdb->ReparseTag == IO_REPARSE_TAG_APPEXECLINK)
-    {
-        /* PathBuffer is a null-separated string array.
-           We want to return the third element. */
-        wchar_t *element = &rdb->AppExecLinkBuffer.PathBuffer[0];
-        wchar_t *endOfBuffer = (wchar_t*)&target_buffer[n_bytes_returned];
-        for (int i = 2; i && element < endOfBuffer; --i) {
-            element = &element[wcslen(element) + 1];
-        }
-        if (element < endOfBuffer) {
-            result = PyUnicode_FromWideChar(element, -1);
-        }
     }
     else
     {

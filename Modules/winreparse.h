@@ -38,11 +38,6 @@ typedef struct {
         struct {
             UCHAR  DataBuffer[1];
         } GenericReparseBuffer;
-
-        struct {
-            ULONG Version;
-            WCHAR PathBuffer[1];
-        } AppExecLinkBuffer;
     };
 } _Py_REPARSE_DATA_BUFFER, *_Py_PREPARSE_DATA_BUFFER;
 
