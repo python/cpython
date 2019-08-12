@@ -354,7 +354,7 @@ continue in for loop under finally should be ok.
     >>> test()
     9
 
-continue in a finally should be ok.
+Start simple, a continue in a finally should not be allowed.
 
     >>> def test():
     ...    for abc in range(10):
@@ -362,9 +362,11 @@ continue in a finally should be ok.
     ...            pass
     ...        finally:
     ...            continue
-    ...    print(abc)
-    >>> test()
-    9
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'continue' not supported inside 'finally' clause
+
+This is essentially a continue in a finally which should not be allowed.
 
     >>> def test():
     ...    for abc in range(10):
@@ -375,24 +377,9 @@ continue in a finally should be ok.
     ...                continue
     ...            except:
     ...                pass
-    ...    print(abc)
-    >>> test()
-    9
-
-    >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            try:
-    ...                pass
-    ...            except:
-    ...                continue
-    ...    print(abc)
-    >>> test()
-    9
-
-A continue outside loop should not be allowed.
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'continue' not supported inside 'finally' clause
 
     >>> def foo():
     ...     try:
@@ -401,7 +388,42 @@ A continue outside loop should not be allowed.
     ...         continue
     Traceback (most recent call last):
       ...
-    SyntaxError: 'continue' not properly in loop
+    SyntaxError: 'continue' not supported inside 'finally' clause
+
+    >>> def foo():
+    ...     for a in ():
+    ...       try:
+    ...           pass
+    ...       finally:
+    ...           continue
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'continue' not supported inside 'finally' clause
+
+    >>> def foo():
+    ...     for a in ():
+    ...         try:
+    ...             pass
+    ...         finally:
+    ...             try:
+    ...                 continue
+    ...             finally:
+    ...                 pass
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'continue' not supported inside 'finally' clause
+
+    >>> def foo():
+    ...  for a in ():
+    ...   try: pass
+    ...   finally:
+    ...    try:
+    ...     pass
+    ...    except:
+    ...     continue
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'continue' not supported inside 'finally' clause
 
 There is one test for a break that is not in a loop.  The compiler
 uses a single data structure to keep track of try-finally and loops,

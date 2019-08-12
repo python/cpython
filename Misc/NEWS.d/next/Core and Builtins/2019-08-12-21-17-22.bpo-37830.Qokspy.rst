@@ -1,0 +1,1 @@
+Reverted :issue:`32489`: "Allow 'continue' in 'finally' clause."
