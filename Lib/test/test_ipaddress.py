@@ -179,6 +179,10 @@ class CommonTestMixin_v6(CommonTestMixin):
         with self.assertAddressError('Invalid IPv6 address: "%r"', address):
             self.factory(address)
 
+    def test_invalid_scope_id_with_percent(self):
+        address = ('::1%scope%')
+        with self.assertAddressError('Invalid IPv6 address: "%r"', address):
+            self.factory(address)
 
 class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
     factory = ipaddress.IPv4Address
