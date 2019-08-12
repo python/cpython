@@ -969,6 +969,17 @@ class GrammarTests(unittest.TestCase):
             break
         self.assertEqual(count, 1)
 
+
+        def _wrap():
+            for number in range(2):
+                try:
+                    return number
+                finally:
+                    continue
+
+        with self.assertRaises(RuntimeError):
+            _wrap()
+
     def test_return_in_finally(self):
         def g1():
             try:

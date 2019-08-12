@@ -1,0 +1,2 @@
+Raise `RuntimeError` instead of getting seg fault on special cases like
+returning inside of a try also using continue inside of finally.

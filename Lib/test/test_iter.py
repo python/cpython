@@ -983,7 +983,7 @@ class TestCase(unittest.TestCase):
         try:
             for i in BadIterator() :
                 pass
-        except TypeError:
+        except RuntimeError:
             pass
 
     def test_extending_list_with_iterator_does_not_segfault(self):

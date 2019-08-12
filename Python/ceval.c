@@ -3195,6 +3195,15 @@ main_loop:
             PREDICTED(FOR_ITER);
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
+            if (!PyIter_Check(iter)){
+                iter = POP();
+                Py_CLEAR(iter);
+                _PyErr_SetString(tstate, PyExc_RuntimeError,
+                                 "cannot use continue inside of a finally "
+                                 "if you are returning the iterated value "
+                                 "inside try");
+                goto error;
+            }
             PyObject *next = (*iter->ob_type->tp_iternext)(iter);
             if (next != NULL) {
                 PUSH(next);
