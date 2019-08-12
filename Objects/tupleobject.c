@@ -57,11 +57,16 @@ show_track(void)
     fprintf(stderr, "%.2f%% tuple tracking rate\n\n",
         (100.0*count_tracked/(count_untracked+count_tracked)));
 }
-
-#   define TUPLE_GC_TRACK(op) (count_tracked++, _PyObject_GC_TRACK(op))
-#else
-#   define TUPLE_GC_TRACK(op) (_PyObject_GC_TRACK(op))
 #endif
+
+static inline void
+TUPLE_GC_TRACK(PyTupleObject *op)
+{
+#ifdef SHOW_TRACK_COUNT
+    count_tracked++;
+#endif
+    _PyObject_GC_TRACK(op);
+}
 
 /* Print summary info about the state of the optimized allocator */
 void
@@ -88,7 +93,7 @@ _PyTuple_DebugMallocStats(FILE *out)
    this function must not be called with size == 0 (unless from PyTuple_New()
    which wraps this function).
 */
-static PyObject *
+static PyTupleObject *
 tuple_new_untracked(Py_ssize_t size)
 {
     PyTupleObject *op;
@@ -117,13 +122,13 @@ tuple_new_untracked(Py_ssize_t size)
         /* Check for overflow */
         if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - sizeof(PyTupleObject) -
                     sizeof(PyObject *)) / sizeof(PyObject *)) {
-            return PyErr_NoMemory();
+            return (PyTupleObject *)PyErr_NoMemory();
         }
         op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
         if (op == NULL)
             return NULL;
     }
-    return (PyObject *) op;
+    return op;
 }
 
 PyObject *
@@ -140,7 +145,7 @@ PyTuple_New(Py_ssize_t size)
         return (PyObject *) op;
     }
 #endif
-    op = (PyTupleObject *)tuple_new_untracked(size);
+    op = tuple_new_untracked(size);
     for (Py_ssize_t i = 0; i < size; i++) {
         op->ob_item[i] = NULL;
     }
@@ -231,7 +236,6 @@ PyTuple_Pack(Py_ssize_t n, ...)
 {
     Py_ssize_t i;
     PyObject *o;
-    PyObject *result;
     PyObject **items;
     va_list vargs;
 
@@ -240,12 +244,12 @@ PyTuple_Pack(Py_ssize_t n, ...)
     }
 
     va_start(vargs, n);
-    result = tuple_new_untracked(n);
+    PyTupleObject *result = tuple_new_untracked(n);
     if (result == NULL) {
         va_end(vargs);
         return NULL;
     }
-    items = ((PyTupleObject *)result)->ob_item;
+    items = result->ob_item;
     for (i = 0; i < n; i++) {
         o = va_arg(vargs, PyObject *);
         Py_INCREF(o);
@@ -253,7 +257,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
     }
     va_end(vargs);
     TUPLE_GC_TRACK(result);
-    return result;
+    return (PyObject *)result;
 }
 
 
@@ -449,7 +453,8 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
     if (n == 0) {
         return PyTuple_New(0);
     }
-    PyTupleObject *tuple = (PyTupleObject *)tuple_new_untracked(n);
+
+    PyTupleObject *tuple = tuple_new_untracked(n);
     if (tuple == NULL) {
         return NULL;
     }
@@ -518,7 +523,8 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
     if (size == 0) {
         return PyTuple_New(0);
     }
-    np = (PyTupleObject *) tuple_new_untracked(size);
+
+    np = tuple_new_untracked(size);
     if (np == NULL) {
         return NULL;
     }
@@ -562,7 +568,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     if (n > PY_SSIZE_T_MAX / Py_SIZE(a))
         return PyErr_NoMemory();
     size = Py_SIZE(a) * n;
-    np = (PyTupleObject *) tuple_new_untracked(size);
+    np = tuple_new_untracked(size);
     if (np == NULL)
         return NULL;
     p = np->ob_item;
@@ -787,7 +793,6 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength, i;
         size_t cur;
-        PyObject* result;
         PyObject* it;
         PyObject **src, **dest;
 
@@ -807,11 +812,11 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
             return (PyObject *)self;
         }
         else {
-            result = tuple_new_untracked(slicelength);
+            PyTupleObject* result = tuple_new_untracked(slicelength);
             if (!result) return NULL;
 
             src = self->ob_item;
-            dest = ((PyTupleObject *)result)->ob_item;
+            dest = result->ob_item;
             for (cur = start, i = 0; i < slicelength;
                  cur += step, i++) {
                 it = src[cur];
@@ -820,7 +825,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
             }
 
             TUPLE_GC_TRACK(result);
-            return result;
+            return (PyObject *)result;
         }
     }
     else {
