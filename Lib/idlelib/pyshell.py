@@ -1409,15 +1409,16 @@ class PyShell(OutputWindow):
 
         idx = 0
         while m is not None:
-            string_part = string[idx:m.start()]
-            write(string_part)
+            if m.start() > idx:
+                string_part = string[idx:m.start()]
+                write(string_part)
 
-            # We never write before the last newline, so we must keep
-            # track of the last newline written.
-            new_str_last_newline = string_part.rfind('\n')
-            if new_str_last_newline >= 0:
-                last_linestart = \
-                    cursor - len(string_part) + new_str_last_newline + 1
+                # We never write before the last newline, so we must keep
+                # track of the last newline written.
+                new_str_last_newline = string_part.rfind('\n')
+                if new_str_last_newline >= 0:
+                    last_linestart = \
+                        cursor - len(string_part) + new_str_last_newline + 1
 
             # Process a sequence of control characters. This assumes
             # that they are all '\r' and/or '\b' characters.
@@ -1431,8 +1432,9 @@ class PyShell(OutputWindow):
             m = _control_char_re.search(string, idx)
 
         # Handle rest of output after final control character.
-        rewrite |= cursor < orig_cursor
-        write(string[idx:])
+        if idx < len(string):
+            rewrite |= cursor < orig_cursor
+            write(string[idx:])
         buffer.seek(0, 2)  # seek to end
         buffer_len = buffer.tell()
 

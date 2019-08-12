@@ -39,11 +39,22 @@ class PyShellFileListTest(unittest.TestCase):
 
 
 class TestProcessControlChars(unittest.TestCase):
+    def call(self, existing, string, cursor):
+        return pyshell.PyShell._process_control_chars(existing, string, cursor)
+
     def check(self, existing, string, cursor, expected):
-        self.assertEqual(
-            pyshell.PyShell._process_control_chars(existing, string, cursor),
-            expected,
-        )
+        self.assertEqual(self.call(existing, string, cursor), expected)
+
+    def check_leniently(self, existing, string, cursor, expected):
+        result = self.call(existing, string, cursor)
+        if existing and not expected[0]:
+            options = [
+                expected,
+                (True, existing[:cursor] + expected[1], expected[2]),
+            ]
+            self.assertIn(result, options)
+        else:
+            self.assertEqual(result, expected)
 
     def test_empty_written(self):
         self.check('', '', 0, (False, '', 0))
@@ -80,6 +91,11 @@ class TestProcessControlChars(unittest.TestCase):
         self.check('', 'ab\bc', 0, (False, 'ac', 0))
         self.check('', 'ab\bc\bd', 0, (False, 'ad', 0))
 
+        self.check('abc', '\b', 3, (False, '', 1))
+        self.check('abc', '\b', 2, (False, 'c', 2))
+        self.check('abc', '\b', 1, (False, 'bc', 3))
+        self.check('abc', '\b', 0, (False, 'abc', 3))
+
     def test_backspace_doesnt_delete(self):
         # \b should only move the cursor one place earlier
         self.check('', 'a\b', 0, (False, 'a', 1))
@@ -92,12 +108,20 @@ class TestProcessControlChars(unittest.TestCase):
     def test_newline(self):
         self.check('', '\n', 0, (False, '\n', 0))
         self.check('abc', '\n', 3, (False, '\n', 0))
+        self.check('abc', 'def\n', 3, (False, 'def\n', 0))
+        self.check('abc', '\ndef', 3, (False, '\ndef', 0))
 
     def test_newline_and_carriage_return(self):
         self.check('abc', '\n\rdef', 3, (False, '\ndef', 0))
         self.check('abc', 'd\n\ref', 3, (False, 'd\nef', 0))
         self.check('abc', 'de\n\rf', 3, (False, 'de\nf', 0))
         self.check('abc', 'def\n\r', 3, (False, 'def\n', 0))
+
+        self.check_leniently('abc', '\r\n', 3, (False, '\n', 0))
+        self.check_leniently('abc', 'def\r\n', 3, (False, 'def\n', 0))
+        self.check_leniently('abc', '\r\ndef', 3, (False, '\ndef', 0))
+        self.check_leniently('abc', '\rdef\n', 3, (True, 'def\n', 0))
+        self.check_leniently('abc', '\rd\nef', 3, (True, 'dbc\nef', 0))
 
 
 if __name__ == '__main__':
