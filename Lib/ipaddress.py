@@ -1800,7 +1800,7 @@ class _BaseV6:
         addr, sep, scope_id = ip_str.partition('%')
         if not sep:
             scope_id = None
-        elif not scope_id:
+        elif not scope_id or '%' in scope_id:
             raise AddressValueError('Invalid IPv6 address: "%r"' % ip_str)
         return addr, scope_id
 
