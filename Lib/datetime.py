@@ -2115,9 +2115,7 @@ class datetime(date):
             if tzoff is None:
                 self._hashcode = hash(t._getstate()[0])
             else:
-                days = _ymd2ord(self.year, self.month, self.day)
-                seconds = self.hour * 3600 + self.minute * 60 + self.second
-                self._hashcode = hash(timedelta(days, seconds, self.microsecond) - tzoff)
+                self._hashcode = hash((t - tzoff)._getstate()[0])
         return self._hashcode
 
     # Pickle support.
