@@ -2174,6 +2174,11 @@ main_loop:
         }
 
         case TARGET(CALL_FINALLY): {
+            while (f->f_checkpoint > 0 && STACK_LEVEL() > f->f_checkpoint) {
+                PyObject *o = POP();
+                Py_XDECREF(o);
+            }
+            f->f_checkpoint = -1;
             PyObject *ret = PyLong_FromLong(INSTR_OFFSET());
             if (ret == NULL) {
                 goto error;
@@ -3223,8 +3228,8 @@ main_loop:
             /* NOTE: If you add any new block-setup opcodes that
                are not try/except/finally handlers, you may need
                to update the PyGen_NeedsFinalizing() function.
-               */
-
+               */ 
+            f->f_checkpoint = STACK_LEVEL();
             PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
             DISPATCH();
@@ -3288,8 +3293,8 @@ main_loop:
                of __enter__ on the stack. */
             PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
-
             PUSH(res);
+            f->f_checkpoint = STACK_LEVEL();
             DISPATCH();
         }
 

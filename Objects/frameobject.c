@@ -715,6 +715,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     }
 
     f->f_lasti = -1;
+    f->f_checkpoint = -1;
     f->f_lineno = code->co_firstlineno;
     f->f_iblock = 0;
     f->f_executing = 0;
