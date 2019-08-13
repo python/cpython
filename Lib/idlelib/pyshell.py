@@ -1383,35 +1383,14 @@ class PyShell(OutputWindow):
         last_linestart = 0
         buffer = StringIO(existing)
         rewrite = False
-
-        def write(string):
-            nonlocal buffer, cursor, rewrite
-            rewrite |= cursor < orig_cursor
-
-            string_first_newline = string.find('\n')
-            buffer.seek(0, 2)  # seek to end
-            end = buffer.tell()
-            buffer.seek(cursor)
-            if (
-                    string_first_newline >= 0 and
-                    cursor + string_first_newline < end
-            ):
-                # We must split the string in order to overwrite just
-                # part of the first line.
-                buffer.write(string[:string_first_newline])
-                buffer.seek(0, 2)  # seek to end
-                buffer.write(string[string_first_newline:])
-            else:
-                buffer.write(string)
-
-            cursor = buffer.tell()
-            return
+        write_to_buffer = cls._process_control_chars_buffer_write
 
         idx = 0
         while m is not None:
             if m.start() > idx:
                 string_part = string[idx:m.start()]
-                write(string_part)
+                rewrite |= cursor < orig_cursor
+                cursor = write_to_buffer(buffer, cursor, string_part)
 
                 # We never write before the last newline, so we must keep
                 # track of the last newline written.
@@ -1434,7 +1413,7 @@ class PyShell(OutputWindow):
         # Handle rest of output after final control character.
         if idx < len(string):
             rewrite |= cursor < orig_cursor
-            write(string[idx:])
+            cursor = write_to_buffer(buffer, cursor, string[idx:])
         buffer.seek(0, 2)  # seek to end
         buffer_len = buffer.tell()
 
@@ -1444,6 +1423,27 @@ class PyShell(OutputWindow):
         else:
             buffer.seek(orig_cursor)
             return False, buffer.read(), buffer_len - cursor
+
+    @staticmethod
+    def _process_control_chars_buffer_write(buffer, cursor, string):
+        string_first_newline = string.find('\n')
+        buffer.seek(0, 2)  # seek to end
+        buffer_len = buffer.tell()
+        buffer.seek(cursor)
+        if (
+                string_first_newline >= 0 and
+                cursor + string_first_newline < buffer_len
+        ):
+            # We must split the string in order to overwrite just
+            # part of the first line.
+            buffer.write(string[:string_first_newline])
+            buffer.seek(0, 2)  # seek to end
+            buffer.write(string[string_first_newline:])
+        else:
+            buffer.write(string)
+
+        cursor = buffer.tell()
+        return cursor
 
     def rmenu_check_cut(self):
         try:
