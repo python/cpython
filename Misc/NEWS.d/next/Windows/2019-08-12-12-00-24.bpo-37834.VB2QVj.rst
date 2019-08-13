@@ -1,2 +1,2 @@
-Enables :func:`os.readlink` and :func:`os.path.is_link` to recognize app
-execution aliases.
+Only attempt to traverse reparse points on Windows when they represent a
+symlink or a directory junction.
