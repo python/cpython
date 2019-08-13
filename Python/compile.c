@@ -348,7 +348,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
     c.c_nestlevel = 0;
     c.c_do_not_emit_bytecode = 0;
-    c.c_do_not_return = 0;
+    c.c_do_not_return = CR_FALSE;
 
     if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
         goto finally;
@@ -2783,7 +2783,7 @@ compiler_return(struct compiler *c, stmt_ty s)
             return compiler_error(
                 c, "'return' with value in async generator");
     }
-    if (!c->c_do_not_return){
+    if (c->c_do_not_return != CR_TRUE){
         if (preserve_tos) {
             VISIT(c, expr, s->v.Return.value);
         }
@@ -2816,8 +2816,8 @@ compiler_break(struct compiler *c)
             ADDOP_JABS(c, JUMP_ABSOLUTE, info->fb_exit);
             return 1;
         }
-        if (info->fb_type == FINALLY_END && !c->c_do_not_return){
-            c->c_do_not_return = 1;
+        if (info->fb_type == FINALLY_END && c->c_do_not_return == CR_FALSE){
+            c->c_do_not_return = CR_TRUE;
         }
     }
     return compiler_error(c, "'break' outside loop");
@@ -2833,8 +2833,8 @@ compiler_continue(struct compiler *c)
             ADDOP_JABS(c, JUMP_ABSOLUTE, info->fb_block);
             return 1;
         }
-        if (info->fb_type == FINALLY_END && !c->c_do_not_return){
-            c->c_do_not_return = 1;
+        if (info->fb_type == FINALLY_END && c->c_do_not_return == CR_FALSE){
+            c->c_do_not_return = CR_TRUE;
         }
         if (!compiler_unwind_fblock(c, info, 0))
             return 0;
@@ -2911,11 +2911,12 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
 
     /* `finally` block */
     compiler_use_next_block(c, end);
+    c->c_do_not_return = CR_IGNORE;
     if (!compiler_push_fblock(c, FINALLY_END, end, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, END_FINALLY);
-    c->c_do_not_return = 0; /* be sure it is turned off */
+    c->c_do_not_return = CR_FALSE; /* be sure it is turned off */
     compiler_pop_fblock(c, FINALLY_END, end);
     return 1;
 }

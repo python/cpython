@@ -97,4 +97,9 @@ PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, int optimize);
 #define Py_eval_input 258
 #define Py_func_type_input 345
 
+/* Compiler Return Flags */
+#define CR_FALSE 0
+#define CR_TRUE 1
+#define CR_IGNORE 2 /* ignore do_not_return */
+
 #endif /* !Py_COMPILE_H */
