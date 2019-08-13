@@ -17,7 +17,10 @@ static PyObject *
 _io__BufferedIOBase_readinto(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
@@ -54,7 +57,10 @@ static PyObject *
 _io__BufferedIOBase_readinto1(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
@@ -239,7 +245,10 @@ static PyObject *
 _io__Buffered_readinto(buffered *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
@@ -276,7 +285,10 @@ static PyObject *
 _io__Buffered_readinto1(buffered *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
@@ -532,7 +544,10 @@ static PyObject *
 _io_BufferedWriter_write(buffered *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -672,4 +687,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b22b4aedd53c340a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1a01ff9fb8fae871 input=a9049054013a1b77]*/

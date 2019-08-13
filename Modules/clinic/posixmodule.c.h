@@ -4950,8 +4950,11 @@ os_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     Py_ssize_t _return_value;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("write", nargs, 2, 2)) {
         goto exit;
@@ -5272,9 +5275,12 @@ os_pwrite(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
     Py_off_t offset;
     Py_ssize_t _return_value;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (!_PyArg_CheckPositional("pwrite", nargs, 3, 3)) {
         goto exit;
@@ -7211,9 +7217,12 @@ os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     path_t path = PATH_T_INITIALIZE("setxattr", "path", 0, 1);
     path_t attribute = PATH_T_INITIALIZE("setxattr", "attribute", 0, 0);
-    Py_buffer value = {NULL, NULL};
+    Py_buffer value;
     int flags = 0;
     int follow_symlinks = 1;
+    /* initializers for value */
+    value.buf = NULL;
+    value.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 4, 0, argsbuf);
     if (!args) {
@@ -8741,4 +8750,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=1e001c855e011720 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d9742d443478345 input=a9049054013a1b77]*/

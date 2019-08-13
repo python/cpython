@@ -196,7 +196,10 @@ static PyObject *
 _io_FileIO_readinto(fileio *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
@@ -297,7 +300,10 @@ static PyObject *
 _io_FileIO_write(fileio *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer b = {NULL, NULL};
+    Py_buffer b;
+    /* initializers for b */
+    b.buf = NULL;
+    b.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -447,4 +453,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=7ee4f3ae584fc6d2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b74f41c6088e8d17 input=a9049054013a1b77]*/

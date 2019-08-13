@@ -216,7 +216,10 @@ static PyObject *
 _ssl__SSLSocket_write(PySSLSocket *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer b = {NULL, NULL};
+    Py_buffer b;
+    /* initializers for b */
+    b.buf = NULL;
+    b.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -271,7 +274,10 @@ _ssl__SSLSocket_read(PySSLSocket *self, PyObject *args)
     PyObject *return_value = NULL;
     int len;
     int group_right_1 = 0;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -494,7 +500,10 @@ static PyObject *
 _ssl__SSLContext__set_npn_protocols(PySSLContext *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer protos = {NULL, NULL};
+    Py_buffer protos;
+    /* initializers for protos */
+    protos.buf = NULL;
+    protos.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &protos, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -530,7 +539,10 @@ static PyObject *
 _ssl__SSLContext__set_alpn_protocols(PySSLContext *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer protos = {NULL, NULL};
+    Py_buffer protos;
+    /* initializers for protos */
+    protos.buf = NULL;
+    protos.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &protos, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -1011,7 +1023,10 @@ static PyObject *
 _ssl_MemoryBIO_write(PySSLMemoryBIO *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer b = {NULL, NULL};
+    Py_buffer b;
+    /* initializers for b */
+    b.buf = NULL;
+    b.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -1070,8 +1085,11 @@ static PyObject *
 _ssl_RAND_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer view = {NULL, NULL};
+    Py_buffer view;
     double entropy;
+    /* initializers for view */
+    view.buf = NULL;
+    view.obj = NULL;
 
     if (!_PyArg_CheckPositional("RAND_add", nargs, 2, 2)) {
         goto exit;
@@ -1476,4 +1494,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=a399d0eb393b6fab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=588ee1fbd560ace3 input=a9049054013a1b77]*/

@@ -414,7 +414,10 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static _PyArg_Parser _parser = {NULL, _keywords, "source_hash", 0};
     PyObject *argsbuf[2];
     long key;
-    Py_buffer source = {NULL, NULL};
+    Py_buffer source;
+    /* initializers for source */
+    source.buf = NULL;
+    source.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
     if (!args) {
@@ -454,4 +457,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=b51244770fdcf4b8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f35f37327c144794 input=a9049054013a1b77]*/

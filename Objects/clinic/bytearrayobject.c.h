@@ -105,8 +105,15 @@ static PyObject *
 bytearray_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer frm = {NULL, NULL};
-    Py_buffer to = {NULL, NULL};
+    Py_buffer frm;
+    Py_buffer to;
+    /* initializers for frm */
+    frm.buf = NULL;
+    frm.obj = NULL;
+
+    /* initializers for to */
+    to.buf = NULL;
+    to.obj = NULL;
 
     if (!_PyArg_CheckPositional("maketrans", nargs, 2, 2)) {
         goto exit;
@@ -164,9 +171,16 @@ static PyObject *
 bytearray_replace(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer old = {NULL, NULL};
-    Py_buffer new = {NULL, NULL};
+    Py_buffer old;
+    Py_buffer new;
     Py_ssize_t count = -1;
+    /* initializers for old */
+    old.buf = NULL;
+    old.obj = NULL;
+
+    /* initializers for new */
+    new.buf = NULL;
+    new.obj = NULL;
 
     if (!_PyArg_CheckPositional("replace", nargs, 2, 3)) {
         goto exit;
@@ -1011,4 +1025,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=7848247e5469ba1b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fa3f438f60940cc3 input=a9049054013a1b77]*/

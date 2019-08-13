@@ -19,9 +19,12 @@ static PyObject *
 audioop_getsample(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
     Py_ssize_t index;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("getsample", nargs, 3, 3)) {
         goto exit;
@@ -86,8 +89,11 @@ static PyObject *
 audioop_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("max", nargs, 2, 2)) {
         goto exit;
@@ -135,8 +141,11 @@ static PyObject *
 audioop_minmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("minmax", nargs, 2, 2)) {
         goto exit;
@@ -184,8 +193,11 @@ static PyObject *
 audioop_avg(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("avg", nargs, 2, 2)) {
         goto exit;
@@ -233,8 +245,11 @@ static PyObject *
 audioop_rms(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("rms", nargs, 2, 2)) {
         goto exit;
@@ -283,8 +298,15 @@ static PyObject *
 audioop_findfit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
-    Py_buffer reference = {NULL, NULL};
+    Py_buffer fragment;
+    Py_buffer reference;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
+
+    /* initializers for reference */
+    reference.buf = NULL;
+    reference.obj = NULL;
 
     if (!_PyArg_CheckPositional("findfit", nargs, 2, 2)) {
         goto exit;
@@ -335,8 +357,15 @@ static PyObject *
 audioop_findfactor(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
-    Py_buffer reference = {NULL, NULL};
+    Py_buffer fragment;
+    Py_buffer reference;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
+
+    /* initializers for reference */
+    reference.buf = NULL;
+    reference.obj = NULL;
 
     if (!_PyArg_CheckPositional("findfactor", nargs, 2, 2)) {
         goto exit;
@@ -387,8 +416,11 @@ static PyObject *
 audioop_findmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     Py_ssize_t length;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("findmax", nargs, 2, 2)) {
         goto exit;
@@ -444,8 +476,11 @@ static PyObject *
 audioop_avgpp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("avgpp", nargs, 2, 2)) {
         goto exit;
@@ -493,8 +528,11 @@ static PyObject *
 audioop_maxpp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("maxpp", nargs, 2, 2)) {
         goto exit;
@@ -542,8 +580,11 @@ static PyObject *
 audioop_cross(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("cross", nargs, 2, 2)) {
         goto exit;
@@ -592,9 +633,12 @@ static PyObject *
 audioop_mul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
     double factor;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("mul", nargs, 3, 3)) {
         goto exit;
@@ -647,10 +691,13 @@ static PyObject *
 audioop_tomono(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
     double lfactor;
     double rfactor;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("tomono", nargs, 4, 4)) {
         goto exit;
@@ -707,10 +754,13 @@ static PyObject *
 audioop_tostereo(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
     double lfactor;
     double rfactor;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("tostereo", nargs, 4, 4)) {
         goto exit;
@@ -767,9 +817,16 @@ static PyObject *
 audioop_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment1 = {NULL, NULL};
-    Py_buffer fragment2 = {NULL, NULL};
+    Py_buffer fragment1;
+    Py_buffer fragment2;
     int width;
+    /* initializers for fragment1 */
+    fragment1.buf = NULL;
+    fragment1.obj = NULL;
+
+    /* initializers for fragment2 */
+    fragment2.buf = NULL;
+    fragment2.obj = NULL;
 
     if (!_PyArg_CheckPositional("add", nargs, 3, 3)) {
         goto exit;
@@ -828,9 +885,12 @@ static PyObject *
 audioop_bias(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
     int bias;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("bias", nargs, 3, 3)) {
         goto exit;
@@ -887,8 +947,11 @@ static PyObject *
 audioop_reverse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("reverse", nargs, 2, 2)) {
         goto exit;
@@ -936,8 +999,11 @@ static PyObject *
 audioop_byteswap(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("byteswap", nargs, 2, 2)) {
         goto exit;
@@ -986,9 +1052,12 @@ static PyObject *
 audioop_lin2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
     int newwidth;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("lin2lin", nargs, 3, 3)) {
         goto exit;
@@ -1048,7 +1117,7 @@ static PyObject *
 audioop_ratecv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
     int nchannels;
     int inrate;
@@ -1056,6 +1125,9 @@ audioop_ratecv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *state;
     int weightA = 1;
     int weightB = 0;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("ratecv", nargs, 6, 8)) {
         goto exit;
@@ -1156,8 +1228,11 @@ static PyObject *
 audioop_lin2ulaw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("lin2ulaw", nargs, 2, 2)) {
         goto exit;
@@ -1205,8 +1280,11 @@ static PyObject *
 audioop_ulaw2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("ulaw2lin", nargs, 2, 2)) {
         goto exit;
@@ -1254,8 +1332,11 @@ static PyObject *
 audioop_lin2alaw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("lin2alaw", nargs, 2, 2)) {
         goto exit;
@@ -1303,8 +1384,11 @@ static PyObject *
 audioop_alaw2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("alaw2lin", nargs, 2, 2)) {
         goto exit;
@@ -1353,9 +1437,12 @@ static PyObject *
 audioop_lin2adpcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
     PyObject *state;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("lin2adpcm", nargs, 3, 3)) {
         goto exit;
@@ -1405,9 +1492,12 @@ static PyObject *
 audioop_adpcm2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer fragment = {NULL, NULL};
+    Py_buffer fragment;
     int width;
     PyObject *state;
+    /* initializers for fragment */
+    fragment.buf = NULL;
+    fragment.obj = NULL;
 
     if (!_PyArg_CheckPositional("adpcm2lin", nargs, 3, 3)) {
         goto exit;
@@ -1439,4 +1529,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=2b173a25726252e9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=89936bcf45bc37e1 input=a9049054013a1b77]*/

@@ -93,7 +93,10 @@ static PyObject *
 bytes_partition(PyBytesObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer sep = {NULL, NULL};
+    Py_buffer sep;
+    /* initializers for sep */
+    sep.buf = NULL;
+    sep.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &sep, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -136,7 +139,10 @@ static PyObject *
 bytes_rpartition(PyBytesObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer sep = {NULL, NULL};
+    Py_buffer sep;
+    /* initializers for sep */
+    sep.buf = NULL;
+    sep.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &sep, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -410,8 +416,15 @@ static PyObject *
 bytes_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer frm = {NULL, NULL};
-    Py_buffer to = {NULL, NULL};
+    Py_buffer frm;
+    Py_buffer to;
+    /* initializers for frm */
+    frm.buf = NULL;
+    frm.obj = NULL;
+
+    /* initializers for to */
+    to.buf = NULL;
+    to.obj = NULL;
 
     if (!_PyArg_CheckPositional("maketrans", nargs, 2, 2)) {
         goto exit;
@@ -469,9 +482,16 @@ static PyObject *
 bytes_replace(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer old = {NULL, NULL};
-    Py_buffer new = {NULL, NULL};
+    Py_buffer old;
+    Py_buffer new;
     Py_ssize_t count = -1;
+    /* initializers for old */
+    old.buf = NULL;
+    old.obj = NULL;
+
+    /* initializers for new */
+    new.buf = NULL;
+    new.obj = NULL;
 
     if (!_PyArg_CheckPositional("replace", nargs, 2, 3)) {
         goto exit;
@@ -755,4 +775,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2d0a3733e13e753a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=72de91b6e1f61ff3 input=a9049054013a1b77]*/

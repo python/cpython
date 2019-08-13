@@ -23,7 +23,10 @@ static PyObject *
 _bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -145,8 +148,11 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
     static _PyArg_Parser _parser = {NULL, _keywords, "decompress", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     Py_ssize_t max_length = -1;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -220,4 +226,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8e123f4eec497655 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ddeb2c3f0f652110 input=a9049054013a1b77]*/

@@ -92,8 +92,11 @@ _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *cons
     static _PyArg_Parser _parser = {NULL, _keywords, "decode", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer input = {NULL, NULL};
+    Py_buffer input;
     const char *errors = NULL;
+    /* initializers for input */
+    input.buf = NULL;
+    input.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -271,8 +274,11 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderOb
     static _PyArg_Parser _parser = {NULL, _keywords, "decode", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer input = {NULL, NULL};
+    Py_buffer input;
     int final = 0;
+    /* initializers for input */
+    input.buf = NULL;
+    input.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -525,4 +531,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=eb95a408c4ddbfff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3342aa0cbab14171 input=a9049054013a1b77]*/

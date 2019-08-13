@@ -330,7 +330,10 @@ static PyObject *
 array_array_fromstring(arrayobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (PyUnicode_Check(arg)) {
         Py_ssize_t len;
@@ -376,7 +379,10 @@ static PyObject *
 array_array_frombytes(arrayobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -599,4 +605,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=c9a40f11f1a866fb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bd3ddc6e9f701bf9 input=a9049054013a1b77]*/

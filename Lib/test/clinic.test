@@ -1919,11 +1919,30 @@ static PyObject *
 test_Py_buffer_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer a = {NULL, NULL};
-    Py_buffer b = {NULL, NULL};
-    Py_buffer c = {NULL, NULL};
-    Py_buffer d = {NULL, NULL};
-    Py_buffer e = {NULL, NULL};
+    Py_buffer a;
+    Py_buffer b;
+    Py_buffer c;
+    Py_buffer d;
+    Py_buffer e;
+    /* initializers for a */
+    a.buf = NULL;
+    a.obj = NULL;
+
+    /* initializers for b */
+    b.buf = NULL;
+    b.obj = NULL;
+
+    /* initializers for c */
+    c.buf = NULL;
+    c.obj = NULL;
+
+    /* initializers for d */
+    d.buf = NULL;
+    d.obj = NULL;
+
+    /* initializers for e */
+    e.buf = NULL;
+    e.obj = NULL;
 
     if (!_PyArg_ParseStack(args, nargs, "y*y*s*z*w*:test_Py_buffer_converter",
         &a, &b, &c, &d, &e)) {
@@ -1959,7 +1978,7 @@ exit:
 static PyObject *
 test_Py_buffer_converter_impl(PyObject *module, Py_buffer *a, Py_buffer *b,
                               Py_buffer *c, Py_buffer *d, Py_buffer *e)
-/*[clinic end generated code: output=5760c82faa2ed61f input=6a9da0f56f9525fd]*/
+/*[clinic end generated code: output=0e751bf42493b9a6 input=6a9da0f56f9525fd]*/
 
 
 /*[clinic input]

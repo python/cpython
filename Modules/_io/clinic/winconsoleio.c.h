@@ -196,7 +196,10 @@ static PyObject *
 _io__WindowsConsoleIO_readinto(winconsoleio *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
@@ -307,7 +310,10 @@ static PyObject *
 _io__WindowsConsoleIO_write(winconsoleio *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer b = {NULL, NULL};
+    Py_buffer b;
+    /* initializers for b */
+    b.buf = NULL;
+    b.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -386,4 +392,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=57bf2c09a42bd330 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a661aad83b886863 input=a9049054013a1b77]*/

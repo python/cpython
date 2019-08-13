@@ -3373,7 +3373,13 @@ class Py_buffer_converter(CConverter):
     type = 'Py_buffer'
     format_unit = 'y*'
     impl_by_reference = True
-    c_ignored_default = "{NULL, NULL}"
+    c_ignored_default = None
+
+    def initialize(self):
+        return (
+            f"{self.name}.buf = NULL;\n"
+            f"{self.name}.obj = NULL;"
+        )
 
     def converter_init(self, *, accept={buffer}):
         if self.default not in (unspecified, None):

@@ -59,7 +59,10 @@ static PyObject *
 Struct_unpack(PyStructObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -107,8 +110,11 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
     static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
     Py_ssize_t offset = 0;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -241,7 +247,10 @@ unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyStructObject *s_object = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (!_PyArg_CheckPositional("unpack", nargs, 2, 2)) {
         goto exit;
@@ -295,8 +304,11 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyStructObject *s_object = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
     Py_ssize_t offset = 0;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
     if (!args) {
@@ -386,4 +398,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=b642e1002d25ebdd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=22d4b3467e04f9f4 input=a9049054013a1b77]*/

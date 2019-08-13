@@ -23,7 +23,10 @@ static PyObject *
 _lzma_LZMACompressor_compress(Compressor *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -99,8 +102,11 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_
     static _PyArg_Parser _parser = {NULL, _keywords, "decompress", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     Py_ssize_t max_length = -1;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -309,7 +315,10 @@ _lzma__decode_filter_properties(PyObject *module, PyObject *const *args, Py_ssiz
 {
     PyObject *return_value = NULL;
     lzma_vli filter_id;
-    Py_buffer encoded_props = {NULL, NULL};
+    Py_buffer encoded_props;
+    /* initializers for encoded_props */
+    encoded_props.buf = NULL;
+    encoded_props.obj = NULL;
 
     if (!_PyArg_CheckPositional("_decode_filter_properties", nargs, 2, 2)) {
         goto exit;
@@ -334,4 +343,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=1a290aa478603107 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9198e64e15709ad6 input=a9049054013a1b77]*/

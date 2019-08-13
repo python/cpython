@@ -315,7 +315,10 @@ static PyObject *
 _io_BytesIO_readinto(bytesio *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
+    Py_buffer buffer;
+    /* initializers for buffer */
+    buffer.buf = NULL;
+    buffer.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
@@ -515,4 +518,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=22e8fb54874b6ee5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ddb2b92cbc6b31d1 input=a9049054013a1b77]*/

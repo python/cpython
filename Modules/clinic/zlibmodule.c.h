@@ -27,8 +27,11 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static _PyArg_Parser _parser = {NULL, _keywords, "compress", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     int level = Z_DEFAULT_COMPRESSION;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -93,9 +96,12 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     static _PyArg_Parser _parser = {NULL, _keywords, "decompress", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     int wbits = MAX_WBITS;
     Py_ssize_t bufsize = DEF_BUF_SIZE;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
     if (!args) {
@@ -190,7 +196,10 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     int wbits = MAX_WBITS;
     int memLevel = DEF_MEM_LEVEL;
     int strategy = Z_DEFAULT_STRATEGY;
-    Py_buffer zdict = {NULL, NULL};
+    Py_buffer zdict;
+    /* initializers for zdict */
+    zdict.buf = NULL;
+    zdict.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 6, 0, argsbuf);
     if (!args) {
@@ -369,7 +378,10 @@ static PyObject *
 zlib_Compress_compress(compobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -421,8 +433,11 @@ zlib_Decompress_decompress(compobject *self, PyObject *const *args, Py_ssize_t n
     static _PyArg_Parser _parser = {NULL, _keywords, "decompress", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     Py_ssize_t max_length = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -667,8 +682,11 @@ static PyObject *
 zlib_adler32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     unsigned int value = 1;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("adler32", nargs, 1, 2)) {
         goto exit;
@@ -725,8 +743,11 @@ static PyObject *
 zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     unsigned int value = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("crc32", nargs, 1, 2)) {
         goto exit;
@@ -785,4 +806,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=feb079cebbbaacd6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2da57771b2b8d772 input=a9049054013a1b77]*/

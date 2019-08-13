@@ -29,9 +29,9 @@ py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *data = NULL;
     int digest_size = BLAKE2B_OUTBYTES;
-    Py_buffer key = {NULL, NULL};
-    Py_buffer salt = {NULL, NULL};
-    Py_buffer person = {NULL, NULL};
+    Py_buffer key;
+    Py_buffer salt;
+    Py_buffer person;
     int fanout = 1;
     int depth = 1;
     unsigned long leaf_size = 0;
@@ -39,6 +39,17 @@ py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int node_depth = 0;
     int inner_size = 0;
     int last_node = 0;
+    /* initializers for key */
+    key.buf = NULL;
+    key.obj = NULL;
+
+    /* initializers for salt */
+    salt.buf = NULL;
+    salt.obj = NULL;
+
+    /* initializers for person */
+    person.buf = NULL;
+    person.obj = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
     if (!fastargs) {
@@ -261,4 +272,4 @@ _blake2_blake2b_hexdigest(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=a91d182ce1109f34 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=138a523a1c723c3b input=a9049054013a1b77]*/

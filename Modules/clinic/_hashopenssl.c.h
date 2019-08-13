@@ -135,10 +135,17 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
     const char *hash_name;
-    Py_buffer password = {NULL, NULL};
-    Py_buffer salt = {NULL, NULL};
+    Py_buffer password;
+    Py_buffer salt;
     long iterations;
     PyObject *dklen_obj = Py_None;
+    /* initializers for password */
+    password.buf = NULL;
+    password.obj = NULL;
+
+    /* initializers for salt */
+    salt.buf = NULL;
+    salt.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 5, 0, argsbuf);
     if (!args) {
@@ -227,13 +234,20 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     static _PyArg_Parser _parser = {NULL, _keywords, "scrypt", 0};
     PyObject *argsbuf[7];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer password = {NULL, NULL};
-    Py_buffer salt = {NULL, NULL};
+    Py_buffer password;
+    Py_buffer salt;
     PyObject *n_obj = Py_None;
     PyObject *r_obj = Py_None;
     PyObject *p_obj = Py_None;
     long maxmem = 0;
     long dklen = 64;
+    /* initializers for password */
+    password.buf = NULL;
+    password.obj = NULL;
+
+    /* initializers for salt */
+    salt.buf = NULL;
+    salt.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -352,9 +366,16 @@ _hashlib_hmac_digest(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     static const char * const _keywords[] = {"key", "msg", "digest", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "hmac_digest", 0};
     PyObject *argsbuf[3];
-    Py_buffer key = {NULL, NULL};
-    Py_buffer msg = {NULL, NULL};
+    Py_buffer key;
+    Py_buffer msg;
     const char *digest;
+    /* initializers for key */
+    key.buf = NULL;
+    key.obj = NULL;
+
+    /* initializers for msg */
+    msg.buf = NULL;
+    msg.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
     if (!args) {
@@ -409,4 +430,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=5955ec791260045a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1317fcf49df8067 input=a9049054013a1b77]*/

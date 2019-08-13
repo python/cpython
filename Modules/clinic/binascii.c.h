@@ -53,8 +53,11 @@ binascii_b2a_uu(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     static _PyArg_Parser _parser = {NULL, _keywords, "b2a_uu", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     int backtick = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -142,8 +145,11 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static _PyArg_Parser _parser = {NULL, _keywords, "b2a_base64", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     int newline = 1;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -227,7 +233,10 @@ static PyObject *
 binascii_rlecode_hqx(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -263,7 +272,10 @@ static PyObject *
 binascii_b2a_hqx(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -299,7 +311,10 @@ static PyObject *
 binascii_rledecode_hqx(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -335,9 +350,12 @@ static PyObject *
 binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     unsigned int crc;
     unsigned int _return_value;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("crc_hqx", nargs, 2, 2)) {
         goto exit;
@@ -389,9 +407,12 @@ static PyObject *
 binascii_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     unsigned int crc = 0;
     unsigned int _return_value;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("crc32", nargs, 1, 2)) {
         goto exit;
@@ -469,9 +490,12 @@ binascii_b2a_hex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static _PyArg_Parser _parser = {NULL, _keywords, "b2a_hex", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     PyObject *sep = NULL;
     int bytes_per_sep = 1;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
     if (!args) {
@@ -544,9 +568,12 @@ binascii_hexlify(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static _PyArg_Parser _parser = {NULL, _keywords, "hexlify", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     PyObject *sep = NULL;
     int bytes_per_sep = 1;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
     if (!args) {
@@ -734,10 +761,13 @@ binascii_b2a_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     static _PyArg_Parser _parser = {NULL, _keywords, "b2a_qp", 0};
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     int quotetabs = 0;
     int istext = 1;
     int header = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, argsbuf);
     if (!args) {
@@ -801,4 +831,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=f7b8049edb130c63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e0729dd1ca7bb7f6 input=a9049054013a1b77]*/

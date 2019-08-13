@@ -259,8 +259,11 @@ static PyObject *
 _codecs_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("escape_decode", nargs, 1, 2)) {
         goto exit;
@@ -386,9 +389,12 @@ static PyObject *
 _codecs_utf_7_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("utf_7_decode", nargs, 1, 3)) {
         goto exit;
@@ -461,9 +467,12 @@ static PyObject *
 _codecs_utf_8_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("utf_8_decode", nargs, 1, 3)) {
         goto exit;
@@ -536,9 +545,12 @@ static PyObject *
 _codecs_utf_16_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("utf_16_decode", nargs, 1, 3)) {
         goto exit;
@@ -611,9 +623,12 @@ static PyObject *
 _codecs_utf_16_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("utf_16_le_decode", nargs, 1, 3)) {
         goto exit;
@@ -686,9 +701,12 @@ static PyObject *
 _codecs_utf_16_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("utf_16_be_decode", nargs, 1, 3)) {
         goto exit;
@@ -762,10 +780,13 @@ static PyObject *
 _codecs_utf_16_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int byteorder = 0;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("utf_16_ex_decode", nargs, 1, 4)) {
         goto exit;
@@ -850,9 +871,12 @@ static PyObject *
 _codecs_utf_32_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("utf_32_decode", nargs, 1, 3)) {
         goto exit;
@@ -925,9 +949,12 @@ static PyObject *
 _codecs_utf_32_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("utf_32_le_decode", nargs, 1, 3)) {
         goto exit;
@@ -1000,9 +1027,12 @@ static PyObject *
 _codecs_utf_32_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("utf_32_be_decode", nargs, 1, 3)) {
         goto exit;
@@ -1076,10 +1106,13 @@ static PyObject *
 _codecs_utf_32_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int byteorder = 0;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("utf_32_ex_decode", nargs, 1, 4)) {
         goto exit;
@@ -1164,8 +1197,11 @@ static PyObject *
 _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("unicode_escape_decode", nargs, 1, 2)) {
         goto exit;
@@ -1236,8 +1272,11 @@ static PyObject *
 _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("raw_unicode_escape_decode", nargs, 1, 2)) {
         goto exit;
@@ -1308,8 +1347,11 @@ static PyObject *
 _codecs_latin_1_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("latin_1_decode", nargs, 1, 2)) {
         goto exit;
@@ -1370,8 +1412,11 @@ static PyObject *
 _codecs_ascii_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("ascii_decode", nargs, 1, 2)) {
         goto exit;
@@ -1432,9 +1477,12 @@ static PyObject *
 _codecs_charmap_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     PyObject *mapping = NULL;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("charmap_decode", nargs, 1, 3)) {
         goto exit;
@@ -1501,9 +1549,12 @@ static PyObject *
 _codecs_mbcs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("mbcs_decode", nargs, 1, 3)) {
         goto exit;
@@ -1580,9 +1631,12 @@ static PyObject *
 _codecs_oem_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("oem_decode", nargs, 1, 3)) {
         goto exit;
@@ -1660,9 +1714,12 @@ _codecs_code_page_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
 {
     PyObject *return_value = NULL;
     int codepage;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
     int final = 0;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("code_page_decode", nargs, 2, 4)) {
         goto exit;
@@ -1746,8 +1803,11 @@ static PyObject *
 _codecs_readbuffer_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    Py_buffer data;
     const char *errors = NULL;
+    /* initializers for data */
+    data.buf = NULL;
+    data.obj = NULL;
 
     if (!_PyArg_CheckPositional("readbuffer_encode", nargs, 1, 2)) {
         goto exit;
@@ -2922,4 +2982,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=da3c47709a55a05e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=955e74011a71d01f input=a9049054013a1b77]*/

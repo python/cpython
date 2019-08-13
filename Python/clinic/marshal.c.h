@@ -146,7 +146,10 @@ static PyObject *
 marshal_loads(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer bytes = {NULL, NULL};
+    Py_buffer bytes;
+    /* initializers for bytes */
+    bytes.buf = NULL;
+    bytes.obj = NULL;
 
     if (PyObject_GetBuffer(arg, &bytes, PyBUF_SIMPLE) != 0) {
         goto exit;
@@ -165,4 +168,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ae2bca1aa239e095 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0d76e514a635f320 input=a9049054013a1b77]*/
