@@ -754,9 +754,8 @@ class TestShutil(unittest.TestCase):
         src_stat = os.lstat(src_link)
         shutil.copytree(src_dir, dst_dir, symlinks=True)
         self.assertTrue(os.path.islink(os.path.join(dst_dir, 'sub', 'link')))
-        actual = os.readlink(os.path.join(dst_dir, 'sub', 'link'))
-        expected = os.path.join(src_dir, 'file.txt')
-        self.assertEqual(actual, expected)
+        self.assertEqual(os.readlink(os.path.join(dst_dir, 'sub', 'link')),
+                         os.path.join(src_dir, 'file.txt'))
         dst_stat = os.lstat(dst_link)
         if hasattr(os, 'lchmod'):
             self.assertEqual(dst_stat.st_mode, src_stat.st_mode)
