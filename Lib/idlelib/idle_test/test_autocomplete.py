@@ -603,8 +603,14 @@ class TestQuoteClosesLiteral(unittest.TestCase):
 
 
 class TestDictKeyReprs(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._dict_key_reprs = staticmethod(
+            ac.AutoComplete._make_dict_key_repr_func()
+        )
+
     def call(self, comp_start, comp_list):
-        return ac.AutoComplete._dict_key_reprs(comp_start, comp_list)
+        return self._dict_key_reprs(comp_start, comp_list)
 
     def check(self, comp_start, comp_list, expected):
         self.assertEqual(self.call(comp_start, comp_list), expected)
