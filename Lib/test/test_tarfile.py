@@ -46,17 +46,18 @@ md5_sparse = "a54fbc4ca4f4399a90e1b27164012fc6"
 class TarFileTest:
     tarfile_module = tarfile.TarFile
     tarfile_open = tarfile.open
-    taropen = tarfile.TarFile.taropen
+    def get_taropen(self):
+        return getattr(self.tarfile_module, self.taropen_name)
 
 class SafeTarFileTest:
     tarfile_module = tarfile.SafeTarFile
     tarfile_open = tarfile.safe_open
-    taropen = tarfile.SafeTarFile.taropen
 
 class TarTest:
     tarname = tarname
     suffix = ''
     open = io.FileIO
+    taropen_name = 'taropen'
 
     @property
     def mode(self):
@@ -67,21 +68,21 @@ class GzipTest:
     tarname = gzipname
     suffix = 'gz'
     open = gzip.GzipFile if gzip else None
-    taropen = tarfile.TarFile.gzopen
+    taropen_name = 'gzopen'
 
 @support.requires_bz2
 class Bz2Test:
     tarname = bz2name
     suffix = 'bz2'
     open = bz2.BZ2File if bz2 else None
-    taropen = tarfile.TarFile.bz2open
+    taropen_name = 'bz2open'
 
 @support.requires_lzma
 class LzmaTest:
     tarname = xzname
     suffix = 'xz'
     open = lzma.LZMAFile if lzma else None
-    taropen = tarfile.TarFile.xzopen
+    taropen_name = 'xzopen'
 
 
 class ReadTest(TarTest):
@@ -606,7 +607,7 @@ class MiscReadTestBase(CommonReadTest):
         with self.tarfile_open(tarname, mode=self.mode) as tar:
             self.assertIsInstance(tar.name, str)
             self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
-        with self.taropen(tarname) as tar:
+        with self.get_taropen()(tarname) as tar:
             self.assertIsInstance(tar.name, str)
             self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
         with self.tarfile_module.open(tarname, mode=self.mode) as tar:
@@ -621,11 +622,11 @@ class MiscReadTestBase(CommonReadTest):
         with open(tmpname, 'wb'):
             pass
         with self.assertRaisesRegex(ValueError, 'mode must be '):
-            tar = self.taropen(tmpname, 'q')
+            tar = self.get_taropen()(tmpname, 'q')
         with self.assertRaisesRegex(ValueError, 'mode must be '):
-            tar = self.taropen(tmpname, 'rw')
+            tar = self.get_taropen()(tmpname, 'rw')
         with self.assertRaisesRegex(ValueError, 'mode must be '):
-            tar = self.taropen(tmpname, '')
+            tar = self.get_taropen()(tmpname, '')
 
     def test_fileobj_with_offset(self):
         # Skip the first member and store values from the second member
@@ -1709,7 +1710,7 @@ class CreateTestBase(WriteTestBaseBase, unittest.TestCase, TarFileTest):
         with self.tarfile_open(tmpname, self.mode) as tobj:
             tobj.add(self.file_path)
 
-        with self.taropen(tmpname) as tobj:
+        with self.get_taropen()(tmpname) as tobj:
             names = tobj.getnames()
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
@@ -1721,29 +1722,29 @@ class CreateTestBase(WriteTestBaseBase, unittest.TestCase, TarFileTest):
         with self.assertRaises(FileExistsError):
             tobj = self.tarfile_open(tmpname, self.mode)
 
-        with self.taropen(tmpname) as tobj:
+        with self.get_taropen()(tmpname) as tobj:
             names = tobj.getnames()
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
 
     def test_create_taropen(self):
-        with self.taropen(tmpname, "x") as tobj:
+        with self.get_taropen()(tmpname, "x") as tobj:
             tobj.add(self.file_path)
 
-        with self.taropen(tmpname) as tobj:
+        with self.get_taropen()(tmpname) as tobj:
             names = tobj.getnames()
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
 
     def test_create_existing_taropen(self):
-        with self.taropen(tmpname, "x") as tobj:
+        with self.get_taropen()(tmpname, "x") as tobj:
             tobj.add(self.file_path)
 
         with self.assertRaises(FileExistsError):
-            with self.taropen(tmpname, "x"):
+            with self.get_taropen()(tmpname, "x"):
                 pass
 
-        with self.taropen(tmpname) as tobj:
+        with self.get_taropen()(tmpname) as tobj:
             names = tobj.getnames()
         self.assertEqual(len(names), 1)
         self.assertIn("spameggs42", names[0])
@@ -1757,13 +1758,13 @@ class CreateTestBase(WriteTestBaseBase, unittest.TestCase, TarFileTest):
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
 
-        with self.taropen(tmpname) as tobj:
+        with self.get_taropen()(tmpname) as tobj:
             names = tobj.getnames()
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
 
     def test_create_taropen_pathlike_name(self):
-        with self.taropen(pathlib.Path(tmpname), "x") as tobj:
+        with self.get_taropen()(pathlib.Path(tmpname), "x") as tobj:
             self.assertIsInstance(tobj.name, str)
             self.assertEqual(tobj.name, os.path.abspath(tmpname))
             tobj.add(pathlib.Path(self.file_path))
@@ -1771,7 +1772,7 @@ class CreateTestBase(WriteTestBaseBase, unittest.TestCase, TarFileTest):
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
 
-        with self.taropen(tmpname) as tobj:
+        with self.get_taropen()(tmpname) as tobj:
             names = tobj.getnames()
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
@@ -2505,8 +2506,10 @@ class CommandLineTest(unittest.TestCase, TarFileTest):
             try:
                 tar_name = tmpname + '.' + filetype.suffix
                 out = self.tarfilecmd('-c', tar_name, *files)
-                with filetype.taropen(tar_name) as tar:
+                self.taropen_name = filetype.taropen_name
+                with self.get_taropen()(tar_name) as tar:
                     tar.getmembers()
+                del self.taropen_name
             finally:
                 support.unlink(tar_name)
 
