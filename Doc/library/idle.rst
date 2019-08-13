@@ -473,22 +473,24 @@ Completions
 
 Completions are supplied for functions, classes, and attributes of classes,
 both built-in and user-defined. Completions are also provided for
-filenames.
+filenames and for dict keys.
 
 The AutoCompleteWindow (ACW) will open after a predefined delay (default is
-two seconds) after a '.' or (in a string) an os.sep is typed. If after one
-of those characters (plus zero or more other characters) a tab is typed
-the ACW will open immediately if a possible continuation is found.
+two seconds) after a '.' or (in a string), an os.sep ('/', and also '\' on
+Windows) or a '[' is typed. If after one of those characters (plus zero or more
+other characters) a tab is typed the ACW will open immediately if a possible
+continuation is found.
 
 If there is only one possible completion for the characters entered, a
 :kbd:`Tab` will supply that completion without opening the ACW.
 
-'Show Completions' will force open a completions window, by default the
-:kbd:`C-space` will open a completions window. In an empty
-string, this will contain the files in the current directory. On a
-blank line, it will contain the built-in and user-defined functions and
-classes in the current namespaces, plus any modules imported. If some
-characters have been entered, the ACW will attempt to be more specific.
+'Show Completions' (by default bound to :kbd:`C-space`) will "force" opening a
+completions window.  In an empty string, this will contain the files in the
+current directory.  On a blank line, it will contain the built-in and
+user-defined functions and classes in the current namespaces, plus any modules
+imported.  After a bracket following a dict, it will contain the dict's keys of
+types str and bytes.  If some characters have been entered, the ACW will
+attempt to be more specific.
 
 If a string of characters is typed, the ACW selection will jump to the
 entry most closely matching those characters.  Entering a :kbd:`tab` will
@@ -499,7 +501,9 @@ and the scroll wheel all operate on the ACW.
 
 "Hidden" attributes can be accessed by typing the beginning of hidden
 name after a '.', e.g. '_'. This allows access to modules with
-``__all__`` set, or to class-private attributes.
+``__all__`` set, or to class-private attributes.  Likewise, names of hidden
+files (those with names beginning with '.') can be accessed by typing a '.'
+when completing file names.
 
 Completions and the 'Expand Word' facility can save a lot of typing!
 
