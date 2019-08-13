@@ -752,10 +752,10 @@ iterations of the loop.
      from the block stack.
 
 
-.. opcode:: ASSERT_RAISE (argc)
+.. opcode:: LOAD_ASSERTION_ERROR
 
-   Raises :exc:`AssertionError`.  *argc* is ``1`` when there is an argument to
-   pass to :exc:`AssertionError`.  Used by the :keyword:`assert` statement.
+   Pushes :exc:`AssertionError` onto the stack.  Used by the :keyword:`assert`
+   statement.
 
    .. versionadded:: 3.9
 

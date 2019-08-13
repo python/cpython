@@ -1129,8 +1129,8 @@ stack_effect(int opcode, int oparg, int jump)
             return (oparg & FVS_MASK) == FVS_HAVE_SPEC ? -1 : 0;
         case LOAD_METHOD:
             return 1;
-        case ASSERT_RAISE:
-            return -oparg;
+        case LOAD_ASSERTION_ERROR:
+            return 0;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -3229,11 +3229,12 @@ compiler_assert(struct compiler *c, stmt_ty s)
         return 0;
     if (!compiler_jump_if(c, s->v.Assert.test, end, 1))
         return 0;
-    expr_ty msg = s->v.Assert.msg;
-    if (msg) {
-        VISIT(c, expr, msg);
+    ADDOP(c, LOAD_ASSERTION_ERROR);
+    if (s->v.Assert.msg) {
+        VISIT(c, expr, s->v.Assert.msg);
+        ADDOP_I(c, CALL_FUNCTION, 1);
     }
-    ADDOP_I(c, ASSERT_RAISE, msg != NULL);
+    ADDOP_I(c, RAISE_VARARGS, 1);
     compiler_use_next_block(c, end);
     return 1;
 }

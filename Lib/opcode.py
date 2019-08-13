@@ -109,7 +109,7 @@ def_op('PRINT_EXPR', 70)
 def_op('LOAD_BUILD_CLASS', 71)
 def_op('YIELD_FROM', 72)
 def_op('GET_AWAITABLE', 73)
-
+def_op('LOAD_ASSERTION_ERROR', 74)
 def_op('INPLACE_LSHIFT', 75)
 def_op('INPLACE_RSHIFT', 76)
 def_op('INPLACE_AND', 77)
@@ -212,6 +212,5 @@ name_op('LOAD_METHOD', 160)
 def_op('CALL_METHOD', 161)
 jrel_op('CALL_FINALLY', 162)
 def_op('POP_FINALLY', 163)
-def_op('ASSERT_RAISE', 164)
 
 del def_op, name_op, jrel_op, jabs_op
