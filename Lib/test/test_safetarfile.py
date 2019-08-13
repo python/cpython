@@ -3,7 +3,7 @@ import os
 import io
 import unittest
 import tarfile
-from .test_tarfile import *
+from .test_tarfile import testtardir, setUpModule as setUpModuleTarFile, tearDownModule as tearDownModuleTarFile
 
 class SafeTarFileTestBase:
     tarfile_module = tarfile.SafeTarFile
@@ -158,6 +158,8 @@ class SafeTarFileTest(unittest.TestCase):
             tar = tarfile.safe_open(fileobj=fileobj)
             return tar.is_safe()
 
+"""
+
 class FileUstarReadTest(UstarReadTestBase, unittest.TestCase, SafeTarFileTestBase):
     pass
 
@@ -226,27 +228,13 @@ class LzmaDetectReadTest(LzmaTest, DetectReadTestBase, unittest.TestCase, SafeTa
 class MemberReadTest(MemberReadTestBase, unittest.TestCase, SafeTarFileTestBase):
     pass
 
+"""
 
 def setUpModule():
-    support.unlink(TEMPDIR)
-    os.makedirs(TEMPDIR)
-
-    global testtarnames
-    testtarnames = [tarname]
-    with open(tarname, "rb") as fobj:
-        data = fobj.read()
-
-    # Create compressed tarfiles.
-    for c in GzipTest, Bz2Test, LzmaTest:
-        if c.open:
-            support.unlink(c.tarname)
-            testtarnames.append(c.tarname)
-            with c.open(c.tarname, "wb") as tar:
-                tar.write(data)
+    setUpModuleTarFile()
 
 def tearDownModule():
-    if os.path.exists(TEMPDIR):
-        support.rmtree(TEMPDIR)
+    tearDownModuleTarFile()
 
 if __name__ == "__main__":
     unittest.main()
