@@ -609,11 +609,11 @@ class MiscReadTestBase(CommonReadTest):
         with self.taropen(tarname) as tar:
             self.assertIsInstance(tar.name, str)
             self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
-        with tarfile.TarFile.open(tarname, mode=self.mode) as tar:
+        with self.tarfile_module.open(tarname, mode=self.mode) as tar:
             self.assertIsInstance(tar.name, str)
             self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
         if self.suffix == '':
-            with tarfile.TarFile(tarname, mode='r') as tar:
+            with self.tarfile_module(tarname, mode='r') as tar:
                 self.assertIsInstance(tar.name, str)
                 self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
 
@@ -787,7 +787,7 @@ class MiscReadTestBase(CommonReadTest):
             fobj.write(b"")
 
         try:
-            tar = object.__new__(tarfile.TarFile)
+            tar = object.__new__(self.tarfile_module)
             try:
                 tar.__init__(empty)
             except tarfile.ReadError:
