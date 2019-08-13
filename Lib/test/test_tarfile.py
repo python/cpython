@@ -43,6 +43,15 @@ dotlessname = os.path.join(TEMPDIR, "testtar")
 md5_regtype = "65f477c818ad9e15f7feab0c6d37742f"
 md5_sparse = "a54fbc4ca4f4399a90e1b27164012fc6"
 
+class TarFileTest:
+    tarfile_module = tarfile.TarFile
+    tarfile_open = tarfile.open
+    taropen = tarfile.TarFile.taropen
+
+class SafeTarFileTest:
+    tarfile_module = tarfile.SafeTarFile
+    tarfile_open = tarfile.safe_open
+    taropen = tarfile.SafeTarFile.taropen
 
 class TarTest:
     tarname = tarname
@@ -451,14 +460,11 @@ class ListTest(ReadTest, unittest.TestCase):
         self.assertIn(b'ustar/regtype', out)
         self.assertNotIn(b'ustar/conttype', out)
 
-
 class GzipListTest(GzipTest, ListTest):
     pass
 
-
 class Bz2ListTest(Bz2Test, ListTest):
     pass
-
 
 class LzmaListTest(LzmaTest, ListTest):
     pass
