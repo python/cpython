@@ -3,7 +3,7 @@ import os
 import io
 import unittest
 import tarfile
-from .test_tarfile import testtardir, setUpModule as setUpModuleTarFile, tearDownModule as tearDownModuleTarFile, GzipTest, Bz2Test, LzmaTest, UstarReadTestBase
+from .test_tarfile import testtardir, setUpModule as setUpModuleTarFile, tearDownModule as tearDownModuleTarFile, GzipTest, Bz2Test, LzmaTest, UstarReadTestBase, ListTestBase
 
 class SafeTarFileTestBase:
     tarfile_module = tarfile.SafeTarFile
@@ -171,10 +171,11 @@ class FileBz2UstarReadTest(Bz2Test, UstarReadTestBase, unittest.TestCase, SafeTa
 class FileLzmaUstarReadTest(LzmaTest, UstarReadTestBase, unittest.TestCase, SafeTarFileTestBase):
     pass
 
-"""
 
 class ListTest(ListTestBase, unittest.TestCase, SafeTarFileTestBase):
     pass
+
+"""
 
 class GzipListTest(GzipTest, ListTestBase, unittest.TestCase, SafeTarFileTestBase):
     pass
@@ -184,6 +185,7 @@ class Bz2ListTest(Bz2Test, ListTestBase, unittest.TestCase, SafeTarFileTestBase)
 
 class LzmaListTest(LzmaTest, ListTestBase, unittest.TestCase, SafeTarFileTestBase):
     pass
+
 
 
 class MiscReadTest(MiscReadTestBase, unittest.TestCase, SafeTarFileTestBase):
