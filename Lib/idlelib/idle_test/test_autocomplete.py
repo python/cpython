@@ -685,6 +685,14 @@ class TestDictKeyReprs(unittest.TestCase):
         # Such characters should only be escaped in bytes, not str.
         self.check('"', ['\x80\xc3\xff'], ['"\x80\xc3\xff"'])
 
+    def test_non_bmp_escape(self):
+        self.check('"', ['\U00010000'], [r'"\U00010000"'])
+        self.check('"', ['\U00011111'], [r'"\U00011111"'])
+        self.check('"', ['ab\U00011111ba'], [r'"ab\U00011111ba"'])
+
+        self.check('r"', ['\U00010000'], [r'"\U00010000"'])
+        self.check('r"', ['ab\U00011111ba'], [r'"ab\U00011111ba"'])
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

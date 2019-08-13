@@ -183,10 +183,14 @@ class AutoComplete:
         def high_byte_sub(match):
             """escaping for bytes values above 127"""
             return f'\\x{ord(match.group()):x}'
+        non_bmp_re = re.compile(r'[\U00010000-\U0010ffff]')
+        def non_bmp_sub(match):
+            """escaping for non-BMP unicode code points"""
+            return f'\\U{ord(match.group()):08x}'
 
         # Split the completions into lists of str and bytes.
         str_comps = [c for c in comp_list if type(c) == str]
-        bytes_comps = (c for c in comp_list if type(c) == bytes)
+        bytes_comps = [c for c in comp_list if type(c) == bytes]
 
         # Create reprs for the str objects.
         str_repr_template = f"{prefix}{quote_type}{{}}{quote_type}"
@@ -206,42 +210,45 @@ class AutoComplete:
             # Escape control characters.
             str_comps = [escape_re.sub(control_char_escape, x)
                          for x in str_comps]
+            str_comps = [non_bmp_re.sub(non_bmp_sub, x) for x in str_comps]
             str_comps = [str_repr_template.format(x) for x in str_comps]
         else:
             # Format as raw literals (r"...") except when there are control
             # characters which must be escaped.
             non_raw_prefix = prefix.replace('r', '').replace('R', '')
             non_raw_template = f"{non_raw_prefix}{quote_type}{{}}{quote_type}"
-            str_comps = (
+            str_comps = [
                 str_repr_template.format(x)
-                if escape_re.search(x) is None
+                if escape_re.search(x) is None and non_bmp_re.search(x) is None
                 else non_raw_template.format(
-                    escape_re.sub(control_char_escape, x))
+                    non_bmp_re.sub(non_bmp_sub,
+                        escape_re.sub(control_char_escape,
+                            x)))
                 for x in str_comps
-            )
+            ]
 
         # Create reprs for the bytes objects.
         bytes_repr_template = f"{bytes_prefix}{quote_type}{{}}{quote_type}"
         bytes_comps = (x.decode('latin-1') for x in bytes_comps)
         if not is_raw:
             # Escape back-slashes.
-            bytes_comps = (x.replace('\\', '\\\\') for x in bytes_comps)
+            bytes_comps = [x.replace('\\', '\\\\') for x in bytes_comps]
         # Escape quotes.
-        bytes_comps = (
-            x.replace(quote_type, '\\'+quote_type) for x in bytes_comps)
+        bytes_comps = [
+            x.replace(quote_type, '\\'+quote_type) for x in bytes_comps]
         if not is_raw:
             # Escape control characters.
-            bytes_comps = (
-                escape_re.sub(control_char_escape, x) for x in bytes_comps)
+            bytes_comps = [
+                escape_re.sub(control_char_escape, x) for x in bytes_comps]
             # Escape high-value characters.
-            bytes_comps = (
-                high_byte_escape_re.sub(high_byte_sub, x) for x in bytes_comps)
-            bytes_comps = (bytes_repr_template.format(x) for x in bytes_comps)
+            bytes_comps = [
+                high_byte_escape_re.sub(high_byte_sub, x) for x in bytes_comps]
+            bytes_comps = [bytes_repr_template.format(x) for x in bytes_comps]
         else:
             # Format as raw literals (br"...") except when there are control
             # characters or high-value characters which must be escaped.
             non_raw_template = f"b{quote_type}{{}}{quote_type}"
-            bytes_comps = (
+            bytes_comps = [
                 bytes_repr_template.format(x)
                 if (
                     escape_re.search(x) is None and
@@ -252,9 +259,9 @@ class AutoComplete:
                         high_byte_sub, escape_re.sub(control_char_escape, x))
                 )
                 for x in bytes_comps
-            )
+            ]
 
-        return list(itertools.chain(str_comps, bytes_comps))
+        return str_comps + bytes_comps
 
     def open_completions(self, args):
         """Find the completions and create the AutoCompleteWindow.
