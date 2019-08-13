@@ -1,4 +1,4 @@
-""" Test script for the unicodedata module.
+""" Tests for the unicodedata module.
 
     Written by Marc-Andre Lemburg (mal@lemburg.com).
 
@@ -6,16 +6,12 @@
 
 """
 
-import sys
-import unittest
 import hashlib
+import sys
+import unicodedata
+import unittest
 from test.support import script_helper
 
-encoding = 'utf-8'
-errors = 'surrogatepass'
-
-
-### Run tests
 
 class UnicodeMethodsTest(unittest.TestCase):
 
@@ -61,20 +57,12 @@ class UnicodeMethodsTest(unittest.TestCase):
                 (char + 'ABC').title(),
 
                 ]
-            h.update(''.join(data).encode(encoding, errors))
+            h.update(''.join(data).encode('utf-8', 'surrogatepass'))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 
 class UnicodeDatabaseTest(unittest.TestCase):
-
-    def setUp(self):
-        # In case unicodedata is not available, this will raise an ImportError,
-        # but the other test cases will still be run
-        import unicodedata
-        self.db = unicodedata
-
-    def tearDown(self):
-        del self.db
+    db = unicodedata
 
 class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
