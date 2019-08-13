@@ -43,13 +43,13 @@ dotlessname = os.path.join(TEMPDIR, "testtar")
 md5_regtype = "65f477c818ad9e15f7feab0c6d37742f"
 md5_sparse = "a54fbc4ca4f4399a90e1b27164012fc6"
 
-class TarFileTest:
+class TarFileTestBase:
     tarfile_module = tarfile.TarFile
     tarfile_open = tarfile.open
     def get_taropen(self):
         return getattr(self.tarfile_module, self.taropen_name)
 
-class SafeTarFileTest:
+class SafeTarFileTestBase:
     tarfile_module = tarfile.SafeTarFile
     tarfile_open = tarfile.safe_open
 
@@ -97,7 +97,7 @@ class ReadTest(TarTest):
         self.tar.close()
 
 
-class SafeTarFileTest(unittest.TestCase, TarFileTest):
+class SafeTarFileTest(unittest.TestCase):
     ANALYZE_RESULTS = "analyzeresults"
     FILTER_RESULTS = "filterresults"
     IS_SAFE_RESULTS = "is_saferesults"
@@ -371,16 +371,16 @@ class UstarReadTestBase(ReadTest):
     def test_issue14160(self):
         self._test_fileobj_link("symtype2", "ustar/regtype")
 
-class UstarReadTest(UstarReadTestBase, unittest.TestCase, TarFileTest):
+class UstarReadTest(UstarReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class GzipUstarReadTest(GzipTest, UstarReadTestBase, unittest.TestCase, TarFileTest):
+class GzipUstarReadTest(GzipTest, UstarReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class Bz2UstarReadTest(Bz2Test, UstarReadTestBase, unittest.TestCase, TarFileTest):
+class Bz2UstarReadTest(Bz2Test, UstarReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class LzmaUstarReadTest(LzmaTest, UstarReadTestBase, unittest.TestCase, TarFileTest):
+class LzmaUstarReadTest(LzmaTest, UstarReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
 
@@ -463,16 +463,16 @@ class ListTestBase(ReadTest):
         self.assertIn(b'ustar/regtype', out)
         self.assertNotIn(b'ustar/conttype', out)
 
-class ListTest(ListTestBase, unittest.TestCase, TarFileTest):
+class ListTest(ListTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class GzipListTest(GzipTest, ListTestBase, unittest.TestCase, TarFileTest):
+class GzipListTest(GzipTest, ListTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class Bz2ListTest(Bz2Test, ListTestBase, unittest.TestCase, TarFileTest):
+class Bz2ListTest(Bz2Test, ListTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class LzmaListTest(LzmaTest, ListTestBase, unittest.TestCase, TarFileTest):
+class LzmaListTest(LzmaTest, ListTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
 
@@ -806,17 +806,17 @@ class MiscReadTestBase(CommonReadTest):
                 self.assertEqual(m1.offset, m2.offset)
                 self.assertEqual(m1.get_info(), m2.get_info())
 
-class MiscReadTest(MiscReadTestBase, unittest.TestCase, TarFileTest):
+class MiscReadTest(MiscReadTestBase, unittest.TestCase, TarFileTestBase):
     test_fail_comp = None
 
-class GzipMiscReadTest(GzipTest, MiscReadTestBase, unittest.TestCase, TarFileTest):
+class GzipMiscReadTest(GzipTest, MiscReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class Bz2MiscReadTest(Bz2Test, MiscReadTestBase, unittest.TestCase, TarFileTest):
+class Bz2MiscReadTest(Bz2Test, MiscReadTestBase, unittest.TestCase, TarFileTestBase):
     def requires_name_attribute(self):
         self.skipTest("BZ2File have no name attribute")
 
-class LzmaMiscReadTest(LzmaTest, MiscReadTestBase, unittest.TestCase, TarFileTest):
+class LzmaMiscReadTest(LzmaTest, MiscReadTestBase, unittest.TestCase, TarFileTestBase):
     def requires_name_attribute(self):
         self.skipTest("LZMAFile have no name attribute")
 
@@ -882,16 +882,16 @@ class StreamReadTestBase(CommonReadTest):
         finally:
             tar1.close()
 
-class StreamReadTest(StreamReadTestBase, unittest.TestCase, TarFileTest):
+class StreamReadTest(StreamReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class GzipStreamReadTest(GzipTest, StreamReadTestBase, unittest.TestCase, TarFileTest):
+class GzipStreamReadTest(GzipTest, StreamReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class Bz2StreamReadTest(Bz2Test, StreamReadTestBase, unittest.TestCase, TarFileTest):
+class Bz2StreamReadTest(Bz2Test, StreamReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class LzmaStreamReadTest(LzmaTest, StreamReadTestBase, unittest.TestCase, TarFileTest):
+class LzmaStreamReadTest(LzmaTest, StreamReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
 
@@ -935,13 +935,13 @@ class DetectReadTestBase(TarTest):
     def test_detect_fileobj(self):
         self._test_modes(self._testfunc_fileobj)
 
-class DetectReadTest(DetectReadTestBase, unittest.TestCase, TarFileTest):
+class DetectReadTest(DetectReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class GzipDetectReadTest(GzipTest, DetectReadTestBase, unittest.TestCase, TarFileTest):
+class GzipDetectReadTest(GzipTest, DetectReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class Bz2DetectReadTest(Bz2Test, DetectReadTestBase, unittest.TestCase, TarFileTest):
+class Bz2DetectReadTest(Bz2Test, DetectReadTestBase, unittest.TestCase, TarFileTestBase):
     def test_detect_stream_bz2(self):
         # Originally, tarfile's stream detection looked for the string
         # "BZh91" at the start of the file. This is incorrect because
@@ -956,11 +956,11 @@ class Bz2DetectReadTest(Bz2Test, DetectReadTestBase, unittest.TestCase, TarFileT
 
         self._testfunc_file(tmpname, "r|*")
 
-class LzmaDetectReadTest(LzmaTest, DetectReadTestBase, unittest.TestCase, TarFileTest):
+class LzmaDetectReadTest(LzmaTest, DetectReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
 
-class MemberReadTest(ReadTest, unittest.TestCase, TarFileTest):
+class MemberReadTest(ReadTest, unittest.TestCase, TarFileTestBase):
 
     def _test_member(self, tarinfo, chksum=None, **kwargs):
         if chksum is not None:
@@ -1099,7 +1099,7 @@ class LongnameTest:
             self.assertEqual(tarinfo.type, self.longnametype)
 
 
-class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase, TarFileTest):
+class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase, TarFileTestBase):
 
     subdir = "gnu"
     longnametype = tarfile.GNUTYPE_LONGNAME
@@ -1158,7 +1158,7 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase, TarFileTest):
             return False
 
 
-class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase, TarFileTest):
+class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase, TarFileTestBase):
 
     subdir = "pax"
     longnametype = tarfile.XHDTYPE
@@ -1542,16 +1542,16 @@ class WriteTestBase(WriteTestBaseBase):
                                    pax_headers={'non': 'empty'})
             self.assertFalse(f.closed)
 
-class WriteTest(WriteTestBase, unittest.TestCase, TarFileTest):
+class WriteTest(WriteTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class GzipWriteTest(GzipTest, WriteTestBase, unittest.TestCase, TarFileTest):
+class GzipWriteTest(GzipTest, WriteTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class Bz2WriteTest(Bz2Test, WriteTestBase, unittest.TestCase, TarFileTest):
+class Bz2WriteTest(Bz2Test, WriteTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class LzmaWriteTest(LzmaTest, WriteTestBase, unittest.TestCase, TarFileTest):
+class LzmaWriteTest(LzmaTest, WriteTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
 
@@ -1593,20 +1593,20 @@ class StreamWriteTestBase(WriteTestBaseBase):
         finally:
             os.umask(original_umask)
 
-class StreamWriteTest(StreamWriteTestBase, unittest.TestCase, TarFileTest):
+class StreamWriteTest(StreamWriteTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class GzipStreamWriteTest(GzipTest, StreamWriteTestBase, unittest.TestCase, TarFileTest):
+class GzipStreamWriteTest(GzipTest, StreamWriteTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class Bz2StreamWriteTest(Bz2Test, StreamWriteTestBase, unittest.TestCase, TarFileTest):
+class Bz2StreamWriteTest(Bz2Test, StreamWriteTestBase, unittest.TestCase, TarFileTestBase):
     decompressor = bz2.BZ2Decompressor if bz2 else None
 
-class LzmaStreamWriteTest(LzmaTest, StreamWriteTestBase, unittest.TestCase, TarFileTest):
+class LzmaStreamWriteTest(LzmaTest, StreamWriteTestBase, unittest.TestCase, TarFileTestBase):
     decompressor = lzma.LZMADecompressor if lzma else None
 
 
-class GNUWriteTest(unittest.TestCase, TarFileTest):
+class GNUWriteTest(unittest.TestCase, TarFileTestBase):
     # This testcase checks for correct creation of GNU Longname
     # and Longlink extended headers (cp. bug #812325).
 
@@ -1688,7 +1688,7 @@ class GNUWriteTest(unittest.TestCase, TarFileTest):
                    ("longlnk/" * 127) + "longlink_")
 
 
-class CreateTestBase(WriteTestBaseBase, unittest.TestCase, TarFileTest):
+class CreateTestBase(WriteTestBaseBase, unittest.TestCase, TarFileTestBase):
 
     prefix = "x:"
 
@@ -1777,19 +1777,19 @@ class CreateTestBase(WriteTestBaseBase, unittest.TestCase, TarFileTest):
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
 
-class CreateTest(CreateTestBase, unittest.TestCase, TarFileTest):
+class CreateTest(CreateTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class GzipCreateTest(GzipTest, CreateTestBase, unittest.TestCase, TarFileTest):
+class GzipCreateTest(GzipTest, CreateTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class Bz2CreateTest(Bz2Test, CreateTestBase, unittest.TestCase, TarFileTest):
+class Bz2CreateTest(Bz2Test, CreateTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class LzmaCreateTest(LzmaTest, CreateTestBase, unittest.TestCase, TarFileTest):
+class LzmaCreateTest(LzmaTest, CreateTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class CreateWithXModeTest(CreateTestBase, unittest.TestCase, TarFileTest):
+class CreateWithXModeTest(CreateTestBase, unittest.TestCase, TarFileTestBase):
 
     prefix = "x"
 
@@ -1798,7 +1798,7 @@ class CreateWithXModeTest(CreateTestBase, unittest.TestCase, TarFileTest):
 
 
 @unittest.skipUnless(hasattr(os, "link"), "Missing hardlink implementation")
-class HardlinkTest(unittest.TestCase, TarFileTest):
+class HardlinkTest(unittest.TestCase, TarFileTestBase):
     # Test the creation of LNKTYPE (hardlink) members in an archive.
 
     def setUp(self):
@@ -2005,7 +2005,7 @@ class UnicodeTest:
             tar.close()
 
 
-class UstarUnicodeTest(UnicodeTest, unittest.TestCase, TarFileTest):
+class UstarUnicodeTest(UnicodeTest, unittest.TestCase, TarFileTestBase):
 
     format = tarfile.USTAR_FORMAT
 
@@ -2084,7 +2084,7 @@ class UstarUnicodeTest(UnicodeTest, unittest.TestCase, TarFileTest):
                     break
 
 
-class GNUUnicodeTest(UnicodeTest, unittest.TestCase, TarFileTest):
+class GNUUnicodeTest(UnicodeTest, unittest.TestCase, TarFileTestBase):
 
     format = tarfile.GNU_FORMAT
 
@@ -2102,7 +2102,7 @@ class GNUUnicodeTest(UnicodeTest, unittest.TestCase, TarFileTest):
                     self.fail("unable to read bad GNU tar pax header")
 
 
-class PAXUnicodeTest(UnicodeTest, unittest.TestCase, TarFileTest):
+class PAXUnicodeTest(UnicodeTest, unittest.TestCase, TarFileTestBase):
 
     format = tarfile.PAX_FORMAT
 
@@ -2142,7 +2142,7 @@ class AppendTestBase:
         self._create_testtar("w:" + self.suffix)
         self.assertRaises(tarfile.ReadError, self.tarfile_open, tmpname, "a")
 
-class AppendTest(AppendTestBase, unittest.TestCase, TarFileTest):
+class AppendTest(AppendTestBase, unittest.TestCase, TarFileTestBase):
     test_append_compressed = None
 
     def _add_testfile(self, fileobj=None):
@@ -2206,17 +2206,17 @@ class AppendTest(AppendTestBase, unittest.TestCase, TarFileTest):
     def test_invalid(self):
         self._test_error(b"a" * 512)
 
-class GzipAppendTest(GzipTest, AppendTestBase, unittest.TestCase, TarFileTest):
+class GzipAppendTest(GzipTest, AppendTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class Bz2AppendTest(Bz2Test, AppendTestBase, unittest.TestCase, TarFileTest):
+class Bz2AppendTest(Bz2Test, AppendTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class LzmaAppendTest(LzmaTest, AppendTestBase, unittest.TestCase, TarFileTest):
+class LzmaAppendTest(LzmaTest, AppendTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
 
-class LimitsTest(unittest.TestCase, TarFileTest):
+class LimitsTest(unittest.TestCase, TarFileTestBase):
 
     def test_ustar_limits(self):
         # 100 char name
@@ -2275,7 +2275,7 @@ class LimitsTest(unittest.TestCase, TarFileTest):
         tarinfo.tobuf(tarfile.PAX_FORMAT)
 
 
-class MiscTest(unittest.TestCase, TarFileTest):
+class MiscTest(unittest.TestCase, TarFileTestBase):
 
     def test_char_fields(self):
         self.assertEqual(tarfile.stn("foo", 8, "ascii", "strict"),
@@ -2359,7 +2359,7 @@ class MiscTest(unittest.TestCase, TarFileTest):
         support.check__all__(self, tarfile, blacklist=blacklist)
 
 
-class CommandLineTest(unittest.TestCase, TarFileTest):
+class CommandLineTest(unittest.TestCase, TarFileTestBase):
 
     def tarfilecmd(self, *args, **kwargs):
         rc, out, err = script_helper.assert_python_ok('-m', 'tarfile', *args,
@@ -2551,7 +2551,7 @@ class CommandLineTest(unittest.TestCase, TarFileTest):
         self.assertEqual(rc, 1)
 
 
-class ContextManagerTest(unittest.TestCase, TarFileTest):
+class ContextManagerTest(unittest.TestCase, TarFileTestBase):
 
     def test_basic(self):
         with self.tarfile_open(tarname) as tar:
@@ -2610,7 +2610,7 @@ class ContextManagerTest(unittest.TestCase, TarFileTest):
 
 
 @unittest.skipIf(hasattr(os, "link"), "requires os.link to be missing")
-class LinkEmulationTest(ReadTest, unittest.TestCase, TarFileTest):
+class LinkEmulationTest(ReadTest, unittest.TestCase, TarFileTestBase):
 
     # Test for issue #8741 regression. On platforms that do not support
     # symbolic or hard links tarfile tries to extract these types of members
@@ -2643,7 +2643,7 @@ class LinkEmulationTest(ReadTest, unittest.TestCase, TarFileTest):
         self._test_link_extraction("./ustar/linktest2/symtype")
 
 
-class Bz2PartialReadTest(Bz2Test, unittest.TestCase, TarFileTest):
+class Bz2PartialReadTest(Bz2Test, unittest.TestCase, TarFileTestBase):
     # Issue5068: The _BZ2Proxy.read() method loops forever
     # on an empty or partial bzipped file.
 
@@ -2688,7 +2688,7 @@ def root_is_uid_gid_0():
 
 @unittest.skipUnless(hasattr(os, 'chown'), "missing os.chown")
 @unittest.skipUnless(hasattr(os, 'geteuid'), "missing os.geteuid")
-class NumericOwnerTest(unittest.TestCase, TarFileTest):
+class NumericOwnerTest(unittest.TestCase, TarFileTestBase):
     # mock the following:
     #  os.chown: so we can test what's being called
     #  os.chmod: so the modes are not actually changed. if they are, we can't
