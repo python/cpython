@@ -619,6 +619,40 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, p.relative_to, '')
         self.assertRaises(ValueError, p.relative_to, P('a'))
 
+    def test_is_relative_to_common(self):
+        P = self.cls
+        p = P('a/b')
+        self.assertRaises(TypeError, p.is_relative_to)
+        self.assertRaises(TypeError, p.is_relative_to, b'a')
+        self.assertTrue(p.is_relative_to(P()))
+        self.assertTrue(p.is_relative_to(''))
+        self.assertTrue(p.is_relative_to(P('a')))
+        self.assertTrue(p.is_relative_to('a/'))
+        self.assertTrue(p.is_relative_to(P('a/b')))
+        self.assertTrue(p.is_relative_to('a/b'))
+        # With several args.
+        self.assertTrue(p.is_relative_to('a', 'b'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P('c')))
+        self.assertFalse(p.is_relative_to(P('a/b/c')))
+        self.assertFalse(p.is_relative_to(P('a/c')))
+        self.assertFalse(p.is_relative_to(P('/a')))
+        p = P('/a/b')
+        self.assertTrue(p.is_relative_to(P('/')))
+        self.assertTrue(p.is_relative_to('/'))
+        self.assertTrue(p.is_relative_to(P('/a')))
+        self.assertTrue(p.is_relative_to('/a'))
+        self.assertTrue(p.is_relative_to('/a/'))
+        self.assertTrue(p.is_relative_to(P('/a/b')))
+        self.assertTrue(p.is_relative_to('/a/b'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P('/c')))
+        self.assertFalse(p.is_relative_to(P('/a/b/c')))
+        self.assertFalse(p.is_relative_to(P('/a/c')))
+        self.assertFalse(p.is_relative_to(P()))
+        self.assertFalse(p.is_relative_to(''))
+        self.assertFalse(p.is_relative_to(P('a')))
+
     def test_pickling_common(self):
         P = self.cls
         p = P('/a/b')
@@ -1061,6 +1095,59 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P('c:/Server/Share/Foo'))
         self.assertRaises(ValueError, p.relative_to, P('//z/Share/Foo'))
         self.assertRaises(ValueError, p.relative_to, P('//Server/z/Foo'))
+
+    def test_is_relative_to(self):
+        P = self.cls
+        p = P('C:Foo/Bar')
+        self.assertTrue(p.is_relative_to(P('c:')))
+        self.assertTrue(p.is_relative_to('c:'))
+        self.assertTrue(p.is_relative_to(P('c:foO')))
+        self.assertTrue(p.is_relative_to('c:foO'))
+        self.assertTrue(p.is_relative_to('c:foO/'))
+        self.assertTrue(p.is_relative_to(P('c:foO/baR')))
+        self.assertTrue(p.is_relative_to('c:foO/baR'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P()))
+        self.assertFalse(p.is_relative_to(''))
+        self.assertFalse(p.is_relative_to(P('d:')))
+        self.assertFalse(p.is_relative_to(P('/')))
+        self.assertFalse(p.is_relative_to(P('Foo')))
+        self.assertFalse(p.is_relative_to(P('/Foo')))
+        self.assertFalse(p.is_relative_to(P('C:/Foo')))
+        self.assertFalse(p.is_relative_to(P('C:Foo/Bar/Baz')))
+        self.assertFalse(p.is_relative_to(P('C:Foo/Baz')))
+        p = P('C:/Foo/Bar')
+        self.assertTrue(p.is_relative_to('c:'))
+        self.assertTrue(p.is_relative_to(P('c:/')))
+        self.assertTrue(p.is_relative_to(P('c:/foO')))
+        self.assertTrue(p.is_relative_to('c:/foO/'))
+        self.assertTrue(p.is_relative_to(P('c:/foO/baR')))
+        self.assertTrue(p.is_relative_to('c:/foO/baR'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P('C:/Baz')))
+        self.assertFalse(p.is_relative_to(P('C:/Foo/Bar/Baz')))
+        self.assertFalse(p.is_relative_to(P('C:/Foo/Baz')))
+        self.assertFalse(p.is_relative_to(P('C:Foo')))
+        self.assertFalse(p.is_relative_to(P('d:')))
+        self.assertFalse(p.is_relative_to(P('d:/')))
+        self.assertFalse(p.is_relative_to(P('/')))
+        self.assertFalse(p.is_relative_to(P('/Foo')))
+        self.assertFalse(p.is_relative_to(P('//C/Foo')))
+        # UNC paths.
+        p = P('//Server/Share/Foo/Bar')
+        self.assertTrue(p.is_relative_to(P('//sErver/sHare')))
+        self.assertTrue(p.is_relative_to('//sErver/sHare'))
+        self.assertTrue(p.is_relative_to('//sErver/sHare/'))
+        self.assertTrue(p.is_relative_to(P('//sErver/sHare/Foo')))
+        self.assertTrue(p.is_relative_to('//sErver/sHare/Foo'))
+        self.assertTrue(p.is_relative_to('//sErver/sHare/Foo/'))
+        self.assertTrue(p.is_relative_to(P('//sErver/sHare/Foo/Bar')))
+        self.assertTrue(p.is_relative_to('//sErver/sHare/Foo/Bar'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P('/Server/Share/Foo')))
+        self.assertFalse(p.is_relative_to(P('c:/Server/Share/Foo')))
+        self.assertFalse(p.is_relative_to(P('//z/Share/Foo')))
+        self.assertFalse(p.is_relative_to(P('//Server/z/Foo')))
 
     def test_is_absolute(self):
         P = self.cls

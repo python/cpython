@@ -886,6 +886,15 @@ class PurePath(object):
         return self._from_parsed_parts('', root if n == 1 else '',
                                        abs_parts[n:])
 
+    def is_relative_to(self, *other):
+        """Return True if the path is relative to another path or False.
+        """
+        try:
+            self.relative_to(*other)
+            return True
+        except ValueError:
+            return False
+
     @property
     def parts(self):
         """An object providing sequence-like access to the
