@@ -594,10 +594,6 @@ the :attr:`warning` attribute of a :exc:`SecurityError`.
 
    An absolute pathname (names starting with a ``"/"``).
 
-.. data:: WARN_ABSOLUTE_NAME
-
-   An absolute pathname (names starting with a ``"/"``).
-
 .. data:: WARN_RELATIVE_NAME
 
    A relative pathname (names starting with ``".."``) that breaks out of the
