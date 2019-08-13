@@ -383,6 +383,17 @@ class Bz2UstarReadTest(Bz2Test, UstarReadTestBase, unittest.TestCase, TarFileTes
 class LzmaUstarReadTest(LzmaTest, UstarReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
+class SafeTarFileUstarReadTest(UstarReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarFileGzipUstarReadTest(GzipTest, UstarReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarFileBz2UstarReadTest(Bz2Test, UstarReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarFileLzmaUstarReadTest(LzmaTest, UstarReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
 
 class ListTestBase(ReadTest):
 
@@ -475,6 +486,17 @@ class Bz2ListTest(Bz2Test, ListTestBase, unittest.TestCase, TarFileTestBase):
 class LzmaListTest(LzmaTest, ListTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
+class SafeTarListTest(ListTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarGzipListTest(GzipTest, ListTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarBz2ListTest(Bz2Test, ListTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarLzmaListTest(LzmaTest, ListTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
 
 class CommonReadTest(ReadTest):
 
@@ -820,6 +842,19 @@ class LzmaMiscReadTest(LzmaTest, MiscReadTestBase, unittest.TestCase, TarFileTes
     def requires_name_attribute(self):
         self.skipTest("LZMAFile have no name attribute")
 
+class SafeTarMiscReadTest(MiscReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    test_fail_comp = None
+
+class SafeTarGzipMiscReadTest(GzipTest, MiscReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarBz2MiscReadTest(Bz2Test, MiscReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    def requires_name_attribute(self):
+        self.skipTest("BZ2File have no name attribute")
+
+class SafeTarLzmaMiscReadTest(LzmaTest, MiscReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    def requires_name_attribute(self):
+        self.skipTest("LZMAFile have no name attribute")
 
 class StreamReadTestBase(CommonReadTest):
 
@@ -894,6 +929,18 @@ class Bz2StreamReadTest(Bz2Test, StreamReadTestBase, unittest.TestCase, TarFileT
 class LzmaStreamReadTest(LzmaTest, StreamReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
+class SafeTarStreamReadTest(StreamReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarGzipStreamReadTest(GzipTest, StreamReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarBz2StreamReadTest(Bz2Test, StreamReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarLzmaStreamReadTest(LzmaTest, StreamReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
 
 class DetectReadTestBase(TarTest):
     def _testfunc_file(self, name, mode):
@@ -935,13 +982,7 @@ class DetectReadTestBase(TarTest):
     def test_detect_fileobj(self):
         self._test_modes(self._testfunc_fileobj)
 
-class DetectReadTest(DetectReadTestBase, unittest.TestCase, TarFileTestBase):
-    pass
-
-class GzipDetectReadTest(GzipTest, DetectReadTestBase, unittest.TestCase, TarFileTestBase):
-    pass
-
-class Bz2DetectReadTest(Bz2Test, DetectReadTestBase, unittest.TestCase, TarFileTestBase):
+class Bz2DetectReadTestBase(Bz2Test, DetectReadTestBase):
     def test_detect_stream_bz2(self):
         # Originally, tarfile's stream detection looked for the string
         # "BZh91" at the start of the file. This is incorrect because
@@ -956,11 +997,7 @@ class Bz2DetectReadTest(Bz2Test, DetectReadTestBase, unittest.TestCase, TarFileT
 
         self._testfunc_file(tmpname, "r|*")
 
-class LzmaDetectReadTest(LzmaTest, DetectReadTestBase, unittest.TestCase, TarFileTestBase):
-    pass
-
-
-class MemberReadTest(ReadTest, unittest.TestCase, TarFileTestBase):
+class MemberReadTestBase(ReadTest):
 
     def _test_member(self, tarinfo, chksum=None, **kwargs):
         if chksum is not None:
@@ -1056,6 +1093,35 @@ class MemberReadTest(ReadTest, unittest.TestCase, TarFileTestBase):
                                      "\xc4\xd6\xdc\xe4\xf6\xfc\xdf")
         self._test_member(tarinfo, size=7011, chksum=md5_regtype)
 
+class DetectReadTest(DetectReadTestBase, unittest.TestCase, TarFileTestBase):
+    pass
+
+class GzipDetectReadTest(GzipTest, DetectReadTestBase, unittest.TestCase, TarFileTestBase):
+    pass
+
+class Bz2DetectReadTest(Bz2DetectReadTestBase, unittest.TestCase, TarFileTestBase):
+    pass
+
+class LzmaDetectReadTest(LzmaTest, DetectReadTestBase, unittest.TestCase, TarFileTestBase):
+    pass
+
+class MemberReadTest(MemberReadTestBase, unittest.TestCase, TarFileTestBase):
+    pass
+
+class SafeTarDetectReadTest(DetectReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarGzipDetectReadTest(GzipTest, DetectReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarBz2DetectReadTest(Bz2DetectReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarLzmaDetectReadTest(LzmaTest, DetectReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
+
+class SafeTarMemberReadTest(MemberReadTestBase, unittest.TestCase, SafeTarFileTestBase):
+    pass
 
 class LongnameTest:
 
