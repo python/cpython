@@ -286,7 +286,7 @@ def _dnsname_match(dn, hostname):
         return False
 
     # Make sure there are no mistake "white space" present
-    #dn = dn.strip()
+    dn = dn.strip()
 
     wildcards = dn.count('*')
     # speed up common case w/o wildcards
