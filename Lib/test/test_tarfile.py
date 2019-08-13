@@ -247,7 +247,7 @@ class SafeTarFileTest(unittest.TestCase):
             return tar.is_safe()
 
 
-class UstarReadTest(ReadTest, unittest.TestCase):
+class UstarReadTestBase(ReadTest):
 
     def test_fileobj_regular_file(self):
         tarinfo = self.tar.getmember("ustar/regtype")
@@ -371,17 +371,20 @@ class UstarReadTest(ReadTest, unittest.TestCase):
     def test_issue14160(self):
         self._test_fileobj_link("symtype2", "ustar/regtype")
 
-class GzipUstarReadTest(GzipTest, UstarReadTest):
+class UstarReadTest(UstarReadTestBase, unittest.TestCase):
     pass
 
-class Bz2UstarReadTest(Bz2Test, UstarReadTest):
+class GzipUstarReadTest(GzipTest, UstarReadTestBase, unittest.TestCase):
     pass
 
-class LzmaUstarReadTest(LzmaTest, UstarReadTest):
+class Bz2UstarReadTest(Bz2Test, UstarReadTestBase, unittest.TestCase):
+    pass
+
+class LzmaUstarReadTest(LzmaTest, UstarReadTestBase, unittest.TestCase):
     pass
 
 
-class ListTest(ReadTest, unittest.TestCase):
+class ListTestBase(ReadTest):
 
     # Override setUp to use default encoding (UTF-8)
     def setUp(self):
@@ -460,13 +463,16 @@ class ListTest(ReadTest, unittest.TestCase):
         self.assertIn(b'ustar/regtype', out)
         self.assertNotIn(b'ustar/conttype', out)
 
-class GzipListTest(GzipTest, ListTest):
+class ListTest(ListTestBase, unittest.TestCase):
     pass
 
-class Bz2ListTest(Bz2Test, ListTest):
+class GzipListTest(GzipTest, ListTestBase, unittest.TestCase):
     pass
 
-class LzmaListTest(LzmaTest, ListTest):
+class Bz2ListTest(Bz2Test, ListTestBase, unittest.TestCase):
+    pass
+
+class LzmaListTest(LzmaTest, ListTestBase, unittest.TestCase):
     pass
 
 
@@ -815,7 +821,7 @@ class LzmaMiscReadTest(LzmaTest, MiscReadTestBase, unittest.TestCase):
         self.skipTest("LZMAFile have no name attribute")
 
 
-class StreamReadTest(CommonReadTest, unittest.TestCase):
+class StreamReadTestBase(CommonReadTest):
 
     prefix="r|"
 
@@ -876,17 +882,20 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
         finally:
             tar1.close()
 
-class GzipStreamReadTest(GzipTest, StreamReadTest):
+class StreamReadTest(StreamReadTestBase, unittest.TestCase):
     pass
 
-class Bz2StreamReadTest(Bz2Test, StreamReadTest):
+class GzipStreamReadTest(GzipTest, StreamReadTestBase, unittest.TestCase):
     pass
 
-class LzmaStreamReadTest(LzmaTest, StreamReadTest):
+class Bz2StreamReadTest(Bz2Test, StreamReadTestBase, unittest.TestCase):
+    pass
+
+class LzmaStreamReadTest(LzmaTest, StreamReadTestBase, unittest.TestCase):
     pass
 
 
-class DetectReadTest(TarTest, unittest.TestCase):
+class DetectReadTestBase(TarTest):
     def _testfunc_file(self, name, mode):
         try:
             tar = tarfile.open(name, mode)
@@ -926,10 +935,13 @@ class DetectReadTest(TarTest, unittest.TestCase):
     def test_detect_fileobj(self):
         self._test_modes(self._testfunc_fileobj)
 
-class GzipDetectReadTest(GzipTest, DetectReadTest):
+class DetectReadTest(DetectReadTestBase, unittest.TestCase):
     pass
 
-class Bz2DetectReadTest(Bz2Test, DetectReadTest):
+class GzipDetectReadTest(GzipTest, DetectReadTestBase, unittest.TestCase):
+    pass
+
+class Bz2DetectReadTest(Bz2Test, DetectReadTestBase, unittest.TestCase):
     def test_detect_stream_bz2(self):
         # Originally, tarfile's stream detection looked for the string
         # "BZh91" at the start of the file. This is incorrect because
@@ -944,7 +956,7 @@ class Bz2DetectReadTest(Bz2Test, DetectReadTest):
 
         self._testfunc_file(tmpname, "r|*")
 
-class LzmaDetectReadTest(LzmaTest, DetectReadTest):
+class LzmaDetectReadTest(LzmaTest, DetectReadTestBase, unittest.TestCase):
     pass
 
 
@@ -1190,7 +1202,7 @@ class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase):
             tar.close()
 
 
-class WriteTestBase(TarTest):
+class WriteTestBaseBase(TarTest):
     # Put all write tests in here that are supposed to be tested
     # in all possible mode combinations.
 
@@ -1220,7 +1232,7 @@ class WriteTestBase(TarTest):
             self.assertEqual(len(fobj.read()), tarfile.RECORDSIZE * 2)
 
 
-class WriteTest(WriteTestBase, unittest.TestCase):
+class WriteTestBase(WriteTestBaseBase):
 
     prefix = "w:"
 
@@ -1530,17 +1542,20 @@ class WriteTest(WriteTestBase, unittest.TestCase):
                                    pax_headers={'non': 'empty'})
             self.assertFalse(f.closed)
 
-class GzipWriteTest(GzipTest, WriteTest):
+class WriteTest(WriteTestBase, unittest.TestCase):
     pass
 
-class Bz2WriteTest(Bz2Test, WriteTest):
+class GzipWriteTest(GzipTest, WriteTestBase, unittest.TestCase):
     pass
 
-class LzmaWriteTest(LzmaTest, WriteTest):
+class Bz2WriteTest(Bz2Test, WriteTestBase, unittest.TestCase):
+    pass
+
+class LzmaWriteTest(LzmaTest, WriteTestBase, unittest.TestCase):
     pass
 
 
-class StreamWriteTest(WriteTestBase, unittest.TestCase):
+class StreamWriteTestBase(WriteTestBaseBase):
 
     prefix = "w|"
     decompressor = None
@@ -1578,13 +1593,16 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
         finally:
             os.umask(original_umask)
 
-class GzipStreamWriteTest(GzipTest, StreamWriteTest):
+class StreamWriteTest(StreamWriteTestBase, unittest.TestCase):
     pass
 
-class Bz2StreamWriteTest(Bz2Test, StreamWriteTest):
+class GzipStreamWriteTest(GzipTest, StreamWriteTestBase, unittest.TestCase):
+    pass
+
+class Bz2StreamWriteTest(Bz2Test, StreamWriteTestBase, unittest.TestCase):
     decompressor = bz2.BZ2Decompressor if bz2 else None
 
-class LzmaStreamWriteTest(LzmaTest, StreamWriteTest):
+class LzmaStreamWriteTest(LzmaTest, StreamWriteTestBase, unittest.TestCase):
     decompressor = lzma.LZMADecompressor if lzma else None
 
 
@@ -1670,7 +1688,7 @@ class GNUWriteTest(unittest.TestCase):
                    ("longlnk/" * 127) + "longlink_")
 
 
-class CreateTest(WriteTestBase, unittest.TestCase):
+class CreateTestBase(WriteTestBaseBase, unittest.TestCase):
 
     prefix = "x:"
 
@@ -1759,20 +1777,19 @@ class CreateTest(WriteTestBase, unittest.TestCase):
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
 
-
-class GzipCreateTest(GzipTest, CreateTest):
+class CreateTest(CreateTestBase, unittest.TestCase):
     pass
 
-
-class Bz2CreateTest(Bz2Test, CreateTest):
+class GzipCreateTest(GzipTest, CreateTestBase, unittest.TestCase):
     pass
 
-
-class LzmaCreateTest(LzmaTest, CreateTest):
+class Bz2CreateTest(Bz2Test, CreateTestBase, unittest.TestCase):
     pass
 
+class LzmaCreateTest(LzmaTest, CreateTestBase, unittest.TestCase):
+    pass
 
-class CreateWithXModeTest(CreateTest):
+class CreateWithXModeTest(CreateTestBase, unittest.TestCase):
 
     prefix = "x"
 
