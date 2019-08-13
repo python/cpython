@@ -2461,11 +2461,12 @@ class Win32SymlinkTests(unittest.TestCase):
 
         for alias in aliases:
             if support.verbose:
+                print()
                 print("Testing with", alias)
             st = os.lstat(alias)
             self.assertEqual(st, os.stat(alias))
+            self.assertFalse(stat.S_ISLNK(st.st_mode))
             self.assertEqual(st.st_reparse_tag, stat.IO_REPARSE_TAG_APPEXECLINK)
-            self.assertFalse(os.path.islink(alias))
             # testing the first one we see is sufficient
             break
         else:
@@ -2478,25 +2479,29 @@ class Win32JunctionTests(unittest.TestCase):
 
     def setUp(self):
         assert os.path.exists(self.junction_target)
-        assert not os.path.exists(self.junction)
+        assert not os.path.lexists(self.junction)
 
     def tearDown(self):
-        if os.path.exists(self.junction):
-            # os.rmdir delegates to Windows' RemoveDirectoryW,
-            # which removes junction points safely.
-            os.rmdir(self.junction)
+        if os.path.lexists(self.junction):
+            os.unlink(self.junction)
 
     def test_create_junction(self):
         _winapi.CreateJunction(self.junction_target, self.junction)
+        self.assertTrue(os.path.lexists(self.junction))
         self.assertTrue(os.path.exists(self.junction))
         self.assertTrue(os.path.isdir(self.junction))
+        self.assertNotEqual(os.stat(self.junction), os.lstat(self.junction))
+        self.assertEqual(os.stat(self.junction), os.stat(self.junction_target))
 
-        # Junctions are not recognized as links.
-        self.assertFalse(os.path.islink(self.junction))
+        # bpo-37834: Junctions are now recognized as links.
+        self.assertTrue(os.path.islink(self.junction))
+        self.assertEqual(os.path.normcase("\\\\?\\" + self.junction_target),
+                         os.path.normcase(os.readlink(self.junction)))
 
     def test_unlink_removes_junction(self):
         _winapi.CreateJunction(self.junction_target, self.junction)
         self.assertTrue(os.path.exists(self.junction))
+        self.assertTrue(os.path.lexists(self.junction))
 
         os.unlink(self.junction)
         self.assertFalse(os.path.exists(self.junction))

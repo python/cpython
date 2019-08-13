@@ -1732,7 +1732,8 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             return -1;
         if (traverse &&
             info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
-            reparse_tag == IO_REPARSE_TAG_SYMLINK) {
+            (reparse_tag == IO_REPARSE_TAG_SYMLINK ||
+             reparse_tag == IO_REPARSE_TAG_MOUNT_POINT)) {
             /* Should traverse, but could not open reparse point handle */
             SetLastError(lastError);
             return -1;
@@ -1752,7 +1753,9 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             if (!CloseHandle(hFile))
                 return -1;
 
-            if (traverse && reparse_tag == IO_REPARSE_TAG_SYMLINK) {
+            if (traverse &&
+                (reparse_tag == IO_REPARSE_TAG_SYMLINK ||
+                 reparse_tag == IO_REPARSE_TAG_MOUNT_POINT)) {
                 /* In order to call GetFinalPathNameByHandle we need to open
                    the file without the reparse handling flag set. */
                 hFile2 = CreateFileW(
@@ -3825,18 +3828,8 @@ os__getfullpathname_impl(PyObject *module, path_t *path)
 }
 
 
-/*[clinic input]
-os._getfinalpathname
-
-    path: path_t
-    /
-
-A helper function for samepath on windows.
-[clinic start generated code]*/
-
 static PyObject *
-os__getfinalpathname_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=621a3c79bc29ebfa input=2b6b6c7cbad5fb84]*/
+getfinalpathname_impl(const wchar_t *path, PyObject *path_object)
 {
     HANDLE hFile;
     wchar_t buf[MAXPATHLEN], *target_path = buf;
@@ -3846,7 +3839,7 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
 
     Py_BEGIN_ALLOW_THREADS
     hFile = CreateFileW(
-        path->wide,
+        path,
         0, /* desired access */
         0, /* share mode */
         NULL, /* security attributes */
@@ -3857,7 +3850,7 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
     Py_END_ALLOW_THREADS
 
     if (hFile == INVALID_HANDLE_VALUE) {
-        return win32_error_object("CreateFileW", path->object);
+        return win32_error_object("CreateFileW", path_object);
     }
 
     /* We have a good handle to the target, use it to determine the
@@ -3870,7 +3863,7 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
 
         if (!result_length) {
             result = win32_error_object("GetFinalPathNameByHandleW",
-                                         path->object);
+                                         path_object);
             goto cleanup;
         }
 
@@ -3891,8 +3884,6 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
     }
 
     result = PyUnicode_FromWideChar(target_path, result_length);
-    if (path->narrow)
-        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
 
 cleanup:
     if (target_path != buf) {
@@ -3901,6 +3892,27 @@ cleanup:
     CloseHandle(hFile);
     return result;
 }
+
+/*[clinic input]
+os._getfinalpathname
+
+    path: path_t
+    /
+
+A helper function for samepath on windows.
+[clinic start generated code]*/
+
+static PyObject *
+os__getfinalpathname_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=621a3c79bc29ebfa input=2b6b6c7cbad5fb84]*/
+{
+    PyObject *result = getfinalpathname_impl(path->wide, path->object);
+    if (result && path->narrow) {
+        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
+    return result;
+}
+
 
 /*[clinic input]
 os._isdir
@@ -7812,7 +7824,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     DWORD n_bytes_returned;
     DWORD io_result;
     HANDLE reparse_point_handle;
-    char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+    char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE + sizeof(wchar_t)];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
     PyObject *result;
 
@@ -7849,22 +7861,37 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         return path_error(path);
     }
 
+    wchar_t *name = NULL;
+    Py_ssize_t nameLen = 0;
     if (rdb->ReparseTag == IO_REPARSE_TAG_SYMLINK)
     {
-        const wchar_t *print_name;
-        print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                     rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
-
-        result = PyUnicode_FromWideChar(print_name,
-                rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
+        name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
+                rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset);
+        nameLen = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
+    }
+    else if (rdb->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT)
+    {
+        name = (wchar_t *)((char*)rdb->MountPointReparseBuffer.PathBuffer +
+                rdb->MountPointReparseBuffer.SubstituteNameOffset);
+        nameLen = rdb->MountPointReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
     }
     else
     {
         PyErr_SetString(PyExc_ValueError, "not a symbolic link");
         return NULL;
     }
-    if (result && path->narrow) {
-        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    if (name) {
+        /* we have a mutable buffer with at least one extra space,
+           so this is safe */
+        name[nameLen] = L'\0';
+        result = getfinalpathname_impl(name, NULL);
+        if (!result) {
+            PyErr_Clear();
+            result = PyUnicode_FromWideChar(name, nameLen);
+        }
+        if (path->narrow) {
+            Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+        }
     }
     return result;
 #endif
