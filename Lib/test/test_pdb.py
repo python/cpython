@@ -1377,6 +1377,19 @@ class PdbTestCase(unittest.TestCase):
             if save_home is not None:
                 os.environ['HOME'] = save_home
 
+    def test_readrc_homedir(self):
+        save_home = os.environ.pop("HOME", None)
+        with support.temp_dir() as temp_dir, patch("os.path.expanduser"):
+            rc_path = os.path.join(temp_dir, ".pdbrc")
+            os.path.expanduser.return_value = rc_path
+            try:
+                with open(rc_path, "w") as f:
+                    f.write("invalid")
+                self.assertEqual(pdb.Pdb().rcLines[0], "invalid")
+            finally:
+                if save_home is not None:
+                    os.environ["HOME"] = save_home
+
     def test_header(self):
         stdout = StringIO()
         header = 'Nobody expects... blah, blah, blah'

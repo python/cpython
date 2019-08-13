@@ -375,7 +375,7 @@ class ResolveNameTests:
 
     def test_no_package(self):
         # .bacon in ''
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ImportError):
             self.util.resolve_name('.bacon', '')
 
     def test_in_package(self):
@@ -390,7 +390,7 @@ class ResolveNameTests:
 
     def test_escape(self):
         # ..bacon in spam
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ImportError):
             self.util.resolve_name('..bacon', 'spam')
 
 
@@ -518,7 +518,7 @@ class FindSpecTests:
         with util.temp_module(name, pkg=True) as pkg_dir:
             fullname, _ = util.submodule(name, subname, pkg_dir)
             relname = '.' + subname
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ImportError):
                 self.util.find_spec(relname)
             self.assertNotIn(name, sorted(sys.modules))
             self.assertNotIn(fullname, sorted(sys.modules))

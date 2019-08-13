@@ -6,7 +6,7 @@ import platform
 from tkinter import *
 from tkinter.ttk import Frame, Scrollbar
 
-from idlelib.autocomplete import COMPLETE_FILES, COMPLETE_ATTRIBUTES
+from idlelib.autocomplete import FILES, ATTRS
 from idlelib.multicall import MC_SHIFT
 
 HIDE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-hide>>"
@@ -39,8 +39,7 @@ class AutoCompleteWindow:
         self.completions = None
         # A list with more completions, or None
         self.morecompletions = None
-        # The completion mode. Either autocomplete.COMPLETE_ATTRIBUTES or
-        # autocomplete.COMPLETE_FILES
+        # The completion mode, either autocomplete.ATTRS or .FILES.
         self.mode = None
         # The current completion start, on the text box (a string)
         self.start = None
@@ -73,8 +72,8 @@ class AutoCompleteWindow:
 
     def _binary_search(self, s):
         """Find the first index in self.completions where completions[i] is
-        greater or equal to s, or the last index if there is no such
-        one."""
+        greater or equal to s, or the last index if there is no such.
+        """
         i = 0; j = len(self.completions)
         while j > i:
             m = (i + j) // 2
@@ -87,7 +86,8 @@ class AutoCompleteWindow:
     def _complete_string(self, s):
         """Assuming that s is the prefix of a string in self.completions,
         return the longest string which is a prefix of all the strings which
-        s is a prefix of them. If s is not a prefix of a string, return s."""
+        s is a prefix of them. If s is not a prefix of a string, return s.
+        """
         first = self._binary_search(s)
         if self.completions[first][:len(s)] != s:
             # There is not even one completion which s is a prefix of.
@@ -116,8 +116,10 @@ class AutoCompleteWindow:
         return first_comp[:i]
 
     def _selection_changed(self):
-        """Should be called when the selection of the Listbox has changed.
-        Updates the Listbox display and calls _change_start."""
+        """Call when the selection of the Listbox has changed.
+
+        Updates the Listbox display and calls _change_start.
+        """
         cursel = int(self.listbox.curselection()[0])
 
         self.listbox.see(cursel)
@@ -153,8 +155,10 @@ class AutoCompleteWindow:
 
     def show_window(self, comp_lists, index, complete, mode, userWantsWin):
         """Show the autocomplete list, bind events.
-        If complete is True, complete the text, and if there is exactly one
-        matching completion, don't open a list."""
+
+        If complete is True, complete the text, and if there is exactly
+        one matching completion, don't open a list.
+        """
         # Handle the start we already have
         self.completions, self.morecompletions = comp_lists
         self.mode = mode
@@ -300,7 +304,7 @@ class AutoCompleteWindow:
         if keysym != "Tab":
             self.lastkey_was_tab = False
         if (len(keysym) == 1 or keysym in ("underscore", "BackSpace")
-            or (self.mode == COMPLETE_FILES and keysym in
+            or (self.mode == FILES and keysym in
                 ("period", "minus"))) \
            and not (state & ~MC_SHIFT):
             # Normal editing of text
@@ -329,10 +333,10 @@ class AutoCompleteWindow:
             self.hide_window()
             return 'break'
 
-        elif (self.mode == COMPLETE_ATTRIBUTES and keysym in
+        elif (self.mode == ATTRS and keysym in
               ("period", "space", "parenleft", "parenright", "bracketleft",
                "bracketright")) or \
-             (self.mode == COMPLETE_FILES and keysym in
+             (self.mode == FILES and keysym in
               ("slash", "backslash", "quotedbl", "apostrophe")) \
              and not (state & ~MC_SHIFT):
             # If start is a prefix of the selection, but is not '' when
@@ -340,7 +344,7 @@ class AutoCompleteWindow:
             # selected completion. Anyway, close the list.
             cursel = int(self.listbox.curselection()[0])
             if self.completions[cursel][:len(self.start)] == self.start \
-               and (self.mode == COMPLETE_ATTRIBUTES or self.start):
+               and (self.mode == ATTRS or self.start):
                 self._change_start(self.completions[cursel])
             self.hide_window()
             return None
