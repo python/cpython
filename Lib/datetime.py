@@ -2115,7 +2115,12 @@ class datetime(date):
             if tzoff is None:
                 self._hashcode = hash(t._getstate()[0])
             else:
-                self._hashcode = hash((t - tzoff)._getstate()[0])
+                try:
+                    t_with_offset = t - tzoff
+                except OverflowError:
+                    # t - tzoff is less than 0, which can't be represented as a datetime, so we use t + tzoff instead.
+                    t_with_offset = t + tzoff
+                self._hashcode = hash(t_with_offset._getstate()[0])
         return self._hashcode
 
     # Pickle support.
