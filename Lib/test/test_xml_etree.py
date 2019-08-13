@@ -797,11 +797,15 @@ class ElementTreeTest(unittest.TestCase):
         ET.indent(elem)
         self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>\n</html>')
 
+        elem = ET.XML("<html> <body>text</body>  </html>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>\n</html>')
+
         elem = ET.XML("<html><body>text</body>tail</html>")
         ET.indent(elem)
         self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>tail</html>')
 
-        elem = ET.XML("<html><body><p>par</p><p>text</p><p><br/></p></body></html>")
+        elem = ET.XML("<html><body><p>par</p>\n<p>text</p>\t<p><br/></p></body></html>")
         ET.indent(elem)
         self.assertEqual(
             ET.tostring(elem),
