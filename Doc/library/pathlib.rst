@@ -466,7 +466,6 @@ Pure paths provide the following methods and properties:
 
    Return whether or not this path is relative to the *other* path.
 
-      >>> from pathlib import PurePath
       >>> p = PurePath('/etc/passwd')
       >>> p.is_relative_to('/etc')
       True
