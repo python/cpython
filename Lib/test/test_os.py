@@ -2275,13 +2275,20 @@ class ReadlinkTests(unittest.TestCase):
         os.symlink(self.filelink_target, self.filelink)
         self.addCleanup(support.unlink, self.filelink)
         filelink = FakePath(self.filelink)
-        self.assertEqual(os.readlink(filelink), self.filelink_target)
+        path = os.readlink(filelink)
+        if sys.platform == "win32" and path.startswith("\\\\?\\"):
+            # issue9949: ntpath.realpath() should do this, but does not
+            path = path[4:]
+        self.assertEqual(path, self.filelink_target)
 
     @support.skip_unless_symlink
     def test_pathlike_bytes(self):
         os.symlink(self.filelinkb_target, self.filelinkb)
         self.addCleanup(support.unlink, self.filelinkb)
         path = os.readlink(FakePath(self.filelinkb))
+        if sys.platform == "win32" and path.startswith(b"\\\\?\\"):
+            # issue9949: ntpath.realpath() should do this, but does not
+            path = path[4:]
         self.assertEqual(path, self.filelinkb_target)
         self.assertIsInstance(path, bytes)
 
@@ -2290,6 +2297,9 @@ class ReadlinkTests(unittest.TestCase):
         os.symlink(self.filelinkb_target, self.filelinkb)
         self.addCleanup(support.unlink, self.filelinkb)
         path = os.readlink(self.filelinkb)
+        if sys.platform == "win32" and path.startswith(b"\\\\?\\"):
+            # issue9949: ntpath.realpath() should do this, but does not
+            path = path[4:]
         self.assertEqual(path, self.filelinkb_target)
         self.assertIsInstance(path, bytes)
 

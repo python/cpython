@@ -754,8 +754,12 @@ class TestShutil(unittest.TestCase):
         src_stat = os.lstat(src_link)
         shutil.copytree(src_dir, dst_dir, symlinks=True)
         self.assertTrue(os.path.islink(os.path.join(dst_dir, 'sub', 'link')))
-        self.assertEqual(os.readlink(os.path.join(dst_dir, 'sub', 'link')),
-                         os.path.join(src_dir, 'file.txt'))
+        actual = os.readlink(os.path.join(dst_dir, 'sub', 'link'))
+        expected = os.path.join(src_dir, 'file.txt')
+        if sys.platform == 'win32':
+            # issue9949: ntpath.realpath() should do this, but does not
+            expected = os.path._getfinalpathname(expected)
+        self.assertEqual(actual, expected)
         dst_stat = os.lstat(dst_link)
         if hasattr(os, 'lchmod'):
             self.assertEqual(dst_stat.st_mode, src_stat.st_mode)
@@ -1873,7 +1877,7 @@ class TestMove(unittest.TestCase):
         self.assertTrue(os.path.islink(dst_link))
         # On Windows, os.path.realpath does not follow symlinks (issue #9949)
         if os.name == 'nt':
-            self.assertEqual(os.path.realpath(src), os.readlink(dst_link))
+            self.assertEqual('\\\\?\\' + os.path.realpath(src), os.readlink(dst_link))
         else:
             self.assertEqual(os.path.realpath(src), os.path.realpath(dst_link))
 

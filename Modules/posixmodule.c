@@ -3828,8 +3828,18 @@ os__getfullpathname_impl(PyObject *module, path_t *path)
 }
 
 
+/*[clinic input]
+os._getfinalpathname
+
+    path: path_t
+    /
+
+A helper function for samepath on windows.
+[clinic start generated code]*/
+
 static PyObject *
-getfinalpathname_impl(const wchar_t *path, PyObject *path_object)
+os__getfinalpathname_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=621a3c79bc29ebfa input=2b6b6c7cbad5fb84]*/
 {
     HANDLE hFile;
     wchar_t buf[MAXPATHLEN], *target_path = buf;
@@ -3839,7 +3849,7 @@ getfinalpathname_impl(const wchar_t *path, PyObject *path_object)
 
     Py_BEGIN_ALLOW_THREADS
     hFile = CreateFileW(
-        path,
+        path->wide,
         0, /* desired access */
         0, /* share mode */
         NULL, /* security attributes */
@@ -3850,7 +3860,7 @@ getfinalpathname_impl(const wchar_t *path, PyObject *path_object)
     Py_END_ALLOW_THREADS
 
     if (hFile == INVALID_HANDLE_VALUE) {
-        return win32_error_object("CreateFileW", path_object);
+        return win32_error_object("CreateFileW", path->object);
     }
 
     /* We have a good handle to the target, use it to determine the
@@ -3863,7 +3873,7 @@ getfinalpathname_impl(const wchar_t *path, PyObject *path_object)
 
         if (!result_length) {
             result = win32_error_object("GetFinalPathNameByHandleW",
-                                         path_object);
+                                         path->object);
             goto cleanup;
         }
 
@@ -3884,32 +3894,16 @@ getfinalpathname_impl(const wchar_t *path, PyObject *path_object)
     }
 
     result = PyUnicode_FromWideChar(target_path, result_length);
+    if (result && path->narrow) {
+        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
+    return result;
 
 cleanup:
     if (target_path != buf) {
         PyMem_Free(target_path);
     }
     CloseHandle(hFile);
-    return result;
-}
-
-/*[clinic input]
-os._getfinalpathname
-
-    path: path_t
-    /
-
-A helper function for samepath on windows.
-[clinic start generated code]*/
-
-static PyObject *
-os__getfinalpathname_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=621a3c79bc29ebfa input=2b6b6c7cbad5fb84]*/
-{
-    PyObject *result = getfinalpathname_impl(path->wide, path->object);
-    if (result && path->narrow) {
-        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
-    }
     return result;
 }
 
@@ -7884,11 +7878,10 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         /* we have a mutable buffer with at least one extra space,
            so this is safe */
         name[nameLen] = L'\0';
-        result = getfinalpathname_impl(name, NULL);
-        if (!result) {
-            PyErr_Clear();
-            result = PyUnicode_FromWideChar(name, nameLen);
+        if (wcsncmp(name, L"\\??\\", 4) == 0) {
+            name[1] = L'\\';
         }
+        result = PyUnicode_FromWideChar(name, nameLen);
         if (path->narrow) {
             Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
         }

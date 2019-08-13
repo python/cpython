@@ -1,6 +1,7 @@
 """Tests for the lll script in the Tools/script directory."""
 
 import os
+import sys
 import tempfile
 from test import support
 from test.test_tools import skip_if_missing, import_tool
@@ -26,6 +27,10 @@ class lllTests(unittest.TestCase):
 
             with support.captured_stdout() as output:
                 self.lll.main([dir1, dir2])
+            if sys.platform == 'win32':
+                # issue9949: ntpath.realpath() should do this, but does not
+                fn1 = os.path._getfinalpathname(fn1)
+                fn2 = os.path._getfinalpathname(fn2)
             self.assertEqual(output.getvalue(),
                 f'{dir1}:\n'
                 f'symlink -> {fn1}\n'
