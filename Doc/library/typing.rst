@@ -1245,7 +1245,8 @@ The module defines the following classes, functions and decorators:
 .. data:: Tuple
 
    Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
-   with the first item of type X and the second of type Y.
+   with the first item of type X and the second of type Y. The type of
+   the empty tuple can be written as ``Tuple[()]``.
 
    Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
    to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
