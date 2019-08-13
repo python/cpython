@@ -406,7 +406,7 @@ class TestDiscovery(unittest.TestCase):
         top_level_dir = os.path.abspath('/foo/bar')
         start_dir = os.path.abspath('/foo/bar/baz')
         self.assertEqual(suite, "['tests']")
-        self.assertEqual(loader._top_level_dir, '/foo')
+        self.assertEqual(loader._top_level_dir, os.path.abspath('/foo'))
         self.assertEqual(_find_tests_args, [(start_dir, 'pattern')])
         self.assertIn(top_level_dir, sys.path)
 
