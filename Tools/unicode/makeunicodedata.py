@@ -897,8 +897,7 @@ def open_data(template, version):
             url = ('http://www.unicode.org/Public/3.2-Update/'+template) % ('-'+version,)
         else:
             url = ('http://www.unicode.org/Public/%s/ucd/'+template) % (version, '')
-        if not os.path.exists(DATA_DIR):
-            os.mkdir(DATA_DIR)
+        os.makedirs(DATA_DIR, exist_ok=True)
         urllib.request.urlretrieve(url, filename=local)
     if local.endswith('.txt'):
         return open(local, encoding='utf-8')
