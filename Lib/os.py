@@ -1107,3 +1107,24 @@ if name == 'nt':
             cookie,
             nt._remove_dll_directory
         )
+
+    _readlink = readlink
+    def readlink(path):
+        import ntpath
+        link = _readlink(path)
+        prefix = b'\\\\?\\' if isinstance(link, bytes) else '\\\\?\\'
+        if link.startswith(prefix):
+            try:
+                link = ntpath._getfinalpathname(link[4:])[4:]
+            except OSError:
+                pass
+            else:
+                if link:
+                    return link
+        try:
+            link = ntpath._getfinalpathname(link)
+        except OSError:
+            pass
+        return link
+
+    readlink.__doc__ = _readlink.__doc__

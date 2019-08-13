@@ -7818,7 +7818,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     DWORD n_bytes_returned;
     DWORD io_result;
     HANDLE reparse_point_handle;
-    char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE + sizeof(wchar_t)];
+    char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
     PyObject *result;
 
@@ -7860,13 +7860,13 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     if (rdb->ReparseTag == IO_REPARSE_TAG_SYMLINK)
     {
         name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset);
+                           rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset);
         nameLen = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
     }
     else if (rdb->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT)
     {
         name = (wchar_t *)((char*)rdb->MountPointReparseBuffer.PathBuffer +
-                rdb->MountPointReparseBuffer.SubstituteNameOffset);
+                           rdb->MountPointReparseBuffer.SubstituteNameOffset);
         nameLen = rdb->MountPointReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
     }
     else
@@ -7875,10 +7875,8 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         return NULL;
     }
     if (name) {
-        /* we have a mutable buffer with at least one extra space,
-           so this is safe */
-        name[nameLen] = L'\0';
-        if (wcsncmp(name, L"\\??\\", 4) == 0) {
+        if (nameLen > 4 && wcsncmp(name, L"\\??\\", 4) == 0) {
+            /* Our buffer is mutable, so this is okay */
             name[1] = L'\\';
         }
         result = PyUnicode_FromWideChar(name, nameLen);
