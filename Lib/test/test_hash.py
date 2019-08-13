@@ -310,11 +310,11 @@ class MemoryviewHashRandomizationTests(StringlikeHashRandomizationTests,
     def test_empty_string(self):
         self.assertEqual(hash(memoryview(b"")), 0)
 
-class DatetimePureTests(HashRandomizationTests):
+class DatetimeFastTests(HashRandomizationTests):
     def get_hash_command(self, repr_):
         return 'import datetime; print(hash(%s))' % repr_
 
-class DatetimeFastTests(HashRandomizationTests):
+class DatetimePureTests(HashRandomizationTests):
     def get_hash_command(self, repr_):
         return """from test.support import import_fresh_module;
 datetime = import_fresh_module('datetime', blocked=['_datetime'])
