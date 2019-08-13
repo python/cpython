@@ -592,12 +592,21 @@ class RefactoringTool(object):
             return block
         if self.refactor_tree(tree, filename):
             new = str(tree).splitlines(keepends=True)
+            # Adjust lineno for lines inserted before
+            jmp = 0
+            for n in new:
+                if n == '\n': break
+                jmp += 1
+            pre = new[:jmp]
             # Undo the adjustment of the line numbers in wrap_toks() below.
-            clipped, new = new[:lineno-1], new[lineno-1:]
+            clipped, new = new[jmp:lineno-1+jmp], new[lineno-1+jmp:]
             assert clipped == ["\n"] * (lineno-1), clipped
             if not new[-1].endswith("\n"):
                 new[-1] += "\n"
-            block = [indent + self.PS1 + new.pop(0)]
+            block = []
+            if pre:
+                block += [indent + self.PS1 + line for line in pre]
+            block += [indent + self.PS1 + new.pop(0)]
             if new:
                 block += [indent + self.PS2 + line for line in new]
         return block

@@ -428,6 +428,30 @@ class Test_reduce(FixerTestCase):
         s = "reduce()"
         self.unchanged(s)
 
+class Test_doctests(FixerTestCase):
+    fixer = "reduce"
+
+    def check(self, before, after, ignore_warnings=False):
+        before = support.reformat(before)
+        after = support.reformat(after)
+        output = self.refactor.refactor_docstring(before, self.filename)
+        self.assertEqual(after, output)
+
+    def test_reduce(self):
+        # See issue 12611
+        b = """\
+        '''
+        >>> reduce(lambda x, y: x + y, seq)
+        '''
+        """
+        a = """\
+        '''
+        >>> from functools import reduce
+        >>> reduce(lambda x, y: x + y, seq)
+        '''
+        """
+        self.check(b, a)
+
 class Test_print(FixerTestCase):
     fixer = "print"
 
