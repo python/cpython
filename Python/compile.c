@@ -166,6 +166,8 @@ struct compiler {
                                     This can be used to temporarily visit
                                     nodes without emitting bytecode to
                                     check only errors. */
+    int c_do_not_return;         /* The compiler won't do anything except
+                                    syntax check when it sees a return */
 
     PyObject *c_const_cache;     /* Python dict holding all constants,
                                     including names tuple */
@@ -346,6 +348,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
     c.c_nestlevel = 0;
     c.c_do_not_emit_bytecode = 0;
+    c.c_do_not_return = 0;
 
     if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
         goto finally;
@@ -2780,23 +2783,24 @@ compiler_return(struct compiler *c, stmt_ty s)
             return compiler_error(
                 c, "'return' with value in async generator");
     }
-    if (preserve_tos) {
-        VISIT(c, expr, s->v.Return.value);
-    }
-    for (int depth = c->u->u_nfblocks; depth--;) {
-        struct fblockinfo *info = &c->u->u_fblock[depth];
+    if (!c->c_do_not_return){
+        if (preserve_tos) {
+            VISIT(c, expr, s->v.Return.value);
+        }
+        for (int depth = c->u->u_nfblocks; depth--;) {
+            struct fblockinfo *info = &c->u->u_fblock[depth];
 
-        if (!compiler_unwind_fblock(c, info, preserve_tos))
-            return 0;
+            if (!compiler_unwind_fblock(c, info, preserve_tos))
+                return 0;
+        }
+        if (s->v.Return.value == NULL) {
+            ADDOP_LOAD_CONST(c, Py_None);
+        }
+        else if (!preserve_tos) {
+            VISIT(c, expr, s->v.Return.value);
+        }
+        ADDOP(c, RETURN_VALUE);
     }
-    if (s->v.Return.value == NULL) {
-        ADDOP_LOAD_CONST(c, Py_None);
-    }
-    else if (!preserve_tos) {
-        VISIT(c, expr, s->v.Return.value);
-    }
-    ADDOP(c, RETURN_VALUE);
-
     return 1;
 }
 
@@ -2812,6 +2816,9 @@ compiler_break(struct compiler *c)
             ADDOP_JABS(c, JUMP_ABSOLUTE, info->fb_exit);
             return 1;
         }
+        if (info->fb_type == FINALLY_END && !c->c_do_not_return){
+            c->c_do_not_return = 1;
+        }
     }
     return compiler_error(c, "'break' outside loop");
 }
@@ -2825,6 +2832,9 @@ compiler_continue(struct compiler *c)
         if (info->fb_type == WHILE_LOOP || info->fb_type == FOR_LOOP) {
             ADDOP_JABS(c, JUMP_ABSOLUTE, info->fb_block);
             return 1;
+        }
+        if (info->fb_type == FINALLY_END && !c->c_do_not_return){
+            c->c_do_not_return = 1;
         }
         if (!compiler_unwind_fblock(c, info, 0))
             return 0;
@@ -2876,6 +2886,13 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     if (body == NULL || end == NULL)
         return 0;
 
+    if (!compiler_push_fblock(c, FINALLY_END, body, end))
+        return 0;
+    c->c_do_not_emit_bytecode = 1;
+    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
+    c->c_do_not_emit_bytecode = 0;
+    compiler_pop_fblock(c, FINALLY_END, body);
+
     /* `try` block */
     ADDOP_JREL(c, SETUP_FINALLY, end);
     compiler_use_next_block(c, body);
@@ -2898,6 +2915,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, END_FINALLY);
+    c->c_do_not_return = 0; /* be sure it is turned off */
     compiler_pop_fblock(c, FINALLY_END, end);
     return 1;
 }

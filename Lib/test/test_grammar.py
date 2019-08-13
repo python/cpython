@@ -916,6 +916,16 @@ class GrammarTests(unittest.TestCase):
                 break
         self.assertEqual(count, 0)
 
+        def wrapper():
+            for count in [0, 1]:
+                for count in [0, 1]:
+                    try:
+                        return count
+                    finally:
+                        break
+            return 3
+        self.assertEqual(wrapper(), 3)
+
     def test_continue_in_finally(self):
         count = 0
         while count < 2:
@@ -969,6 +979,14 @@ class GrammarTests(unittest.TestCase):
             break
         self.assertEqual(count, 1)
 
+        def wrapper():
+            for count in [0, 1]:
+                try:
+                    return count
+                finally:
+                    continue
+            return 3
+        self.assertEqual(wrapper(), 3)
     def test_return_in_finally(self):
         def g1():
             try:
