@@ -49,10 +49,6 @@ class TarFileTestBase:
     def get_taropen(self):
         return getattr(self.tarfile_module, self.taropen_name)
 
-class SafeTarFileTestBase:
-    tarfile_module = tarfile.SafeTarFile
-    tarfile_open = tarfile.safe_open
-
 class TarTest:
     tarname = tarname
     suffix = ''
@@ -95,156 +91,6 @@ class ReadTest(TarTest):
 
     def tearDown(self):
         self.tar.close()
-
-
-class SafeTarFileTest(unittest.TestCase):
-    ANALYZE_RESULTS = "analyzeresults"
-    FILTER_RESULTS = "filterresults"
-    IS_SAFE_RESULTS = "is_saferesults"
-
-    TEST_RESULTS = {
-        os.path.join(testtardir, "sly_absolute0.tar"):
-        {
-            ANALYZE_RESULTS:
-            {
-                "/tmp/moo": {tarfile.WARN_ABSOLUTE_NAME}
-            },
-            FILTER_RESULTS: [],
-            IS_SAFE_RESULTS: False
-        },
-
-        os.path.join(testtardir, "sly_absolute1.tar"):
-        {
-            ANALYZE_RESULTS:
-            {
-                "//tmp/moo": {tarfile.WARN_ABSOLUTE_NAME}
-            },
-            FILTER_RESULTS: [],
-            IS_SAFE_RESULTS: False
-        },
-
-        os.path.join(testtardir, "sly_dirsymlink0.tar"):
-        {
-            ANALYZE_RESULTS:
-            {
-                "tmp": {tarfile.WARN_ABSOLUTE_LINKNAME},
-                "tmp/moo": {tarfile.WARN_ABSOLUTE_NAME}
-            },
-            FILTER_RESULTS: [],
-            IS_SAFE_RESULTS: False
-        },
-
-        os.path.join(testtardir, "sly_dirsymlink1.tar"):
-        {
-            ANALYZE_RESULTS:
-            {
-                "cur": set(),
-                "par": {tarfile.WARN_RELATIVE_LINKNAME},
-                "par/moo": {tarfile.WARN_RELATIVE_NAME}
-            },
-            FILTER_RESULTS: ["cur"],
-            IS_SAFE_RESULTS: False
-        },
-
-        os.path.join(testtardir, "sly_dirsymlink2.tar"):
-        {
-            ANALYZE_RESULTS:
-            {
-                "cur": set(),
-                "cur/par": {tarfile.WARN_RELATIVE_LINKNAME},
-                "par/moo": {tarfile.WARN_RELATIVE_NAME}
-            },
-            FILTER_RESULTS: ["cur"],
-            IS_SAFE_RESULTS: False
-        },
-
-        os.path.join(testtardir, "sly_dirsymlink3.tar"):
-        {
-            ANALYZE_RESULTS:
-            {
-                "dirsym": set(),
-                "dirsym/sym": set(),
-                "dirsym/symsym3": {tarfile.WARN_RELATIVE_LINKNAME}
-            },
-            FILTER_RESULTS: ["dirsym", "dirsym/sym"],
-            IS_SAFE_RESULTS: False
-        },
-
-        os.path.join(testtardir, "sly_relative0.tar"):
-        {
-            ANALYZE_RESULTS:
-            {
-                "../moo": {tarfile.WARN_RELATIVE_NAME}
-            },
-            FILTER_RESULTS: [],
-            IS_SAFE_RESULTS: False
-        },
-
-        os.path.join(testtardir, "sly_relative1.tar"):
-        {
-            ANALYZE_RESULTS:
-            {
-                "tmp/../../moo": {tarfile.WARN_RELATIVE_NAME}
-            },
-            FILTER_RESULTS: [],
-            IS_SAFE_RESULTS: False
-        },
-
-        os.path.join(testtardir, "sly_symlink.tar"):
-        {
-            ANALYZE_RESULTS:
-            {
-                "moo": {tarfile.WARN_ABSOLUTE_LINKNAME},
-                "moo": {tarfile.WARN_DUPLICATE_NAME}
-            },
-            FILTER_RESULTS: [],
-            IS_SAFE_RESULTS: False
-        }
-    }
-
-    def test_analyze(self):
-        for entry in self.TEST_RESULTS:
-            analyzeresults = self._get_analyze_results(entry)
-            expectedvalues = self.TEST_RESULTS[entry][self.ANALYZE_RESULTS]
-            self.assertEqual(analyzeresults, expectedvalues,
-                    "SafeTarFile analyze() failed for " + entry)
-
-    def test_filter(self):
-        for entry in self.TEST_RESULTS:
-            filterresults = self._get_filter_results(entry)
-            expectedvalues = self.TEST_RESULTS[entry][self.FILTER_RESULTS]
-            self.assertEqual(filterresults, expectedvalues,
-                    "SafeTarFile filter() failed for " + entry)
-
-    def test_is_safe(self):
-        for entry in self.TEST_RESULTS:
-            issaferesults = self._get_is_safe_results(entry)
-            expectedvalues = self.TEST_RESULTS[entry][self.IS_SAFE_RESULTS]
-            self.assertEqual(issaferesults, expectedvalues,
-                    "SafeTarFile is_safe() failed for " + entry)
-
-    def _get_analyze_results(self, tarballpath):
-        with open(tarballpath, "r+b") as fileobj:
-            results = {}
-            tar = tarfile.safe_open(fileobj=fileobj)
-            for result in tar.analyze():
-                results[result[0].name] = result[1]
-
-            return results
-
-    def _get_filter_results(self, tarballpath):
-        with open(tarballpath, "r+b") as fileobj:
-            results = []
-            tar = tarfile.safe_open(fileobj=fileobj)
-            for result in tar.filter():
-                results.append(result.name)
-
-            return results
-
-    def _get_is_safe_results(self, tarballpath):
-        with open(tarballpath, "r+b") as fileobj:
-            tar = tarfile.safe_open(fileobj=fileobj)
-            return tar.is_safe()
 
 
 class UstarReadTestBase(ReadTest):
@@ -383,18 +229,6 @@ class Bz2UstarReadTest(Bz2Test, UstarReadTestBase, unittest.TestCase, TarFileTes
 class LzmaUstarReadTest(LzmaTest, UstarReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class SafeTarFileUstarReadTest(UstarReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarFileGzipUstarReadTest(GzipTest, UstarReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarFileBz2UstarReadTest(Bz2Test, UstarReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarFileLzmaUstarReadTest(LzmaTest, UstarReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
 class ListTestBase(ReadTest):
 
     # Override setUp to use default encoding (UTF-8)
@@ -486,17 +320,6 @@ class Bz2ListTest(Bz2Test, ListTestBase, unittest.TestCase, TarFileTestBase):
 class LzmaListTest(LzmaTest, ListTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class SafeTarListTest(ListTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarGzipListTest(GzipTest, ListTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarBz2ListTest(Bz2Test, ListTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarLzmaListTest(LzmaTest, ListTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
 
 class CommonReadTest(ReadTest):
 
@@ -842,20 +665,6 @@ class LzmaMiscReadTest(LzmaTest, MiscReadTestBase, unittest.TestCase, TarFileTes
     def requires_name_attribute(self):
         self.skipTest("LZMAFile have no name attribute")
 
-class SafeTarMiscReadTest(MiscReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    test_fail_comp = None
-
-class SafeTarGzipMiscReadTest(GzipTest, MiscReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarBz2MiscReadTest(Bz2Test, MiscReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    def requires_name_attribute(self):
-        self.skipTest("BZ2File have no name attribute")
-
-class SafeTarLzmaMiscReadTest(LzmaTest, MiscReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    def requires_name_attribute(self):
-        self.skipTest("LZMAFile have no name attribute")
-
 class StreamReadTestBase(CommonReadTest):
 
     prefix="r|"
@@ -927,18 +736,6 @@ class Bz2StreamReadTest(Bz2Test, StreamReadTestBase, unittest.TestCase, TarFileT
     pass
 
 class LzmaStreamReadTest(LzmaTest, StreamReadTestBase, unittest.TestCase, TarFileTestBase):
-    pass
-
-class SafeTarStreamReadTest(StreamReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarGzipStreamReadTest(GzipTest, StreamReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarBz2StreamReadTest(Bz2Test, StreamReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarLzmaStreamReadTest(LzmaTest, StreamReadTestBase, unittest.TestCase, SafeTarFileTestBase):
     pass
 
 
@@ -1108,20 +905,6 @@ class LzmaDetectReadTest(LzmaTest, DetectReadTestBase, unittest.TestCase, TarFil
 class MemberReadTest(MemberReadTestBase, unittest.TestCase, TarFileTestBase):
     pass
 
-class SafeTarDetectReadTest(DetectReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarGzipDetectReadTest(GzipTest, DetectReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarBz2DetectReadTest(Bz2DetectReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarLzmaDetectReadTest(LzmaTest, DetectReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
-
-class SafeTarMemberReadTest(MemberReadTestBase, unittest.TestCase, SafeTarFileTestBase):
-    pass
 
 class LongnameTest:
 
