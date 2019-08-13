@@ -192,7 +192,7 @@ class HashRandomizationTests:
         # two runs should return different hashes
         run1 = self.get_hash(self.repr_, seed='random')
         run2 = self.get_hash(self.repr_, seed='random')
-        self.assertNotEqual(run1, run2)
+        self.assertNotEqual(run1, run2, self.repr_)
 
 class StringlikeHashRandomizationTests(HashRandomizationTests):
     repr_ = None
@@ -310,17 +310,32 @@ class MemoryviewHashRandomizationTests(StringlikeHashRandomizationTests,
     def test_empty_string(self):
         self.assertEqual(hash(memoryview(b"")), 0)
 
-class DatetimeTests(HashRandomizationTests):
+class DatetimePureTests(HashRandomizationTests):
     def get_hash_command(self, repr_):
         return 'import datetime; print(hash(%s))' % repr_
 
-class DatetimeDateTests(DatetimeTests, unittest.TestCase):
+class DatetimeFastTests(HashRandomizationTests):
+    def get_hash_command(self, repr_):
+        return """from test.support import import_fresh_module;
+datetime = import_fresh_module('datetime', blocked=['_datetime'])
+print(hash(%s))""" % repr_
+
+class DatetimeDateTests(DatetimeFastTests, unittest.TestCase):
     repr_ = repr(datetime.date(1066, 10, 14))
 
-class DatetimeDatetimeTests(DatetimeTests, unittest.TestCase):
+class DatetimeDatetimeTests(DatetimeFastTests, unittest.TestCase):
     repr_ = repr(datetime.datetime(1, 2, 3, 4, 5, 6, 7))
 
-class DatetimeTimeTests(DatetimeTests, unittest.TestCase):
+class DatetimeTimeFastTests(DatetimeFastTests, unittest.TestCase):
+    repr_ = repr(datetime.time(0))
+
+class DatetimeDatePureTests(DatetimePureTests, unittest.TestCase):
+    repr_ = repr(datetime.date(1066, 10, 14))
+
+class DatetimeDatetimePureTests(DatetimePureTests, unittest.TestCase):
+    repr_ = repr(datetime.datetime(1, 2, 3, 4, 5, 6, 7))
+
+class DatetimeTimePureTests(DatetimePureTests, unittest.TestCase):
     repr_ = repr(datetime.time(0))
 
 
