@@ -273,7 +273,7 @@ Methods and properties
 
 .. testsetup::
 
-   from pathlib import PurePosixPath, PureWindowsPath
+   from pathlib import PurePath, PurePosixPath, PureWindowsPath
 
 Pure paths provide the following methods and properties:
 
