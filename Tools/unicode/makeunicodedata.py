@@ -943,10 +943,7 @@ class UnicodeData:
     #  ISO-comment, uppercase, lowercase, titlecase, ea-width, (16)
     #  derived-props] (17)
 
-    def __init__(self, version,
-                 linebreakprops=False,
-                 expand=1,
-                 cjk_check=True):
+    def __init__(self, version, cjk_check=True):
         self.changed = []
         table = [None] * 0x110000
         for s in UcdFile(UNICODE_DATA, version):
@@ -956,26 +953,25 @@ class UnicodeData:
         cjk_ranges_found = []
 
         # expand first-last ranges
-        if expand:
-            field = None
-            for i in range(0, 0x110000):
-                s = table[i]
-                if s:
-                    if s[1][-6:] == "First>":
-                        s[1] = ""
-                        field = s
-                    elif s[1][-5:] == "Last>":
-                        if s[1].startswith("<CJK Ideograph"):
-                            cjk_ranges_found.append((field[0],
-                                                     s[0]))
-                        s[1] = ""
-                        field = None
-                elif field:
-                    f2 = field[:]
-                    f2[0] = "%X" % i
-                    table[i] = f2
-            if cjk_check and cjk_ranges != cjk_ranges_found:
-                raise ValueError("CJK ranges deviate: have %r" % cjk_ranges_found)
+        field = None
+        for i in range(0, 0x110000):
+            s = table[i]
+            if s:
+                if s[1][-6:] == "First>":
+                    s[1] = ""
+                    field = s
+                elif s[1][-5:] == "Last>":
+                    if s[1].startswith("<CJK Ideograph"):
+                        cjk_ranges_found.append((field[0],
+                                                 s[0]))
+                    s[1] = ""
+                    field = None
+            elif field:
+                f2 = field[:]
+                f2[0] = "%X" % i
+                table[i] = f2
+        if cjk_check and cjk_ranges != cjk_ranges_found:
+            raise ValueError("CJK ranges deviate: have %r" % cjk_ranges_found)
 
         # public attributes
         self.filename = UNICODE_DATA % ''
