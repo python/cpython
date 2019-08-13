@@ -610,6 +610,12 @@ tab of the configuration dialog.  Line numbers for an existing
 window are shown and hidden in the Options menu.
 (Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
 
+In the shell, ``\r`` and ``\b`` control characters in output are now handled
+much like in terminals, i.e. moving the cursor position.  This allows common
+uses of these control characters, such as progress indicators, to be displayed
+properly rather than flooding the output and eventually slowing the shell down
+to a crawl.  (Contributed by Tal Einat in :issue:`37827`.)
+
 The changes above have been backported to 3.7 maintenance releases.
 
 

@@ -1,0 +1,2 @@
+Emulate terminal handling of ``\r`` and ``\b`` control characters in shell
+outoput.
