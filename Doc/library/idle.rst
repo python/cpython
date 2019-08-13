@@ -752,11 +752,13 @@ with 300 the default.
 A Tk Text widget, and hence IDLE's Shell, displays characters (codepoints) in
 the BMP (Basic Multilingual Plane) subset of Unicode.  Which characters are
 displayed with a proper glyph and which with a replacement box depends on the
-operating system and installed fonts.  Tab characters cause the following text
-to begin after the next tab stop. (They occur every 8 'characters').  Newline
-characters cause following text to appear on a new line.  Other control
-characters are ignored or displayed as a space, box, or something else,
-depending on the operating system and font.  (Moving the text cursor through
+OS and installed fonts.  Tab characters (``\t``) cause the following text to
+begin after the next tab stop.  (They occur every 8 'characters').  Newline
+characters (``\n``) cause following text to appear on a new line.  Carriage-
+return characters (``\r``) move the cursor back to the beginning of the current
+line, and backspace characters (``\b``) move the cursor back one character.
+Other control characters are ignored or displayed as a space, a box, or
+something else, depending on the OS and font.  (Moving the text cursor through
 such output with arrow keys may exhibit some surprising spacing behavior.) ::
 
    >>> s = 'a\tb\a<\x02><\r>\bc\nd'  # Enter 22 chars.
@@ -764,7 +766,7 @@ such output with arrow keys may exhibit some surprising spacing behavior.) ::
    14
    >>> s  # Display repr(s)
    'a\tb\x07<\x02><\r>\x08c\nd'
-   >>> print(s, end='')  # Display s as is.
+   >>> print(s)  # Send s to the output
    # Result varies by OS and font.  Try it.
 
 The ``repr`` function is used for interactive echo of expression
