@@ -240,8 +240,8 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                This should not happen if called correctly. */
             if (theLength == 0) {
                 message = PyUnicode_FromFormat(
-                    "While importing %s, DLL load failed with error code %u",
-                    shortname, errorCode);
+                    "DLL load failed with error code %u while importing %s",
+                    errorCode, shortname);
             } else {
                 /* For some reason a \r\n
                    is appended to the text */
@@ -252,7 +252,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                     theInfo[theLength] = '\0';
                 }
                 message = PyUnicode_FromFormat(
-                    "While importing %s, DLL load failed: ", shortname);
+                    "DLL load failed while importing %s: ", shortname);
 
                 PyUnicode_AppendAndDel(&message,
                     PyUnicode_FromWideChar(
