@@ -512,6 +512,141 @@ be finalized; only the internally used file object will be closed. See the
 
 
 
+.. _safetarfile-objects:
+
+SafeTarFile Objects
+-------------------
+
+In general, it is no good idea to extract tar archives from sources you do not
+completely trust. Archives that were created carelessly or maliciously may
+contain file system objects in configurations that pose a variety of risks to
+the system if they are extracted, for example overwriting existing files in
+unanticipated locations. See the warning for :meth:`TarFile.extractall`.
+
+The :class:`SafeTarFile` class is a replacement for the :class:`TarFile` class
+that can be used identically but tries to safeguard against a number of
+unwanted side-effects. :class:`SafeTarFile` does this by identifying bad
+archives and preventing the bad parts from being extracted.  The default
+behaviour of the :class:`SafeTarFile` class is to raise a :exc:`SecurityError`
+exception in case of a bad archive member or a :exc:`LimitError` in case of an
+exceeded limit.
+
+.. note::
+
+   There is no additional benefit in using :class:`SafeTarFile` for the
+   creation of tar archives.
+
+.. versionadded:: 3.5
+   Added the :class:`SafeTarFile` class.
+
+.. class:: SafeTarFile(..., ignore_warnings=None, max_files=100000, max_total=1073741824)
+
+   :class:`SafeTarFile` offers a few additional keyword arguments to the
+   arguments it has in common with the :class:`TarFile` class:
+
+   *ignore_warnings* takes a list of constants one for each warning that
+   you like to ignore, by default no warnings are ignored. See the first part
+   of :ref:`safetarfile-configuration` for the constants.
+
+   *max_files* is the maximum allowed number of files stored in the tar
+   archive, default is ``100000``.  To disable the limit, pass :const:`None` or
+   ``0``.
+
+   *max_total* is the maximum allowed size in bytes that all files together may
+   occupy when extracted. This defaults to 1 GiB.  To disable the limit, pass
+   :const:`None` or ``0``.
+
+.. method:: SafeTarFile.analyze()
+
+   Check the archive for possible issues, and generate a 2-tuple for each
+   member consisting of the member's :class:`TarInfo` object and a :class:`set`
+   that is either empty (good) or contains one or more warnings described in
+   :ref:`safetarfile-configuration` (bad).  No :exc:`SecurityError` exceptions
+   are raised.  If a limit is exceeded a :exc:`LimitError` is raised.
+
+.. method:: SafeTarFile.filter()
+
+   Return a generator that only produces :class:`TarInfo` objects that are not
+   marked as bad, e.g. to restore the good parts of an archive.  However, if a
+   limit is exceeded a :exc:`LimitError` is raised.
+
+.. method:: SafeTarFile.is_safe()
+
+   Analyze the archive and return :const:`True` if there were no issues found
+   and it should be safe to extract the archive to the file system. Neither
+   :exc:`SecurityError` nor :exc:`LimitError` will be raised.
+
+
+
+.. _safetarfile-configuration:
+
+SafeTarFile configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are two different types of checks built into :class:`SafeTarFile`. The
+first type takes care of archive members whose configuration poses a risk to
+the system when they are extracted.  Each of these checks can be switched off
+by passing a list of the following constants as the *ignore_warnings* argument
+to the :class:`SafeTarFile` constructor.  These constants are also stored in
+the :attr:`warning` attribute of a :exc:`SecurityError`.
+
+.. data:: WARN_ABSOLUTE_NAME
+
+   An absolute pathname (names starting with a ``"/"``).
+
+.. data:: WARN_ABSOLUTE_NAME
+
+   An absolute pathname (names starting with a ``"/"``).
+
+.. data:: WARN_RELATIVE_NAME
+
+   A relative pathname (names starting with ``".."``) that breaks out of the
+   destination directory.
+
+.. data:: WARN_DUPLICATE_NAME
+
+   A duplicate pathname.
+
+.. data:: WARN_ABSOLUTE_LINKNAME
+
+   An absolute linkname.
+
+.. data:: WARN_RELATIVE_LINKNAME
+
+   A relative linkname that breaks out of the destination directory.
+
+.. data:: WARN_SETUID_SET
+
+   A regular file with a set-user-id permission bit set.
+
+.. data:: WARN_SETGID_SET
+
+   A regular file with a set-group-id permission bit set.
+
+.. data:: WARN_CHARACTER_DEVICE
+
+   A character device node.
+
+.. data:: WARN_BLOCK_DEVICE
+
+   A block device node.
+
+The second type of check makes sure that the archive complies to a number of
+user-defined limits, e.g. to prevent denial-of-service scenarios by excessive
+use of memory or disk space. These limits can be configured using the keyword
+arguments exclusive to the :class:`SafeTarFile` constructor.  The following
+constants are stored in the :attr:`warning` attribute of a :exc:`LimitError`.
+
+.. data:: LIMIT_MAX_FILES
+
+   Maximum allowed number of files exceeded.
+
+.. data:: LIMIT_MAX_SIZE
+
+   Maximum allowed total size of unpacked contents exceeded.
+
+
+
 .. _tarinfo-objects:
 
 TarInfo Objects
@@ -803,6 +938,21 @@ parameter in :meth:`TarFile.add`::
     tar = tarfile.open("sample.tar.gz", "w:gz")
     tar.add("foo", filter=reset)
     tar.close()
+
+How to safely extract a tar archive from an untrusted source::
+
+    import tarfile
+
+    with tarfile.safe_open("sample.tar", ignore_warnings={tarfile.WARN_DUPLICATE_NAME}) as tar:
+        # We don't care about duplicate archive members.
+        if not tar.is_safe():
+            print("sample.tar has the following issues:")
+            for tarinfo, warnings in tar.analyze():
+                print(tarinfo.name, ",".join(warnings))
+            print("extracting the good parts")
+            tar.extractall(members=tar.filter())
+        else:
+            tar.extractall()
 
 
 .. _tar-formats:

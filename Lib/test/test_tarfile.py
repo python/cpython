@@ -32,7 +32,8 @@ def md5sum(data):
 
 TEMPDIR = os.path.abspath(support.TESTFN) + "-tardir"
 tarextdir = TEMPDIR + '-extract-test'
-tarname = support.findfile("testtar.tar")
+tarname = support.findfile("testtar.tar", subdir="tarfiletestdata")
+testtardir = os.path.dirname(tarname)
 gzipname = os.path.join(TEMPDIR, "testtar.tar.gz")
 bz2name = os.path.join(TEMPDIR, "testtar.tar.bz2")
 xzname = os.path.join(TEMPDIR, "testtar.tar.xz")
@@ -85,6 +86,156 @@ class ReadTest(TarTest):
 
     def tearDown(self):
         self.tar.close()
+
+
+class SafeTarFileTest(unittest.TestCase):
+    ANALYZE_RESULTS = "analyzeresults"
+    FILTER_RESULTS = "filterresults"
+    IS_SAFE_RESULTS = "is_saferesults"
+
+    TEST_RESULTS = {
+        os.path.join(testtardir, "sly_absolute0.tar"):
+        {
+            ANALYZE_RESULTS:
+            {
+                "/tmp/moo": {tarfile.WARN_ABSOLUTE_NAME}
+            },
+            FILTER_RESULTS: [],
+            IS_SAFE_RESULTS: False
+        },
+
+        os.path.join(testtardir, "sly_absolute1.tar"):
+        {
+            ANALYZE_RESULTS:
+            {
+                "//tmp/moo": {tarfile.WARN_ABSOLUTE_NAME}
+            },
+            FILTER_RESULTS: [],
+            IS_SAFE_RESULTS: False
+        },
+
+        os.path.join(testtardir, "sly_dirsymlink0.tar"):
+        {
+            ANALYZE_RESULTS:
+            {
+                "tmp": {tarfile.WARN_ABSOLUTE_LINKNAME},
+                "tmp/moo": {tarfile.WARN_ABSOLUTE_NAME}
+            },
+            FILTER_RESULTS: [],
+            IS_SAFE_RESULTS: False
+        },
+
+        os.path.join(testtardir, "sly_dirsymlink1.tar"):
+        {
+            ANALYZE_RESULTS:
+            {
+                "cur": set(),
+                "par": {tarfile.WARN_RELATIVE_LINKNAME},
+                "par/moo": {tarfile.WARN_RELATIVE_NAME}
+            },
+            FILTER_RESULTS: ["cur"],
+            IS_SAFE_RESULTS: False
+        },
+
+        os.path.join(testtardir, "sly_dirsymlink2.tar"):
+        {
+            ANALYZE_RESULTS:
+            {
+                "cur": set(),
+                "cur/par": {tarfile.WARN_RELATIVE_LINKNAME},
+                "par/moo": {tarfile.WARN_RELATIVE_NAME}
+            },
+            FILTER_RESULTS: ["cur"],
+            IS_SAFE_RESULTS: False
+        },
+
+        os.path.join(testtardir, "sly_dirsymlink3.tar"):
+        {
+            ANALYZE_RESULTS:
+            {
+                "dirsym": set(),
+                "dirsym/sym": set(),
+                "dirsym/symsym3": {tarfile.WARN_RELATIVE_LINKNAME}
+            },
+            FILTER_RESULTS: ["dirsym", "dirsym/sym"],
+            IS_SAFE_RESULTS: False
+        },
+
+        os.path.join(testtardir, "sly_relative0.tar"):
+        {
+            ANALYZE_RESULTS:
+            {
+                "../moo": {tarfile.WARN_RELATIVE_NAME}
+            },
+            FILTER_RESULTS: [],
+            IS_SAFE_RESULTS: False
+        },
+
+        os.path.join(testtardir, "sly_relative1.tar"):
+        {
+            ANALYZE_RESULTS:
+            {
+                "tmp/../../moo": {tarfile.WARN_RELATIVE_NAME}
+            },
+            FILTER_RESULTS: [],
+            IS_SAFE_RESULTS: False
+        },
+
+        os.path.join(testtardir, "sly_symlink.tar"):
+        {
+            ANALYZE_RESULTS:
+            {
+                "moo": {tarfile.WARN_ABSOLUTE_LINKNAME},
+                "moo": {tarfile.WARN_DUPLICATE_NAME}
+            },
+            FILTER_RESULTS: [],
+            IS_SAFE_RESULTS: False
+        }
+    }
+
+    def test_analyze(self):
+        for entry in self.TEST_RESULTS:
+            analyzeresults = self._get_analyze_results(entry)
+            expectedvalues = self.TEST_RESULTS[entry][self.ANALYZE_RESULTS]
+            self.assertEqual(analyzeresults, expectedvalues,
+                    "SafeTarFile analyze() failed for " + entry)
+
+    def test_filter(self):
+        for entry in self.TEST_RESULTS:
+            filterresults = self._get_filter_results(entry)
+            expectedvalues = self.TEST_RESULTS[entry][self.FILTER_RESULTS]
+            self.assertEqual(filterresults, expectedvalues,
+                    "SafeTarFile filter() failed for " + entry)
+
+    def test_is_safe(self):
+        for entry in self.TEST_RESULTS:
+            issaferesults = self._get_is_safe_results(entry)
+            expectedvalues = self.TEST_RESULTS[entry][self.IS_SAFE_RESULTS]
+            self.assertEqual(issaferesults, expectedvalues,
+                    "SafeTarFile is_safe() failed for " + entry)
+
+    def _get_analyze_results(self, tarballpath):
+        with open(tarballpath, "r+b") as fileobj:
+            results = {}
+            tar = tarfile.safe_open(fileobj=fileobj)
+            for result in tar.analyze():
+                results[result[0].name] = result[1]
+
+            return results
+
+    def _get_filter_results(self, tarballpath):
+        with open(tarballpath, "r+b") as fileobj:
+            results = []
+            tar = tarfile.safe_open(fileobj=fileobj)
+            for result in tar.filter():
+                results.append(result.name)
+
+            return results
+
+    def _get_is_safe_results(self, tarballpath):
+        with open(tarballpath, "r+b") as fileobj:
+            tar = tarfile.safe_open(fileobj=fileobj)
+            return tar.is_safe()
 
 
 class UstarReadTest(ReadTest, unittest.TestCase):
