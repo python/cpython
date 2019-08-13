@@ -32,7 +32,7 @@ import zipfile
 
 from functools import partial
 from textwrap import dedent
-from typing import *
+from typing import Iterator, List, Tuple
 
 SCRIPT = sys.argv[0]
 VERSION = "3.3"
