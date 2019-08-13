@@ -136,7 +136,7 @@ class AutoComplete:
         else:
             return None
 
-        hp.set_index("insert-%dc" % (len(hp.rawtext) - opening_bracket_idx))
+        hp.set_index("insert-%dc" % (hp.indexinrawtext - opening_bracket_idx))
         comp_what = hp.get_expression()
         return comp_what, comp_start
 

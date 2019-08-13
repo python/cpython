@@ -302,12 +302,16 @@ class OpenCompletionsTest(unittest.TestCase):
             return_value=False, spec=acw.AutoCompleteWindow.show_window)
         return self.mock_acw
 
+    def open_completions(self, args):
+        acp = self.autocomplete
+        with patch.object(acp, '_make_autocomplete_window', self.make_acw):
+            return acp.open_completions(args)
+
     def test_open_completions_files(self):
         acp = self.autocomplete
 
         self.text.insert('1.0', 'int.')
-        with patch.object(acp, '_make_autocomplete_window', self.make_acw):
-            acp.open_completions(ac.TAB)
+        self.open_completions(ac.TAB)
         mock_acw = self.mock_acw
 
         self.assertIs(acp.autocompletewindow, mock_acw)
@@ -326,9 +330,8 @@ class OpenCompletionsTest(unittest.TestCase):
         self.text.insert('1.0', '"t')
         def _listdir(path):
             return ['.hidden', 'monty', 'python']
-        with patch.object(acp, '_make_autocomplete_window', self.make_acw):
-            with patch('os.listdir', _listdir):
-                acp.open_completions(ac.TAB)
+        with patch('os.listdir', _listdir):
+            self.open_completions(ac.TAB)
         mock_acw = self.mock_acw
 
         mock_acw.show_window.assert_called_once()
@@ -349,11 +352,9 @@ class OpenCompletionsTest(unittest.TestCase):
             with self.subTest(quote=quote):
                 self.text.delete('1.0', 'end')
                 self.text.insert('1.0', f'test_dict[{quote}')
-                with patch.object(acp, '_make_autocomplete_window',
-                                  self.make_acw):
-                    with patch.dict('__main__.__dict__',
-                                    {'test_dict': test_dict}):
-                        acp.open_completions(ac.TAB)
+                with patch.dict('__main__.__dict__',
+                                {'test_dict': test_dict}):
+                    self.open_completions(ac.TAB)
                 mock_acw = self.mock_acw
 
                 mock_acw.show_window.assert_called_once()
@@ -373,11 +374,9 @@ class OpenCompletionsTest(unittest.TestCase):
         test_dict = {'one': 1, b'two': 2, 3: 3}
 
         self.text.insert('1.0', f'test_dict[')
-        with patch.object(acp, '_make_autocomplete_window',
-                          self.make_acw):
-            with patch.dict('__main__.__dict__',
-                            {'test_dict': test_dict}):
-                acp.open_completions(ac.TAB)
+        with patch.dict('__main__.__dict__',
+                        {'test_dict': test_dict}):
+            self.open_completions(ac.TAB)
         mock_acw = self.mock_acw
 
         mock_acw.show_window.assert_called_once()
@@ -389,12 +388,38 @@ class OpenCompletionsTest(unittest.TestCase):
         self.assertLess(set(expected), set(comp_lists[0]))
         self.assertLess(set(expected), set(comp_lists[1]))
 
+    def test_open_completions_dict_keys_in_middle_of_string(self):
+        # Note that dict key completion lists also include variables from
+        # the global namespace.
+        acp = self.autocomplete
+
+        test_dict = {'one': 1, b'two': 2, 3: 3}
+
+        self.text.insert('1.0', f'test_dict["one"]')
+        for insert_pos in range(len('test_dict['), len('test_dict["one') + 1):
+            for oc_args in (ac.TAB, ac.FORCE, ac.TRY_D):
+                with self.subTest(insert_pos=insert_pos, oc_args=oc_args):
+                    self.text.mark_set('insert', f'1.{insert_pos}')
+                    with patch.dict('__main__.__dict__',
+                                    {'test_dict': test_dict}):
+                        self.open_completions(oc_args)
+                    mock_acw = self.mock_acw
+
+                    mock_acw.show_window.assert_called_once()
+                    comp_lists, index, complete, mode = \
+                        mock_acw.show_window.call_args[0]
+                    self.assertEqual(mode, ac.DICTKEYS)
+                    self.assertLess(set(comp_lists[0]), set(comp_lists[1]))
+                    expected = [f'"one"', f'b"two"']
+                    self.assertLess(set(expected), set(comp_lists[0]))
+                    self.assertLess(set(expected), set(comp_lists[1]))
+
     def test_no_list(self):
         acp = self.autocomplete
         fetch = Func(result=([],[]))
         acp.fetch_completions = fetch
         none = self.assertIsNone
-        oc = acp.open_completions
+        oc = self.open_completions
         self.text.insert('1.0', 'object')
         none(oc(ac.TAB))
         self.text.insert('insert', '.')
@@ -405,7 +430,7 @@ class OpenCompletionsTest(unittest.TestCase):
         # Test other two None returns.
         none = self.assertIsNone
         acp = self.autocomplete
-        oc = acp.open_completions
+        oc = self.open_completions
 
         # No object for attributes or need call not allowed.
         self.text.delete('1.0', 'end')

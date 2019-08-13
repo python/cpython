@@ -194,6 +194,7 @@ class Text(Widget, YView):
         There are just a few Text-only options that affect text behavior.
         '''
         self.data = ['', '\n']
+        self.marks = {'insert': (1, 0)}
 
     def index(self, index):
         "Return string version of index decoded according to current text."
@@ -229,8 +230,8 @@ class Text(Widget, YView):
 
         first_part = re.match(r'^[^-+\s]+', index).group(0)
 
-        if first_part == 'insert':
-            line, char = lastline, len(self.data[lastline]) - 1
+        if first_part in self.marks:
+            line, char = self.marks[first_part]
         elif first_part == 'end':
             line, char = self._endex(endflag)
         else:
@@ -327,6 +328,18 @@ class Text(Widget, YView):
         self.data[line+1:line+1] = chars[1:]
         self.data[line+len(chars)-1] += after
 
+        for mark in list(self.marks):
+            mark_line, mark_char = self.marks[mark]
+            if (
+                    (mark_line, mark_char) > (line, char) or
+                    mark == 'insert' and (mark_line, mark_char) == (line, char)
+            ):
+                new_line = mark_line + len(chars) - 1
+                new_char = mark_char + len(chars[-1])
+                if mark_line > line:
+                    new_char -= char
+                self.marks[mark] = (new_line, new_char)
+
     def get(self, index1, index2=None):
         "Return slice from index1 to index2 (default is 'index1+1')."
 
@@ -372,9 +385,20 @@ class Text(Widget, YView):
         elif startline < endline:
             self.data[startline] = self.data[startline][:startchar] + \
                                    self.data[endline][endchar:]
-            startline += 1
-            for i in range(startline, endline+1):
-                del self.data[startline]
+            del self.data[startline+1:endline+1]
+
+        for mark in list(self.marks):
+            mark_line, mark_char = self.marks[mark]
+            if (mark_line, mark_char) > (startline, startchar):
+                if (mark_line, mark_char) <= (endline, endchar):
+                    (new_line, new_char) = (startline, startchar)
+                elif mark_line == endline:
+                    new_line = startline
+                    new_char = startchar + (mark_char - endchar)
+                else:  # mark_line > endline
+                    new_line = mark_line - (endline - startline)
+                    new_char = mark_char
+                self.marks[mark] = (new_line, new_char)
 
     def compare(self, index1, op, index2):
         line1, char1 = self._decode(index1)
@@ -400,10 +424,14 @@ class Text(Widget, YView):
 
     def mark_set(self, name, index):
         "Set mark *name* before the character at index."
-        pass
+        self.marks[name] = self._decode(index)
 
     def mark_unset(self, *markNames):
         "Delete all marks in markNames."
+        for name in markNames:
+            if name == 'end' or '.' in name:
+                raise ValueError(f"Invalid mark name: {name}")
+            del self.marks[name]
 
     def tag_remove(self, tagName, index1, index2=None):
         "Remove tag tagName from all characters between index1 and index2."
