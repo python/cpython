@@ -1412,9 +1412,11 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *self;
 
-    assert(type != NULL && type->tp_alloc != NULL);
+    assert(type != NULL);
+    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
+    assert(alloc_func != NULL);
 
-    self = type->tp_alloc(type, 0);
+    self = alloc_func(type, 0);
     if (self != NULL) {
         PyStructObject *s = (PyStructObject*)self;
         Py_INCREF(Py_None);
@@ -1460,7 +1462,7 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
         PyErr_Format(PyExc_TypeError,
                      "Struct() argument 1 must be a str or bytes object, "
                      "not %.200s",
-                     Py_TYPE(format)->tp_name);
+                     _PyType_Name(Py_TYPE(format)));
         return -1;
     }
 
@@ -1473,13 +1475,16 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
 static void
 s_dealloc(PyStructObject *s)
 {
+    PyTypeObject *tp = Py_TYPE(s);
     if (s->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)s);
     if (s->s_codes != NULL) {
         PyMem_FREE(s->s_codes);
     }
-    Py_DECREF(s->s_format);
-    Py_TYPE(s)->tp_free((PyObject *)s);
+    Py_XDECREF(s->s_format);
+    freefunc free_func = PyType_GetSlot(Py_TYPE(s), Py_tp_free);
+    free_func(s);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -1671,9 +1676,7 @@ unpackiter_iternext(unpackiterobject *self)
 }
 
 PyObject *unpackiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-    PyErr_Format(PyExc_TypeError,
-                 "Cannot create '%.200s objects",
-                 _PyType_Name(type));
+    PyErr_Format(PyExc_TypeError, "Cannot create '%.200s objects", _PyType_Name(type));
     return NULL;
 }
 
@@ -1847,8 +1850,8 @@ strings.");
 static PyObject *
 s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
+    char *buf;
     PyStructObject *soself;
-    PyObject *result;
 
     /* Validate arguments. */
     soself = (PyStructObject *)self;
@@ -1861,18 +1864,22 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         return NULL;
     }
 
-    /* Allocate a new buffer */
-    result = PyBytes_FromStringAndSize((char *)NULL, soself->s_size);
-    if (result == NULL)
-        return NULL;
-
-    /* Call the guts */
-    if ( s_pack_internal(soself, args, 0, PyBytes_AS_STRING(result)) != 0 ) {
-        Py_DECREF(result);
+    /* Allocate a new string */
+    _PyBytesWriter writer;
+    _PyBytesWriter_Init(&writer);
+    buf = _PyBytesWriter_Alloc(&writer, soself->s_size);
+    if (buf == NULL) {
+        _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }
 
-    return result;
+    /* Call the guts */
+    if ( s_pack_internal(soself, args, 0, buf) != 0 ) {
+        _PyBytesWriter_Dealloc(&writer);
+        return NULL;
+    }
+
+    return _PyBytesWriter_Finish(&writer, buf + soself->s_size);
 }
 
 PyDoc_STRVAR(s_pack_into__doc__,
