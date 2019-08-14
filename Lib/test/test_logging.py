@@ -4906,6 +4906,13 @@ class LoggerTest(BaseTest):
         # Ensure logger2 uses parent logger's effective level
         self.assertFalse(logger2.isEnabledFor(logging.ERROR))
 
+        # Ensure setting level directly still clears cache
+        self.assertEqual(logger2._cache, {logging.ERROR: False})
+        logger2.level = logging.ERROR
+        self.assertEqual(logger2._cache, {})
+        self.assertTrue(logger2.isEnabledFor(logging.ERROR))
+        self.assertEqual(logger2._cache, {logging.ERROR: True})
+
         # Set level to NOTSET and ensure caches are empty
         logger2.setLevel(logging.NOTSET)
         self.assertEqual(logger2.getEffectiveLevel(), logging.CRITICAL)

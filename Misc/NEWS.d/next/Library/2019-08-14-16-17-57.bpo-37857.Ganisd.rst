@@ -1,0 +1,2 @@
+Setting the ``level`` attribute of a ``logger.Logger`` (instead of calling
+``setLevel()``) no longer causes cache inconsistency.

@@ -1397,19 +1397,27 @@ class Logger(Filterer):
         """
         Filterer.__init__(self)
         self.name = name
-        self.level = _checkLevel(level)
+        self._level = _checkLevel(level)
         self.parent = None
         self.propagate = True
         self.handlers = []
         self.disabled = False
         self._cache = {}
 
+    @property
+    def level(self):
+        return self._level
+
+    @level.setter
+    def level(self, level):
+        self._level = level
+        self.manager._clear_cache()
+
     def setLevel(self, level):
         """
         Set the logging level of this logger.  level must be an int or a str.
         """
         self.level = _checkLevel(level)
-        self.manager._clear_cache()
 
     def debug(self, msg, *args, **kwargs):
         """
