@@ -1760,7 +1760,6 @@ clean: pycremoval
 	-rm -f Programs/_testembed Programs/_freeze_importlib
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
-	-rm -rf Tools/unicode/data
 	-rm -f profile-gen-stamp
 
 profile-removal:
