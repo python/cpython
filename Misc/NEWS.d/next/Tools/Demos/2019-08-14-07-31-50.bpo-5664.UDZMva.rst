@@ -1,0 +1,1 @@
+2to3 convert Cookie.Cookie properly
