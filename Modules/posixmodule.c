@@ -1696,100 +1696,81 @@ static int
 win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                  BOOL traverse)
 {
-    int code;
-    HANDLE hFile, hFile2;
+    HANDLE hFile;
     BY_HANDLE_FILE_INFORMATION info;
-    ULONG reparse_tag = 0;
-    wchar_t *target_path;
+    FILE_ATTRIBUTE_TAG_INFO tagInfo;
     const wchar_t *dot;
 
-    hFile = CreateFileW(
-        path,
-        FILE_READ_ATTRIBUTES, /* desired access */
-        0, /* share mode */
-        NULL, /* security attributes */
-        OPEN_EXISTING,
-        /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
+    /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
+    DWORD flags = FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS;
+    if (!traverse) {
         /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
            Because of this, calls like GetFinalPathNameByHandle will return
            the symlink path again and not the actual final path. */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|
-            FILE_FLAG_OPEN_REPARSE_POINT,
-        NULL);
+        flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+    }
 
+    hFile = CreateFileW(
+        path,
+        FILE_READ_ATTRIBUTES,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        NULL, /* security attributes */
+        OPEN_EXISTING,
+        flags,
+        NULL
+    );
     if (hFile == INVALID_HANDLE_VALUE) {
         /* Either the target doesn't exist, or we don't have access to
            get a handle to it. If the former, we need to return an error.
            If the latter, we can use attributes_from_dir. */
         DWORD lastError = GetLastError();
-        if (lastError != ERROR_ACCESS_DENIED &&
-            lastError != ERROR_SHARING_VIOLATION)
-            return -1;
-        /* Could not get attributes on open file. Fall back to
-           reading the directory. */
-        if (!attributes_from_dir(path, &info, &reparse_tag))
-            /* Very strange. This should not fail now */
-            return -1;
-        if (traverse &&
-            info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
-            (reparse_tag == IO_REPARSE_TAG_SYMLINK ||
-             reparse_tag == IO_REPARSE_TAG_MOUNT_POINT)) {
-            /* Should traverse, but could not open reparse point handle */
-            SetLastError(lastError);
-            return -1;
-        }
-    } else {
-        if (!GetFileInformationByHandle(hFile, &info)) {
-            CloseHandle(hFile);
-            return -1;
-        }
-        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (!win32_get_reparse_tag(hFile, &reparse_tag)) {
-                CloseHandle(hFile);
+        if (lastError == ERROR_ACCESS_DENIED ||
+            lastError == ERROR_SHARING_VIOLATION) {
+            /* Could not get attributes on open file. Try reading
+               the directory. */
+            ULONG reparse_tag = 0;
+            if (!attributes_from_dir(path, &info, &reparse_tag)) {
+                /* Very strange. This should not fail now */
                 return -1;
             }
-            /* Close the outer open file handle now that we're about to
-               reopen it with different flags. */
-            if (!CloseHandle(hFile))
-                return -1;
 
             if (traverse &&
-                (reparse_tag == IO_REPARSE_TAG_SYMLINK ||
-                 reparse_tag == IO_REPARSE_TAG_MOUNT_POINT)) {
-                /* In order to call GetFinalPathNameByHandle we need to open
-                   the file without the reparse handling flag set. */
-                hFile2 = CreateFileW(
-                           path, FILE_READ_ATTRIBUTES, FILE_SHARE_READ,
-                           NULL, OPEN_EXISTING,
-                           FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
-                           NULL);
-                if (hFile2 == INVALID_HANDLE_VALUE)
-                    return -1;
-
-                if (!get_target_path(hFile2, &target_path)) {
-                    CloseHandle(hFile2);
-                    return -1;
-                }
-
-                if (!CloseHandle(hFile2)) {
-                    return -1;
-                }
-
-                code = win32_xstat_impl(target_path, result, FALSE);
-                PyMem_RawFree(target_path);
-                return code;
+                info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+                IsReparseTagNameSurrogate(reparse_tag)) {
+                /* Should have traversed this, but could not open it */
+                return -1;
             }
-        } else
-            CloseHandle(hFile);
+
+            return 0;
+        } else if (traverse && lastError == ERROR_CANT_ACCESS_FILE) {
+            /* Try again without traversal */
+            return win32_xstat_impl(path, result, FALSE);
+        }
+        return -1;
     }
-    _Py_attribute_data_to_stat(&info, reparse_tag, result);
+
+    /* We have a valid hFile at this stage */
+
+    if (!GetFileInformationByHandle(hFile, &info)) {
+        CloseHandle(hFile);
+        return -1;
+    }
+
+    if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
+                                      &tagInfo, sizeof(tagInfo))) {
+        tagInfo.ReparseTag = 0;
+    }
+
+    CloseHandle(hFile);
+    _Py_attribute_data_to_stat(&info, tagInfo.ReparseTag, result);
 
     /* Set S_IEXEC if it is an .exe, .bat, ... */
     dot = wcsrchr(path, '.');
     if (dot) {
         if (_wcsicmp(dot, L".bat") == 0 || _wcsicmp(dot, L".cmd") == 0 ||
-            _wcsicmp(dot, L".exe") == 0 || _wcsicmp(dot, L".com") == 0)
+            _wcsicmp(dot, L".exe") == 0 || _wcsicmp(dot, L".com") == 0) {
             result->st_mode |= 0111;
+        }
     }
     return 0;
 }
@@ -1810,9 +1791,8 @@ win32_xstat(const wchar_t *path, struct _Py_stat_struct *result, BOOL traverse)
    default does not traverse symlinks and instead returns attributes for
    the symlink.
 
-   Therefore, win32_lstat will get the attributes traditionally, and
-   win32_stat will first explicitly resolve the symlink target and then will
-   call win32_lstat on that result. */
+   Instead, we will open the file (which *does* traverse symlinks by default)
+   and GetFileInformationByHandle(). */
 
 static int
 win32_lstat(const wchar_t* path, struct _Py_stat_struct *result)
@@ -3897,7 +3877,6 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
     if (result && path->narrow) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
     }
-    return result;
 
 cleanup:
     if (target_path != buf) {

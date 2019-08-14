@@ -2354,13 +2354,11 @@ class Win32SymlinkTests(unittest.TestCase):
         #  was created with target_is_dir==True.
         os.remove(self.missing_link)
 
-    @unittest.skip("currently fails; consider for improvement")
     def test_isdir_on_directory_link_to_missing_target(self):
         self._create_missing_dir_link()
         # consider having isdir return true for directory links
         self.assertTrue(os.path.isdir(self.missing_link))
 
-    @unittest.skip("currently fails; consider for improvement")
     def test_rmdir_on_directory_link_to_missing_target(self):
         self._create_missing_dir_link()
         # consider allowing rmdir to remove directory links
