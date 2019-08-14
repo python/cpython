@@ -225,6 +225,7 @@ class TestNtpath(unittest.TestCase):
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_basic(self):
         ABSTFN = ntpath.abspath(support.TESTFN)
+        open(ABSTFN, "wb").close()
         self.addCleanup(support.unlink, ABSTFN)
         self.addCleanup(support.unlink, ABSTFN + "1")
 
@@ -237,19 +238,20 @@ class TestNtpath(unittest.TestCase):
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_relative(self):
         ABSTFN = ntpath.abspath(support.TESTFN)
+        open(ABSTFN, "wb").close()
         self.addCleanup(support.unlink, ABSTFN)
         self.addCleanup(support.unlink, ABSTFN + "1")
 
         os.symlink(ABSTFN, os.path.relpath(ABSTFN + "1"))
-        self.assertEqual(ntpath.realpath(ABSTFN), ABSTFN + "1")
+        self.assertEqual(ntpath.realpath(ABSTFN + "1"), ABSTFN)
 
     @support.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_broken_symlinks(self):
         ABSTFN = ntpath.abspath(support.TESTFN)
+        os.mkdir(ABSTFN)
         self.addCleanup(support.rmtree, ABSTFN)
 
-        os.mkdir(ABSTFN)
         with support.change_cwd(ABSTFN):
             os.mkdir("subdir")
             os.chdir("subdir")
@@ -330,18 +332,17 @@ class TestNtpath(unittest.TestCase):
                          ABSTFN + "x")
         self.assertEqual(ntpath.realpath(ABSTFN + "1\\..\\"
                                          + ntpath.basename(ABSTFN) + "1"),
-                         ABSTFN + "1")
+                         ABSTFN + "2")
 
         os.symlink(ntpath.basename(ABSTFN) + "a\\b", ABSTFN + "a")
-        self.assertEqual(ntpath.realpath(ABSTFN + "a"), ABSTFN + "a\\b")
+        self.assertEqual(ntpath.realpath(ABSTFN + "a"), ABSTFN + "a")
 
         os.symlink("..\\" + os.path.basename(os.path.dirname(ABSTFN))
                    + "\\" + os.path.basename(ABSTFN) + "c", ABSTFN + "c")
         self.assertEqual(ntpath.realpath(ABSTFN + "c"), ABSTFN + "c")
 
-        with support.change_cwd('..'):
-            # Test using relative path as well.
-            self.assertEqual(ntpath.realpath(ntpath.basename(ABSTFN)), ABSTFN)
+        # Test using relative path as well.
+        self.assertEqual(ntpath.realpath(ntpath.basename(ABSTFN)), ABSTFN)
 
     def test_expandvars(self):
         with support.EnvironmentVarGuard() as env:

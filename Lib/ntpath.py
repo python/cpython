@@ -525,26 +525,48 @@ except ImportError:
     # realpath is a no-op on systems without _getfinalpathname support.
     realpath = abspath
 else:
+    def _readlink_deep(path, seen=None, *, _readlink=os.readlink):
+        if seen is None:
+            seen = set()
+
+        while normcase(path) not in seen:
+            seen.add(normcase(path))
+            try:
+                path = _readlink(path)
+            except OSError as ex:
+                # Stop on file (2) or directory (3) not found, or
+                # paths that are not reparse points (4390)
+                if ex.winerror not in (2, 3, 4390):
+                    raise
+                break
+            except ValueError:
+                # Stop on reparse points that are not symlinks
+                break
+        return path
+
     def _getfinalpathname_nonstrict(path):
-        # Fast-path is to find the target directly
-        try:
-            return _getfinalpathname(path)
-        except OSError:
-            pass
+        # Allow file (2) or directory (3) not found, or symlinks that
+        # cannot be followed (1921)
+        allowed_winerror = 2, 3, 1921
 
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
-        path, tail = split(path)
+        tail = ''
+        seen = set()
         while path:
             try:
-                return join(_getfinalpathname(path), tail)
-            except OSError:
+                path = _readlink_deep(path, seen)
+                path = _getfinalpathname(path)
+                return join(path, tail) if tail else path
+            except OSError as ex:
+                if ex.winerror not in allowed_winerror:
+                    raise
                 path, name = split(path)
                 if path and not name:
                     tail = path + tail
                     break
-                tail = join(name, tail)
-        return tail
+                tail = join(name, tail) if tail else name
+        return abspath(tail)
 
     def realpath(path):
         path = os.fspath(path)
