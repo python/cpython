@@ -176,6 +176,18 @@ static char *screen_encoding = NULL;
 
 /* Utility Functions */
 
+static inline int
+color_pair_to_attr(short color_number)
+{
+    return ((int)color_number << 8);
+}
+
+static inline short
+attr_to_color_pair(int attr)
+{
+    return (short)((attr & A_COLOR) >> 8);
+}
+
 /*
  * Check the return code from a curses function and return None
  * or raise an exception as appropriate.  These are exported using the
@@ -606,7 +618,7 @@ _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
     if (type == 2) {
         funcname = "add_wch";
         wstr[1] = L'\0';
-        setcchar(&wcval, wstr, attr, 0, NULL);
+        setcchar(&wcval, wstr, attr, attr_to_color_pair(attr), NULL);
         if (coordinates_group)
             rtn = mvwadd_wch(self->win,y,x, &wcval);
         else {
@@ -2621,7 +2633,7 @@ _curses_color_pair_impl(PyObject *module, short color_number)
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return  PyLong_FromLong((long) (color_number << 8));
+    return  PyLong_FromLong(color_pair_to_attr(color_number));
 }
 
 /*[clinic input]
@@ -3644,7 +3656,7 @@ _curses_pair_number_impl(PyObject *module, int attr)
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return PyLong_FromLong((long) ((attr & A_COLOR) >> 8));
+    return PyLong_FromLong(attr_to_color_pair(attr));
 }
 
 /*[clinic input]
