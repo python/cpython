@@ -232,6 +232,9 @@ coverage of each test.
 
 bpo-33856: Add 'help' to Shell's initial welcome message.
 
+bpo-37849: Fix completions list appearing too high or low when shown
+above the current line.
+
 
 What's New in IDLE 3.7.0 (since 3.6.0)
 Released on 2018-06-27
