@@ -192,7 +192,7 @@ class HashRandomizationTests:
         # two runs should return different hashes
         run1 = self.get_hash(self.repr_, seed='random')
         run2 = self.get_hash(self.repr_, seed='random')
-        self.assertNotEqual(run1, run2, self.repr_)
+        self.assertNotEqual(run1, run2)
 
 class StringlikeHashRandomizationTests(HashRandomizationTests):
     repr_ = None
