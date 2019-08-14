@@ -1033,6 +1033,11 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
         val = flag;
     }
     if (ste->ste_comp_iter_target) {
+        /* This name is an iteration variable in a comprehension,
+         * so check for a binding conflict with any named expressions.
+         * Otherwise, mark it as an iteration variable so subsequent
+         * named expressions can check for conflicts.
+         */
         if (val & (DEF_GLOBAL | DEF_NONLOCAL)) {
             PyErr_Format(PyExc_SyntaxError,
                 NAMED_EXPR_COMP_INNER_LOOP_CONFLICT, name);
