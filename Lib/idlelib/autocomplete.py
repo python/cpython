@@ -149,14 +149,25 @@ class AutoComplete:
         escapes = {ord_: f'\\x{ord_:02x}' for ord_ in range(14)}
         escapes.update({0: '\\0', 9: '\\t', 10: '\\n', 13: '\\r'})
         def control_char_escape(match):
+            """escaping for ASCII control characters 0-13"""
+            # This is needed to avoid potential visual artifacts displaying
+            # these characters, and even more importantly to be clear to users.
+            #
+            # The characters '\0', '\t', '\n' and '\r' are displayed as done
+            # here rather than as hex escape codes, which is nicer and clearer.
             return escapes[ord(match.group())]
         high_byte_escape_re = re.compile(r'[\x80-\xff]')
         def high_byte_sub(match):
             """escaping for bytes values above 127"""
+            # This is needed for bytes literals since they must have values of
+            # 128 and above escaped.
+            # See: https://docs.python.org/3/reference/lexical_analysis.html
             return f'\\x{ord(match.group()):x}'
-        non_bmp_re = re.compile(r'[\U00010000-\U0010ffff]')
+        non_bmp_re = re.compile(f'[\\U00010000-\\U{sys.maxunicode:08x}]')
         def non_bmp_sub(match):
             """escaping for non-BMP unicode code points"""
+            # This is needed since Tk doesn't support displaying non-BMP
+            # unicode code points.
             return f'\\U{ord(match.group()):08x}'
 
         def str_reprs(str_comps, prefix, is_raw, quote_type):
