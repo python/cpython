@@ -594,7 +594,7 @@ else:
                 spath = path[len(prefix):]
             # Ensure that the non-prefixed path resolves to the same path
             try:
-                if _getfinalpathname(spath) == _getfinalpathname(path):
+                if _getfinalpathname(spath) == path:
                     path = spath
             except OSError as ex:
                 pass
