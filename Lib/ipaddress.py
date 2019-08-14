@@ -1790,7 +1790,7 @@ class _BaseV6:
         """Helper function to parse IPv6 string address with scope id.
 
         See RFC 4007 for details.
-        
+
         Arg:
             ip_str: A string, the IPv6 address.
 
@@ -1866,9 +1866,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
     @property
     def scope_id(self):
         """Identifier of a particular zone of the address's scope.
-        
+
         See RFC 4007 for details.
-        
+
         Returns:
             A string identifying the zone of the address if specified, else None.
         """
