@@ -1728,40 +1728,39 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             lastError == ERROR_SHARING_VIOLATION) {
             /* Could not get attributes on open file. Try reading
                the directory. */
-            ULONG reparse_tag = 0;
-            if (!attributes_from_dir(path, &info, &reparse_tag)) {
+            if (!attributes_from_dir(path, &info, &tagInfo.ReparseTag)) {
                 /* Very strange. This should not fail now */
                 return -1;
             }
 
-            if (traverse &&
-                info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
-                IsReparseTagNameSurrogate(reparse_tag)) {
-                /* Should have traversed this, but could not open it */
-                return -1;
-            }
-
-            return 0;
+            /* Now info is initialized, fall through */
         } else if (traverse && lastError == ERROR_CANT_ACCESS_FILE) {
             /* Try again without traversal */
             return win32_xstat_impl(path, result, FALSE);
+        } else {
+            return -1;
         }
-        return -1;
-    }
-
-    /* We have a valid hFile at this stage */
-
-    if (!GetFileInformationByHandle(hFile, &info)) {
+    } else if (!GetFileInformationByHandle(hFile, &info)) {
         CloseHandle(hFile);
         return -1;
     }
 
-    if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
-                                      &tagInfo, sizeof(tagInfo))) {
-        tagInfo.ReparseTag = 0;
+    if (hFile == INVALID_HANDLE_VALUE) {
+        if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
+                                          &tagInfo, sizeof(tagInfo))) {
+            tagInfo.ReparseTag = 0;
+        }
+
+        CloseHandle(hFile);
     }
 
-    CloseHandle(hFile);
+    if (traverse &&
+        info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+        IsReparseTagNameSurrogate(tagInfo.ReparseTag)) {
+        /* Should have traversed this, but could not open it */
+        return -1;
+    }
+
     _Py_attribute_data_to_stat(&info, tagInfo.ReparseTag, result);
 
     /* Set S_IEXEC if it is an .exe, .bat, ... */
