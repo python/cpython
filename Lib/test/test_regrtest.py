@@ -1154,6 +1154,33 @@ class ArgsTestCase(BaseTestCase):
                                   env_changed=[testname],
                                   fail_env_changed=True)
 
+    def test_multiprocessing_timeout(self):
+        code = textwrap.dedent(r"""
+            import time
+            import unittest
+            try:
+                import faulthandler
+            except ImportError:
+                faulthandler = None
+
+            class Tests(unittest.TestCase):
+                # test hangs and so should be stopped by the timeout
+                def test_sleep(self):
+                    # we want to test regrtest multiprocessing timeout,
+                    # not faulthandler timeout
+                    if faulthandler is not None:
+                        faulthandler.cancel_dump_traceback_later()
+
+                    time.sleep(60 * 5)
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-j2", "--timeout=1.0", testname, exitcode=2)
+        self.check_executed_tests(output, [testname],
+                                  failed=testname)
+        self.assertRegex(output,
+                         re.compile('%s timed out' % testname, re.MULTILINE))
+
     def test_unraisable_exc(self):
         # --fail-env-changed must catch unraisable exception
         code = textwrap.dedent(r"""
