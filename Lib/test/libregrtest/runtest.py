@@ -68,7 +68,7 @@ FOUND_GARBAGE = []
 
 def is_failed(result, ns):
     ok = result.result
-    if ok in (PASSED, RESOURCE_DENIED, SKIPPED, TEST_DID_NOT_RUN, TIMEOUT):
+    if ok in (PASSED, RESOURCE_DENIED, SKIPPED, TEST_DID_NOT_RUN):
         return False
     if ok == ENV_CHANGED:
         return ns.fail_env_changed
