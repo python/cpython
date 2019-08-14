@@ -275,9 +275,9 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: scope_id
 
-      For addresses that appear to be scoped addresses (containing
-      ``%<scope_id>``) as defined by :RFC:`4007`, this property will consist
-      scope id.  For any other address, this property will be ``None``.
+      For scoped addresses as defined by :RFC:`4007`, this property identifies
+      the particular zone of the address's scope that the address belongs to,
+      as a string. When no scope zone is specified, this property will be ``None``.
 
    .. attribute:: sixtofour
 
