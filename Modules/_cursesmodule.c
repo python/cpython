@@ -178,6 +178,18 @@ static char *screen_encoding = NULL;
 
 /* Utility Functions */
 
+static inline int
+color_pair_to_attr(short color_number)
+{
+    return ((int)color_number << 8);
+}
+
+static inline short
+attr_to_color_pair(int attr)
+{
+    return (short)((attr & A_COLOR) >> 8);
+}
+
 /*
  * Check the return code from a curses function and return None
  * or raise an exception as appropriate.  These are exported using the
@@ -614,7 +626,7 @@ curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1, int y,
     if (type == 2) {
         funcname = "add_wch";
         wstr[1] = L'\0';
-        setcchar(&wcval, wstr, attr, 0, NULL);
+        setcchar(&wcval, wstr, attr, attr_to_color_pair(attr), NULL);
         if (coordinates_group)
             rtn = mvwadd_wch(cwself->win,y,x, &wcval);
         else {
@@ -2204,7 +2216,7 @@ PyCurses_color_pair(PyObject *self, PyObject *args)
     PyCursesInitialisedColor;
 
     if (!PyArg_ParseTuple(args, "i:color_pair", &n)) return NULL;
-    return PyLong_FromLong((long) (n << 8));
+    return PyLong_FromLong(color_pair_to_attr(n));
 }
 
 static PyObject *
@@ -2802,7 +2814,7 @@ PyCurses_pair_number(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    return PyLong_FromLong((long) ((n & A_COLOR) >> 8));
+    return PyLong_FromLong(attr_to_color_pair(n));
 }
 
 static PyObject *
