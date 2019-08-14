@@ -1489,7 +1489,7 @@ static int
 symtable_handle_namedexpr(struct symtable *st, expr_ty e)
 {
     if (st->st_cur->ste_comp_iter_expr > 0) {
-        /* Evaluating the outermost range expression for a comprehension */
+        /* Assignment isn't allowed in a comprehension iterable expression */
         PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_ITER_EXPR);
         PyErr_SyntaxLocationObject(st->st_filename,
                                     e->lineno,
@@ -1497,7 +1497,7 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
         VISIT_QUIT(st, 0);
     }
     if (st->st_cur->ste_comprehension) {
-        /* Already inside a comprehension body */
+        /* Inside a comprehension body, so find the right target scope */
         if (!symtable_extend_namedexpr_scope(st, e->v.NamedExpr.target))
             VISIT_QUIT(st, 0);
     }
