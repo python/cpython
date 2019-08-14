@@ -5675,39 +5675,35 @@ datetime_hash(PyDateTime_DateTime *self)
             return -1;
 
         /* Reduce this to a hash of another object. */
+        // todo fix datetime
         if (offset == Py_None)
             self->hashcode = generic_hash(
                 (unsigned char *)self->data, _PyDateTime_DATETIME_DATASIZE);
         else {
-            PyObject *temp1, *temp2;
-            int days, seconds;
+            PyObject * temp = datetime_subtract((PyObject *)self, (PyObject *)offset);
+            if (temp == NULL) {
+                if (!PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                    Py_DECREF(offset);
+                    return -1;
+                }
+                PyErr_Clear();
+                // time + offset is less than 0, which can't be represented as a datetime, so we use time + offset instead.
+                temp = datetime_add((PyObject *)self, (PyObject *)offset);
+            }
+            if (temp == NULL) {
+                Py_DECREF(temp);
+                Py_DECREF(offset);
+                return -1;
+            }
+            self->hashcode = generic_hash(
+                (unsigned char *)temp, _PyDateTime_DATETIME_DATASIZE);
 
-            assert(HASTZINFO(self));
-            days = ymd_to_ord(GET_YEAR(self),
-                              GET_MONTH(self),
-                              GET_DAY(self));
-            seconds = DATE_GET_HOUR(self) * 3600 +
-                      DATE_GET_MINUTE(self) * 60 +
-                      DATE_GET_SECOND(self);
-            temp1 = new_delta(days, seconds,
-                              DATE_GET_MICROSECOND(self),
-                              1);
-            if (temp1 == NULL) {
-                Py_DECREF(offset);
-                return -1;
-            }
-            temp2 = delta_subtract(temp1, offset);
-            Py_DECREF(temp1);
-            if (temp2 == NULL) {
-                Py_DECREF(offset);
-                return -1;
-            }
-            self->hashcode = PyObject_Hash(temp2);
-            Py_DECREF(temp2);
+            Py_DECREF(temp);
         }
         Py_DECREF(offset);
     }
     return self->hashcode;
+
 }
 
 static PyObject *
