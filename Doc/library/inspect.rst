@@ -40,10 +40,26 @@ attributes:
 +-----------+-------------------+---------------------------+
 | Type      | Attribute         | Description               |
 +===========+===================+===========================+
-| module    | __doc__           | documentation string      |
+| module    | __cached__        | the path where a compiled |
+|           |                   | version is stored         |
++-----------+-------------------+---------------------------+
+|           | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __file__          | filename (missing for     |
 |           |                   | built-in modules)         |
++-----------+-------------------+---------------------------+
+|           | __loader__        | loader used to load the   |
+|           |                   | module                    |
++-----------+-------------------+---------------------------+
+|           | __name__          | name of the module        |
++-----------+-------------------+---------------------------+
+|           | __path__          | list of strings specifying|
+|           |                   | the search path within a  |
+|           |                   | package (not set for      |
+|           |                   | modules)                  |
++-----------+-------------------+---------------------------+
+|           | __package__       | parent package for the    |
+|           |                   | module/package            |
 +-----------+-------------------+---------------------------+
 | class     | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
