@@ -1325,7 +1325,11 @@ _PyFaulthandler_Init(int enable)
      * be able to allocate memory on the stack, even on a stack overflow. If it
      * fails, ignore the error. */
     stack.ss_flags = 0;
-    stack.ss_size = SIGSTKSZ;
+    /* bpo-21131: allocate dedicated stack of SIGSTKSZ*2 bytes, instead of just
+       SIGSTKSZ bytes. Calling the previous signal handler in faulthandler
+       signal handler uses more than SIGSTKSZ bytes of stack memory on some
+       platforms. */
+    stack.ss_size = SIGSTKSZ * 2;
     stack.ss_sp = PyMem_Malloc(stack.ss_size);
     if (stack.ss_sp != NULL) {
         err = sigaltstack(&stack, &old_stack);
