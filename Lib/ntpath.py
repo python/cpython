@@ -589,9 +589,15 @@ else:
             # For UNC paths, the prefix will actually be \\?\UNC\
             # Handle that case as well.
             if path.startswith(unc_prefix):
-                path = new_unc_prefix + path[len(unc_prefix):]
+                spath = new_unc_prefix + path[len(unc_prefix):]
             else:
-                path = path[len(prefix):]
+                spath = path[len(prefix):]
+            # Ensure that the non-prefixed path resolves to the same path
+            try:
+                if _getfinalpathname(spath) == _getfinalpathname(path):
+                    path = spath
+            except OSError as ex:
+                pass
         return path
 
 

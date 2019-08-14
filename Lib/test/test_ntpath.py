@@ -315,36 +315,72 @@ class TestNtpath(unittest.TestCase):
         self.addCleanup(support.unlink, ABSTFN + "c")
         self.addCleanup(support.unlink, ABSTFN + "a")
 
+        P = "\\\\?\\"
+
         os.symlink(ABSTFN, ABSTFN)
-        self.assertEqual(ntpath.realpath(ABSTFN), ABSTFN)
+        self.assertEqual(ntpath.realpath(ABSTFN), P + ABSTFN)
 
         os.symlink(ABSTFN + "1", ABSTFN + "2")
         os.symlink(ABSTFN + "2", ABSTFN + "1")
-        self.assertEqual(ntpath.realpath(ABSTFN + "1"), ABSTFN + "1")
-        self.assertEqual(ntpath.realpath(ABSTFN + "2"), ABSTFN + "2")
+        self.assertEqual(ntpath.realpath(ABSTFN + "1"), P + ABSTFN + "1")
+        self.assertEqual(ntpath.realpath(ABSTFN + "2"), P + ABSTFN + "2")
 
-        self.assertEqual(ntpath.realpath(ABSTFN + "1\\x"), ABSTFN + "1\\x")
+        self.assertEqual(ntpath.realpath(ABSTFN + "1\\x"), P + ABSTFN + "1\\x")
         self.assertEqual(ntpath.realpath(ABSTFN + "1\\.."),
                          ntpath.dirname(ABSTFN))
         self.assertEqual(ntpath.realpath(ABSTFN + "1\\..\\x"),
-                         ntpath.dirname(ABSTFN) + "\\x")
+                         ntpath.dirname(P + ABSTFN) + "\\x")
         os.symlink(ABSTFN + "x", ABSTFN + "y")
         self.assertEqual(ntpath.realpath(ABSTFN + "1\\..\\"
                                          + ntpath.basename(ABSTFN) + "y"),
-                         ABSTFN + "x")
+                         P + ABSTFN + "x")
         self.assertEqual(ntpath.realpath(ABSTFN + "1\\..\\"
                                          + ntpath.basename(ABSTFN) + "1"),
-                         ABSTFN + "2")
+                         P + ABSTFN + "2")
 
         os.symlink(ntpath.basename(ABSTFN) + "a\\b", ABSTFN + "a")
-        self.assertEqual(ntpath.realpath(ABSTFN + "a"), ABSTFN + "a")
+        self.assertEqual(ntpath.realpath(ABSTFN + "a"), P + ABSTFN + "a")
 
         os.symlink("..\\" + ntpath.basename(ntpath.dirname(ABSTFN))
                    + "\\" + ntpath.basename(ABSTFN) + "c", ABSTFN + "c")
-        self.assertEqual(ntpath.realpath(ABSTFN + "c"), ABSTFN + "c")
+        self.assertEqual(ntpath.realpath(ABSTFN + "c"), P + ABSTFN + "c")
 
         # Test using relative path as well.
-        self.assertEqual(ntpath.realpath(ntpath.basename(ABSTFN)), ABSTFN)
+        self.assertEqual(ntpath.realpath(ntpath.basename(ABSTFN)), P + ABSTFN)
+
+    @support.skip_unless_symlink
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
+    def test_realpath_symlink_prefix(self):
+        ABSTFN = ntpath.abspath(support.TESTFN)
+        self.addCleanup(support.unlink, ABSTFN + "3")
+        self.addCleanup(support.unlink, "\\\\?\\" + ABSTFN + "3.")
+        self.addCleanup(support.unlink, ABSTFN + "3link")
+        self.addCleanup(support.unlink, ABSTFN + "3.link")
+
+        with open(ABSTFN + "3", "wb") as f:
+            f.write(b'0')
+        os.symlink(ABSTFN + "3", ABSTFN + "3link")
+
+        with open("\\\\?\\" + ABSTFN + "3.", "wb") as f:
+            f.write(b'1')
+        os.symlink("\\\\?\\" + ABSTFN + "3.", ABSTFN + "3.link")
+
+        self.assertEqual(ntpath.realpath(ABSTFN + "3link"),
+                         ABSTFN + "3")
+        self.assertEqual(ntpath.realpath(ABSTFN + "3.link"),
+                         "\\\\?\\" + ABSTFN + "3.")
+
+        # Resolved paths should be usable to open target files
+        with open(ntpath.realpath(ABSTFN + "3link"), "rb") as f:
+            self.assertEqual(f.read(), b'0')
+        with open(ntpath.realpath(ABSTFN + "3.link"), "rb") as f:
+            self.assertEqual(f.read(), b'1')
+
+        # When the prefix is included, it is not stripped
+        self.assertEqual(ntpath.realpath("\\\\?\\" + ABSTFN + "3link"),
+                         "\\\\?\\" + ABSTFN + "3")
+        self.assertEqual(ntpath.realpath("\\\\?\\" + ABSTFN + "3.link"),
+                         "\\\\?\\" + ABSTFN + "3.")
 
     def test_expandvars(self):
         with support.EnvironmentVarGuard() as env:
