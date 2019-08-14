@@ -217,11 +217,15 @@ write code that handles both IP versions correctly.  Address objects are
       :RFC:`4291` for details.  For example,
       ``"0000:0000:0000:0000:0000:0abc:0007:0def"`` can be compressed to
       ``"::abc:7:def"``.
+
+      Optionally, the string may also have a scope (zone) id, expressed
+      with a suffix ``%<scope_id>``. If present, the scope id must be non-empty,
+      and may not contain ``%``.
+
+      See :RFC:`4007` for details.
    2. An integer that fits into 128 bits.
    3. An integer packed into a :class:`bytes` object of length 16, big-endian.
-   4. String IPv6 address may contain scope (or zone) id in format <address>%<scope_id>.
-      Scope id could not be blank or negative integer.
-      See :RFC:`4007` for details.
+
 
    >>> ipaddress.IPv6Address('2001:db8::1000')
    IPv6Address('2001:db8::1000')
