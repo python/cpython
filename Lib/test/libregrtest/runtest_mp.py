@@ -13,7 +13,7 @@ from test import support
 
 from test.libregrtest.runtest import (
     runtest, INTERRUPTED, CHILD_ERROR, PROGRESS_MIN_TIME,
-    format_test_result, TestResult, is_failed)
+    format_test_result, TestResult, is_failed, TIMEOUT)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import format_duration
 
@@ -103,11 +103,12 @@ class ExitThread(Exception):
 
 
 class MultiprocessThread(threading.Thread):
-    def __init__(self, pending, output, ns):
+    def __init__(self, pending, output, ns, timeout):
         super().__init__()
         self.pending = pending
         self.output = output
         self.ns = ns
+        self.timeout = timeout
         self.current_test_name = None
         self.start_time = None
         self._popen = None
@@ -126,6 +127,12 @@ class MultiprocessThread(threading.Thread):
         return '<%s>' % ' '.join(info)
 
     def kill(self):
+        """
+        Kill the current process (if any).
+
+        This method can be called by the thread running the process,
+        or by another thread.
+        """
         self._killed = True
 
         popen = self._popen
@@ -136,6 +143,13 @@ class MultiprocessThread(threading.Thread):
         # does not hang
         popen.stdout.close()
         popen.stderr.close()
+        popen.wait()
+
+    def mp_result_error(self, test_name, error_type, stdout='', stderr='',
+                        err_msg=None):
+        test_time = time.monotonic() - self.start_time
+        result = TestResult(test_name, error_type, test_time, None)
+        return MultiprocessResult(result, stdout, stderr, err_msg)
 
     def _runtest(self, test_name):
         try:
@@ -154,7 +168,19 @@ class MultiprocessThread(threading.Thread):
                         raise ExitThread
 
                     try:
+                        stdout, stderr = popen.communicate(timeout=self.timeout)
+                    except subprocess.TimeoutExpired:
+                        if self._killed:
+                            # kill() has been called: communicate() fails
+                            # on reading closed stdout/stderr
+                            raise ExitThread
+
+                        popen.kill()
                         stdout, stderr = popen.communicate()
+                        self.kill()
+
+                        return self.mp_result_error(test_name, TIMEOUT,
+                                                    stdout, stderr)
                     except OSError:
                         if self._killed:
                             # kill() has been called: communicate() fails
@@ -163,7 +189,6 @@ class MultiprocessThread(threading.Thread):
                         raise
                 except:
                     self.kill()
-                    popen.wait()
                     raise
 
             retcode = popen.wait()
@@ -191,8 +216,7 @@ class MultiprocessThread(threading.Thread):
                     err_msg = "Failed to parse worker JSON: %s" % exc
 
         if err_msg is not None:
-            test_time = time.monotonic() - self.start_time
-            result = TestResult(test_name, CHILD_ERROR, test_time, None)
+            return self.mp_result_error(test_name, CHILD_ERROR, stdout, stderr, err_msg)
 
         return MultiprocessResult(result, stdout, stderr, err_msg)
 
@@ -236,13 +260,16 @@ class MultiprocessRunner:
         self.output = queue.Queue()
         self.pending = MultiprocessIterator(self.regrtest.tests)
         if self.ns.timeout is not None:
-            self.test_timeout = self.ns.timeout * 1.5
+            self.worker_timeout = self.ns.timeout * 1.5
+            self.main_timeout = self.ns.timeout * 2.0
         else:
-            self.test_timeout = None
+            self.worker_timeout = None
+            self.main_timeout = None
         self.workers = None
 
     def start_workers(self):
-        self.workers = [MultiprocessThread(self.pending, self.output, self.ns)
+        self.workers = [MultiprocessThread(self.pending, self.output,
+                                           self.ns, self.worker_timeout)
                         for _ in range(self.ns.use_mp)]
         print("Run tests in parallel using %s child processes"
               % len(self.workers))
@@ -274,8 +301,8 @@ class MultiprocessRunner:
                 return None
 
         while True:
-            if self.test_timeout is not None:
-                faulthandler.dump_traceback_later(self.test_timeout, exit=True)
+            if self.main_timeout is not None:
+                faulthandler.dump_traceback_later(self.main_timeout, exit=True)
 
             # wait for a thread
             timeout = max(PROGRESS_UPDATE, PROGRESS_MIN_TIME)
@@ -343,7 +370,7 @@ class MultiprocessRunner:
             print()
             self.regrtest.interrupted = True
         finally:
-            if self.test_timeout is not None:
+            if self.main_timeout is not None:
                 faulthandler.cancel_dump_traceback_later()
 
         # a test failed (and --failfast is set) or all tests completed
