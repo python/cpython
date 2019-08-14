@@ -184,7 +184,7 @@ def runtest(ns, test_name):
         FAILED           test failed
         PASSED           test passed
         EMPTY_TEST_SUITE test ran no subtests.
-        TIMEOUT          test timd out.
+        TIMEOUT          test timed out.
 
     If ns.xmlpath is not None, xml_data is a list containing each
     generated testsuite element.
