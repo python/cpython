@@ -1,3 +1,4 @@
 [build]
-    command = "make -C Doc/ html"
+    base = "Doc/"
+    command = "make html"
     publish = "Doc/build/html"
