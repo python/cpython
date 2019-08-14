@@ -276,6 +276,13 @@ and off individually.  They are described here in more detail.
    Handles other modules renames in the standard library.  It is separate from
    the :2to3fixer:`imports` fixer only because of technical limitations.
 
+.. 2to3fixer:: imports3
+
+   Handles other modules renames in the standard library.  It is separate from
+   the :2to3fixer:`imports` and :2to3fixer:`imports2` fixers only because of
+   technical limitations. :2to3fixer:`renames` needs to run afterwards to
+   rename :data:`http.cookies.Cookie` to :data:`http.cookies.SimpleCookie`.
+
 .. 2to3fixer:: input
 
    Converts ``input(prompt)`` to ``eval(input(prompt))``.
@@ -389,7 +396,8 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: renames
 
-   Changes :data:`sys.maxint` to :data:`sys.maxsize`.
+   Changes :data:`sys.maxint` to :data:`sys.maxsize` and
+   :data:`http.cookies.Cookie` to :data:`http.cookies.SimpleCookie`.
 
 .. 2to3fixer:: repr
 
