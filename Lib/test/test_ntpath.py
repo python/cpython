@@ -213,13 +213,13 @@ class TestNtpath(unittest.TestCase):
 
     def test_realpath_pardir(self):
         expected = ntpath.normpath(os.getcwd())
-        tester("ntpath.realpath('..')", os.path.dirname(expected))
+        tester("ntpath.realpath('..')", ntpath.dirname(expected))
         tester("ntpath.realpath('../..')",
-               os.path.dirname(ntpath.dirname(expected)))
+               ntpath.dirname(ntpath.dirname(expected)))
         tester("ntpath.realpath('/'.join(['..'] * 50))",
-               os.path.splitdrive(expected)[0] + '\\')
+               ntpath.splitdrive(expected)[0] + '\\')
         tester("ntpath.realpath('..\\..')",
-               os.path.dirname(ntpath.dirname(expected)))
+               ntpath.dirname(ntpath.dirname(expected)))
         tester("ntpath.realpath('\\'.join(['..'] * 50))",
                ntpath.splitdrive(expected)[0] + '\\')
 
@@ -244,7 +244,7 @@ class TestNtpath(unittest.TestCase):
         self.addCleanup(support.unlink, ABSTFN)
         self.addCleanup(support.unlink, ABSTFN + "1")
 
-        os.symlink(ABSTFN, os.path.relpath(ABSTFN + "1"))
+        os.symlink(ABSTFN, ntpath.relpath(ABSTFN + "1"))
         self.assertEqual(ntpath.realpath(ABSTFN + "1"), ABSTFN)
 
     @support.skip_unless_symlink
@@ -339,8 +339,8 @@ class TestNtpath(unittest.TestCase):
         os.symlink(ntpath.basename(ABSTFN) + "a\\b", ABSTFN + "a")
         self.assertEqual(ntpath.realpath(ABSTFN + "a"), ABSTFN + "a")
 
-        os.symlink("..\\" + os.path.basename(os.path.dirname(ABSTFN))
-                   + "\\" + os.path.basename(ABSTFN) + "c", ABSTFN + "c")
+        os.symlink("..\\" + ntpath.basename(ntpath.dirname(ABSTFN))
+                   + "\\" + ntpath.basename(ABSTFN) + "c", ABSTFN + "c")
         self.assertEqual(ntpath.realpath(ABSTFN + "c"), ABSTFN + "c")
 
         # Test using relative path as well.
@@ -440,11 +440,11 @@ class TestNtpath(unittest.TestCase):
 
     def test_relpath(self):
         tester('ntpath.relpath("a")', 'a')
-        tester('ntpath.relpath(os.path.abspath("a"))', 'a')
+        tester('ntpath.relpath(ntpath.abspath("a"))', 'a')
         tester('ntpath.relpath("a/b")', 'a\\b')
         tester('ntpath.relpath("../a/b")', '..\\a\\b')
         with support.temp_cwd(support.TESTFN) as cwd_dir:
-            currentdir = os.path.basename(cwd_dir)
+            currentdir = ntpath.basename(cwd_dir)
             tester('ntpath.relpath("a", "../b")', '..\\'+currentdir+'\\a')
             tester('ntpath.relpath("a/b", "../c")', '..\\'+currentdir+'\\a\\b')
         tester('ntpath.relpath("a", "b/c")', '..\\..\\a')
@@ -569,7 +569,7 @@ class TestNtpath(unittest.TestCase):
             # locations below cannot then refer to mount points
             #
             drive, path = ntpath.splitdrive(sys.executable)
-            with support.change_cwd(os.path.dirname(sys.executable)):
+            with support.change_cwd(ntpath.dirname(sys.executable)):
                 self.assertFalse(ntpath.ismount(drive.lower()))
                 self.assertFalse(ntpath.ismount(drive.upper()))
 
