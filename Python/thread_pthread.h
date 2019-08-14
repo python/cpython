@@ -887,7 +887,7 @@ PyThread_tss_get(Py_tss_t *key)
  * need to know the actual amount of space to allocate.
  */
 size_t
-_PyThread_preferred_stacksize()
+_PyThread_preferred_stacksize(void)
 {
 #if defined(THREAD_STACK_SIZE) && (THREAD_STACK_SIZE == 0)
     /* If we have the stacksize thread attribute, we can use it to find the
