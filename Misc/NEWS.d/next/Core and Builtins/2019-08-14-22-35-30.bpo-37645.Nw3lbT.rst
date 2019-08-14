@@ -1,0 +1,2 @@
+For a Python function ``f``, ``str(f)`` now returns ``f()`` instead of
+``<function f at 0x...>``

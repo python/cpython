@@ -609,5 +609,15 @@ class TestPEP590(unittest.TestCase):
                 self.assertEqual(expected, wrapped(*args, **kwargs))
 
 
+class TestReprStr(unittest.TestCase):
+    def test_function(self):
+        f = testfunction
+        self.assertEqual(str(f), "testfunction()")
+        self.assertRegex(repr(f), r"^<function testfunction at .*>$")
+        f = PythonClass.method
+        self.assertEqual(str(f), "PythonClass.method()")
+        self.assertRegex(repr(f), r"^<function PythonClass.method at .*>$")
+
+
 if __name__ == "__main__":
     unittest.main()

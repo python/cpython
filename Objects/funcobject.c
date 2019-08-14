@@ -605,6 +605,13 @@ func_repr(PyFunctionObject *op)
                                op->func_qualname, op);
 }
 
+static PyObject*
+func_str(PyFunctionObject *op)
+{
+    return PyUnicode_FromFormat("%U()", op->func_qualname);
+}
+
+
 static int
 func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 {
@@ -649,7 +656,7 @@ PyTypeObject PyFunction_Type = {
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
     PyVectorcall_Call,                          /* tp_call */
-    0,                                          /* tp_str */
+    (reprfunc)func_str,                         /* tp_str */
     0,                                          /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
