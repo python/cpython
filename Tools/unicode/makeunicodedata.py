@@ -32,7 +32,7 @@ import zipfile
 
 from functools import partial
 from textwrap import dedent
-from typing import *
+from typing import Iterator, List, Tuple
 
 SCRIPT = sys.argv[0]
 VERSION = "3.3"
@@ -904,6 +904,19 @@ def open_data(template, version):
         return open(local, 'rb')
 
 
+def expand_range(char_range: str) -> Iterator[int]:
+    '''
+    Parses ranges of code points, as described in UAX #44:
+      https://www.unicode.org/reports/tr44/#Code_Point_Ranges
+    '''
+    if '..' in char_range:
+        first, last = [int(c, 16) for c in char_range.split('..')]
+    else:
+        first = last = int(char_range, 16)
+    for char in range(first, last+1):
+        yield char
+
+
 class UcdFile:
     '''
     A file in the standard format of the UCD.
@@ -928,6 +941,12 @@ class UcdFile:
 
     def __iter__(self) -> Iterator[List[str]]:
         return self.records()
+
+    def expanded(self) -> Iterator[Tuple[int, List[str]]]:
+        for record in self.records():
+            char_range, rest = record[0], record[1:]
+            for char in expand_range(char_range):
+                yield char, rest
 
 
 # --------------------------------------------------------------------
@@ -955,6 +974,9 @@ class UnicodeData:
         # expand first-last ranges
         field = None
         for i in range(0, 0x110000):
+            # The file UnicodeData.txt has its own distinct way of
+            # expressing ranges.  See:
+            #   https://www.unicode.org/reports/tr44/#Code_Point_Ranges
             s = table[i]
             if s:
                 if s[1][-6:] == "First>":
@@ -1019,14 +1041,8 @@ class UnicodeData:
             self.exclusions[char] = 1
 
         widths = [None] * 0x110000
-        for s in UcdFile(EASTASIAN_WIDTH, version):
-            if '..' in s[0]:
-                first, last = [int(c, 16) for c in s[0].split('..')]
-                chars = list(range(first, last+1))
-            else:
-                chars = [int(s[0], 16)]
-            for char in chars:
-                widths[char] = s[1]
+        for char, (width,) in UcdFile(EASTASIAN_WIDTH, version).expanded():
+            widths[char] = width
 
         for i in range(0, 0x110000):
             if table[i] is not None:
@@ -1036,26 +1052,16 @@ class UnicodeData:
             if table[i] is not None:
                 table[i].append(set())
 
-        for r, p in UcdFile(DERIVED_CORE_PROPERTIES, version):
-            if ".." in r:
-                first, last = [int(c, 16) for c in r.split('..')]
-                chars = list(range(first, last+1))
-            else:
-                chars = [int(r, 16)]
-            for char in chars:
-                if table[char]:
-                    # Some properties (e.g. Default_Ignorable_Code_Point)
-                    # apply to unassigned code points; ignore them
-                    table[char][-1].add(p)
+        for char, (p,) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
+            if table[char]:
+                # Some properties (e.g. Default_Ignorable_Code_Point)
+                # apply to unassigned code points; ignore them
+                table[char][-1].add(p)
 
-        for s in UcdFile(LINE_BREAK, version):
-            if len(s) < 2 or s[1] not in MANDATORY_LINE_BREAKS:
+        for char_range, value in UcdFile(LINE_BREAK, version):
+            if value not in MANDATORY_LINE_BREAKS:
                 continue
-            if '..' not in s[0]:
-                first = last = int(s[0], 16)
-            else:
-                first, last = [int(c, 16) for c in s[0].split('..')]
-            for char in range(first, last+1):
+            for char in expand_range(char_range):
                 table[char][-1].add('Line_Break')
 
         # We only want the quickcheck properties
@@ -1073,11 +1079,7 @@ class UnicodeData:
             quickcheck = 'MN'.index(s[2]) + 1 # Maybe or No
             quickcheck_shift = qc_order.index(s[1])*2
             quickcheck <<= quickcheck_shift
-            if '..' not in s[0]:
-                first = last = int(s[0], 16)
-            else:
-                first, last = [int(c, 16) for c in s[0].split('..')]
-            for char in range(first, last+1):
+            for char in expand_range(s[0]):
                 assert not (quickchecks[char]>>quickcheck_shift)&3
                 quickchecks[char] |= quickcheck
         for i in range(0, 0x110000):
