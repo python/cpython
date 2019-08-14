@@ -44,7 +44,7 @@ MAPPING = {'StringIO':  'io',
            'httplib': 'http.client',
            'htmlentitydefs' : 'html.entities',
            'HTMLParser' : 'html.parser',
-           'Cookie': 'http.cookies',
+           #'Cookie': 'http.cookies', is handled by fix_imports3 + renames
            'cookielib': 'http.cookiejar',
            'BaseHTTPServer': 'http.server',
            'SimpleHTTPServer': 'http.server',
@@ -139,7 +139,10 @@ class FixImports(fixer_base.BaseFix):
                     self.transform(node, results)
         else:
             # Replace usage of the module.
-            bare_name = results["bare_with_attr"][0]
+            if isinstance(results["bare_with_attr"],list):
+                bare_name = results["bare_with_attr"][0]
+            else:
+                bare_name = results["bare_with_attr"]
             new_name = self.replace.get(bare_name.value)
             if new_name:
                 bare_name.replace(Name(new_name, prefix=bare_name.prefix))

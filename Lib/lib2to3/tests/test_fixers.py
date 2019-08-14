@@ -1815,6 +1815,23 @@ class Test_imports2(FixerTestCase, ImportsFixerTests):
     from ..fixes.fix_imports2 import MAPPING as modules
 
 
+class Test_imports3(FixerTestCase):
+
+    def setUp(self):
+        super(Test_imports3, self).setUp(['imports3', 'renames'])
+
+    def test_cookie(self):
+        b = """
+            import Cookie
+            c = Cookie.Cookie('abc')
+            """
+        a = """
+            import http.cookies
+            c = http.cookies.SimpleCookie('abc')
+            """
+        self.check(b, a)
+
+
 class Test_imports_fixer_order(FixerTestCase, ImportsFixerTests):
 
     def setUp(self):
