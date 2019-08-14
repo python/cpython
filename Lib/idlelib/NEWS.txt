@@ -3,6 +3,11 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-37849: Fix completions list appearing too high or low when shown
+above the current line.
+
+bpo-36419: Refactor autocompete and improve testing.
+
 bpo-37748: Reorder the Run menu.  Put the most common choice,
 Run Module, at the top.
 
@@ -231,9 +236,6 @@ the tested module and perform at least one test.  Check and record the
 coverage of each test.
 
 bpo-33856: Add 'help' to Shell's initial welcome message.
-
-bpo-37849: Fix completions list appearing too high or low when shown
-above the current line.
 
 
 What's New in IDLE 3.7.0 (since 3.6.0)
