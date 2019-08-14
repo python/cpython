@@ -1,3 +1,3 @@
 [build]
-    command = "make -C Doc/ venv html"
+    command = "apt-get install python3-venv && make -C Doc/ venv html"
     publish = "Doc/build/html"
