@@ -18,13 +18,14 @@ COUNTER_NAME = r'\System\Processor Queue Length'
 class WindowsLoadTracker():
     """
     This class asynchronously interacts with the `typeperf` command to read
-    the system load on Windows. Mulitprocessing and threads can't be used
+    the system load on Windows. Multiprocessing and threads can't be used
     here because they interfere with the test suite's cases for those
     modules.
     """
 
     def __init__(self):
         self.load = 0.0
+        self.p = None
         self.start()
 
     def start(self):
