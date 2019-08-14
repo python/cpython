@@ -13,7 +13,7 @@ import unittest
 from test import support
 from test.libregrtest.refleak import dash_R, clear_caches
 from test.libregrtest.save_env import saved_test_environment
-from test.libregrtest.utils import print_warning
+from test.libregrtest.utils import format_duration, print_warning
 
 
 # Test result constants.
@@ -77,7 +77,10 @@ def is_failed(result, ns):
 
 def format_test_result(result):
     fmt = _FORMAT_TEST_RESULT.get(result.result, "%s")
-    return fmt % result.test_name
+    text = fmt % result.test_name
+    if result.result == TIMEOUT:
+        text = '%s (%s)' % (text, format_duration(result.test_time))
+    return text
 
 
 def findtestdir(path=None):
