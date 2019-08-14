@@ -60,7 +60,7 @@ show_track(void)
 #endif
 
 static inline void
-TUPLE_GC_TRACK(PyTupleObject *op)
+tuple_gc_track(PyTupleObject *op)
 {
 #ifdef SHOW_TRACK_COUNT
     count_tracked++;
@@ -85,16 +85,16 @@ _PyTuple_DebugMallocStats(FILE *out)
 #endif
 }
 
-/* Return half baked tuple. Before making it public following steps must be
-   done:
+/* Allocate an uninitialized tuple object. Before making it public following
+   steps must be done:
    - initialize its items
-   - call TUPLE_GC_TRACK() on it
+   - call tuple_gc_track() on it
    Because the empty tuple is always reused and it's already tracked by GC,
    this function must not be called with size == 0 (unless from PyTuple_New()
    which wraps this function).
 */
 static PyTupleObject *
-tuple_new_untracked(Py_ssize_t size)
+tuple_alloc(Py_ssize_t size)
 {
     PyTupleObject *op;
     if (size < 0) {
@@ -145,7 +145,7 @@ PyTuple_New(Py_ssize_t size)
         return (PyObject *) op;
     }
 #endif
-    op = tuple_new_untracked(size);
+    op = tuple_alloc(size);
     for (Py_ssize_t i = 0; i < size; i++) {
         op->ob_item[i] = NULL;
     }
@@ -156,7 +156,7 @@ PyTuple_New(Py_ssize_t size)
         Py_INCREF(op);          /* extra INCREF so that this is never freed */
     }
 #endif
-    TUPLE_GC_TRACK(op);
+    tuple_gc_track(op);
     return (PyObject *) op;
 }
 
@@ -244,7 +244,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
     }
 
     va_start(vargs, n);
-    PyTupleObject *result = tuple_new_untracked(n);
+    PyTupleObject *result = tuple_alloc(n);
     if (result == NULL) {
         va_end(vargs);
         return NULL;
@@ -256,7 +256,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
         items[i] = o;
     }
     va_end(vargs);
-    TUPLE_GC_TRACK(result);
+    tuple_gc_track(result);
     return (PyObject *)result;
 }
 
@@ -454,7 +454,7 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
         return PyTuple_New(0);
     }
 
-    PyTupleObject *tuple = tuple_new_untracked(n);
+    PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
         return NULL;
     }
@@ -464,7 +464,7 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
         Py_INCREF(item);
         dst[i] = item;
     }
-    TUPLE_GC_TRACK(tuple);
+    tuple_gc_track(tuple);
     return (PyObject *)tuple;
 }
 
@@ -524,7 +524,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         return PyTuple_New(0);
     }
 
-    np = tuple_new_untracked(size);
+    np = tuple_alloc(size);
     if (np == NULL) {
         return NULL;
     }
@@ -542,7 +542,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         Py_INCREF(v);
         dest[i] = v;
     }
-    TUPLE_GC_TRACK(np);
+    tuple_gc_track(np);
     return (PyObject *)np;
 #undef b
 }
@@ -568,7 +568,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     if (n > PY_SSIZE_T_MAX / Py_SIZE(a))
         return PyErr_NoMemory();
     size = Py_SIZE(a) * n;
-    np = tuple_new_untracked(size);
+    np = tuple_alloc(size);
     if (np == NULL)
         return NULL;
     p = np->ob_item;
@@ -580,7 +580,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
             p++;
         }
     }
-    TUPLE_GC_TRACK(np);
+    tuple_gc_track(np);
     return (PyObject *) np;
 }
 
@@ -812,7 +812,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
             return (PyObject *)self;
         }
         else {
-            PyTupleObject* result = tuple_new_untracked(slicelength);
+            PyTupleObject* result = tuple_alloc(slicelength);
             if (!result) return NULL;
 
             src = self->ob_item;
@@ -824,7 +824,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
                 dest[i] = it;
             }
 
-            TUPLE_GC_TRACK(result);
+            tuple_gc_track(result);
             return (PyObject *)result;
         }
     }
