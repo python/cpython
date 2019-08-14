@@ -332,6 +332,9 @@ class DatetimeDatetimeWithTimezoneFastTests(DatetimeFastTests, unittest.TestCase
 class DatetimeDatetimeWithTimezoneUnderflowFastTests(DatetimeFastTests, unittest.TestCase):
     repr_ = repr(datetime.datetime(1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(minutes=1439))))
 
+class DatetimeDatetimeWithTimezoneOverflowFastTests(DatetimeFastTests, unittest.TestCase):
+    repr_ = repr(datetime.datetime(datetime.MAXYEAR, 12, 31, tzinfo=datetime.timezone(datetime.timedelta(minutes=-1439))))
+
 class DatetimeTimeFastTests(DatetimeFastTests, unittest.TestCase):
     repr_ = repr(datetime.time(0))
 
@@ -340,6 +343,9 @@ class DatetimeTimeWithTimezoneFastTests(DatetimeFastTests, unittest.TestCase):
 
 class DatetimeTimeWithTimezoneUnderflowFastTests(DatetimeFastTests, unittest.TestCase):
     repr_ = repr(datetime.time(0, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(minutes=1439))))
+
+class DatetimeTimeWithTimezoneOverflowFastTests(DatetimeFastTests, unittest.TestCase):
+    repr_ = repr(datetime.time(23, 59, 59, tzinfo=datetime.timezone(datetime.timedelta(minutes=-1439))))
 
 class DatetimeDatePureTests(DatetimePureTests, unittest.TestCase):
     repr_ = repr(datetime.date(1066, 10, 14))
@@ -350,8 +356,11 @@ class DatetimeDatetimePureTests(DatetimePureTests, unittest.TestCase):
 class DatetimeDatetimeWithTimezonePureTests(DatetimePureTests, unittest.TestCase):
     repr_ = repr(datetime.datetime(1, 2, 3, 4, 5, 6, 7, datetime.timezone.utc))
 
-class DatetimeDatetimeWithTimezoneUnderflowPureTests(DatetimeFastTests, unittest.TestCase):
+class DatetimeDatetimeWithTimezoneUnderflowPureTests(DatetimePureTests, unittest.TestCase):
     repr_ = repr(datetime.datetime(1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(minutes=1439))))
+
+class DatetimeDatetimeWithTimezoneOverflowPureTests(DatetimePureTests, unittest.TestCase):
+    repr_ = repr(datetime.datetime(datetime.MAXYEAR, 12, 31, tzinfo=datetime.timezone(datetime.timedelta(minutes=-1439))))
 
 class DatetimeTimePureTests(DatetimePureTests, unittest.TestCase):
     repr_ = repr(datetime.time(0))
@@ -361,6 +370,9 @@ class DatetimeTimeWithTimezonePureTests(DatetimePureTests, unittest.TestCase):
 
 class DatetimeTimeWithTimezoneUnderflowPureTests(DatetimePureTests, unittest.TestCase):
     repr_ = repr(datetime.time(0, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(minutes=1439))))
+
+class DatetimeTimeWithTimezoneOverflowPureTests(DatetimePureTests, unittest.TestCase):
+    repr_ = repr(datetime.time(23, 59, 59, tzinfo=datetime.timezone(datetime.timedelta(minutes=-1439))))
 
 
 class HashDistributionTestCase(unittest.TestCase):
