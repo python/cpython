@@ -1379,10 +1379,11 @@ class time:
                               timedelta(hours=1))
                 assert not m % timedelta(minutes=1), "whole minute"
                 m //= timedelta(minutes=1)
-                if 0 <= h < 24:
-                    self._hashcode = hash(time(h, m, self.second, self.microsecond))
-                else:
-                    self._hashcode = hash((h, m, self.second, self.microsecond))
+                if h < 0:
+                    h = -1 * h
+                if h >= 24:
+                    h = h - 24
+                self._hashcode = hash(time(h, m, self.second, self.microsecond))
         return self._hashcode
 
     # Conversion to string
