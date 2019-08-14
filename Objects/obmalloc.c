@@ -1643,6 +1643,7 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
 {
     void* ptr;
     if (LIKELY(pymalloc_alloc(ctx, &ptr, nbytes))) {
+        memset(ptr, 0, nbytes);
         return ptr;
     }
 
