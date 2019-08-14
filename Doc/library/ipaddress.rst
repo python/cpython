@@ -225,8 +225,8 @@ write code that handles both IP versions correctly.  Address objects are
 
    >>> ipaddress.IPv6Address('2001:db8::1000')
    IPv6Address('2001:db8::1000')
-   >>> ipaddress.IPv6Address('2001:db8::1000%1')
-   IPv6Address('2001:db8::1000%1')
+   >>> ipaddress.IPv6Address('ff02::5678%1')
+   IPv6Address('ff02::5678%1')
 
    .. attribute:: compressed
 
