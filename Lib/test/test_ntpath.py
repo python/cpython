@@ -215,13 +215,13 @@ class TestNtpath(unittest.TestCase):
         expected = ntpath.normpath(os.getcwd())
         tester("ntpath.realpath('..')", os.path.dirname(expected))
         tester("ntpath.realpath('../..')",
-               os.path.dirname(os.path.dirname(expected)))
+               os.path.dirname(ntpath.dirname(expected)))
         tester("ntpath.realpath('/'.join(['..'] * 50))",
                os.path.splitdrive(expected)[0] + '\\')
         tester("ntpath.realpath('..\\..')",
-               os.path.dirname(os.path.dirname(expected)))
+               os.path.dirname(ntpath.dirname(expected)))
         tester("ntpath.realpath('\\'.join(['..'] * 50))",
-               os.path.splitdrive(expected)[0] + '\\')
+               ntpath.splitdrive(expected)[0] + '\\')
 
     @support.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
