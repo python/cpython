@@ -1,0 +1,1 @@
+Fixed completions list appearing too high when shown above the current line.
