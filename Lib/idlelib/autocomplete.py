@@ -163,7 +163,10 @@ class AutoComplete:
             # 128 and above escaped.
             # See: https://docs.python.org/3/reference/lexical_analysis.html
             return f'\\x{ord(match.group()):x}'
-        non_bmp_re = re.compile(f'[\\U00010000-\\U{sys.maxunicode:08x}]')
+        if sys.maxunicode >= 0x10000:
+            non_bmp_re = re.compile(f'[\\U00010000-\\U{sys.maxunicode:08x}]')
+        else:
+            non_bmp_re = re.compile(r'(?!)')  # never matches anything
         def non_bmp_sub(match):
             """escaping for non-BMP unicode code points"""
             # This is needed since Tk doesn't support displaying non-BMP
