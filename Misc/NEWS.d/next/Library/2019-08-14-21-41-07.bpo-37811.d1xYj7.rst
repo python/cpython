@@ -1,0 +1,4 @@
+Fix ``socket`` module's ``socket.connect(address)`` function being unable to
+establish connection in case of interrupted system call. The problem was
+observed on all OSes which ``poll(2)`` system call can take only
+non-negative integers and -1 as a timeout value.
