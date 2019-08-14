@@ -139,12 +139,17 @@ class NamedExpressionInvalidTest(unittest.TestCase):
             msg = f"comprehension inner loop cannot rebind assignment expression target '{target}'"
             with self.subTest(case=case):
                 with self.assertRaisesRegex(SyntaxError, msg):
-                    exec(code, {}, {})
+                    exec(code, {}) # Module scope
+                with self.assertRaisesRegex(SyntaxError, msg):
+                    exec(code, {}, {}) # Class scope
+                with self.assertRaisesRegex(SyntaxError, msg):
+                    exec(f"lambda: {code}", {}) # Function scope
 
-    def test_named_expression_invalid_comprehension_iterator_expression(self):
+    def test_named_expression_invalid_comprehension_iterable_expression(self):
         cases = [
             ("Top level", "[i for i in (i := range(5))]"),
-            ("Inside container", "[i for i in (2, 3, i := range(5))]"),
+            ("Inside tuple", "[i for i in (2, 3, i := range(5))]"),
+            ("Inside list", "[i for i in [2, 3, i := range(5)]]"),
             ("Different name", "[i for i in (j := range(5))]"),
             ("Lambda expression", "[i for i in (lambda:(j := range(5)))()]"),
             ("Inner loop", "[i for i in range(5) for j in (i := range(5))]"),
@@ -156,7 +161,11 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         for case, code in cases:
             with self.subTest(case=case):
                 with self.assertRaisesRegex(SyntaxError, msg):
-                    exec(code, {}, {})
+                    exec(code, {}) # Module scope
+                with self.assertRaisesRegex(SyntaxError, msg):
+                    exec(code, {}, {}) # Class scope
+                with self.assertRaisesRegex(SyntaxError, msg):
+                    exec(f"lambda: {code}", {}) # Function scope
 
 
 class NamedExpressionAssignmentTest(unittest.TestCase):
@@ -433,6 +442,34 @@ spam()"""
 
         self.assertEqual(ns["a"], 20)
 
+    def test_named_expression_variable_reuse_in_comprehensions(self):
+        # The compiler is expected to raise syntax error for comprehension
+        # iteration variables, but should be fine with rebinding of other
+        # names (e.g. globals, nonlocals, other assignment expressions)
+
+        # The cases are all defined to produce the same expected result
+        # Each comprehension is checked at both function scope and module scope
+        rebinding = "[x := i for i in range(3) if (x := i) or not x]"
+        filter_ref = "[x := i for i in range(3) if x or not x]"
+        body_ref = "[x for i in range(3) if (x := i) or not x]"
+        nested_ref = "[j for i in range(3) if x or not x for j in range(3) if (x := i)][:-3]"
+        cases = [
+            ("Rebind global", f"x = 1; result = {rebinding}"),
+            ("Rebind nonlocal", f"result, x = (lambda x=1: ({rebinding}, x))()"),
+            ("Filter global", f"x = 1; result = {filter_ref}"),
+            ("Filter nonlocal", f"result, x = (lambda x=1: ({filter_ref}, x))()"),
+            ("Body global", f"x = 1; result = {body_ref}"),
+            ("Body nonlocal", f"result, x = (lambda x=1: ({body_ref}, x))()"),
+            ("Nested global", f"x = 1; result = {nested_ref}"),
+            ("Nested nonlocal", f"result, x = (lambda x=1: ({nested_ref}, x))()"),
+        ]
+        msg = "assignment expression cannot be used in a comprehension iterable expression"
+        for case, code in cases:
+            with self.subTest(case=case):
+                ns = {}
+                exec(code, ns)
+                self.assertEqual(ns["x"], 2)
+                self.assertEqual(ns["result"], [0, 1, 2])
 
 if __name__ == "__main__":
     unittest.main()
