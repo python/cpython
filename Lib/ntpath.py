@@ -519,8 +519,60 @@ else:  # use native Windows method on Windows
         except (OSError, ValueError):
             return _abspath_fallback(path)
 
-# realpath is a no-op on systems without islink support
-realpath = abspath
+try:
+    from nt import _getfinalpathname
+except ImportError:
+    # realpath is a no-op on systems without _getfinalpathname support.
+    realpath = abspath
+else:
+    def _getfinalpathname_nonstrict(path):
+        # Fast-path is to find the target directly
+        try:
+            return _getfinalpathname(path)
+        except OSError:
+            pass
+
+        # Non-strict algorithm is to find as much of the target directory
+        # as we can and join the rest.
+        path, tail = split(path)
+        while path:
+            try:
+                return join(_getfinalpathname(path), tail)
+            except OSError:
+                path, name = split(path)
+                if path and not name:
+                    tail = path + tail
+                    break
+                tail = join(name, tail)
+        return tail
+
+    def realpath(path):
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            prefix = b'\\\\?\\'
+            unc_prefix = b'\\\\?\\UNC\\'
+            new_unc_prefix = b'\\\\'
+            cwd = os.getcwdb()
+        else:
+            prefix = '\\\\?\\'
+            unc_prefix = '\\\\?\\UNC\\'
+            new_unc_prefix = '\\\\'
+            cwd = os.getcwd()
+        had_prefix = path.startswith(prefix)
+        path = _getfinalpathname_nonstrict(path)
+        # The path returned by _getfinalpathname will always start with \\?\ -
+        # strip off that prefix unless it was already provided on the original
+        # path.
+        if not had_prefix and path.startswith(prefix):
+            # For UNC paths, the prefix will actually be \\?\UNC\
+            # Handle that case as well.
+            if path.startswith(unc_prefix):
+                path = new_unc_prefix + path[len(unc_prefix):]
+            else:
+                path = path[len(prefix):]
+        return path
+
+
 # Win9x family and earlier have no Unicode filename support.
 supports_unicode_filenames = (hasattr(sys, "getwindowsversion") and
                               sys.getwindowsversion()[3] >= 2)
@@ -631,23 +683,6 @@ def commonpath(paths):
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *paths)
         raise
-
-
-# determine if two files are in fact the same file
-try:
-    # GetFinalPathNameByHandle is available starting with Windows 6.0.
-    # Windows XP and non-Windows OS'es will mock _getfinalpathname.
-    if sys.getwindowsversion()[:2] >= (6, 0):
-        from nt import _getfinalpathname
-    else:
-        raise ImportError
-except (AttributeError, ImportError):
-    # On Windows XP and earlier, two files are the same if their absolute
-    # pathnames are the same.
-    # Non-Windows operating systems fake this method with an XP
-    # approximation.
-    def _getfinalpathname(f):
-        return normcase(abspath(f))
 
 
 try:
