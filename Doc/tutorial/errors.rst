@@ -272,7 +272,7 @@ re-raise the exception::
 Exception Chaining
 ==================
 
-The :keyword:`raise` statement allows an optional :keyword:`from` which allows
+The :keyword:`raise` statement allows an optional :keyword:`from` which enables
 chaining exceptions by setting the ``__cause__`` attribute of the raised
 exception. For example::
 
@@ -301,8 +301,8 @@ This can be useful when you are transforming exceptions. For example::
 
 The expression following the :keyword:`from` must be either an exception or
 ``None``. Exception chaining happens automatically when an exception is raised
-inside an exception handler or :keyword:`finally` section. Although, it can be
-disabled by using ``from None``:
+inside an exception handler or :keyword:`finally` section. Exception chaining
+can be disabled by using ``from None`` idiom:
 
     >>> try:
     ...     open('database.sqlite')
