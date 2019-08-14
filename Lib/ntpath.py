@@ -545,9 +545,9 @@ else:
         return path
 
     def _getfinalpathname_nonstrict(path):
-        # Allow file (2) or directory (3) not found, or symlinks that
-        # cannot be followed (1921)
-        allowed_winerror = 2, 3, 1921
+        # Allow file (2) or directory (3) not found, invalid syntax (123),
+        # and symlinks that cannot be followed (1921)
+        allowed_winerror = 2, 3, 123, 1921
 
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.

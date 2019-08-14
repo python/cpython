@@ -204,22 +204,24 @@ class TestNtpath(unittest.TestCase):
         tester("ntpath.normpath('\\\\?\\D:/XY\\Z')", r'\\?\D:/XY\Z')
 
     def test_realpath_curdir(self):
-        tester("ntpath.realpath('.')", os.getcwd())
-        tester("ntpath.realpath('./.')", os.getcwd())
-        tester("ntpath.realpath('/'.join(['.'] * 100))", os.getcwd())
-        tester("ntpath.realpath('.\\.')", os.getcwd())
-        tester("ntpath.realpath('\\'.join(['.'] * 100))", os.getcwd())
+        expected = ntpath.normpath(os.getcwd())
+        tester("ntpath.realpath('.')", expected)
+        tester("ntpath.realpath('./.')", expected)
+        tester("ntpath.realpath('/'.join(['.'] * 100))", expected)
+        tester("ntpath.realpath('.\\.')", expected)
+        tester("ntpath.realpath('\\'.join(['.'] * 100))", expected)
 
     def test_realpath_pardir(self):
-        tester("ntpath.realpath('..')", os.path.dirname(os.getcwd()))
+        expected = ntpath.normpath(os.getcwd())
+        tester("ntpath.realpath('..')", os.path.dirname(expected))
         tester("ntpath.realpath('../..')",
-               os.path.dirname(os.path.dirname(os.getcwd())))
+               os.path.dirname(os.path.dirname(expected)))
         tester("ntpath.realpath('/'.join(['..'] * 50))",
-               os.path.splitdrive(os.getcwd())[0] + '\\')
+               os.path.splitdrive(expected)[0] + '\\')
         tester("ntpath.realpath('..\\..')",
-               os.path.dirname(os.path.dirname(os.getcwd())))
+               os.path.dirname(os.path.dirname(expected)))
         tester("ntpath.realpath('\\'.join(['..'] * 50))",
-               os.path.splitdrive(os.getcwd())[0] + '\\')
+               os.path.splitdrive(expected)[0] + '\\')
 
     @support.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
