@@ -1756,9 +1756,13 @@ expression support in the :mod:`re` module).
 .. method:: str.isspace()
 
    Return true if there are only whitespace characters in the string and there is
-   at least one character, false otherwise.  Whitespace characters  are those
-   characters defined in the Unicode character database as "Other" or "Separator"
-   and those with bidirectional property being one of "WS", "B", or "S".
+   at least one character, false otherwise.
+
+   A character is *whitespace* if in the Unicode character database
+   (see :mod:`unicodedata`), either its general category is ``Zs``
+   ("Separator, space"), or its bidirectional class is one of ``WS``,
+   ``B``, or ``S``.
+
 
 .. method:: str.istitle()
 
