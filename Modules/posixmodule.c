@@ -1698,11 +1698,11 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
 {
     HANDLE hFile;
     BY_HANDLE_FILE_INFORMATION info;
-    FILE_ATTRIBUTE_TAG_INFO tagInfo;
+    FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
     const wchar_t *dot;
 
     /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-    DWORD flags = FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS;
+    DWORD flags = FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS;
     if (!traverse) {
         /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
            Because of this, calls like GetFinalPathNameByHandle will return
@@ -1713,7 +1713,7 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
     hFile = CreateFileW(
         path,
         FILE_READ_ATTRIBUTES,
-        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        0,
         NULL, /* security attributes */
         OPEN_EXISTING,
         flags,
@@ -1740,13 +1740,15 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         } else {
             return -1;
         }
-    } else if (!GetFileInformationByHandle(hFile, &info)) {
-        CloseHandle(hFile);
-        return -1;
-    }
+    } else {
+        if (!GetFileInformationByHandle(hFile, &info)) {
+            CloseHandle(hFile);
+            return -1;
+        }
 
-    if (hFile == INVALID_HANDLE_VALUE) {
-        if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
+        /* Get the reparse tag if we will need it */
+        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+            !GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
                                           &tagInfo, sizeof(tagInfo))) {
             tagInfo.ReparseTag = 0;
         }
@@ -1754,21 +1756,22 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         CloseHandle(hFile);
     }
 
-    if (traverse &&
-        info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
-        IsReparseTagNameSurrogate(tagInfo.ReparseTag)) {
+    _Py_attribute_data_to_stat(&info, tagInfo.ReparseTag, result);
+
+    if (traverse && (result->st_mode & S_IFMT) == S_IFLNK) {
         /* Should have traversed this, but could not open it */
+        SetLastError(ERROR_CANT_ACCESS_FILE);
         return -1;
     }
 
-    _Py_attribute_data_to_stat(&info, tagInfo.ReparseTag, result);
-
-    /* Set S_IEXEC if it is an .exe, .bat, ... */
-    dot = wcsrchr(path, '.');
-    if (dot) {
-        if (_wcsicmp(dot, L".bat") == 0 || _wcsicmp(dot, L".cmd") == 0 ||
-            _wcsicmp(dot, L".exe") == 0 || _wcsicmp(dot, L".com") == 0) {
-            result->st_mode |= 0111;
+    if (!(info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+        /* Set S_IEXEC if it is an .exe, .bat, ... */
+        dot = wcsrchr(path, '.');
+        if (dot) {
+            if (_wcsicmp(dot, L".bat") == 0 || _wcsicmp(dot, L".cmd") == 0 ||
+                _wcsicmp(dot, L".exe") == 0 || _wcsicmp(dot, L".com") == 0) {
+                result->st_mode |= 0111;
+            }
         }
     }
     return 0;
@@ -7850,7 +7853,6 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     else
     {
         PyErr_SetString(PyExc_ValueError, "not a symbolic link");
-        return NULL;
     }
     if (name) {
         if (nameLen > 4 && wcsncmp(name, L"\\??\\", 4) == 0) {

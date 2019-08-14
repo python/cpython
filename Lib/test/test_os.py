@@ -2257,6 +2257,14 @@ class ReadlinkTests(unittest.TestCase):
     def assertPathEqual(self, left, right):
         left = os.path.normcase(left)
         right = os.path.normcase(right)
+        if sys.platform == 'win32':
+            # Stripping prefixes blindly is generally bad practice,
+            # but all we are doing here is comparing the paths, so
+            # it works out okay.
+            if left[:4] in ('\\\\?\\', b'\\\\?\\'):
+                left = left[4:]
+            if right[:4] in ('\\\\?\\', b'\\\\?\\'):
+                right = right[4:]
         self.assertEqual(left, right)
 
     def setUp(self):
