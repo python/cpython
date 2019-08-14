@@ -329,7 +329,7 @@ class DatetimeDatetimeTests(DatetimeFastTests, unittest.TestCase):
 class DatetimeDatetimeWithTimezoneFastTests(DatetimeFastTests, unittest.TestCase):
     repr_ = repr(datetime.datetime(1, 2, 3, 4, 5, 6, 7, datetime.timezone.utc))
 
-class DatetimeDatetimeWithNegativeTimezoneFastTests(DatetimeFastTests, unittest.TestCase):
+class DatetimeDatetimeWithTimezoneUnderflowFastTests(DatetimeFastTests, unittest.TestCase):
     repr_ = repr(datetime.datetime(1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(minutes=1439))))
 
 class DatetimeTimeFastTests(DatetimeFastTests, unittest.TestCase):
@@ -338,7 +338,7 @@ class DatetimeTimeFastTests(DatetimeFastTests, unittest.TestCase):
 class DatetimeTimeWithTimezoneFastTests(DatetimeFastTests, unittest.TestCase):
     repr_ = repr(datetime.time(0, 0, 0, 0, datetime.timezone.utc))
 
-class DatetimeTimeWithNegativeTimezoneFastTests(DatetimeFastTests, unittest.TestCase):
+class DatetimeTimeWithTimezoneUnderflowFastTests(DatetimeFastTests, unittest.TestCase):
     repr_ = repr(datetime.time(0, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(minutes=1439))))
 
 class DatetimeDatePureTests(DatetimePureTests, unittest.TestCase):
@@ -350,7 +350,7 @@ class DatetimeDatetimePureTests(DatetimePureTests, unittest.TestCase):
 class DatetimeDatetimeWithTimezonePureTests(DatetimePureTests, unittest.TestCase):
     repr_ = repr(datetime.datetime(1, 2, 3, 4, 5, 6, 7, datetime.timezone.utc))
 
-class DatetimeDatetimeWithNegativeTimezonePureTests(DatetimeFastTests, unittest.TestCase):
+class DatetimeDatetimeWithTimezoneUnderflowPureTests(DatetimeFastTests, unittest.TestCase):
     repr_ = repr(datetime.datetime(1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(minutes=1439))))
 
 class DatetimeTimePureTests(DatetimePureTests, unittest.TestCase):
@@ -359,7 +359,7 @@ class DatetimeTimePureTests(DatetimePureTests, unittest.TestCase):
 class DatetimeTimeWithTimezonePureTests(DatetimePureTests, unittest.TestCase):
     repr_ = repr(datetime.time(0, 0, 0, 0, datetime.timezone.utc))
 
-class DatetimeTimeWithNegativeTimezonePureTests(DatetimePureTests, unittest.TestCase):
+class DatetimeTimeWithTimezoneUnderflowPureTests(DatetimePureTests, unittest.TestCase):
     repr_ = repr(datetime.time(0, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(minutes=1439))))
 
 
