@@ -235,6 +235,9 @@ Public functions
    .. versionchanged:: 3.7
       The *invalidation_mode* parameter was added.
 
+   .. versionchanged:: 3.7.2
+      The *invalidation_mode* parameter's default value is updated to None.
+
 .. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, quiet=0, legacy=False, optimize=-1, invalidation_mode=None)
 
    Byte-compile all the :file:`.py` files found along ``sys.path``. Return a
