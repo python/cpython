@@ -4397,7 +4397,8 @@ time_hash(PyDateTime_Time *self)
                 Py_DECREF(offset);
                 return -1;
             }
-            self->hashcode = PyObject_Hash(temp2);
+            self->hashcode = self->hashcode = generic_hash(
+                (unsigned char *)temp2, _PyDateTime_TIME_DATASIZE);
             Py_DECREF(temp2);
         }
         Py_DECREF(offset);
@@ -5675,7 +5676,6 @@ datetime_hash(PyDateTime_DateTime *self)
             return -1;
 
         /* Reduce this to a hash of another object. */
-        // todo fix datetime
         if (offset == Py_None)
             self->hashcode = generic_hash(
                 (unsigned char *)self->data, _PyDateTime_DATETIME_DATASIZE);

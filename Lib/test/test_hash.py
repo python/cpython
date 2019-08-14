@@ -329,8 +329,8 @@ class DatetimeDatetimeTests(DatetimeFastTests, unittest.TestCase):
 class DatetimeDatetimeWithTimezoneFastTests(DatetimeFastTests, unittest.TestCase):
     repr_ = repr(datetime.datetime(1, 2, 3, 4, 5, 6, 7, datetime.timezone.utc))
 
-# class DatetimeTimeWithTimezoneFastTests(DatetimeFastTests, unittest.TestCase):
-#     repr_ = repr(datetime.time(0, 0, 0, 0, datetime.timezone.utc))
+class DatetimeTimeWithTimezoneFastTests(DatetimeFastTests, unittest.TestCase):
+    repr_ = repr(datetime.time(0, 0, 0, 0, datetime.timezone.utc))
 
 class DatetimeTimeFastTests(DatetimeFastTests, unittest.TestCase):
     repr_ = repr(datetime.time(0))
