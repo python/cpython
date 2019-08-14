@@ -14,7 +14,7 @@ extern "C" {
 /*
  * Find the size of the stack the system uses by default.
  */
-PyAPI_FUNC(size_t) _PyThread_preferred_stacksize();
+PyAPI_FUNC(size_t) _PyThread_preferred_stacksize(void);
 
 #ifdef __cplusplus
 }
