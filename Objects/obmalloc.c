@@ -44,9 +44,9 @@ static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
 #    define _Py_NO_ADDRESS_SAFETY_ANALYSIS \
         __attribute__((no_address_safety_analysis))
 #  endif
-   // TSAN is supported since GCC 4.8, but __SANITIZE_THREAD__ macro
+   // TSAN is supported since GCC 5.1, but __SANITIZE_THREAD__ macro
    // is provided only since GCC 7.
-#  if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
+#  if __GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ >= 1)
 #    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #  endif
 #endif
