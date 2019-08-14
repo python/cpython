@@ -1,0 +1,4 @@
+# Requirements for docs build on netlify
+sphinx==2.0.1
+blurb
+python-docs-theme
