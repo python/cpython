@@ -556,11 +556,10 @@ class Fraction(numbers.Rational):
     def __hash__(self):
         """hash(self)"""
 
-        # In order to make sure that the hash of a Fraction agrees
-        # with the hash of a numerically equal integer, float or
-        # Decimal instance, we follow the rules for numeric hashes
-        # outlined in the documentation.  (See library docs, 'Built-in
-        # Types').
+        # To make sure that the hash of a Fraction agrees with the hash
+        # of a numerically equal integer, float or Decimal instance, we
+        # follow the rules for numeric hashes outlined in the
+        # documentation.  (See library docs, 'Built-in Types').
 
         try:
             dinv = pow(self._denominator, -1, _PyHASH_MODULUS)
