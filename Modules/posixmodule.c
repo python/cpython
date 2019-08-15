@@ -1672,8 +1672,8 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
     DWORD flags = FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS;
     if (!traverse) {
         /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
-           Because of this, calls like GetFinalPathNameByHandle will return
-           the symlink path again and not the actual final path. */
+           This will cause stat() to return information about the link
+           rather than the target. */
         flags |= FILE_FLAG_OPEN_REPARSE_POINT;
     }
 
@@ -1691,20 +1691,28 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
            get a handle to it. If the former, we need to return an error.
            If the latter, we can use attributes_from_dir. */
         DWORD lastError = GetLastError();
-        if (lastError == ERROR_ACCESS_DENIED ||
-            lastError == ERROR_SHARING_VIOLATION) {
-            /* Could not get attributes on open file. Try reading
-               the directory. */
-            if (!attributes_from_dir(path, &info, &tagInfo.ReparseTag)) {
-                /* Very strange. This should not fail now */
-                return -1;
-            }
 
-            /* Now info is initialized, fall through */
-        } else if (traverse && lastError == ERROR_CANT_ACCESS_FILE) {
-            /* Try again without traversal */
-            return win32_xstat_impl(path, result, FALSE);
-        } else {
+        if (traverse && lastError == ERROR_CANT_ACCESS_FILE) {
+            /* bpo37834: Special handling for appexeclink files to
+               return the link rather than an error. */
+            if (!win32_xstat_impl(path, result, FALSE)
+                && result->st_reparse_tag == IO_REPARSE_TAG_APPEXECLINK
+            ) {
+                return 0;
+            }
+            SetLastError(lastError);
+            return -1;
+        }
+
+        if (lastError != ERROR_ACCESS_DENIED
+            && lastError != ERROR_SHARING_VIOLATION) {
+            return -1;
+        }
+
+        /* Could not get attributes on open file. Try reading
+           the directory. */
+        if (!attributes_from_dir(path, &info, &tagInfo.ReparseTag)) {
+            /* Very strange. This should not fail now */
             return -1;
         }
     } else {
@@ -1723,13 +1731,18 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         CloseHandle(hFile);
     }
 
-    _Py_attribute_data_to_stat(&info, tagInfo.ReparseTag, result);
-
-    if (traverse && (result->st_mode & S_IFMT) == S_IFLNK) {
-        /* Should have traversed this, but could not open it */
-        SetLastError(ERROR_CANT_ACCESS_FILE);
-        return -1;
+    if (!traverse
+        && info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT
+        && tagInfo.ReparseTag != IO_REPARSE_TAG_SYMLINK
+        && tagInfo.ReparseTag != IO_REPARSE_TAG_MOUNT_POINT
+        && tagInfo.ReparseTag != IO_REPARSE_TAG_APPEXECLINK) {
+        /* Reparse points other than symlink and mount_point
+           always need to be opened by the IO manager */
+        return win32_xstat_impl(path, result, TRUE);
     }
+
+
+    _Py_attribute_data_to_stat(&info, tagInfo.ReparseTag, result);
 
     if (!(info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
         /* Set S_IEXEC if it is an .exe, .bat, ... */
