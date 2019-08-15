@@ -322,10 +322,10 @@ class TestNtpath(unittest.TestCase):
 
         os.symlink(ABSTFN + "1", ABSTFN + "2")
         os.symlink(ABSTFN + "2", ABSTFN + "1")
-        self.assertEqual(ntpath.realpath(ABSTFN + "1"), P + ABSTFN + "1")
-        self.assertEqual(ntpath.realpath(ABSTFN + "2"), P + ABSTFN + "2")
+        self.assertEqual(ntpath.realpath(ABSTFN + "1"), P + ABSTFN + "2")
+        self.assertEqual(ntpath.realpath(ABSTFN + "2"), P + ABSTFN + "1")
 
-        self.assertEqual(ntpath.realpath(ABSTFN + "1\\x"), P + ABSTFN + "1\\x")
+        self.assertEqual(ntpath.realpath(ABSTFN + "1\\x"), P + ABSTFN + "2\\x")
         self.assertEqual(ntpath.realpath(ABSTFN + "1\\.."),
                          ntpath.dirname(ABSTFN))
         self.assertEqual(ntpath.realpath(ABSTFN + "1\\..\\x"),
@@ -336,7 +336,7 @@ class TestNtpath(unittest.TestCase):
                          P + ABSTFN + "x")
         self.assertEqual(ntpath.realpath(ABSTFN + "1\\..\\"
                                          + ntpath.basename(ABSTFN) + "1"),
-                         P + ABSTFN + "2")
+                         P + ABSTFN + "1")
 
         os.symlink(ntpath.basename(ABSTFN) + "a\\b", ABSTFN + "a")
         self.assertEqual(ntpath.realpath(ABSTFN + "a"), P + ABSTFN + "a")
