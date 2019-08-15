@@ -570,7 +570,8 @@ class Fraction(numbers.Rational):
         try:
             dinv =  pow(self._denominator, -1, _PyHASH_MODULUS)
         except ValueError:
-            dinv = pow(self._denominator, _PyHASH_MODULUS - 2, _PyHASH_MODULUS)
+            # ValueError means there is no modular inverse
+            dinv = 0
         if not dinv:
             hash_ = _PyHASH_INF
         else:
