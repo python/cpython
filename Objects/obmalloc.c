@@ -1641,7 +1641,7 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
 static void *
 _PyObject_Malloc(void *ctx, size_t nbytes)
 {
-    void* ptr;
+    void* ptr = NULL;
     if (LIKELY(pymalloc_alloc(ctx, &ptr, nbytes))) {
         return ptr;
     }
