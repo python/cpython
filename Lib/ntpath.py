@@ -529,10 +529,14 @@ else:
         if seen is None:
             seen = set()
 
-        while normcase(path) not in seen:
+        while True:
             seen.add(normcase(path))
             try:
-                path = _readlink(path)
+                next_path = _readlink(path)
+                # Break out _before_ traversing the cycle
+                if normcase(next_path) in seen:
+                    break
+                path = next_path
             except OSError as ex:
                 # Stop on file (2) or directory (3) not found, or
                 # paths that are not reparse points (4390)
