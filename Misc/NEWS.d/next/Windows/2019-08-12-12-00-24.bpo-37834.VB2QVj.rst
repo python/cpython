@@ -1,0 +1,2 @@
+Only attempt to traverse reparse points on Windows when they represent a
+symlink or a directory junction.

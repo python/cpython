@@ -1625,6 +1625,7 @@ win32_wchdir(LPCWSTR path)
 */
 #define HAVE_STAT_NSEC 1
 #define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
+#define HAVE_STRUCT_STAT_ST_REPARSE_TAG 1
 
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
@@ -1658,134 +1659,100 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
     return TRUE;
 }
 
-static BOOL
-get_target_path(HANDLE hdl, wchar_t **target_path)
-{
-    int buf_size, result_length;
-    wchar_t *buf;
-
-    /* We have a good handle to the target, use it to determine
-       the target path name (then we'll call lstat on it). */
-    buf_size = GetFinalPathNameByHandleW(hdl, 0, 0,
-                                         VOLUME_NAME_DOS);
-    if(!buf_size)
-        return FALSE;
-
-    buf = (wchar_t *)PyMem_RawMalloc((buf_size + 1) * sizeof(wchar_t));
-    if (!buf) {
-        SetLastError(ERROR_OUTOFMEMORY);
-        return FALSE;
-    }
-
-    result_length = GetFinalPathNameByHandleW(hdl,
-                       buf, buf_size, VOLUME_NAME_DOS);
-
-    if(!result_length) {
-        PyMem_RawFree(buf);
-        return FALSE;
-    }
-
-    buf[result_length] = 0;
-
-    *target_path = buf;
-    return TRUE;
-}
-
 static int
 win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                  BOOL traverse)
 {
-    int code;
-    HANDLE hFile, hFile2;
+    HANDLE hFile;
     BY_HANDLE_FILE_INFORMATION info;
-    ULONG reparse_tag = 0;
-    wchar_t *target_path;
+    FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
     const wchar_t *dot;
+
+    /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
+    DWORD flags = FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS;
+    if (!traverse) {
+        /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
+           This will cause stat() to return information about the link
+           rather than the target. */
+        flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+    }
 
     hFile = CreateFileW(
         path,
-        FILE_READ_ATTRIBUTES, /* desired access */
-        0, /* share mode */
+        FILE_READ_ATTRIBUTES,
+        0,
         NULL, /* security attributes */
         OPEN_EXISTING,
-        /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-        /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
-           Because of this, calls like GetFinalPathNameByHandle will return
-           the symlink path again and not the actual final path. */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|
-            FILE_FLAG_OPEN_REPARSE_POINT,
-        NULL);
-
+        flags,
+        NULL
+    );
     if (hFile == INVALID_HANDLE_VALUE) {
         /* Either the target doesn't exist, or we don't have access to
            get a handle to it. If the former, we need to return an error.
            If the latter, we can use attributes_from_dir. */
         DWORD lastError = GetLastError();
-        if (lastError != ERROR_ACCESS_DENIED &&
-            lastError != ERROR_SHARING_VIOLATION)
+
+        if (traverse && lastError == ERROR_CANT_ACCESS_FILE) {
+            /* bpo37834: Special handling for appexeclink files to
+               return the link rather than an error. */
+            if (!win32_xstat_impl(path, result, FALSE)
+                && result->st_reparse_tag == IO_REPARSE_TAG_APPEXECLINK
+            ) {
+                return 0;
+            }
+            SetLastError(lastError);
             return -1;
-        /* Could not get attributes on open file. Fall back to
-           reading the directory. */
-        if (!attributes_from_dir(path, &info, &reparse_tag))
+        }
+
+        if (lastError != ERROR_ACCESS_DENIED
+            && lastError != ERROR_SHARING_VIOLATION) {
+            return -1;
+        }
+
+        /* Could not get attributes on open file. Try reading
+           the directory. */
+        if (!attributes_from_dir(path, &info, &tagInfo.ReparseTag)) {
             /* Very strange. This should not fail now */
             return -1;
-        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (traverse) {
-                /* Should traverse, but could not open reparse point handle */
-                SetLastError(lastError);
-                return -1;
-            }
         }
     } else {
         if (!GetFileInformationByHandle(hFile, &info)) {
             CloseHandle(hFile);
             return -1;
         }
-        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (!win32_get_reparse_tag(hFile, &reparse_tag)) {
-                CloseHandle(hFile);
-                return -1;
-            }
-            /* Close the outer open file handle now that we're about to
-               reopen it with different flags. */
-            if (!CloseHandle(hFile))
-                return -1;
 
-            if (traverse) {
-                /* In order to call GetFinalPathNameByHandle we need to open
-                   the file without the reparse handling flag set. */
-                hFile2 = CreateFileW(
-                           path, FILE_READ_ATTRIBUTES, FILE_SHARE_READ,
-                           NULL, OPEN_EXISTING,
-                           FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
-                           NULL);
-                if (hFile2 == INVALID_HANDLE_VALUE)
-                    return -1;
+        /* Get the reparse tag if we will need it */
+        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+            !GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
+                                          &tagInfo, sizeof(tagInfo))) {
+            tagInfo.ReparseTag = 0;
+        }
 
-                if (!get_target_path(hFile2, &target_path)) {
-                    CloseHandle(hFile2);
-                    return -1;
-                }
-
-                if (!CloseHandle(hFile2)) {
-                    return -1;
-                }
-
-                code = win32_xstat_impl(target_path, result, FALSE);
-                PyMem_RawFree(target_path);
-                return code;
-            }
-        } else
-            CloseHandle(hFile);
+        CloseHandle(hFile);
     }
-    _Py_attribute_data_to_stat(&info, reparse_tag, result);
 
-    /* Set S_IEXEC if it is an .exe, .bat, ... */
-    dot = wcsrchr(path, '.');
-    if (dot) {
-        if (_wcsicmp(dot, L".bat") == 0 || _wcsicmp(dot, L".cmd") == 0 ||
-            _wcsicmp(dot, L".exe") == 0 || _wcsicmp(dot, L".com") == 0)
-            result->st_mode |= 0111;
+    if (!traverse
+        && info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT
+        && tagInfo.ReparseTag != IO_REPARSE_TAG_SYMLINK
+        && tagInfo.ReparseTag != IO_REPARSE_TAG_MOUNT_POINT
+        && tagInfo.ReparseTag != IO_REPARSE_TAG_APPEXECLINK) {
+        /* Reparse points other than symlink and mount_point
+           always need to be opened by the IO manager */
+        return win32_xstat_impl(path, result, TRUE);
+    }
+
+
+    _Py_attribute_data_to_stat(&info, tagInfo.ReparseTag, result);
+
+    if (!(info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+        /* Set S_IEXEC if it is an .exe, .bat, ... */
+        dot = wcsrchr(path, '.');
+        if (dot) {
+            if (_wcsicmp(dot, L".bat") == 0 || _wcsicmp(dot, L".cmd") == 0 ||
+                _wcsicmp(dot, L".exe") == 0 || _wcsicmp(dot, L".com") == 0) {
+                result->st_mode |= 0111;
+            }
+        }
     }
     return 0;
 }
@@ -1806,9 +1773,8 @@ win32_xstat(const wchar_t *path, struct _Py_stat_struct *result, BOOL traverse)
    default does not traverse symlinks and instead returns attributes for
    the symlink.
 
-   Therefore, win32_lstat will get the attributes traditionally, and
-   win32_stat will first explicitly resolve the symlink target and then will
-   call win32_lstat on that result. */
+   Instead, we will open the file (which *does* traverse symlinks by default)
+   and GetFileInformationByHandle(). */
 
 static int
 win32_lstat(const wchar_t* path, struct _Py_stat_struct *result)
@@ -1877,6 +1843,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
     {"st_fstype",  "Type of filesystem"},
 #endif
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+    {"st_reparse_tag", "Windows reparse tag"},
+#endif
     {0}
 };
 
@@ -1926,6 +1895,12 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_FSTYPE_IDX (ST_FILE_ATTRIBUTES_IDX+1)
 #else
 #define ST_FSTYPE_IDX ST_FILE_ATTRIBUTES_IDX
+#endif
+
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+#define ST_REPARSE_TAG_IDX (ST_FSTYPE_IDX+1)
+#else
+#define ST_REPARSE_TAG_IDX ST_FSTYPE_IDX
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
@@ -2154,6 +2129,10 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
    PyStructSequence_SET_ITEM(v, ST_FSTYPE_IDX,
                               PyUnicode_FromString(st->st_fstype));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+    PyStructSequence_SET_ITEM(v, ST_REPARSE_TAG_IDX,
+                              PyLong_FromUnsignedLong(st->st_reparse_tag));
 #endif
 
     if (PyErr_Occurred()) {
@@ -3877,8 +3856,9 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
     }
 
     result = PyUnicode_FromWideChar(target_path, result_length);
-    if (path->narrow)
+    if (result && path->narrow) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
 
 cleanup:
     if (target_path != buf) {
@@ -3887,6 +3867,7 @@ cleanup:
     CloseHandle(hFile);
     return result;
 }
+
 
 /*[clinic input]
 os._isdir
@@ -7800,7 +7781,6 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     HANDLE reparse_point_handle;
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    const wchar_t *print_name;
     PyObject *result;
 
     /* First get a handle to the reparse point */
@@ -7836,19 +7816,33 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         return path_error(path);
     }
 
-    if (rdb->ReparseTag != IO_REPARSE_TAG_SYMLINK)
+    wchar_t *name = NULL;
+    Py_ssize_t nameLen = 0;
+    if (rdb->ReparseTag == IO_REPARSE_TAG_SYMLINK)
     {
-        PyErr_SetString(PyExc_ValueError,
-                "not a symbolic link");
-        return NULL;
+        name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
+                           rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset);
+        nameLen = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
     }
-    print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                 rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
-
-    result = PyUnicode_FromWideChar(print_name,
-            rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
-    if (path->narrow) {
-        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    else if (rdb->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT)
+    {
+        name = (wchar_t *)((char*)rdb->MountPointReparseBuffer.PathBuffer +
+                           rdb->MountPointReparseBuffer.SubstituteNameOffset);
+        nameLen = rdb->MountPointReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
+    }
+    else
+    {
+        PyErr_SetString(PyExc_ValueError, "not a symbolic link");
+    }
+    if (name) {
+        if (nameLen > 4 && wcsncmp(name, L"\\??\\", 4) == 0) {
+            /* Our buffer is mutable, so this is okay */
+            name[1] = L'\\';
+        }
+        result = PyUnicode_FromWideChar(name, nameLen);
+        if (path->narrow) {
+            Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+        }
     }
     return result;
 #endif
