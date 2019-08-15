@@ -10,9 +10,7 @@ written by Barry Warsaw.
 import re
 tspecials = re.compile(r'[ \(\)<>@,;:\\"/\[\]\?=]')
 
-# Regular expression that matches characters not allowed in headers, per
-# the WSGI spec.
-bad_header_value_re = re.compile(r'[\000-\037]')
+from http.client import _is_legal_header_name, _is_illegal_header_value
 
 def _formatparam(param, value=None, quote=1):
     """Convenience function to format and return a key=value pair.
@@ -36,6 +34,11 @@ class Headers:
         headers = headers if headers is not None else []
         if type(headers) is not list:
             raise TypeError("Headers must be a list of name/value tuples")
+        for header, value in headers:
+            if not _is_legal_header_name(header.encode('ascii')):
+                raise ValueError('Invalid header name %r' % (header,))
+            if _is_illegal_header_value(value.encode('ascii')):
+                raise ValueError('Invalid header value %r' % (value,))
         self._headers = headers
         if __debug__:
             for k, v in headers:
@@ -44,14 +47,10 @@ class Headers:
 
     def _convert_string_type(self, value):
         """Convert/check value type."""
-        if type(value) is not str:
-            raise AssertionError("Header names/values must be"
-                " of type str (got {0})".format(repr(value)))
-        bad_match = bad_header_value_re.search(value)
-        if bad_match:
-            error_str = "Bad header value: {0!r} (bad char: {1!r})"
-            raise AssertionError(error_str.format(value, bad_match.group(0)))
-        return value
+        if type(value) is str:
+            return value
+        raise AssertionError("Header names/values must be"
+            " of type str (got {0})".format(repr(value)))
 
     def __len__(self):
         """Return the total number of headers, including duplicates."""
@@ -187,4 +186,10 @@ class Headers:
             else:
                 v = self._convert_string_type(v)
                 parts.append(_formatparam(k.replace('_', '-'), v))
-        self._headers.append((self._convert_string_type(_name), "; ".join(parts)))
+        header = self._convert_string_type(_name)
+        value = "; ".join(parts)
+        if not _is_legal_header_name(header.encode('ascii')):
+            raise ValueError('Invalid header name %r' % (header,))
+        if _is_illegal_header_value(value.encode('ascii')):
+            raise ValueError('Invalid header value %r' % (value,))
+        self._headers.append((header, value))

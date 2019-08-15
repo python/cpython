@@ -525,14 +525,16 @@ class HeaderTests(TestCase):
             '\r\n'
         )
 
-    def testDisallowNewlines(self):
+    def testValidateHeaders(self):
         h = Headers([])
-        self.assertRaises(AssertionError, h.add_header, 'foo', 'bar\rbaz: bat')
-        self.assertRaises(AssertionError, h.add_header, 'foo', 'bar\nbaz: bat')
-        self.assertRaises(AssertionError, h.add_header, 'foo:\rbar', 'baz')
-        self.assertRaises(AssertionError, h.add_header, 'foo:\nbar', 'baz')
-        self.assertRaises(AssertionError, h.add_header, 'foo', 'bar', baz='bat\rqux: spam')
-        self.assertRaises(AssertionError, h.add_header, 'foo', 'bar', baz='bat\nqux: spam')
+        self.assertRaises(ValueError, h.add_header, 'foo', 'bar\rbaz: bat')
+        self.assertRaises(ValueError, h.add_header, 'foo', 'bar\nbaz: bat')
+        self.assertRaises(ValueError, h.add_header, 'foo: bar', 'baz')
+        self.assertRaises(ValueError, h.add_header, 'foo:\rbar', 'baz')
+        self.assertRaises(ValueError, h.add_header, 'foo:\nbar', 'baz')
+        self.assertRaises(ValueError, h.add_header, 'foo', 'bar\nbaz: bat')
+        self.assertRaises(ValueError, h.add_header, 'foo', 'bar', baz='bat\rqux: spam')
+        self.assertRaises(ValueError, h.add_header, 'foo', 'bar', baz='bat\nqux: spam')
 
 class ErrorHandler(BaseCGIHandler):
     """Simple handler subclass for testing BaseHandler"""
