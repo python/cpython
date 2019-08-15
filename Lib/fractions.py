@@ -576,7 +576,7 @@ class Fraction(numbers.Rational):
             hash_ = _PyHASH_INF
         else:
             hash_ = hash(abs(self._numerator)) * dinv % _PyHASH_MODULUS
-        result = hash_ if self >= 0 else -hash_
+        result = hash_ if self._numerator >= 0 else -hash_
         return -2 if result == -1 else result
 
     def __eq__(a, b):
