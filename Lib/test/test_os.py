@@ -2258,12 +2258,13 @@ class ReadlinkTests(unittest.TestCase):
         left = os.path.normcase(left)
         right = os.path.normcase(right)
         if sys.platform == 'win32':
-            # Stripping prefixes blindly is generally bad practice,
-            # but all we are doing here is comparing the paths, so
-            # it works out okay.
-            if left[:4] in ('\\\\?\\', b'\\\\?\\'):
+            # Bad practice to blindly strip the prefix as it may be required to
+            # correctly refer to the file, but we're only comparing paths here.
+            has_prefix = lambda p: p.startswith(
+                b'\\\\?\\' if isinstance(p, bytes) else '\\\\?\\')
+            if has_prefix(left):
                 left = left[4:]
-            if right[:4] in ('\\\\?\\', b'\\\\?\\'):
+            if has_prefix(right):
                 right = right[4:]
         self.assertEqual(left, right)
 
