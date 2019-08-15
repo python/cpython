@@ -1,0 +1,3 @@
+The vectorcall protocol is now enabled for ``type`` objects: set
+``tp_vectorcall`` to a vectorcall function to be used instead of ``tp_new``
+and ``tp_init`` when calling the class itself.
