@@ -567,7 +567,10 @@ class Fraction(numbers.Rational):
         # dinv is the inverse of self._denominator modulo the prime
         # _PyHASH_MODULUS, or 0 if self._denominator is divisible by
         # _PyHASH_MODULUS.
-        dinv = pow(self._denominator, _PyHASH_MODULUS - 2, _PyHASH_MODULUS)
+        try:
+            dinv =  pow(self._denominator, -1, _PyHASH_MODULUS)
+        except ValueError:
+            dinv = pow(self._denominator, _PyHASH_MODULUS - 2, _PyHASH_MODULUS)
         if not dinv:
             hash_ = _PyHASH_INF
         else:
