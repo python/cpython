@@ -1821,7 +1821,7 @@ PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     if (tok->encoding) {
         encoding = (char *)PyMem_MALLOC(strlen(tok->encoding) + 1);
         if (encoding)
-        strcpy(encoding, tok->encoding);
+            strcpy(encoding, tok->encoding);
     }
     PyTokenizer_Free(tok);
     return encoding;
