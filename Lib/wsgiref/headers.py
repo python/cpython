@@ -187,5 +187,4 @@ class Headers:
             else:
                 v = self._convert_string_type(v)
                 parts.append(_formatparam(k.replace('_', '-'), v))
-        self._headers.append((self._convert_string_type(_name),
-                              "; ".join(parts)))
+        self._headers.append((self._convert_string_type(_name), "; ".join(parts)))
