@@ -1209,17 +1209,17 @@ def indent(tree, space="  ", level=0):
         return
 
     # Reduce the memory consumption by reusing indentation strings.
-    class _indentation_cache(dict):
-        def __missing__(self, level):
-            s = self[level] = "\n" + level * space
-            return s
-
-    indentations = _indentation_cache()
+    indentations = ["\n" + i * space for i in range(level+1)]
 
     def _indent_children(elem, level):
         # Start a new indentation level for the first child.
         child_level = level + 1
-        child_indentation = indentations[child_level]
+        try:
+            child_indentation = indentations[child_level]
+        except IndexError:
+            child_indentation = "\n" + child_level * space
+            indentations.append(child_indentation)
+
         if not elem.text or not elem.text.strip():
             elem.text = child_indentation
 
