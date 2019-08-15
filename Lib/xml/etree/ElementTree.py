@@ -1203,6 +1203,8 @@ def indent(tree, space="  ", level=0):
     """
     if isinstance(tree, ElementTree):
         tree = tree.getroot()
+    if level < 0:
+        raise ValueError(f"Initial indentation level must be >= 0, got {level}")
     if not len(tree):
         return
 

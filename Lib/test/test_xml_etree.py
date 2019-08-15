@@ -875,6 +875,13 @@ class ElementTreeTest(unittest.TestCase):
 
     def test_indent_level(self):
         elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        with self.assertRaises(ValueError):
+            ET.indent(elem, level=-1)
+        self.assertEqual(
+            ET.tostring(elem),
+            b"<html><body><p>pre<br />post</p><p>text</p></body></html>"
+        )
+
         ET.indent(elem, level=2)
         self.assertEqual(
             ET.tostring(elem),
