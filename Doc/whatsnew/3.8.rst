@@ -745,6 +745,19 @@ A new :func:`os.memfd_create` function was added to wrap the
 ``memfd_create()`` syscall.
 (Contributed by Zackery Spytz and Christian Heimes in :issue:`26836`.)
 
+On Windows, much of the manual logic for handling reparse points (symlinks)
+has been delegated to the operating system. Specifically, :func:`os.stat`
+will now traverse anything supported by the operating system, while
+:func:`os.lstat` will not traverse anything. The stat result now includes
+:attr:`stat_result.st_reparse_tag` for reparse points, and :func:`os.readlink`
+is now able to read directory junctions.
+
+Directory results from :func:`os.scandir` on Windows will now return true for
+both :meth:`os.DirEntry.is_symlink` and :meth:`os.DirEntry.is_dir` when the
+entry is a directory junction (this would already happen for symbolic links
+to directories). To distinguish a directory junction from a symlink, use
+``stat(follow_symlinks=False).st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT``.
+
 
 os.path
 -------
@@ -760,6 +773,9 @@ characters or bytes unrepresentable at the OS level.
 :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
 environment variable and does not use :envvar:`HOME`, which is not normally set
 for regular user accounts.
+
+:func:`~os.path.isdir` on Windows no longer returns true for a link to a
+non-existent directory.
 
 
 ncurses
@@ -845,6 +861,9 @@ shutil
 format for new archives to improve portability and standards conformance,
 inherited from the corresponding change to the :mod:`tarfile` module.
 (Contributed by C.A.M. Gerlach in :issue:`30661`.)
+
+:func:`shutil.rmtree` on Windows now removes directory junctions without
+removing their contents first.
 
 
 ssl
