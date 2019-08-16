@@ -556,23 +556,19 @@ class Fraction(numbers.Rational):
     def __hash__(self):
         """hash(self)"""
 
-        # XXX since this method is expensive, consider caching the result
+        # To make sure that the hash of a Fraction agrees with the hash
+        # of a numerically equal integer, float or Decimal instance, we
+        # follow the rules for numeric hashes outlined in the
+        # documentation.  (See library docs, 'Built-in Types').
 
-        # In order to make sure that the hash of a Fraction agrees
-        # with the hash of a numerically equal integer, float or
-        # Decimal instance, we follow the rules for numeric hashes
-        # outlined in the documentation.  (See library docs, 'Built-in
-        # Types').
-
-        # dinv is the inverse of self._denominator modulo the prime
-        # _PyHASH_MODULUS, or 0 if self._denominator is divisible by
-        # _PyHASH_MODULUS.
-        dinv = pow(self._denominator, _PyHASH_MODULUS - 2, _PyHASH_MODULUS)
-        if not dinv:
+        try:
+            dinv = pow(self._denominator, -1, _PyHASH_MODULUS)
+        except ValueError:
+            # ValueError means there is no modular inverse
             hash_ = _PyHASH_INF
         else:
-            hash_ = abs(self._numerator) * dinv % _PyHASH_MODULUS
-        result = hash_ if self >= 0 else -hash_
+            hash_ = hash(abs(self._numerator)) * dinv % _PyHASH_MODULUS
+        result = hash_ if self._numerator >= 0 else -hash_
         return -2 if result == -1 else result
 
     def __eq__(a, b):
