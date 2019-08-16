@@ -574,14 +574,14 @@ class Fraction(numbers.Rational):
             # optimized here in two ways:  first, for a non-negative int i,
             # hash(i) == i % P, but the int hash implementation doesn't need
             # to divide, and is faster than doing % P explicitly.  So we do
-            #    hash(|N} * dinv)
+            #    hash(|N| * dinv)
             # instead.  Second, N is unbounded, so its product with dinv may
             # be arbitrarily expensive to compute.  The final answer is the
             # same if we use the bounded |N| % P instead, which can again
             # be done with an int hash() call.  If 0 <= i < P, hash(i) == i,
             # so this nested hash() call wastes a bit of time making a
-            # redundant copy when }N| < P, but can save an arbitrarily large
-            # amount of computation for large }N|.
+            # redundant copy when |N| < P, but can save an arbitrarily large
+            # amount of computation for large |N|.
             hash_ = hash(hash(abs(self._numerator)) * dinv)
         result = hash_ if self._numerator >= 0 else -hash_
         return -2 if result == -1 else result
