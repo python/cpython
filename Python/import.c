@@ -402,16 +402,23 @@ import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
        stuffing the new module in sys.modules.
     */
     spec = _PyObject_GetAttrId(mod, &PyId___spec__);
-    if (_PyModuleSpec_IsInitializing(spec)) {
+    if (spec == NULL) {
+        PyErr_Clear();
+        return 0;
+    }
+    int busy = _PyModuleSpec_IsInitializing(spec);
+    Py_DECREF(spec);
+    if (busy) {
+        /*
+           Wait until module is done importing.
+        */
         PyObject *value = _PyObject_CallMethodIdOneArg(
             interp->importlib, &PyId__lock_unlock_module, name);
         if (value == NULL) {
-            Py_DECREF(spec);
             return -1;
         }
         Py_DECREF(value);
     }
-    Py_XDECREF(spec);
     return 0;
 }
 
