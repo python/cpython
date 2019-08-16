@@ -1016,10 +1016,12 @@ class PyShell(OutputWindow):
         self.close_debugger()
         if use_subprocess:
             self.interp.kill_subprocess()
-        # Restore std streams
+        # Restore std streams and warning_stream
         sys.stdout = self.save_stdout
         sys.stderr = self.save_stderr
         sys.stdin = self.save_stdin
+        global warning_stream
+        warning_stream = sys.__stderr__
         # Break cycles
         self.interp = None
         self.console = None
