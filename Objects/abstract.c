@@ -514,7 +514,7 @@ PyBuffer_SizeFromFormat(const char *format)
         goto done;
     }
 
-    fmt = PyBytes_FromString(format);
+    fmt = PyUnicode_FromString(format);
     if (fmt == NULL) {
         goto done;
     }

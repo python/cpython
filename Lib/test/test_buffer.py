@@ -4419,10 +4419,10 @@ class TestBufferProtocol(unittest.TestCase):
 
     @support.cpython_only
     def test_pybuffer_size_from_format(self):
-        # basic tests
-        for format in ("i", "3s", "0i", " "):
-            self.assertEqual(_testcapi.pybuffer_size_from_format(format),
-                             struct.calcsize(format.encode()))
+        nitems = randrange(1, 30)
+        for fmt, _, _ in iter_format(nitems):
+            self.assertEqual(_testcapi.pybuffer_size_from_format(fmt),
+                             struct.calcsize(fmt))
 
 if __name__ == "__main__":
     unittest.main()
