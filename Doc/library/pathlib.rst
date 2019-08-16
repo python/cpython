@@ -807,6 +807,13 @@ call fails (for example because the path doesn't exist).
    ``False`` is also returned if the path doesn't exist; other errors (such
    as permission errors) are propagated.
 
+   .. versionchanged:: 3.8
+      On Windows, now returns ``True`` for directory junctions as well as
+      symlinks. To determine whether the path is actually a symlink to a
+      directory or a directory junction, compare ``Path.lstat().st_reparse_tag``
+      against ``stat.IO_REPARSE_TAG_SYMLINK`` or
+      ``stat.IO_REPARSE_TAG_MOUNT_POINT``.
+
 
 .. method:: Path.is_socket()
 
