@@ -67,18 +67,16 @@ warning_stream = sys.__stderr__  # None, at least on Windows, if no console.
 
 def idle_showwarning(
         message, category, filename, lineno, file=None, line=None):
-    """Show Idle-format warning (after replacing warnings.showwarning).
+    """Print Idle-format warning to warning_stream.
 
-    The differences are the formatter called, the file=None replacement,
-    which can be None, the capture of the consequence AttributeError,
-    and the output of a hard-coded prompt.
+    Difference from show_warning are the formatter, the file=None
+    replacement, and the capture of the consequence AttributeError.
     """
     if file is None:
         file = warning_stream
     try:
         file.write(idle_formatwarning(
                 message, category, filename, lineno, line=line))
-        file.write(">>> ")
     except (AttributeError, OSError):
         pass  # if file (probably __stderr__) is invalid, skip warning.
 
