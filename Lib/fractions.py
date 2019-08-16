@@ -568,7 +568,7 @@ class Fraction(numbers.Rational):
             hash_ = _PyHASH_INF
         else:
             # The general algorithm now specifies that the absolute value of
-            # the hash is 
+            # the hash is
             #    (|N| * dinv) % P
             # where N is self._numerator and P is _PyHASH_MODULUS.  That's
             # optimized here in two ways:  first, for a non-negative int i,
