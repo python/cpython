@@ -383,7 +383,7 @@ enumeration, with the exception of special methods (:meth:`__str__`,
 variable names listed in :attr:`_ignore_`.
 
 Note:  if your enumeration defines :meth:`__new__` and/or :meth:`__init__` then
-whatever value(s) given to the enum member will be passed into those methods.
+any value(s) given to the enum member will be passed into those methods.
 See `Planet`_ for an example.
 
 
