@@ -452,7 +452,14 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
         dstname = os.path.join(dst, srcentry.name)
         srcobj = srcentry if use_srcentry else srcname
         try:
-            if srcentry.is_symlink():
+            is_symlink = srcentry.is_symlink()
+            if is_symlink and os.name == 'nt':
+                # Special check for directory junctions, which appear as
+                # symlinks but we want to recurse.
+                lstat = srcentry.stat(follow_symlinks=False)
+                if lstat.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT:
+                    is_symlink = False
+            if is_symlink:
                 linkto = os.readlink(srcname)
                 if symlinks:
                     # We can't just leave it to `copy_function` because legacy

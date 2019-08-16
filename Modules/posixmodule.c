@@ -1693,13 +1693,13 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         DWORD lastError = GetLastError();
 
         if (traverse && lastError == ERROR_CANT_ACCESS_FILE) {
-            /* bpo37834: Special handling for appexeclink files to
-               return the link rather than an error. */
-            if (!win32_xstat_impl(path, result, FALSE)
-                && result->st_reparse_tag == IO_REPARSE_TAG_APPEXECLINK
-            ) {
+            /* bpo37834: Special handling for unfollowable links to
+               return the original link rather than an error. */
+            if (!win32_xstat_impl(path, result, FALSE)) {
                 return 0;
             }
+            /* If we can't access the link directly, then return
+               the original error code. */
             SetLastError(lastError);
             return -1;
         }
@@ -1730,17 +1730,6 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
 
         CloseHandle(hFile);
     }
-
-    if (!traverse
-        && info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT
-        && tagInfo.ReparseTag != IO_REPARSE_TAG_SYMLINK
-        && tagInfo.ReparseTag != IO_REPARSE_TAG_MOUNT_POINT
-        && tagInfo.ReparseTag != IO_REPARSE_TAG_APPEXECLINK) {
-        /* Reparse points other than symlink and mount_point
-           always need to be opened by the IO manager */
-        return win32_xstat_impl(path, result, TRUE);
-    }
-
 
     _Py_attribute_data_to_stat(&info, tagInfo.ReparseTag, result);
 
@@ -3866,45 +3855,6 @@ cleanup:
     }
     CloseHandle(hFile);
     return result;
-}
-
-
-/*[clinic input]
-os._isdir
-
-    path as arg: object
-    /
-
-Return true if the pathname refers to an existing directory.
-[clinic start generated code]*/
-
-static PyObject *
-os__isdir(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=404f334d85d4bf25 input=36cb6785874d479e]*/
-{
-    DWORD attributes;
-    path_t path = PATH_T_INITIALIZE("_isdir", "path", 0, 0);
-
-    if (!path_converter(arg, &path)) {
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
-        return NULL;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    attributes = GetFileAttributesW(path.wide);
-    Py_END_ALLOW_THREADS
-
-    path_cleanup(&path);
-    if (attributes == INVALID_FILE_ATTRIBUTES)
-        Py_RETURN_FALSE;
-
-    if (attributes & FILE_ATTRIBUTE_DIRECTORY)
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
 }
 
 
@@ -7777,7 +7727,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         return PyBytes_FromStringAndSize(buffer, length);
 #elif defined(MS_WINDOWS)
     DWORD n_bytes_returned;
-    DWORD io_result;
+    DWORD io_result = 0;
     HANDLE reparse_point_handle;
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
@@ -7793,23 +7743,18 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         OPEN_EXISTING,
         FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS,
         0);
-    Py_END_ALLOW_THREADS
-
-    if (reparse_point_handle == INVALID_HANDLE_VALUE) {
-        return path_error(path);
+    if (reparse_point_handle != INVALID_HANDLE_VALUE) {
+        /* New call DeviceIoControl to read the reparse point */
+        io_result = DeviceIoControl(
+            reparse_point_handle,
+            FSCTL_GET_REPARSE_POINT,
+            0, 0, /* in buffer */
+            target_buffer, sizeof(target_buffer),
+            &n_bytes_returned,
+            0 /* we're not using OVERLAPPED_IO */
+            );
+        CloseHandle(reparse_point_handle);
     }
-
-    Py_BEGIN_ALLOW_THREADS
-    /* New call DeviceIoControl to read the reparse point */
-    io_result = DeviceIoControl(
-        reparse_point_handle,
-        FSCTL_GET_REPARSE_POINT,
-        0, 0, /* in buffer */
-        target_buffer, sizeof(target_buffer),
-        &n_bytes_returned,
-        0 /* we're not using OVERLAPPED_IO */
-        );
-    CloseHandle(reparse_point_handle);
     Py_END_ALLOW_THREADS
 
     if (io_result == 0) {
@@ -13641,7 +13586,6 @@ static PyMethodDef posix_methods[] = {
     OS_PATHCONF_METHODDEF
     OS_ABORT_METHODDEF
     OS__GETFULLPATHNAME_METHODDEF
-    OS__ISDIR_METHODDEF
     OS__GETDISKUSAGE_METHODDEF
     OS__GETFINALPATHNAME_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
