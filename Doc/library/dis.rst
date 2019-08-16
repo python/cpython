@@ -1142,8 +1142,10 @@ All of the following opcodes use their arguments.
 
    Calls a callable object with positional (if any) and keyword arguments.
    *argc* indicates the total number of positional and keyword arguments.
-   The top element on the stack contains a tuple of keyword argument names.
-   Below that are keyword arguments in the order corresponding to the tuple.
+   The top element on the stack contains a tuple with the names of the
+   keyword arguments, which must be strings.
+   Below that are the values for the keyword arguments,
+   in the order corresponding to the tuple.
    Below that are positional arguments, with the right-most parameter on
    top.  Below the arguments is a callable object to call.
    ``CALL_FUNCTION_KW`` pops all arguments and the callable object off the stack,

@@ -204,6 +204,7 @@ also keyword arguments.  So there are a total of 6 calling conventions:
    Keyword arguments are passed the same way as in the vectorcall protocol:
    there is an additional fourth :c:type:`PyObject\*` parameter
    which is a tuple representing the names of the keyword arguments
+   (which are guaranteed to be strings)
    or possibly *NULL* if there are no keywords.  The values of the keyword
    arguments are stored in the *args* array, after the positional arguments.
 
