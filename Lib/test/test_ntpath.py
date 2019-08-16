@@ -320,12 +320,16 @@ class TestNtpath(unittest.TestCase):
         os.symlink(ABSTFN, ABSTFN)
         self.assertEqual(ntpath.realpath(ABSTFN), P + ABSTFN)
 
+        # cycles are non-deterministic as to which path is returned, but
+        # it will always be the fully resolved path of one member of the cycle
         os.symlink(ABSTFN + "1", ABSTFN + "2")
         os.symlink(ABSTFN + "2", ABSTFN + "1")
-        self.assertEqual(ntpath.realpath(ABSTFN + "1"), P + ABSTFN + "2")
-        self.assertEqual(ntpath.realpath(ABSTFN + "2"), P + ABSTFN + "1")
+        expected = (P + ABSTFN + "1", P + ABSTFN + "2")
+        self.assertIn(ntpath.realpath(ABSTFN + "1"), expected)
+        self.assertIn(ntpath.realpath(ABSTFN + "2"), expected)
 
-        self.assertEqual(ntpath.realpath(ABSTFN + "1\\x"), P + ABSTFN + "2\\x")
+        self.assertIn(ntpath.realpath(ABSTFN + "1\\x"),
+                      (ntpath.join(r, "x") for r in expected))
         self.assertEqual(ntpath.realpath(ABSTFN + "1\\.."),
                          ntpath.dirname(ABSTFN))
         self.assertEqual(ntpath.realpath(ABSTFN + "1\\..\\x"),
@@ -334,9 +338,9 @@ class TestNtpath(unittest.TestCase):
         self.assertEqual(ntpath.realpath(ABSTFN + "1\\..\\"
                                          + ntpath.basename(ABSTFN) + "y"),
                          P + ABSTFN + "x")
-        self.assertEqual(ntpath.realpath(ABSTFN + "1\\..\\"
-                                         + ntpath.basename(ABSTFN) + "1"),
-                         P + ABSTFN + "1")
+        self.assertIn(ntpath.realpath(ABSTFN + "1\\..\\"
+                                      + ntpath.basename(ABSTFN) + "1"),
+                      expected)
 
         os.symlink(ntpath.basename(ABSTFN) + "a\\b", ABSTFN + "a")
         self.assertEqual(ntpath.realpath(ABSTFN + "a"), P + ABSTFN + "a")

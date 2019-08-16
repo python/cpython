@@ -520,29 +520,25 @@ else:  # use native Windows method on Windows
             return _abspath_fallback(path)
 
 try:
-    from nt import _getfinalpathname
+    from nt import _getfinalpathname, readlink as _nt_readlink
 except ImportError:
     # realpath is a no-op on systems without _getfinalpathname support.
     realpath = abspath
 else:
-    def _readlink_deep(path, seen=None, *, _readlink=os.readlink):
+    def _readlink_deep(path, seen=None):
         if seen is None:
             seen = set()
 
-        while True:
+        while normcase(path) not in seen:
             seen.add(normcase(path))
             try:
-                next_path = _readlink(path)
-                # Break out _before_ traversing the cycle
-                if normcase(next_path) in seen:
-                    break
-                path = next_path
+                path = _nt_readlink(path)
             except OSError as ex:
                 # Stop on file (2) or directory (3) not found, or
                 # paths that are not reparse points (4390)
-                if ex.winerror not in (2, 3, 4390):
-                    raise
-                break
+                if ex.winerror in (2, 3, 4390):
+                    break
+                raise
             except ValueError:
                 # Stop on reparse points that are not symlinks
                 break
@@ -567,8 +563,7 @@ else:
                     raise
                 path, name = split(path)
                 if path and not name:
-                    tail = path + tail
-                    break
+                    return abspath(path + tail)
                 tail = join(name, tail) if tail else name
         return abspath(tail)
 
