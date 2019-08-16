@@ -60,10 +60,9 @@ from idlelib.undo import UndoDelegator
 HOST = '127.0.0.1' # python execution server on localhost loopback
 PORT = 0  # someday pass in host, port for remote debug capability
 
-# Override warnings module to write to warning_stream.  Initialize to send IDLE
-# internal warnings to the console.  ScriptBinding.check_syntax() will
-# temporarily redirect the stream to the shell window to display warnings when
-# checking user's code.
+# Override warnings.show_warning to write to IDLE format to warning_stream.
+# Initially send IDLE internal warnings to the console, if present.
+# Send to Shell.stderr (traceback stream) when available.
 warning_stream = sys.__stderr__  # None, at least on Windows, if no console.
 
 def idle_showwarning(
@@ -665,8 +664,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         "Extend base class method: Stuff the source in the line cache first"
         filename = self.stuffsource(source)
         self.more = 0
-        self.save_warnings_filters = warnings.filters[:]
-        warnings.filterwarnings(action="error", category=SyntaxWarning)
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
         #if isinstance(source, str):
@@ -677,14 +674,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
         #        self.tkconsole.resetoutput()
         #        self.write("Unsupported characters in input\n")
         #        return
-        try:
-            # InteractiveInterpreter.runsource() calls its runcode() method,
-            # which is overridden (see below)
-            return InteractiveInterpreter.runsource(self, source, filename)
-        finally:
-            if self.save_warnings_filters is not None:
-                warnings.filters[:] = self.save_warnings_filters
-                self.save_warnings_filters = None
+        # II.runsource() calls .runcode(), overridden below.
+        return InteractiveInterpreter.runsource(self, source, filename)
 
     def stuffsource(self, source):
         "Stuff source in the filename cache"
@@ -916,6 +907,8 @@ class PyShell(OutputWindow):
             sys.stdout = self.stdout
             sys.stderr = self.stderr
             sys.stdin = self.stdin
+        global warning_stream
+        warning_stream = self.stderr
         try:
             # page help() text to shell.
             import pydoc # import must be done here to capture i/o rebinding.
