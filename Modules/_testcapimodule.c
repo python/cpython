@@ -2607,9 +2607,9 @@ get_fields_from_date(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    PyTuple_SET_ITEM(rv, 0, PyLong_FromSsize_t(year));
-    PyTuple_SET_ITEM(rv, 1, PyLong_FromSsize_t(month));
-    PyTuple_SET_ITEM(rv, 2, PyLong_FromSsize_t(day));
+    PyTuple_SET_ITEM(rv, 0, PyLong_FromLong(year));
+    PyTuple_SET_ITEM(rv, 1, PyLong_FromLong(month));
+    PyTuple_SET_ITEM(rv, 2, PyLong_FromLong(day));
 
     return rv;
 }
@@ -2635,10 +2635,10 @@ get_fields_from_datetime(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    PyTuple_SET_ITEM(rv, 0, PyLong_FromSsize_t(hour));
-    PyTuple_SET_ITEM(rv, 1, PyLong_FromSsize_t(minute));
-    PyTuple_SET_ITEM(rv, 2, PyLong_FromSsize_t(second));
-    PyTuple_SET_ITEM(rv, 3, PyLong_FromSsize_t(microsecond));
+    PyTuple_SET_ITEM(rv, 0, PyLong_FromLong(hour));
+    PyTuple_SET_ITEM(rv, 1, PyLong_FromLong(minute));
+    PyTuple_SET_ITEM(rv, 2, PyLong_FromLong(second));
+    PyTuple_SET_ITEM(rv, 3, PyLong_FromLong(microsecond));
 
     return rv;
 }
@@ -2664,10 +2664,10 @@ get_fields_from_time(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    PyTuple_SET_ITEM(rv, 0, PyLong_FromSsize_t(hour));
-    PyTuple_SET_ITEM(rv, 1, PyLong_FromSsize_t(minute));
-    PyTuple_SET_ITEM(rv, 2, PyLong_FromSsize_t(second));
-    PyTuple_SET_ITEM(rv, 3, PyLong_FromSsize_t(microsecond));
+    PyTuple_SET_ITEM(rv, 0, PyLong_FromLong(hour));
+    PyTuple_SET_ITEM(rv, 1, PyLong_FromLong(minute));
+    PyTuple_SET_ITEM(rv, 2, PyLong_FromLong(second));
+    PyTuple_SET_ITEM(rv, 3, PyLong_FromLong(microsecond));
 
     return rv;
 }
@@ -2692,9 +2692,9 @@ get_fields_from_delta(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    PyTuple_SET_ITEM(rv, 0, PyLong_FromSsize_t(days));
-    PyTuple_SET_ITEM(rv, 1, PyLong_FromSsize_t(seconds));
-    PyTuple_SET_ITEM(rv, 2, PyLong_FromSsize_t(microseconds));
+    PyTuple_SET_ITEM(rv, 0, PyLong_FromLong(days));
+    PyTuple_SET_ITEM(rv, 1, PyLong_FromLong(seconds));
+    PyTuple_SET_ITEM(rv, 2, PyLong_FromLong(microseconds));
 
     return rv;
 }
