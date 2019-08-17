@@ -1189,7 +1189,7 @@ subtype_dealloc(PyObject *self)
        /* Only decref if the base type is not already a heap allocated type.
           Otherwise, basedealloc should have decref'd it already */
         if (type->tp_flags & Py_TPFLAGS_HEAPTYPE && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE))
-						Py_DECREF(type);
+                                                Py_DECREF(type);
 
         /* Done */
         return;
