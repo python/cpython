@@ -993,26 +993,57 @@ class GrammarTests(unittest.TestCase):
 
     def test_break_in_finally_after_return(self):
         # See issue #37830
-        def test():
-            for i in [0, 1]:
-                for j in [10, 20]:
+        def g1(x):
+            for count in [0, 1]:
+                count2 = 0
+                while count2 < 20:
+                    count2 += 10
                     try:
-                        return i + j
+                        return count + count2
                     finally:
-                        break
-            return 'Good', i, j
-        self.assertEqual(test(), ('Good', 1, 10))
+                        if x:
+                            break
+            return 'end', count, count2
+        self.assertEqual(g1(False), 10)
+        self.assertEqual(g1(True), ('end', 1, 10))
+
+        def g2(x):
+            for count in [0, 1]:
+                for count2 in [10, 20]:
+                    try:
+                        return count + count2
+                    finally:
+                        if x:
+                            break
+            return 'end', count, count2
+        self.assertEqual(g2(False), 10)
+        self.assertEqual(g2(True), ('end', 1, 10))
 
     def test_continue_in_finally_after_return(self):
         # See issue #37830
-        def test():
-            for i in [0, 1]:
+        def g1(x):
+            count = 0
+            while count < 100:
+                count += 1
                 try:
-                    return i
+                    return count
                 finally:
-                    continue
-            return 'Good', i
-        self.assertEqual(test(), ('Good', 1))
+                    if x:
+                        continue
+            return 'end', count
+        self.assertEqual(g1(False), 1)
+        self.assertEqual(g1(True), ('end', 100))
+
+        def g2(x):
+            for count in [0, 1]:
+                try:
+                    return count
+                finally:
+                    if x:
+                        continue
+            return 'end', count
+        self.assertEqual(g2(False), 0)
+        self.assertEqual(g2(True), ('end', 1))
 
     def test_yield(self):
         # Allowed as standalone statement
