@@ -7186,6 +7186,11 @@ PyUnicode_AsASCIIString(PyObject *unicode)
 #define NEED_RETRY
 #endif
 
+/* INT_MAX is the theoretical largest chunk, but INT_MAX / 4
+   performs better and avoids partial characters overrunning the
+   length limit in MultiByteToWideChar on Windows */
+#define DECODING_CHUNK_SIZE (INT_MAX/4)
+
 #ifndef WC_ERR_INVALID_CHARS
 #  define WC_ERR_INVALID_CHARS 0x0080
 #endif
@@ -7422,11 +7427,8 @@ decode_code_page_stateful(int code_page,
     do
     {
 #ifdef NEED_RETRY
-        /* INT_MAX is the theoretical largest chunk, but INT_MAX / 4
-           performs better and avoids partial characters overrunning the
-           length limit in MultiByteToWideChar on Windows */
-        if (size > INT_MAX / 4) {
-            chunk_size = INT_MAX / 4;
+        if (size > DECODING_CHUNK_SIZE) {
+            chunk_size = DECODING_CHUNK_SIZE;
             final = 0;
             done = 0;
         }
@@ -7830,11 +7832,8 @@ encode_code_page(int code_page,
     do
     {
 #ifdef NEED_RETRY
-        /* UTF-16 encoding may double the size, so use at most
-           INT_MAX/2 chunks. INT_MAX/4 performs better and avoids
-           trying to allocate more than 2GiB in one go */
-        if (len > INT_MAX / 4) {
-            chunk_len = INT_MAX / 4;
+        if (len > DECODING_CHUNK_SIZE) {
+            chunk_len = DECODING_CHUNK_SIZE;
             done = 0;
         }
         else
