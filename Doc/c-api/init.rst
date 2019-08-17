@@ -1027,7 +1027,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
     Destroy the current thread state and release the global interpreter lock.
     interpreter lock need not be held. Like :c:func:`PyThreadState_Delete`, the global
-    interpreter lock need not be held. The thread state must have been reset with a previous
+    interpreter lock need not be held. When using :c:func:`PyThreadState_DeleteCurrent`, the thread state must have been reset with a previous
     call to :c:func:`PyThreadState_Clear`.
 
 .. c:function:: PY_INT64_T PyInterpreterState_GetID(PyInterpreterState *interp)
