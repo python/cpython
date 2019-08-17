@@ -1848,7 +1848,7 @@ result of ``type(name, bases, namespace)``.
 The class creation process can be customized by passing the ``metaclass``
 keyword argument in the class definition line, or by inheriting from an
 existing class that included such an argument. In the following example,
-both ``MyClass`` and ``MySubclass`` are instances of ``Meta``::
+both ``MyClass`` and ``MySubclass`` are instances of ``Meta``and the type of ``MyClass`` is of metaclass ``Meta`` and type of ``MySubclass`` is ``MyClass``::
 
    class Meta(type):
        pass
