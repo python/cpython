@@ -1665,6 +1665,10 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 
         case FINALLY_END:
             ADDOP_I(c, POP_FINALLY, preserve_tos);
+            if (preserve_tos) {
+                ADDOP(c, ROT_TWO);
+            }
+            ADDOP(c, POP_TOP);
             return 1;
 
         case FOR_LOOP:
@@ -1681,7 +1685,15 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 
         case FINALLY_TRY:
             ADDOP(c, POP_BLOCK);
-            ADDOP_JREL(c, CALL_FINALLY, info->fb_exit);
+            if (preserve_tos) {
+                ADDOP(c, ROT_TWO);
+                ADDOP(c, POP_TOP);
+                ADDOP_JREL(c, CALL_FINALLY, info->fb_exit);
+            }
+            else {
+                ADDOP_JREL(c, CALL_FINALLY, info->fb_exit);
+                ADDOP(c, POP_TOP);
+            }
             return 1;
 
         case WITH:
@@ -2835,6 +2847,7 @@ compiler_continue(struct compiler *c)
 
 /* Code generated for "try: <body> finally: <finalbody>" is as follows:
 
+        LOAD_CONST      None
         SETUP_FINALLY           L
         <code for body>
         POP_BLOCK
@@ -2842,12 +2855,15 @@ compiler_continue(struct compiler *c)
     L:
         <code for finalbody>
         END_FINALLY
+        POP_TOP
 
    The special instructions use the block stack.  Each block
    stack entry contains the instruction that created it (here
    SETUP_FINALLY), the level of the value stack at the time the
    block stack entry was created, and a label (here L).
 
+   LOAD_CONST None:
+    Pushes a placeholder for the value of "return".
    SETUP_FINALLY:
     Pushes the current value stack level and the label
     onto the block stack.
@@ -2858,6 +2874,8 @@ compiler_continue(struct compiler *c)
    END_FINALLY:
     Pops 1 (NULL or int) or 6 entries from the *value* stack and restore
     the raised and the caught exceptions they specify.
+   POP_TOP:
+    Pops a None pushed before SETUP_FINALLY.
 
    The block stack is unwound when an exception is raised:
    when a SETUP_FINALLY entry is found, the raised and the caught
@@ -2877,6 +2895,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         return 0;
 
     /* `try` block */
+    ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_JREL(c, SETUP_FINALLY, end);
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, FINALLY_TRY, body, end))
@@ -2898,6 +2917,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, END_FINALLY);
+    ADDOP(c, POP_TOP);
     compiler_pop_fblock(c, FINALLY_END, end);
     return 1;
 }

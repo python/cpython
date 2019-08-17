@@ -991,6 +991,29 @@ class GrammarTests(unittest.TestCase):
                 return 4
         self.assertEqual(g3(), 4)
 
+    def test_break_in_finally_after_return(self):
+        # See issue #37830
+        def test():
+            for i in [0, 1]:
+                for j in [10, 20]:
+                    try:
+                        return i + j
+                    finally:
+                        break
+            return 'Good', i, j
+        self.assertEqual(test(), ('Good', 1, 10))
+
+    def test_continue_in_finally_after_return(self):
+        # See issue #37830
+        def test():
+            for i in [0, 1]:
+                try:
+                    return i
+                finally:
+                    continue
+            return 'Good', i
+        self.assertEqual(test(), ('Good', 1))
+
     def test_yield(self):
         # Allowed as standalone statement
         def g(): yield 1
