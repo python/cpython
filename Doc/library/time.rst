@@ -608,7 +608,7 @@ Functions
 
 .. function:: time_ns() -> int
 
-   Similar to :func:`time` but returns time as an integer number of nanoseconds
+   Similar to :func:`~time.time` but returns time as an integer number of nanoseconds
    since the epoch_.
 
    .. versionadded:: 3.7
