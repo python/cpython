@@ -552,6 +552,7 @@ def move(src, dst, copy_function=copy2):
 
     A lot more could be done here...  A look at a mv.c shows a lot of
     the issues this implementation glosses over.
+    
     """
     real_dst = dst
     if os.path.isdir(dst):
