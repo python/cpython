@@ -1300,6 +1300,21 @@ class TestCase(unittest.TestCase):
         self.assertTrue(is_dataclass(d.d))
         self.assertFalse(is_dataclass(d.e))
 
+    def test_is_dataclass_when_getattr_always_returns(self):
+        # See bpo-37868.
+        class A:
+            def __getattr__(self, key):
+                return 0
+
+        self.assertFalse(is_dataclass(A()))
+        self.assertFalse(is_dataclass(A))
+
+        # class A above is really testing the same things as:
+        class B:
+            __dataclass_fields = []
+
+        self.assertFalse(is_dataclass(B()))
+
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
         #  and get back the same thing.
