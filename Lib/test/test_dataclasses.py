@@ -1305,15 +1305,31 @@ class TestCase(unittest.TestCase):
         class A:
             def __getattr__(self, key):
                 return 0
-
         self.assertFalse(is_dataclass(A()))
         self.assertFalse(is_dataclass(A))
 
-        # class A above is really testing the same things as:
-        class B:
-            __dataclass_fields__ = []
+        # Indirect tests for _is_dataclass_instance().
+        with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+            asdict(A())
+        with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+            astuple(A())
+        with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+            replace(A(), x=0)
 
-        self.assertFalse(is_dataclass(B()))
+        # Also test for an instance attribute.
+        class A:
+            pass
+        a = A()
+        a.__dataclass_fields__ = []
+        self.assertFalse(is_dataclass(a))
+
+        # Indirect tests for _is_dataclass_instance().
+        with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+            asdict(A())
+        with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+            astuple(A())
+        with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+            replace(A(), x=0)
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
