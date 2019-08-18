@@ -201,8 +201,8 @@ Object Protocol
 
    Return a user-friendly string representation of the function-like object
    *func*. This returns ``func.__qualname__ + "()"`` if there is a
-   ``__qualname__`` attribute and ``type(func).__name__ + " object"``
-   otherwise. Note that there is no check that *func* is actually callable.
+   ``__qualname__`` attribute and ``str(func)`` otherwise.
+   Note that there is no check that *func* is actually callable.
 
    .. versionadded:: 3.9
 

@@ -669,7 +669,7 @@ def _PyObject_FunctionStr(f):
     try:
         return f.__qualname__ + "()"
     except Exception:
-        return type(f).__name__ + " object"
+        return str(f)
 */
 PyObject *
 _PyObject_FunctionStr(PyObject *f)
@@ -686,7 +686,7 @@ _PyObject_FunctionStr(PyObject *f)
         return NULL;
     }
     PyErr_Clear();
-    return PyUnicode_FromFormat("%.200s object", Py_TYPE(f)->tp_name);
+    return PyObject_Str(f);
 }
 
 /* For Python 3.0.1 and later, the old three-way comparison has been

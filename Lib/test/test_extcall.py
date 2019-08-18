@@ -268,7 +268,7 @@ What about willful misconduct?
     >>> nothing(*h)
     Traceback (most recent call last):
       ...
-    TypeError: NoneType object argument after * must be an iterable, \
+    TypeError: None argument after * must be an iterable, \
 not function
 
     >>> h(**h)
