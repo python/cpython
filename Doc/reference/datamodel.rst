@@ -2399,6 +2399,18 @@ left undefined.
    and :func:`complex` fall back to :meth:`__index__`.
 
 
+.. method:: object.as_integer_ratio(self)
+
+   Called to represent a number as an exact ratio of integers. This must
+   return a pair ``(numerator, denominator)`` such that
+   ``self * denominator == numerator``.
+   The *numerator* and *denominator* must be coprime and *denominator*
+   must be strictly positive. This is used for conversion to
+   :class:`fractions.Fraction` or whenever exact arithmetic is needed.
+   It is not required that *numerator* and *denominator* are instances of
+   :class:`int`, but they must be instances of :class:`~numbers.Integral`.
+
+
 .. method:: object.__round__(self, [,ndigits])
             object.__trunc__(self)
             object.__floor__(self)
