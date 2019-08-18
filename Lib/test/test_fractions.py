@@ -78,6 +78,15 @@ class DummyRational(object):
     def __float__(self):
         assert False, "__float__ should not be invoked"
 
+
+class IntegerRatio:
+    def __init__(self, num, den):
+        self.integer_ratio = (num, den)
+
+    def as_integer_ratio(self):
+        return self.integer_ratio
+
+
 class DummyFraction(fractions.Fraction):
     """Dummy Fraction subclass for copy and deepcopy testing."""
 
@@ -155,11 +164,13 @@ class FractionTest(unittest.TestCase):
         self.assertRaises(TypeError, F, "3/2", 3)
         self.assertRaises(TypeError, F, 3, 0j)
         self.assertRaises(TypeError, F, 3, 1j)
+        self.assertRaises(TypeError, F, 1j, 3)
         self.assertRaises(TypeError, F, 1, 2, 3)
 
     @requires_IEEE_754
     def testInitFromFloat(self):
         self.assertEqual((5, 2), _components(F(2.5)))
+        self.assertEqual((5, 7), _components(F(2.5, 3.5)))
         self.assertEqual((0, 1), _components(F(-0.0)))
         self.assertEqual((3602879701896397, 36028797018963968),
                          _components(F(0.1)))
@@ -171,6 +182,8 @@ class FractionTest(unittest.TestCase):
     def testInitFromDecimal(self):
         self.assertEqual((11, 10),
                          _components(F(Decimal('1.1'))))
+        self.assertEqual((11, 10),
+                         _components(F(Decimal('9.9'), Decimal(9))))
         self.assertEqual((7, 200),
                          _components(F(Decimal('3.5e-2'))))
         self.assertEqual((0, 1),
@@ -301,6 +314,14 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "cannot convert NaN to integer ratio",
             F.from_decimal, Decimal("snan"))
+
+    def testFromIntegerRatio(self):
+        a = IntegerRatio(-5, 4)
+        b = IntegerRatio(-5, 3)
+        self.assertEqual(F(a).as_integer_ratio(), (-5, 4))
+        self.assertEqual(F(a, b).as_integer_ratio(), (3, 4))
+        self.assertEqual(F(1, a).as_integer_ratio(), (-4, 5))
+        self.assertEqual(F(a, 5.0).as_integer_ratio(), (-1, 4))
 
     def test_as_integer_ratio(self):
         self.assertEqual(F(4, 6).as_integer_ratio(), (2, 3))

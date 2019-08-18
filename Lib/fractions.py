@@ -57,22 +57,46 @@ _RATIONAL_FORMAT = re.compile(r"""
 """, re.VERBOSE | re.IGNORECASE)
 
 
+def _as_integer_ratio(obj):
+    """
+    Return a pair (numerator, denominator) if obj has an ``as_integer_ratio``
+    method or is an instance of ``numbers.Rational``. Return ``NotImplemented``
+    if neither works.
+    """
+    # Fast path
+    if type(obj) is int:
+        return (obj, 1)
+
+    try:
+        f = obj.as_integer_ratio
+    except AttributeError:
+        pass
+    else:
+        return f()
+
+    if isinstance(obj, numbers.Rational):
+        return (obj.numerator, obj.denominator)
+
+    return NotImplemented
+
+
 class Fraction(numbers.Rational):
     """This class implements rational numbers.
 
     In the two-argument form of the constructor, Fraction(8, 6) will
-    produce a rational number equivalent to 4/3. Both arguments must
-    be Rational. The numerator defaults to 0 and the denominator
-    defaults to 1 so that Fraction(3) == 3 and Fraction() == 0.
+    produce a rational number equivalent to 4/3. The numerator defaults
+    to 0 and the denominator defaults to 1 so that Fraction(3) == 3 and
+    Fraction() == 0.
 
-    Fractions can also be constructed from:
+    Fractions can be constructed from:
 
       - numeric strings similar to those accepted by the
         float constructor (for example, '-2.3' or '1e10')
 
       - strings of the form '123/456'
 
-      - float and Decimal instances
+      - objects with an ``as_integer_ratio()`` method (this includes
+        float and Decimal instances)
 
       - other Rational instances (including integers)
 
@@ -115,23 +139,14 @@ class Fraction(numbers.Rational):
         self = super(Fraction, cls).__new__(cls)
 
         if denominator is None:
-            if type(numerator) is int:
-                self._numerator = numerator
-                self._denominator = 1
-                return self
-
-            elif isinstance(numerator, numbers.Rational):
-                self._numerator = numerator.numerator
-                self._denominator = numerator.denominator
-                return self
-
-            elif isinstance(numerator, (float, Decimal)):
-                # Exact conversion
-                self._numerator, self._denominator = numerator.as_integer_ratio()
-                return self
-
+            nd = _as_integer_ratio(numerator)
+            if nd is not NotImplemented:
+                numerator, denominator = nd
+                # Assume that result is already normalized
+                _normalize = False
+            # _as_integer_ratio() returned NotImplemented, so we
+            # failed unless we got a string
             elif isinstance(numerator, str):
-                # Handle construction from strings.
                 m = _RATIONAL_FORMAT.match(numerator)
                 if m is None:
                     raise ValueError('Invalid literal for Fraction: %r' %
@@ -158,21 +173,21 @@ class Fraction(numbers.Rational):
                     numerator = -numerator
 
             else:
-                raise TypeError("argument should be a string "
-                                "or a Rational instance")
+                raise TypeError("argument should be a string, "
+                                "a Rational instance or have "
+                                "an as_integer_ratio() method")
 
-        elif type(numerator) is int is type(denominator):
-            pass # *very* normal case
-
-        elif (isinstance(numerator, numbers.Rational) and
-            isinstance(denominator, numbers.Rational)):
-            numerator, denominator = (
-                numerator.numerator * denominator.denominator,
-                denominator.numerator * numerator.denominator
-                )
         else:
-            raise TypeError("both arguments should be "
-                            "Rational instances")
+            x = _as_integer_ratio(numerator)
+            y = _as_integer_ratio(denominator)
+            if x is NotImplemented or y is NotImplemented:
+                raise TypeError("both arguments should be "
+                                "a Rational instance or have "
+                                "an as_integer_ratio() method")
+            num1, den1 = x
+            den2, num2 = y
+            numerator = num1 * num2
+            denominator = den1 * den2
 
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)

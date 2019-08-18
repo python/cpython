@@ -14,27 +14,25 @@
 The :mod:`fractions` module provides support for rational number arithmetic.
 
 
-A Fraction instance can be constructed from a pair of integers, from
-another rational number, or from a string.
+A Fraction instance can be constructed from a numerator and denominator
+or from a string.
 
 .. class:: Fraction(numerator=0, denominator=1)
-           Fraction(other_fraction)
-           Fraction(float)
-           Fraction(decimal)
            Fraction(string)
 
-   The first version requires that *numerator* and *denominator* are instances
-   of :class:`numbers.Rational` and returns a new :class:`Fraction` instance
-   with value ``numerator/denominator``. If *denominator* is :const:`0`, it
-   raises a :exc:`ZeroDivisionError`. The second version requires that
-   *other_fraction* is an instance of :class:`numbers.Rational` and returns a
-   :class:`Fraction` instance with the same value.  The next two versions accept
-   either a :class:`float` or a :class:`decimal.Decimal` instance, and return a
-   :class:`Fraction` instance with exactly the same value.  Note that due to the
-   usual issues with binary floating-point (see :ref:`tut-fp-issues`), the
-   argument to ``Fraction(1.1)`` is not exactly equal to 11/10, and so
+   In the first version, *numerator* and *denominator* must either have
+   an ``as_integer_ratio()`` method or be instances of
+   :class:`numbers.Rational`. This includes in particular :class:`int`,
+   :class:`Fraction`, :class:`float` and :class:`decimal.Decimal`.
+   It returns a new :class:`Fraction` instance with value
+   ``numerator/denominator``. If *denominator* is :const:`0`, it raises a
+   :exc:`ZeroDivisionError`.
+
+   Note that due to the usual issues with binary floating-point
+   (see :ref:`tut-fp-issues`), 1.1 is not exactly equal to 11/10, and so
    ``Fraction(1.1)`` does *not* return ``Fraction(11, 10)`` as one might expect.
    (But see the documentation for the :meth:`limit_denominator` method below.)
+
    The last version of the constructor expects a string or unicode instance.
    The usual form for this instance is::
 
@@ -69,6 +67,8 @@ another rational number, or from a string.
       Fraction(9, 4)
       >>> Fraction(1.1)
       Fraction(2476979795053773, 2251799813685248)
+      >>> Fraction(3.5, 2.5)
+      Fraction(7, 5)
       >>> from decimal import Decimal
       >>> Fraction(Decimal('1.1'))
       Fraction(11, 10)
@@ -83,6 +83,10 @@ another rational number, or from a string.
    .. versionchanged:: 3.2
       The :class:`Fraction` constructor now accepts :class:`float` and
       :class:`decimal.Decimal` instances.
+
+   .. versionchanged:: 3.9
+      The :class:`Fraction` constructor now accepts any object with
+      ``as_integer_ratio()`` as numerator or denominator.
 
 
    .. attribute:: numerator

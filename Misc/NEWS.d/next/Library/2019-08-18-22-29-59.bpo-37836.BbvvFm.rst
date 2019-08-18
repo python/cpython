@@ -1,0 +1,3 @@
+When constructing a :class:`fractions.Fraction`, the given numerator (and
+optional denominator) may now be any object with an ``as_integer_ratio``
+method.
