@@ -81,7 +81,7 @@ It's called a frame block to distinguish it from a basic block in the
 compiler IR.
 */
 
-enum fblocktype { WHILE_LOOP, FOR_LOOP, EXCEPT, FINALLY_TRY, FINALLY_END,
+enum fblocktype { WHILE_LOOP, FOR_LOOP, EXCEPT, FINALLY_TRY, FINALLY_TRY2, FINALLY_END,
                   WITH, ASYNC_WITH, HANDLER_CLEANUP };
 
 struct fblockinfo {
@@ -1664,6 +1664,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             return 1;
 
         case FINALLY_END:
+            info->fb_exit = NULL;
             ADDOP_I(c, POP_FINALLY, preserve_tos);
             if (preserve_tos) {
                 ADDOP(c, ROT_TWO);
@@ -1684,6 +1685,11 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             return 1;
 
         case FINALLY_TRY:
+            ADDOP(c, POP_BLOCK);
+            ADDOP_JREL(c, CALL_FINALLY, info->fb_exit);
+            return 1;
+
+        case FINALLY_TRY2:
             ADDOP(c, POP_BLOCK);
             if (preserve_tos) {
                 ADDOP(c, ROT_TWO);
@@ -2847,7 +2853,6 @@ compiler_continue(struct compiler *c)
 
 /* Code generated for "try: <body> finally: <finalbody>" is as follows:
 
-        LOAD_CONST      None
         SETUP_FINALLY           L
         <code for body>
         POP_BLOCK
@@ -2855,15 +2860,12 @@ compiler_continue(struct compiler *c)
     L:
         <code for finalbody>
         END_FINALLY
-        POP_TOP
 
    The special instructions use the block stack.  Each block
    stack entry contains the instruction that created it (here
    SETUP_FINALLY), the level of the value stack at the time the
    block stack entry was created, and a label (here L).
 
-   LOAD_CONST None:
-    Pushes a placeholder for the value of "return".
    SETUP_FINALLY:
     Pushes the current value stack level and the label
     onto the block stack.
@@ -2874,8 +2876,6 @@ compiler_continue(struct compiler *c)
    END_FINALLY:
     Pops 1 (NULL or int) or 6 entries from the *value* stack and restore
     the raised and the caught exceptions they specify.
-   POP_TOP:
-    Pops a None pushed before SETUP_FINALLY.
 
    The block stack is unwound when an exception is raised:
    when a SETUP_FINALLY entry is found, the raised and the caught
@@ -2887,18 +2887,47 @@ compiler_continue(struct compiler *c)
 static int
 compiler_try_finally(struct compiler *c, stmt_ty s)
 {
-    basicblock *body, *end;
+    basicblock *start, *newcurblock, *body, *end;
+    int break_finally = 1;
 
     body = compiler_new_block(c);
     end = compiler_new_block(c);
     if (body == NULL || end == NULL)
         return 0;
 
+    start = c->u->u_curblock;
+
+    /* `finally` block. Compile it first to determine if any of "break",
+       "continue" or "return" are used in it. */
+    compiler_use_next_block(c, end);
+    if (!compiler_push_fblock(c, FINALLY_END, end, end))
+        return 0;
+    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
+    ADDOP(c, END_FINALLY);
+    break_finally = (c->u->u_fblock[c->u->u_nfblocks - 1].fb_exit == NULL);
+    if (break_finally) {
+        /* Pops a placeholder. See below */
+        ADDOP(c, POP_TOP);
+    }
+    compiler_pop_fblock(c, FINALLY_END, end);
+
+    newcurblock = c->u->u_curblock;
+    c->u->u_curblock = start;
+    start->b_next = NULL;
+
     /* `try` block */
-    ADDOP_LOAD_CONST(c, Py_None);
+    c->u->u_lineno_set = 0;
+    c->u->u_lineno = s->lineno;
+    c->u->u_col_offset = s->col_offset;
+    if (break_finally) {
+        /* Pushes a placeholder for the value of "return" in the "try" block
+           to balance the stack for "break", "continue" and "return" in
+           the "finally" block. */
+        ADDOP_LOAD_CONST(c, Py_None);
+    }
     ADDOP_JREL(c, SETUP_FINALLY, end);
     compiler_use_next_block(c, body);
-    if (!compiler_push_fblock(c, FINALLY_TRY, body, end))
+    if (!compiler_push_fblock(c, break_finally ? FINALLY_TRY2 : FINALLY_TRY, body, end))
         return 0;
     if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
         if (!compiler_try_except(c, s))
@@ -2909,16 +2938,11 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     }
     ADDOP(c, POP_BLOCK);
     ADDOP(c, BEGIN_FINALLY);
-    compiler_pop_fblock(c, FINALLY_TRY, body);
+    compiler_pop_fblock(c, break_finally ? FINALLY_TRY2 : FINALLY_TRY, body);
 
-    /* `finally` block */
-    compiler_use_next_block(c, end);
-    if (!compiler_push_fblock(c, FINALLY_END, end, NULL))
-        return 0;
-    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    ADDOP(c, END_FINALLY);
-    ADDOP(c, POP_TOP);
-    compiler_pop_fblock(c, FINALLY_END, end);
+    c->u->u_curblock->b_next = end;
+    c->u->u_curblock = newcurblock;
+
     return 1;
 }
 

@@ -233,6 +233,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
      * the 'finally' blocks. */
     memset(blockstack, '\0', sizeof(blockstack));
     blockstack_top = 0;
+    unsigned char prevop = NOP;
     for (addr = 0; addr < code_len; addr += sizeof(_Py_CODEUNIT)) {
         unsigned char op = code[addr];
         switch (op) {
@@ -267,10 +268,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                          * we're jumping out of. */
                         delta++;
                     }
-                    else if (op == SETUP_FINALLY &&
-                             code[target_addr] != POP_TOP &&
-                             code[target_addr] != DUP_TOP)
-                    {
+                    else if (prevop == LOAD_CONST) {
                         /* Pops None pushed before SETUP_FINALLY. */
                         delta++;
                     }
@@ -303,6 +301,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             break;
         }
         }
+        prevop = op;
     }
 
     /* Verify that the blockstack tracking code didn't get lost. */
