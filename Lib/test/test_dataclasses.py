@@ -1311,7 +1311,7 @@ class TestCase(unittest.TestCase):
 
         # class A above is really testing the same things as:
         class B:
-            __dataclass_fields = []
+            __dataclass_fields__ = []
 
         self.assertFalse(is_dataclass(B()))
 
