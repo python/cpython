@@ -513,7 +513,7 @@ rmtree.avoids_symlink_attacks = _use_fd_functions
 def _basename(path):
     """A basename() variant which first strips the trailing slash, if present.
     Thus we always get the last component of the path, even for directories.
-    
+
     path: Union[PathLike, str]
 
     e.g.
@@ -552,7 +552,7 @@ def move(src, dst, copy_function=copy2):
 
     A lot more could be done here...  A look at a mv.c shows a lot of
     the issues this implementation glosses over.
-    
+
     """
     real_dst = dst
     if os.path.isdir(dst):
