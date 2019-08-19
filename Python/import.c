@@ -402,10 +402,6 @@ import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
        stuffing the new module in sys.modules.
     */
     spec = _PyObject_GetAttrId(mod, &PyId___spec__);
-    if (spec == NULL) {
-        PyErr_Clear();
-        return 0;
-    }
     int busy = _PyModuleSpec_IsInitializing(spec);
     Py_DECREF(spec);
     if (busy) {
