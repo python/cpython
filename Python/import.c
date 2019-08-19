@@ -403,11 +403,9 @@ import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
     */
     spec = _PyObject_GetAttrId(mod, &PyId___spec__);
     int busy = _PyModuleSpec_IsInitializing(spec);
-    Py_DECREF(spec);
+    Py_XDECREF(spec);
     if (busy) {
-        /*
-           Wait until module is done importing.
-        */
+        /* Wait until module is done importing. */
         PyObject *value = _PyObject_CallMethodIdOneArg(
             interp->importlib, &PyId__lock_unlock_module, name);
         if (value == NULL) {
