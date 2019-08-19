@@ -386,8 +386,8 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_unstructured_without_trailing_whitespace_hang_case(self):
         self._test_get_x(self._get_unst,
             '=?utf-8?q?somevalue?=aa',
-            '=?utf-8?q?somevalue?=aa',
-            '=?utf-8?q?somevalue?=aa',
+            'somevalueaa',
+            'somevalueaa',
             [errors.InvalidHeaderDefect],
             '')
 
