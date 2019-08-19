@@ -63,10 +63,6 @@ def _as_integer_ratio(obj):
     method or is an instance of ``numbers.Rational``. Return ``NotImplemented``
     if neither works.
     """
-    # Fast path
-    if type(obj) is int:
-        return (obj, 1)
-
     try:
         f = obj.as_integer_ratio
     except AttributeError:
@@ -139,6 +135,11 @@ class Fraction(numbers.Rational):
         self = super(Fraction, cls).__new__(cls)
 
         if denominator is None:
+            # Fast path for Fraction(int)
+            if type(numerator) is int:
+                self._numerator = numerator
+                self._denominator = 1
+                return self
             nd = _as_integer_ratio(numerator)
             if nd is not NotImplemented:
                 numerator, denominator = nd
@@ -177,6 +178,9 @@ class Fraction(numbers.Rational):
                                 "a Rational instance or have "
                                 "an as_integer_ratio() method")
 
+        elif type(numerator) is int is type(denominator):
+            # Fast path for Fraction(int, int)
+            pass
         else:
             x = _as_integer_ratio(numerator)
             y = _as_integer_ratio(denominator)
