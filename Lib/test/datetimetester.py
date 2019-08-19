@@ -5916,7 +5916,7 @@ class CapiTest(unittest.TestCase):
 
                 self.assertEqual(dt1.astimezone(timezone.utc), dt_utc)
 
-    def test_get_delta_object_macros(self):
+    def test_PyDateTime_DELTA_GET(self):
         class TimeDeltaSubclass(timedelta):
             pass
 
@@ -5930,7 +5930,7 @@ class CapiTest(unittest.TestCase):
                     self.assertEqual(seconds, d.seconds)
                     self.assertEqual(microseconds, d.microseconds)
 
-    def test_get_date_object_macros(self):
+    def test_PyDateTime_GET(self):
         class DateSubclass(date):
             pass
 
@@ -5944,7 +5944,7 @@ class CapiTest(unittest.TestCase):
                     self.assertEqual(month, d.month)
                     self.assertEqual(day, d.day)
 
-    def test_get_datetime_object_macros(self):
+    def test_PyDateTime_DATE_GET(self):
         class DateTimeSubclass(datetime):
             pass
 
@@ -5960,7 +5960,7 @@ class CapiTest(unittest.TestCase):
                     self.assertEqual(second, d.second)
                     self.assertEqual(microsecond, d.microsecond)
 
-    def test_get_time_object_macros(self):
+    def test_PyDateTime_TIME_GET(self):
         class TimeSubclass(time):
             pass
 
