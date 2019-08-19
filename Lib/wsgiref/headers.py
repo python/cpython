@@ -34,12 +34,9 @@ class Headers:
         headers = headers if headers is not None else []
         if type(headers) is not list:
             raise TypeError("Headers must be a list of name/value tuples")
+        self._headers = []
         for header, value in headers:
-            if not _is_legal_header_name(header.encode('ascii')):
-                raise ValueError('Invalid header name %r' % (header,))
-            if _is_illegal_header_value(value.encode('ascii')):
-                raise ValueError('Invalid header value %r' % (value,))
-        self._headers = headers
+            self.add_header(header, value)
         if __debug__:
             for k, v in headers:
                 self._convert_string_type(k)
