@@ -295,8 +295,9 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.acosh, NINF)
         self.assertTrue(math.isnan(math.acosh(NAN)))
 
+    @support.cpython_only
     def testAsIntegerRatio(self):
-        as_integer_ratio = math.as_integer_ratio
+        as_integer_ratio = math._as_integer_ratio
         self.assertEqual(as_integer_ratio(0), (0, 1))
         self.assertEqual(as_integer_ratio(3), (3, 1))
         self.assertEqual(as_integer_ratio(-3), (-3, 1))

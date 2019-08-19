@@ -3307,15 +3307,19 @@ error:
 
 
 /*[clinic input]
-math.as_integer_ratio
+math._as_integer_ratio
     x: object
     /
-greatest common divisor of x and y
+
+Return integer ratio.
+
+Return a pair of integers, whose ratio is exactly equal to the original
+number and with a positive denominator.
 [clinic start generated code]*/
 
 static PyObject *
-math_as_integer_ratio(PyObject *module, PyObject *x)
-/*[clinic end generated code: output=1844868fd4efb2f1 input=d7f2e8ffd51c6599]*/
+math__as_integer_ratio(PyObject *module, PyObject *x)
+/*[clinic end generated code: output=2e4f43d93f6e7850 input=b54b48dd6bbe22ea]*/
 {
     _Py_IDENTIFIER(as_integer_ratio);
     _Py_IDENTIFIER(numerator);
@@ -3382,7 +3386,7 @@ math_as_integer_ratio(PyObject *module, PyObject *x)
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
-    MATH_AS_INTEGER_RATIO_METHODDEF
+    MATH__AS_INTEGER_RATIO_METHODDEF
     {"asin",            math_asin,      METH_O,         math_asin_doc},
     {"asinh",           math_asinh,     METH_O,         math_asinh_doc},
     {"atan",            math_atan,      METH_O,         math_atan_doc},

@@ -713,12 +713,15 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(math_as_integer_ratio__doc__,
-"as_integer_ratio($module, x, /)\n"
+PyDoc_STRVAR(math__as_integer_ratio__doc__,
+"_as_integer_ratio($module, x, /)\n"
 "--\n"
 "\n"
-"greatest common divisor of x and y");
+"Return integer ratio.\n"
+"\n"
+"Return a pair of integers, whose ratio is exactly equal to the original\n"
+"number and with a positive denominator.");
 
-#define MATH_AS_INTEGER_RATIO_METHODDEF    \
-    {"as_integer_ratio", (PyCFunction)math_as_integer_ratio, METH_O, math_as_integer_ratio__doc__},
-/*[clinic end generated code: output=f9722232fc321d17 input=a9049054013a1b77]*/
+#define MATH__AS_INTEGER_RATIO_METHODDEF    \
+    {"_as_integer_ratio", (PyCFunction)math__as_integer_ratio, METH_O, math__as_integer_ratio__doc__},
+/*[clinic end generated code: output=7f658f3ee1d866ba input=a9049054013a1b77]*/

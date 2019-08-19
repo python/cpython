@@ -225,7 +225,7 @@ def _exact_ratio(x):
     x is expected to be an int, Fraction, Decimal or float.
     """
     try:
-        return math.as_integer_ratio(x)
+        return math._as_integer_ratio(x)
     except (OverflowError, ValueError):
         # float NAN or INF.
         assert not _isfinite(x)
