@@ -1107,7 +1107,6 @@ def get_unstructured(value):
                 token, value = get_encoded_word(value)
             except errors.HeaderParseError as e:
                 if "encoded word format invalid" in str(e):
-                    unstructured.defects.append(errors.InvalidHeaderDefect(str(e)))
                     encoded_format_invalid = True
             else:
                 have_ws = True
