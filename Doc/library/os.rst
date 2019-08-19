@@ -1858,6 +1858,9 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
 
+   .. versionchanged:: 3.8
+      On Windows, now opens reparse points that represent another file
+      (name surrogates).
 
 .. function:: mkdir(path, mode=0o777, *, dir_fd=None)
 
@@ -2452,10 +2455,10 @@ features:
    .. versionchanged:: 3.8
       On Windows, all reparse points that can be resolved by the operating
       system are now followed, and passing ``follow_symlinks=False``
-      disables following all reparse points. If the operating system reaches
-      a reparse point that it is not able to follow, *stat* will return the
-      information for the original path as if ``follow_symlinks=False`` had
-      been specified.
+      disables following all name surrogate reparse points. If the operating
+      system reaches a reparse point that it is not able to follow, *stat* now
+      returns the information for the original path as if
+      ``follow_symlinks=False`` had been specified instead of raising an error.
 
 
 .. class:: stat_result
