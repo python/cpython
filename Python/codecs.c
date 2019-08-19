@@ -51,7 +51,7 @@ int PyCodec_Register(PyObject *search_function)
 
 extern int _Py_normalize_encoding(const char *, char *, size_t);
 
-/* Convert a string to a normalized Python string: all characters are
+/* Convert a string to a normalized Python string(decoded from UTF-8): all characters are
    converted to lower case, spaces and hyphens are replaced with underscores. */
 
 static
@@ -72,7 +72,7 @@ PyObject *normalizestring(const char *string)
 
     if (!_Py_normalize_encoding(string, encoding, len + 1))
     {
-        Py_FatalError("normalizestring(): encoding failed");
+        PyErr_SetString(PyExc_RuntimeError, "_Py_normalize_encoding() failed");
         PyMem_Free(encoding);
         return NULL;
     }
