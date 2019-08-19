@@ -1305,31 +1305,26 @@ class TestCase(unittest.TestCase):
         class A:
             def __getattr__(self, key):
                 return 0
-        self.assertFalse(is_dataclass(A()))
         self.assertFalse(is_dataclass(A))
-
-        # Indirect tests for _is_dataclass_instance().
-        with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
-            asdict(A())
-        with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
-            astuple(A())
-        with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
-            replace(A(), x=0)
+        a = A()
 
         # Also test for an instance attribute.
-        class A:
+        class B:
             pass
-        a = A()
-        a.__dataclass_fields__ = []
-        self.assertFalse(is_dataclass(a))
+        b = B()
+        b.__dataclass_fields__ = []
 
-        # Indirect tests for _is_dataclass_instance().
-        with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
-            asdict(A())
-        with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
-            astuple(A())
-        with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
-            replace(A(), x=0)
+        for obj in a, b:
+            with self.subTest(obj=obj):
+                self.assertFalse(is_dataclass(obj))
+
+                # Indirect tests for _is_dataclass_instance().
+                with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+                    asdict(obj)
+                with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+                    astuple(obj)
+                with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+                    replace(obj, x=0)
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
