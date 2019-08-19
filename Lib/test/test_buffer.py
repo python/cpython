@@ -4420,7 +4420,7 @@ class TestBufferProtocol(unittest.TestCase):
     @support.cpython_only
     def test_pybuffer_size_from_format(self):
         # basic tests
-        for format in ("i", "3s", "0i", " "):
+        for format in ('', 'ii', '3s'):
             self.assertEqual(_testcapi.PyBuffer_SizeFromFormat(format),
                              struct.calcsize(format))
 

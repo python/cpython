@@ -3308,7 +3308,7 @@ test_PyBuffer_SizeFromFormat(PyObject *self, PyObject *args)
     const char *format;
     Py_ssize_t result;
 
-    if (!PyArg_ParseTuple(args, "s:pybuffer_size_from_format",
+    if (!PyArg_ParseTuple(args, "s:test_PyBuffer_SizeFromFormat",
                           &format)) {
         return NULL;
     }
