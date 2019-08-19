@@ -1628,9 +1628,6 @@ pymalloc_alloc(void *ctx, size_t nbytes)
          * available:  use a free pool.
          */
         bp = allocate_from_new_pool(size);
-        if (UNLIKELY(bp == NULL)) {
-            return NULL;
-        }
     }
 
     return (void *)bp;
