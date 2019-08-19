@@ -1,2 +1,2 @@
-Only attempt to traverse reparse points on Windows when they represent a
-symlink or a directory junction.
+Treat all name surrogate reparse points on Windows in :func:`os.lstat` and
+other reparse points as regular files in :func:`os.stat`.

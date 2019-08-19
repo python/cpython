@@ -2503,8 +2503,8 @@ class Win32JunctionTests(unittest.TestCase):
         self.assertNotEqual(os.stat(self.junction), os.lstat(self.junction))
         self.assertEqual(os.stat(self.junction), os.stat(self.junction_target))
 
-        # bpo-37834: Junctions are now recognized as links.
-        self.assertTrue(os.path.islink(self.junction))
+        # bpo-37834: Junctions are not recognized as links.
+        self.assertFalse(os.path.islink(self.junction))
         self.assertEqual(os.path.normcase("\\\\?\\" + self.junction_target),
                          os.path.normcase(os.readlink(self.junction)))
 

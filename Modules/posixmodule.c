@@ -1664,86 +1664,173 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                  BOOL traverse)
 {
     HANDLE hFile;
-    BY_HANDLE_FILE_INFORMATION info;
+    BY_HANDLE_FILE_INFORMATION fileInfo;
     FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
-    const wchar_t *dot;
+    DWORD fileType, error;
+    BOOL isUnhandledTag = FALSE;
+    int retval = 0;
 
-    /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-    DWORD flags = FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS;
+    DWORD access = FILE_READ_ATTRIBUTES;
+    DWORD flags = FILE_FLAG_BACKUP_SEMANTICS; /* Allow opening directories. */
     if (!traverse) {
-        /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
-           This will cause stat() to return information about the link
-           rather than the target. */
         flags |= FILE_FLAG_OPEN_REPARSE_POINT;
     }
 
-    hFile = CreateFileW(
-        path,
-        FILE_READ_ATTRIBUTES,
-        0,
-        NULL, /* security attributes */
-        OPEN_EXISTING,
-        flags,
-        NULL
-    );
+    hFile = CreateFileW(path, access, 0, NULL, OPEN_EXISTING, flags, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
-        /* Either the target doesn't exist, or we don't have access to
-           get a handle to it. If the former, we need to return an error.
-           If the latter, we can use attributes_from_dir. */
-        DWORD lastError = GetLastError();
-
-        if (traverse && lastError == ERROR_CANT_ACCESS_FILE) {
-            /* bpo37834: Special handling for unfollowable links to
-               return the original link rather than an error. */
-            if (!win32_xstat_impl(path, result, FALSE)) {
-                return 0;
+        /* Either the path doesn't exist, or the caller lacks access. */
+        error = GetLastError();
+        switch (error) {
+        case ERROR_ACCESS_DENIED:     /* Cannot sync or read attributes. */
+        case ERROR_SHARING_VIOLATION: /* It's a paging file. */
+            /* Try reading the parent directory. */
+            if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag)) {
+                /* Cannot read the parent directory. */
+                SetLastError(error);
+                return -1;
             }
-            /* If we can't access the link directly, then return
-               the original error code. */
-            SetLastError(lastError);
+            if (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+                if (traverse ||
+                    !IsReparseTagNameSurrogate(tagInfo.ReparseTag)) {
+                    /* The stat call has to traverse but cannot, so fail. */
+                    SetLastError(error);
+                    return -1;
+                }
+            }
+            break;
+
+        case ERROR_INVALID_PARAMETER:
+            /* \\.\con requires read or write access. */
+            hFile = CreateFileW(path, access | GENERIC_READ,
+                        FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                        OPEN_EXISTING, flags, NULL);
+            if (hFile == INVALID_HANDLE_VALUE) {
+                SetLastError(error);
+                return -1;
+            }
+            break;
+
+        case ERROR_CANT_ACCESS_FILE:
+            /* bpo37834: open unhandled reparse points if traverse fails. */
+            if (traverse) {
+                traverse = FALSE;
+                isUnhandledTag = TRUE;
+                hFile = CreateFileW(path, access, 0, NULL, OPEN_EXISTING,
+                            flags | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+            }
+            if (hFile == INVALID_HANDLE_VALUE) {
+                SetLastError(error);
+                return -1;
+            }
+            break;
+
+        default:
             return -1;
         }
-
-        if (lastError != ERROR_ACCESS_DENIED
-            && lastError != ERROR_SHARING_VIOLATION) {
-            return -1;
-        }
-
-        /* Could not get attributes on open file. Try reading
-           the directory. */
-        if (!attributes_from_dir(path, &info, &tagInfo.ReparseTag)) {
-            /* Very strange. This should not fail now */
-            return -1;
-        }
-    } else {
-        if (!GetFileInformationByHandle(hFile, &info)) {
-            CloseHandle(hFile);
-            return -1;
-        }
-
-        /* Get the reparse tag if we will need it */
-        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
-            !GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
-                                          &tagInfo, sizeof(tagInfo))) {
-            tagInfo.ReparseTag = 0;
-        }
-
-        CloseHandle(hFile);
     }
 
-    _Py_attribute_data_to_stat(&info, tagInfo.ReparseTag, result);
+    if (hFile != INVALID_HANDLE_VALUE) {
+        /* Handle types other than files on disk. */
+        fileType = GetFileType(hFile);
+        if (fileType != FILE_TYPE_DISK) {
+            if (fileType == FILE_TYPE_UNKNOWN && GetLastError() != 0) {
+                retval = -1;
+                goto cleanup;
+            }
+            DWORD fileAttributes = GetFileAttributesW(path);
+            memset(result, 0, sizeof(*result));
+            if (fileAttributes != INVALID_FILE_ATTRIBUTES &&
+                fileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                /* \\.\pipe\ or \\.\mailslot\ */
+                result->st_mode = _S_IFDIR;
+            } else if (fileType == FILE_TYPE_CHAR) {
+                /* \\.\nul */
+                result->st_mode = _S_IFCHR;
+            } else if (fileType == FILE_TYPE_PIPE) {
+                /* \\.\pipe\spam */
+                result->st_mode = _S_IFIFO;
+            }
+            /* FILE_TYPE_UNKNOWN, e.g. \\.\mailslot\waitfor.exe\spam */
+            goto cleanup;
+        }
 
-    if (!(info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-        /* Set S_IEXEC if it is an .exe, .bat, ... */
-        dot = wcsrchr(path, '.');
-        if (dot) {
-            if (_wcsicmp(dot, L".bat") == 0 || _wcsicmp(dot, L".cmd") == 0 ||
-                _wcsicmp(dot, L".exe") == 0 || _wcsicmp(dot, L".com") == 0) {
+        /* Query the reparse tag, and traverse a non-link. */
+        if (!traverse) {
+            if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
+                    &tagInfo, sizeof(tagInfo))) {
+                /* Allow devices that do not support FileAttributeTagInfo. */
+                switch (GetLastError()) {
+                case ERROR_INVALID_PARAMETER:
+                case ERROR_INVALID_FUNCTION:
+                case ERROR_NOT_SUPPORTED:
+                    tagInfo.FileAttributes = FILE_ATTRIBUTE_NORMAL;
+                    tagInfo.ReparseTag = 0;
+                    break;
+                default:
+                    retval = -1;
+                    goto cleanup;
+                }
+            } else if (tagInfo.FileAttributes &
+                         FILE_ATTRIBUTE_REPARSE_POINT) {
+                if (IsReparseTagNameSurrogate(tagInfo.ReparseTag)) {
+                    if (isUnhandledTag) {
+                        /* Traversing previously failed for either this link
+                           or its target. */
+                        SetLastError(ERROR_CANT_ACCESS_FILE);
+                        retval = -1;
+                        goto cleanup;
+                    }
+                /* Traverse a non-link, but not if traversing already failed
+                   for an unhandled tag. */
+                } else if (!isUnhandledTag) {
+                    CloseHandle(hFile);
+                    return win32_xstat_impl(path, result, TRUE);
+                }
+            }
+        }
+
+        if (!GetFileInformationByHandle(hFile, &fileInfo)) {
+            switch (GetLastError()) {
+            case ERROR_INVALID_PARAMETER:
+            case ERROR_INVALID_FUNCTION:
+            case ERROR_NOT_SUPPORTED:
+                retval = -1;
+                goto cleanup;
+            }
+            /* Volumes and physical disks are block devices, e.g.
+               \\.\C: and \\.\PhysicalDrive0. */
+            memset(result, 0, sizeof(*result));
+            result->st_mode = 0x6000; /* S_IFBLK */
+            goto cleanup;
+        }
+    }
+
+    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, result);
+
+    if (!(fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+        /* Fix the file execute permissions. This hack sets S_IEXEC if
+           the filename has an extension that is commonly used by files
+           that CreateProcessW can execute. A real implementation calls
+           GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
+           AccessCheck to check for generic read, write, and execute
+           access. */
+        const wchar_t *fileExtension = wcsrchr(path, '.');
+        if (fileExtension) {
+            if (_wcsicmp(fileExtension, L".exe") == 0 ||
+                _wcsicmp(fileExtension, L".bat") == 0 ||
+                _wcsicmp(fileExtension, L".cmd") == 0 ||
+                _wcsicmp(fileExtension, L".com") == 0) {
                 result->st_mode |= 0111;
             }
         }
     }
-    return 0;
+
+cleanup:
+    if (hFile != INVALID_HANDLE_VALUE) {
+        CloseHandle(hFile);
+    }
+
+    return retval;
 }
 
 static int

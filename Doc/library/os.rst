@@ -1858,6 +1858,9 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
 
+   .. versionchanged:: 3.8
+      On Windows, now opens reparse points that represent another file
+      (name surrogates).
 
 .. function:: mkdir(path, mode=0o777, *, dir_fd=None)
 
@@ -2364,9 +2367,10 @@ features:
       but :exc:`FileNotFoundError` is caught and not raised.
 
       .. versionchanged:: 3.8
-         On Windows, now returns true for directory junctions. To determine
-         whether the entry is a symlink to a directory or a directory junction,
-         compare ``entry.stat(follow_symlinks=False).st_reparse_tag`` against
+         On Windows, now returns ``True`` for directory junctions as well as
+         symlinks. To determine whether the entry is actually a symlink to a
+         directory or a directory junction, compare
+         ``entry.stat(follow_symlinks=False).st_reparse_tag`` against
          ``stat.IO_REPARSE_TAG_SYMLINK`` or ``stat.IO_REPARSE_TAG_MOUNT_POINT``.
 
    .. method:: stat(\*, follow_symlinks=True)
@@ -2415,12 +2419,14 @@ features:
    :ref:`not following symlinks <follow_symlinks>`.
 
    On Windows, passing ``follow_symlinks=False`` will disable following all
-   types of reparse points, including directory junctions. When the operating
-   system is unable to follow a reparse point, the stat result for the original
-   link is returned as if ``follow_symlinks=False`` had been specified. To
-   obtain stat results for the final path in this case, use the
+   types of reparse points, including directory junctions. Otherwise, if the
+   operating system is unable to follow a reparse point (for example, when it
+   is a custom reparse point type with no filesystem support), the stat result
+   for the original link is returned as if ``follow_symlinks=False`` had been
+   specified. To obtain stat results for the final path in this case, use the
    :func:`os.path.realpath` function to resolve the path name as far as
-   possible and call :func:`lstat` on the result.
+   possible and call :func:`lstat` on the result. This does not apply to
+   dangling symlinks or junction points, which will raise the usual exceptions.
 
    .. index:: module: stat
 
@@ -2449,10 +2455,10 @@ features:
    .. versionchanged:: 3.8
       On Windows, all reparse points that can be resolved by the operating
       system are now followed, and passing ``follow_symlinks=False``
-      disables following all reparse points. When the operating system reaches
-      a reparse point that it can never handle, :func:`stat` will return
-      information for the original path as if ``follow_symlinks=False`` had
-      been passed.
+      disables following all name surrogate reparse points. If the operating
+      system reaches a reparse point that it is not able to follow, *stat* now
+      returns the information for the original path as if
+      ``follow_symlinks=False`` had been specified instead of raising an error.
 
 
 .. class:: stat_result
