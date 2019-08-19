@@ -72,7 +72,7 @@ PyObject *normalizestring(const char *string)
 
     if (!_Py_normalize_encoding(string, encoding, len + 1))
     {
-        Py_FatalError("normalizestring(): encoding failed");
+        PyErr_SetString(PyExc_RuntimeError, "_Py_normalize_encoding() failed");
         PyMem_Free(encoding);
         return NULL;
     }
