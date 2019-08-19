@@ -1730,6 +1730,30 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
     }
 
     if (hFile != INVALID_HANDLE_VALUE) {
+        /* Handle types other than files on disk. */
+        fileType = GetFileType(hFile);
+        if (fileType != FILE_TYPE_DISK) {
+            if (fileType == FILE_TYPE_UNKNOWN && GetLastError() != 0) {
+                retval = -1;
+                goto cleanup;
+            }
+            DWORD fileAttributes = GetFileAttributesW(path);
+            memset(result, 0, sizeof(*result));
+            if (fileAttributes != INVALID_FILE_ATTRIBUTES &&
+                fileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                /* \\.\pipe\ or \\.\mailslot\ */
+                result->st_mode = _S_IFDIR;
+            } else if (fileType == FILE_TYPE_CHAR) {
+                /* \\.\nul */
+                result->st_mode = _S_IFCHR;
+            } else if (fileType == FILE_TYPE_PIPE) {
+                /* \\.\pipe\spam */
+                result->st_mode = _S_IFIFO;
+            }
+            /* FILE_TYPE_UNKNOWN, e.g. \\.\mailslot\waitfor.exe\spam */
+            goto cleanup;
+        }
+
         /* Query the reparse tag, and traverse a non-link. */
         if (!traverse) {
             if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
@@ -1763,30 +1787,6 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                     return win32_xstat_impl(path, result, TRUE);
                 }
             }
-        }
-
-        fileType = GetFileType(hFile);
-        if (fileType != FILE_TYPE_DISK) {
-            /* Handle file types other than files on disk. */
-            if (fileType == FILE_TYPE_UNKNOWN && GetLastError() != 0) {
-                retval = -1;
-                goto cleanup;
-            }
-            DWORD fileAttributes = GetFileAttributesW(path);
-            memset(result, 0, sizeof(*result));
-            if (fileAttributes != INVALID_FILE_ATTRIBUTES &&
-                fileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-                /* \\.\pipe\ or \\.\mailslot\ */
-                result->st_mode = _S_IFDIR;
-            } else if (fileType == FILE_TYPE_CHAR) {
-                /* \\.\nul */
-                result->st_mode = _S_IFCHR;
-            } else if (fileType == FILE_TYPE_PIPE) {
-                /* \\.\pipe\spam */
-                result->st_mode = _S_IFIFO;
-            }
-            /* FILE_TYPE_UNKNOWN, e.g. \\.\mailslot\waitfor.exe\spam */
-            goto cleanup;
         }
 
         if (!GetFileInformationByHandle(hFile, &fileInfo)) {
