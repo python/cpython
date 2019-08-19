@@ -396,7 +396,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             '=?utf-8?q?=somevalue?=',
             '=?utf-8?q?=somevalue?=',
             '=?utf-8?q?=somevalue?=',
-            [errors.InvalidHeaderDefect],
+            [],
             '')
 
     # get_qp_ctext
