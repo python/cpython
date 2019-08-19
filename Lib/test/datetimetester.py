@@ -5924,7 +5924,7 @@ class CapiTest(unittest.TestCase):
             for args in [(26, 55, 99999), (26, 55, 99999)]:
                 d = klass(*args)
                 with self.subTest(cls=klass, date=args):
-                    days, seconds, microseconds = _testcapi.get_fields_from_delta(d)
+                    days, seconds, microseconds = _testcapi.PyDateTime_DELTA_GET(d)
 
                     self.assertEqual(days, d.days)
                     self.assertEqual(seconds, d.seconds)
@@ -5938,7 +5938,7 @@ class CapiTest(unittest.TestCase):
             for args in [(2000, 1, 2), (2012, 2, 29)]:
                 d = klass(*args)
                 with self.subTest(cls=klass, date=args):
-                    year, month, day = _testcapi.get_fields_from_date(d)
+                    year, month, day = _testcapi.PyDateTime_GET(d)
 
                     self.assertEqual(year, d.year)
                     self.assertEqual(month, d.month)
@@ -5953,7 +5953,7 @@ class CapiTest(unittest.TestCase):
                          (1993, 8, 26, 22, 12, 55, 99999)]:
                 d = klass(*args)
                 with self.subTest(cls=klass, date=args):
-                    hour, minute, second, microsecond = _testcapi.get_fields_from_datetime(d)
+                    hour, minute, second, microsecond = _testcapi.PyDateTime_DATE_GET(d)
 
                     self.assertEqual(hour, d.hour)
                     self.assertEqual(minute, d.minute)
@@ -5968,7 +5968,7 @@ class CapiTest(unittest.TestCase):
             for args in [(12, 30, 20, 10), (12, 30, 20, 10)]:
                 d = klass(*args)
                 with self.subTest(cls=klass, date=args):
-                    hour, minute, second, microsecond = _testcapi.get_fields_from_time(d)
+                    hour, minute, second, microsecond = _testcapi.PyDateTime_TIME_GET(d)
 
                     self.assertEqual(hour, d.hour)
                     self.assertEqual(minute, d.minute)

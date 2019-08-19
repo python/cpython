@@ -2588,7 +2588,7 @@ get_datetime_fromtimestamp(PyObject* self, PyObject *args)
 }
 
 static PyObject *
-get_fields_from_date(PyObject *self, PyObject *args)
+test_PyDateTime_GET(PyObject *self, PyObject *args)
 {
     PyObject *obj = NULL;
     PyObject *rv;
@@ -2615,7 +2615,7 @@ get_fields_from_date(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-get_fields_from_datetime(PyObject *self, PyObject *args)
+test_PyDateTime_DATE_GET(PyObject *self, PyObject *args)
 {
     PyObject *obj = NULL;
     PyObject *rv;
@@ -2644,7 +2644,7 @@ get_fields_from_datetime(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-get_fields_from_time(PyObject *self, PyObject *args)
+test_PyDateTime_TIME_GET(PyObject *self, PyObject *args)
 {
     PyObject *obj = NULL;
     PyObject *rv;
@@ -2673,7 +2673,7 @@ get_fields_from_time(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-get_fields_from_delta(PyObject *self, PyObject *args)
+test_PyDateTime_DELTA_GET(PyObject *self, PyObject *args)
 {
     PyObject *obj = NULL;
     PyObject *rv;
@@ -5187,10 +5187,10 @@ static PyMethodDef TestMethods[] = {
     {"get_delta_fromdsu",        get_delta_fromdsu,              METH_VARARGS},
     {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
     {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
-    {"get_fields_from_date",       get_fields_from_date,         METH_VARARGS},
-    {"get_fields_from_datetime",   get_fields_from_datetime,     METH_VARARGS},
-    {"get_fields_from_time",       get_fields_from_time,         METH_VARARGS},
-    {"get_fields_from_delta",      get_fields_from_delta,        METH_VARARGS},
+    {"PyDateTime_GET",             test_PyDateTime_GET,          METH_VARARGS},
+    {"PyDateTime_DATE_GET",        test_PyDateTime_DATE_GET,     METH_VARARGS},
+    {"PyDateTime_TIME_GET",        test_PyDateTime_TIME_GET,     METH_VARARGS},
+    {"PyDateTime_DELTA_GET",       test_PyDateTime_DELTA_GET,        METH_VARARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
