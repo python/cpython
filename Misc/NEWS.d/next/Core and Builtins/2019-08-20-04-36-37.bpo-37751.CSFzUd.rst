@@ -1,0 +1,1 @@
+Fix ``normalizestring`` with hyphens and spaces converted to underscores and reuse ``_Py_normalize_encoding()`` in ``normalizestring``.
