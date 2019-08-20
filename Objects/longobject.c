@@ -4298,7 +4298,6 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         Py_DECREF(b);
         Py_RETURN_NOTIMPLEMENTED;
     }
-
     if (Py_SIZE(b) < 0 && c == NULL) {
         /* if exponent is negative and there's no modulus:
                return a float.  This works because we know
@@ -4332,6 +4331,14 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
             _PyLong_Negate(&c);
             if (c == NULL)
                 goto Error;
+        }
+
+        /* if exponent < 0 and abs(modulus) == 1:
+               raise ValueError */
+        if ((Py_SIZE(b) < 0) && (c->ob_digit[0] == 1)) {
+            PyErr_SetString(PyExc_ValueError,
+                            "Can't use negative exponent with modulus +-1.");
+            goto Error;
         }
 
         /* if modulus == 1:

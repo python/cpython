@@ -48,7 +48,7 @@ class PowTest(unittest.TestCase):
         for i in range(il, ih+1):
             for j in range(jl, jh+1):
                 for k in range(kl, kh+1):
-                    if k != 0:
+                    if abs(k) not in {0, 1}:
                         if type == float or j < 0:
                             self.assertRaises(TypeError, pow, type(i), j, k)
                             continue
@@ -123,6 +123,9 @@ class PowTest(unittest.TestCase):
     def test_negative_exponent(self):
         for a in range(-50, 50):
             for m in range(-50, 50):
+                if abs(m) == 1:
+                    continue
+
                 with self.subTest(a=a, m=m):
                     if m != 0 and math.gcd(a, m) == 1:
                         # Exponent -1 should give an inverse, with the
@@ -143,6 +146,11 @@ class PowTest(unittest.TestCase):
                             pow(a, -2, m)
                         with self.assertRaises(ValueError):
                             pow(a, -1001, m)
+
+    def test_negative_exponent_with_mod_one(self):
+        for mod in (-1, 1):
+            with self.assertRaises(ValueError):
+                pow(2, -1, mod)
 
 
 if __name__ == "__main__":

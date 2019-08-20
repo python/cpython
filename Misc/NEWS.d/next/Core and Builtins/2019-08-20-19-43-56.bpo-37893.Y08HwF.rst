@@ -1,0 +1,2 @@
+Raise a ValueError if exponent is negative and modulus is +-1 in pow
+function.
