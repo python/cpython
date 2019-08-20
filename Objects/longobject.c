@@ -484,7 +484,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
 {
     /* This version by Tim Peters */
     PyLongObject *v;
-    unsigned long x, prev;
+    unsigned long x;
     long res;
     Py_ssize_t i;
     int sign;
@@ -527,12 +527,11 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
             i = -(i);
         }
         while (--i >= 0) {
-            prev = x;
-            x = (x << PyLong_SHIFT) | v->ob_digit[i];
-            if ((x >> PyLong_SHIFT) != prev) {
+            if (x > (unsigned long)-1 >> PyLong_SHIFT) {
                 *overflow = sign;
                 goto exit;
             }
+            x = (x << PyLong_SHIFT) | v->ob_digit[i];
         }
         /* Haven't lost any bits, but casting to long requires extra
          * care (see comment above).
@@ -596,7 +595,7 @@ _PyLong_AsInt(PyObject *obj)
 Py_ssize_t
 PyLong_AsSsize_t(PyObject *vv) {
     PyLongObject *v;
-    size_t x, prev;
+    size_t x;
     Py_ssize_t i;
     int sign;
 
@@ -623,10 +622,10 @@ PyLong_AsSsize_t(PyObject *vv) {
         i = -(i);
     }
     while (--i >= 0) {
-        prev = x;
-        x = (x << PyLong_SHIFT) | v->ob_digit[i];
-        if ((x >> PyLong_SHIFT) != prev)
+        if (x > (size_t)-1 >> PyLong_SHIFT) {
             goto overflow;
+        }
+        x = (x << PyLong_SHIFT) | v->ob_digit[i];
     }
     /* Haven't lost any bits, but casting to a signed type requires
      * extra care (see comment above).
@@ -652,7 +651,7 @@ unsigned long
 PyLong_AsUnsignedLong(PyObject *vv)
 {
     PyLongObject *v;
-    unsigned long x, prev;
+    unsigned long x;
     Py_ssize_t i;
 
     if (vv == NULL) {
@@ -677,14 +676,13 @@ PyLong_AsUnsignedLong(PyObject *vv)
     case 1: return v->ob_digit[0];
     }
     while (--i >= 0) {
-        prev = x;
-        x = (x << PyLong_SHIFT) | v->ob_digit[i];
-        if ((x >> PyLong_SHIFT) != prev) {
+        if (x > (unsigned long)-1 >> PyLong_SHIFT) {
             PyErr_SetString(PyExc_OverflowError,
                             "Python int too large to convert "
                             "to C unsigned long");
             return (unsigned long) -1;
         }
+        x = (x << PyLong_SHIFT) | v->ob_digit[i];
     }
     return x;
 }
@@ -696,7 +694,7 @@ size_t
 PyLong_AsSize_t(PyObject *vv)
 {
     PyLongObject *v;
-    size_t x, prev;
+    size_t x;
     Py_ssize_t i;
 
     if (vv == NULL) {
@@ -721,13 +719,12 @@ PyLong_AsSize_t(PyObject *vv)
     case 1: return v->ob_digit[0];
     }
     while (--i >= 0) {
-        prev = x;
-        x = (x << PyLong_SHIFT) | v->ob_digit[i];
-        if ((x >> PyLong_SHIFT) != prev) {
+        if (x > (size_t)-1 >> PyLong_SHIFT) {
             PyErr_SetString(PyExc_OverflowError,
                 "Python int too large to convert to C size_t");
             return (size_t) -1;
         }
+        x = (x << PyLong_SHIFT) | v->ob_digit[i];
     }
     return x;
 }

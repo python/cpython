@@ -1,0 +1,3 @@
+Slightly improve performance of :c:func:`PyLong_AsSsize_t`,
+:c:func:`PyLong_AsSize_t`, :c:func:`PyLong_AsLong` and
+:c:func:`PyLong_AsUnsignedLong` with large longs. Patch by Sergey Fedoseev.
