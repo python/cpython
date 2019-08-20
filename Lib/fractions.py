@@ -9,6 +9,7 @@ import numbers
 import operator
 import re
 import sys
+from math import _as_integer_ratio
 
 __all__ = ['Fraction', 'gcd']
 
@@ -143,7 +144,7 @@ class Fraction(numbers.Rational):
                     numerator = -numerator
             else:
                 try:
-                    self._numerator, self._denominator = math._as_integer_ratio(numerator)
+                    self._numerator, self._denominator = _as_integer_ratio(numerator)
                     return self
                 except TypeError:
                     raise TypeError("argument should be a string or a number, "
