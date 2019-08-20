@@ -1,0 +1,2 @@
+When using minidom module to generate XML documents the ability to add Standalone Document Declaration is added.
+All the changes are made to generate a document in compliance with Extensible Markup Language (XML) 1.0 (Fifth Edition) W3C Recommendation (available here: https://www.w3.org/TR/xml/#sec-prolog-dtd).
