@@ -926,27 +926,26 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
             return stderr
 
         # tracemalloc disabled
+        filename = os.path.abspath(support.TESTFN)
         stderr = run('-Wd', support.TESTFN)
-        expected = textwrap.dedent('''
-            {fname}:5: ResourceWarning: unclosed file <...>
+        expected = textwrap.dedent(f'''
+            {filename}:5: ResourceWarning: unclosed file <...>
               f = None
             ResourceWarning: Enable tracemalloc to get the object allocation traceback
-        ''')
-        expected = expected.format(fname=support.TESTFN).strip()
+        ''').strip()
         self.assertEqual(stderr, expected)
 
         # tracemalloc enabled
         stderr = run('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
-        expected = textwrap.dedent('''
-            {fname}:5: ResourceWarning: unclosed file <...>
+        expected = textwrap.dedent(f'''
+            {filename}:5: ResourceWarning: unclosed file <...>
               f = None
             Object allocated at (most recent call last):
-              File "{fname}", lineno 7
+              File "{filename}", lineno 7
                 func()
-              File "{fname}", lineno 3
+              File "{filename}", lineno 3
                 f = open(__file__)
-        ''')
-        expected = expected.format(fname=support.TESTFN).strip()
+        ''').strip()
         self.assertEqual(stderr, expected)
 
 

@@ -3,6 +3,7 @@ approx_equal function.
 
 """
 
+import bisect
 import collections
 import collections.abc
 import copy
@@ -13,6 +14,7 @@ import pickle
 import random
 import sys
 import unittest
+from test import support
 
 from decimal import Decimal
 from fractions import Fraction
@@ -2038,29 +2040,316 @@ class TestStdev(VarianceStdevMixin, NumericTestCase):
         expected = math.sqrt(statistics.variance(data))
         self.assertEqual(self.func(data), expected)
 
+
+class TestGeometricMean(unittest.TestCase):
+
+    def test_basics(self):
+        geometric_mean = statistics.geometric_mean
+        self.assertAlmostEqual(geometric_mean([54, 24, 36]), 36.0)
+        self.assertAlmostEqual(geometric_mean([4.0, 9.0]), 6.0)
+        self.assertAlmostEqual(geometric_mean([17.625]), 17.625)
+
+        random.seed(86753095551212)
+        for rng in [
+                range(1, 100),
+                range(1, 1_000),
+                range(1, 10_000),
+                range(500, 10_000, 3),
+                range(10_000, 500, -3),
+                [12, 17, 13, 5, 120, 7],
+                [random.expovariate(50.0) for i in range(1_000)],
+                [random.lognormvariate(20.0, 3.0) for i in range(2_000)],
+                [random.triangular(2000, 3000, 2200) for i in range(3_000)],
+            ]:
+            gm_decimal = math.prod(map(Decimal, rng)) ** (Decimal(1) / len(rng))
+            gm_float = geometric_mean(rng)
+            self.assertTrue(math.isclose(gm_float, float(gm_decimal)))
+
+    def test_various_input_types(self):
+        geometric_mean = statistics.geometric_mean
+        D = Decimal
+        F = Fraction
+        # https://www.wolframalpha.com/input/?i=geometric+mean+3.5,+4.0,+5.25
+        expected_mean = 4.18886
+        for data, kind in [
+            ([3.5, 4.0, 5.25], 'floats'),
+            ([D('3.5'), D('4.0'), D('5.25')], 'decimals'),
+            ([F(7, 2), F(4, 1), F(21, 4)], 'fractions'),
+            ([3.5, 4, F(21, 4)], 'mixed types'),
+            ((3.5, 4.0, 5.25), 'tuple'),
+            (iter([3.5, 4.0, 5.25]), 'iterator'),
+                ]:
+            actual_mean = geometric_mean(data)
+            self.assertIs(type(actual_mean), float, kind)
+            self.assertAlmostEqual(actual_mean, expected_mean, places=5)
+
+    def test_big_and_small(self):
+        geometric_mean = statistics.geometric_mean
+
+        # Avoid overflow to infinity
+        large = 2.0 ** 1000
+        big_gm = geometric_mean([54.0 * large, 24.0 * large, 36.0 * large])
+        self.assertTrue(math.isclose(big_gm, 36.0 * large))
+        self.assertFalse(math.isinf(big_gm))
+
+        # Avoid underflow to zero
+        small = 2.0 ** -1000
+        small_gm = geometric_mean([54.0 * small, 24.0 * small, 36.0 * small])
+        self.assertTrue(math.isclose(small_gm, 36.0 * small))
+        self.assertNotEqual(small_gm, 0.0)
+
+    def test_error_cases(self):
+        geometric_mean = statistics.geometric_mean
+        StatisticsError = statistics.StatisticsError
+        with self.assertRaises(StatisticsError):
+            geometric_mean([])                      # empty input
+        with self.assertRaises(StatisticsError):
+            geometric_mean([3.5, 0.0, 5.25])        # zero input
+        with self.assertRaises(StatisticsError):
+            geometric_mean([3.5, -4.0, 5.25])       # negative input
+        with self.assertRaises(StatisticsError):
+            geometric_mean(iter([]))                # empty iterator
+        with self.assertRaises(TypeError):
+            geometric_mean(None)                    # non-iterable input
+        with self.assertRaises(TypeError):
+            geometric_mean([10, None, 20])          # non-numeric input
+        with self.assertRaises(TypeError):
+            geometric_mean()                        # missing data argument
+        with self.assertRaises(TypeError):
+            geometric_mean([10, 20, 60], 70)        # too many arguments
+
+    def test_special_values(self):
+        # Rules for special values are inherited from math.fsum()
+        geometric_mean = statistics.geometric_mean
+        NaN = float('Nan')
+        Inf = float('Inf')
+        self.assertTrue(math.isnan(geometric_mean([10, NaN])), 'nan')
+        self.assertTrue(math.isnan(geometric_mean([NaN, Inf])), 'nan and infinity')
+        self.assertTrue(math.isinf(geometric_mean([10, Inf])), 'infinity')
+        with self.assertRaises(ValueError):
+            geometric_mean([Inf, -Inf])
+
+
+class TestQuantiles(unittest.TestCase):
+
+    def test_specific_cases(self):
+        # Match results computed by hand and cross-checked
+        # against the PERCENTILE.EXC function in MS Excel.
+        quantiles = statistics.quantiles
+        data = [120, 200, 250, 320, 350]
+        random.shuffle(data)
+        for n, expected in [
+            (1, []),
+            (2, [250.0]),
+            (3, [200.0, 320.0]),
+            (4, [160.0, 250.0, 335.0]),
+            (5, [136.0, 220.0, 292.0, 344.0]),
+            (6, [120.0, 200.0, 250.0, 320.0, 350.0]),
+            (8, [100.0, 160.0, 212.5, 250.0, 302.5, 335.0, 357.5]),
+            (10, [88.0, 136.0, 184.0, 220.0, 250.0, 292.0, 326.0, 344.0, 362.0]),
+            (12, [80.0, 120.0, 160.0, 200.0, 225.0, 250.0, 285.0, 320.0, 335.0,
+                  350.0, 365.0]),
+            (15, [72.0, 104.0, 136.0, 168.0, 200.0, 220.0, 240.0, 264.0, 292.0,
+                  320.0, 332.0, 344.0, 356.0, 368.0]),
+                ]:
+            self.assertEqual(expected, quantiles(data, n=n))
+            self.assertEqual(len(quantiles(data, n=n)), n - 1)
+            # Preserve datatype when possible
+            for datatype in (float, Decimal, Fraction):
+                result = quantiles(map(datatype, data), n=n)
+                self.assertTrue(all(type(x) == datatype) for x in result)
+                self.assertEqual(result, list(map(datatype, expected)))
+            # Quantiles should be idempotent
+            if len(expected) >= 2:
+                self.assertEqual(quantiles(expected, n=n), expected)
+            # Cross-check against method='inclusive' which should give
+            # the same result after adding in minimum and maximum values
+            # extrapolated from the two lowest and two highest points.
+            sdata = sorted(data)
+            lo = 2 * sdata[0] - sdata[1]
+            hi = 2 * sdata[-1] - sdata[-2]
+            padded_data = data + [lo, hi]
+            self.assertEqual(
+                quantiles(data, n=n),
+                quantiles(padded_data, n=n, method='inclusive'),
+                (n, data),
+            )
+            # Invariant under tranlation and scaling
+            def f(x):
+                return 3.5 * x - 1234.675
+            exp = list(map(f, expected))
+            act = quantiles(map(f, data), n=n)
+            self.assertTrue(all(math.isclose(e, a) for e, a in zip(exp, act)))
+        # Quartiles of a standard normal distribution
+        for n, expected in [
+            (1, []),
+            (2, [0.0]),
+            (3, [-0.4307, 0.4307]),
+            (4 ,[-0.6745, 0.0, 0.6745]),
+                ]:
+            actual = quantiles(statistics.NormalDist(), n=n)
+            self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
+                            for e, a in zip(expected, actual)))
+        # Q2 agrees with median()
+        for k in range(2, 60):
+            data = random.choices(range(100), k=k)
+            q1, q2, q3 = quantiles(data)
+            self.assertEqual(q2, statistics.median(data))
+
+    def test_specific_cases_inclusive(self):
+        # Match results computed by hand and cross-checked
+        # against the PERCENTILE.INC function in MS Excel
+        # and against the quantile() function in SciPy.
+        quantiles = statistics.quantiles
+        data = [100, 200, 400, 800]
+        random.shuffle(data)
+        for n, expected in [
+            (1, []),
+            (2, [300.0]),
+            (3, [200.0, 400.0]),
+            (4, [175.0, 300.0, 500.0]),
+            (5, [160.0, 240.0, 360.0, 560.0]),
+            (6, [150.0, 200.0, 300.0, 400.0, 600.0]),
+            (8, [137.5, 175, 225.0, 300.0, 375.0, 500.0,650.0]),
+            (10, [130.0, 160.0, 190.0, 240.0, 300.0, 360.0, 440.0, 560.0, 680.0]),
+            (12, [125.0, 150.0, 175.0, 200.0, 250.0, 300.0, 350.0, 400.0,
+                  500.0, 600.0, 700.0]),
+            (15, [120.0, 140.0, 160.0, 180.0, 200.0, 240.0, 280.0, 320.0, 360.0,
+                  400.0, 480.0, 560.0, 640.0, 720.0]),
+                ]:
+            self.assertEqual(expected, quantiles(data, n=n, method="inclusive"))
+            self.assertEqual(len(quantiles(data, n=n, method="inclusive")), n - 1)
+            # Preserve datatype when possible
+            for datatype in (float, Decimal, Fraction):
+                result = quantiles(map(datatype, data), n=n, method="inclusive")
+                self.assertTrue(all(type(x) == datatype) for x in result)
+                self.assertEqual(result, list(map(datatype, expected)))
+            # Invariant under tranlation and scaling
+            def f(x):
+                return 3.5 * x - 1234.675
+            exp = list(map(f, expected))
+            act = quantiles(map(f, data), n=n, method="inclusive")
+            self.assertTrue(all(math.isclose(e, a) for e, a in zip(exp, act)))
+        # Quartiles of a standard normal distribution
+        for n, expected in [
+            (1, []),
+            (2, [0.0]),
+            (3, [-0.4307, 0.4307]),
+            (4 ,[-0.6745, 0.0, 0.6745]),
+                ]:
+            actual = quantiles(statistics.NormalDist(), n=n, method="inclusive")
+            self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
+                            for e, a in zip(expected, actual)))
+        # Natural deciles
+        self.assertEqual(quantiles([0, 100], n=10, method='inclusive'),
+                         [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0])
+        self.assertEqual(quantiles(range(0, 101), n=10, method='inclusive'),
+                         [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0])
+        # Whenever n is smaller than the number of data points, running
+        # method='inclusive' should give the same result as method='exclusive'
+        # after the two included extreme points are removed.
+        data = [random.randrange(10_000) for i in range(501)]
+        actual = quantiles(data, n=32, method='inclusive')
+        data.remove(min(data))
+        data.remove(max(data))
+        expected = quantiles(data, n=32)
+        self.assertEqual(expected, actual)
+        # Q2 agrees with median()
+        for k in range(2, 60):
+            data = random.choices(range(100), k=k)
+            q1, q2, q3 = quantiles(data, method='inclusive')
+            self.assertEqual(q2, statistics.median(data))
+
+    def test_equal_inputs(self):
+        quantiles = statistics.quantiles
+        for n in range(2, 10):
+            data = [10.0] * n
+            self.assertEqual(quantiles(data), [10.0, 10.0, 10.0])
+            self.assertEqual(quantiles(data, method='inclusive'),
+                            [10.0, 10.0, 10.0])
+
+    def test_equal_sized_groups(self):
+        quantiles = statistics.quantiles
+        total = 10_000
+        data = [random.expovariate(0.2) for i in range(total)]
+        while len(set(data)) != total:
+            data.append(random.expovariate(0.2))
+        data.sort()
+
+        # Cases where the group size exactly divides the total
+        for n in (1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000):
+            group_size = total // n
+            self.assertEqual(
+                [bisect.bisect(data, q) for q in quantiles(data, n=n)],
+                list(range(group_size, total, group_size)))
+
+        # When the group sizes can't be exactly equal, they should
+        # differ by no more than one
+        for n in (13, 19, 59, 109, 211, 571, 1019, 1907, 5261, 9769):
+            group_sizes = {total // n, total // n + 1}
+            pos = [bisect.bisect(data, q) for q in quantiles(data, n=n)]
+            sizes = {q - p for p, q in zip(pos, pos[1:])}
+            self.assertTrue(sizes <= group_sizes)
+
+    def test_error_cases(self):
+        quantiles = statistics.quantiles
+        StatisticsError = statistics.StatisticsError
+        with self.assertRaises(TypeError):
+            quantiles()                         # Missing arguments
+        with self.assertRaises(TypeError):
+            quantiles([10, 20, 30], 13, n=4)    # Too many arguments
+        with self.assertRaises(TypeError):
+            quantiles([10, 20, 30], 4)          # n is a positional argument
+        with self.assertRaises(StatisticsError):
+            quantiles([10, 20, 30], n=0)        # n is zero
+        with self.assertRaises(StatisticsError):
+            quantiles([10, 20, 30], n=-1)       # n is negative
+        with self.assertRaises(TypeError):
+            quantiles([10, 20, 30], n=1.5)      # n is not an integer
+        with self.assertRaises(ValueError):
+            quantiles([10, 20, 30], method='X') # method is unknown
+        with self.assertRaises(StatisticsError):
+            quantiles([10], n=4)                # not enough data points
+        with self.assertRaises(TypeError):
+            quantiles([10, None, 30], n=4)      # data is non-numeric
+
+
 class TestNormalDist(unittest.TestCase):
+
+    # General note on precision: The pdf(), cdf(), and overlap() methods
+    # depend on functions in the math libraries that do not make
+    # explicit accuracy guarantees.  Accordingly, some of the accuracy
+    # tests below may fail if the underlying math functions are
+    # inaccurate.  There isn't much we can do about this short of
+    # implementing our own implementations from scratch.
 
     def test_slots(self):
         nd = statistics.NormalDist(300, 23)
         with self.assertRaises(TypeError):
             vars(nd)
-        self.assertEqual(nd.__slots__, ('mu', 'sigma'))
+        self.assertEqual(tuple(nd.__slots__), ('_mu', '_sigma'))
 
     def test_instantiation_and_attributes(self):
         nd = statistics.NormalDist(500, 17)
-        self.assertEqual(nd.mu, 500)
-        self.assertEqual(nd.sigma, 17)
+        self.assertEqual(nd.mean, 500)
+        self.assertEqual(nd.stdev, 17)
         self.assertEqual(nd.variance, 17**2)
 
         # default arguments
         nd = statistics.NormalDist()
-        self.assertEqual(nd.mu, 0)
-        self.assertEqual(nd.sigma, 1)
+        self.assertEqual(nd.mean, 0)
+        self.assertEqual(nd.stdev, 1)
         self.assertEqual(nd.variance, 1**2)
 
         # error case: negative sigma
         with self.assertRaises(statistics.StatisticsError):
             statistics.NormalDist(500, -10)
+
+        # verify that subclass type is honored
+        class NewNormalDist(statistics.NormalDist):
+            pass
+        nnd = NewNormalDist(200, 5)
+        self.assertEqual(type(nnd), NewNormalDist)
 
     def test_alternative_constructor(self):
         NormalDist = statistics.NormalDist
@@ -2076,6 +2365,12 @@ class TestNormalDist(unittest.TestCase):
             NormalDist.from_samples([])                      # empty input
         with self.assertRaises(statistics.StatisticsError):
             NormalDist.from_samples([10])                    # only one input
+
+        # verify that subclass type is honored
+        class NewNormalDist(NormalDist):
+            pass
+        nnd = NewNormalDist.from_samples(data)
+        self.assertEqual(type(nnd), NewNormalDist)
 
     def test_sample_generation(self):
         NormalDist = statistics.NormalDist
@@ -2098,12 +2393,6 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(data1, data3)
         self.assertEqual(data2, data4)
         self.assertNotEqual(data1, data2)
-
-        # verify that subclass type is honored
-        class NewNormalDist(NormalDist):
-            pass
-        nnd = NewNormalDist(200, 5)
-        self.assertEqual(type(nnd), NewNormalDist)
 
     def test_pdf(self):
         NormalDist = statistics.NormalDist
@@ -2151,8 +2440,8 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(set(map(type, cdfs)), {float})
         # Verify montonic
         self.assertEqual(cdfs, sorted(cdfs))
-        # Verify center
-        self.assertAlmostEqual(X.cdf(100), 0.50)
+        # Verify center (should be exact)
+        self.assertEqual(X.cdf(100), 0.50)
         # Check against a table of known values
         # https://en.wikipedia.org/wiki/Standard_normal_table#Cumulative
         Z = NormalDist()
@@ -2174,6 +2463,7 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(X.cdf(float('Inf')), 1.0)
         self.assertTrue(math.isnan(X.cdf(float('NaN'))))
 
+    @support.skip_if_pgo_task
     def test_inv_cdf(self):
         NormalDist = statistics.NormalDist
 
@@ -2216,10 +2506,11 @@ class TestNormalDist(unittest.TestCase):
             p = 1.0 - p
             self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
 
-        # Now apply cdf() first.  At six sigmas, the round-trip
-        # loses a lot of precision, so only check to 6 places.
-        for x in range(10, 190):
-            self.assertAlmostEqual(iq.inv_cdf(iq.cdf(x)), x, places=6)
+        # Now apply cdf() first.  Near the tails, the round-trip loses
+        # precision and is ill-conditioned (small changes in the inputs
+        # give large changes in the output), so only check to 5 places.
+        for x in range(200):
+            self.assertAlmostEqual(iq.inv_cdf(iq.cdf(x)), x, places=5)
 
         # Error cases:
         with self.assertRaises(statistics.StatisticsError):
@@ -2231,11 +2522,11 @@ class TestNormalDist(unittest.TestCase):
         with self.assertRaises(statistics.StatisticsError):
             iq.inv_cdf(1.1)                         # p over one
         with self.assertRaises(statistics.StatisticsError):
-            iq.sigma = 0.0                          # sigma is zero
+            iq = NormalDist(100, 0)                 # sigma is zero
             iq.inv_cdf(0.5)
-        with self.assertRaises(statistics.StatisticsError):
-            iq.sigma = -0.1                         # sigma under zero
-            iq.inv_cdf(0.5)
+
+        # Special values
+        self.assertTrue(math.isnan(Z.inv_cdf(float('NaN'))))
 
     def test_overlap(self):
         NormalDist = statistics.NormalDist
@@ -2252,8 +2543,8 @@ class TestNormalDist(unittest.TestCase):
         def overlap_numeric(X, Y, *, steps=8_192, z=5):
             'Numerical integration cross-check for overlap() '
             fsum = math.fsum
-            center = (X.mu + Y.mu) / 2.0
-            width = z * max(X.sigma, Y.sigma)
+            center = (X.mean + Y.mean) / 2.0
+            width = z * max(X.stdev, Y.stdev)
             start = center - width
             dx = 2.0 * width / steps
             x_arr = [start + i*dx for i in range(steps)]
@@ -2275,6 +2566,7 @@ class TestNormalDist(unittest.TestCase):
                 (NormalDist(-100, 15), NormalDist(110, 15)),
                 (NormalDist(-100, 15), NormalDist(-110, 15)),
                 # Misc cases with unequal standard deviations
+                (NormalDist(100, 12), NormalDist(100, 15)),
                 (NormalDist(100, 12), NormalDist(110, 15)),
                 (NormalDist(100, 12), NormalDist(150, 15)),
                 (NormalDist(100, 12), NormalDist(150, 35)),
@@ -2305,18 +2597,6 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(X.stdev, 15)
         self.assertEqual(X.variance, 225)
 
-    def test_unary_operations(self):
-        NormalDist = statistics.NormalDist
-        X = NormalDist(100, 12)
-        Y = +X
-        self.assertIsNot(X, Y)
-        self.assertEqual(X.mu, Y.mu)
-        self.assertEqual(X.sigma, Y.sigma)
-        Y = -X
-        self.assertIsNot(X, Y)
-        self.assertEqual(X.mu, -Y.mu)
-        self.assertEqual(X.sigma, Y.sigma)
-
     def test_same_type_addition_and_subtraction(self):
         NormalDist = statistics.NormalDist
         X = NormalDist(100, 12)
@@ -2340,13 +2620,27 @@ class TestNormalDist(unittest.TestCase):
         with self.assertRaises(TypeError):                  # __rtruediv__
             y / X
 
+    def test_unary_operations(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 12)
+        Y = +X
+        self.assertIsNot(X, Y)
+        self.assertEqual(X.mean, Y.mean)
+        self.assertEqual(X.stdev, Y.stdev)
+        Y = -X
+        self.assertIsNot(X, Y)
+        self.assertEqual(X.mean, -Y.mean)
+        self.assertEqual(X.stdev, Y.stdev)
+
     def test_equality(self):
         NormalDist = statistics.NormalDist
         nd1 = NormalDist()
         nd2 = NormalDist(2, 4)
         nd3 = NormalDist()
+        nd4 = NormalDist(2, 4)
         self.assertNotEqual(nd1, nd2)
         self.assertEqual(nd1, nd3)
+        self.assertEqual(nd2, nd4)
 
         # Test NotImplemented when types are different
         class A:
@@ -2386,6 +2680,11 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(nd, nd2)
         nd3 = pickle.loads(pickle.dumps(nd))
         self.assertEqual(nd, nd3)
+
+    def test_hashability(self):
+        ND = statistics.NormalDist
+        s = {ND(100, 15), ND(100.0, 15.0), ND(100, 10), ND(95, 15), ND(100, 15)}
+        self.assertEqual(len(s), 3)
 
     def test_repr(self):
         nd = statistics.NormalDist(37.5, 5.625)

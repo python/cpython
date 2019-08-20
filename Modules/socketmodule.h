@@ -14,6 +14,47 @@
 
 #else /* MS_WINDOWS */
 # include <winsock2.h>
+
+/*
+ * If Windows has bluetooth support, include bluetooth constants.
+ */
+#ifdef AF_BTH
+# include <ws2bth.h>
+# include <pshpack1.h>
+
+/*
+ * The current implementation assumes the bdaddr in the sockaddr structs
+ * will be a bdaddr_t. We treat this as an opaque type: on *nix systems, it
+ * will be a struct with a single member (an array of six bytes). On windows,
+ * we typedef this to ULONGLONG to match the Windows definition.
+ */
+typedef ULONGLONG bdaddr_t;
+
+/*
+ * Redefine SOCKADDR_BTH to provide names compatible with _BT_RC_MEMB() macros.
+ */
+struct SOCKADDR_BTH_REDEF {
+    union {
+        USHORT    addressFamily;
+        USHORT    family;
+    };
+
+    union {
+        ULONGLONG btAddr;
+        bdaddr_t  bdaddr;
+    };
+
+    GUID      serviceClassId;
+
+    union {
+        ULONG     port;
+        ULONG     channel;
+    };
+
+};
+# include <poppack.h>
+#endif
+
 /* Windows 'supports' CMSG_LEN, but does not follow the POSIX standard
  * interface at all, so there is no point including the code that
  * attempts to use it.
@@ -199,6 +240,8 @@ typedef union sock_addr {
     struct sockaddr_rc bt_rc;
     struct sockaddr_sco bt_sco;
     struct sockaddr_hci bt_hci;
+#elif defined(MS_WINDOWS)
+    struct SOCKADDR_BTH_REDEF bt_rc;
 #endif
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll ll;

@@ -31,7 +31,7 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
    `TKDocs <http://www.tkdocs.com/>`_
       Extensive tutorial plus friendlier widget pages for some of the widgets.
 
-   `Tkinter reference: a GUI for Python <https://infohost.nmt.edu/tcc/help/pubs/tkinter/web/index.html>`_
+   `Tkinter 8.5 reference: a GUI for Python <https://web.archive.org/web/20190524140835/https://infohost.nmt.edu/tcc/help/pubs/tkinter/web/index.html>`_
       On-line reference material.
 
    `Tkinter docs from effbot <http://effbot.org/tkinterbook/>`_
@@ -41,7 +41,7 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
       Book by Mark Lutz, has excellent coverage of Tkinter.
 
    `Modern Tkinter for Busy Python Developers <https://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
-      Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
+      Book by Mark Roseman about building attractive and modern graphical user interfaces with Python and Tkinter.
 
    `Python and Tkinter Programming <https://www.manning.com/books/python-and-tkinter-programming>`_
       Book by John Grayson (ISBN 1-884777-81-3).
@@ -55,7 +55,7 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
    `Tcl/Tk recent man pages <https://www.tcl.tk/doc/>`_
       Recent Tcl/Tk manuals on www.tcl.tk.
 
-   `ActiveState Tcl Home Page <http://tcl.activestate.com/>`_
+   `ActiveState Tcl Home Page <https://tcl.tk>`_
       The Tk/Tcl development is largely taking place at ActiveState.
 
    `Tcl and the Tk Toolkit <https://www.amazon.com/exec/obidos/ASIN/020163337X>`_

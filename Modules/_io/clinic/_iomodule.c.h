@@ -281,4 +281,46 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=19fc9b69a5166f63 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_io_open_code__doc__,
+"open_code($module, /, path)\n"
+"--\n"
+"\n"
+"Opens the provided file with the intent to import the contents.\n"
+"\n"
+"This may perform extra validation beyond open(), but is otherwise interchangeable\n"
+"with calling open(path, \'rb\').");
+
+#define _IO_OPEN_CODE_METHODDEF    \
+    {"open_code", (PyCFunction)(void(*)(void))_io_open_code, METH_FASTCALL|METH_KEYWORDS, _io_open_code__doc__},
+
+static PyObject *
+_io_open_code_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+_io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "open_code", 0};
+    PyObject *argsbuf[1];
+    PyObject *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("open_code", 1, "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    path = args[0];
+    return_value = _io_open_code_impl(module, path);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=d479285078750d68 input=a9049054013a1b77]*/

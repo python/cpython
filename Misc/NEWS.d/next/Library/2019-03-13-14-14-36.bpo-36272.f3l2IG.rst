@@ -1,2 +1,0 @@
-:mod:`logging` does not silently ignore RecursionError anymore. Patch
-contributed by Rémi Lapeyre.

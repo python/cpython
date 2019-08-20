@@ -1,3 +1,0 @@
-Use :func:`multiprocessing.connection.wait` instead of polling each 0.2
-seconds for worker updates in :class:`multiprocessing.Pool`. Patch by Pablo
-Galindo.

@@ -681,7 +681,13 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     /* For # codes */
 #define FETCH_SIZE      int *q=NULL;Py_ssize_t *q2=NULL;\
     if (flags & FLAG_SIZE_T) q2=va_arg(*p_va, Py_ssize_t*); \
-    else q=va_arg(*p_va, int*);
+    else { \
+        if (PyErr_WarnEx(PyExc_DeprecationWarning, \
+                    "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) { \
+            return NULL; \
+        } \
+        q=va_arg(*p_va, int*); \
+    }
 #define STORE_SIZE(s)   \
     if (flags & FLAG_SIZE_T) \
         *q2=s; \
@@ -2037,11 +2043,7 @@ find_keyword(PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
         if (kwname == key) {
             return kwstack[i];
         }
-        if (!PyUnicode_Check(kwname)) {
-            /* ignore non-string keyword keys:
-               an error will be raised below */
-            continue;
-        }
+        assert(PyUnicode_Check(kwname));
         if (_PyUnicode_EQ(kwname, key)) {
             return kwstack[i];
         }
@@ -2269,16 +2271,11 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
                 j++;
             }
 
-            if (!PyUnicode_Check(keyword)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "keywords must be strings");
-                return cleanreturn(0, &freelist);
-            }
             match = PySequence_Contains(kwtuple, keyword);
             if (match <= 0) {
                 if (!match) {
                     PyErr_Format(PyExc_TypeError,
-                                 "'%U' is an invalid keyword "
+                                 "'%S' is an invalid keyword "
                                  "argument for %.200s%s",
                                  keyword,
                                  (parser->fname == NULL) ? "this function" : parser->fname,
@@ -2499,16 +2496,11 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
                 j++;
             }
 
-            if (!PyUnicode_Check(keyword)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "keywords must be strings");
-                return NULL;
-            }
             match = PySequence_Contains(kwtuple, keyword);
             if (match <= 0) {
                 if (!match) {
                     PyErr_Format(PyExc_TypeError,
-                                 "'%U' is an invalid keyword "
+                                 "'%S' is an invalid keyword "
                                  "argument for %.200s%s",
                                  keyword,
                                  (parser->fname == NULL) ? "this function" : parser->fname,
@@ -2591,8 +2583,13 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                 if (p_va != NULL) {
                     if (flags & FLAG_SIZE_T)
                         (void) va_arg(*p_va, Py_ssize_t *);
-                    else
+                    else {
+                        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                                    "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) {
+                            return NULL;
+                        }
                         (void) va_arg(*p_va, int *);
+                    }
                 }
                 format++;
             } else if ((c == 's' || c == 'z' || c == 'y' || c == 'w')
