@@ -825,9 +825,9 @@ def requires_compiler_optimizations(test):
 
     Skip test if sys.flags.noopt is true.
     """
-    ok = not sys.flags.noopt
-    msg = 'need compiler optimizations'
-    return test if ok else unittest.skip(msg)(test)
+    if sys.flags.noopt:
+        test = unittest.skip('need compiler optimizations')(test)
+    return test
 
 
 is_jython = sys.platform.startswith('java')
