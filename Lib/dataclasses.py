@@ -1015,13 +1015,14 @@ def fields(class_or_instance):
 
 def _is_dataclass_instance(obj):
     """Returns True if obj is an instance of a dataclass."""
-    return not isinstance(obj, type) and hasattr(obj, _FIELDS)
+    return hasattr(type(obj), _FIELDS)
 
 
 def is_dataclass(obj):
     """Returns True if obj is a dataclass or an instance of a
     dataclass."""
-    return hasattr(obj, _FIELDS)
+    cls = obj if isinstance(obj, type) else type(obj)
+    return hasattr(cls, _FIELDS)
 
 
 def asdict(obj, *, dict_factory=dict):

@@ -1,0 +1,3 @@
+Fix dataclasses.is_dataclass when given an instance that never raises
+AttributeError in __getattr__.  That is, an object that returns something
+for __dataclass_fields__ even if it's not a dataclass.
