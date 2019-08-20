@@ -4335,7 +4335,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 
         /* if exponent < 0 and abs(modulus) == 1:
                raise ValueError */
-        if ((Py_SIZE(b) < 0) && (c->ob_digit[0] == 1)) {
+        if ((Py_SIZE(b) < 0) && (Py_SIZE(c) == 1) && (c->ob_digit[0] == 1)) {
             PyErr_SetString(PyExc_ValueError,
                             "Can't use negative exponent with modulus +-1.");
             goto Error;
