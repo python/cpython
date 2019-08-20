@@ -1,0 +1,3 @@
+Implement :c:func:`PyBuffer_SizeFromFormat()` function (previously
+documented but not implemented): call :func:`struct.calcsize`.
+Patch by Joannah Nanjekye.

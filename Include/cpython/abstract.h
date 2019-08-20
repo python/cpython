@@ -243,7 +243,7 @@ PyAPI_FUNC(void *) PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices);
 
 /* Return the implied itemsize of the data-format area from a
    struct-style description. */
-PyAPI_FUNC(int) PyBuffer_SizeFromFormat(const char *);
+PyAPI_FUNC(Py_ssize_t) PyBuffer_SizeFromFormat(const char *format);
 
 /* Implementation in memoryobject.c */
 PyAPI_FUNC(int) PyBuffer_ToContiguous(void *buf, Py_buffer *view,
