@@ -43,8 +43,8 @@ class Node(xml.dom.Node):
     def __bool__(self):
         return True
 
-    def toxml(self, encoding=None):
-        return self.toprettyxml("", "", encoding)
+    def toxml(self, encoding=None, standalone=None):
+        return self.toprettyxml("", "", encoding, standalone)
 
     def toprettyxml(self, indent="\t", newl="\n", encoding=None,
                     standalone=None):
@@ -1796,7 +1796,7 @@ class Document(Node, DocumentLS):
             standalone = ''
 
         writer.write(
-            '<?xml version="1.0" {encoding} {standalone}?>{newline}'.format(
+            '<?xml version="1.0" {encoding}{standalone}?>{newline}'.format(
                 encoding="encoding='{}'".format(encoding) if encoding else '',
                 standalone=standalone,
                 newline=newl)
