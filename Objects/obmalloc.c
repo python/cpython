@@ -1580,35 +1580,35 @@ allocate_from_new_pool(uint size)
 
 /* pymalloc allocator
 
-   Return 1 if pymalloc allocated memory and wrote the pointer into *ptr_p.
+   Return a pointer to newly allocated memory if pymalloc allocated memory.
 
-   Return 0 if pymalloc failed to allocate the memory block: on bigger
+   Return NULL if pymalloc failed to allocate the memory block: on bigger
    requests, on error in the code below (as a last chance to serve the request)
    or when the max memory limit has been reached.
 */
-static inline int
-pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
+static inline void*
+pymalloc_alloc(void *ctx, size_t nbytes)
 {
 #ifdef WITH_VALGRIND
     if (UNLIKELY(running_on_valgrind == -1)) {
         running_on_valgrind = RUNNING_ON_VALGRIND;
     }
     if (UNLIKELY(running_on_valgrind)) {
-        return 0;
+        return NULL;
     }
 #endif
 
     if (UNLIKELY(nbytes == 0)) {
-        return 0;
+        return NULL;
     }
     if (UNLIKELY(nbytes > SMALL_REQUEST_THRESHOLD)) {
-        return 0;
+        return NULL;
     }
 
     uint size = (uint)(nbytes - 1) >> ALIGNMENT_SHIFT;
     poolp pool = usedpools[size + size];
     block *bp;
-    
+
     if (LIKELY(pool != pool->nextpool)) {
         /*
          * There is a used pool for this size class.
@@ -1616,6 +1616,7 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
          */
         ++pool->ref.count;
         bp = pool->freeblock;
+        assert(bp != NULL);
 
         if (UNLIKELY((pool->freeblock = *(block **)bp) == NULL)) {
             // Reached the end of the free list, try to extend it.
@@ -1627,22 +1628,17 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
          * available:  use a free pool.
          */
         bp = allocate_from_new_pool(size);
-        if (UNLIKELY(bp == NULL)) {
-            return 0;
-        }
     }
 
-    assert(bp != NULL);
-    *ptr_p = (void *)bp;
-    return 1;
+    return (void *)bp;
 }
 
 
 static void *
 _PyObject_Malloc(void *ctx, size_t nbytes)
 {
-    void* ptr;
-    if (LIKELY(pymalloc_alloc(ctx, &ptr, nbytes))) {
+    void* ptr = pymalloc_alloc(ctx, nbytes);
+    if (LIKELY(ptr != NULL)) {
         return ptr;
     }
 
@@ -1657,12 +1653,11 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
 static void *
 _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
 {
-    void* ptr;
-
     assert(elsize == 0 || nelem <= (size_t)PY_SSIZE_T_MAX / elsize);
     size_t nbytes = nelem * elsize;
 
-    if (LIKELY(pymalloc_alloc(ctx, &ptr, nbytes))) {
+    void* ptr = pymalloc_alloc(ctx, nbytes);
+    if (LIKELY(ptr != NULL)) {
         memset(ptr, 0, nbytes);
         return ptr;
     }
@@ -1711,8 +1706,8 @@ insert_to_freepool(poolp pool)
      * are no arenas in usable_arenas with that value.
      */
     struct arena_object* lastnf = nfp2lasta[nf];
-    assert((nf == 0 && lastnf == NULL) || 
-           (nf > 0 && 
+    assert((nf == 0 && lastnf == NULL) ||
+           (nf > 0 &&
             lastnf != NULL &&
             lastnf->nfreepools == nf &&
             (lastnf->nextarena == NULL ||
