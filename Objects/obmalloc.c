@@ -1377,13 +1377,13 @@ address_in_range(void *p, poolp pool)
    block allocations typically result in a couple of instructions).
    Unless the optimizer reorders everything, being too smart...
 
-   Return 1 if pymalloc allocated memory and wrote the pointer into *ptr_p.
+   Return a pointer to newly allocated memory if pymalloc allocated memory.
 
-   Return 0 if pymalloc failed to allocate the memory block: on bigger
+   Return NULL if pymalloc failed to allocate the memory block: on bigger
    requests, on error in the code below (as a last chance to serve the request)
    or when the max memory limit has been reached. */
-static int
-pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
+static void*
+pymalloc_alloc(void *ctx, size_t nbytes)
 {
     block *bp;
     poolp pool;
@@ -1395,15 +1395,15 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
         running_on_valgrind = RUNNING_ON_VALGRIND;
     }
     if (UNLIKELY(running_on_valgrind)) {
-        return 0;
+        return NULL;
     }
 #endif
 
     if (nbytes == 0) {
-        return 0;
+        return NULL;
     }
     if (nbytes > SMALL_REQUEST_THRESHOLD) {
-        return 0;
+        return NULL;
     }
 
     LOCK();
@@ -1564,20 +1564,19 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
 success:
     UNLOCK();
     assert(bp != NULL);
-    *ptr_p = (void *)bp;
-    return 1;
+    return (void *)bp;
 
 failed:
     UNLOCK();
-    return 0;
+    return NULL;
 }
 
 
 static void *
 _PyObject_Malloc(void *ctx, size_t nbytes)
 {
-    void* ptr;
-    if (pymalloc_alloc(ctx, &ptr, nbytes)) {
+    void* ptr = pymalloc_alloc(ctx, nbytes);
+    if (ptr != NULL) {
         _Py_AllocatedBlocks++;
         return ptr;
     }
@@ -1593,12 +1592,11 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
 static void *
 _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
 {
-    void* ptr;
-
     assert(elsize == 0 || nelem <= (size_t)PY_SSIZE_T_MAX / elsize);
     size_t nbytes = nelem * elsize;
 
-    if (pymalloc_alloc(ctx, &ptr, nbytes)) {
+    void *ptr = pymalloc_alloc(ctx, nbytes);
+    if (ptr != NULL) {
         memset(ptr, 0, nbytes);
         _Py_AllocatedBlocks++;
         return ptr;
