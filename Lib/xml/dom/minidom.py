@@ -1798,7 +1798,7 @@ class Document(Node, DocumentLS):
 
         writer.write(
             '<?xml version="1.0" {encoding}{standalone}?>{newline}'.format(
-                encoding="encoding='{}'".format(encoding) if encoding else '',
+                encoding="encoding=\"{}\"".format(encoding) if encoding else '',
                 standalone=standalone,
                 newline=newl)
         )
