@@ -350,10 +350,18 @@ the :mod:`glob` module.)
 .. function:: realpath(path)
 
    Return the canonical path of the specified filename, eliminating any symbolic
-   links encountered in the path (if they are supported by the operating system).
+   links encountered in the path (if they are supported by the operating
+   system).
+
+   .. note::
+      When symbolic link cycles occur, the returned path will be one member of
+      the cycle, but no guarantee is made about which member that will be.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.8
+      Symbolic links and junctions are now resolved on Windows.
 
 
 .. function:: relpath(path, start=os.curdir)

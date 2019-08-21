@@ -519,8 +519,94 @@ else:  # use native Windows method on Windows
         except (OSError, ValueError):
             return _abspath_fallback(path)
 
-# realpath is a no-op on systems without islink support
-realpath = abspath
+try:
+    from nt import _getfinalpathname, readlink as _nt_readlink
+except ImportError:
+    # realpath is a no-op on systems without _getfinalpathname support.
+    realpath = abspath
+else:
+    def _readlink_deep(path, seen=None):
+        if seen is None:
+            seen = set()
+
+        while normcase(path) not in seen:
+            seen.add(normcase(path))
+            try:
+                path = _nt_readlink(path)
+            except OSError as ex:
+                # Stop on file (2) or directory (3) not found, or
+                # paths that are not reparse points (4390)
+                if ex.winerror in (2, 3, 4390):
+                    break
+                raise
+            except ValueError:
+                # Stop on reparse points that are not symlinks
+                break
+        return path
+
+    def _getfinalpathname_nonstrict(path):
+        # Fast path to get the final path name. If this succeeds, there
+        # is no need to go any further.
+        try:
+            return _getfinalpathname(path)
+        except OSError:
+            pass
+
+        # Allow file (2) or directory (3) not found, invalid syntax (123),
+        # and symlinks that cannot be followed (1921)
+        allowed_winerror = 2, 3, 123, 1921
+
+        # Non-strict algorithm is to find as much of the target directory
+        # as we can and join the rest.
+        tail = ''
+        seen = set()
+        while path:
+            try:
+                path = _readlink_deep(path, seen)
+                path = _getfinalpathname(path)
+                return join(path, tail) if tail else path
+            except OSError as ex:
+                if ex.winerror not in allowed_winerror:
+                    raise
+                path, name = split(path)
+                if path and not name:
+                    return abspath(path + tail)
+                tail = join(name, tail) if tail else name
+        return abspath(tail)
+
+    def realpath(path):
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            prefix = b'\\\\?\\'
+            unc_prefix = b'\\\\?\\UNC\\'
+            new_unc_prefix = b'\\\\'
+            cwd = os.getcwdb()
+        else:
+            prefix = '\\\\?\\'
+            unc_prefix = '\\\\?\\UNC\\'
+            new_unc_prefix = '\\\\'
+            cwd = os.getcwd()
+        had_prefix = path.startswith(prefix)
+        path = _getfinalpathname_nonstrict(path)
+        # The path returned by _getfinalpathname will always start with \\?\ -
+        # strip off that prefix unless it was already provided on the original
+        # path.
+        if not had_prefix and path.startswith(prefix):
+            # For UNC paths, the prefix will actually be \\?\UNC\
+            # Handle that case as well.
+            if path.startswith(unc_prefix):
+                spath = new_unc_prefix + path[len(unc_prefix):]
+            else:
+                spath = path[len(prefix):]
+            # Ensure that the non-prefixed path resolves to the same path
+            try:
+                if _getfinalpathname(spath) == path:
+                    path = spath
+            except OSError as ex:
+                pass
+        return path
+
+
 # Win9x family and earlier have no Unicode filename support.
 supports_unicode_filenames = (hasattr(sys, "getwindowsversion") and
                               sys.getwindowsversion()[3] >= 2)
@@ -631,23 +717,6 @@ def commonpath(paths):
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *paths)
         raise
-
-
-# determine if two files are in fact the same file
-try:
-    # GetFinalPathNameByHandle is available starting with Windows 6.0.
-    # Windows XP and non-Windows OS'es will mock _getfinalpathname.
-    if sys.getwindowsversion()[:2] >= (6, 0):
-        from nt import _getfinalpathname
-    else:
-        raise ImportError
-except (AttributeError, ImportError):
-    # On Windows XP and earlier, two files are the same if their absolute
-    # pathnames are the same.
-    # Non-Windows operating systems fake this method with an XP
-    # approximation.
-    def _getfinalpathname(f):
-        return normcase(abspath(f))
 
 
 try:

@@ -824,6 +824,9 @@ characters or bytes unrepresentable at the OS level.
 environment variable and does not use :envvar:`HOME`, which is not normally set
 for regular user accounts.
 
+:func:`~os.path.realpath` on Windows now resolves reparse points, including
+symlinks and directory junctions.
+
 
 ncurses
 -------

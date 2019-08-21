@@ -1871,11 +1871,7 @@ class TestMove(unittest.TestCase):
         dst_link = os.path.join(self.dst_dir, 'quux')
         shutil.move(dst, dst_link)
         self.assertTrue(os.path.islink(dst_link))
-        # On Windows, os.path.realpath does not follow symlinks (issue #9949)
-        if os.name == 'nt':
-            self.assertEqual(os.path.realpath(src), os.readlink(dst_link))
-        else:
-            self.assertEqual(os.path.realpath(src), os.path.realpath(dst_link))
+        self.assertEqual(os.path.realpath(src), os.path.realpath(dst_link))
 
     @support.skip_unless_symlink
     @mock_rename
