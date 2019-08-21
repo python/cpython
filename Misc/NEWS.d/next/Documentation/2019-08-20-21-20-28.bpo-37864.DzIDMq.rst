@@ -1,0 +1,5 @@
+The several definitions in prose of a "printable" character are now all
+consolidated on :meth:`str.isprintable`, with cross-references from
+:c:func:`Py_UNICODE_ISPRINTABLE` and from a comment in
+:source:`Objects/unicodectype.c`.  The new definition is more explicit than
+any one of the previous definitions, and corrects an error in one of them.
