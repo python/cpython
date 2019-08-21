@@ -28,9 +28,6 @@ Future Functions
 
 .. function:: ensure_future(obj, \*, loop=None)
 
-   Schedule the execution of a :term:`coroutine object <coroutine>` and wrap it
-   in a future. Return a :class:`Task` object.
-
    Return:
 
    * *obj* argument as is, if *obj* is a :class:`Future`,
@@ -38,7 +35,9 @@ Future Functions
      is used for the test.)
 
    * a :class:`Task` object wrapping *obj*, if *obj* is a
-     coroutine (:func:`iscoroutine` is used for the test.)
+     coroutine (:func:`iscoroutine` is used for the test);
+     in this case the coroutine will be scheduled by
+    ``ensure_future()``.
 
    * a :class:`Task` object that would await on *obj*, if *obj* is an
      awaitable (:func:`inspect.isawaitable` is used for the test.)
