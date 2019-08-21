@@ -106,6 +106,7 @@ class TimeoutTestCase(unittest.TestCase):
     def tearDown(self):
         self.sock.close()
 
+    @unittest.skipIf(True, 'need to replace these hosts; see bpo-35518')
     def testConnectTimeout(self):
         # Choose a private address that is unlikely to exist to prevent
         # failures due to the connect succeeding before the timeout.
