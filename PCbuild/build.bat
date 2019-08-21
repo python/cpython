@@ -162,7 +162,7 @@ exit /b %ERRORLEVEL%
 :Regen
 echo on
 call "%dir%find_msbuild.bat" %MSBUILD%
-if not ERRORLEVEL 1 %MSBUILD% "%dir%regen.proj" /t:%target% %parallel% %verbose%^
+if not ERRORLEVEL 1 %MSBUILD% "%dir%regen.vcxproj" /t:%target% %parallel% %verbose%^
  /p:Configuration=%conf% /p:Platform=%platf%^
  /p:IncludeExternals=%IncludeExternals%^
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
