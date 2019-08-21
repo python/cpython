@@ -1859,8 +1859,11 @@ features:
       Accepts a :term:`path-like object` for *src* and *dst*.
 
    .. versionchanged:: 3.8
-      On Windows, now opens reparse points that represent another file
-      (name surrogates).
+      On Windows, now opens reparse points that represent another path
+      (name surrogates), including symbolic links and directory junctions.
+      Other kinds of reparse points are resolved by the operating system as
+      for :func:`~os.stat`.
+      
 
 .. function:: mkdir(path, mode=0o777, *, dir_fd=None)
 
@@ -2042,6 +2045,10 @@ features:
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
+   When trying to resolve a path that may contain links, use
+   :func:`~os.path.realpath` to properly handle recursion and platform
+   differences.
+
    .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
@@ -2058,8 +2065,8 @@ features:
 
    .. versionchanged:: 3.8
       Added support for directory junctions, and changed to return the
-      substitution path (which typically includes ``\\?\`` prefix) rather than
-      the optional "print name" field that was previously returned.
+      substitution path (which typically includes ``\\?\`` prefix) rather
+      than the optional "print name" field that was previously returned.
 
 .. function:: remove(path, *, dir_fd=None)
 
@@ -2366,13 +2373,6 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
-      .. versionchanged:: 3.8
-         On Windows, now returns ``True`` for directory junctions as well as
-         symlinks. To determine whether the entry is actually a symlink to a
-         directory or a directory junction, compare
-         ``entry.stat(follow_symlinks=False).st_reparse_tag`` against
-         ``stat.IO_REPARSE_TAG_SYMLINK`` or ``stat.IO_REPARSE_TAG_MOUNT_POINT``.
-
    .. method:: stat(\*, follow_symlinks=True)
 
       Return a :class:`stat_result` object for this entry. This method
@@ -2381,7 +2381,8 @@ features:
 
       On Unix, this method always requires a system call. On Windows, it
       only requires a system call if *follow_symlinks* is ``True`` and the
-      entry is a symbolic link.
+      entry is a reparse point (for example, a symbolic link or directory
+      junction).
 
       On Windows, the ``st_ino``, ``st_dev`` and ``st_nlink`` attributes of the
       :class:`stat_result` are always set to zero. Call :func:`os.stat` to
@@ -2419,11 +2420,12 @@ features:
    :ref:`not following symlinks <follow_symlinks>`.
 
    On Windows, passing ``follow_symlinks=False`` will disable following all
-   types of reparse points, including directory junctions. Otherwise, if the
-   operating system is unable to follow a reparse point (for example, when it
-   is a custom reparse point type with no filesystem support), the stat result
-   for the original link is returned as if ``follow_symlinks=False`` had been
-   specified. To obtain stat results for the final path in this case, use the
+   name-surrogate reparse points, which includes symlinks and directory
+   junctions. Other types of reparse points that do not resemble links or that
+   the operating system is unable to follow will be opened directly. When
+   following a chain of multiple links, this may result in the original link
+   being returned instead of the non-link that prevented full traversal. To
+   obtain stat results for the final path in this case, use the
    :func:`os.path.realpath` function to resolve the path name as far as
    possible and call :func:`lstat` on the result. This does not apply to
    dangling symlinks or junction points, which will raise the usual exceptions.
@@ -2657,8 +2659,9 @@ features:
       Added the :attr:`st_reparse_tag` member on Windows.
 
    .. versionchanged:: 3.8
-      On Windows, the :attr:`st_mode` member now identifies directory
-      junctions as links instead of directories.
+      On Windows, the :attr:`st_mode` member now identifies special
+      files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
+      as appropriate.
 
 .. function:: statvfs(path)
 
