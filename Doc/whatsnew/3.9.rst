@@ -118,6 +118,16 @@ finalization crashed with a Python fatal error if a daemon thread was still
 running.
 (Contributed by Victor Stinner in :issue:`37266`.)
 
+venv
+----
+
+The activation scripts provided by :mod:`venv` now all specify their prompt
+customization consistently by always using the value specified by
+``__VENV_PROMPT__``. Previously some scripts unconditionally used
+``__VENV_PROMPT__``, others only if it happened to be set (which was the default
+case), and one used ``__VENV_NAME__`` instead.
+(Contributed by Brett Cannon in :issue:`37663`.)
+
 pprint
 ------
 
@@ -191,11 +201,13 @@ Removed
   Use :meth:`~threading.Thread.is_alive()` instead.
   (Contributed by Dong-hee Na in :issue:`37804`.)
 
+
 Porting to Python 3.9
 =====================
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
 
 Changes in the Python API
 -------------------------
@@ -205,3 +217,6 @@ Changes in the Python API
   catching the specific exception type and supporting both Python 3.9 and
   earlier versions will need to catch both:
   ``except (ImportError, ValueError):``
+
+* The :mod:`venv` activation scripts no longer special-case when
+  ``__VENV_PROMPT__`` is set to ``""``.
