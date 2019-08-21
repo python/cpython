@@ -425,3 +425,13 @@ for more detail on the meaning of these constants.
           FILE_ATTRIBUTE_VIRTUAL
 
    .. versionadded:: 3.5
+
+On Windows, the following constants are available for comparing against the
+``st_reparse_tag`` member returned by :func:`os.lstat`. These are well-known
+constants, but are not an exhaustive list.
+
+.. data:: IO_REPARSE_TAG_SYMLINK
+          IO_REPARSE_TAG_MOUNT_POINT
+          IO_REPARSE_TAG_APPEXECLINK
+
+   .. versionadded:: 3.8

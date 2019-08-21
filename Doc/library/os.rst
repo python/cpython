@@ -1858,6 +1858,9 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
 
+   .. versionchanged:: 3.8
+      On Windows, now opens reparse points that represent another file
+      (name surrogates).
 
 .. function:: mkdir(path, mode=0o777, *, dir_fd=None)
 
@@ -2052,6 +2055,11 @@ features:
 
    .. versionchanged:: 3.8
       Accepts a :term:`path-like object` and a bytes object on Windows.
+
+   .. versionchanged:: 3.8
+      Added support for directory junctions, and changed to return the
+      substitution path (which typically includes ``\\?\`` prefix) rather than
+      the optional "print name" field that was previously returned.
 
 .. function:: remove(path, *, dir_fd=None)
 
@@ -2358,6 +2366,13 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
+      .. versionchanged:: 3.8
+         On Windows, now returns ``True`` for directory junctions as well as
+         symlinks. To determine whether the entry is actually a symlink to a
+         directory or a directory junction, compare
+         ``entry.stat(follow_symlinks=False).st_reparse_tag`` against
+         ``stat.IO_REPARSE_TAG_SYMLINK`` or ``stat.IO_REPARSE_TAG_MOUNT_POINT``.
+
    .. method:: stat(\*, follow_symlinks=True)
 
       Return a :class:`stat_result` object for this entry. This method
@@ -2403,6 +2418,16 @@ features:
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
+   On Windows, passing ``follow_symlinks=False`` will disable following all
+   types of reparse points, including directory junctions. Otherwise, if the
+   operating system is unable to follow a reparse point (for example, when it
+   is a custom reparse point type with no filesystem support), the stat result
+   for the original link is returned as if ``follow_symlinks=False`` had been
+   specified. To obtain stat results for the final path in this case, use the
+   :func:`os.path.realpath` function to resolve the path name as far as
+   possible and call :func:`lstat` on the result. This does not apply to
+   dangling symlinks or junction points, which will raise the usual exceptions.
+
    .. index:: module: stat
 
    Example::
@@ -2426,6 +2451,14 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.8
+      On Windows, all reparse points that can be resolved by the operating
+      system are now followed, and passing ``follow_symlinks=False``
+      disables following all name surrogate reparse points. If the operating
+      system reaches a reparse point that it is not able to follow, *stat* now
+      returns the information for the original path as if
+      ``follow_symlinks=False`` had been specified instead of raising an error.
 
 
 .. class:: stat_result
@@ -2578,7 +2611,7 @@ features:
 
       File type.
 
-   On Windows systems, the following attribute is also available:
+   On Windows systems, the following attributes are also available:
 
    .. attribute:: st_file_attributes
 
@@ -2586,6 +2619,12 @@ features:
       ``BY_HANDLE_FILE_INFORMATION`` structure returned by
       :c:func:`GetFileInformationByHandle`. See the ``FILE_ATTRIBUTE_*``
       constants in the :mod:`stat` module.
+
+   .. attribute:: st_reparse_tag
+
+      When :attr:`st_file_attributes` has the ``FILE_ATTRIBUTE_REPARSE_POINT``
+      set, this field contains the tag identifying the type of reparse point.
+      See the ``IO_REPARSE_TAG_*`` constants in the :mod:`stat` module.
 
    The standard module :mod:`stat` defines functions and constants that are
    useful for extracting information from a :c:type:`stat` structure. (On
@@ -2613,6 +2652,13 @@ features:
 
    .. versionadded:: 3.7
       Added the :attr:`st_fstype` member to Solaris/derivatives.
+
+   .. versionadded:: 3.8
+      Added the :attr:`st_reparse_tag` member on Windows.
+
+   .. versionchanged:: 3.8
+      On Windows, the :attr:`st_mode` member now identifies directory
+      junctions as links instead of directories.
 
 .. function:: statvfs(path)
 
