@@ -1863,7 +1863,7 @@ features:
       (name surrogates), including symbolic links and directory junctions.
       Other kinds of reparse points are resolved by the operating system as
       for :func:`~os.stat`.
-      
+
 
 .. function:: mkdir(path, mode=0o777, *, dir_fd=None)
 
