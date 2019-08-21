@@ -458,7 +458,8 @@ def normpath(path):
         # in the case of paths with these prefixes:
         # \\.\ -> device names
         # \\?\ -> literal paths
-        # do not do any normalization, but return the path unchanged
+        # do not do any normalization, but return the path
+        # unchanged apart from the call to os.fspath()
         return path
     path = path.replace(altsep, sep)
     prefix, path = splitdrive(path)
@@ -575,7 +576,7 @@ else:
         return abspath(tail)
 
     def realpath(path):
-        path = os.fspath(path)
+        path = normpath(path)
         if isinstance(path, bytes):
             prefix = b'\\\\?\\'
             unc_prefix = b'\\\\?\\UNC\\'
@@ -586,6 +587,7 @@ else:
             unc_prefix = '\\\\?\\UNC\\'
             new_unc_prefix = '\\\\'
             cwd = os.getcwd()
+        did_not_exist = not exists(path)
         had_prefix = path.startswith(prefix)
         path = _getfinalpathname_nonstrict(path)
         # The path returned by _getfinalpathname will always start with \\?\ -
@@ -603,7 +605,10 @@ else:
                 if _getfinalpathname(spath) == path:
                     path = spath
             except OSError as ex:
-                pass
+                # If the path does not exist and originally did not exist, then
+                # strip the prefix anyway.
+                if ex.winerror in {2, 3} and did_not_exist:
+                    path = spath
         return path
 
 
