@@ -3,6 +3,8 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-37902: Add scrolling for IDLE browsers.
+
 bpo-37849: Fix completions list appearing too high or low when shown
 above the current line.
 
