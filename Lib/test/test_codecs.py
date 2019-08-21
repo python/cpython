@@ -3075,13 +3075,13 @@ class CodePageTest(unittest.TestCase):
             self.assertEqual(codec.name, 'mbcs')
 
     @support.bigmemtest(size=2**31, memuse=7, dry_run=False)
-    def test_large_input(self):
+    def test_large_input(self, size):
         # Test input longer than INT_MAX.
         # Input should contain undecodable bytes before and after
         # the INT_MAX limit.
-        encoded = (b'01234567' * (2**28-1) +
+        encoded = (b'01234567' * ((size//8)-1) +
                    b'\x85\x86\xea\xeb\xec\xef\xfc\xfd\xfe\xff')
-        self.assertEqual(len(encoded), 2**31+2)
+        self.assertEqual(len(encoded), size+2)
         decoded = codecs.code_page_decode(932, encoded, 'surrogateescape', True)
         self.assertEqual(decoded[1], len(encoded))
         del encoded
@@ -3091,6 +3091,20 @@ class CodePageTest(unittest.TestCase):
                          '6701234567'
                          '\udc85\udc86\udcea\udceb\udcec'
                          '\udcef\udcfc\udcfd\udcfe\udcff')
+
+    @support.bigmemtest(size=2**31, memuse=6, dry_run=False)
+    def test_large_utf8_input(self, size):
+        # Test input longer than INT_MAX.
+        # Input should contain a decodable multi-byte character
+        # surrounding INT_MAX
+        encoded = (b'0123456\xed\x84\x80' * (size//8))
+        self.assertEqual(len(encoded), size // 8 * 10)
+        decoded = codecs.code_page_decode(65001, encoded, 'ignore', True)
+        self.assertEqual(decoded[1], len(encoded))
+        del encoded
+        self.assertEqual(len(decoded[0]), size)
+        self.assertEqual(decoded[0][:10], '0123456\ud10001')
+        self.assertEqual(decoded[0][-11:], '56\ud1000123456\ud100')
 
 
 class ASCIITest(unittest.TestCase):
