@@ -3358,10 +3358,7 @@ class OSErrorTests(unittest.TestCase):
         if hasattr(os, "lchmod"):
             funcs.append((self.filenames, os.lchmod, 0o777))
         if hasattr(os, "readlink"):
-            if sys.platform == "win32":
-                funcs.append((self.unicode_filenames, os.readlink,))
-            else:
-                funcs.append((self.filenames, os.readlink,))
+            funcs.append((self.filenames, os.readlink,))
 
 
         for filenames, func, *func_args in funcs:
