@@ -42,6 +42,11 @@ try:
 except ImportError:
     UID_GID_SUPPORT = False
 
+try:
+    import _winapi
+except ImportError:
+    _winapi = None
+
 def _fake_rename(*args, **kwargs):
     # Pretend the destination path is on a different filesystem.
     raise OSError(getattr(errno, 'EXDEV', 18), "Invalid cross-device link")
@@ -221,6 +226,47 @@ class TestShutil(unittest.TestCase):
         link3 = os.path.join(dir1, 'link3')
         os.symlink(file1, link3)
         # make sure symlinks are removed but not followed
+        shutil.rmtree(dir1)
+        self.assertFalse(os.path.exists(dir1))
+        self.assertTrue(os.path.exists(dir3))
+        self.assertTrue(os.path.exists(file1))
+
+    @unittest.skipUnless(_winapi, 'only relevant on Windows')
+    def test_rmtree_fails_on_junctions(self):
+        tmp = self.mkdtemp()
+        dir_ = os.path.join(tmp, 'dir')
+        os.mkdir(dir_)
+        link = os.path.join(tmp, 'link')
+        _winapi.CreateJunction(dir_, link)
+        self.assertRaises(OSError, shutil.rmtree, link)
+        self.assertTrue(os.path.exists(dir_))
+        self.assertTrue(os.path.lexists(link))
+        errors = []
+        def onerror(*args):
+            errors.append(args)
+        shutil.rmtree(link, onerror=onerror)
+        self.assertEqual(len(errors), 1)
+        self.assertIs(errors[0][0], os.path.islink)
+        self.assertEqual(errors[0][1], link)
+        self.assertIsInstance(errors[0][2][1], OSError)
+
+    @unittest.skipUnless(_winapi, 'only relevant on Windows')
+    def test_rmtree_works_on_junctions(self):
+        tmp = self.mkdtemp()
+        dir1 = os.path.join(tmp, 'dir1')
+        dir2 = os.path.join(dir1, 'dir2')
+        dir3 = os.path.join(tmp, 'dir3')
+        for d in dir1, dir2, dir3:
+            os.mkdir(d)
+        file1 = os.path.join(tmp, 'file1')
+        write_file(file1, 'foo')
+        link1 = os.path.join(dir1, 'link1')
+        _winapi.CreateJunction(dir2, link1)
+        link2 = os.path.join(dir1, 'link2')
+        _winapi.CreateJunction(dir3, link2)
+        link3 = os.path.join(dir1, 'link3')
+        _winapi.CreateJunction(file1, link3)
+        # make sure junctions are removed but not followed
         shutil.rmtree(dir1)
         self.assertFalse(os.path.exists(dir1))
         self.assertTrue(os.path.exists(dir3))
@@ -754,8 +800,12 @@ class TestShutil(unittest.TestCase):
         src_stat = os.lstat(src_link)
         shutil.copytree(src_dir, dst_dir, symlinks=True)
         self.assertTrue(os.path.islink(os.path.join(dst_dir, 'sub', 'link')))
-        self.assertEqual(os.readlink(os.path.join(dst_dir, 'sub', 'link')),
-                         os.path.join(src_dir, 'file.txt'))
+        actual = os.readlink(os.path.join(dst_dir, 'sub', 'link'))
+        # Bad practice to blindly strip the prefix as it may be required to
+        # correctly refer to the file, but we're only comparing paths here.
+        if os.name == 'nt' and actual.startswith('\\\\?\\'):
+            actual = actual[4:]
+        self.assertEqual(actual, os.path.join(src_dir, 'file.txt'))
         dst_stat = os.lstat(dst_link)
         if hasattr(os, 'lchmod'):
             self.assertEqual(dst_stat.st_mode, src_stat.st_mode)
@@ -886,7 +936,6 @@ class TestShutil(unittest.TestCase):
         shutil.copytree(src, dst, copy_function=custom_cpfun)
         self.assertEqual(len(flag), 1)
 
-    @unittest.skipIf(os.name == 'nt', 'temporarily disabled on Windows')
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
     def test_dont_copy_file_onto_link_to_itself(self):
         # bug 851123.
@@ -936,6 +985,20 @@ class TestShutil(unittest.TestCase):
             dst = os.path.join(TESTFN, 'shop')
             os.mkdir(src)
             os.symlink(src, dst)
+            self.assertRaises(OSError, shutil.rmtree, dst)
+            shutil.rmtree(dst, ignore_errors=True)
+        finally:
+            shutil.rmtree(TESTFN, ignore_errors=True)
+
+    @unittest.skipUnless(_winapi, 'only relevant on Windows')
+    def test_rmtree_on_junction(self):
+        os.mkdir(TESTFN)
+        try:
+            src = os.path.join(TESTFN, 'cheese')
+            dst = os.path.join(TESTFN, 'shop')
+            os.mkdir(src)
+            open(os.path.join(src, 'spam'), 'wb').close()
+            _winapi.CreateJunction(src, dst)
             self.assertRaises(OSError, shutil.rmtree, dst)
             shutil.rmtree(dst, ignore_errors=True)
         finally:
