@@ -587,7 +587,7 @@ else:
             unc_prefix = '\\\\?\\UNC\\'
             new_unc_prefix = '\\\\'
             cwd = os.getcwd()
-        did_not_exist = not exists(path)
+        did_not_exist = not lexists(path)
         had_prefix = path.startswith(prefix)
         path = _getfinalpathname_nonstrict(path)
         # The path returned by _getfinalpathname will always start with \\?\ -
