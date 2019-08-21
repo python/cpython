@@ -337,7 +337,7 @@ class TestNtpath(unittest.TestCase):
         os.symlink(ABSTFN + "x", ABSTFN + "y")
         self.assertEqual(ntpath.realpath(ABSTFN + "1\\..\\"
                                          + ntpath.basename(ABSTFN) + "y"),
-                         P + ABSTFN + "x")
+                         ABSTFN + "x")
         self.assertIn(ntpath.realpath(ABSTFN + "1\\..\\"
                                       + ntpath.basename(ABSTFN) + "1"),
                       expected)
