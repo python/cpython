@@ -126,6 +126,38 @@ class MultiprocessThread(threading.Thread):
             info.append(f'pid={popen.pid}')
         return '<%s>' % ' '.join(info)
 
+    def _kill(self):
+        dt = time.monotonic() - self.start_time
+
+        popen = self._popen
+        pid = popen.pid
+        print("Kill worker process %s running for %.1f sec" % (pid, dt),
+              file=sys.stderr, flush=True)
+
+        try:
+            popen.kill()
+            return True
+        except OSError as exc:
+            print("WARNING: Failed to kill worker process %s: %r" % (pid, exc),
+                  file=sys.stderr, flush=True)
+            return False
+
+    def _close_wait(self):
+        popen = self._popen
+
+        # stdout and stderr must be closed to ensure that communicate()
+        # does not hang
+        popen.stdout.close()
+        popen.stderr.close()
+
+        try:
+            popen.wait(JOIN_TIMEOUT)
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            print("WARNING: Failed to wait for worker process %s "
+                  "completion (timeout=%.1f sec): %r"
+                  % (popen.pid, JOIN_TIMEOUT, exc),
+                  file=sys.stderr, flush=True)
+
     def kill(self):
         """
         Kill the current process (if any).
@@ -135,21 +167,36 @@ class MultiprocessThread(threading.Thread):
         """
         self._killed = True
 
-        popen = self._popen
-        if popen is None:
+        if self._popen is None:
             return
-        popen.kill()
-        # stdout and stderr must be closed to ensure that communicate()
-        # does not hang
-        popen.stdout.close()
-        popen.stderr.close()
-        popen.wait()
+
+        if not self._kill():
+            return
+
+        self._close_wait()
 
     def mp_result_error(self, test_name, error_type, stdout='', stderr='',
                         err_msg=None):
         test_time = time.monotonic() - self.start_time
         result = TestResult(test_name, error_type, test_time, None)
         return MultiprocessResult(result, stdout, stderr, err_msg)
+
+    def _timedout(self, test_name):
+        self._kill()
+
+        stdout = sterr = ''
+        popen = self._popen
+        try:
+            stdout, stderr = popen.communicate(timeout=JOIN_TIMEOUT)
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            print("WARNING: Failed to read worker process %s output "
+                  "(timeout=%.1f sec): %r"
+                  % (popen.pid, exc, timeout),
+                  file=sys.stderr, flush=True)
+
+        self._close_wait()
+
+        return self.mp_result_error(test_name, TIMEOUT, stdout, stderr)
 
     def _runtest(self, test_name):
         try:
@@ -158,7 +205,7 @@ class MultiprocessThread(threading.Thread):
 
             self._popen = run_test_in_subprocess(test_name, self.ns)
             popen = self._popen
-            with popen:
+            try:
                 try:
                     if self._killed:
                         # If kill() has been called before self._popen is set,
@@ -175,12 +222,7 @@ class MultiprocessThread(threading.Thread):
                             # on reading closed stdout/stderr
                             raise ExitThread
 
-                        popen.kill()
-                        stdout, stderr = popen.communicate()
-                        self.kill()
-
-                        return self.mp_result_error(test_name, TIMEOUT,
-                                                    stdout, stderr)
+                        return self._timedout(test_name)
                     except OSError:
                         if self._killed:
                             # kill() has been called: communicate() fails
@@ -190,8 +232,10 @@ class MultiprocessThread(threading.Thread):
                 except:
                     self.kill()
                     raise
+            finally:
+                self._close_wait()
 
-            retcode = popen.wait()
+            retcode = popen.returncode
         finally:
             self.current_test_name = None
             self._popen = None
@@ -286,10 +330,11 @@ class MultiprocessRunner:
                 if not worker.is_alive():
                     break
                 dt = time.monotonic() - start_time
-                print("Wait for regrtest worker %r for %.1f sec" % (worker, dt))
+                print("Wait for regrtest worker %r for %.1f sec" % (worker, dt),
+                      flush=True)
                 if dt > JOIN_TIMEOUT:
                     print("Warning -- failed to join a regrtest worker %s"
-                          % worker)
+                          % worker, flush=True)
                     break
 
     def _get_result(self):
