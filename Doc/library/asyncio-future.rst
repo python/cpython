@@ -37,7 +37,7 @@ Future Functions
    * a :class:`Task` object wrapping *obj*, if *obj* is a
      coroutine (:func:`iscoroutine` is used for the test);
      in this case the coroutine will be scheduled by
-    ``ensure_future()``.
+     ``ensure_future()``.
 
    * a :class:`Task` object that would await on *obj*, if *obj* is an
      awaitable (:func:`inspect.isawaitable` is used for the test.)
