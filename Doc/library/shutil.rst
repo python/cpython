@@ -304,6 +304,10 @@ Directory and files operations
       Added a symlink attack resistant version that is used automatically
       if platform supports fd-based functions.
 
+   .. versionchanged:: 3.8
+      On Windows, will no longer delete the contents of a directory junction
+      before removing the junction.
+
    .. attribute:: rmtree.avoids_symlink_attacks
 
       Indicates whether the current platform and implementation provides a
