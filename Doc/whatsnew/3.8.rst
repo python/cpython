@@ -808,6 +808,21 @@ A new :func:`os.memfd_create` function was added to wrap the
 ``memfd_create()`` syscall.
 (Contributed by Zackery Spytz and Christian Heimes in :issue:`26836`.)
 
+On Windows, much of the manual logic for handling reparse points (including
+symlinks and directory junctions) has been delegated to the operating system.
+Specifically, :func:`os.stat` will now traverse anything supported by the
+operating system, while :func:`os.lstat` will only open reparse points that
+identify as "name surrogates" while others are opened as for :func:`os.stat`.
+In all cases, :attr:`stat_result.st_mode` will only have ``S_IFLNK`` set for
+symbolic links and not other kinds of reparse points. To identify other kinds
+of reparse point, check the new :attr:`stat_result.st_reparse_tag` attribute.
+
+On Windows, :func:`os.readlink` is now able to read directory junctions. Note
+that :func:`~os.path.islink` will return ``False`` for directory junctions,
+and so code that checks ``islink`` first will continue to treat junctions as
+directories, while code that handles errors from :func:`os.readlink` may now
+treat junctions as links.
+
 
 os.path
 -------
@@ -823,6 +838,9 @@ characters or bytes unrepresentable at the OS level.
 :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
 environment variable and does not use :envvar:`HOME`, which is not normally set
 for regular user accounts.
+
+:func:`~os.path.isdir` on Windows no longer returns true for a link to a
+non-existent directory.
 
 :func:`~os.path.realpath` on Windows now resolves reparse points, including
 symlinks and directory junctions.
@@ -911,6 +929,9 @@ shutil
 format for new archives to improve portability and standards conformance,
 inherited from the corresponding change to the :mod:`tarfile` module.
 (Contributed by C.A.M. Gerlach in :issue:`30661`.)
+
+:func:`shutil.rmtree` on Windows now removes directory junctions without
+recursively removing their contents first.
 
 
 ssl
