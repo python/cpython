@@ -1,0 +1,207 @@
+****************************
+  What's New In Python 3.9
+****************************
+
+:Release: |release|
+:Date: |today|
+
+.. Rules for maintenance:
+
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+
+   * It's helpful to add the bug/patch number as a comment:
+
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer in :issue:`12345`.)
+
+   This saves the maintainer the effort of going through the Mercurial log
+   when researching a change.
+
+This article explains the new features in Python 3.9, compared to 3.8.
+
+For full details, see the :source:`Misc/NEWS` file.
+
+.. note::
+
+   Prerelease users should be aware that this document is currently in draft
+   form. It will be updated substantially as Python 3.9 moves towards release,
+   so it's worth checking back even after reading earlier versions.
+
+
+Summary -- Release highlights
+=============================
+
+.. This section singles out the most important changes in Python 3.9.
+   Brevity is key.
+
+
+.. PEP-sized items next.
+
+
+
+New Features
+============
+
+
+
+Other Language Changes
+======================
+
+* :func:`builtins.__import__` now raises :exc:`ImportError` instead of
+  :exc:`ValueError` as used to occur when a relative import went past
+  its top-level package.
+  (Contributed by Ngalim Siregar in :issue:`37444`.)
+
+
+* Python now gets the absolute path of the script filename specified on
+  the command line (ex: ``python3 script.py``): the ``__file__`` attribute of
+  the ``__main__`` module, ``sys.argv[0]`` and ``sys.path[0]`` become an
+  absolute path, rather than a relative path. These paths now remain valid
+  after the current directory is changed by :func:`os.chdir`. As a side effect,
+  a traceback also displays the absolute path for ``__main__`` module frames in
+  this case.
+  (Contributed by Victor Stinner in :issue:`20443`.)
+
+* In development mode and in debug build, *encoding* and *errors* arguments are
+  now checked on string encoding and decoding operations. Examples:
+  :func:`open`, :meth:`str.encode` and :meth:`bytes.decode`.
+
+  By default, for best performances, the *errors* argument is only checked at
+  the first encoding/decoding error, and the *encoding* argument is sometimes
+  ignored for empty strings.
+  (Contributed by Victor Stinner in :issue:`37388`.)
+
+
+New Modules
+===========
+
+* None yet.
+
+
+Improved Modules
+================
+
+threading
+---------
+
+In a subinterpreter, spawning a daemon thread now raises an exception. Daemon
+threads were never supported in subinterpreters. Previously, the subinterpreter
+finalization crashed with a Python fatal error if a daemon thread was still
+running.
+(Contributed by Victor Stinner in :issue:`37266`.)
+
+pprint
+------
+
+:mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
+(Contributed by Carl Bordum Hansen in :issue:`37376`.)
+
+importlib
+---------
+
+To improve consistency with import statements, :func:`importlib.util.resolve_name`
+now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
+import attempts.
+(Contributed by Ngalim Siregar in :issue:`37444`.)
+
+Optimizations
+=============
+
+
+Build and C API Changes
+=======================
+
+* Add a new public :c:func:`PyObject_CallNoArgs` function to the C API:
+  call a callable Python object without any arguments. It is the most efficient
+  way to call a callable Python object without any argument.
+  (Contributed by Victor Stinner in :issue:`37194`.)
+
+
+
+Deprecated
+==========
+
+* Currently :func:`math.factorial` accepts :class:`float` instances with
+  non-negative integer values (like ``5.0``).  It raises a :exc:`ValueError`
+  for non-integral and negative floats.  It is deprecated now.  In future
+  Python versions it will raise a :exc:`TypeError` for all floats.
+  (Contributed by Serhiy Storchaka in :issue:`37315`.)
+
+* The :mod:`parser` module is deprecated and will be removed in future versions
+  of Python. For the majority of use cases users can leverage the Abstract Syntax
+  Tree (AST) generation and compilation stage, using the :mod:`ast` module.
+
+
+Removed
+=======
+
+* The undocumented ``sys.callstats()`` function has been removed. Since Python
+  3.7, it was deprecated and always returned ``None``. It required a special
+  build option ``CALL_PROFILE`` which was already removed in Python 3.7.
+  (Contributed by Victor Stinner in :issue:`37414`.)
+
+* The ``sys.getcheckinterval()`` and ``sys.setcheckinterval()`` functions have
+  been removed. They were deprecated since Python 3.2. Use
+  :func:`sys.getswitchinterval` and :func:`sys.setswitchinterval` instead.
+  (Contributed by Victor Stinner in :issue:`37392`.)
+
+* The C function ``PyImport_Cleanup()`` has been removed. It was documented as:
+  "Empty the module table.  For internal use only."
+  (Contributed by Victor Stinner in :issue:`36710`.)
+
+* ``_dummy_thread`` and ``dummy_threading`` modules have been removed. These
+  modules were deprecated since Python 3.7 which requires threading support.
+  (Contributed by Victor Stinner in :issue:`37312`.)
+
+* ``aifc.openfp()`` alias to ``aifc.open()``, ``sunau.openfp()`` alias to
+  ``sunau.open()``, and ``wave.openfp()`` alias to ``wave.open()`` have been
+  removed. They were deprecated since Python 3.7.
+  (Contributed by Victor Stinner in :issue:`37320`.)
+
+* The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
+  has been removed. It was deprecated since Python 3.8.
+  Use :meth:`~threading.Thread.is_alive()` instead.
+  (Contributed by Dong-hee Na in :issue:`37804`.)
+
+Porting to Python 3.9
+=====================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+Changes in the Python API
+-------------------------
+
+* :func:`builtins.__import__` and :func:`importlib.util.resolve_name` now raise
+  :exc:`ImportError` where it previously raised :exc:`ValueError`. Callers
+  catching the specific exception type and supporting both Python 3.9 and
+  earlier versions will need to catch both:
+  ``except (ImportError, ValueError):``

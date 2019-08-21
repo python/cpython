@@ -37,8 +37,6 @@ def tester(fn, wantResult):
         wantResult = os.fsencode(wantResult)
     elif isinstance(wantResult, tuple):
         wantResult = tuple(os.fsencode(r) for r in wantResult)
-
-    gotResult = eval(fn)
     if wantResult != gotResult:
         raise TestFailed("%s should return: %s but returned: %s" \
               %(str(fn), str(wantResult), repr(gotResult)))

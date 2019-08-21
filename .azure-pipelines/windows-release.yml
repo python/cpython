@@ -1,0 +1,129 @@
+name: Release_$(Build.SourceBranchName)_$(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
+
+variables:
+    __RealSigningCertificate: 'Python Software Foundation'
+# QUEUE TIME VARIABLES
+#   GitRemote: python
+#   SourceTag:
+#   DoPGO: true
+#   SigningCertificate: 'Python Software Foundation'
+#   SigningDescription: 'Built: $(Build.BuildNumber)'
+#   DoLayout: true
+#   DoMSIX: true
+#   DoNuget: true
+#   DoEmbed: true
+#   DoMSI: true
+#   DoPublish: false
+#   PyDotOrgUsername: ''
+#   PyDotOrgServer: ''
+#   BuildToPublish: ''
+
+trigger: none
+pr: none
+
+stages:
+- stage: Build
+  displayName: Build binaries
+  condition: and(succeeded(), not(variables['BuildToPublish']))
+  jobs:
+  - template: windows-release/stage-build.yml
+
+- stage: Sign
+  displayName: Sign binaries
+  dependsOn: Build
+  condition: and(succeeded(), not(variables['BuildToPublish']))
+  jobs:
+  - template: windows-release/stage-sign.yml
+
+- stage: Layout
+  displayName: Generate layouts
+  dependsOn: Sign
+  condition: and(succeeded(), not(variables['BuildToPublish']))
+  jobs:
+  - template: windows-release/stage-layout-full.yml
+  - template: windows-release/stage-layout-embed.yml
+  - template: windows-release/stage-layout-nuget.yml
+
+- stage: Pack
+  dependsOn: Layout
+  condition: and(succeeded(), not(variables['BuildToPublish']))
+  jobs:
+  - template: windows-release/stage-pack-nuget.yml
+
+- stage: Test
+  dependsOn: Pack
+  condition: and(succeeded(), not(variables['BuildToPublish']))
+  jobs:
+  - template: windows-release/stage-test-embed.yml
+  - template: windows-release/stage-test-nuget.yml
+
+- stage: Layout_MSIX
+  displayName: Generate MSIX layouts
+  dependsOn: Sign
+  condition: and(succeeded(), and(eq(variables['DoMSIX'], 'true'), not(variables['BuildToPublish'])))
+  jobs:
+  - template: windows-release/stage-layout-msix.yml
+
+- stage: Pack_MSIX
+  displayName: Package MSIX
+  dependsOn: Layout_MSIX
+  condition: and(succeeded(), not(variables['BuildToPublish']))
+  jobs:
+  - template: windows-release/stage-pack-msix.yml
+
+- stage: Build_MSI
+  displayName: Build MSI installer
+  dependsOn: Sign
+  condition: and(succeeded(), and(eq(variables['DoMSI'], 'true'), not(variables['BuildToPublish'])))
+  jobs:
+  - template: windows-release/stage-msi.yml
+
+- stage: Test_MSI
+  displayName: Test MSI installer
+  dependsOn: Build_MSI
+  condition: and(succeeded(), not(variables['BuildToPublish']))
+  jobs:
+  - template: windows-release/stage-test-msi.yml
+
+- stage: PublishPyDotOrg
+  displayName: Publish to python.org
+  dependsOn: ['Test_MSI', 'Test']
+  condition: and(succeeded(), and(eq(variables['DoPublish'], 'true'), not(variables['BuildToPublish'])))
+  jobs:
+  - template: windows-release/stage-publish-pythonorg.yml
+
+- stage: PublishNuget
+  displayName: Publish to nuget.org
+  dependsOn: Test
+  condition: and(succeeded(), and(eq(variables['DoPublish'], 'true'), not(variables['BuildToPublish'])))
+  jobs:
+  - template: windows-release/stage-publish-nugetorg.yml
+
+- stage: PublishStore
+  displayName: Publish to Store
+  dependsOn: Pack_MSIX
+  condition: and(succeeded(), and(eq(variables['DoPublish'], 'true'), not(variables['BuildToPublish'])))
+  jobs:
+  - template: windows-release/stage-publish-store.yml
+
+
+- stage: PublishExistingPyDotOrg
+  displayName: Publish existing build to python.org
+  dependsOn: []
+  condition: and(succeeded(), and(eq(variables['DoPublish'], 'true'), variables['BuildToPublish']))
+  jobs:
+  - template: windows-release/stage-publish-pythonorg.yml
+
+- stage: PublishExistingNuget
+  displayName: Publish existing build to nuget.org
+  dependsOn: []
+  condition: and(succeeded(), and(eq(variables['DoPublish'], 'true'), variables['BuildToPublish']))
+  jobs:
+  - template: windows-release/stage-publish-nugetorg.yml
+
+- stage: PublishExistingStore
+  displayName: Publish existing build to Store
+  dependsOn: []
+  condition: and(succeeded(), and(eq(variables['DoPublish'], 'true'), variables['BuildToPublish']))
+  jobs:
+  - template: windows-release/stage-publish-store.yml

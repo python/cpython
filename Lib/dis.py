@@ -157,6 +157,7 @@ def _format_code_info(co):
     lines.append("Name:              %s" % co.co_name)
     lines.append("Filename:          %s" % co.co_filename)
     lines.append("Argument count:    %s" % co.co_argcount)
+    lines.append("Positional-only arguments: %s" % co.co_posonlyargcount)
     lines.append("Kw-only arguments: %s" % co.co_kwonlyargcount)
     lines.append("Number of locals:  %s" % co.co_nlocals)
     lines.append("Stack size:        %s" % co.co_stacksize)

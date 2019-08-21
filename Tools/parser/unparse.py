@@ -399,6 +399,8 @@ class Unparser:
         elif value is ...:
             self.write("...")
         else:
+            if t.kind == "u":
+                self.write("u")
             self._write_constant(t.value)
 
     def _List(self, t):
@@ -592,14 +594,18 @@ class Unparser:
     def _arguments(self, t):
         first = True
         # normal arguments
-        defaults = [None] * (len(t.args) - len(t.defaults)) + t.defaults
-        for a, d in zip(t.args, defaults):
+        all_args = t.posonlyargs + t.args
+        defaults = [None] * (len(all_args) - len(t.defaults)) + t.defaults
+        for index, elements in enumerate(zip(all_args, defaults), 1):
+            a, d = elements
             if first:first = False
             else: self.write(", ")
             self.dispatch(a)
             if d:
                 self.write("=")
                 self.dispatch(d)
+            if index == len(t.posonlyargs):
+                self.write(", /")
 
         # varargs, or bare '*' if no varargs but keyword-only arguments present
         if t.vararg or t.kwonlyargs:

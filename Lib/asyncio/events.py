@@ -79,7 +79,9 @@ class Handle:
     def _run(self):
         try:
             self._context.run(self._callback, *self._args)
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             cb = format_helpers._format_callback_source(
                 self._callback, self._args)
             msg = f'Exception in callback {cb}'
@@ -117,20 +119,24 @@ class TimerHandle(Handle):
         return hash(self._when)
 
     def __lt__(self, other):
-        return self._when < other._when
+        if isinstance(other, TimerHandle):
+            return self._when < other._when
+        return NotImplemented
 
     def __le__(self, other):
-        if self._when < other._when:
-            return True
-        return self.__eq__(other)
+        if isinstance(other, TimerHandle):
+            return self._when < other._when or self.__eq__(other)
+        return NotImplemented
 
     def __gt__(self, other):
-        return self._when > other._when
+        if isinstance(other, TimerHandle):
+            return self._when > other._when
+        return NotImplemented
 
     def __ge__(self, other):
-        if self._when > other._when:
-            return True
-        return self.__eq__(other)
+        if isinstance(other, TimerHandle):
+            return self._when > other._when or self.__eq__(other)
+        return NotImplemented
 
     def __eq__(self, other):
         if isinstance(other, TimerHandle):
@@ -139,10 +145,6 @@ class TimerHandle(Handle):
                     self._args == other._args and
                     self._cancelled == other._cancelled)
         return NotImplemented
-
-    def __ne__(self, other):
-        equal = self.__eq__(other)
-        return NotImplemented if equal is NotImplemented else not equal
 
     def cancel(self):
         if not self._cancelled:
@@ -298,7 +300,8 @@ class AbstractEventLoop:
             *, ssl=None, family=0, proto=0,
             flags=0, sock=None, local_addr=None,
             server_hostname=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            happy_eyeballs_delay=None, interleave=None):
         raise NotImplementedError
 
     async def create_server(

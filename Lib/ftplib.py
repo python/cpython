@@ -148,6 +148,7 @@ class FTP:
             self.timeout = timeout
         if source_address is not None:
             self.source_address = source_address
+        sys.audit("ftplib.connect", self, self.host, self.port)
         self.sock = socket.create_connection((self.host, self.port), self.timeout,
                                              source_address=self.source_address)
         self.af = self.sock.family
@@ -188,6 +189,7 @@ class FTP:
     def putline(self, line):
         if '\r' in line or '\n' in line:
             raise ValueError('an illegal newline character should not be contained')
+        sys.audit("ftplib.sendcmd", self, line)
         line = line + CRLF
         if self.debugging > 1:
             print('*put*', self.sanitize(line))
@@ -302,26 +304,7 @@ class FTP:
 
     def makeport(self):
         '''Create a new socket and send a PORT command for it.'''
-        err = None
-        sock = None
-        for res in socket.getaddrinfo(None, 0, self.af, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
-            af, socktype, proto, canonname, sa = res
-            try:
-                sock = socket.socket(af, socktype, proto)
-                sock.bind(sa)
-            except OSError as _:
-                err = _
-                if sock:
-                    sock.close()
-                sock = None
-                continue
-            break
-        if sock is None:
-            if err is not None:
-                raise err
-            else:
-                raise OSError("getaddrinfo returns an empty list")
-        sock.listen(1)
+        sock = socket.create_server(("", 0), family=self.af, backlog=1)
         port = sock.getsockname()[1] # Get proper port
         host = self.sock.getsockname()[0] # Get proper host
         if self.af == socket.AF_INET:

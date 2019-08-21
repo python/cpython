@@ -824,10 +824,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def display_no_subprocess_error(self):
         tkMessageBox.showerror(
-            "Subprocess Startup Error",
-            "IDLE's subprocess didn't make connection.  Either IDLE can't "
-            "start a subprocess or personal firewall software is blocking "
-            "the connection.",
+            "Subprocess Connection Error",
+            "IDLE's subprocess didn't make connection.\n"
+            "See the 'Startup failure' section of the IDLE doc, online at\n"
+            "https://docs.python.org/3/library/idle.html#startup-failure",
             parent=self.tkconsole.text)
 
     def display_executing_dialog(self):
@@ -861,6 +861,8 @@ class PyShell(OutputWindow):
         ("Squeeze", "<<squeeze-current-text>>"),
     ]
 
+    allow_line_numbers = False
+
     # New classes
     from idlelib.history import History
 
@@ -881,7 +883,7 @@ class PyShell(OutputWindow):
         self.usetabs = True
         # indentwidth must be 8 when using tabs.  See note in EditorWindow:
         self.indentwidth = 8
-        self.context_use_ps1 = True
+
         self.sys_ps1 = sys.ps1 if hasattr(sys, 'ps1') else '>>> '
         self.prompt_last_line = self.sys_ps1.split('\n')[-1]
         self.prompt = self.sys_ps1  # Changes when debug active

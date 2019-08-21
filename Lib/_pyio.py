@@ -33,6 +33,12 @@ DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 # Rebind for compatibility
 BlockingIOError = BlockingIOError
 
+# Does io.IOBase finalizer log the exception if the close() method fails?
+# The exception is ignored silently by default in release build.
+_IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
+# Does open() check its 'errors' argument?
+_CHECK_ERRORS = _IOBASE_EMITS_UNRAISABLE
+
 
 def open(file, mode="r", buffering=-1, encoding=None, errors=None,
          newline=None, closefd=True, opener=None):
@@ -250,6 +256,29 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         result.close()
         raise
 
+# Define a default pure-Python implementation for open_code()
+# that does not allow hooks. Warn on first use. Defined for tests.
+def _open_code_with_warning(path):
+    """Opens the provided file with mode ``'rb'``. This function
+    should be used when the intent is to treat the contents as
+    executable code.
+
+    ``path`` should be an absolute path.
+
+    When supported by the runtime, this function can be hooked
+    in order to allow embedders more control over code files.
+    This functionality is not supported on the current runtime.
+    """
+    import warnings
+    warnings.warn("_pyio.open_code() may not be using hooks",
+                  RuntimeWarning, 2)
+    return open(path, "rb")
+
+try:
+    open_code = io.open_code
+except AttributeError:
+    open_code = _open_code_with_warning
+
 
 class DocDescriptor:
     """Helper for builtins.open.__doc__
@@ -292,16 +321,15 @@ class IOBase(metaclass=abc.ABCMeta):
     derived classes can override selectively; the default implementations
     represent a file that cannot be read, written or seeked.
 
-    Even though IOBase does not declare read, readinto, or write because
+    Even though IOBase does not declare read or write because
     their signatures will vary, implementations and clients should
     consider those methods part of the interface. Also, implementations
     may raise UnsupportedOperation when operations they do not support are
     called.
 
     The basic type used for binary data read from or written to a file is
-    bytes. Other bytes-like objects are accepted as method arguments too. In
-    some cases (such as readinto), a writable object is required. Text I/O
-    classes work with str data.
+    bytes. Other bytes-like objects are accepted as method arguments too.
+    Text I/O classes work with str data.
 
     Note that calling any method (even inquiries) on a closed stream is
     undefined. Implementations may raise OSError in this case.
@@ -379,15 +407,28 @@ class IOBase(metaclass=abc.ABCMeta):
 
     def __del__(self):
         """Destructor.  Calls close()."""
-        # The try/except block is in case this is called at program
-        # exit time, when it's possible that globals have already been
-        # deleted, and then the close() call might fail.  Since
-        # there's nothing we can do about such failures and they annoy
-        # the end users, we suppress the traceback.
         try:
+            closed = self.closed
+        except Exception:
+            # If getting closed fails, then the object is probably
+            # in an unusable state, so ignore.
+            return
+
+        if closed:
+            return
+
+        if _IOBASE_EMITS_UNRAISABLE:
             self.close()
-        except:
-            pass
+        else:
+            # The try/except block is in case this is called at program
+            # exit time, when it's possible that globals have already been
+            # deleted, and then the close() call might fail.  Since
+            # there's nothing we can do about such failures and they annoy
+            # the end users, we suppress the traceback.
+            try:
+                self.close()
+            except:
+                pass
 
     ### Inquiries ###
 
@@ -552,6 +593,11 @@ class IOBase(metaclass=abc.ABCMeta):
         return lines
 
     def writelines(self, lines):
+        """Write a list of lines to the stream.
+
+        Line separators are not added, so it is usual for each of the lines
+        provided to have a line separator at the end.
+        """
         self._checkClosed()
         for line in lines:
             self.write(line)
@@ -839,6 +885,10 @@ class BytesIO(BufferedIOBase):
 
     """Buffered I/O implementation using an in-memory bytes buffer."""
 
+    # Initialize _buffer as soon as possible since it's used by __del__()
+    # which calls close()
+    _buffer = None
+
     def __init__(self, initial_bytes=None):
         buf = bytearray()
         if initial_bytes is not None:
@@ -866,7 +916,8 @@ class BytesIO(BufferedIOBase):
         return memoryview(self._buffer)
 
     def close(self):
-        self._buffer.clear()
+        if self._buffer is not None:
+            self._buffer.clear()
         super().close()
 
     def read(self, size=-1):
@@ -1522,7 +1573,7 @@ class FileIO(RawIOBase):
                     raise IsADirectoryError(errno.EISDIR,
                                             os.strerror(errno.EISDIR), file)
             except AttributeError:
-                # Ignore the AttribueError if stat.S_ISDIR or errno.EISDIR
+                # Ignore the AttributeError if stat.S_ISDIR or errno.EISDIR
                 # don't exist.
                 pass
             self._blksize = getattr(fdfstat, 'st_blksize', 0)
@@ -1763,8 +1814,7 @@ class TextIOBase(IOBase):
     """Base class for text I/O.
 
     This class provides a character and line based interface to stream
-    I/O. There is no readinto method because Python's character strings
-    are immutable. There is no public constructor.
+    I/O. There is no public constructor.
     """
 
     def read(self, size=-1):
@@ -1937,6 +1987,10 @@ class TextIOWrapper(TextIOBase):
 
     _CHUNK_SIZE = 2048
 
+    # Initialize _buffer as soon as possible since it's used by __del__()
+    # which calls close()
+    _buffer = None
+
     # The write_through argument has no effect here since this
     # implementation always writes through.  The argument is present only
     # so that the signature can match the signature of the C version.
@@ -1970,6 +2024,8 @@ class TextIOWrapper(TextIOBase):
         else:
             if not isinstance(errors, str):
                 raise ValueError("invalid errors: %r" % errors)
+            if _CHECK_ERRORS:
+                codecs.lookup_error(errors)
 
         self._buffer = buffer
         self._decoded_chars = ''  # buffer for text returned from decoder

@@ -24,10 +24,6 @@
  *  Py_[X]DECREF() and Py_[X]INCREF() macros.  The lint annotations
  *  look like "NOTE(...)".
  *
- *  To debug parser errors like
- *      "parser.ParserError: Expected node type 12, got 333."
- *  decode symbol numbers using the automatically-generated files
- *  Lib/symbol.h and Include/token.h.
  */
 
 #include "Python.h"                     /* general Python API             */
@@ -228,10 +224,10 @@ PyTypeObject PyST_Type = {
     (int) sizeof(PyST_Object),          /* tp_basicsize         */
     0,                                  /* tp_itemsize          */
     (destructor)parser_free,            /* tp_dealloc           */
-    0,                                  /* tp_print             */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr           */
     0,                                  /* tp_setattr           */
-    0,                                  /* tp_reserved          */
+    0,                                  /* tp_as_async          */
     0,                                  /* tp_repr              */
     0,                                  /* tp_as_number         */
     0,                                  /* tp_as_sequence       */
@@ -340,8 +336,7 @@ parser_newstobject(node *st, int type)
     if (o != 0) {
         o->st_node = st;
         o->st_type = type;
-        o->st_flags.cf_flags = 0;
-        o->st_flags.cf_feature_version = PY_MINOR_VERSION;
+        o->st_flags = _PyCompilerFlags_INIT;
     }
     else {
         PyNode_Free(st);
@@ -648,7 +643,6 @@ validate_node(node *tree)
 {
     int type = TYPE(tree);
     int nch = NCH(tree);
-    dfa *nt_dfa;
     state *dfa_state;
     int pos, arc;
 
@@ -658,7 +652,7 @@ validate_node(node *tree)
         PyErr_Format(parser_error, "Unrecognized node type %d.", TYPE(tree));
         return 0;
     }
-    nt_dfa = &_PyParser_Grammar.g_dfa[type];
+    const dfa *nt_dfa = &_PyParser_Grammar.g_dfa[type];
     REQ(tree, nt_dfa->d_type);
 
     /* Run the DFA for this nonterminal. */
@@ -666,6 +660,13 @@ validate_node(node *tree)
     for (pos = 0; pos < nch; ++pos) {
         node *ch = CHILD(tree, pos);
         int ch_type = TYPE(ch);
+        if ((ch_type >= NT_OFFSET + _PyParser_Grammar.g_ndfas)
+            || (ISTERMINAL(ch_type) && (ch_type >= N_TOKENS))
+            || (ch_type < 0)
+           ) {
+            PyErr_Format(parser_error, "Unrecognized node type %d.", ch_type);
+            return 0;
+        }
         if (ch_type == suite && TYPE(tree) == funcdef) {
             /* This is the opposite hack of what we do in parser.c
                (search for func_body_suite), except we don't ever
@@ -700,8 +701,10 @@ validate_node(node *tree)
             const char *expected_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
 
             if (ISNONTERMINAL(next_type)) {
-                PyErr_Format(parser_error, "Expected node type %d, got %d.",
-                             next_type, ch_type);
+                PyErr_Format(parser_error, "Expected %s, got %s.",
+                             _PyParser_Grammar.g_dfa[next_type - NT_OFFSET].d_name,
+                             ISTERMINAL(ch_type) ? _PyParser_TokenNames[ch_type] :
+                             _PyParser_Grammar.g_dfa[ch_type - NT_OFFSET].d_name);
             }
             else if (expected_str != NULL) {
                 PyErr_Format(parser_error, "Illegal terminal: expected '%s'.",
@@ -1154,6 +1157,12 @@ PyMODINIT_FUNC
 PyInit_parser(void)
 {
     PyObject *module, *copyreg;
+
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "The parser module is deprecated and will be removed "
+            "in future versions of Python", 7) != 0) {
+        return NULL;
+    }
 
     if (PyType_Ready(&PyST_Type) < 0)
         return NULL;

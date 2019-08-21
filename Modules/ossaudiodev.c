@@ -14,8 +14,6 @@
  * (c) 2002 Gregory P. Ward.  All Rights Reserved.
  * (c) 2002 Python Software Foundation.  All Rights Reserved.
  *
- * XXX need a license statement
- *
  * $Id$
  */
 
@@ -539,7 +537,7 @@ oss_exit(PyObject *self, PyObject *unused)
 {
     _Py_IDENTIFIER(close);
 
-    PyObject *ret = _PyObject_CallMethodId(self, &PyId_close, NULL);
+    PyObject *ret = _PyObject_CallMethodIdNoArgs(self, &PyId_close);
     if (!ret)
         return NULL;
     Py_DECREF(ret);
@@ -965,10 +963,10 @@ static PyTypeObject OSSAudioType = {
     0,                          /*tp_itemsize*/
     /* methods */
     (destructor)oss_dealloc,    /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_reserved*/
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -999,10 +997,10 @@ static PyTypeObject OSSMixerType = {
     0,                              /*tp_itemsize*/
     /* methods */
     (destructor)oss_mixer_dealloc,  /*tp_dealloc*/
-    0,                              /*tp_print*/
+    0,                              /*tp_vectorcall_offset*/
     0,                              /*tp_getattr*/
     0,                              /*tp_setattr*/
-    0,                              /*tp_reserved*/
+    0,                              /*tp_as_async*/
     0,                              /*tp_repr*/
     0,                              /*tp_as_number*/
     0,                              /*tp_as_sequence*/

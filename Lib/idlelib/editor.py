@@ -2,7 +2,9 @@ import importlib.abc
 import importlib.util
 import os
 import platform
+import re
 import string
+import sys
 import tokenize
 import traceback
 import webbrowser
@@ -53,14 +55,17 @@ class EditorWindow(object):
     from idlelib.autoexpand import AutoExpand
     from idlelib.calltip import Calltip
     from idlelib.codecontext import CodeContext
-    from idlelib.paragraph import FormatParagraph
+    from idlelib.sidebar import LineNumbers
+    from idlelib.format import FormatParagraph, FormatRegion, Indents, Rstrip
     from idlelib.parenmatch import ParenMatch
-    from idlelib.rstrip import Rstrip
     from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
     help_url = None
+
+    allow_code_context = True
+    allow_line_numbers = True
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
         # Delay import: runscript imports pyshell imports EditorWindow.
@@ -170,14 +175,16 @@ class EditorWindow(object):
         text.bind("<<smart-backspace>>",self.smart_backspace_event)
         text.bind("<<newline-and-indent>>",self.newline_and_indent_event)
         text.bind("<<smart-indent>>",self.smart_indent_event)
-        text.bind("<<indent-region>>",self.indent_region_event)
-        text.bind("<<dedent-region>>",self.dedent_region_event)
-        text.bind("<<comment-region>>",self.comment_region_event)
-        text.bind("<<uncomment-region>>",self.uncomment_region_event)
-        text.bind("<<tabify-region>>",self.tabify_region_event)
-        text.bind("<<untabify-region>>",self.untabify_region_event)
-        text.bind("<<toggle-tabs>>",self.toggle_tabs_event)
-        text.bind("<<change-indentwidth>>",self.change_indentwidth_event)
+        self.fregion = fregion = self.FormatRegion(self)
+        # self.fregion used in smart_indent_event to access indent_region.
+        text.bind("<<indent-region>>", fregion.indent_region_event)
+        text.bind("<<dedent-region>>", fregion.dedent_region_event)
+        text.bind("<<comment-region>>", fregion.comment_region_event)
+        text.bind("<<uncomment-region>>", fregion.uncomment_region_event)
+        text.bind("<<tabify-region>>", fregion.tabify_region_event)
+        text.bind("<<untabify-region>>", fregion.untabify_region_event)
+        text.bind("<<toggle-tabs>>", self.Indents.toggle_tabs_event)
+        text.bind("<<change-indentwidth>>", self.Indents.change_indentwidth_event)
         text.bind("<Left>", self.move_at_edge_if_selection(0))
         text.bind("<Right>", self.move_at_edge_if_selection(1))
         text.bind("<<del-word-left>>", self.del_word_left)
@@ -195,12 +202,14 @@ class EditorWindow(object):
             text.bind("<<open-turtle-demo>>", self.open_turtle_demo)
 
         self.set_status_bar()
+        text_frame.pack(side=LEFT, fill=BOTH, expand=1)
+        text_frame.rowconfigure(1, weight=1)
+        text_frame.columnconfigure(1, weight=1)
         vbar['command'] = self.handle_yview
-        vbar.pack(side=RIGHT, fill=Y)
+        vbar.grid(row=1, column=2, sticky=NSEW)
         text['yscrollcommand'] = vbar.set
         text['font'] = idleConf.GetFont(self.root, 'main', 'EditorWindow')
-        text_frame.pack(side=LEFT, fill=BOTH, expand=1)
-        text.pack(side=TOP, fill=BOTH, expand=1)
+        text.grid(row=1, column=1, sticky=NSEW)
         text.focus_set()
 
         # usetabs true  -> literal tab characters are used by indent and
@@ -228,10 +237,6 @@ class EditorWindow(object):
         self.indentwidth = self.tabwidth
         self.set_notabs_indentwidth()
 
-        # If context_use_ps1 is true, parsing searches back for a ps1 line;
-        # else searches for a popular (if, def, ...) Python stmt.
-        self.context_use_ps1 = False
-
         # When searching backwards for a reliable place to begin parsing,
         # first start num_context_lines[0] lines back, then
         # num_context_lines[1] lines back if that didn't work, and so on.
@@ -251,6 +256,8 @@ class EditorWindow(object):
         self.good_load = False
         self.set_indentation_params(False)
         self.color = None # initialized below in self.ResetColorizer
+        self.code_context = None # optionally initialized later below
+        self.line_numbers = None # optionally initialized later below
         if filename:
             if os.path.exists(filename) and not os.path.isdir(filename):
                 if io.loadfile(filename):
@@ -308,6 +315,7 @@ class EditorWindow(object):
         scriptbinding = ScriptBinding(self)
         text.bind("<<check-module>>", scriptbinding.check_module_event)
         text.bind("<<run-module>>", scriptbinding.run_module_event)
+        text.bind("<<run-custom>>", scriptbinding.run_custom_event)
         text.bind("<<do-rstrip>>", self.Rstrip(self).do_rstrip)
         ctip = self.Calltip(self)
         text.bind("<<try-open-calltip>>", ctip.try_open_calltip_event)
@@ -315,11 +323,23 @@ class EditorWindow(object):
         text.bind("<<refresh-calltip>>", ctip.refresh_calltip_event)
         text.bind("<<force-open-calltip>>", ctip.force_open_calltip_event)
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
-        text.bind("<<toggle-code-context>>",
-                  self.CodeContext(self).toggle_code_context_event)
+        if self.allow_code_context:
+            self.code_context = self.CodeContext(self)
+            text.bind("<<toggle-code-context>>",
+                      self.code_context.toggle_code_context_event)
+        else:
+            self.update_menu_state('options', '*Code Context', 'disabled')
+        if self.allow_line_numbers:
+            self.line_numbers = self.LineNumbers(self)
+            if idleConf.GetOption('main', 'EditorWindow',
+                                  'line-numbers-default', type='bool'):
+                self.toggle_line_numbers_event()
+            text.bind("<<toggle-line-numbers>>", self.toggle_line_numbers_event)
+        else:
+            self.update_menu_state('options', '*Line Numbers', 'disabled')
 
     def _filename_to_unicode(self, filename):
-        """Return filename as BMP unicode so diplayable in Tk."""
+        """Return filename as BMP unicode so displayable in Tk."""
         # Decode bytes to unicode.
         if isinstance(filename, bytes):
             try:
@@ -776,6 +796,12 @@ class EditorWindow(object):
         self._addcolorizer()
         EditorWindow.color_config(self.text)
 
+        if self.code_context is not None:
+            self.code_context.update_highlight_colors()
+
+        if self.line_numbers is not None:
+            self.line_numbers.update_colors()
+
     IDENTCHARS = string.ascii_letters + string.digits + "_"
 
     def colorize_syntax_error(self, text, pos):
@@ -793,7 +819,17 @@ class EditorWindow(object):
         "Update the text widgets' font if it is changed"
         # Called from configdialog.py
 
-        self.text['font'] = idleConf.GetFont(self.root, 'main','EditorWindow')
+        # Update the code context widget first, since its height affects
+        # the height of the text widget.  This avoids double re-rendering.
+        if self.code_context is not None:
+            self.code_context.update_font()
+        # Next, update the line numbers widget, since its width affects
+        # the width of the text widget.
+        if self.line_numbers is not None:
+            self.line_numbers.update_font()
+        # Finally, update the main text widget.
+        new_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
+        self.text['font'] = new_font
 
     def RemoveKeybindings(self):
         "Remove the keybindings before they are changed."
@@ -1280,11 +1316,11 @@ class EditorWindow(object):
         try:
             if first and last:
                 if index2line(first) != index2line(last):
-                    return self.indent_region_event(event)
+                    return self.fregion.indent_region_event(event)
                 text.delete(first, last)
                 text.mark_set("insert", first)
             prefix = text.get("insert linestart", "insert")
-            raw, effective = classifyws(prefix, self.tabwidth)
+            raw, effective = get_line_indent(prefix, self.tabwidth)
             if raw == len(prefix):
                 # only whitespace to the left
                 self.reindent_to(effective + self.indentwidth)
@@ -1337,14 +1373,13 @@ class EditorWindow(object):
             # open/close first need to find the last stmt
             lno = index2line(text.index('insert'))
             y = pyparse.Parser(self.indentwidth, self.tabwidth)
-            if not self.context_use_ps1:
+            if not self.prompt_last_line:
                 for context in self.num_context_lines:
                     startat = max(lno - context, 1)
                     startatindex = repr(startat) + ".0"
                     rawtext = text.get(startatindex, "insert")
                     y.set_code(rawtext)
                     bod = y.find_good_parse_start(
-                              self.context_use_ps1,
                               self._build_char_in_string_func(startatindex))
                     if bod is not None or startat == 1:
                         break
@@ -1414,86 +1449,6 @@ class EditorWindow(object):
             return _icis(_startindex + "+%dc" % offset)
         return inner
 
-    def indent_region_event(self, event):
-        head, tail, chars, lines = self.get_region()
-        for pos in range(len(lines)):
-            line = lines[pos]
-            if line:
-                raw, effective = classifyws(line, self.tabwidth)
-                effective = effective + self.indentwidth
-                lines[pos] = self._make_blanks(effective) + line[raw:]
-        self.set_region(head, tail, chars, lines)
-        return "break"
-
-    def dedent_region_event(self, event):
-        head, tail, chars, lines = self.get_region()
-        for pos in range(len(lines)):
-            line = lines[pos]
-            if line:
-                raw, effective = classifyws(line, self.tabwidth)
-                effective = max(effective - self.indentwidth, 0)
-                lines[pos] = self._make_blanks(effective) + line[raw:]
-        self.set_region(head, tail, chars, lines)
-        return "break"
-
-    def comment_region_event(self, event):
-        head, tail, chars, lines = self.get_region()
-        for pos in range(len(lines) - 1):
-            line = lines[pos]
-            lines[pos] = '##' + line
-        self.set_region(head, tail, chars, lines)
-        return "break"
-
-    def uncomment_region_event(self, event):
-        head, tail, chars, lines = self.get_region()
-        for pos in range(len(lines)):
-            line = lines[pos]
-            if not line:
-                continue
-            if line[:2] == '##':
-                line = line[2:]
-            elif line[:1] == '#':
-                line = line[1:]
-            lines[pos] = line
-        self.set_region(head, tail, chars, lines)
-        return "break"
-
-    def tabify_region_event(self, event):
-        head, tail, chars, lines = self.get_region()
-        tabwidth = self._asktabwidth()
-        if tabwidth is None: return
-        for pos in range(len(lines)):
-            line = lines[pos]
-            if line:
-                raw, effective = classifyws(line, tabwidth)
-                ntabs, nspaces = divmod(effective, tabwidth)
-                lines[pos] = '\t' * ntabs + ' ' * nspaces + line[raw:]
-        self.set_region(head, tail, chars, lines)
-        return "break"
-
-    def untabify_region_event(self, event):
-        head, tail, chars, lines = self.get_region()
-        tabwidth = self._asktabwidth()
-        if tabwidth is None: return
-        for pos in range(len(lines)):
-            lines[pos] = lines[pos].expandtabs(tabwidth)
-        self.set_region(head, tail, chars, lines)
-        return "break"
-
-    def toggle_tabs_event(self, event):
-        if self.askyesno(
-              "Toggle tabs",
-              "Turn tabs " + ("on", "off")[self.usetabs] +
-              "?\nIndent width " +
-              ("will be", "remains at")[self.usetabs] + " 8." +
-              "\n Note: a tab is always 8 columns",
-              parent=self.text):
-            self.usetabs = not self.usetabs
-            # Try to prevent inconsistent indentation.
-            # User must change indent width manually after using tabs.
-            self.indentwidth = 8
-        return "break"
-
     # XXX this isn't bound to anything -- see tabwidth comments
 ##     def change_tabwidth_event(self, event):
 ##         new = self._asktabwidth()
@@ -1501,45 +1456,6 @@ class EditorWindow(object):
 ##             self.tabwidth = new
 ##             self.set_indentation_params(0, guess=0)
 ##         return "break"
-
-    def change_indentwidth_event(self, event):
-        new = self.askinteger(
-                  "Indent width",
-                  "New indent width (2-16)\n(Always use 8 when using tabs)",
-                  parent=self.text,
-                  initialvalue=self.indentwidth,
-                  minvalue=2,
-                  maxvalue=16)
-        if new and new != self.indentwidth and not self.usetabs:
-            self.indentwidth = new
-        return "break"
-
-    def get_region(self):
-        text = self.text
-        first, last = self.get_selection_indices()
-        if first and last:
-            head = text.index(first + " linestart")
-            tail = text.index(last + "-1c lineend +1c")
-        else:
-            head = text.index("insert linestart")
-            tail = text.index("insert lineend +1c")
-        chars = text.get(head, tail)
-        lines = chars.split("\n")
-        return head, tail, chars, lines
-
-    def set_region(self, head, tail, chars, lines):
-        text = self.text
-        newchars = "\n".join(lines)
-        if newchars == chars:
-            text.bell()
-            return
-        text.tag_remove("sel", "1.0", "end")
-        text.mark_set("insert", head)
-        text.undo_block_start()
-        text.delete(head, tail)
-        text.insert(head, newchars)
-        text.undo_block_stop()
-        text.tag_add("sel", head, "insert")
 
     # Make string that displays as n leading blanks.
 
@@ -1562,15 +1478,6 @@ class EditorWindow(object):
             text.insert("insert", self._make_blanks(column))
         text.undo_block_stop()
 
-    def _asktabwidth(self):
-        return self.askinteger(
-            "Tab width",
-            "Columns per tab? (2-16)",
-            parent=self.text,
-            initialvalue=self.indentwidth,
-            minvalue=2,
-            maxvalue=16)
-
     # Guess indentwidth from text content.
     # Return guessed indentwidth.  This should not be believed unless
     # it's in a reasonable range (e.g., it will be 0 if no indented
@@ -1579,33 +1486,39 @@ class EditorWindow(object):
     def guess_indent(self):
         opener, indented = IndentSearcher(self.text, self.tabwidth).run()
         if opener and indented:
-            raw, indentsmall = classifyws(opener, self.tabwidth)
-            raw, indentlarge = classifyws(indented, self.tabwidth)
+            raw, indentsmall = get_line_indent(opener, self.tabwidth)
+            raw, indentlarge = get_line_indent(indented, self.tabwidth)
         else:
             indentsmall = indentlarge = 0
         return indentlarge - indentsmall
+
+    def toggle_line_numbers_event(self, event=None):
+        if self.line_numbers is None:
+            return
+
+        if self.line_numbers.is_shown:
+            self.line_numbers.hide_sidebar()
+            menu_label = "Show"
+        else:
+            self.line_numbers.show_sidebar()
+            menu_label = "Hide"
+        self.update_menu_label(menu='options', index='*Line Numbers',
+                               label=f'{menu_label} Line Numbers')
 
 # "line.col" -> line, as an int
 def index2line(index):
     return int(float(index))
 
-# Look at the leading whitespace in s.
-# Return pair (# of leading ws characters,
-#              effective # of leading blanks after expanding
-#              tabs to width tabwidth)
 
-def classifyws(s, tabwidth):
-    raw = effective = 0
-    for ch in s:
-        if ch == ' ':
-            raw = raw + 1
-            effective = effective + 1
-        elif ch == '\t':
-            raw = raw + 1
-            effective = (effective // tabwidth + 1) * tabwidth
-        else:
-            break
-    return raw, effective
+_line_indent_re = re.compile(r'[ \t]*')
+def get_line_indent(line, tabwidth):
+    """Return a line's indentation as (# chars, effective # of spaces).
+
+    The effective # of spaces is the length after properly "expanding"
+    the tabs into spaces, as done by str.expandtabs(tabwidth).
+    """
+    m = _line_indent_re.match(line)
+    return m.end(), len(m.group().expandtabs(tabwidth))
 
 
 class IndentSearcher(object):

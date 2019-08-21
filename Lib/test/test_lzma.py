@@ -333,6 +333,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
 
     # Test with inputs larger than 4GiB.
 
+    @support.skip_if_pgo_task
     @bigmemtest(size=_4G + 100, memuse=2)
     def test_compressor_bigmem(self, size):
         lzc = LZMACompressor()
@@ -344,6 +345,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         finally:
             ddata = None
 
+    @support.skip_if_pgo_task
     @bigmemtest(size=_4G + 100, memuse=3)
     def test_decompressor_bigmem(self, size):
         lzd = LZMADecompressor()

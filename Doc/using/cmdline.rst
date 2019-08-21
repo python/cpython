@@ -1,4 +1,4 @@
-.. highlightlang:: sh
+.. highlight:: sh
 
 .. ATTENTION: You probably should update Misc/python.man, too, if you modify
    this file.
@@ -70,6 +70,7 @@ source.
    :data:`sys.path` (allowing modules in that directory to be imported as top
    level modules).
 
+   .. audit-event:: cpython.run_command command cmdoption-c
 
 .. cmdoption:: -m <module-name>
 
@@ -106,12 +107,13 @@ source.
        python -mtimeit -s 'setup here' 'benchmarked code here'
        python -mtimeit -h # for details
 
+   .. audit-event:: cpython.run_module module-name cmdoption-m
+
    .. seealso::
       :func:`runpy.run_module`
          Equivalent functionality directly available to Python code
 
       :pep:`338` -- Executing modules as scripts
-
 
    .. versionchanged:: 3.1
       Supply the package name to run a ``__main__`` submodule.
@@ -129,6 +131,7 @@ source.
    ``"-"`` and the current directory will be added to the start of
    :data:`sys.path`.
 
+   .. audit-event:: cpython.run_stdin "" ""
 
 .. describe:: <script>
 
@@ -147,6 +150,8 @@ source.
    If the script name refers to a directory or zipfile, the script name is
    added to the start of :data:`sys.path` and the ``__main__.py`` file in
    that location is executed as the :mod:`__main__` module.
+
+   .. audit-event:: cpython.run_file filename
 
    .. seealso::
       :func:`runpy.run_path`
@@ -182,13 +187,13 @@ Generic options
 
    .. code-block:: none
 
-       Python 3.6.0b2+
+       Python 3.8.0b2+
 
    When given twice, print more information about the build, like:
 
    .. code-block:: none
 
-       Python 3.6.0b2+ (3.6:84a3c5003510+, Oct 26 2016, 02:33:55)
+       Python 3.8.0b2+ (3.8:0c076caaa8, Apr 20 2019, 21:55:00)
        [GCC 6.2.0 20161005]
 
    .. versionadded:: 3.6
@@ -429,6 +434,9 @@ Miscellaneous options
      not be more verbose than the default if the code is correct: new warnings
      are only emitted when an issue is detected. Effect of the developer mode:
 
+     * Check *encoding* and *errors* arguments on string encoding and decoding
+       operations. Examples: :func:`open`, :meth:`str.encode` and
+       :meth:`bytes.decode`.
      * Add ``default`` warning filter, as :option:`-W` ``default``.
      * Install debug hooks on memory allocators: see the
        :c:func:`PyMem_SetupDebugHooks` C function.
@@ -437,6 +445,7 @@ Miscellaneous options
      * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
      * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
        ``True``
+     * :class:`io.IOBase` destructor logs ``close()`` exceptions.
 
    * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
      the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
@@ -465,7 +474,12 @@ Miscellaneous options
       The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
    .. versionadded:: 3.8
-      The ``-X pycache_prefix`` option.
+      The ``-X pycache_prefix`` option. The ``-X dev`` option now logs
+      ``close()`` exceptions in :class:`io.IOBase` destructor.
+
+   .. versionchanged:: 3.9
+      Using ``-X dev`` option, check *encoding* and *errors* arguments on
+      string encoding and decoding operations.
 
 
 Options you shouldn't use
@@ -530,6 +544,11 @@ conflict.
    that objects defined or imported in it can be used without qualification in
    the interactive session.  You can also change the prompts :data:`sys.ps1` and
    :data:`sys.ps2` and the hook :data:`sys.__interactivehook__` in this file.
+
+   .. audit-event:: cpython.run_startup filename PYTHONSTARTUP
+
+      Raises an :ref:`auditing event <auditing>` ``cpython.run_startup`` with
+      the filename as the argument when called on startup.
 
 
 .. envvar:: PYTHONOPTIMIZE
@@ -920,15 +939,18 @@ conflict.
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
-Setting these variables only has an effect in a debug build of Python, that is,
-if Python was configured with the ``--with-pydebug`` build option.
+Setting these variables only has an effect in a debug build of Python.
 
 .. envvar:: PYTHONTHREADDEBUG
 
    If set, Python will print threading debug info.
+
+   Need Python configured with the ``--with-pydebug`` build option.
 
 
 .. envvar:: PYTHONDUMPREFS
 
    If set, Python will dump objects and reference counts still alive after
    shutting down the interpreter.
+
+   Need Python configured with the ``--with-trace-refs`` build option.

@@ -908,6 +908,7 @@ form.
       Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter
       now are errors.
 
+   .. versionchanged:: 3.7
       Empty matches for the pattern are replaced when adjacent to a previous
       non-empty match.
 
@@ -941,7 +942,7 @@ form.
       >>> print('|'.join(map(re.escape, sorted(operators, reverse=True))))
       /|\-|\+|\*\*|\*
 
-   This functions must not be used for the replacement string in :func:`sub`
+   This function must not be used for the replacement string in :func:`sub`
    and :func:`subn`, only backslashes should be escaped.  For example::
 
       >>> digits_re = r'\d+'
