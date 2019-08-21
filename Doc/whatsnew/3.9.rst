@@ -217,6 +217,6 @@ Changes in the Python API
   catching the specific exception type and supporting both Python 3.9 and
   earlier versions will need to catch both:
   ``except (ImportError, ValueError):``
-  
+
 * The :mod:`venv` activation scripts no longer special-case when
   ``__VENV_PROMPT__`` is set to ``""``.
