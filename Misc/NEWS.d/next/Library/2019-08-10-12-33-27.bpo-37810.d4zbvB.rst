@@ -1,0 +1,2 @@
+Fix :mod:`difflib` ``?`` hint in diff output when dealing with tabs.  Patch
+by Anthony Sottile.
