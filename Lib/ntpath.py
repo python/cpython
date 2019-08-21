@@ -458,7 +458,8 @@ def normpath(path):
         # in the case of paths with these prefixes:
         # \\.\ -> device names
         # \\?\ -> literal paths
-        # do not do any normalization, but return the path unchanged
+        # do not do any normalization, but return the path
+        # unchanged apart from the call to os.fspath()
         return path
     path = path.replace(altsep, sep)
     prefix, path = splitdrive(path)
@@ -575,7 +576,7 @@ else:
         return abspath(tail)
 
     def realpath(path):
-        path = os.fspath(path)
+        path = normpath(path)
         if isinstance(path, bytes):
             prefix = b'\\\\?\\'
             unc_prefix = b'\\\\?\\UNC\\'
