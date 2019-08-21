@@ -842,7 +842,7 @@ The design is such that one can use the factory functions returned by the
    work on the backend — the data in *stream*.
 
    You can use these objects to do transparent transcodings, e.g., from Latin-1
-	to UTF-8 and back.
+   to UTF-8 and back.
 
    The *stream* argument must be a file-like object.
 
