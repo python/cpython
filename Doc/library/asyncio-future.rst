@@ -28,8 +28,8 @@ Future Functions
 
 .. function:: ensure_future(obj, \*, loop=None)
 
-   Schedule the execution of a :ref:`coroutine object <coroutine>`: wrap it in
-   a future. Return a :class:`Task` object.
+   Schedule the execution of a :term:`coroutine object <coroutine>` and wrap it
+   in a future. Return a :class:`Task` object.
 
    Return:
 
