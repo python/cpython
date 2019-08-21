@@ -890,6 +890,8 @@ Internal types
 
       .. index::
          single: co_argcount (code object attribute)
+         single: co_posonlyargcount (code object attribute)
+         single: co_kwonlyargcount (code object attribute)
          single: co_code (code object attribute)
          single: co_consts (code object attribute)
          single: co_filename (code object attribute)
@@ -905,21 +907,26 @@ Internal types
          single: co_freevars (code object attribute)
 
       Special read-only attributes: :attr:`co_name` gives the function name;
-      :attr:`co_argcount` is the number of positional arguments (including arguments
-      with default values); :attr:`co_nlocals` is the number of local variables used
-      by the function (including arguments); :attr:`co_varnames` is a tuple containing
+      :attr:`co_argcount` is the total number of positional arguments
+      (including positional-only arguments and arguments with default values);
+      :attr:`co_posonlyargcount` is the number of positional-only arguments
+      (including arguments with default values); :attr:`co_kwonlyargcount` is
+      the number of keyword-only arguments (including arguments with default
+      values); :attr:`co_nlocals` is the number of local variables used by the
+      function (including arguments); :attr:`co_varnames` is a tuple containing
       the names of the local variables (starting with the argument names);
-      :attr:`co_cellvars` is a tuple containing the names of local variables that are
-      referenced by nested functions; :attr:`co_freevars` is a tuple containing the
-      names of free variables; :attr:`co_code` is a string representing the sequence
-      of bytecode instructions; :attr:`co_consts` is a tuple containing the literals
-      used by the bytecode; :attr:`co_names` is a tuple containing the names used by
-      the bytecode; :attr:`co_filename` is the filename from which the code was
-      compiled; :attr:`co_firstlineno` is the first line number of the function;
-      :attr:`co_lnotab` is a string encoding the mapping from bytecode offsets to
-      line numbers (for details see the source code of the interpreter);
-      :attr:`co_stacksize` is the required stack size (including local variables);
-      :attr:`co_flags` is an integer encoding a number of flags for the interpreter.
+      :attr:`co_cellvars` is a tuple containing the names of local variables
+      that are referenced by nested functions; :attr:`co_freevars` is a tuple
+      containing the names of free variables; :attr:`co_code` is a string
+      representing the sequence of bytecode instructions; :attr:`co_consts` is
+      a tuple containing the literals used by the bytecode; :attr:`co_names` is
+      a tuple containing the names used by the bytecode; :attr:`co_filename` is
+      the filename from which the code was compiled; :attr:`co_firstlineno` is
+      the first line number of the function; :attr:`co_lnotab` is a string
+      encoding the mapping from bytecode offsets to line numbers (for details
+      see the source code of the interpreter); :attr:`co_stacksize` is the
+      required stack size (including local variables); :attr:`co_flags` is an
+      integer encoding a number of flags for the interpreter.
 
       .. index:: object: generator
 
@@ -1311,9 +1318,9 @@ Basic customization
    Called by the :func:`format` built-in function,
    and by extension, evaluation of :ref:`formatted string literals
    <f-strings>` and the :meth:`str.format` method, to produce a "formatted"
-   string representation of an object. The ``format_spec`` argument is
+   string representation of an object. The *format_spec* argument is
    a string that contains a description of the formatting options desired.
-   The interpretation of the ``format_spec`` argument is up to the type
+   The interpretation of the *format_spec* argument is up to the type
    implementing :meth:`__format__`, however most classes will either
    delegate formatting to one of the built-in types, or use a similar
    formatting option syntax.
@@ -1804,7 +1811,7 @@ class defining the method.
    class, as in::
 
        class Philosopher:
-           def __init_subclass__(cls, default_name, **kwargs):
+           def __init_subclass__(cls, /, default_name, **kwargs):
                super().__init_subclass__(**kwargs)
                cls.default_name = default_name
 
@@ -2387,11 +2394,9 @@ left undefined.
    functions). Presence of this method indicates that the numeric object is
    an integer type.  Must return an integer.
 
-   .. note::
-
-      In order to have a coherent integer type class, when :meth:`__index__` is
-      defined :meth:`__int__` should also be defined, and both should return
-      the same value.
+   If :meth:`__int__`, :meth:`__float__` and :meth:`__complex__` are not
+   defined then corresponding built-in functions :func:`int`, :func:`float`
+   and :func:`complex` fall back to :meth:`__index__`.
 
 
 .. method:: object.__round__(self, [,ndigits])
@@ -2680,13 +2685,13 @@ Asynchronous context managers can be used in an :keyword:`async with` statement.
 
 .. method:: object.__aenter__(self)
 
-   This method is semantically similar to the :meth:`__enter__`, with only
-   difference that it must return an *awaitable*.
+   Semantically similar to :meth:`__enter__`, the only
+   difference being that it must return an *awaitable*.
 
 .. method:: object.__aexit__(self, exc_type, exc_value, traceback)
 
-   This method is semantically similar to the :meth:`__exit__`, with only
-   difference that it must return an *awaitable*.
+   Semantically similar to :meth:`__exit__`, the only
+   difference being that it must return an *awaitable*.
 
 An example of an asynchronous context manager class::
 

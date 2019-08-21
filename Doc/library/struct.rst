@@ -70,7 +70,7 @@ The module defines the following exception and functions:
    size required by the format, as reflected by :func:`calcsize`.
 
 
-.. function:: unpack_from(format, buffer, offset=0)
+.. function:: unpack_from(format, /, buffer, offset=0)
 
    Unpack from *buffer* starting at position *offset*, according to the format
    string *format*.  The result is a tuple even if it contains exactly one

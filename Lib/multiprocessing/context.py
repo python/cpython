@@ -35,6 +35,7 @@ class BaseContext(object):
     AuthenticationError = AuthenticationError
 
     current_process = staticmethod(process.current_process)
+    parent_process = staticmethod(process.parent_process)
     active_children = staticmethod(process.active_children)
 
     def cpu_count(self):
@@ -308,7 +309,12 @@ if sys.platform != 'win32':
         'spawn': SpawnContext(),
         'forkserver': ForkServerContext(),
     }
-    _default_context = DefaultContext(_concrete_contexts['fork'])
+    if sys.platform == 'darwin':
+        # bpo-33725: running arbitrary code after fork() is no longer reliable
+        # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
+        _default_context = DefaultContext(_concrete_contexts['spawn'])
+    else:
+        _default_context = DefaultContext(_concrete_contexts['fork'])
 
 else:
 

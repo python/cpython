@@ -156,7 +156,15 @@ PyDoc_STRVAR(list_sort__doc__,
 "sort($self, /, *, key=None, reverse=False)\n"
 "--\n"
 "\n"
-"Stable sort *IN PLACE*.");
+"Sort the list in ascending order and return None.\n"
+"\n"
+"The sort is in-place (i.e. the list itself is modified) and stable (i.e. the\n"
+"order of two equal elements is maintained).\n"
+"\n"
+"If a key function is given, apply it once to each list item and sort them,\n"
+"ascending or descending, according to their function values.\n"
+"\n"
+"The reverse flag can be set to sort in descending order.");
 
 #define LIST_SORT_METHODDEF    \
     {"sort", (PyCFunction)(void(*)(void))list_sort, METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},
@@ -359,4 +367,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=d1d5078edb7d3cf4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=73718c0c33798c62 input=a9049054013a1b77]*/
