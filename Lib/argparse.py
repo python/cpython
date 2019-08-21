@@ -103,6 +103,7 @@ _UNRECOGNIZED_ARGS_ATTR = '_unrecognized_args'
 # Utility functions and classes
 # =============================
 
+
 class _AttributeHolder(object):
     """Abstract base class that provides __repr__.
 
@@ -140,7 +141,7 @@ def _copy_items(items):
     # The copy module is used only in the 'append' and 'append_const'
     # actions, and it is needed only when the default value isn't a list.
     # Delay its import for speeding up the common case.
-    if type(items) is list:
+    if isinstance(items, list):
         return items[:]
     import copy
     return copy.copy(items)
@@ -333,8 +334,11 @@ class HelpFormatter(object):
                 pos_usage = format(positionals, groups)
                 opt_parts = _re.findall(part_regexp, opt_usage)
                 pos_parts = _re.findall(part_regexp, pos_usage)
-                assert ' '.join(opt_parts) == opt_usage
-                assert ' '.join(pos_parts) == pos_usage
+
+                # ignore extra whitespace differences
+                # can happen if metavar='', '\n', or '\t'
+                assert ' '.join(opt_parts).split() == opt_usage.split()
+                assert ' '.join(pos_parts).split() == pos_usage.split()
 
                 # helper for wrapping lines
                 def get_lines(parts, indent, prefix=None):
@@ -655,7 +659,8 @@ class RawDescriptionHelpFormatter(HelpFormatter):
     """
 
     def _fill_text(self, text, width, indent):
-        return ''.join(indent + line for line in text.splitlines(keepends=True))
+        return ''.join(
+            indent + line for line in text.splitlines(keepends=True))
 
 
 class RawTextHelpFormatter(RawDescriptionHelpFormatter):
@@ -701,7 +706,6 @@ class MetavarTypeHelpFormatter(HelpFormatter):
         return action.type.__name__
 
 
-
 # =====================
 # Options and Arguments
 # =====================
@@ -710,7 +714,7 @@ def _get_action_name(argument):
     if argument is None:
         return None
     elif argument.option_strings:
-        return  '/'.join(argument.option_strings)
+        return '/'.join(argument.option_strings)
     elif argument.metavar not in (None, SUPPRESS):
         return argument.metavar
     elif argument.dest not in (None, SUPPRESS):
@@ -1157,6 +1161,7 @@ class _SubParsersAction(Action):
             vars(namespace).setdefault(_UNRECOGNIZED_ARGS_ATTR, [])
             getattr(namespace, _UNRECOGNIZED_ARGS_ATTR).extend(arg_strings)
 
+
 class _ExtendAction(_AppendAction):
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
@@ -1167,6 +1172,7 @@ class _ExtendAction(_AppendAction):
 # ==============
 # Type classes
 # ==============
+
 
 class FileType(object):
     """Factory for creating file object types
@@ -1221,6 +1227,7 @@ class FileType(object):
 # ===========================
 # Optional and Positional Parsing
 # ===========================
+
 
 class Namespace(_AttributeHolder):
     """Simple object for storing attributes.
@@ -1322,10 +1329,10 @@ class _ActionsContainer(object):
                 return action.default
         return self._defaults.get(dest, None)
 
-
     # =======================
     # Adding argument actions
     # =======================
+
     def add_argument(self, *args, **kwargs):
         """
         add_argument(dest, ..., name=value, ...)
@@ -1373,7 +1380,8 @@ class _ActionsContainer(object):
             try:
                 self._get_formatter()._format_args(action, None)
             except TypeError:
-                raise ValueError("length of metavar tuple does not match nargs")
+                raise ValueError(
+                    "length of metavar tuple does not match nargs")
 
         return self._add_action(action)
 
@@ -1482,7 +1490,8 @@ class _ActionsContainer(object):
 
             # strings starting with two prefix characters are long options
             option_strings.append(option_string)
-            if len(option_string) > 1 and option_string[1] in self.prefix_chars:
+            if len(
+                    option_string) > 1 and option_string[1] in self.prefix_chars:
                 long_option_strings.append(option_string)
 
         # infer destination, '--foo-bar' -> 'foo_bar' and '-x' -> 'x'
@@ -1672,7 +1681,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         default_prefix = '-' if '-' in prefix_chars else prefix_chars[0]
         if self.add_help:
             self.add_argument(
-                default_prefix+'h', default_prefix*2+'help',
+                default_prefix + 'h', default_prefix * 2 + 'help',
                 action='help', default=SUPPRESS,
                 help=_('show this help message and exit'))
 
@@ -2016,7 +2025,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     if (action.default is not None and
                         isinstance(action.default, str) and
                         hasattr(namespace, action.dest) and
-                        action.default is getattr(namespace, action.dest)):
+                            action.default is getattr(namespace, action.dest)):
                         setattr(namespace, action.dest,
                                 self._get_value(action, action.default))
 
@@ -2141,7 +2150,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             # if multiple actions match, the option string was ambiguous
             if len(option_tuples) > 1:
                 options = ', '.join([option_string
-                    for action, option_string, explicit_arg in option_tuples])
+                                     for action, option_string, explicit_arg in option_tuples])
                 args = {'option': arg_string, 'matches': options}
                 msg = _('ambiguous option: %(option)s could match %(matches)s')
                 self.error(msg % args)
@@ -2285,10 +2294,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
              if action.nargs in [PARSER, REMAINDER]]
         if a:
             raise TypeError('parse_intermixed_args: positional arg'
-                            ' with nargs=%s'%a[0].nargs)
+                            ' with nargs=%s' % a[0].nargs)
 
         if [action.dest for group in self._mutually_exclusive_groups
-            for action in group._group_actions if action in positionals]:
+                for action in group._group_actions if action in positionals]:
             raise TypeError('parse_intermixed_args: positional in'
                             ' mutuallyExclusiveGroup')
 
@@ -2310,9 +2319,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 for action in positionals:
                     # remove the empty positional values from namespace
                     if (hasattr(namespace, action.dest)
-                            and getattr(namespace, action.dest)==[]):
+                            and getattr(namespace, action.dest) == []):
                         from warnings import warn
-                        warn('Do not expect %s in %s' % (action.dest, namespace))
+                        warn(
+                            'Do not expect %s in %s' %
+                            (action.dest, namespace))
                         delattr(namespace, action.dest)
             finally:
                 # restore nargs and usage before exiting
