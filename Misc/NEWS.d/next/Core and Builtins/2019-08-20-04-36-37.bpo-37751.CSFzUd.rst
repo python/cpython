@@ -1,0 +1,1 @@
+Fix :func:`codecs.lookup` to normalize the encoding name the same way than :func:`encodings.normalize_encoding`, except that :func:`codecs.lookup` also converts the name to lower case.
