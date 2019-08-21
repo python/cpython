@@ -7,6 +7,7 @@ from email.message import Message
 from test.test_email import TestEmailBase, parameterize
 from email import headerregistry
 from email.headerregistry import Address, Group
+from test.support import ALWAYS_EQ
 
 
 DITTO = object()
@@ -1524,6 +1525,24 @@ class TestAddressAndGroup(TestEmailBase):
         m['To'] = g
         self.assertEqual(m['to'], 'foo bar:;')
         self.assertEqual(m['to'].addresses, g.addresses)
+
+    def test_address_comparison(self):
+        a = Address('foo', 'bar', 'example.com')
+        self.assertEqual(Address('foo', 'bar', 'example.com'), a)
+        self.assertNotEqual(Address('baz', 'bar', 'example.com'), a)
+        self.assertNotEqual(Address('foo', 'baz', 'example.com'), a)
+        self.assertNotEqual(Address('foo', 'bar', 'baz'), a)
+        self.assertFalse(a == object())
+        self.assertTrue(a == ALWAYS_EQ)
+
+    def test_group_comparison(self):
+        a = Address('foo', 'bar', 'example.com')
+        g = Group('foo bar', [a])
+        self.assertEqual(Group('foo bar', (a,)), g)
+        self.assertNotEqual(Group('baz', [a]), g)
+        self.assertNotEqual(Group('foo bar', []), g)
+        self.assertFalse(g == object())
+        self.assertTrue(g == ALWAYS_EQ)
 
 
 class TestFolding(TestHeaderBase):

@@ -1868,7 +1868,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
                free variable that has the same name as a method,
                the name will be considered free *and* local in the
                class.  It should be handled by the closure, as
-               well as by the normal name loookup logic.
+               well as by the normal name lookup logic.
             */
             reftype = get_ref_type(c, name);
             if (reftype == CELL)

@@ -1,0 +1,2 @@
+distutils sorts source file lists so that Extension .so files
+build more reproducibly by default

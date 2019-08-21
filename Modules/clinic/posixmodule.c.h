@@ -2817,7 +2817,7 @@ PyDoc_STRVAR(os_sched_getscheduler__doc__,
 "sched_getscheduler($module, pid, /)\n"
 "--\n"
 "\n"
-"Get the scheduling policy for the process identifiedy by pid.\n"
+"Get the scheduling policy for the process identified by pid.\n"
 "\n"
 "Passing 0 for pid returns the scheduling policy for the calling process.");
 
@@ -8741,4 +8741,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=b3ae8afd275ea5cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e001c855e011720 input=a9049054013a1b77]*/

@@ -313,7 +313,9 @@ However, for reading convenience, most of the examples show sorted sequences.
    measure of central location.
 
    If there are multiple modes, returns the first one encountered in the *data*.
-   If *data* is empty, :exc:`StatisticsError` is raised.
+   If the smallest or largest of multiple modes is desired instead, use
+   ``min(multimode(data))`` or ``max(multimode(data))``.  If the input *data* is
+   empty, :exc:`StatisticsError` is raised.
 
    ``mode`` assumes discrete data, and returns a single value. This is the
    standard treatment of the mode as commonly taught in schools:
@@ -554,7 +556,7 @@ However, for reading convenience, most of the examples show sorted sequences.
         >>> [round(q, 1) for q in quantiles(data, n=10)]
         [81.0, 86.2, 89.0, 99.4, 102.5, 103.6, 106.0, 109.8, 111.0]
 
-        >>> # Quartile cut points for the standard normal distibution
+        >>> # Quartile cut points for the standard normal distribution
         >>> Z = NormalDist()
         >>> [round(q, 4) for q in quantiles(Z, n=4)]
         [-0.6745, 0.0, 0.6745]

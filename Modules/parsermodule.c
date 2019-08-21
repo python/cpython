@@ -1158,6 +1158,12 @@ PyInit_parser(void)
 {
     PyObject *module, *copyreg;
 
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "The parser module is deprecated and will be removed "
+            "in future versions of Python", 7) != 0) {
+        return NULL;
+    }
+
     if (PyType_Ready(&PyST_Type) < 0)
         return NULL;
     module = PyModule_Create(&parsermodule);

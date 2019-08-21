@@ -1499,7 +1499,7 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
     // Switch to the original interpreter.
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(data->interp);
     if (interp == NULL) {
-        // The intepreter was already destroyed.
+        // The interpreter was already destroyed.
         if (data->free != NULL) {
             // XXX Someone leaked some memory...
         }

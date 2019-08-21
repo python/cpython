@@ -114,6 +114,19 @@ def _have_socket_vsock():
     return ret
 
 
+def _have_socket_bluetooth():
+    """Check whether AF_BLUETOOTH sockets are supported on this host."""
+    try:
+        # RFCOMM is supported by all platforms with bluetooth support. Windows
+        # does not support omitting the protocol.
+        s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
+
 @contextlib.contextmanager
 def socket_setdefaulttimeout(timeout):
     old_timeout = socket.getdefaulttimeout()
@@ -137,6 +150,8 @@ HAVE_SOCKET_QIPCRTR = _have_socket_qipcrtr()
 HAVE_SOCKET_VSOCK = _have_socket_vsock()
 
 HAVE_SOCKET_UDPLITE = hasattr(socket, "IPPROTO_UDPLITE")
+
+HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
 
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
@@ -1908,6 +1923,19 @@ class BasicCANTest(unittest.TestCase):
         socket.CAN_BCM_RX_TIMEOUT   # cyclic message is absent
         socket.CAN_BCM_RX_CHANGED   # updated CAN frame (detected content change)
 
+        # flags
+        socket.CAN_BCM_SETTIMER
+        socket.CAN_BCM_STARTTIMER
+        socket.CAN_BCM_TX_COUNTEVT
+        socket.CAN_BCM_TX_ANNOUNCE
+        socket.CAN_BCM_TX_CP_CAN_ID
+        socket.CAN_BCM_RX_FILTER_ID
+        socket.CAN_BCM_RX_CHECK_DLC
+        socket.CAN_BCM_RX_NO_AUTOTIMER
+        socket.CAN_BCM_RX_ANNOUNCE_RESUME
+        socket.CAN_BCM_TX_RESET_MULTI_IDX
+        socket.CAN_BCM_RX_RTR_FRAME
+
     def testCreateSocket(self):
         with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
             pass
@@ -2242,6 +2270,45 @@ class BasicVSOCKTest(unittest.TestCase):
             self.assertEqual(orig_min * 2,
                              s.getsockopt(socket.AF_VSOCK,
                              socket.SO_VM_SOCKETS_BUFFER_MIN_SIZE))
+
+
+@unittest.skipUnless(HAVE_SOCKET_BLUETOOTH,
+                     'Bluetooth sockets required for this test.')
+class BasicBluetoothTest(unittest.TestCase):
+
+    def testBluetoothConstants(self):
+        socket.BDADDR_ANY
+        socket.BDADDR_LOCAL
+        socket.AF_BLUETOOTH
+        socket.BTPROTO_RFCOMM
+
+        if sys.platform != "win32":
+            socket.BTPROTO_HCI
+            socket.SOL_HCI
+            socket.BTPROTO_L2CAP
+
+            if not sys.platform.startswith("freebsd"):
+                socket.BTPROTO_SCO
+
+    def testCreateRfcommSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
+            pass
+
+    @unittest.skipIf(sys.platform == "win32", "windows does not support L2CAP sockets")
+    def testCreateL2capSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as s:
+            pass
+
+    @unittest.skipIf(sys.platform == "win32", "windows does not support HCI sockets")
+    def testCreateHciSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as s:
+            pass
+
+    @unittest.skipIf(sys.platform == "win32" or sys.platform.startswith("freebsd"),
+                     "windows and freebsd do not support SCO sockets")
+    def testCreateScoSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
+            pass
 
 
 class BasicTCPTest(SocketConnectedTest):
@@ -6403,6 +6470,7 @@ def test_main():
         BasicVSOCKTest,
         ThreadedVSOCKSocketStreamTest,
     ])
+    tests.append(BasicBluetoothTest)
     tests.extend([
         CmsgMacroTests,
         SendmsgUDPTest,

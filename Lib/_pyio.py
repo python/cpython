@@ -1573,7 +1573,7 @@ class FileIO(RawIOBase):
                     raise IsADirectoryError(errno.EISDIR,
                                             os.strerror(errno.EISDIR), file)
             except AttributeError:
-                # Ignore the AttribueError if stat.S_ISDIR or errno.EISDIR
+                # Ignore the AttributeError if stat.S_ISDIR or errno.EISDIR
                 # don't exist.
                 pass
             self._blksize = getattr(fdfstat, 'st_blksize', 0)

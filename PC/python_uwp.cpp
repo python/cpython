@@ -122,6 +122,12 @@ set_process_name(PyConfig *config)
                 break;
             }
         }
+        size_t i = executable.find_last_of(L"/\\");
+        if (i == std::wstring::npos) {
+            executable = PROGNAME;
+        } else {
+            executable.replace(i + 1, std::wstring::npos, PROGNAME);
+        }
     }
 
     if (!home.empty()) {
@@ -163,10 +169,29 @@ wmain(int argc, wchar_t **argv)
     PyPreConfig preconfig;
     PyConfig config;
 
+    const wchar_t *moduleName = NULL;
+    const wchar_t *p = wcsrchr(argv[0], L'\\');
+    if (!p) {
+        p = argv[0];
+    }
+    if (p) {
+        if (*p == L'\\') {
+            p++;
+        }
+
+        if (wcsnicmp(p, L"pip", 3) == 0) {
+            moduleName = L"pip";
+        } else if (wcsnicmp(p, L"idle", 4) == 0) {
+            moduleName = L"idlelib";
+        }
+    }
+
     PyPreConfig_InitPythonConfig(&preconfig);
-    status = Py_PreInitializeFromArgs(&preconfig, argc, argv);
-    if (PyStatus_Exception(status)) {
-        goto fail_without_config;
+    if (!moduleName) {
+        status = Py_PreInitializeFromArgs(&preconfig, argc, argv);
+        if (PyStatus_Exception(status)) {
+            goto fail_without_config;
+        }
     }
 
     status = PyConfig_InitPythonConfig(&config);
@@ -178,48 +203,32 @@ wmain(int argc, wchar_t **argv)
     if (PyStatus_Exception(status)) {
         goto fail;
     }
+    if (moduleName) {
+        config.parse_argv = 0;
+    }
 
     status = set_process_name(&config);
     if (PyStatus_Exception(status)) {
         goto fail;
     }
 
-    const wchar_t *p = _wgetenv(L"PYTHONUSERBASE");
+    p = _wgetenv(L"PYTHONUSERBASE");
     if (!p || !*p) {
         _wputenv_s(L"PYTHONUSERBASE", get_user_base().c_str());
     }
 
-    p = wcsrchr(argv[0], L'\\');
-    if (!p) {
-        p = argv[0];
-    }
-    if (p) {
-        if (*p == L'\\') {
-            p++;
+    if (moduleName) {
+        status = PyConfig_SetString(&config, &config.run_module, moduleName);
+        if (PyStatus_Exception(status)) {
+            goto fail;
         }
-
-        const wchar_t *moduleName = NULL;
-        if (wcsnicmp(p, L"pip", 3) == 0) {
-            moduleName = L"pip";
-            /* No longer required when pip 19.1 is added */
-            _wputenv_s(L"PIP_USER", L"true");
-        } else if (wcsnicmp(p, L"idle", 4) == 0) {
-            moduleName = L"idlelib";
+        status = PyConfig_SetString(&config, &config.run_filename, NULL);
+        if (PyStatus_Exception(status)) {
+            goto fail;
         }
-
-        if (moduleName) {
-            status = PyConfig_SetString(&config, &config.run_module, moduleName);
-            if (PyStatus_Exception(status)) {
-                goto fail;
-            }
-            status = PyConfig_SetString(&config, &config.run_filename, NULL);
-            if (PyStatus_Exception(status)) {
-                goto fail;
-            }
-            status = PyConfig_SetString(&config, &config.run_command, NULL);
-            if (PyStatus_Exception(status)) {
-                goto fail;
-            }
+        status = PyConfig_SetString(&config, &config.run_command, NULL);
+        if (PyStatus_Exception(status)) {
+            goto fail;
         }
     }
 

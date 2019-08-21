@@ -1822,7 +1822,7 @@ _ssl__test_decode_cert_impl(PyObject *module, PyObject *path)
         goto fail0;
     }
 
-    x = PEM_read_bio_X509_AUX(cert,NULL, NULL, NULL);
+    x = PEM_read_bio_X509(cert, NULL, NULL, NULL);
     if (x == NULL) {
         PyErr_SetString(PySSLErrorObject,
                         "Error decoding PEM-encoded file");
@@ -5600,8 +5600,7 @@ list_contains(PyListObject *a, PyObject *el)
     int cmp;
 
     for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(a); ++i)
-        cmp = PyObject_RichCompareBool(el, PyList_GET_ITEM(a, i),
-                                           Py_EQ);
+        cmp = PyObject_RichCompareBool(PyList_GET_ITEM(a, i), el, Py_EQ);
     return cmp;
 }
 

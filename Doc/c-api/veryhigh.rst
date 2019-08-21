@@ -117,7 +117,7 @@ the same library that the Python runtime is using.
    closed before PyRun_SimpleFileExFlags returns.
 
    .. note::
-      On Windows, *fp* should be opened as binary mode (e.g. ``fopen(filename, "rb")``.
+      On Windows, *fp* should be opened as binary mode (e.g. ``fopen(filename, "rb")``).
       Otherwise, Python may not handle script file with LF line ending correctly.
 
 

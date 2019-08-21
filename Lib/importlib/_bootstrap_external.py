@@ -1367,8 +1367,6 @@ class PathFinder:
             return None
         return spec.loader
 
-    search_template = r'(?:{pattern}(-.*)?\.(dist|egg)-info|EGG-INFO)'
-
     @classmethod
     def find_distributions(cls, name=None, path=None):
         """
@@ -1400,24 +1398,35 @@ class PathFinder:
     def _switch_path(path):
         from contextlib import suppress
         import zipfile
-        from pathlib import Path
-        with suppress(Exception):
-            return zipfile.Path(path)
-        return Path(path)
+        import pathlib
+        PYPY_OPEN_BUG = False
+        if not PYPY_OPEN_BUG or os.path.isfile(path):  # pragma: no branch
+            with suppress(Exception):
+                return zipfile.Path(path)
+        return pathlib.Path(path)
 
     @classmethod
-    def _predicate(cls, pattern, root, item):
+    def _matches_info(cls, normalized, item):
         import re
-        return re.match(pattern, str(item.name), flags=re.IGNORECASE)
+        template = r'{pattern}(-.*)?\.(dist|egg)-info'
+        manifest = template.format(pattern=normalized)
+        return re.match(manifest, item.name, flags=re.IGNORECASE)
+
+    @classmethod
+    def _matches_legacy(cls, normalized, item):
+        import re
+        template = r'{pattern}-.*\.egg[\\/]EGG-INFO'
+        manifest = template.format(pattern=normalized)
+        return re.search(manifest, str(item), flags=re.IGNORECASE)
 
     @classmethod
     def _search_path(cls, root, pattern):
         if not root.is_dir():
             return ()
         normalized = pattern.replace('-', '_')
-        matcher = cls.search_template.format(pattern=normalized)
         return (item for item in root.iterdir()
-                if cls._predicate(matcher, root, item))
+                if cls._matches_info(normalized, item)
+                or cls._matches_legacy(normalized, item))
 
 
 class FileFinder:

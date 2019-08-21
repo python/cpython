@@ -40,11 +40,16 @@
  */
 #if defined(__APPLE__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
 #undef  THREAD_STACK_SIZE
-#define THREAD_STACK_SIZE       0x500000
+/* Note: This matches the value of -Wl,-stack_size in configure.ac */
+#define THREAD_STACK_SIZE       0x1000000
 #endif
 #if defined(__FreeBSD__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
 #undef  THREAD_STACK_SIZE
 #define THREAD_STACK_SIZE       0x400000
+#endif
+#if defined(_AIX) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
+#undef  THREAD_STACK_SIZE
+#define THREAD_STACK_SIZE       0x200000
 #endif
 /* for safety, ensure a viable minimum stacksize */
 #define THREAD_STACK_MIN        0x8000  /* 32 KiB */

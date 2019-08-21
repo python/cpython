@@ -1162,7 +1162,7 @@ static PyTypeObject AsyncGenHooksType;
 PyDoc_STRVAR(asyncgen_hooks_doc,
 "asyncgen_hooks\n\
 \n\
-A struct sequence providing information about asynhronous\n\
+A struct sequence providing information about asynchronous\n\
 generators hooks.  The attributes are read only.");
 
 static PyStructSequence_Field asyncgen_hooks_fields[] = {

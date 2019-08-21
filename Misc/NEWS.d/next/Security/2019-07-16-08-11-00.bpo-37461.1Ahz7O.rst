@@ -1,2 +1,2 @@
-Fix an inifite loop when parsing specially crafted email headers. Patch by
+Fix an infinite loop when parsing specially crafted email headers. Patch by
 Abhilash Raj.

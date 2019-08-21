@@ -99,11 +99,6 @@ typedef struct {
 
 PyAPI_FUNC(int) PyCFunction_ClearFreeList(void);
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyCFunction_DebugMallocStats(FILE *out);
-PyAPI_FUNC(void) _PyMethod_DebugMallocStats(FILE *out);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
