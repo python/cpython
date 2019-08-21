@@ -545,6 +545,13 @@ else:
         return path
 
     def _getfinalpathname_nonstrict(path):
+        # Fast path to get the final path name. If this succeeds, there
+        # is no need to go any further.
+        try:
+            return _getfinalpathname(path)
+        except OSError:
+            pass
+
         # Allow file (2) or directory (3) not found, invalid syntax (123),
         # and symlinks that cannot be followed (1921)
         allowed_winerror = 2, 3, 123, 1921
