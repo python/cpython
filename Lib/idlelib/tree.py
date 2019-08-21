@@ -260,7 +260,19 @@ class TreeNode:
                                        anchor="nw", window=self.label)
         self.label.bind("<1>", self.select_or_edit)
         self.label.bind("<Double-1>", self.flip)
+        self.label.bind("<MouseWheel>", self.mousescroll)
+        self.label.bind("<Button-4>", self.mousescroll)
+        self.label.bind("<Button-5>", self.mousescroll)
         self.text_id = id
+
+    def mousescroll(self, event):
+        up = {
+            EventType.MouseWheel: event.delta > 0,
+            EventType.Button: event.num == 4,
+        }
+        lines = (-5 if up[event.type] else 5)
+        self.canvas.yview_scroll(lines, "units")
+        return "break"
 
     def select_or_edit(self, event=None):
         if self.selected and self.item.IsEditable():
@@ -410,42 +422,68 @@ class FileTreeItem(TreeItem):
 # A canvas widget with scroll bars and some useful bindings
 
 class ScrolledCanvas:
+
     def __init__(self, master, **opts):
         if 'yscrollincrement' not in opts:
             opts['yscrollincrement'] = 17
+
         self.master = master
+
         self.frame = Frame(master)
         self.frame.rowconfigure(0, weight=1)
         self.frame.columnconfigure(0, weight=1)
+
         self.canvas = Canvas(self.frame, **opts)
         self.canvas.grid(row=0, column=0, sticky="nsew")
+
         self.vbar = Scrollbar(self.frame, name="vbar")
         self.vbar.grid(row=0, column=1, sticky="nse")
         self.hbar = Scrollbar(self.frame, name="hbar", orient="horizontal")
         self.hbar.grid(row=1, column=0, sticky="ews")
+
         self.canvas['yscrollcommand'] = self.vbar.set
         self.vbar['command'] = self.canvas.yview
         self.canvas['xscrollcommand'] = self.hbar.set
         self.hbar['command'] = self.canvas.xview
+
         self.canvas.bind("<Key-Prior>", self.page_up)
         self.canvas.bind("<Key-Next>", self.page_down)
         self.canvas.bind("<Key-Up>", self.unit_up)
         self.canvas.bind("<Key-Down>", self.unit_down)
+
+        self.canvas.bind("<MouseWheel>", self.mousescroll)
+        self.canvas.bind("<Button-4>", self.mousescroll)
+        self.canvas.bind("<Button-5>", self.mousescroll)
+
         #if isinstance(master, Toplevel) or isinstance(master, Tk):
         self.canvas.bind("<Alt-Key-2>", self.zoom_height)
         self.canvas.focus_set()
+
     def page_up(self, event):
         self.canvas.yview_scroll(-1, "page")
         return "break"
+
     def page_down(self, event):
         self.canvas.yview_scroll(1, "page")
         return "break"
+
     def unit_up(self, event):
         self.canvas.yview_scroll(-1, "unit")
         return "break"
+
     def unit_down(self, event):
         self.canvas.yview_scroll(1, "unit")
         return "break"
+
+    def mousescroll(self, event):
+        up = {
+            EventType.MouseWheel: event.delta > 0,
+            EventType.Button: event.num == 4,
+        }
+        lines = (-5 if up[event.type] else 5)
+        self.canvas.yview_scroll(lines, "units")
+        return "break"
+
     def zoom_height(self, event):
         zoomheight.zoom_height(self.master)
         return "break"
