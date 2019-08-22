@@ -486,7 +486,7 @@ Literal = _SpecialForm('Literal', doc=
     """)
 
 
-class ForwardRef(_Final, _root=True):
+class ForwardRef(_Final, _Immutable, _root=True):
     """Internal wrapper to hold a forward reference."""
 
     __slots__ = ('__forward_arg__', '__forward_code__',
@@ -524,11 +524,10 @@ class ForwardRef(_Final, _root=True):
     def __eq__(self, other):
         if not isinstance(other, ForwardRef):
             return NotImplemented
-        return (self.__forward_arg__ == other.__forward_arg__ and
-                self.__forward_value__ == other.__forward_value__)
+        return self.__forward_arg__ == other.__forward_arg__
 
     def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_value__))
+        return hash(self.__forward_arg__)
 
     def __repr__(self):
         return f'ForwardRef({self.__forward_arg__!r})'
