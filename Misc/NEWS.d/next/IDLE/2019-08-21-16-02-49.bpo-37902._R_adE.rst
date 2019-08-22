@@ -1,1 +1,1 @@
-Add mousewheel scrolling for IDLE class, path, and stack browsers.
+Add mousewheel scrolling for IDLE module, path, and stack browsers.
