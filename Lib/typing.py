@@ -527,7 +527,7 @@ class ForwardRef(_Final, _Immutable, _root=True):
         return self.__forward_arg__ == other.__forward_arg__
 
     def __hash__(self):
-        return hash(self.__forward_arg__)
+        return hash((self.__forward_arg__,))
 
     def __repr__(self):
         return f'ForwardRef({self.__forward_arg__!r})'
