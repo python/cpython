@@ -192,7 +192,7 @@
   </Target>
   <Target Name="_RegenTokens" AfterTargets="_RegenOpcodes">
     <!-- Regenerate Doc/library/token-list.inc from Grammar/Tokens using Tools/scripts/generate_token.py-->
-    <Exec Command="&quot;$(PythonExe)&quot; $(PySourcePath)Tools\scripts\generate_token.py rst &quot;.$(PySourcePath)Grammar\Tokens&quot; &quot;$(PySourcePath)Doc\library\token-list.inc&quot;" />
+    <Exec Command="&quot;$(PythonExe)&quot; $(PySourcePath)Tools\scripts\generate_token.py rst &quot;$(PySourcePath)Grammar\Tokens&quot; &quot;$(PySourcePath)Doc\library\token-list.inc&quot;" />
     <!-- Regenerate Include/token.h from Grammar/Tokens using Tools/scripts/generate_token.py-->
     <Exec Command="&quot;$(PythonExe)&quot; $(PySourcePath)Tools\scripts\generate_token.py h &quot;$(PySourcePath)Grammar\Tokens&quot; &quot;$(PySourcePath)Include\token.h&quot;" />
     <!-- Regenerate Parser/token.c from Grammar/Tokens using Tools/scripts/generate_token.py-->
