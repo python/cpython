@@ -53,7 +53,7 @@ class TestHandleScroll(unittest.TestCase):
             event.delta = delta
             event.num = num
             res = tree.handlescroll(event, _Widget(SCROLL, amount, "units"))
-            test.assertEqual(res, "break")
+            self.assertEqual(res, "break")
 
 
 if __name__ == '__main__':
