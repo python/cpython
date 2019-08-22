@@ -1,1 +1,1 @@
-Add ``exit_on_error`` in :class:`ArgumentParser`.
+Add optional keyword argument ``exit_on_error`` for :class:`ArgumentParser`.

@@ -5230,7 +5230,7 @@ class TestExitOnError(TestCase):
 
     def test_exit_on_error_with_good_args(self):
         ns = self.parser.parse_args('--integers 4'.split())
-        self.assertEqual(ns, argparse.Namespace(integers=4)) 
+        self.assertEqual(ns, argparse.Namespace(integers=4))
 
     def test_exit_on_error_with_bad_args(self):
         with self.assertRaises(argparse.ArgumentError):
