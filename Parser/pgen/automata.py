@@ -1,18 +1,18 @@
-"""Classes representing different state-machine concepts"""
+"""Classes representing state-machine concepts"""
 
 class NFA:
     """A non deterministic finite automata
 
-    A non deterministic automata is a form of a finite state
+    A non deterministic automata, NFA, is a form of a finite state
     machine that does not follow the rules that make a state
-    machine deterministic:
+    machine deterministic.
 
-       * Each of the transitions is uniquely determined by
+       * A transition is uniquely determined by
          the source state and input symbol
        * Reading an input symbol is required for each state
          transition (no epsilon transitions).
 
-    The class assumes that there is only one starting state and one
+    This class assumes that there is only one starting state and one
     accepting (ending) state.
 
     Attributes:
@@ -53,15 +53,15 @@ class NFAArc:
 
     NFA states can be connected via two ways:
 
-        * A label transition: an input equal to the label must
+        * A label transition: An input equal to the label must
           be consumed to perform the transition.
-        * An epsilon transition: the transition can be taken without
-          consuming any input
+        * An epsilon transition: The transition can be taken without
+          consuming any input symbol.
 
         Attributes:
-            target (NFAState): The end of the transition that the arc represents.
-            label (Optional[str]): The label that must be consumed for making
-                the transition. An epsilon tranisition is represented using `None`.
+            target (NFAState): The ending state of the transition arc.
+            label (Optional[str]): The label that must be consumed to make
+                the transition. An epsilon transition is represented using `None`.
     """
 
     def __init__(self, target, label):
@@ -73,7 +73,7 @@ class NFAArc:
 
 
 class NFAState:
-    """A state of a NFA
+    """A state of a NFA, non deterministic finite automata.
 
     Attributes:
         target (rule_name): The name of the rule the NFA containing this
@@ -88,7 +88,7 @@ class NFAState:
         self.arcs = []
 
     def add_arc(self, target, label=None):
-        """Add a new arc to the conecting this NFA state to another
+        """Add a new arc to the connect the present state to a target state within the NFA
 
         This method will add a new arc to the list of arcs in this state
         that connects another state to the current one via an optional label.
@@ -111,14 +111,14 @@ class DFA:
     """A deterministic finite automata
 
     A deterministic finite automata is a form of a finite state machine
-    that obeys the followin rules:
+    that obeys the following rules:
 
        * Each of the transitions is uniquely determined by
          the source state and input symbol
        * Reading an input symbol is required for each state
          transition (no epsilon transitions).
 
-    Thee finite-state machine will that accepts or rejects stringsof symbols
+    The finite-state machine will accept or reject a string of symbols
     and only produces a unique computation of the automaton for each input
     string. The DFA must have a unique starting state (represented as the first
     element in the list of states) but can have multiple accepting states.
@@ -136,9 +136,9 @@ class DFA:
     def from_nfa(cls, nfa):
         """Constructs a DFA from a NFA using the Rabin–Scott construction algorithm.
 
-        To simulate the operation of a DFA on a given input string, one needs to keep
-        track of a single state at any time: the state that the automaton will reach after
-        seeing a prefix of the input. In contrast, to simulate an NFA, one needs to keep
+        To simulate the operation of a DFA on a given input string, it's necessary to keep
+        track of a single state at any time, or more precisely, the state that the automaton will reach after
+        seeing a prefix of the input. In contrast, to simulate an NFA, it's necessary to keep
         track of a set of states: all of the states that the automaton could reach after
         seeing the same prefix of the input, according to the nondeterministic choices made
         by the automaton. There are two possible sources of non-determinism:
@@ -189,7 +189,7 @@ class DFA:
 
         Because the DFA states consist of sets of NFA states, an n-state NFA may be converted
         to a DFA with at most 2**n states. Notice that the constructed DFA is not minimal and
-        can be simplified afterwards.
+        can be simplified or reduced afterwards.
 
         Parameters:
             name (NFA): The NFA to transform to DFA.
@@ -217,9 +217,9 @@ class DFA:
         # Start by visiting the NFA starting state (there is only one).
         states = [DFAState(nfa.name, base_nfa_set, nfa.end)]
 
-        for state in states:  # NB states grows while we're iterating
+        for state in states:  # NB states grow while we're iterating
 
-            # Find transitions from the current state to other rachable states
+            # Find transitions from the current state to other reachable states
             # and store them in mapping that correlates the label to all the
             # possible reachable states that can be obtained by consuming a
             # token equal to the label. Each set of all the states that can
@@ -260,19 +260,19 @@ class DFA:
     def simplify(self):
         """Attempt to reduce the number of states of the DFA
 
-        Transform the DFA into an equivalent DFA that has a less states. There are two
-        classes of states that can be removed or merged from the original DFA without
-        affecting the language it accepts to minimize it.
+        Transform the DFA into an equivalent DFA that has fewer states. Two
+        classes of states can be removed or merged from the original DFA without
+        affecting the language it accepts to minimize it:
 
-            * Unreachable states are the states that are not reachable from the initial
+            * Unreachable states can not be reached from the initial
               state of the DFA, for any input string.
             * Nondistinguishable states are those that cannot be distinguished from one
             another for any input string.
 
-        This algorithm does not achieve the optimal solution, but works well enough for
-        the particularities of the Python grammar. The algorithm consists on repeatedly
-        look for two states that have the same set of arcs (same labels pointing to the
-        same nodes) and unify them, until things stop changing.
+        This algorithm does not achieve the optimal fully-reduced solution, but it works well enough for
+        the particularities of the Python grammar. The algorithm repeatedly
+        looks for two states that have the same set of arcs (same labels pointing to the
+        same nodes) and unifies them, until things stop changing.
         """
         changes = True
         while changes:
@@ -299,9 +299,8 @@ class DFAState(object):
     """A state of a DFA
 
     Attributes:
-        rule_name (rule_name): The name of the rule the DFA containing this
-            state is representing.
-        nfa_set (Set[NFAState]): The set of NFA states this state was created from.
+        rule_name (rule_name): The name of the DFA rule containing the represented state.
+        nfa_set (Set[NFAState]): The set of NFA states used to create this state.
         final (bool): True if the state represents an accepting state of the DFA
             containing this state.
         arcs (Dict[label, DFAState]): A mapping representing transitions between
@@ -322,7 +321,7 @@ class DFAState(object):
 
         Parameters:
             target (DFAState): The DFA state at the end of the arc.
-            label (str): The label respreseting the token that must be consumed
+            label (str): The label respresenting the token that must be consumed
                 to perform this transition.
         """
         assert isinstance(label, str)
