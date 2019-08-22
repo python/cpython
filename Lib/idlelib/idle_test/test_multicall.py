@@ -36,7 +36,7 @@ class MultiCallTest(unittest.TestCase):
         self.assertIsInstance(mctext._MultiCall__binders, list)
 
     def test_yview(self):
-        # Added for tree.handlescroll
+        # Added for tree.wheel_event
         # (it depends on yview to not be overriden)
         mc = self.mc
         self.assertIs(mc.yview, Text.yview)

@@ -29,9 +29,9 @@ class TreeTest(unittest.TestCase):
         node.expand()
 
 
-class TestHandleScroll(unittest.TestCase):
+class TestScrollEvent(unittest.TestCase):
 
-    def test_handlescroll(self):
+    def test_wheel_event(self):
         # Fake widget class containing `yview` only.
         class _Widget:
             def __init__(widget, *expected):
@@ -52,7 +52,7 @@ class TestHandleScroll(unittest.TestCase):
             event.type = ty
             event.delta = delta
             event.num = num
-            res = tree.handlescroll(event, _Widget(SCROLL, amount, "units"))
+            res = tree.wheel_event(event, _Widget(SCROLL, amount, "units"))
             self.assertEqual(res, "break")
 
 

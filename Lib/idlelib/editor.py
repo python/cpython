@@ -60,7 +60,7 @@ class EditorWindow(object):
     from idlelib.parenmatch import ParenMatch
     from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
-    from idlelib.tree import handlescroll
+    from idlelib.tree import wheel_event
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
     help_url = None
@@ -152,9 +152,9 @@ class EditorWindow(object):
         else:
             # Elsewhere, use right-click for popup menus.
             text.bind("<3>",self.right_menu_event)
-        text.bind('<MouseWheel>', self.handlescroll)
-        text.bind('<Button-4>', self.handlescroll)
-        text.bind('<Button-5>', self.handlescroll)
+        text.bind('<MouseWheel>', self.wheel_event)
+        text.bind('<Button-4>', self.wheel_event)
+        text.bind('<Button-5>', self.wheel_event)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
         text.bind("<<paste>>", self.paste)
