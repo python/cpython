@@ -1,5 +1,5 @@
 from _weakrefset import WeakSet
-
+from warnings import warn
 
 def get_cache_token():
     """Returns the current ABC cache token.
@@ -108,7 +108,8 @@ class ABCMeta(type):
     def __subclasscheck__(cls, subclass):
         """Override for issubclass(subclass, cls)."""
         if not isinstance(subclass, type):
-            raise TypeError('issubclass() arg 1 must be a class')
+            warn('issubclass() arg 1 is not a class. Returning False.')
+            return False
         # Check cache
         if subclass in cls._abc_cache:
             return True
