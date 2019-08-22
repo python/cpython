@@ -107,7 +107,7 @@ PyObject *
 _pysqlite_long_from_int64(sqlite_int64 value)
 {
 # if SIZEOF_LONG_LONG < 8
-    if (value > PY_LLONG_MAX || value < PY_LLONG_MIN) {
+    if (value > LLONG_MAX || value < LLONG_MIN) {
         return _PyLong_FromByteArray(&value, sizeof(value),
                                      IS_LITTLE_ENDIAN, 1 /* signed */);
     }

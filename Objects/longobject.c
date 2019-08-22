@@ -1133,7 +1133,7 @@ PyLong_AsVoidPtr(PyObject *vv)
  * rewritten to use the newer PyLong_{As,From}ByteArray API.
  */
 
-#define PY_ABS_LLONG_MIN (0-(unsigned long long)PY_LLONG_MIN)
+#define PY_ABS_LLONG_MIN (0-(unsigned long long)LLONG_MIN)
 
 /* Create a new int object from a C long long int. */
 
@@ -1488,11 +1488,11 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         /* Haven't lost any bits, but casting to long requires extra
          * care (see comment above).
          */
-        if (x <= (unsigned long long)PY_LLONG_MAX) {
+        if (x <= (unsigned long long)LLONG_MAX) {
             res = (long long)x * sign;
         }
         else if (sign < 0 && x == PY_ABS_LLONG_MIN) {
-            res = PY_LLONG_MIN;
+            res = LLONG_MIN;
         }
         else {
             *overflow = sign;
@@ -5045,7 +5045,7 @@ simple:
     /* a fits into a long, so b must too */
     x = PyLong_AsLong((PyObject *)a);
     y = PyLong_AsLong((PyObject *)b);
-#elif PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
+#elif LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     x = PyLong_AsLongLong((PyObject *)a);
     y = PyLong_AsLongLong((PyObject *)b);
 #else
@@ -5064,7 +5064,7 @@ simple:
     }
 #if LONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     return PyLong_FromLong(x);
-#elif PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
+#elif LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     return PyLong_FromLongLong(x);
 #else
 # error "_PyLong_GCD"
