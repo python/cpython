@@ -6,21 +6,21 @@ def generate_tokens(tokens):
     for line in tokens:
         line = line.strip()
 
-        if not line or line.startswith('#'):
+        if not line or line.startswith("#"):
             continue
 
         name = line.split()[0]
         yield (name, next(numbers))
 
-    yield ('N_TOKENS', next(numbers))
-    yield ('NT_OFFSET', 256)
+    yield ("N_TOKENS", next(numbers))
+    yield ("NT_OFFSET", 256)
 
 
 def generate_opmap(tokens):
     for line in tokens:
         line = line.strip()
 
-        if not line or line.startswith('#'):
+        if not line or line.startswith("#"):
             continue
 
         pieces = line.split()
@@ -35,4 +35,4 @@ def generate_opmap(tokens):
     # with the token generation in "generate_tokens" because if this
     # symbol is included in Grammar/Tokens, it will collide with !=
     # as it has the same name (NOTEQUAL).
-    yield ('<>', 'NOTEQUAL')
+    yield ("<>", "NOTEQUAL")

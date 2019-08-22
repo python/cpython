@@ -76,12 +76,14 @@ class Grammar:
 
     def print_labels(self, writer):
         writer(
-            "static const label labels[{n_labels}] = {{\n".format(n_labels=len(self.labels))
+            "static const label labels[{n_labels}] = {{\n".format(
+                n_labels=len(self.labels)
+            )
         )
         for label, name in self.labels:
             label_name = '"{}"'.format(name) if name is not None else 0
             writer(
-                '    {{{label}, {label_name}}},\n'.format(
+                "    {{{label}, {label_name}}},\n".format(
                     label=label, label_name=label_name
                 )
             )
