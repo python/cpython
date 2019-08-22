@@ -4,7 +4,7 @@ from idlelib import tree
 import unittest
 from test.support import requires
 requires('gui')
-from tkinter import Tk, EventType
+from tkinter import Tk, EventType, SCROLL
 
 
 class TreeTest(unittest.TestCase):
