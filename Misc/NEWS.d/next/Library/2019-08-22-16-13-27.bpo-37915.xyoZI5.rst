@@ -1,0 +1,3 @@
+Fix a segmentation fault that appeared when comparing instances of
+``datetime.timezone`` and ``datetime.tzinfo`` objects. Patch by Pablo
+Galindo.
