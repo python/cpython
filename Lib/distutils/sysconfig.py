@@ -187,9 +187,9 @@ def customize_compiler(compiler):
                 _osx_support.customize_compiler(_config_vars)
                 _config_vars['CUSTOMIZED_OSX_COMPILER'] = 'True'
 
-        (cc, cxx, cflags, ccshared, ldshared, shlib_suffix, ar, ar_flags) = \
+        (cc, cxx, cflags, ccshared, ldshared, shlib_suffix, ar, ranlib, ar_flags) = \
             get_config_vars('CC', 'CXX', 'CFLAGS',
-                            'CCSHARED', 'LDSHARED', 'SHLIB_SUFFIX', 'AR', 'ARFLAGS')
+                            'CCSHARED', 'LDSHARED', 'SHLIB_SUFFIX', 'AR', 'RANLIB', 'ARFLAGS')
 
         if 'CC' in os.environ:
             newcc = os.environ['CC']
@@ -219,6 +219,8 @@ def customize_compiler(compiler):
             ldshared = ldshared + ' ' + os.environ['CPPFLAGS']
         if 'AR' in os.environ:
             ar = os.environ['AR']
+        if 'RANLIB' in os.environ:
+            ranlib = os.environ['RANLIB']
         if 'ARFLAGS' in os.environ:
             archiver = ar + ' ' + os.environ['ARFLAGS']
         else:
@@ -232,7 +234,8 @@ def customize_compiler(compiler):
             compiler_cxx=cxx,
             linker_so=ldshared,
             linker_exe=cc,
-            archiver=archiver)
+            archiver=archiver,
+            ranlib=ranlib)
 
         compiler.shared_lib_extension = shlib_suffix
 
