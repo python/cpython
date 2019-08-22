@@ -612,7 +612,8 @@ There is one classmethod to make a :class:`ZipInfo` instance for a filesystem
 file:
 
 .. classmethod:: ZipInfo.from_file(filename, arcname=None, *, \
-                                   strict_timestamps=True)
+                                   strict_timestamps=True, \
+                                   follow_symlinks=False)
 
    Construct a :class:`ZipInfo` instance for a file on the filesystem, in
    preparation for adding it to a zip file.
@@ -629,6 +630,9 @@ file:
    Similar behavior occurs with files newer than 2107-12-31,
    the timestamp is also set to the limit.
 
+   The *follow_symlinks* argument allows to choose whether or not to follow
+   a symbolic link.
+
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.6.2
@@ -637,22 +641,41 @@ file:
    .. versionadded:: 3.8
       The *strict_timestamps* keyword-only argument
 
+   .. versionadded:: 3.9
+      The *follow_symlinks* keyword-only argument
+
 
 Instances have the following methods and attributes:
 
 .. method:: ZipInfo.is_dir()
 
-   Return ``True`` if this archive member is a directory.
-
-   This uses the entry's name: directories should always end with ``/``.
+   Return :const:`True` if this archive member is a directory.
 
    .. versionadded:: 3.6
+   This uses the entry's name: directories should always end with ``/``.
 
+   .. versionchanged:: 3.9
+   Use the filemode contained in external file attributes.
+
+.. method:: ZipInfo.is_reg()
+
+   Return :const:`True` if this archive member is a regular file.
+
+.. method:: ZipInfo.is_file()
+
+   Same as :meth:`is_reg`.
+
+.. method:: ZipInfo.is_sym()
+
+   Return :const:`True` if this archive member is a symbolic link.
 
 .. attribute:: ZipInfo.filename
 
    Name of the file in the archive.
 
+.. attribute:: ZipInfo.filemode
+
+   The file's mode.
 
 .. attribute:: ZipInfo.date_time
 
