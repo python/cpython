@@ -1130,7 +1130,7 @@ stack_effect(int opcode, int oparg, int jump)
         case LOAD_METHOD:
             return 1;
         case LOAD_ASSERTION_ERROR:
-            return 0;
+            return 1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }

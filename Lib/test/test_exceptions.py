@@ -1289,8 +1289,8 @@ class ExceptionTests(unittest.TestCase):
     def test_assert_shadowing(self):
         # Shadowing AssertionError would cause the assert statement to
         # misbehave.
-        globals()['AssertionError'] = TypeError
         global AssertionError
+        AssertionError = TypeError
         try:
             assert False, 'hello'
         except BaseException as e:
