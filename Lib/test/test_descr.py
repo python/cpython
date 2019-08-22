@@ -541,7 +541,9 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                     name = "_%s__super" % name
                 else:
                     name = "__super"
-                setattr(cls, name, super(cls))
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    setattr(cls, name, super(cls))
                 return cls
         class A(metaclass=autosuper):
             def meth(self):

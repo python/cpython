@@ -1,0 +1,1 @@
+Deprecate passing a single argument to :func:`super`.
