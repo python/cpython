@@ -125,6 +125,13 @@ only modify the list have no return value printed -- they return the default
 ``None``. [1]_  This is a design principle for all mutable data structures in
 Python.
 
+Another thing you might notice is that not all data can be sorted or
+compared.  For instance, ``[None, 'hello', 10]`` doesn't sort because
+integers can't be compared to strings and *None* can't be compared to
+other types.  Also, there are some types that don't have a defined
+ordering relation.  For example, ``3+4j < 5+7j`` isn't a valid
+comparison.
+
 
 .. _tut-lists-as-stacks:
 
