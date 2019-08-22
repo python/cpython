@@ -51,12 +51,14 @@ Concepts
   next token in the input to know which rule needs to parse. For example given
   this grammar:
 
-  start: 'start' A | B 'end' A: 'a' 'something' B: 'b' 'something_else'
+  start: '(' A | B ')'
+  A: 'a' '<'
+  B: 'b' '<'
 
-  and the input 'start b something_else end' the parser can only look at 'b' to
-  know if it needs to parse A o B. Because FIRST(A) = {'a'} and FIRST(B) =
-  {'b'} it knows that needs to continue parsing rule B because only that rule
-  can start with 'b'.
+  and the input '(b<)' the parser can only look at 'b' to know if it needs
+  to parse A o B. Because FIRST(A) = {'a'} and FIRST(B) = {'b'} it knows
+  that needs to continue parsing rule B because only that rule can start
+  with 'b'.
 
 Description
 -----------

@@ -36,7 +36,7 @@ class NFA:
         for i, state in enumerate(todo):
             writer("  State", i, state is self.end and "(final)" or "")
             for arc in state.arcs:
-                label = arc.target
+                label = arc.label
                 next = arc.target
                 if next in todo:
                     j = todo.index(next)
