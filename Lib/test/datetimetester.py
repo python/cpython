@@ -413,6 +413,9 @@ class TestTimeZone(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     timezone(delta)
 
+    def test_comparison_with_tzinfo(self):
+        self.assertNotEqual(timezone.utc, tzinfo())
+        self.assertNotEqual(timezone(timedelta(hours=1)), tzinfo())
 
 #############################################################################
 # Base class for testing a particular aspect of timedelta, time, date and
