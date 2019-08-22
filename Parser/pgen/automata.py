@@ -3,14 +3,15 @@
 class NFA:
     """A non deterministic finite automata
 
-    A non deterministic automata, NFA, is a form of a finite state
-    machine that does not follow the rules that make a state
-    machine deterministic.
+    A non deterministic automata is a form of a finite state
+    machine. An NFA's rules are less restrictive than a DFA.
+    The NFA rules are:
 
-       * A transition is uniquely determined by
-         the source state and input symbol
-       * Reading an input symbol is required for each state
-         transition (no epsilon transitions).
+      * A transition can be non-deterministic and can result in
+        nothing, one, or two or more states.
+
+      * An epsilon transition consuming empty input is valid.
+        Transitions consuming labeled symbols are also permitted.
 
     This class assumes that there is only one starting state and one
     accepting (ending) state.
@@ -61,7 +62,8 @@ class NFAArc:
         Attributes:
             target (NFAState): The ending state of the transition arc.
             label (Optional[str]): The label that must be consumed to make
-                the transition. An epsilon transition is represented using `None`.
+                the transition. An epsilon transition is represented
+                using `None`.
     """
 
     def __init__(self, target, label):
@@ -76,8 +78,8 @@ class NFAState:
     """A state of a NFA, non deterministic finite automata.
 
     Attributes:
-        target (rule_name): The name of the rule the NFA containing this
-            state is representing.
+        target (rule_name): The name of the rule used to represent the NFA's
+            ending state after a transition.
         arcs (Dict[Optional[str], NFAState]): A mapping representing transitions
             between the current NFA state and another NFA state via following
             a label.
@@ -88,10 +90,12 @@ class NFAState:
         self.arcs = []
 
     def add_arc(self, target, label=None):
-        """Add a new arc to the connect the present state to a target state within the NFA
+        """Add a new arc to connect the state to a target state within the NFA
 
-        This method will add a new arc to the list of arcs in this state
-        that connects another state to the current one via an optional label.
+        The method adds a new arc to the list of arcs available as transitions
+        from the present state. An optional label indicates a named transition
+        that consumes an input while the absence of a label represents an epsilon
+        transition.
 
         Attributes:
             target (NFAState): The end of the transition that the arc represents.
@@ -121,7 +125,7 @@ class DFA:
     The finite-state machine will accept or reject a string of symbols
     and only produces a unique computation of the automaton for each input
     string. The DFA must have a unique starting state (represented as the first
-    element in the list of states) but can have multiple accepting states.
+    element in the list of states) but can have multiple final states.
 
     Attributes:
         name (str): The name of the rule the DFA is representing.
@@ -136,12 +140,14 @@ class DFA:
     def from_nfa(cls, nfa):
         """Constructs a DFA from a NFA using the Rabin–Scott construction algorithm.
 
-        To simulate the operation of a DFA on a given input string, it's necessary to keep
-        track of a single state at any time, or more precisely, the state that the automaton will reach after
-        seeing a prefix of the input. In contrast, to simulate an NFA, it's necessary to keep
-        track of a set of states: all of the states that the automaton could reach after
-        seeing the same prefix of the input, according to the nondeterministic choices made
-        by the automaton. There are two possible sources of non-determinism:
+        To simulate the operation of a DFA on a given input string, it's
+        necessary to keep track of a single state at any time, or more precisely,
+        the state that the automaton will reach after seeing a prefix of the
+        input. In contrast, to simulate an NFA, it's necessary to keep track of
+        a set of states: all of the states that the automaton could reach after
+        seeing the same prefix of the input, according to the nondeterministic
+        choices made by the automaton. There are two possible sources of
+        non-determinism:
 
         1) Multiple (one or more) transitions with the same label
 
@@ -162,34 +168,34 @@ class DFA:
             |   1   +----------->+   2   +----------->+
             +-------+            +-------+
 
+        Looking at the first case above, we can't determine which transition should be
+        followed when given an input A. We could choose whether or not to follow the
+        transition while in the second case the problem is that we can choose both to
+        follow the transition or not doing it. To solve this problem we can imagine that
+        we follow all possibilities at the same time and we construct new states from the
+        set of all possible reachable states. For every case in the previous example:
 
-        In the first case the problem is that given the input 'A' we don't know which
-        transition shold we follow while in the second case the problem is that we can
-        choose both to follow the transition or not doing it. To solve this problem we can
-        imagine that we follow all possibilities at the same time and we construct new
-        states from the set of all possible reachable states. For every case in the previous
-        example:
 
-
-        1) For multiple transitions with the same label we colapse all of the final
-           states under the same one
+        1) For multiple transitions with the same label we colapse all of the
+           final states under the same one
 
             +-------+            +-------+
             | State |     'A'    | State |
             |   1   +----------->+  2-3  +----------->+
             +-------+            +-------+
 
-        2) For epsilon transitions we collapse all epsilon-reachable states into the
-           same one
+        2) For epsilon transitions we collapse all epsilon-reachable states
+           into the same one
 
             +-------+
             | State |
             |  1-2  +----------->
             +-------+
 
-        Because the DFA states consist of sets of NFA states, an n-state NFA may be converted
-        to a DFA with at most 2**n states. Notice that the constructed DFA is not minimal and
-        can be simplified or reduced afterwards.
+        Because the DFA states consist of sets of NFA states, an n-state NFA
+        may be converted to a DFA with at most 2**n states. Notice that the
+        constructed DFA is not minimal and can be simplified or reduced
+        afterwards.
 
         Parameters:
             name (NFA): The NFA to transform to DFA.
@@ -266,13 +272,14 @@ class DFA:
 
             * Unreachable states can not be reached from the initial
               state of the DFA, for any input string.
-            * Nondistinguishable states are those that cannot be distinguished from one
-            another for any input string.
+            * Nondistinguishable states are those that cannot be distinguished
+              from one another for any input string.
 
-        This algorithm does not achieve the optimal fully-reduced solution, but it works well enough for
-        the particularities of the Python grammar. The algorithm repeatedly
-        looks for two states that have the same set of arcs (same labels pointing to the
-        same nodes) and unifies them, until things stop changing.
+        This algorithm does not achieve the optimal fully-reduced solution, but it
+        works well enough for the particularities of the Python grammar. The
+        algorithm repeatedly looks for two states that have the same set of
+        arcs (same labels pointing to the same nodes) and unifies them, until
+        things stop changing.
         """
         changes = True
         while changes:
