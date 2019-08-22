@@ -1,0 +1,1 @@
+Fix itertools.tee() crash in multithreading. Patch by hongweipeng.

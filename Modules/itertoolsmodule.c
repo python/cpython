@@ -495,12 +495,12 @@ teedataobject_getitem(teedataobject *tdo, int i)
 
         if (value != NULL) {
             teedataobject *temp = tdo;
-            while (temp->numread + 1 > LINKCELLS) {
+            while (temp->numread >= LINKCELLS) {
                 temp = (teedataobject *) teedataobject_jumplink(temp);
             }
             temp->values[temp->numread] = value;
             temp->numread++;
-        }else if (i == tdo->numread) {
+        }else if (i == tdo->numread || PyErr_Occurred()) {
             return NULL;
         }
         value = tdo->values[i];
