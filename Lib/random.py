@@ -155,7 +155,8 @@ class Random(_random.Random):
         elif not isinstance(a, (type(None), int, float, str, bytes, bytearray)):
             _warn('Seeding based on hashing is deprecated\n'
                   'since Python 3.9 and will be removed in a subsequent '
-                  'version. The only \nsupported seed types are: None, '
+                  'version. The only \n'
+                  'supported seed types are: None, '
                   'int, float, str, bytes, and bytearray.',
                   DeprecationWarning, 2)
 

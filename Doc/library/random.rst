@@ -88,8 +88,8 @@ Bookkeeping functions
 
    .. deprecated:: 3.9
       In the future, the *seed* must be one of the following types:
-      :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
-      :class:`bytes`, or :class:`bytearray'.
+      *NoneType*, :class:`int`, :class:`float`, :class:`str`,
+      :class:`bytes`, or :class:`bytearray`.
 
 .. function:: getstate()
 

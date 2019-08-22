@@ -173,7 +173,7 @@ Deprecated
   possible seed value.  Unfortunately, some of those types are not
   guaranteed to have a deterministic hash value.  After Python 3.9,
   the module will restrict its seeds to *None*, :class:`int`,
-  :class:`float`, :class:`str`, :class:`bytes`, and :class:`bytearray'.
+  :class:`float`, :class:`str`, :class:`bytes`, and :class:`bytearray`.
 
 
 Removed
