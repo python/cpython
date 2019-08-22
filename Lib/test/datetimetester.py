@@ -414,6 +414,8 @@ class TestTimeZone(unittest.TestCase):
                     timezone(delta)
 
     def test_comparison_with_tzinfo(self):
+        # Constructing tzinfo objects directly should not be done by users
+        # and serves only to check the bug described in bpo-37915
         self.assertNotEqual(timezone.utc, tzinfo())
         self.assertNotEqual(timezone(timedelta(hours=1)), tzinfo())
 
