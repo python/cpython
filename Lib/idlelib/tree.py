@@ -56,6 +56,31 @@ def listicons(icondir=ICONDIR):
             column = 0
     root.images = images
 
+def handlescroll(event, widget=None):
+    """Handle scrollwheel event.
+
+    For wheel up, event.delta = 120*n on Windows, -1*n on darwin,
+    where n can be > 1 if one scrolls fast.  Flicking the wheel
+    generates up to maybe 20 events with n up to 10 or more 1.
+    Macs use wheel down (delta = 1*n) to scroll up, so positive
+    delta means to scroll up on both systems.
+
+    X-11 sends Control-Button-4 event instead.
+
+    If widget is passed as an argument, its yview command will be
+    called (instead of event.widget's).
+
+    This function depends on widget.yview to not be overridden by
+    a subclass.
+    """
+    up = {EventType.MouseWheel: event.delta > 0,
+          EventType.ButtonPress: event.num == 4}
+    lines = (-5 if up[event.type] else 5)
+    if widget is None:
+        widget = event.widget
+    widget.yview(SCROLL, lines, 'units')
+    return 'break'
+
 
 class TreeNode:
 
@@ -260,19 +285,10 @@ class TreeNode:
                                        anchor="nw", window=self.label)
         self.label.bind("<1>", self.select_or_edit)
         self.label.bind("<Double-1>", self.flip)
-        self.label.bind("<MouseWheel>", self.mousescroll)
-        self.label.bind("<Button-4>", self.mousescroll)
-        self.label.bind("<Button-5>", self.mousescroll)
+        self.label.bind("<MouseWheel>", lambda e: handlescroll(e, self.canvas))
+        self.label.bind("<Button-4>", lambda e: handlescroll(e, self.canvas))
+        self.label.bind("<Button-5>", lambda e: handlescroll(e, self.canvas))
         self.text_id = id
-
-    def mousescroll(self, event):
-        up = {
-            EventType.MouseWheel: event.delta > 0,
-            EventType.Button: event.num == 4,
-        }
-        lines = (-5 if up[event.type] else 5)
-        self.canvas.yview_scroll(lines, "units")
-        return "break"
 
     def select_or_edit(self, event=None):
         if self.selected and self.item.IsEditable():
@@ -426,64 +442,42 @@ class ScrolledCanvas:
     def __init__(self, master, **opts):
         if 'yscrollincrement' not in opts:
             opts['yscrollincrement'] = 17
-
         self.master = master
-
         self.frame = Frame(master)
         self.frame.rowconfigure(0, weight=1)
         self.frame.columnconfigure(0, weight=1)
-
         self.canvas = Canvas(self.frame, **opts)
         self.canvas.grid(row=0, column=0, sticky="nsew")
-
         self.vbar = Scrollbar(self.frame, name="vbar")
         self.vbar.grid(row=0, column=1, sticky="nse")
         self.hbar = Scrollbar(self.frame, name="hbar", orient="horizontal")
         self.hbar.grid(row=1, column=0, sticky="ews")
-
         self.canvas['yscrollcommand'] = self.vbar.set
         self.vbar['command'] = self.canvas.yview
         self.canvas['xscrollcommand'] = self.hbar.set
         self.hbar['command'] = self.canvas.xview
-
         self.canvas.bind("<Key-Prior>", self.page_up)
         self.canvas.bind("<Key-Next>", self.page_down)
         self.canvas.bind("<Key-Up>", self.unit_up)
         self.canvas.bind("<Key-Down>", self.unit_down)
-
-        self.canvas.bind("<MouseWheel>", self.mousescroll)
-        self.canvas.bind("<Button-4>", self.mousescroll)
-        self.canvas.bind("<Button-5>", self.mousescroll)
-
+        self.canvas.bind("<MouseWheel>", handlescroll)
+        self.canvas.bind("<Button-4>", handlescroll)
+        self.canvas.bind("<Button-5>", handlescroll)
         #if isinstance(master, Toplevel) or isinstance(master, Tk):
         self.canvas.bind("<Alt-Key-2>", self.zoom_height)
         self.canvas.focus_set()
-
     def page_up(self, event):
         self.canvas.yview_scroll(-1, "page")
         return "break"
-
     def page_down(self, event):
         self.canvas.yview_scroll(1, "page")
         return "break"
-
     def unit_up(self, event):
         self.canvas.yview_scroll(-1, "unit")
         return "break"
-
     def unit_down(self, event):
         self.canvas.yview_scroll(1, "unit")
         return "break"
-
-    def mousescroll(self, event):
-        up = {
-            EventType.MouseWheel: event.delta > 0,
-            EventType.Button: event.num == 4,
-        }
-        lines = (-5 if up[event.type] else 5)
-        self.canvas.yview_scroll(lines, "units")
-        return "break"
-
     def zoom_height(self, event):
         zoomheight.zoom_height(self.master)
         return "break"

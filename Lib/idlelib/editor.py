@@ -60,6 +60,7 @@ class EditorWindow(object):
     from idlelib.parenmatch import ParenMatch
     from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
+    from idlelib.tree import handlescroll
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
     help_url = None
@@ -151,9 +152,9 @@ class EditorWindow(object):
         else:
             # Elsewhere, use right-click for popup menus.
             text.bind("<3>",self.right_menu_event)
-        text.bind('<MouseWheel>', self.mousescroll)
-        text.bind('<Button-4>', self.mousescroll)
-        text.bind('<Button-5>', self.mousescroll)
+        text.bind('<MouseWheel>', handlescroll)
+        text.bind('<Button-4>', handlescroll)
+        text.bind('<Button-5>', handlescroll)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
         text.bind("<<paste>>", self.paste)
@@ -482,23 +483,6 @@ class EditorWindow(object):
             event = 'scroll'
             args = (lines, 'units')
         self.text.yview(event, *args)
-        return 'break'
-
-    def mousescroll(self, event):
-        """Handle scrollwheel event.
-
-        For wheel up, event.delta = 120*n on Windows, -1*n on darwin,
-        where n can be > 1 if one scrolls fast.  Flicking the wheel
-        generates up to maybe 20 events with n up to 10 or more 1.
-        Macs use wheel down (delta = 1*n) to scroll up, so positive
-        delta means to scroll up on both systems.
-
-        X-11 sends Control-Button-4 event instead.
-        """
-        up = {EventType.MouseWheel: event.delta > 0,
-              EventType.Button: event.num == 4}
-        lines = -5 if up[event.type] else 5
-        self.text.yview_scroll(lines, 'units')
         return 'break'
 
     rmenu = None
