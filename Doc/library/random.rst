@@ -86,6 +86,11 @@ Bookkeeping functions
    .. versionchanged:: 3.2
       Moved to the version 2 scheme which uses all of the bits in a string seed.
 
+   .. deprecated:: 3.9
+      In the future, the *seed* must be one of the following types:
+      *NoneType*, :class:`int`, :class:`float`, :class:`str`,
+      :class:`bytes`, or :class:`bytearray`.
+
 .. function:: getstate()
 
    Return an object capturing the current internal state of the generator.  This
@@ -315,6 +320,11 @@ Alternative Generator
 
    Class that implements the default pseudo-random number generator used by the
    :mod:`random` module.
+
+   .. deprecated:: 3.9
+      In the future, the *seed* must be one of the following types:
+      :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
+      :class:`bytes`, or :class:`bytearray`.
 
 .. class:: SystemRandom([seed])
 
