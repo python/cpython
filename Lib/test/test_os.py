@@ -2466,6 +2466,9 @@ class Win32SymlinkTests(unittest.TestCase):
 
     def test_appexeclink(self):
         root = os.path.expandvars(r'%LOCALAPPDATA%\Microsoft\WindowsApps')
+        if not os.path.isdir(root):
+            self.skipTest("test requires a WindowsApps directory")
+
         aliases = [os.path.join(root, a)
                    for a in fnmatch.filter(os.listdir(root), '*.exe')]
 
