@@ -3,6 +3,11 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-37849: Fix completions list appearing too high or low when shown
+above the current line.
+
+bpo-36419: Refactor autocompete and improve testing.
+
 bpo-37748: Reorder the Run menu.  Put the most common choice,
 Run Module, at the top.
 
