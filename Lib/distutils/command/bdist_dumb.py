@@ -16,7 +16,7 @@ class bdist_dumb(Command):
 
     description = "create a \"dumb\" built distribution"
 
-    user_options = [('bdist-dir=', 'd',
+    user_options = [('bdist-dir=', 'b',
                      "temporary directory for creating the distribution"),
                     ('plat-name=', 'p',
                      "platform name to embed in generated filenames "
