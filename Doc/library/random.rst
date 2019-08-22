@@ -324,7 +324,7 @@ Alternative Generator
    .. deprecated:: 3.9
       In the future, the *seed* must be one of the following types:
       :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
-      :class:`bytes`, or :class:`bytearray'.
+      :class:`bytes`, or :class:`bytearray`.
 
 .. class:: SystemRandom([seed])
 
