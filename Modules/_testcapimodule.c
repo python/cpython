@@ -4704,8 +4704,8 @@ dict_get_version(PyObject *self, PyObject *args)
 
     version = dict->ma_version_tag;
 
-    Py_BUILD_ASSERT(sizeof(unsigned PY_LONG_LONG) >= sizeof(version));
-    return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG)version);
+    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(version));
+    return PyLong_FromUnsignedLongLong((unsigned long long)version);
 }
 
 
