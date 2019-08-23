@@ -209,6 +209,9 @@ class Variable(_NTBase,
         else:
             self.id.validate()
 
+        if not self.filename:
+            raise TypeError('id missing filename')
+
         if self.vartype is None:
             raise TypeError('missing vartype')
 
