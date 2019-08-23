@@ -184,14 +184,14 @@ class MultiprocessThread(threading.Thread):
     def _timedout(self, test_name):
         self._kill()
 
-        stdout = sterr = ''
+        stdout = stderr = ''
         popen = self._popen
         try:
             stdout, stderr = popen.communicate(timeout=JOIN_TIMEOUT)
         except (subprocess.TimeoutExpired, OSError) as exc:
             print("WARNING: Failed to read worker process %s output "
                   "(timeout=%.1f sec): %r"
-                  % (popen.pid, exc, timeout),
+                  % (popen.pid, JOIN_TIMEOUT, exc),
                   file=sys.stderr, flush=True)
 
         self._close_wait()
