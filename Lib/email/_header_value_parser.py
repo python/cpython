@@ -1039,7 +1039,10 @@ def get_encoded_word(value):
         raise errors.HeaderParseError(
             "expected encoded word but found {}".format(value))
     remstr = ''.join(remainder)
-    if len(remstr) > 1 and remstr[0] in hexdigits and remstr[1] in hexdigits and tok.count('?') < 2:
+    if (len(remstr) > 1 and
+        remstr[0] in hexdigits and
+        remstr[1] in hexdigits and
+        tok.count('?') < 2):
         # The ? after the CTE was followed by an encoded word escape (=XX).
         rest, *remainder = remstr.split('?=', 1)
         tok = tok + '?=' + rest
