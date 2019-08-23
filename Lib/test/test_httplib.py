@@ -1401,6 +1401,7 @@ class OfflineTest(TestCase):
             'PRECONDITION_REQUIRED',
             'TOO_MANY_REQUESTS',
             'REQUEST_HEADER_FIELDS_TOO_LARGE',
+            'UNAVAILABLE_FOR_LEGAL_REASONS',
             'INTERNAL_SERVER_ERROR',
             'NOT_IMPLEMENTED',
             'BAD_GATEWAY',
