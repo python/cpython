@@ -13,7 +13,7 @@ import textwrap
 import unittest
 
 from test import support
-from test.support import run_unittest, findfile, python_is_optimized
+from test.support import findfile, python_is_optimized
 
 def get_gdb_version():
     try:
@@ -348,7 +348,6 @@ class PrettyPrintTests(DebuggerTests):
         def check_repr(text):
             try:
                 text.encode(encoding)
-                printable = True
             except UnicodeEncodeError:
                 self.assertGdbRepr(text, ascii(text))
             else:
@@ -960,18 +959,13 @@ class PyLocalsTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
-def test_main():
+
+def setUpModule():
     if support.verbose:
         print("GDB version %s.%s:" % (gdb_major_version, gdb_minor_version))
         for line in gdb_version.splitlines():
             print(" " * 4 + line)
-    run_unittest(PrettyPrintTests,
-                 PyListTests,
-                 StackNavigationTests,
-                 PyBtTests,
-                 PyPrintTests,
-                 PyLocalsTests
-                 )
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
