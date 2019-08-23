@@ -3058,11 +3058,11 @@ make_sys_argv(int argc, wchar_t * const * argv)
 void
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
+    wchar_t* empty_argv[1] = {L""};
     PyThreadState *tstate = _PyThreadState_GET();
 
     if (argc < 1 || argv == NULL) {
         /* Ensure at least one (empty) argument is seen */
-        wchar_t* empty_argv[1] = {L""};
         argv = empty_argv;
         argc = 1;
     }
