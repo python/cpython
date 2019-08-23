@@ -1104,13 +1104,13 @@ def get_unstructured(value):
             token, value = get_fws(value)
             unstructured.append(token)
             continue
-        encoded_format_invalid = False
+        valid_ew = True
         if value.startswith('=?'):
             try:
                 token, value = get_encoded_word(value)
             except errors.HeaderParseError as e:
                 if "encoded word format invalid" in str(e):
-                    encoded_format_invalid = True
+                    valid_ew = False
             else:
                 have_ws = True
                 if len(unstructured) > 0:
@@ -1128,7 +1128,7 @@ def get_unstructured(value):
         # Split in the middle of an atom if there is a rfc2047 encoded word
         # which does not have WSP on both sides. The defect will be registered
         # the next time through the loop.
-        if not encoded_format_invalid and rfc2047_matcher.search(tok):
+        if valid_ew and rfc2047_matcher.search(tok):
             tok, *remainder = value.partition('=?')
         vtext = ValueTerminal(tok, 'vtext')
         _validate_xtext(vtext)
