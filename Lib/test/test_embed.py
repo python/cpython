@@ -902,6 +902,23 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                api=API_PYTHON,
                                modify_path_cb=modify_path)
 
+    def test_init_sys_add(self):
+        config = {
+            'faulthandler': 1,
+            'xoptions': [
+                'config_xoption',
+                'cmdline_xoption',
+                'sysadd_xoption',
+                'faulthandler',
+            ],
+            'warnoptions': [
+                'ignore:::config_warnoption',
+                'ignore:::cmdline_warnoption',
+                'ignore:::sysadd_warnoption',
+            ],
+        }
+        self.check_all_configs("test_init_sys_add", config, api=API_PYTHON)
+
     def test_init_run_main(self):
         code = ('import _testinternalcapi, json; '
                 'print(json.dumps(_testinternalcapi.get_configs()))')
