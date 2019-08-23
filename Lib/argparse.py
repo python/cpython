@@ -1624,7 +1624,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         - add_help -- Add a -h/-help option
         - allow_abbrev -- Allow long options to be abbreviated unambiguously
         - exit_on_error -- Determines whether or not argparser exits with
-            error when an error occurs
+            error info when an error occurs
     """
 
     def __init__(self,
