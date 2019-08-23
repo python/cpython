@@ -73,3 +73,27 @@ class Slot:
         its __new__ or __init__).
         """
         self.instances[id(obj)] = value
+
+
+class classonly:
+    """A non-data descriptor that makes a value only visible on the class.
+
+    This is like the "classmethod" builtin, but does not show up on
+    instances of the class.  It may be used as a decorator.
+    """
+
+    def __init__(self, value):
+        self.value = value
+        self.getter = classmethod(value).__get__
+        self.name = None
+
+    def __set_name__(self, cls, name):
+        if self.name is not None:
+            raise TypeError('already used')
+        self.name = name
+
+    def __get__(self, obj, cls):
+        if obj is not None:
+            raise AttributeError(self.name)
+        # called on the class
+        return self.getter(None, cls)
