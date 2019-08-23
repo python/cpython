@@ -17,6 +17,10 @@ class HeaderParseError(MessageParseError):
     """Error while parsing headers."""
 
 
+class InvalidEwError(HeaderParseError):
+    """Invalid encoded word found while parsing headers."""
+
+
 class BoundaryError(MessageParseError):
     """Couldn't find terminating boundary."""
 

@@ -1054,7 +1054,7 @@ def get_encoded_word(value):
     try:
         text, charset, lang, defects = _ew.decode('=?' + tok + '?=')
     except ValueError:
-        raise errors.HeaderParseError(
+        raise errors.InvalidEwError(
             "encoded word format invalid: '{}'".format(ew.cte))
     ew.charset = charset
     ew.lang = lang
@@ -1108,9 +1108,12 @@ def get_unstructured(value):
         if value.startswith('=?'):
             try:
                 token, value = get_encoded_word(value)
-            except errors.HeaderParseError as e:
-                if "encoded word format invalid" in str(e):
-                    valid_ew = False
+            except errors.InvalidEwError:
+                valid_ew = False
+            except errors.HeaderParseError:
+                # XXX: Need to figure out how to register defects when
+                # appropriate here.
+                pass
             else:
                 have_ws = True
                 if len(unstructured) > 0:
