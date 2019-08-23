@@ -328,9 +328,9 @@ Initializing and finalizing the interpreter
 
    The *argc* and *argv* parameters should be prepared exactly as those which
    are passed to a C program's :c:func:`main` function (converted to ``wchar_t``
-   :c:func:`Py_DecodeLocale`).  It is important to note that the argument list
-   may be modified (but the contents of the strings pointed to by the argument
-   list are not).
+   with :c:func:`Py_DecodeLocale`).  It is important to note that the argument
+   list may be modified (but the contents of the strings pointed to by the
+   argument list are not).
 
    The return value will be ``0`` if the interpreter exits normally (i.e.,
    without an exception), ``1`` if the interpreter exits due to an exception,
@@ -350,8 +350,8 @@ Initializing and finalizing the interpreter
    documentation. If this function is instead called *after* a preceding
    ``Py_Initialize`` or ``Py_InitializeEx`` call, then exactly which
    environmental and command line configuration settings will be updated is
-   version dependent (as it depends on which settings correctly support being
-   modified after they have already been set once in the first call to
+   version dependent (as it depends on which settings correctly support
+   being modified after they have already been set once in the first call to
    ``Py_Initialize`` or ``Py_InitializeEx``).
 
 
