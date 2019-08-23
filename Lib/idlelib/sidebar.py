@@ -11,10 +11,22 @@ from idlelib.config import idleConf
 from idlelib.delegator import Delegator
 
 
+def get_lineno(text, index):
+    """Utility to get the line number of an index in a Tk text widget."""
+    return int(float(text.index(index)))
+
+
 def get_end_linenumber(text):
     """Utility to get the last line's number in a Tk text widget."""
-    return int(float(text.index('end-1c')))
+    return get_lineno(text, 'end-1c')
 
+
+def get_displaylines(text, index):
+    """Display height, in lines, of a logical line in a Tk text widget."""
+    res = text.count(f"{index} linestart",
+                     f"{index} lineend",
+                     "displaylines")
+    return res[0] if res else 0
 
 def get_widget_padding(widget):
     """Get the total padding of a Tk widget, including its border."""
@@ -361,28 +373,63 @@ class LineNumbers(BaseSideBar):
 #         self.prev_end = end
 
 
-class TextChangeDelegator(Delegator):
-    """Generate callbacks upon insert, replace and delete operations."""
-    def __init__(self, changed_callback):
+class WrappedLineHeightChangeDelegator(Delegator):
+    def __init__(self, callback):
         """
-        changed_callback - Callable, will be called after insert
-                           or delete operations with the current
-                           end line number.
+        callback - Callable, will be called when an insert, delete or replace
+                   action on the text widget requires updating the shell
+                   sidebar.
         """
         Delegator.__init__(self)
-        self.changed_callback = changed_callback
+        self.callback = callback
 
     def insert(self, index, chars, tags=None):
+        is_single_line = '\n' not in chars
+        if not is_single_line:
+            before_displaylines = get_displaylines(self, index)
+
         self.delegate.insert(index, chars, tags)
-        self.changed_callback("insert")
+
+        if not is_single_line:
+            after_displaylines = get_displaylines(self, index)
+            if after_displaylines == before_displaylines:
+                return  # no need to update the sidebar
+
+        self.callback()
 
     def replace(self, index1, index2, chars, *args):
+        is_single_line = (
+            '\n' not in chars and
+            get_lineno(self, index1) == get_lineno(self, index2)
+        )
+        if is_single_line:
+            before_displaylines = get_displaylines(self, index1)
+
         self.delegate.replace(index1, index2, chars, *args)
-        self.changed_callback("replace")
+
+        if is_single_line:
+            after_displaylines = get_displaylines(self, index1)
+            if after_displaylines == before_displaylines:
+                return  # no need to update the sidebar
+
+        self.callback()
 
     def delete(self, index1, index2=None):
+        if index2 is None:
+            index2 = index1 + "+1c"
+        is_single_line = get_lineno(self, index1) == get_lineno(self, index2)
+        if is_single_line:
+            before_displaylines = get_displaylines(self, index1)
+
         self.delegate.delete(index1, index2)
-        self.changed_callback("delete")
+
+        if is_single_line:
+            after_displaylines = get_displaylines(self, index1)
+            print("displaylines", before_displaylines, after_displaylines)
+            if after_displaylines == before_displaylines:
+                return  # no need to update the sidebar
+
+        self.callback()
 
 
 class ShellSidebar:
@@ -398,17 +445,21 @@ class ShellSidebar:
 
         self.bind_events()
 
-        change_delegator = TextChangeDelegator(self.change_callback)
-        # Insert the TextChangeDelegator after the undo delegator, so that
-        # the sidebar is properly updated after undo and redo actions.
-        change_delegator.setdelegate(self.editwin.undo.delegate)
-        self.editwin.undo.setdelegate(change_delegator)
-        # Reset the delegator caches of the delegators "above" the
-        # TextChangeDelegator we just inserted.
+        change_delegator = \
+            WrappedLineHeightChangeDelegator(self.change_callback)
+
+        # Insert the TextChangeDelegator after the last delegator, so that
+        # the sidebar reflects final changes to the text widget contents.
         delegator = self.editwin.per.top
-        while delegator is not change_delegator:
-            delegator.resetcache()
-            delegator = delegator.delegate
+        if delegator.delegate != self.text:
+            while delegator.delegate != self.editwin.per.bottom:
+                # Reset the delegator caches of the delegators "above" the
+                # TextChangeDelegator we will insert.
+                delegator.resetcache()
+                delegator = delegator.delegate
+        last_delegator = delegator
+        change_delegator.setdelegate(last_delegator.delegate)
+        last_delegator.setdelegate(change_delegator)
 
         self.text['yscrollcommand'] = self.yscroll_event
 
@@ -432,9 +483,7 @@ class ShellSidebar:
             self.canvas.delete(tk.ALL)
             self.is_shown = False
 
-    def change_callback(self, change_type):
-        if change_type == "insert":
-            return
+    def change_callback(self):
         if self.is_shown:
             self.update_sidebar()
 
@@ -466,7 +515,7 @@ class ShellSidebar:
         The scroll bar is also updated.
         """
         self.editwin.vbar.set(*args)
-        self.change_callback('yview')
+        self.change_callback()
         return 'break'
 
     def update_font(self):
@@ -479,7 +528,7 @@ class ShellSidebar:
 
     def _update_font(self, font):
         self.font = font
-        self.change_callback("font")
+        self.change_callback()
 
     def update_colors(self):
         """Update the sidebar text colors, usually after config changes."""
@@ -490,7 +539,7 @@ class ShellSidebar:
     def _update_colors(self, foreground, background):
         self.colors = (foreground, background)
         self.canvas.configure(background=self.colors[1])
-        self.change_callback("colors")
+        self.change_callback()
 
     def redirect_focusin_event(self, event):
         """Redirect focus-in events to the main editor text widget."""
