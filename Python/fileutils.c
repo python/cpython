@@ -1037,11 +1037,18 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
         flags = HANDLE_FLAG_INHERIT;
     else
         flags = 0;
-    if (!SetHandleInformation(handle, HANDLE_FLAG_INHERIT, flags)) {
+
+    /* This check can be removed once support for Windows 7 ends. */
+#define CONSOLE_PSEUDOHANDLE(handle) (((ULONG_PTR)(handle) & 0x3) == 0x3 && \
+        GetFileType(handle) == FILE_TYPE_CHAR)
+
+    if (!CONSOLE_PSEUDOHANDLE(handle) &&
+        !SetHandleInformation(handle, HANDLE_FLAG_INHERIT, flags)) {
         if (raise)
             PyErr_SetFromWindowsErr(0);
         return -1;
     }
+#undef CONSOLE_PSEUDOHANDLE
     return 0;
 
 #else
