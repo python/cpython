@@ -1128,6 +1128,9 @@ def get_unstructured(value):
         # Split in the middle of an atom if there is a rfc2047 encoded word
         # which does not have WSP on both sides. The defect will be registered
         # the next time through the loop.
+        # This needs to only be performed when the encoded word is valid;
+        # otherwise, performing it on an invalid encoded word can cause
+        # the parser to go in an infinite loop.
         if valid_ew and rfc2047_matcher.search(tok):
             tok, *remainder = value.partition('=?')
         vtext = ValueTerminal(tok, 'vtext')
