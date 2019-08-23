@@ -26,7 +26,7 @@ Concepts
 
   rule_name: rule_description;
 
-  meaning the rule 'a: b' specifies that a can be replaced by b. A Context-free
+  meaning the rule 'a: b' specifies that a can be replaced by b. A context-free
   grammar is a grammar in which the left-hand side of each production rule
   consists of only a single nonterminal symbol. Context-free grammars can
   always be recognized by a Non-Deterministic Automatons.
