@@ -927,6 +927,9 @@ class PyShell(OutputWindow):
         #
         self.pollinterval = 50  # millisec
 
+        self.input_lines = set()
+        self.prompt_lines = set()
+
         self.shell_sidebar = self.ShellSidebar(self)
         self.shell_sidebar.show_sidebar()
 
@@ -1167,10 +1170,22 @@ class PyShell(OutputWindow):
             # Check if there's a relevant stdin range -- if so, use it
             prev = self.text.tag_prevrange("stdin", "insert")
             if prev and self.text.compare("insert", "<", prev[1]):
+                for line in reversed(range(self.getlineno(prev[0]),
+                                           self.getlineno(prev[1]))):
+                    if line in self.prompt_lines:
+                        break
+                if self.text.compare(f"{line}.0", ">", prev[0]):
+                    prev = (f"{line}.0", prev[1])
                 self.recall(self.text.get(prev[0], prev[1]), event)
                 return "break"
             next = self.text.tag_nextrange("stdin", "insert")
             if next and self.text.compare("insert lineend", ">=", next[0]):
+                for line in range(self.getlineno(next[0]),
+                                  self.getlineno(next[1])):
+                    if line + 1 in self.prompt_lines:
+                        break
+                if self.text.compare(f"{line}.end", "<", next[1]):
+                    next = (next[0], f"{line}.end")
                 self.recall(self.text.get(next[0], next[1]), event)
                 return "break"
             # No stdin mark -- just get the current line, less any prompt
@@ -1212,7 +1227,7 @@ class PyShell(OutputWindow):
 
     def recall(self, s, event):
         # remove leading and trailing empty or whitespace lines
-        s = re.sub(r'^\s*\n', '' , s)
+        s = re.sub(r'^\s*\n', '', s)
         s = re.sub(r'\n\s*$', '', s)
         lines = s.split('\n')
         self.text.undo_block_start()
@@ -1223,6 +1238,7 @@ class PyShell(OutputWindow):
             if prefix.rstrip().endswith(':'):
                 self.newline_and_indent_event(event)
                 prefix = self.text.get("insert linestart", "insert")
+            first_line = self.getlineno("insert")
             self.text.insert("insert", lines[0].strip())
             if len(lines) > 1:
                 orig_base_indent = re.search(r'^([ \t]*)', lines[0]).group(0)
@@ -1232,6 +1248,9 @@ class PyShell(OutputWindow):
                         # replace orig base indentation with new indentation
                         line = new_base_indent + line[len(orig_base_indent):]
                     self.text.insert('insert', '\n'+line.rstrip())
+            self.input_lines.update(
+                range(first_line, self.getlineno("insert") + 1))
+            self.shell_sidebar.update_sidebar()
         finally:
             self.text.see("insert")
             self.text.undo_block_stop()
@@ -1248,7 +1267,13 @@ class PyShell(OutputWindow):
         while i > 0 and line[i-1] in " \t":
             i = i-1
         line = line[:i]
-        self.interp.runsource(line)
+        input_is_incomplete = self.interp.runsource(line)
+        # If the input is a complete statement, the sidebar updates will be
+        # handled elsewhere.
+        if input_is_incomplete:
+            self.input_lines.update(range(self.getlineno("iomark"),
+                                          self.getlineno("end-1c") + 1))
+            self.shell_sidebar.update_sidebar()
 
     def open_stack_viewer(self, event=None):
         if self.interp.rpcclt:
@@ -1274,7 +1299,18 @@ class PyShell(OutputWindow):
 
     def showprompt(self):
         self.resetoutput()
-        self.console.write(self.prompt)
+
+        prompt_lineno = self.getlineno("iomark")
+        prompt = self.prompt
+        if self.sys_ps1 and prompt.endswith(self.sys_ps1):
+            prompt = prompt[:-len(self.sys_ps1)]
+        self.console.write(prompt)
+
+        n_prompt_lines = prompt.count('\n') + 1
+        self.prompt_lines.update(
+            range(prompt_lineno, prompt_lineno + n_prompt_lines))
+        self.shell_sidebar.update_sidebar()
+
         self.text.mark_set("insert", "end-1c")
         self.set_line_and_column()
         self.io.reset_undo()

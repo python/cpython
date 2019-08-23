@@ -361,9 +361,8 @@ class LineNumbers(BaseSideBar):
 #         self.prev_end = end
 
 
-class ChangeOrScrollDelegator(Delegator):
-    """Generate callbacks with the current end line number after
-       insert or delete operations"""
+class TextChangeDelegator(Delegator):
+    """Generate callbacks upon insert, replace and delete operations."""
     def __init__(self, changed_callback):
         """
         changed_callback - Callable, will be called after insert
@@ -385,22 +384,9 @@ class ChangeOrScrollDelegator(Delegator):
         self.delegate.delete(index1, index2)
         self.changed_callback("delete")
 
-    # def yview(self, *args):
-    #     print(f'yview {args=}')
-    #     self.delete.yview(*args)
-    #     if args:
-    #         self.changed_callback("yview")
-    #
-    # def yview_moveto(self, fraction):
-    #     self.delegate.yview_moveto(fraction)
-    #     self.changed_callback("yview_moveto")
-    #
-    # def yview_scroll(self, number, what):
-    #     self.delegate.yview_moveto(number, what)
-    #     self.changed_callback("yview_scroll")
-
 
 class ShellSidebar:
+    """Sidebar for the PyShell window, for prompts etc."""
     def __init__(self, editwin):
         self.editwin = editwin
         self.parent = editwin.text_frame
@@ -412,15 +398,15 @@ class ShellSidebar:
 
         self.bind_events()
 
-        change_scroll_delegator = ChangeOrScrollDelegator(self.change_callback)
-        # Insert the delegator after the undo delegator, so that line numbers
-        # are properly updated after undo and redo actions.
-        change_scroll_delegator.setdelegate(self.editwin.undo.delegate)
-        self.editwin.undo.setdelegate(change_scroll_delegator)
+        change_delegator = TextChangeDelegator(self.change_callback)
+        # Insert the TextChangeDelegator after the undo delegator, so that
+        # the sidebar is properly updated after undo and redo actions.
+        change_delegator.setdelegate(self.editwin.undo.delegate)
+        self.editwin.undo.setdelegate(change_delegator)
         # Reset the delegator caches of the delegators "above" the
-        # end line delegator we just inserted.
+        # TextChangeDelegator we just inserted.
         delegator = self.editwin.per.top
-        while delegator is not change_scroll_delegator:
+        while delegator is not change_delegator:
             delegator.resetcache()
             delegator = delegator.delegate
 
@@ -434,7 +420,7 @@ class ShellSidebar:
     def show_sidebar(self):
         if not self.is_shown:
             self.update_sidebar()
-            _padx, pady = get_widget_padding(self.text)
+            # _padx, pady = get_widget_padding(self.text)
             self.canvas.grid(row=1, column=0, sticky=tk.NSEW,
                              # padx=2, pady=pady)
                              padx=2, pady=0)
@@ -447,8 +433,10 @@ class ShellSidebar:
             self.is_shown = False
 
     def change_callback(self, change_type):
+        if change_type == "insert":
+            return
         if self.is_shown:
-            self.text.after_idle(self.update_sidebar)
+            self.update_sidebar()
 
     def update_sidebar(self):
         text = self.text
@@ -462,15 +450,15 @@ class ShellSidebar:
             if lineinfo is None:
                 break
             y = lineinfo[1]
-            tags = self.text.tag_names(f'{index} linestart')
-            prompt = '>>>' if 'console' in tags else '...'
+            lineno = self.editwin.getlineno(index)
+            prompt = (
+                '>>>' if lineno in self.editwin.prompt_lines else
+                '...' if lineno in self.editwin.input_lines else
+                '   '
+            )
             canvas.create_text(2, y, anchor=tk.NW, text=prompt,
                                font=self.font, fill=self.colors[0])
             index = text.index(f'{index}+1line')
-
-        # import sys
-        # for i in range(1, self.editwin.getlineno('end')):
-        #     print(i, self.text.tag_names(f'{i}.0'), file=sys.stderr)
 
     def yscroll_event(self, *args, **kwargs):
         """Redirect vertical scrolling to the main editor text widget.
@@ -530,6 +518,7 @@ class ShellSidebar:
         # Note that without this, scrolling with the mouse only scrolls
         # the line numbers.
         self.canvas.bind('<MouseWheel>', self.redirect_mousewheel_event)
+
 
 def _linenumbers_drag_scrolling(parent):  # htest #
     from idlelib.idle_test.test_sidebar import Dummy_editwin
