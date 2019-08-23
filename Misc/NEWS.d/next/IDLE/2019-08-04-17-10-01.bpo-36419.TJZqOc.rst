@@ -1,1 +1,1 @@
-Refactor autocomplete and improve testing.
+Refactor IDLE autocomplete and improve testing.
