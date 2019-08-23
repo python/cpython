@@ -572,6 +572,18 @@ Functions
    .. versionadded:: 3.2
 
 
+.. function:: indent(tree, space="  ", level=0)
+
+   Appends whitespace to the subtree to indent the tree visually.
+   This can be used to generate pretty-printed XML output.
+   *tree* can be an Element or ElementTree.  *space* is the whitespace
+   string that will be inserted for each indentation level, two space
+   characters by default.  For indenting partial subtrees inside of an
+   already indented tree, pass the initial indentation level as *level*.
+
+   .. versionadded:: 3.9
+
+
 .. function:: iselement(element)
 
    Checks if an object appears to be a valid element object.  *element* is an
