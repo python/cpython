@@ -32,16 +32,16 @@ class StaticsFromSymbolsTests(_Base):
 
     def test_typical(self):
         self._return_iter_symbols = [
-                info.Symbol('var1', 'variable', False, 'dir1/spam.c', None, None),
-                info.Symbol('var2', 'variable', False, 'dir1/spam.c', None, None),
-                info.Symbol('func1', 'function', False, 'dir1/spam.c', None, None),
-                info.Symbol('func2', 'function', True, 'dir1/spam.c', None, None),
-                info.Symbol('var3', 'variable', False, 'dir1/spam.c', None, None),
-                info.Symbol('var4', 'variable', False, 'dir1/spam.c', 'func2', None),
-                info.Symbol('var1', 'variable', True, 'dir1/ham.c', None, None),
-                info.Symbol('var1', 'variable', False, 'dir1/eggs.c', None, None),
-                info.Symbol('xyz', 'other', False, 'dir1/eggs.c', None, None),
-                info.Symbol('???', 'other', False, None, None, None),
+                info.Symbol(('dir1/spam.c', None, 'var1'), 'variable', False),
+                info.Symbol(('dir1/spam.c', None, 'var2'), 'variable', False),
+                info.Symbol(('dir1/spam.c', None, 'func1'), 'function', False),
+                info.Symbol(('dir1/spam.c', None, 'func2'), 'function', True),
+                info.Symbol(('dir1/spam.c', None, 'var3'), 'variable', False),
+                info.Symbol(('dir1/spam.c', 'func2', 'var4'), 'variable', False),
+                info.Symbol(('dir1/ham.c', None, 'var1'), 'variable', True),
+                info.Symbol(('dir1/eggs.c', None, 'var1'), 'variable', False),
+                info.Symbol(('dir1/eggs.c', None, 'xyz'), 'other', False),
+                info.Symbol((None, None, '???'), 'other', False),
                 ]
 
         found = list(statics_from_symbols(['dir1'], self.iter_symbols))

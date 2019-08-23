@@ -216,84 +216,82 @@ class IDTests(unittest.TestCase):
 class SymbolTests(unittest.TestCase):
 
     VALID_ARGS = (
-            'eggs',
+            ID('x/y/z/spam.c', 'func', 'eggs'),
             Symbol.KIND.VARIABLE,
             False,
-            'x/y/z/spam.c',
-            'func',
-            'int',
             )
     VALID_KWARGS = dict(zip(Symbol._fields, VALID_ARGS))
     VALID_EXPECTED = VALID_ARGS
 
-    def test_init_typical_binary(self):
+    def test_init_typical_binary_local(self):
+        id = ID(None, None, 'spam')
         symbol = Symbol(
-                name='spam',
+                id=id,
                 kind=Symbol.KIND.VARIABLE,
                 external=False,
-                filename='Python/ceval.c',
                 )
 
         self.assertEqual(symbol, (
-            'spam',
+            id,
             Symbol.KIND.VARIABLE,
             False,
-            'Python/ceval.c',
-            None,
-            None,
             ))
 
-    def test_init_typical_source(self):
+    def test_init_typical_binary_global(self):
+        id = ID('Python/ceval.c', None, 'spam')
         symbol = Symbol(
-                name='spam',
+                id=id,
                 kind=Symbol.KIND.VARIABLE,
                 external=False,
-                filename='Python/ceval.c',
-                declaration='static const int',
                 )
 
         self.assertEqual(symbol, (
-            'spam',
+            id,
             Symbol.KIND.VARIABLE,
             False,
-            'Python/ceval.c',
-            None,
-            'static const int',
             ))
 
     def test_init_coercion(self):
         tests = [
             ('str subclass',
              dict(
-                 name=PseudoStr('eggs'),
+                 id=PseudoStr('eggs'),
                  kind=PseudoStr('variable'),
                  external=0,
-                 filename=PseudoStr('x/y/z/spam.c'),
-                 funcname=PseudoStr('func'),
-                 declaration=PseudoStr('int'),
                  ),
-             ('eggs',
+             (ID(None, None, 'eggs'),
               Symbol.KIND.VARIABLE,
               False,
-              'x/y/z/spam.c',
-              'func',
-              'int',
               )),
-            ('non-str',
+            ('with filename',
              dict(
-                 name=('a', 'b', 'c'),
+                 id=('x/y/z/spam.c', 'eggs'),
+                 kind=PseudoStr('variable'),
+                 external=0,
+                 ),
+             (ID('x/y/z/spam.c', None, 'eggs'),
+              Symbol.KIND.VARIABLE,
+              False,
+              )),
+            ('non-str 1',
+             dict(
+                 id=('a', 'b', 'c'),
                  kind=StrProxy('variable'),
                  external=0,
-                 filename=StrProxy('x/y/z/spam.c'),
-                 funcname=StrProxy('func'),
-                 declaration=Object(),
                  ),
-             ("('a', 'b', 'c')",
+             (ID('a', 'b', 'c'),
               Symbol.KIND.VARIABLE,
               False,
-              'x/y/z/spam.c',
-              'func',
+              )),
+            ('non-str 2',
+             dict(
+                 id=('a', 'b', 'c'),
+                 kind=Object(),
+                 external=0,
+                 ),
+             (ID('a', 'b', 'c'),
               '<object>',
+              False,
               )),
             ]
         for summary, kwargs, expected in tests:
@@ -304,39 +302,51 @@ class SymbolTests(unittest.TestCase):
                     value = getattr(symbol, field)
                     if field == 'external':
                         self.assertIs(type(value), bool)
+                    elif field == 'id':
+                        self.assertIs(type(value), ID)
                     else:
                         self.assertIs(type(value), str)
                 self.assertEqual(tuple(symbol), expected)
 
     def test_init_all_missing(self):
-        symbol = Symbol('spam')
+        id = ID(None, None, 'spam')
+
+        symbol = Symbol(id)
 
         self.assertEqual(symbol, (
-            'spam',
+            id,
             Symbol.KIND.VARIABLE,
-            None,
-            None,
-            None,
             None,
             ))
 
     def test_fields(self):
-        static = Symbol('a', 'b', False, 'z', 'x', 'w')
+        id = ID('z', 'x', 'a')
 
-        self.assertEqual(static.name, 'a')
-        self.assertEqual(static.kind, 'b')
-        self.assertIs(static.external, False)
-        self.assertEqual(static.filename, 'z')
-        self.assertEqual(static.funcname, 'x')
-        self.assertEqual(static.declaration, 'w')
+        symbol = Symbol(id, 'b', False)
+
+        self.assertEqual(symbol.id, id)
+        self.assertEqual(symbol.kind, 'b')
+        self.assertIs(symbol.external, False)
+
+    def test___getattr__(self):
+        id = ID('z', 'x', 'a')
+        symbol = Symbol(id, 'b', False)
+
+        filename = symbol.filename
+        funcname = symbol.funcname
+        name = symbol.name
+
+        self.assertEqual(filename, 'z')
+        self.assertEqual(funcname, 'x')
+        self.assertEqual(name, 'a')
 
     def test_validate_typical(self):
+        id = ID('z', 'x', 'a')
+
         symbol = Symbol(
-                name='spam',
+                id=id,
                 kind=Symbol.KIND.VARIABLE,
                 external=False,
-                filename='Python/ceval.c',
-                declaration='static const int',
                 )
 
         symbol.validate()  # This does not fail.
@@ -347,17 +357,8 @@ class SymbolTests(unittest.TestCase):
                 symbol = Symbol(**self.VALID_KWARGS)
                 symbol = symbol._replace(**{field: None})
 
-                if field in ('funcname', 'declaration'):
-                    symbol.validate()  # The field can be missing (not set).
-                    continue
-
                 with self.assertRaises(TypeError):
                     symbol.validate()
-        with self.subTest('combined'):
-            symbol = Symbol(**self.VALID_KWARGS)
-            symbol = symbol._replace(filename=None, funcname=None)
-
-            symbol.validate()  # The fields together can be missing (not set).
 
     def test_validate_bad_field(self):
         badch = tuple(c for c in string.punctuation + string.digits)
@@ -369,11 +370,8 @@ class SymbolTests(unittest.TestCase):
                 'a++',
                 ) + badch
         tests = [
-            ('name', notnames),
+            ('id', notnames),
             ('kind', ('bogus',)),
-            ('filename', ()),  # Any non-empty str is okay.
-            ('funcname', notnames),
-            ('declaration', ()),  # Any non-empty str is okay.
             ]
         seen = set()
         for field, invalid in tests:

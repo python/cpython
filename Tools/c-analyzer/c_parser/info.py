@@ -134,9 +134,7 @@ class ID(_NTBase, namedtuple('ID', 'filename funcname name')):
         # XXX Check the filename?
 
 
-class Symbol(_NTBase,
-             namedtuple('Symbol',
-                        'name kind external filename funcname declaration')):
+class Symbol(_NTBase, namedtuple('Symbol', 'id kind external')):
     """Info for a single compilation symbol."""
 
     __slots__ = ()
@@ -146,25 +144,30 @@ class Symbol(_NTBase,
         FUNCTION = 'function'
         OTHER = 'other'
 
-    def __new__(cls, name, kind=KIND.VARIABLE, external=None,
-                filename=None, funcname=None, declaration=None):
+    @classonly
+    def from_name(cls, name, filename=None, kind=KIND.VARIABLE, external=None):
+        """Return a new symbol based on the given name."""
+        id = ID(filename, None, name)
+        return cls(id, kind, external)
+
+    def __new__(cls, id, kind=KIND.VARIABLE, external=None):
         self = super().__new__(
                 cls,
-                name=str(name) if name else None,
+                id=ID.from_raw(id),
                 kind=str(kind) if kind else None,
                 external=bool(external) if external is not None else None,
-                filename=str(filename) if filename else None,
-                funcname=str(funcname) if funcname else None,
-                declaration=normalize_vartype(declaration),
                 )
         return self
 
+    def __getattr__(self, name):
+        return getattr(self.id, name)
+
     def validate(self):
         """Fail if the object is invalid (i.e. init with bad data)."""
-        if not self.name:
-            raise TypeError('missing name')
-        elif not NAME_RE.match(self.name):
-            raise ValueError(f'name must be a name, got {self.name!r}')
+        if not self.id:
+            raise TypeError('missing id')
+        else:
+            self.id.validate()
 
         if not self.kind:
             raise TypeError('missing kind')
@@ -173,18 +176,6 @@ class Symbol(_NTBase,
 
         if self.external is None:
             raise TypeError('missing external')
-
-        if not self.filename and self.funcname:
-            raise TypeError('missing filename')
-        # filename, funcname and declaration can be not set.
-
-        if not self.funcname:
-            # funcname can be not set.
-            pass
-        elif not NAME_RE.match(self.funcname):
-            raise ValueError(f'funcname must be a name, got{self.funcname!r}')
-
-        # declaration can be not set.
 
 
 class Variable(_NTBase,
