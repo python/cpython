@@ -500,7 +500,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.fail(f"fail to decode stdout: {stdout!r}")
 
     def get_expected_config(self, expected_preconfig, expected, env, api,
-                            add_path=None):
+                            modify_path_cb=None):
         cls = self.__class__
         if cls.EXPECTED_CONFIG is None:
             cls.EXPECTED_CONFIG = self._get_expected_config(env)
@@ -556,8 +556,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         prepend_path = expected['pythonpath_env']
         if prepend_path is not None:
             expected['module_search_paths'] = [prepend_path, *expected['module_search_paths']]
-        if add_path is not None:
-            expected['module_search_paths'] = [*expected['module_search_paths'], add_path]
+        if modify_path_cb is not None:
+            expected['module_search_paths'] = expected['module_search_paths'].copy()
+            modify_path_cb(expected['module_search_paths'])
 
         for key in self.COPY_PRE_CONFIG:
             if key not in expected_preconfig:
@@ -602,7 +603,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(configs['global_config'], expected)
 
     def check_all_configs(self, testname, expected_config=None,
-                     expected_preconfig=None, add_path=None, stderr=None,
+                     expected_preconfig=None, modify_path_cb=None, stderr=None,
                      *, api):
         env = remove_python_envvars()
 
@@ -628,7 +629,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         self.get_expected_config(expected_preconfig,
                                  expected_config, env,
-                                 api, add_path)
+                                 api, modify_path_cb)
 
         out, err = self.run_embedded_interpreter(testname, env=env)
         if stderr is None and not expected_config['verbose']:
@@ -894,9 +895,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'program_name': './init_read_set',
             'executable': 'my_executable',
         }
+        def modify_path(path):
+            path.insert(1, "test_path_insert1")
+            path.append("test_path_append")
         self.check_all_configs("test_init_read_set", config,
                                api=API_PYTHON,
-                               add_path="init_read_set_path")
+                               modify_path_cb=modify_path)
 
     def test_init_run_main(self):
         code = ('import _testinternalcapi, json; '
