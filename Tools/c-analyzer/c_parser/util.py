@@ -1,6 +1,9 @@
 import subprocess 
 
 
+_NOT_SET = object()
+
+
 def run_cmd(argv):
     proc = subprocess.run(
             argv,
