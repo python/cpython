@@ -333,6 +333,7 @@
     <ClCompile Include="..\Modules\sha256module.c" />
     <ClCompile Include="..\Modules\sha512module.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
+    <ClCompile Include="..\Modules\_statisticsmodule.c" />
     <ClCompile Include="..\Modules\symtablemodule.c" />
     <ClCompile Include="..\Modules\_threadmodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
