@@ -652,10 +652,10 @@ Instances have the following methods and attributes:
    Return :const:`True` if this archive member is a directory.
 
    .. versionadded:: 3.6
-   This uses the entry's name: directories should always end with ``/``.
+      This uses the entry's name: directories should always end with ``/``.
 
    .. versionchanged:: 3.9
-   Use the filemode contained in external file attributes.
+      Use the filemode contained in external file attributes.
 
 .. method:: ZipInfo.is_reg()
 
