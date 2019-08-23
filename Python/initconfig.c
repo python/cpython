@@ -297,11 +297,19 @@ _PyWideStringList_Copy(PyWideStringList *list, const PyWideStringList *list2)
 
 
 PyStatus
-PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
+PyWideStringList_Insert(PyWideStringList *list,
+                        Py_ssize_t index, const wchar_t *item)
 {
-    if (list->length == PY_SSIZE_T_MAX) {
+    Py_ssize_t len = list->length;
+    if (len == PY_SSIZE_T_MAX) {
         /* length+1 would overflow */
         return _PyStatus_NO_MEMORY();
+    }
+    if (index < 0) {
+        return _PyStatus_ERR("PyWideStringList_Insert index must be >= 0");
+    }
+    if (index > len) {
+        index = len;
     }
 
     wchar_t *item2 = _PyMem_RawWcsdup(item);
@@ -309,17 +317,30 @@ PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
         return _PyStatus_NO_MEMORY();
     }
 
-    size_t size = (list->length + 1) * sizeof(list->items[0]);
+    size_t size = (len + 1) * sizeof(list->items[0]);
     wchar_t **items2 = (wchar_t **)PyMem_RawRealloc(list->items, size);
     if (items2 == NULL) {
         PyMem_RawFree(item2);
         return _PyStatus_NO_MEMORY();
     }
 
-    items2[list->length] = item2;
+    if (index < len) {
+        memmove(&items2[index + 1],
+                &items2[index],
+                (len - index) * sizeof(items2[0]));
+    }
+
+    items2[index] = item2;
     list->items = items2;
     list->length++;
     return _PyStatus_OK();
+}
+
+
+PyStatus
+PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
+{
+    return PyWideStringList_Insert(list, list->length, item);
 }
 
 
