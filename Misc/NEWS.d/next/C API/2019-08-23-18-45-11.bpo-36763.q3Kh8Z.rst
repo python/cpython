@@ -1,0 +1,2 @@
+Options added by ``PySys_AddXOption()`` are now handled the same way than
+``PyConfig.xoptions`` and command line ``-X`` options.
