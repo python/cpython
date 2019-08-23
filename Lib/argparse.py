@@ -1623,7 +1623,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         - conflict_handler -- String indicating how to handle conflicts
         - add_help -- Add a -h/-help option
         - allow_abbrev -- Allow long options to be abbreviated unambiguously
-        - exit_on_error -- Determines whether or not argparser exits with
+        - exit_on_error -- Determines whether or not argparser exits with an
             error when an error occurs
     """
 
