@@ -1,6 +1,8 @@
 from collections import namedtuple
 import re
 
+from .util import classonly
+
 
 NAME_RE = re.compile(r'^([a-zA-Z]|_\w*[a-zA-Z]\w*|[a-zA-Z]\w*)$')
 
@@ -19,6 +21,30 @@ def normalize_vartype(vartype):
 class _NTBase:
 
     __slots__ = ()
+
+    @classonly
+    def from_raw(cls, raw):
+        if not raw:
+            return None
+        elif isinstance(raw, cls):
+            return raw
+        elif isinstance(raw, str):
+            return cls.from_string(raw)
+        else:
+            if hasattr(raw, 'items'):
+                return cls(**raw)
+            try:
+                args = tuple(raw)
+            except TypeError:
+                pass
+            else:
+                return cls(*args)
+        raise NotImplementedError
+
+    @classonly
+    def from_string(cls, value):
+        """Return a new instance based on the given string."""
+        raise NotImplementedError
 
     @classmethod
     def _make(cls, iterable):  # The default _make() is not subclass-friendly.
