@@ -179,7 +179,7 @@ ArgumentParser objects
    * allow_abbrev_ - Allows long options to be abbreviated if the
      abbreviation is unambiguous. (default: ``True``)
 
-   * exit_on_error_ - Determines whether or not argparser exits with error
+   * exit_on_error_ - Determines whether or not argparser exits with error info
      when an error occur. (default: ``True``)
 
    .. versionchanged:: 3.5
@@ -651,6 +651,28 @@ the help options::
 
    optional arguments:
      +h, ++help  show this help message and exit
+
+
+exit_on_error
+^^^^^^^^^^^^^
+
+Normally, when you pass an wrong argument list to the :meth:`~ArgumentParser.parse_args`
+method of an :class:`ArgumentParser`, it will exit with error info.
+
+If user would like catch error by themselves, they can enable this feature by setting
+``exit_on_error`` to ``False``:
+
+   >>> parser = argparse.ArgumentParser(exit_on_error=False)
+   >>> parser.add_argument('--integers', type=int)
+   _StoreAction(option_strings=['--integers'], dest='integers', nargs=None, const=None, default=None, type=<class 'int'>, choices=None, help=None, metavar=None)
+   >>> try:
+   ...     parser.parse_args('--integers a'.split())
+   ... except argparse.ArgumentError:
+   ...     print('Catching an argumentError')
+   ...
+   Catching an argumentError
+
+.. versionadded:: 3.9
 
 
 The add_argument() method
