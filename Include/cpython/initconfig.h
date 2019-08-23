@@ -37,6 +37,9 @@ typedef struct {
 
 PyAPI_FUNC(PyStatus) PyWideStringList_Append(PyWideStringList *list,
     const wchar_t *item);
+PyAPI_FUNC(PyStatus) PyWideStringList_Insert(PyWideStringList *list,
+    Py_ssize_t index,
+    const wchar_t *item);
 
 
 /* --- PyPreConfig ----------------------------------------------- */

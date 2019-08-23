@@ -1350,8 +1350,14 @@ static int test_init_read_set(void)
         goto fail;
     }
 
+    status = PyWideStringList_Insert(&config.module_search_paths,
+                                     1, L"test_path_insert1");
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
     status = PyWideStringList_Append(&config.module_search_paths,
-                                     L"init_read_set_path");
+                                     L"test_path_append");
     if (PyStatus_Exception(status)) {
         goto fail;
     }
