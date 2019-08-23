@@ -66,20 +66,20 @@ they appear in the sequence.  For example (no pun intended):
    window 6
    defenestrate 12
 
-If you need to modify the sequence you are iterating over while inside the loop
-(for example to duplicate selected items), it is recommended that you first
-make a copy.  Iterating over a sequence does not implicitly make a copy.  The
-slice notation makes this especially convenient::
+Code that modifies a collection while iterating over that same collection can
+be tricky to get right.  Instead, it is usually more straight-forward to loop
+over a copy of the collection or to create a new collection::
 
-   >>> for w in words[:]:  # Loop over a slice copy of the entire list.
-   ...     if len(w) > 6:
-   ...         words.insert(0, w)
-   ...
-   >>> words
-   ['defenestrate', 'cat', 'window', 'defenestrate']
+    # Strategy:  Iterate over a copy
+    for user, status in users.copy().items():
+        if status == 'inactive':
+            del users[user]
 
-With ``for w in words:``, the example would attempt to create an infinite list,
-inserting ``defenestrate`` over and over again.
+    # Strategy:  Create a new collection
+    active_users = {}
+    for user, status in users.items():
+        if status == 'active':
+            active_users[user] = status
 
 
 .. _tut-range:
