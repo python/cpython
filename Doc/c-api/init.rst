@@ -344,12 +344,15 @@ Initializing and finalizing the interpreter
    unhandled :exc:`SystemExit` will still exit the process, while any other
    means of exiting will set the return value as described above.
 
-   If this function is called after a separate :c:func:`Py_Initialize` or
-   :c:func:`Py_InitializeEx` call, then exactly which environmental and
-   command line configuration settings will be respected is version dependent
-   (since it depends on which settings are handled in the now skipped implicit
-   call to ``Py_Initialize``, and which are handled directly in ``Py_Main``
-   itself).
+   In normal usage, an embedding application will call this function
+   *instead* of calling :c:func:`Py_Initialize` or :c:func:`Py_InitializeEx`
+   directly, and all settings will be applied as described elsewhere in this
+   documentation. If this function is instead called *after* a preceding
+   ``Py_Initialize`` or ``Py_InitializeEx`` call, then exactly which
+   environmental and command line configuration settings will be updated is
+   version dependent (as it depends on which settings correctly support being
+   modified after they have already been set once in the first call to
+   ``Py_Initialize`` or ``Py_InitializeEx``).
 
 
 Process-wide parameters
