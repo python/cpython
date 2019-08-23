@@ -47,11 +47,11 @@ class StaticsFromSymbolsTests(_Base):
         found = list(statics_from_symbols(['dir1'], self.iter_symbols))
 
         self.assertEqual(found, [
-            info.Variable('dir1/spam.c', None, 'var1', '???'),
-            info.Variable('dir1/spam.c', None, 'var2', '???'),
-            info.Variable('dir1/spam.c', None, 'var3', '???'),
-            info.Variable('dir1/spam.c', 'func2', 'var4', '???'),
-            info.Variable('dir1/eggs.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var2', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var3', '???'),
+            info.Variable.from_parts('dir1/spam.c', 'func2', 'var4', '???'),
+            info.Variable.from_parts('dir1/eggs.c', None, 'var1', '???'),
             ])
         self.assertEqual(self.calls, [
             ('iter_symbols', (['dir1'],)),
@@ -79,25 +79,25 @@ class StaticFromDeclarationsTests(_Base):
     def test_typical(self):
         self._return_iter_declarations = [
             None,
-            info.Variable('dir1/spam.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var1', '???'),
             object(),
-            info.Variable('dir1/spam.c', None, 'var2', '???'),
-            info.Variable('dir1/spam.c', None, 'var3', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var2', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var3', '???'),
             object(),
-            info.Variable('dir1/spam.c', 'func2', 'var4', '???'),
+            info.Variable.from_parts('dir1/spam.c', 'func2', 'var4', '???'),
             object(),
-            info.Variable('dir1/eggs.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/eggs.c', None, 'var1', '???'),
             object(),
             ]
 
         found = list(statics_from_declarations(['dir1'], self.iter_declarations))
 
         self.assertEqual(found, [
-            info.Variable('dir1/spam.c', None, 'var1', '???'),
-            info.Variable('dir1/spam.c', None, 'var2', '???'),
-            info.Variable('dir1/spam.c', None, 'var3', '???'),
-            info.Variable('dir1/spam.c', 'func2', 'var4', '???'),
-            info.Variable('dir1/eggs.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var2', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var3', '???'),
+            info.Variable.from_parts('dir1/spam.c', 'func2', 'var4', '???'),
+            info.Variable.from_parts('dir1/eggs.c', None, 'var1', '???'),
             ])
         self.assertEqual(self.calls, [
             ('iter_declarations', (['dir1'],)),
@@ -129,11 +129,11 @@ class IterStaticsTests(_Base):
 
     def test_typical(self):
         expected = [
-            info.Variable('dir1/spam.c', None, 'var1', '???'),
-            info.Variable('dir1/spam.c', None, 'var2', '???'),
-            info.Variable('dir1/spam.c', None, 'var3', '???'),
-            info.Variable('dir1/spam.c', 'func2', 'var4', '???'),
-            info.Variable('dir1/eggs.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var2', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var3', '???'),
+            info.Variable.from_parts('dir1/spam.c', 'func2', 'var4', '???'),
+            info.Variable.from_parts('dir1/eggs.c', None, 'var1', '???'),
             ]
         self._return_from_symbols = expected
 
@@ -160,11 +160,11 @@ class IterStaticsTests(_Base):
 
     def test_from_binary(self):
         expected = [
-            info.Variable('dir1/spam.c', None, 'var1', '???'),
-            info.Variable('dir1/spam.c', None, 'var2', '???'),
-            info.Variable('dir1/spam.c', None, 'var3', '???'),
-            info.Variable('dir1/spam.c', 'func2', 'var4', '???'),
-            info.Variable('dir1/eggs.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var2', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var3', '???'),
+            info.Variable.from_parts('dir1/spam.c', 'func2', 'var4', '???'),
+            info.Variable.from_parts('dir1/eggs.c', None, 'var1', '???'),
             ]
         self._return_from_symbols = expected
 
@@ -179,11 +179,11 @@ class IterStaticsTests(_Base):
 
     def test_from_symbols(self):
         expected = [
-            info.Variable('dir1/spam.c', None, 'var1', '???'),
-            info.Variable('dir1/spam.c', None, 'var2', '???'),
-            info.Variable('dir1/spam.c', None, 'var3', '???'),
-            info.Variable('dir1/spam.c', 'func2', 'var4', '???'),
-            info.Variable('dir1/eggs.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var2', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var3', '???'),
+            info.Variable.from_parts('dir1/spam.c', 'func2', 'var4', '???'),
+            info.Variable.from_parts('dir1/eggs.c', None, 'var1', '???'),
             ]
         self._return_from_symbols = expected
 
@@ -198,11 +198,11 @@ class IterStaticsTests(_Base):
 
     def test_from_declarations(self):
         expected = [
-            info.Variable('dir1/spam.c', None, 'var1', '???'),
-            info.Variable('dir1/spam.c', None, 'var2', '???'),
-            info.Variable('dir1/spam.c', None, 'var3', '???'),
-            info.Variable('dir1/spam.c', 'func2', 'var4', '???'),
-            info.Variable('dir1/eggs.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var2', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var3', '???'),
+            info.Variable.from_parts('dir1/spam.c', 'func2', 'var4', '???'),
+            info.Variable.from_parts('dir1/eggs.c', None, 'var1', '???'),
             ]
         self._return_from_declarations = expected
 
@@ -217,11 +217,11 @@ class IterStaticsTests(_Base):
 
     def test_from_preprocessed(self):
         expected = [
-            info.Variable('dir1/spam.c', None, 'var1', '???'),
-            info.Variable('dir1/spam.c', None, 'var2', '???'),
-            info.Variable('dir1/spam.c', None, 'var3', '???'),
-            info.Variable('dir1/spam.c', 'func2', 'var4', '???'),
-            info.Variable('dir1/eggs.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var1', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var2', '???'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var3', '???'),
+            info.Variable.from_parts('dir1/spam.c', 'func2', 'var4', '???'),
+            info.Variable.from_parts('dir1/eggs.c', None, 'var1', '???'),
             ]
         self._return_from_declarations = expected
 

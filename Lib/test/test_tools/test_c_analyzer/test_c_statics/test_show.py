@@ -7,15 +7,15 @@ with tool_imports_for_tests():
 
 
 TYPICAL = [
-        info.Variable('src1/spam.c', None, 'var1', 'const char *'),
-        info.Variable('src1/spam.c', 'ham', 'initialized', 'int'),
-        info.Variable('src1/spam.c', None, 'var2', 'PyObject *'),
-        info.Variable('src1/eggs.c', 'tofu', 'ready', 'int'),
-        info.Variable('src1/spam.c', None, 'freelist', '(PyTupleObject *)[10]'),
-        info.Variable('src1/sub/ham.c', None, 'var1', 'const char const *'),
-        info.Variable('src2/jam.c', None, 'var1', 'int'),
-        info.Variable('src2/jam.c', None, 'var2', 'MyObject *'),
-        info.Variable('Include/spam.h', None, 'data', 'const int'),
+        info.Variable.from_parts('src1/spam.c', None, 'var1', 'const char *'),
+        info.Variable.from_parts('src1/spam.c', 'ham', 'initialized', 'int'),
+        info.Variable.from_parts('src1/spam.c', None, 'var2', 'PyObject *'),
+        info.Variable.from_parts('src1/eggs.c', 'tofu', 'ready', 'int'),
+        info.Variable.from_parts('src1/spam.c', None, 'freelist', '(PyTupleObject *)[10]'),
+        info.Variable.from_parts('src1/sub/ham.c', None, 'var1', 'const char const *'),
+        info.Variable.from_parts('src2/jam.c', None, 'var1', 'int'),
+        info.Variable.from_parts('src2/jam.c', None, 'var2', 'MyObject *'),
+        info.Variable.from_parts('Include/spam.h', None, 'data', 'const int'),
         ]
 
 

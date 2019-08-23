@@ -179,39 +179,36 @@ class Symbol(_NTBase, namedtuple('Symbol', 'id kind external')):
 
 
 class Variable(_NTBase,
-               namedtuple('Variable', 'filename funcname name vartype')):
+               namedtuple('Variable', 'id vartype')):
     """Information about a single variable declaration."""
 
     __slots__ = ()
-    _OBJ_CONDITIONS = {}
 
-    def __new__(cls, filename, funcname, name, vartype, conditions=None):
+    @classonly
+    def from_parts(cls, filename, funcname, name, vartype):
+        id = ID(filename, funcname, name)
+        return cls(id, vartype)
+
+    def __new__(cls, id, vartype):
         self = super().__new__(
                 cls,
-                filename=str(filename) if filename else None,
-                funcname=str(funcname) if funcname else None,
-                name=str(name) if name else None,
+                id=ID.from_raw(id),
                 vartype=normalize_vartype(vartype) if vartype else None,
                 )
-        cls._OBJ_CONDITIONS[id(self)] = tuple(str(s) if s else None
-                                              for s in conditions or ())
         return self
+
+    def __getattr__(self, name):
+        return getattr(self.id, name)
 
     def validate(self):
         """Fail if the object is invalid (i.e. init with bad data)."""
-        for field in self._fields:
-            value = getattr(self, field)
-            if value is None:
-                if field == 'funcname':  # The field can be missing (net set).
-                    continue
-                raise TypeError(f'missing {field}')
-            elif field not in ('filename', 'vartype'):
-                if not NAME_RE.match(value):
-                    raise ValueError(f'{field} must be a name, got {value!r}')
+        if not self.id:
+            raise TypeError('missing id')
+        else:
+            self.id.validate()
 
-    @property
-    def conditions(self):
-        return self._OBJ_CONDITIONS[id(self)]
+        if self.vartype is None:
+            raise TypeError('missing vartype')
 
     @property
     def isstatic(self):

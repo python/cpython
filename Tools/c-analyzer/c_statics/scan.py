@@ -12,7 +12,7 @@ def statics_from_symbols(dirnames, iter_symbols):
             continue
         if symbol.external:
             continue
-        yield info.Variable(
+        yield info.Variable.from_parts(
                 filename=symbol.filename,
                 funcname=symbol.funcname or None,
                 name=symbol.name,

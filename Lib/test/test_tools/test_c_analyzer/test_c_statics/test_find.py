@@ -42,7 +42,7 @@ class _Base(unittest.TestCase):
                    ignored=False,
                    known=False,
                    ):
-        static = info.Variable(filename, funcname, name, vartype)
+        static = info.Variable.from_parts(filename, funcname, name, vartype)
         funcs = []
         if supported is not None:
             funcs.append('iter_statics')

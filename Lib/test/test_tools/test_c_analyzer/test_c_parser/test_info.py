@@ -400,9 +400,7 @@ class SymbolTests(unittest.TestCase):
 class VariableTests(unittest.TestCase):
 
     VALID_ARGS = (
-            'x/y/z/spam.c',
-            'func',
-            'eggs',
+            ('x/y/z/spam.c', 'func', 'eggs'),
             'int',
             )
     VALID_KWARGS = dict(zip(Variable._fields, VALID_ARGS))
@@ -410,46 +408,31 @@ class VariableTests(unittest.TestCase):
 
     def test_init_typical_global(self):
         static = Variable(
-                filename='x/y/z/spam.c',
-                funcname=None,
-                name='eggs',
+                id=ID(
+                    filename='x/y/z/spam.c',
+                    funcname=None,
+                    name='eggs',
+                    ),
                 vartype='int',
                 )
 
         self.assertEqual(static, (
-                'x/y/z/spam.c',
-                None,
-                'eggs',
+                ('x/y/z/spam.c', None, 'eggs'),
                 'int',
                 ))
 
     def test_init_typical_local(self):
         static = Variable(
-                filename='x/y/z/spam.c',
-                funcname='func',
-                name='eggs',
+                id=ID(
+                    filename='x/y/z/spam.c',
+                    funcname='func',
+                    name='eggs',
+                    ),
                 vartype='int',
                 )
 
         self.assertEqual(static, (
-                'x/y/z/spam.c',
-                'func',
-                'eggs',
-                'int',
-                ))
-
-    def test_coercion_typical(self):
-        static = Variable(
-                filename='x/y/z/spam.c',
-                funcname='func',
-                name='eggs',
-                vartype='int',
-                )
-
-        self.assertEqual(static, (
-                'x/y/z/spam.c',
-                'func',
-                'eggs',
+                ('x/y/z/spam.c', 'func', 'eggs'),
                 'int',
                 ))
 
@@ -457,44 +440,53 @@ class VariableTests(unittest.TestCase):
         for value in ('', None):
             with self.subTest(repr(value)):
                 static = Variable(
-                        filename=value,
-                        funcname=value,
-                        name=value,
+                        id=value,
                         vartype=value,
                         )
 
                 self.assertEqual(static, (
                         None,
                         None,
-                        None,
-                        None,
                         ))
 
     def test_init_all_coerced(self):
+        id = ID('x/y/z/spam.c', 'func', 'spam')
         tests = [
             ('str subclass',
              dict(
-                 filename=PseudoStr('x/y/z/spam.c'),
-                 funcname=PseudoStr('func'),
-                 name=PseudoStr('eggs'),
+                 id=(
+                    PseudoStr('x/y/z/spam.c'),
+                    PseudoStr('func'),
+                    PseudoStr('spam'),
+                    ),
                  vartype=PseudoStr('int'),
                  ),
-             ('x/y/z/spam.c',
-              'func',
-              'eggs',
+             (id,
               'int',
+              )),
+            ('non-str 1',
+             dict(
+                 id=id,
+                 vartype=Object(),
+                 ),
+             (id,
+              '<object>',
+              )),
+            ('non-str 2',
+             dict(
+                 id=id,
+                 vartype=StrProxy('variable'),
+                 ),
+             (id,
+              'variable',
               )),
             ('non-str',
              dict(
-                 filename=StrProxy('x/y/z/spam.c'),
-                 funcname=StrProxy('func'),
-                 name=('a', 'b', 'c'),
-                 vartype=Object(),
+                 id=id,
+                 vartype=('a', 'b', 'c'),
                  ),
-             ('x/y/z/spam.c',
-              'func',
+             (id,
               "('a', 'b', 'c')",
-              '<object>',
               )),
             ]
         for summary, kwargs, expected in tests:
@@ -503,31 +495,41 @@ class VariableTests(unittest.TestCase):
 
                 for field in Variable._fields:
                     value = getattr(static, field)
-                    self.assertIs(type(value), str)
+                    if field == 'id':
+                        self.assertIs(type(value), ID)
+                    else:
+                        self.assertIs(type(value), str)
                 self.assertEqual(tuple(static), expected)
 
     def test_iterable(self):
         static = Variable(**self.VALID_KWARGS)
 
-        filename, funcname, name, vartype = static
+        id, vartype = static
 
-        values = (filename, funcname, name, vartype)
+        values = (id, vartype)
         for value, expected in zip(values, self.VALID_EXPECTED):
             self.assertEqual(value, expected)
 
     def test_fields(self):
-        static = Variable('a', 'b', 'z', 'x')
+        static = Variable(('a', 'b', 'z'), 'x')
+
+        self.assertEqual(static.id, ('a', 'b', 'z'))
+        self.assertEqual(static.vartype, 'x')
+
+    def test___getattr__(self):
+        static = Variable(('a', 'b', 'z'), 'x')
 
         self.assertEqual(static.filename, 'a')
         self.assertEqual(static.funcname, 'b')
         self.assertEqual(static.name, 'z')
-        self.assertEqual(static.vartype, 'x')
 
     def test_validate_typical(self):
         static = Variable(
-                filename='x/y/z/spam.c',
-                funcname='func',
-                name='eggs',
+                id=ID(
+                    filename='x/y/z/spam.c',
+                    funcname='func',
+                    name='eggs',
+                    ),
                 vartype='int',
                 )
 
@@ -538,10 +540,6 @@ class VariableTests(unittest.TestCase):
             with self.subTest(field):
                 static = Variable(**self.VALID_KWARGS)
                 static = static._replace(**{field: None})
-
-                if field == 'funcname':
-                    static.validate()  # The field can be missing (not set).
-                    continue
 
                 with self.assertRaises(TypeError):
                     static.validate()
@@ -556,9 +554,7 @@ class VariableTests(unittest.TestCase):
                 'a++',
                 ) + badch
         tests = [
-            ('filename', ()),  # Any non-empty str is okay.
-            ('funcname', notnames),
-            ('name', notnames),
+            ('id', ()),  # Any non-empty str is okay.
             ('vartype', ()),  # Any non-empty str is okay.
             ]
         seen = set()
