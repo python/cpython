@@ -179,7 +179,7 @@ ArgumentParser objects
    * allow_abbrev_ - Allows long options to be abbreviated if the
      abbreviation is unambiguous. (default: ``True``)
 
-   * exit_on_error_ - Determines whether or not argparser exits with error
+   * exit_on_error_ - Determines whether or not argparser exits with an error
      when an error occur. (default: ``True``)
 
    .. versionchanged:: 3.5
