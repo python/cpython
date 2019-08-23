@@ -7,6 +7,8 @@
 Initialization, Finalization, and Threads
 *****************************************
 
+See also :ref:`Python Initialization Configuration <init-config>`.
+
 .. _pre-init-safe:
 
 Before Python Initialization

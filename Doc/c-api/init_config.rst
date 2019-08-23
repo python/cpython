@@ -48,6 +48,8 @@ The preconfiguration (``PyPreConfig`` type) is stored in
 ``_PyRuntime.preconfig`` and the configuration (``PyConfig`` type) is stored in
 ``PyInterpreterState.config``.
 
+See also :ref:`Initialization, Finalization, and Threads <initialization>`.
+
 .. seealso::
    :pep:`587` "Python Initialization Configuration".
 
