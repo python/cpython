@@ -818,7 +818,13 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertEqual(exitcode, 0xC0000005)
 
     def test_cancel_later_no_dump(self):
+        code = dedent("""
+        import faulthandler
         faulthandler.cancel_dump_traceback_later()
+        """)
+        output, exitcode = self.get_output(code)
+        self.assertEqual(output, [])
+        self.assertEqual(exitcode, 0x00000000)
 
 
 if __name__ == "__main__":
