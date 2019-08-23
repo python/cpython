@@ -660,7 +660,7 @@ Normally, when you pass an wrong argument list to the :meth:`~ArgumentParser.par
 method of an :class:`ArgumentParser`, it will exit with error info.
 
 If user would like catch error by themselves, they can enable this feature by setting
-``exit_on_error`` to ``False``:
+``exit_on_error`` to ``False``::
 
    >>> parser = argparse.ArgumentParser(exit_on_error=False)
    >>> parser.add_argument('--integers', type=int)
