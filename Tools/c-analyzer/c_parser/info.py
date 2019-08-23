@@ -84,9 +84,9 @@ class _NTBase:
 class ID(_NTBase, namedtuple('ID', 'filename funcname name')):
     """A unique ID for a single symbol or declaration."""
 
-    # XXX Add optional conditions (tuple of strings) field.
-
     __slots__ = ()
+    # XXX Add optional conditions (tuple of strings) field.
+    #conditions = Slot()
 
     @classonly
     def from_raw(cls, raw):
@@ -111,6 +111,8 @@ class ID(_NTBase, namedtuple('ID', 'filename funcname name')):
                 funcname=str(funcname) if funcname else None,
                 name=str(name) if name else None,
                 )
+        #cls.conditions.set(self, tuple(str(s) if s else None
+        #                               for s in conditions or ()))
         return self
 
     def validate(self):
