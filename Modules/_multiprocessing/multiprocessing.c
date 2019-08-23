@@ -167,7 +167,7 @@ multiprocessing_recvfd(PyObject *self, PyObject *args)
     cmsg = CMSG_FIRSTHDR(&msg);
     cmsg->cmsg_level = SOL_SOCKET;
     cmsg->cmsg_type = SCM_RIGHTS;
-    cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+    cmsg->cmsg_len = CMSG_SPACE(sizeof(int));
     msg.msg_controllen = cmsg->cmsg_len;
 
     Py_BEGIN_ALLOW_THREADS
