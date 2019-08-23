@@ -4,6 +4,8 @@ import re
 from .util import classonly
 
 
+UNKNOWN = '???'
+
 NAME_RE = re.compile(r'^([a-zA-Z]|_\w*[a-zA-Z]\w*|[a-zA-Z]\w*)$')
 
 
@@ -129,10 +131,11 @@ class ID(_NTBase, namedtuple('ID', 'filename funcname name')):
         if self.funcname:
             if not self.filename:
                 raise TypeError('missing filename')
-            if not NAME_RE.match(self.funcname):
+            if not NAME_RE.match(self.funcname) and self.funcname != UNKNOWN:
                 raise ValueError(
                         f'name must be an identifier, got {self.funcname!r}')
 
+        # XXX Require the filename (at least UNKONWN)?
         # XXX Check the filename?
 
 
