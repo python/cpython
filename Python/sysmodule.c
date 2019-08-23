@@ -2037,35 +2037,42 @@ _clear_preinit_entries(_Py_PreInitEntry *optionlist)
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
-static void
-_clear_all_preinit_options(void)
+
+PyStatus
+_PySys_ReadPreinitWarnOptions(PyConfig *config)
 {
+    PyStatus status;
+    _Py_PreInitEntry entry;
+
+    for (entry = _preinit_warnoptions; entry != NULL; entry = entry->next) {
+        status = PyWideStringList_Append(&config->warnoptions, entry->value);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
     _clear_preinit_entries(&_preinit_warnoptions);
-    _clear_preinit_entries(&_preinit_xoptions);
+    return _PyStatus_OK();
 }
 
-static int
-sys_read_preinit_options(PyThreadState *tstate)
+
+PyStatus
+_PySys_ReadPreinitXOptions(PyConfig *config)
 {
-    /* Rerun the add commands with the actual sys module available */
-    if (tstate == NULL) {
-        /* Still don't have a thread state, so something is wrong! */
-        return -1;
-    }
-    _Py_PreInitEntry entry = _preinit_warnoptions;
-    while (entry != NULL) {
-        PySys_AddWarnOption(entry->value);
-        entry = entry->next;
-    }
-    entry = _preinit_xoptions;
-    while (entry != NULL) {
-        PySys_AddXOption(entry->value);
-        entry = entry->next;
+    PyStatus status;
+    _Py_PreInitEntry entry;
+
+    for (entry = _preinit_xoptions; entry != NULL; entry = entry->next) {
+        status = PyWideStringList_Append(&config->xoptions, entry->value);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
-    _clear_all_preinit_options();
-    return 0;
+    _clear_preinit_entries(&_preinit_xoptions);
+    return _PyStatus_OK();
 }
+
 
 static PyObject *
 get_warnoptions(PyThreadState *tstate)
@@ -2235,9 +2242,7 @@ PySys_AddXOption(const wchar_t *s)
     }
     if (_PySys_AddXOptionWithError(s) < 0) {
         /* No return value, therefore clear error state if possible */
-        if (tstate) {
-            _PyErr_Clear(tstate);
-        }
+        _PyErr_Clear(tstate);
     }
 }
 
@@ -2896,11 +2901,6 @@ _PySys_InitMain(_PyRuntimeState *runtime, PyThreadState *tstate)
     }
 
     if (get_xoptions(tstate) == NULL)
-        return -1;
-
-    /* Transfer any sys.warnoptions and sys._xoptions set directly
-     * by an embedding application from the linked list to the module. */
-    if (sys_read_preinit_options(tstate) != 0)
         return -1;
 
     if (_PyErr_Occurred(tstate)) {
