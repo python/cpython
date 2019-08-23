@@ -2069,6 +2069,7 @@ config_init_warnoptions(PyConfig *config,
     /* The priority order for warnings configuration is (highest precedence
      * first):
      *
+     * - early PySys_AddWarnOption() calls
      * - the BytesWarning filter, if needed ('-b', '-bb')
      * - any '-W' command line options; then
      * - the 'PYTHONWARNINGS' environment variable; then
@@ -2124,6 +2125,13 @@ config_init_warnoptions(PyConfig *config,
             return status;
         }
     }
+
+    /* Handle early PySys_AddWarnOption() calls */
+    status = _PySys_ReadPreinitWarnOptions(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -2293,7 +2301,8 @@ config_read_cmdline(PyConfig *config)
     }
 
     status = config_init_warnoptions(config,
-                                  &cmdline_warnoptions, &env_warnoptions);
+                                     &cmdline_warnoptions,
+                                     &env_warnoptions);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
@@ -2399,6 +2408,12 @@ PyConfig_Read(PyConfig *config)
     }
 
     status = config_read_cmdline(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
+    /* Handle early PySys_AddXOption() calls */
+    status = _PySys_ReadPreinitXOptions(config);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
