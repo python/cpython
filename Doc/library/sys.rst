@@ -1300,7 +1300,14 @@ always available.
    Note that as an exception is propagated down the chain of callers, an
    ``'exception'`` event is generated at each level.
 
-   For more information on code and frame objects, refer to :ref:`types`.
+   For more fine-grained usage, it's possible to set a trace function by
+   assigning ``frame.f_trace = tracefunc`` explicitly, rather than relying on
+   it being set indirectly via the return value from an already installed
+   trace function. This is also required for activating the trace function on
+   the current frame, which :func:`settrace` doesn't do. If you do this, you
+   must also call :func:`settrace` with the same tracing function for it to
+   work. For more information on code and frame objects, refer to
+   :ref:`types`.
 
    .. audit-event:: sys.settrace "" sys.settrace
 
