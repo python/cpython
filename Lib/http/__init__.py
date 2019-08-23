@@ -15,7 +15,7 @@ class HTTPStatus(IntEnum):
         * RFC 7238: Permanent Redirect
         * RFC 2295: Transparent Content Negotiation in HTTP
         * RFC 2774: An HTTP Extension Framework
-        * RFC 7725: Status Code to Report Legal Obstacles
+        * RFC 7725: An HTTP Status Code to Report Legal Obstacles
         * RFC 7540: Hypertext Transfer Protocol Version 2 (HTTP/2)
     """
     def __new__(cls, value, phrase, description=''):
