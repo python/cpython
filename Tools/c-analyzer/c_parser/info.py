@@ -138,6 +138,10 @@ class ID(_NTBase, namedtuple('ID', 'filename funcname name')):
         # XXX Require the filename (at least UNKONWN)?
         # XXX Check the filename?
 
+    @property
+    def islocal(self):
+        return self.funcname is not None
+
 
 class Symbol(_NTBase, namedtuple('Symbol', 'id kind external')):
     """Info for a single compilation symbol."""
