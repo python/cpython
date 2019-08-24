@@ -2,7 +2,8 @@ from collections import namedtuple
 import os
 import re
 
-from . import util, info
+from c_analyzer_common import util
+from . import info
 
 
 CONTINUATION = '\\' + os.linesep
@@ -106,7 +107,7 @@ def _parse_directive(line):
     return directive
 
 
-class PreprocessorDirective(info._NTBase):
+class PreprocessorDirective(util._NTBase):
     """The base class for directives."""
 
     __slots__ = ()

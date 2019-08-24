@@ -2,7 +2,8 @@ import os.path
 import shutil
 import sys
 
-from c_parser import info, util
+from c_analyzer_common import util
+from c_parser import info
 from . import source
 
 
@@ -96,11 +97,7 @@ def _iter_symbols_nm(binary, find_local_symbol=None,
             continue
         assert vartype is None
         yield info.Symbol(
-                id=info.ID(
-                    filename=filename,
-                    funcname=funcname,
-                    name=name,
-                    ),
+                id=(filename, funcname, name),
                 kind=kind,
                 external=external,
                 )

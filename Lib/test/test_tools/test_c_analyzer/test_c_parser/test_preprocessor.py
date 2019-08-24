@@ -2,7 +2,7 @@ import itertools
 import textwrap
 import unittest
 
-from .util import wrapped_arg_combos, StrProxy
+from ..util import wrapped_arg_combos, StrProxy
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
     from c_parser.preprocessor import (

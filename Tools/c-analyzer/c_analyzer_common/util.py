@@ -100,3 +100,66 @@ class classonly:
             raise AttributeError(self.name)
         # called on the class
         return self.getter(None, cls)
+
+
+class _NTBase:
+
+    __slots__ = ()
+
+    @classonly
+    def from_raw(cls, raw):
+        if not raw:
+            return None
+        elif isinstance(raw, cls):
+            return raw
+        elif isinstance(raw, str):
+            return cls.from_string(raw)
+        else:
+            if hasattr(raw, 'items'):
+                return cls(**raw)
+            try:
+                args = tuple(raw)
+            except TypeError:
+                pass
+            else:
+                return cls(*args)
+        raise NotImplementedError
+
+    @classonly
+    def from_string(cls, value):
+        """Return a new instance based on the given string."""
+        raise NotImplementedError
+
+    @classmethod
+    def _make(cls, iterable):  # The default _make() is not subclass-friendly.
+        return cls.__new__(cls, *iterable)
+
+    # XXX Always validate?
+    #def __init__(self, *args, **kwargs):
+    #    self.validate()
+
+    # XXX The default __repr__() is not subclass-friendly (where the name changes).
+    #def __repr__(self):
+    #    _, _, sig = super().__repr__().partition('(')
+    #    return f'{self.__class__.__name__}({sig}'
+
+    # To make sorting work with None:
+    def __lt__(self, other):
+        try:
+            return super().__lt__(other)
+        except TypeError:
+            if None in self:
+                return True
+            elif None in other:
+                return False
+            else:
+                raise
+
+    def validate(self):
+        return
+
+    # XXX Always validate?
+    #def _replace(self, **kwargs):
+    #    obj = super()._replace(**kwargs)
+    #    obj.validate()
+    #    return obj
