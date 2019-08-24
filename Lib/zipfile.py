@@ -7,6 +7,7 @@ import binascii
 import functools
 import importlib.util
 import io
+import itertools
 import os
 import posixpath
 import shutil
@@ -2104,6 +2105,65 @@ class PyZipFile(ZipFile):
         return (fname, archivename)
 
 
+def _unique_everseen(iterable, key=None):
+    "List unique elements, preserving order. Remember all elements ever seen."
+    # unique_everseen('AAAABBBCCDAABBB') --> A B C D
+    # unique_everseen('ABBCcAD', str.lower) --> A B C D
+    seen = set()
+    seen_add = seen.add
+    if key is None:
+        for element in itertools.filterfalse(seen.__contains__, iterable):
+            seen_add(element)
+            yield element
+    else:
+        for element in iterable:
+            k = key(element)
+            if k not in seen:
+                seen_add(k)
+                yield element
+
+
+def _parents(path):
+    """
+    Given a path with elements separated by
+    posixpath.sep, generate all parents of that path.
+
+    >>> list(_parents('b/d'))
+    ['b']
+    >>> list(_parents('/b/d/'))
+    ['/b']
+    >>> list(_parents('b/d/f/'))
+    ['b/d', 'b']
+    >>> list(_parents('b'))
+    []
+    >>> list(_parents(''))
+    []
+    """
+    return itertools.islice(_ancestry(path), 1, None)
+
+
+def _ancestry(path):
+    """
+    Given a path with elements separated by
+    posixpath.sep, generate all elements of that path
+
+    >>> list(_ancestry('b/d'))
+    ['b/d', 'b']
+    >>> list(_ancestry('/b/d/'))
+    ['/b/d', '/b']
+    >>> list(_ancestry('b/d/f/'))
+    ['b/d/f', 'b/d', 'b']
+    >>> list(_ancestry('b'))
+    ['b']
+    >>> list(_ancestry(''))
+    []
+    """
+    path = path.rstrip(posixpath.sep)
+    while path and path != posixpath.sep:
+        yield path
+        path, tail = posixpath.split(path)
+
+
 class Path:
     """
     A pathlib-compatible interface for zip files.
@@ -2227,12 +2287,17 @@ class Path:
     __truediv__ = joinpath
 
     @staticmethod
-    def _add_implied_dirs(names):
-        return names + [
-            name + "/"
-            for name in map(posixpath.dirname, names)
-            if name and name + "/" not in names
-        ]
+    def _implied_dirs(names):
+        return _unique_everseen(
+            parent + "/"
+            for name in names
+            for parent in _parents(name)
+            if parent + "/" not in names
+        )
+
+    @classmethod
+    def _add_implied_dirs(cls, names):
+        return names + list(cls._implied_dirs(names))
 
     @property
     def parent(self):
