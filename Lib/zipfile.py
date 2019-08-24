@@ -2288,22 +2288,16 @@ class Path:
 
     @staticmethod
     def _implied_dirs(names):
-        subdirs = list(_unique_everseen([
-            name + "/"
-            for name in map(posixpath.dirname, names)
-            if name and name + "/" not in names
-        ]))
-        missing_dirs = [
-            p + "/"
-            for sd in subdirs
-            for p in _parents(sd)
-            if p + "/" not in subdirs
-        ]
-        return subdirs + missing_dirs
+        return _unique_everseen(
+            parent + "/"
+            for name in names
+            for parent in _parents(name)
+            if parent + "/" not in names
+        )
 
     @classmethod
     def _add_implied_dirs(cls, names):
-        return names + cls._implied_dirs(names)
+        return names + list(cls._implied_dirs(names))
 
     @property
     def parent(self):
