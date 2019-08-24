@@ -1189,25 +1189,30 @@ class PyShell(OutputWindow):
         # the current line, less a leading prompt, less leading or
         # trailing whitespace
         if self.text.compare("insert", "<", "iomark linestart"):
-            # Check if there's a relevant stdin range -- if so, use it
+            # Check if there's a relevant stdin range -- if so, use it.
+            # Note: "stdin" blocks may include several successive statements,
+            # so look for "console" tags on the newline before each statement
+            # (and possibly on prompts).
             prev = self.text.tag_prevrange("stdin", "insert")
-            if prev and self.text.compare("insert", "<", prev[1]):
-                for line in reversed(range(self.getlineno(prev[0]),
-                                           self.getlineno(prev[1]))):
-                    if "console" in self.text.tag_names(f"{line}.0-1c"):
-                        break
-                if self.text.compare(f"{line}.0", ">", prev[0]):
-                    prev = (f"{line}.0", prev[1])
+            if (
+                    prev and
+                    self.text.compare("insert", "<", prev[1]) and
+                    # The following is needed to handle empty statements.
+                    "console" not in self.text.tag_names("insert")
+            ):
+                prev_cons = self.text.tag_prevrange("console", "insert")
+                if prev_cons and self.text.compare(prev_cons[1], ">=", prev[0]):
+                    prev = (prev_cons[1], prev[1])
+                next_cons = self.text.tag_nextrange("console", "insert")
+                if next_cons and self.text.compare(next_cons[0], "<", prev[1]):
+                    prev = (prev[0], self.text.index(next_cons[0] + "+1c"))
                 self.recall(self.text.get(prev[0], prev[1]), event)
                 return "break"
             next = self.text.tag_nextrange("stdin", "insert")
             if next and self.text.compare("insert lineend", ">=", next[0]):
-                for line in range(self.getlineno(next[0]),
-                                  self.getlineno(next[1])):
-                    if "console" in self.text.tag_names(f"{line+1}.0-1c"):
-                        break
-                if self.text.compare(f"{line}.end", "<", next[1]):
-                    next = (next[0], f"{line}.end")
+                next_cons = self.text.tag_nextrange("console", "insert lineend")
+                if next_cons and self.text.compare(next_cons[0], "<", next[1]):
+                    next = (next[0], self.text.index(next_cons[0] + "+1c"))
                 self.recall(self.text.get(next[0], next[1]), event)
                 return "break"
             # No stdin mark -- just get the current line, less any prompt
