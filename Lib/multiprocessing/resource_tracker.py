@@ -19,6 +19,7 @@ import os
 import signal
 import sys
 import threading
+import errno
 import warnings
 
 from . import spawn
@@ -33,15 +34,21 @@ _CLEANUP_FUNCS = {
     'noop': lambda: None,
 }
 
+_FILE_PREFIXES = {}
+
 if os.name == 'posix':
     import _multiprocessing
     import _posixshmem
+    import fcntl
 
     _CLEANUP_FUNCS.update({
         'semaphore': _multiprocessing.sem_unlink,
         'shared_memory': _posixshmem.shm_unlink,
     })
 
+    _FILE_PREFIXES.update({
+        'shared_memory': '/dev/shm' # Directory containing memory mapped files created
+    })                              # by SharedMemory in Unix
 
 class ResourceTracker(object):
 
@@ -163,6 +170,7 @@ def main(fd):
     if _HAVE_SIGMASK:
         signal.pthread_sigmask(signal.SIG_UNBLOCK, _IGNORED_SIGNALS)
 
+
     for f in (sys.stdin, sys.stdout):
         try:
             f.close()
@@ -209,6 +217,19 @@ def main(fd):
                 # For some reason the process which created and registered this
                 # resource has failed to unregister it. Presumably it has
                 # died.  We therefore unlink it.
+
+                if rtype in _FILE_PREFIXES:
+                    try:
+                        sh_fd = open(_FILE_PREFIXES[rtype] + name)
+                        fcntl.flock(sh_fd, fcntl.LOCK_EX | fcntl.LOCK_NB) # Try to acquire exclusive lock on shared_memory
+                        sh_fd.close()
+                    except FileNotFoundError:
+                        pass
+                    except IOError as e:
+                        sh_fd.close()
+                        if e.errno == errno.EAGAIN: # Don't Cleanup if a shared flock is present
+                            continue                # implying, that a process is using it.
+
                 try:
                     try:
                         _CLEANUP_FUNCS[rtype](name)

@@ -20,6 +20,7 @@ if os.name == "nt":
     _USE_POSIX = False
 else:
     import _posixshmem
+    import fcntl
     _USE_POSIX = True
 
 
@@ -69,6 +70,7 @@ class SharedMemory:
     _flags = os.O_RDWR
     _mode = 0o600
     _prepend_leading_slash = True if _USE_POSIX else False
+    _has_shared_lock = False
 
     def __init__(self, name=None, create=False, size=0):
         if not size >= 0:
@@ -113,6 +115,7 @@ class SharedMemory:
                 self.unlink()
                 raise
 
+            self._aquire_shared_lock()
             from .resource_tracker import register
             register(self._name, "shared_memory")
 
@@ -195,6 +198,17 @@ class SharedMemory:
     def __repr__(self):
         return f'{self.__class__.__name__}({self.name!r}, size={self.size})'
 
+    def _aquire_shared_lock(self):
+        if _USE_POSIX and (not self._has_shared_lock):
+            fcntl.flock(self._fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            self._has_shared_lock = True
+
+
+    def _release_shared_lock(self):
+        if _USE_POSIX and self._has_shared_lock:
+            fcntl.flock(self._fd, fcntl.LOCK_UN | fcntl.LOCK_NB)
+            self._has_shared_lock = False
+
     @property
     def buf(self):
         "A memoryview of contents of the shared memory block."
@@ -217,6 +231,7 @@ class SharedMemory:
     def close(self):
         """Closes access to the shared memory from this instance but does
         not destroy the shared memory block."""
+        self._release_shared_lock()
         if self._buf is not None:
             self._buf.release()
             self._buf = None

@@ -4026,6 +4026,82 @@ class _TestSharedMemory(BaseTestCase):
                     "resource_tracker: There appear to be 1 leaked "
                     "shared_memory objects to clean up at shutdown", err)
 
+
+    def test_shared_memory_persistence_after_one_of_multiple_processes_terminate(self):
+        # Test If shared memory can be attached after a process using it exits,
+        # but another process is still holding it.
+        cmd_process_1 = '''if 1:
+            import time, sys
+            from multiprocessing import shared_memory
+
+            # Create a shared_memory segment, and send the segment name
+            sm = shared_memory.SharedMemory(create=True, size=10)
+            sys.stdout.write(sm.name + '\\n')
+            sys.stdout.flush()
+            time.sleep(100)
+        '''
+        cmd_process_2 = '''if 1:
+            import time, sys
+            from multiprocessing import shared_memory
+
+            # Create a shared_memory segment, and send the segment name
+            sm = shared_memory.SharedMemory(name={}, create=False)
+            sys.stdout.write(sm.name + '\\n')
+            sys.stdout.flush()
+            time.sleep(100)
+        '''
+
+        p1 = subprocess.Popen([sys.executable, '-E', '-c', cmd_process_1],
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+
+        name = p1.stdout.readline().strip().decode()
+
+        p2 = subprocess.Popen([sys.executable, '-E', '-c', cmd_process_2.format(name)])
+
+        p2.terminate()
+        p2.wait()
+
+        deadline = time.monotonic() + 60
+        t = 0.1
+        while time.monotonic() < deadline:
+            time.sleep(t)
+            t = min(t*2, 5)
+            try:
+                smm = shared_memory.SharedMemory(name=name, create=False)
+            except FileNotFoundError:
+                raise AssertionError("Shared Memory segment was unlinked, despite"
+                                        "the fact a process is still using it.")
+
+        smm.close()
+        p1.terminate()
+        p1.wait()
+
+        deadline = time.monotonic() + 60
+        t = 0.1
+        while time.monotonic() < deadline:
+            time.sleep(t)
+            t = min(t*2, 5)
+            try:
+                smm = shared_memory.SharedMemory(name=name, create=False)
+            except FileNotFoundError:
+                break
+        else:
+            raise AssertionError("A SharedMemory segment was leaked after"
+                                    " a process was abruptly terminated.")
+
+        if os.name == 'posix':
+            # A warning was emitted by the subprocess' own
+            # resource_tracker (on Windows, shared memory segments
+            # are released automatically by the OS).
+            err = p1.stderr.read().decode()
+            self.assertIn(
+                "resource_tracker: There appear to be 1 leaked "
+                "shared_memory objects to clean up at shutdown", err)
+
+        p1.stderr.close()
+        p1.stdout.close()
+
 #
 #
 #
