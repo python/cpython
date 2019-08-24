@@ -2,9 +2,9 @@ import os.path
 import shutil
 import sys
 
-from c_analyzer_common import util
-from c_parser import info
+from c_analyzer_common import util, info
 from . import source
+from .info import Symbol
 
 
 #PYTHON = os.path.join(REPO_ROOT, 'python')
@@ -61,11 +61,11 @@ def _is_special_symbol(name):
 # "nm"
 
 NM_KINDS = {
-        'b': info.Symbol.KIND.VARIABLE,  # uninitialized
-        'd': info.Symbol.KIND.VARIABLE,  # initialized
-        #'g': info.Symbol.KIND.VARIABLE,  # uninitialized
-        #'s': info.Symbol.KIND.VARIABLE,  # initialized
-        't': info.Symbol.KIND.FUNCTION,
+        'b': Symbol.KIND.VARIABLE,  # uninitialized
+        'd': Symbol.KIND.VARIABLE,  # initialized
+        #'g': Symbol.KIND.VARIABLE,  # uninitialized
+        #'s': Symbol.KIND.VARIABLE,  # initialized
+        't': Symbol.KIND.FUNCTION,
         }
 
 
@@ -91,12 +91,12 @@ def _iter_symbols_nm(binary, find_local_symbol=None,
          ) = _parse_nm_line(line,
                             _find_local_symbol=find_local_symbol,
                             )
-        if kind != info.Symbol.KIND.VARIABLE:
+        if kind != Symbol.KIND.VARIABLE:
             continue
         elif _is_special_symbol(name):
             continue
         assert vartype is None
-        yield info.Symbol(
+        yield Symbol(
                 id=(filename, funcname, name),
                 kind=kind,
                 external=external,
@@ -111,7 +111,7 @@ def _parse_nm_line(line, *, _find_local_symbol=None):
     kind, _, line = line.partition(' ')
     line = line.strip()
     external = kind.isupper()
-    kind = NM_KINDS.get(kind.lower(), info.Symbol.KIND.OTHER)
+    kind = NM_KINDS.get(kind.lower(), Symbol.KIND.OTHER)
 
     name, _, filename = line.partition('\t')
     name = name.strip()
@@ -135,7 +135,7 @@ def _parse_nm_line(line, *, _find_local_symbol=None):
 
 
 def _parse_nm_name(name, kind):
-    if kind != info.Symbol.KIND.VARIABLE:
+    if kind != Symbol.KIND.VARIABLE:
         return name, None
     if _is_special_symbol(name):
         return name, None

@@ -6,7 +6,11 @@ with tool_imports_for_tests():
     from c_statics.scan import (
             iter_statics, statics_from_symbols, statics_from_declarations
             )
-    from c_symbols import binary as b_symbols, source as s_symbols
+    from c_symbols import (
+            info as s_info,
+            binary as b_symbols,
+            source as s_symbols,
+            )
 
 
 class _Base(unittest.TestCase):
@@ -32,16 +36,16 @@ class StaticsFromSymbolsTests(_Base):
 
     def test_typical(self):
         self._return_iter_symbols = [
-                info.Symbol(('dir1/spam.c', None, 'var1'), 'variable', False),
-                info.Symbol(('dir1/spam.c', None, 'var2'), 'variable', False),
-                info.Symbol(('dir1/spam.c', None, 'func1'), 'function', False),
-                info.Symbol(('dir1/spam.c', None, 'func2'), 'function', True),
-                info.Symbol(('dir1/spam.c', None, 'var3'), 'variable', False),
-                info.Symbol(('dir1/spam.c', 'func2', 'var4'), 'variable', False),
-                info.Symbol(('dir1/ham.c', None, 'var1'), 'variable', True),
-                info.Symbol(('dir1/eggs.c', None, 'var1'), 'variable', False),
-                info.Symbol(('dir1/eggs.c', None, 'xyz'), 'other', False),
-                info.Symbol((None, None, '???'), 'other', False),
+                s_info.Symbol(('dir1/spam.c', None, 'var1'), 'variable', False),
+                s_info.Symbol(('dir1/spam.c', None, 'var2'), 'variable', False),
+                s_info.Symbol(('dir1/spam.c', None, 'func1'), 'function', False),
+                s_info.Symbol(('dir1/spam.c', None, 'func2'), 'function', True),
+                s_info.Symbol(('dir1/spam.c', None, 'var3'), 'variable', False),
+                s_info.Symbol(('dir1/spam.c', 'func2', 'var4'), 'variable', False),
+                s_info.Symbol(('dir1/ham.c', None, 'var1'), 'variable', True),
+                s_info.Symbol(('dir1/eggs.c', None, 'var1'), 'variable', False),
+                s_info.Symbol(('dir1/eggs.c', None, 'xyz'), 'other', False),
+                s_info.Symbol((None, None, '???'), 'other', False),
                 ]
 
         found = list(statics_from_symbols(['dir1'], self.iter_symbols))

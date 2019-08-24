@@ -1,5 +1,9 @@
 from c_parser import info, declarations
-from c_symbols import binary as b_symbols, source as s_symbols
+from c_symbols import (
+        info as s_info,
+        binary as b_symbols,
+        source as s_symbols,
+        )
 
 
 # Once we start parsing directly, getting symbols from a binary will
@@ -8,7 +12,7 @@ from c_symbols import binary as b_symbols, source as s_symbols
 def statics_from_symbols(dirnames, iter_symbols):
     """Yield a Variable for each found symbol (static only)."""
     for symbol in iter_symbols(dirnames):
-        if symbol.kind is not info.Symbol.KIND.VARIABLE:
+        if symbol.kind is not s_info.Symbol.KIND.VARIABLE:
             continue
         if symbol.external:
             continue
