@@ -1265,7 +1265,6 @@ class PyShell(OutputWindow):
             if prefix.rstrip().endswith(':'):
                 self.newline_and_indent_event(event)
                 prefix = self.text.get("insert linestart", "insert")
-            first_line = self.getlineno("insert")
             self.text.insert("insert", lines[0].strip(), "stdin")
             if len(lines) > 1:
                 orig_base_indent = re.search(r'^([ \t]*)', lines[0]).group(0)
