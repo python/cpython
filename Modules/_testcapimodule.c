@@ -2588,115 +2588,53 @@ get_datetime_fromtimestamp(PyObject* self, PyObject *args)
 }
 
 static PyObject *
-test_PyDateTime_GET(PyObject *self, PyObject *args)
+test_PyDateTime_GET(PyObject *self, PyObject *obj)
 {
-    PyObject *obj = NULL;
-    PyObject *rv;
     int year, month, day;
-
-    if (!PyArg_ParseTuple(args, "O", &obj)) {
-        return NULL;
-    }
 
     year = PyDateTime_GET_YEAR(obj);
     month = PyDateTime_GET_MONTH(obj);
     day = PyDateTime_GET_DAY(obj);
 
-    rv = PyTuple_New(3);
-    if (rv == NULL) {
-        return NULL;
-    }
-
-    PyTuple_SET_ITEM(rv, 0, PyLong_FromLong(year));
-    PyTuple_SET_ITEM(rv, 1, PyLong_FromLong(month));
-    PyTuple_SET_ITEM(rv, 2, PyLong_FromLong(day));
-
-    return rv;
+    return Py_BuildValue("[lll]", year, month, day);
 }
 
 static PyObject *
-test_PyDateTime_DATE_GET(PyObject *self, PyObject *args)
+test_PyDateTime_DATE_GET(PyObject *self, PyObject *obj)
 {
-    PyObject *obj = NULL;
-    PyObject *rv;
     int hour, minute, second, microsecond;
-
-    if (!PyArg_ParseTuple(args, "O", &obj)) {
-        return NULL;
-    }
 
     hour = PyDateTime_DATE_GET_HOUR(obj);
     minute = PyDateTime_DATE_GET_MINUTE(obj);
     second = PyDateTime_DATE_GET_SECOND(obj);
     microsecond = PyDateTime_DATE_GET_MICROSECOND(obj);
 
-    rv = PyTuple_New(4);
-    if (rv == NULL) {
-        return NULL;
-    }
-
-    PyTuple_SET_ITEM(rv, 0, PyLong_FromLong(hour));
-    PyTuple_SET_ITEM(rv, 1, PyLong_FromLong(minute));
-    PyTuple_SET_ITEM(rv, 2, PyLong_FromLong(second));
-    PyTuple_SET_ITEM(rv, 3, PyLong_FromLong(microsecond));
-
-    return rv;
+    return Py_BuildValue("[llll]", hour, minute, second, microsecond);
 }
 
 static PyObject *
-test_PyDateTime_TIME_GET(PyObject *self, PyObject *args)
+test_PyDateTime_TIME_GET(PyObject *self, PyObject *obj)
 {
-    PyObject *obj = NULL;
-    PyObject *rv;
     int hour, minute, second, microsecond;
-
-    if (!PyArg_ParseTuple(args, "O", &obj)) {
-        return NULL;
-    }
 
     hour = PyDateTime_TIME_GET_HOUR(obj);
     minute = PyDateTime_TIME_GET_MINUTE(obj);
     second = PyDateTime_TIME_GET_SECOND(obj);
     microsecond = PyDateTime_TIME_GET_MICROSECOND(obj);
 
-    rv = PyTuple_New(4);
-    if (rv == NULL) {
-        return NULL;
-    }
-
-    PyTuple_SET_ITEM(rv, 0, PyLong_FromLong(hour));
-    PyTuple_SET_ITEM(rv, 1, PyLong_FromLong(minute));
-    PyTuple_SET_ITEM(rv, 2, PyLong_FromLong(second));
-    PyTuple_SET_ITEM(rv, 3, PyLong_FromLong(microsecond));
-
-    return rv;
+    return Py_BuildValue("[llll]", hour, minute, second, microsecond);
 }
 
 static PyObject *
-test_PyDateTime_DELTA_GET(PyObject *self, PyObject *args)
+test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
 {
-    PyObject *obj = NULL;
-    PyObject *rv;
     int days, seconds, microseconds;
-
-    if (!PyArg_ParseTuple(args, "O", &obj)) {
-        return NULL;
-    }
 
     days = PyDateTime_DELTA_GET_DAYS(obj);
     seconds = PyDateTime_DELTA_GET_SECONDS(obj);
     microseconds = PyDateTime_DELTA_GET_MICROSECONDS(obj);
 
-    rv = PyTuple_New(3);
-    if (rv == NULL) {
-        return NULL;
-    }
-
-    PyTuple_SET_ITEM(rv, 0, PyLong_FromLong(days));
-    PyTuple_SET_ITEM(rv, 1, PyLong_FromLong(seconds));
-    PyTuple_SET_ITEM(rv, 2, PyLong_FromLong(microseconds));
-
-    return rv;
+    return Py_BuildValue("[lll]", days, seconds, microseconds);
 }
 
 /* test_thread_state spawns a thread of its own, and that thread releases
@@ -5187,10 +5125,10 @@ static PyMethodDef TestMethods[] = {
     {"get_delta_fromdsu",        get_delta_fromdsu,              METH_VARARGS},
     {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
     {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
-    {"PyDateTime_GET",             test_PyDateTime_GET,          METH_VARARGS},
-    {"PyDateTime_DATE_GET",        test_PyDateTime_DATE_GET,     METH_VARARGS},
-    {"PyDateTime_TIME_GET",        test_PyDateTime_TIME_GET,     METH_VARARGS},
-    {"PyDateTime_DELTA_GET",       test_PyDateTime_DELTA_GET,        METH_VARARGS},
+    {"PyDateTime_GET",             test_PyDateTime_GET,           METH_O},
+    {"PyDateTime_DATE_GET",        test_PyDateTime_DATE_GET,      METH_O},
+    {"PyDateTime_TIME_GET",        test_PyDateTime_TIME_GET,      METH_O},
+    {"PyDateTime_DELTA_GET",       test_PyDateTime_DELTA_GET,     METH_O},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
