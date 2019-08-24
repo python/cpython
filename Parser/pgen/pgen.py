@@ -10,11 +10,11 @@ Concepts
 * An LL(1) parser (Left-to-right, Leftmost derivation, 1 token-lookahead) is a
   top-down parser for a subset of context-free languages. It parses the input
   from Left to right, performing Leftmost derivation of the sentence, and can
-  only use 1 tokens of lookahead when parsing a sentence.
+  only use 1 token of lookahead when parsing a sentence.
 
 * A parsing table is a collection of data that a generic implementation of the
   LL(1) parser consumes to know how to parse a given context-free grammar. In
-  this case the collection of thata involves Deterministic Finite Automatons,
+  this case the collection of data involves Deterministic Finite Automatons,
   calculated first sets, keywords and transition labels.
 
 * A grammar is defined by production rules (or just 'productions') that specify
@@ -26,9 +26,9 @@ Concepts
 
   rule_name: rule_description;
 
-  meaning the rule 'a: b' specifies that a can be replaced by b. A Context-free
-  grammars is a grammars in which the left-hand side of each production rule
-  consists of only a single nonterminal symbol. Context free grammars can
+  meaning the rule 'a: b' specifies that a can be replaced by b. A context-free
+  grammar is a grammar in which the left-hand side of each production rule
+  consists of only a single nonterminal symbol. Context-free grammars can
   always be recognized by a Non-Deterministic Automatons.
 
 * Terminal symbols are literal symbols which may appear in the outputs of the
@@ -47,8 +47,8 @@ Concepts
 
 * The first sets of a rule (FIRST(rule)) are defined to be the set of terminals
   that can appear in the first position of any string derived from the rule.
-  This is useful for LL(1) parsers as the parser is only allow to look at the
-  next token in the input to know which rule needs to parse. For example given
+  This is useful for LL(1) parsers as the parser is only allowed to look at the
+  next token in the input to know which rule needs to parse. For example, given
   this grammar:
 
   start: '(' A | B ')'
