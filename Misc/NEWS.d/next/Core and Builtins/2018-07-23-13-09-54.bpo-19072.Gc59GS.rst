@@ -1,0 +1,3 @@
+The :class:`classmethod` decorator can now wrap other descriptors
+such as property objects.  Adapted from a patch written by Graham
+Dumpleton.
