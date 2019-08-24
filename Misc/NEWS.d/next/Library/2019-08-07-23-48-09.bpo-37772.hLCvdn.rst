@@ -1,0 +1,1 @@
+In ``zipfile.Path``, when adding implicit dirs, ensure that ancestral directories are added and that duplicates are excluded.
