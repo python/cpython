@@ -346,9 +346,9 @@ class ModifiedColorDelegator(ColorDelegator):
         for tag in self.tagdefs:
             self.tag_remove(tag, "iomark", "end")
 
+
 class ModifiedUndoDelegator(UndoDelegator):
     "Extend base class: forbid insert/delete before the I/O mark"
-
     def insert(self, index, chars, tags=None):
         try:
             if self.delegate.compare(index, "<", "iomark"):
@@ -366,6 +366,19 @@ class ModifiedUndoDelegator(UndoDelegator):
         except TclError:
             pass
         UndoDelegator.delete(self, index1, index2)
+
+    def undo_event(self, event):
+        # Temporarily monkey-patch the delegate's .insert() method to
+        # always use the "stdin" tag.  This is needed for undo-ing
+        # deletions to preserve the "stdin" tag, because UndoDelegator
+        # doesn't preserve tags for deleted text.
+        orig_insert = self.delegate.insert
+        self.delegate.insert = \
+            lambda index, chars: orig_insert(index, chars, "stdin")
+        try:
+            super().undo_event(event)
+        finally:
+            self.delegate.insert = orig_insert
 
 
 class UserInputTaggingDelegator(Delegator):
