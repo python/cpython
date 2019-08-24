@@ -226,8 +226,8 @@ are always available.  They are listed here in alphabetical order.
    For more information on class methods, see :ref:`types`.
 
    .. versionchanged:: 3.9
-   Class methods can now wrap other :term:`descriptors <descriptor>` such as
-   :func:`property`.
+      Class methods can now wrap other :term:`descriptors <descriptor>` such as
+      :func:`property`.
 
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
