@@ -5805,7 +5805,7 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
        with CertCloseStore using CERT_CLOSE_STORE_FORCE_FLAG,
        the collection store must be closed before its sibling stores.
       (https://docs.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certaddstoretocollection) */
-    success = CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG);
+    BOOL success = CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG);
     for (i = 0; i < system_stores_count; i++) {
         if (system_store_handles[i] == NULL) {
             continue;
