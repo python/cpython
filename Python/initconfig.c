@@ -83,8 +83,8 @@ static const char usage_5[] =
 "PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n";
 static const char usage_6[] =
 "PYTHONHASHSEED: if this variable is set to 'random', a random value is used\n"
-"   to seed the hashes of str, bytes and datetime objects.  It can also be\n"
-"   set to an integer in the range [0,4294967295] to get hash values with a\n"
+"   to seed the hashes of str and bytes objects.  It can also be set to an\n"
+"   integer in the range [0,4294967295] to get hash values with a\n"
 "   predictable seed.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
