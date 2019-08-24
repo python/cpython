@@ -48,6 +48,7 @@ import warnings
 
 from idlelib.colorizer import ColorDelegator
 from idlelib.config import idleConf
+from idlelib.delegator import Delegator
 from idlelib import debugger
 from idlelib import debugger_r
 from idlelib.editor import EditorWindow, fixwordbreaks
@@ -365,6 +366,14 @@ class ModifiedUndoDelegator(UndoDelegator):
         except TclError:
             pass
         UndoDelegator.delete(self, index1, index2)
+
+
+class UserInputTaggingDelegator(Delegator):
+    """Delegator used to tag user input with "stdin"."""
+    def insert(self, index, chars, tags=None):
+        if tags is None:
+            tags = "stdin"
+        self.delegate.insert(index, chars, tags)
 
 
 class MyRPCClient(rpc.RPCClient):
@@ -912,11 +921,14 @@ class PyShell(OutputWindow):
         #
         self.pollinterval = 50  # millisec
 
-        self.input_lines = set()
-        self.prompt_lines = set()
-
         self.shell_sidebar = self.ShellSidebar(self)
         self.shell_sidebar.show_sidebar()
+
+        # Insert UserInputTaggingDelegator at the top of the percolator,
+        # but make calls to text.insert() skip it.  This causes only insert
+        # events generated in Tcl/Tk to go through this delegator.
+        self.text.insert = self.per.top.insert
+        self.per.insertfilter(UserInputTaggingDelegator())
 
     def get_tag_colors(self):
         tag_colors = super().get_tag_colors()
@@ -1169,7 +1181,7 @@ class PyShell(OutputWindow):
             if prev and self.text.compare("insert", "<", prev[1]):
                 for line in reversed(range(self.getlineno(prev[0]),
                                            self.getlineno(prev[1]))):
-                    if line in self.prompt_lines:
+                    if "console" in self.text.tag_names(f"{line}.0-1c"):
                         break
                 if self.text.compare(f"{line}.0", ">", prev[0]):
                     prev = (f"{line}.0", prev[1])
@@ -1179,7 +1191,7 @@ class PyShell(OutputWindow):
             if next and self.text.compare("insert lineend", ">=", next[0]):
                 for line in range(self.getlineno(next[0]),
                                   self.getlineno(next[1])):
-                    if line + 1 in self.prompt_lines:
+                    if "console" in self.text.tag_names(f"{line+1}.0-1c"):
                         break
                 if self.text.compare(f"{line}.end", "<", next[1]):
                     next = (next[0], f"{line}.end")
@@ -1236,7 +1248,7 @@ class PyShell(OutputWindow):
                 self.newline_and_indent_event(event)
                 prefix = self.text.get("insert linestart", "insert")
             first_line = self.getlineno("insert")
-            self.text.insert("insert", lines[0].strip())
+            self.text.insert("insert", lines[0].strip(), "stdin")
             if len(lines) > 1:
                 orig_base_indent = re.search(r'^([ \t]*)', lines[0]).group(0)
                 new_base_indent  = re.search(r'^([ \t]*)', prefix).group(0)
@@ -1244,9 +1256,7 @@ class PyShell(OutputWindow):
                     if line.startswith(orig_base_indent):
                         # replace orig base indentation with new indentation
                         line = new_base_indent + line[len(orig_base_indent):]
-                    self.text.insert('insert', '\n'+line.rstrip())
-            self.input_lines.update(
-                range(first_line, self.getlineno("insert") + 1))
+                    self.text.insert('insert', '\n'+line.rstrip(), "stdin")
             self.shell_sidebar.update_sidebar()
         finally:
             self.text.see("insert")
@@ -1268,8 +1278,6 @@ class PyShell(OutputWindow):
         # If the input is a complete statement, the sidebar updates will be
         # handled elsewhere.
         if input_is_incomplete:
-            self.input_lines.update(range(self.getlineno("iomark"),
-                                          self.getlineno("end-1c") + 1))
             self.shell_sidebar.update_sidebar()
 
     def open_stack_viewer(self, event=None):
@@ -1297,16 +1305,11 @@ class PyShell(OutputWindow):
     def showprompt(self):
         self.resetoutput()
 
-        prompt_lineno = self.getlineno("iomark")
         prompt = self.prompt
         if self.sys_ps1 and prompt.endswith(self.sys_ps1):
             prompt = prompt[:-len(self.sys_ps1)]
+        self.text.tag_add("console", "iomark-1c")
         self.console.write(prompt)
-
-        n_prompt_lines = prompt.count('\n') + 1
-        self.prompt_lines.update(
-            range(prompt_lineno, prompt_lineno + n_prompt_lines))
-        self.shell_sidebar.update_sidebar()
 
         self.text.mark_set("insert", "end-1c")
         self.set_line_and_column()

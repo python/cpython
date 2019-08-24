@@ -478,6 +478,7 @@ class ShellSidebar:
 
     def update_sidebar(self):
         text = self.text
+        text_tagnames = text.tag_names
         canvas = self.canvas
 
         canvas.delete(tk.ALL)
@@ -488,10 +489,11 @@ class ShellSidebar:
             if lineinfo is None:
                 break
             y = lineinfo[1]
-            lineno = self.editwin.getlineno(index)
+            is_prompt = "console" in text_tagnames(f"{index} linestart -1c")
+            is_input = "stdin" in text_tagnames(f"{index} lineend -1c")
             prompt = (
-                '>>>' if lineno in self.editwin.prompt_lines else
-                '...' if lineno in self.editwin.input_lines else
+                '>>>' if is_prompt else
+                '...' if is_input else
                 '   '
             )
             canvas.create_text(2, y, anchor=tk.NW, text=prompt,
