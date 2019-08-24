@@ -1,1 +1,1 @@
-IDLE - Refactor autocompete and improve testing.
+Refactor IDLE autocomplete and improve testing.
