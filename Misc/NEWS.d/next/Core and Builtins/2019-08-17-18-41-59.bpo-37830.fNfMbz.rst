@@ -1,0 +1,3 @@
+Fixed compilation of :keyword:`break` and :keyword:`continue` in the
+:keyword:`finally` block when the corresponding :keyword:`try` block
+contains :keyword:`return` with a non-constant value.
