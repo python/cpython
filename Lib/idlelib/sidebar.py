@@ -325,48 +325,6 @@ class LineNumbers(BaseSideBar):
         self.prev_end = end
 
 
-# class ShellSidebar(LineNumbers):
-#     """Show shell prompts in a sidebar."""
-#     def __init__(self, editwin):
-#         super().__init__(editwin)
-#         self.sidebar_text.delete('1.0', 'end-1c')
-#         self.sidebar_text.config(width=3)
-#         self.sidebar_text.tag_config('linenumber', justify=tk.LEFT)
-#
-#     def update_sidebar_text(self, end):
-#         """
-#         Perform the following action:
-#         Each line sidebar_text contains the linenumber for that line
-#         Synchronize with editwin.text so that both sidebar_text and
-#         editwin.text contain the same number of lines"""
-#         if end == self.prev_end:
-#             return
-#
-#         with temp_enable_text_widget(self.sidebar_text):
-#             # if end > self.prev_end:
-#             #     new_text = '\n'.join(itertools.chain(
-#             #         [''],
-#             #         itertools.repeat('...', end - self.prev_end),
-#             #     ))
-#             #     self.sidebar_text.insert(f'end -1c', new_text, 'linenumber')
-#             # elif self.prev_end > self.editwin.getlineno("iomark"):
-#             #     self.sidebar_text.delete(f'{end+1}.0 -1c', 'end -1c')
-#             # else:
-#                 import sys
-#                 for i in range(1, self.editwin.getlineno('end')):
-#                     print(i, self.text.tag_names(f'{i}.0'), file=sys.stderr)
-#                 new_text = '\n'.join(itertools.chain(
-#                     # [''],
-#                     ('>>>' if 'console' in self.text.tag_names(f'{line}.0') else '---'
-#                      # for line in range(self.prev_end + 1, end + 1)),
-#                      for line in range(1, end + 1)),
-#                 ))
-#                 self.sidebar_text.delete('1.0', 'end-1c')
-#                 self.sidebar_text.insert(f'end -1c', new_text, 'linenumber')
-#
-#         self.prev_end = end
-
-
 class WrappedLineHeightChangeDelegator(Delegator):
     def __init__(self, callback):
         """
