@@ -219,10 +219,12 @@ are always available.  They are listed here in alphabetical order.
 
    Class methods are different than C++ or Java static methods. If you want those,
    see :func:`staticmethod` in this section.
-
    For more information on class methods, consult the documentation on the standard
    type hierarchy in :ref:`types`.
 
+   .. versionchanged:: 3.9
+   Class methods can now wrap other :term:`descriptors <descriptor>` such as
+   :func:`property`.
 
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
