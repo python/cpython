@@ -18,6 +18,7 @@ from test import support
 
 from decimal import Decimal
 from fractions import Fraction
+from test import support
 
 
 # Module to be tested.
@@ -177,6 +178,23 @@ class _DoNothing:
 
 # We prefer this for testing numeric values that may not be exactly equal,
 # and avoid using TestCase.assertAlmostEqual, because it sucks :-)
+
+py_statistics = support.import_fresh_module('statistics', blocked=['_statistics'])
+c_statistics = support.import_fresh_module('statistics', fresh=['_statistics'])
+
+
+class TestModules(unittest.TestCase):
+    func_names = ['_normal_dist_inv_cdf']
+
+    def test_py_functions(self):
+        for fname in self.func_names:
+            self.assertEqual(getattr(py_statistics, fname).__module__, 'statistics')
+
+    @unittest.skipUnless(c_statistics, 'requires _statistics')
+    def test_c_functions(self):
+        for fname in self.func_names:
+            self.assertEqual(getattr(c_statistics, fname).__module__, '_statistics')
+
 
 class NumericTestCase(unittest.TestCase):
     """Unit test class for numeric work.
@@ -2314,7 +2332,7 @@ class TestQuantiles(unittest.TestCase):
             quantiles([10, None, 30], n=4)      # data is non-numeric
 
 
-class TestNormalDist(unittest.TestCase):
+class TestNormalDist:
 
     # General note on precision: The pdf(), cdf(), and overlap() methods
     # depend on functions in the math libraries that do not make
@@ -2324,35 +2342,35 @@ class TestNormalDist(unittest.TestCase):
     # implementing our own implementations from scratch.
 
     def test_slots(self):
-        nd = statistics.NormalDist(300, 23)
+        nd = self.module.NormalDist(300, 23)
         with self.assertRaises(TypeError):
             vars(nd)
         self.assertEqual(tuple(nd.__slots__), ('_mu', '_sigma'))
 
     def test_instantiation_and_attributes(self):
-        nd = statistics.NormalDist(500, 17)
+        nd = self.module.NormalDist(500, 17)
         self.assertEqual(nd.mean, 500)
         self.assertEqual(nd.stdev, 17)
         self.assertEqual(nd.variance, 17**2)
 
         # default arguments
-        nd = statistics.NormalDist()
+        nd = self.module.NormalDist()
         self.assertEqual(nd.mean, 0)
         self.assertEqual(nd.stdev, 1)
         self.assertEqual(nd.variance, 1**2)
 
         # error case: negative sigma
-        with self.assertRaises(statistics.StatisticsError):
-            statistics.NormalDist(500, -10)
+        with self.assertRaises(self.module.StatisticsError):
+            self.module.NormalDist(500, -10)
 
         # verify that subclass type is honored
-        class NewNormalDist(statistics.NormalDist):
+        class NewNormalDist(self.module.NormalDist):
             pass
         nnd = NewNormalDist(200, 5)
         self.assertEqual(type(nnd), NewNormalDist)
 
     def test_alternative_constructor(self):
-        NormalDist = statistics.NormalDist
+        NormalDist = self.module.NormalDist
         data = [96, 107, 90, 92, 110]
         # list input
         self.assertEqual(NormalDist.from_samples(data), NormalDist(99, 9))
@@ -2361,9 +2379,9 @@ class TestNormalDist(unittest.TestCase):
         # iterator input
         self.assertEqual(NormalDist.from_samples(iter(data)), NormalDist(99, 9))
         # error cases
-        with self.assertRaises(statistics.StatisticsError):
+        with self.assertRaises(self.module.StatisticsError):
             NormalDist.from_samples([])                      # empty input
-        with self.assertRaises(statistics.StatisticsError):
+        with self.assertRaises(self.module.StatisticsError):
             NormalDist.from_samples([10])                    # only one input
 
         # verify that subclass type is honored
@@ -2373,7 +2391,7 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(type(nnd), NewNormalDist)
 
     def test_sample_generation(self):
-        NormalDist = statistics.NormalDist
+        NormalDist = self.module.NormalDist
         mu, sigma = 10_000, 3.0
         X = NormalDist(mu, sigma)
         n = 1_000
@@ -2381,7 +2399,7 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(len(data), n)
         self.assertEqual(set(map(type, data)), {float})
         # mean(data) expected to fall within 8 standard deviations
-        xbar = statistics.mean(data)
+        xbar = self.module.mean(data)
         self.assertTrue(mu - sigma*8 <= xbar <= mu + sigma*8)
 
         # verify that seeding makes reproducible sequences
@@ -2395,7 +2413,7 @@ class TestNormalDist(unittest.TestCase):
         self.assertNotEqual(data1, data2)
 
     def test_pdf(self):
-        NormalDist = statistics.NormalDist
+        NormalDist = self.module.NormalDist
         X = NormalDist(100, 15)
         # Verify peak around center
         self.assertLess(X.pdf(99), X.pdf(100))
@@ -2426,7 +2444,7 @@ class TestNormalDist(unittest.TestCase):
             self.assertAlmostEqual(Z.pdf(-x / 100.0), px, places=4)
         # Error case: variance is zero
         Y = NormalDist(100, 0)
-        with self.assertRaises(statistics.StatisticsError):
+        with self.assertRaises(self.module.StatisticsError):
             Y.pdf(90)
         # Special values
         self.assertEqual(X.pdf(float('-Inf')), 0.0)
@@ -2434,7 +2452,7 @@ class TestNormalDist(unittest.TestCase):
         self.assertTrue(math.isnan(X.pdf(float('NaN'))))
 
     def test_cdf(self):
-        NormalDist = statistics.NormalDist
+        NormalDist = self.module.NormalDist
         X = NormalDist(100, 15)
         cdfs = [X.cdf(x) for x in range(1, 200)]
         self.assertEqual(set(map(type, cdfs)), {float})
@@ -2456,7 +2474,7 @@ class TestNormalDist(unittest.TestCase):
             self.assertAlmostEqual(Z.cdf(-z), 1.0 - cum_prob, places=5)
         # Error case: variance is zero
         Y = NormalDist(100, 0)
-        with self.assertRaises(statistics.StatisticsError):
+        with self.assertRaises(self.module.StatisticsError):
             Y.cdf(90)
         # Special values
         self.assertEqual(X.cdf(float('-Inf')), 0.0)
@@ -2465,7 +2483,7 @@ class TestNormalDist(unittest.TestCase):
 
     @support.skip_if_pgo_task
     def test_inv_cdf(self):
-        NormalDist = statistics.NormalDist
+        NormalDist = self.module.NormalDist
 
         # Center case should be exact.
         iq = NormalDist(100, 15)
@@ -2513,15 +2531,15 @@ class TestNormalDist(unittest.TestCase):
             self.assertAlmostEqual(iq.inv_cdf(iq.cdf(x)), x, places=5)
 
         # Error cases:
-        with self.assertRaises(statistics.StatisticsError):
+        with self.assertRaises(self.module.StatisticsError):
             iq.inv_cdf(0.0)                         # p is zero
-        with self.assertRaises(statistics.StatisticsError):
+        with self.assertRaises(self.module.StatisticsError):
             iq.inv_cdf(-0.1)                        # p under zero
-        with self.assertRaises(statistics.StatisticsError):
+        with self.assertRaises(self.module.StatisticsError):
             iq.inv_cdf(1.0)                         # p is one
-        with self.assertRaises(statistics.StatisticsError):
+        with self.assertRaises(self.module.StatisticsError):
             iq.inv_cdf(1.1)                         # p over one
-        with self.assertRaises(statistics.StatisticsError):
+        with self.assertRaises(self.module.StatisticsError):
             iq = NormalDist(100, 0)                 # sigma is zero
             iq.inv_cdf(0.5)
 
@@ -2529,7 +2547,7 @@ class TestNormalDist(unittest.TestCase):
         self.assertTrue(math.isnan(Z.inv_cdf(float('NaN'))))
 
     def test_overlap(self):
-        NormalDist = statistics.NormalDist
+        NormalDist = self.module.NormalDist
 
         # Match examples from Imman and Bradley
         for X1, X2, published_result in [
@@ -2586,26 +2604,26 @@ class TestNormalDist(unittest.TestCase):
             X.overlap(X, X)                         # too may arguments
         with self.assertRaises(TypeError):
             X.overlap(None)                         # right operand not a NormalDist
-        with self.assertRaises(statistics.StatisticsError):
+        with self.assertRaises(self.module.StatisticsError):
             X.overlap(NormalDist(1, 0))             # right operand sigma is zero
-        with self.assertRaises(statistics.StatisticsError):
+        with self.assertRaises(self.module.StatisticsError):
             NormalDist(1, 0).overlap(X)             # left operand sigma is zero
 
     def test_properties(self):
-        X = statistics.NormalDist(100, 15)
+        X = self.module.NormalDist(100, 15)
         self.assertEqual(X.mean, 100)
         self.assertEqual(X.stdev, 15)
         self.assertEqual(X.variance, 225)
 
     def test_same_type_addition_and_subtraction(self):
-        NormalDist = statistics.NormalDist
+        NormalDist = self.module.NormalDist
         X = NormalDist(100, 12)
         Y = NormalDist(40, 5)
         self.assertEqual(X + Y, NormalDist(140, 13))        # __add__
         self.assertEqual(X - Y, NormalDist(60, 13))         # __sub__
 
     def test_translation_and_scaling(self):
-        NormalDist = statistics.NormalDist
+        NormalDist = self.module.NormalDist
         X = NormalDist(100, 15)
         y = 10
         self.assertEqual(+X, NormalDist(100, 15))           # __pos__
@@ -2621,7 +2639,7 @@ class TestNormalDist(unittest.TestCase):
             y / X
 
     def test_unary_operations(self):
-        NormalDist = statistics.NormalDist
+        NormalDist = self.module.NormalDist
         X = NormalDist(100, 12)
         Y = +X
         self.assertIsNot(X, Y)
@@ -2633,7 +2651,7 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(X.stdev, Y.stdev)
 
     def test_equality(self):
-        NormalDist = statistics.NormalDist
+        NormalDist = self.module.NormalDist
         nd1 = NormalDist()
         nd2 = NormalDist(2, 4)
         nd3 = NormalDist()
@@ -2673,7 +2691,7 @@ class TestNormalDist(unittest.TestCase):
         self.assertNotEqual(nd, lnd)
 
     def test_pickle_and_copy(self):
-        nd = statistics.NormalDist(37.5, 5.625)
+        nd = self.module.NormalDist(37.5, 5.625)
         nd1 = copy.copy(nd)
         self.assertEqual(nd, nd1)
         nd2 = copy.deepcopy(nd)
@@ -2682,13 +2700,35 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(nd, nd3)
 
     def test_hashability(self):
-        ND = statistics.NormalDist
+        ND = self.module.NormalDist
         s = {ND(100, 15), ND(100.0, 15.0), ND(100, 10), ND(95, 15), ND(100, 15)}
         self.assertEqual(len(s), 3)
 
     def test_repr(self):
-        nd = statistics.NormalDist(37.5, 5.625)
+        nd = self.module.NormalDist(37.5, 5.625)
         self.assertEqual(repr(nd), 'NormalDist(mu=37.5, sigma=5.625)')
+
+# Swapping the sys.modules['statistics'] is to solving the
+# _pickle.PicklingError:
+# Can't pickle <class 'statistics.NormalDist'>:
+# it's not the same object as statistics.NormalDist
+class TestNormalDistPython(unittest.TestCase, TestNormalDist):
+    module = py_statistics
+    def setUp(self):
+        sys.modules['statistics'] = self.module
+
+    def tearDown(self):
+        sys.modules['statistics'] = statistics
+
+
+@unittest.skipUnless(c_statistics, 'requires _statistics')
+class TestNormalDistC(unittest.TestCase, TestNormalDist):
+    module = c_statistics
+    def setUp(self):
+        sys.modules['statistics'] = self.module
+
+    def tearDown(self):
+        sys.modules['statistics'] = statistics
 
 
 # === Run tests ===
