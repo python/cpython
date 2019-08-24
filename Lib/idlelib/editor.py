@@ -266,7 +266,7 @@ class EditorWindow(object):
         io.set_filename_change_hook(self.filename_change_hook)
         self.good_load = False
         self.set_indentation_params(False)
-        self.color = None # initialized below in self.ResetColorizer
+        self.color = None # initialized below in self.update_colors()
         self.code_context = None # optionally initialized later below
         self.line_numbers = None # optionally initialized later below
         if filename:
@@ -279,7 +279,7 @@ class EditorWindow(object):
                 io.set_filename(filename)
                 self.good_load = True
 
-        self.ResetColorizer()
+        self.update_colors()
         self.saved_change_hook()
         self.update_recent_files_list()
         self.load_extensions()
@@ -792,17 +792,39 @@ class EditorWindow(object):
         self.color = None
 
     def ResetColorizer(self):
-        "Update the color theme"
-        # Called from self.filename_change_hook and from configdialog.py
+        """Reset the syntax colorizer.
+
+        For example, this is called after filename changes, since the file
+        type can affect the highlighting.
+        """
         self._rmcolorizer()
         self._addcolorizer()
+
+    def update_colors(self):
+        """Update the color theme.
+
+        For example, this is called after highlighting config changes.
+        """
         EditorWindow.color_config(self.text)
+
+        tag_colors = self.get_tag_colors()
+        for tag, tag_colors_config in tag_colors.items():
+            self.text.tag_configure(tag, **tag_colors_config)
+
+        self.ResetColorizer()
 
         if self.code_context is not None:
             self.code_context.update_highlight_colors()
 
         if self.line_numbers is not None:
             self.line_numbers.update_colors()
+
+    def get_tag_colors(self):
+        theme = idleConf.CurrentTheme()
+        return {
+            # The following is used by ReplaceDialog:
+            "hit": idleConf.GetHighlight(theme, "hit"),
+        }
 
     IDENTCHARS = string.ascii_letters + string.digits + "_"
 

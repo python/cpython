@@ -335,25 +335,10 @@ class PyShellFileList(FileList):
 
 class ModifiedColorDelegator(ColorDelegator):
     "Extend base class: colorizer for the shell window itself"
-
-    def __init__(self):
-        ColorDelegator.__init__(self)
-        self.LoadTagDefs()
-
     def recolorize_main(self):
         self.tag_remove("TODO", "1.0", "iomark")
         self.tag_add("SYNC", "1.0", "iomark")
         ColorDelegator.recolorize_main(self)
-
-    def LoadTagDefs(self):
-        ColorDelegator.LoadTagDefs(self)
-        theme = idleConf.CurrentTheme()
-        self.tagdefs.update({
-            "stdin": {'background':None,'foreground':None},
-            "stdout": idleConf.GetHighlight(theme, "stdout"),
-            "stderr": idleConf.GetHighlight(theme, "stderr"),
-            "console": idleConf.GetHighlight(theme, "console"),
-        })
 
     def removecolors(self):
         # Don't remove shell color tags before "iomark"
@@ -932,6 +917,18 @@ class PyShell(OutputWindow):
 
         self.shell_sidebar = self.ShellSidebar(self)
         self.shell_sidebar.show_sidebar()
+
+    def get_tag_colors(self):
+        tag_colors = super().get_tag_colors()
+
+        theme = idleConf.CurrentTheme()
+        tag_colors.update({
+            "stdin": {'background': None, 'foreground': None},
+            "stdout": idleConf.GetHighlight(theme, "stdout"),
+            "stderr": idleConf.GetHighlight(theme, "stderr"),
+            "console": idleConf.GetHighlight(theme, "console"),
+        })
+        return tag_colors
 
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(shell_only=True)
