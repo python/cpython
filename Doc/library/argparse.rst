@@ -656,7 +656,7 @@ the help options::
 exit_on_error
 ^^^^^^^^^^^^^
 
-Normally, when you pass an wrong argument list to the :meth:`~ArgumentParser.parse_args`
+Normally, when you pass an invalid argument list to the :meth:`~ArgumentParser.parse_args`
 method of an :class:`ArgumentParser`, it will exit with error info.
 
 If the user would like catch errors manually, they can enable this feature by setting
