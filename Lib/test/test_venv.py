@@ -394,11 +394,7 @@ class EnsurePipTest(BaseTest):
         with open(os.devnull, "rb") as f:
             self.assertEqual(f.read(), b"")
 
-        # Issue #20541: os.path.exists('nul') is False on Windows
-        if os.devnull.lower() == 'nul':
-            self.assertFalse(os.path.exists(os.devnull))
-        else:
-            self.assertTrue(os.path.exists(os.devnull))
+        self.assertTrue(os.path.exists(os.devnull))
 
     def do_test_with_pip(self, system_site_packages):
         rmtree(self.env_dir)

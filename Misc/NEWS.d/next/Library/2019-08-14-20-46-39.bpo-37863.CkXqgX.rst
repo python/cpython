@@ -1,0 +1,1 @@
+Optimizations for Fraction.__hash__ suggested by Tim Peters.
