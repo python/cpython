@@ -1442,25 +1442,9 @@ built-in types.
   :exc:`TypeError`.
 
   Sequences compare lexicographically using comparison of corresponding
-  elements, whereby reflexivity of the elements is enforced.
-
-  In enforcing reflexivity of elements, the comparison of collections assumes
-  that for a collection element ``x``, ``x == x`` is always true.  Based on
-  that assumption, element identity is compared first, and element comparison
-  is performed only for distinct elements.  This approach yields the same
-  result as a strict element comparison would, if the compared elements are
-  reflexive.  For non-reflexive elements, the result is different than for
-  strict element comparison, and may be surprising:  The non-reflexive
-  not-a-number values for example result in the following comparison behavior
-  when used in a list::
-
-    >>> nan = float('NaN')
-    >>> nan is nan
-    True
-    >>> nan == nan
-    False                 <-- the defined non-reflexive behavior of NaN
-    >>> [nan] == [nan]
-    True                  <-- list enforces reflexivity and tests identity first
+  elements.  The built-in containers typically assume identical objects are
+  equal to themselves.  That lets them bypass equality tests for identical
+  objects to improve performance and to maintain their internal invariants.
 
   Lexicographical comparison between built-in collections works as follows:
 
