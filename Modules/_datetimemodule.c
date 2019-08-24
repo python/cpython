@@ -2643,6 +2643,38 @@ delta_total_seconds(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
+delta_total_minutes(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *total_minutes;
+    PyObject *total_microseconds;
+
+    total_microseconds = delta_to_microseconds((PyDateTime_Delta *)self);
+    if (total_microseconds == NULL)
+        return NULL;
+
+    total_minutes = PyNumber_TrueDivide(total_microseconds, us_per_minute);
+
+    Py_DECREF(total_microseconds);
+    return total_minutes;
+}
+
+static PyObject *
+delta_total_hours(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *total_hours;
+    PyObject *total_microseconds;
+
+    total_microseconds = delta_to_microseconds((PyDateTime_Delta *)self);
+    if (total_microseconds == NULL)
+        return NULL;
+
+    total_hours = PyNumber_TrueDivide(total_microseconds, us_per_hour);
+
+    Py_DECREF(total_microseconds);
+    return total_hours;
+}
+
+static PyObject *
 delta_reduce(PyDateTime_Delta* self, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("ON", Py_TYPE(self), delta_getstate(self));
@@ -2666,6 +2698,10 @@ static PyMemberDef delta_members[] = {
 static PyMethodDef delta_methods[] = {
     {"total_seconds", delta_total_seconds, METH_NOARGS,
      PyDoc_STR("Total seconds in the duration.")},
+    {"total_minutes", delta_total_minutes, METH_NOARGS,
+            PyDoc_STR("Total minutes in the duration.")},
+    {"total_hours", delta_total_hours, METH_NOARGS,
+            PyDoc_STR("Total hours in the duration.")},
 
     {"__reduce__", (PyCFunction)delta_reduce, METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
