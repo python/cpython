@@ -391,23 +391,6 @@ class WrappedLineHeightChangeDelegator(Delegator):
 
         self.callback()
 
-    def replace(self, index1, index2, chars, *args):
-        is_single_line = (
-            '\n' not in chars and
-            get_lineno(self, index1) == get_lineno(self, index2)
-        )
-        if is_single_line:
-            before_displaylines = get_displaylines(self, index1)
-
-        self.delegate.replace(index1, index2, chars, *args)
-
-        if is_single_line:
-            after_displaylines = get_displaylines(self, index1)
-            if after_displaylines == before_displaylines:
-                return  # no need to update the sidebar
-
-        self.callback()
-
     def delete(self, index1, index2=None):
         if index2 is None:
             index2 = index1 + "+1c"
