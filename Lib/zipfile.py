@@ -2123,24 +2123,45 @@ def _unique_everseen(iterable, key=None):
                 yield element
 
 
-def _parents(name):
+def _parents(path):
     """
-    for given directory, return a list of parents
-    example: 'b/' returns ['.']
-             'b/d/' return ['b', '.']
+    Given a path with elements separated by
+    posixpath.sep, generate all parents of that path.
+
+    >>> list(_parents('b/d'))
+    ['b']
+    >>> list(_parents('/b/d/'))
+    ['/b']
+    >>> list(_parents('b/d/f/'))
+    ['b/d', 'b']
+    >>> list(_parents('b'))
+    []
+    >>> list(_parents(''))
+    []
     """
-    subdir_list = [name]
-    subdir_parents = []
-    while True:
-        head, tail = posixpath.split(name)
-        if head:
-            if head + "/" not in subdir_list:
-                subdir_parents.append(head)
-            name = head
-        else:
-            subdir_parents.append(".")
-            break
-    return subdir_parents
+    return itertools.islice(_ancestry(path), 1, None)
+
+
+def _ancestry(path):
+    """
+    Given a path with elements separated by
+    posixpath.sep, generate all elements of that path
+
+    >>> list(_ancestry('b/d'))
+    ['b/d', 'b']
+    >>> list(_ancestry('/b/d/'))
+    ['/b/d', '/b']
+    >>> list(_ancestry('b/d/f/'))
+    ['b/d/f', 'b/d', 'b']
+    >>> list(_ancestry('b'))
+    ['b']
+    >>> list(_ancestry(''))
+    []
+    """
+    path = path.rstrip(posixpath.sep)
+    while path and path != posixpath.sep:
+        yield path
+        path, tail = posixpath.split(path)
 
 
 class Path:
