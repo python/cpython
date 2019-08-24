@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from c_analyzer_common.info import ID
+from c_analyzer_common import info
 from c_analyzer_common.util import classonly, _NTBase
 
 
@@ -23,13 +23,13 @@ class Variable(_NTBase,
 
     @classonly
     def from_parts(cls, filename, funcname, name, vartype):
-        id = ID(filename, funcname, name)
+        id = info.ID(filename, funcname, name)
         return cls(id, vartype)
 
     def __new__(cls, id, vartype):
         self = super().__new__(
                 cls,
-                id=ID.from_raw(id),
+                id=info.ID.from_raw(id),
                 vartype=normalize_vartype(vartype) if vartype else None,
                 )
         return self
@@ -37,17 +37,23 @@ class Variable(_NTBase,
     def __getattr__(self, name):
         return getattr(self.id, name)
 
-    def validate(self):
-        """Fail if the object is invalid (i.e. init with bad data)."""
+    def _validate_id(self):
         if not self.id:
             raise TypeError('missing id')
-        else:
-            self.id.validate()
 
-        if not self.filename:
+        if not self.filename or self.filename == info.UNKNOWN:
             raise TypeError('id missing filename')
 
-        if self.vartype is None:
+        if self.funcname and self.funcname == info.UNKNOWN:
+            raise TypeError('id missing funcname')
+
+        self.id.validate()
+
+    def validate(self):
+        """Fail if the object is invalid (i.e. init with bad data)."""
+        self._validate_id()
+
+        if self.vartype is None or self.vartype == info.UNKNOWN:
             raise TypeError('missing vartype')
 
     @property
