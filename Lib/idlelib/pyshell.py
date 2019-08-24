@@ -1324,6 +1324,7 @@ class PyShell(OutputWindow):
         self.text.tag_add("console", "iomark-1c")
         self.console.write(prompt)
 
+        self.shell_sidebar.update_sidebar()
         self.text.mark_set("insert", "end-1c")
         self.set_line_and_column()
         self.io.reset_undo()
