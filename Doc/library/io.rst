@@ -31,7 +31,7 @@ be used for each of them.  A concrete object belonging to any of these
 categories is called a :term:`file object`.  Other common terms are *stream*
 and *file-like object*.
 
-Independently of its category, each concrete stream object will also have
+Independent of its category, each concrete stream object will also have
 various capabilities: it can be read-only, write-only, or read-write. It can
 also allow arbitrary random access (seeking forwards or backwards to any
 location), or only sequential access (for example in the case of a socket or
@@ -39,7 +39,7 @@ pipe).
 
 All streams are careful about the type of data you give to them.  For example
 giving a :class:`str` object to the ``write()`` method of a binary stream
-will raise a ``TypeError``.  So will giving a :class:`bytes` object to the
+will raise a :exc:`TypeError`.  So will giving a :class:`bytes` object to the
 ``write()`` method of a text stream.
 
 .. versionchanged:: 3.3
@@ -119,6 +119,27 @@ High-level Module Interface
 .. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
 
    This is an alias for the builtin :func:`open` function.
+
+   .. audit-event:: open path,mode,flags io.open
+
+      This function raises an :ref:`auditing event <auditing>` ``open`` with
+      arguments ``path``, ``mode`` and ``flags``. The ``mode`` and ``flags``
+      arguments may have been modified or inferred from the original call.
+
+
+.. function:: open_code(path)
+
+   Opens the provided file with mode ``'rb'``. This function should be used
+   when the intent is to treat the contents as executable code.
+
+   ``path`` should be an absolute path.
+
+   The behavior of this function may be overridden by an earlier call to the
+   :c:func:`PyFile_SetOpenCodeHook`, however, it should always be considered
+   interchangeable with ``open(path, 'rb')``. Overriding the behavior is
+   intended for additional validation or preprocessing of the file.
+
+   .. versionadded:: 3.8
 
 
 .. exception:: BlockingIOError
@@ -226,7 +247,7 @@ I/O Base Classes
    implementations represent a file that cannot be read, written or
    seeked.
 
-   Even though :class:`IOBase` does not declare :meth:`read`, :meth:`readinto`,
+   Even though :class:`IOBase` does not declare :meth:`read`
    or :meth:`write` because their signatures will vary, implementations and
    clients should consider those methods part of the interface.  Also,
    implementations may raise a :exc:`ValueError` (or :exc:`UnsupportedOperation`)
@@ -234,9 +255,7 @@ I/O Base Classes
 
    The basic type used for binary data read from or written to a file is
    :class:`bytes`.  Other :term:`bytes-like objects <bytes-like object>` are
-   accepted as method arguments too.  In some cases, such as
-   :meth:`~RawIOBase.readinto`, a writable object such as :class:`bytearray`
-   is required.  Text I/O classes work with :class:`str` data.
+   accepted as method arguments too.  Text I/O classes work with :class:`str` data.
 
    Note that calling any method (even inquiries) on a closed stream is
    undefined.  Implementations may raise :exc:`ValueError` in this case.
@@ -249,7 +268,7 @@ I/O Base Classes
 
    :class:`IOBase` is also a context manager and therefore supports the
    :keyword:`with` statement.  In this example, *file* is closed after the
-   :keyword:`with` statement's suite is finished---even if an exception occurs::
+   :keyword:`!with` statement's suite is finished---even if an exception occurs::
 
       with open('spam.txt', 'w') as file:
           file.write('Spam and eggs!')
@@ -308,7 +327,7 @@ I/O Base Classes
       Note that it's already possible to iterate on file objects using ``for
       line in file: ...`` without calling ``file.readlines()``.
 
-   .. method:: seek(offset[, whence])
+   .. method:: seek(offset, whence=SEEK_SET)
 
       Change the stream position to the given byte *offset*.  *offset* is
       interpreted relative to the position indicated by *whence*.  The default
@@ -349,8 +368,8 @@ I/O Base Classes
       (on most systems, additional bytes are zero-filled).  The new file size
       is returned.
 
-   .. versionchanged:: 3.5
-      Windows will now zero-fill files when extending.
+      .. versionchanged:: 3.5
+         Windows will now zero-fill files when extending.
 
    .. method:: writable()
 
@@ -405,7 +424,8 @@ I/O Base Classes
 
       Read bytes into a pre-allocated, writable
       :term:`bytes-like object` *b*, and return the
-      number of bytes read.  If the object is in non-blocking mode and no bytes
+      number of bytes read.  For example, *b* might be a :class:`bytearray`.
+      If the object is in non-blocking mode and no bytes
       are available, ``None`` is returned.
 
    .. method:: write(b)
@@ -495,6 +515,7 @@ I/O Base Classes
 
       Read bytes into a pre-allocated, writable
       :term:`bytes-like object` *b* and return the number of bytes read.
+      For example, *b* might be a :class:`bytearray`.
 
       Like :meth:`read`, multiple reads may be issued to the underlying raw
       stream, unless the latter is interactive.
@@ -719,15 +740,15 @@ than raw I/O does.
 .. class:: BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered interface to random access streams.  It inherits
-   :class:`BufferedReader` and :class:`BufferedWriter`, and further supports
-   :meth:`seek` and :meth:`tell` functionality.
+   :class:`BufferedReader` and :class:`BufferedWriter`.
 
    The constructor creates a reader and writer for a seekable raw stream, given
    in the first argument.  If the *buffer_size* is omitted it defaults to
    :data:`DEFAULT_BUFFER_SIZE`.
 
    :class:`BufferedRandom` is capable of anything :class:`BufferedReader` or
-   :class:`BufferedWriter` can do.
+   :class:`BufferedWriter` can do.  In addition, :meth:`seek` and :meth:`tell`
+   are guaranteed to be implemented.
 
 
 .. class:: BufferedRWPair(reader, writer, buffer_size=DEFAULT_BUFFER_SIZE)
@@ -757,8 +778,7 @@ Text I/O
 .. class:: TextIOBase
 
    Base class for text streams.  This class provides a character and line based
-   interface to stream I/O.  There is no :meth:`readinto` method because
-   Python's character strings are immutable.  It inherits :class:`IOBase`.
+   interface to stream I/O.  It inherits :class:`IOBase`.
    There is no public constructor.
 
    :class:`TextIOBase` provides or overrides these data attributes and
@@ -811,7 +831,7 @@ Text I/O
 
       If *size* is specified, at most *size* characters will be read.
 
-   .. method:: seek(offset[, whence])
+   .. method:: seek(offset, whence=SEEK_SET)
 
       Change the stream position to the given *offset*.  Behaviour depends on
       the *whence* parameter.  The default value for *whence* is
@@ -925,7 +945,7 @@ Text I/O
       *errors*, *newline*, *line_buffering* and *write_through*.
 
       Parameters not specified keep current settings, except
-      ``errors='strict`` is used when *encoding* is specified but
+      ``errors='strict'`` is used when *encoding* is specified but
       *errors* is not specified.
 
       It is not possible to change the encoding or newline if some data
@@ -1048,4 +1068,3 @@ The above implicitly extends to text files, since the :func:`open()` function
 will wrap a buffered object inside a :class:`TextIOWrapper`.  This includes
 standard streams and therefore affects the built-in function :func:`print()` as
 well.
-

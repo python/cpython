@@ -2989,9 +2989,20 @@ private:
         LOC_STRING *pLocString = nullptr;
         
         if (IsWindowsServer()) {
-            if (IsWindowsVersionOrGreater(6, 1, 1)) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2008 R2 or later");
+            if (IsWindowsVersionOrGreater(6, 2, 0)) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2012 or later");
                 return;
+            } else if (IsWindowsVersionOrGreater(6, 1, 1)) {
+                HMODULE hKernel32 = GetModuleHandleW(L"kernel32");
+                if (hKernel32 && !GetProcAddress(hKernel32, "AddDllDirectory")) {
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2 without KB2533625");
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "KB2533625 update is required to continue.");
+                    /* The "MissingSP1" error also specifies updates are required */
+                    LocGetString(_wixLoc, L"#(loc.FailureWS2K8R2MissingSP1)", &pLocString);
+                } else {
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2008 R2 or later");
+                    return;
+                }
             } else if (IsWindowsVersionOrGreater(6, 1, 0)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2");
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
@@ -3009,9 +3020,20 @@ private:
                 LocGetString(_wixLoc, L"#(loc.FailureWS2K3OrEarlier)", &pLocString);
             }
         } else {
-            if (IsWindows7SP1OrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 7 SP1 or later");
+            if (IsWindows8OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 8 or later");
                 return;
+            } else if (IsWindows7SP1OrGreater()) {
+                HMODULE hKernel32 = GetModuleHandleW(L"kernel32");
+                if (hKernel32 && !GetProcAddress(hKernel32, "AddDllDirectory")) {
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 SP1 without KB2533625");
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "KB2533625 update is required to continue.");
+                    /* The "MissingSP1" error also specifies updates are required */
+                    LocGetString(_wixLoc, L"#(loc.FailureWin7MissingSP1)", &pLocString);
+                } else {
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 7 SP1 or later");
+                    return;
+                }
             } else if (IsWindows7OrGreater()) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 RTM");
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");

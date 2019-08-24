@@ -26,7 +26,7 @@ NSMALLPOSINTS = 0.
 .. nonce: Te4Tjb
 .. section: Core and Builtins
 
-Implement formatting support for PEP 515.  Initial patch by Chris Angelico.
+Implement formatting support for :pep:`515`.  Initial patch by Chris Angelico.
 
 ..
 
@@ -107,7 +107,7 @@ Serhiy Storchaka and Victor Stinner.
 .. nonce: TdJp8_
 .. section: Core and Builtins
 
-Implement tokenizing support for PEP 515. Patch by Georg Brandl.
+Implement tokenizing support for :pep:`515`. Patch by Georg Brandl.
 
 ..
 
@@ -126,7 +126,7 @@ Levkivskyi.
 .. nonce: noeoav
 .. section: Core and Builtins
 
-Implement PEP 525 -- Asynchronous Generators.
+Implement :pep:`525` -- Asynchronous Generators.
 
 ..
 
@@ -135,7 +135,7 @@ Implement PEP 525 -- Asynchronous Generators.
 .. nonce: 0ayJ5k
 .. section: Core and Builtins
 
-Implement PEP 526 -- Syntax for Variable Annotations. Patch by Ivan
+Implement :pep:`526` -- Syntax for Variable Annotations. Patch by Ivan
 Levkivskyi.
 
 ..
@@ -224,7 +224,7 @@ longer a relevant platform for Python.
 .. nonce: rdhhVw
 .. section: Core and Builtins
 
-Implement PEP 523.
+Implement :pep:`523`.
 
 ..
 
@@ -410,7 +410,7 @@ Patch written by Xiang Zhang.
 .. nonce: 0DdIrA
 .. section: Core and Builtins
 
-Implement PEP 530 -- asynchronous comprehensions.
+Implement :pep:`530` -- asynchronous comprehensions.
 
 ..
 
@@ -958,7 +958,7 @@ attack (CVE-2016-2183).
 .. nonce: WI70Tc
 .. section: Library
 
-Add ChaCha20 Poly1305 to ssl module's default ciper list. (Required OpenSSL
+Add ChaCha20 Poly1305 to ssl module's default cipher list. (Required OpenSSL
 1.1.0 or LibreSSL).
 
 ..

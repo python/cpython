@@ -4,6 +4,16 @@
 API Reference
 *************
 
+.. seealso::
+
+   `New and changed setup.py arguments in setuptools <setuptools-setup-py>`_
+      The ``setuptools`` project adds new capabilities to the ``setup`` function
+      and other APIs, makes the API consistent across different Python versions,
+      and is hence recommended over using ``distutils`` directly.
+
+.. _setuptools-setup-py: https://setuptools.readthedocs.io/en/latest/setuptools.html#new-and-changed-setup-keywords
+
+.. include:: ./_setuptools_disclaimer.rst
 
 :mod:`distutils.core` --- Core Distutils functionality
 ======================================================
@@ -183,8 +193,9 @@ the full reference.
    | *sources*              | list of source filenames,      | a list of strings         |
    |                        | relative to the distribution   |                           |
    |                        | root (where the setup script   |                           |
-   |                        | lives), in Unix form (slash-   |                           |
-   |                        | separated) for portability.    |                           |
+   |                        | lives), in Unix form           |                           |
+   |                        | (slash-separated) for          |                           |
+   |                        | portability.                   |                           |
    |                        | Source files may be C, C++,    |                           |
    |                        | SWIG (.i), platform-specific   |                           |
    |                        | resource files, or whatever    |                           |
@@ -275,6 +286,11 @@ the full reference.
    |                        | abort the build process, but   |                           |
    |                        | simply skip the extension.     |                           |
    +------------------------+--------------------------------+---------------------------+
+
+   .. versionchanged:: 3.8
+
+      On Unix, C extensions are no longer linked to libpython except on
+      Android and Cygwin.
 
 
 .. class:: Distribution
@@ -940,7 +956,7 @@ timestamp dependency analysis.
 .. function:: newer_group(sources, target[, missing='error'])
 
    Return true if *target* is out-of-date with respect to any file listed in
-   *sources*  In other words, if *target* exists and is newer than every file in
+   *sources*.  In other words, if *target* exists and is newer than every file in
    *sources*, return false; otherwise return true. *missing* controls what we do
    when a source file is missing; the default (``'error'``) is to blow up with an
    :exc:`OSError` from  inside :func:`os.stat`; if it is ``'ignore'``, we silently
@@ -1393,11 +1409,11 @@ This module provides the :class:`FileList` class, used for poking about the
 filesystem and building lists of files.
 
 
-:mod:`distutils.log` --- Simple PEP 282-style logging
-=====================================================
+:mod:`distutils.log` --- Simple :pep:`282`-style logging
+========================================================
 
 .. module:: distutils.log
-   :synopsis: A simple logging mechanism, 282-style
+   :synopsis: A simple logging mechanism, :pep:`282`-style
 
 
 :mod:`distutils.spawn` --- Spawn a sub-process
@@ -1566,8 +1582,8 @@ lines, and joining lines with backslashes.
    +------------------+--------------------------------+---------+
    | option name      | description                    | default |
    +==================+================================+=========+
-   | *strip_comments* | strip from ``'#'`` to end-of-  | true    |
-   |                  | line, as well as any           |         |
+   | *strip_comments* | strip from ``'#'`` to          | true    |
+   |                  | end-of-line, as well as any    |         |
    |                  | whitespace leading up to the   |         |
    |                  | ``'#'``\ ---unless it is       |         |
    |                  | escaped by a backslash         |         |
@@ -1846,6 +1862,9 @@ Subclasses of :class:`Command` must define the following methods.
 
 .. module:: distutils.command.bdist_wininst
    :synopsis: Build a Windows installer
+
+.. deprecated:: 3.8
+   Use bdist_wheel (wheel packages) instead.
 
 
 .. % todo

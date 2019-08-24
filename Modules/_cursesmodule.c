@@ -176,6 +176,18 @@ static char *screen_encoding = NULL;
 
 /* Utility Functions */
 
+static inline int
+color_pair_to_attr(short color_number)
+{
+    return ((int)color_number << 8);
+}
+
+static inline short
+attr_to_color_pair(int attr)
+{
+    return (short)((attr & A_COLOR) >> 8);
+}
+
 /*
  * Check the return code from a curses function and return None
  * or raise an exception as appropriate.  These are exported using the
@@ -412,26 +424,26 @@ PyTypeObject PyCursesWindow_Type;
    PARSESTR - format string for argument parsing
 */
 
-#define Window_NoArgNoReturnFunction(X)                 \
-    static PyObject *PyCursesWindow_ ## X               \
-    (PyCursesWindowObject *self, PyObject *args)        \
+#define Window_NoArgNoReturnFunction(X)                         \
+    static PyObject *PyCursesWindow_ ## X                       \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
     { return PyCursesCheckERR(X(self->win), # X); }
 
 #define Window_NoArgTrueFalseFunction(X)                                \
     static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self)                                        \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
     {                                                                   \
         return PyBool_FromLong(X(self->win)); }
 
 #define Window_NoArgNoReturnVoidFunction(X)                     \
     static PyObject * PyCursesWindow_ ## X                      \
-    (PyCursesWindowObject *self)                                \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
     {                                                           \
         X(self->win); Py_RETURN_NONE; }
 
 #define Window_NoArg2TupleReturnFunction(X, TYPE, ERGSTR)               \
     static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self)                                        \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
     {                                                                   \
         TYPE arg1, arg2;                                                \
         X(self->win,arg1,arg2); return Py_BuildValue(ERGSTR, arg1, arg2); }
@@ -606,7 +618,7 @@ _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
     if (type == 2) {
         funcname = "add_wch";
         wstr[1] = L'\0';
-        setcchar(&wcval, wstr, attr, 0, NULL);
+        setcchar(&wcval, wstr, attr, attr_to_color_pair(attr), NULL);
         if (coordinates_group)
             rtn = mvwadd_wch(self->win,y,x, &wcval);
         else {
@@ -2288,7 +2300,7 @@ PyCursesWindow_get_encoding(PyCursesWindowObject *self, void *closure)
 }
 
 static int
-PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value)
+PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     PyObject *ascii;
     char *encoding;
@@ -2424,10 +2436,10 @@ PyTypeObject PyCursesWindow_Type = {
     0,                          /*tp_itemsize*/
     /* methods */
     (destructor)PyCursesWindow_Dealloc, /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     (getattrfunc)0,             /*tp_getattr*/
     (setattrfunc)0,             /*tp_setattr*/
-    0,                          /*tp_reserved*/
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -2621,7 +2633,7 @@ _curses_color_pair_impl(PyObject *module, short color_number)
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return  PyLong_FromLong((long) (color_number << 8));
+    return  PyLong_FromLong(color_pair_to_attr(color_number));
 }
 
 /*[clinic input]
@@ -2906,7 +2918,7 @@ _curses_getwin(PyObject *module, PyObject *file)
     if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0)
         goto error;
 
-    data = _PyObject_CallMethodId(file, &PyId_read, NULL);
+    data = _PyObject_CallMethodIdNoArgs(file, &PyId_read);
     if (data == NULL)
         goto error;
     if (!PyBytes_Check(data)) {
@@ -3644,7 +3656,7 @@ _curses_pair_number_impl(PyObject *module, int attr)
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return PyLong_FromLong((long) ((attr & A_COLOR) >> 8));
+    return PyLong_FromLong(attr_to_color_pair(attr));
 }
 
 /*[clinic input]
@@ -4176,7 +4188,7 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
         wchar_t buffer[2];
         if (PyUnicode_AsWideChar(obj, buffer, 2) != 1) {
             PyErr_Format(PyExc_TypeError,
-                         "expect bytes or str of length 1, or int, "
+                         "expect str of length 1 or int, "
                          "got a str of length %zi",
                          PyUnicode_GET_LENGTH(obj));
             return 0;
@@ -4203,7 +4215,7 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "expect bytes or str of length 1, or int, got %s",
+                     "expect str of length 1 or int, got %s",
                      Py_TYPE(obj)->tp_name);
         return 0;
     }
@@ -4288,6 +4300,59 @@ _curses_use_default_colors_impl(PyObject *module)
     }
 }
 #endif /* STRICT_SYSV_CURSES */
+
+
+#ifdef NCURSES_VERSION
+
+PyDoc_STRVAR(ncurses_version__doc__,
+"curses.ncurses_version\n\
+\n\
+Ncurses version information as a named tuple.");
+
+static PyTypeObject NcursesVersionType;
+
+static PyStructSequence_Field ncurses_version_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyStructSequence_Desc ncurses_version_desc = {
+    "curses.ncurses_version",  /* name */
+    ncurses_version__doc__,    /* doc */
+    ncurses_version_fields,    /* fields */
+    3
+};
+
+static PyObject *
+make_ncurses_version(void)
+{
+    PyObject *ncurses_version;
+    int pos = 0;
+
+    ncurses_version = PyStructSequence_New(&NcursesVersionType);
+    if (ncurses_version == NULL) {
+        return NULL;
+    }
+
+#define SetIntItem(flag) \
+    PyStructSequence_SET_ITEM(ncurses_version, pos++, PyLong_FromLong(flag)); \
+    if (PyErr_Occurred()) { \
+        Py_CLEAR(ncurses_version); \
+        return NULL; \
+    }
+
+    SetIntItem(NCURSES_VERSION_MAJOR)
+    SetIntItem(NCURSES_VERSION_MINOR)
+    SetIntItem(NCURSES_VERSION_PATCH)
+#undef SetIntItem
+
+    return ncurses_version;
+}
+
+#endif /* NCURSES_VERSION */
+
 
 /* List of functions defined in the module */
 
@@ -4425,6 +4490,30 @@ PyInit__curses(void)
     PyDict_SetItemString(d, "version", v);
     PyDict_SetItemString(d, "__version__", v);
     Py_DECREF(v);
+
+#ifdef NCURSES_VERSION
+    /* ncurses_version */
+    if (NcursesVersionType.tp_name == NULL) {
+        if (PyStructSequence_InitType2(&NcursesVersionType,
+                                       &ncurses_version_desc) < 0)
+            return NULL;
+    }
+    v = make_ncurses_version();
+    if (v == NULL) {
+        return NULL;
+    }
+    PyDict_SetItemString(d, "ncurses_version", v);
+    Py_DECREF(v);
+
+    /* prevent user from creating new instances */
+    NcursesVersionType.tp_init = NULL;
+    NcursesVersionType.tp_new = NULL;
+    if (PyDict_DelItemString(NcursesVersionType.tp_dict, "__new__") < 0 &&
+        PyErr_ExceptionMatches(PyExc_KeyError))
+    {
+        PyErr_Clear();
+    }
+#endif /* NCURSES_VERSION */
 
     SetDictInt("ERR", ERR);
     SetDictInt("OK", OK);

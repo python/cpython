@@ -11,8 +11,7 @@ import warnings
 from test.support import (
     forget, make_legacy_pyc, unload, verbose, no_tracing,
     create_empty_file, temp_dir)
-from test.support.script_helper import (
-    make_pkg, make_script, make_zip_pkg, make_zip_script)
+from test.support.script_helper import make_script, make_zip_script
 
 
 import runpy
@@ -238,9 +237,8 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
                 if verbose > 1: print("  Next level in:", sub_dir)
                 if verbose > 1: print("  Created:", pkg_fname)
         mod_fname = os.path.join(sub_dir, test_fname)
-        mod_file = open(mod_fname, "w")
-        mod_file.write(source)
-        mod_file.close()
+        with open(mod_fname, "w") as mod_file:
+            mod_file.write(source)
         if verbose > 1: print("  Created:", mod_fname)
         mod_name = (pkg_name+".")*depth + mod_base
         mod_spec = importlib.util.spec_from_file_location(mod_name,

@@ -18,10 +18,6 @@
  * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA, OR PROFITS, WHETHER
  * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * Nevertheless, I would like to know about bugs in this library or
- * suggestions for improvment.  Send bug reports and feedback to
- * davegottner@delphi.com.
  *---------------------------------------------------------------------------*/
 
 /* Modified to support --help and --version, as well as /? on Windows
@@ -31,17 +27,27 @@
 #include <stdio.h>
 #include <string.h>
 #include <wchar.h>
-#include "internal/pygetopt.h"
+#include "pycore_getopt.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int _PyOS_opterr = 1;          /* generate error messages */
-int _PyOS_optind = 1;          /* index into argv array   */
-wchar_t *_PyOS_optarg = NULL;     /* optional argument       */
+int _PyOS_opterr = 1;                 /* generate error messages */
+Py_ssize_t _PyOS_optind = 1;          /* index into argv array   */
+const wchar_t *_PyOS_optarg = NULL;   /* optional argument       */
 
-static wchar_t *opt_ptr = L"";
+static const wchar_t *opt_ptr = L"";
+
+/* Python command line short and long options */
+
+#define SHORT_OPTS L"bBc:dEhiIJm:OqRsStuvVW:xX:?"
+
+static const _PyOS_LongOption longopts[] = {
+    {L"check-hash-based-pycs", 1, 0},
+    {NULL, 0, 0},
+};
+
 
 void _PyOS_ResetGetOpt(void)
 {
@@ -51,8 +57,7 @@ void _PyOS_ResetGetOpt(void)
     opt_ptr = L"";
 }
 
-int _PyOS_GetOpt(int argc, wchar_t **argv, wchar_t *optstring,
-                 const _PyOS_LongOption *longopts, int *longindex)
+int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
 {
     wchar_t *ptr;
     wchar_t option;
@@ -128,7 +133,7 @@ int _PyOS_GetOpt(int argc, wchar_t **argv, wchar_t *optstring,
         return '_';
     }
 
-    if ((ptr = wcschr(optstring, option)) == NULL) {
+    if ((ptr = wcschr(SHORT_OPTS, option)) == NULL) {
         if (_PyOS_opterr)
             fprintf(stderr, "Unknown option: -%c\n", (char)option);
         return '_';

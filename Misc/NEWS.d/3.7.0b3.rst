@@ -295,7 +295,7 @@ only 1 bit left for addresses.
 .. nonce: lgFXWl
 .. section: Library
 
-Fix C implemetation of ``ABC.__subclasscheck__(cls, subclass)`` crashed when
+Fix C implementation of ``ABC.__subclasscheck__(cls, subclass)`` crashed when
 ``subclass`` is not a type object.
 
 ..
@@ -517,7 +517,7 @@ Simplify and rename StringTranslatePseudoMapping in pyparse.
 .. nonce: dL5x7C
 .. section: Tools/Demos
 
-Add an ``-n`` flag for ``Tools/scripts/pathfix.py`` to disbale automatic
+Add an ``-n`` flag for ``Tools/scripts/pathfix.py`` to disable automatic
 backup creation (files with ``~`` suffix).
 
 ..

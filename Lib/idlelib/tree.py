@@ -17,7 +17,7 @@
 import os
 
 from tkinter import *
-from tkinter.ttk import Scrollbar
+from tkinter.ttk import Frame, Scrollbar
 
 from idlelib.config import idleConf
 from idlelib import zoomheight

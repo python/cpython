@@ -1,6 +1,9 @@
 import os
+import signal
 import socket
 import sys
+import time
+import threading
 import unittest
 from unittest import mock
 
@@ -12,6 +15,7 @@ import _winapi
 
 import asyncio
 from asyncio import windows_events
+from asyncio.streams import _StreamProtocol
 from test.test_asyncio import utils as test_utils
 
 
@@ -31,6 +35,28 @@ class UpperProto(asyncio.Protocol):
         if b'\n' in data:
             self.trans.write(b''.join(self.buf).upper())
             self.trans.close()
+
+
+class ProactorLoopCtrlC(test_utils.TestCase):
+
+    def test_ctrl_c(self):
+
+        def SIGINT_after_delay():
+            time.sleep(0.1)
+            signal.raise_signal(signal.SIGINT)
+
+        thread = threading.Thread(target=SIGINT_after_delay)
+        loop = asyncio.get_event_loop()
+        try:
+            # only start the loop once the event loop is running
+            loop.call_soon(thread.start)
+            loop.run_forever()
+            self.fail("should not fall through 'run_forever'")
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.close_loop(loop)
+        thread.join()
 
 
 class ProactorTests(test_utils.TestCase):
@@ -73,14 +99,16 @@ class ProactorTests(test_utils.TestCase):
 
         clients = []
         for i in range(5):
-            stream_reader = asyncio.StreamReader(loop=self.loop)
-            protocol = asyncio.StreamReaderProtocol(stream_reader,
-                                                    loop=self.loop)
+            stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
+                                    loop=self.loop, _asyncio_internal=True)
+            protocol = _StreamProtocol(stream,
+                                       loop=self.loop,
+                                       _asyncio_internal=True)
             trans, proto = await self.loop.create_pipe_connection(
                 lambda: protocol, ADDRESS)
             self.assertIsInstance(trans, asyncio.Transport)
             self.assertEqual(protocol, proto)
-            clients.append((stream_reader, trans))
+            clients.append((stream, trans))
 
         for i, (r, w) in enumerate(clients):
             w.write('lower-{}\n'.format(i).encode())
@@ -89,6 +117,7 @@ class ProactorTests(test_utils.TestCase):
             response = await r.readline()
             self.assertEqual(response, 'LOWER-{}\n'.format(i).encode())
             w.close()
+            await r.close()
 
         server.close()
 

@@ -1,3 +1,0 @@
-Improve consistency of errors raised by ``issubclass()`` when called with a
-non-class and an abstract base class as the first and second arguments,
-respectively. Patch by Josh Bronson.

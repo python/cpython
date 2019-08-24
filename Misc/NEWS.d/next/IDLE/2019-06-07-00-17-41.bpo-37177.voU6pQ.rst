@@ -1,0 +1,2 @@
+Properly 'attach' search dialogs to their main window so that they behave
+like other dialogs and do not get hidden behind their main window.

@@ -115,7 +115,7 @@ def get_ld_headers(file):
         else:
             break
     p.stdout.close()
-    p.wait
+    p.wait()
     return ldr_headers
 
 def get_shared(ld_headers):

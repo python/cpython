@@ -24,14 +24,16 @@ programmers will encounter a fragment of code like this::
    z++;
 
 Only the ``x++`` statement is executed if the condition is true, but the
-indentation leads you to believe otherwise.  Even experienced C programmers will
-sometimes stare at it a long time wondering why ``y`` is being decremented even
+indentation leads many to believe otherwise.  Even experienced C programmers will
+sometimes stare at it a long time wondering as to why ``y`` is being decremented even
 for ``x > y``.
 
 Because there are no begin/end brackets, Python is much less prone to
 coding-style conflicts.  In C there are many different ways to place the braces.
-If you're used to reading and writing code that uses one style, you will feel at
-least slightly uneasy when reading (or being required to write) another style.
+After becoming used to reading and writing code using a particular style,
+it is normal to feel somewhat uneasy when reading (or being required to write)
+in a different one.
+
 
 Many coding styles place begin/end brackets on a line by themselves.  This makes
 programs considerably longer and wastes valuable screen space, making it harder
@@ -215,24 +217,25 @@ objects using the ``for`` statement.  For example, :term:`file objects
 Why does Python use methods for some functionality (e.g. list.index()) but functions for other (e.g. len(list))?
 ----------------------------------------------------------------------------------------------------------------
 
-The major reason is history. Functions were used for those operations that were
-generic for a group of types and which were intended to work even for objects
-that didn't have methods at all (e.g. tuples).  It is also convenient to have a
-function that can readily be applied to an amorphous collection of objects when
-you use the functional features of Python (``map()``, ``zip()`` et al).
+As Guido said:
 
-In fact, implementing ``len()``, ``max()``, ``min()`` as a built-in function is
-actually less code than implementing them as methods for each type.  One can
-quibble about individual cases but it's a part of Python, and it's too late to
-make such fundamental changes now. The functions have to remain to avoid massive
-code breakage.
+    (a) For some operations, prefix notation just reads better than
+    postfix -- prefix (and infix!) operations have a long tradition in
+    mathematics which likes notations where the visuals help the
+    mathematician thinking about a problem. Compare the easy with which we
+    rewrite a formula like x*(a+b) into x*a + x*b to the clumsiness of
+    doing the same thing using a raw OO notation.
 
-.. XXX talk about protocols?
+    (b) When I read code that says len(x) I *know* that it is asking for
+    the length of something. This tells me two things: the result is an
+    integer, and the argument is some kind of container. To the contrary,
+    when I read x.len(), I have to already know that x is some kind of
+    container implementing an interface or inheriting from a class that
+    has a standard len(). Witness the confusion we occasionally have when
+    a class that is not implementing a mapping has a get() or keys()
+    method, or something that isn't a file has a write() method.
 
-.. note::
-
-   For string operations, Python has moved from external functions (the
-   ``string`` module) to methods.  However, ``len()`` is still a function.
+    -- https://mail.python.org/pipermail/python-3000/2006-November/004643.html
 
 
 Why is join() a string method instead of a list or tuple method?
@@ -527,7 +530,7 @@ Some unacceptable solutions that have been proposed:
      mydict = {[1, 2]: '12'}
      print(mydict[[1, 2]])
 
-  would raise a KeyError exception because the id of the ``[1, 2]`` used in the
+  would raise a :exc:`KeyError` exception because the id of the ``[1, 2]`` used in the
   second line differs from that in the first line.  In other words, dictionary
   keys should be compared using ``==``, not using :keyword:`is`.
 
@@ -638,11 +641,11 @@ to the end of some internal list; an interface specification cannot test that
 your :meth:`append` implementation will actually do this correctly, but it's
 trivial to check this property in a test suite.
 
-Writing test suites is very helpful, and you might want to design your code with
-an eye to making it easily tested.  One increasingly popular technique,
-test-directed development, calls for writing parts of the test suite first,
-before you write any of the actual code.  Of course Python allows you to be
-sloppy and not write test cases at all.
+Writing test suites is very helpful, and you might want to design your code to
+make it easily tested. One increasingly popular technique, test-driven
+development, calls for writing parts of the test suite first, before you write
+any of the actual code.  Of course Python allows you to be sloppy and not write
+test cases at all.
 
 
 Why is there no goto?

@@ -784,7 +784,7 @@ class _mboxMMDF(_singlefileMailbox):
     def get_string(self, key, from_=False):
         """Return a string representation or raise a KeyError."""
         return email.message_from_bytes(
-            self.get_bytes(key)).as_string(unixfrom=from_)
+            self.get_bytes(key, from_)).as_string(unixfrom=from_)
 
     def get_bytes(self, key, from_=False):
         """Return a string representation or raise a KeyError."""
