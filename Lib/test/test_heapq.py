@@ -280,11 +280,6 @@ class LenOnly:
     def __len__(self):
         return 10
 
-class GetOnly:
-    "Dummy sequence class defining __getitem__ but not __len__."
-    def __getitem__(self, ndx):
-        return 10
-
 class CmpErr:
     "Dummy element that always raises an error during comparison"
     def __eq__(self, other):
