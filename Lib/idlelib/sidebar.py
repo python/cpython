@@ -182,14 +182,8 @@ class LineNumbers(BaseSideBar):
         end_line_delegator = EndLineDelegator(self.update_sidebar_text)
         # Insert the delegator after the undo delegator, so that line numbers
         # are properly updated after undo and redo actions.
-        end_line_delegator.setdelegate(self.editwin.undo.delegate)
-        self.editwin.undo.setdelegate(end_line_delegator)
-        # Reset the delegator caches of the delegators "above" the
-        # end line delegator we just inserted.
-        delegator = self.editwin.per.top
-        while delegator is not end_line_delegator:
-            delegator.resetcache()
-            delegator = delegator.delegate
+        self.editwin.per.insertfilterafter(filter=end_line_delegator,
+                                           after=self.editwin.undo)
 
     def bind_events(self):
         # Ensure focus is always redirected to the main editor text widget.
@@ -450,16 +444,11 @@ class ShellSidebar:
 
         # Insert the TextChangeDelegator after the last delegator, so that
         # the sidebar reflects final changes to the text widget contents.
-        delegator = self.editwin.per.top
-        if delegator.delegate != self.text:
-            while delegator.delegate != self.editwin.per.bottom:
-                # Reset the delegator caches of the delegators "above" the
-                # TextChangeDelegator we will insert.
-                delegator.resetcache()
-                delegator = delegator.delegate
-        last_delegator = delegator
-        change_delegator.setdelegate(last_delegator.delegate)
-        last_delegator.setdelegate(change_delegator)
+        d = self.editwin.per.top
+        if d.delegate is not self.text:
+            while d.delegate is not self.editwin.per.bottom:
+                d = d.delegate
+        self.editwin.per.insertfilterafter(change_delegator, d)
 
         self.text['yscrollcommand'] = self.yscroll_event
 

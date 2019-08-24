@@ -782,9 +782,7 @@ class EditorWindow(object):
             self.color = self.ColorDelegator()
         # can add more colorizers here...
         if self.color:
-            self.per.removefilter(self.undo)
-            self.per.insertfilter(self.color)
-            self.per.insertfilter(self.undo)
+            self.per.insertfilterafter(filter=self.color, after=self.undo)
 
     def _rmcolorizer(self):
         if not self.color:
