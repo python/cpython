@@ -2397,29 +2397,14 @@ class CommandLineTest(unittest.TestCase):
 consume = tuple
 
 
-def add_dirs(zipfile):
+def add_dirs(zf):
     """
-    Given a writable zipfile, inject directory entries for
+    Given a writable zip file zf, inject directory entries for
     any directories implied by the presence of children.
     """
-    names = zipfile.namelist()
-    subdirs = set(
-        name
-        for name in map(posixpath.dirname, names)
-        if name and name + "/" not in names
-    )
-    missingdirs = set(
-        str(p)
-        for sd in subdirs
-        for p in pathlib.PurePath(sd).parents
-        if str(p) not in {".", "/"}
-    )
-    subdirs.update(missingdirs)
-    consume(
-        zipfile.writestr(name + "/", b"")
-        for name in subdirs
-    )
-    return zipfile
+    for name in zipfile.Path._implied_dirs(zf.namelist()):
+        zf.writestr(name, b"")
+    return zf
 
 
 def build_abcde_files():
