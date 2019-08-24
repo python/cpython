@@ -6259,7 +6259,6 @@ def test_main():
 @requireAttrs(socket, "recv_fds")
 @requireAttrs(socket, "AF_UNIX")
 class SendRecvFdsTests(unittest.TestCase):
-    @unittest.skipIf(sys.platform == 'darwin', 'test not working for MacOSX')
     def testSendAndRecvFds(self):
         def close_pipes(pipes):
             for fd1, fd2 in pipes:

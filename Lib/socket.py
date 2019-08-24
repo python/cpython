@@ -51,7 +51,7 @@ the setsockopt() and getsockopt() methods.
 import _socket
 from _socket import *
 
-import os, sys, io, selectors, array
+import os, sys, io, selectors
 from enum import IntEnum, IntFlag
 
 try:
@@ -466,6 +466,8 @@ def fromfd(fd, family, type, proto=0):
     return socket(family, type, proto, nfd)
 
 if hasattr(_socket.socket, "sendmsg"):
+    import array
+
     def send_fds(sock, buffers, fds, flags=0, address=None):
         """ send_fds(sock, buffers, fds[, flags[, address]]) -> socket object
 
@@ -476,6 +478,8 @@ if hasattr(_socket.socket, "sendmsg"):
     __all__.append("send_fds")
 
 if hasattr(_socket.socket, "recvmsg"):
+    import array
+
     def recv_fds(sock, bufsize, maxfds, flags=0):
         """ recv_fds(sock, bufsize, maxfds[, flags]) -> (socket object, socket object)
 
@@ -491,6 +495,7 @@ if hasattr(_socket.socket, "recvmsg"):
                 # Append data, ignoring any truncated integers at the end.
                 fds.frombytes(cmsg_data[:
                         len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+
         return msg, list(fds), flags, addr
     __all__.append("recv_fds")
 

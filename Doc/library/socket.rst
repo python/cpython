@@ -1584,7 +1584,7 @@ to sockets.
 
    .. note::
 
-      Any truncated integers at the end are ignored.
+      Any truncated integers at the end of the list of file descriptors.
 
 .. method:: socket.sendfile(file, offset=0, count=None)
 
