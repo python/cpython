@@ -2297,7 +2297,7 @@ class Path:
             p + "/"
             for sd in subdirs
             for p in _parents(sd)
-            if p not in {".", "/"} and p + "/" not in subdirs
+            if p + "/" not in subdirs
         ]
         return names + subdirs + missing_dirs
 
