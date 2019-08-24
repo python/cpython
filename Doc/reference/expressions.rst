@@ -1425,6 +1425,10 @@ built-in types.
   themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3``, ``x
   == x``, ``x != x`` are all false.  This behavior is compliant with IEEE 754.
 
+* ``None`` and ``NotImplemented`` are singletons.  :PEP:`8` advises that
+  comparisons for singletons should always be done with ``is`` or ``is not``,
+  never the equality operators.
+
 * Binary sequences (instances of :class:`bytes` or :class:`bytearray`) can be
   compared within and across their types.  They compare lexicographically using
   the numeric values of their elements.
