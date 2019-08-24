@@ -11,18 +11,23 @@ PYTHON = sys.executable
 
 
 def iter_symbols(dirnames, binary=PYTHON, *,
+                 # Alternately, use look_up_known_symbol()
+                 # from c_statics.supported.
+                 find_local_symbol=source.find_symbol,
                  _file_exists=os.path.exists,
-                 _find_local_symbol=source.find_symbol,
                  _iter_symbols_nm=(lambda b, fls: _iter_symbols_nm(b, fls)),
                  ):
     """Yield a Symbol for each symbol found in the binary."""
     if not _file_exists(binary):
         raise Exception('executable missing (need to build it first?)')
 
-    cache = {}
-    def find_local_symbol(name):
-        return _find_local_symbol(name, dirnames, _perfilecache=cache)
-    yield from _iter_symbols_nm(binary, find_local_symbol)
+    if not find_local_symbol:
+        yield from _iter_symbols_nm(binary)
+    else:
+        cache = {}
+        def find_local_symbol(name, *, _find=find_local_symbol):
+            return _find(name, dirnames, _perfilecache=cache)
+        yield from _iter_symbols_nm(binary, find_local_symbol)
 
 
 #############################
@@ -82,20 +87,22 @@ def _iter_symbols_nm(binary, find_local_symbol=None,
         raise
     for line in output.splitlines():
         (name, kind, external, filename, funcname, vartype,
-         )= _parse_nm_line(line, _find_local_symbol=find_local_symbol)
+         ) = _parse_nm_line(line,
+                            _find_local_symbol=find_local_symbol,
+                            )
         if kind != info.Symbol.KIND.VARIABLE:
             continue
         elif _is_special_symbol(name):
             continue
-        elif not filename:
-            raise Exception(f'missing filename: {name}')
+        assert vartype is None
         yield info.Symbol(
-                name=name,
+                id=info.ID(
+                    filename=filename,
+                    funcname=funcname,
+                    name=name,
+                    ),
                 kind=kind,
                 external=external,
-                filename=filename,
-                funcname=funcname,
-                declaration=vartype,
                 )
 
 
@@ -111,22 +118,35 @@ def _parse_nm_line(line, *, _find_local_symbol=None):
 
     name, _, filename = line.partition('\t')
     name = name.strip()
-
-    funcname = None
-    vartype = None
     if filename:
         filename = os.path.relpath(filename.partition(':')[0])
-    elif kind != info.Symbol.KIND.VARIABLE:
-        pass
-    elif _is_special_symbol(name):
-        pass
-    elif _find_local_symbol is not None:
-        orig = name
-        name, sep, digits = name.partition('.')
-        if not sep or not digits.isdigit():
-            print(_origline)
-            raise Exception(f'expected local variable, got {orig}')
-        filename, funcname, vartype = _find_local_symbol(name)
+    else:
+        filename = info.UNKNOWN
 
-#    return info.Symbol(name, kind, external, filename or None, funcname)
-    return name, kind, external, filename or None, funcname, vartype
+    vartype = None
+    name, islocal = _parse_nm_name(name, kind)
+    if islocal:
+        funcname = info.UNKNOWN
+        if _find_local_symbol is not None:
+            filename, funcname, vartype = _find_local_symbol(name)
+            filename = filename or info.UNKNOWN
+            funcname = funcname or info.UNKNOWN
+    else:
+        funcname = None
+        # XXX fine filename and vartype?
+    return name, kind, external, filename, funcname, vartype
+
+
+def _parse_nm_name(name, kind):
+    if kind != info.Symbol.KIND.VARIABLE:
+        return name, None
+    if _is_special_symbol(name):
+        return name, None
+
+    actual, sep, digits = name.partition('.')
+    if not sep:
+        return name, False
+
+    if not digits.isdigit():
+        raise Exception(f'got bogus name {name}')
+    return actual, True
