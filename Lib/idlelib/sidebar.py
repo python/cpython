@@ -371,7 +371,7 @@ class WrappedLineHeightChangeDelegator(Delegator):
     def __init__(self, callback):
         """
         callback - Callable, will be called when an insert, delete or replace
-                   action on the text widget requires updating the shell
+                   action on the text widget may require updating the shell
                    sidebar.
         """
         Delegator.__init__(self)
@@ -419,7 +419,6 @@ class WrappedLineHeightChangeDelegator(Delegator):
 
         if is_single_line:
             after_displaylines = get_displaylines(self, index1)
-            print("displaylines", before_displaylines, after_displaylines)
             if after_displaylines == before_displaylines:
                 return  # no need to update the sidebar
 
