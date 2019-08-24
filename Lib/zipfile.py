@@ -2287,7 +2287,7 @@ class Path:
     __truediv__ = joinpath
 
     @staticmethod
-    def _add_implied_dirs(names):
+    def _implied_dirs(names):
         subdirs = list(_unique_everseen([
             name + "/"
             for name in map(posixpath.dirname, names)
@@ -2299,7 +2299,11 @@ class Path:
             for p in _parents(sd)
             if p + "/" not in subdirs
         ]
-        return names + subdirs + missing_dirs
+        return subdirs + missing_dirs
+
+    @classmethod
+    def _add_implied_dirs(cls, names):
+        return names + cls._implied_dirs(names)
 
     @property
     def parent(self):
