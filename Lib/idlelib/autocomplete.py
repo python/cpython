@@ -10,7 +10,7 @@ import re
 import string
 import sys
 
-# Two types of completions; defined here for autocomplete_w import below.
+# Three types of completions; defined here for autocomplete_w import below.
 ATTRS, FILES, DICTKEYS = 0, 1, 2
 from idlelib import autocomplete_w
 from idlelib.config import idleConf
