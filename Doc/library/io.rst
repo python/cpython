@@ -671,7 +671,7 @@ than raw I/O does.
 
    A buffered binary stream over a readable, sequential :class:`RawIOBase`
    raw binary stream.  It inherits :class:`BufferedIOBase`.
-   
+
    When reading data from this object, a larger amount of data may be
    requested from the underlying raw stream, and kept in an internal buffer.
    The buffered data can then be returned directly on subsequent reads.
@@ -708,7 +708,7 @@ than raw I/O does.
 
    A buffered binary stream over a writeable, sequential :class:`RawIOBase`
    raw binary stream.  It inherits :class:`BufferedIOBase`.
-   
+
    When writing to this object, data is normally placed into an internal
    buffer.  The buffer will be written out to the underlying :class:`RawIOBase`
    object under various conditions, including:
@@ -963,7 +963,7 @@ Text I/O
 
    A text stream using an in-memory text buffer.  It inherits
    :class:`TextIOBase`.
-   
+
    The text buffer is discarded when the :meth:`~IOBase.close` method is
    called.
 
