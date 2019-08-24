@@ -198,14 +198,14 @@ to provide an interface to files in the machine's file system.
 The :class:`BufferedIOBase` ABC extends :class:`IOBase`.  It deals with
 buffering on a raw byte stream (:class:`RawIOBase`).  Its subclasses,
 :class:`BufferedWriter`, :class:`BufferedReader`, and :class:`BufferedRWPair`
-buffer streams that are readable, writable, and both readable and writable.
+buffer streams that are readable, writable, and both readable and writable, respectively.
 :class:`BufferedRandom` provides a buffered interface to random access streams.
 Another :class:`BufferedIOBase` subclass, :class:`BytesIO`, is a stream of
 in-memory bytes.
 
 The :class:`TextIOBase` ABC extends :class:`IOBase`.  It deals with
 streams whose bytes represent text, and handles encoding and decoding to and
-from strings.  :class:`TextIOWrapper`, which extends it, is a buffered text
+from strings.  :class:`TextIOWrapper`, which extends :class:`TextIOBase`, is a buffered text
 interface to a buffered raw stream (:class:`BufferedIOBase`).  Finally,
 :class:`StringIO` is an in-memory stream for text.
 
@@ -273,7 +273,7 @@ I/O Base Classes
       with open('spam.txt', 'w') as file:
           file.write('Spam and eggs!')
 
-   :class:`IOBase` provides these data attribute and methods:
+   :class:`IOBase` provides these data attributes and methods:
 
    .. method:: close()
 
