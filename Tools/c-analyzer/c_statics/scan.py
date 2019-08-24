@@ -21,6 +21,7 @@ def statics_from_symbols(dirnames, iter_symbols):
                 funcname=symbol.funcname or None,
                 name=symbol.name,
                 vartype='???',
+                isstatic=True,
                 )
 
 

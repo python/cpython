@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from c_analyzer_common import info
+from c_analyzer_common import info, util
 from c_analyzer_common.util import classonly, _NTBase
 
 
@@ -20,11 +20,15 @@ class Variable(_NTBase,
     """Information about a single variable declaration."""
 
     __slots__ = ()
+    _isstatic = util.Slot()
 
     @classonly
-    def from_parts(cls, filename, funcname, name, vartype):
+    def from_parts(cls, filename, funcname, name, vartype, isstatic=False):
         id = info.ID(filename, funcname, name)
-        return cls(id, vartype)
+        self = cls(id, vartype)
+        if isstatic:
+            self._isstatic = True
+        return self
 
     def __new__(cls, id, vartype):
         self = super().__new__(
@@ -58,7 +62,11 @@ class Variable(_NTBase,
 
     @property
     def isstatic(self):
-        return 'static' in self.vartype.split()
+        try:
+            return self._isstatic
+        except AttributeError:
+            self._isstatic = ('static' in self.vartype.split())
+            return self._isstatic
 
     @property
     def isconst(self):
