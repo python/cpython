@@ -1,0 +1,3 @@
+The ``CHECK_BINOP`` macro inside :file:`Object/longobject.c` has been
+replaced with an explicit :c:macro:`Py_RETURN_NOTIMPLEMENTED` at each call
+site, inside an ordinary ``if``.
