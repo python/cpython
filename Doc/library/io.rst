@@ -464,7 +464,7 @@ I/O Base Classes
    :class:`RawIOBase` implementation, but wrap one, like
    :class:`BufferedWriter` and :class:`BufferedReader` do.
 
-   :class:`BufferedIOBase` provides or overrides these data attribute and
+   :class:`BufferedIOBase` provides or overrides these data attributes and
    methods in addition to those from :class:`IOBase`:
 
    .. attribute:: raw
@@ -925,7 +925,7 @@ Text I/O
       locale encoding using :func:`locale.setlocale`, use the current locale
       encoding instead of the user preferred encoding.
 
-   :class:`TextIOWrapper` provides these data attributes and method in
+   :class:`TextIOWrapper` provides these data attributes and methods in
    addition to those from :class:`TextIOBase` and :class:`IOBase`:
 
    .. attribute:: line_buffering
@@ -973,10 +973,8 @@ Text I/O
    the buffer.
 
    The *newline* argument works like that of :class:`TextIOWrapper`,
-   except that if *newline* is set to ``None``, newlines are written as
-   ``\n`` on all platforms, but universal newline decoding is still
-   performed when reading.  The default is to consider only ``\n``
-   characters as ends of lines and to do no newline translation.
+   except that when writing output to the stream, if *newline* is ``None``,
+   newlines are written as ``\n`` on all platforms.
 
    :class:`StringIO` provides this method in addition to those from
    :class:`TextIOBase` and :class:`IOBase`:
@@ -1070,5 +1068,5 @@ buffered object.
 
 The above implicitly extends to text files, since the :func:`open()` function
 will wrap a buffered object inside a :class:`TextIOWrapper`.  This includes
-standard streams and therefore affects the built-in function :func:`print()` as
+standard streams and therefore affects the built-in :func:`print()` function as
 well.
