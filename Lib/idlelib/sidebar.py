@@ -379,12 +379,12 @@ class WrappedLineHeightChangeDelegator(Delegator):
 
     def insert(self, index, chars, tags=None):
         is_single_line = '\n' not in chars
-        if not is_single_line:
+        if is_single_line:
             before_displaylines = get_displaylines(self, index)
 
         self.delegate.insert(index, chars, tags)
 
-        if not is_single_line:
+        if is_single_line:
             after_displaylines = get_displaylines(self, index)
             if after_displaylines == before_displaylines:
                 return  # no need to update the sidebar
@@ -430,7 +430,7 @@ class ShellSidebar:
         if d.delegate is not self.text:
             while d.delegate is not self.editwin.per.bottom:
                 d = d.delegate
-        self.editwin.per.insertfilterafter(change_delegator, d)
+        self.editwin.per.insertfilterafter(change_delegator, after=d)
 
         self.text['yscrollcommand'] = self.yscroll_event
 
