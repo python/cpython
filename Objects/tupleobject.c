@@ -21,9 +21,7 @@ static struct {
     PyGC_Head gc_head;
     PyTupleObject obj;
 } _PyTuple_EmptyStruct = {
-    .gc_head = { .gc = {
-        .gc_refs = (((size_t)_PyGC_REFS_UNTRACKED) << _PyGC_REFS_SHIFT)
-    } },
+    .gc_head = {0, 0},
     .obj = {
         PyVarObject_HEAD_INIT(&PyTuple_Type, 0)
         { NULL }
