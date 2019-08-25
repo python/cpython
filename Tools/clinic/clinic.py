@@ -3107,7 +3107,7 @@ class float_converter(CConverter):
         if self.format_unit == 'f':
             return """
                 if (PyFloat_CheckExact({argname})) {{{{
-                   {paramname} = PyFloat_AS_DOUBLE({argname});
+                    {paramname} = (float) (PyFloat_AS_DOUBLE({argname}));
                 }}}}
                 else
                 {{{{
@@ -3129,11 +3129,11 @@ class double_converter(CConverter):
         if self.format_unit == 'd':
             return """
                 if (PyFloat_CheckExact({argname})) {{{{
-                   {paramname} = PyFloat_AS_DOUBLE({argname});
+                    {paramname} = PyFloat_AS_DOUBLE({argname});
                 }}}}
                 else
                 {{{{
-                    {paramname} = (float) PyFloat_AsDouble({argname});
+                    {paramname} = PyFloat_AsDouble({argname});
                     if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
                         goto exit;
                     }}}}
