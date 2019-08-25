@@ -1587,9 +1587,15 @@ test_float_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    a = (float) PyFloat_AsDouble(args[0]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[0])) {
+        a = (float) (PyFloat_AS_DOUBLE(args[0]));
+    }
+    else
+    {
+        a = (float) PyFloat_AsDouble(args[0]);
+        if (a == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
 skip_optional:
     return_value = test_float_converter_impl(module, a);
@@ -1600,7 +1606,7 @@ exit:
 
 static PyObject *
 test_float_converter_impl(PyObject *module, float a)
-/*[clinic end generated code: output=8293566b2ec1fc52 input=259c0d98eca35034]*/
+/*[clinic end generated code: output=6b9c7443d2601cea input=259c0d98eca35034]*/
 
 
 /*[clinic input]
@@ -1634,9 +1640,15 @@ test_double_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    a = PyFloat_AsDouble(args[0]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[0])) {
+        a = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        a = PyFloat_AsDouble(args[0]);
+        if (a == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
 skip_optional:
     return_value = test_double_converter_impl(module, a);
@@ -1647,7 +1659,7 @@ exit:
 
 static PyObject *
 test_double_converter_impl(PyObject *module, double a)
-/*[clinic end generated code: output=487081a9b8da67ab input=c6a9945706a41c27]*/
+/*[clinic end generated code: output=5b7b9a0f0791b2cc input=c6a9945706a41c27]*/
 
 
 /*[clinic input]

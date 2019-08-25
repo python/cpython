@@ -615,9 +615,15 @@ audioop_mul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    factor = PyFloat_AsDouble(args[2]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[2])) {
+        factor = PyFloat_AS_DOUBLE(args[2]);
+    }
+    else
+    {
+        factor = PyFloat_AsDouble(args[2]);
+        if (factor == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = audioop_mul_impl(module, &fragment, width, factor);
 
@@ -671,13 +677,25 @@ audioop_tomono(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    lfactor = PyFloat_AsDouble(args[2]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[2])) {
+        lfactor = PyFloat_AS_DOUBLE(args[2]);
     }
-    rfactor = PyFloat_AsDouble(args[3]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    else
+    {
+        lfactor = PyFloat_AsDouble(args[2]);
+        if (lfactor == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[3])) {
+        rfactor = PyFloat_AS_DOUBLE(args[3]);
+    }
+    else
+    {
+        rfactor = PyFloat_AsDouble(args[3]);
+        if (rfactor == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = audioop_tomono_impl(module, &fragment, width, lfactor, rfactor);
 
@@ -731,13 +749,25 @@ audioop_tostereo(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    lfactor = PyFloat_AsDouble(args[2]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[2])) {
+        lfactor = PyFloat_AS_DOUBLE(args[2]);
     }
-    rfactor = PyFloat_AsDouble(args[3]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    else
+    {
+        lfactor = PyFloat_AsDouble(args[2]);
+        if (lfactor == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[3])) {
+        rfactor = PyFloat_AS_DOUBLE(args[3]);
+    }
+    else
+    {
+        rfactor = PyFloat_AsDouble(args[3]);
+        if (rfactor == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = audioop_tostereo_impl(module, &fragment, width, lfactor, rfactor);
 
@@ -1439,4 +1469,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=2b173a25726252e9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af32f4bce9c934fa input=a9049054013a1b77]*/

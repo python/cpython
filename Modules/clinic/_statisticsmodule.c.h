@@ -26,17 +26,35 @@ _statistics__normal_dist_inv_cdf(PyObject *module, PyObject *const *args, Py_ssi
     if (!_PyArg_CheckPositional("_normal_dist_inv_cdf", nargs, 3, 3)) {
         goto exit;
     }
-    p = PyFloat_AsDouble(args[0]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[0])) {
+        p = PyFloat_AS_DOUBLE(args[0]);
     }
-    mu = PyFloat_AsDouble(args[1]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    else
+    {
+        p = PyFloat_AsDouble(args[0]);
+        if (p == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
-    sigma = PyFloat_AsDouble(args[2]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[1])) {
+        mu = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        mu = PyFloat_AsDouble(args[1]);
+        if (mu == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[2])) {
+        sigma = PyFloat_AS_DOUBLE(args[2]);
+    }
+    else
+    {
+        sigma = PyFloat_AsDouble(args[2]);
+        if (sigma == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     _return_value = _statistics__normal_dist_inv_cdf_impl(module, p, mu, sigma);
     if ((_return_value == -1.0) && PyErr_Occurred()) {
@@ -47,4 +65,4 @@ _statistics__normal_dist_inv_cdf(PyObject *module, PyObject *const *args, Py_ssi
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ba6af124acd34732 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c5826928a238326c input=a9049054013a1b77]*/
