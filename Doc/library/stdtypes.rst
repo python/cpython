@@ -4355,7 +4355,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       :ref:`documentation of view objects <dict-views>`.
 
       An equality comparison between one ``dict.values()`` view and another
-      will always return ``False``. This also applies when comparing a 
+      will always return ``False``. This also applies when comparing
       ``dict.values()`` to itself::
 
          >>> d = {'a' : 1}
