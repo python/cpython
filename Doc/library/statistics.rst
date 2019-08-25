@@ -734,32 +734,6 @@ Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
     >>> [round(sat.inv_cdf(p / 10)) for p in range(1, 10)]
     [810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
 
-What percentage of men and women will have the same height in `two normally
-distributed populations with known means and standard deviations
-<http://www.usablestats.com/lessons/normal>`_?
-
-    >>> men = NormalDist(70, 4)
-    >>> women = NormalDist(65, 3.5)
-    >>> ovl = men.overlap(women)
-    >>> round(ovl * 100.0, 1)
-    50.3
-
-To estimate the distribution for a model than isn't easy to solve
-analytically, :class:`NormalDist` can generate input samples for a `Monte
-Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
-
-.. doctest::
-
-    >>> def model(x, y, z):
-    ...     return (3*x + 7*x*y - 5*y) / (11 * z)
-    ...
-    >>> n = 100_000
-    >>> X = NormalDist(10, 2.5).samples(n)
-    >>> Y = NormalDist(15, 1.75).samples(n)
-    >>> Z = NormalDist(5, 1.25).samples(n)
-    >>> NormalDist.from_samples(map(model, X, Y, Z))     # doctest: +SKIP
-    NormalDist(mu=19.640137307085507, sigma=47.03273142191088)
-
 Normal distributions commonly arise in machine learning problems.
 
 Wikipedia has a `nice example of a Naive Bayesian Classifier
