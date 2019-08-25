@@ -1350,8 +1350,14 @@ static int test_init_read_set(void)
         goto fail;
     }
 
+    status = PyWideStringList_Insert(&config.module_search_paths,
+                                     1, L"test_path_insert1");
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
     status = PyWideStringList_Append(&config.module_search_paths,
-                                     L"init_read_set_path");
+                                     L"test_path_append");
     if (PyStatus_Exception(status)) {
         goto fail;
     }
@@ -1365,6 +1371,54 @@ static int test_init_read_set(void)
     return 0;
 
 fail:
+    Py_ExitStatusException(status);
+}
+
+
+static int test_init_sys_add(void)
+{
+    PySys_AddXOption(L"sysadd_xoption");
+    PySys_AddXOption(L"faulthandler");
+    PySys_AddWarnOption(L"ignore:::sysadd_warnoption");
+
+    PyConfig config;
+    PyStatus status;
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
+    wchar_t* argv[] = {
+        L"python3",
+        L"-W",
+        L"ignore:::cmdline_warnoption",
+        L"-X",
+        L"cmdline_xoption",
+    };
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config.parse_argv = 1;
+
+    status = PyWideStringList_Append(&config.xoptions,
+                                     L"config_xoption");
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
+    status = PyWideStringList_Append(&config.warnoptions,
+                                     L"ignore:::config_warnoption");
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+
+fail:
+    PyConfig_Clear(&config);
     Py_ExitStatusException(status);
 }
 
@@ -1504,6 +1558,7 @@ static struct TestCase TestCases[] = {
     {"test_init_read_set", test_init_read_set},
     {"test_init_run_main", test_init_run_main},
     {"test_init_main", test_init_main},
+    {"test_init_sys_add", test_init_sys_add},
     {"test_run_main", test_run_main},
     {"test_open_code_hook", test_open_code_hook},
     {"test_audit", test_audit},

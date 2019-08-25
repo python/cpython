@@ -47,7 +47,7 @@
 
 This article explains the new features in Python 3.9, compared to 3.8.
 
-For full details, see the :source:`Misc/NEWS` file.
+For full details, see the :ref:`changelog <changelog>`.
 
 .. note::
 
@@ -168,6 +168,12 @@ Deprecated
 * The :mod:`parser` module is deprecated and will be removed in future versions
   of Python. For the majority of use cases users can leverage the Abstract Syntax
   Tree (AST) generation and compilation stage, using the :mod:`ast` module.
+
+* The :mod:`random` module currently accepts any hashable type as a
+  possible seed value.  Unfortunately, some of those types are not
+  guaranteed to have a deterministic hash value.  After Python 3.9,
+  the module will restrict its seeds to *None*, :class:`int`,
+  :class:`float`, :class:`str`, :class:`bytes`, and :class:`bytearray`.
 
 
 Removed
