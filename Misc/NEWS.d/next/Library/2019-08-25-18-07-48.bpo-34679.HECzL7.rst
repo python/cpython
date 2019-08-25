@@ -1,0 +1,1 @@
+Restore instantiation Windows IOCP event loop from non-main thread.
