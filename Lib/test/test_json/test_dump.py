@@ -11,6 +11,8 @@ class TestDump:
 
     def test_dumps(self):
         self.assertEqual(self.dumps({}), '{}')
+
+    def test_dump_skipkeys(self):
         v = {b'invalid_key': False, 'valid_key': True}
         with self.assertRaises(TypeError):
             self.json.dumps(v)
