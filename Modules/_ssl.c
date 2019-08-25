@@ -5694,6 +5694,7 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     Py_XDECREF(keyusage);
     Py_XDECREF(tup);
 
+    /* There's no function argument to close all handles together. (bpo-37702) */
     BOOL success = CertCloseStore(hCollectionStore, 0);
     for (i = 0; i < system_stores_count; i++) {
         if (system_store_handles[i] == NULL) {
@@ -5793,6 +5794,7 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
     Py_XDECREF(enc);
     Py_XDECREF(tup);
 
+    /* There's no function argument to close all handles together. (bpo-37702) */
     BOOL success = CertCloseStore(hCollectionStore, 0);
     for (i = 0; i < system_stores_count; i++) {
         if (system_store_handles[i] == NULL) {
