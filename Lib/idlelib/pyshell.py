@@ -955,6 +955,12 @@ class PyShell(OutputWindow):
         })
         return tag_colors
 
+    def ResetFont(self):
+        # Update the sidebar widget, since its width affects
+        # the width of the text widget.
+        self.shell_sidebar.update_font()
+        super().ResetFont()
+
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(shell_only=True)
 
