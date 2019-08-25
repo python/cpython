@@ -2003,7 +2003,7 @@ Exiting methods
 
    This method terminates the program, exiting with the specified *status*
    and, if given, it prints a *message* before that. The user can override
-   this method to catching errors manually::
+   this method to handle these steps differently::
 
     import sys
     class ErrorCatchingArgumentParser(argparse.ArgumentParser):
