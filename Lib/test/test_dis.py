@@ -147,7 +147,7 @@ def bug1333982(x=[]):
 dis_bug1333982 = """\
 %3d           0 LOAD_CONST               1 (0)
               2 POP_JUMP_IF_TRUE        26
-              4 LOAD_GLOBAL              0 (AssertionError)
+              4 LOAD_ASSERTION_ERROR
               6 LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
               8 LOAD_CONST               3 ('bug1333982.<locals>.<listcomp>')
              10 MAKE_FUNCTION            0
