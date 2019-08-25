@@ -887,7 +887,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'f': {/* float */
         float *p = va_arg(*p_va, float *);
         double dval = PyFloat_AsDouble(arg);
-        if (PyErr_Occurred())
+        if (dval == -1.0 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else
             *p = (float) dval;
@@ -897,7 +897,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'd': {/* double */
         double *p = va_arg(*p_va, double *);
         double dval = PyFloat_AsDouble(arg);
-        if (PyErr_Occurred())
+        if (dval == -1.0 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else
             *p = dval;
