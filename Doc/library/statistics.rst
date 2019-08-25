@@ -667,12 +667,8 @@ of applications in statistics.
 
     .. method:: NormalDist.overlap(other)
 
-       Compute the `overlapping coefficient (OVL)
-       <http://www.iceaaonline.com/ready/wp-content/uploads/2014/06/MM-9-Presentation-Meet-the-Overlapping-Coefficient-A-Measure-for-Elevator-Speeches.pdf>`_
-       between two normal distributions, giving a measure of agreement.
-       Returns a value between 0.0 and 1.0 giving `the overlapping area for
-       the two probability density functions
-       <https://www.rasch.org/rmt/rmt101r.htm>`_.
+       Returns a value between 0.0 and 1.0 giving the overlapping area for
+       the two probability density functions.
 
     Instances of :class:`NormalDist` support addition, subtraction,
     multiplication and division by a constant.  These operations
