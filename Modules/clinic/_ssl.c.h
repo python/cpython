@@ -1093,9 +1093,15 @@ _ssl_RAND_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
     }
-    entropy = PyFloat_AsDouble(args[1]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[1])) {
+        entropy = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        entropy = PyFloat_AsDouble(args[1]);
+        if (entropy == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = _ssl_RAND_add_impl(module, &view, entropy);
 
@@ -1476,4 +1482,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=a399d0eb393b6fab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5003112e167cd948 input=a9049054013a1b77]*/
