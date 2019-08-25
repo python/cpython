@@ -1,0 +1,2 @@
+Fixed :meth:`argparse.ArgumentParser.format_usage` for mutually exclusive groups.
+Patch by Andrew Nester.

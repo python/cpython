@@ -2813,6 +2813,46 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
           -c          c help
         '''
 
+class TestMutuallyExclusiveNested(MEMixin, TestCase):
+
+    def get_parser(self, required):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        group = parser.add_mutually_exclusive_group(required=required)
+        group.add_argument('-a')
+        group.add_argument('-b')
+        group2 = group.add_mutually_exclusive_group(required=required)
+        group2.add_argument('-c')
+        group2.add_argument('-d')
+        group3 = group2.add_mutually_exclusive_group(required=required)
+        group3.add_argument('-e')
+        group3.add_argument('-f')
+        return parser
+
+    usage_when_not_required = '''\
+        usage: PROG [-h] [-a A | -b B | [-c C | -d D | [-e E | -f F]]]
+        '''
+    usage_when_required = '''\
+        usage: PROG [-h] (-a A | -b B | (-c C | -d D | (-e E | -f F)))
+        '''
+
+    help = '''\
+
+        optional arguments:
+          -h, --help  show this help message and exit
+          -a A
+          -b B
+          -c C
+          -d D
+          -e E
+          -f F
+        '''
+
+    # We are only interested in testing the behavior of format_usage().
+    test_failures_when_not_required = None
+    test_failures_when_required = None
+    test_successes_when_not_required = None
+    test_successes_when_required = None
+
 # =================================================
 # Mutually exclusive group in parent parser tests
 # =================================================
