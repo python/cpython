@@ -73,7 +73,7 @@ static void *opcode_targets[256] = {
     &&TARGET_LOAD_BUILD_CLASS,
     &&TARGET_YIELD_FROM,
     &&TARGET_GET_AWAITABLE,
-    &&_unknown_opcode,
+    &&TARGET_LOAD_ASSERTION_ERROR,
     &&TARGET_INPLACE_LSHIFT,
     &&TARGET_INPLACE_RSHIFT,
     &&TARGET_INPLACE_AND,

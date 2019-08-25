@@ -1285,6 +1285,22 @@ class ExceptionTests(unittest.TestCase):
                 next(i)
                 next(i)
 
+    @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
+    def test_assert_shadowing(self):
+        # Shadowing AssertionError would cause the assert statement to
+        # misbehave.
+        global AssertionError
+        AssertionError = TypeError
+        try:
+            assert False, 'hello'
+        except BaseException as e:
+            del AssertionError
+            self.assertIsInstance(e, AssertionError)
+            self.assertEqual(str(e), 'hello')
+        else:
+            del AssertionError
+            self.fail('Expected exception')
+
 
 class ImportErrorTests(unittest.TestCase):
 
