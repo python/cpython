@@ -1,0 +1,2 @@
+Fix infinite recursion with typing.get_type_hints.
+Patch by hongweipeng.

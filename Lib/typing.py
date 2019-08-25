@@ -491,7 +491,7 @@ class ForwardRef(_Final, _root=True):
 
     __slots__ = ('__forward_arg__', '__forward_code__',
                  '__forward_evaluated__', '__forward_value__',
-                 '__forward_is_argument__')
+                 '__forward_is_argument__', '__hash')
 
     def __init__(self, arg, is_argument=True):
         if not isinstance(arg, str):
@@ -505,6 +505,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
+        self.__hash = None
 
     def _evaluate(self, globalns, localns):
         if not self.__forward_evaluated__ or localns is not globalns:
@@ -528,7 +529,9 @@ class ForwardRef(_Final, _root=True):
                 self.__forward_value__ == other.__forward_value__)
 
     def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_value__))
+        if self.__hash is None:
+            self.__hash = hash((self.__forward_arg__, self.__forward_value__))
+        return self.__hash
 
     def __repr__(self):
         return f'ForwardRef({self.__forward_arg__!r})'
