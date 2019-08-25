@@ -26,8 +26,6 @@ from distutils.debug import DEBUG
 # to look for a Python module named after the command.
 command_re = re.compile(r'^[a-zA-Z]([a-zA-Z0-9_]*)$')
 
-longopt_revxlate = str.maketrans('_', '-')
-
 
 def _ensure_list(value, fieldname):
     if isinstance(value, str):
@@ -607,9 +605,10 @@ Common commands: (see '--help-commands' for more)
         # holding pen, the 'command_options' dictionary.
         opt_dict = self.get_option_dict(command)
         for (name, value) in vars(opts).items():
-            opt_name = name.translate(longopt_revxlate)
-            if (  opt_name in global_option_names
-                  and opt_name not in command_option_names):
+            # Translate Python identifiers into long options names.
+            opt_name = name.replace('_', '-')
+            if (opt_name in global_option_names and
+                    opt_name not in command_option_names):
                 alias = self.negative_opt.get(name)
                 try:
                     if alias:

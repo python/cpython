@@ -497,7 +497,7 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
         # Note: the `quiet` option is an alias that negatively affects the
         # `verbose` option value, that is `True` by default
         self.assertFalse(dist.verbose)
-        self.assertTrue("verbose" not in dist.get_option_dict("build"))
+        self.assertNotIn("verbose", dist.get_option_dict("build"))
 
     def test_read_metadata(self):
         attrs = {"name": "package",
