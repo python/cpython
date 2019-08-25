@@ -7,7 +7,10 @@
 Initialization, Finalization, and Threads
 *****************************************
 
-See also :ref:`Python Initialization Configuration <init-config>`.
+This section covers the traditional global variable based approach to
+configuring the CPython runtime. See :ref:`init-config` for an alternate
+struct based configuration approach introduced in CPython 3.8.
+
 
 .. _pre-init-safe:
 
@@ -27,6 +30,7 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`Py_InitializeEx`
   * :c:func:`Py_BytesMain`
   * :c:func:`Py_Main`
+  * the runtime initialization functions covered in :ref:`init-config`
 
 * Configuration functions:
 
@@ -43,6 +47,7 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PySys_AddWarnOption`
   * :c:func:`PySys_AddXOption`
   * :c:func:`PySys_ResetWarnOptions`
+  * the configuration functions covered in :ref:`init-config`
 
 * Informative functions:
 
@@ -59,6 +64,7 @@ The following functions can be safely called before Python is initialized:
 * Utilities:
 
   * :c:func:`Py_DecodeLocale`
+  * the status reporting and utility functions covered in :ref:`init-config`
 
 * Memory allocators:
 
@@ -69,11 +75,13 @@ The following functions can be safely called before Python is initialized:
 
 .. note::
 
-   The following functions **should not be called** before
+   Despite their apparent similarity to some of the functions listed above,
+   the following functions **should not be called** before
    :c:func:`Py_Initialize`: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
    :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
    :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`,
-   :c:func:`Py_GetProgramName` and :c:func:`PyEval_InitThreads`.
+   :c:func:`Py_GetProgramName`, :c:func:`PyEval_InitThreads`, and
+   :c:func:`Py_RunMain`.
 
 
 .. _global-conf-vars:
@@ -252,24 +260,27 @@ Initializing and finalizing the interpreter
    this should be called before using any other Python/C API functions; see
    :ref:`Before Python Initialization <pre-init-safe>` for the few exceptions.
 
-   This initializes
-   the table of loaded modules (``sys.modules``), and creates the fundamental
-   modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  It also initializes
-   the module search path (``sys.path``). It does not set ``sys.argv``; use
-   :c:func:`PySys_SetArgvEx` for that.  This is a no-op when called for a second time
-   (without calling :c:func:`Py_FinalizeEx` first).  There is no return value; it is a
-   fatal error if the initialization fails.
+   This initializes the table of loaded modules (``sys.modules``), and creates
+   the fundamental modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`. It
+   also initializes the module search path (``sys.path``). It does not set
+   ``sys.argv``; use :c:func:`PySys_SetArgvEx` for that.  This is a no-op when
+   called for a second time (without calling :c:func:`Py_FinalizeEx` first).
+   There is no return value; it is a fatal error if the initialization fails.
+
+   See :c:func:`Py_InitializeFromConfig` and the :ref:`init-config` section for
+   an alternative configuration approach based on passed in C structs rather
+   than global process state.
 
    .. note::
-      On Windows, changes the console mode from ``O_TEXT`` to ``O_BINARY``, which will
-      also affect non-Python uses of the console using the C Runtime.
+      On Windows, changes the console mode from ``O_TEXT`` to ``O_BINARY``,
+      which will also affect non-Python uses of the console using the C Runtime.
 
 
 .. c:function:: void Py_InitializeEx(int initsigs)
 
    This function works like :c:func:`Py_Initialize` if *initsigs* is ``1``. If
-   *initsigs* is ``0``, it skips initialization registration of signal handlers, which
-   might be useful when Python is embedded.
+   *initsigs* is ``0``, it skips initialization registration of signal handlers,
+   which may be useful when CPython is embedded as part of a larger application.
 
 
 .. c:function:: int Py_IsInitialized()
@@ -354,9 +365,21 @@ Initializing and finalizing the interpreter
    Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
    function will not return ``1``, but exit the process, as long as
    ``Py_InspectFlag`` is not set. If ``Py_InspectFlag`` is set, execution will
-   drop into interactive Python prompt, at which point a second otherwise
+   drop into the interactive Python prompt, at which point a second otherwise
    unhandled :exc:`SystemExit` will still exit the process, while any other
    means of exiting will set the return value as described above.
+
+   In terms of the CPython runtime configuration APIs documented in the
+   :ref:`runtime configuration <init-config>` section (and without accounting
+   for error handling), ``Py_Main`` is approximately equivalent to::
+
+      PyConfig config;
+      PyConfig_InitPythonConfig(&config);
+      PyConfig_SetArgv(&config, argc, argv);
+      Py_InitializeFromConfig(&config);
+      PyConfig_Clear(&config);
+
+      Py_RunMain();
 
    If this function is called after a separate :c:func:`Py_Initialize` or
    :c:func:`Py_InitializeEx` call, then exactly which environmental and
@@ -364,6 +387,34 @@ Initializing and finalizing the interpreter
    (since it depends on which settings are handled in the now skipped implicit
    call to ``Py_Initialize``, and which are handled directly in ``Py_Main``
    itself).
+
+
+.. c:function:: int Py_RunMain(void)
+
+   Executes the main module in a fully configured CPython runtime.
+
+   Executes the command (:c:member:`PyConfig.run_command`), the script
+   (:c:member:`PyConfig.run_filename`) or the module
+   (:c:member:`PyConfig.run_module`) specified on the command line or in the
+   configuration. If none of these values are set, runs the interactive Python
+   prompt.
+
+   The return value will be ``0`` if the interpreter exits normally (i.e.,
+   without an exception), or ``1`` if the interpreter exits due to an exception.
+
+   Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
+   function will not return ``1``, but exit the process, as long as
+   :c:member:`PyConfig.inspect` is not set. If :c:member:`PyConfig.inspect` is
+   set, execution will drop into the interactive Python prompt, at which point
+   a second otherwise unhandled :exc:`SystemExit` will still exit the process,
+   while any other means of exiting will set the return value as described above.
+
+   Finally, finalizes Python and returns an exit status that can be passed to
+   the ``exit()`` function.
+
+   See :ref:`Python Configuration <init-python-config>` for an example of a
+   customized Python that always runs in isolated mode using
+   :c:func:`Py_RunMain`.
 
 
 Process-wide parameters

@@ -15,7 +15,7 @@ Structures:
 * :c:type:`PyStatus`
 * :c:type:`PyWideStringList`
 
-Functions:
+Configuration functions:
 
 * :c:func:`PyConfig_Clear`
 * :c:func:`PyConfig_InitIsolatedConfig`
@@ -28,6 +28,9 @@ Functions:
 * :c:func:`PyConfig_SetWideStringList`
 * :c:func:`PyPreConfig_InitIsolatedConfig`
 * :c:func:`PyPreConfig_InitPythonConfig`
+
+Status reporting functions:
+
 * :c:func:`PyStatus_Error`
 * :c:func:`PyStatus_Exception`
 * :c:func:`PyStatus_Exit`
@@ -35,14 +38,19 @@ Functions:
 * :c:func:`PyStatus_IsExit`
 * :c:func:`PyStatus_NoMemory`
 * :c:func:`PyStatus_Ok`
+* :c:func:`Py_ExitStatusException`
+
+Utility functions:
+
 * :c:func:`PyWideStringList_Append`
 * :c:func:`PyWideStringList_Insert`
-* :c:func:`Py_ExitStatusException`
+
+Runtime initialization functions:
+
 * :c:func:`Py_InitializeFromConfig`
 * :c:func:`Py_PreInitialize`
 * :c:func:`Py_PreInitializeFromArgs`
 * :c:func:`Py_PreInitializeFromBytesArgs`
-* :c:func:`Py_RunMain`
 
 The preconfiguration (``PyPreConfig`` type) is stored in
 ``_PyRuntime.preconfig`` and the configuration (``PyConfig`` type) is stored in
@@ -917,26 +925,6 @@ The following configuration files are used by the path configuration:
 * ``pyvenv.cfg``
 * ``python._pth`` (Windows only)
 * ``pybuilddir.txt`` (Unix only)
-
-
-Py_RunMain()
-------------
-
-.. c:function:: int Py_RunMain(void)
-
-   Execute the command (:c:member:`PyConfig.run_command`), the script
-   (:c:member:`PyConfig.run_filename`) or the module
-   (:c:member:`PyConfig.run_module`) specified on the command line or in the
-   configuration.
-
-   By default and when if :option:`-i` option is used, run the REPL.
-
-   Finally, finalizes Python and returns an exit status that can be passed to
-   the ``exit()`` function.
-
-See :ref:`Python Configuration <init-python-config>` for an example of
-customized Python always running in isolated mode using
-:c:func:`Py_RunMain`.
 
 
 Multi-Phase Initialization Private Provisional API
