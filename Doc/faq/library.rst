@@ -832,7 +832,7 @@ There are also many other specialized generators in this module, such as:
 
 Some higher-level functions operate on sequences directly, such as:
 
-* ``choice(S)`` chooses random element from a given sequence.
+* ``choice(S)`` chooses a random element from a given sequence.
 * ``shuffle(L)`` shuffles a list in-place, i.e. permutes it randomly.
 
 There's also a ``Random`` class you can instantiate to create independent
