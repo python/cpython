@@ -235,7 +235,6 @@ EXPORTS
   PyExc_SystemError=python39.PyExc_SystemError DATA
   PyExc_SystemExit=python39.PyExc_SystemExit DATA
   PyExc_TabError=python39.PyExc_TabError DATA
-  PyExc_TargetScopeError=python39.PyExc_TargetScopeError DATA
   PyExc_TimeoutError=python39.PyExc_TimeoutError DATA
   PyExc_TypeError=python39.PyExc_TypeError DATA
   PyExc_UnboundLocalError=python39.PyExc_UnboundLocalError DATA
