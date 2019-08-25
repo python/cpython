@@ -82,11 +82,12 @@ or from a string.
 
    .. versionchanged:: 3.2
       The :class:`Fraction` constructor now accepts :class:`float` and
-      :class:`decimal.Decimal` instances.
+      :class:`decimal.Decimal` instances as a single argument.
 
    .. versionchanged:: 3.9
       The :class:`Fraction` constructor now accepts any object with
-      ``as_integer_ratio()`` as numerator or denominator.
+      ``as_integer_ratio()`` (in particular also :class:`float` and
+      :class:`decimal.Decimal` instances) as numerator or denominator.
 
 
    .. attribute:: numerator

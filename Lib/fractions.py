@@ -66,12 +66,10 @@ def _as_integer_ratio(obj):
     try:
         f = obj.as_integer_ratio
     except AttributeError:
-        pass
+        if isinstance(obj, numbers.Rational):
+            return (obj.numerator, obj.denominator)
     else:
         return f()
-
-    if isinstance(obj, numbers.Rational):
-        return (obj.numerator, obj.denominator)
 
     return NotImplemented
 
@@ -82,20 +80,20 @@ class Fraction(numbers.Rational):
     In the two-argument form of the constructor, Fraction(8, 6) will
     produce a rational number equivalent to 4/3. The numerator defaults
     to 0 and the denominator defaults to 1 so that Fraction(3) == 3 and
-    Fraction() == 0.
+    Fraction() == 0. The numerator and denominator can be:
 
-    Fractions can be constructed from:
+      - objects with an ``as_integer_ratio()`` method (this includes
+        integers, Fractions, floats and Decimal instances)
+
+      - other Rational instances
+
+    Fractions can also be constructed from a string (in this case, only
+    a single argument is allowed):
 
       - numeric strings similar to those accepted by the
         float constructor (for example, '-2.3' or '1e10')
 
       - strings of the form '123/456'
-
-      - objects with an ``as_integer_ratio()`` method (this includes
-        float and Decimal instances)
-
-      - other Rational instances (including integers)
-
     """
 
     __slots__ = ('_numerator', '_denominator')
