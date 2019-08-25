@@ -783,9 +783,14 @@ typedef enum {YES = 0, MAYBE = 1, NO = 2} QuickcheckResult;
  *
  * Return YES or NO if quickcheck determines the input is certainly
  * normalized or certainly not, and MAYBE if quickcheck is unable to
- * tell. */
+ * tell.
+ *
+ * If `yes_only` is true, then return MAYBE as soon as we determine
+ * the answer is not YES.
+ */
 static QuickcheckResult
-is_normalized_quickcheck(PyObject *self, PyObject *input, int nfc, int k)
+is_normalized_quickcheck(PyObject *self, PyObject *input,
+                         int nfc, int k, int yes_only)
 {
     /* This is an implementation of the following algorithm:
        https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms
@@ -820,12 +825,17 @@ is_normalized_quickcheck(PyObject *self, PyObject *input, int nfc, int k)
             return NO; /* non-canonical sort order, not normalized */
         prev_combining = combining;
 
-        unsigned char quickcheck = record->normalization_quick_check;
-        switch ((quickcheck >> quickcheck_shift) & 3) {
-        case NO:
-          return NO;
-        case MAYBE:
-          result = MAYBE; /* this string might need normalization */
+        unsigned char quickcheck_whole = record->normalization_quick_check;
+        if (yes_only) {
+            if (quickcheck_whole & (3 << quickcheck_shift))
+                return MAYBE;
+        } else {
+            switch ((quickcheck_whole >> quickcheck_shift) & 3) {
+            case NO:
+              return NO;
+            case MAYBE:
+              result = MAYBE; /* this string might need normalization */
+            }
         }
     }
     return result;
@@ -884,7 +894,7 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
         return NULL;
     }
 
-    m = is_normalized_quickcheck(self, input, nfc, k);
+    m = is_normalized_quickcheck(self, input, nfc, k, 0);
 
     if (m == MAYBE) {
         cmp = (nfc ? nfc_nfkc : nfd_nfkd)(self, input, k);
@@ -930,28 +940,28 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
     }
 
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
-        if (is_normalized_quickcheck(self, input, 1, 0) == YES) {
+        if (is_normalized_quickcheck(self, input, 1, 0, 1) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfc_nfkc(self, input, 0);
     }
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
-        if (is_normalized_quickcheck(self, input, 1, 1) == YES) {
+        if (is_normalized_quickcheck(self, input, 1, 1, 1) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfc_nfkc(self, input, 1);
     }
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
-        if (is_normalized_quickcheck(self, input, 0, 0) == YES) {
+        if (is_normalized_quickcheck(self, input, 0, 0, 1) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfd_nfkd(self, input, 0);
     }
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
-        if (is_normalized_quickcheck(self, input, 0, 1) == YES) {
+        if (is_normalized_quickcheck(self, input, 0, 1, 1) == YES) {
             Py_INCREF(input);
             return input;
         }
