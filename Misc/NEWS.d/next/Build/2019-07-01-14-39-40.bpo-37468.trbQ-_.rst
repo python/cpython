@@ -1,0 +1,2 @@
+``make install`` no longer installs ``wininst-*.exe`` files used by
+distutils bdist_wininst: bdist_wininst only works on Windows.

@@ -9,6 +9,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer, \
 from http import server, HTTPStatus
 
 import os
+import socket
 import sys
 import re
 import base64
@@ -609,9 +610,10 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
         # The shebang line should be pure ASCII: use symlink if possible.
         # See issue #7668.
+        self._pythonexe_symlink = None
         if support.can_symlink():
             self.pythonexe = os.path.join(self.parent_dir, 'python')
-            os.symlink(sys.executable, self.pythonexe)
+            self._pythonexe_symlink = support.PythonSymlink(self.pythonexe).__enter__()
         else:
             self.pythonexe = sys.executable
 
@@ -654,8 +656,8 @@ class CGIHTTPServerTestCase(BaseTestCase):
     def tearDown(self):
         try:
             os.chdir(self.cwd)
-            if self.pythonexe != sys.executable:
-                os.remove(self.pythonexe)
+            if self._pythonexe_symlink:
+                self._pythonexe_symlink.__exit__(None, None, None)
             if self.nocgi_path:
                 os.remove(self.nocgi_path)
             if self.file1_path:
@@ -1116,6 +1118,66 @@ class MiscTestCase(unittest.TestCase):
         self.assertCountEqual(server.__all__, expected)
 
 
+class ScriptTestCase(unittest.TestCase):
+
+    def mock_server_class(self):
+        return mock.MagicMock(
+            return_value=mock.MagicMock(
+                __enter__=mock.MagicMock(
+                    return_value=mock.MagicMock(
+                        socket=mock.MagicMock(
+                            getsockname=lambda: ('', 0),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+    @mock.patch('builtins.print')
+    def test_server_test_unspec(self, _):
+        mock_server = self.mock_server_class()
+        server.test(ServerClass=mock_server, bind=None)
+        self.assertIn(
+            mock_server.address_family,
+            (socket.AF_INET6, socket.AF_INET),
+        )
+
+    @mock.patch('builtins.print')
+    def test_server_test_localhost(self, _):
+        mock_server = self.mock_server_class()
+        server.test(ServerClass=mock_server, bind="localhost")
+        self.assertIn(
+            mock_server.address_family,
+            (socket.AF_INET6, socket.AF_INET),
+        )
+
+    ipv6_addrs = (
+        "::",
+        "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+        "::1",
+    )
+
+    ipv4_addrs = (
+        "0.0.0.0",
+        "8.8.8.8",
+        "127.0.0.1",
+    )
+
+    @mock.patch('builtins.print')
+    def test_server_test_ipv6(self, _):
+        for bind in self.ipv6_addrs:
+            mock_server = self.mock_server_class()
+            server.test(ServerClass=mock_server, bind=bind)
+            self.assertEqual(mock_server.address_family, socket.AF_INET6)
+
+    @mock.patch('builtins.print')
+    def test_server_test_ipv4(self, _):
+        for bind in self.ipv4_addrs:
+            mock_server = self.mock_server_class()
+            server.test(ServerClass=mock_server, bind=bind)
+            self.assertEqual(mock_server.address_family, socket.AF_INET)
+
+
 def test_main(verbose=None):
     cwd = os.getcwd()
     try:
@@ -1127,6 +1189,7 @@ def test_main(verbose=None):
             CGIHTTPServerTestCase,
             SimpleHTTPRequestHandlerTestCase,
             MiscTestCase,
+            ScriptTestCase
         )
     finally:
         os.chdir(cwd)

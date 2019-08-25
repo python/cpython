@@ -1,4 +1,4 @@
-/* 4b74aa710b4ed5ce464b0ce544852cb47bf905c85a49c7bae2749f5885cb966d (2.2.5+)
+/* 69df5be70289a11fb834869ce4a91c23c1d9dd04baffcbd10e86742d149a080c (2.2.7+)
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
                         / _ \\  /| '_ \ / _` | __|
@@ -161,14 +161,8 @@ typedef char ICHAR;
 /* Round up n to be a multiple of sz, where sz is a power of 2. */
 #define ROUND_UP(n, sz) (((n) + ((sz) - 1)) & ~((sz) - 1))
 
-/* Handle the case where memmove() doesn't exist. */
-#ifndef HAVE_MEMMOVE
-#ifdef HAVE_BCOPY
-#define memmove(d,s,l) bcopy((s),(d),(l))
-#else
-#error memmove does not exist on this platform, nor is a substitute available
-#endif /* HAVE_BCOPY */
-#endif /* HAVE_MEMMOVE */
+/* Do safe (NULL-aware) pointer arithmetic */
+#define EXPAT_SAFE_PTR_DIFF(p, q) (((p) && (q)) ? ((p) - (q)) : 0)
 
 #include "internal.h"
 #include "xmltok.h"
@@ -744,7 +738,7 @@ writeRandomBytes_dev_urandom(void * target, size_t count) {
 #endif  /* ! defined(HAVE_ARC4RANDOM_BUF) && ! defined(HAVE_ARC4RANDOM) */
 
 
-#if defined(HAVE_ARC4RANDOM)
+#if defined(HAVE_ARC4RANDOM) && ! defined(HAVE_ARC4RANDOM_BUF)
 
 static void
 writeRandomBytes_arc4random(void * target, size_t count) {
@@ -762,7 +756,7 @@ writeRandomBytes_arc4random(void * target, size_t count) {
   }
 }
 
-#endif  /* defined(HAVE_ARC4RANDOM) */
+#endif  /* defined(HAVE_ARC4RANDOM) && ! defined(HAVE_ARC4RANDOM_BUF) */
 
 
 #ifdef _WIN32
@@ -1820,6 +1814,7 @@ XML_Parse(XML_Parser parser, const char *s, int len, int isFinal)
       parser->m_errorCode = XML_ERROR_NO_MEMORY;
       return XML_STATUS_ERROR;
     }
+    /* fall through */
   default:
     parser->m_parsingStatus.parsing = XML_PARSING;
   }
@@ -1969,6 +1964,7 @@ XML_ParseBuffer(XML_Parser parser, int len, int isFinal)
       parser->m_errorCode = XML_ERROR_NO_MEMORY;
       return XML_STATUS_ERROR;
     }
+    /* fall through */
   default:
     parser->m_parsingStatus.parsing = XML_PARSING;
   }
@@ -2026,39 +2022,46 @@ XML_GetBuffer(XML_Parser parser, int len)
   default: ;
   }
 
-  if (len > parser->m_bufferLim - parser->m_bufferEnd) {
+  if (len > EXPAT_SAFE_PTR_DIFF(parser->m_bufferLim, parser->m_bufferEnd)) {
 #ifdef XML_CONTEXT_BYTES
     int keep;
 #endif  /* defined XML_CONTEXT_BYTES */
     /* Do not invoke signed arithmetic overflow: */
-    int neededSize = (int) ((unsigned)len + (unsigned)(parser->m_bufferEnd - parser->m_bufferPtr));
+    int neededSize = (int) ((unsigned)len +
+                            (unsigned)EXPAT_SAFE_PTR_DIFF(parser->m_bufferEnd,
+                                                          parser->m_bufferPtr));
     if (neededSize < 0) {
       parser->m_errorCode = XML_ERROR_NO_MEMORY;
       return NULL;
     }
 #ifdef XML_CONTEXT_BYTES
-    keep = (int)(parser->m_bufferPtr - parser->m_buffer);
+    keep = (int)EXPAT_SAFE_PTR_DIFF(parser->m_bufferPtr, parser->m_buffer);
     if (keep > XML_CONTEXT_BYTES)
       keep = XML_CONTEXT_BYTES;
     neededSize += keep;
 #endif  /* defined XML_CONTEXT_BYTES */
-    if (neededSize  <= parser->m_bufferLim - parser->m_buffer) {
+    if (neededSize <= EXPAT_SAFE_PTR_DIFF(parser->m_bufferLim, parser->m_buffer)) {
 #ifdef XML_CONTEXT_BYTES
-      if (keep < parser->m_bufferPtr - parser->m_buffer) {
-        int offset = (int)(parser->m_bufferPtr - parser->m_buffer) - keep;
+      if (keep < EXPAT_SAFE_PTR_DIFF(parser->m_bufferPtr, parser->m_buffer)) {
+          int offset = (int)EXPAT_SAFE_PTR_DIFF(parser->m_bufferPtr, parser->m_buffer) - keep;
+        /* The buffer pointers cannot be NULL here; we have at least some bytes in the buffer */
         memmove(parser->m_buffer, &parser->m_buffer[offset], parser->m_bufferEnd - parser->m_bufferPtr + keep);
         parser->m_bufferEnd -= offset;
         parser->m_bufferPtr -= offset;
       }
 #else
-      memmove(parser->m_buffer, parser->m_bufferPtr, parser->m_bufferEnd - parser->m_bufferPtr);
-      parser->m_bufferEnd = parser->m_buffer + (parser->m_bufferEnd - parser->m_bufferPtr);
-      parser->m_bufferPtr = parser->m_buffer;
+      if (parser->m_buffer && parser->m_bufferPtr) {
+        memmove(parser->m_buffer, parser->m_bufferPtr,
+                EXPAT_SAFE_PTR_DIFF(parser->m_bufferEnd, parser->m_bufferPtr));
+        parser->m_bufferEnd = parser->m_buffer +
+            EXPAT_SAFE_PTR_DIFF(parser->m_bufferEnd, parser->m_bufferPtr);
+        parser->m_bufferPtr = parser->m_buffer;
+      }
 #endif  /* not defined XML_CONTEXT_BYTES */
     }
     else {
       char *newBuf;
-      int bufferSize = (int)(parser->m_bufferLim - parser->m_bufferPtr);
+      int bufferSize = (int)EXPAT_SAFE_PTR_DIFF(parser->m_bufferLim, parser->m_bufferPtr);
       if (bufferSize == 0)
         bufferSize = INIT_BUFFER_SIZE;
       do {
@@ -2077,25 +2080,34 @@ XML_GetBuffer(XML_Parser parser, int len)
       parser->m_bufferLim = newBuf + bufferSize;
 #ifdef XML_CONTEXT_BYTES
       if (parser->m_bufferPtr) {
-        int keep = (int)(parser->m_bufferPtr - parser->m_buffer);
+        int keep = (int)EXPAT_SAFE_PTR_DIFF(parser->m_bufferPtr, parser->m_buffer);
         if (keep > XML_CONTEXT_BYTES)
           keep = XML_CONTEXT_BYTES;
-        memcpy(newBuf, &parser->m_bufferPtr[-keep], parser->m_bufferEnd - parser->m_bufferPtr + keep);
+        memcpy(newBuf, &parser->m_bufferPtr[-keep],
+               EXPAT_SAFE_PTR_DIFF(parser->m_bufferEnd, parser->m_bufferPtr) + keep);
         FREE(parser, parser->m_buffer);
         parser->m_buffer = newBuf;
-        parser->m_bufferEnd = parser->m_buffer + (parser->m_bufferEnd - parser->m_bufferPtr) + keep;
+        parser->m_bufferEnd = parser->m_buffer +
+            EXPAT_SAFE_PTR_DIFF(parser->m_bufferEnd, parser->m_bufferPtr) + keep;
         parser->m_bufferPtr = parser->m_buffer + keep;
       }
       else {
-        parser->m_bufferEnd = newBuf + (parser->m_bufferEnd - parser->m_bufferPtr);
+        /* This must be a brand new buffer with no data in it yet */
+        parser->m_bufferEnd = newBuf;
         parser->m_bufferPtr = parser->m_buffer = newBuf;
       }
 #else
       if (parser->m_bufferPtr) {
-        memcpy(newBuf, parser->m_bufferPtr, parser->m_bufferEnd - parser->m_bufferPtr);
+        memcpy(newBuf, parser->m_bufferPtr,
+               EXPAT_SAFE_PTR_DIFF(parser->m_bufferEnd, parser->m_bufferPtr));
         FREE(parser, parser->m_buffer);
+        parser->m_bufferEnd = newBuf +
+            EXPAT_SAFE_PTR_DIFF(parser->m_bufferEnd, parser->m_bufferPtr);
       }
-      parser->m_bufferEnd = newBuf + (parser->m_bufferEnd - parser->m_bufferPtr);
+      else {
+        /* This must be a brand new buffer with no data in it yet */
+        parser->m_bufferEnd = newBuf;
+      }
       parser->m_bufferPtr = parser->m_buffer = newBuf;
 #endif  /* not defined XML_CONTEXT_BYTES */
     }
@@ -2908,9 +2920,11 @@ doContent(XML_Parser parser,
         poolClear(&parser->m_tempPool);
         freeBindings(parser, bindings);
       }
-      if ((parser->m_tagLevel == 0) &&
-          !((parser->m_parsingStatus.parsing == XML_FINISHED) || (parser->m_parsingStatus.parsing == XML_SUSPENDED))) {
-        return epilogProcessor(parser, next, end, nextPtr);
+      if ((parser->m_tagLevel == 0) && (parser->m_parsingStatus.parsing != XML_FINISHED)) {
+        if (parser->m_parsingStatus.parsing == XML_SUSPENDED)
+          parser->m_processor = epilogProcessor;
+        else
+          return epilogProcessor(parser, next, end, nextPtr);
       }
       break;
     case XML_TOK_END_TAG:
@@ -2996,7 +3010,7 @@ doContent(XML_Parser parser,
         enum XML_Error result;
         if (parser->m_startCdataSectionHandler)
           parser->m_startCdataSectionHandler(parser->m_handlerArg);
-#if 0
+/* BEGIN disabled code */
         /* Suppose you doing a transformation on a document that involves
            changing only the character data.  You set up a defaultHandler
            and a characterDataHandler.  The defaultHandler simply copies
@@ -3009,9 +3023,9 @@ doContent(XML_Parser parser,
            However, now we have a start/endCdataSectionHandler, so it seems
            easier to let the user deal with this.
         */
-        else if (parser->m_characterDataHandler)
+        else if (0 && parser->m_characterDataHandler)
           parser->m_characterDataHandler(parser->m_handlerArg, parser->m_dataBuf, 0);
-#endif
+/* END disabled code */
         else if (parser->m_defaultHandler)
           reportDefault(parser, enc, s, next);
         result = doCdataSection(parser, enc, &next, end, nextPtr, haveMore);
@@ -3708,11 +3722,11 @@ doCdataSection(XML_Parser parser,
     case XML_TOK_CDATA_SECT_CLOSE:
       if (parser->m_endCdataSectionHandler)
         parser->m_endCdataSectionHandler(parser->m_handlerArg);
-#if 0
+/* BEGIN disabled code */
       /* see comment under XML_TOK_CDATA_SECT_OPEN */
-      else if (parser->m_characterDataHandler)
+      else if (0 && parser->m_characterDataHandler)
         parser->m_characterDataHandler(parser->m_handlerArg, parser->m_dataBuf, 0);
-#endif
+/* END disabled code */
       else if (parser->m_defaultHandler)
         reportDefault(parser, enc, s, next);
       *startPtr = next;
@@ -4746,8 +4760,8 @@ doProlog(XML_Parser parser,
           return XML_ERROR_NO_MEMORY;
         parser->m_declEntity->publicId = NULL;
       }
-      /* fall through */
 #endif /* XML_DTD */
+      /* fall through */
     case XML_ROLE_ENTITY_SYSTEM_ID:
       if (dtd->keepProcessing && parser->m_declEntity) {
         parser->m_declEntity->systemId = poolStoreString(&dtd->pool, enc,
@@ -6057,7 +6071,7 @@ setElementTypePrefix(XML_Parser parser, ELEMENT_TYPE *elementType)
       else
         poolDiscard(&dtd->pool);
       elementType->prefix = prefix;
-
+      break;
     }
   }
   return 1;
@@ -6643,7 +6657,6 @@ hash(XML_Parser parser, KEY s)
 {
   struct siphash state;
   struct sipkey key;
-  (void)sip_tobin;
   (void)sip24_valid;
   copy_salt_to_sipkey(parser, &key);
   sip24_init(&state, &key);

@@ -11,7 +11,6 @@ _closere - line that must be followed by dedent.
 _chew_ordinaryre - non-special characters.
 """
 import re
-import sys
 
 # Reason last statement is continued (or C_NONE if it's not).
 (C_NONE, C_BACKSLASH, C_STRING_FIRST_LINE,
@@ -576,7 +575,7 @@ class Parser:
         return code[i:j]
 
     def is_block_opener(self):
-        "Return True if the last interesting statemtent opens a block."
+        "Return True if the last interesting statement opens a block."
         self._study2()
         return self.lastch == ':'
 

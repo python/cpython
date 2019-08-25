@@ -50,7 +50,9 @@
 
 This article explains the new features in Python 3.2 as compared to 3.1.  It
 focuses on a few highlights and gives a few examples.  For full details, see the
-`Misc/NEWS <https://hg.python.org/cpython/file/3.2/Misc/NEWS>`_ file.
+`Misc/NEWS
+<https://github.com/python/cpython/blob/076ca6c3c8df3030307e548d9be792ce3c1c6eea/Misc/NEWS>`_
+file.
 
 .. seealso::
 
@@ -969,10 +971,10 @@ sites do not finish before midnight, the barrier times-out and the ballots are
 sealed and deposited in a queue for later handling.
 
 See `Barrier Synchronization Patterns
-<https://parlab.eecs.berkeley.edu/wiki/_media/patterns/paraplop_g1_3.pdf>`_ for
-more examples of how barriers can be used in parallel computing.  Also, there is
+<http://osl.cs.illinois.edu/media/papers/karmani-2009-barrier_synchronization_pattern.pdf>`_
+for more examples of how barriers can be used in parallel computing.  Also, there is
 a simple but thorough explanation of barriers in `The Little Book of Semaphores
-<http://greenteapress.com/semaphores/downey08semaphores.pdf>`_, *section 3.6*.
+<https://greenteapress.com/semaphores/LittleBookOfSemaphores.pdf>`_, *section 3.6*.
 
 (Contributed by Kristján Valur Jónsson with an API review by Jeffrey Yasskin in
 :issue:`8777`.)
@@ -2512,9 +2514,9 @@ repository.  This distributed version control system should make it easier for
 members of the community to create and share external changesets.  See
 :pep:`385` for details.
 
-To learn to use the new version control system, see the `tutorial by Joel
-Spolsky <http://hginit.com>`_ or the `Guide to Mercurial Workflows
-<https://www.mercurial-scm.org/guide>`_.
+To learn to use the new version control system, see the `Quick Start
+<https://www.mercurial-scm.org/wiki/QuickStart>`_ or the `Guide to
+Mercurial Workflows <https://www.mercurial-scm.org/guide>`_.
 
 
 Build and C API Changes
