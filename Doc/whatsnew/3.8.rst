@@ -1363,7 +1363,7 @@ Deprecated
 * :class:`ast.NodeVisitor` methods ``visit_Num()``, ``visit_Str()``,
   ``visit_Bytes()``, ``visit_NameConstant()`` and ``visit_Ellipsis()`` are
   deprecated now and will not be called in future Python versions.
-  Add the :meth:``~ast.NodeVisitor.visit_Constant`` method to handle all
+  Add the :meth:`~ast.NodeVisitor.visit_Constant` method to handle all
   constant nodes.
   (Contributed by Serhiy Storchaka in :issue:`36917`.)
 
