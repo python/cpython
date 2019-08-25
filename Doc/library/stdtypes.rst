@@ -4358,7 +4358,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       will always return ``False``. This also applies when comparing
       ``dict.values()`` to itself::
 
-         >>> d = {'a' : 1}
+         >>> d = {'a': 1}
          >>> d.values() == d.values()
          False
 
