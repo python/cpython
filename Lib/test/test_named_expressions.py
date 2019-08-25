@@ -463,7 +463,6 @@ spam()"""
             ("Nested global", f"x = 1; result = {nested_ref}"),
             ("Nested nonlocal", f"result, x = (lambda x=1: ({nested_ref}, x))()"),
         ]
-        msg = "assignment expression cannot be used in a comprehension iterable expression"
         for case, code in cases:
             with self.subTest(case=case):
                 ns = {}
