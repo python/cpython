@@ -331,9 +331,10 @@ Initializing and finalizing the interpreter
 
    The *argc* and *argv* parameters should be prepared exactly as those which
    are passed to a C program's :c:func:`main` function (converted to ``wchar_t``
-   :c:func:`Py_DecodeLocale`).  It is important to note that the argument list
-   may be modified (but the contents of the strings pointed to by the argument
-   list are not).
+   :c:func:`Py_DecodeLocale`). It is important to note that the argument list
+   entries may be modified to point to strings other than those passed in
+   (however, the contents of the strings pointed to by the argument list are
+   not modified).
 
    The return value will be ``0`` if the interpreter exits normally (i.e.,
    without an exception), ``1`` if the interpreter exits due to an exception,
@@ -357,7 +358,9 @@ Initializing and finalizing the interpreter
 
 .. c:function:: int Py_BytesMain(int argc, char **argv)
 
-   Similar to :c:func:`Py_Main` but *argv* is an array of bytes strings.
+   Similar to :c:func:`Py_Main` but *argv* is an array of bytes strings,
+   allowing the calling application to delegate the text decoding step to
+   the CPython runtime.
 
    .. versionadded:: 3.8
 
