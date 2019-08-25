@@ -13,12 +13,7 @@
 
 # Sometimes you may find shebangs with flags such as `#! /usr/bin/env python -si`.
 # Normally, pathfix overwrites the entire line, including the flags.
-# To keep flags from the original shebang line, use -f "".
-# To add a flag, pass it to the -f option. For example, -f s adds the `s` flag
-# if not already present.
-# The new flag will be added before any existing flags.
-# Adding multiple flags, multi-letter flags, or options with arguments
-# is not supported.
+# To change interpreter and keep flags from the original shebang line, use -k.
 
 
 # Undoubtedly you can do this using find and sed or perl, but this is
@@ -50,11 +45,12 @@ def main():
     global new_interpreter
     global preserve_timestamps
     global create_backup
-    global add_flag
-    usage = ('usage: %s -i /interpreter -p -n -f flags-to-add file-or-directory ...\n' %
+    global keep_flags
+    keep_flags = False
+    usage = ('usage: %s -i /interpreter -p -n -k file-or-directory ...\n' %
              sys.argv[0])
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i:f:pn')
+        opts, args = getopt.getopt(sys.argv[1:], 'i:kpn')
     except getopt.error as msg:
         err(str(msg) + '\n')
         err(usage)
@@ -66,11 +62,8 @@ def main():
             preserve_timestamps = True
         if o == '-n':
             create_backup = False
-        if o == '-f':
-            if len(a) > 1:
-                err('-f: just one literal flags can be added')
-                sys.exit(2)
-            add_flag = a.encode()
+        if o == '-k':
+            keep_flags = True
     if not new_interpreter or not new_interpreter.startswith(b'/') or \
            not args:
         err('-i option or file-or-directory missing\n')
@@ -183,48 +176,25 @@ def fix(filename):
 
 
 def parse_shebang(shebangline):
-    """takes shebangline and returns tuple with string of shebang's flags
-    and string of shebang's args
-    parse_shebang(b'#!/usr/bin/python -f sfj') --> (b'f',b'sfj')
-    """
     end = len(shebangline)
     start = shebangline.find(b' -', 0, end)  # .find() returns index at space
     if start == -1:
         return b'', b''
-
-    start += 2
-    flags = shebangline[start:end].split()
-    args = b''
-    if len(flags) > 1:
-        args = b' '.join(flags[1:])
-    flags = flags[0]
-    return flags, args
-
+    print(shebangline[(start + 2):end])
+    return shebangline[(start + 2):end]
 
 
 def fixline(line):
+    global keep_flags
     if not line.startswith(b'#!'):
         return line
 
     if b"python" not in line:
         return line
-
-    if add_flag is not None:
-        flags, args = parse_shebang(line)
-        if args:
-            args = b' ' + args
-
-        if flags == b'' and add_flag == b'':
-            flags = b''
-
-        elif add_flag in flags:
-            flags = b' -' + flags + args
-
-        else:
-            flags = b' -' + add_flag + flags + args
-    else:
-        flags = b''
-    return b'#! ' + new_interpreter + flags + b'\n'
+    if keep_flags:
+        flags = parse_shebang(line)
+        return b'#! ' + new_interpreter + b" -" + flags
+    return b'#! ' + new_interpreter + b'\n'
 
 
 if __name__ == '__main__':
