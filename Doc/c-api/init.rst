@@ -28,9 +28,10 @@ The following functions can be safely called before Python is initialized:
 
   * :c:func:`Py_Initialize`
   * :c:func:`Py_InitializeEx`
+  * :c:func:`Py_InitializeFromConfig`
   * :c:func:`Py_BytesMain`
   * :c:func:`Py_Main`
-  * the runtime initialization functions covered in :ref:`init-config`
+  * the runtime pre-initialization functions covered in :ref:`init-config`
 
 * Configuration functions:
 
@@ -76,8 +77,8 @@ The following functions can be safely called before Python is initialized:
 .. note::
 
    Despite their apparent similarity to some of the functions listed above,
-   the following functions **should not be called** before
-   :c:func:`Py_Initialize`: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
+   the following functions **should not be called** before the interpreter has
+   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
    :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
    :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`,
    :c:func:`Py_GetProgramName`, :c:func:`PyEval_InitThreads`, and
@@ -283,6 +284,15 @@ Initializing and finalizing the interpreter
    which may be useful when CPython is embedded as part of a larger application.
 
 
+.. c:function:: PyStatus Py_InitializeFromConfig(const PyConfig *config)
+
+   Initialize Python from *config* configuration.
+
+   See the :ref:`init-config` section for details on pre-initializing the
+   interpreter, populating the runtime configuration structure, and querying
+   the returned status structure.
+
+
 .. c:function:: int Py_IsInitialized()
 
    Return true (nonzero) when the Python interpreter has been initialized, false
@@ -350,12 +360,12 @@ Initializing and finalizing the interpreter
    command line interface, rather than just embedding a Python runtime in a
    larger application.
 
-   The *argc* and *argv* parameters should be prepared exactly as those which
-   are passed to a C program's :c:func:`main` function (converted to ``wchar_t``
-   :c:func:`Py_DecodeLocale`). It is important to note that the argument list
-   entries may be modified to point to strings other than those passed in
-   (however, the contents of the strings pointed to by the argument list are
-   not modified).
+   The *argc* and *argv* parameters are similar to those which are passed to a
+   C program's :c:func:`main` function, except that the *argv* entries are first
+   converted to ``wchar_t`` using :c:func:`Py_DecodeLocale`). It is also
+   important to note that the argument list entries may be modified to point to
+   strings other than those passed in (however, the contents of the strings
+   pointed to by the argument list are not modified).
 
    The return value will be ``0`` if the interpreter exits normally (i.e.,
    without an exception), ``1`` if the interpreter exits due to an exception,
@@ -381,12 +391,15 @@ Initializing and finalizing the interpreter
 
       Py_RunMain();
 
-   If this function is called after a separate :c:func:`Py_Initialize` or
-   :c:func:`Py_InitializeEx` call, then exactly which environmental and
-   command line configuration settings will be respected is version dependent
-   (since it depends on which settings are handled in the now skipped implicit
-   call to ``Py_Initialize``, and which are handled directly in ``Py_Main``
-   itself).
+   In normal usage, an embedding application will call this function
+   *instead* of calling :c:func:`Py_Initialize`, :c:func:`Py_InitializeEx` or
+   :c:func:`Py_InitializeFromConfig` directly, and all settings will be applied
+   as described elsewhere in this documentation. If this function is instead
+   called *after* a preceding runtime initialization API call, then exactly
+   which environmental and command line configuration settings will be updated
+   is version dependent (as it depends on which settings correctly support
+   being modified after they have already been set once when the runtime was
+   first initialized).
 
 
 .. c:function:: int Py_RunMain(void)

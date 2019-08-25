@@ -45,9 +45,8 @@ Utility functions:
 * :c:func:`PyWideStringList_Append`
 * :c:func:`PyWideStringList_Insert`
 
-Runtime initialization functions:
+Runtime pre-initialization functions:
 
-* :c:func:`Py_InitializeFromConfig`
 * :c:func:`Py_PreInitialize`
 * :c:func:`Py_PreInitializeFromArgs`
 * :c:func:`Py_PreInitializeFromBytesArgs`
@@ -685,21 +684,20 @@ The ``xoptions`` options are parsed to set other options: see :option:`-X`
 option.
 
 
+.._init-from-config:
+
 Initialization with PyConfig
 ----------------------------
 
-Function to initialize Python:
-
-.. c:function:: PyStatus Py_InitializeFromConfig(const PyConfig *config)
-
-   Initialize Python from *config* configuration.
+Initializing the interpreter from a populated configuration struct is handled
+by calling :c:func:`Py_InitializeFromConfig`.
 
 The caller is responsible to handle exceptions (error or exit) using
 :c:func:`PyStatus_Exception` and :c:func:`Py_ExitStatusException`.
 
-``PyImport_FrozenModules``, ``PyImport_AppendInittab()`` or
-``PyImport_ExtendInittab()`` is used: they must be set or called after Python
-preinitialization and before the Python initialization.
+If ``PyImport_FrozenModules``, ``PyImport_AppendInittab()`` or
+``PyImport_ExtendInittab()`` are used, they must be set or called after Python
+preinitialization and before the full Python initialization.
 
 Example setting the program name::
 
