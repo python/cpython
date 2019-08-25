@@ -8,31 +8,30 @@ extern "C" {
 /* Interface to random parts in ceval.c */
 
 /* PyEval_CallObjectWithKeywords(), PyEval_CallObject(), PyEval_CallFunction
- * and PyEval_CallMethod are kept for backward compatibility: PyObject_Call(),
- * PyObject_CallFunction() and PyObject_CallMethod() are recommended to call
- * a callable object.
+ * and PyEval_CallMethod are deprecated. Since they are officially part of the
+ * stable ABI (PEP 384), they must be kept for backward compatibility.
+ * PyObject_Call(), PyObject_CallFunction() and PyObject_CallMethod() are
+ * recommended to call a callable object.
  */
 
-PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
+Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
     PyObject *callable,
     PyObject *args,
     PyObject *kwargs);
 
-/* Inline this */
+/* Deprecated since PyEval_CallObjectWithKeywords is deprecated */
 #define PyEval_CallObject(callable, arg) \
     PyEval_CallObjectWithKeywords(callable, arg, (PyObject *)NULL)
 
-PyAPI_FUNC(PyObject *) PyEval_CallFunction(PyObject *callable,
-                                           const char *format, ...);
-PyAPI_FUNC(PyObject *) PyEval_CallMethod(PyObject *obj,
-                                         const char *name,
-                                         const char *format, ...);
+Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallFunction(
+    PyObject *callable, const char *format, ...);
+Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallMethod(
+    PyObject *obj, const char *name, const char *format, ...);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);
 PyAPI_FUNC(void) PyEval_SetTrace(Py_tracefunc, PyObject *);
-PyAPI_FUNC(void) _PyEval_SetCoroutineWrapper(PyObject *);
-PyAPI_FUNC(PyObject *) _PyEval_GetCoroutineWrapper(void);
+PyAPI_FUNC(int) _PyEval_GetCoroutineOriginTrackingDepth(void);
 PyAPI_FUNC(void) _PyEval_SetAsyncGenFirstiter(PyObject *);
 PyAPI_FUNC(PyObject *) _PyEval_GetAsyncGenFirstiter(void);
 PyAPI_FUNC(void) _PyEval_SetAsyncGenFinalizer(PyObject *);
@@ -46,15 +45,16 @@ PyAPI_FUNC(PyObject *) PyEval_GetGlobals(void);
 PyAPI_FUNC(PyObject *) PyEval_GetLocals(void);
 PyAPI_FUNC(struct _frame *) PyEval_GetFrame(void);
 
+#ifndef Py_LIMITED_API
+/* Helper to look up a builtin object */
+PyAPI_FUNC(PyObject *) _PyEval_GetBuiltinId(_Py_Identifier *);
 /* Look at the current frame's (if any) code's co_flags, and turn on
    the corresponding compiler flags in cf->cf_flags.  Return 1 if any
    flag was set, else return 0. */
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyEval_MergeCompilerFlags(PyCompilerFlags *cf);
 #endif
 
 PyAPI_FUNC(int) Py_AddPendingCall(int (*func)(void *), void *arg);
-PyAPI_FUNC(void) _PyEval_SignalReceived(void);
 PyAPI_FUNC(int) Py_MakePendingCalls(void);
 
 /* Protection against deeply nested recursive calls
@@ -93,21 +93,19 @@ PyAPI_FUNC(int) Py_GetRecursionLimit(void);
       PyThreadState_GET()->overflowed = 0;  \
     } while(0)
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(const char *where);
-/* XXX _Py_CheckRecursionLimit should be changed to
-   _PyRuntime.ceval.check_recursion_limit.  However, due to the macros
-   in which it's used, _Py_CheckRecursionLimit is stuck in the stable
-   ABI.  It should be removed therefrom when possible.
+
+/* Due to the macros in which it's used, _Py_CheckRecursionLimit is in
+   the stable ABI.  It should be removed therefrom when possible.
 */
 PyAPI_DATA(int) _Py_CheckRecursionLimit;
 
 #ifdef USE_STACKCHECK
-/* With USE_STACKCHECK, we artificially decrement the recursion limit in order
-   to trigger regular stack checks in _Py_CheckRecursiveCall(), except if
-   the "overflowed" flag is set, in which case we need the true value
-   of _Py_CheckRecursionLimit for _Py_MakeEndRecCheck() to function properly.
+/* With USE_STACKCHECK, trigger stack checks in _Py_CheckRecursiveCall()
+   on every 64th call to Py_EnterRecursiveCall.
 */
 #  define _Py_MakeRecCheck(x)  \
-    (++(x) > (_Py_CheckRecursionLimit += PyThreadState_GET()->overflowed - 1))
+    (++(x) > _Py_CheckRecursionLimit || \
+     ++(PyThreadState_GET()->stackcheck_counter) > 64)
 #else
 #  define _Py_MakeRecCheck(x)  (++(x) > _Py_CheckRecursionLimit)
 #endif
@@ -190,14 +188,10 @@ PyAPI_FUNC(void) PyEval_RestoreThread(PyThreadState *);
 
 PyAPI_FUNC(int)  PyEval_ThreadsInitialized(void);
 PyAPI_FUNC(void) PyEval_InitThreads(void);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyEval_FiniThreads(void);
-#endif /* !Py_LIMITED_API */
-PyAPI_FUNC(void) PyEval_AcquireLock(void) Py_DEPRECATED(3.2);
-PyAPI_FUNC(void) PyEval_ReleaseLock(void) /* Py_DEPRECATED(3.2) */;
+Py_DEPRECATED(3.2) PyAPI_FUNC(void) PyEval_AcquireLock(void);
+/* Py_DEPRECATED(3.2) */ PyAPI_FUNC(void) PyEval_ReleaseLock(void);
 PyAPI_FUNC(void) PyEval_AcquireThread(PyThreadState *tstate);
 PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
-PyAPI_FUNC(void) PyEval_ReInitThreads(void);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyEval_SetSwitchInterval(unsigned long microseconds);
@@ -219,7 +213,6 @@ PyAPI_FUNC(Py_ssize_t) _PyEval_RequestCodeExtraIndex(freefunc);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyEval_SliceIndex(PyObject *, Py_ssize_t *);
 PyAPI_FUNC(int) _PyEval_SliceIndexNotNone(PyObject *, Py_ssize_t *);
-PyAPI_FUNC(void) _PyEval_SignalAsyncExc(void);
 #endif
 
 /* Masks and values used by FORMAT_VALUE opcode. */

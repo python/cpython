@@ -1,3 +1,10 @@
+# added for local development
+.buildaix/
+Modules/python.exp
+buildaix/
+installp/
+.gitignore
+
 # Two-trick pony for OSX and other case insensitive file systems:
 # Ignore ./python binary on Unix but still look into ./Python/ directory.
 /python
@@ -29,6 +36,7 @@ Lib/test/data/*
 Makefile
 Makefile.pre
 Misc/python.pc
+Misc/python-embed.pc
 Misc/python-config.sh
 Modules/Setup
 Modules/Setup.config
@@ -62,11 +70,12 @@ PCbuild/*.VC.db
 PCbuild/*.VC.opendb
 PCbuild/.vs/
 PCbuild/amd64/
+PCbuild/arm32/
+PCbuild/arm64/
 PCbuild/obj/
 PCbuild/win32/
+Tools/unicode/data/
 .purify
-Parser/pgen
-Parser/pgen.exe
 __pycache__
 autom4te.cache
 build/
@@ -106,3 +115,5 @@ Tools/ssl/amd64
 Tools/ssl/win32
 .vs/
 .vscode/
+gmon.out
+.mypy_cache/

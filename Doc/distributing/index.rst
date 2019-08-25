@@ -31,7 +31,7 @@ installing other Python projects, refer to the
 Key terms
 =========
 
-* the `Python Packaging Index <https://pypi.python.org/pypi>`__ is a public
+* the `Python Packaging Index <https://pypi.org>`__ is a public
   repository of open source licensed packages made available for use by
   other Python users
 * the `Python Packaging Authority
@@ -62,7 +62,7 @@ Key terms
   locally.
 
 .. _setuptools: https://setuptools.readthedocs.io/en/latest/
-.. _wheel: https://wheel.readthedocs.org
+.. _wheel: https://wheel.readthedocs.io/
 
 Open source licensing and collaboration
 =======================================
@@ -111,24 +111,30 @@ by invoking the ``pip`` module at the command line::
 The Python Packaging User Guide includes more details on the `currently
 recommended tools`_.
 
-.. _currently recommended tools: https://packaging.python.org/en/latest/current/#packaging-tool-recommendations
+.. _currently recommended tools: https://packaging.python.org/guides/tool-recommendations/#packaging-tool-recommendations
 
-Reading the guide
-=================
+.. index::
+   single: Python Package Index (PyPI)
+   single: PyPI; (see Python Package Index (PyPI))
+
+.. _publishing-python-packages:
+
+Reading the Python Packaging User Guide
+=======================================
 
 The Python Packaging User Guide covers the various key steps and elements
-involved in creating a project:
+involved in creating and publishing a project:
 
 * `Project structure`_
 * `Building and packaging the project`_
 * `Uploading the project to the Python Packaging Index`_
 
 .. _Project structure: \
-   https://packaging.python.org/en/latest/distributing/
+    https://packaging.python.org/tutorials/distributing-packages/
 .. _Building and packaging the project: \
-   https://packaging.python.org/en/latest/distributing/#packaging-your-project
+   https://packaging.python.org/tutorials/distributing-packages/#packaging-your-project
 .. _Uploading the project to the Python Packaging Index: \
-   https://packaging.python.org/en/latest/distributing/#uploading-your-project-to-pypi
+   https://packaging.python.org/tutorials/distributing-packages/#uploading-your-project-to-pypi
 
 
 How do I...?
@@ -160,7 +166,7 @@ Python Packaging User Guide for more information and recommendations.
 .. seealso::
 
    `Python Packaging User Guide: Binary Extensions
-   <https://packaging.python.org/en/latest/extensions>`__
+   <https://packaging.python.org/guides/packaging-binary-extensions/>`__
 
 .. other topics:
 

@@ -1,3 +1,4 @@
+import functools
 import sys
 import types
 import warnings
@@ -1226,6 +1227,56 @@ class Test_TestLoader(unittest.TestCase):
         names = ['test_1', 'test_2', 'test_3']
         self.assertEqual(loader.getTestCaseNames(TestC), names)
 
+    # "Return a sorted sequence of method names found within testCaseClass"
+    #
+    # If TestLoader.testNamePatterns is set, only tests that match one of these
+    # patterns should be included.
+    def test_getTestCaseNames__testNamePatterns(self):
+        class MyTest(unittest.TestCase):
+            def test_1(self): pass
+            def test_2(self): pass
+            def foobar(self): pass
+
+        loader = unittest.TestLoader()
+
+        loader.testNamePatterns = []
+        self.assertEqual(loader.getTestCaseNames(MyTest), [])
+
+        loader.testNamePatterns = ['*1']
+        self.assertEqual(loader.getTestCaseNames(MyTest), ['test_1'])
+
+        loader.testNamePatterns = ['*1', '*2']
+        self.assertEqual(loader.getTestCaseNames(MyTest), ['test_1', 'test_2'])
+
+        loader.testNamePatterns = ['*My*']
+        self.assertEqual(loader.getTestCaseNames(MyTest), ['test_1', 'test_2'])
+
+        loader.testNamePatterns = ['*my*']
+        self.assertEqual(loader.getTestCaseNames(MyTest), [])
+
+    # "Return a sorted sequence of method names found within testCaseClass"
+    #
+    # If TestLoader.testNamePatterns is set, only tests that match one of these
+    # patterns should be included.
+    #
+    # For backwards compatibility reasons (see bpo-32071), the check may only
+    # touch a TestCase's attribute if it starts with the test method prefix.
+    def test_getTestCaseNames__testNamePatterns__attribute_access_regression(self):
+        class Trap:
+            def __get__(*ignored):
+                self.fail('Non-test attribute accessed')
+
+        class MyTest(unittest.TestCase):
+            def test_1(self): pass
+            foobar = Trap()
+
+        loader = unittest.TestLoader()
+        self.assertEqual(loader.getTestCaseNames(MyTest), ['test_1'])
+
+        loader = unittest.TestLoader()
+        loader.testNamePatterns = []
+        self.assertEqual(loader.getTestCaseNames(MyTest), [])
+
     ################################################################
     ### /Tests for TestLoader.getTestCaseNames()
 
@@ -1523,6 +1574,21 @@ class Test_TestLoader(unittest.TestCase):
     def test_suiteClass__default_value(self):
         loader = unittest.TestLoader()
         self.assertIs(loader.suiteClass, unittest.TestSuite)
+
+
+    def test_partial_functions(self):
+        def noop(arg):
+            pass
+
+        class Foo(unittest.TestCase):
+            pass
+
+        setattr(Foo, 'test_partial', functools.partial(noop, None))
+
+        loader = unittest.TestLoader()
+
+        test_names = ['test_partial']
+        self.assertEqual(loader.getTestCaseNames(Foo), test_names)
 
 
 if __name__ == "__main__":

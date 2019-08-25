@@ -1,11 +1,9 @@
-''' Test idlelib.tree.
+"Test tree. coverage 56%."
 
-Coverage: 56%
-'''
 from idlelib import tree
+import unittest
 from test.support import requires
 requires('gui')
-import unittest
 from tkinter import Tk
 
 

@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#include "pystate.h"   /* _PyErr_StackItem */
+
 struct _frame; /* Avoid including frameobject.h */
 
 /* _PyGenObject_HEAD defines the initial segment of generator
@@ -25,7 +27,8 @@ struct _frame; /* Avoid including frameobject.h */
     /* Name of the generator. */                                            \
     PyObject *prefix##_name;                                                \
     /* Qualified name of the generator. */                                  \
-    PyObject *prefix##_qualname;
+    PyObject *prefix##_qualname;                                            \
+    _PyErr_StackItem prefix##_exc_state;
 
 typedef struct {
     /* The gi_ prefix is intended to remind of generator-iterator. */
@@ -50,6 +53,7 @@ PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 #ifndef Py_LIMITED_API
 typedef struct {
     _PyGenObject_HEAD(cr)
+    PyObject *cr_origin;
 } PyCoroObject;
 
 PyAPI_DATA(PyTypeObject) PyCoro_Type;

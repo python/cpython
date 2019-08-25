@@ -97,8 +97,8 @@ class Address:
         return self.addr_spec
 
     def __eq__(self, other):
-        if type(other) != type(self):
-            return False
+        if not isinstance(other, Address):
+            return NotImplemented
         return (self.display_name == other.display_name and
                 self.username == other.username and
                 self.domain == other.domain)
@@ -150,8 +150,8 @@ class Group:
         return "{}:{};".format(disp, adrstr)
 
     def __eq__(self, other):
-        if type(other) != type(self):
-            return False
+        if not isinstance(other, Group):
+            return NotImplemented
         return (self.display_name == other.display_name and
                 self.addresses == other.addresses)
 
@@ -245,13 +245,16 @@ class BaseHeader(str):
         the header name and the ': ' separator.
 
         """
-        # At some point we need to only put fws here if it was in the source.
+        # At some point we need to put fws here if it was in the source.
         header = parser.Header([
             parser.HeaderLabel([
                 parser.ValueTerminal(self.name, 'header-name'),
                 parser.ValueTerminal(':', 'header-sep')]),
-            parser.CFWSList([parser.WhiteSpaceTerminal(' ', 'fws')]),
-                             self._parse_tree])
+            ])
+        if self._parse_tree:
+            header.append(
+                parser.CFWSList([parser.WhiteSpaceTerminal(' ', 'fws')]))
+        header.append(self._parse_tree)
         return header.fold(policy=policy)
 
 
@@ -517,6 +520,18 @@ class ContentTransferEncodingHeader:
         return self._cte
 
 
+class MessageIDHeader:
+
+    max_count = 1
+    value_parser = staticmethod(parser.parse_message_id)
+
+    @classmethod
+    def parse(cls, value, kwds):
+        kwds['parse_tree'] = parse_tree = cls.value_parser(value)
+        kwds['decoded'] = str(parse_tree)
+        kwds['defects'].extend(parse_tree.all_defects)
+
+
 # The header factory #
 
 _default_header_map = {
@@ -539,6 +554,7 @@ _default_header_map = {
     'content-type':                 ContentTypeHeader,
     'content-disposition':          ContentDispositionHeader,
     'content-transfer-encoding':    ContentTransferEncodingHeader,
+    'message-id':                   MessageIDHeader,
     }
 
 class HeaderRegistry:

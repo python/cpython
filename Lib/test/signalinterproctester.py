@@ -21,25 +21,19 @@ class InterProcessSignalTests(unittest.TestCase):
         self.got_signals['SIGUSR1'] += 1
         raise SIGUSR1Exception
 
-    def wait_signal(self, child, signame, exc_class=None):
-        try:
-            if child is not None:
-                # This wait should be interrupted by exc_class
-                # (if set)
-                child.wait()
+    def wait_signal(self, child, signame):
+        if child is not None:
+            # This wait should be interrupted by exc_class
+            # (if set)
+            child.wait()
 
-            timeout = 10.0
-            deadline = time.monotonic() + timeout
+        timeout = 10.0
+        deadline = time.monotonic() + timeout
 
-            while time.monotonic() < deadline:
-                if self.got_signals[signame]:
-                    return
-                signal.pause()
-        except BaseException as exc:
-            if exc_class is not None and isinstance(exc, exc_class):
-                # got the expected exception
+        while time.monotonic() < deadline:
+            if self.got_signals[signame]:
                 return
-            raise
+            signal.pause()
 
         self.fail('signal %s not received after %s seconds'
                   % (signame, timeout))
@@ -65,8 +59,9 @@ class InterProcessSignalTests(unittest.TestCase):
         self.assertEqual(self.got_signals, {'SIGHUP': 1, 'SIGUSR1': 0,
                                             'SIGALRM': 0})
 
-        with self.subprocess_send_signal(pid, "SIGUSR1") as child:
-            self.wait_signal(child, 'SIGUSR1', SIGUSR1Exception)
+        with self.assertRaises(SIGUSR1Exception):
+            with self.subprocess_send_signal(pid, "SIGUSR1") as child:
+                self.wait_signal(child, 'SIGUSR1')
         self.assertEqual(self.got_signals, {'SIGHUP': 1, 'SIGUSR1': 1,
                                             'SIGALRM': 0})
 
@@ -75,8 +70,9 @@ class InterProcessSignalTests(unittest.TestCase):
             child.wait()
 
         try:
-            signal.alarm(1)
-            self.wait_signal(None, 'SIGALRM', KeyboardInterrupt)
+            with self.assertRaises(KeyboardInterrupt):
+                signal.alarm(1)
+                self.wait_signal(None, 'SIGALRM')
             self.assertEqual(self.got_signals, {'SIGHUP': 1, 'SIGUSR1': 1,
                                                 'SIGALRM': 0})
         finally:

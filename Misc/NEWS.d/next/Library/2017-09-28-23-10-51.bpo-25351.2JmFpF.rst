@@ -1,1 +1,0 @@
-Avoid venv activate failures with undefined variables

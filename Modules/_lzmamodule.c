@@ -105,7 +105,7 @@ catch_lzma_error(lzma_ret lzret)
 static void*
 PyLzma_Malloc(void *opaque, size_t items, size_t size)
 {
-    if (items > (size_t)PY_SSIZE_T_MAX / size)
+    if (size != 0 && items > (size_t)PY_SSIZE_T_MAX / size)
         return NULL;
     /* PyMem_Malloc() cannot be used:
        the GIL is not held when lzma_code() is called */
@@ -216,7 +216,7 @@ parse_filter_spec_lzma(PyObject *spec)
 
     if (lzma_lzma_preset(options, preset)) {
         PyMem_Free(options);
-        PyErr_Format(Error, "Invalid compression preset: %d", preset);
+        PyErr_Format(Error, "Invalid compression preset: %u", preset);
         return NULL;
     }
 
@@ -588,14 +588,6 @@ _lzma_LZMACompressor_flush_impl(Compressor *self)
     return result;
 }
 
-static PyObject *
-Compressor_getstate(Compressor *self, PyObject *noargs)
-{
-    PyErr_Format(PyExc_TypeError, "cannot serialize '%s' object",
-                 Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 static int
 Compressor_init_xz(lzma_stream *lzs, int check, uint32_t preset,
                    PyObject *filterspecs)
@@ -627,7 +619,7 @@ Compressor_init_alone(lzma_stream *lzs, uint32_t preset, PyObject *filterspecs)
         lzma_options_lzma options;
 
         if (lzma_lzma_preset(&options, preset)) {
-            PyErr_Format(Error, "Invalid compression preset: %d", preset);
+            PyErr_Format(Error, "Invalid compression preset: %u", preset);
             return -1;
         }
         lzret = lzma_alone_encoder(lzs, &options);
@@ -791,7 +783,6 @@ Compressor_dealloc(Compressor *self)
 static PyMethodDef Compressor_methods[] = {
     _LZMA_LZMACOMPRESSOR_COMPRESS_METHODDEF
     _LZMA_LZMACOMPRESSOR_FLUSH_METHODDEF
-    {"__getstate__", (PyCFunction)Compressor_getstate, METH_NOARGS},
     {NULL}
 };
 
@@ -829,10 +820,10 @@ static PyTypeObject Compressor_type = {
     sizeof(Compressor),                 /* tp_basicsize */
     0,                                  /* tp_itemsize */
     (destructor)Compressor_dealloc,     /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1075,14 +1066,6 @@ _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
     return result;
 }
 
-static PyObject *
-Decompressor_getstate(Decompressor *self, PyObject *noargs)
-{
-    PyErr_Format(PyExc_TypeError, "cannot serialize '%s' object",
-                 Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 static int
 Decompressor_init_raw(lzma_stream *lzs, PyObject *filterspecs)
 {
@@ -1160,17 +1143,21 @@ _lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
     self->lzs.allocator = &self->alloc;
     self->lzs.next_in = NULL;
 
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
+    PyThread_type_lock lock = PyThread_allocate_lock();
+    if (lock == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
         return -1;
     }
+    if (self->lock != NULL) {
+        PyThread_free_lock(self->lock);
+    }
+    self->lock = lock;
 
     self->check = LZMA_CHECK_UNKNOWN;
     self->needs_input = 1;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
+    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
     if (self->unused_data == NULL)
         goto error;
 
@@ -1228,7 +1215,6 @@ Decompressor_dealloc(Decompressor *self)
 
 static PyMethodDef Decompressor_methods[] = {
     _LZMA_LZMADECOMPRESSOR_DECOMPRESS_METHODDEF
-    {"__getstate__", (PyCFunction)Decompressor_getstate, METH_NOARGS},
     {NULL}
 };
 
@@ -1262,10 +1248,10 @@ static PyTypeObject Decompressor_type = {
     sizeof(Decompressor),               /* tp_basicsize */
     0,                                  /* tp_itemsize */
     (destructor)Decompressor_dealloc,   /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */

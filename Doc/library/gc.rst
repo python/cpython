@@ -63,11 +63,14 @@ The :mod:`gc` module provides the following functions:
    Return the debugging flags currently set.
 
 
-.. function:: get_objects()
+.. function:: get_objects(generation=None)
 
    Returns a list of all objects tracked by the collector, excluding the list
-   returned.
+   returned. If *generation* is not None, return only the objects tracked by
+   the collector that are in that generation.
 
+   .. versionchanged:: 3.8
+      New *generation* parameter.
 
 .. function:: get_stats()
 
@@ -172,6 +175,33 @@ The :mod:`gc` module provides the following functions:
       True
 
    .. versionadded:: 3.1
+
+
+.. function:: freeze()
+
+   Freeze all the objects tracked by gc - move them to a permanent generation
+   and ignore all the future collections. This can be used before a POSIX
+   fork() call to make the gc copy-on-write friendly or to speed up collection.
+   Also collection before a POSIX fork() call may free pages for future
+   allocation which can cause copy-on-write too so it's advised to disable gc
+   in parent process and freeze before fork and enable gc in child process.
+
+   .. versionadded:: 3.7
+
+
+.. function:: unfreeze()
+
+   Unfreeze the objects in the permanent generation, put them back into the
+   oldest generation.
+
+   .. versionadded:: 3.7
+
+
+.. function:: get_freeze_count()
+
+   Return the number of objects in the permanent generation.
+
+   .. versionadded:: 3.7
 
 
 The following variables are provided for read-only access (you can mutate the
