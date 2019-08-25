@@ -25,6 +25,7 @@ The following functions can be safely called before Python is initialized:
 
   * :c:func:`Py_Initialize`
   * :c:func:`Py_InitializeEx`
+  * :c:func:`Py_BytesMain`
   * :c:func:`Py_Main`
 
 * Configuration functions:
@@ -278,6 +279,12 @@ Initializing and finalizing the interpreter
    :c:func:`Py_Initialize` is called again.
 
 
+.. c:function:: void Py_Finalize()
+
+   This is a backwards-compatible version of :c:func:`Py_FinalizeEx` that
+   disregards the return value.
+
+
 .. c:function:: int Py_FinalizeEx()
 
    Undo all initializations made by :c:func:`Py_Initialize` and subsequent use of
@@ -311,10 +318,13 @@ Initializing and finalizing the interpreter
    .. versionadded:: 3.6
 
 
-.. c:function:: void Py_Finalize()
+.. c:function:: int Py_BytesMain(int argc, char **argv)
 
-   This is a backwards-compatible version of :c:func:`Py_FinalizeEx` that
-   disregards the return value.
+   Similar to :c:func:`Py_Main` but *argv* is an array of bytes strings,
+   allowing the calling application to delegate the text decoding step to
+   the CPython runtime.
+
+   .. versionadded:: 3.8
 
 
 .. c:function:: int Py_Main(int argc, wchar_t **argv)
@@ -354,15 +364,6 @@ Initializing and finalizing the interpreter
    (since it depends on which settings are handled in the now skipped implicit
    call to ``Py_Initialize``, and which are handled directly in ``Py_Main``
    itself).
-
-
-.. c:function:: int Py_BytesMain(int argc, char **argv)
-
-   Similar to :c:func:`Py_Main` but *argv* is an array of bytes strings,
-   allowing the calling application to delegate the text decoding step to
-   the CPython runtime.
-
-   .. versionadded:: 3.8
 
 
 Process-wide parameters
