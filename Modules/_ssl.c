@@ -5580,10 +5580,9 @@ ssl_collect_certificates(const char *store_name,
         }
     }
     if (storesAdded == 0) {
-        CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG);
+        CertCloseStore(hCollectionStore, 0);
         return NULL;
     }
-
     return hCollectionStore;
 }
 
@@ -5695,16 +5694,12 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     Py_XDECREF(keyusage);
     Py_XDECREF(tup);
 
-    /* When a collection store and its sibling stores are closed
-       with CertCloseStore using CERT_CLOSE_STORE_FORCE_FLAG,
-       the collection store must be closed before its sibling stores.
-      (https://docs.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certaddstoretocollection) */
-    BOOL success = CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG);
+    BOOL success = CertCloseStore(hCollectionStore, 0);
     for (i = 0; i < system_stores_count; i++) {
         if (system_store_handles[i] == NULL) {
             continue;
         }
-        if (!CertCloseStore(system_store_handles[i], CERT_CLOSE_STORE_FORCE_FLAG)) {
+        if (!CertCloseStore(system_store_handles[i], 0)) {
             success = 0;
         }
     }
@@ -5713,7 +5708,6 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
         Py_XDECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
     }
-
     return result;
 }
 
@@ -5799,16 +5793,12 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
     Py_XDECREF(enc);
     Py_XDECREF(tup);
 
-    /* When a collection store and its sibling stores are closed
-       with CertCloseStore using CERT_CLOSE_STORE_FORCE_FLAG,
-       the collection store must be closed before its sibling stores.
-      (https://docs.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certaddstoretocollection) */
-    BOOL success = CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG);
+    BOOL success = CertCloseStore(hCollectionStore, 0);
     for (i = 0; i < system_stores_count; i++) {
         if (system_store_handles[i] == NULL) {
             continue;
         }
-        if (!CertCloseStore(system_store_handles[i], CERT_CLOSE_STORE_FORCE_FLAG)) {
+        if (!CertCloseStore(system_store_handles[i], 0)) {
             success = 0;
         }
     }
