@@ -2814,6 +2814,7 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
         '''
 
 class TestMutuallyExclusiveNested(MEMixin, TestCase):
+
     def get_parser(self, required):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         group = parser.add_mutually_exclusive_group(required=required)
@@ -2826,10 +2827,6 @@ class TestMutuallyExclusiveNested(MEMixin, TestCase):
         group3.add_argument('-e')
         group3.add_argument('-f')
         return parser
-
-    failures = []
-    successes = []
-    successes_when_not_required = []
 
     usage_when_not_required = '''\
         usage: PROG [-h] [-a A | -b B | [-c C | -d D | [-e E | -f F]]]
@@ -2849,6 +2846,12 @@ class TestMutuallyExclusiveNested(MEMixin, TestCase):
           -e E
           -f F
         '''
+
+    # We are only interested in testing the behavior of format_usage().
+    test_failures_when_not_required = None
+    test_failures_when_required = None
+    test_successes_when_not_required = None
+    test_successes_when_required = None
 
 # =================================================
 # Mutually exclusive group in parent parser tests
