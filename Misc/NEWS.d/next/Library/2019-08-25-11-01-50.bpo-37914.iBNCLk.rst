@@ -1,0 +1,2 @@
+Support total_hours() and total_minutes() in class timedelta.
+Patch by hongweipeng.
