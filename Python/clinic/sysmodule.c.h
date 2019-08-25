@@ -362,9 +362,15 @@ sys_setswitchinterval(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double interval;
 
-    interval = PyFloat_AsDouble(arg);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(arg)) {
+        interval = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        interval = PyFloat_AsDouble(arg);
+        if (interval == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = sys_setswitchinterval_impl(module, interval);
 
@@ -1082,4 +1088,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=43c4fde7b5783d8d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1a67b37c4486d65f input=a9049054013a1b77]*/
