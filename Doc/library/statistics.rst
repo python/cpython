@@ -730,6 +730,23 @@ Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
     >>> [round(sat.inv_cdf(p / 10)) for p in range(1, 10)]
     [810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
 
+To estimate the distribution for a model than isn't easy to solve
+analytically, :class:`NormalDist` can generate input samples for a `Monte
+Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
+
+.. doctest::
+
+    >>> def model(x, y, z):
+    ...     return (3*x + 7*x*y - 5*y) / (11 * z)
+    ...
+    >>> n = 100_000
+    >>> seed = 86753099035768
+    >>> X = NormalDist(10, 2.5).samples(n, seed=seed)
+    >>> Y = NormalDist(15, 1.75).samples(n, seed=seed)
+    >>> Z = NormalDist(50, 1.25).samples(n, seed=seed)
+    >>> NormalDist.from_samples(map(model, X, Y, Z))     # doctest: +SKIP
+    NormalDist(mu=1.8661894803304777, sigma=0.65238717376862)
+
 Normal distributions commonly arise in machine learning problems.
 
 Wikipedia has a `nice example of a Naive Bayesian Classifier
