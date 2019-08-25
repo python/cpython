@@ -3879,7 +3879,7 @@ written in Python, such as a mail server's external command delivery program.
    :attr:`children_system`, and :attr:`elapsed` in that order.
 
    See the Unix manual page
-   :manpage:`times(2)` or the corresponding Windows Platform API documentation.
+   :manpage:`times(3p)` or the corresponding Windows Platform API documentation.
    On Windows, only :attr:`user` and :attr:`system` are known; the other
    attributes are zero.
 
