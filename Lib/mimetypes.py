@@ -23,10 +23,10 @@ init([files]) -- parse a list of files, default knownfiles (on Windows, the
 read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
+import posixpath
 import os
 import sys
-import posixpath
-import urllib.parse
+import urllib
 try:
     import winreg as _winreg
 except ImportError:
@@ -114,7 +114,8 @@ class MimeTypes:
         but non-standard types.
         """
         url = os.fspath(url)
-        scheme, url = urllib.parse._splittype(url)
+        p = urllib.parse.urlparse(url)
+        scheme, url = p.scheme, p.path
         if scheme == 'data':
             # syntax of data URLs:
             # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
