@@ -1,5 +1,6 @@
+from c_analyzer_common.known import known_from_file
 from . import scan
-from .supported import is_supported, ignored_from_file, known_from_file
+from .supported import is_supported, ignored_from_file
 
 
 def statics(dirnames, ignored, known, *,

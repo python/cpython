@@ -20,11 +20,3 @@ def is_supported(static, ignored=None, known=None):
 def ignored_from_file(infile, fmt=None):
     """Yield StaticVar for each ignored var in the file."""
     raise NotImplementedError
-
-
-#############################
-# known
-
-def known_from_file(infile, fmt=None):
-    """Yield StaticVar for each ignored var in the file."""
-    raise NotImplementedError
