@@ -360,6 +360,27 @@ class NodeVisitor(object):
             elif isinstance(value, AST):
                 self.visit(value)
 
+    def visit_Constant(self, node):
+        value = node.value
+        type_name = _const_node_type_names.get(type(value))
+        if type_name is None:
+            for cls, name in _const_node_type_names.items():
+                if isinstance(value, cls):
+                    type_name = name
+                    break
+        if type_name is not None:
+            method = 'visit_' + type_name
+            try:
+                visitor = getattr(self, method)
+            except AttributeError:
+                pass
+            else:
+                import warnings
+                warnings.warn(f"{method} is deprecated; add visit_Constant",
+                              DeprecationWarning, 2)
+                return visitor(node)
+        return self.generic_visit(node)
+
 
 class NodeTransformer(NodeVisitor):
     """
@@ -486,4 +507,14 @@ _const_types = {
 }
 _const_types_not = {
     Num: (bool,),
+}
+_const_node_type_names = {
+    bool: 'NameConstant',  # should be before int
+    type(None): 'NameConstant',
+    int: 'Num',
+    float: 'Num',
+    complex: 'Num',
+    str: 'Str',
+    bytes: 'Bytes',
+    type(...): 'Ellipsis',
 }
