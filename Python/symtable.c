@@ -999,7 +999,9 @@ symtable_lookup(struct symtable *st, PyObject *name)
     PyObject *mangled = _Py_Mangle(st->st_private, name);
     if (!mangled)
         return 0;
-    return _PyST_GetSymbol(st->st_cur, mangled);
+    long ret = _PyST_GetSymbol(st->st_cur, mangled);
+    Py_DECREF(mangled);
+    return ret;
 }
 
 static int
