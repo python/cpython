@@ -655,15 +655,11 @@ Instances have the following methods and attributes:
       This uses the entry's name: directories should always end with ``/``.
 
    .. versionchanged:: 3.9
-      Use the filemode contained in external file attributes.
-
-.. method:: ZipInfo.is_reg()
-
-   Return :const:`True` if this archive member is a regular file.
+      This uses the filemode contained in external file attributes.
 
 .. method:: ZipInfo.is_file()
 
-   Same as :meth:`is_reg`.
+   Return :const:`True` if this archive member is a regular file.
 
 .. method:: ZipInfo.is_sym()
 

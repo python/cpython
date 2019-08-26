@@ -535,12 +535,9 @@ class ZipInfo (object):
     def filemode(self):
         return self.external_attr >> 16
 
-    def is_reg(self):
+    def is_file(self):
         """Return True if this archive member is a regular file."""
         return stat.S_ISREG(self.filemode)
-    def is_file(self):
-        """Same as is_reg()."""
-        return self.is_reg()
     def is_sym(self):
         """Return True if this archive member is a symbolic link."""
         return stat.S_ISLNK(self.filemode)
