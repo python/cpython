@@ -55,6 +55,15 @@ raised for division by zero and mod by zero.
 #include "Python.h"
 #include "_math.h"
 
+#ifdef _MSC_VER         /* Microsoft compiler */
+#define HAVE_J0     1
+#define HAVE_J1     1
+#define HAVE_JN     1
+#define HAVE_Y0     1
+#define HAVE_Y1     1
+#define HAVE_YN     1
+#endif  /* _MSC_VER */
+
 #include "clinic/mathmodule.c.h"
 
 /*[clinic input]
@@ -3440,12 +3449,8 @@ static PyMethodDef math_methods[] = {
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
-#ifdef HAVE_JN
     MATH_BESSELJ_METHODDEF
-#endif
-#ifdef HAVE_YN
     MATH_BESSELY_METHODDEF
-#endif
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF
