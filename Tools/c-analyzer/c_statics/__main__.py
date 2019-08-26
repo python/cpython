@@ -10,7 +10,7 @@ from . import (
 
 def _find_statics(dirnames, known, ignored):
     ignored = supported.ignored_from_file(ignored)
-    known = known_from_file(known, dirnames)
+    known = known_from_file(known)
 
     knownvars = (known or {}).get('variables')
     for static in find.statics_from_binary(knownvars=knownvars):
