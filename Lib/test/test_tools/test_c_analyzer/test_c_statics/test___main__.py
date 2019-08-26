@@ -78,8 +78,8 @@ class CheckTests(CMDBase):
         self.assertEqual(self.calls[0], (
             '_find', (
                 cg.SOURCE_DIRS,
-                cg.IGNORED_FILE,
                 cg.KNOWN_FILE,
+                cg.IGNORED_FILE,
                 ),
             ))
 
@@ -97,7 +97,7 @@ class CheckTests(CMDBase):
                  )
 
         self.assertEqual(self.calls, [
-            ('_find', (dirs, 'ignored.tsv', 'known.tsv')),
+            ('_find', (dirs, 'known.tsv', 'ignored.tsv')),
             #('_print', ('okay',)),
             ])
 
@@ -117,7 +117,7 @@ class CheckTests(CMDBase):
 
         unsupported = [v for v, s in TYPICAL if not s]
         self.assertEqual(self.calls, [
-            ('_find', (dirs, 'ignored.tsv', 'known.tsv')),
+            ('_find', (dirs, 'known.tsv', 'ignored.tsv')),
             ('_print', ('ERROR: found unsupported static variables',)),
             ('_print', ()),
             ('_show', (sorted(unsupported),)),
@@ -139,8 +139,8 @@ class ShowTests(CMDBase):
         self.assertEqual(self.calls[0], (
             '_find', (
                 cg.SOURCE_DIRS,
-                cg.IGNORED_FILE,
                 cg.KNOWN_FILE,
+                cg.IGNORED_FILE,
                 ),
             ))
 
@@ -150,8 +150,8 @@ class ShowTests(CMDBase):
 
         cmd_show('show',
                  dirs,
-                 ignored='ignored.tsv',
                  known='known.tsv',
+                 ignored='ignored.tsv',
                  _find=self._find,
                  _show=self._show,
                  _print=self._print,
@@ -160,7 +160,7 @@ class ShowTests(CMDBase):
         supported = [v for v, s in TYPICAL if s]
         unsupported = [v for v, s in TYPICAL if not s]
         self.assertEqual(self.calls, [
-            ('_find', (dirs, 'ignored.tsv', 'known.tsv')),
+            ('_find', (dirs, 'known.tsv', 'ignored.tsv')),
             ('_print', ('supported:',)),
             ('_print', ('----------',)),
             ('_show', (sorted(supported),)),

@@ -1,16 +1,27 @@
 import argparse
 import sys
 
+from c_analyzer_common.known import from_file as known_from_file
 from . import (
         KNOWN_FILE, IGNORED_FILE, SOURCE_DIRS,
-        find, show,
+        supported, find, show,
         )
+
+
+def _find_statics(dirnames, known, ignored):
+    ignored = supported.ignored_from_file(ignored)
+    known = known_from_file(known, dirnames)
+
+    knownvars = (known or {}).get('variables')
+    for static in find.statics_from_binary(knownvars=knownvars):
+    #for static in find.statics(dirnames, known, kind='platform'):
+        yield static, is_supported(statics, ignored, known)
 
 
 def cmd_check(cmd, dirs=SOURCE_DIRS, *,
               ignored=IGNORED_FILE,
               known=KNOWN_FILE,
-              _find=find.statics,
+              _find=_find_statics,
               _show=show.basic,
               _print=print,
               ):
@@ -20,7 +31,7 @@ def cmd_check(cmd, dirs=SOURCE_DIRS, *,
     In the failure case, the list of unsupported variables
     will be printed out.
     """
-    unsupported = [v for v, s in _find(dirs, ignored, known) if not s]
+    unsupported = [v for v, s in _find(dirs, known, ignored) if not s]
     if not unsupported:
         #_print('okay')
         return
@@ -35,7 +46,7 @@ def cmd_check(cmd, dirs=SOURCE_DIRS, *,
 def cmd_show(cmd, dirs=SOURCE_DIRS, *,
              ignored=IGNORED_FILE,
              known=KNOWN_FILE,
-             _find=find.statics,
+              _find=_find_statics,
              _show=show.basic,
              _print=print,
              ):
@@ -46,7 +57,7 @@ def cmd_show(cmd, dirs=SOURCE_DIRS, *,
     """
     allsupported = []
     allunsupported = []
-    for found, supported in _find(dirs, ignored, known):
+    for found, supported in _find(dirs, known, ignored):
         (allsupported if supported else allunsupported
          ).append(found)
 
