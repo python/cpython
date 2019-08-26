@@ -1767,10 +1767,13 @@ class datetime(date):
             # We found one solution, but it may not be the one we need.
             # Look for an earlier solution (if `fold` is 0), or a
             # later one (if `fold` is 1).
-            u2 = u1 + (-max_fold_seconds, max_fold_seconds)[self.fold]
-            b = local(u2) - u2
-            if a == b:
+            if u1 < max_fold_seconds:
                 return u1
+            else:
+                u2 = u1 + (-max_fold_seconds, max_fold_seconds)[self.fold]
+                b = local(u2) - u2
+                if a == b:
+                    return u1
         else:
             b = t1 - u1
             assert a != b
