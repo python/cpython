@@ -1,0 +1,1 @@
+Add `DirectoryNotEmptyError` subclass of `OSError`.
