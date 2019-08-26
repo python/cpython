@@ -391,7 +391,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.tkconsole = tkconsole
         locals = sys.modules['__main__'].__dict__
         InteractiveInterpreter.__init__(self, locals=locals)
-        self.save_warnings_filters = None
         self.restarting = False
         self.subprocess_arglist = None
         self.port = PORT
@@ -672,7 +671,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
         #        self.tkconsole.resetoutput()
         #        self.write("Unsupported characters in input\n")
         #        return
-        # II.runsource() calls .runcode(), overridden below.
+        # InteractiveInterpreter.runsource() calls its runcode() method,
+        # which is overridden (see below)
         return InteractiveInterpreter.runsource(self, source, filename)
 
     def stuffsource(self, source):
@@ -752,9 +752,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if self.tkconsole.executing:
             self.interp.restart_subprocess()
         self.checklinecache()
-        if self.save_warnings_filters is not None:
-            warnings.filters[:] = self.save_warnings_filters
-            self.save_warnings_filters = None
         debugger = self.debugger
         try:
             self.tkconsole.beginexecuting()
