@@ -5697,9 +5697,9 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     Py_XDECREF(keyusage);
     Py_XDECREF(tup);
 
-    /* CertCloseStore() has no option to close all handles together.
-       And if CERT_CLOSE_STORE_FORCE_FLAG (not recommended) is used,
-       hCollectionStore must be closed before hSystemStore. (bpo-37702) */
+    /* CertCloseStore() can't close handles together with any argument.
+       In case of using CERT_CLOSE_STORE_FORCE_FLAG (not recommended),
+       we must close hCollectionStore before hSystemStore. (bpo-37702) */
     BOOL success = CertCloseStore(hCollectionStore, 0);
     for (i = 0; i < system_stores_count; i++) {
         if (system_store_handles[i] &&
@@ -5797,9 +5797,9 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
     Py_XDECREF(enc);
     Py_XDECREF(tup);
 
-    /* CertCloseStore() has no option to close all handles together.
-       And if CERT_CLOSE_STORE_FORCE_FLAG (not recommended) is used,
-       hCollectionStore must be closed before hSystemStore. (bpo-37702) */
+    /* CertCloseStore() can't close handles together with any argument.
+       In case of using CERT_CLOSE_STORE_FORCE_FLAG (not recommended),
+       we must close hCollectionStore before hSystemStore. (bpo-37702) */
     BOOL success = CertCloseStore(hCollectionStore, 0);
     for (i = 0; i < system_stores_count; i++) {
         if (system_store_handles[i] &&
