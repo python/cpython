@@ -5553,10 +5553,8 @@ ssl_collect_certificates(const char *store_name,
  * enumerated. The store must be readable to be added to the
  * store collection.
  */
-
-    HCERTSTORE hCollectionStore = NULL, hSystemStore = NULL;
+    HCERTSTORE hCollectionStore, hSystemStore;
     size_t i, storesAdded;
-    BOOL result;
 
     hCollectionStore = CertOpenStore(CERT_STORE_PROV_COLLECTION, 0,
                                      (HCRYPTPROV)NULL, 0, NULL);
@@ -5572,18 +5570,23 @@ ssl_collect_certificates(const char *store_name,
                                      system_stores[i], store_name);
         if (hSystemStore) {
             system_store_handles[i] = hSystemStore;
-            result = CertAddStoreToCollection(hCollectionStore, hSystemStore,
-                                     CERT_PHYSICAL_STORE_ADD_ENABLE_FLAG, 0);
-            if (result) {
-                ++storesAdded;
+            if (CertAddStoreToCollection(hCollectionStore, hSystemStore,
+                                    CERT_PHYSICAL_STORE_ADD_ENABLE_FLAG, 0)) {
+                storesAdded = 1;
             }
         }
     }
-    if (storesAdded == 0) {
-        CertCloseStore(hCollectionStore, 0);
-        return NULL;
+    if (storesAdded) {
+        return hCollectionStore;
     }
-    return hCollectionStore;
+
+    CertCloseStore(hCollectionStore, 0);
+    for (i = 0; i < system_stores_count; i++) {
+        if (system_store_handles[i]) {
+            CertCloseStore(system_store_handles[i], 0);
+        }
+    }
+    return NULL;
 }
 
 /* code from Objects/listobject.c */
@@ -5694,13 +5697,13 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     Py_XDECREF(keyusage);
     Py_XDECREF(tup);
 
-    /* There's no function argument to close all handles together. (bpo-37702) */
+    /* CertCloseStore() has no option to close all handles together.
+       And if CERT_CLOSE_STORE_FORCE_FLAG (not recommended) is used,
+       hCollectionStore must be closed before hSystemStore. (bpo-37702) */
     BOOL success = CertCloseStore(hCollectionStore, 0);
     for (i = 0; i < system_stores_count; i++) {
-        if (system_store_handles[i] == NULL) {
-            continue;
-        }
-        if (!CertCloseStore(system_store_handles[i], 0)) {
+        if (system_store_handles[i] &&
+            !CertCloseStore(system_store_handles[i], 0)) {
             success = 0;
         }
     }
@@ -5794,13 +5797,13 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
     Py_XDECREF(enc);
     Py_XDECREF(tup);
 
-    /* There's no function argument to close all handles together. (bpo-37702) */
+    /* CertCloseStore() has no option to close all handles together.
+       And if CERT_CLOSE_STORE_FORCE_FLAG (not recommended) is used,
+       hCollectionStore must be closed before hSystemStore. (bpo-37702) */
     BOOL success = CertCloseStore(hCollectionStore, 0);
     for (i = 0; i < system_stores_count; i++) {
-        if (system_store_handles[i] == NULL) {
-            continue;
-        }
-        if (!CertCloseStore(system_store_handles[i], 0)) {
+        if (system_store_handles[i] &&
+            !CertCloseStore(system_store_handles[i], 0)) {
             success = 0;
         }
     }
