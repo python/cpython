@@ -394,7 +394,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.tkconsole = tkconsole
         locals = sys.modules['__main__'].__dict__
         InteractiveInterpreter.__init__(self, locals=locals)
-        self.save_warnings_filters = None
         self.restarting = False
         self.subprocess_arglist = None
         self.port = PORT
@@ -665,8 +664,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         "Extend base class method: Stuff the source in the line cache first"
         filename = self.stuffsource(source)
         self.more = 0
-        self.save_warnings_filters = warnings.filters[:]
-        warnings.filterwarnings(action="error", category=SyntaxWarning)
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
         #if isinstance(source, str):
@@ -677,14 +674,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         #        self.tkconsole.resetoutput()
         #        self.write("Unsupported characters in input\n")
         #        return
-        try:
-            # InteractiveInterpreter.runsource() calls its runcode() method,
-            # which is overridden (see below)
-            return InteractiveInterpreter.runsource(self, source, filename)
-        finally:
-            if self.save_warnings_filters is not None:
-                warnings.filters[:] = self.save_warnings_filters
-                self.save_warnings_filters = None
+        # InteractiveInterpreter.runsource() calls its runcode() method,
+        # which is overridden (see below)
+        return InteractiveInterpreter.runsource(self, source, filename)
 
     def stuffsource(self, source):
         "Stuff source in the filename cache"
@@ -763,9 +755,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if self.tkconsole.executing:
             self.interp.restart_subprocess()
         self.checklinecache()
-        if self.save_warnings_filters is not None:
-            warnings.filters[:] = self.save_warnings_filters
-            self.save_warnings_filters = None
         debugger = self.debugger
         try:
             self.tkconsole.beginexecuting()
