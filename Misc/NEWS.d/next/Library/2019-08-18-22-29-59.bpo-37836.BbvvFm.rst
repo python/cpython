@@ -1,3 +1,3 @@
 When constructing a :class:`fractions.Fraction`, the given numerator and
 denominator may now be any object with an ``as_integer_ratio`` method.
-This allows for example passing floats for both the numerator and denominator.
+This allows, for example, passing floats for both the numerator and denominator.
