@@ -1689,7 +1689,7 @@ class NodeVisitorTests(unittest.TestCase):
         visitor = Visitor()
         log = []
         with warnings.catch_warnings(record=True) as wlog:
-            warnings.filterwarnings('always', '', DeprecationWarning)
+            warnings.filterwarnings('always', '', PendingDeprecationWarning)
             visitor.visit(mod)
         self.assertEqual(log, [
             (1, 'Num', 42),
