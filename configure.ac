@@ -2313,7 +2313,7 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
   AC_DEFINE(HAVE_LARGEFILE_SUPPORT, 1,
   [Defined to enable large file support when an off_t is bigger than a long
-   and long long is available and at least as big as an off_t. You may need
+   and long long is at least as big as an off_t. You may need
    to add some flags for configuration and compilation to enable this mode.
    (For Solaris and Linux, the necessary defines are already defined.)])
   AC_MSG_RESULT(yes)
