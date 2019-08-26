@@ -122,6 +122,7 @@ PyAPI_DATA(PyObject *) PyExc_FileNotFoundError;
 PyAPI_DATA(PyObject *) PyExc_InterruptedError;
 PyAPI_DATA(PyObject *) PyExc_IsADirectoryError;
 PyAPI_DATA(PyObject *) PyExc_NotADirectoryError;
+PyAPI_DATA(PyObject *) PyExc_DirectoryNotEmptyError;
 PyAPI_DATA(PyObject *) PyExc_PermissionError;
 PyAPI_DATA(PyObject *) PyExc_ProcessLookupError;
 PyAPI_DATA(PyObject *) PyExc_TimeoutError;

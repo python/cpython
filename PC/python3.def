@@ -210,6 +210,7 @@ EXPORTS
   PyExc_IndexError=python39.PyExc_IndexError DATA
   PyExc_InterruptedError=python39.PyExc_InterruptedError DATA
   PyExc_IsADirectoryError=python39.PyExc_IsADirectoryError DATA
+  PyExc_DirectoryNotEmptyError=python39.PyExc_DirectoryNotEmptyError DATA
   PyExc_KeyError=python39.PyExc_KeyError DATA
   PyExc_KeyboardInterrupt=python39.PyExc_KeyboardInterrupt DATA
   PyExc_LookupError=python39.PyExc_LookupError DATA

@@ -1271,6 +1271,8 @@ MiddlingExtendsException(PyExc_OSError, FileNotFoundError, OSError,
                          "File not found.");
 MiddlingExtendsException(PyExc_OSError, IsADirectoryError, OSError,
                          "Operation doesn't work on directories.");
+MiddlingExtendsException(PyExc_OSError, DirectoryNotEmptyError, OSError,
+                         "Operation only works on empty directories.");
 MiddlingExtendsException(PyExc_OSError, NotADirectoryError, OSError,
                          "Operation only works on directories.");
 MiddlingExtendsException(PyExc_OSError, InterruptedError, OSError,
@@ -2575,6 +2577,7 @@ _PyExc_Init(void)
     PRE_INIT(FileNotFoundError);
     PRE_INIT(IsADirectoryError);
     PRE_INIT(NotADirectoryError);
+    PRE_INIT(DirectoryNotEmptyError);
     PRE_INIT(InterruptedError);
     PRE_INIT(PermissionError);
     PRE_INIT(ProcessLookupError);
@@ -2608,6 +2611,7 @@ _PyExc_Init(void)
     ADD_ERRNO(FileNotFoundError, ENOENT);
     ADD_ERRNO(IsADirectoryError, EISDIR);
     ADD_ERRNO(NotADirectoryError, ENOTDIR);
+    ADD_ERRNO(DirectoryNotEmptyError, ENOTEMPTY);
     ADD_ERRNO(InterruptedError, EINTR);
     ADD_ERRNO(PermissionError, EACCES);
     ADD_ERRNO(PermissionError, EPERM);
@@ -2715,6 +2719,7 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     POST_INIT(FileNotFoundError);
     POST_INIT(IsADirectoryError);
     POST_INIT(NotADirectoryError);
+    POST_INIT(DirectoryNotEmptyError);
     POST_INIT(InterruptedError);
     POST_INIT(PermissionError);
     POST_INIT(ProcessLookupError);

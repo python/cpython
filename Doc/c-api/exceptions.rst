@@ -788,6 +788,7 @@ the variables:
    single: PyExc_IndexError
    single: PyExc_InterruptedError
    single: PyExc_IsADirectoryError
+   single: PyExc_DirectoryNotEmptyError
    single: PyExc_KeyError
    single: PyExc_KeyboardInterrupt
    single: PyExc_LookupError
@@ -866,6 +867,8 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_InterruptedError`        | :exc:`InterruptedError`         |          |
 +-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_DirectoryNotEmptyError`  | :exc:`DirectoryNotEmptyError`   |          |
++--------------------------------------------------------------------------------------+
 | :c:data:`PyExc_IsADirectoryError`       | :exc:`IsADirectoryError`        |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_KeyError`                | :exc:`KeyError`                 |          |
@@ -944,6 +947,9 @@ the variables:
 
 .. versionadded:: 3.6
    :c:data:`PyExc_ModuleNotFoundError`.
+
+.. versionadded:: 3.9
+   :c:data:`PyExc_DirectoryNotEmptyError`.
 
 These are compatibility aliases to :c:data:`PyExc_OSError`:
 

@@ -1170,6 +1170,12 @@ class ExceptionTests(unittest.TestCase):
             self.fail("RecursionError not raised")
         self.assertEqual(wr(), None)
 
+    def test_errno_ENOTEMPTY(self):
+        with self.assertRaises(OSError) as cm:
+            test_dir = os.path.dirname(__file__)
+            os.rmdir(test_dir)
+        self.assertEqual(cm.exception.errno, errno.ENOTEMPTY, cm.exception)
+
     def test_errno_ENOTDIR(self):
         # Issue #12802: "not a directory" errors are ENOTDIR even on Windows
         with self.assertRaises(OSError) as cm:

@@ -63,6 +63,7 @@ class HierarchyTest(unittest.TestCase):
         +-- InterruptedError                                            EINTR
         +-- IsADirectoryError                                          EISDIR
         +-- NotADirectoryError                                        ENOTDIR
+        +-- DirectoryNotEmptyError                                  ENOTEMPTY
         +-- PermissionError                                     EACCES, EPERM
         +-- ProcessLookupError                                          ESRCH
         +-- TimeoutError                                            ETIMEDOUT
