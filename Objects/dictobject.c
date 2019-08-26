@@ -3922,7 +3922,7 @@ dictviews_sub(PyObject* self, PyObject *other)
 static int
 dictitems_contains(_PyDictViewObject *dv, PyObject *obj);
 
-PyObject*
+PyObject *
 _PyDictView_Intersect(PyObject* self, PyObject *other)
 {
     PyObject *result;
@@ -3938,7 +3938,7 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
         PyObject *tmp = other;
         other = self;
         self = tmp;
-    }    
+    }
 
     len_self = dictview_len((_PyDictViewObject *)self);
 
@@ -3984,8 +3984,9 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
 
     while ((key = PyIter_Next(it)) != NULL) {
         rv = dict_contains((_PyDictViewObject *)self, key);
-        if (rv < 0)
+        if (rv < 0) {
             goto error;
+        }
         if (rv) {
             if (PySet_Add(result, key)) {
                 goto error;
@@ -4000,11 +4001,11 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
     }
     return result;
 
-    error:
-        Py_DECREF(it);
-        Py_DECREF(result);
-        Py_DECREF(key);
-        return NULL;
+error:
+    Py_DECREF(it);
+    Py_DECREF(result);
+    Py_DECREF(key);
+    return NULL;
 }
 
 static PyObject*
