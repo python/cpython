@@ -5869,7 +5869,7 @@ _PyLong_Init(void)
 }
 
 void
-PyLong_Fini(void)
+_PyLong_Fini(void)
 {
     /* Integers are currently statically allocated. Py_DECREF is not
        needed, but Python must forget about the reference or multiple
