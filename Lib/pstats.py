@@ -333,6 +333,29 @@ class Stats:
 
         return new_list, msg
 
+    def get_profile_dict(self):
+        profile_dict = {}
+        # TODO(will change this to avoid calling get_print_list)
+        width, list = self.get_print_list([])
+        if list:
+            for func in list:
+                cc, nc, tt, ct, callers = self.stats[func]
+                ncalls = str(nc) if nc == cc else (str(nc) + '/' + str(cc))
+                tottime = float(f8(tt))
+                percall_tottime = -1 if nc == 0 else float(f8(tt/nc))
+                cumtime = float(f8(ct))
+                percall_cumtime = -1 if cc == 0 else float(f8(ct/cc))
+                func_name = func_std_string(func)
+                profile_dict[func_name] = {
+                    "ncalls": ncalls,
+                    "tottime": tottime, # time spent in this function alone
+                    "percall_tottime": percall_tottime,
+                    "cumtime": cumtime, # time spent in the function plus all functions that this function called,
+                    "percall_cumtime": percall_cumtime
+                }
+        profile_dict["total_tt"] = float(f8(self.total_tt))
+        return profile_dict
+
     def get_print_list(self, sel_list):
         width = self.max_name_len
         if self.fcn_list:
