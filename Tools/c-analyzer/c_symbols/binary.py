@@ -11,7 +11,7 @@ from .info import Symbol
 PYTHON = sys.executable
 
 
-def iter_symbols(dirnames, binary=PYTHON, *,
+def iter_symbols(binary=PYTHON, dirnames=None, *,
                  # Alternately, use look_up_known_symbol()
                  # from c_statics.supported.
                  find_local_symbol=source.find_symbol,
