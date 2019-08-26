@@ -50,7 +50,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
 
    If *recursive* is true, the pattern "``**``" will match any files and zero or
    more directories, subdirectories and symbolic links to directories. If the
-   pattern is followed by an ``os.sep`` or ``os.altsep`` then files will not
+   pattern is followed by an :data:`os.sep` or :data:`os.altsep` then files will not
    match.
 
    .. note::
