@@ -128,7 +128,9 @@ class SDistTestCase(BasePyPIRCCommandTestCase):
             zip_file.close()
 
         # making sure everything has been pruned correctly
-        self.assertEqual(len(content), 4)
+        expected = ['', 'PKG-INFO', 'README', 'setup.py',
+                    'somecode/', 'somecode/__init__.py']
+        self.assertEqual(sorted(content), ['fake-1.0/' + x for x in expected])
 
     @unittest.skipUnless(ZLIB_SUPPORT, 'Need zlib support to run')
     @unittest.skipIf(find_executable('tar') is None,
@@ -226,7 +228,13 @@ class SDistTestCase(BasePyPIRCCommandTestCase):
             zip_file.close()
 
         # making sure everything was added
-        self.assertEqual(len(content), 12)
+        expected = ['', 'PKG-INFO', 'README', 'buildout.cfg',
+                    'data/', 'data/data.dt', 'inroot.txt',
+                    'scripts/', 'scripts/script.py', 'setup.py',
+                    'some/', 'some/file.txt', 'some/other_file.txt',
+                    'somecode/', 'somecode/__init__.py', 'somecode/doc.dat',
+                    'somecode/doc.txt']
+        self.assertEqual(sorted(content), ['fake-1.0/' + x for x in expected])
 
         # checking the MANIFEST
         f = open(join(self.tmp_dir, 'MANIFEST'))

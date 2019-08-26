@@ -112,8 +112,8 @@ Note that in general the practice of importing ``*`` from a module or package is
 frowned upon, since it often causes poorly readable code. However, it is okay to
 use it to save typing in interactive sessions.
 
-If the module name is followed by :keyword:`as`, then the name
-following :keyword:`as` is bound directly to the imported module.
+If the module name is followed by :keyword:`!as`, then the name
+following :keyword:`!as` is bound directly to the imported module.
 
 ::
 
@@ -249,7 +249,7 @@ Some tips for experts:
   directory.
 
 * There is more detail on this process, including a flow chart of the
-  decisions, in PEP 3147.
+  decisions, in :pep:`3147`.
 
 
 .. _tut-standardmodules:
@@ -306,23 +306,27 @@ defines.  It returns a sorted list of strings::
    >>> dir(fibo)
    ['__name__', 'fib', 'fib2']
    >>> dir(sys)  # doctest: +NORMALIZE_WHITESPACE
-   ['__displayhook__', '__doc__', '__excepthook__', '__loader__', '__name__',
-    '__package__', '__stderr__', '__stdin__', '__stdout__',
-    '_clear_type_cache', '_current_frames', '_debugmallocstats', '_getframe',
-    '_home', '_mercurial', '_xoptions', 'abiflags', 'api_version', 'argv',
-    'base_exec_prefix', 'base_prefix', 'builtin_module_names', 'byteorder',
-    'call_tracing', 'callstats', 'copyright', 'displayhook',
-    'dont_write_bytecode', 'exc_info', 'excepthook', 'exec_prefix',
-    'executable', 'exit', 'flags', 'float_info', 'float_repr_style',
-    'getcheckinterval', 'getdefaultencoding', 'getdlopenflags',
-    'getfilesystemencoding', 'getobjects', 'getprofile', 'getrecursionlimit',
-    'getrefcount', 'getsizeof', 'getswitchinterval', 'gettotalrefcount',
+   ['__breakpointhook__', '__displayhook__', '__doc__', '__excepthook__',
+    '__interactivehook__', '__loader__', '__name__', '__package__', '__spec__',
+    '__stderr__', '__stdin__', '__stdout__', '__unraisablehook__',
+    '_clear_type_cache', '_current_frames', '_debugmallocstats', '_framework',
+    '_getframe', '_git', '_home', '_xoptions', 'abiflags', 'addaudithook',
+    'api_version', 'argv', 'audit', 'base_exec_prefix', 'base_prefix',
+    'breakpointhook', 'builtin_module_names', 'byteorder', 'call_tracing',
+    'callstats', 'copyright', 'displayhook', 'dont_write_bytecode', 'exc_info',
+    'excepthook', 'exec_prefix', 'executable', 'exit', 'flags', 'float_info',
+    'float_repr_style', 'get_asyncgen_hooks', 'get_coroutine_origin_tracking_depth',
+    'getallocatedblocks', 'getdefaultencoding', 'getdlopenflags',
+    'getfilesystemencodeerrors', 'getfilesystemencoding', 'getprofile',
+    'getrecursionlimit', 'getrefcount', 'getsizeof', 'getswitchinterval',
     'gettrace', 'hash_info', 'hexversion', 'implementation', 'int_info',
-    'intern', 'maxsize', 'maxunicode', 'meta_path', 'modules', 'path',
-    'path_hooks', 'path_importer_cache', 'platform', 'prefix', 'ps1',
-    'setcheckinterval', 'setdlopenflags', 'setprofile', 'setrecursionlimit',
-    'setswitchinterval', 'settrace', 'stderr', 'stdin', 'stdout',
-    'thread_info', 'version', 'version_info', 'warnoptions']
+    'intern', 'is_finalizing', 'last_traceback', 'last_type', 'last_value',
+    'maxsize', 'maxunicode', 'meta_path', 'modules', 'path', 'path_hooks',
+    'path_importer_cache', 'platform', 'prefix', 'ps1', 'ps2', 'pycache_prefix',
+    'set_asyncgen_hooks', 'set_coroutine_origin_tracking_depth', 'setdlopenflags',
+    'setprofile', 'setrecursionlimit', 'setswitchinterval', 'settrace', 'stderr',
+    'stdin', 'stdout', 'thread_info', 'unraisablehook', 'version', 'version_info',
+    'warnoptions']
 
 Without arguments, :func:`dir` lists the names you have defined currently::
 
@@ -425,9 +429,9 @@ your package (expressed in terms of a hierarchical filesystem):
 When importing the package, Python searches through the directories on
 ``sys.path`` looking for the package subdirectory.
 
-The :file:`__init__.py` files are required to make Python treat the directories
-as containing packages; this is done to prevent directories with a common name,
-such as ``string``, from unintentionally hiding valid modules that occur later
+The :file:`__init__.py` files are required to make Python treat directories
+containing the file as packages.  This prevents directories with a common name,
+such as ``string``, unintentionally hiding valid modules that occur later
 on the module search path. In the simplest case, :file:`__init__.py` can just be
 an empty file, but it can also execute initialization code for the package or
 set the ``__all__`` variable, described later.
@@ -523,7 +527,7 @@ Although certain modules are designed to export only names that follow certain
 patterns when you use ``import *``, it is still considered bad practice in
 production code.
 
-Remember, there is nothing wrong with using ``from Package import
+Remember, there is nothing wrong with using ``from package import
 specific_submodule``!  In fact, this is the recommended notation unless the
 importing module needs to use submodules with the same name from different
 packages.

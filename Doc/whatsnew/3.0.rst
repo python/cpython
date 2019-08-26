@@ -373,7 +373,7 @@ New Syntax
 
 * :pep:`3104`: :keyword:`nonlocal` statement.  Using ``nonlocal x``
   you can now assign directly to a variable in an outer (but
-  non-global) scope.  :keyword:`nonlocal` is a new reserved word.
+  non-global) scope.  :keyword:`!nonlocal` is a new reserved word.
 
 * :pep:`3132`: Extended Iterable Unpacking.  You can now write things
   like ``a, b, *rest = some_sequence``.  And even ``*rest, a =
@@ -408,14 +408,14 @@ Changed Syntax
 * :pep:`3109` and :pep:`3134`: new :keyword:`raise` statement syntax:
   :samp:`raise [{expr} [from {expr}]]`.  See below.
 
-* :keyword:`as` and :keyword:`with` are now reserved words.  (Since
+* :keyword:`!as` and :keyword:`with` are now reserved words.  (Since
   2.6, actually.)
 
 * ``True``, ``False``, and ``None`` are reserved words.  (2.6 partially enforced
   the restrictions on ``None`` already.)
 
 * Change from :keyword:`except` *exc*, *var* to
-  :keyword:`except` *exc* :keyword:`as` *var*.  See :pep:`3110`.
+  :keyword:`!except` *exc* :keyword:`!as` *var*.  See :pep:`3110`.
 
 * :pep:`3115`: New Metaclass Syntax.  Instead of::
 
@@ -507,9 +507,9 @@ consulted for longer descriptions.
 * :ref:`pep-3105`.  This is now a standard feature and no longer needs
   to be imported from :mod:`__future__`.  More details were given above.
 
-* :ref:`pep-3110`.  The :keyword:`except` *exc* :keyword:`as` *var*
-  syntax is now standard and :keyword:`except` *exc*, *var* is no
-  longer supported.  (Of course, the :keyword:`as` *var* part is still
+* :ref:`pep-3110`.  The :keyword:`except` *exc* :keyword:`!as` *var*
+  syntax is now standard and :keyword:`!except` *exc*, *var* is no
+  longer supported.  (Of course, the :keyword:`!as` *var* part is still
   optional.)
 
 * :ref:`pep-3112`.  The ``b"..."`` string literal notation (and its

@@ -148,10 +148,14 @@ class FilterTests(BaseTest):
             self.module.resetwarnings()
             self.module.filterwarnings("always", category=UserWarning)
             message = "FilterTests.test_always"
-            self.module.warn(message, UserWarning)
-            self.assertTrue(message, w[-1].message)
-            self.module.warn(message, UserWarning)
-            self.assertTrue(w[-1].message, message)
+            def f():
+                self.module.warn(message, UserWarning)
+            f()
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[-1].message.args[0], message)
+            f()
+            self.assertEqual(len(w), 2)
+            self.assertEqual(w[-1].message.args[0], message)
 
     def test_always_after_default(self):
         with original_warnings.catch_warnings(record=True,
@@ -447,6 +451,7 @@ class WarnTests(BaseTest):
                            "warnings.warn('hello', UserWarning)"),
                           filename, "exec")
         with original_warnings.catch_warnings(record=True) as w:
+            self.module.simplefilter("always", category=UserWarning)
             exec(codeobj)
         self.assertEqual(w[0].filename, filename)
 
@@ -872,6 +877,25 @@ class WarningsDisplayTests(BaseTest):
                                 file_object, expected_file_line)
         self.assertEqual(expect, file_object.getvalue())
 
+    def test_formatwarning_override(self):
+        # bpo-35178: Test that a custom formatwarning function gets the 'line'
+        # argument as a positional argument, and not only as a keyword argument
+        def myformatwarning(message, category, filename, lineno, text):
+            return f'm={message}:c={category}:f={filename}:l={lineno}:t={text}'
+
+        file_name = os.path.splitext(warning_tests.__file__)[0] + '.py'
+        line_num = 3
+        file_line = linecache.getline(file_name, line_num).strip()
+        message = 'msg'
+        category = Warning
+        file_object = StringIO()
+        expected = f'm={message}:c={category}:f={file_name}:l={line_num}' + \
+                   f':t={file_line}'
+        with support.swap_attr(self.module, 'formatwarning', myformatwarning):
+            self.module.showwarning(message, category, file_name, line_num,
+                                    file_object, file_line)
+            self.assertEqual(file_object.getvalue(), expected)
+
 
 class CWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = c_warnings
@@ -892,22 +916,36 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
                 func()
             """))
 
-        res = assert_python_ok('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
+        def run(*args):
+            res = assert_python_ok(*args)
+            stderr = res.err.decode('ascii', 'replace')
+            stderr = '\n'.join(stderr.splitlines())
 
-        stderr = res.err.decode('ascii', 'replace')
-        # normalize newlines
-        stderr = '\n'.join(stderr.splitlines())
-        stderr = re.sub('<.*>', '<...>', stderr)
-        expected = textwrap.dedent('''
-            {fname}:5: ResourceWarning: unclosed file <...>
+            # normalize newlines
+            stderr = re.sub('<.*>', '<...>', stderr)
+            return stderr
+
+        # tracemalloc disabled
+        filename = os.path.abspath(support.TESTFN)
+        stderr = run('-Wd', support.TESTFN)
+        expected = textwrap.dedent(f'''
+            {filename}:5: ResourceWarning: unclosed file <...>
+              f = None
+            ResourceWarning: Enable tracemalloc to get the object allocation traceback
+        ''').strip()
+        self.assertEqual(stderr, expected)
+
+        # tracemalloc enabled
+        stderr = run('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
+        expected = textwrap.dedent(f'''
+            {filename}:5: ResourceWarning: unclosed file <...>
               f = None
             Object allocated at (most recent call last):
-              File "{fname}", lineno 7
+              File "{filename}", lineno 7
                 func()
-              File "{fname}", lineno 3
+              File "{filename}", lineno 3
                 f = open(__file__)
-        ''')
-        expected = expected.format(fname=support.TESTFN).strip()
+        ''').strip()
         self.assertEqual(stderr, expected)
 
 

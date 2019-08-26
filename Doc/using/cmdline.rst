@@ -1,4 +1,4 @@
-.. highlightlang:: sh
+.. highlight:: sh
 
 .. ATTENTION: You probably should update Misc/python.man, too, if you modify
    this file.
@@ -70,6 +70,7 @@ source.
    :data:`sys.path` (allowing modules in that directory to be imported as top
    level modules).
 
+   .. audit-event:: cpython.run_command command cmdoption-c
 
 .. cmdoption:: -m <module-name>
 
@@ -106,12 +107,13 @@ source.
        python -mtimeit -s 'setup here' 'benchmarked code here'
        python -mtimeit -h # for details
 
+   .. audit-event:: cpython.run_module module-name cmdoption-m
+
    .. seealso::
       :func:`runpy.run_module`
          Equivalent functionality directly available to Python code
 
       :pep:`338` -- Executing modules as scripts
-
 
    .. versionchanged:: 3.1
       Supply the package name to run a ``__main__`` submodule.
@@ -129,6 +131,7 @@ source.
    ``"-"`` and the current directory will be added to the start of
    :data:`sys.path`.
 
+   .. audit-event:: cpython.run_stdin "" ""
 
 .. describe:: <script>
 
@@ -147,6 +150,8 @@ source.
    If the script name refers to a directory or zipfile, the script name is
    added to the start of :data:`sys.path` and the ``__main__.py`` file in
    that location is executed as the :mod:`__main__` module.
+
+   .. audit-event:: cpython.run_file filename
 
    .. seealso::
       :func:`runpy.run_path`
@@ -182,13 +187,13 @@ Generic options
 
    .. code-block:: none
 
-       Python 3.6.0b2+
+       Python 3.8.0b2+
 
    When given twice, print more information about the build, like:
 
    .. code-block:: none
 
-       Python 3.6.0b2+ (3.6:84a3c5003510+, Oct 26 2016, 02:33:55)
+       Python 3.8.0b2+ (3.8:0c076caaa8, Apr 20 2019, 21:55:00)
        [GCC 6.2.0 20161005]
 
    .. versionadded:: 3.6
@@ -297,7 +302,7 @@ Miscellaneous options
    randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
-   so that the :meth:`__hash__` values of str, bytes and datetime
+   so that the :meth:`__hash__` values of str and bytes objects
    are "salted" with an unpredictable random value.  Although they remain
    constant within an individual Python process, they are not predictable
    between repeated invocations of Python.
@@ -429,6 +434,9 @@ Miscellaneous options
      not be more verbose than the default if the code is correct: new warnings
      are only emitted when an issue is detected. Effect of the developer mode:
 
+     * Check *encoding* and *errors* arguments on string encoding and decoding
+       operations. Examples: :func:`open`, :meth:`str.encode` and
+       :meth:`bytes.decode`.
      * Add ``default`` warning filter, as :option:`-W` ``default``.
      * Install debug hooks on memory allocators: see the
        :c:func:`PyMem_SetupDebugHooks` C function.
@@ -437,11 +445,15 @@ Miscellaneous options
      * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
      * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
        ``True``
+     * :class:`io.IOBase` destructor logs ``close()`` exceptions.
 
    * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
      the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
      mode (even when it would otherwise activate automatically).
      See :envvar:`PYTHONUTF8` for more details.
+   * ``-X pycache_prefix=PATH`` enables writing ``.pyc`` files to a parallel
+     tree rooted at the given directory instead of to the code tree. See also
+     :envvar:`PYTHONPYCACHEPREFIX`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -460,6 +472,14 @@ Miscellaneous options
 
    .. versionadded:: 3.7
       The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
+
+   .. versionadded:: 3.8
+      The ``-X pycache_prefix`` option. The ``-X dev`` option now logs
+      ``close()`` exceptions in :class:`io.IOBase` destructor.
+
+   .. versionchanged:: 3.9
+      Using ``-X dev`` option, check *encoding* and *errors* arguments on
+      string encoding and decoding operations.
 
 
 Options you shouldn't use
@@ -525,6 +545,11 @@ conflict.
    the interactive session.  You can also change the prompts :data:`sys.ps1` and
    :data:`sys.ps2` and the hook :data:`sys.__interactivehook__` in this file.
 
+   .. audit-event:: cpython.run_startup filename PYTHONSTARTUP
+
+      Raises an :ref:`auditing event <auditing>` ``cpython.run_startup`` with
+      the filename as the argument when called on startup.
+
 
 .. envvar:: PYTHONOPTIMIZE
 
@@ -587,10 +612,20 @@ conflict.
    specifying the :option:`-B` option.
 
 
+.. envvar:: PYTHONPYCACHEPREFIX
+
+   If this is set, Python will write ``.pyc`` files in a mirror directory tree
+   at this path, instead of in ``__pycache__`` directories within the source
+   tree. This is equivalent to specifying the :option:`-X`
+   ``pycache_prefix=PATH`` option.
+
+   .. versionadded:: 3.8
+
+
 .. envvar:: PYTHONHASHSEED
 
    If this variable is not set or set to ``random``, a random value is used
-   to seed the hashes of str, bytes and datetime objects.
+   to seed the hashes of str and bytes objects.
 
    If :envvar:`PYTHONHASHSEED` is set to an integer value, it is used as a fixed
    seed for generating the hash() of the types covered by the hash
@@ -769,7 +804,7 @@ conflict.
    This may also be enabled at runtime with
    :func:`sys._enablelegacywindowsfsencoding()`.
 
-   Availability: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
       See :pep:`529` for more details.
@@ -783,7 +818,7 @@ conflict.
    This variable is ignored if the standard streams are redirected (to files
    or pipes) rather than referring to console buffers.
 
-   Availability: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
 
@@ -834,7 +869,7 @@ conflict.
    order to force the interpreter to use ``ASCII`` instead of ``UTF-8`` for
    system interfaces.
 
-   Availability: \*nix
+   .. availability:: \*nix.
 
    .. versionadded:: 3.7
       See :pep:`538` for more details.
@@ -889,13 +924,13 @@ conflict.
    If this environment variable is not set at all, then the interpreter defaults
    to using the current locale settings, *unless* the current locale is
    identified as a legacy ASCII-based locale
-   (as descibed for :envvar:`PYTHONCOERCECLOCALE`), and locale coercion is
+   (as described for :envvar:`PYTHONCOERCECLOCALE`), and locale coercion is
    either disabled or fails. In such legacy locales, the interpreter will
    default to enabling UTF-8 mode unless explicitly instructed not to do so.
 
    Also available as the :option:`-X` ``utf8`` option.
 
-   Availability: \*nix
+   .. availability:: \*nix.
 
    .. versionadded:: 3.7
       See :pep:`540` for more details.
@@ -904,15 +939,18 @@ conflict.
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
-Setting these variables only has an effect in a debug build of Python, that is,
-if Python was configured with the ``--with-pydebug`` build option.
+Setting these variables only has an effect in a debug build of Python.
 
 .. envvar:: PYTHONTHREADDEBUG
 
    If set, Python will print threading debug info.
+
+   Need Python configured with the ``--with-pydebug`` build option.
 
 
 .. envvar:: PYTHONDUMPREFS
 
    If set, Python will dump objects and reference counts still alive after
    shutting down the interpreter.
+
+   Need Python configured with the ``--with-trace-refs`` build option.

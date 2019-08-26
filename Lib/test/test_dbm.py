@@ -160,7 +160,7 @@ class WhichDBTestCase(unittest.TestCase):
             # and test that we can find it
             self.assertIn(b"1", f)
             # and read it
-            self.assertTrue(f[b"1"] == b"1")
+            self.assertEqual(f[b"1"], b"1")
             f.close()
             self.assertEqual(name, self.dbm.whichdb(_fname))
 

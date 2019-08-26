@@ -50,8 +50,8 @@ listed below.
 Logger Objects
 --------------
 
-Loggers have the following attributes and methods.  Note that Loggers are never
-instantiated directly, but always through the module-level function
+Loggers have the following attributes and methods.  Note that Loggers should
+*NEVER* be instantiated directly, but always through the module-level function
 ``logging.getLogger(name)``.  Multiple calls to :func:`getLogger` with the same
 name will always return a reference to the same Logger object.
 
@@ -232,13 +232,13 @@ is the module's name in the Python package namespace.
       above example). In such circumstances, it is likely that specialized
       :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
-      .. versionadded:: 3.2
+      .. versionchanged:: 3.2
          The *stack_info* parameter was added.
 
       .. versionchanged:: 3.5
          The *exc_info* parameter can now accept exception instances.
 
-      .. versionadded:: 3.8
+      .. versionchanged:: 3.8
          The *stacklevel* parameter was added.
 
 
@@ -544,6 +544,10 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
    .. versionchanged:: 3.2
       The *style* parameter was added.
 
+   .. versionchanged:: 3.8
+      The *validate* parameter was added. Incorrect or mismatched style and fmt
+      will raise a ``ValueError``.
+      For example: ``logging.Formatter('%(asctime)s - %(message)s', style='{')``.
 
    .. method:: format(record)
 
@@ -900,7 +904,7 @@ re-entrant, and so cannot be invoked from such signal handlers.
 Module-Level Functions
 ----------------------
 
-In addition to the classes described above, there are a number of module- level
+In addition to the classes described above, there are a number of module-level
 functions.
 
 
@@ -949,8 +953,8 @@ functions.
    There are three keyword arguments in *kwargs* which are inspected: *exc_info*
    which, if it does not evaluate as false, causes exception information to be
    added to the logging message. If an exception tuple (in the format returned by
-   :func:`sys.exc_info`) is provided, it is used; otherwise, :func:`sys.exc_info`
-   is called to get the exception information.
+   :func:`sys.exc_info`) or an exception instance is provided, it is used;
+   otherwise, :func:`sys.exc_info` is called to get the exception information.
 
    The second optional keyword argument is *stack_info*, which defaults to
    ``False``. If true, stack information is added to the logging
@@ -1007,7 +1011,7 @@ functions.
    above example). In such circumstances, it is likely that specialized
    :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       The *stack_info* parameter was added.
 
 .. function:: info(msg, *args, **kwargs)
@@ -1131,7 +1135,7 @@ functions.
    if no handlers are defined for the root logger.
 
    This function does nothing if the root logger already has handlers
-   configured for it.
+   configured, unless the keyword argument *force* is set to ``True``.
 
    .. note:: This function should be called from the main thread
       before other threads are started. In versions of Python prior to
@@ -1147,58 +1151,91 @@ functions.
    +--------------+---------------------------------------------+
    | Format       | Description                                 |
    +==============+=============================================+
-   | ``filename`` | Specifies that a FileHandler be created,    |
+   | *filename*   | Specifies that a FileHandler be created,    |
    |              | using the specified filename, rather than a |
    |              | StreamHandler.                              |
    +--------------+---------------------------------------------+
-   | ``filemode`` | Specifies the mode to open the file, if     |
-   |              | filename is specified (if filemode is       |
-   |              | unspecified, it defaults to 'a').           |
+   | *filemode*   | If *filename* is specified, open the file   |
+   |              | in this :ref:`mode <filemodes>`. Defaults   |
+   |              | to ``'a'``.                                 |
    +--------------+---------------------------------------------+
-   | ``format``   | Use the specified format string for the     |
+   | *format*     | Use the specified format string for the     |
    |              | handler.                                    |
    +--------------+---------------------------------------------+
-   | ``datefmt``  | Use the specified date/time format.         |
+   | *datefmt*    | Use the specified date/time format, as      |
+   |              | accepted by :func:`time.strftime`.          |
    +--------------+---------------------------------------------+
-   | ``style``    | If ``format`` is specified, use this style  |
-   |              | for the format string. One of '%', '{' or   |
-   |              | '$' for %-formatting, :meth:`str.format` or |
-   |              | :class:`string.Template` respectively, and  |
-   |              | defaulting to '%' if not specified.         |
+   | *style*      | If *format* is specified, use this style    |
+   |              | for the format string. One of ``'%'``,      |
+   |              | ``'{'`` or ``'$'`` for :ref:`printf-style   |
+   |              | <old-string-formatting>`,                   |
+   |              | :meth:`str.format` or                       |
+   |              | :class:`string.Template` respectively.      |
+   |              | Defaults to ``'%'``.                        |
    +--------------+---------------------------------------------+
-   | ``level``    | Set the root logger level to the specified  |
-   |              | level.                                      |
+   | *level*      | Set the root logger level to the specified  |
+   |              | :ref:`level <levels>`.                      |
    +--------------+---------------------------------------------+
-   | ``stream``   | Use the specified stream to initialize the  |
+   | *stream*     | Use the specified stream to initialize the  |
    |              | StreamHandler. Note that this argument is   |
-   |              | incompatible with 'filename' - if both are  |
-   |              | present, a ``ValueError`` is raised.        |
+   |              | incompatible with *filename* - if both      |
+   |              | are present, a ``ValueError`` is raised.    |
    +--------------+---------------------------------------------+
-   | ``handlers`` | If specified, this should be an iterable of |
+   | *handlers*   | If specified, this should be an iterable of |
    |              | already created handlers to add to the root |
    |              | logger. Any handlers which don't already    |
    |              | have a formatter set will be assigned the   |
    |              | default formatter created in this function. |
    |              | Note that this argument is incompatible     |
-   |              | with 'filename' or 'stream' - if both are   |
-   |              | present, a ``ValueError`` is raised.        |
+   |              | with *filename* or *stream* - if both       |
+   |              | are present, a ``ValueError`` is raised.    |
+   +--------------+---------------------------------------------+
+   | *force*      | If this keyword argument is specified as    |
+   |              | true, any existing handlers attached to the |
+   |              | root logger are removed and closed, before  |
+   |              | carrying out the configuration as specified |
+   |              | by the other arguments.                     |
+   +--------------+---------------------------------------------+
+   | *encoding*   | If this keyword argument is specified along |
+   |              | with *filename*, its value is used when the |
+   |              | FileHandler is created, and thus used when  |
+   |              | opening the output file.                    |
+   +--------------+---------------------------------------------+
+   | *errors*     | If this keyword argument is specified along |
+   |              | with *filename*, its value is used when the |
+   |              | FileHandler is created, and thus used when  |
+   |              | opening the output file. If not specified,  |
+   |              | the value 'backslashreplace' is used. Note  |
+   |              | that if ``None`` is specified, it will be   |
+   |              | passed as such to func:`open`, which means  |
+   |              | that it will be treated the same as passing |
+   |              | 'errors'.                                   |
    +--------------+---------------------------------------------+
 
    .. versionchanged:: 3.2
-      The ``style`` argument was added.
+      The *style* argument was added.
 
    .. versionchanged:: 3.3
-      The ``handlers`` argument was added. Additional checks were added to
+      The *handlers* argument was added. Additional checks were added to
       catch situations where incompatible arguments are specified (e.g.
-      ``handlers`` together with ``stream`` or ``filename``, or ``stream``
-      together with ``filename``).
+      *handlers* together with *stream* or *filename*, or *stream*
+      together with *filename*).
 
+   .. versionchanged:: 3.8
+      The *force* argument was added.
+
+   .. versionchanged:: 3.9
+      The *encoding* and *errors* arguments were added.
 
 .. function:: shutdown()
 
    Informs the logging system to perform an orderly shutdown by flushing and
    closing all handlers. This should be called at application exit and no
    further use of the logging system should be made after this call.
+
+   When the logging module is imported, it registers this function as an exit
+   handler (see :mod:`atexit`), so normally there's no need to do that
+   manually.
 
 
 .. function:: setLoggerClass(klass)
@@ -1207,7 +1244,9 @@ functions.
    The class should define :meth:`__init__` such that only a name argument is
    required, and the :meth:`__init__` should call :meth:`Logger.__init__`. This
    function is typically called before any loggers are instantiated by applications
-   which need to use custom logger behavior.
+   which need to use custom logger behavior. After this call, as at any other
+   time, do not instantiate loggers directly using the subclass: continue to use
+   the :func:`logging.getLogger` API to get your loggers.
 
 
 .. function:: setLogRecordFactory(factory)

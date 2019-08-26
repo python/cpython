@@ -31,8 +31,17 @@
 */
 
 #include <stddef.h>
-#include <stdbool.h>
-#include <string.h>  // memcpy
+#include <string.h>  /* memcpy */
+
+#if defined(_MSC_VER) && (_MSC_VER <= 1700)
+  /* for vs2012/11.0/1700 and earlier Visual Studio compilers */
+# define bool   int
+# define false  0
+# define true   1
+#else
+# include <stdbool.h>
+#endif
+
 
 #ifdef _WIN32
 #include "winconfig.h"
@@ -57,7 +66,6 @@
   { PREFIX(prologTok), PREFIX(contentTok), \
     PREFIX(cdataSectionTok) IGNORE_SECTION_TOK_VTABLE }, \
   { PREFIX(attributeValueTok), PREFIX(entityValueTok) }, \
-  PREFIX(sameName), \
   PREFIX(nameMatchesAscii), \
   PREFIX(nameLength), \
   PREFIX(skipS), \
@@ -354,7 +362,7 @@ enum {  /* UTF8_cvalN is value of masked first byte of N byte sequence */
 };
 
 void
-align_limit_to_full_utf8_characters(const char * from, const char ** fromLimRef)
+_INTERNAL_trim_to_complete_utf8_characters(const char * from, const char ** fromLimRef)
 {
   const char * fromLim = *fromLimRef;
   size_t walked = 0;
@@ -405,18 +413,22 @@ utf8_toUtf8(const ENCODING *UNUSED_P(enc),
   }
 
   /* Avoid copying partial characters (from incomplete input). */
-  const char * const fromLimBefore = fromLim;
-  align_limit_to_full_utf8_characters(*fromP, &fromLim);
-  if (fromLim < fromLimBefore) {
-    input_incomplete = true;
+  {
+    const char * const fromLimBefore = fromLim;
+    _INTERNAL_trim_to_complete_utf8_characters(*fromP, &fromLim);
+    if (fromLim < fromLimBefore) {
+      input_incomplete = true;
+    }
   }
 
-  const ptrdiff_t bytesToCopy = fromLim - *fromP;
-  memcpy((void *)*toP, (const void *)*fromP, (size_t)bytesToCopy);
-  *fromP += bytesToCopy;
-  *toP += bytesToCopy;
+  {
+    const ptrdiff_t bytesToCopy = fromLim - *fromP;
+    memcpy(*toP, *fromP, bytesToCopy);
+    *fromP += bytesToCopy;
+    *toP += bytesToCopy;
+  }
 
-  if (output_exhausted)  // needs to go first
+  if (output_exhausted)  /* needs to go first */
     return XML_CONVERT_OUTPUT_EXHAUSTED;
   else if (input_incomplete)
     return XML_CONVERT_INPUT_INCOMPLETE;
@@ -1452,9 +1464,8 @@ unknown_toUtf8(const ENCODING *enc,
         return XML_CONVERT_OUTPUT_EXHAUSTED;
       (*fromP)++;
     }
-    do {
-      *(*toP)++ = *utf8++;
-    } while (--n != 0);
+    memcpy(*toP, utf8, n);
+    *toP += n;
   }
 }
 

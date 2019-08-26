@@ -38,24 +38,6 @@ const char *_PyImport_DynLoadFiletab[] = {
     NULL
 };
 
-/* Case insensitive string compare, to avoid any dependencies on particular
-   C RTL implementations */
-
-static int strcasecmp (const char *string1, const char *string2)
-{
-    int first, second;
-
-    do {
-        first  = tolower(*string1);
-        second = tolower(*string2);
-        string1++;
-        string2++;
-    } while (first && first == second);
-
-    return (first - second);
-}
-
-
 /* Function to return the name of the "python" DLL that the supplied module
    directly imports.  Looks through the list of imported modules and
    returns the first entry that starts with "python" (case sensitive) and
@@ -215,11 +197,15 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 #if HAVE_SXS
         cookie = _Py_ActivateActCtx();
 #endif
-        /* We use LoadLibraryEx so Windows looks for dependent DLLs
-            in directory of pathname first. */
-        /* XXX This call doesn't exist in Windows CE */
+        /* bpo-36085: We use LoadLibraryEx with restricted search paths
+           to avoid DLL preloading attacks and enable use of the
+           AddDllDirectory function. We add SEARCH_DLL_LOAD_DIR to
+           ensure DLLs adjacent to the PYD are preferred. */
+        Py_BEGIN_ALLOW_THREADS
         hDLL = LoadLibraryExW(wpathname, NULL,
-                              LOAD_WITH_ALTERED_SEARCH_PATH);
+                              LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
+                              LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+        Py_END_ALLOW_THREADS
 #if HAVE_SXS
         _Py_DeactivateActCtx(cookie);
 #endif
@@ -254,8 +240,8 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                This should not happen if called correctly. */
             if (theLength == 0) {
                 message = PyUnicode_FromFormat(
-                    "DLL load failed with error code %d",
-                    errorCode);
+                    "DLL load failed with error code %u while importing %s",
+                    errorCode, shortname);
             } else {
                 /* For some reason a \r\n
                    is appended to the text */
@@ -265,8 +251,8 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                     theLength -= 2;
                     theInfo[theLength] = '\0';
                 }
-                message = PyUnicode_FromString(
-                    "DLL load failed: ");
+                message = PyUnicode_FromFormat(
+                    "DLL load failed while importing %s: ", shortname);
 
                 PyUnicode_AppendAndDel(&message,
                     PyUnicode_FromWideChar(
@@ -293,16 +279,20 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
             import_python = GetPythonImport(hDLL);
 
             if (import_python &&
-                strcasecmp(buffer,import_python)) {
+                _stricmp(buffer,import_python)) {
                 PyErr_Format(PyExc_ImportError,
                              "Module use of %.150s conflicts "
                              "with this version of Python.",
                              import_python);
+                Py_BEGIN_ALLOW_THREADS
                 FreeLibrary(hDLL);
+                Py_END_ALLOW_THREADS
                 return NULL;
             }
         }
+        Py_BEGIN_ALLOW_THREADS
         p = GetProcAddress(hDLL, funcname);
+        Py_END_ALLOW_THREADS
     }
 
     return p;

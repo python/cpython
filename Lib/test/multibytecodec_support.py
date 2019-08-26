@@ -277,6 +277,11 @@ class TestBase:
         writer = self.writer(stream)
         writer.reset()
 
+    def test_incrementalencoder_del_segfault(self):
+        e = self.incrementalencoder()
+        with self.assertRaises(AttributeError):
+            del e.errors
+
 
 class TestBase_Mapping(unittest.TestCase):
     pass_enctest = []

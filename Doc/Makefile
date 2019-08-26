@@ -11,9 +11,10 @@ BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
+SPHINXERRORHANDLING = -W
 
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_elements.papersize=$(PAPER) \
-                $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
+                $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help build html htmlhelp latex text changes linkcheck \
 	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
@@ -47,11 +48,19 @@ build:
 	@if [ -f  ../Misc/NEWS ] ; then \
 		echo "Using existing Misc/NEWS file"; \
 		cp ../Misc/NEWS build/NEWS; \
-	elif [ -d ../Misc/NEWS.d ]; then \
-		echo "Building NEWS from Misc/NEWS.d with blurb"; \
-		$(BLURB) merge -f build/NEWS; \
+	elif $(BLURB) help >/dev/null 2>&1 && $(SPHINXBUILD) --version >/dev/null 2>&1; then \
+		if [ -d ../Misc/NEWS.d ]; then \
+			echo "Building NEWS from Misc/NEWS.d with blurb"; \
+			$(BLURB) merge -f build/NEWS; \
+		else \
+			echo "Neither Misc/NEWS.d nor Misc/NEWS found; cannot build docs"; \
+			exit 1; \
+		fi \
 	else \
-		echo "Neither Misc/NEWS.d nor Misc/NEWS found; cannot build docs"; \
+		echo ""; \
+		echo "Missing the required blurb or sphinx-build tools."; \
+		echo "Please run 'make venv' to install local copies."; \
+		echo ""; \
 		exit 1; \
 	fi
 	$(SPHINXBUILD) $(ALLSPHINXOPTS)
@@ -123,7 +132,8 @@ clean:
 
 venv:
 	$(PYTHON) -m venv $(VENVDIR)
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb python-docs-theme
+	$(VENVDIR)/bin/python3 -m pip install -U pip setuptools
+	$(VENVDIR)/bin/python3 -m pip install -U Sphinx==2.0.1 blurb python-docs-theme
 	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:
@@ -173,7 +183,7 @@ check:
 	$(PYTHON) tools/rstlint.py -i tools -i $(VENVDIR) -i README.rst
 
 serve:
-	../Tools/scripts/serve.py build/html
+	$(PYTHON) ../Tools/scripts/serve.py build/html
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.

@@ -1690,8 +1690,6 @@ class OutputChecker:
                 kind = 'ndiff with -expected +actual'
             else:
                 assert 0, 'Bad diff option'
-            # Remove trailing whitespace on diff output.
-            diff = [line.rstrip() + '\n' for line in diff]
             return 'Differences (%s):\n' % kind + _indent(''.join(diff))
 
         # If we're not using diff, then simply list the expected
@@ -2302,7 +2300,7 @@ class DocTestCase(unittest.TestCase):
         name = self._dt_test.name.split('.')
         return "%s (%s)" % (name[-1], '.'.join(name[:-1]))
 
-    __str__ = __repr__
+    __str__ = object.__str__
 
     def shortDescription(self):
         return "Doctest: " + self._dt_test.name
@@ -2401,7 +2399,6 @@ class DocFileCase(DocTestCase):
 
     def __repr__(self):
         return self._dt_test.filename
-    __str__ = __repr__
 
     def format_failure(self, err):
         return ('Failed doctest test for %s\n  File "%s", line 0\n\n%s'

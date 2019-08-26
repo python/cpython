@@ -11,7 +11,7 @@
 # to use the preferred suppressions with address_in_range.
 #
 # If you do not want to recompile Python, you can uncomment
-# suppressions for PyObject_Free and PyObject_Realloc.
+# suppressions for _PyObject_Free and _PyObject_Realloc.
 #
 # See Misc/README.valgrind for more information.
 
@@ -127,61 +127,61 @@
 ###{
 ###   ADDRESS_IN_RANGE/Invalid read of size 4
 ###   Memcheck:Addr4
-###   fun:PyObject_Free
+###   fun:_PyObject_Free
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Invalid read of size 4
 ###   Memcheck:Value4
-###   fun:PyObject_Free
+###   fun:_PyObject_Free
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Use of uninitialised value of size 8
 ###   Memcheck:Addr8
-###   fun:PyObject_Free
+###   fun:_PyObject_Free
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Use of uninitialised value of size 8
 ###   Memcheck:Value8
-###   fun:PyObject_Free
+###   fun:_PyObject_Free
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Conditional jump or move depends on uninitialised value
 ###   Memcheck:Cond
-###   fun:PyObject_Free
+###   fun:_PyObject_Free
 ###}
 
 ###{
 ###   ADDRESS_IN_RANGE/Invalid read of size 4
 ###   Memcheck:Addr4
-###   fun:PyObject_Realloc
+###   fun:_PyObject_Realloc
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Invalid read of size 4
 ###   Memcheck:Value4
-###   fun:PyObject_Realloc
+###   fun:_PyObject_Realloc
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Use of uninitialised value of size 8
 ###   Memcheck:Addr8
-###   fun:PyObject_Realloc
+###   fun:_PyObject_Realloc
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Use of uninitialised value of size 8
 ###   Memcheck:Value8
-###   fun:PyObject_Realloc
+###   fun:_PyObject_Realloc
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Conditional jump or move depends on uninitialised value
 ###   Memcheck:Cond
-###   fun:PyObject_Realloc
+###   fun:_PyObject_Realloc
 ###}
 
 ###

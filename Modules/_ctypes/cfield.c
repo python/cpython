@@ -60,8 +60,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #define CONT_BITFIELD 2
 #define EXPAND_BITFIELD 3
 
-    self = (CFieldObject *)PyObject_CallObject((PyObject *)&PyCField_Type,
-                                               NULL);
+    self = (CFieldObject *)_PyObject_CallNoArg((PyObject *)&PyCField_Type);
     if (self == NULL)
         return NULL;
     dict = PyType_stgdict(desc);
@@ -305,10 +304,10 @@ PyTypeObject PyCField_Type = {
     sizeof(CFieldObject),                       /* tp_basicsize */
     0,                                          /* tp_itemsize */
     PyCField_dealloc,                                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)PyCField_repr,                            /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -1147,7 +1146,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
     }
     if (PyLong_Check(value))
     {
-        long longval = PyLong_AS_LONG(value);
+        long longval = PyLong_AsLong(value);
         if (longval < 0 || longval >= 256)
             goto error;
         *(char *)ptr = (char)longval;
@@ -1229,9 +1228,6 @@ U_get(void *ptr, Py_ssize_t size)
 static PyObject *
 U_set(void *ptr, PyObject *value, Py_ssize_t length)
 {
-    Py_UNICODE *wstr;
-    Py_ssize_t size;
-
     /* It's easier to calculate in characters than in bytes */
     length /= sizeof(wchar_t);
 
@@ -1242,9 +1238,14 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
         return NULL;
     }
 
-    wstr = PyUnicode_AsUnicodeAndSize(value, &size);
-    if (wstr == NULL)
+    Py_ssize_t size = PyUnicode_AsWideChar(value, NULL, 0);
+    if (size < 0) {
         return NULL;
+    }
+    // PyUnicode_AsWideChar() returns number of wchars including trailing null byte,
+    // when it is called with NULL.
+    size--;
+    assert(size >= 0);
     if (size > length) {
         PyErr_Format(PyExc_ValueError,
                      "string too long (%zd, maximum length %zd)",
@@ -1421,16 +1422,18 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
 
     /* create a BSTR from value */
     if (value) {
-        wchar_t* wvalue;
         Py_ssize_t wsize;
-        wvalue = PyUnicode_AsUnicodeAndSize(value, &wsize);
-        if (wvalue == NULL)
+        wchar_t *wvalue = PyUnicode_AsWideCharString(value, &wsize);
+        if (wvalue == NULL) {
             return NULL;
+        }
         if ((unsigned) wsize != wsize) {
             PyErr_SetString(PyExc_ValueError, "String too long for BSTR");
+            PyMem_Free(wvalue);
             return NULL;
         }
         bstr = SysAllocStringLen(wvalue, (unsigned)wsize);
+        PyMem_Free(wvalue);
     } else
         bstr = NULL;
 

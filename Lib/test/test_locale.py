@@ -3,7 +3,7 @@ import unittest
 import locale
 import sys
 import codecs
-import warnings
+
 
 class BaseLocalizedTest(unittest.TestCase):
     #

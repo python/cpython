@@ -320,6 +320,17 @@ def ensure_bytecode_path(bytecode_path):
 
 
 @contextlib.contextmanager
+def temporary_pycache_prefix(prefix):
+    """Adjust and restore sys.pycache_prefix."""
+    _orig_prefix = sys.pycache_prefix
+    sys.pycache_prefix = prefix
+    try:
+        yield
+    finally:
+        sys.pycache_prefix = _orig_prefix
+
+
+@contextlib.contextmanager
 def create_modules(*names):
     """Temporarily create each named module with an attribute (named 'attr')
     that contains the name passed into the context manager that caused the
@@ -477,7 +488,7 @@ class CommonResourceTests(abc.ABC):
             self.execute(data01, full_path)
 
     def test_relative_path(self):
-        # A reative path is a ValueError.
+        # A relative path is a ValueError.
         with self.assertRaises(ValueError):
             self.execute(data01, '../data01/utf-8.file')
 

@@ -8,7 +8,7 @@
 
 --------------
 
-This module defines utility function to assist in dynamic creation of
+This module defines utility functions to assist in dynamic creation of
 new types.
 
 It also defines names for some object types that are used by the standard
@@ -98,6 +98,9 @@ the types that arise only incidentally during processing such as the
 Typical use of these names is for :func:`isinstance` or
 :func:`issubclass` checks.
 
+
+If you instantiate any of these types, note that signatures may vary between Python versions.
+
 Standard names are defined for the following types:
 
 .. data:: FunctionType
@@ -134,6 +137,14 @@ Standard names are defined for the following types:
    .. index:: builtin: compile
 
    The type for code objects such as returned by :func:`compile`.
+
+
+.. data:: CellType
+
+   The type for cell objects: such objects are used as containers for
+   a function's free variables.
+
+   .. versionadded:: 3.8
 
 
 .. data:: MethodType
@@ -319,7 +330,7 @@ Additional Utility Classes and Functions
    The type is roughly equivalent to the following code::
 
        class SimpleNamespace:
-           def __init__(self, **kwargs):
+           def __init__(self, /, **kwargs):
                self.__dict__.update(kwargs)
 
            def __repr__(self):
