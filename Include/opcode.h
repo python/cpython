@@ -117,14 +117,14 @@ extern "C" {
 #define LOAD_CLASSDEREF         148
 #define BUILD_LIST_UNPACK       149
 #define BUILD_MAP_UNPACK        150
-#define BUILD_MAP_UNPACK_WITH_CALL 151
+#define BUILD_VAR_KEYWORD       151
 #define BUILD_TUPLE_UNPACK      152
 #define BUILD_SET_UNPACK        153
 #define SETUP_ASYNC_WITH        154
 #define FORMAT_VALUE            155
 #define BUILD_CONST_KEY_MAP     156
 #define BUILD_STRING            157
-#define BUILD_TUPLE_UNPACK_WITH_CALL 158
+#define BUILD_VAR_POSITIONAL    158
 #define LOAD_METHOD             160
 #define CALL_METHOD             161
 #define CALL_FINALLY            162

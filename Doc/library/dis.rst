@@ -921,18 +921,22 @@ All of the following opcodes use their arguments.
 
    Pops *count* iterables from the stack, joins them in a single tuple,
    and pushes the result.  Implements iterable unpacking in tuple
-   displays ``(*x, *y, *z)``.
+   displays ``(*x, *y, *z)``.  Note that function calls do not use this
+   opcode -- they use the specialized :opcode:`BUILD_VAR_POSITIONAL`.
 
    .. versionadded:: 3.5
 
 
-.. opcode:: BUILD_TUPLE_UNPACK_WITH_CALL (count)
+.. opcode:: BUILD_VAR_POSITIONAL (count)
 
    This is similar to :opcode:`BUILD_TUPLE_UNPACK`,
    but is used for ``f(*x, *y, *z)`` call syntax. The stack item at position
    ``count + 1`` should be the corresponding callable ``f``.
 
    .. versionadded:: 3.6
+   .. versionchanged:: 3.9
+      This opcode was renamed from ``BUILD_TUPLE_UNPACK_WITH_CALL`` to
+      ``BUILD_VAR_POSITIONAL``.
 
 
 .. opcode:: BUILD_LIST_UNPACK (count)
@@ -957,12 +961,13 @@ All of the following opcodes use their arguments.
 
    Pops *count* mappings from the stack, merges them into a single dictionary,
    and pushes the result.  Implements dictionary unpacking in dictionary
-   displays ``{**x, **y, **z}``.
+   displays ``{**x, **y, **z}``.  Note that function calls do not use this
+   opcode -- they use the specialized :opcode:`BUILD_VAR_KEYWORD`.
 
    .. versionadded:: 3.5
 
 
-.. opcode:: BUILD_MAP_UNPACK_WITH_CALL (count)
+.. opcode:: BUILD_VAR_KEYWORD (count)
 
    This is similar to :opcode:`BUILD_MAP_UNPACK`,
    but is used for ``f(**x, **y, **z)`` call syntax.  The stack item at
@@ -972,6 +977,9 @@ All of the following opcodes use their arguments.
    .. versionchanged:: 3.6
       The position of the callable is determined by adding 2 to the opcode
       argument instead of encoding it in the second byte of the argument.
+   .. versionchanged:: 3.9
+      This opcode was renamed from ``BUILD_MAP_UNPACK_WITH_CALL`` to
+      ``BUILD_VAR_KEYWORD``.
 
 
 .. opcode:: LOAD_ATTR (namei)
@@ -1171,8 +1179,8 @@ All of the following opcodes use their arguments.
    arguments.  If the lowest bit of *flags* is set, the top of the stack
    contains a mapping object containing additional keyword arguments.
    Below that is an iterable object containing positional arguments and
-   a callable object to call.  :opcode:`BUILD_MAP_UNPACK_WITH_CALL` and
-   :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` can be used for merging multiple
+   a callable object to call.  :opcode:`BUILD_VAR_KEYWORD` and
+   :opcode:`BUILD_VAR_POSITIONAL` can be used for merging multiple
    mapping objects and iterables containing arguments.
    Before the callable is called, the mapping object and iterable object
    are each "unpacked" and their contents passed in as keyword and

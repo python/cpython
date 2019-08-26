@@ -441,8 +441,7 @@ class DisTests(unittest.TestCase):
 
     def test_widths(self):
         for opcode, opname in enumerate(dis.opname):
-            if opname in ('BUILD_MAP_UNPACK_WITH_CALL',
-                          'BUILD_TUPLE_UNPACK_WITH_CALL'):
+            if opname in ('BUILD_VAR_KEYWORD', 'BUILD_VAR_POSITIONAL'):
                 continue
             with self.subTest(opname=opname):
                 width = dis._OPNAME_WIDTH

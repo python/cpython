@@ -235,3 +235,9 @@ CPython bytecode changes
   :keyword:`assert` statement. Previously, the assert statement would not work
   correctly if the :exc:`AssertionError` exception was being shadowed.
   (Contributed by Zackery Spytz in :issue:`34880`.)
+
+* The ``BUILD_TUPLE_UNPACK_WITH_CALL`` and ``BUILD_MAP_UNPACK_WITH_CALL``
+  opcodes have been renamed to :opcode:`BUILD_VAR_POSITIONAL` and
+  :opcode:`BUILD_VAR_KEYWORD`, respectively.
+  (Contributed by Zackery Spytz, Nick Coghlan, and Serhiy Storchaka in
+  :issue:`30076`.)

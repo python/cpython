@@ -1016,10 +1016,10 @@ stack_effect(int opcode, int oparg, int jump)
             return 1-oparg;
         case BUILD_LIST_UNPACK:
         case BUILD_TUPLE_UNPACK:
-        case BUILD_TUPLE_UNPACK_WITH_CALL:
+        case BUILD_VAR_POSITIONAL:
         case BUILD_SET_UNPACK:
         case BUILD_MAP_UNPACK:
-        case BUILD_MAP_UNPACK_WITH_CALL:
+        case BUILD_VAR_KEYWORD:
             return 1 - oparg;
         case BUILD_MAP:
             return 1 - 2*oparg;
@@ -4177,7 +4177,7 @@ compiler_call_helper(struct compiler *c,
         if (nsubargs > 1) {
             /* If we ended up with more than one stararg, we need
                to concatenate them into a single sequence. */
-            ADDOP_I(c, BUILD_TUPLE_UNPACK_WITH_CALL, nsubargs);
+            ADDOP_I(c, BUILD_VAR_POSITIONAL, nsubargs);
         }
         else if (nsubargs == 0) {
             ADDOP_I(c, BUILD_TUPLE, 0);
@@ -4208,7 +4208,7 @@ compiler_call_helper(struct compiler *c,
         }
         if (nsubkwargs > 1) {
             /* Pack it all up */
-            ADDOP_I(c, BUILD_MAP_UNPACK_WITH_CALL, nsubkwargs);
+            ADDOP_I(c, BUILD_VAR_KEYWORD, nsubkwargs);
         }
         ADDOP_I(c, CALL_FUNCTION_EX, nsubkwargs > 0);
         return 1;

@@ -2701,7 +2701,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(BUILD_TUPLE_UNPACK_WITH_CALL):
+        case TARGET(BUILD_VAR_POSITIONAL):
         case TARGET(BUILD_TUPLE_UNPACK):
         case TARGET(BUILD_LIST_UNPACK): {
             int convert_to_tuple = opcode != BUILD_LIST_UNPACK;
@@ -2717,7 +2717,7 @@ main_loop:
 
                 none_val = _PyList_Extend((PyListObject *)sum, PEEK(i));
                 if (none_val == NULL) {
-                    if (opcode == BUILD_TUPLE_UNPACK_WITH_CALL &&
+                    if (opcode == BUILD_VAR_POSITIONAL &&
                         _PyErr_ExceptionMatches(tstate, PyExc_TypeError))
                     {
                         check_args_iterable(tstate, PEEK(1 + oparg), PEEK(i));
@@ -2925,7 +2925,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(BUILD_MAP_UNPACK_WITH_CALL): {
+        case TARGET(BUILD_VAR_KEYWORD): {
             Py_ssize_t i;
             PyObject *sum = PyDict_New();
             if (sum == NULL)
