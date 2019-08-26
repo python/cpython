@@ -255,7 +255,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
        than +255 (encoded as multiple bytes), just to keep the peephole optimizer
        simple. The optimizer leaves line number deltas unchanged. */
 
-    for (j = 0; j < tabsiz; j += 2) {
+    for (j = 0; j < (unsigned int) tabsiz; j += 2) {
         if (lnotab[j] == 255) {
             goto exitUnchanged;
         }
