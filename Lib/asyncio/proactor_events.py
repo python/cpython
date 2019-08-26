@@ -629,7 +629,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._make_self_pipe()
         self_no = self._csock.fileno()
         if threading.current_thread() is threading.main_thread():
-            # wakeup fd can be installed from main thread only
+            # wakeup fd can only be installed to a file descriptor from the main thread
             signal.set_wakeup_fd(self_no)
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
