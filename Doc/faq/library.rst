@@ -160,8 +160,8 @@ The "global main logic" of your program may be as simple as ::
 at the bottom of the main module of your program.
 
 Once your program is organized as a tractable collection of function and class
-behaviours you should write test functions that exercise the behaviours.  A test
-suite that automates a sequence of tests can be associated with each module.
+behaviours, you should write test functions that exercise the behaviours.  A
+test suite that automates a sequence of tests can be associated with each module.
 This sounds like a lot of work, but since Python is so terse and flexible it's
 surprisingly easy.  You can make coding much more pleasant and fun by writing
 your test functions in parallel with the "production code", since this makes it
@@ -777,8 +777,9 @@ just return the errno value.  To poll, you can call :meth:`socket.connect_ex` ag
 socket to :meth:`select.select` to check if it's writable.
 
 .. note::
-   The :mod:`asyncio` module provides a general purpose concurrency 
-   library, which can be used for writing non-blocking networking code.
+   The :mod:`asyncio` module provides a general purpose single-threaded and
+   concurrent asynchronous library, which can be used for writing non-blocking
+   network code.
    The third-party `Twisted <https://twistedmatrix.com/trac/>`_ library is
    a popular and feature-rich alternative.
 
@@ -832,7 +833,7 @@ There are also many other specialized generators in this module, such as:
 
 Some higher-level functions operate on sequences directly, such as:
 
-* ``choice(S)`` chooses random element from a given sequence.
+* ``choice(S)`` chooses a random element from a given sequence.
 * ``shuffle(L)`` shuffles a list in-place, i.e. permutes it randomly.
 
 There's also a ``Random`` class you can instantiate to create independent
