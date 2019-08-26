@@ -671,8 +671,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         #        self.tkconsole.resetoutput()
         #        self.write("Unsupported characters in input\n")
         #        return
-        # InteractiveInterpreter.runsource() calls its runcode() method,
-        # which is overridden (see below)
+        # II.runsource() calls .runcode(), overridden below.
         return InteractiveInterpreter.runsource(self, source, filename)
 
     def stuffsource(self, source):
