@@ -765,20 +765,20 @@ The :mod:`select` module is commonly used to help with asynchronous I/O on
 sockets.
 
 To prevent the TCP connect from blocking, you can set the socket to non-blocking
-mode.  Then when you do the ``connect()``, you will either connect immediately
+mode.  Then when you do the :meth:`socket.connect`, you will either connect immediately
 (unlikely) or get an exception that contains the error number as ``.errno``.
 ``errno.EINPROGRESS`` indicates that the connection is in progress, but hasn't
 finished yet.  Different OSes will return different values, so you're going to
 have to check what's returned on your system.
 
-You can use the ``connect_ex()`` method to avoid creating an exception.  It will
-just return the errno value.  To poll, you can call ``connect_ex()`` again later
+You can use the :meth:`socket.connect_ex` method to avoid creating an exception.  It will
+just return the errno value.  To poll, you can call :meth:`socket.connect_ex` again later
 -- ``0`` or ``errno.EISCONN`` indicate that you're connected -- or you can pass this
 socket to ``select()`` to check if it's writable.
 
 .. note::
-   The :mod:`asyncio` module presents a framework-like approach to the problem
-   of writing non-blocking networking code.
+   The :mod:`asyncio` module provides a general purpose concurrency 
+   library, which can be used for writing non-blocking networking code.
    The third-party `Twisted <https://twistedmatrix.com/trac/>`_ library is
    a popular and feature-rich alternative.
 
@@ -832,7 +832,7 @@ There are also many other specialized generators in this module, such as:
 
 Some higher-level functions operate on sequences directly, such as:
 
-* ``choice(S)`` chooses a random element from a given sequence.
+* ``choice(S)`` chooses random element from a given sequence.
 * ``shuffle(L)`` shuffles a list in-place, i.e. permutes it randomly.
 
 There's also a ``Random`` class you can instantiate to create independent
