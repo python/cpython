@@ -121,7 +121,10 @@ class Random(_random.Random):
                 break
 
     def seed(self, a=None, version=2):
-        """Initialize internal state from hashable object.
+        """Initialize internal state from a seed.
+
+        The only supported seed types are None, int, float,
+        str, bytes, and bytearray.
 
         None or no argument seeds from current time or from an operating
         system specific randomness source if available.
@@ -143,11 +146,19 @@ class Random(_random.Random):
             x ^= len(a)
             a = -2 if x == -1 else x
 
-        if version == 2 and isinstance(a, (str, bytes, bytearray)):
+        elif version == 2 and isinstance(a, (str, bytes, bytearray)):
             if isinstance(a, str):
                 a = a.encode()
             a += _sha512(a).digest()
             a = int.from_bytes(a, 'big')
+
+        elif not isinstance(a, (type(None), int, float, str, bytes, bytearray)):
+            _warn('Seeding based on hashing is deprecated\n'
+                  'since Python 3.9 and will be removed in a subsequent '
+                  'version. The only \n'
+                  'supported seed types are: None, '
+                  'int, float, str, bytes, and bytearray.',
+                  DeprecationWarning, 2)
 
         super().seed(a)
         self.gauss_next = None
