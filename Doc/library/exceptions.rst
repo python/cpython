@@ -640,13 +640,11 @@ depending on the system error code.
    on something which is not a directory.
    Corresponds to :c:data:`errno` ``ENOTDIR``.
 
-
 .. exception:: DirectoryNotEmptyError
 
    Raised when a directory operation (such as :func:`os.rmdir`) is requested
    on a directory which is empty.
    Corresponds to :c:data:`errno` ``ENOTEMPTY``
-
 
 .. exception:: PermissionError
 
