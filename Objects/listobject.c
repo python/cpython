@@ -138,7 +138,7 @@ PyList_ClearFreeList(void)
 }
 
 void
-PyList_Fini(void)
+_PyList_Fini(void)
 {
     PyList_ClearFreeList();
 }

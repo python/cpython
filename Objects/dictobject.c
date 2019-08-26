@@ -282,7 +282,7 @@ _PyDict_DebugMallocStats(FILE *out)
 
 
 void
-PyDict_Fini(void)
+_PyDict_Fini(void)
 {
     PyDict_ClearFreeList();
 }

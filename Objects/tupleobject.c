@@ -989,7 +989,7 @@ PyTuple_ClearFreeList(void)
 }
 
 void
-PyTuple_Fini(void)
+_PyTuple_Fini(void)
 {
 #if PyTuple_MAXSAVESIZE > 0
     /* empty tuples are used all over the place and applications may
