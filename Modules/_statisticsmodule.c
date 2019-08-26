@@ -1,4 +1,4 @@
-/* statistics accelerator C extensor: _statistics module. */
+/* statistics accelerator C extension: _statistics module. */
 
 #include "Python.h"
 #include "structmember.h"
@@ -10,11 +10,13 @@ module _statistics
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=864a6f59b76123b2]*/
 
-
-static PyMethodDef speedups_methods[] = {
-    _STATISTICS__NORMAL_DIST_INV_CDF_METHODDEF
-    {NULL, NULL, 0, NULL}
-};
+/*
+ * There is no closed-form solution to the inverse CDF for the normal
+ * distribution, so we use a rational approximation instead:
+ * Wichura, M.J. (1988). "Algorithm AS241: The Percentage Points of the
+ * Normal Distribution".  Applied Statistics. Blackwell Publishing. 37
+ * (3): 477–484. doi:10.2307/2347330. JSTOR 2347330.
+ */
 
 /*[clinic input]
 _statistics._normal_dist_inv_cdf -> double
@@ -34,7 +36,7 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
     // Algorithm AS 241: The Percentage Points of the Normal Distribution
     if(fabs(q) <= 0.425) {
         r = 0.180625 - q * q;
-        // Hash sum AB: 55.88319 28806 14901 4439
+        // Hash sum-55.8831928806149014439
         num = (((((((2.5090809287301226727e+3 * r +
                      3.3430575583588128105e+4) * r +
                      6.7265770927008700853e+4) * r +
@@ -54,11 +56,11 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
         x = num / den;
         return mu + (x * sigma);
     }
-    r = q <= 0.0? p : 1.0-p;
+    r = (q <= 0.0) ? p : (1.0 - p);
     r = sqrt(-log(r));
     if (r <= 5.0) {
         r = r - 1.6;
-        // Hash sum CD: 49.33206 50330 16102 89036
+        // Hash sum-49.33206503301610289036
         num = (((((((7.74545014278341407640e-4 * r +
                      2.27238449892691845833e-2) * r +
                      2.41780725177450611770e-1) * r +
@@ -77,7 +79,7 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
                      1.0);
     } else {
         r -= 5.0;
-        // Hash sum EF: 47.52583 31754 92896 71629
+        // Hash sum-47.52583317549289671629
         num = (((((((2.01033439929228813265e-7 * r +
                      2.71155556874348757815e-5) * r +
                      1.24266094738807843860e-3) * r +
@@ -96,22 +98,29 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
                      1.0);
     }
     x = num / den;
-    if (q < 0.0) x = -x;
+    if (q < 0.0) {
+        x = -x;
+    }
     return mu + (x * sigma);
 }
+
+
+static PyMethodDef statistics_methods[] = {
+    _STATISTICS__NORMAL_DIST_INV_CDF_METHODDEF
+    {NULL, NULL, 0, NULL}
+};
 
 static struct PyModuleDef statisticsmodule = {
         PyModuleDef_HEAD_INIT,
         "_statistics",
         _statistics__normal_dist_inv_cdf__doc__,
         -1,
-        speedups_methods,
+        statistics_methods,
         NULL,
         NULL,
         NULL,
         NULL
 };
-
 
 PyMODINIT_FUNC
 PyInit__statistics(void)
