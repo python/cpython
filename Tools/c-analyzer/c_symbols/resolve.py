@@ -1,5 +1,6 @@
+from c_analyzer_common import files
 from c_analyzer_common.info import UNKNOWN
-from c_parser import files, declarations, info
+from c_parser import declarations, info
 from .info import Symbol
 from .source import _find_symbol
 

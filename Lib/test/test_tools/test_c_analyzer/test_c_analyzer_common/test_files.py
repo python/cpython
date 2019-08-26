@@ -3,7 +3,7 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_parser.files import iter_files
+    from c_analyzer_common.files import iter_files
 
 
 def fixpath(filename):
