@@ -1360,6 +1360,13 @@ Deprecated
   versions. :class:`~ast.Constant` should be used instead.
   (Contributed by Serhiy Storchaka in :issue:`32892`.)
 
+* :class:`ast.NodeVisitor` methods ``visit_Num()``, ``visit_Str()``,
+  ``visit_Bytes()``, ``visit_NameConstant()`` and ``visit_Ellipsis()`` are
+  deprecated now and will not be called in future Python versions.
+  Add the :meth:`~ast.NodeVisitor.visit_Constant` method to handle all
+  constant nodes.
+  (Contributed by Serhiy Storchaka in :issue:`36917`.)
+
 * The following functions and methods are deprecated in the :mod:`gettext`
   module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
   :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
