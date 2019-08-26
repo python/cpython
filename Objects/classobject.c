@@ -375,7 +375,7 @@ PyMethod_ClearFreeList(void)
 }
 
 void
-PyMethod_Fini(void)
+_PyMethod_Fini(void)
 {
     (void)PyMethod_ClearFreeList();
 }

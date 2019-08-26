@@ -1463,7 +1463,7 @@ PyAsyncGen_ClearFreeLists(void)
 }
 
 void
-PyAsyncGen_Fini(void)
+_PyAsyncGen_Fini(void)
 {
     PyAsyncGen_ClearFreeLists();
 }

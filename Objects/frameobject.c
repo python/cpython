@@ -997,7 +997,7 @@ PyFrame_ClearFreeList(void)
 }
 
 void
-PyFrame_Fini(void)
+_PyFrame_Fini(void)
 {
     (void)PyFrame_ClearFreeList();
 }

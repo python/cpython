@@ -2031,7 +2031,7 @@ PyFloat_ClearFreeList(void)
 }
 
 void
-PyFloat_Fini(void)
+_PyFloat_Fini(void)
 {
     (void)PyFloat_ClearFreeList();
 }

@@ -1307,22 +1307,22 @@ Py_FinalizeEx(void)
     _PyExc_Fini();
 
     /* Sundry finalizers */
-    PyMethod_Fini();
-    PyFrame_Fini();
-    PyCFunction_Fini();
-    PyTuple_Fini();
-    PyList_Fini();
-    PySet_Fini();
-    PyBytes_Fini();
-    PyLong_Fini();
-    PyFloat_Fini();
-    PyDict_Fini();
-    PySlice_Fini();
+    _PyMethod_Fini();
+    _PyFrame_Fini();
+    _PyCFunction_Fini();
+    _PyTuple_Fini();
+    _PyList_Fini();
+    _PySet_Fini();
+    _PyBytes_Fini();
+    _PyLong_Fini();
+    _PyFloat_Fini();
+    _PyDict_Fini();
+    _PySlice_Fini();
     _PyGC_Fini(runtime);
     _PyWarnings_Fini(interp);
     _Py_HashRandomization_Fini();
     _PyArg_Fini();
-    PyAsyncGen_Fini();
+    _PyAsyncGen_Fini();
     _PyContext_Fini();
 
     /* Cleanup Unicode implementation */

@@ -62,18 +62,19 @@ extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
 
 /* Various internal finalizers */
 
-extern void PyMethod_Fini(void);
-extern void PyFrame_Fini(void);
-extern void PyCFunction_Fini(void);
-extern void PyDict_Fini(void);
-extern void PyTuple_Fini(void);
-extern void PyList_Fini(void);
-extern void PySet_Fini(void);
-extern void PyBytes_Fini(void);
-extern void PyFloat_Fini(void);
+extern void _PyMethod_Fini(void);
+extern void _PyFrame_Fini(void);
+extern void _PyCFunction_Fini(void);
+extern void _PyDict_Fini(void);
+extern void _PyTuple_Fini(void);
+extern void _PyList_Fini(void);
+extern void _PySet_Fini(void);
+extern void _PyBytes_Fini(void);
+extern void _PyFloat_Fini(void);
+extern void _PySlice_Fini(void);
+extern void _PyAsyncGen_Fini(void);
+
 extern void PyOS_FiniInterrupts(void);
-extern void PySlice_Fini(void);
-extern void PyAsyncGen_Fini(void);
 
 extern void _PyExc_Fini(void);
 extern void _PyImport_Fini(void);
@@ -82,7 +83,7 @@ extern void _PyGC_Fini(_PyRuntimeState *runtime);
 extern void _PyType_Fini(void);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(void);
-extern void PyLong_Fini(void);
+extern void _PyLong_Fini(void);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
 extern int _PyTraceMalloc_Fini(void);
