@@ -802,7 +802,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
 
     const char *tzinfo_pos = p;
     do {
-        if (*tzinfo_pos == '+' || *tzinfo_pos == '-') {
+        if (*tzinfo_pos == '+' || *tzinfo_pos == '-' || *tzinfo_pos == 'Z' ) {
             break;
         }
     } while (++tzinfo_pos < p_end);
@@ -826,19 +826,26 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
 
     // Parse time zone component
     // Valid formats are:
+    //    - Z                (len  1)
+    //    - +HH              (len  3)
     //    - +HH:MM           (len  6)
     //    - +HH:MM:SS        (len  9)
     //    - +HH:MM:SS.ffffff (len 16)
     size_t tzlen = p_end - tzinfo_pos;
-    if (!(tzlen == 6 || tzlen == 9 || tzlen == 16)) {
+    int utc = 0;
+
+    if (tzlen == 1 && *tzinfo_pos == 'Z') {
+        utc = 1;
+    } else if (!(tzlen == 3 || tzlen == 6 || tzlen == 9 || tzlen == 16)) {
         return -5;
     }
 
     int tzsign = (*tzinfo_pos == '-') ? -1 : 1;
     tzinfo_pos++;
     int tzhour = 0, tzminute = 0, tzsecond = 0;
-    rv = parse_hh_mm_ss_ff(tzinfo_pos, p_end, &tzhour, &tzminute, &tzsecond,
-                           tzmicrosecond);
+
+    rv = utc ? 0 : parse_hh_mm_ss_ff(tzinfo_pos, p_end, &tzhour, &tzminute, &tzsecond,
+                                     tzmicrosecond);
 
     *tzoffset = tzsign * ((tzhour * 3600) + (tzminute * 60) + tzsecond);
     *tzmicrosecond *= tzsign;
