@@ -507,7 +507,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             ;
 #else
             data = compact + 1;
-#end
+#endif
             _PyObject_ASSERT(op, kind == PyUnicode_1BYTE_KIND
                                  || kind == PyUnicode_2BYTE_KIND
                                  || kind == PyUnicode_4BYTE_KIND);
@@ -522,7 +522,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             ;
 #else
             data = unicode->data.any;
-#end
+#endif
             if (kind == PyUnicode_WCHAR_KIND) {
                 _PyObject_ASSERT(op, ascii->length == 0);
                 _PyObject_ASSERT(op, ascii->hash == -1);
