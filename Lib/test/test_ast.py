@@ -4,6 +4,7 @@ import os
 import sys
 import unittest
 import weakref
+from textwrap import dedent
 
 from test import support
 
@@ -1121,6 +1122,44 @@ class ConstantTests(unittest.TestCase):
         binop.right = new_right
 
         self.assertEqual(ast.literal_eval(binop), 10+20j)
+
+
+class NodeVisitorTests(unittest.TestCase):
+    def test_old_constant_nodes(self):
+        class Visitor(ast.NodeVisitor):
+            def visit_Num(self, node):
+                log.append((node.lineno, 'Num', node.n))
+            def visit_Str(self, node):
+                log.append((node.lineno, 'Str', node.s))
+            def visit_Bytes(self, node):
+                log.append((node.lineno, 'Bytes', node.s))
+            def visit_NameConstant(self, node):
+                log.append((node.lineno, 'NameConstant', node.value))
+            def visit_Ellipsis(self, node):
+                log.append((node.lineno, 'Ellipsis', ...))
+        mod = ast.parse(dedent('''\
+            i = 42
+            f = 4.25
+            c = 4.25j
+            s = 'string'
+            b = b'bytes'
+            t = True
+            n = None
+            e = ...
+            '''))
+        visitor = Visitor()
+        log = []
+        visitor.visit(mod)
+        self.assertEqual(log, [
+            (1, 'Num', 42),
+            (2, 'Num', 4.25),
+            (3, 'Num', 4.25j),
+            (4, 'Str', 'string'),
+            (5, 'Bytes', b'bytes'),
+            (6, 'NameConstant', True),
+            (7, 'NameConstant', None),
+            (8, 'Ellipsis', ...),
+        ])
 
 
 def main():
