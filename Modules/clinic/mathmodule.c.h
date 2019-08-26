@@ -32,6 +32,108 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_JN)
+
+PyDoc_STRVAR(math_besselj__doc__,
+"besselj($module, n, x, /)\n"
+"--\n"
+"\n"
+"Returns the Bessel function of the first kind of order n of x.");
+
+#define MATH_BESSELJ_METHODDEF    \
+    {"besselj", (PyCFunction)(void(*)(void))math_besselj, METH_FASTCALL, math_besselj__doc__},
+
+static PyObject *
+math_besselj_impl(PyObject *module, int n, double x);
+
+static PyObject *
+math_besselj(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int n;
+    double x;
+
+    if (!_PyArg_CheckPositional("besselj", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    n = _PyLong_AsInt(args[0]);
+    if (n == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        x = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[1]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_besselj_impl(module, n, x);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_JN) */
+
+#if defined(HAVE_YN)
+
+PyDoc_STRVAR(math_bessely__doc__,
+"bessely($module, n, x, /)\n"
+"--\n"
+"\n"
+"Returns the Bessel function of the second kind of order n of x.");
+
+#define MATH_BESSELY_METHODDEF    \
+    {"bessely", (PyCFunction)(void(*)(void))math_bessely, METH_FASTCALL, math_bessely__doc__},
+
+static PyObject *
+math_bessely_impl(PyObject *module, int n, double x);
+
+static PyObject *
+math_bessely(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int n;
+    double x;
+
+    if (!_PyArg_CheckPositional("bessely", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    n = _PyLong_AsInt(args[0]);
+    if (n == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        x = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[1]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_bessely_impl(module, n, x);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_YN) */
+
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
 "--\n"
@@ -808,4 +910,12 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9a2b3dc91eb9aadd input=a9049054013a1b77]*/
+
+#ifndef MATH_BESSELJ_METHODDEF
+    #define MATH_BESSELJ_METHODDEF
+#endif /* !defined(MATH_BESSELJ_METHODDEF) */
+
+#ifndef MATH_BESSELY_METHODDEF
+    #define MATH_BESSELY_METHODDEF
+#endif /* !defined(MATH_BESSELY_METHODDEF) */
+/*[clinic end generated code: output=3b296bff99b26ec9 input=a9049054013a1b77]*/

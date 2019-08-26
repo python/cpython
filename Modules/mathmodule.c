@@ -1096,6 +1096,108 @@ FUNC1(atanh, m_atanh, 0,
       "atanh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic tangent of x.")
 
+#ifdef HAVE_JN
+
+/*[clinic input]
+math.besselj
+
+    n: int
+    x: double
+    /
+
+Returns the Bessel function of the first kind of order n of x.
+[clinic start generated code]*/
+
+static PyObject *
+math_besselj_impl(PyObject *module, int n, double x)
+/*[clinic end generated code: output=713a9bedc9dac7a3 input=56919f7f7ab11a3f]*/
+{
+    double result;
+    errno = 0;
+    if (Py_IS_NAN(x)) {
+        result = Py_NAN;
+    } else if (Py_IS_INFINITY(x)) {
+        result = 0.0;
+    } else {
+        switch (n) {
+            case 0:
+#ifdef HAVE_J0
+                result = j0(x);
+#else
+                result = jn(0, x);
+#endif
+                break;
+            case 1:
+#ifdef HAVE_J1
+                result = j1(x);
+#else
+                result = jn(1, x);
+#endif
+                break;
+            default:
+                result = jn(n, x);
+                break;
+        }
+    }
+    if (errno && is_error(result)) {
+        return NULL;
+    }
+    return PyFloat_FromDouble(result);
+}
+
+#endif
+
+#ifdef HAVE_YN
+
+/*[clinic input]
+math.bessely
+
+    n: int
+    x: double
+    /
+
+Returns the Bessel function of the second kind of order n of x.
+[clinic start generated code]*/
+
+static PyObject *
+math_bessely_impl(PyObject *module, int n, double x)
+/*[clinic end generated code: output=cadeacd11c57e1d7 input=b5a2ee42e4729276]*/
+{
+    double result;
+    errno = 0;
+    if (Py_IS_NAN(x)) {
+        result = Py_NAN;
+    } else if (Py_IS_INFINITY(x)) {
+        result = 0.0;
+    } else {
+        switch (n) {
+            case 0:
+#ifdef HAVE_Y0
+                result = y0(x);
+#else
+                result = yn(0, x);
+#endif
+                break;
+            case 1:
+#ifdef HAVE_Y1
+                result = y1(x);
+#else
+                result = yn(1, x);
+#endif
+                break;
+            default:
+                result = yn(n, x);
+                break;
+        }
+    }
+    if (errno && is_error(result)) {
+        return NULL;
+    }
+    return PyFloat_FromDouble(result);
+}
+
+#endif
+
 /*[clinic input]
 math.ceil
 
@@ -3338,6 +3440,12 @@ static PyMethodDef math_methods[] = {
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
+#ifdef HAVE_JN
+    MATH_BESSELJ_METHODDEF
+#endif
+#ifdef HAVE_YN
+    MATH_BESSELY_METHODDEF
+#endif
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF

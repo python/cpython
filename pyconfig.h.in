@@ -556,6 +556,15 @@
 /* Define if gcc has the ipa-pure-const bug. */
 #undef HAVE_IPA_PURE_CONST_BUG
 
+/* Define to 1 if you have the `j0' function. */
+#undef HAVE_J0
+
+/* Define to 1 if you have the `j1' function. */
+#undef HAVE_J1
+
+/* Define to 1 if you have the `jn' function. */
+#undef HAVE_JN
+
 /* Define to 1 if you have the `kill' function. */
 #undef HAVE_KILL
 
@@ -569,7 +578,7 @@
 #undef HAVE_LANGINFO_H
 
 /* Defined to enable large file support when an off_t is bigger than a long
-   and long long is at least as big as an off_t. You may need to
+   and long long is available and at least as big as an off_t. You may need to
    add some flags for configuration and compilation to enable this mode. (For
    Solaris and Linux, the necessary defines are already defined.) */
 #undef HAVE_LARGEFILE_SUPPORT
@@ -1331,6 +1340,15 @@
 
 /* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
 #undef HAVE_X509_VERIFY_PARAM_SET1_HOST
+
+/* Define to 1 if you have the `y0' function. */
+#undef HAVE_Y0
+
+/* Define to 1 if you have the `y1' function. */
+#undef HAVE_Y1
+
+/* Define to 1 if you have the `yn' function. */
+#undef HAVE_YN
 
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY

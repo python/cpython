@@ -488,6 +488,20 @@ instead of circles.
 Special functions
 -----------------
 
+.. function:: besselj(n, x)
+
+   Returns the Bessel function of the first kind of order *n* of *x*.
+
+   .. versionadded:: 3.9
+
+
+.. function:: bessely(n, x)
+
+   Returns the Bessel function of the second kind of order *n* of *x*.
+
+   .. versionadded:: 3.9
+
+
 .. function:: erf(x)
 
    Return the `error function <https://en.wikipedia.org/wiki/Error_function>`_ at

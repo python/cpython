@@ -1,0 +1,2 @@
+Add the Bessel functions of the first and second kind to the :mod:`math`
+module as :func:`math.besselj` and :func:`math.bessely` respectively.
