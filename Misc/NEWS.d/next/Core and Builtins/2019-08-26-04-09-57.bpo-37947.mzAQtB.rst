@@ -1,0 +1,2 @@
+Adjust correctly the recursion level in the symtable generation for named
+expressions. Patch by Pablo Galindo.

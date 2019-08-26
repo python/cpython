@@ -1508,6 +1508,7 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
     }
     VISIT(st, expr, e->v.NamedExpr.value);
     VISIT(st, expr, e->v.NamedExpr.target);
+    VISIT_QUIT(st, 1);
 }
 
 static int
@@ -1520,7 +1521,8 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     }
     switch (e->kind) {
     case NamedExpr_kind:
-        symtable_handle_namedexpr(st, e);
+        if(!symtable_handle_namedexpr(st, e))
+            VISIT_QUIT(st, 0);
         break;
     case BoolOp_kind:
         VISIT_SEQ(st, expr, e->v.BoolOp.values);
