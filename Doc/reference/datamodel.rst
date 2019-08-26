@@ -1166,10 +1166,10 @@ Basic customization
    with appropriate arguments and then modifying the newly-created instance
    as necessary before returning it.
 
-   If :meth:`__new__` returns an instance of *cls*, then the new instance's
-   :meth:`__init__` method will be invoked like ``__init__(self[, ...])``, where
-   *self* is the new instance and the remaining arguments are the same as were
-   passed to :meth:`__new__`.
+   If :meth:`__new__` is invoked during object construction and it returns an
+   instance or subclass of *cls*, then the new instance’s :meth:`__init__` method
+   will be invoked like ``__init__(self[, ...])``, where *self* is the new instance
+   and the remaining arguments are the same as were passed to the object constructor.
 
    If :meth:`__new__` does not return an instance of *cls*, then the new instance's
    :meth:`__init__` method will not be invoked.
