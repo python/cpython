@@ -503,7 +503,11 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
         void *data;
 
         if (ascii->state.compact == 1) {
+#ifdef NDEBUG
+            ;
+#else
             data = compact + 1;
+#end
             _PyObject_ASSERT(op, kind == PyUnicode_1BYTE_KIND
                                  || kind == PyUnicode_2BYTE_KIND
                                  || kind == PyUnicode_4BYTE_KIND);
@@ -514,7 +518,11 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
         else {
             PyUnicodeObject *unicode = (PyUnicodeObject *)op;
 
+#ifdef NDEBUG
+            ;
+#else
             data = unicode->data.any;
+#end
             if (kind == PyUnicode_WCHAR_KIND) {
                 _PyObject_ASSERT(op, ascii->length == 0);
                 _PyObject_ASSERT(op, ascii->hash == -1);
