@@ -1,1 +1,0 @@
-Add a new :mod:`_testinternalcapi` module to test the internal C API.

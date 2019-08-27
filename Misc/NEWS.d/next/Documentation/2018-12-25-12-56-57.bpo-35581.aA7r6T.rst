@@ -1,1 +1,0 @@
-@typing.type_check_only now allows type stubs to mark functions and classes not available during runtime.

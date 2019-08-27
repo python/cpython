@@ -431,7 +431,7 @@ If this is set to a comma-separated string it is equivalent to
 specifying the \fB\-W\fP option for each separate value.
 .IP PYTHONHASHSEED
 If this variable is set to "random", a random value is used to seed the hashes
-of str, bytes and datetime objects.
+of str and bytes objects.
 
 If PYTHONHASHSEED is set to an integer value, it is used as a fixed seed for
 generating the hash() of the types covered by the hash randomization.  Its

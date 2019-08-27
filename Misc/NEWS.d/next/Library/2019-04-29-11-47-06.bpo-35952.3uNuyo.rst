@@ -1,1 +1,0 @@
-Fix pythoninfo when the compiler is missing.

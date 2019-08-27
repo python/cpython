@@ -1,5 +1,5 @@
-#ifndef Py_INTERNAL_MEM_H
-#define Py_INTERNAL_MEM_H
+#ifndef Py_INTERNAL_PYMEM_H
+#define Py_INTERNAL_PYMEM_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -179,7 +179,16 @@ static inline int _PyMem_IsPtrFreed(void *ptr)
 #endif
 }
 
+PyAPI_FUNC(int) _PyMem_GetAllocatorName(
+    const char *name,
+    PyMemAllocatorName *allocator);
+
+/* Configure the Python memory allocators.
+   Pass PYMEM_ALLOCATOR_DEFAULT to use default allocators.
+   PYMEM_ALLOCATOR_NOT_SET does nothing. */
+PyAPI_FUNC(int) _PyMem_SetupAllocators(PyMemAllocatorName allocator);
+
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_INTERNAL_MEM_H */
+#endif /* !Py_INTERNAL_PYMEM_H */

@@ -788,6 +788,123 @@ class ElementTreeTest(unittest.TestCase):
         elem = ET.fromstring("<html><body>text</body></html>")
         self.assertEqual(ET.tostring(elem), b'<html><body>text</body></html>')
 
+    def test_indent(self):
+        elem = ET.XML("<root></root>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<root />')
+
+        elem = ET.XML("<html><body>text</body></html>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>\n</html>')
+
+        elem = ET.XML("<html> <body>text</body>  </html>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>\n</html>')
+
+        elem = ET.XML("<html><body>text</body>tail</html>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>tail</html>')
+
+        elem = ET.XML("<html><body><p>par</p>\n<p>text</p>\t<p><br/></p></body></html>")
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'  <body>\n'
+            b'    <p>par</p>\n'
+            b'    <p>text</p>\n'
+            b'    <p>\n'
+            b'      <br />\n'
+            b'    </p>\n'
+            b'  </body>\n'
+            b'</html>'
+        )
+
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'  <body>\n'
+            b'    <p>pre<br />post</p>\n'
+            b'    <p>text</p>\n'
+            b'  </body>\n'
+            b'</html>'
+        )
+
+    def test_indent_space(self):
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem, space='\t')
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'\t<body>\n'
+            b'\t\t<p>pre<br />post</p>\n'
+            b'\t\t<p>text</p>\n'
+            b'\t</body>\n'
+            b'</html>'
+        )
+
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem, space='')
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'<body>\n'
+            b'<p>pre<br />post</p>\n'
+            b'<p>text</p>\n'
+            b'</body>\n'
+            b'</html>'
+        )
+
+    def test_indent_space_caching(self):
+        elem = ET.XML("<html><body><p>par</p><p>text</p><p><br/></p><p /></body></html>")
+        ET.indent(elem)
+        self.assertEqual(
+            {el.tail for el in elem.iter()},
+            {None, "\n", "\n  ", "\n    "}
+        )
+        self.assertEqual(
+            {el.text for el in elem.iter()},
+            {None, "\n  ", "\n    ", "\n      ", "par", "text"}
+        )
+        self.assertEqual(
+            len({el.tail for el in elem.iter()}),
+            len({id(el.tail) for el in elem.iter()}),
+        )
+
+    def test_indent_level(self):
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        with self.assertRaises(ValueError):
+            ET.indent(elem, level=-1)
+        self.assertEqual(
+            ET.tostring(elem),
+            b"<html><body><p>pre<br />post</p><p>text</p></body></html>"
+        )
+
+        ET.indent(elem, level=2)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'      <body>\n'
+            b'        <p>pre<br />post</p>\n'
+            b'        <p>text</p>\n'
+            b'      </body>\n'
+            b'    </html>'
+        )
+
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem, level=1, space=' ')
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'  <body>\n'
+            b'   <p>pre<br />post</p>\n'
+            b'   <p>text</p>\n'
+            b'  </body>\n'
+            b' </html>'
+        )
+
     def test_tostring_default_namespace(self):
         elem = ET.XML('<body xmlns="http://effbot.org/ns"><tag/></body>')
         self.assertEqual(
@@ -1144,14 +1261,9 @@ class ElementTreeTest(unittest.TestCase):
 
         # tests from the xml specification
         check("*", ['*'])
-        check("{ns}*", ['{ns}*'])
-        check("{}*", ['{}*'])
-        check("{*}tag", ['{*}tag'])
-        check("{*}*", ['{*}*'])
         check("text()", ['text', '()'])
         check("@name", ['@', 'name'])
         check("@*", ['@', '*'])
-        check("@{ns}attr", ['@', '{ns}attr'])
         check("para[1]", ['para', '[', '1', ']'])
         check("para[last()]", ['para', '[', 'last', '()', ']'])
         check("*/para", ['*', '/', 'para'])
@@ -1163,7 +1275,6 @@ class ElementTreeTest(unittest.TestCase):
         check("//olist/item", ['//', 'olist', '/', 'item'])
         check(".", ['.'])
         check(".//para", ['.', '//', 'para'])
-        check(".//{*}tag", ['.', '//', '{*}tag'])
         check("..", ['..'])
         check("../@lang", ['..', '/', '@', 'lang'])
         check("chapter[title]", ['chapter', '[', 'title', ']'])
@@ -1171,11 +1282,32 @@ class ElementTreeTest(unittest.TestCase):
               '[', '@', 'secretary', '', 'and', '', '@', 'assistant', ']'])
 
         # additional tests
+        check("@{ns}attr", ['@', '{ns}attr'])
         check("{http://spam}egg", ['{http://spam}egg'])
         check("./spam.egg", ['.', '/', 'spam.egg'])
         check(".//{http://spam}egg", ['.', '//', '{http://spam}egg'])
+
+        # wildcard tags
+        check("{ns}*", ['{ns}*'])
+        check("{}*", ['{}*'])
+        check("{*}tag", ['{*}tag'])
+        check("{*}*", ['{*}*'])
+        check(".//{*}tag", ['.', '//', '{*}tag'])
+
+        # namespace prefix resolution
         check("./xsd:type", ['.', '/', '{http://www.w3.org/2001/XMLSchema}type'],
               {'xsd': 'http://www.w3.org/2001/XMLSchema'})
+        check("type", ['{http://www.w3.org/2001/XMLSchema}type'],
+              {'': 'http://www.w3.org/2001/XMLSchema'})
+        check("@xsd:type", ['@', '{http://www.w3.org/2001/XMLSchema}type'],
+              {'xsd': 'http://www.w3.org/2001/XMLSchema'})
+        check("@type", ['@', 'type'],
+              {'': 'http://www.w3.org/2001/XMLSchema'})
+        check("@{*}type", ['@', '{*}type'],
+              {'': 'http://www.w3.org/2001/XMLSchema'})
+        check("@{ns}attr", ['@', '{ns}attr'],
+              {'': 'http://www.w3.org/2001/XMLSchema',
+               'ns': 'http://www.w3.org/2001/XMLSchema'})
 
     def test_processinginstruction(self):
         # Test ProcessingInstruction directly
@@ -2938,6 +3070,66 @@ class TreeBuilderTest(unittest.TestCase):
         b = ET.TreeBuilder(pi_factory=lambda target, text: (len(target), text))
         self.assertEqual(b.pi('target'), (len('target'), None))
         self.assertEqual(b.pi('pitarget', ' text '), (len('pitarget'), ' text '))
+
+    def test_late_tail(self):
+        # Issue #37399: The tail of an ignored comment could overwrite the text before it.
+        class TreeBuilderSubclass(ET.TreeBuilder):
+            pass
+
+        xml = "<a>text<!-- comment -->tail</a>"
+        a = ET.fromstring(xml)
+        self.assertEqual(a.text, "texttail")
+
+        parser = ET.XMLParser(target=TreeBuilderSubclass())
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a.text, "texttail")
+
+        xml = "<a>text<?pi data?>tail</a>"
+        a = ET.fromstring(xml)
+        self.assertEqual(a.text, "texttail")
+
+        xml = "<a>text<?pi data?>tail</a>"
+        parser = ET.XMLParser(target=TreeBuilderSubclass())
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a.text, "texttail")
+
+    def test_late_tail_mix_pi_comments(self):
+        # Issue #37399: The tail of an ignored comment could overwrite the text before it.
+        # Test appending tails to comments/pis.
+        class TreeBuilderSubclass(ET.TreeBuilder):
+            pass
+
+        xml = "<a>text<?pi1?> <!-- comment -->\n<?pi2?>tail</a>"
+        parser = ET.XMLParser(target=ET.TreeBuilder(insert_comments=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a[0].text, ' comment ')
+        self.assertEqual(a[0].tail, '\ntail')
+        self.assertEqual(a.text, "text ")
+
+        parser = ET.XMLParser(target=TreeBuilderSubclass(insert_comments=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a[0].text, ' comment ')
+        self.assertEqual(a[0].tail, '\ntail')
+        self.assertEqual(a.text, "text ")
+
+        xml = "<a>text<!-- comment -->\n<?pi data?>tail</a>"
+        parser = ET.XMLParser(target=ET.TreeBuilder(insert_pis=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a[0].text, 'pi data')
+        self.assertEqual(a[0].tail, 'tail')
+        self.assertEqual(a.text, "text\n")
+
+        parser = ET.XMLParser(target=TreeBuilderSubclass(insert_pis=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a[0].text, 'pi data')
+        self.assertEqual(a[0].tail, 'tail')
+        self.assertEqual(a.text, "text\n")
 
     def test_treebuilder_elementfactory_none(self):
         parser = ET.XMLParser(target=ET.TreeBuilder(element_factory=None))

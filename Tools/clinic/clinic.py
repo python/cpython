@@ -3106,9 +3106,15 @@ class float_converter(CConverter):
     def parse_arg(self, argname, argnum):
         if self.format_unit == 'f':
             return """
-                {paramname} = (float) PyFloat_AsDouble({argname});
-                if (PyErr_Occurred()) {{{{
-                    goto exit;
+                if (PyFloat_CheckExact({argname})) {{{{
+                    {paramname} = (float) (PyFloat_AS_DOUBLE({argname}));
+                }}}}
+                else
+                {{{{
+                    {paramname} = (float) PyFloat_AsDouble({argname});
+                    if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
+                        goto exit;
+                    }}}}
                 }}}}
                 """.format(argname=argname, paramname=self.name)
         return super().parse_arg(argname, argnum)
@@ -3122,9 +3128,15 @@ class double_converter(CConverter):
     def parse_arg(self, argname, argnum):
         if self.format_unit == 'd':
             return """
-                {paramname} = PyFloat_AsDouble({argname});
-                if (PyErr_Occurred()) {{{{
-                    goto exit;
+                if (PyFloat_CheckExact({argname})) {{{{
+                    {paramname} = PyFloat_AS_DOUBLE({argname});
+                }}}}
+                else
+                {{{{
+                    {paramname} = PyFloat_AsDouble({argname});
+                    if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
+                        goto exit;
+                    }}}}
                 }}}}
                 """.format(argname=argname, paramname=self.name)
         return super().parse_arg(argname, argnum)
@@ -4900,7 +4912,14 @@ def main(argv):
         sys.exit("Error: clinic.py requires Python 3.3 or greater.")
 
     import argparse
-    cmdline = argparse.ArgumentParser()
+    cmdline = argparse.ArgumentParser(
+        description="""Preprocessor for CPython C files.
+
+The purpose of the Argument Clinic is automating all the boilerplate involved
+with writing argument parsing code for builtins and providing introspection
+signatures ("docstrings") for CPython builtins.
+
+For more information see https://docs.python.org/3/howto/clinic.html""")
     cmdline.add_argument("-f", "--force", action='store_true')
     cmdline.add_argument("-o", "--output", type=str)
     cmdline.add_argument("-v", "--verbose", action='store_true')

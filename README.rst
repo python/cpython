@@ -1,4 +1,4 @@
-This is Python version 3.8.0 alpha 3
+This is Python version 3.9.0 alpha 0
 ====================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
@@ -140,7 +140,7 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.8 <https://docs.python.org/3.8/whatsnew/3.8.html>`_ document.  For a more
+3.9 <https://docs.python.org/3.9/whatsnew/3.9.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
@@ -153,7 +153,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.8 <https://docs.python.org/3.8/>`_ is online,
+`Documentation for Python 3.9 <https://docs.python.org/3.9/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -212,8 +212,8 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.8 with 3.8 being the
-primary version, you would execute ``make install`` in your 3.8 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.9 with 3.9 being the
+primary version, you would execute ``make install`` in your 3.9 build directory
 and ``make altinstall`` in the others.
 
 
@@ -243,7 +243,7 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`569` for Python 3.8 release details.
+See :pep:`596` for Python 3.9 release details.
 
 
 Copyright and License Information

@@ -28,7 +28,7 @@ from _ast import *
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
-          type_comments=False, feature_version=-1):
+          type_comments=False, feature_version=None):
     """
     Parse the source into an AST node.
     Equivalent to compile(source, filename, mode, PyCF_ONLY_AST).
@@ -37,8 +37,15 @@ def parse(source, filename='<unknown>', mode='exec', *,
     flags = PyCF_ONLY_AST
     if type_comments:
         flags |= PyCF_TYPE_COMMENTS
+    if isinstance(feature_version, tuple):
+        major, minor = feature_version  # Should be a 2-tuple.
+        assert major == 3
+        feature_version = minor
+    elif feature_version is None:
+        feature_version = -1
+    # Else it should be an int giving the minor version for 3.x.
     return compile(source, filename, mode, flags,
-                   feature_version=feature_version)
+                   _feature_version=feature_version)
 
 
 def literal_eval(node_or_string):
@@ -353,6 +360,27 @@ class NodeVisitor(object):
             elif isinstance(value, AST):
                 self.visit(value)
 
+    def visit_Constant(self, node):
+        value = node.value
+        type_name = _const_node_type_names.get(type(value))
+        if type_name is None:
+            for cls, name in _const_node_type_names.items():
+                if isinstance(value, cls):
+                    type_name = name
+                    break
+        if type_name is not None:
+            method = 'visit_' + type_name
+            try:
+                visitor = getattr(self, method)
+            except AttributeError:
+                pass
+            else:
+                import warnings
+                warnings.warn(f"{method} is deprecated; add visit_Constant",
+                              DeprecationWarning, 2)
+                return visitor(node)
+        return self.generic_visit(node)
+
 
 class NodeTransformer(NodeVisitor):
     """
@@ -479,4 +507,14 @@ _const_types = {
 }
 _const_types_not = {
     Num: (bool,),
+}
+_const_node_type_names = {
+    bool: 'NameConstant',  # should be before int
+    type(None): 'NameConstant',
+    int: 'Num',
+    float: 'Num',
+    complex: 'Num',
+    str: 'Str',
+    bytes: 'Bytes',
+    type(...): 'Ellipsis',
 }

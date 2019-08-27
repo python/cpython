@@ -3,7 +3,7 @@
     <Fragment>
         <ComponentGroup Id="exe_txt">
             <Component Id="LICENSE.txt" Directory="InstallDirectory" Guid="*">
-                <File Name="LICENSE.txt" Source="LICENSE" KeyPath="yes" />
+                <File Name="LICENSE.txt" Source="LICENSE.txt" KeyPath="yes" />
             </Component>
             <Component Id="NEWS.txt" Directory="InstallDirectory" Guid="*">
                 <File Name="NEWS.txt" KeyPath="yes" />

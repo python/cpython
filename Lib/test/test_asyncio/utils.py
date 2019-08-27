@@ -1,5 +1,6 @@
 """Utilities shared by tests."""
 
+import asyncio
 import collections
 import contextlib
 import io
@@ -512,6 +513,18 @@ class TestCase(unittest.TestCase):
         if executor is not None:
             executor.shutdown(wait=True)
         loop.close()
+        policy = support.maybe_get_event_loop_policy()
+        if policy is not None:
+            try:
+                watcher = policy.get_child_watcher()
+            except NotImplementedError:
+                # watcher is not implemented by EventLoopPolicy, e.g. Windows
+                pass
+            else:
+                if isinstance(watcher, asyncio.ThreadedChildWatcher):
+                    threads = list(watcher._threads.values())
+                    for thread in threads:
+                        thread.join()
 
     def set_event_loop(self, loop, *, cleanup=True):
         assert loop is not None

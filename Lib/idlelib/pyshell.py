@@ -394,7 +394,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.tkconsole = tkconsole
         locals = sys.modules['__main__'].__dict__
         InteractiveInterpreter.__init__(self, locals=locals)
-        self.save_warnings_filters = None
         self.restarting = False
         self.subprocess_arglist = None
         self.port = PORT
@@ -665,8 +664,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         "Extend base class method: Stuff the source in the line cache first"
         filename = self.stuffsource(source)
         self.more = 0
-        self.save_warnings_filters = warnings.filters[:]
-        warnings.filterwarnings(action="error", category=SyntaxWarning)
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
         #if isinstance(source, str):
@@ -677,14 +674,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         #        self.tkconsole.resetoutput()
         #        self.write("Unsupported characters in input\n")
         #        return
-        try:
-            # InteractiveInterpreter.runsource() calls its runcode() method,
-            # which is overridden (see below)
-            return InteractiveInterpreter.runsource(self, source, filename)
-        finally:
-            if self.save_warnings_filters is not None:
-                warnings.filters[:] = self.save_warnings_filters
-                self.save_warnings_filters = None
+        # InteractiveInterpreter.runsource() calls its runcode() method,
+        # which is overridden (see below)
+        return InteractiveInterpreter.runsource(self, source, filename)
 
     def stuffsource(self, source):
         "Stuff source in the filename cache"
@@ -763,9 +755,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if self.tkconsole.executing:
             self.interp.restart_subprocess()
         self.checklinecache()
-        if self.save_warnings_filters is not None:
-            warnings.filters[:] = self.save_warnings_filters
-            self.save_warnings_filters = None
         debugger = self.debugger
         try:
             self.tkconsole.beginexecuting()
@@ -824,10 +813,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def display_no_subprocess_error(self):
         tkMessageBox.showerror(
-            "Subprocess Startup Error",
-            "IDLE's subprocess didn't make connection.  Either IDLE can't "
-            "start a subprocess or personal firewall software is blocking "
-            "the connection.",
+            "Subprocess Connection Error",
+            "IDLE's subprocess didn't make connection.\n"
+            "See the 'Startup failure' section of the IDLE doc, online at\n"
+            "https://docs.python.org/3/library/idle.html#startup-failure",
             parent=self.tkconsole.text)
 
     def display_executing_dialog(self):
@@ -861,6 +850,8 @@ class PyShell(OutputWindow):
         ("Squeeze", "<<squeeze-current-text>>"),
     ]
 
+    allow_line_numbers = False
+
     # New classes
     from idlelib.history import History
 
@@ -881,7 +872,7 @@ class PyShell(OutputWindow):
         self.usetabs = True
         # indentwidth must be 8 when using tabs.  See note in EditorWindow:
         self.indentwidth = 8
-        self.context_use_ps1 = True
+
         self.sys_ps1 = sys.ps1 if hasattr(sys, 'ps1') else '>>> '
         self.prompt_last_line = self.sys_ps1.split('\n')[-1]
         self.prompt = self.sys_ps1  # Changes when debug active

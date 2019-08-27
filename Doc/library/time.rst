@@ -136,30 +136,6 @@ Functions
       Unlike the C function of the same name, :func:`asctime` does not add a
       trailing newline.
 
-
-.. function:: clock()
-
-   .. index::
-      single: CPU time
-      single: processor time
-      single: benchmarking
-
-   On Unix, return the current processor time as a floating point number expressed
-   in seconds.  The precision, and in fact the very definition of the meaning of
-   "processor time", depends on that of the C function of the same name.
-
-   On Windows, this function returns wall-clock seconds elapsed since the first
-   call to this function, as a floating point number, based on the Win32 function
-   :c:func:`QueryPerformanceCounter`. The resolution is typically better than one
-   microsecond.
-
-   .. availability:: Windows, Unix. Not available on VxWorks.
-
-   .. deprecated:: 3.3
-      The behaviour of this function depends on the platform: use
-      :func:`perf_counter` or :func:`process_time` instead, depending on your
-      requirements, to have a well defined behaviour.
-
 .. function:: pthread_getcpuclockid(thread_id)
 
    Return the *clk_id* of the thread-specific CPU-time clock for the specified *thread_id*.
@@ -632,7 +608,7 @@ Functions
 
 .. function:: time_ns() -> int
 
-   Similar to :func:`time` but returns time as an integer number of nanoseconds
+   Similar to :func:`~time.time` but returns time as an integer number of nanoseconds
    since the epoch_.
 
    .. versionadded:: 3.7

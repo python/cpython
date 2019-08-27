@@ -13,7 +13,7 @@ import unittest
 from test import support
 from test.libregrtest.refleak import dash_R, clear_caches
 from test.libregrtest.save_env import saved_test_environment
-from test.libregrtest.utils import print_warning
+from test.libregrtest.utils import format_duration, print_warning
 
 
 # Test result constants.
@@ -24,7 +24,8 @@ SKIPPED = -2
 RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
-TEST_DID_NOT_RUN = -6   # error in a child process
+TEST_DID_NOT_RUN = -6
+TIMEOUT = -7
 
 _FORMAT_TEST_RESULT = {
     PASSED: '%s passed',
@@ -35,6 +36,7 @@ _FORMAT_TEST_RESULT = {
     INTERRUPTED: '%s interrupted',
     CHILD_ERROR: '%s crashed',
     TEST_DID_NOT_RUN: '%s run no tests',
+    TIMEOUT: '%s timed out',
 }
 
 # Minimum duration of a test to display its duration or to mention that
@@ -64,9 +66,21 @@ NOTTESTS = set()
 FOUND_GARBAGE = []
 
 
+def is_failed(result, ns):
+    ok = result.result
+    if ok in (PASSED, RESOURCE_DENIED, SKIPPED, TEST_DID_NOT_RUN):
+        return False
+    if ok == ENV_CHANGED:
+        return ns.fail_env_changed
+    return True
+
+
 def format_test_result(result):
     fmt = _FORMAT_TEST_RESULT.get(result.result, "%s")
-    return fmt % result.test_name
+    text = fmt % result.test_name
+    if result.result == TIMEOUT:
+        text = '%s (%s)' % (text, format_duration(result.test_time))
+    return text
 
 
 def findtestdir(path=None):
@@ -170,6 +184,7 @@ def runtest(ns, test_name):
         FAILED           test failed
         PASSED           test passed
         EMPTY_TEST_SUITE test ran no subtests.
+        TIMEOUT          test timed out.
 
     If ns.xmlpath is not None, xml_data is a list containing each
     generated testsuite element.

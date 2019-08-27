@@ -1,1 +1,0 @@
-Improve test coverage for xml.etree.ElementTree. Patch by Gordon P. Hemsley.

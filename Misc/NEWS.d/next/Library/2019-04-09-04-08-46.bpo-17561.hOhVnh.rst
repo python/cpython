@@ -1,1 +1,0 @@
-Set backlog=None as the default for socket.create_server.

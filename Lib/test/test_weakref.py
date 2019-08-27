@@ -11,7 +11,7 @@ import time
 import random
 
 from test import support
-from test.support import script_helper
+from test.support import script_helper, ALWAYS_EQ
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None
@@ -794,6 +794,10 @@ class ReferencesTestCase(TestBase):
         self.assertTrue(a != c)
         self.assertTrue(a == d)
         self.assertFalse(a != d)
+        self.assertFalse(a == x)
+        self.assertTrue(a != x)
+        self.assertTrue(a == ALWAYS_EQ)
+        self.assertFalse(a != ALWAYS_EQ)
         del x, y, z
         gc.collect()
         for r in a, b, c:
@@ -1102,6 +1106,9 @@ class WeakMethodTestCase(unittest.TestCase):
         _ne(a, f)
         _ne(b, e)
         _ne(b, f)
+        # Compare with different types
+        _ne(a, x.some_method)
+        _eq(a, ALWAYS_EQ)
         del x, y, z
         gc.collect()
         # Dead WeakMethods compare by identity
@@ -1866,20 +1873,10 @@ class FinalizeTestCase(unittest.TestCase):
         f()
         self.assertEqual(res, [((1, 2), {'func': 3, 'obj': 4})])
 
-        res = []
-        with self.assertWarns(DeprecationWarning):
-            f = weakref.finalize(a, func=fin, arg=1)
-        self.assertEqual(f.peek(), (a, fin, (), {'arg': 1}))
-        f()
-        self.assertEqual(res, [((), {'arg': 1})])
-
-        res = []
-        with self.assertWarns(DeprecationWarning):
-            f = weakref.finalize(obj=a, func=fin, arg=1)
-        self.assertEqual(f.peek(), (a, fin, (), {'arg': 1}))
-        f()
-        self.assertEqual(res, [((), {'arg': 1})])
-
+        with self.assertRaises(TypeError):
+            weakref.finalize(a, func=fin, arg=1)
+        with self.assertRaises(TypeError):
+            weakref.finalize(obj=a, func=fin, arg=1)
         self.assertRaises(TypeError, weakref.finalize, a)
         self.assertRaises(TypeError, weakref.finalize)
 

@@ -13,7 +13,7 @@ import textwrap
 import unittest
 
 from test import support
-from test.support import run_unittest, findfile, python_is_optimized
+from test.support import findfile, python_is_optimized
 
 def get_gdb_version():
     try:
@@ -51,6 +51,10 @@ if not sysconfig.is_python_build():
 if 'Clang' in platform.python_compiler() and sys.platform == 'darwin':
     raise unittest.SkipTest("test_gdb doesn't work correctly when python is"
                             " built with LLVM clang")
+
+if ((sysconfig.get_config_var('PGO_PROF_USE_FLAG') or 'xxx') in
+    (sysconfig.get_config_var('PY_CORE_CFLAGS') or '')):
+    raise unittest.SkipTest("test_gdb is not reliable on PGO builds")
 
 # Location of custom hooks file in a repository checkout.
 checkout_hook_path = os.path.join(os.path.dirname(sys.executable),
@@ -210,43 +214,22 @@ class DebuggerTests(unittest.TestCase):
         elif script:
             args += [script]
 
-        # print args
-        # print (' '.join(args))
-
         # Use "args" to invoke gdb, capturing stdout, stderr:
         out, err = run_gdb(*args, PYTHONHASHSEED=PYTHONHASHSEED)
 
-        errlines = err.splitlines()
-        unexpected_errlines = []
+        for line in err.splitlines():
+            print(line, file=sys.stderr)
 
-        # Ignore some benign messages on stderr.
-        ignore_patterns = (
-            'Function "%s" not defined.' % breakpoint,
-            'Do you need "set solib-search-path" or '
-            '"set sysroot"?',
-            # BFD: /usr/lib/debug/(...): unable to initialize decompress
-            # status for section .debug_aranges
-            'BFD: ',
-            # ignore all warnings
-            'warning: ',
-            )
-        for line in errlines:
-            if not line:
-                continue
-            # bpo34007: Sometimes some versions of the shared libraries that
-            # are part of the traceback are compiled in optimised mode and the
-            # Program Counter (PC) is not present, not allowing gdb to walk the
-            # frames back. When this happens, the Python bindings of gdb raise
-            # an exception, making the test impossible to succeed.
-            if "PC not saved" in line:
-                raise unittest.SkipTest("gdb cannot walk the frame object"
-                                        " because the Program Counter is"
-                                        " not present")
-            if not line.startswith(ignore_patterns):
-                unexpected_errlines.append(line)
+        # bpo-34007: Sometimes some versions of the shared libraries that
+        # are part of the traceback are compiled in optimised mode and the
+        # Program Counter (PC) is not present, not allowing gdb to walk the
+        # frames back. When this happens, the Python bindings of gdb raise
+        # an exception, making the test impossible to succeed.
+        if "PC not saved" in err:
+            raise unittest.SkipTest("gdb cannot walk the frame object"
+                                    " because the Program Counter is"
+                                    " not present")
 
-        # Ensure no unexpected error messages:
-        self.assertEqual(unexpected_errlines, [])
         return out
 
     def get_gdb_repr(self, source,
@@ -272,7 +255,7 @@ class DebuggerTests(unittest.TestCase):
         # gdb can insert additional '\n' and space characters in various places
         # in its output, depending on the width of the terminal it's connected
         # to (using its "wrap_here" function)
-        m = re.match(r'.*#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)\)\s+at\s+\S*Python/bltinmodule.c.*',
+        m = re.match(r'.*#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)?\)\s+at\s+\S*Python/bltinmodule.c.*',
                      gdb_output, re.DOTALL)
         if not m:
             self.fail('Unexpected gdb output: %r\n%s' % (gdb_output, gdb_output))
@@ -365,7 +348,6 @@ class PrettyPrintTests(DebuggerTests):
         def check_repr(text):
             try:
                 text.encode(encoding)
-                printable = True
             except UnicodeEncodeError:
                 self.assertGdbRepr(text, ascii(text))
             else:
@@ -863,27 +845,40 @@ id(42)
     # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
     def test_pycfunction(self):
         'Verify that "py-bt" displays invocations of PyCFunction instances'
-        # Tested function must not be defined with METH_NOARGS or METH_O,
-        # otherwise call_function() doesn't call PyCFunction_Call()
-        cmd = ('from time import gmtime\n'
-               'def foo():\n'
-               '    gmtime(1)\n'
-               'def bar():\n'
-               '    foo()\n'
-               'bar()\n')
-        # Verify with "py-bt":
-        gdb_output = self.get_stack_trace(cmd,
-                                          breakpoint='time_gmtime',
-                                          cmds_after_breakpoint=['bt', 'py-bt'],
-                                          )
-        self.assertIn('<built-in method gmtime', gdb_output)
+        # Various optimizations multiply the code paths by which these are
+        # called, so test a variety of calling conventions.
+        for py_name, py_args, c_name, expected_frame_number in (
+            ('gmtime', '', 'time_gmtime', 1),  # METH_VARARGS
+            ('len', '[]', 'builtin_len', 1),  # METH_O
+            ('locals', '', 'builtin_locals', 1),  # METH_NOARGS
+            ('iter', '[]', 'builtin_iter', 1),  # METH_FASTCALL
+            ('sorted', '[]', 'builtin_sorted', 1),  # METH_FASTCALL|METH_KEYWORDS
+        ):
+            with self.subTest(c_name):
+                cmd = ('from time import gmtime\n'  # (not always needed)
+                    'def foo():\n'
+                    f'    {py_name}({py_args})\n'
+                    'def bar():\n'
+                    '    foo()\n'
+                    'bar()\n')
+                # Verify with "py-bt":
+                gdb_output = self.get_stack_trace(
+                    cmd,
+                    breakpoint=c_name,
+                    cmds_after_breakpoint=['bt', 'py-bt'],
+                )
+                self.assertIn(f'<built-in method {py_name}', gdb_output)
 
-        # Verify with "py-bt-full":
-        gdb_output = self.get_stack_trace(cmd,
-                                          breakpoint='time_gmtime',
-                                          cmds_after_breakpoint=['py-bt-full'],
-                                          )
-        self.assertIn('#2 <built-in method gmtime', gdb_output)
+                # Verify with "py-bt-full":
+                gdb_output = self.get_stack_trace(
+                    cmd,
+                    breakpoint=c_name,
+                    cmds_after_breakpoint=['py-bt-full'],
+                )
+                self.assertIn(
+                    f'#{expected_frame_number} <built-in method {py_name}',
+                    gdb_output,
+                )
 
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
@@ -964,18 +959,13 @@ class PyLocalsTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
-def test_main():
+
+def setUpModule():
     if support.verbose:
         print("GDB version %s.%s:" % (gdb_major_version, gdb_minor_version))
         for line in gdb_version.splitlines():
             print(" " * 4 + line)
-    run_unittest(PrettyPrintTests,
-                 PyListTests,
-                 StackNavigationTests,
-                 PyBtTests,
-                 PyPrintTests,
-                 PyLocalsTests
-                 )
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _new-types-topics:
 
@@ -104,7 +104,7 @@ done.  This can be done using the :c:func:`PyErr_Fetch` and
            /* This saves the current exception state */
            PyErr_Fetch(&err_type, &err_value, &err_traceback);
 
-           cbresult = PyObject_CallObject(self->my_callback, NULL);
+           cbresult = PyObject_CallNoArgs(self->my_callback);
            if (cbresult == NULL)
                PyErr_WriteUnraisable(self->my_callback);
            else

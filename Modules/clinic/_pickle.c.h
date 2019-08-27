@@ -63,7 +63,7 @@ exit:
 }
 
 PyDoc_STRVAR(_pickle_Pickler___init____doc__,
-"Pickler(file, protocol=None, fix_imports=True)\n"
+"Pickler(file, protocol=None, fix_imports=True, buffer_callback=None)\n"
 "--\n"
 "\n"
 "This takes a binary file for writing a pickle data stream.\n"
@@ -83,27 +83,40 @@ PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "\n"
 "If *fix_imports* is True and protocol is less than 3, pickle will try\n"
 "to map the new Python 3 names to the old module names used in Python\n"
-"2, so that the pickle data stream is readable with Python 2.");
+"2, so that the pickle data stream is readable with Python 2.\n"
+"\n"
+"If *buffer_callback* is None (the default), buffer views are\n"
+"serialized into *file* as part of the pickle stream.\n"
+"\n"
+"If *buffer_callback* is not None, then it can be called any number\n"
+"of times with a buffer view.  If the callback returns a false value\n"
+"(such as None), the given buffer is out-of-band; otherwise the\n"
+"buffer is serialized in-band, i.e. inside the pickle stream.\n"
+"\n"
+"It is an error if *buffer_callback* is not None and *protocol*\n"
+"is None or smaller than 5.");
 
 static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
-                              PyObject *protocol, int fix_imports);
+                              PyObject *protocol, int fix_imports,
+                              PyObject *buffer_callback);
 
 static int
 _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static const char * const _keywords[] = {"file", "protocol", "fix_imports", NULL};
+    static const char * const _keywords[] = {"file", "protocol", "fix_imports", "buffer_callback", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "Pickler", 0};
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *file;
     PyObject *protocol = NULL;
     int fix_imports = 1;
+    PyObject *buffer_callback = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 3, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 4, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -117,12 +130,18 @@ _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    fix_imports = PyObject_IsTrue(fastargs[2]);
-    if (fix_imports < 0) {
-        goto exit;
+    if (fastargs[2]) {
+        fix_imports = PyObject_IsTrue(fastargs[2]);
+        if (fix_imports < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
+    buffer_callback = fastargs[3];
 skip_optional_pos:
-    return_value = _pickle_Pickler___init___impl((PicklerObject *)self, file, protocol, fix_imports);
+    return_value = _pickle_Pickler___init___impl((PicklerObject *)self, file, protocol, fix_imports, buffer_callback);
 
 exit:
     return return_value;
@@ -272,7 +291,8 @@ exit:
 }
 
 PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
-"Unpickler(file, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\')\n"
+"Unpickler(file, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\',\n"
+"          buffers=None)\n"
 "--\n"
 "\n"
 "This takes a binary file for reading a pickle data stream.\n"
@@ -299,15 +319,15 @@ PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
 static int
 _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
                                 int fix_imports, const char *encoding,
-                                const char *errors);
+                                const char *errors, PyObject *buffers);
 
 static int
 _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
+    static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", "buffers", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "Unpickler", 0};
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
@@ -315,6 +335,7 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int fix_imports = 1;
     const char *encoding = "ASCII";
     const char *errors = "strict";
+    PyObject *buffers = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
@@ -351,21 +372,27 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    if (!PyUnicode_Check(fastargs[3])) {
-        _PyArg_BadArgument("Unpickler", 4, "str", fastargs[3]);
-        goto exit;
+    if (fastargs[3]) {
+        if (!PyUnicode_Check(fastargs[3])) {
+            _PyArg_BadArgument("Unpickler", 4, "str", fastargs[3]);
+            goto exit;
+        }
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(fastargs[3], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
-    Py_ssize_t errors_length;
-    errors = PyUnicode_AsUTF8AndSize(fastargs[3], &errors_length);
-    if (errors == NULL) {
-        goto exit;
-    }
-    if (strlen(errors) != (size_t)errors_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    buffers = fastargs[4];
 skip_optional_kwonly:
-    return_value = _pickle_Unpickler___init___impl((UnpicklerObject *)self, file, fix_imports, encoding, errors);
+    return_value = _pickle_Unpickler___init___impl((UnpicklerObject *)self, file, fix_imports, encoding, errors, buffers);
 
 exit:
     return return_value;
@@ -426,7 +453,8 @@ _pickle_UnpicklerMemoProxy___reduce__(UnpicklerMemoProxyObject *self, PyObject *
 }
 
 PyDoc_STRVAR(_pickle_dump__doc__,
-"dump($module, /, obj, file, protocol=None, *, fix_imports=True)\n"
+"dump($module, /, obj, file, protocol=None, *, fix_imports=True,\n"
+"     buffer_callback=None)\n"
 "--\n"
 "\n"
 "Write a pickled representation of obj to the open file object file.\n"
@@ -450,27 +478,33 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "\n"
 "If *fix_imports* is True and protocol is less than 3, pickle will try\n"
 "to map the new Python 3 names to the old module names used in Python\n"
-"2, so that the pickle data stream is readable with Python 2.");
+"2, so that the pickle data stream is readable with Python 2.\n"
+"\n"
+"If *buffer_callback* is None (the default), buffer views are serialized\n"
+"into *file* as part of the pickle stream.  It is an error if\n"
+"*buffer_callback* is not None and *protocol* is None or smaller than 5.");
 
 #define _PICKLE_DUMP_METHODDEF    \
     {"dump", (PyCFunction)(void(*)(void))_pickle_dump, METH_FASTCALL|METH_KEYWORDS, _pickle_dump__doc__},
 
 static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
-                  PyObject *protocol, int fix_imports);
+                  PyObject *protocol, int fix_imports,
+                  PyObject *buffer_callback);
 
 static PyObject *
 _pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"obj", "file", "protocol", "fix_imports", NULL};
+    static const char * const _keywords[] = {"obj", "file", "protocol", "fix_imports", "buffer_callback", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "dump", 0};
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *obj;
     PyObject *file;
     PyObject *protocol = NULL;
     int fix_imports = 1;
+    PyObject *buffer_callback = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
     if (!args) {
@@ -491,19 +525,26 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    fix_imports = PyObject_IsTrue(args[3]);
-    if (fix_imports < 0) {
-        goto exit;
+    if (args[3]) {
+        fix_imports = PyObject_IsTrue(args[3]);
+        if (fix_imports < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    buffer_callback = args[4];
 skip_optional_kwonly:
-    return_value = _pickle_dump_impl(module, obj, file, protocol, fix_imports);
+    return_value = _pickle_dump_impl(module, obj, file, protocol, fix_imports, buffer_callback);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_pickle_dumps__doc__,
-"dumps($module, /, obj, protocol=None, *, fix_imports=True)\n"
+"dumps($module, /, obj, protocol=None, *, fix_imports=True,\n"
+"      buffer_callback=None)\n"
 "--\n"
 "\n"
 "Return the pickled representation of the object as a bytes object.\n"
@@ -519,26 +560,31 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
 "\n"
 "If *fix_imports* is True and *protocol* is less than 3, pickle will\n"
 "try to map the new Python 3 names to the old module names used in\n"
-"Python 2, so that the pickle data stream is readable with Python 2.");
+"Python 2, so that the pickle data stream is readable with Python 2.\n"
+"\n"
+"If *buffer_callback* is None (the default), buffer views are serialized\n"
+"into *file* as part of the pickle stream.  It is an error if\n"
+"*buffer_callback* is not None and *protocol* is None or smaller than 5.");
 
 #define _PICKLE_DUMPS_METHODDEF    \
     {"dumps", (PyCFunction)(void(*)(void))_pickle_dumps, METH_FASTCALL|METH_KEYWORDS, _pickle_dumps__doc__},
 
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
-                   int fix_imports);
+                   int fix_imports, PyObject *buffer_callback);
 
 static PyObject *
 _pickle_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"obj", "protocol", "fix_imports", NULL};
+    static const char * const _keywords[] = {"obj", "protocol", "fix_imports", "buffer_callback", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "dumps", 0};
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *obj;
     PyObject *protocol = NULL;
     int fix_imports = 1;
+    PyObject *buffer_callback = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -558,12 +604,18 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    fix_imports = PyObject_IsTrue(args[2]);
-    if (fix_imports < 0) {
-        goto exit;
+    if (args[2]) {
+        fix_imports = PyObject_IsTrue(args[2]);
+        if (fix_imports < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    buffer_callback = args[3];
 skip_optional_kwonly:
-    return_value = _pickle_dumps_impl(module, obj, protocol, fix_imports);
+    return_value = _pickle_dumps_impl(module, obj, protocol, fix_imports, buffer_callback);
 
 exit:
     return return_value;
@@ -571,7 +623,7 @@ exit:
 
 PyDoc_STRVAR(_pickle_load__doc__,
 "load($module, /, file, *, fix_imports=True, encoding=\'ASCII\',\n"
-"     errors=\'strict\')\n"
+"     errors=\'strict\', buffers=None)\n"
 "--\n"
 "\n"
 "Read and return an object from the pickle data stored in a file.\n"
@@ -603,20 +655,22 @@ PyDoc_STRVAR(_pickle_load__doc__,
 
 static PyObject *
 _pickle_load_impl(PyObject *module, PyObject *file, int fix_imports,
-                  const char *encoding, const char *errors);
+                  const char *encoding, const char *errors,
+                  PyObject *buffers);
 
 static PyObject *
 _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
+    static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", "buffers", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "load", 0};
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *file;
     int fix_imports = 1;
     const char *encoding = "ASCII";
     const char *errors = "strict";
+    PyObject *buffers = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -653,21 +707,27 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_kwonly;
         }
     }
-    if (!PyUnicode_Check(args[3])) {
-        _PyArg_BadArgument("load", 4, "str", args[3]);
-        goto exit;
+    if (args[3]) {
+        if (!PyUnicode_Check(args[3])) {
+            _PyArg_BadArgument("load", 4, "str", args[3]);
+            goto exit;
+        }
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[3], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
-    Py_ssize_t errors_length;
-    errors = PyUnicode_AsUTF8AndSize(args[3], &errors_length);
-    if (errors == NULL) {
-        goto exit;
-    }
-    if (strlen(errors) != (size_t)errors_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    buffers = args[4];
 skip_optional_kwonly:
-    return_value = _pickle_load_impl(module, file, fix_imports, encoding, errors);
+    return_value = _pickle_load_impl(module, file, fix_imports, encoding, errors, buffers);
 
 exit:
     return return_value;
@@ -675,7 +735,7 @@ exit:
 
 PyDoc_STRVAR(_pickle_loads__doc__,
 "loads($module, /, data, *, fix_imports=True, encoding=\'ASCII\',\n"
-"      errors=\'strict\')\n"
+"      errors=\'strict\', buffers=None)\n"
 "--\n"
 "\n"
 "Read and return an object from the given pickle data.\n"
@@ -698,20 +758,22 @@ PyDoc_STRVAR(_pickle_loads__doc__,
 
 static PyObject *
 _pickle_loads_impl(PyObject *module, PyObject *data, int fix_imports,
-                   const char *encoding, const char *errors);
+                   const char *encoding, const char *errors,
+                   PyObject *buffers);
 
 static PyObject *
 _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"data", "fix_imports", "encoding", "errors", NULL};
+    static const char * const _keywords[] = {"data", "fix_imports", "encoding", "errors", "buffers", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "loads", 0};
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *data;
     int fix_imports = 1;
     const char *encoding = "ASCII";
     const char *errors = "strict";
+    PyObject *buffers = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -748,23 +810,29 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             goto skip_optional_kwonly;
         }
     }
-    if (!PyUnicode_Check(args[3])) {
-        _PyArg_BadArgument("loads", 4, "str", args[3]);
-        goto exit;
+    if (args[3]) {
+        if (!PyUnicode_Check(args[3])) {
+            _PyArg_BadArgument("loads", 4, "str", args[3]);
+            goto exit;
+        }
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[3], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
-    Py_ssize_t errors_length;
-    errors = PyUnicode_AsUTF8AndSize(args[3], &errors_length);
-    if (errors == NULL) {
-        goto exit;
-    }
-    if (strlen(errors) != (size_t)errors_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    buffers = args[4];
 skip_optional_kwonly:
-    return_value = _pickle_loads_impl(module, data, fix_imports, encoding, errors);
+    return_value = _pickle_loads_impl(module, data, fix_imports, encoding, errors, buffers);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8f972562c8f71e2b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8dc0e862f96c4afe input=a9049054013a1b77]*/

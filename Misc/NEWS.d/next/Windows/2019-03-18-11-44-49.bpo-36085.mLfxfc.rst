@@ -1,2 +1,0 @@
-Enable better DLL resolution on Windows by using safe DLL search paths and
-adding :func:`os.add_dll_directory`.

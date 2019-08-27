@@ -81,7 +81,7 @@ internal_error_callback(const char *errors)
 static PyObject *
 call_error_callback(PyObject *errors, PyObject *exc)
 {
-    PyObject *args, *cb, *r;
+    PyObject *cb, *r;
     const char *str;
 
     assert(PyUnicode_Check(errors));
@@ -92,17 +92,7 @@ call_error_callback(PyObject *errors, PyObject *exc)
     if (cb == NULL)
         return NULL;
 
-    args = PyTuple_New(1);
-    if (args == NULL) {
-        Py_DECREF(cb);
-        return NULL;
-    }
-
-    PyTuple_SET_ITEM(args, 0, exc);
-    Py_INCREF(exc);
-
-    r = PyObject_CallObject(cb, args);
-    Py_DECREF(args);
+    r = _PyObject_CallOneArg(cb, exc);
     Py_DECREF(cb);
     return r;
 }
@@ -711,10 +701,10 @@ static PyTypeObject MultibyteCodec_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)multibytecodec_dealloc, /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1088,10 +1078,10 @@ static PyTypeObject MultibyteIncrementalEncoder_Type = {
     0,                                  /* tp_itemsize */
     /*  methods  */
     (destructor)mbiencoder_dealloc, /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1387,10 +1377,10 @@ static PyTypeObject MultibyteIncrementalDecoder_Type = {
     0,                                  /* tp_itemsize */
     /*  methods  */
     (destructor)mbidecoder_dealloc, /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1734,10 +1724,10 @@ static PyTypeObject MultibyteStreamReader_Type = {
     0,                                  /* tp_itemsize */
     /*  methods  */
     (destructor)mbstreamreader_dealloc, /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1786,7 +1776,7 @@ mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
     if (str == NULL)
         return -1;
 
-    wr = _PyObject_CallMethodIdObjArgs(self->stream, &PyId_write, str, NULL);
+    wr = _PyObject_CallMethodIdOneArg(self->stream, &PyId_write, str);
     Py_DECREF(str);
     if (wr == NULL)
         return -1;
@@ -1880,7 +1870,7 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
     if (PyBytes_Size(pwrt) > 0) {
         PyObject *wr;
 
-        wr = _PyObject_CallMethodIdObjArgs(self->stream, &PyId_write, pwrt);
+        wr = _PyObject_CallMethodIdOneArg(self->stream, &PyId_write, pwrt);
         if (wr == NULL) {
             Py_DECREF(pwrt);
             return NULL;
@@ -1980,10 +1970,10 @@ static PyTypeObject MultibyteStreamWriter_Type = {
     0,                                  /* tp_itemsize */
     /*  methods  */
     (destructor)mbstreamwriter_dealloc, /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */

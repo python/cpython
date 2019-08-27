@@ -313,7 +313,9 @@ However, for reading convenience, most of the examples show sorted sequences.
    measure of central location.
 
    If there are multiple modes, returns the first one encountered in the *data*.
-   If *data* is empty, :exc:`StatisticsError` is raised.
+   If the smallest or largest of multiple modes is desired instead, use
+   ``min(multimode(data))`` or ``max(multimode(data))``.  If the input *data* is
+   empty, :exc:`StatisticsError` is raised.
 
    ``mode`` assumes discrete data, and returns a single value. This is the
    standard treatment of the mode as commonly taught in schools:
@@ -511,22 +513,37 @@ However, for reading convenience, most of the examples show sorted sequences.
    is not least 1.
 
    The *dist* can be any iterable containing sample data or it can be an
-   instance of a class that defines an :meth:`~inv_cdf` method.
+   instance of a class that defines an :meth:`~inv_cdf` method.  For meaningful
+   results, the number of data points in *dist* should be larger than *n*.
    Raises :exc:`StatisticsError` if there are not at least two data points.
 
    For sample data, the cut points are linearly interpolated from the
    two nearest data points.  For example, if a cut point falls one-third
    of the distance between two sample values, ``100`` and ``112``, the
-   cut-point will evaluate to ``104``.  Other selection methods may be
-   offered in the future (for example choose ``100`` as the nearest
-   value or compute ``106`` as the midpoint).  This might matter if
-   there are too few samples for a given number of cut points.
+   cut-point will evaluate to ``104``.
 
-   If *method* is set to *inclusive*, *dist* is treated as population data.
-   The minimum value is treated as the 0th percentile and the maximum
-   value is treated as the 100th percentile.  If *dist* is an instance of
-   a class that defines an :meth:`~inv_cdf` method, setting *method*
-   has no effect.
+   The *method* for computing quantiles can be varied depending on
+   whether the data in *dist* includes or excludes the lowest and
+   highest possible values from the population.
+
+   The default *method* is "exclusive" and is used for data sampled from
+   a population that can have more extreme values than found in the
+   samples.  The portion of the population falling below the *i-th* of
+   *m* sorted data points is computed as ``i / (m + 1)``.  Given nine
+   sample values, the method sorts them and assigns the following
+   percentiles: 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%.
+
+   Setting the *method* to "inclusive" is used for describing population
+   data or for samples that are known to include the most extreme values
+   from the population.  The minimum value in *dist* is treated as the 0th
+   percentile and the maximum value is treated as the 100th percentile.
+   The portion of the population falling below the *i-th* of *m* sorted
+   data points is computed as ``(i - 1) / (m - 1)``.  Given 11 sample
+   values, the method sorts them and assigns the following percentiles:
+   0%, 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%.
+
+   If *dist* is an instance of a class that defines an
+   :meth:`~inv_cdf` method, setting *method* has no effect.
 
    .. doctest::
 
@@ -539,7 +556,7 @@ However, for reading convenience, most of the examples show sorted sequences.
         >>> [round(q, 1) for q in quantiles(data, n=10)]
         [81.0, 86.2, 89.0, 99.4, 102.5, 103.6, 106.0, 109.8, 111.0]
 
-        >>> # Quartile cut points for the standard normal distibution
+        >>> # Quartile cut points for the standard normal distribution
         >>> Z = NormalDist()
         >>> [round(q, 4) for q in quantiles(Z, n=4)]
         [-0.6745, 0.0, 0.6745]
@@ -650,12 +667,8 @@ of applications in statistics.
 
     .. method:: NormalDist.overlap(other)
 
-       Compute the `overlapping coefficient (OVL)
-       <http://www.iceaaonline.com/ready/wp-content/uploads/2014/06/MM-9-Presentation-Meet-the-Overlapping-Coefficient-A-Measure-for-Elevator-Speeches.pdf>`_
-       between two normal distributions, giving a measure of agreement.
-       Returns a value between 0.0 and 1.0 giving `the overlapping area for
-       the two probability density functions
-       <https://www.rasch.org/rmt/rmt101r.htm>`_.
+       Returns a value between 0.0 and 1.0 giving the overlapping area for
+       the two probability density functions.
 
     Instances of :class:`NormalDist` support addition, subtraction,
     multiplication and division by a constant.  These operations
@@ -717,16 +730,6 @@ Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
     >>> [round(sat.inv_cdf(p / 10)) for p in range(1, 10)]
     [810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
 
-What percentage of men and women will have the same height in `two normally
-distributed populations with known means and standard deviations
-<http://www.usablestats.com/lessons/normal>`_?
-
-    >>> men = NormalDist(70, 4)
-    >>> women = NormalDist(65, 3.5)
-    >>> ovl = men.overlap(women)
-    >>> round(ovl * 100.0, 1)
-    50.3
-
 To estimate the distribution for a model than isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte
 Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
@@ -737,11 +740,12 @@ Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
     ...     return (3*x + 7*x*y - 5*y) / (11 * z)
     ...
     >>> n = 100_000
-    >>> X = NormalDist(10, 2.5).samples(n)
-    >>> Y = NormalDist(15, 1.75).samples(n)
-    >>> Z = NormalDist(5, 1.25).samples(n)
+    >>> seed = 86753099035768
+    >>> X = NormalDist(10, 2.5).samples(n, seed=seed)
+    >>> Y = NormalDist(15, 1.75).samples(n, seed=seed)
+    >>> Z = NormalDist(50, 1.25).samples(n, seed=seed)
     >>> NormalDist.from_samples(map(model, X, Y, Z))     # doctest: +SKIP
-    NormalDist(mu=19.640137307085507, sigma=47.03273142191088)
+    NormalDist(mu=1.8661894803304777, sigma=0.65238717376862)
 
 Normal distributions commonly arise in machine learning problems.
 

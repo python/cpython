@@ -35,10 +35,6 @@
 
 /* External API definitions */
 
-/* Namespace external symbols to allow multiple libexpat version to
-   co-exist. */
-#include "pyexpatns.h"
-
 #if defined(_MSC_EXTENSIONS) && !defined(__BEOS__) && !defined(__CYGWIN__)
 # define XML_USE_MSC_EXTENSIONS 1
 #endif
@@ -85,6 +81,10 @@
 # endif
 #endif  /* not defined XMLCALL */
 
+/* Namespace external symbols to allow multiple libexpat version to
+   co-exist. */
+#include "pyexpatns.h"
+
 
 #if !defined(XML_STATIC) && !defined(XMLIMPORT)
 # ifndef XML_BUILDING_EXPAT
@@ -97,7 +97,11 @@
 # endif
 #endif  /* not defined XML_STATIC */
 
-#if !defined(XMLIMPORT) && defined(__GNUC__) && (__GNUC__ >= 4)
+#ifndef XML_ENABLE_VISIBILITY
+# define XML_ENABLE_VISIBILITY 0
+#endif
+
+#if !defined(XMLIMPORT) && XML_ENABLE_VISIBILITY
 # define XMLIMPORT __attribute__ ((visibility ("default")))
 #endif
 

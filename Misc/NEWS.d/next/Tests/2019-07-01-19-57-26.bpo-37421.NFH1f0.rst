@@ -1,0 +1,2 @@
+multiprocessing tests now explicitly call ``_run_finalizers()`` to
+immediately remove temporary directories created by tests.
