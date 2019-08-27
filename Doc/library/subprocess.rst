@@ -486,8 +486,9 @@ functions.
    .. versionchanged:: 3.8
 
       The *preexec_fn* parameter is no longer supported in subinterpreters.
-      The new restriction may affect applications that are deployed in
-      mod_wsgi, uWSGI, and other environments.
+      The use of the parameter in a subinterpreter raises
+      :exc:`RuntimeError`. The new restriction may affect applications that
+      are deployed in mod_wsgi, uWSGI, and other embedded environments.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
    :const:`2` will be closed before the child process is executed.  Otherwise
