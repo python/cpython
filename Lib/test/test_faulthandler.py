@@ -817,7 +817,9 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertEqual(output, [])
         self.assertEqual(exitcode, 0xC0000005)
 
-    def test_cancel_later_no_dump(self):
+    def test_cancel_later_without_dump_traceback_later(self):
+        # bpo-37933: Calling cancel_dump_traceback_later()
+        # without dump_traceback_later() must not gfaust
         code = dedent("""
             import faulthandler
             faulthandler.cancel_dump_traceback_later()
