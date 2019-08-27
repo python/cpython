@@ -1531,6 +1531,12 @@ Changes in the Python API
   non-zero :attr:`~Popen.returncode`.
   (Contributed by Joannah Nanjekye and Victor Stinner in :issue:`35537`.)
 
+* The *preexec_fn* argument of * :class:`subprocess.Popen` is no longer
+  compatible with subinterpreters. The use of the parameter in a
+  subinterpreter now raises :exc:`RuntimeError`.
+  (Contributed by Eric Snow in :issue:`34651`, modified by Christian Heimes
+  in :issue:`37951`.)
+
 * The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
   exceptions.
 
