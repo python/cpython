@@ -5543,9 +5543,21 @@ parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
     return retval;
 }
 
+static DWORD system_stores[] = {
+    CERT_SYSTEM_STORE_LOCAL_MACHINE,
+    CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
+    CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
+    CERT_SYSTEM_STORE_CURRENT_USER,
+    CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY,
+    CERT_SYSTEM_STORE_SERVICES,
+    CERT_SYSTEM_STORE_USERS
+};
+
+#define SYSTEM_STORES_COUNT sizeof(system_stores) / sizeof(DWORD)
+
+
 static HCERTSTORE
 ssl_collect_certificates(const char *store_name,
-                         DWORD *system_stores, size_t system_stores_count,
                          HCERTSTORE *system_store_handles)
 {
 /* this function collects the system certificate stores listed in
@@ -5561,8 +5573,9 @@ ssl_collect_certificates(const char *store_name,
     if (!hCollectionStore) {
         return NULL;
     }
+
     storesAdded = 0;
-    for (i = 0; i < system_stores_count; i++) {
+    for (i = 0; i < SYSTEM_STORES_COUNT; i++) {
         system_store_handles[i] = NULL;
         hSystemStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0,
                                      (HCRYPTPROV)NULL,
@@ -5581,7 +5594,7 @@ ssl_collect_certificates(const char *store_name,
     }
 
     CertCloseStore(hCollectionStore, 0);
-    for (i = 0; i < system_stores_count; i++) {
+    for (i = 0; i < SYSTEM_STORES_COUNT; i++) {
         if (system_store_handles[i]) {
             CertCloseStore(system_store_handles[i], 0);
         }
@@ -5620,29 +5633,19 @@ static PyObject *
 _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
 /*[clinic end generated code: output=5134dc8bb3a3c893 input=915f60d70461ea4e]*/
 {
-    HCERTSTORE hCollectionStore = NULL;
+    HCERTSTORE system_store_handles[SYSTEM_STORES_COUNT];
     PCCERT_CONTEXT pCertCtx = NULL;
     PyObject *keyusage = NULL, *cert = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
-    static DWORD system_stores[] = {
-        CERT_SYSTEM_STORE_LOCAL_MACHINE,
-        CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
-        CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
-        CERT_SYSTEM_STORE_CURRENT_USER,
-        CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY,
-        CERT_SYSTEM_STORE_SERVICES,
-        CERT_SYSTEM_STORE_USERS};
-    size_t i, system_stores_count = sizeof(system_stores) / sizeof(DWORD);
-    HCERTSTORE system_store_handles[sizeof(system_stores) / sizeof(DWORD)];
+    size_t i;
 
     result = PyList_New(0);
     if (result == NULL) {
         return NULL;
     }
-    hCollectionStore = ssl_collect_certificates(store_name,
-                                                system_stores,
-                                                system_stores_count,
-                                                system_store_handles);
+
+    HCERTSTORE hCollectionStore = ssl_collect_certificates(store_name,
+                                                    system_store_handles);
     if (hCollectionStore == NULL) {
         Py_DECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
@@ -5697,11 +5700,8 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     Py_XDECREF(keyusage);
     Py_XDECREF(tup);
 
-    /* CertCloseStore() with any argument can't close handles together.
-       In case of using CERT_CLOSE_STORE_FORCE_FLAG (not recommended),
-       we must close hCollectionStore before we close each hSystemStore. */
     BOOL success = CertCloseStore(hCollectionStore, 0);
-    for (i = 0; i < system_stores_count; i++) {
+    for (i = 0; i < SYSTEM_STORES_COUNT; i++) {
         if (system_store_handles[i] &&
                 !CertCloseStore(system_store_handles[i], 0)) {
             success = 0;
@@ -5731,29 +5731,19 @@ static PyObject *
 _ssl_enum_crls_impl(PyObject *module, const char *store_name)
 /*[clinic end generated code: output=bce467f60ccd03b6 input=a1f1d7629f1c5d3d]*/
 {
-    HCERTSTORE hCollectionStore = NULL;
+    HCERTSTORE system_store_handles[SYSTEM_STORES_COUNT];
     PCCRL_CONTEXT pCrlCtx = NULL;
     PyObject *crl = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
-    static DWORD system_stores[] = {
-        CERT_SYSTEM_STORE_LOCAL_MACHINE,
-        CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
-        CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
-        CERT_SYSTEM_STORE_CURRENT_USER,
-        CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY,
-        CERT_SYSTEM_STORE_SERVICES,
-        CERT_SYSTEM_STORE_USERS};
-    size_t i, system_stores_count = sizeof(system_stores) / sizeof(DWORD);
-    HCERTSTORE system_store_handles[sizeof(system_stores) / sizeof(DWORD)];
+    size_t i;
 
     result = PyList_New(0);
     if (result == NULL) {
         return NULL;
     }
-    hCollectionStore = ssl_collect_certificates(store_name,
-                                                system_stores,
-                                                system_stores_count,
-                                                system_store_handles);
+
+    HCERTSTORE hCollectionStore = ssl_collect_certificates(store_name,
+                                                    system_store_handles);
     if (hCollectionStore == NULL) {
         Py_DECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
@@ -5797,11 +5787,8 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
     Py_XDECREF(enc);
     Py_XDECREF(tup);
 
-    /* CertCloseStore() with any argument can't close handles together.
-       In case of using CERT_CLOSE_STORE_FORCE_FLAG (not recommended),
-       we must close hCollectionStore before we close each hSystemStore. */
     BOOL success = CertCloseStore(hCollectionStore, 0);
-    for (i = 0; i < system_stores_count; i++) {
+    for (i = 0; i < SYSTEM_STORES_COUNT; i++) {
         if (system_store_handles[i] &&
                 !CertCloseStore(system_store_handles[i], 0)) {
             success = 0;
