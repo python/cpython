@@ -1,0 +1,1 @@
+Fix compiler warning of distutils.ccompiler.CCompiler.has_function
