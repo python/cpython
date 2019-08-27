@@ -13,7 +13,8 @@ def _find_statics(dirnames, known, ignored):
     known = known_from_file(known)
 
     knownvars = (known or {}).get('variables')
-    for static in find.statics_from_binary(knownvars=knownvars):
+    for static in find.statics_from_binary(knownvars=knownvars,
+                                           dirnames=dirnames):
     #for static in find.statics(dirnames, known, kind='platform'):
         yield static, is_supported(statics, ignored, known)
 

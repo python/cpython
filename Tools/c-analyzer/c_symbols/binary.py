@@ -16,7 +16,7 @@ def iter_symbols(binary=PYTHON, dirnames=None, *,
                  # from c_statics.supported.
                  find_local_symbol=source.find_symbol,
                  _file_exists=os.path.exists,
-                 _iter_symbols_nm=(lambda b, fls: _iter_symbols_nm(b, fls)),
+                 _iter_symbols_nm=(lambda b, *a: _iter_symbols_nm(b, *a)),
                  ):
     """Yield a Symbol for each symbol found in the binary."""
     if not _file_exists(binary):

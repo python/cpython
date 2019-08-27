@@ -51,7 +51,7 @@ def _find_symbol(name, filenames, _perfilecache, *,
             symbols.pop(name)
         return filename, funcname, vartype
     else:
-        return UNKONWN, UNKNOWN, UNKNOWN
+        return UNKNOWN, UNKNOWN, UNKNOWN
 
 
 def iter_symbols():

@@ -13,6 +13,7 @@ from c_parser import info, declarations
 
 def statics_from_binary(binfile=b_symbols.PYTHON, *,
                         knownvars=None,
+                        dirnames=None,
                         _iter_symbols=b_symbols.iter_symbols,
                         _resolve=resolve.symbols_to_variables,
                         _get_symbol_resolver=resolve.get_resolver,
@@ -23,7 +24,7 @@ def statics_from_binary(binfile=b_symbols.PYTHON, *,
     """
     symbols = _iter_symbols(binfile, find_local_symbol=None)
     for variable in _resolve(symbols,
-                             resolve=_get_symbol_resolver(knownvars),
+                             resolve=_get_symbol_resolver(knownvars, dirnames),
                              ):
         if not variable.isstatic:
             continue

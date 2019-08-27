@@ -48,12 +48,13 @@ def look_up_known_symbol(symbol, knownvars, *,
 def find_in_source(symbol, dirnames, *,
                    _perfilecache={},
                    _find_symbol=_find_symbol,
+                   _iter_files=files.iter_files,
                    ):
     """Return the Variable matching the given Symbol.
 
     If there is no match then return None.
     """
-    if symbol.filename and symbol.filename != UNKONWN:
+    if symbol.filename and symbol.filename != UNKNOWN:
         filenames = [symbol.filename]
     else:
         filenames = _iter_files(dirnames, ('.c', '.h'))
@@ -122,14 +123,13 @@ def symbols_to_variables(symbols, *,
             # XXX validate?
             yield symbol
             continue
-        if symbol.kind is not Symbol.KIND.VARIABLE:
+        if symbol.kind != Symbol.KIND.VARIABLE:
             continue
         resolved = resolve(symbol)
         if resolved is None:
-            raise NotImplementedError
-            #yield Variable(
-            #        id=symbol.ID,
-            #        vartype=info.UNKNOWN,
-            #        )
-            #continue
+            raise NotImplementedError(symbol)
+            resolved = info.Variable(
+                    id=symbol.id,
+                    vartype=UNKNOWN,
+                    )
         yield resolved
