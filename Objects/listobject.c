@@ -22,7 +22,7 @@ class list "PyListObject *" "&PyList_Type"
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
- * responsibility to overwrite them with sane values.
+ * responsibility to overwrite them with same values.
  * The number of allocated elements may grow, shrink, or stay the same.
  * Failure is impossible if newsize <= self.allocated on entry, although
  * that partly relies on an assumption that the system realloc() never
