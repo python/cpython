@@ -47,7 +47,7 @@
 
 This article explains the new features in Python 3.9, compared to 3.8.
 
-For full details, see the :source:`Misc/NEWS` file.
+For full details, see the :ref:`changelog <changelog>`.
 
 .. note::
 
@@ -169,6 +169,12 @@ Deprecated
   of Python. For the majority of use cases users can leverage the Abstract Syntax
   Tree (AST) generation and compilation stage, using the :mod:`ast` module.
 
+* The :mod:`random` module currently accepts any hashable type as a
+  possible seed value.  Unfortunately, some of those types are not
+  guaranteed to have a deterministic hash value.  After Python 3.9,
+  the module will restrict its seeds to *None*, :class:`int`,
+  :class:`float`, :class:`str`, :class:`bytes`, and :class:`bytearray`.
+
 
 Removed
 =======
@@ -220,3 +226,12 @@ Changes in the Python API
 
 * The :mod:`venv` activation scripts no longer special-case when
   ``__VENV_PROMPT__`` is set to ``""``.
+
+
+CPython bytecode changes
+------------------------
+
+* The :opcode:`LOAD_ASSERTION_ERROR` opcode was added for handling the
+  :keyword:`assert` statement. Previously, the assert statement would not work
+  correctly if the :exc:`AssertionError` exception was being shadowed.
+  (Contributed by Zackery Spytz in :issue:`34880`.)
