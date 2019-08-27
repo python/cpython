@@ -16,7 +16,7 @@ def _find_statics(dirnames, known, ignored):
     for static in find.statics_from_binary(knownvars=knownvars,
                                            dirnames=dirnames):
     #for static in find.statics(dirnames, known, kind='platform'):
-        yield static, is_supported(statics, ignored, known)
+        yield static, supported.is_supported(static, ignored, known)
 
 
 def cmd_check(cmd, dirs=SOURCE_DIRS, *,
