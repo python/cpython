@@ -2734,6 +2734,17 @@ class GetTypeHintTests(BaseTestCase):
                          {'z': ClassVar[CSub], 'y': int, 'b': int,
                           'x': ClassVar[Optional[B]]})
         self.assertEqual(gth(G), {'lst': ClassVar[List[T]]})
+        
+    def test_get_type_hints_retains_forward_equality(self):
+        fr = typing.ForwardRef('int')
+        hsh = hash(fr)
+        
+        def foo(a: fr):
+            pass
+        
+        gth(foo)
+        self.assertEqual(fr, typing.ForwardRef('int'))
+        self.assertEqual(hash(fr), hsh)
 
 
 class GetUtilitiesTestCase(TestCase):
