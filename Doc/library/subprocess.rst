@@ -483,6 +483,13 @@ functions.
       The *start_new_session* parameter can take the place of a previously
       common use of *preexec_fn* to call os.setsid() in the child.
 
+   .. versionchanged:: 3.8
+
+      The *preexec_fn* parameter is no longer supported in subinterpreters.
+      The use of the parameter in a subinterpreter raises
+      :exc:`RuntimeError`. The new restriction may affect applications that
+      are deployed in mod_wsgi, uWSGI, and other embedded environments.
+
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
    :const:`2` will be closed before the child process is executed.  Otherwise
    when *close_fds* is false, file descriptors obey their inheritable flag
