@@ -117,9 +117,15 @@ math_frexp(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    x = PyFloat_AsDouble(arg);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = math_frexp_impl(module, x);
 
@@ -151,9 +157,15 @@ math_ldexp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("ldexp", nargs, 2, 2)) {
         goto exit;
     }
-    x = PyFloat_AsDouble(args[0]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     i = args[1];
     return_value = math_ldexp_impl(module, x, i);
@@ -182,9 +194,15 @@ math_modf(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    x = PyFloat_AsDouble(arg);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = math_modf_impl(module, x);
 
@@ -277,13 +295,25 @@ math_fmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("fmod", nargs, 2, 2)) {
         goto exit;
     }
-    x = PyFloat_AsDouble(args[0]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
     }
-    y = PyFloat_AsDouble(args[1]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = math_fmod_impl(module, x, y);
 
@@ -349,13 +379,25 @@ math_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("pow", nargs, 2, 2)) {
         goto exit;
     }
-    x = PyFloat_AsDouble(args[0]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
     }
-    y = PyFloat_AsDouble(args[1]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = math_pow_impl(module, x, y);
 
@@ -381,9 +423,15 @@ math_degrees(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    x = PyFloat_AsDouble(arg);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = math_degrees_impl(module, x);
 
@@ -409,9 +457,15 @@ math_radians(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    x = PyFloat_AsDouble(arg);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = math_radians_impl(module, x);
 
@@ -437,9 +491,15 @@ math_isfinite(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    x = PyFloat_AsDouble(arg);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = math_isfinite_impl(module, x);
 
@@ -465,9 +525,15 @@ math_isnan(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    x = PyFloat_AsDouble(arg);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = math_isnan_impl(module, x);
 
@@ -493,9 +559,15 @@ math_isinf(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    x = PyFloat_AsDouble(arg);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = math_isinf_impl(module, x);
 
@@ -550,29 +622,53 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!args) {
         goto exit;
     }
-    a = PyFloat_AsDouble(args[0]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[0])) {
+        a = PyFloat_AS_DOUBLE(args[0]);
     }
-    b = PyFloat_AsDouble(args[1]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    else
+    {
+        a = PyFloat_AsDouble(args[0]);
+        if (a == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        b = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        b = PyFloat_AsDouble(args[1]);
+        if (b == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
     if (args[2]) {
-        rel_tol = PyFloat_AsDouble(args[2]);
-        if (PyErr_Occurred()) {
-            goto exit;
+        if (PyFloat_CheckExact(args[2])) {
+            rel_tol = PyFloat_AS_DOUBLE(args[2]);
+        }
+        else
+        {
+            rel_tol = PyFloat_AsDouble(args[2]);
+            if (rel_tol == -1.0 && PyErr_Occurred()) {
+                goto exit;
+            }
         }
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    abs_tol = PyFloat_AsDouble(args[3]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[3])) {
+        abs_tol = PyFloat_AS_DOUBLE(args[3]);
+    }
+    else
+    {
+        abs_tol = PyFloat_AsDouble(args[3]);
+        if (abs_tol == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
 skip_optional_kwonly:
     _return_value = math_isclose_impl(module, a, b, rel_tol, abs_tol);
@@ -712,4 +808,4 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f93cfe13ab2fdb4e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9a2b3dc91eb9aadd input=a9049054013a1b77]*/

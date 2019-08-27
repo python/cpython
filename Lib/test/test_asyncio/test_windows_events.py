@@ -59,6 +59,25 @@ class ProactorLoopCtrlC(test_utils.TestCase):
         thread.join()
 
 
+class ProactorMultithreading(test_utils.TestCase):
+    def test_run_from_nonmain_thread(self):
+        finished = False
+
+        async def coro():
+            await asyncio.sleep(0)
+
+        def func():
+            nonlocal finished
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(coro())
+            finished = True
+
+        thread = threading.Thread(target=func)
+        thread.start()
+        thread.join()
+        self.assertTrue(finished)
+
+
 class ProactorTests(test_utils.TestCase):
 
     def setUp(self):
