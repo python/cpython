@@ -7,19 +7,21 @@ with tool_imports_for_tests():
 
 
 TYPICAL = [
-        info.Variable.from_parts('src1/spam.c', None, 'var1', 'const char *'),
-        info.Variable.from_parts('src1/spam.c', 'ham', 'initialized', 'int'),
-        info.Variable.from_parts('src1/spam.c', None, 'var2', 'PyObject *'),
-        info.Variable.from_parts('src1/eggs.c', 'tofu', 'ready', 'int'),
-        info.Variable.from_parts('src1/spam.c', None, 'freelist', '(PyTupleObject *)[10]'),
-        info.Variable.from_parts('src1/sub/ham.c', None, 'var1', 'const char const *'),
-        info.Variable.from_parts('src2/jam.c', None, 'var1', 'int'),
-        info.Variable.from_parts('src2/jam.c', None, 'var2', 'MyObject *'),
-        info.Variable.from_parts('Include/spam.h', None, 'data', 'const int'),
+        info.Variable.from_parts('src1/spam.c', None, 'var1', 'statc const char *'),
+        info.Variable.from_parts('src1/spam.c', 'ham', 'initialized', 'static int'),
+        info.Variable.from_parts('src1/spam.c', None, 'var2', 'static PyObject *'),
+        info.Variable.from_parts('src1/eggs.c', 'tofu', 'ready', 'static int'),
+        info.Variable.from_parts('src1/spam.c', None, 'freelist', 'static (PyTupleObject *)[10]'),
+        info.Variable.from_parts('src1/sub/ham.c', None, 'var1', 'static const char const *'),
+        info.Variable.from_parts('src2/jam.c', None, 'var1', 'static int'),
+        info.Variable.from_parts('src2/jam.c', None, 'var2', 'static MyObject *'),
+        info.Variable.from_parts('Include/spam.h', None, 'data', 'static const int'),
         ]
 
 
 class BasicTests(unittest.TestCase):
+
+    maxDiff = None
 
     def setUp(self):
         self.lines = []
@@ -32,15 +34,15 @@ class BasicTests(unittest.TestCase):
               _print=self.print)
 
         self.assertEqual(self.lines, [
-            'src1/spam.c:var1',
-            'src1/spam.c:ham():initialized',
-            'src1/spam.c:var2',
-            'src1/eggs.c:tofu():ready',
-            'src1/spam.c:freelist',
-            'src1/sub/ham.c:var1',
-            'src2/jam.c:var1',
-            'src2/jam.c:var2',
-            'Include/spam.h:data',
+            'src1/spam.c:var1                                                 const char *',
+            'src1/spam.c:ham():initialized                                    int',
+            'src1/spam.c:var2                                                 PyObject *',
+            'src1/eggs.c:tofu():ready                                         int',
+            'src1/spam.c:freelist                                             (PyTupleObject *)[10]',
+            'src1/sub/ham.c:var1                                              const char const *',
+            'src2/jam.c:var1                                                  int',
+            'src2/jam.c:var2                                                  MyObject *',
+            'Include/spam.h:data                                              const int',
             ])
 
     def test_no_rows(self):
