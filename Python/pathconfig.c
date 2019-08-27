@@ -734,8 +734,7 @@ _PyPathConfig_ComputeSysPath0(const PyWideStringList *argv, PyObject **path0_p)
 /* Search for a prefix value in an environment file (pyvenv.cfg).
    If found, copy it into the provided buffer. */
 int
-_Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
-                       wchar_t *value, size_t value_size)
+_Py_FindEnvConfigValue(FILE *env_file, wchar_t *value, size_t value_size)
 {
     int result = 0; /* meaning not found */
     char buffer[MAXPATHLEN * 2 + 1];  /* allow extra for key, '=', etc. */
@@ -763,7 +762,7 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
         if (tmpbuffer) {
             wchar_t * state;
             wchar_t * tok = WCSTOK(tmpbuffer, L" \t\r\n", &state);
-            if ((tok != NULL) && !wcscmp(tok, key)) {
+            if ((tok != NULL) && !wcscmp(tok, L"home")) {
                 tok = WCSTOK(NULL, L" \t", &state);
                 if ((tok != NULL) && !wcscmp(tok, L"=")) {
                     tok = WCSTOK(NULL, L"\r\n", &state);

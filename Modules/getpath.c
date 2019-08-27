@@ -986,7 +986,7 @@ calculate_read_pyenv(PyCalculatePath *calculate)
     }
 
     /* Look for a 'home' variable and set argv0_path to it, if found */
-    if (_Py_FindEnvConfigValue(env_file, L"home", tmpbuffer, buflen)) {
+    if (_Py_FindEnvConfigValue(env_file, tmpbuffer, buflen)) {
         if (safe_wcscpy(calculate->argv0_path, tmpbuffer,
                         Py_ARRAY_LENGTH(calculate->argv0_path)) < 0) {
             return PATHLEN_ERR();

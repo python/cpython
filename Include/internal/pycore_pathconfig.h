@@ -51,7 +51,6 @@ extern int _PyPathConfig_ComputeSysPath0(
     PyObject **path0);
 extern int _Py_FindEnvConfigValue(
     FILE *env_file,
-    const wchar_t *key,
     wchar_t *value,
     size_t value_size);
 

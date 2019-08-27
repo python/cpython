@@ -742,7 +742,7 @@ calculate_pyvenv_file(PyCalculatePath *calculate)
 
     /* Look for a 'home' variable and set argv0_path to it, if found */
     wchar_t tmpbuffer[MAXPATHLEN+1];
-    if (_Py_FindEnvConfigValue(env_file, L"home", tmpbuffer, MAXPATHLEN)) {
+    if (_Py_FindEnvConfigValue(env_file, tmpbuffer, MAXPATHLEN)) {
         wcscpy_s(calculate->argv0_path, MAXPATHLEN+1, tmpbuffer);
     }
     fclose(env_file);
