@@ -4,8 +4,7 @@ import os.path
 PKG_ROOT = os.path.dirname(__file__)
 DATA_DIR = os.path.dirname(PKG_ROOT)
 REPO_ROOT = os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(DATA_DIR)))
+        os.path.dirname(DATA_DIR))
 
 KNOWN_FILE = os.path.join(DATA_DIR, 'known.tsv')
 IGNORED_FILE = os.path.join(DATA_DIR, 'ignored.tsv')
