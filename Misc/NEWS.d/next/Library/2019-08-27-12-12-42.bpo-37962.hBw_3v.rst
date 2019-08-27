@@ -1,0 +1,1 @@
+datetime.datetime.fromisoformat now supports datetime strings that contain the UTC designator or a timezone expressed as hours only.
