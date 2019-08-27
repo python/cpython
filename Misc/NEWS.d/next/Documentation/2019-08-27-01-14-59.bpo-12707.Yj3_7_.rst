@@ -1,0 +1,1 @@
+Deprecate info(), geturl(), getcode() methods in favor of headers, url, and status properties for HTTPResponse and addinfourl. Patch by Ashwin Ramaswami
