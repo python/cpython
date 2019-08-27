@@ -43,7 +43,7 @@ def find_matching_variable(varid, filename, srclines=None, *,
     with _get_srclines(filename, srclines, cache=cache) as srclines:
         for line in srclines:
             # XXX remember current funcname
-            if name not in line:
+            if not re.match(rf'.*\b{name}\b', line):
                 continue
             if funcname:
                 if not line.startswith('    '):
