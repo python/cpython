@@ -1,6 +1,7 @@
 import csv
 
 from c_analyzer_common.info import ID
+from c_analyzer_common.util import read_tsv
 
 
 def is_supported(static, ignored=None, known=None):
@@ -26,28 +27,16 @@ HEADER = '\t'.join(COLUMNS)
 
 
 def ignored_from_file(infile, *,
-                      _open=open,
+                      _read_tsv=read_tsv,
                       ):
     """Yield StaticVar for each ignored var in the file."""
-    if isinstance(infile, str):
-        with _open(infile) as infile:
-            return ignored_from_file(infile, _open=open)
-
-    lines = iter(infile)
-    try:
-        header = next(lines).strip()
-    except StopIteration:
-        header = ''
-    if header != HEADER:
-        raise ValueError(f'bad header {header!r}')
-
     ignored = {
         'variables': {},
         #'types': {},
         #'constants': {},
         #'macros': {},
         }
-    for row in csv.reader(lines, delimiter='\t'):
+    for row in _read_tsv(infile, HEADER):
         filename, funcname, name, kind, reason = row
         id = ID(filename, funcname, name)
         kind = kind.strip()

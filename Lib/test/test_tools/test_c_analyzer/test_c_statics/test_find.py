@@ -42,8 +42,8 @@ class StaticsFromBinaryTests(_Base):
         self.calls.append(('_resolve_symbols', (symbols, resolve,)))
         return self._return_resolve_symbols
 
-    def _get_symbol_resolver(self, knownvars):
-        self.calls.append(('_get_symbol_resolver', (knownvars,)))
+    def _get_symbol_resolver(self, knownvars, dirnames):
+        self.calls.append(('_get_symbol_resolver', (knownvars, dirnames)))
         return self._return_get_symbol_resolver
 
     def test_typical(self):
@@ -70,7 +70,7 @@ class StaticsFromBinaryTests(_Base):
             ])
         self.assertEqual(self.calls, [
             ('_iter_symbols', ('python', None)),
-            ('_get_symbol_resolver', (knownvars,)),
+            ('_get_symbol_resolver', (knownvars, None)),
             ('_resolve_symbols', (symbols, resolver)),
             ])
 

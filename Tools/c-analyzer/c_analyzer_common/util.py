@@ -1,10 +1,11 @@
+import csv
 import subprocess 
 
 
 _NOT_SET = object()
 
 
-def run_cmd(argv):
+def run_cmd(argv, **kwargs):
     proc = subprocess.run(
             argv,
             #capture_output=True,
@@ -12,8 +13,56 @@ def run_cmd(argv):
             stdout=subprocess.PIPE,
             text=True,
             check=True,
+            **kwargs
             )
     return proc.stdout
+
+
+def read_tsv(infile, header, *,
+             _open=open,
+             _get_reader=csv.reader,
+             ):
+    """Yield each row of the given TSV (tab-separated) file."""
+    if isinstance(infile, str):
+        with _open(infile, newline='') as infile:
+            yield from read_tsv(infile, header,
+                                _open=_open,
+                                _get_reader=_get_reader,
+                                )
+            return
+    lines = iter(infile)
+
+    # Validate the header.
+    try:
+        actualheader = next(lines).strip()
+    except StopIteration:
+        actualheader = ''
+    if actualheader != header:
+        raise ValueError(f'bad header {actualheader!r}')
+
+    for row in _get_reader(lines, delimiter='\t'):
+        yield tuple(v.strip() for v in row)
+
+
+def write_tsv(outfile, header, rows, *,
+             _open=open,
+             _get_writer=csv.writer,
+             ):
+    """Write each of the rows to the given TSV (tab-separated) file."""
+    if isinstance(outfile, str):
+        with _open(outfile, 'w', newline='') as outfile:
+            return write_tsv(outfile, header, rows,
+                            _open=_open,
+                            _get_writer=_get_writer,
+                            )
+
+    if isinstance(header, str):
+        header = header.split('\t')
+    writer = _get_writer(outfile, delimiter='\t')
+    writer.writerow(header)
+    for row in rows:
+        writer.writerow('' if v is None else str(v)
+                        for v in row)
 
 
 class Slot:

@@ -2,7 +2,8 @@ import csv
 
 from c_parser.info import Variable
 
-from . import info
+from .info import ID
+from .util import read_tsv
 
 
 COLUMNS = ('filename', 'funcname', 'name', 'kind', 'declaration')
@@ -13,30 +14,18 @@ HEADER = '\t'.join(COLUMNS)
 # * from_file()
 
 def from_file(infile, *,
-              _open=open,
+              _read_tsv=read_tsv,
               ):
     """Return the info for known declarations in the given file."""
-    if isinstance(infile, str):
-        with _open(infile) as infile:
-            return from_file(infile, _open=open)
-
-    lines = iter(infile)
-    try:
-        header = next(lines).strip()
-    except StopIteration:
-        header = ''
-    if header != HEADER:
-        raise ValueError(f'bad header {header!r}')
-
     known = {
         'variables': {},
         #'types': {},
         #'constants': {},
         #'macros': {},
         }
-    for row in csv.reader(lines, delimiter='\t'):
+    for row in _read_tsv(infile, HEADER):
         filename, funcname, name, kind, declaration = row
-        id = info.ID(filename.strip(), funcname.strip(), name.strip())
+        id = ID(filename.strip(), funcname.strip(), name.strip())
         kind = kind.strip()
         if kind == 'variable':
             values = known['variables']
