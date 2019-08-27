@@ -2318,7 +2318,7 @@ PySet_ClearFreeList(void)
 }
 
 void
-PySet_Fini(void)
+_PySet_Fini(void)
 {
     Py_CLEAR(emptyfrozenset);
 }
