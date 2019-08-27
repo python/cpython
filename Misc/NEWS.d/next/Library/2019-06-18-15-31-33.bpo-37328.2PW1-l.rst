@@ -1,0 +1,2 @@
+``HTMLParser.unescape`` is removed.  It was undocumented and deprecated
+since Python 3.4.
