@@ -83,15 +83,15 @@ def get_resolver(knownvars=None, dirnames=None, *,
     with the corresponding information.  Otherwise None is returned.
     """
     if knownvars:
-        known = dict((known or {}).get('variables', ()))  # a copy
+        knownvars = dict(knownvars)  # a copy
         def resolve_known(symbol):
-            found = _look_up_known(symbol, known)
+            found = _look_up_known(symbol, knownvars)
             if found is None:
                 return None
             elif symbol.funcname == UNKNOWN:
-                known.pop(var.id)
+                knownvars.pop(var.id)
             elif not symbol.filename or symbol.filename == UNKNOWN:
-                known.pop(var.id)
+                knownvars.pop(var.id)
             return found
         if dirnames:
             def resolve(symbol):
