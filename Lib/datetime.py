@@ -1733,7 +1733,6 @@ class datetime(date):
         except ValueError:
             raise ValueError(f'Invalid isoformat string: {date_string!r}')
 
-
         if tstr:
             try:
                 time_components = _parse_isoformat_time(tstr)
