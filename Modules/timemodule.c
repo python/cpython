@@ -1208,7 +1208,7 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
             return -1;
         }
 
-        _PyTime_t total = utime + utime;
+        _PyTime_t total = utime + stime;
         *tp = total;
         return 0;
     }
