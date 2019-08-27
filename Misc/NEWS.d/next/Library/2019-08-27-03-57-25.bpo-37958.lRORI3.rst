@@ -1,0 +1,3 @@
+pstats is really useful or profiling and printing the output of the execution of some block of code, but I've found on multiple occasions that sometimes I'd like to access this output directly in an easily usable dictionary on which I can further analyze or manipulate. My proposal is to add a function called get_profile_dict inside of pstats that'll automatically return this data.
+
+(Please note that the PR I've put up is just a first version to get some feedback on, and it needs to be updated if the community chooses to move forward with it (e.g. we shouldn't be calling get_print_list inside of get_profile_dict in production code))
