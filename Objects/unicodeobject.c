@@ -516,9 +516,9 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             _PyObject_ASSERT(op, compact->utf8 != data);
         }
         else {
+#ifndef NDEBUG
             PyUnicodeObject *unicode = (PyUnicodeObject *)op;
 
-#ifndef NDEBUG
             data = unicode->data.any;
 #endif
             if (kind == PyUnicode_WCHAR_KIND) {
