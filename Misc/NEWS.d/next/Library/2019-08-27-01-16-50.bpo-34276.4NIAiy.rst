@@ -1,0 +1,1 @@
+Makes sure that file URIs with multiple leading slashes (file:////, etc.) are properly round-tripped. Patch by Ashwin Ramaswami
