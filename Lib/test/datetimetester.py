@@ -3007,6 +3007,89 @@ class TestDateTime(TestDate):
 
         self.assertIs(dt.tzinfo, timezone.utc)
 
+    def test_fromisoformat_utc_z(self):
+        """
+        As specified in ISO 8601 4.2.4, UTC shall be expressed:
+        "by the UTC designator [Z]".
+        """
+        dt_str = '2014-04-19T13:21:13Z'
+        dt = self.theclass.fromisoformat(dt_str)
+
+        self.assertIs(dt.tzinfo, timezone.utc)
+
+    def test_fromisoformat_tz_hours(self):
+        """
+        As specified in ISO 8601 4.2.5.1:
+
+        "When it is required to indicate the difference between local time
+        and UTC of day, the representation of the difference can be expressed
+        in hours and minutes, or hours only."
+        """
+        dt_str = '2014-04-19T13:21:13+01'
+        dt = self.theclass.fromisoformat(dt_str)
+
+        self.assertEqual(dt.tzinfo.tzname(None), 'UTC+01:00')
+
+    def test_fromisoformat_ecma(self):
+        """Tests the example from:
+        https://developer.mozilla.org/en-US/docs/Web/
+        JavaScript/Reference/Global_Objects/Date/toISOString
+
+        See also:
+        https://www.ecma-international.org/ecma-262/5.1/#sec-15.9.5.43
+        https://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15
+
+        """
+        dt = self.theclass.fromisoformat('2011-10-05T14:48:00.000Z')
+        self.assertEqual(
+            dt,
+            datetime(2011, 10, 5, 14, 48, tzinfo=timezone.utc)
+        )
+
+    def test_fromisoformat_w3(self):
+        """
+        Tests the examples from:
+        https://www.w3.org/TR/NOTE-datetime
+        """
+        w3_examples = (
+            (
+                '1997-07-16',
+                datetime(1997, 7, 16, 0, 0)),
+            (
+                '1997-07-16T19:20+01:00',
+                datetime(
+                    1997, 7, 16, 19, 20,
+                    tzinfo=timezone(timedelta(seconds=3600))
+                )
+            ),
+            (
+                '1997-07-16T19:20:30+01:00',
+                datetime(
+                    1997, 7, 16, 19, 20, 30,
+                    tzinfo=timezone(timedelta(seconds=3600))
+                )
+            ),
+            (
+                '1994-11-05T08:15:30-05:00',
+                datetime(
+                    1994, 11, 5, 8, 15, 30,
+                    tzinfo=timezone(timedelta(days=-1, seconds=68400))
+                ),
+            ),
+            (
+                '1994-11-05T13:15:30Z',
+                datetime(
+                    1994, 11, 5, 13, 15, 30,
+                    tzinfo=timezone.utc
+                )
+            )
+        )
+
+        for iso_string, dtime in w3_examples:
+            self.assertEqual(
+                self.theclass.fromisoformat(iso_string),
+                dtime)
+
     def test_fromisoformat_subclass(self):
         class DateTimeSubclass(self.theclass):
             pass

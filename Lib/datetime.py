@@ -318,8 +318,8 @@ def _parse_isoformat_time(tstr):
     if len_str < 2:
         raise ValueError('Isoformat time too short')
 
-    # This is equivalent to re.search('[+-]', tstr), but faster
-    tz_pos = (tstr.find('-') + 1 or tstr.find('+') + 1)
+    # This is equivalent to re.search('[+-Z]', tstr), but faster
+    tz_pos = (tstr.find('-') + 1 or tstr.find('+') + 1 or tstr.find('Z') + 1)
     timestr = tstr[:tz_pos-1] if tz_pos > 0 else tstr
 
     time_comps = _parse_hh_mm_ss_ff(timestr)
@@ -329,14 +329,20 @@ def _parse_isoformat_time(tstr):
         tzstr = tstr[tz_pos:]
 
         # Valid time zone strings are:
+        # (UTC)               len: 0
+        # HH                  len: 2
         # HH:MM               len: 5
         # HH:MM:SS            len: 8
         # HH:MM:SS.ffffff     len: 15
 
-        if len(tzstr) not in (5, 8, 15):
+        tzlen = len(tzstr)
+        if tzlen == 0 and tstr[tz_pos - 1] == 'Z':
+            tz_comps = (0, 0, 0, 0)
+        elif tzlen not in (2, 5, 8, 15):
             raise ValueError('Malformed time zone string')
+        else:
+            tz_comps = _parse_hh_mm_ss_ff(tzstr)
 
-        tz_comps = _parse_hh_mm_ss_ff(tzstr)
         if all(x == 0 for x in tz_comps):
             tzi = timezone.utc
         else:
@@ -1726,6 +1732,7 @@ class datetime(date):
             date_components = _parse_isoformat_date(dstr)
         except ValueError:
             raise ValueError(f'Invalid isoformat string: {date_string!r}')
+
 
         if tstr:
             try:
