@@ -56,11 +56,11 @@ class IgnoredFromFileTests(unittest.TestCase):
     def test_typical(self):
         lines = textwrap.dedent('''
             filename	funcname	name	kind	reason
-            file1.c		var1	variable	...
+            file1.c	-	var1	variable	...
             file1.c	func1	local1	variable	
-            file1.c		var2	variable	???
+            file1.c	-	var2	variable	???
             file1.c	func2	local2	variable	    
-            file2.c		var1	variable	reasons
+            file2.c	-	var1	variable	reasons
             ''').strip().splitlines()
         self._return_read_tsv = [tuple(v.strip() for v in line.split('\t'))
                                  for line in lines[1:]]

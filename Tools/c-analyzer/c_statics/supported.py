@@ -38,11 +38,12 @@ def ignored_from_file(infile, *,
         }
     for row in _read_tsv(infile, HEADER):
         filename, funcname, name, kind, reason = row
+        if not funcname or funcname == '-':
+            funcname = None
         id = ID(filename, funcname, name)
-        kind = kind.strip()
         if kind == 'variable':
             values = ignored['variables']
         else:
             raise ValueError(f'unsupported kind in row {row}')
-        values[id] = reason.strip()
+        values[id] = reason
     return ignored

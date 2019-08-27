@@ -25,11 +25,12 @@ def from_file(infile, *,
         }
     for row in _read_tsv(infile, HEADER):
         filename, funcname, name, kind, declaration = row
-        id = ID(filename.strip(), funcname.strip(), name.strip())
-        kind = kind.strip()
+        if not funcname or funcname == '-':
+            funcname = None
+        id = ID(filename, funcname, name)
         if kind == 'variable':
             values = known['variables']
-            value = Variable(id, declaration.strip())
+            value = Variable(id, declaration)
         else:
             raise ValueError(f'unsupported kind in row {row}')
         value.validate()
