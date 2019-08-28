@@ -8,7 +8,7 @@ from c_parser import declarations
 
 def find_symbol(name, dirnames, *,
                 _perfilecache,
-                _iter_files=files.iter_files,
+                _iter_files=files.iter_files_by_suffix,
                 **kwargs
                 ):
     """Return (filename, funcname, vartype) for the matching Symbol."""

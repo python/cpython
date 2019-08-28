@@ -48,7 +48,7 @@ def look_up_known_symbol(symbol, knownvars, *,
 def find_in_source(symbol, dirnames, *,
                    _perfilecache={},
                    _find_symbol=_find_symbol,
-                   _iter_files=files.iter_files,
+                   _iter_files=files.iter_files_by_suffix,
                    ):
     """Return the Variable matching the given Symbol.
 
