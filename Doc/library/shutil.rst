@@ -314,6 +314,9 @@ Directory and files operations
    .. versionchanged:: 3.5
       Added the *copy_function* keyword argument.
 
+   .. versionchanged:: 3.9
+      Accepts a :term:`path-like object` for both *src* and *dst*.
+
 .. function:: disk_usage(path)
 
    Return disk usage statistics about the given path as a :term:`named tuple`
