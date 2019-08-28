@@ -521,6 +521,17 @@ class ForwardRef(_Final, _root=True):
             self.__forward_evaluated__ = True
         return self.__forward_value__
 
+    def _check_recursion(self, value, forward_args):
+        if isinstance(value, _GenericAlias):
+            for val in value.__args__:
+                if isinstance(val, _GenericAlias):
+                    self._check_recursion(val, forward_args)
+                elif self is val and self.__forward_evaluated__:
+                    forward_args.append(...)
+                else:
+                    forward_args.append(val)
+        return tuple(forward_args)
+
     def __eq__(self, other):
         if not isinstance(other, ForwardRef):
             return NotImplemented
@@ -528,6 +539,8 @@ class ForwardRef(_Final, _root=True):
                 self.__forward_value__ == other.__forward_value__)
 
     def __hash__(self):
+        if self.__forward_evaluated__:
+            self.__forward_value__ = self._check_recursion(self.__forward_value__, [])
         return hash((self.__forward_arg__, self.__forward_value__))
 
     def __repr__(self):
