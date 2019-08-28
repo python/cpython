@@ -6279,7 +6279,7 @@ class SendRecvFdsTests(unittest.TestCase):
         with sock1, sock2:
             socket.send_fds(sock1, [MSG], fds)
             # request more data and file descriptors than expected
-            msg, fds2, flags, addr  = socket.recv_fds(sock2, len(MSG) * 2, len(fds) * 2)
+            msg, fds2, flags, addr = socket.recv_fds(sock2, len(MSG) * 2, len(fds) * 2)
             self.addCleanup(close_fds, fds2)
 
         self.assertEqual(msg, MSG)

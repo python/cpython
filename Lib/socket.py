@@ -469,7 +469,7 @@ if hasattr(_socket.socket, "sendmsg"):
     import array
 
     def send_fds(sock, buffers, fds, flags=0, address=None):
-        """ send_fds(sock, buffers, fds[, flags[, address]]) -> socket object
+        """ send_fds(sock, buffers, fds[, flags[, address]]) -> integer
 
         Send the list of file descriptors fds over an AF_UNIX socket.
         """
@@ -481,9 +481,10 @@ if hasattr(_socket.socket, "recvmsg"):
     import array
 
     def recv_fds(sock, bufsize, maxfds, flags=0):
-        """ recv_fds(sock, bufsize, maxfds[, flags]) -> (socket object, socket object)
+        """ recv_fds(sock, bufsize, maxfds[, flags]) -> (data, list of file
+        descriptors, msg_flags, address)
 
-        receive up to maxfds file descriptors returning the message
+        Receive up to maxfds file descriptors returning the message
         data and a list containing the descriptors.
         """
         # Array of ints
