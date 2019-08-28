@@ -4,6 +4,8 @@ import os
 import pathlib
 import pickle
 import random
+import sys
+from test import support
 import unittest
 
 from test.support import (
@@ -331,6 +333,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
 
     # Test with inputs larger than 4GiB.
 
+    @support.skip_if_pgo_task
     @bigmemtest(size=_4G + 100, memuse=2)
     def test_compressor_bigmem(self, size):
         lzc = LZMACompressor()
@@ -342,6 +345,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         finally:
             ddata = None
 
+    @support.skip_if_pgo_task
     @bigmemtest(size=_4G + 100, memuse=3)
     def test_decompressor_bigmem(self, size):
         lzd = LZMADecompressor()
@@ -363,6 +367,15 @@ class CompressorDecompressorTestCase(unittest.TestCase):
                 pickle.dumps(LZMACompressor(), proto)
             with self.assertRaises(TypeError):
                 pickle.dumps(LZMADecompressor(), proto)
+
+    @support.refcount_test
+    def test_refleaks_in_decompressor___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        lzd = LZMADecompressor()
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            lzd.__init__()
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):

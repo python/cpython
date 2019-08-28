@@ -1,0 +1,2 @@
+Fix asyncio sendfile support when sendfile sends extra data in fallback
+mode.

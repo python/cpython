@@ -1,0 +1,4 @@
+[build]
+    base = "Doc/"
+    command = "make html"
+    publish = "Doc/build/html"

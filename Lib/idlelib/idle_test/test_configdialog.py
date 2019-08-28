@@ -1,7 +1,6 @@
-"""Test idlelib.configdialog.
+"""Test configdialog, coverage 94%.
 
 Half the class creates dialog, half works with user customizations.
-Coverage: 95%.
 """
 from idlelib import configdialog
 from test.support import requires
@@ -9,7 +8,7 @@ requires('gui')
 import unittest
 from unittest import mock
 from idlelib.idle_test.mock_idle import Func
-from tkinter import Tk, Frame, StringVar, IntVar, BooleanVar, DISABLED, NORMAL
+from tkinter import Tk, StringVar, IntVar, BooleanVar, DISABLED, NORMAL
 from idlelib import config
 from idlelib.configdialog import idleConf, changes, tracers
 
@@ -61,6 +60,7 @@ class FontPageTest(unittest.TestCase):
         page = cls.page = dialog.fontpage
         dialog.note.select(page)
         page.set_samples = Func()  # Mask instance method.
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -211,6 +211,7 @@ class IndentTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.page = dialog.fontpage
+        cls.page.update()
 
     def test_load_tab_cfg(self):
         d = self.page
@@ -241,6 +242,7 @@ class HighPageTest(unittest.TestCase):
         page.paint_theme_sample = Func()
         page.set_highlight_target = Func()
         page.set_color_sample = Func()
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -604,40 +606,35 @@ class HighPageTest(unittest.TestCase):
 
     def test_paint_theme_sample(self):
         eq = self.assertEqual
-        d = self.page
-        del d.paint_theme_sample
-        hs_tag = d.highlight_sample.tag_cget
+        page = self.page
+        del page.paint_theme_sample  # Delete masking mock.
+        hs_tag = page.highlight_sample.tag_cget
         gh = idleConf.GetHighlight
-        fg = 'foreground'
-        bg = 'background'
 
         # Create custom theme based on IDLE Dark.
-        d.theme_source.set(True)
-        d.builtin_name.set('IDLE Dark')
+        page.theme_source.set(True)
+        page.builtin_name.set('IDLE Dark')
         theme = 'IDLE Test'
-        d.create_new(theme)
-        d.set_color_sample.called = 0
+        page.create_new(theme)
+        page.set_color_sample.called = 0
 
         # Base theme with nothing in `changes`.
-        d.paint_theme_sample()
-        eq(hs_tag('break', fg), gh(theme, 'break', fgBg='fg'))
-        eq(hs_tag('cursor', bg), gh(theme, 'normal', fgBg='bg'))
-        self.assertNotEqual(hs_tag('console', fg), 'blue')
-        self.assertNotEqual(hs_tag('console', bg), 'yellow')
-        eq(d.set_color_sample.called, 1)
+        page.paint_theme_sample()
+        new_console = {'foreground': 'blue',
+                       'background': 'yellow',}
+        for key, value in new_console.items():
+            self.assertNotEqual(hs_tag('console', key), value)
+        eq(page.set_color_sample.called, 1)
 
         # Apply changes.
-        changes.add_option('highlight', theme, 'console-foreground', 'blue')
-        changes.add_option('highlight', theme, 'console-background', 'yellow')
-        d.paint_theme_sample()
+        for key, value in new_console.items():
+            changes.add_option('highlight', theme, 'console-'+key, value)
+        page.paint_theme_sample()
+        for key, value in new_console.items():
+            eq(hs_tag('console', key), value)
+        eq(page.set_color_sample.called, 2)
 
-        eq(hs_tag('break', fg), gh(theme, 'break', fgBg='fg'))
-        eq(hs_tag('cursor', bg), gh(theme, 'normal', fgBg='bg'))
-        eq(hs_tag('console', fg), 'blue')
-        eq(hs_tag('console', bg), 'yellow')
-        eq(d.set_color_sample.called, 2)
-
-        d.paint_theme_sample = Func()
+        page.paint_theme_sample = Func()
 
     def test_delete_custom(self):
         eq = self.assertEqual
@@ -1086,6 +1083,7 @@ class GenPageTest(unittest.TestCase):
         dialog.note.select(page)
         page.set = page.set_add_delete_state = Func()
         page.upc = page.update_help_changes = Func()
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -1170,7 +1168,7 @@ class GenPageTest(unittest.TestCase):
     def test_context(self):
         self.page.context_int.delete(0, 'end')
         self.page.context_int.insert(0, '1')
-        self.assertEqual(extpage, {'CodeContext': {'numlines': '1'}})
+        self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
 
     def test_source_selected(self):
         d = self.page

@@ -1,3 +1,0 @@
-Use autoconf to detect OpenSSL libs, headers and supported features. The
-ax_check_openssl M4 macro uses pkg-config to locate OpenSSL and falls back
-to manual search.

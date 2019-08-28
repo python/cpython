@@ -79,6 +79,13 @@ The module itself defines the following classes:
     ('211 1755 1 1755 gmane.comp.python.committers', 1755, 1, 1755, 'gmane.comp.python.committers')
     >>>
 
+   .. audit-event:: nntplib.connect self,host,port nntplib.NNTP
+
+   .. audit-event:: nntplib.putline self,line nntplib.NNTP
+
+      All commands will raise an :ref:`auditing event <auditing>`
+      ``nntplib.putline`` with arguments ``self`` and ``line``,
+      where ``line`` is the bytes about to be sent to the remote host.
 
    .. versionchanged:: 3.2
       *usenetrc* is now ``False`` by default.
@@ -99,6 +106,14 @@ The module itself defines the following classes:
    Note that SSL-on-563 is discouraged per :rfc:`4642`, in favor of
    STARTTLS as described below.  However, some servers only support the
    former.
+
+   .. audit-event:: nntplib.connect self,host,port nntplib.NNTP_SSL
+
+   .. audit-event:: nntplib.putline self,line nntplib.NNTP_SSL
+
+      All commands will raise an :ref:`auditing event <auditing>`
+      ``nntplib.putline`` with arguments ``self`` and ``line``,
+      where ``line`` is the bytes about to be sent to the remote host.
 
    .. versionadded:: 3.2
 
@@ -232,10 +247,10 @@ tuples or objects that the method normally returns will be empty.
    .. versionadded:: 3.2
 
 
-.. method:: NNTP.starttls(ssl_context=None)
+.. method:: NNTP.starttls(context=None)
 
    Send a ``STARTTLS`` command.  This will enable encryption on the NNTP
-   connection.  The *ssl_context* argument is optional and should be a
+   connection.  The *context* argument is optional and should be a
    :class:`ssl.SSLContext` object.  Please read :ref:`ssl-security` for best
    practices.
 
@@ -542,7 +557,7 @@ them have been superseded by newer commands in :rfc:`3977`.
       is supplied, then the returned *list* is an empty list. This is an optional NNTP
       extension, and may not be supported by all servers.
 
-      RFC2980 says "It is suggested that this extension be deprecated".  Use
+      :rfc:`2980` says "It is suggested that this extension be deprecated".  Use
       :meth:`descriptions` or :meth:`description` instead.
 
 

@@ -1,0 +1,2 @@
+Decoding bytes objects larger than 2GiB is faster and no longer fails when a
+multibyte characters spans a chunk boundary.

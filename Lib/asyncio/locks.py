@@ -3,11 +3,13 @@
 __all__ = ('Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore')
 
 import collections
+import types
 import warnings
 
 from . import events
 from . import futures
-from .coroutines import coroutine
+from . import exceptions
+from .import coroutines
 
 
 class _ContextManager:
@@ -54,7 +56,7 @@ class _ContextManagerMixin:
         # always raises; that's how the with-statement works.
         pass
 
-    @coroutine
+    @types.coroutine
     def __iter__(self):
         # This is not a coroutine.  It is meant to enable the idiom:
         #
@@ -76,6 +78,9 @@ class _ContextManagerMixin:
                       DeprecationWarning, stacklevel=2)
         yield from self.acquire()
         return _ContextManager(self)
+
+    # The flag is needed for legacy asyncio.iscoroutine()
+    __iter__._is_coroutine = coroutines._is_coroutine
 
     async def __acquire_ctx(self):
         await self.acquire()
@@ -153,7 +158,7 @@ class Lock(_ContextManagerMixin):
     """
 
     def __init__(self, *, loop=None):
-        self._waiters = collections.deque()
+        self._waiters = None
         self._locked = False
         if loop is not None:
             self._loop = loop
@@ -177,22 +182,31 @@ class Lock(_ContextManagerMixin):
         This method blocks until the lock is unlocked, then sets it to
         locked and returns True.
         """
-        if not self._locked and all(w.cancelled() for w in self._waiters):
+        if (not self._locked and (self._waiters is None or
+                all(w.cancelled() for w in self._waiters))):
             self._locked = True
             return True
 
+        if self._waiters is None:
+            self._waiters = collections.deque()
         fut = self._loop.create_future()
         self._waiters.append(fut)
+
+        # Finally block should be called before the CancelledError
+        # handling as we don't want CancelledError to call
+        # _wake_up_first() and attempt to wake up itself.
         try:
-            await fut
-            self._locked = True
-            return True
-        except futures.CancelledError:
+            try:
+                await fut
+            finally:
+                self._waiters.remove(fut)
+        except exceptions.CancelledError:
             if not self._locked:
                 self._wake_up_first()
             raise
-        finally:
-            self._waiters.remove(fut)
+
+        self._locked = True
+        return True
 
     def release(self):
         """Release a lock.
@@ -212,11 +226,19 @@ class Lock(_ContextManagerMixin):
             raise RuntimeError('Lock is not acquired.')
 
     def _wake_up_first(self):
-        """Wake up the first waiter who isn't cancelled."""
-        for fut in self._waiters:
-            if not fut.done():
-                fut.set_result(True)
-                break
+        """Wake up the first waiter if it isn't done."""
+        if not self._waiters:
+            return
+        try:
+            fut = next(iter(self._waiters))
+        except StopIteration:
+            return
+
+        # .done() necessarily means that a waiter will wake up later on and
+        # either take the lock, or, if it was cancelled and lock wasn't
+        # taken already, will hit this again and wake up a new waiter.
+        if not fut.done():
+            fut.set_result(True)
 
 
 class Event:
@@ -346,12 +368,16 @@ class Condition(_ContextManagerMixin):
 
         finally:
             # Must reacquire lock even if wait is cancelled
+            cancelled = False
             while True:
                 try:
                     await self.acquire()
                     break
-                except futures.CancelledError:
-                    pass
+                except exceptions.CancelledError:
+                    cancelled = True
+
+            if cancelled:
+                raise exceptions.CancelledError
 
     async def wait_for(self, predicate):
         """Wait until a predicate becomes true.

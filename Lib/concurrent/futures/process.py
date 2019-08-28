@@ -3,7 +3,7 @@
 
 """Implements ProcessPoolExecutor.
 
-The follow diagram and text describe the data-flow through the system:
+The following diagram and text describe the data-flow through the system:
 
 |======================= In-process =====================|== Out-of-process ==|
 
@@ -51,12 +51,13 @@ from concurrent.futures import _base
 import queue
 from queue import Full
 import multiprocessing as mp
-from multiprocessing.connection import wait
+import multiprocessing.connection
 from multiprocessing.queues import Queue
 import threading
 import weakref
 from functools import partial
 import itertools
+import sys
 import traceback
 
 # Workers are created as daemon threads and processes. This is done to allow the
@@ -78,10 +79,12 @@ _global_shutdown = False
 
 
 class _ThreadWakeup:
-    __slot__ = ["_state"]
-
     def __init__(self):
         self._reader, self._writer = mp.Pipe(duplex=False)
+
+    def close(self):
+        self._writer.close()
+        self._reader.close()
 
     def wakeup(self):
         self._writer.send_bytes(b"")
@@ -106,6 +109,12 @@ def _python_exit():
 # (Futures in the call queue cannot be cancelled).
 EXTRA_QUEUED_CALLS = 1
 
+
+# On Windows, WaitForMultipleObjects is used to wait for processes to finish.
+# It can wait on, at most, 63 objects. There is an overhead of two objects:
+# - the result queue reader
+# - the thread wakeup reader
+_MAX_WINDOWS_WORKERS = 63 - 2
 
 # Hack to embed stringification of remote traceback in local traceback
 
@@ -233,6 +242,7 @@ def _process_worker(call_queue, result_queue, initializer, initargs):
             _sendback_result(result_queue, call_item.work_id, exception=exc)
         else:
             _sendback_result(result_queue, call_item.work_id, result=r)
+            del r
 
         # Liberate the resource as soon as possible, to avoid holding onto
         # open files or shared memory that is not needed anymore
@@ -349,7 +359,7 @@ def _queue_management_worker(executor_reference,
         # submitted, from the executor being shutdown/gc-ed, or from the
         # shutdown of the python interpreter.
         worker_sentinels = [p.sentinel for p in processes.values()]
-        ready = wait(readers + worker_sentinels)
+        ready = mp.connection.wait(readers + worker_sentinels)
 
         cause = None
         is_broken = True
@@ -421,6 +431,10 @@ def _queue_management_worker(executor_reference,
         #   - The executor that owns this worker has been shutdown.
         if shutting_down():
             try:
+                # Flag the executor as shutting down as early as possible if it
+                # is not gc-ed yet.
+                if executor is not None:
+                    executor._shutdown_thread = True
                 # Since no new work items can be added, it is safe to shutdown
                 # this thread if there are no pending work items.
                 if not pending_work_items:
@@ -491,16 +505,23 @@ class ProcessPoolExecutor(_base.Executor):
                 worker processes will be created as the machine has processors.
             mp_context: A multiprocessing context to launch the workers. This
                 object should provide SimpleQueue, Queue and Process.
-            initializer: An callable used to initialize worker processes.
+            initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
         """
         _check_system_limits()
 
         if max_workers is None:
             self._max_workers = os.cpu_count() or 1
+            if sys.platform == 'win32':
+                self._max_workers = min(_MAX_WINDOWS_WORKERS,
+                                        self._max_workers)
         else:
             if max_workers <= 0:
                 raise ValueError("max_workers must be greater than 0")
+            elif (sys.platform == 'win32' and
+                max_workers > _MAX_WINDOWS_WORKERS):
+                raise ValueError(
+                    f"max_workers must be <= {_MAX_WINDOWS_WORKERS}")
 
             self._max_workers = max_workers
 
@@ -587,12 +608,15 @@ class ProcessPoolExecutor(_base.Executor):
             p.start()
             self._processes[p.pid] = p
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(self, fn, /, *args, **kwargs):
         with self._shutdown_lock:
             if self._broken:
                 raise BrokenProcessPool(self._broken)
             if self._shutdown_thread:
                 raise RuntimeError('cannot schedule new futures after shutdown')
+            if _global_shutdown:
+                raise RuntimeError('cannot schedule new futures after '
+                                   'interpreter shutdown')
 
             f = _base.Future()
             w = _WorkItem(f, fn, args, kwargs)
@@ -654,6 +678,11 @@ class ProcessPoolExecutor(_base.Executor):
             self._call_queue = None
         self._result_queue = None
         self._processes = None
+
+        if self._queue_management_thread_wakeup:
+            self._queue_management_thread_wakeup.close()
+            self._queue_management_thread_wakeup = None
+
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
 
 atexit.register(_python_exit)

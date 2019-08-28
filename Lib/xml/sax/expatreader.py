@@ -95,7 +95,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._lex_handler_prop = None
         self._parsing = 0
         self._entity_stack = []
-        self._external_ges = 1
+        self._external_ges = 0
         self._interning = None
 
     # XMLReader methods

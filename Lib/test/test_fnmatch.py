@@ -2,6 +2,7 @@
 
 import unittest
 import os
+import warnings
 
 from fnmatch import fnmatch, fnmatchcase, translate, filter
 
@@ -82,6 +83,17 @@ class FnmatchTestCase(unittest.TestCase):
         check('usr\\bin', 'usr/bin', normsep)
         check('usr/bin', 'usr\\bin', normsep)
         check('usr\\bin', 'usr\\bin')
+
+    def test_warnings(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', Warning)
+            check = self.check_match
+            check('[', '[[]')
+            check('&', '[a&&b]')
+            check('|', '[a||b]')
+            check('~', '[a~~b]')
+            check(',', '[a-z+--A-Z]')
+            check('.', '[a-z--/A-Z]')
 
 
 class TranslateTestCase(unittest.TestCase):

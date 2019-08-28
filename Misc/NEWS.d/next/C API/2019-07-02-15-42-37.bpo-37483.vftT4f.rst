@@ -1,0 +1,2 @@
+Add new function ``_PyObject_CallOneArg`` for calling an object with one
+positional argument.

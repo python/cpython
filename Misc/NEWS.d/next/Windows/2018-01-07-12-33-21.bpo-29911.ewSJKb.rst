@@ -1,1 +1,0 @@
-Ensure separate Modify and Uninstall buttons are displayed.

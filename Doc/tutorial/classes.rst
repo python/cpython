@@ -387,8 +387,8 @@ the corresponding function with an argument list that is created by inserting
 the method's instance object before the first argument.
 
 If you still don't understand how methods work, a look at the implementation can
-perhaps clarify matters.  When an instance attribute is referenced that isn't a
-data attribute, its class is searched.  If the name denotes a valid class
+perhaps clarify matters.  When a non-data attribute of an instance is
+referenced, the instance's class is searched.  If the name denotes a valid class
 attribute that is a function object, a method object is created by packing
 (pointers to) the instance object and the function object just found together in
 an abstract object: this is the method object.  When the method object is called
@@ -475,12 +475,20 @@ Random Remarks
 
 .. These should perhaps be placed more carefully...
 
-Data attributes override method attributes with the same name; to avoid
-accidental name conflicts, which may cause hard-to-find bugs in large programs,
-it is wise to use some kind of convention that minimizes the chance of
-conflicts.  Possible conventions include capitalizing method names, prefixing
-data attribute names with a small unique string (perhaps just an underscore), or
-using verbs for methods and nouns for data attributes.
+If the same attribute name occurs in both an instance and in a class,
+then attribute lookup prioritizes the instance::
+
+    >>> class Warehouse:
+            purpose = 'storage'
+            region = 'west'
+
+    >>> w1 = Warehouse()
+    >>> print(w1.purpose, w1.region)
+    storage west
+    >>> w2 = Warehouse()
+    >>> w2.region = 'east'
+    >>> print(w2.purpose, w2.region)
+    storage east
 
 Data attributes may be referenced by methods as well as by ordinary users
 ("clients") of an object.  In other words, classes are not usable to implement
@@ -672,6 +680,9 @@ be treated as a non-public part of the API (whether it is a function, a method
 or a data member).  It should be considered an implementation detail and subject
 to change without notice.
 
+.. index::
+   pair: name; mangling
+
 Since there is a valid use-case for class-private members (namely to avoid name
 clashes of names with names defined by subclasses), there is limited support for
 such a mechanism, called :dfn:`name mangling`.  Any identifier of the form
@@ -702,6 +713,11 @@ breaking intraclass method calls.  For example::
            # but does not break __init__()
            for item in zip(keys, values):
                self.items_list.append(item)
+
+The above example would work even if ``MappingSubclass`` were to introduce a
+``__update`` identifier since it is replaced with ``_Mapping__update`` in the
+``Mapping`` class  and ``_MappingSubclass__update`` in the ``MappingSubclass``
+class respectively.
 
 Note that the mangling rules are designed mostly to avoid accidents; it still is
 possible to access or modify a variable that is considered private.  This can
@@ -775,7 +791,7 @@ calls :func:`iter` on the container object.  The function returns an iterator
 object that defines the method :meth:`~iterator.__next__` which accesses
 elements in the container one at a time.  When there are no more elements,
 :meth:`~iterator.__next__` raises a :exc:`StopIteration` exception which tells the
-:keyword:`for` loop to terminate.  You can call the :meth:`~iterator.__next__` method
+:keyword:`!for` loop to terminate.  You can call the :meth:`~iterator.__next__` method
 using the :func:`next` built-in function; this example shows how it all works::
 
    >>> s = 'abc'
@@ -892,10 +908,7 @@ Examples::
    >>> sum(x*y for x,y in zip(xvec, yvec))         # dot product
    260
 
-   >>> from math import pi, sin
-   >>> sine_table = {x: sin(x*pi/180) for x in range(0, 91)}
-
-   >>> unique_words = set(word  for line in page  for word in line.split())
+   >>> unique_words = set(word for line in page  for word in line.split())
 
    >>> valedictorian = max((student.gpa, student.name) for student in graduates)
 

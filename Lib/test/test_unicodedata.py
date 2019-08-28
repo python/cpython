@@ -1,4 +1,4 @@
-""" Test script for the unicodedata module.
+""" Tests for the unicodedata module.
 
     Written by Marc-Andre Lemburg (mal@lemburg.com).
 
@@ -6,21 +6,17 @@
 
 """
 
-import sys
-import unittest
 import hashlib
+import sys
+import unicodedata
+import unittest
 from test.support import script_helper
 
-encoding = 'utf-8'
-errors = 'surrogatepass'
-
-
-### Run tests
 
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = '727091e0fd5807eb41c72912ae95cdd74c795e27'
+    expectedchecksum = '9129d6f2bdf008a81c2476e5b5127014a62130c1'
 
     def test_method_checksum(self):
         h = hashlib.sha1()
@@ -61,26 +57,18 @@ class UnicodeMethodsTest(unittest.TestCase):
                 (char + 'ABC').title(),
 
                 ]
-            h.update(''.join(data).encode(encoding, errors))
+            h.update(''.join(data).encode('utf-8', 'surrogatepass'))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 
 class UnicodeDatabaseTest(unittest.TestCase):
-
-    def setUp(self):
-        # In case unicodedata is not available, this will raise an ImportError,
-        # but the other test cases will still be run
-        import unicodedata
-        self.db = unicodedata
-
-    def tearDown(self):
-        del self.db
+    db = unicodedata
 
 class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = 'db6f92bb5010f8e85000634b08e77233355ab37a'
+    expectedchecksum = 'c44a49ca7c5cb6441640fe174ede604b45028652'
     def test_function_checksum(self):
         data = []
         h = hashlib.sha1()
@@ -207,6 +195,19 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         a = 'C\u0338' * 20  + 'C\u0327'
         b = 'C\u0338' * 20  + '\xC7'
         self.assertEqual(self.db.normalize('NFC', a), b)
+
+    def test_issue29456(self):
+        # Fix #29456
+        u1176_str_a = '\u1100\u1176\u11a8'
+        u1176_str_b = '\u1100\u1176\u11a8'
+        u11a7_str_a = '\u1100\u1175\u11a7'
+        u11a7_str_b = '\uae30\u11a7'
+        u11c3_str_a = '\u1100\u1175\u11c3'
+        u11c3_str_b = '\uae30\u11c3'
+        self.assertEqual(self.db.normalize('NFC', u1176_str_a), u1176_str_b)
+        self.assertEqual(self.db.normalize('NFC', u11a7_str_a), u11a7_str_b)
+        self.assertEqual(self.db.normalize('NFC', u11c3_str_a), u11c3_str_b)
+
 
     def test_east_asian_width(self):
         eaw = self.db.east_asian_width

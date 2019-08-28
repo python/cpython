@@ -207,7 +207,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                     goto InvalidContinuation1;
             } else if (ch == 0xF4 && ch2 >= 0x90) {
                 /* invalid sequence
-                   \xF4\x90\x80\80- -- 110000- overflow */
+                   \xF4\x90\x80\x80- -- 110000- overflow */
                 goto InvalidContinuation1;
             }
             if (!IS_CONTINUATION_BYTE(ch3)) {
@@ -260,6 +260,7 @@ Py_LOCAL_INLINE(PyObject *)
 STRINGLIB(utf8_encoder)(PyObject *unicode,
                         STRINGLIB_CHAR *data,
                         Py_ssize_t size,
+                        _Py_error_handler error_handler,
                         const char *errors)
 {
     Py_ssize_t i;                /* index into data of next input character */
@@ -268,7 +269,6 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
     PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
     PyObject *rep = NULL;
-    _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
 #endif
 #if STRINGLIB_SIZEOF_CHAR == 1
     const Py_ssize_t max_char_size = 2;
@@ -313,7 +313,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
             Py_ssize_t startpos, endpos, newpos;
             Py_ssize_t k;
             if (error_handler == _Py_ERROR_UNKNOWN) {
-                error_handler = get_error_handler(errors);
+                error_handler = _Py_GetErrorHandler(errors);
             }
 
             startpos = i-1;
@@ -573,10 +573,10 @@ STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
         }
 
         /* UTF-16 code pair: */
-        if (q >= e)
-            goto UnexpectedEnd;
         if (!Py_UNICODE_IS_HIGH_SURROGATE(ch))
             goto IllegalEncoding;
+        if (q >= e)
+            goto UnexpectedEnd;
         ch2 = (q[ihi] << 8) | q[ilo];
         q += 2;
         if (!Py_UNICODE_IS_LOW_SURROGATE(ch2))

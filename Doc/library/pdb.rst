@@ -76,6 +76,10 @@ at the location you want to break into the debugger.  You can then step through
 the code following this statement, and continue running without the debugger
 using the :pdbcmd:`continue` command.
 
+.. versionadded:: 3.7
+   The built-in :func:`breakpoint()`, when called with defaults, can be used
+   instead of ``import pdb; pdb.set_trace()``.
+
 The typical usage to inspect a crashed program is::
 
    >>> import pdb
@@ -176,6 +180,8 @@ access further features, you have to do this yourself:
    Example call to enable tracing with *skip*::
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
+
+   .. audit-event:: pdb.Pdb "" pdb.Pdb
 
    .. versionadded:: 3.1
       The *skip* argument.
@@ -332,16 +338,19 @@ by the local file.
       (com) end
       (Pdb)
 
-   To remove all commands from a breakpoint, type commands and follow it
+   To remove all commands from a breakpoint, type ``commands`` and follow it
    immediately with ``end``; that is, give no commands.
 
-   With no *bpnumber* argument, commands refers to the last breakpoint set.
+   With no *bpnumber* argument, ``commands`` refers to the last breakpoint set.
 
    You can use breakpoint commands to start your program up again.  Simply use
-   the continue command, or step, or any other command that resumes execution.
+   the :pdbcmd:`continue` command, or :pdbcmd:`step`,
+   or any other command that resumes execution.
 
-   Specifying any command resuming execution (currently continue, step, next,
-   return, jump, quit and their abbreviations) terminates the command list (as if
+   Specifying any command resuming execution
+   (currently :pdbcmd:`continue`, :pdbcmd:`step`, :pdbcmd:`next`,
+   :pdbcmd:`return`, :pdbcmd:`jump`, :pdbcmd:`quit` and their abbreviations)
+   terminates the command list (as if
    that command was immediately followed by end). This is because any time you
    resume execution (even with a simple next or step), you may encounter another
    breakpoint—which could have its own command list, leading to ambiguities about

@@ -96,8 +96,9 @@ special nature.
 
 You can match the characters not listed within the class by :dfn:`complementing`
 the set.  This is indicated by including a ``'^'`` as the first character of the
-class; ``'^'`` outside a character class will simply match the ``'^'``
-character.  For example, ``[^5]`` will match any character except ``'5'``.
+class. For example, ``[^5]`` will match any character except ``'5'``.  If the
+caret appears elsewhere in a character class, it does not have special meaning.
+For example: ``[5^]`` will match either a ``'5'`` or a ``'^'``.
 
 Perhaps the most important metacharacter is the backslash, ``\``.   As in Python
 string literals, the backslash can be followed by various characters to signal
@@ -289,6 +290,8 @@ Putting REs in strings keeps the Python language simpler, but has one
 disadvantage which is the topic of the next section.
 
 
+.. _the-backslash-plague:
+
 The Backslash Plague
 --------------------
 
@@ -326,6 +329,13 @@ backslashes are not handled in any special way in a string literal prefixed with
 ``'r'``, so ``r"\n"`` is a two-character string containing ``'\'`` and ``'n'``,
 while ``"\n"`` is a one-character string containing a newline. Regular
 expressions will often be written in Python code using this raw string notation.
+
+In addition, special escape sequences that are valid in regular expressions,
+but not valid as Python string literals, now result in a
+:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`,
+which means the sequences will be invalid if raw string notation or escaping
+the backslashes isn't used.
+
 
 +-------------------+------------------+
 | Regular String    | Raw string       |
@@ -457,9 +467,15 @@ In actual programs, the most common style is to store the
 Two pattern methods return all of the matches for a pattern.
 :meth:`~re.Pattern.findall` returns a list of matching strings::
 
-   >>> p = re.compile('\d+')
+   >>> p = re.compile(r'\d+')
    >>> p.findall('12 drummers drumming, 11 pipers piping, 10 lords a-leaping')
    ['12', '11', '10']
+
+The ``r`` prefix, making the literal a raw string literal, is needed in this
+example because escape sequences in a normal "cooked" string literal that are
+not recognized by Python, as opposed to regular expressions, now result in a
+:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`.  See
+:ref:`the-backslash-plague`.
 
 :meth:`~re.Pattern.findall` has to create the entire list before it can be returned as the
 result.  The :meth:`~re.Pattern.finditer` method returns a sequence of
@@ -771,7 +787,9 @@ Frequently you need to obtain more information than just whether the RE matched
 or not.  Regular expressions are often used to dissect strings by writing a RE
 divided into several subgroups which match different components of interest.
 For example, an RFC-822 header line is divided into a header name and a value,
-separated by a ``':'``, like this::
+separated by a ``':'``, like this:
+
+.. code-block:: none
 
    From: author@example.com
    User-Agent: Thunderbird 1.5.0.9 (X11/20061227)
@@ -923,6 +941,13 @@ given numbers, so you can retrieve information about a group in two ways::
    'Lots'
    >>> m.group(1)
    'Lots'
+
+Additionally, you can retrieve named groups as a dictionary with
+:meth:`~re.Match.groupdict`::
+
+   >>> m = re.match(r'(?P<first>\w+) (?P<last>\w+)', 'Jane Doe')
+   >>> m.groupdict()
+   {'first': 'Jane', 'last': 'Doe'}
 
 Named groups are handy because they let you use easily-remembered names, instead
 of having to remember numbers.  Here's an example RE from the :mod:`imaplib`
@@ -1096,11 +1121,11 @@ following calls::
 The module-level function :func:`re.split` adds the RE to be used as the first
 argument, but is otherwise the same.   ::
 
-   >>> re.split('[\W]+', 'Words, words, words.')
+   >>> re.split(r'[\W]+', 'Words, words, words.')
    ['Words', 'words', 'words', '']
-   >>> re.split('([\W]+)', 'Words, words, words.')
+   >>> re.split(r'([\W]+)', 'Words, words, words.')
    ['Words', ', ', 'words', ', ', 'words', '.', '']
-   >>> re.split('[\W]+', 'Words, words, words.', 1)
+   >>> re.split(r'[\W]+', 'Words, words, words.', 1)
    ['Words', 'words, words.']
 
 

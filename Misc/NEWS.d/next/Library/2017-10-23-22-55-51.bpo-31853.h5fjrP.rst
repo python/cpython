@@ -1,2 +1,0 @@
-Use super().method instead of socket.method in SSLSocket.  They were
-there most likely for legacy reasons.
