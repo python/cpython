@@ -5553,8 +5553,7 @@ static DWORD system_stores[] = {
     CERT_SYSTEM_STORE_USERS
 };
 
-#define SYSTEM_STORES_COUNT sizeof(system_stores) / sizeof(DWORD)
-
+#define SYSTEM_STORES_COUNT (sizeof(system_stores) / sizeof(DWORD))
 
 static HCERTSTORE
 ssl_collect_certificates(const char *store_name,
