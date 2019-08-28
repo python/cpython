@@ -1,0 +1,3 @@
+Subscripts to the `unittest.mock.call` objects now receive the same chaining mechanism as any other custom attributes, so that the following no longer raises a `TypeError`:
+
+    call().foo().__getitem__('bar')
