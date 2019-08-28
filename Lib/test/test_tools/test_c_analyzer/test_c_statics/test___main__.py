@@ -3,8 +3,11 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
+    from c_analyzer_common import SOURCE_DIRS
+    from c_analyzer_common.known import DATA_FILE as KNOWN_FILE
     from c_parser import info
     import c_statics as cg
+    from c_statics.supported import IGNORED_FILE
     from c_statics.__main__ import cmd_check, cmd_show, parse_args, main
 
 
@@ -77,9 +80,9 @@ class CheckTests(CMDBase):
 
         self.assertEqual(self.calls[0], (
             '_find', (
-                cg.SOURCE_DIRS,
-                cg.KNOWN_FILE,
-                cg.IGNORED_FILE,
+                SOURCE_DIRS,
+                KNOWN_FILE,
+                IGNORED_FILE,
                 ),
             ))
 
@@ -138,9 +141,9 @@ class ShowTests(CMDBase):
 
         self.assertEqual(self.calls[0], (
             '_find', (
-                cg.SOURCE_DIRS,
-                cg.KNOWN_FILE,
-                cg.IGNORED_FILE,
+                SOURCE_DIRS,
+                KNOWN_FILE,
+                IGNORED_FILE,
                 ),
             ))
 
@@ -191,9 +194,9 @@ class ParseArgsTests(unittest.TestCase):
 
         self.assertEqual(cmd, 'check')
         self.assertEqual(cmdkwargs, {
-            'ignored': cg.IGNORED_FILE,
-            'known': cg.KNOWN_FILE,
-            'dirs': cg.SOURCE_DIRS,
+            'ignored': IGNORED_FILE,
+            'known': KNOWN_FILE,
+            'dirs': SOURCE_DIRS,
             })
 
     def test_check_full_args(self):
@@ -220,9 +223,9 @@ class ParseArgsTests(unittest.TestCase):
 
         self.assertEqual(cmd, 'show')
         self.assertEqual(cmdkwargs, {
-            'ignored': cg.IGNORED_FILE,
-            'known': cg.KNOWN_FILE,
-            'dirs': cg.SOURCE_DIRS,
+            'ignored': IGNORED_FILE,
+            'known': KNOWN_FILE,
+            'dirs': SOURCE_DIRS,
             })
 
     def test_show_full_args(self):

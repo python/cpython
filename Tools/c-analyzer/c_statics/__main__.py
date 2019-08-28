@@ -1,11 +1,13 @@
 import argparse
 import sys
 
-from c_analyzer_common.known import from_file as known_from_file
-from . import (
-        KNOWN_FILE, IGNORED_FILE, SOURCE_DIRS,
-        supported, find, show,
-        )
+from c_analyzer_common import SOURCE_DIRS
+from c_analyzer_common.known import (
+    from_file as known_from_file,
+    DATA_FILE as KNOWN_FILE,
+    )
+from . import find, show
+from .supported import is_supported, ignored_from_file, IGNORED_FILE
 
 
 def _find_statics(dirnames, known, ignored):

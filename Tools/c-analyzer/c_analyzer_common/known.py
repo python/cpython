@@ -1,10 +1,14 @@
 import csv
+import os.path
 
+from c_analyzer_common import DATA_DIR
 from c_parser.info import Variable
 
 from .info import ID
 from .util import read_tsv
 
+
+DATA_FILE = os.path.join(DATA_DIR, 'known.tsv')
 
 COLUMNS = ('filename', 'funcname', 'name', 'kind', 'declaration')
 HEADER = '\t'.join(COLUMNS)

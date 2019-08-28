@@ -1,6 +1,8 @@
 import csv
+import os.path
 import re
 
+from c_analyzer_common import DATA_DIR
 from c_analyzer_common.info import ID
 from c_analyzer_common.util import read_tsv
 
@@ -167,6 +169,8 @@ def _is_object(vartype):
 
 #############################
 # ignored
+
+IGNORED_FILE = os.path.join(DATA_DIR, 'ignored.tsv')
 
 COLUMNS = ('filename', 'funcname', 'name', 'kind', 'reason')
 HEADER = '\t'.join(COLUMNS)
