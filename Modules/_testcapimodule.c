@@ -2596,7 +2596,7 @@ test_PyDateTime_GET(PyObject *self, PyObject *obj)
     month = PyDateTime_GET_MONTH(obj);
     day = PyDateTime_GET_DAY(obj);
 
-    return Py_BuildValue("[lll]", year, month, day);
+    return Py_BuildValue("(lll)", year, month, day);
 }
 
 static PyObject *
@@ -2609,7 +2609,7 @@ test_PyDateTime_DATE_GET(PyObject *self, PyObject *obj)
     second = PyDateTime_DATE_GET_SECOND(obj);
     microsecond = PyDateTime_DATE_GET_MICROSECOND(obj);
 
-    return Py_BuildValue("[llll]", hour, minute, second, microsecond);
+    return Py_BuildValue("(llll)", hour, minute, second, microsecond);
 }
 
 static PyObject *
@@ -2622,7 +2622,7 @@ test_PyDateTime_TIME_GET(PyObject *self, PyObject *obj)
     second = PyDateTime_TIME_GET_SECOND(obj);
     microsecond = PyDateTime_TIME_GET_MICROSECOND(obj);
 
-    return Py_BuildValue("[llll]", hour, minute, second, microsecond);
+    return Py_BuildValue("(llll)", hour, minute, second, microsecond);
 }
 
 static PyObject *
@@ -2634,7 +2634,7 @@ test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
     seconds = PyDateTime_DELTA_GET_SECONDS(obj);
     microseconds = PyDateTime_DELTA_GET_MICROSECONDS(obj);
 
-    return Py_BuildValue("[lll]", days, seconds, microseconds);
+    return Py_BuildValue("(lll)", days, seconds, microseconds);
 }
 
 /* test_thread_state spawns a thread of its own, and that thread releases
