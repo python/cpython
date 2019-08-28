@@ -11,14 +11,14 @@ from .supported import is_supported, ignored_from_file, IGNORED_FILE
 
 
 def _find_statics(dirnames, known, ignored):
-    ignored = supported.ignored_from_file(ignored)
+    ignored = ignored_from_file(ignored)
     known = known_from_file(known)
 
     knownvars = (known or {}).get('variables')
     for static in find.statics_from_binary(knownvars=knownvars,
                                            dirnames=dirnames):
     #for static in find.statics(dirnames, known, kind='platform'):
-        yield static, supported.is_supported(static, ignored, known)
+        yield static, is_supported(static, ignored, known)
 
 
 def cmd_check(cmd, dirs=SOURCE_DIRS, *,
