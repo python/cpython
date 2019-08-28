@@ -526,7 +526,7 @@ class ForwardRef(_Final, _root=True):
             for val in value.__args__:
                 if isinstance(val, _GenericAlias):
                     self._check_recursion(val, forward_args)
-                elif self is val and self.__forward_evaluated__:
+                elif self is val:
                     forward_args.append(...)
                 else:
                     forward_args.append(val)

@@ -2364,6 +2364,37 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(get_type_hints(foo, globals(), locals()),
                          {'a': Union[T]})
 
+    def test_union_forward_recursion(self):
+        ValueList = List['Value']
+        Value = Union[str, ValueList]
+
+        class C:
+            foo: List[Value]
+        class D:
+            foo: Union[Value, ValueList]
+        class E:
+            foo: Union[List[Value], ValueList]
+        class F:
+            foo: Union[Value, List[Value], ValueList]
+
+        self.assertEqual(get_type_hints(C, globals(), locals()),
+                         {'foo': List[Union[str, List[Union[str, List['Value']]]]]})
+        self.assertEqual(get_type_hints(D, globals(), locals()),
+                         {'foo': Union[str, List[Union[str, List['Value']]]]})
+        self.assertEqual(get_type_hints(E, globals(), locals()),
+                         {'foo': Union[
+                             List[Union[str, List[Union[str, List['Value']]]]],
+                             List[Union[str, List['Value']]]
+                           ]
+                         })
+        self.assertEqual(get_type_hints(F, globals(), locals()),
+                         {'foo': Union[
+                             str,
+                             List[Union[str, List['Value']]],
+                             List[Union[str, List[Union[str, List['Value']]]]]
+                           ]
+                         })
+
     def test_tuple_forward(self):
 
         def foo(a: Tuple['T']):
