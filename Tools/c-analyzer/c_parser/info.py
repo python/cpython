@@ -38,6 +38,9 @@ class Variable(_NTBase,
                 )
         return self
 
+    def __hash__(self):
+        return hash(self.id)
+
     def __getattr__(self, name):
         return getattr(self.id, name)
 
