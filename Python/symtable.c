@@ -285,7 +285,6 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         return NULL;
     }
     /* Be careful here to prevent overflow. */
-
     starting_recursion_depth = (tstate->recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         tstate->recursion_depth * COMPILER_STACK_FRAME_SCALE : tstate->recursion_depth;
     st->recursion_depth = starting_recursion_depth;
