@@ -102,7 +102,7 @@ builtin_format(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("format", 2, "str", args[1]);
+        _PyArg_BadArgument("format", "argument 2", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -200,7 +200,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto exit;
     }
     if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("compile", 3, "str", args[2]);
+        _PyArg_BadArgument("compile", "argument 'mode'", "str", args[2]);
         goto exit;
     }
     Py_ssize_t mode_length;
@@ -849,4 +849,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e173df340a9e4516 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1927f3c9abd00c35 input=a9049054013a1b77]*/
