@@ -1501,16 +1501,16 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
         PyErr_SyntaxLocationObject(st->st_filename,
                                     e->lineno,
                                     e->col_offset);
-        VISIT_QUIT(st, 0);
+        return 0;
     }
     if (st->st_cur->ste_comprehension) {
         /* Inside a comprehension body, so find the right target scope */
         if (!symtable_extend_namedexpr_scope(st, e->v.NamedExpr.target))
-            VISIT_QUIT(st, 0);
+            return 0;
     }
     VISIT(st, expr, e->v.NamedExpr.value);
     VISIT(st, expr, e->v.NamedExpr.target);
-    VISIT_QUIT(st, 1);
+    return 1;
 }
 
 static int
