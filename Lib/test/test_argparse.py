@@ -1,6 +1,5 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
 
-import codecs
 import inspect
 import os
 import shutil
@@ -784,6 +783,25 @@ class TestOptionalsDisallowLongAbbreviation(ParserTestCase):
         ('', NS(foo=None, foodle=False, foonly=None)),
         ('--foo 3', NS(foo='3', foodle=False, foonly=None)),
         ('--foonly 7 --foodle --foo 2', NS(foo='2', foodle=True, foonly='7')),
+    ]
+
+
+class TestDisallowLongAbbreviationAllowsShortGrouping(ParserTestCase):
+    """Do not allow abbreviations of long options at all"""
+
+    parser_signature = Sig(allow_abbrev=False)
+    argument_signatures = [
+        Sig('-r'),
+        Sig('-c', action='count'),
+    ]
+    failures = ['-r', '-c -r']
+    successes = [
+        ('', NS(r=None, c=None)),
+        ('-ra', NS(r='a', c=None)),
+        ('-rcc', NS(r='cc', c=None)),
+        ('-cc', NS(r=None, c=2)),
+        ('-cc -ra', NS(r='a', c=2)),
+        ('-ccrcc', NS(r='cc', c=2)),
     ]
 
 # ================
@@ -2795,6 +2813,46 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
           -c          c help
         '''
 
+class TestMutuallyExclusiveNested(MEMixin, TestCase):
+
+    def get_parser(self, required):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        group = parser.add_mutually_exclusive_group(required=required)
+        group.add_argument('-a')
+        group.add_argument('-b')
+        group2 = group.add_mutually_exclusive_group(required=required)
+        group2.add_argument('-c')
+        group2.add_argument('-d')
+        group3 = group2.add_mutually_exclusive_group(required=required)
+        group3.add_argument('-e')
+        group3.add_argument('-f')
+        return parser
+
+    usage_when_not_required = '''\
+        usage: PROG [-h] [-a A | -b B | [-c C | -d D | [-e E | -f F]]]
+        '''
+    usage_when_required = '''\
+        usage: PROG [-h] (-a A | -b B | (-c C | -d D | (-e E | -f F)))
+        '''
+
+    help = '''\
+
+        optional arguments:
+          -h, --help  show this help message and exit
+          -a A
+          -b B
+          -c C
+          -d D
+          -e E
+          -f F
+        '''
+
+    # We are only interested in testing the behavior of format_usage().
+    test_failures_when_not_required = None
+    test_failures_when_required = None
+    test_successes_when_not_required = None
+    test_successes_when_required = None
+
 # =================================================
 # Mutually exclusive group in parent parser tests
 # =================================================
@@ -4245,7 +4303,6 @@ class TestHelpSubparsersWithHelpOrdering(HelpTestCase):
 
 
 class TestHelpMetavarTypeFormatter(HelpTestCase):
-    """"""
 
     def custom_type(string):
         return string
@@ -5131,6 +5188,35 @@ class TestAddArgumentMetavar(TestCase):
 
     def test_nargs_3_metavar_length3(self):
         self.do_test_no_exception(nargs=3, metavar=("1", "2", "3"))
+
+
+class TestInvalidNargs(TestCase):
+
+    EXPECTED_INVALID_MESSAGE = "invalid nargs value"
+    EXPECTED_RANGE_MESSAGE = ("nargs for store actions must be != 0; if you "
+                              "have nothing to store, actions such as store "
+                              "true or store const may be more appropriate")
+
+    def do_test_range_exception(self, nargs):
+        parser = argparse.ArgumentParser()
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument("--foo", nargs=nargs)
+        self.assertEqual(cm.exception.args[0], self.EXPECTED_RANGE_MESSAGE)
+
+    def do_test_invalid_exception(self, nargs):
+        parser = argparse.ArgumentParser()
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument("--foo", nargs=nargs)
+        self.assertEqual(cm.exception.args[0], self.EXPECTED_INVALID_MESSAGE)
+
+    # Unit tests for different values of nargs
+
+    def test_nargs_alphabetic(self):
+        self.do_test_invalid_exception(nargs='a')
+        self.do_test_invalid_exception(nargs="abcd")
+
+    def test_nargs_zero(self):
+        self.do_test_range_exception(nargs=0)
 
 # ============================
 # from argparse import * tests

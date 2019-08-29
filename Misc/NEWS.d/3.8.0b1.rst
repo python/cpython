@@ -355,7 +355,7 @@ standard library. They now inherit ``__str__()`` from :class:`object`.
 
 ..
 
-.. bpo: 36774
+.. bpo: 36817
 .. date: 2019-05-02-11-48-08
 .. nonce: ZqbJ1J
 .. section: Core and Builtins
@@ -1613,7 +1613,7 @@ versions.
 .. section: Documentation
 
 Improve documentation of the stdin, stdout, and stderr arguments of of the
-``asyncio.subprocess_exec`` function to specficy which values are supported.
+``asyncio.subprocess_exec`` function to specify which values are supported.
 Also mention that decoding as text is not supported.
 
 Add a few tests to verify that the various values passed to the std*
@@ -1951,7 +1951,7 @@ sys.exit().
 
 ..
 
-.. bpo: 13102
+.. bpo: 36807
 .. date: 2019-05-05-16-27-53
 .. nonce: AGNWYJ
 .. section: IDLE

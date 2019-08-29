@@ -881,7 +881,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'f': {/* float */
         float *p = va_arg(*p_va, float *);
         double dval = PyFloat_AsDouble(arg);
-        if (PyErr_Occurred())
+        if (dval == -1.0 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else
             *p = (float) dval;
@@ -891,7 +891,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'd': {/* double */
         double *p = va_arg(*p_va, double *);
         double dval = PyFloat_AsDouble(arg);
-        if (PyErr_Occurred())
+        if (dval == -1.0 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else
             *p = dval;
@@ -2037,11 +2037,7 @@ find_keyword(PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
         if (kwname == key) {
             return kwstack[i];
         }
-        if (!PyUnicode_Check(kwname)) {
-            /* ignore non-string keyword keys:
-               an error will be raised below */
-            continue;
-        }
+        assert(PyUnicode_Check(kwname));
         if (_PyUnicode_EQ(kwname, key)) {
             return kwstack[i];
         }
@@ -2269,16 +2265,11 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
                 j++;
             }
 
-            if (!PyUnicode_Check(keyword)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "keywords must be strings");
-                return cleanreturn(0, &freelist);
-            }
             match = PySequence_Contains(kwtuple, keyword);
             if (match <= 0) {
                 if (!match) {
                     PyErr_Format(PyExc_TypeError,
-                                 "'%U' is an invalid keyword "
+                                 "'%S' is an invalid keyword "
                                  "argument for %.200s%s",
                                  keyword,
                                  (parser->fname == NULL) ? "this function" : parser->fname,
@@ -2499,16 +2490,11 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
                 j++;
             }
 
-            if (!PyUnicode_Check(keyword)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "keywords must be strings");
-                return NULL;
-            }
             match = PySequence_Contains(kwtuple, keyword);
             if (match <= 0) {
                 if (!match) {
                     PyErr_Format(PyExc_TypeError,
-                                 "'%U' is an invalid keyword "
+                                 "'%S' is an invalid keyword "
                                  "argument for %.200s%s",
                                  keyword,
                                  (parser->fname == NULL) ? "this function" : parser->fname,

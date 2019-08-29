@@ -886,6 +886,15 @@ class PurePath(object):
         return self._from_parsed_parts('', root if n == 1 else '',
                                        abs_parts[n:])
 
+    def is_relative_to(self, *other):
+        """Return True if the path is relative to another path or False.
+        """
+        try:
+            self.relative_to(*other)
+            return True
+        except ValueError:
+            return False
+
     @property
     def parts(self):
         """An object providing sequence-like access to the
@@ -907,10 +916,16 @@ class PurePath(object):
         return self._make_child(args)
 
     def __truediv__(self, key):
-        return self._make_child((key,))
+        try:
+            return self._make_child((key,))
+        except TypeError:
+            return NotImplemented
 
     def __rtruediv__(self, key):
-        return self._from_parts([key] + self._parts)
+        try:
+            return self._from_parts([key] + self._parts)
+        except TypeError:
+            return NotImplemented
 
     @property
     def parent(self):

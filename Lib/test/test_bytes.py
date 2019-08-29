@@ -12,12 +12,14 @@ import copy
 import functools
 import pickle
 import tempfile
+import textwrap
 import unittest
 
 import test.support
 import test.string_tests
 import test.list_tests
 from test.support import bigaddrspacetest, MAX_Py_ssize_t
+from test.support.script_helper import assert_python_failure
 
 
 if sys.flags.bytes_warning:
@@ -314,6 +316,62 @@ class BaseBytesTest:
                          "Hello world\n")
         # Default encoding is utf-8
         self.assertEqual(self.type2test(b'\xe2\x98\x83').decode(), '\u2603')
+
+    def test_check_encoding_errors(self):
+        # bpo-37388: bytes(str) and bytes.encode() must check encoding
+        # and errors arguments in dev mode
+        invalid = 'Boom, Shaka Laka, Boom!'
+        encodings = ('ascii', 'utf8', 'latin1')
+        code = textwrap.dedent(f'''
+            import sys
+            type2test = {self.type2test.__name__}
+            encodings = {encodings!r}
+
+            for data in ('', 'short string'):
+                try:
+                    type2test(data, encoding={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(21)
+
+                for encoding in encodings:
+                    try:
+                        type2test(data, encoding=encoding, errors={invalid!r})
+                    except LookupError:
+                        pass
+                    else:
+                        sys.exit(22)
+
+            for data in (b'', b'short string'):
+                data = type2test(data)
+                print(repr(data))
+                try:
+                    data.decode(encoding={invalid!r})
+                except LookupError:
+                    sys.exit(10)
+                else:
+                    sys.exit(23)
+
+                try:
+                    data.decode(errors={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(24)
+
+                for encoding in encodings:
+                    try:
+                        data.decode(encoding=encoding, errors={invalid!r})
+                    except LookupError:
+                        pass
+                    else:
+                        sys.exit(25)
+
+            sys.exit(10)
+        ''')
+        proc = assert_python_failure('-X', 'dev', '-c', code)
+        self.assertEqual(proc.rc, 10, proc)
 
     def test_from_int(self):
         b = self.type2test(0)

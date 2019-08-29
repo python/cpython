@@ -3121,9 +3121,15 @@ class float_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'f':
             return """
-                {paramname} = (float) PyFloat_AsDouble({argname});
-                if (PyErr_Occurred()) {{{{
-                    goto exit;
+                if (PyFloat_CheckExact({argname})) {{{{
+                    {paramname} = (float) (PyFloat_AS_DOUBLE({argname}));
+                }}}}
+                else
+                {{{{
+                    {paramname} = (float) PyFloat_AsDouble({argname});
+                    if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
+                        goto exit;
+                    }}}}
                 }}}}
                 """.format(argname=argname, paramname=self.name)
         return super().parse_arg(argname, displayname)
@@ -3137,9 +3143,15 @@ class double_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'd':
             return """
-                {paramname} = PyFloat_AsDouble({argname});
-                if (PyErr_Occurred()) {{{{
-                    goto exit;
+                if (PyFloat_CheckExact({argname})) {{{{
+                    {paramname} = PyFloat_AS_DOUBLE({argname});
+                }}}}
+                else
+                {{{{
+                    {paramname} = PyFloat_AsDouble({argname});
+                    if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
+                        goto exit;
+                    }}}}
                 }}}}
                 """.format(argname=argname, paramname=self.name)
         return super().parse_arg(argname, displayname)

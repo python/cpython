@@ -1272,19 +1272,6 @@ exit:
 
 #if defined(MS_WINDOWS)
 
-PyDoc_STRVAR(os__isdir__doc__,
-"_isdir($module, path, /)\n"
-"--\n"
-"\n"
-"Return true if the pathname refers to an existing directory.");
-
-#define OS__ISDIR_METHODDEF    \
-    {"_isdir", (PyCFunction)os__isdir, METH_O, os__isdir__doc__},
-
-#endif /* defined(MS_WINDOWS) */
-
-#if defined(MS_WINDOWS)
-
 PyDoc_STRVAR(os__getvolumepathname__doc__,
 "_getvolumepathname($module, /, path)\n"
 "--\n"
@@ -2817,7 +2804,7 @@ PyDoc_STRVAR(os_sched_getscheduler__doc__,
 "sched_getscheduler($module, pid, /)\n"
 "--\n"
 "\n"
-"Get the scheduling policy for the process identifiedy by pid.\n"
+"Get the scheduling policy for the process identified by pid.\n"
 "\n"
 "Passing 0 for pid returns the scheduling policy for the calling process.");
 
@@ -8274,10 +8261,6 @@ exit:
     #define OS__GETFINALPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFINALPATHNAME_METHODDEF) */
 
-#ifndef OS__ISDIR_METHODDEF
-    #define OS__ISDIR_METHODDEF
-#endif /* !defined(OS__ISDIR_METHODDEF) */
-
 #ifndef OS__GETVOLUMEPATHNAME_METHODDEF
     #define OS__GETVOLUMEPATHNAME_METHODDEF
 #endif /* !defined(OS__GETVOLUMEPATHNAME_METHODDEF) */
@@ -8741,4 +8724,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=20d4c74909efe418 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3c5cb675b0d09145 input=a9049054013a1b77]*/

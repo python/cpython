@@ -408,8 +408,8 @@ stringio_iternext(stringio *self)
     }
     else {
         /* XXX is subclassing StringIO really supported? */
-        line = PyObject_CallMethodObjArgs((PyObject *)self,
-                                           _PyIO_str_readline, NULL);
+        line = _PyObject_CallMethodNoArgs((PyObject *)self,
+                                             _PyIO_str_readline);
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "

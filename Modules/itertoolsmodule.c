@@ -134,7 +134,7 @@ groupby_step(groupbyobject *gbo)
         newkey = newvalue;
         Py_INCREF(newvalue);
     } else {
-        newkey = PyObject_CallFunctionObjArgs(gbo->keyfunc, newvalue, NULL);
+        newkey = _PyObject_CallOneArg(gbo->keyfunc, newvalue);
         if (newkey == NULL) {
             Py_DECREF(newvalue);
             return -1;
@@ -452,6 +452,7 @@ typedef struct {
     teedataobject *dataobj;
     int index;                  /* 0 <= index <= LINKCELLS */
     PyObject *weakreflist;
+    unsigned long thread_id;
 } teeobject;
 
 static PyTypeObject teedataobject_type;
@@ -680,6 +681,11 @@ tee_next(teeobject *to)
 {
     PyObject *value, *link;
 
+    if (to->thread_id != PyThread_get_thread_ident()) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "tee() iterator can not be consumed from different threads.");
+        return NULL;
+    }
     if (to->index >= LINKCELLS) {
         link = teedataobject_jumplink(to->dataobj);
         if (link == NULL)
@@ -713,6 +719,7 @@ tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
     newto->dataobj = to->dataobj;
     newto->index = to->index;
     newto->weakreflist = NULL;
+    newto->thread_id = to->thread_id;
     PyObject_GC_Track(newto);
     return (PyObject *)newto;
 }
@@ -745,6 +752,7 @@ tee_fromiterable(PyObject *iterable)
 
     to->index = 0;
     to->weakreflist = NULL;
+    to->thread_id = PyThread_get_thread_ident();
     PyObject_GC_Track(to);
 done:
     Py_XDECREF(it);
@@ -1210,7 +1218,7 @@ dropwhile_next(dropwhileobject *lz)
         if (lz->start == 1)
             return item;
 
-        good = PyObject_CallFunctionObjArgs(lz->func, item, NULL);
+        good = _PyObject_CallOneArg(lz->func, item);
         if (good == NULL) {
             Py_DECREF(item);
             return NULL;
@@ -1373,7 +1381,7 @@ takewhile_next(takewhileobject *lz)
     if (item == NULL)
         return NULL;
 
-    good = PyObject_CallFunctionObjArgs(lz->func, item, NULL);
+    good = _PyObject_CallOneArg(lz->func, item);
     if (good == NULL) {
         Py_DECREF(item);
         return NULL;
@@ -3906,7 +3914,7 @@ filterfalse_next(filterfalseobject *lz)
             ok = PyObject_IsTrue(item);
         } else {
             PyObject *good;
-            good = PyObject_CallFunctionObjArgs(lz->func, item, NULL);
+            good = _PyObject_CallOneArg(lz->func, item);
             if (good == NULL) {
                 Py_DECREF(item);
                 return NULL;

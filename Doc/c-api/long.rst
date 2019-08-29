@@ -42,9 +42,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    The current implementation keeps an array of integer objects for all integers
    between ``-5`` and ``256``, when you create an int in that range you actually
-   just get back a reference to the existing object. So it should be possible to
-   change the value of ``1``.  I suspect the behaviour of Python in this case is
-   undefined. :-)
+   just get back a reference to the existing object.
 
 
 .. c:function:: PyObject* PyLong_FromUnsignedLong(unsigned long v)

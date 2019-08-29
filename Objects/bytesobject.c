@@ -2333,8 +2333,7 @@ bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
 {
     PyObject *result = _PyBytes_FromHex(string, 0);
     if (type != &PyBytes_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallFunctionObjArgs((PyObject *)type,
-                                                       result, NULL));
+        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 }
@@ -3048,7 +3047,7 @@ error:
 }
 
 void
-PyBytes_Fini(void)
+_PyBytes_Fini(void)
 {
     int i;
     for (i = 0; i < UCHAR_MAX + 1; i++)

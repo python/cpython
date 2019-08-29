@@ -561,6 +561,8 @@ class DisplayName(Phrase):
     @property
     def display_name(self):
         res = TokenList(self)
+        if len(res) == 0:
+            return res.value
         if res[0].token_type == 'cfws':
             res.pop(0)
         else:
@@ -582,7 +584,7 @@ class DisplayName(Phrase):
             for x in self:
                 if x.token_type == 'quoted-string':
                     quote = True
-        if quote:
+        if len(self) != 0 and quote:
             pre = post = ''
             if self[0].token_type=='cfws' or self[0][0].token_type=='cfws':
                 pre = ' '
@@ -1191,7 +1193,7 @@ def get_bare_quoted_string(value):
             "expected '\"' but found '{}'".format(value))
     bare_quoted_string = BareQuotedString()
     value = value[1:]
-    if value[0] == '"':
+    if value and value[0] == '"':
         token, value = get_qcontent(value)
         bare_quoted_string.append(token)
     while value and value[0] != '"':
@@ -1360,6 +1362,9 @@ def get_word(value):
         leader, value = get_cfws(value)
     else:
         leader = None
+    if not value:
+        raise errors.HeaderParseError(
+            "Expected 'atom' or 'quoted-string' but found nothing.")
     if value[0]=='"':
         token, value = get_quoted_string(value)
     elif value[0] in SPECIALS:
@@ -1584,6 +1589,8 @@ def get_domain(value):
         token, value = get_dot_atom(value)
     except errors.HeaderParseError:
         token, value = get_atom(value)
+    if value and value[0] == '@':
+        raise errors.HeaderParseError('Invalid Domain')
     if leader is not None:
         token[:0] = [leader]
     domain.append(token)
@@ -2493,6 +2500,9 @@ def get_parameter(value):
         while value:
             if value[0] in WSP:
                 token, value = get_fws(value)
+            elif value[0] == '"':
+                token = ValueTerminal('"', 'DQUOTE')
+                value = value[1:]
             else:
                 token, value = get_qcontent(value)
             v.append(token)
@@ -2733,6 +2743,9 @@ def _refold_parse_tree(parse_tree, *, policy):
             wrap_as_ew_blocked -= 1
             continue
         tstr = str(part)
+        if part.token_type == 'ptext' and set(tstr) & SPECIALS:
+            # Encode if tstr contains special characters.
+            want_encoding = True
         try:
             tstr.encode(encoding)
             charset = encoding
@@ -2843,15 +2856,22 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
         trailing_wsp = to_encode[-1]
         to_encode = to_encode[:-1]
     new_last_ew = len(lines[-1]) if last_ew is None else last_ew
+
+    encode_as = 'utf-8' if charset == 'us-ascii' else charset
+
+    # The RFC2047 chrome takes up 7 characters plus the length
+    # of the charset name.
+    chrome_len = len(encode_as) + 7
+
+    if (chrome_len + 1) >= maxlen:
+        raise errors.HeaderParseError(
+            "max_line_length is too small to fit an encoded word")
+
     while to_encode:
         remaining_space = maxlen - len(lines[-1])
-        # The RFC2047 chrome takes up 7 characters plus the length
-        # of the charset name.
-        encode_as = 'utf-8' if charset == 'us-ascii' else charset
-        text_space = remaining_space - len(encode_as) - 7
+        text_space = remaining_space - chrome_len
         if text_space <= 0:
             lines.append(' ')
-            # XXX We'll get an infinite loop here if maxlen is <= 7
             continue
 
         to_encode_word = to_encode[:text_space]

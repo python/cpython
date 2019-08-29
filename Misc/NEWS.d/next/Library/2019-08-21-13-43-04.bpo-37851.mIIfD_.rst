@@ -1,0 +1,3 @@
+The :mod:`faulthandler` module no longer allocates its alternative stack at
+Python startup. Now the stack is only allocated at the first faulthandler
+usage.

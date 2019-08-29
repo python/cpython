@@ -1,0 +1,2 @@
+Gather Format menu functions into format.py.  Combine
+paragraph.py, rstrip.py, and format methods from editor.py.

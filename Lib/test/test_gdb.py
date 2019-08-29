@@ -13,7 +13,7 @@ import textwrap
 import unittest
 
 from test import support
-from test.support import run_unittest, findfile, python_is_optimized
+from test.support import findfile, python_is_optimized
 
 def get_gdb_version():
     try:
@@ -214,43 +214,22 @@ class DebuggerTests(unittest.TestCase):
         elif script:
             args += [script]
 
-        # print args
-        # print (' '.join(args))
-
         # Use "args" to invoke gdb, capturing stdout, stderr:
         out, err = run_gdb(*args, PYTHONHASHSEED=PYTHONHASHSEED)
 
-        errlines = err.splitlines()
-        unexpected_errlines = []
+        for line in err.splitlines():
+            print(line, file=sys.stderr)
 
-        # Ignore some benign messages on stderr.
-        ignore_patterns = (
-            'Function "%s" not defined.' % breakpoint,
-            'Do you need "set solib-search-path" or '
-            '"set sysroot"?',
-            # BFD: /usr/lib/debug/(...): unable to initialize decompress
-            # status for section .debug_aranges
-            'BFD: ',
-            # ignore all warnings
-            'warning: ',
-            )
-        for line in errlines:
-            if not line:
-                continue
-            # bpo34007: Sometimes some versions of the shared libraries that
-            # are part of the traceback are compiled in optimised mode and the
-            # Program Counter (PC) is not present, not allowing gdb to walk the
-            # frames back. When this happens, the Python bindings of gdb raise
-            # an exception, making the test impossible to succeed.
-            if "PC not saved" in line:
-                raise unittest.SkipTest("gdb cannot walk the frame object"
-                                        " because the Program Counter is"
-                                        " not present")
-            if not line.startswith(ignore_patterns):
-                unexpected_errlines.append(line)
+        # bpo-34007: Sometimes some versions of the shared libraries that
+        # are part of the traceback are compiled in optimised mode and the
+        # Program Counter (PC) is not present, not allowing gdb to walk the
+        # frames back. When this happens, the Python bindings of gdb raise
+        # an exception, making the test impossible to succeed.
+        if "PC not saved" in err:
+            raise unittest.SkipTest("gdb cannot walk the frame object"
+                                    " because the Program Counter is"
+                                    " not present")
 
-        # Ensure no unexpected error messages:
-        self.assertEqual(unexpected_errlines, [])
         return out
 
     def get_gdb_repr(self, source,
@@ -369,7 +348,6 @@ class PrettyPrintTests(DebuggerTests):
         def check_repr(text):
             try:
                 text.encode(encoding)
-                printable = True
             except UnicodeEncodeError:
                 self.assertGdbRepr(text, ascii(text))
             else:
@@ -871,10 +849,10 @@ id(42)
         # called, so test a variety of calling conventions.
         for py_name, py_args, c_name, expected_frame_number in (
             ('gmtime', '', 'time_gmtime', 1),  # METH_VARARGS
-            ('len', '[]', 'builtin_len', 2),  # METH_O
-            ('locals', '', 'builtin_locals', 2),  # METH_NOARGS
-            ('iter', '[]', 'builtin_iter', 2),  # METH_FASTCALL
-            ('sorted', '[]', 'builtin_sorted', 2),  # METH_FASTCALL|METH_KEYWORDS
+            ('len', '[]', 'builtin_len', 1),  # METH_O
+            ('locals', '', 'builtin_locals', 1),  # METH_NOARGS
+            ('iter', '[]', 'builtin_iter', 1),  # METH_FASTCALL
+            ('sorted', '[]', 'builtin_sorted', 1),  # METH_FASTCALL|METH_KEYWORDS
         ):
             with self.subTest(c_name):
                 cmd = ('from time import gmtime\n'  # (not always needed)
@@ -981,18 +959,13 @@ class PyLocalsTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
-def test_main():
+
+def setUpModule():
     if support.verbose:
         print("GDB version %s.%s:" % (gdb_major_version, gdb_minor_version))
         for line in gdb_version.splitlines():
             print(" " * 4 + line)
-    run_unittest(PrettyPrintTests,
-                 PyListTests,
-                 StackNavigationTests,
-                 PyBtTests,
-                 PyPrintTests,
-                 PyLocalsTests
-                 )
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

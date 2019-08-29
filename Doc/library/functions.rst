@@ -128,6 +128,8 @@ are always available.  They are listed here in alphabetical order.
    :func:`breakpoint` will automatically call that, allowing you to drop into
    the debugger of choice.
 
+   .. audit-event:: builtins.breakpoint breakpointhook breakpoint
+
    .. versionadded:: 3.7
 
 .. _func-bytearray:
@@ -220,10 +222,12 @@ are always available.  They are listed here in alphabetical order.
    implied first argument.
 
    Class methods are different than C++ or Java static methods. If you want those,
-   see :func:`staticmethod`.
-
+   see :func:`staticmethod` in this section.
    For more information on class methods, see :ref:`types`.
 
+   .. versionchanged:: 3.9
+      Class methods can now wrap other :term:`descriptors <descriptor>` such as
+      :func:`property`.
 
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
@@ -275,9 +279,9 @@ are always available.  They are listed here in alphabetical order.
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
 
-   .. audit-event:: compile "source filename"
+   .. audit-event:: compile source,filename compile
 
-      Raises an :func:`auditing event <sys.audit>` ``compile`` with arguments
+      Raises an :ref:`auditing event <auditing>` ``compile`` with arguments
       ``source`` and ``filename``. This event may also be raised by implicit
       compilation.
 
@@ -463,12 +467,16 @@ are always available.  They are listed here in alphabetical order.
    dictionaries as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
-   inserted under that key before *expression* is parsed.
-   This means that *expression* normally has full
-   access to the standard :mod:`builtins` module and restricted environments are
-   propagated.  If the *locals* dictionary is omitted it defaults to the *globals*
-   dictionary.  If both dictionaries are omitted, the expression is executed in the
-   environment where :func:`eval` is called.  The return value is the result of
+   inserted under that key before *expression* is parsed.  This means that
+   *expression* normally has full access to the standard :mod:`builtins`
+   module and restricted environments are propagated.  If the *locals*
+   dictionary is omitted it defaults to the *globals* dictionary.  If both
+   dictionaries are omitted, the expression is executed with the *globals* and
+   *locals* in the environment where :func:`eval` is called.  Note, *eval()*
+   does not have access to the :term:`nested scope`\s (non-locals) in the
+   enclosing environment.
+
+   The return value is the result of
    the evaluated expression. Syntax errors are reported as exceptions.  Example:
 
       >>> x = 1
@@ -488,10 +496,10 @@ are always available.  They are listed here in alphabetical order.
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
 
-   .. audit-event:: exec code_object
+   .. audit-event:: exec code_object eval
 
-      Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
-      the argument. Code compilation events may also be raised.
+      Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
+      as the argument. Code compilation events may also be raised.
 
 .. index:: builtin: exec
 
@@ -523,10 +531,10 @@ are always available.  They are listed here in alphabetical order.
    builtins are available to the executed code by inserting your own
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
 
-   .. audit-event:: exec code_object
+   .. audit-event:: exec code_object exec
 
-      Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
-      the argument. Code compilation events may also be raised.
+      Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
+      as the argument. Code compilation events may also be raised.
 
    .. note::
 
@@ -777,12 +785,12 @@ are always available.  They are listed here in alphabetical order.
    If the :mod:`readline` module was loaded, then :func:`input` will use it
    to provide elaborate line editing and history features.
 
-   .. audit-event:: builtins.input prompt
+   .. audit-event:: builtins.input prompt input
 
-      Raises an :func:`auditing event <sys.audit>` ``builtins.input`` with
+      Raises an :ref:`auditing event <auditing>` ``builtins.input`` with
       argument ``prompt`` before reading input
 
-   .. audit-event:: builtins.input/result result
+   .. audit-event:: builtins.input/result result input
 
       Raises an auditing event ``builtins.input/result`` with the result after
       successfully reading input.
@@ -1220,7 +1228,7 @@ are always available.  They are listed here in alphabetical order.
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
 
-   .. audit-event:: open "file mode flags"
+   .. audit-event:: open file,mode,flags open
 
    The ``mode`` and ``flags`` arguments may have been modified or inferred from
    the original call.
@@ -1581,10 +1589,17 @@ are always available.  They are listed here in alphabetical order.
 
    Return a proxy object that delegates method calls to a parent or sibling
    class of *type*.  This is useful for accessing inherited methods that have
-   been overridden in a class. The search order is same as that used by
-   :func:`getattr` except that the *type* itself is skipped.
+   been overridden in a class.
 
-   The :attr:`~class.__mro__` attribute of the *type* lists the method
+   The *object-or-type* determines the :term:`method resolution order`
+   to be searched.  The search starts from the class right after the
+   *type*.
+
+   For example, if :attr:`~class.__mro__` of *object-or-type* is
+   ``D -> B -> C -> A -> object`` and the value of *type* is ``B``,
+   then :func:`super` searches ``C -> A -> object``.
+
+   The :attr:`~class.__mro__` attribute of the *object-or-type* lists the method
    resolution search order used by both :func:`getattr` and :func:`super`.  The
    attribute is dynamic and can change whenever the inheritance hierarchy is
    updated.

@@ -505,7 +505,7 @@ class ProcessPoolExecutor(_base.Executor):
                 worker processes will be created as the machine has processors.
             mp_context: A multiprocessing context to launch the workers. This
                 object should provide SimpleQueue, Queue and Process.
-            initializer: An callable used to initialize worker processes.
+            initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
         """
         _check_system_limits()

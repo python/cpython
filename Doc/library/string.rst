@@ -146,7 +146,7 @@ implementation as the built-in :meth:`~str.format` method.
       keyword arguments.
 
       For compound field names, these functions are only called for the first
-      component of the field name; Subsequent components are handled through
+      component of the field name; subsequent components are handled through
       normal attribute and indexing operations.
 
       So for example, the field expression '0.name' would cause

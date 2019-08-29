@@ -1001,8 +1001,8 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
   stgdict items size, align, length contain info about pointers itself,
   stgdict->proto has info about the pointed to type!
 */
-    stgdict = (StgDictObject *)PyObject_CallObject(
-        (PyObject *)&PyCStgDict_Type, NULL);
+    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+        (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
         return NULL;
     stgdict->size = sizeof(void *);
@@ -1489,8 +1489,8 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    stgdict = (StgDictObject *)PyObject_CallObject(
-        (PyObject *)&PyCStgDict_Type, NULL);
+    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+        (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
         goto error;
 
@@ -1946,8 +1946,8 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     if (result == NULL)
         return NULL;
 
-    stgdict = (StgDictObject *)PyObject_CallObject(
-        (PyObject *)&PyCStgDict_Type, NULL);
+    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+        (PyObject *)&PyCStgDict_Type);
     if (!stgdict) {
         Py_DECREF(result);
         return NULL;
@@ -2060,8 +2060,8 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    stgdict = (StgDictObject *)PyObject_CallObject(
-        (PyObject *)&PyCStgDict_Type, NULL);
+    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+        (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
         goto error;
 
@@ -2454,8 +2454,8 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyTypeObject *result;
     StgDictObject *stgdict;
 
-    stgdict = (StgDictObject *)PyObject_CallObject(
-        (PyObject *)&PyCStgDict_Type, NULL);
+    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+        (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
         return NULL;
 
@@ -3974,7 +3974,7 @@ _build_result(PyObject *result, PyObject *callargs,
             _Py_IDENTIFIER(__ctypes_from_outparam__);
 
             v = PyTuple_GET_ITEM(callargs, i);
-            v = _PyObject_CallMethodId(v, &PyId___ctypes_from_outparam__, NULL);
+            v = _PyObject_CallMethodIdNoArgs(v, &PyId___ctypes_from_outparam__);
             if (v == NULL || numretvals == 1) {
                 Py_DECREF(callargs);
                 return v;

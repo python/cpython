@@ -72,6 +72,15 @@ def _is_exception(obj):
     )
 
 
+def _extract_mock(obj):
+    # Autospecced functions will return a FunctionType with "mock" attribute
+    # which is the actual mock object that needs to be used.
+    if isinstance(obj, FunctionTypes) and hasattr(obj, 'mock'):
+        return obj.mock
+    else:
+        return obj
+
+
 def _get_signature_object(func, as_instance, eat_self):
     """
     Given an arbitrary, possibly callable object, try to create a suitable
@@ -346,13 +355,7 @@ class _CallList(list):
 
 
 def _check_and_set_parent(parent, value, name, new_name):
-    # function passed to create_autospec will have mock
-    # attribute attached to which parent must be set
-    if isinstance(value, FunctionTypes):
-        try:
-            value = value.mock
-        except AttributeError:
-            pass
+    value = _extract_mock(value)
 
     if not _is_instance_mock(value):
         return False
@@ -467,10 +470,12 @@ class NonCallableMock(Base):
         Attach a mock as an attribute of this one, replacing its name and
         parent. Calls to the attached mock will be recorded in the
         `method_calls` and `mock_calls` attributes of this one."""
-        mock._mock_parent = None
-        mock._mock_new_parent = None
-        mock._mock_name = ''
-        mock._mock_new_name = None
+        inner_mock = _extract_mock(mock)
+
+        inner_mock._mock_parent = None
+        inner_mock._mock_new_parent = None
+        inner_mock._mock_name = ''
+        inner_mock._mock_new_name = None
 
         setattr(self, attribute, mock)
 
@@ -799,6 +804,35 @@ class NonCallableMock(Base):
         return message % (action, expected_string, actual_string)
 
 
+    def _get_call_signature_from_name(self, name):
+        """
+        * If call objects are asserted against a method/function like obj.meth1
+        then there could be no name for the call object to lookup. Hence just
+        return the spec_signature of the method/function being asserted against.
+        * If the name is not empty then remove () and split by '.' to get
+        list of names to iterate through the children until a potential
+        match is found. A child mock is created only during attribute access
+        so if we get a _SpecState then no attributes of the spec were accessed
+        and can be safely exited.
+        """
+        if not name:
+            return self._spec_signature
+
+        sig = None
+        names = name.replace('()', '').split('.')
+        children = self._mock_children
+
+        for name in names:
+            child = children.get(name)
+            if child is None or isinstance(child, _SpecState):
+                break
+            else:
+                children = child._mock_children
+                sig = child._spec_signature
+
+        return sig
+
+
     def _call_matcher(self, _call):
         """
         Given a call (or simply an (args, kwargs) tuple), return a
@@ -806,7 +840,12 @@ class NonCallableMock(Base):
         This is a best effort method which relies on the spec's signature,
         if available, or falls back on the arguments themselves.
         """
-        sig = self._spec_signature
+
+        if isinstance(_call, tuple) and len(_call) > 2:
+            sig = self._get_call_signature_from_name(_call[0])
+        else:
+            sig = self._spec_signature
+
         if sig is not None:
             if len(_call) == 2:
                 name = ''
@@ -849,7 +888,7 @@ class NonCallableMock(Base):
             raise AssertionError(msg)
 
     def assert_called_with(self, /, *args, **kwargs):
-        """assert that the mock was called with the specified arguments.
+        """assert that the last call was made with the specified arguments.
 
         Raises an AssertionError if the args and keyword args passed in are
         different to the last call to the mock."""
@@ -2353,12 +2392,10 @@ class _Call(tuple):
 
 
     def __eq__(self, other):
-        if other is ANY:
-            return True
         try:
             len_other = len(other)
         except TypeError:
-            return False
+            return NotImplemented
 
         self_name = ''
         if len(self) == 2:
@@ -2767,7 +2804,7 @@ class PropertyMock(Mock):
     def _get_child_mock(self, /, **kwargs):
         return MagicMock(**kwargs)
 
-    def __get__(self, obj, obj_type):
+    def __get__(self, obj, obj_type=None):
         return self()
     def __set__(self, obj, val):
         self(val)

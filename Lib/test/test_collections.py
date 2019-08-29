@@ -13,7 +13,7 @@ from test import support
 import types
 import unittest
 
-from collections import namedtuple, Counter, OrderedDict, _count_elements, _tuplegetter
+from collections import namedtuple, Counter, OrderedDict, _count_elements
 from collections import UserDict, UserString, UserList
 from collections import ChainMap
 from collections import deque
@@ -424,8 +424,8 @@ class TestNamedTuple(unittest.TestCase):
 
         self.assertIsInstance(p, tuple)
         self.assertEqual(p, (11, 22))                                       # matches a real tuple
-        self.assertEqual(tuple(p), (11, 22))                                # coercable to a real tuple
-        self.assertEqual(list(p), [11, 22])                                 # coercable to a list
+        self.assertEqual(tuple(p), (11, 22))                                # coercible to a real tuple
+        self.assertEqual(list(p), [11, 22])                                 # coercible to a list
         self.assertEqual(max(p), 22)                                        # iterable
         self.assertEqual(max(*p), 22)                                       # star-able
         x, y = p
@@ -1472,9 +1472,6 @@ class TestCollectionABCs(ABCTestCase):
 
     def test_issue26915(self):
         # Container membership test should check identity first
-        class CustomEqualObject:
-            def __eq__(self, other):
-                return False
         class CustomSequence(Sequence):
             def __init__(self, seq):
                 self._seq = seq
@@ -1484,7 +1481,7 @@ class TestCollectionABCs(ABCTestCase):
                 return len(self._seq)
 
         nan = float('nan')
-        obj = CustomEqualObject()
+        obj = support.NEVER_EQ
         seq = CustomSequence([nan, obj, nan])
         containers = [
             seq,

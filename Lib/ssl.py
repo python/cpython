@@ -327,12 +327,22 @@ def _inet_paton(ipname):
     Supports IPv4 addresses on all platforms and IPv6 on platforms with IPv6
     support.
     """
-    # inet_aton() also accepts strings like '1'
-    if ipname.count('.') == 3:
-        try:
-            return _socket.inet_aton(ipname)
-        except OSError:
-            pass
+    # inet_aton() also accepts strings like '1', '127.1', some also trailing
+    # data like '127.0.0.1 whatever'.
+    try:
+        addr = _socket.inet_aton(ipname)
+    except OSError:
+        # not an IPv4 address
+        pass
+    else:
+        if _socket.inet_ntoa(addr) == ipname:
+            # only accept injective ipnames
+            return addr
+        else:
+            # refuse for short IPv4 notation and additional trailing data
+            raise ValueError(
+                "{!r} is not a quad-dotted IPv4 address.".format(ipname)
+            )
 
     try:
         return _socket.inet_pton(_socket.AF_INET6, ipname)
@@ -346,14 +356,15 @@ def _inet_paton(ipname):
     raise ValueError("{!r} is not an IPv4 address.".format(ipname))
 
 
-def _ipaddress_match(ipname, host_ip):
+def _ipaddress_match(cert_ipaddress, host_ip):
     """Exact matching of IP addresses.
 
     RFC 6125 explicitly doesn't define an algorithm for this
     (section 1.7.2 - "Out of Scope").
     """
-    # OpenSSL may add a trailing newline to a subjectAltName's IP address
-    ip = _inet_paton(ipname.rstrip())
+    # OpenSSL may add a trailing newline to a subjectAltName's IP address,
+    # commonly woth IPv6 addresses. Strip off trailing \n.
+    ip = _inet_paton(cert_ipaddress.rstrip())
     return ip == host_ip
 
 

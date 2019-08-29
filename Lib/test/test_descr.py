@@ -2659,12 +2659,8 @@ order (MRO) for bases """
         self.assertEqual(Sub.test(), Base.aProp)
 
         # Verify that super() doesn't allow keyword args
-        try:
+        with self.assertRaises(TypeError):
             super(Base, kw=1)
-        except TypeError:
-            pass
-        else:
-            self.assertEqual("super shouldn't accept keyword args")
 
     def test_basic_inheritance(self):
         # Testing inheritance from basic types...
@@ -4647,9 +4643,11 @@ order (MRO) for bases """
     def test_mixing_slot_wrappers(self):
         class X(dict):
             __setattr__ = dict.__setitem__
+            __neg__ = dict.copy
         x = X()
         x.y = 42
         self.assertEqual(x["y"], 42)
+        self.assertEqual(x, -x)
 
     def test_slot_shadows_class_variable(self):
         with self.assertRaises(ValueError) as cm:
