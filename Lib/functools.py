@@ -400,7 +400,7 @@ class partialmethod(object):
         _method._partialmethod = self
         return _method
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj, cls=None):
         get = getattr(self.func, "__get__", None)
         result = None
         if get is not None:
@@ -905,7 +905,7 @@ class singledispatchmethod:
         """
         return self.dispatcher.register(cls, func=method)
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj, cls=None):
         def _method(*args, **kwargs):
             method = self.dispatcher.dispatch(args[0].__class__)
             return method.__get__(obj, cls)(*args, **kwargs)
@@ -943,7 +943,7 @@ class cached_property:
                 f"({self.attrname!r} and {name!r})."
             )
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance, owner=None):
         if instance is None:
             return self
         if self.attrname is None:
