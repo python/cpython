@@ -1,0 +1,2 @@
+Added a link to dateutil.parser.isoparse in the datetime.fromisoformat
+documentation. Patch by Paul Ganssle
