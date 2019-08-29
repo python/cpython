@@ -1589,10 +1589,17 @@ are always available.  They are listed here in alphabetical order.
 
    Return a proxy object that delegates method calls to a parent or sibling
    class of *type*.  This is useful for accessing inherited methods that have
-   been overridden in a class. The search order is same as that used by
-   :func:`getattr` except that the *type* itself is skipped.
+   been overridden in a class.
 
-   The :attr:`~class.__mro__` attribute of the *type* lists the method
+   The *object-or-type* determines the :term:`method resolution order`
+   to be searched.  The search starts from the class right after the
+   *type*.
+
+   For example, if :attr:`~class.__mro__` of *object-or-type* is
+   ``D -> B -> C -> A -> object`` and the value of *type* is ``B``,
+   then :func:`super` searches ``C -> A -> object``.
+
+   The :attr:`~class.__mro__` attribute of the *object-or-type* lists the method
    resolution search order used by both :func:`getattr` and :func:`super`.  The
    attribute is dynamic and can change whenever the inheritance hierarchy is
    updated.
