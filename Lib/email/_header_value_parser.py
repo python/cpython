@@ -566,12 +566,12 @@ class DisplayName(Phrase):
         if res[0].token_type == 'cfws':
             res.pop(0)
         else:
-            if res[0][0].token_type == 'cfws':
+            if isinstance(res[0][0], TokenList) and res[0][0].token_type == 'cfws':
                 res[0] = TokenList(res[0][1:])
         if res[-1].token_type == 'cfws':
             res.pop()
         else:
-            if res[-1][-1].token_type == 'cfws':
+            if isinstance(res[-1][-1], TokenList) and res[-1][-1].token_type == 'cfws':
                 res[-1] = TokenList(res[-1][:-1])
         return res.value
 
@@ -1757,7 +1757,10 @@ def get_name_addr(value):
             raise errors.HeaderParseError(
                 "expected name-addr but found '{}'".format(token))
         if leader is not None:
-            token[0][:0] = [leader]
+            if isinstance(token[0], TokenList):
+                token[0][:0] = [leader]
+            else:
+                token[:0] = [leader]
             leader = None
         name_addr.append(token)
     token, value = get_angle_addr(value)

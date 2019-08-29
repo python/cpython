@@ -1,0 +1,1 @@
+Fix parsing invalid email address headers starting or ending with a dot.
