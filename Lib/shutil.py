@@ -544,7 +544,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                          ignore_dangling_symlinks=ignore_dangling_symlinks,
                          dirs_exist_ok=dirs_exist_ok)
 
-if hasattr(stat, 'FILE_ATTRIBUTE_REPARSE_POINT'):
+if hasattr(os.stat_result, 'st_file_attributes'):
     # Special handling for directory junctions to make them behave like
     # symlinks for shutil.rmtree, since in general they do not appear as
     # regular links.
