@@ -147,9 +147,9 @@ class TestFcntl(unittest.TestCase):
     @unittest.skipIf(sys.platform != 'darwin', "F_GETPATH is only available on macos")
     def test_fcntl_f_getpath(self):
         self.f = open(TESTFN, 'wb')
-        abspath = os.path.abspath(TESTFN)
-        res = fcntl.fcntl(self.f.fileno(), fcntl.F_GETPATH, bytes(len(abspath)))
-        self.assertEqual(abspath, res.decode('utf-8'))
+        expected = os.path.abspath(TESTFN).encode('utf-8')
+        res = fcntl.fcntl(self.f.fileno(), fcntl.F_GETPATH, bytes(len(expected)))
+        self.assertEqual(expected, res)
 
 def test_main():
     run_unittest(TestFcntl)
