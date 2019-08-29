@@ -1642,7 +1642,7 @@ class' :attr:`~object.__dict__`.
    new value, *value*.
 
    Note, adding :meth:`__set__` or :meth:`__delete__` changes the kind of
-   descriptor to a "data descriptor".  See :ref:`invoking descriptors` for
+   descriptor to a "data descriptor".  See :ref:`descriptor-invocation` for
    more details.
 
 .. method:: object.__delete__(self, instance)
