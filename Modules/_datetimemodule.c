@@ -3982,7 +3982,7 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                 return NULL;
             }
             if (PyUnicode_GET_LENGTH(state) == _PyDateTime_TIME_DATASIZE &&
-                (0x7F & PyUnicode_READ_CHAR(state, 2)) < 24)
+                (0x7F & PyUnicode_READ_CHAR(state, 0)) < 24)
             {
                 state = PyUnicode_AsLatin1String(state);
                 if (state == NULL) {
