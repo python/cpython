@@ -492,6 +492,10 @@ def _parse_localename(localename):
         return tuple(code.split('.')[:2])
     elif code == 'C':
         return None, None
+    elif code == 'UTF-8':
+        # On macOS "LC_CTYPE=UTF-8" is a valid locale setting
+        # for getting UTF-8 handling for text.
+        return None, 'UTF-8'
     raise ValueError('unknown locale: %s' % localename)
 
 def _build_localename(localetuple):
