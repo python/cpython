@@ -1641,6 +1641,9 @@ class' :attr:`~object.__dict__`.
    Called to set the attribute on an instance *instance* of the owner class to a
    new value, *value*.
 
+   Note, adding :meth:`__set__` or :meth:`__delete__` changes the kind of
+   descriptor to a "data descriptor".  See :ref:`invoking descriptors` for
+   more details.
 
 .. method:: object.__delete__(self, instance)
 
