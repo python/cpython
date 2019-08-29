@@ -631,6 +631,11 @@ faulthandler_thread(void *unused)
 static void
 cancel_dump_traceback_later(void)
 {
+    /* If not scheduled, nothing to cancel */
+    if (!thread.cancel_event) {
+        return;
+    }
+
     /* Notify cancellation */
     PyThread_release_lock(thread.cancel_event);
 
