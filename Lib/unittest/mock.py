@@ -888,7 +888,7 @@ class NonCallableMock(Base):
             raise AssertionError(msg)
 
     def assert_called_with(self, /, *args, **kwargs):
-        """assert that the mock was called with the specified arguments.
+        """assert that the last call was made with the specified arguments.
 
         Raises an AssertionError if the args and keyword args passed in are
         different to the last call to the mock."""

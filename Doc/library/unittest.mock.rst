@@ -317,8 +317,8 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_called_with(*args, **kwargs)
 
-        This method is a convenient way of asserting that calls are made in a
-        particular way:
+        This method is a convenient way of asserting that the last call has been
+        made in a particular way:
 
             >>> mock = Mock()
             >>> mock.method(1, 2, 3, test='wow')
