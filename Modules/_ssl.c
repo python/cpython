@@ -5555,9 +5555,22 @@ static DWORD system_stores[] = {
 
 #define SYSTEM_STORES_COUNT (sizeof(system_stores) / sizeof(DWORD))
 
+static BOOL
+cert_close_stores(HCERTSTORE hCollectionStore, HCERTSTORE *system_store_handles)
+{
+    size_t i;
+    BOOL success = CertCloseStore(hCollectionStore, 0);
+    for (i = 0; i < SYSTEM_STORES_COUNT; i++) {
+        if (system_store_handles[i] &&
+                !CertCloseStore(system_store_handles[i], 0)) {
+            success = 0;
+        }
+    }
+    return success;
+}
+
 static HCERTSTORE
-ssl_collect_certificates(const char *store_name,
-                         HCERTSTORE *system_store_handles)
+ssl_collect_certificates(const char *store_name, HCERTSTORE *system_store_handles)
 {
 /* this function collects the system certificate stores listed in
  * system_stores into a collection certificate store for being
@@ -5572,7 +5585,6 @@ ssl_collect_certificates(const char *store_name,
     if (!hCollectionStore) {
         return NULL;
     }
-
     storesAdded = 0;
     for (i = 0; i < SYSTEM_STORES_COUNT; i++) {
         system_store_handles[i] = NULL;
@@ -5588,17 +5600,11 @@ ssl_collect_certificates(const char *store_name,
             }
         }
     }
-    if (storesAdded) {
-        return hCollectionStore;
+    if (!storesAdded) {
+        cert_close_stores(hCollectionStore, system_store_handles);
+        return NULL;
     }
-
-    CertCloseStore(hCollectionStore, 0);
-    for (i = 0; i < SYSTEM_STORES_COUNT; i++) {
-        if (system_store_handles[i]) {
-            CertCloseStore(system_store_handles[i], 0);
-        }
-    }
-    return NULL;
+    return hCollectionStore;
 }
 
 /* code from Objects/listobject.c */
@@ -5632,19 +5638,17 @@ static PyObject *
 _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
 /*[clinic end generated code: output=5134dc8bb3a3c893 input=915f60d70461ea4e]*/
 {
+    HCERTSTORE hCollectionStore;
     HCERTSTORE system_store_handles[SYSTEM_STORES_COUNT];
     PCCERT_CONTEXT pCertCtx = NULL;
     PyObject *keyusage = NULL, *cert = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
-    size_t i;
 
     result = PyList_New(0);
     if (result == NULL) {
         return NULL;
     }
-
-    HCERTSTORE hCollectionStore = ssl_collect_certificates(store_name,
-                                                    system_store_handles);
+    hCollectionStore = ssl_collect_certificates(store_name, system_store_handles);
     if (hCollectionStore == NULL) {
         Py_DECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
@@ -5699,14 +5703,7 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     Py_XDECREF(keyusage);
     Py_XDECREF(tup);
 
-    BOOL success = CertCloseStore(hCollectionStore, 0);
-    for (i = 0; i < SYSTEM_STORES_COUNT; i++) {
-        if (system_store_handles[i] &&
-                !CertCloseStore(system_store_handles[i], 0)) {
-            success = 0;
-        }
-    }
-    if (!success) {
+    if (!cert_close_stores(hCollectionStore, system_store_handles)) {
         /* This error case might shadow another exception.*/
         Py_XDECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
@@ -5730,19 +5727,17 @@ static PyObject *
 _ssl_enum_crls_impl(PyObject *module, const char *store_name)
 /*[clinic end generated code: output=bce467f60ccd03b6 input=a1f1d7629f1c5d3d]*/
 {
+    HCERTSTORE hCollectionStore;
     HCERTSTORE system_store_handles[SYSTEM_STORES_COUNT];
     PCCRL_CONTEXT pCrlCtx = NULL;
     PyObject *crl = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
-    size_t i;
 
     result = PyList_New(0);
     if (result == NULL) {
         return NULL;
     }
-
-    HCERTSTORE hCollectionStore = ssl_collect_certificates(store_name,
-                                                    system_store_handles);
+    hCollectionStore = ssl_collect_certificates(store_name, system_store_handles);
     if (hCollectionStore == NULL) {
         Py_DECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
@@ -5786,14 +5781,7 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
     Py_XDECREF(enc);
     Py_XDECREF(tup);
 
-    BOOL success = CertCloseStore(hCollectionStore, 0);
-    for (i = 0; i < SYSTEM_STORES_COUNT; i++) {
-        if (system_store_handles[i] &&
-                !CertCloseStore(system_store_handles[i], 0)) {
-            success = 0;
-        }
-    }
-    if (!success) {
+    if (!cert_close_stores(hCollectionStore, system_store_handles)) {
         /* This error case might shadow another exception.*/
         Py_XDECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
