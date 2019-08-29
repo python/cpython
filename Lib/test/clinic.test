@@ -44,7 +44,7 @@ test_object_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("test_object_converter", 3, "str", args[2]);
+        _PyArg_BadArgument("test_object_converter", "argument 3", "str", args[2]);
         goto exit;
     }
     c = args[2];
@@ -58,7 +58,7 @@ exit:
 static PyObject *
 test_object_converter_impl(PyObject *module, PyObject *a, PyObject *b,
                            PyObject *c, PyUnicode_Object *d)
-/*[clinic end generated code: output=f2c26174b3d46e94 input=005e6a8a711a869b]*/
+/*[clinic end generated code: output=a78312d933df9ea1 input=005e6a8a711a869b]*/
 
 
 /*[clinic input]
@@ -180,52 +180,52 @@ test_object_converter_subclass_of(PyObject *module, PyObject *const *args, Py_ss
         goto exit;
     }
     if (!PyLong_Check(args[0])) {
-        _PyArg_BadArgument("test_object_converter_subclass_of", 1, "int", args[0]);
+        _PyArg_BadArgument("test_object_converter_subclass_of", "argument 1", "int", args[0]);
         goto exit;
     }
     a = args[0];
     if (!PyTuple_Check(args[1])) {
-        _PyArg_BadArgument("test_object_converter_subclass_of", 2, "tuple", args[1]);
+        _PyArg_BadArgument("test_object_converter_subclass_of", "argument 2", "tuple", args[1]);
         goto exit;
     }
     b = args[1];
     if (!PyList_Check(args[2])) {
-        _PyArg_BadArgument("test_object_converter_subclass_of", 3, "list", args[2]);
+        _PyArg_BadArgument("test_object_converter_subclass_of", "argument 3", "list", args[2]);
         goto exit;
     }
     c = args[2];
     if (!PySet_Check(args[3])) {
-        _PyArg_BadArgument("test_object_converter_subclass_of", 4, "set", args[3]);
+        _PyArg_BadArgument("test_object_converter_subclass_of", "argument 4", "set", args[3]);
         goto exit;
     }
     d = args[3];
     if (!PyFrozenSet_Check(args[4])) {
-        _PyArg_BadArgument("test_object_converter_subclass_of", 5, "frozenset", args[4]);
+        _PyArg_BadArgument("test_object_converter_subclass_of", "argument 5", "frozenset", args[4]);
         goto exit;
     }
     e = args[4];
     if (!PyDict_Check(args[5])) {
-        _PyArg_BadArgument("test_object_converter_subclass_of", 6, "dict", args[5]);
+        _PyArg_BadArgument("test_object_converter_subclass_of", "argument 6", "dict", args[5]);
         goto exit;
     }
     f = args[5];
     if (!PyUnicode_Check(args[6])) {
-        _PyArg_BadArgument("test_object_converter_subclass_of", 7, "str", args[6]);
+        _PyArg_BadArgument("test_object_converter_subclass_of", "argument 7", "str", args[6]);
         goto exit;
     }
     g = args[6];
     if (!PyBytes_Check(args[7])) {
-        _PyArg_BadArgument("test_object_converter_subclass_of", 8, "bytes", args[7]);
+        _PyArg_BadArgument("test_object_converter_subclass_of", "argument 8", "bytes", args[7]);
         goto exit;
     }
     h = args[7];
     if (!PyByteArray_Check(args[8])) {
-        _PyArg_BadArgument("test_object_converter_subclass_of", 9, "bytearray", args[8]);
+        _PyArg_BadArgument("test_object_converter_subclass_of", "argument 9", "bytearray", args[8]);
         goto exit;
     }
     i = args[8];
     if (!PyObject_TypeCheck(args[9], &MyType)) {
-        _PyArg_BadArgument("test_object_converter_subclass_of", 10, (&MyType)->tp_name, args[9]);
+        _PyArg_BadArgument("test_object_converter_subclass_of", "argument 10", (&MyType)->tp_name, args[9]);
         goto exit;
     }
     j = args[9];
@@ -240,7 +240,7 @@ test_object_converter_subclass_of_impl(PyObject *module, PyObject *a,
                                        PyObject *b, PyObject *c, PyObject *d,
                                        PyObject *e, PyObject *f, PyObject *g,
                                        PyObject *h, PyObject *i, PyObject *j)
-/*[clinic end generated code: output=99691bda8eeda6d6 input=31b06b772d5f983e]*/
+/*[clinic end generated code: output=dcf7772bf0c876dd input=31b06b772d5f983e]*/
 
 
 /*[clinic input]
@@ -269,7 +269,7 @@ test_PyBytesObject_converter(PyObject *module, PyObject *arg)
     PyBytesObject *a;
 
     if (!PyBytes_Check(arg)) {
-        _PyArg_BadArgument("test_PyBytesObject_converter", 0, "bytes", arg);
+        _PyArg_BadArgument("test_PyBytesObject_converter", "argument", "bytes", arg);
         goto exit;
     }
     a = (PyBytesObject *)arg;
@@ -281,7 +281,7 @@ exit:
 
 static PyObject *
 test_PyBytesObject_converter_impl(PyObject *module, PyBytesObject *a)
-/*[clinic end generated code: output=5d9a301c1df24eb5 input=12b10c7cb5750400]*/
+/*[clinic end generated code: output=7539d628e6fceace input=12b10c7cb5750400]*/
 
 
 /*[clinic input]
@@ -310,7 +310,7 @@ test_PyByteArrayObject_converter(PyObject *module, PyObject *arg)
     PyByteArrayObject *a;
 
     if (!PyByteArray_Check(arg)) {
-        _PyArg_BadArgument("test_PyByteArrayObject_converter", 0, "bytearray", arg);
+        _PyArg_BadArgument("test_PyByteArrayObject_converter", "argument", "bytearray", arg);
         goto exit;
     }
     a = (PyByteArrayObject *)arg;
@@ -322,7 +322,7 @@ exit:
 
 static PyObject *
 test_PyByteArrayObject_converter_impl(PyObject *module, PyByteArrayObject *a)
-/*[clinic end generated code: output=9455d06f4f09637b input=5a657da535d194ae]*/
+/*[clinic end generated code: output=1245af9f5b3e355e input=5a657da535d194ae]*/
 
 
 /*[clinic input]
@@ -351,7 +351,7 @@ test_unicode_converter(PyObject *module, PyObject *arg)
     PyObject *a;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("test_unicode_converter", 0, "str", arg);
+        _PyArg_BadArgument("test_unicode_converter", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -366,7 +366,7 @@ exit:
 
 static PyObject *
 test_unicode_converter_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=9275c04fe204f4c5 input=aa33612df92aa9c5]*/
+/*[clinic end generated code: output=18f1e3880c862611 input=aa33612df92aa9c5]*/
 
 
 /*[clinic input]
@@ -507,7 +507,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         a = PyByteArray_AS_STRING(args[0])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 1, "a byte string of length 1", args[0]);
+        _PyArg_BadArgument("test_char_converter", "argument 1", "a byte string of length 1", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -520,7 +520,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         b = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 2, "a byte string of length 1", args[1]);
+        _PyArg_BadArgument("test_char_converter", "argument 2", "a byte string of length 1", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -533,7 +533,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         c = PyByteArray_AS_STRING(args[2])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 3, "a byte string of length 1", args[2]);
+        _PyArg_BadArgument("test_char_converter", "argument 3", "a byte string of length 1", args[2]);
         goto exit;
     }
     if (nargs < 4) {
@@ -546,7 +546,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         d = PyByteArray_AS_STRING(args[3])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 4, "a byte string of length 1", args[3]);
+        _PyArg_BadArgument("test_char_converter", "argument 4", "a byte string of length 1", args[3]);
         goto exit;
     }
     if (nargs < 5) {
@@ -559,7 +559,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         e = PyByteArray_AS_STRING(args[4])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 5, "a byte string of length 1", args[4]);
+        _PyArg_BadArgument("test_char_converter", "argument 5", "a byte string of length 1", args[4]);
         goto exit;
     }
     if (nargs < 6) {
@@ -572,7 +572,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         f = PyByteArray_AS_STRING(args[5])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 6, "a byte string of length 1", args[5]);
+        _PyArg_BadArgument("test_char_converter", "argument 6", "a byte string of length 1", args[5]);
         goto exit;
     }
     if (nargs < 7) {
@@ -585,7 +585,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         g = PyByteArray_AS_STRING(args[6])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 7, "a byte string of length 1", args[6]);
+        _PyArg_BadArgument("test_char_converter", "argument 7", "a byte string of length 1", args[6]);
         goto exit;
     }
     if (nargs < 8) {
@@ -598,7 +598,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         h = PyByteArray_AS_STRING(args[7])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 8, "a byte string of length 1", args[7]);
+        _PyArg_BadArgument("test_char_converter", "argument 8", "a byte string of length 1", args[7]);
         goto exit;
     }
     if (nargs < 9) {
@@ -611,7 +611,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         i = PyByteArray_AS_STRING(args[8])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 9, "a byte string of length 1", args[8]);
+        _PyArg_BadArgument("test_char_converter", "argument 9", "a byte string of length 1", args[8]);
         goto exit;
     }
     if (nargs < 10) {
@@ -624,7 +624,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         j = PyByteArray_AS_STRING(args[9])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 10, "a byte string of length 1", args[9]);
+        _PyArg_BadArgument("test_char_converter", "argument 10", "a byte string of length 1", args[9]);
         goto exit;
     }
     if (nargs < 11) {
@@ -637,7 +637,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         k = PyByteArray_AS_STRING(args[10])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 11, "a byte string of length 1", args[10]);
+        _PyArg_BadArgument("test_char_converter", "argument 11", "a byte string of length 1", args[10]);
         goto exit;
     }
     if (nargs < 12) {
@@ -650,7 +650,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         l = PyByteArray_AS_STRING(args[11])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 12, "a byte string of length 1", args[11]);
+        _PyArg_BadArgument("test_char_converter", "argument 12", "a byte string of length 1", args[11]);
         goto exit;
     }
     if (nargs < 13) {
@@ -663,7 +663,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         m = PyByteArray_AS_STRING(args[12])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 13, "a byte string of length 1", args[12]);
+        _PyArg_BadArgument("test_char_converter", "argument 13", "a byte string of length 1", args[12]);
         goto exit;
     }
     if (nargs < 14) {
@@ -676,7 +676,7 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         n = PyByteArray_AS_STRING(args[13])[0];
     }
     else {
-        _PyArg_BadArgument("test_char_converter", 14, "a byte string of length 1", args[13]);
+        _PyArg_BadArgument("test_char_converter", "argument 14", "a byte string of length 1", args[13]);
         goto exit;
     }
 skip_optional:
@@ -690,7 +690,7 @@ static PyObject *
 test_char_converter_impl(PyObject *module, char a, char b, char c, char d,
                          char e, char f, char g, char h, char i, char j,
                          char k, char l, char m, char n)
-/*[clinic end generated code: output=e041d687555e0a5d input=e42330417a44feac]*/
+/*[clinic end generated code: output=9d3aaf5d6857ec9e input=e42330417a44feac]*/
 
 
 /*[clinic input]
@@ -1009,14 +1009,14 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("test_int_converter", 3, "a unicode character", args[2]);
+        _PyArg_BadArgument("test_int_converter", "argument 3", "a unicode character", args[2]);
         goto exit;
     }
     if (PyUnicode_READY(args[2])) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[2]) != 1) {
-        _PyArg_BadArgument("test_int_converter", 3, "a unicode character", args[2]);
+        _PyArg_BadArgument("test_int_converter", "argument 3", "a unicode character", args[2]);
         goto exit;
     }
     c = PyUnicode_READ_CHAR(args[2], 0);
@@ -1041,7 +1041,7 @@ exit:
 
 static PyObject *
 test_int_converter_impl(PyObject *module, int a, int b, int c, myenum d)
-/*[clinic end generated code: output=de74e24e85a669a5 input=d20541fc1ca0553e]*/
+/*[clinic end generated code: output=10a2e48a34af5d7a input=d20541fc1ca0553e]*/
 
 
 /*[clinic input]
@@ -1215,7 +1215,7 @@ test_unsigned_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t
         goto skip_optional;
     }
     if (!PyLong_Check(args[2])) {
-        _PyArg_BadArgument("test_unsigned_long_converter", 3, "int", args[2]);
+        _PyArg_BadArgument("test_unsigned_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
     c = PyLong_AsUnsignedLongMask(args[2]);
@@ -1229,7 +1229,7 @@ exit:
 static PyObject *
 test_unsigned_long_converter_impl(PyObject *module, unsigned long a,
                                   unsigned long b, unsigned long c)
-/*[clinic end generated code: output=1c05c871c0309e08 input=f450d94cae1ef73b]*/
+/*[clinic end generated code: output=87c6b29fa217026e input=f450d94cae1ef73b]*/
 
 
 /*[clinic input]
@@ -1335,7 +1335,7 @@ test_unsigned_long_long_converter(PyObject *module, PyObject *const *args, Py_ss
         goto skip_optional;
     }
     if (!PyLong_Check(args[2])) {
-        _PyArg_BadArgument("test_unsigned_long_long_converter", 3, "int", args[2]);
+        _PyArg_BadArgument("test_unsigned_long_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
     c = PyLong_AsUnsignedLongLongMask(args[2]);
@@ -1351,7 +1351,7 @@ test_unsigned_long_long_converter_impl(PyObject *module,
                                        unsigned long long a,
                                        unsigned long long b,
                                        unsigned long long c)
-/*[clinic end generated code: output=0a9b17fb824e28eb input=a15115dc41866ff4]*/
+/*[clinic end generated code: output=aad2c7b43db2f190 input=a15115dc41866ff4]*/
 
 
 /*[clinic input]
@@ -3207,3 +3207,56 @@ test_posonly_opt_keywords_opt_kwonly_opt_impl(PyObject *module, PyObject *a,
                                               PyObject *d, PyObject *e,
                                               PyObject *f)
 /*[clinic end generated code: output=719e4f6c224402d4 input=9914857713c5bbf8]*/
+
+/*[clinic input]
+test_keyword_only_parameter
+
+
+    *
+    co_lnotab: PyBytesObject(c_default="(PyBytesObject *)self->co_lnotab") = None
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_keyword_only_parameter__doc__,
+"test_keyword_only_parameter($module, /, *, co_lnotab=None)\n"
+"--\n"
+"\n");
+
+#define TEST_KEYWORD_ONLY_PARAMETER_METHODDEF    \
+    {"test_keyword_only_parameter", (PyCFunction)(void(*)(void))test_keyword_only_parameter, METH_FASTCALL|METH_KEYWORDS, test_keyword_only_parameter__doc__},
+
+static PyObject *
+test_keyword_only_parameter_impl(PyObject *module, PyBytesObject *co_lnotab);
+
+static PyObject *
+test_keyword_only_parameter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"co_lnotab", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "test_keyword_only_parameter", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyBytesObject *co_lnotab = (PyBytesObject *)self->co_lnotab;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!PyBytes_Check(args[0])) {
+        _PyArg_BadArgument("test_keyword_only_parameter", "argument 'co_lnotab'", "bytes", args[0]);
+        goto exit;
+    }
+    co_lnotab = (PyBytesObject *)args[0];
+skip_optional_kwonly:
+    return_value = test_keyword_only_parameter_impl(module, co_lnotab);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_keyword_only_parameter_impl(PyObject *module, PyBytesObject *co_lnotab)
+/*[clinic end generated code: output=f25914b402039493 input=303df5046c7e37a3]*/
