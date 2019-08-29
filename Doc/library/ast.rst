@@ -262,11 +262,12 @@ and classes for traversing abstract syntax trees:
 .. function:: dump(node, annotate_fields=True, include_attributes=False)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
-   debugging purposes.  The returned string will show the names and the values
-   for fields.  This makes the code impossible to evaluate, so if evaluation is
-   wanted *annotate_fields* must be set to ``False``.  Attributes such as line
+   debugging purposes.  If *annotate_fields* is true (by default),
+   the returned string will show the names and the values for fields.
+   If *annotate_fields* is false, the result string will be more compact by
+   omitting unambiguous field names.  Attributes such as line
    numbers and column offsets are not dumped by default.  If this is wanted,
-   *include_attributes* can be set to ``True``.
+   *include_attributes* can be set to true.
 
 .. seealso::
 
