@@ -1463,9 +1463,25 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
         setentry *entry;
         Py_ssize_t pos = 0;
 
-        while (set_next((PySetObject *)other, &pos, &entry))
-            if (set_discard_entry(so, entry->key, entry->hash) < 0)
+        /* Optimization:  When the other set is more than 8 times
+           larger than the base set, replace the other set with
+           interesection of the two sets.
+        */
+        if ((PySet_GET_SIZE(other) >> 3) > PySet_GET_SIZE(so)) {
+            other = set_intersection(so, other);
+            if (other == NULL)
                 return -1;
+        } else {
+            Py_INCREF(other);
+        }
+
+        while (set_next((PySetObject *)other, &pos, &entry))
+            if (set_discard_entry(so, entry->key, entry->hash) < 0) {
+                Py_DECREF(other);
+                return -1;
+            }
+
+        Py_DECREF(other);
     } else {
         PyObject *key, *it;
         it = PyObject_GetIter(other);
