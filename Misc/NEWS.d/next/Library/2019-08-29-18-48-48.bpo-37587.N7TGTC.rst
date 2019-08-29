@@ -1,0 +1,2 @@
+Use ``_PyUnicodeWriter`` instead of list of unicode chunks in
+``_json.scanstring``. Decoding long non-ASCII string is up to 4x faster.
