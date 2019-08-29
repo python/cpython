@@ -73,19 +73,6 @@ static PyMemberDef encoder_members[] = {
     {NULL}
 };
 
-static PyObject *
-join_list_unicode(PyObject *lst)
-{
-    /* return u''.join(lst) */
-    static PyObject *sep = NULL;
-    if (sep == NULL) {
-        sep = PyUnicode_FromStringAndSize("", 0);
-        if (sep == NULL)
-            return NULL;
-    }
-    return PyUnicode_Join(sep, lst);
-}
-
 /* Forward decls */
 
 static PyObject *
@@ -385,21 +372,6 @@ _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
     return tpl;
 }
 
-#define APPEND_OLD_CHUNK \
-    if (chunk != NULL) { \
-        if (chunks == NULL) { \
-            chunks = PyList_New(0); \
-            if (chunks == NULL) { \
-                goto bail; \
-            } \
-        } \
-        if (PyList_Append(chunks, chunk)) { \
-            Py_CLEAR(chunk); \
-            goto bail; \
-        } \
-        Py_CLEAR(chunk); \
-    }
-
 static PyObject *
 scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next_end_ptr)
 {
@@ -417,11 +389,12 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
     Py_ssize_t next /* = begin */;
     const void *buf;
     int kind;
-    PyObject *chunks = NULL;
-    PyObject *chunk = NULL;
 
     if (PyUnicode_READY(pystr) == -1)
         return 0;
+
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
 
     len = PyUnicode_GET_LENGTH(pystr);
     buf = PyUnicode_DATA(pystr);
@@ -455,12 +428,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
         }
         /* Pick up this chunk if it's not zero length */
         if (next != end) {
-            APPEND_OLD_CHUNK
-                chunk = PyUnicode_FromKindAndData(
-                    kind,
-                    (char*)buf + kind * end,
-                    next - end);
-            if (chunk == NULL) {
+            if (_PyUnicodeWriter_WriteSubstring(&writer, pystr, end, next) < 0) {
                 goto bail;
             }
         }
@@ -473,6 +441,8 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             raise_errmsg("Unterminated string starting at", pystr, begin);
             goto bail;
         }
+        // Enable overallocating after simple case (e.g. "spam") is failed.
+        writer.overallocate = 1;
         c = PyUnicode_READ(kind, buf, next);
         if (c != 'u') {
             /* Non-unicode backslash escapes */
@@ -551,34 +521,18 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                     end -= 6;
             }
         }
-        APPEND_OLD_CHUNK
-        chunk = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, &c, 1);
-        if (chunk == NULL) {
+        if (_PyUnicodeWriter_WriteChar(&writer, c) < 0) {
             goto bail;
         }
     }
 
-    if (chunks == NULL) {
-        if (chunk != NULL)
-            rval = chunk;
-        else
-            rval = PyUnicode_FromStringAndSize("", 0);
-    }
-    else {
-        APPEND_OLD_CHUNK
-        rval = join_list_unicode(chunks);
-        if (rval == NULL) {
-            goto bail;
-        }
-        Py_CLEAR(chunks);
-    }
-
+    rval = _PyUnicodeWriter_Finish(&writer);
     *next_end_ptr = end;
     return rval;
+
 bail:
     *next_end_ptr = -1;
-    Py_XDECREF(chunks);
-    Py_XDECREF(chunk);
+    _PyUnicodeWriter_Dealloc(&writer);
     return NULL;
 }
 
