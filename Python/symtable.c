@@ -266,6 +266,7 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     int i;
     PyThreadState *tstate;
     int recursion_limit = Py_GetRecursionLimit();
+    int starting_recursion_depth;
 
     if (st == NULL)
         return NULL;
@@ -284,8 +285,9 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         return NULL;
     }
     /* Be careful here to prevent overflow. */
-    st->recursion_depth = (tstate->recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+    starting_recursion_depth = (tstate->recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         tstate->recursion_depth * COMPILER_STACK_FRAME_SCALE : tstate->recursion_depth;
+    st->recursion_depth = starting_recursion_depth;
     st->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
 
@@ -326,6 +328,14 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         goto error;
     }
     if (!symtable_exit_block(st, (void *)mod)) {
+        PySymtable_Free(st);
+        return NULL;
+    }
+    /* Check that the recursion depth counting balanced correctly */
+    if (st->recursion_depth != starting_recursion_depth) {
+        PyErr_Format(PyExc_SystemError,
+            "symtable analysis recursion depth mismatch (before=%d, after=%d)",
+            starting_recursion_depth, st->recursion_depth);
         PySymtable_Free(st);
         return NULL;
     }
@@ -1501,16 +1511,16 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
         PyErr_SyntaxLocationObject(st->st_filename,
                                     e->lineno,
                                     e->col_offset);
-        VISIT_QUIT(st, 0);
+        return 0;
     }
     if (st->st_cur->ste_comprehension) {
         /* Inside a comprehension body, so find the right target scope */
         if (!symtable_extend_namedexpr_scope(st, e->v.NamedExpr.target))
-            VISIT_QUIT(st, 0);
+            return 0;
     }
     VISIT(st, expr, e->v.NamedExpr.value);
     VISIT(st, expr, e->v.NamedExpr.target);
-    VISIT_QUIT(st, 1);
+    return 1;
 }
 
 static int
