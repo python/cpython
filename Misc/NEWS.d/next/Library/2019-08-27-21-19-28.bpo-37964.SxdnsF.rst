@@ -1,0 +1,1 @@
+Add ``F_GETPATH`` command to :mod:`fcntl`.

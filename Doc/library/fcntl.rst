@@ -33,6 +33,10 @@ descriptor.
    ``F_SEAL_*`` constants for sealing of :func:`os.memfd_create` file
    descriptors.
 
+.. versionchanged:: 3.9
+   On macOS, the fcntl module exposes the ``F_GETPATH`` constant, which obtains
+   the path of a file from a file descriptor.
+
 The module defines the following functions:
 
 
