@@ -148,10 +148,8 @@ class TestFcntl(unittest.TestCase):
     def test_fcntl_f_getpath(self):
         self.f = open(TESTFN, 'wb')
         abspath = os.path.abspath(TESTFN)
-        s = '$'*len(abspath)
-        res = fcntl.fcntl(self.f.fileno(), fcntl.F_GETPATH, s)
+        res = fcntl.fcntl(self.f.fileno(), fcntl.F_GETPATH, bytes(len(abspath)))
         self.assertEqual(abspath, res.decode('utf-8'))
-        self.f.close()
 
 def test_main():
     run_unittest(TestFcntl)
