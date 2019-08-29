@@ -1618,21 +1618,32 @@ refers to the attribute whose name is the key of the property in the owner
 class' :attr:`~object.__dict__`.
 
 
-.. method:: object.__get__(self, instance, owner)
+.. method:: object.__get__(self, instance, owner=None)
 
-   Called to get the attribute of the owner class (class attribute access) or of an
-   instance of that class (instance attribute access). *owner* is always the owner
-   class, while *instance* is the instance that the attribute was accessed through,
-   or ``None`` when the attribute is accessed through the *owner*.  This method
-   should return the (computed) attribute value or raise an :exc:`AttributeError`
-   exception.
+   Called to get the attribute of the owner class (class attribute access) or
+   of an instance of that class (instance attribute access). The optional
+   *owner* argument is the owner class, while *instance* is the instance that
+   the attribute was accessed through, or ``None`` when the attribute is
+   accessed through the *owner*.
 
+   This method should return the computed attribute value or raise an
+   :exc:`AttributeError` exception.
+
+   :PEP:`252` specifies that :meth:`__get__` is callable with one or two
+   arguments.  Python's own built-in descriptors support this specification;
+   however, it is likely that some third-party tools have descriptors
+   that require both arguments.  Python's own :meth:`__getattribute__`
+   implementation always passes in both arguments whether they are required
+   or not.
 
 .. method:: object.__set__(self, instance, value)
 
    Called to set the attribute on an instance *instance* of the owner class to a
    new value, *value*.
 
+   Note, adding :meth:`__set__` or :meth:`__delete__` changes the kind of
+   descriptor to a "data descriptor".  See :ref:`descriptor-invocation` for
+   more details.
 
 .. method:: object.__delete__(self, instance)
 

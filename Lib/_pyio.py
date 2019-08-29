@@ -283,7 +283,7 @@ except AttributeError:
 class DocDescriptor:
     """Helper for builtins.open.__doc__
     """
-    def __get__(self, obj, typ):
+    def __get__(self, obj, typ=None):
         return (
             "open(file, mode='r', buffering=-1, encoding=None, "
                  "errors=None, newline=None, closefd=True)\n\n" +

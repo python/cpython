@@ -2804,7 +2804,7 @@ class PropertyMock(Mock):
     def _get_child_mock(self, /, **kwargs):
         return MagicMock(**kwargs)
 
-    def __get__(self, obj, obj_type):
+    def __get__(self, obj, obj_type=None):
         return self()
     def __set__(self, obj, val):
         self(val)
