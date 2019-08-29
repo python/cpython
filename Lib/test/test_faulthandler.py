@@ -819,7 +819,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     def test_cancel_later_without_dump_traceback_later(self):
         # bpo-37933: Calling cancel_dump_traceback_later()
-        # without dump_traceback_later() must not segfault
+        # without dump_traceback_later() must not segfault.
         code = dedent("""
             import faulthandler
             faulthandler.cancel_dump_traceback_later()
