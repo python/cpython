@@ -19,6 +19,8 @@
 #include "ucnhash.h"
 #include "structmember.h"
 
+#include <stdbool.h>
+
 _Py_IDENTIFIER(NFC);
 _Py_IDENTIFIER(NFD);
 _Py_IDENTIFIER(NFKC);
@@ -793,7 +795,7 @@ typedef enum {YES = 0, MAYBE = 1, NO = 2} QuickcheckResult;
  */
 static QuickcheckResult
 is_normalized_quickcheck(PyObject *self, PyObject *input,
-                         int nfc, int k, int yes_only)
+                         int nfc, int k, bool yes_only)
 {
     /* An older version of the database is requested, quickchecks must be
        disabled. */
@@ -892,7 +894,7 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
         return NULL;
     }
 
-    m = is_normalized_quickcheck(self, input, nfc, k, 0);
+    m = is_normalized_quickcheck(self, input, nfc, k, false);
 
     if (m == MAYBE) {
         cmp = (nfc ? nfc_nfkc : nfd_nfkd)(self, input, k);
@@ -938,28 +940,28 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
     }
 
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
-        if (is_normalized_quickcheck(self, input, 1, 0, 1) == YES) {
+        if (is_normalized_quickcheck(self, input, 1, 0, true) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfc_nfkc(self, input, 0);
     }
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
-        if (is_normalized_quickcheck(self, input, 1, 1, 1) == YES) {
+        if (is_normalized_quickcheck(self, input, 1, 1, true) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfc_nfkc(self, input, 1);
     }
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
-        if (is_normalized_quickcheck(self, input, 0, 0, 1) == YES) {
+        if (is_normalized_quickcheck(self, input, 0, 0, true) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfd_nfkd(self, input, 0);
     }
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
-        if (is_normalized_quickcheck(self, input, 0, 1, 1) == YES) {
+        if (is_normalized_quickcheck(self, input, 0, 1, true) == YES) {
             Py_INCREF(input);
             return input;
         }
