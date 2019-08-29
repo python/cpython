@@ -1,0 +1,4 @@
+Improve performance of :c:func:`PyLong_FromDouble` for values that fit into
+:c:type:`long`. Now :meth:`float.__trunc__` is faster up to 10%,
+:func:`math.floor()` and :func:`math.ceil()` are faster up to 30% when used
+with such values.
