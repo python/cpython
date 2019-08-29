@@ -850,7 +850,9 @@ Other constructors, all class methods:
   .. caution::
 
     This does not support parsing arbitrary ISO 8601 strings - it is only intended
-    as the inverse operation of :meth:`datetime.isoformat`.
+    as the inverse operation of :meth:`datetime.isoformat`. A more full-featured
+    ISO 8601 parser, ``dateutil.parser.isoparse`` is available in the third-party package
+    `dateutil <https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.isoparse>`_.
 
   .. versionadded:: 3.7
 
