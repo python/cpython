@@ -1102,9 +1102,8 @@ container should match the type_ specified::
    usage: doors.py [-h] {1,2,3}
    doors.py: error: argument door: invalid choice: 4 (choose from 1, 2, 3)
 
-Any object that supports the ``in`` operator can be passed as the *choices*
-value, so :class:`dict` objects, :class:`set` objects, custom containers,
-etc. are all supported.
+Any container can be passed as the *choices* value, so :class:`list` objects,
+:class:`set` objects, and custom containers are all supported.
 
 
 required
