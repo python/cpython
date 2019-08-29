@@ -2629,6 +2629,55 @@ get_datetime_fromtimestamp(PyObject* self, PyObject *args)
     return rv;
 }
 
+static PyObject *
+test_PyDateTime_GET(PyObject *self, PyObject *obj)
+{
+    int year, month, day;
+
+    year = PyDateTime_GET_YEAR(obj);
+    month = PyDateTime_GET_MONTH(obj);
+    day = PyDateTime_GET_DAY(obj);
+
+    return Py_BuildValue("(lll)", year, month, day);
+}
+
+static PyObject *
+test_PyDateTime_DATE_GET(PyObject *self, PyObject *obj)
+{
+    int hour, minute, second, microsecond;
+
+    hour = PyDateTime_DATE_GET_HOUR(obj);
+    minute = PyDateTime_DATE_GET_MINUTE(obj);
+    second = PyDateTime_DATE_GET_SECOND(obj);
+    microsecond = PyDateTime_DATE_GET_MICROSECOND(obj);
+
+    return Py_BuildValue("(llll)", hour, minute, second, microsecond);
+}
+
+static PyObject *
+test_PyDateTime_TIME_GET(PyObject *self, PyObject *obj)
+{
+    int hour, minute, second, microsecond;
+
+    hour = PyDateTime_TIME_GET_HOUR(obj);
+    minute = PyDateTime_TIME_GET_MINUTE(obj);
+    second = PyDateTime_TIME_GET_SECOND(obj);
+    microsecond = PyDateTime_TIME_GET_MICROSECOND(obj);
+
+    return Py_BuildValue("(llll)", hour, minute, second, microsecond);
+}
+
+static PyObject *
+test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
+{
+    int days, seconds, microseconds;
+
+    days = PyDateTime_DELTA_GET_DAYS(obj);
+    seconds = PyDateTime_DELTA_GET_SECONDS(obj);
+    microseconds = PyDateTime_DELTA_GET_MICROSECONDS(obj);
+
+    return Py_BuildValue("(lll)", days, seconds, microseconds);
+}
 
 /* test_thread_state spawns a thread of its own, and that thread releases
  * `thread_done` when it's finished.  The driver code has to know when the
@@ -5138,6 +5187,10 @@ static PyMethodDef TestMethods[] = {
     {"get_delta_fromdsu",        get_delta_fromdsu,              METH_VARARGS},
     {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
     {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
+    {"PyDateTime_GET",             test_PyDateTime_GET,           METH_O},
+    {"PyDateTime_DATE_GET",        test_PyDateTime_DATE_GET,      METH_O},
+    {"PyDateTime_TIME_GET",        test_PyDateTime_TIME_GET,      METH_O},
+    {"PyDateTime_DELTA_GET",       test_PyDateTime_DELTA_GET,     METH_O},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
