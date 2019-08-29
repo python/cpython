@@ -1,0 +1,2 @@
+Fix error unpickling datetime.time objects from Python 2 with seconds>=24.
+Patch by Justin Blanchard.
