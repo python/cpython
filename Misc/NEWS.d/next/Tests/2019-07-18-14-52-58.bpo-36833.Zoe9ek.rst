@@ -1,0 +1,2 @@
+Added tests for PyDateTime_xxx_GET_xxx() macros of the C API of
+the :mod:`datetime` module. Patch by Joannah Nanjekye.
