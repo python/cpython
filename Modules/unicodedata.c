@@ -787,16 +787,14 @@ typedef enum {YES = 0, MAYBE = 1, NO = 2} QuickcheckResult;
  *
  * If `yes_only` is true, then return MAYBE as soon as we determine
  * the answer is not YES.
+ *
+ * For background and details on the algorithm, see UAX #15:
+ *   https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms
  */
 static QuickcheckResult
 is_normalized_quickcheck(PyObject *self, PyObject *input,
                          int nfc, int k, int yes_only)
 {
-    /* This is an implementation of the following algorithm:
-       https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms
-       See there for background.
-    */
-
     /* An older version of the database is requested, quickchecks must be
        disabled. */
     if (self && UCD_Check(self))
