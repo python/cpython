@@ -1,0 +1,1 @@
+Add a --minify command-line argument to json.tool for minifying JSON.

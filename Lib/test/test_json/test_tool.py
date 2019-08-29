@@ -82,6 +82,8 @@ class TestTool(unittest.TestCase):
     }
     """)
 
+    minify_expect = """[["blorpie"],["whoops"],[],"d-shtaeou","d-nthiouh","i-vhbjkhnth",{"nifty":87},{"field":"yes","morefield":false}]"""
+
     def test_stdin_stdout(self):
         args = sys.executable, '-m', 'json.tool'
         with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
@@ -133,4 +135,11 @@ class TestTool(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(),
                          self.expect_without_sort_keys.encode().splitlines())
+        self.assertEqual(err, b'')
+
+    def test_minify_flag(self):
+        infile = self._create_infile()
+        rc, out, err = assert_python_ok('-m', 'json.tool', '--minify', '--sort-keys', infile)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, self.minify_expect.encode())
         self.assertEqual(err, b'')
