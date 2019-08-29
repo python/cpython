@@ -2268,12 +2268,6 @@ class Parameter:
     def __repr__(self):
         return '<clinic.Parameter ' + self.name + '>'
 
-    def is_positional_or_keyword(self):
-        return self.kind in (
-            inspect.Parameter.POSITIONAL_OR_KEYWORD,
-            inspect.Parameter.KEYWORD_ONLY
-        )
-
     def is_keyword_only(self):
         return self.kind == inspect.Parameter.KEYWORD_ONLY
 
@@ -2299,7 +2293,7 @@ class Parameter:
     def get_displayname(self, i):
         if i == 0:
             return '"argument"'
-        if self.is_positional_or_keyword():
+        if not self.is_positional_only():
             return '''"argument '{}'"'''.format(self.name)
         else:
             return '"argument {}"'.format(i)
