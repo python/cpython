@@ -375,7 +375,7 @@ msvcrt_putch(PyObject *module, PyObject *arg)
         char_value = PyByteArray_AS_STRING(arg)[0];
     }
     else {
-        _PyArg_BadArgument("putch", 0, "a byte string of length 1", arg);
+        _PyArg_BadArgument("putch", "argument", "a byte string of length 1", arg);
         goto exit;
     }
     return_value = msvcrt_putch_impl(module, char_value);
@@ -403,14 +403,14 @@ msvcrt_putwch(PyObject *module, PyObject *arg)
     int unicode_char;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("putwch", 0, "a unicode character", arg);
+        _PyArg_BadArgument("putwch", "argument", "a unicode character", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyArg_BadArgument("putwch", 0, "a unicode character", arg);
+        _PyArg_BadArgument("putwch", "argument", "a unicode character", arg);
         goto exit;
     }
     unicode_char = PyUnicode_READ_CHAR(arg, 0);
@@ -449,7 +449,7 @@ msvcrt_ungetch(PyObject *module, PyObject *arg)
         char_value = PyByteArray_AS_STRING(arg)[0];
     }
     else {
-        _PyArg_BadArgument("ungetch", 0, "a byte string of length 1", arg);
+        _PyArg_BadArgument("ungetch", "argument", "a byte string of length 1", arg);
         goto exit;
     }
     return_value = msvcrt_ungetch_impl(module, char_value);
@@ -477,14 +477,14 @@ msvcrt_ungetwch(PyObject *module, PyObject *arg)
     int unicode_char;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("ungetwch", 0, "a unicode character", arg);
+        _PyArg_BadArgument("ungetwch", "argument", "a unicode character", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyArg_BadArgument("ungetwch", 0, "a unicode character", arg);
+        _PyArg_BadArgument("ungetwch", "argument", "a unicode character", arg);
         goto exit;
     }
     unicode_char = PyUnicode_READ_CHAR(arg, 0);
@@ -679,4 +679,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=816bc4f993893cea input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7cc6ffaf64f268f7 input=a9049054013a1b77]*/

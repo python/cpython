@@ -616,7 +616,7 @@ os_chflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
         goto exit;
     }
     if (!PyLong_Check(args[1])) {
-        _PyArg_BadArgument("chflags", 2, "int", args[1]);
+        _PyArg_BadArgument("chflags", "argument 'flags'", "int", args[1]);
         goto exit;
     }
     flags = PyLong_AsUnsignedLongMask(args[1]);
@@ -674,7 +674,7 @@ os_lchflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
     if (!PyLong_Check(args[1])) {
-        _PyArg_BadArgument("lchflags", 2, "int", args[1]);
+        _PyArg_BadArgument("lchflags", "argument 'flags'", "int", args[1]);
         goto exit;
     }
     flags = PyLong_AsUnsignedLongMask(args[1]);
@@ -4956,7 +4956,7 @@ os_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("write", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("write", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     _return_value = os_write_impl(module, fd, &data);
@@ -5279,7 +5279,7 @@ os_pwrite(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("pwrite", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("pwrite", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     if (!Py_off_t_converter(args[2], &offset)) {
@@ -6012,7 +6012,7 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("putenv", 1, "str", args[0]);
+        _PyArg_BadArgument("putenv", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -6020,7 +6020,7 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     name = args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("putenv", 2, "str", args[1]);
+        _PyArg_BadArgument("putenv", "argument 2", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -7216,7 +7216,7 @@ os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&value, 'C')) {
-        _PyArg_BadArgument("setxattr", 3, "contiguous buffer", args[2]);
+        _PyArg_BadArgument("setxattr", "argument 'value'", "contiguous buffer", args[2]);
         goto exit;
     }
     if (!noptargs) {
@@ -8724,4 +8724,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=b71eff00b91f5e43 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3c5cb675b0d09145 input=a9049054013a1b77]*/
