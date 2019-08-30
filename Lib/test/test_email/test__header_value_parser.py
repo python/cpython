@@ -391,7 +391,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             [errors.InvalidHeaderDefect],
             '')
 
-    def test_get_unstructured_invalid_encoded_word(self):
+    def test_get_unstructured_invalid_ew(self):
         self._test_get_x(self._get_unst,
             '=?utf-8?q?=somevalue?=',
             '=?utf-8?q?=somevalue?=',
