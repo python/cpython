@@ -714,7 +714,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
             self.assertRaises(TypeError, self.module.warn, "Warning!")
 
     def test_show_warning_output(self):
-        # With showarning() missing, make sure that output is okay.
+        # With showwarning() missing, make sure that output is okay.
         text = 'test show_warning'
         with original_warnings.catch_warnings(module=self.module):
             self.module.filterwarnings("always", category=UserWarning)
