@@ -882,7 +882,7 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
     if (self->readuniversal) {
         PyObject *incrementalDecoder = PyObject_CallFunction(
             (PyObject *)&PyIncrementalNewlineDecoder_Type,
-            "Oi", self->decoder, (int)self->readtranslate);
+            "OO", self->decoder, self->readtranslate ? Py_True : Py_False);
         if (incrementalDecoder == NULL)
             return -1;
         Py_CLEAR(self->decoder);
