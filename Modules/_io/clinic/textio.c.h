@@ -39,13 +39,8 @@ _io_IncrementalNewlineDecoder___init__(PyObject *self, PyObject *args, PyObject 
         goto exit;
     }
     decoder = fastargs[0];
-    if (PyFloat_Check(fastargs[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    translate = _PyLong_AsInt(fastargs[1]);
-    if (translate == -1 && PyErr_Occurred()) {
+    translate = PyObject_IsTrue(fastargs[1]);
+    if (translate < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -90,13 +85,8 @@ _io_IncrementalNewlineDecoder_decode(nldecoder_object *self, PyObject *const *ar
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    final = _PyLong_AsInt(args[1]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[1]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -266,26 +256,16 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[4]) {
-        if (PyFloat_Check(fastargs[4])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
-        line_buffering = _PyLong_AsInt(fastargs[4]);
-        if (line_buffering == -1 && PyErr_Occurred()) {
+        line_buffering = PyObject_IsTrue(fastargs[4]);
+        if (line_buffering < 0) {
             goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (PyFloat_Check(fastargs[5])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    write_through = _PyLong_AsInt(fastargs[5]);
-    if (write_through == -1 && PyErr_Occurred()) {
+    write_through = PyObject_IsTrue(fastargs[5]);
+    if (write_through < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -701,4 +681,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=b1bae4f4cdf6019e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9b841d00fb6d40cd input=a9049054013a1b77]*/

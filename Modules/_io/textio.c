@@ -229,7 +229,7 @@ typedef struct {
 /*[clinic input]
 _io.IncrementalNewlineDecoder.__init__
     decoder: object
-    translate: int
+    translate: bool
     errors: object(c_default="NULL") = "strict"
 
 Codec used when reading a file in universal newlines mode.
@@ -246,7 +246,7 @@ static int
 _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
                                             PyObject *decoder, int translate,
                                             PyObject *errors)
-/*[clinic end generated code: output=fbd04d443e764ec2 input=89db6b19c6b126bf]*/
+/*[clinic end generated code: output=fbd04d443e764ec2 input=ed547aa257616b0e]*/
 {
     self->decoder = decoder;
     Py_INCREF(decoder);
@@ -504,13 +504,13 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
 /*[clinic input]
 _io.IncrementalNewlineDecoder.decode
     input: object
-    final: bool(accept={int}) = False
+    final: bool = False
 [clinic start generated code]*/
 
 static PyObject *
 _io_IncrementalNewlineDecoder_decode_impl(nldecoder_object *self,
                                           PyObject *input, int final)
-/*[clinic end generated code: output=0d486755bb37a66e input=a4ea97f26372d866]*/
+/*[clinic end generated code: output=0d486755bb37a66e input=90e223c70322c5cd]*/
 {
     return _PyIncrementalNewlineDecoder_decode((PyObject *) self, input, final);
 }
@@ -1034,8 +1034,8 @@ _io.TextIOWrapper.__init__
     encoding: str(accept={str, NoneType}) = NULL
     errors: object = None
     newline: str(accept={str, NoneType}) = NULL
-    line_buffering: bool(accept={int}) = False
-    write_through: bool(accept={int}) = False
+    line_buffering: bool = False
+    write_through: bool = False
 
 Character and line based layer over a BufferedIOBase object, buffer.
 
@@ -1072,7 +1072,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=72267c0c01032ed2 input=1c5dd5d78bfcc675]*/
+/*[clinic end generated code: output=72267c0c01032ed2 input=ad7234e548e219b7]*/
 {
     PyObject *raw, *codec_info = NULL;
     _PyIO_State *state = NULL;

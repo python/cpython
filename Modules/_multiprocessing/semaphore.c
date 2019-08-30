@@ -69,7 +69,7 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
 
     static char *kwlist[] = {"block", "timeout", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iO", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pO", kwlist,
                                      &blocking, &timeout_obj))
         return NULL;
 
@@ -276,7 +276,7 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
 
     static char *kwlist[] = {"block", "timeout", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iO", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pO", kwlist,
                                      &blocking, &timeout_obj))
         return NULL;
 

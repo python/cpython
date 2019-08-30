@@ -1010,13 +1010,8 @@ unicode_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    keepends = _PyLong_AsInt(args[0]);
-    if (keepends == -1 && PyErr_Occurred()) {
+    keepends = PyObject_IsTrue(args[0]);
+    if (keepends < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -1232,4 +1227,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=d9a6ee45ddd0ccfd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=30d91e2d37d1973d input=a9049054013a1b77]*/

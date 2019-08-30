@@ -816,13 +816,8 @@ bytearray_splitlines(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    keepends = _PyLong_AsInt(args[0]);
-    if (keepends == -1 && PyErr_Occurred()) {
+    keepends = PyObject_IsTrue(args[0]);
+    if (keepends < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -1011,4 +1006,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=09df354d3374dfb2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=387ddb600a53c38a input=a9049054013a1b77]*/

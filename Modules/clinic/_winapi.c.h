@@ -107,7 +107,7 @@ _winapi_ConnectNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nar
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "overlapped", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE "|i:ConnectNamedPipe", _keywords, 0};
+    static _PyArg_Parser _parser = {"" F_HANDLE "|p:ConnectNamedPipe", _keywords, 0};
     HANDLE handle;
     int use_overlapped = 0;
 
@@ -806,7 +806,7 @@ _winapi_ReadFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "size", "overlapped", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE "k|i:ReadFile", _keywords, 0};
+    static _PyArg_Parser _parser = {"" F_HANDLE "k|p:ReadFile", _keywords, 0};
     HANDLE handle;
     DWORD size;
     int use_overlapped = 0;
@@ -1031,7 +1031,7 @@ _winapi_WriteFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "buffer", "overlapped", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE "O|i:WriteFile", _keywords, 0};
+    static _PyArg_Parser _parser = {"" F_HANDLE "O|p:WriteFile", _keywords, 0};
     HANDLE handle;
     PyObject *buffer;
     int use_overlapped = 0;
@@ -1097,4 +1097,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f3897898ea1da99d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=651159ab3c111385 input=a9049054013a1b77]*/

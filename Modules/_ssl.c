@@ -4243,7 +4243,7 @@ _ssl__SSLContext_load_dh_params(PySSLContext *self, PyObject *filepath)
 /*[clinic input]
 _ssl._SSLContext._wrap_socket
     sock: object(subclass_of="PySocketModule.Sock_Type")
-    server_side: int
+    server_side: bool
     server_hostname as hostname_obj: object = None
     *
     owner: object = None
@@ -4255,7 +4255,7 @@ static PyObject *
 _ssl__SSLContext__wrap_socket_impl(PySSLContext *self, PyObject *sock,
                                    int server_side, PyObject *hostname_obj,
                                    PyObject *owner, PyObject *session)
-/*[clinic end generated code: output=f103f238633940b4 input=957d5006183d1894]*/
+/*[clinic end generated code: output=f103f238633940b4 input=c2aaafe82cb0e886]*/
 {
     char *hostname = NULL;
     PyObject *res;
@@ -4280,7 +4280,7 @@ _ssl__SSLContext__wrap_socket_impl(PySSLContext *self, PyObject *sock,
 _ssl._SSLContext._wrap_bio
     incoming: object(subclass_of="&PySSLMemoryBIO_Type", type="PySSLMemoryBIO *")
     outgoing: object(subclass_of="&PySSLMemoryBIO_Type", type="PySSLMemoryBIO *")
-    server_side: int
+    server_side: bool
     server_hostname as hostname_obj: object = None
     *
     owner: object = None
@@ -4293,7 +4293,7 @@ _ssl__SSLContext__wrap_bio_impl(PySSLContext *self, PySSLMemoryBIO *incoming,
                                 PySSLMemoryBIO *outgoing, int server_side,
                                 PyObject *hostname_obj, PyObject *owner,
                                 PyObject *session)
-/*[clinic end generated code: output=5c5d6d9b41f99332 input=8cf22f4d586ac56a]*/
+/*[clinic end generated code: output=5c5d6d9b41f99332 input=5ef5d022af56164e]*/
 {
     char *hostname = NULL;
     PyObject *res;

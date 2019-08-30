@@ -196,13 +196,8 @@ list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto skip_optional_kwonly;
         }
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    reverse = _PyLong_AsInt(args[1]);
-    if (reverse == -1 && PyErr_Occurred()) {
+    reverse = PyObject_IsTrue(args[1]);
+    if (reverse < 0) {
         goto exit;
     }
 skip_optional_kwonly:
@@ -367,4 +362,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=73718c0c33798c62 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f82859bd70344ff7 input=a9049054013a1b77]*/

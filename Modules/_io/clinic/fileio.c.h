@@ -87,13 +87,8 @@ _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[2]) {
-        if (PyFloat_Check(fastargs[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
-        closefd = _PyLong_AsInt(fastargs[2]);
-        if (closefd == -1 && PyErr_Occurred()) {
+        closefd = PyObject_IsTrue(fastargs[2]);
+        if (closefd < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -447,4 +442,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=a7e9cca3613660fb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=96649080f5dcf810 input=a9049054013a1b77]*/

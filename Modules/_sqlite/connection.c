@@ -90,7 +90,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     double timeout = 5.0;
     int rc;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|diOiOip", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|diOpOip", kwlist,
                                      PyUnicode_FSConverter, &database_obj, &timeout, &detect_types,
                                      &isolation_level, &check_same_thread,
                                      &factory, &cached_statements, &uri))
@@ -1086,7 +1086,7 @@ static PyObject* pysqlite_enable_load_extension(pysqlite_Connection* self, PyObj
         return NULL;
     }
 
-    if (!PyArg_ParseTuple(args, "i", &onoff)) {
+    if (!PyArg_ParseTuple(args, "p", &onoff)) {
         return NULL;
     }
 

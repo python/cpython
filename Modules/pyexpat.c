@@ -700,7 +700,7 @@ get_parse_result(xmlparseobject *self, int rv)
 pyexpat.xmlparser.Parse
 
     data: object
-    isfinal: bool(accept={int}) = False
+    isfinal: bool = False
     /
 
 Parse XML data.
@@ -711,7 +711,7 @@ Parse XML data.
 static PyObject *
 pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
                              int isfinal)
-/*[clinic end generated code: output=f4db843dd1f4ed4b input=eb616027bfa9847f]*/
+/*[clinic end generated code: output=f4db843dd1f4ed4b input=089c927235118d83]*/
 {
     const char *s;
     Py_ssize_t slen;

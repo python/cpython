@@ -230,13 +230,8 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[4]) {
-        if (PyFloat_Check(args[4])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
-        dont_inherit = _PyLong_AsInt(args[4]);
-        if (dont_inherit == -1 && PyErr_Occurred()) {
+        dont_inherit = PyObject_IsTrue(args[4]);
+        if (dont_inherit < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -849,4 +844,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1927f3c9abd00c35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6a1ea734493a4c3d input=a9049054013a1b77]*/

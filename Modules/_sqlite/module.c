@@ -73,7 +73,7 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
 
     PyObject* result;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|diOiOip", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|diOpOip", kwlist,
                                      &database, &timeout, &detect_types,
                                      &isolation_level, &check_same_thread,
                                      &factory, &cached_statements, &uri))
@@ -139,7 +139,7 @@ static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyOb
     int do_enable;
     int rc;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i", kwlist, &do_enable))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "p", kwlist, &do_enable))
     {
         return NULL;
     }

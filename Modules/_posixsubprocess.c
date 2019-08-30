@@ -574,7 +574,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     int saved_errno = 0;
 
     if (!PyArg_ParseTuple(
-            args, "OOpO!OOiiiiiiiiiiO:fork_exec",
+            args, "OOpO!OOiiiiiiiippO:fork_exec",
             &process_args, &executable_list,
             &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,

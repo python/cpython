@@ -106,7 +106,7 @@ _io.open
     encoding: str(accept={str, NoneType}) = NULL
     errors: str(accept={str, NoneType}) = NULL
     newline: str(accept={str, NoneType}) = NULL
-    closefd: bool(accept={int}) = True
+    closefd: bool = True
     opener: object = None
 
 Open file and return a stream.  Raise OSError upon failure.
@@ -233,7 +233,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=03da2940c8a65871]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=e3995ddfcc587eb0]*/
 {
     unsigned i;
 
@@ -241,8 +241,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     int text = 0, binary = 0, universal = 0;
 
     char rawmode[6], *m;
-    int line_buffering, is_number;
-    long isatty = 0;
+    int line_buffering, is_number, isatty = 0;
 
     PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL, *path_or_fd = NULL;
 
@@ -403,9 +402,9 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         PyObject *res = _PyObject_CallMethodIdNoArgs(raw, &PyId_isatty);
         if (res == NULL)
             goto error;
-        isatty = PyLong_AsLong(res);
+        isatty = PyObject_IsTrue(res);
         Py_DECREF(res);
-        if (isatty == -1 && PyErr_Occurred())
+        if (isatty < 0)
             goto error;
     }
 

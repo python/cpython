@@ -769,49 +769,29 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 4) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[3])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    interactive = _PyLong_AsInt(args[3]);
-    if (interactive == -1 && PyErr_Occurred()) {
+    interactive = PyObject_IsTrue(args[3]);
+    if (interactive < 0) {
         goto exit;
     }
     if (nargs < 5) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[4])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    wantobjects = _PyLong_AsInt(args[4]);
-    if (wantobjects == -1 && PyErr_Occurred()) {
+    wantobjects = PyObject_IsTrue(args[4]);
+    if (wantobjects < 0) {
         goto exit;
     }
     if (nargs < 6) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[5])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    wantTk = _PyLong_AsInt(args[5]);
-    if (wantTk == -1 && PyErr_Occurred()) {
+    wantTk = PyObject_IsTrue(args[5]);
+    if (wantTk < 0) {
         goto exit;
     }
     if (nargs < 7) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[6])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    sync = _PyLong_AsInt(args[6]);
-    if (sync == -1 && PyErr_Occurred()) {
+    sync = PyObject_IsTrue(args[6]);
+    if (sync < 0) {
         goto exit;
     }
     if (nargs < 8) {
@@ -912,4 +892,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=da0115c470aac1c0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=94c0701cf3e9e70b input=a9049054013a1b77]*/

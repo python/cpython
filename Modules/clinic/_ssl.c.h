@@ -694,13 +694,8 @@ _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *const *args, Py_ssiz
         goto exit;
     }
     sock = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    server_side = _PyLong_AsInt(args[1]);
-    if (server_side == -1 && PyErr_Occurred()) {
+    server_side = PyObject_IsTrue(args[1]);
+    if (server_side < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -774,13 +769,8 @@ _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *const *args, Py_ssize_t
         goto exit;
     }
     outgoing = (PySSLMemoryBIO *)args[1];
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    server_side = _PyLong_AsInt(args[2]);
-    if (server_side == -1 && PyErr_Occurred()) {
+    server_side = PyObject_IsTrue(args[2]);
+    if (server_side < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -1482,4 +1472,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=aa4947067c3fef2d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=841b449d27d4208e input=a9049054013a1b77]*/

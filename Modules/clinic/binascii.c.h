@@ -70,13 +70,8 @@ binascii_b2a_uu(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    backtick = _PyLong_AsInt(args[1]);
-    if (backtick == -1 && PyErr_Occurred()) {
+    backtick = PyObject_IsTrue(args[1]);
+    if (backtick < 0) {
         goto exit;
     }
 skip_optional_kwonly:
@@ -159,13 +154,8 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    newline = _PyLong_AsInt(args[1]);
-    if (newline == -1 && PyErr_Occurred()) {
+    newline = PyObject_IsTrue(args[1]);
+    if (newline < 0) {
         goto exit;
     }
 skip_optional_kwonly:
@@ -689,13 +679,8 @@ binascii_a2b_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    header = _PyLong_AsInt(args[1]);
-    if (header == -1 && PyErr_Occurred()) {
+    header = PyObject_IsTrue(args[1]);
+    if (header < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -754,13 +739,8 @@ binascii_b2a_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto skip_optional_pos;
     }
     if (args[1]) {
-        if (PyFloat_Check(args[1])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
-        quotetabs = _PyLong_AsInt(args[1]);
-        if (quotetabs == -1 && PyErr_Occurred()) {
+        quotetabs = PyObject_IsTrue(args[1]);
+        if (quotetabs < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -768,26 +748,16 @@ binascii_b2a_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
-        istext = _PyLong_AsInt(args[2]);
-        if (istext == -1 && PyErr_Occurred()) {
+        istext = PyObject_IsTrue(args[2]);
+        if (istext < 0) {
             goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (PyFloat_Check(args[3])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    header = _PyLong_AsInt(args[3]);
-    if (header == -1 && PyErr_Occurred()) {
+    header = PyObject_IsTrue(args[3]);
+    if (header < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -801,4 +771,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=e13bd02ac40496f0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=737cae0d4e91d26a input=a9049054013a1b77]*/

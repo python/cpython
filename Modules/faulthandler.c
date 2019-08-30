@@ -267,7 +267,7 @@ faulthandler_dump_traceback_py(PyObject *self,
     int fd;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|Oi:dump_traceback", kwlist,
+        "|Op:dump_traceback", kwlist,
         &file, &all_threads))
         return NULL;
 
@@ -529,7 +529,7 @@ faulthandler_py_enable(PyObject *self, PyObject *args, PyObject *kwargs)
     PyThreadState *tstate;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|Oi:enable", kwlist, &file, &all_threads))
+        "|Op:enable", kwlist, &file, &all_threads))
         return NULL;
 
     fd = faulthandler_get_fileno(&file);
@@ -902,7 +902,7 @@ faulthandler_register_py(PyObject *self,
     int err;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i|Oii:register", kwlist,
+        "i|Opp:register", kwlist,
         &signum, &file, &all_threads, &chain))
         return NULL;
 
