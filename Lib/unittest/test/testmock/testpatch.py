@@ -1651,7 +1651,7 @@ class PatchTest(unittest.TestCase):
             p1.stop()
         self.assertEqual(squizz.squozz, 3)
 
-    def test_patch_propagrates_exc_on_exit(self):
+    def test_patch_propagates_exc_on_exit(self):
         class holder:
             exc_info = None, None, None
 
