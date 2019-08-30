@@ -2209,7 +2209,7 @@ class ThreadedEchoServer(threading.Thread):
             self.running = False
             self.sock = connsock
             self.addr = addr
-            self.sock.setblocking(True)
+            self.sock.setblocking(1)
             self.sslconn = None
             threading.Thread.__init__(self)
             self.daemon = True
@@ -3255,7 +3255,7 @@ class ThreadedTests(unittest.TestCase):
         wrapped = False
         with server:
             s = socket.socket()
-            s.setblocking(True)
+            s.setblocking(1)
             s.connect((HOST, server.port))
             if support.verbose:
                 sys.stdout.write("\n")
