@@ -1,0 +1,733 @@
+.. bpo: 34155
+.. date: 2019-05-04-13-33-37
+.. nonce: MJll68
+.. release date: 2019-08-29
+.. section: Security
+
+Fix parsing of invalid email addresses with more than one ``@`` (e.g.
+a@b@c.com.) to not return the part before 2nd ``@`` as valid email address.
+Patch by maxking & jpic.
+
+..
+
+.. bpo: 37947
+.. date: 2019-08-26-04-09-57
+.. nonce: mzAQtB
+.. section: Core and Builtins
+
+Adjust correctly the recursion level in the symtable generation for named
+expressions. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 37830
+.. date: 2019-08-17-18-41-59
+.. nonce: fNfMbz
+.. section: Core and Builtins
+
+Fixed compilation of :keyword:`break` and :keyword:`continue` in the
+:keyword:`finally` block when the corresponding :keyword:`try` block
+contains :keyword:`return` with a non-constant value.
+
+..
+
+.. bpo: 32912
+.. date: 2019-08-06-14-03-59
+.. nonce: UDwSMJ
+.. section: Core and Builtins
+
+Reverted :issue:`32912`: emitting :exc:`SyntaxWarning` instead of
+:exc:`DeprecationWarning` for invalid escape sequences in string and bytes
+literals.
+
+..
+
+.. bpo: 37757
+.. date: 2019-08-05-14-22-59
+.. nonce: lRv5HX
+.. section: Core and Builtins
+
+:pep:`572`: As described in the PEP, assignment expressions now raise
+:exc:`SyntaxError` when their interaction with comprehension scoping results
+in an ambiguous target scope.
+
+The ``TargetScopeError`` subclass originally proposed by the PEP has been
+removed in favour of just raising regular syntax errors for the disallowed
+cases.
+
+..
+
+.. bpo: 36311
+.. date: 2019-08-02-15-01-33
+.. nonce: uY5vt-
+.. section: Core and Builtins
+
+Decoding bytes objects larger than 2GiB is faster and no longer fails when a
+multibyte characters spans a chunk boundary.
+
+..
+
+.. bpo: 37433
+.. date: 2019-06-27-15-01-14
+.. nonce: amNGqr
+.. section: Core and Builtins
+
+Fix ``SyntaxError`` indicator printing too many spaces for multi-line
+strings - by Anthony Sottile.
+
+..
+
+.. bpo: 20523
+.. date: 2019-02-15-20-42-36
+.. nonce: rRLrvr
+.. section: Core and Builtins
+
+``pdb.Pdb`` supports ~/.pdbrc in Windows 7. Patch by Tim Hopper and Dan
+Lidral-Porter.
+
+..
+
+.. bpo: 37834
+.. date: 2019-08-29-16-41-36
+.. nonce: FThnsh
+.. section: Library
+
+Prevent shutil.rmtree exception when built on non-Windows system without fd
+system call support, like older versions of macOS.
+
+..
+
+.. bpo: 37965
+.. date: 2019-08-28-14-04-18
+.. nonce: 7xGE-C
+.. section: Library
+
+Fix C compiler warning caused by distutils.ccompiler.CCompiler.has_function.
+
+..
+
+.. bpo: 37960
+.. date: 2019-08-27-10-52-13
+.. nonce: CTY7Lw
+.. section: Library
+
+``repr()`` of buffered and text streams now silences only expected
+exceptions when get the value of "name" and "mode" attributes.
+
+..
+
+.. bpo: 37951
+.. date: 2019-08-27-10-03-48
+.. nonce: MfRQgL
+.. section: Library
+
+Most features of the subprocess module now work again in subinterpreters.
+Only *preexec_fn* is restricted in subinterpreters.
+
+..
+
+.. bpo: 36205
+.. date: 2019-08-27-03-53-26
+.. nonce: AfkGRl
+.. section: Library
+
+Fix the rusage implementation of time.process_time() to correctly report the
+sum of the system and user CPU time.
+
+..
+
+.. bpo: 37950
+.. date: 2019-08-26-10-45-51
+.. nonce: -K1IKT
+.. section: Library
+
+Fix :func:`ast.dump` when call with incompletely initialized node.
+
+..
+
+.. bpo: 34679
+.. date: 2019-08-25-18-07-48
+.. nonce: HECzL7
+.. section: Library
+
+Restores instantiation of Windows IOCP event loops from the non-main thread.
+
+..
+
+.. bpo: 36917
+.. date: 2019-08-25-14-56-42
+.. nonce: GBxdw2
+.. section: Library
+
+Add default implementation of the :meth:`ast.NodeVisitor.visit_Constant`
+method which emits a deprecation warning and calls corresponding methody
+``visit_Num()``, ``visit_Str()``, etc.
+
+..
+
+.. bpo: 37798
+.. date: 2019-08-24-16-54-49
+.. nonce: 7mRQCk
+.. section: Library
+
+Update test_statistics.py to verify that the statistics module works well
+for both C and Python implementations. Patch by Dong-hee Na
+
+..
+
+.. bpo: 26589
+.. date: 2019-08-23-00-55-19
+.. nonce: M1xyxG
+.. section: Library
+
+Added a new status code to the http module: 451
+UNAVAILABLE_FOR_LEGAL_REASONS
+
+..
+
+.. bpo: 37915
+.. date: 2019-08-22-16-13-27
+.. nonce: xyoZI5
+.. section: Library
+
+Fix a segmentation fault that appeared when comparing instances of
+``datetime.timezone`` and ``datetime.tzinfo`` objects. Patch by Pablo
+Galindo.
+
+..
+
+.. bpo: 37868
+.. date: 2019-08-17-22-33-54
+.. nonce: hp64fi
+.. section: Library
+
+Fix dataclasses.is_dataclass when given an instance that never raises
+AttributeError in __getattr__.  That is, an object that returns something
+for __dataclass_fields__ even if it's not a dataclass.
+
+..
+
+.. bpo: 37811
+.. date: 2019-08-14-21-41-07
+.. nonce: d1xYj7
+.. section: Library
+
+Fix ``socket`` module's ``socket.connect(address)`` function being unable to
+establish connection in case of interrupted system call. The problem was
+observed on all OSes which ``poll(2)`` system call can take only
+non-negative integers and -1 as a timeout value.
+
+..
+
+.. bpo: 21131
+.. date: 2019-08-14-15-34-23
+.. nonce: 0MMQRi
+.. section: Library
+
+Fix ``faulthandler.register(chain=True)`` stack. faulthandler now allocates
+a dedicated stack of ``SIGSTKSZ*2`` bytes, instead of just ``SIGSTKSZ``
+bytes. Calling the previous signal handler in faulthandler signal handler
+uses more than ``SIGSTKSZ`` bytes of stack memory on some platforms.
+
+..
+
+.. bpo: 37798
+.. date: 2019-08-14-13-51-24
+.. nonce: AmXrik
+.. section: Library
+
+Add C fastpath for statistics.NormalDist.inv_cdf() Patch by Dong-hee Na
+
+..
+
+.. bpo: 37819
+.. date: 2019-08-11-10-34-19
+.. nonce: LVJls-
+.. section: Library
+
+Add Fraction.as_integer_ratio() to match the corresponding methods in bool,
+int, float, and decimal.
+
+..
+
+.. bpo: 37810
+.. date: 2019-08-10-12-33-27
+.. nonce: d4zbvB
+.. section: Library
+
+Fix :mod:`difflib` ``?`` hint in diff output when dealing with tabs.  Patch
+by Anthony Sottile.
+
+..
+
+.. bpo: 37772
+.. date: 2019-08-07-23-48-09
+.. nonce: hLCvdn
+.. section: Library
+
+In ``zipfile.Path``, when adding implicit dirs, ensure that ancestral
+directories are added and that duplicates are excluded.
+
+..
+
+.. bpo: 28292
+.. date: 2019-08-04-11-47-58
+.. nonce: vkihH5
+.. section: Library
+
+Mark calendar.py helper functions as being private.  The follows PEP 8
+guidance to maintain the style conventions in the module and it addresses a
+known case of user confusion.
+
+..
+
+.. bpo: 18049
+.. date: 2019-08-02-16-44-42
+.. nonce: OA4qBL
+.. section: Library
+
+Add definition of THREAD_STACK_SIZE for AIX in Python/thread_pthread.h The
+default thread stacksize caused crashes with the default recursion limit
+Patch by M Felt
+
+..
+
+.. bpo: 37738
+.. date: 2019-08-01-17-11-16
+.. nonce: A3WWcT
+.. section: Library
+
+Fix the implementation of curses ``addch(str, color_pair)``: pass the color
+pair to ``setcchar()``, instead of always passing 0 as the color pair.
+
+..
+
+.. bpo: 37723
+.. date: 2019-07-31-16-49-01
+.. nonce: zq6tw8
+.. section: Library
+
+Fix performance regression on regular expression parsing with huge character
+sets. Patch by Yann Vaginay.
+
+..
+
+.. bpo: 32178
+.. date: 2019-07-30-22-41-05
+.. nonce: X-IFLe
+.. section: Library
+
+Fix IndexError in :mod:`email` package when trying to parse invalid address
+fields starting with ``:``.
+
+..
+
+.. bpo: 37685
+.. date: 2019-07-28-22-25-25
+.. nonce: _3bN9f
+.. section: Library
+
+Fixed comparisons of :class:`datetime.timedelta` and
+:class:`datetime.timezone`.
+
+..
+
+.. bpo: 37695
+.. date: 2019-07-27-20-21-03
+.. nonce: QANdvg
+.. section: Library
+
+Correct :func:`curses.unget_wch` error message.  Patch by Anthony Sottile.
+
+..
+
+.. bpo: 37354
+.. date: 2019-07-25-10-28-40
+.. nonce: RT3_3H
+.. section: Library
+
+Make Activate.ps1 Powershell script static to allow for signing it.
+
+..
+
+.. bpo: 37664
+.. date: 2019-07-24-18-27-44
+.. nonce: o-GYZC
+.. section: Library
+
+Update wheels bundled with ensurepip (pip 19.2.3 and setuptools 41.2.0)
+
+..
+
+.. bpo: 37642
+.. date: 2019-07-21-20-59-31
+.. nonce: L61Bvy
+.. section: Library
+
+Allowed the pure Python implementation of :class:`datetime.timezone` to
+represent sub-minute offsets close to minimum and maximum boundaries,
+specifically in the ranges (23:59, 24:00) and (-23:59, 24:00). Patch by
+Ngalim Siregar
+
+..
+
+.. bpo: 16970
+.. date: 2019-07-19-01-46-56
+.. nonce: GEASf5
+.. section: Library
+
+Adding a value error when an invalid value in passed to nargs Patch by
+Robert Leenders
+
+..
+
+.. bpo: 37587
+.. date: 2019-07-13-16-02-48
+.. nonce: fd-1aF
+.. section: Library
+
+Make json.loads faster for long strings. (Patch by Marco Paolini)
+
+..
+
+.. bpo: 18378
+.. date: 2019-07-13-13-40-12
+.. nonce: NHcojp
+.. section: Library
+
+Recognize "UTF-8" as a valid value for LC_CTYPE in locale._parse_localename.
+
+..
+
+.. bpo: 37531
+.. date: 2019-07-09-19-38-26
+.. nonce: GX7s8S
+.. section: Library
+
+"python3 -m test -jN --timeout=TIMEOUT" now kills a worker process if it
+runs longer than *TIMEOUT* seconds.
+
+..
+
+.. bpo: 37482
+.. date: 2019-07-09-11-20-21
+.. nonce: auzvev
+.. section: Library
+
+Fix serialization of display name in originator or destination address
+fields with both encoded words and special chars.
+
+..
+
+.. bpo: 37372
+.. date: 2019-06-22-12-30-00
+.. nonce: kIKqZ6
+.. section: Library
+
+Fix error unpickling datetime.time objects from Python 2 with seconds>=24.
+Patch by Justin Blanchard.
+
+..
+
+.. bpo: 37085
+.. date: 2019-06-18-16-29-31
+.. nonce: GeYaD6
+.. section: Library
+
+Add the optional Linux SocketCAN Broadcast Manager constants, used as flags
+to configure the BCM behaviour, in the socket module.  Patch by Karl Ding.
+
+..
+
+.. bpo: 36871
+.. date: 2019-05-12-12-58-37
+.. nonce: 6xiEHZ
+.. section: Library
+
+Ensure method signature is used instead of constructor signature of a class
+while asserting mock object against method calls. Patch by Karthikeyan
+Singaravelan.
+
+..
+
+.. bpo: 36582
+.. date: 2019-05-07-17-42-36
+.. nonce: L_dxR6
+.. section: Library
+
+Fix ``UserString.encode()`` to correctly return ``bytes`` rather than a
+``UserString`` instance.
+
+..
+
+.. bpo: 34775
+.. date: 2018-09-23-03-18-52
+.. nonce: vHeuHk
+.. section: Library
+
+Division handling of PurePath now returns NotImplemented instead of raising
+a TypeError when passed something other than an instance of str or PurePath.
+Patch by Roger Aiudi.
+
+..
+
+.. bpo: 37979
+.. date: 2019-08-29-10-40-05
+.. nonce: TAUx_E
+.. section: Documentation
+
+Added a link to dateutil.parser.isoparse in the datetime.fromisoformat
+documentation. Patch by Paul Ganssle
+
+..
+
+.. bpo: 37759
+.. date: 2019-08-04-19-20-58
+.. nonce: EHRF4i
+.. section: Documentation
+
+Beginning edits to Whatsnew 3.8
+
+..
+
+.. bpo: 37726
+.. date: 2019-07-31-11-40-06
+.. nonce: h-3o9a
+.. section: Documentation
+
+Stop recommending getopt in the tutorial for command line argument parsing
+and promote argparse.
+
+..
+
+.. bpo: 37256
+.. date: 2019-07-16-14-48-12
+.. nonce: qJTrBb
+.. section: Documentation
+
+Fix wording of arguments for :class:`Request` in :mod:`urllib.request`
+
+..
+
+.. bpo: 37004
+.. date: 2019-05-22-04-30-07
+.. nonce: BRgxrt
+.. section: Documentation
+
+In the documentation for difflib, a note was added explicitly warning that
+the results of SequenceMatcher's ratio method may depend on the order of the
+input strings.
+
+..
+
+.. bpo: 36487
+.. date: 2019-04-02-19-23-00
+.. nonce: Jg6-MG
+.. section: Documentation
+
+Make C-API docs clear about what the "main" interpreter is.
+
+..
+
+.. bpo: 37805
+.. date: 2019-08-25-19-51-46
+.. nonce: Kl1sti
+.. section: Tests
+
+Add tests for json.dump(..., skipkeys=True). Patch by Dong-hee Na.
+
+..
+
+.. bpo: 37707
+.. date: 2019-07-29-11-36-16
+.. nonce: Sm-dGk
+.. section: Build
+
+Mark some individual tests to skip when --pgo is used.  The tests marked
+increase the PGO task time significantly and likely don't help improve
+optimization of the final executable.
+
+..
+
+.. bpo: 37549
+.. date: 2019-08-22-09-04-44
+.. nonce: TpKI3M
+.. section: Windows
+
+:func:`os.dup` no longer fails for standard streams on Windows 7.
+
+..
+
+.. bpo: 1311
+.. date: 2019-08-21-12-58-18
+.. nonce: BoW1wU
+.. section: Windows
+
+The ``nul`` file on Windows now returns True from :func:`~os.path.exists`
+and a valid result from :func:`os.stat` with ``S_IFCHR`` set.
+
+..
+
+.. bpo: 9949
+.. date: 2019-08-14-13-40-15
+.. nonce: zW45Ks
+.. section: Windows
+
+Enable support for following symlinks in :func:`os.realpath`.
+
+..
+
+.. bpo: 37834
+.. date: 2019-08-12-12-00-24
+.. nonce: VB2QVj
+.. section: Windows
+
+Treat all name surrogate reparse points on Windows in :func:`os.lstat` and
+other reparse points as regular files in :func:`os.stat`.
+
+..
+
+.. bpo: 36266
+.. date: 2019-08-08-18-05-27
+.. nonce: x4eZU3
+.. section: Windows
+
+Add the module name in the formatted error message when DLL load fail
+happens during module import in ``_PyImport_FindSharedFuncptrWindows()``.
+Patch by Srinivas Nyayapati.
+
+..
+
+.. bpo: 25172
+.. date: 2019-08-06-18-09-18
+.. nonce: Akreij
+.. section: Windows
+
+Trying to import the :mod:`crypt` module on Windows will result in an
+:exc:`ImportError` with a message explaining that the module isn't supported
+on Windows. On other platforms, if the underlying ``_crypt`` module is not
+available, the ImportError will include a message explaining the problem.
+
+..
+
+.. bpo: 37778
+.. date: 2019-08-06-13-54-12
+.. nonce: AY1XhH
+.. section: Windows
+
+Fixes the icons used for file associations to the Microsoft Store package.
+
+..
+
+.. bpo: 37734
+.. date: 2019-08-06-09-35-12
+.. nonce: EoJ9Nh
+.. section: Windows
+
+Fix use of registry values to launch Python from Microsoft Store app.
+
+..
+
+.. bpo: 28269
+.. date: 2019-05-05-05-23-34
+.. nonce: -MOHI7
+.. section: Windows
+
+Replace use of :c:func:`strcasecmp` for the system function
+:c:func:`_stricmp`. Patch by Minmin Gong.
+
+..
+
+.. bpo: 18049
+.. date: 2019-07-13-15-58-18
+.. nonce: MklhQQ
+.. section: macOS
+
+Increase the default stack size of threads from 5MB to 16MB on macOS, to
+match the stack size of the main thread. This avoids crashes on deep
+recursion in threads.
+
+..
+
+.. bpo: 37824
+.. date: 2019-08-26-00-41-53
+.. nonce: YY5jAI
+.. section: IDLE
+
+Properly handle user input warnings in IDLE shell. Cease turning
+SyntaxWarnings into SyntaxErrors.
+
+..
+
+.. bpo: 37929
+.. date: 2019-08-24-22-00-33
+.. nonce: jb7523
+.. section: IDLE
+
+IDLE Settings dialog now closes properly when there is no shell window.
+
+..
+
+.. bpo: 37849
+.. date: 2019-08-14-09-43-15
+.. nonce: -bcYF3
+.. section: IDLE
+
+Fixed completions list appearing too high or low when shown above the
+current line.
+
+..
+
+.. bpo: 36419
+.. date: 2019-08-04-17-10-01
+.. nonce: TJZqOc
+.. section: IDLE
+
+Refactor IDLE autocomplete and improve testing.
+
+..
+
+.. bpo: 37748
+.. date: 2019-08-04-15-27-50
+.. nonce: 0vf6pg
+.. section: IDLE
+
+Reorder the Run menu.  Put the most common choice, Run Module, at the top.
+
+..
+
+.. bpo: 37942
+.. date: 2019-08-24-12-11-30
+.. nonce: 7H8N9a
+.. section: Tools/Demos
+
+Improve ArgumentClinic converter for floats.
+
+..
+
+.. bpo: 37034
+.. date: 2019-05-27-16-13-08
+.. nonce: zbTgy8
+.. section: Tools/Demos
+
+Argument Clinic now uses the argument name on errors with keyword-only
+argument instead of their position. Patch contributed by Rémi Lapeyre.
+
+..
+
+.. bpo: 36763
+.. date: 2019-08-23-18-45-11
+.. nonce: q3Kh8Z
+.. section: C API
+
+Options added by ``PySys_AddXOption()`` are now handled the same way than
+``PyConfig.xoptions`` and command line ``-X`` options.
+
+..
+
+.. bpo: 37926
+.. date: 2019-08-23-11-35-55
+.. nonce: hnI5IQ
+.. section: C API
+
+Fix a crash in ``PySys_SetArgvEx(0, NULL, 0)``.
