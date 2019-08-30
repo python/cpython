@@ -48,7 +48,7 @@ class IoctlTests(unittest.TestCase):
         else:
             buf.append(fill)
         with open("/dev/tty", "rb") as tty:
-            r = fcntl.ioctl(tty, termios.TIOCGPGRP, buf, 1)
+            r = fcntl.ioctl(tty, termios.TIOCGPGRP, buf, True)
         rpgrp = buf[0]
         self.assertEqual(r, 0)
         self.assertIn(rpgrp, ids)
