@@ -115,7 +115,7 @@ tooltip.py # unused
 
 IDLE MENUS
 Top level items and most submenu items are defined in mainmenu.
-Extenstions add submenu items when active.  The names given are
+Extensions add submenu items when active.  The names given are
 found, quoted, in one of these modules, paired with a '<<pseudoevent>>'.
 Each pseudoevent is bound to an event handler.  Some event handlers
 call another function that does the actual work.  The annotations below
