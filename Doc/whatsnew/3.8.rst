@@ -767,7 +767,7 @@ numbers::
 
     >>> prior = 0.8
     >>> likelihoods = [0.625, 0.84, 0.30]
-    >>> (link: http://math.prod) math.prod(likelihoods, start=prior)
+    >>> math.prod(likelihoods, start=prior)
     0.126
 
 (Contributed by Pablo Galindo in :issue:`35606`)
