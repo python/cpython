@@ -2548,10 +2548,6 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *item = PyTuple_GET_ITEM(args, i);
         PyObject *it = PyObject_GetIter(item);
         if (it == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError))
-                PyErr_Format(PyExc_TypeError,
-                    "zip argument #%zd must support iteration",
-                    i+1);
             Py_DECREF(ittuple);
             return NULL;
         }

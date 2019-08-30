@@ -971,6 +971,18 @@ class TestBasicOps(unittest.TestCase):
             self.pickletest(proto, zip_longest("abc", "defgh", fillvalue=1))
             self.pickletest(proto, zip_longest("", "defgh"))
 
+    def test_zip_longest_bad_iterable(self):
+        exception = TypeError()
+
+        class BadIterable:
+            def __iter__(self):
+                raise exception
+
+        with self.assertRaises(TypeError) as cm:
+            zip_longest(BadIterable())
+
+        self.assertIs(cm.exception, exception)
+
     def test_bug_7244(self):
 
         class Repeater:

@@ -1477,6 +1477,18 @@ class BuiltinTest(unittest.TestCase):
             z1 = zip(a, b)
             self.check_iter_pickle(z1, t, proto)
 
+    def test_zip_bad_iterable(self):
+        exception = TypeError()
+
+        class BadIterable:
+            def __iter__(self):
+                raise exception
+
+        with self.assertRaises(TypeError) as cm:
+            zip(BadIterable())
+
+        self.assertIs(cm.exception, exception)
+
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test
         #  the specifics of the various formatters
