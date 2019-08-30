@@ -935,6 +935,10 @@ class EWWhiteSpaceTerminal(WhiteSpaceTerminal):
         return ''
 
 
+class _InvalidEwError(errors.HeaderParseError):
+    """Invalid encoded word found while parsing headers."""
+
+
 # XXX these need to become classes and used as instances so
 # that a program can't change them in a parse tree and screw
 # up other parse trees.  Maybe should have  tests for that, too.
@@ -1054,7 +1058,7 @@ def get_encoded_word(value):
     try:
         text, charset, lang, defects = _ew.decode('=?' + tok + '?=')
     except ValueError:
-        raise errors.InvalidEwError(
+        raise _InvalidEwError(
             "encoded word format invalid: '{}'".format(ew.cte))
     ew.charset = charset
     ew.lang = lang
@@ -1108,7 +1112,7 @@ def get_unstructured(value):
         if value.startswith('=?'):
             try:
                 token, value = get_encoded_word(value)
-            except errors.InvalidEwError:
+            except _InvalidEwError:
                 valid_ew = False
             except errors.HeaderParseError:
                 # XXX: Need to figure out how to register defects when
