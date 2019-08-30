@@ -4523,7 +4523,7 @@ check_pyobject_forbidden_bytes_is_freed(PyObject *self, PyObject *Py_UNUSED(args
     /* Initialize reference count to avoid early crash in ceval or GC */
     Py_REFCNT(op) = 1;
     /* ob_type field is after the memory block: part of "forbidden bytes"
-       when using debug hooks on memory allocatrs! */
+       when using debug hooks on memory allocators! */
     return test_pyobject_is_freed("check_pyobject_forbidden_bytes_is_freed", op);
 }
 
