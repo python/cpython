@@ -32,7 +32,7 @@ class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
 class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
     def test_import_nonexistent_module(self):
         # Ensure that the MetadataPathFinder does not crash an import of a
-        # non-existant module.
+        # non-existent module.
         with self.assertRaises(ImportError):
             importlib.import_module('does_not_exist')
 

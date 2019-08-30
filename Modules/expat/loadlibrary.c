@@ -53,12 +53,12 @@ typedef HMODULE (APIENTRY *LOADLIBRARYEX_FN)(LPCTSTR, HANDLE, DWORD);
 /* See function definitions in winbase.h */
 #ifdef UNICODE
 #  ifdef _WIN32_WCE
-#    define LOADLIBARYEX  L"LoadLibraryExW"
+#    define LOADLIBRARYEX  L"LoadLibraryExW"
 #  else
-#    define LOADLIBARYEX  "LoadLibraryExW"
+#    define LOADLIBRARYEX  "LoadLibraryExW"
 #  endif
 #else
-#  define LOADLIBARYEX    "LoadLibraryExA"
+#  define LOADLIBRARYEX    "LoadLibraryExA"
 #endif
 
 
@@ -88,7 +88,7 @@ HMODULE _Expat_LoadLibrary(LPCTSTR filename)
 
   /* Attempt to find LoadLibraryEx() which is only available on Windows 2000
      and above */
-  pLoadLibraryEx = (LOADLIBRARYEX_FN) GetProcAddress(hKernel32, LOADLIBARYEX);
+  pLoadLibraryEx = (LOADLIBRARYEX_FN) GetProcAddress(hKernel32, LOADLIBRARYEX);
 
   /* Detect if there's already a path in the filename and load the library if
      there is. Note: Both back slashes and forward slashes have been supported

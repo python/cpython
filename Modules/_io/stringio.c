@@ -899,7 +899,7 @@ stringio_setstate(stringio *self, PyObject *state)
 
     /* Set carefully the position value. Alternatively, we could use the seek
        method instead of modifying self->pos directly to better protect the
-       object internal state against errneous (or malicious) inputs. */
+       object internal state against erroneous (or malicious) inputs. */
     position_obj = PyTuple_GET_ITEM(state, 2);
     if (!PyLong_Check(position_obj)) {
         PyErr_Format(PyExc_TypeError,

@@ -1379,8 +1379,8 @@ an :term:`importer`.
    bytecode file. An empty string represents no optimization, so
    ``/foo/bar/baz.py`` with an *optimization* of ``''`` will result in a
    bytecode path of ``/foo/bar/__pycache__/baz.cpython-32.pyc``. ``None`` causes
-   the interpter's optimization level to be used. Any other value's string
-   representation being used, so ``/foo/bar/baz.py`` with an *optimization* of
+   the interpreter's optimization level to be used. Any other value's string
+   representation is used, so ``/foo/bar/baz.py`` with an *optimization* of
    ``2`` will lead to the bytecode path of
    ``/foo/bar/__pycache__/baz.cpython-32.opt-2.pyc``. The string representation
    of *optimization* can only be alphanumeric, else :exc:`ValueError` is raised.

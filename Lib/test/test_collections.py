@@ -1927,7 +1927,7 @@ class TestCounter(unittest.TestCase):
                  'r', 'c', 'd', ' ', 's', 's', 'i', 'i', 'm', 'm', 'l'])
 
         # Math operations order first by the order encountered in the left
-        # operand and then by the order encounted in the right operand.
+        # operand and then by the order encountered in the right operand.
         ps = 'aaabbcdddeefggghhijjjkkl'
         qs = 'abbcccdeefffhkkllllmmnno'
         order = {letter: i for i, letter in enumerate(dict.fromkeys(ps + qs))}

@@ -3025,7 +3025,7 @@ order (MRO) for bases """
         # Testing a str subclass used as dict key ..
 
         class cistr(str):
-            """Sublcass of str that computes __eq__ case-insensitively.
+            """Subclass of str that computes __eq__ case-insensitively.
 
             Also computes a hash code of the string in canonical form.
             """

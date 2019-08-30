@@ -48,7 +48,7 @@ def testformat(formatstr, args, output=None, limit=None, overflowok=False):
 
 def testcommon(formatstr, args, output=None, limit=None, overflowok=False):
     # if formatstr is a str, test str, bytes, and bytearray;
-    # otherwise, test bytes and bytearry
+    # otherwise, test bytes and bytearray
     if isinstance(formatstr, str):
         testformat(formatstr, args, output, limit, overflowok)
         b_format = formatstr.encode('ascii')

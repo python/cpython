@@ -1255,7 +1255,7 @@ Support wrapped callables in doctest. Patch by Claudiu Popa.
 .. nonce: -sW7gk
 .. section: Library
 
-Make sure selectors.EpollSelecrtor.select() works when no FD is registered.
+Make sure selectors.EpollSelector.select() works when no FD is registered.
 
 ..
 
