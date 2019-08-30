@@ -229,7 +229,7 @@ class LocalWinregTests(BaseWinregTests):
         h.Close()
         self.assertEqual(h.handle, 0)
 
-    def test_inexistant_remote_registry(self):
+    def test_nonexistent_remote_registry(self):
         connect = lambda: ConnectRegistry("abcdefghijkl", HKEY_CURRENT_USER)
         self.assertRaises(OSError, connect)
 
