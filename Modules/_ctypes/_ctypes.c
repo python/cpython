@@ -437,26 +437,27 @@ StructUnionType_paramfunc(CDataObject *self)
     void *ptr;
 
     if ((size_t)self->b_size > sizeof(void*)) {
-        void *new_ptr = PyMem_Malloc(self->b_size);
-        if (new_ptr == NULL)
+        ptr = PyMem_Malloc(self->b_size);
+        if (ptr == NULL) {
             return NULL;
-        memcpy(new_ptr, self->b_ptr, self->b_size);
+        }
+        memcpy(ptr, self->b_ptr, self->b_size);
 
+        /* Create a Python object which calls PyMem_Free(ptr) in
+           its deallocator. The object will be destroyed
+           at _ctypes_callproc() cleanup. */
         obj = (&StructParam_Type)->tp_alloc(&StructParam_Type, 0);
         if (obj == NULL) {
-            PyMem_Free(new_ptr);
+            PyMem_Free(ptr);
             return NULL;
         }
 
         StructParamObject *struct_param = (StructParamObject *)obj;
-        struct_param->ptr = new_ptr;
-
-        ptr = new_ptr;
+        struct_param->ptr = ptr;
     } else {
+        ptr = self->b_ptr;
         obj = (PyObject *)self;
         Py_INCREF(obj);
-
-        ptr = self->b_ptr;
     }
 
     parg = PyCArgObject_new();
