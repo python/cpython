@@ -688,8 +688,8 @@ en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
         def mock_get_command_stdout(command, args):
             return io.BytesIO(data.encode())
 
-        # The above data is specific to AIX - with '.' as _MAC_DELIM
-        # and strings shorter than 17 bytes (no leading 0).
+        # The above data is from AIX - with '.' as _MAC_DELIM and strings
+        # shorter than 17 bytes (no leading 0). (_MAC_OMITS_LEADING_ZEROES=True)
         with mock.patch.multiple(self.uuid,
                                  _MAC_DELIM=b'.',
                                  _MAC_OMITS_LEADING_ZEROES=True,
