@@ -23,10 +23,10 @@ init([files]) -- parse a list of files, default knownfiles (on Windows, the
 read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
-import posixpath
 import os
 import sys
-import urllib
+import posixpath
+import urllib.parse
 try:
     import winreg as _winreg
 except ImportError:
