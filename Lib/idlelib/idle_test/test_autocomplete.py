@@ -408,7 +408,7 @@ class OpenCompletionsTest(unittest.TestCase):
     def test_open_completions_bracket_not_after_dict(self):
         acp = self.autocomplete
 
-        for code in ['[', 'a[', 'globals()[[']:
+        for code in ['[', 'a[', '{}[', '{1: 1}[', 'globals()[[']:
             for oc_args in (ac.TAB, ac.FORCE, ac.TRY_D):
                 with self.subTest(code=code, oc_args=oc_args):
                     self.text.delete('1.0', 'end')
