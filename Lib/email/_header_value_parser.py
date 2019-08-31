@@ -935,6 +935,10 @@ class EWWhiteSpaceTerminal(WhiteSpaceTerminal):
         return ''
 
 
+class _InvalidEwError(errors.HeaderParseError):
+    """Invalid encoded word found while parsing headers."""
+
+
 # XXX these need to become classes and used as instances so
 # that a program can't change them in a parse tree and screw
 # up other parse trees.  Maybe should have  tests for that, too.
@@ -1039,7 +1043,10 @@ def get_encoded_word(value):
         raise errors.HeaderParseError(
             "expected encoded word but found {}".format(value))
     remstr = ''.join(remainder)
-    if len(remstr) > 1 and remstr[0] in hexdigits and remstr[1] in hexdigits:
+    if (len(remstr) > 1 and
+        remstr[0] in hexdigits and
+        remstr[1] in hexdigits and
+        tok.count('?') < 2):
         # The ? after the CTE was followed by an encoded word escape (=XX).
         rest, *remainder = remstr.split('?=', 1)
         tok = tok + '?=' + rest
@@ -1051,7 +1058,7 @@ def get_encoded_word(value):
     try:
         text, charset, lang, defects = _ew.decode('=?' + tok + '?=')
     except ValueError:
-        raise errors.HeaderParseError(
+        raise _InvalidEwError(
             "encoded word format invalid: '{}'".format(ew.cte))
     ew.charset = charset
     ew.lang = lang
@@ -1101,9 +1108,12 @@ def get_unstructured(value):
             token, value = get_fws(value)
             unstructured.append(token)
             continue
+        valid_ew = True
         if value.startswith('=?'):
             try:
                 token, value = get_encoded_word(value)
+            except _InvalidEwError:
+                valid_ew = False
             except errors.HeaderParseError:
                 # XXX: Need to figure out how to register defects when
                 # appropriate here.
@@ -1125,7 +1135,10 @@ def get_unstructured(value):
         # Split in the middle of an atom if there is a rfc2047 encoded word
         # which does not have WSP on both sides. The defect will be registered
         # the next time through the loop.
-        if rfc2047_matcher.search(tok):
+        # This needs to only be performed when the encoded word is valid;
+        # otherwise, performing it on an invalid encoded word can cause
+        # the parser to go in an infinite loop.
+        if valid_ew and rfc2047_matcher.search(tok):
             tok, *remainder = value.partition('=?')
         vtext = ValueTerminal(tok, 'vtext')
         _validate_xtext(vtext)
