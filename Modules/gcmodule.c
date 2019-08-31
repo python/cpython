@@ -1115,8 +1115,9 @@ collect(struct _gc_runtime_state *state, int generation,
     }
     if (state->debug & DEBUG_STATS) {
         double d = _PyTime_AsSecondsDouble(_PyTime_GetMonotonicClock() - t1);
-        PySys_FormatStderr(
-            "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
+        PySys_WriteStderr(
+            "gc: done, %" PY_FORMAT_SIZE_T "d unreachable, "
+            "%" PY_FORMAT_SIZE_T "d uncollectable, %.4fs elapsed\n",
             n+m, n, d);
     }
 
