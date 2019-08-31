@@ -319,7 +319,7 @@ PyCFunction_ClearFreeList(void)
 }
 
 void
-PyCFunction_Fini(void)
+_PyCFunction_Fini(void)
 {
     (void)PyCFunction_ClearFreeList();
 }

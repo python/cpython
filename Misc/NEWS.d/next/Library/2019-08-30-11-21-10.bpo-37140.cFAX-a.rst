@@ -1,0 +1,5 @@
+Fix a ctypes regression of Python 3.8. When a ctypes.Structure is passed by
+copy to a function, ctypes internals created a temporary object which had
+the side effect of calling the structure finalizer (__del__) twice. The
+Python semantics requires a finalizer to be called exactly once. Fix ctypes
+internals to no longer call the finalizer twice.

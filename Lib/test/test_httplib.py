@@ -7,6 +7,7 @@ import array
 import re
 import socket
 import threading
+import warnings
 
 import unittest
 TestCase = unittest.TestCase
@@ -1400,6 +1401,7 @@ class OfflineTest(TestCase):
             'PRECONDITION_REQUIRED',
             'TOO_MANY_REQUESTS',
             'REQUEST_HEADER_FIELDS_TOO_LARGE',
+            'UNAVAILABLE_FOR_LEGAL_REASONS',
             'INTERNAL_SERVER_ERROR',
             'NOT_IMPLEMENTED',
             'BAD_GATEWAY',
@@ -1759,8 +1761,11 @@ class HTTPSTest(TestCase):
         self.assertIs(h._context, context)
         self.assertFalse(h._context.post_handshake_auth)
 
-        h = client.HTTPSConnection('localhost', 443, context=context,
-                                   cert_file=CERT_localhost)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', 'key_file, cert_file and check_hostname are deprecated',
+                                    DeprecationWarning)
+            h = client.HTTPSConnection('localhost', 443, context=context,
+                                       cert_file=CERT_localhost)
         self.assertTrue(h._context.post_handshake_auth)
 
 

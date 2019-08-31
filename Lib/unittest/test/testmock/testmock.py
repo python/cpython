@@ -3,6 +3,7 @@ import re
 import sys
 import tempfile
 
+from test.support import ALWAYS_EQ
 import unittest
 from unittest.test.testmock.support import is_instance
 from unittest import mock
@@ -322,6 +323,8 @@ class MockTest(unittest.TestCase):
         self.assertFalse(mm != mock.ANY)
         self.assertTrue(mock.ANY == mm)
         self.assertFalse(mock.ANY != mm)
+        self.assertTrue(mm == ALWAYS_EQ)
+        self.assertFalse(mm != ALWAYS_EQ)
 
         call1 = mock.call(mock.MagicMock())
         call2 = mock.call(mock.ANY)
@@ -329,6 +332,11 @@ class MockTest(unittest.TestCase):
         self.assertFalse(call1 != call2)
         self.assertTrue(call2 == call1)
         self.assertFalse(call2 != call1)
+
+        self.assertTrue(call1 == ALWAYS_EQ)
+        self.assertFalse(call1 != ALWAYS_EQ)
+        self.assertFalse(call1 == 1)
+        self.assertTrue(call1 != 1)
 
 
     def test_assert_called_with(self):
@@ -1337,6 +1345,54 @@ class MockTest(unittest.TestCase):
                             mock.assert_has_calls,
                             list(reversed(these))
                         )
+
+
+    def test_assert_has_calls_nested_spec(self):
+        class Something:
+
+            def __init__(self): pass
+            def meth(self, a, b, c, d=None): pass
+
+            class Foo:
+
+                def __init__(self, a): pass
+                def meth1(self, a, b): pass
+
+        mock_class = create_autospec(Something)
+
+        for m in [mock_class, mock_class()]:
+            m.meth(1, 2, 3, d=1)
+            m.assert_has_calls([call.meth(1, 2, 3, d=1)])
+            m.assert_has_calls([call.meth(1, 2, 3, 1)])
+
+        mock_class.reset_mock()
+
+        for m in [mock_class, mock_class()]:
+            self.assertRaises(AssertionError, m.assert_has_calls, [call.Foo()])
+            m.Foo(1).meth1(1, 2)
+            m.assert_has_calls([call.Foo(1), call.Foo(1).meth1(1, 2)])
+            m.Foo.assert_has_calls([call(1), call().meth1(1, 2)])
+
+        mock_class.reset_mock()
+
+        invalid_calls = [call.meth(1),
+                         call.non_existent(1),
+                         call.Foo().non_existent(1),
+                         call.Foo().meth(1, 2, 3, 4)]
+
+        for kall in invalid_calls:
+            self.assertRaises(AssertionError,
+                              mock_class.assert_has_calls,
+                              [kall]
+            )
+
+
+    def test_assert_has_calls_nested_without_spec(self):
+        m = MagicMock()
+        m().foo().bar().baz()
+        m.one().two().three()
+        calls = call.one().two().three().call_list()
+        m.assert_has_calls(calls)
 
 
     def test_assert_has_calls_with_function_spec(self):

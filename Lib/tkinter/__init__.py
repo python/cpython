@@ -484,6 +484,8 @@ class Variable:
         Note: if the Variable's master matters to behavior
         also compare self._master == other._master
         """
+        if not isinstance(other, Variable):
+            return NotImplemented
         return self.__class__.__name__ == other.__class__.__name__ \
             and self._name == other._name
 
