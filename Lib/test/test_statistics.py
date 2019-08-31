@@ -1810,13 +1810,13 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         # Test mode with bimodal data.
         data = [1, 1, 2, 2, 2, 2, 3, 4, 5, 6, 6, 6, 6, 7, 8, 9, 9]
         assert data.count(2) == data.count(6) == 4
-        # mode() should return 2, the first encounted mode
+        # mode() should return 2, the first encountered mode
         self.assertEqual(self.func(data), 2)
 
     def test_unique_data(self):
         # Test mode when data points are all unique.
         data = list(range(10))
-        # mode() should return 0, the first encounted mode
+        # mode() should return 0, the first encountered mode
         self.assertEqual(self.func(data), 0)
 
     def test_none_data(self):

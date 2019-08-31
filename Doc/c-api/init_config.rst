@@ -876,7 +876,7 @@ Path Configuration
 If at least one "output field" is not set, Python computes the path
 configuration to fill unset fields. If
 :c:member:`~PyConfig.module_search_paths_set` is equal to 0,
-:c:member:`~PyConfig.module_search_paths` is overriden and
+:c:member:`~PyConfig.module_search_paths` is overridden and
 :c:member:`~PyConfig.module_search_paths_set` is set to 1.
 
 It is possible to completely ignore the function computing the default
