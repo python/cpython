@@ -4,6 +4,30 @@ import unittest
 import sys
 import cgitb
 
+class BadGetAttr:
+    """Support class to ValueError on getattr while examining the
+    traceback.
+    """
+    def __init__(self):
+        self._bad = False
+        self._h = self._fn
+    def __getattr__(self, attr):
+        if self._bad:
+            raise ValueError('getattr exception')
+        return self.__dict__['_'+attr]
+    def _fn(self):
+        self._bad = True
+        raise ValueError('real exception')
+
+class BadRepr:
+    """Support class to ValueError on repr while examining the
+    traceback."""
+    def __repr__(self):
+        raise ValueError('repr exception')
+    def fn(self):
+        raise ValueError('real exception')
+
+
 class TestCgitb(unittest.TestCase):
 
     def test_fonts(self):
@@ -68,17 +92,6 @@ class TestCgitb(unittest.TestCase):
         # ValueError from attribute look-up, the original exception
         # was lost.  Provoking this artificially involves a convoluted
         # dance.
-        class BadGetAttr:
-            def __init__(self):
-                self._bad = False
-                self._h = self._fn
-            def __getattr__(self, attr):
-                if self._bad:
-                    raise ValueError('getattr exception')
-                return self.__dict__['_'+attr]
-            def _fn(self):
-                self._bad = True
-                raise ValueError('real exception')
         bga = BadGetAttr()
         try:
             bga.h()
@@ -92,34 +105,17 @@ class TestCgitb(unittest.TestCase):
         # ValueError from attribute look-up, the original exception
         # was lost.  Provoking this artificially involves a convoluted
         # dance.
-        class BadGetAttr:
-            def __init__(self):
-                self._bad = False
-                self._h = self._fn
-            def __getattr__(self, attr):
-                if self._bad:
-                    raise ValueError('getattr exception')
-                return self.__dict__['_'+attr]
-            def _fn(self):
-                self._bad = True
-                raise ValueError('real exception')
         bga = BadGetAttr()
         try:
             bga.h()
         except ValueError as err:
             text = cgitb.text(sys.exc_info())
-            print(text)
             self.assertIn('ValueError', text)
             self.assertIn(str(err), text)
 
     def test_masking_repr_exception(self):
         # bpo 1047397: if examining the traceback provoked a
         # ValueError from a repr, the original exception was lost.
-        class BadRepr:
-            def __repr__(self):
-                raise ValueError('repr exception')
-            def fn(self):
-                raise ValueError('real exception')
         br = BadRepr()
         try:
             br.fn()
@@ -127,6 +123,17 @@ class TestCgitb(unittest.TestCase):
             html = cgitb.html(sys.exc_info())
             self.assertIn('ValueError', html)
             self.assertIn(str(err), html)
+
+    def test_masking_repr_exception(self):
+        # bpo 1047397: if examining the traceback provoked a
+        # ValueError from a repr, the original exception was lost.
+        br = BadRepr()
+        try:
+            br.fn()
+        except ValueError as err:
+            text = cgitb.text(sys.exc_info())
+            self.assertIn('ValueError', text)
+            self.assertIn(str(err), text)
 
 
 if __name__ == "__main__":
