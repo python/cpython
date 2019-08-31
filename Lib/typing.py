@@ -491,7 +491,7 @@ class ForwardRef(_Final, _root=True):
 
     __slots__ = ('__forward_arg__', '__forward_code__',
                  '__forward_evaluated__', '__forward_value__',
-                 '__forward_is_argument__')
+                 '__forward_is_argument__', '__filter_recursion_value__')
 
     def __init__(self, arg, is_argument=True):
         if not isinstance(arg, str):
@@ -505,6 +505,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
+        self.__filter_recursion_value__ = None
 
     def _evaluate(self, globalns, localns):
         if not self.__forward_evaluated__ or localns is not globalns:
@@ -539,9 +540,10 @@ class ForwardRef(_Final, _root=True):
 
     def __hash__(self):
         forward_value = self.__forward_value__
-        if self.__forward_evaluated__ and isinstance(forward_value, _GenericAlias):
-            self.__forward_value__ = forward_value.copy_with(self._check_recursion(forward_value, []))
-        return hash((self.__forward_arg__, self.__forward_value__))
+        if self.__forward_evaluated__ and not self.__filter_recursion_value__ \
+                and isinstance(forward_value, _GenericAlias):
+            self.__filter_recursion_value__ = forward_value.copy_with(self._check_recursion(forward_value, []))
+        return hash((self.__forward_arg__, self.__filter_recursion_value__ or forward_value))
 
     def __repr__(self):
         return f'ForwardRef({self.__forward_arg__!r})'

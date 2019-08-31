@@ -2377,6 +2377,7 @@ class ForwardRefTests(BaseTestCase):
         class F:
             foo: Union[Value, List[Value], ValueList]
 
+        self.assertEqual(get_type_hints(C, globals(), locals()), get_type_hints(C, globals(), locals()))
         self.assertEqual(get_type_hints(C, globals(), locals()),
                          {'foo': List[Union[str, List[Union[str, List['Value']]]]]})
         self.assertEqual(get_type_hints(D, globals(), locals()),
