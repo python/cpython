@@ -120,8 +120,8 @@ class FTP:
     def __enter__(self):
         return self
 
+    # Context management protocol: try to quit() if active
     def __exit__(self, *args):
-        """Context management protocol: try to quit() if active"""
         if self.sock is not None:
             try:
                 self.quit()
@@ -180,15 +180,15 @@ class FTP:
         """
         self.passiveserver = val
 
+    # Internal: 'sanitize' a string for printing
     def sanitize(self, s):
-        """Internal: 'sanitize' a string for printing"""
         if s[:5] in {'pass ', 'PASS '}:
             i = len(s.rstrip('\r\n'))
             s = s[:5] + '*'*(i-5) + s[i:]
         return repr(s)
 
+    # Internal: send one line to the server, appending CRLF
     def putline(self, line):
-        """Internal: send one line to the server, appending CRLF"""
         if '\r' in line or '\n' in line:
             raise ValueError('an illegal newline character should not be contained')
         sys.audit("ftplib.sendcmd", self, line)
@@ -197,15 +197,14 @@ class FTP:
             print('*put*', self.sanitize(line))
         self.sock.sendall(line.encode(self.encoding))
 
+    # Internal: send one command to the server (through putline())
     def putcmd(self, line):
-        """Internal: send one command to the server (through putline())"""
         if self.debugging: print('*cmd*', self.sanitize(line))
         self.putline(line)
 
+    # Internal: return one line from the server, stripping CRLF.
+    # Raise EOFError if the connection is closed
     def getline(self):
-        """Internal: return one line from the server, stripping CRLF.
-        Raise EOFError if the connection is closed
-        """
         line = self.file.readline(self.maxline + 1)
         if len(line) > self.maxline:
             raise Error("got more than %d bytes" % self.maxline)
@@ -219,13 +218,11 @@ class FTP:
             line = line[:-1]
         return line
 
-    # 
+    # Internal: get a response from the server, which may possibly
+    # consist of multiple lines.  Return a single string with no
+    # trailing CRLF.  If the response consists of multiple lines,
+    # these are separated by '\n' characters in the string
     def getmultiline(self):
-        """Internal: get a response from the server, which may possibly
-        consist of multiple lines.  Return a single string with no
-        trailing CRLF.  If the response consists of multiple lines,
-        these are separated by '\n' characters in the string
-        """
         line = self.getline()
         if line[3:4] == '-':
             code = line[:3]
@@ -237,10 +234,9 @@ class FTP:
                     break
         return line
 
+    # Internal: get a response from the server.
+    # Raise various errors if the response indicates an error
     def getresp(self):
-        """Internal: get a response from the server.
-        Raise various errors if the response indicates an error
-        """
         resp = self.getmultiline()
         if self.debugging:
             print('*resp*', self.sanitize(resp))
