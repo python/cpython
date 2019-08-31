@@ -342,8 +342,6 @@ class OpenCompletionsTest(unittest.TestCase):
         self.assertEqual(comp_lists[1], ['.hidden', 'monty', 'python'])
 
     def test_open_completions_dict_keys_only_opening_quote(self):
-        # Note that dict key completion lists also include variables from
-        # the global namespace.
         acp = self.autocomplete
 
         test_dict = {'one': 1, b'two': 2, 3: 3}
@@ -361,14 +359,11 @@ class OpenCompletionsTest(unittest.TestCase):
                 comp_lists, index, complete, mode = \
                     mock_acw.show_window.call_args[0]
                 self.assertEqual(mode, ac.DICTKEYS)
-                self.assertLess(set(comp_lists[0]), set(comp_lists[1]))
                 expected = [f'{quote}one{quote}', f'b{quote}two{quote}']
-                self.assertLess(set(expected), set(comp_lists[0]))
-                self.assertLess(set(expected), set(comp_lists[1]))
+                self.assertEqual(expected, comp_lists[0])
+                self.assertEqual(expected, comp_lists[1])
 
     def test_open_completions_dict_keys_no_opening_quote(self):
-        # Note that dict key completion lists also include variables from
-        # the global namespace.
         acp = self.autocomplete
 
         test_dict = {'one': 1, b'two': 2, 3: 3}
@@ -383,14 +378,11 @@ class OpenCompletionsTest(unittest.TestCase):
         comp_lists, index, complete, mode = \
             mock_acw.show_window.call_args[0]
         self.assertEqual(mode, ac.DICTKEYS)
-        self.assertLess(set(comp_lists[0]), set(comp_lists[1]))
         expected = [f'"one"', f'b"two"']
-        self.assertLess(set(expected), set(comp_lists[0]))
-        self.assertLess(set(expected), set(comp_lists[1]))
+        self.assertEqual(expected, comp_lists[0])
+        self.assertEqual(expected, comp_lists[1])
 
     def test_open_completions_dict_keys_in_middle_of_string(self):
-        # Note that dict key completion lists also include variables from
-        # the global namespace.
         acp = self.autocomplete
 
         test_dict = {'one': 1, b'two': 2, 3: 3}
@@ -409,10 +401,55 @@ class OpenCompletionsTest(unittest.TestCase):
                     comp_lists, index, complete, mode = \
                         mock_acw.show_window.call_args[0]
                     self.assertEqual(mode, ac.DICTKEYS)
-                    self.assertLess(set(comp_lists[0]), set(comp_lists[1]))
                     expected = [f'"one"', f'b"two"']
-                    self.assertLess(set(expected), set(comp_lists[0]))
-                    self.assertLess(set(expected), set(comp_lists[1]))
+                    self.assertEqual(expected, comp_lists[0])
+                    self.assertEqual(expected, comp_lists[1])
+
+    def test_open_completions_bracket_not_after_dict(self):
+        acp = self.autocomplete
+
+        for code in ['[', 'a[', 'globals()[[']:
+            for oc_args in (ac.TAB, ac.FORCE, ac.TRY_D):
+                with self.subTest(code=code, oc_args=oc_args):
+                    self.text.delete('1.0', 'end')
+                    self.text.insert('1.0', code)
+
+                    self.mock_acw = None
+                    self.open_completions(oc_args)
+
+                    if oc_args == ac.FORCE:
+                        self.mock_acw.show_window.assert_called_once()
+                        comp_lists, index, complete, mode = \
+                            self.mock_acw.show_window.call_args[0]
+                        self.assertEqual(mode, ac.ATTRS)
+                    else:
+                        self.assertIsNone(self.mock_acw)
+
+    def test_open_completions_bracket_in_string(self):
+        acp = self.autocomplete
+
+        def _listdir(path):
+            # This will be patched and used in fetch_completions.
+            return ['monty', 'python', '.hidden']
+
+        for code in ['"[', '"a[', '"globals()[']:
+            for oc_args in (ac.TAB, ac.FORCE, ac.TRY_D):
+                with self.subTest(code=code, oc_args=oc_args):
+                    self.text.delete('1.0', 'end')
+                    self.text.insert('1.0', code)
+
+                    self.mock_acw = None
+                    with patch.object(os, 'listdir', _listdir):
+                        self.open_completions(oc_args)
+
+                    if oc_args in (ac.TAB, ac.FORCE):
+                        self.mock_acw.show_window.assert_called_once()
+                        comp_lists, index, complete, mode = \
+                            self.mock_acw.show_window.call_args[0]
+                        self.assertEqual(mode, ac.FILES)
+                        self.assertCountEqual(comp_lists[1], _listdir('.'))
+                    else:
+                        self.assertIsNone(self.mock_acw)
 
     def test_no_list(self):
         acp = self.autocomplete
@@ -444,10 +481,8 @@ class OpenCompletionsTest(unittest.TestCase):
         # Dict keys: No object for keys or need call not allowed.
         self.text.delete('1.0', 'end')
         self.text.insert('1.0', '[')
-        none(oc(ac.TAB))
         none(oc(ac.TRY_D))
         self.text.insert('insert', ' globals()[')
-        none(oc(ac.TAB))
         none(oc(ac.TRY_D))
 
         # Blank or quote trigger 'if complete ...'.

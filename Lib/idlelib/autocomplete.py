@@ -313,15 +313,20 @@ class AutoComplete:
         curline = self.text.get("insert linestart", "insert")
         i = j = len(curline)
 
+        comp_lists = None
         if mode in (None, DICTKEYS):
             comp_what_and_start = self._is_completing_dict_key(hp)
             if comp_what_and_start is not None:
                 comp_what, comp_start = comp_what_and_start
                 if comp_what and (evalfuncs or '(' not in comp_what):
-                    self._remove_autocomplete_window()
-                    mode = DICTKEYS
-                else:
-                    return None
+                    comp_lists = self.fetch_completions(comp_what, DICTKEYS)
+                    if comp_lists[0]:
+                        self._remove_autocomplete_window()
+                        mode = DICTKEYS
+                    else:
+                        comp_lists = None
+            if mode == DICTKEYS and comp_lists is None:
+                return None
         if mode in (None, FILES) and hp.is_in_string():
             # Find the beginning of the string.
             # fetch_completions will look at the file system to determine
@@ -360,22 +365,15 @@ class AutoComplete:
 
         if complete and not comp_what and not comp_start:
             return None
-        comp_lists = self.fetch_completions(comp_what, mode)
+        if comp_lists is None:
+            comp_lists = self.fetch_completions(comp_what, mode)
+
         if mode == DICTKEYS:
             assert comp_lists[0] == comp_lists[1]
             reprs = self._make_dict_key_reprs(comp_start, comp_lists[0])
+            reprs.sort()
+            comp_lists = (reprs, list(reprs))
 
-            if hp.is_in_code():
-                # Add variables in the global namespace to the comp lists.
-                comp_lists = (reprs, list(reprs))
-                extra_comp_lists = self.fetch_completions("", ATTRS)
-                comp_lists[0].extend(extra_comp_lists[0])
-                comp_lists[0].sort()
-                comp_lists[1].extend(extra_comp_lists[1])
-                comp_lists[1].sort()
-            else:
-                reprs.sort()
-                comp_lists = (reprs, list(reprs))
         if not comp_lists[0]:
             return None
         self.autocompletewindow = self._make_autocomplete_window()
