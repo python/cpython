@@ -96,7 +96,7 @@ def literal_eval(node_or_string):
     return _convert(node_or_string)
 
 
-def dump(node, annotate_fields=True, include_attributes=False):
+def dump(node, annotate_fields=True, include_attributes=False, indent=None):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
     debugging purposes.  If annotate_fields is true (by default),
@@ -104,9 +104,18 @@ def dump(node, annotate_fields=True, include_attributes=False):
     If annotate_fields is false, the result string will be more compact by
     omitting unambiguous field names.  Attributes such as line
     numbers and column offsets are not dumped by default.  If this is wanted,
-    include_attributes can be set to true.
+    include_attributes can be set to true.  If indent is a non-negative
+    integer or string, then the tree will be pretty-printed with that indent
+    level.
     """
-    def _format(node):
+    def _format(node, level=0):
+        if indent is not None:
+            level += 1
+            prefix = '\n' + indent * level
+            sep = ',\n' + indent * level
+        else:
+            prefix = ''
+            sep = ', '
         if isinstance(node, AST):
             args = []
             keywords = annotate_fields
@@ -117,21 +126,27 @@ def dump(node, annotate_fields=True, include_attributes=False):
                     keywords = True
                 else:
                     if keywords:
-                        args.append('%s=%s' % (field, _format(value)))
+                        args.append('%s=%s' % (field, _format(value, level)))
                     else:
-                        args.append(_format(value))
+                        args.append(_format(value, level))
             if include_attributes and node._attributes:
                 for a in node._attributes:
                     try:
-                        args.append('%s=%s' % (a, _format(getattr(node, a))))
+                        args.append('%s=%s' % (a, _format(getattr(node, a), level)))
                     except AttributeError:
                         pass
-            return '%s(%s)' % (node.__class__.__name__, ', '.join(args))
+            if not args:
+                return '%s()' % (node.__class__.__name__,)
+            return '%s(%s%s)' % (node.__class__.__name__, prefix, sep.join(args))
         elif isinstance(node, list):
-            return '[%s]' % ', '.join(_format(x) for x in node)
+            if not node:
+                return '[]'
+            return '[%s%s]' % (prefix, sep.join(_format(x, level) for x in node))
         return repr(node)
     if not isinstance(node, AST):
         raise TypeError('expected AST, got %r' % node.__class__.__name__)
+    if indent is not None and not isinstance(indent, str):
+        indent = ' ' * indent
     return _format(node)
 
 
