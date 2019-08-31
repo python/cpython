@@ -1,0 +1,2 @@
+Prevent getattr/repr exceptions from losing the original exception in cgitb.
+Original patch by R Becker, updated by R James.
