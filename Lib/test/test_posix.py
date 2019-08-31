@@ -1589,12 +1589,6 @@ class _PosixSpawnMixin:
         )
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
-    def test_resetids_wrong_type(self):
-        with self.assertRaises(TypeError):
-            self.spawn_func(sys.executable,
-                            [sys.executable, "-c", "pass"],
-                            os.environ, resetids=None)
-
     def test_setpgroup(self):
         pid = self.spawn_func(
             sys.executable,
