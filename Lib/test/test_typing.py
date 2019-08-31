@@ -2353,6 +2353,62 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(fr, typing.ForwardRef('int'))
         self.assertNotEqual(List['int'], List[int])
 
+    def test_forward_equality_gth(self):
+        c1 = typing.ForwardRef('C')
+        c1_gth = typing.ForwardRef('C')
+        c2 = typing.ForwardRef('C')
+        c2_gth = typing.ForwardRef('C')
+
+        class C:
+            pass
+        def foo(a: c1_gth, b: c2_gth):
+            pass
+
+        self.assertEqual(get_type_hints(foo, globals(), locals()), {'a': C, 'b': C})
+        self.assertEqual(c1, c2)
+        self.assertEqual(c1, c1_gth)
+        self.assertEqual(c1_gth, c2_gth)
+        self.assertEqual(Union[c1], Union[c1_gth])
+        self.assertEqual(Union[c1, c1_gth, c2, c2_gth], Union[c1])
+
+    def test_forward_equality_hash(self):
+        c1 = typing.ForwardRef('int')
+        c1_gth = typing.ForwardRef('int')
+        c2 = typing.ForwardRef('int')
+        c2_gth = typing.ForwardRef('int')
+
+        def foo(a: c1_gth, b: c2_gth):
+            pass
+        get_type_hints(foo, globals(), locals())
+
+        self.assertEqual(hash(c1), hash(c2))
+        self.assertEqual(hash(c1_gth), hash(c2_gth))
+        self.assertNotEqual(hash(c1), hash(c1_gth))
+
+    def test_forward_equality_namespace(self):
+        class A:
+            pass
+        def namespace1():
+            a = typing.ForwardRef('A')
+            def fun(x: a):
+                pass
+            get_type_hints(fun, globals(), locals())
+            return a
+
+        def namespace2():
+            a = typing.ForwardRef('A')
+
+            class A:
+                pass
+            def fun(x: a):
+                pass
+
+            get_type_hints(fun, globals(), locals())
+            return a
+
+        self.assertEqual(namespace1(), namespace1())
+        self.assertNotEqual(namespace1(), namespace2())
+
     def test_forward_repr(self):
         self.assertEqual(repr(List['int']), "typing.List[ForwardRef('int')]")
 
