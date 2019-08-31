@@ -1688,7 +1688,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 return NULL;
         }
     }
-    return arguments(posargs, posonlyargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
+    return arguments(posonlyargs, posargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
 }
 
 static expr_ty
@@ -2645,7 +2645,7 @@ ast_for_binop(struct compiling *c, const node *n)
             return NULL;
 
         tmp_result = BinOp(result, newoperator, tmp,
-                           LINENO(next_oper), next_oper->n_col_offset,
+                           LINENO(n), n->n_col_offset,
                            CHILD(n, i * 2 + 2)->n_end_lineno,
                            CHILD(n, i * 2 + 2)->n_end_col_offset,
                            c->c_arena);
@@ -3684,9 +3684,6 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                          "unexpected import name: %d", TYPE(n));
             return NULL;
     }
-
-    PyErr_SetString(PyExc_SystemError, "unhandled import name condition");
-    return NULL;
 }
 
 static stmt_ty
@@ -4674,12 +4671,12 @@ warn_invalid_escape_sequence(struct compiling *c, const node *n,
     if (msg == NULL) {
         return -1;
     }
-    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
+    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg,
                                    c->c_filename, LINENO(n),
                                    NULL, NULL) < 0)
     {
-        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
-            /* Replace the SyntaxWarning exception with a SyntaxError
+        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+            /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
             ast_error(c, n, "%U", msg);
@@ -4845,7 +4842,6 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
                      struct compiling *c, const node *n)
 
 {
-    PyCompilerFlags cf;
     node *mod_n;
     mod_ty mod;
     char *str;
@@ -4887,8 +4883,8 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     str[len+1] = ')';
     str[len+2] = 0;
 
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags = PyCF_ONLY_AST;
-    cf.cf_feature_version = PY_MINOR_VERSION;
     mod_n = PyParser_SimpleParseStringFlagsFilename(str, "<fstring>",
                                                     Py_eval_input, 0);
     if (!mod_n) {
@@ -5260,7 +5256,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     *str += 1;
 
     /* If we're in = mode (detected by non-NULL expr_text), and have no format
-       spec and no explict conversion, set the conversion to 'r'. */
+       spec and no explicit conversion, set the conversion to 'r'. */
     if (*expr_text && format_spec == NULL && conversion == -1) {
         conversion = 'r';
     }
@@ -5360,7 +5356,7 @@ typedef struct {
        doubling the number allocated each time. Note that the f-string
        f'{0}a{1}' contains 3 expr_ty's: 2 FormattedValue's, and one
        Constant for the literal 'a'. So you add expr_ty's about twice as
-       fast as you add exressions in an f-string. */
+       fast as you add expressions in an f-string. */
 
     Py_ssize_t allocated;  /* Number we've allocated. */
     Py_ssize_t size;       /* Number we've used. */

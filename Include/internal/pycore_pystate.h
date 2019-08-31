@@ -82,9 +82,6 @@ struct _is {
     PyObject *builtins;
     PyObject *importlib;
 
-    /* Used in Python/sysmodule.c. */
-    int check_interval;
-
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
     /* Support for runtime thread stack size tuning.
@@ -309,6 +306,9 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
 
 PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
+
+/* Used by _PyImport_Cleanup() */
+extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 
 PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);
 

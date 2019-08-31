@@ -501,6 +501,9 @@ all_ins(PyObject* m)
 #ifdef F_SETOWN
     if (PyModule_AddIntMacro(m, F_SETOWN)) return -1;
 #endif
+#ifdef F_GETPATH
+    if (PyModule_AddIntMacro(m, F_GETPATH)) return -1;
+#endif
 #ifdef F_GETSIG
     if (PyModule_AddIntMacro(m, F_GETSIG)) return -1;
 #endif

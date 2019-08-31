@@ -733,20 +733,15 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     # Strip scores for the best n matches
     return [x for score, x in result]
 
-def _count_leading(line, ch):
-    """
-    Return number of `ch` characters at the start of `line`.
 
-    Example:
+def _keep_original_ws(s, tag_s):
+    """Replace whitespace with the original whitespace characters in `s`"""
+    return ''.join(
+        c if tag_c == " " and c.isspace() else tag_c
+        for c, tag_c in zip(s, tag_s)
+    )
 
-    >>> _count_leading('   abc', ' ')
-    3
-    """
 
-    i, n = 0, len(line)
-    while i < n and line[i] == ch:
-        i += 1
-    return i
 
 class Differ:
     r"""
@@ -1033,7 +1028,7 @@ class Differ:
 
     def _qformat(self, aline, bline, atags, btags):
         r"""
-        Format "?" output and deal with leading tabs.
+        Format "?" output and deal with tabs.
 
         Example:
 
@@ -1047,22 +1042,16 @@ class Differ:
         '+ \tabcdefGhijkl\n'
         '? \t ^ ^  ^\n'
         """
-
-        # Can hurt, but will probably help most of the time.
-        common = min(_count_leading(aline, "\t"),
-                     _count_leading(bline, "\t"))
-        common = min(common, _count_leading(atags[:common], " "))
-        common = min(common, _count_leading(btags[:common], " "))
-        atags = atags[common:].rstrip()
-        btags = btags[common:].rstrip()
+        atags = _keep_original_ws(aline, atags).rstrip()
+        btags = _keep_original_ws(bline, btags).rstrip()
 
         yield "- " + aline
         if atags:
-            yield "? %s%s\n" % ("\t" * common, atags)
+            yield f"? {atags}\n"
 
         yield "+ " + bline
         if btags:
-            yield "? %s%s\n" % ("\t" * common, btags)
+            yield f"? {btags}\n"
 
 # With respect to junk, an earlier version of ndiff simply refused to
 # *start* a match with a junk element.  The result was cases like this:

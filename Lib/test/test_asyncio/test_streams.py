@@ -1656,22 +1656,25 @@ os.close(fd)
 
         async def serve_callback(stream):
             data = await stream.readline()
-            self.assertEqual(data, b'begin\n')
+            await stream.write(b'ack-' + data)
             data = await stream.readline()
-            self.assertEqual(data, b'data\n')
+            await stream.write(b'ack-' + data)
             data = await stream.readline()
-            self.assertEqual(data, b'end\n')
-            await stream.write(b'done\n')
+            await stream.write(b'ack-' + data)
             await stream.close()
 
         async def do_connect(host, port):
             stream = await asyncio.connect(host, port)
             await stream.write(b'begin\n')
+            data = await stream.readline()
+            self.assertEqual(b'ack-begin\n', data)
             with open(support.TESTFN, 'rb') as fp:
                 await stream.sendfile(fp)
+            data = await stream.readline()
+            self.assertEqual(b'ack-data\n', data)
             await stream.write(b'end\n')
             data = await stream.readline()
-            self.assertEqual(data, b'done\n')
+            self.assertEqual(data, b'ack-end\n')
             await stream.close()
 
         async def test():
@@ -1775,6 +1778,12 @@ os.close(fd)
                 os.close(rpipe)
 
         self.loop.run_until_complete(test())
+
+    def test_stream_ctor_forbidden(self):
+        with self.assertRaisesRegex(RuntimeError,
+                                    "should be instantiated "
+                                    "by asyncio internals only"):
+            asyncio.Stream(asyncio.StreamMode.READWRITE)
 
 
 if __name__ == '__main__':

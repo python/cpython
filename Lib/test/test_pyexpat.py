@@ -3,6 +3,7 @@
 
 from io import BytesIO
 import os
+import platform
 import sys
 import sysconfig
 import unittest
@@ -285,7 +286,7 @@ class NamespaceSeparatorTest(unittest.TestCase):
             self.fail()
         except TypeError as e:
             self.assertEqual(str(e),
-                'ParserCreate() argument 2 must be str or None, not int')
+                "ParserCreate() argument 'namespace_separator' must be str or None, not int")
 
         try:
             expat.ParserCreate(namespace_separator='too long')
@@ -465,7 +466,7 @@ class HandlerExceptionTest(unittest.TestCase):
                                        "pyexpat.c", "StartElement")
             self.check_traceback_entry(entries[2],
                                        "test_pyexpat.py", "StartElementHandler")
-            if sysconfig.is_python_build():
+            if sysconfig.is_python_build() and not (sys.platform == 'win32' and platform.machine() == 'ARM'):
                 self.assertIn('call_with_frame("StartElement"', entries[1][3])
 
 

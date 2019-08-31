@@ -1,0 +1,1 @@
+Add the module name in the formatted error message when DLL load fail happens during module import in ``_PyImport_FindSharedFuncptrWindows()``. Patch by Srinivas Nyayapati.

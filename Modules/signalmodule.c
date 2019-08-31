@@ -1667,8 +1667,7 @@ _PyErr_CheckSignals(void)
             _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
 
             if (arglist) {
-                result = PyEval_CallObject(Handlers[i].func,
-                                           arglist);
+                result = PyObject_Call(Handlers[i].func, arglist, NULL);
                 Py_DECREF(arglist);
             }
             if (!result) {

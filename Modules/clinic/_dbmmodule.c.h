@@ -136,7 +136,7 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("open", 1, "str", args[0]);
+        _PyArg_BadArgument("open", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -147,7 +147,7 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("open", 2, "str", args[1]);
+        _PyArg_BadArgument("open", "argument 2", "str", args[1]);
         goto exit;
     }
     Py_ssize_t flags_length;
@@ -177,4 +177,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7f5d30ef5d820b8a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7ced103488cbca7a input=a9049054013a1b77]*/

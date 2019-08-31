@@ -43,6 +43,7 @@ import os as _os
 import shutil as _shutil
 import errno as _errno
 from random import Random as _Random
+import sys as _sys
 import weakref as _weakref
 import _thread
 _allocate_lock = _thread.allocate_lock
@@ -244,6 +245,7 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
     for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, pre + name + suf)
+        _sys.audit("tempfile.mkstemp", file)
         try:
             fd = _os.open(file, flags, 0o600)
         except FileExistsError:
@@ -352,6 +354,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
     for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, prefix + name + suffix)
+        _sys.audit("tempfile.mkdtemp", file)
         try:
             _os.mkdir(file, 0o700)
         except FileExistsError:
@@ -546,7 +549,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
         _os.close(fd)
         raise
 
-if _os.name != 'posix' or _os.sys.platform == 'cygwin':
+if _os.name != 'posix' or _sys.platform == 'cygwin':
     # On non-POSIX and Cygwin systems, assume that we cannot unlink a file
     # while it is open.
     TemporaryFile = NamedTemporaryFile

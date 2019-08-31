@@ -143,13 +143,12 @@ class AifcALAWTest(AifcTest, unittest.TestCase):
         frames = byteswap(frames, 2)
 
 
-class AifcMiscTest(audiotests.AudioMiscTests, unittest.TestCase):
-    module = aifc
-
+class AifcMiscTest(unittest.TestCase):
     def test_skipunknown(self):
         #Issue 2245
         #This file contains chunk types aifc doesn't recognize.
-        self.f = aifc.open(findfile('Sine-1000Hz-300ms.aif'))
+        f = aifc.open(findfile('Sine-1000Hz-300ms.aif'))
+        f.close()
 
     def test_close_opened_files_on_error(self):
         non_aifc_file = findfile('pluck-pcm8.wav', subdir='audiodata')
@@ -172,7 +171,8 @@ class AifcMiscTest(audiotests.AudioMiscTests, unittest.TestCase):
         f.setparams((1, 1, 1, 1, b'NONE', b''))
         f.close()
 
-        f = self.f = aifc.open(TESTFN, 'rb')
+        f = aifc.open(TESTFN, 'rb')
+        self.addCleanup(f.close)
         params = f.getparams()
         self.assertEqual(params.nchannels, f.getnchannels())
         self.assertEqual(params.sampwidth, f.getsampwidth())
@@ -208,7 +208,8 @@ class AifcMiscTest(audiotests.AudioMiscTests, unittest.TestCase):
         fout.setmark(2, 0, b'even')
         fout.writeframes(b'\x00')
         fout.close()
-        f = self.f = aifc.open(TESTFN, 'rb')
+        f = aifc.open(TESTFN, 'rb')
+        self.addCleanup(f.close)
         self.assertEqual(f.getmarkers(), [(1, 0, b'odd'), (2, 0, b'even')])
         self.assertEqual(f.getmark(1), (1, 0, b'odd'))
         self.assertEqual(f.getmark(2), (2, 0, b'even'))

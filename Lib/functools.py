@@ -345,23 +345,7 @@ class partialmethod(object):
     callables as instance methods.
     """
 
-    def __init__(*args, **keywords):
-        if len(args) >= 2:
-            self, func, *args = args
-        elif not args:
-            raise TypeError("descriptor '__init__' of partialmethod "
-                            "needs an argument")
-        elif 'func' in keywords:
-            func = keywords.pop('func')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'func' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError("type 'partialmethod' takes at least one argument, "
-                            "got %d" % (len(args)-1))
-        args = tuple(args)
-
+    def __init__(self, func, /, *args, **keywords):
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError("{!r} is not callable or a descriptor"
                                  .format(func))
@@ -379,7 +363,6 @@ class partialmethod(object):
             self.func = func
             self.args = args
             self.keywords = keywords
-    __init__.__text_signature__ = '($self, func, /, *args, **keywords)'
 
     def __repr__(self):
         args = ", ".join(map(repr, self.args))
@@ -400,7 +383,7 @@ class partialmethod(object):
         _method._partialmethod = self
         return _method
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj, cls=None):
         get = getattr(self.func, "__get__", None)
         result = None
         if get is not None:
@@ -905,7 +888,7 @@ class singledispatchmethod:
         """
         return self.dispatcher.register(cls, func=method)
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj, cls=None):
         def _method(*args, **kwargs):
             method = self.dispatcher.dispatch(args[0].__class__)
             return method.__get__(obj, cls)(*args, **kwargs)
@@ -943,7 +926,7 @@ class cached_property:
                 f"({self.attrname!r} and {name!r})."
             )
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance, owner=None):
         if instance is None:
             return self
         if self.attrname is None:

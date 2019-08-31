@@ -158,7 +158,7 @@ class Lock(_ContextManagerMixin):
     """
 
     def __init__(self, *, loop=None):
-        self._waiters = collections.deque()
+        self._waiters = None
         self._locked = False
         if loop is not None:
             self._loop = loop
@@ -182,10 +182,13 @@ class Lock(_ContextManagerMixin):
         This method blocks until the lock is unlocked, then sets it to
         locked and returns True.
         """
-        if not self._locked and all(w.cancelled() for w in self._waiters):
+        if (not self._locked and (self._waiters is None or
+                all(w.cancelled() for w in self._waiters))):
             self._locked = True
             return True
 
+        if self._waiters is None:
+            self._waiters = collections.deque()
         fut = self._loop.create_future()
         self._waiters.append(fut)
 
@@ -224,6 +227,8 @@ class Lock(_ContextManagerMixin):
 
     def _wake_up_first(self):
         """Wake up the first waiter if it isn't done."""
+        if not self._waiters:
+            return
         try:
             fut = next(iter(self._waiters))
         except StopIteration:

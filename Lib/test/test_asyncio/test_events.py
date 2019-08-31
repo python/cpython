@@ -26,14 +26,13 @@ if sys.platform != 'win32':
     import tty
 
 import asyncio
-from asyncio import base_events
-from asyncio import constants
 from asyncio import coroutines
 from asyncio import events
 from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import ALWAYS_EQ, LARGEST, SMALLEST
 
 
 def tearDownModule():
@@ -2365,6 +2364,28 @@ class TimerTests(unittest.TestCase):
         h3 = asyncio.Handle(callback, (), self.loop)
         self.assertIs(NotImplemented, h1.__eq__(h3))
         self.assertIs(NotImplemented, h1.__ne__(h3))
+
+        with self.assertRaises(TypeError):
+            h1 < ()
+        with self.assertRaises(TypeError):
+            h1 > ()
+        with self.assertRaises(TypeError):
+            h1 <= ()
+        with self.assertRaises(TypeError):
+            h1 >= ()
+        self.assertFalse(h1 == ())
+        self.assertTrue(h1 != ())
+
+        self.assertTrue(h1 == ALWAYS_EQ)
+        self.assertFalse(h1 != ALWAYS_EQ)
+        self.assertTrue(h1 < LARGEST)
+        self.assertFalse(h1 > LARGEST)
+        self.assertTrue(h1 <= LARGEST)
+        self.assertFalse(h1 >= LARGEST)
+        self.assertFalse(h1 < SMALLEST)
+        self.assertTrue(h1 > SMALLEST)
+        self.assertFalse(h1 <= SMALLEST)
+        self.assertTrue(h1 >= SMALLEST)
 
 
 class AbstractEventLoopTests(unittest.TestCase):

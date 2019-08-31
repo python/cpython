@@ -1,0 +1,1 @@
+Fix a crash in ``PySys_SetArgvEx(0, NULL, 0)``.

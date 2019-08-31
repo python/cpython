@@ -60,7 +60,7 @@ _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
 
     if (need_to_reenable_gc) {
         PyErr_Fetch(&exctype, &val, &tb);
-        result = _PyObject_CallMethodId(gc_module, &PyId_enable, NULL);
+        result = _PyObject_CallMethodIdNoArgs(gc_module, &PyId_enable);
         if (exctype != NULL) {
             PyErr_Restore(exctype, val, tb);
         }
@@ -583,8 +583,10 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             &restore_signals, &call_setsid, &preexec_fn))
         return NULL;
 
-    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
-        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+    if ((preexec_fn != Py_None) &&
+            (_PyInterpreterState_Get() != PyInterpreterState_Main())) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "preexec_fn not supported within subinterpreters");
         return NULL;
     }
 
@@ -606,7 +608,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         gc_module = PyImport_ImportModule("gc");
         if (gc_module == NULL)
             return NULL;
-        result = _PyObject_CallMethodId(gc_module, &PyId_isenabled, NULL);
+        result = _PyObject_CallMethodIdNoArgs(gc_module, &PyId_isenabled);
         if (result == NULL) {
             Py_DECREF(gc_module);
             return NULL;
@@ -617,7 +619,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             Py_DECREF(gc_module);
             return NULL;
         }
-        result = _PyObject_CallMethodId(gc_module, &PyId_disable, NULL);
+        result = _PyObject_CallMethodIdNoArgs(gc_module, &PyId_disable);
         if (result == NULL) {
             Py_DECREF(gc_module);
             return NULL;

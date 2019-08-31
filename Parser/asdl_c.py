@@ -1191,11 +1191,6 @@ PyObject* PyAST_mod2obj(mod_ty t)
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 {
-    return PyAST_obj2mod_ex(ast, arena, mode, PY_MINOR_VERSION);
-}
-
-mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_version)
-{
     mod_ty res;
     PyObject *req_type[3];
     char *req_name[] = {"Module", "Expression", "Interactive"};
@@ -1280,7 +1275,6 @@ def main(srcfile, dump_module=False):
             f.write("\n")
             f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
             f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
-            f.write("mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_version);\n")
             f.write("int PyAST_Check(PyObject* obj);\n")
             f.write('\n')
             f.write('#ifdef __cplusplus\n')

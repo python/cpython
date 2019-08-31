@@ -85,6 +85,10 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
         factory = (PyObject*)&pysqlite_ConnectionType;
     }
 
+    if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
+        return NULL;
+    }
+
     result = PyObject_Call(factory, args, kwargs);
 
     return result;
@@ -199,7 +203,7 @@ static PyObject* module_register_converter(PyObject* self, PyObject* args)
     }
 
     /* convert the name to upper case */
-    name = _PyObject_CallMethodId(orig_name, &PyId_upper, NULL);
+    name = _PyObject_CallMethodIdNoArgs(orig_name, &PyId_upper);
     if (!name) {
         goto error;
     }

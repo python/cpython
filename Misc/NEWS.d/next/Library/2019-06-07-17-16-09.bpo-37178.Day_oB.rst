@@ -1,0 +1,2 @@
+Give math.perm() a one argument form that means the same as
+math.factorial().

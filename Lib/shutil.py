@@ -452,7 +452,14 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
         dstname = os.path.join(dst, srcentry.name)
         srcobj = srcentry if use_srcentry else srcname
         try:
-            if srcentry.is_symlink():
+            is_symlink = srcentry.is_symlink()
+            if is_symlink and os.name == 'nt':
+                # Special check for directory junctions, which appear as
+                # symlinks but we want to recurse.
+                lstat = srcentry.stat(follow_symlinks=False)
+                if lstat.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT:
+                    is_symlink = False
+            if is_symlink:
                 linkto = os.readlink(srcname)
                 if symlinks:
                     # We can't just leave it to `copy_function` because legacy
@@ -530,11 +537,43 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     function that supports the same signature (like copy()) can be used.
 
     """
+    sys.audit("shutil.copytree", src, dst)
     with os.scandir(src) as entries:
         return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
                          ignore=ignore, copy_function=copy_function,
                          ignore_dangling_symlinks=ignore_dangling_symlinks,
                          dirs_exist_ok=dirs_exist_ok)
+
+if hasattr(os.stat_result, 'st_file_attributes'):
+    # Special handling for directory junctions to make them behave like
+    # symlinks for shutil.rmtree, since in general they do not appear as
+    # regular links.
+    def _rmtree_isdir(entry):
+        try:
+            st = entry.stat(follow_symlinks=False)
+            return (stat.S_ISDIR(st.st_mode) and not
+                (st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
+                 and st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT))
+        except OSError:
+            return False
+
+    def _rmtree_islink(path):
+        try:
+            st = os.lstat(path)
+            return (stat.S_ISLNK(st.st_mode) or
+                (st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
+                 and st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT))
+        except OSError:
+            return False
+else:
+    def _rmtree_isdir(entry):
+        try:
+            return entry.is_dir(follow_symlinks=False)
+        except OSError:
+            return False
+
+    def _rmtree_islink(path):
+        return os.path.islink(path)
 
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onerror):
@@ -546,11 +585,7 @@ def _rmtree_unsafe(path, onerror):
         entries = []
     for entry in entries:
         fullname = entry.path
-        try:
-            is_dir = entry.is_dir(follow_symlinks=False)
-        except OSError:
-            is_dir = False
-        if is_dir:
+        if _rmtree_isdir(entry):
             try:
                 if entry.is_symlink():
                     # This can only happen if someone replaces
@@ -640,6 +675,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
     is false and onerror is None, an exception is raised.
 
     """
+    sys.audit("shutil.rmtree", path)
     if ignore_errors:
         def onerror(*args):
             pass
@@ -679,7 +715,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
             os.close(fd)
     else:
         try:
-            if os.path.islink(path):
+            if _rmtree_islink(path):
                 # symlinks to directories are forbidden, see bug #1669
                 raise OSError("Cannot call rmtree on a symbolic link")
         except OSError:
@@ -965,6 +1001,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     'owner' and 'group' are used when creating a tar archive. By default,
     uses the current owner and group.
     """
+    sys.audit("shutil.make_archive", base_name, format, root_dir, base_dir)
     save_cwd = os.getcwd()
     if root_dir is not None:
         if logger is not None:

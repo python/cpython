@@ -361,8 +361,8 @@ _range_error(const formatdef *f, int is_unsigned)
 
    [bln][up]_TYPE
 
-   [bln] distiguishes among big-endian, little-endian and native.
-   [pu] distiguishes between pack (to struct) and unpack (from struct).
+   [bln] distinguishes among big-endian, little-endian and native.
+   [pu] distinguishes between pack (to struct) and unpack (from struct).
    TYPE is one of char, byte, ubyte, etc.
 */
 
@@ -2098,7 +2098,7 @@ cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
         return 0;
     }
 
-    s_object = PyObject_CallFunctionObjArgs((PyObject *)(&PyStructType), fmt, NULL);
+    s_object = _PyObject_CallOneArg((PyObject *)(&PyStructType), fmt);
     if (s_object != NULL) {
         if (PyDict_GET_SIZE(cache) >= MAXCACHE)
             PyDict_Clear(cache);

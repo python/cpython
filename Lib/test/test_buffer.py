@@ -43,6 +43,11 @@ try:
 except ImportError:
     numpy_array = None
 
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
 
 SHORT_TEST = True
 
@@ -4411,6 +4416,13 @@ class TestBufferProtocol(unittest.TestCase):
     def test_issue_7385(self):
         x = ndarray([1,2,3], shape=[3], flags=ND_GETBUF_FAIL)
         self.assertRaises(BufferError, memoryview, x)
+
+    @support.cpython_only
+    def test_pybuffer_size_from_format(self):
+        # basic tests
+        for format in ('', 'ii', '3s'):
+            self.assertEqual(_testcapi.PyBuffer_SizeFromFormat(format),
+                             struct.calcsize(format))
 
 
 if __name__ == "__main__":

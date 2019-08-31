@@ -41,6 +41,13 @@ PyObject *_PyLong_One = NULL;
    -NSMALLNEGINTS (inclusive) to NSMALLPOSINTS (not inclusive).
 */
 static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
+
+static inline int
+is_small_int(long long ival)
+{
+    return -NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS;
+}
+
 #ifdef COUNT_ALLOCS
 Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
 #endif
@@ -49,7 +56,7 @@ static PyObject *
 get_small_int(sdigit ival)
 {
     PyObject *v;
-    assert(-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS);
+    assert(is_small_int(ival));
     v = (PyObject *)&small_ints[ival + NSMALLNEGINTS];
     Py_INCREF(v);
 #ifdef COUNT_ALLOCS
@@ -60,17 +67,13 @@ get_small_int(sdigit ival)
 #endif
     return v;
 }
-#define CHECK_SMALL_INT(ival) \
-    do if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) { \
-        return get_small_int((sdigit)ival); \
-    } while(0)
 
 static PyLongObject *
 maybe_small_long(PyLongObject *v)
 {
     if (v && Py_ABS(Py_SIZE(v)) <= 1) {
         sdigit ival = MEDIUM_VALUE(v);
-        if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) {
+        if (is_small_int(ival)) {
             Py_DECREF(v);
             return (PyLongObject *)get_small_int(ival);
         }
@@ -78,7 +81,8 @@ maybe_small_long(PyLongObject *v)
     return v;
 }
 #else
-#define CHECK_SMALL_INT(ival)
+#define is_small_int(ival) 0
+#define get_small_int(ival) (assert(0), NULL)
 #define maybe_small_long(val) (val)
 #endif
 
@@ -293,7 +297,9 @@ _PyLong_Copy(PyLongObject *src)
         i = -(i);
     if (i < 2) {
         sdigit ival = MEDIUM_VALUE(src);
-        CHECK_SMALL_INT(ival);
+        if (is_small_int(ival)) {
+            return get_small_int(ival);
+        }
     }
     result = _PyLong_New(i);
     if (result != NULL) {
@@ -315,7 +321,9 @@ PyLong_FromLong(long ival)
     int ndigits = 0;
     int sign;
 
-    CHECK_SMALL_INT(ival);
+    if (is_small_int(ival)) {
+        return get_small_int((sdigit)ival);
+    }
 
     if (ival < 0) {
         /* negate: can't write this as abs_ival = -ival since that
@@ -1146,7 +1154,10 @@ PyLong_FromLongLong(long long ival)
     int ndigits = 0;
     int negative = 0;
 
-    CHECK_SMALL_INT(ival);
+    if (is_small_int(ival)) {
+        return get_small_int((sdigit)ival);
+    }
+
     if (ival < 0) {
         /* avoid signed overflow on negation;  see comments
            in PyLong_FromLong above. */
@@ -1218,7 +1229,10 @@ PyLong_FromSsize_t(Py_ssize_t ival)
     int ndigits = 0;
     int negative = 0;
 
-    CHECK_SMALL_INT(ival);
+    if (is_small_int(ival)) {
+        return get_small_int((sdigit)ival);
+    }
+
     if (ival < 0) {
         /* avoid signed overflow when ival = SIZE_T_MIN */
         abs_ival = (size_t)(-1-ival)+1;
@@ -1376,7 +1390,7 @@ _PyLong_AsUnsignedLongLongMask(PyObject *vv)
 
     if (vv == NULL || !PyLong_Check(vv)) {
         PyErr_BadInternalCall();
-        return (unsigned long) -1;
+        return (unsigned long long) -1;
     }
     v = (PyLongObject *)vv;
     switch(Py_SIZE(v)) {
@@ -1404,7 +1418,7 @@ PyLong_AsUnsignedLongLongMask(PyObject *op)
 
     if (op == NULL) {
         PyErr_BadInternalCall();
-        return (unsigned long)-1;
+        return (unsigned long long)-1;
     }
 
     if (PyLong_Check(op)) {
@@ -5611,8 +5625,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     Py_DECREF(bytes);
 
     if (long_obj != NULL && type != &PyLong_Type) {
-        Py_SETREF(long_obj, PyObject_CallFunctionObjArgs((PyObject *)type,
-                                                         long_obj, NULL));
+        Py_SETREF(long_obj, _PyObject_CallOneArg((PyObject *)type, long_obj));
     }
 
     return long_obj;
@@ -5856,7 +5869,7 @@ _PyLong_Init(void)
 }
 
 void
-PyLong_Fini(void)
+_PyLong_Fini(void)
 {
     /* Integers are currently statically allocated. Py_DECREF is not
        needed, but Python must forget about the reference or multiple

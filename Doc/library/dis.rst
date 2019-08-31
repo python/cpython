@@ -645,10 +645,12 @@ the original TOS1.
 
 .. opcode:: MAP_ADD (i)
 
-   Calls ``dict.setitem(TOS1[-i], TOS, TOS1)``.  Used to implement dict
+   Calls ``dict.__setitem__(TOS1[-i], TOS1, TOS)``.  Used to implement dict
    comprehensions.
 
    .. versionadded:: 3.1
+   .. versionchanged:: 3.8
+      Map value is TOS and map key is TOS1. Before, those were reversed.
 
 For all of the :opcode:`SET_ADD`, :opcode:`LIST_APPEND` and :opcode:`MAP_ADD`
 instructions, while the added value or key/value pair is popped off, the
@@ -748,6 +750,14 @@ iterations of the loop.
      used to re-raise the exception and the last three popped values are used
      to restore the exception state.  An exception handler block is removed
      from the block stack.
+
+
+.. opcode:: LOAD_ASSERTION_ERROR
+
+   Pushes :exc:`AssertionError` onto the stack.  Used by the :keyword:`assert`
+   statement.
+
+   .. versionadded:: 3.9
 
 
 .. opcode:: LOAD_BUILD_CLASS
@@ -1140,8 +1150,10 @@ All of the following opcodes use their arguments.
 
    Calls a callable object with positional (if any) and keyword arguments.
    *argc* indicates the total number of positional and keyword arguments.
-   The top element on the stack contains a tuple of keyword argument names.
-   Below that are keyword arguments in the order corresponding to the tuple.
+   The top element on the stack contains a tuple with the names of the
+   keyword arguments, which must be strings.
+   Below that are the values for the keyword arguments,
+   in the order corresponding to the tuple.
    Below that are positional arguments, with the right-most parameter on
    top.  Below the arguments is a callable object to call.
    ``CALL_FUNCTION_KW`` pops all arguments and the callable object off the stack,
@@ -1219,10 +1231,10 @@ All of the following opcodes use their arguments.
 
 .. opcode:: EXTENDED_ARG (ext)
 
-   Prefixes any opcode which has an argument too big to fit into the default two
-   bytes.  *ext* holds two additional bytes which, taken together with the
-   subsequent opcode's argument, comprise a four-byte argument, *ext* being the
-   two most-significant bytes.
+   Prefixes any opcode which has an argument too big to fit into the default one
+   byte. *ext* holds an additional byte which act as higher bits in the argument.
+   For each opcode, at most three prefixal ``EXTENDED_ARG`` are allowed, forming
+   an argument from two-byte to four-byte.
 
 
 .. opcode:: FORMAT_VALUE (flags)

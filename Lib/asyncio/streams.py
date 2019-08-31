@@ -71,7 +71,7 @@ def connect(host=None, port=None, *,
             ssl_handshake_timeout=None,
             happy_eyeballs_delay=None, interleave=None):
     # Design note:
-    # Don't use decorator approach but exilicit non-async
+    # Don't use decorator approach but explicit non-async
     # function to fail fast and explicitly
     # if passed arguments don't match the function signature
     return _ContextManagerHelper(_connect(host, port, limit,
@@ -442,7 +442,7 @@ if hasattr(socket, 'AF_UNIX'):
                      ssl_handshake_timeout=None):
         """Similar to `connect()` but works with UNIX Domain Sockets."""
         # Design note:
-        # Don't use decorator approach but exilicit non-async
+        # Don't use decorator approach but explicit non-async
         # function to fail fast and explicitly
         # if passed arguments don't match the function signature
         return _ContextManagerHelper(_connect_unix(path,
@@ -556,7 +556,7 @@ class FlowControlMixin(protocols.Protocol):
             # Avoid inheritance from FlowControlMixin
             # Copy-paste the code to your project
             # if you need flow control helpers
-            warnings.warn(f"{self.__class__} should be instaniated "
+            warnings.warn(f"{self.__class__} should be instantiated "
                           "by asyncio internals only, "
                           "please avoid its creation from user code",
                           DeprecationWarning)
@@ -1293,10 +1293,8 @@ class Stream:
                  is_server_side=False,
                  _asyncio_internal=False):
         if not _asyncio_internal:
-            warnings.warn(f"{self.__class__} should be instaniated "
-                          "by asyncio internals only, "
-                          "please avoid its creation from user code",
-                          DeprecationWarning)
+            raise RuntimeError(f"{self.__class__} should be instantiated "
+                               "by asyncio internals only")
         self._mode = mode
         self._transport = transport
         self._protocol = protocol
