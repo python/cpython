@@ -230,15 +230,11 @@ def _remove_dups_flatten(parameters):
         else:
             params.append(p)
     # Weed out strict duplicates, preserving the first of each occurrence.
-    all_params = set(params)
-    if len(all_params) < len(params):
-        new_params = []
-        for t in params:
-            if t in all_params:
-                new_params.append(t)
-                all_params.remove(t)
-        params = new_params
-        assert not all_params, all_params
+    new_params = []
+    for p in params:
+        if p not in new_params:
+            new_params.append(p)
+    params = new_params
     return tuple(params)
 
 
