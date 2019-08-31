@@ -1,0 +1,1 @@
+Improve ForwardRef equality checks. Patch by hongweipeng.
