@@ -2,11 +2,15 @@ import glob
 import os
 import os.path
 
+from . import SOURCE_DIRS, REPO_ROOT
+
 
 C_SOURCE_SUFFIXES = ('.c', '.h')
 
 
-def _walk_tree(root):
+def _walk_tree(root, *,
+               _walk=os.walk,
+               ):
     # A wrapper around os.walk that resolves the filenames.
     for parent, _, names in _walk(root):
         for name in names:
@@ -25,11 +29,10 @@ def walk_tree(root, *,
     if suffix and not isinstance(suffix, str):
         raise ValueError('suffix must be a string')
 
-    for parent, _, names in walk(root):
-        for name in names:
-            if suffix and not name.endswith(suffix):
-                continue
-            yield os.path.join(parent, name)
+    for filename in walk(root):
+        if suffix and not filename.endswith(suffix):
+            continue
+        yield filename
 
 
 def glob_tree(root, *,
@@ -111,9 +114,7 @@ def iter_files_by_suffix(root, suffixes, relparent=None, *,
         suffixes = [suffixes]
     # XXX Ignore repeated suffixes?
     for suffix in suffixes:
-        yield from _iter_files(root, None, relparent,
-                               get_files=get_files,
-                               )
+        yield from _iter_files(root, suffix, relparent)
 
 
 def iter_cpython_files(*,
