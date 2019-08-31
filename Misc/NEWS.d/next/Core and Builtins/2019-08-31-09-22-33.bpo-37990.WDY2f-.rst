@@ -1,0 +1,2 @@
+Fix elapsed time in gc stats was not printed correctly.  This bug was
+a regression in 3.8b4.
