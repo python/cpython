@@ -95,7 +95,7 @@ class _safe_call:
             return self.failval
 
 def _pydoc_repr(value, sub='html'):
-    return getattr(pydoc, 'html').repr(value)
+    return getattr(pydoc, sub).repr(value)
 
 _safe_getattr = _safe_call(getattr, __GETATTR_FAILED__)
 _safe_html_repr = _safe_call(_pydoc_repr, __HTML_REPR_FAILED__)

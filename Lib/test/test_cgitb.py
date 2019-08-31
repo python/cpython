@@ -87,6 +87,31 @@ class TestCgitb(unittest.TestCase):
             self.assertIn('ValueError', html)
             self.assertIn(str(err), html)
 
+    def test_text_masking_getattr_exception(self):
+        # bpo 1047397: if examining the traceback provoked a
+        # ValueError from attribute look-up, the original exception
+        # was lost.  Provoking this artificially involves a convoluted
+        # dance.
+        class BadGetAttr:
+            def __init__(self):
+                self._bad = False
+                self._h = self._fn
+            def __getattr__(self, attr):
+                if self._bad:
+                    raise ValueError('getattr exception')
+                return self.__dict__['_'+attr]
+            def _fn(self):
+                self._bad = True
+                raise ValueError('real exception')
+        bga = BadGetAttr()
+        try:
+            bga.h()
+        except ValueError as err:
+            text = cgitb.text(sys.exc_info())
+            print(text)
+            self.assertIn('ValueError', text)
+            self.assertIn(str(err), text)
+
     def test_masking_repr_exception(self):
         # bpo 1047397: if examining the traceback provoked a
         # ValueError from a repr, the original exception was lost.
