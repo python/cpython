@@ -38,8 +38,9 @@
 module datetime
 class datetime.datetime "PyDateTime_DateTime *" "&PyDateTime_DateTimeType"
 class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
+class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCalendarDateType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=25138ad6a696b785]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=81bec0fa19837f63]*/
 
 #include "clinic/_datetimemodule.c.h"
 
@@ -131,6 +132,7 @@ class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
 static PyTypeObject PyDateTime_DateType;
 static PyTypeObject PyDateTime_DateTimeType;
 static PyTypeObject PyDateTime_DeltaType;
+static PyTypeObject PyDateTime_IsoCalendarDateType;
 static PyTypeObject PyDateTime_TimeType;
 static PyTypeObject PyDateTime_TZInfoType;
 static PyTypeObject PyDateTime_TimeZoneType;
@@ -3224,6 +3226,164 @@ date_isoweekday(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
     return PyLong_FromLong(dow + 1);
 }
 
+PyDoc_STRVAR(iso_calendar_date__doc__,
+"The result of date.isocalendar() or datetime.isocalendar()\n\n\
+This object may be accessed either as a tuple of\n\
+  ((year, week, weekday)\n\
+or via the object attributes as named in the above tuple.");
+
+typedef struct {
+    PyTupleObject tuple;
+} PyDateTime_IsoCalendarDate;
+
+static PyObject *
+iso_calendar_date_repr(PyDateTime_IsoCalendarDate *self)
+{
+    PyObject* year = PyTuple_GetItem((PyObject *)self, 0);
+    if (year == NULL) {
+        return NULL;
+    }
+    PyObject* week = PyTuple_GetItem((PyObject *)self, 1);
+    if (week == NULL) {
+        return NULL;
+    }
+    PyObject* weekday = PyTuple_GetItem((PyObject *)self, 2);
+    if (weekday == NULL) {
+        return NULL;
+    }
+
+    return PyUnicode_FromFormat("%.200s(year=%S, week=%S, weekday=%S)",
+                               Py_TYPE(self)->tp_name, year, week, weekday);
+}
+
+static PyObject *
+isocalendardate_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // Construct the tuple that this reduces to
+    PyObject * reduce_tuple = Py_BuildValue(
+        "O((OOO))", &PyTuple_Type,
+        PyTuple_GET_ITEM(self, 0),
+        PyTuple_GET_ITEM(self, 1),
+        PyTuple_GET_ITEM(self, 2)
+    );
+
+    return reduce_tuple;
+}
+
+static PyObject *
+iso_calendar_date_year(PyDateTime_IsoCalendarDate *self, void *unused)
+{
+    PyObject *year = PyTuple_GetItem((PyObject *)self, 0);
+    if (year == NULL) {
+        return NULL;
+    }
+    Py_INCREF(year);
+    return year;
+}
+
+static PyObject *
+iso_calendar_date_week(PyDateTime_IsoCalendarDate *self, void *unused)
+{
+    PyObject *week = PyTuple_GetItem((PyObject *)self, 1);
+    if (week == NULL) {
+        return NULL;
+    }
+    Py_INCREF(week);
+    return week;
+}
+
+static PyObject *
+iso_calendar_date_weekday(PyDateTime_IsoCalendarDate *self, void *unused)
+{
+    PyObject *weekday = PyTuple_GetItem((PyObject *)self, 2);
+    if (weekday == NULL) {
+        return NULL;
+    }
+    Py_INCREF(weekday);
+    return weekday;
+}
+
+static PyGetSetDef iso_calendar_date_getset[] = {
+    {"year",        (getter)iso_calendar_date_year},
+    {"week",      (getter)iso_calendar_date_week},
+    {"weekday",      (getter)iso_calendar_date_weekday},
+    {NULL}
+};
+
+static PyMethodDef iso_calendar_date_methods[] = {
+    {"__reduce__", (PyCFunction)isocalendardate_reduce, METH_NOARGS,
+     PyDoc_STR("__reduce__() -> (cls, state)")},
+    {NULL, NULL},
+};
+
+static PyTypeObject PyDateTime_IsoCalendarDateType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "datetime.IsoCalendarDate",                         /* tp_name */
+    sizeof(PyDateTime_IsoCalendarDate),                 /* tp_basicsize */
+    0,                                                  /* tp_itemsize */
+    0,                                                  /* tp_dealloc */
+    0,                                                  /* tp_vectorcall_offset */
+    0,                                                  /* tp_getattr */
+    0,                                                  /* tp_setattr */
+    0,                                                  /* tp_as_async */
+    (reprfunc) iso_calendar_date_repr,                  /* tp_repr */
+    0,                                                  /* tp_as_number */
+    0,                                                  /* tp_as_sequence */
+    0,                                                  /* tp_as_mapping */
+    0,                                                  /* tp_hash */
+    0,                                                  /* tp_call */
+    0,                                                  /* tp_str */
+    0,                                                  /* tp_getattro */
+    0,                                                  /* tp_setattro */
+    0,                                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                                 /* tp_flags */
+    iso_calendar_date__doc__,                           /* tp_doc */
+    0,                                                  /* tp_traverse */
+    0,                                                  /* tp_clear */
+    0,                                                  /* tp_richcompare */
+    0,                                                  /* tp_weaklistoffset */
+    0,                                                  /* tp_iter */
+    0,                                                  /* tp_iternext */
+    iso_calendar_date_methods,                          /* tp_methods */
+    0,                                                  /* tp_members */
+    iso_calendar_date_getset,                           /* tp_getset */
+    &PyTuple_Type,                                      /* tp_base */
+    0,                                                  /* tp_dict */
+    0,                                                  /* tp_descr_get */
+    0,                                                  /* tp_descr_set */
+    0,                                                  /* tp_dictoffset */
+    0,                                                  /* tp_init */
+    0,                                                  /* tp_alloc */
+    iso_calendar_date_new,                              /* tp_new */
+};
+
+/*[clinic input]
+@classmethod
+datetime.IsoCalendarDate.__new__ as iso_calendar_date_new
+    year: int
+    week: int
+    weekday: int
+[clinic start generated code]*/
+
+static PyObject *
+iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
+                           int weekday)
+/*[clinic end generated code: output=383d33d8dc7183a2 input=4f2c663c9d19c4ee]*/
+
+{
+    PyDateTime_IsoCalendarDate *self;
+    self = (PyDateTime_IsoCalendarDate *) type->tp_alloc(type, 3);
+    if (self == NULL) {
+        return NULL;
+    }
+
+    PyTuple_SET_ITEM(self, 0, PyLong_FromLong(year));
+    PyTuple_SET_ITEM(self, 1, PyLong_FromLong(week));
+    PyTuple_SET_ITEM(self, 2, PyLong_FromLong(weekday));
+
+    return (PyObject *)self;
+}
+
 static PyObject *
 date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 {
@@ -3243,7 +3403,13 @@ date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
         ++year;
         week = 0;
     }
-    return Py_BuildValue("iii", year, week + 1, day + 1);
+
+    PyObject* v = iso_calendar_date_new_impl(&PyDateTime_IsoCalendarDateType,
+                    year, week + 1, day + 1);
+    if (v == NULL) {
+        return NULL;
+    }
+    return v;
 }
 
 /* Miscellaneous methods. */
@@ -3382,7 +3548,7 @@ static PyMethodDef date_methods[] = {
      PyDoc_STR("Return time tuple, compatible with time.localtime().")},
 
     {"isocalendar", (PyCFunction)date_isocalendar,  METH_NOARGS,
-     PyDoc_STR("Return a 3-tuple containing ISO year, week number, and "
+     PyDoc_STR("Return a named tuple containing ISO year, week number, and "
                "weekday.")},
 
     {"isoformat",   (PyCFunction)date_isoformat,        METH_NOARGS,
@@ -6392,7 +6558,8 @@ PyInit__datetime(void)
         &PyDateTime_TimeType,
         &PyDateTime_DeltaType,
         &PyDateTime_TZInfoType,
-        &PyDateTime_TimeZoneType
+        &PyDateTime_TimeZoneType,
+        &PyDateTime_IsoCalendarDateType,
     };
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
