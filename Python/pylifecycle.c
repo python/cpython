@@ -1735,10 +1735,10 @@ create_stdio(const PyConfig *config, PyObject* io,
         mode = "wb";
     else
         mode = "rb";
-    buf = _PyObject_CallMethodId(io, &PyId_open, "isiOOOi",
+    buf = _PyObject_CallMethodId(io, &PyId_open, "isiOOOO",
                                  fd, mode, buffering,
                                  Py_None, Py_None, /* encoding, errors */
-                                 Py_None, 0); /* newline, closefd */
+                                 Py_None, Py_False); /* newline, closefd */
     if (buf == NULL)
         goto error;
 

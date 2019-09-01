@@ -1059,10 +1059,10 @@ cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
             }
             Py_DECREF(res);
         }
-        return Py_BuildValue("O(N)(Oi)", Py_TYPE(lz), it, lz->saved, 1);
+        return Py_BuildValue("O(N)(OO)", Py_TYPE(lz), it, lz->saved, Py_True);
     }
-    return Py_BuildValue("O(O)(Oi)", Py_TYPE(lz), lz->it, lz->saved,
-                         lz->firstpass);
+    return Py_BuildValue("O(O)(OO)", Py_TYPE(lz), lz->it, lz->saved,
+                         lz->firstpass ? Py_True : Py_False);
 }
 
 static PyObject *

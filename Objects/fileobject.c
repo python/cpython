@@ -38,9 +38,9 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
     io = PyImport_ImportModule("_io");
     if (io == NULL)
         return NULL;
-    stream = _PyObject_CallMethodId(io, &PyId_open, "isisssi", fd, mode,
+    stream = _PyObject_CallMethodId(io, &PyId_open, "isisssO", fd, mode,
                                  buffering, encoding, errors,
-                                 newline, closefd);
+                                 newline, closefd ? Py_True : Py_False);
     Py_DECREF(io);
     if (stream == NULL)
         return NULL;
