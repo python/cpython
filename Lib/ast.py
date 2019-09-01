@@ -106,7 +106,7 @@ def dump(node, annotate_fields=True, include_attributes=False, indent=None):
     numbers and column offsets are not dumped by default.  If this is wanted,
     include_attributes can be set to true.  If indent is a non-negative
     integer or string, then the tree will be pretty-printed with that indent
-    level.
+    level. None (the default) selects the single line representation.
     """
     def _format(node, level=0):
         if indent is not None:

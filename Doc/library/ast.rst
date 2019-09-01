@@ -330,9 +330,13 @@ and classes for traversing abstract syntax trees:
    *include_attributes* can be set to true.
 
    If *indent* is a non-negative integer or string, then the tree will be
-   pretty-printed with that indent level.
+   pretty-printed with that indent level.  An indent level
+   of 0, negative, or ``""`` will only insert newlines.  ``None`` (the default)
+   selects the single line representation. Using a positive integer indent
+   indents that many spaces per level.  If *indent* is a string (such as ``"\t"``),
+   that string is used to indent each level.
 
-   .. versionchange:: 3.9
+   .. versionchanged:: 3.9
       Added the *indent* option.
 
 
