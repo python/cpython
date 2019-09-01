@@ -224,16 +224,12 @@ PySys_Audit(const char *event, const char *argFormat, ...)
         ts->tracing++;
         ts->use_tracing = 0;
         while ((hook = PyIter_Next(hooks)) != NULL) {
+            _Py_IDENTIFIER(__cantrace__);
             PyObject *o;
-            int canTrace = -1;
-            o = PyObject_GetAttrString(hook, "__cantrace__");
+            int canTrace = _PyObject_LookupAttrId(hook, &PyId___cantrace__, &o);
             if (o) {
                 canTrace = PyObject_IsTrue(o);
                 Py_DECREF(o);
-            } else if (_PyErr_Occurred(ts) &&
-                       _PyErr_ExceptionMatches(ts, PyExc_AttributeError)) {
-                _PyErr_Clear(ts);
-                canTrace = 0;
             }
             if (canTrace < 0) {
                 break;
@@ -579,7 +575,10 @@ sys_displayhook_unencodable(PyThreadState *tstate, PyObject *outf, PyObject *o)
     if (encoded == NULL)
         goto error;
 
-    buffer = _PyObject_GetAttrId(outf, &PyId_buffer);
+    if (_PyObject_LookupAttrId(outf, &PyId_buffer, &buffer) < 0) {
+        Py_DECREF(encoded);
+        goto error;
+    }
     if (buffer) {
         result = _PyObject_CallMethodIdOneArg(buffer, &PyId_write, encoded);
         Py_DECREF(buffer);
@@ -589,7 +588,6 @@ sys_displayhook_unencodable(PyThreadState *tstate, PyObject *outf, PyObject *o)
         Py_DECREF(result);
     }
     else {
-        _PyErr_Clear(tstate);
         escaped_str = PyUnicode_FromEncodedObject(encoded,
                                                   stdout_encoding_str,
                                                   "strict");

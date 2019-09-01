@@ -163,10 +163,10 @@ weakref_repr(PyWeakReference *self)
     if (PyWeakref_GET_OBJECT(self) == Py_None)
         return PyUnicode_FromFormat("<weakref at %p; dead>", self);
 
-    name = _PyObject_GetAttrId(PyWeakref_GET_OBJECT(self), &PyId___name__);
+    if (_PyObject_LookupAttrId(PyWeakref_GET_OBJECT(self), &PyId___name__, &name) < 0) {
+        return NULL;
+    }
     if (name == NULL || !PyUnicode_Check(name)) {
-        if (name == NULL)
-            PyErr_Clear();
         repr = PyUnicode_FromFormat(
             "<weakref at %p; to '%s' at %p>",
             self,

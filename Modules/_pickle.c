@@ -4383,7 +4383,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         _Py_IDENTIFIER(__reduce__);
         _Py_IDENTIFIER(__reduce_ex__);
 
-
         /* XXX: If the __reduce__ method is defined, __reduce_ex__ is
            automatically defined as __reduce__. While this is convenient, this
            make it impossible to know which method was actually called. Of
@@ -4404,14 +4403,15 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             }
         }
         else {
-            PickleState *st = _Pickle_GetGlobalState();
-
             /* Check for a __reduce__ method. */
-            reduce_func = _PyObject_GetAttrId(obj, &PyId___reduce__);
+            if (_PyObject_LookupAttrId(obj, &PyId___reduce__, &reduce_func) < 0) {
+                goto error;
+            }
             if (reduce_func != NULL) {
                 reduce_value = PyObject_CallNoArgs(reduce_func);
             }
             else {
+                PickleState *st = _Pickle_GetGlobalState();
                 PyErr_Format(st->PicklingError,
                              "can't pickle '%.200s' object: %R",
                              type->tp_name, obj);
@@ -6446,7 +6446,9 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
         PyObject *extend_func;
         _Py_IDENTIFIER(extend);
 
-        extend_func = _PyObject_GetAttrId(list, &PyId_extend);
+        if (_PyObject_LookupAttrId(list, &PyId_extend, &extend_func) < 0) {
+            return -1;
+        }
         if (extend_func != NULL) {
             slice = Pdata_poplist(self->stack, x);
             if (!slice) {
@@ -6466,7 +6468,6 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
             /* Even if the PEP 307 requires extend() and append() methods,
                fall back on append() if the object has no extend() method
                for backward compatibility. */
-            PyErr_Clear();
             append_func = _PyObject_GetAttrId(list, &PyId_append);
             if (append_func == NULL)
                 return -1;
