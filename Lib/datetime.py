@@ -15,6 +15,9 @@ import sys
 from collections import namedtuple
 
 
+IsoCalendarDate = namedtuple('IsoCalendarDate', 'year week weekday')
+
+
 def _cmp(x, y):
     return 0 if x == y else 1 if x > y else -1
 
@@ -1098,7 +1101,7 @@ class date:
         return self.toordinal() % 7 or 7
 
     def isocalendar(self):
-        """Return a 3-named tuple containing ISO year, week number, and weekday.
+        """Return a named tuple containing ISO year, week number, and weekday.
 
         The first ISO week of the year is the (Mon-Sun) week
         containing the year's first Thursday; everything else derives
@@ -1561,8 +1564,6 @@ _time_class = time  # so functions w/ args named "time" can get at the class
 time.min = time(0, 0, 0)
 time.max = time(23, 59, 59, 999999)
 time.resolution = timedelta(microseconds=1)
-
-IsoCalendarDate = namedtuple('IsoCalendarDate', 'year week weekday')
 
 
 class datetime(date):

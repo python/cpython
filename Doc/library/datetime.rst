@@ -670,7 +670,7 @@ Instance methods:
 
 .. method:: date.isocalendar()
 
-   Return a 3-namedtuple, (ISO year, ISO week number, ISO weekday).
+   Return a named tuple, (ISO year, ISO week number, ISO weekday).
 
    The ISO calendar is a widely used variant of the Gregorian calendar. [#]_
 
@@ -1403,7 +1403,7 @@ Instance methods:
 
 .. method:: datetime.isocalendar()
 
-   Return a 3-namedtuple, (ISO year, ISO week number, ISO weekday).
+   Return a named tuple, (ISO year, ISO week number, ISO weekday).
    The same as ``self.date().isocalendar()``.
 
 

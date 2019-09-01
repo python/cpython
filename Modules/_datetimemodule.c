@@ -3232,12 +3232,15 @@ static PyStructSequence_Field struct_iso_calendar_date_fields[] = {
     {0}
 };
 
+PyDoc_STRVAR(struct_iso_calendar_date__doc__,
+"The result of date.isocalendar() or datetime.isocalendar()\n\n\
+This object may be accessed either as a tuple of\n\
+  ((year, week, weekday)\n\
+or via the object attributes as named in the above tuple.");
+
 static PyStructSequence_Desc struct_iso_calendar_date_desc = {
     "datetime.IsoCalendarDate",
-    "The result of date.isocalendar() or datetime.isocalendar().\n\n"
-    "This object may be accessed either as a tuple of\n"
-    "  (year,week, weekday)\n"
-    "or via the object attributes as named in the above tuple.",
+    struct_iso_calendar_date__doc__,
     struct_iso_calendar_date_fields,
     3
 };
@@ -3254,9 +3257,6 @@ date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
     int  week;
     int  day;
 
-    PyObject* v = PyStructSequence_New(&StructIsoCalendarDateType);
-    if (!v) return NULL;
-
     week = divmod(today - week1_monday, 7, &day);
     if (week < 0) {
         --year;
@@ -3268,12 +3268,17 @@ date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
         week = 0;
     }
 
+    PyObject *v = PyStructSequence_New(&StructIsoCalendarDateType);
+    if (v == NULL) {
+        return NULL;
+    }
+
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong(year));
     PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong(week + 1));
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromLong(day + 1));
 
     if (PyErr_Occurred()) {
-        Py_XDECREF(v);
+        Py_DECREF(v);
         return NULL;
     }
     return v;
@@ -3415,7 +3420,7 @@ static PyMethodDef date_methods[] = {
      PyDoc_STR("Return time tuple, compatible with time.localtime().")},
 
     {"isocalendar", (PyCFunction)date_isocalendar,  METH_NOARGS,
-     PyDoc_STR("Return a 3-named tuple containing ISO year, week number, and "
+     PyDoc_STR("Return a named tuple containing ISO year, week number, and "
                "weekday.")},
 
     {"isoformat",   (PyCFunction)date_isoformat,        METH_NOARGS,

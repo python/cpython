@@ -1376,6 +1376,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.year, 2008)
         self.assertEqual(t.week, 49)
         self.assertEqual(t.weekday, 3)
+        self.assertEqual((2008, 49, 3), t)
 
     def test_iso_long_years(self):
         # Calculate long ISO years and compare to table from
