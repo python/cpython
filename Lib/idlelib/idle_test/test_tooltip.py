@@ -1,26 +1,30 @@
+from functools import wraps
 from idlelib.tooltip import TooltipBase, Hovertip
 from test.support import requires
-requires('gui')
-
-from functools import wraps
 import time
 from tkinter import Button, Tk, Toplevel
 import unittest
+
+
+requires('gui')
 
 
 def setUpModule():
     global root
     root = Tk()
 
+
 def root_update():
     global root
     root.update()
+
 
 def tearDownModule():
     global root
     root.update_idletasks()
     root.destroy()
     del root
+
 
 def add_call_counting(func):
     @wraps(func)
