@@ -355,23 +355,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_elementtree_Element_getchildren__doc__,
-"getchildren($self, /)\n"
-"--\n"
-"\n");
-
-#define _ELEMENTTREE_ELEMENT_GETCHILDREN_METHODDEF    \
-    {"getchildren", (PyCFunction)_elementtree_Element_getchildren, METH_NOARGS, _elementtree_Element_getchildren__doc__},
-
-static PyObject *
-_elementtree_Element_getchildren_impl(ElementObject *self);
-
-static PyObject *
-_elementtree_Element_getchildren(ElementObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return _elementtree_Element_getchildren_impl(self);
-}
-
 PyDoc_STRVAR(_elementtree_Element_iter__doc__,
 "iter($self, /, tag=None)\n"
 "--\n"
@@ -403,42 +386,6 @@ _elementtree_Element_iter(ElementObject *self, PyObject *const *args, Py_ssize_t
     tag = args[0];
 skip_optional_pos:
     return_value = _elementtree_Element_iter_impl(self, tag);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_elementtree_Element_getiterator__doc__,
-"getiterator($self, /, tag=None)\n"
-"--\n"
-"\n");
-
-#define _ELEMENTTREE_ELEMENT_GETITERATOR_METHODDEF    \
-    {"getiterator", (PyCFunction)(void(*)(void))_elementtree_Element_getiterator, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_getiterator__doc__},
-
-static PyObject *
-_elementtree_Element_getiterator_impl(ElementObject *self, PyObject *tag);
-
-static PyObject *
-_elementtree_Element_getiterator(ElementObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"tag", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "getiterator", 0};
-    PyObject *argsbuf[1];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *tag = Py_None;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    tag = args[0];
-skip_optional_pos:
-    return_value = _elementtree_Element_getiterator_impl(self, tag);
 
 exit:
     return return_value;
@@ -969,4 +916,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=50e0b1954c5f9e0f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f5dbf9b4a095d310 input=a9049054013a1b77]*/

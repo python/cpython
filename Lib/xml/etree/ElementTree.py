@@ -273,19 +273,6 @@ class Element:
         # assert iselement(element)
         self._children.remove(subelement)
 
-    def getchildren(self):
-        """(Deprecated) Return all subelements.
-
-        Elements are returned in document order.
-
-        """
-        warnings.warn(
-            "This method will be removed in future versions.  "
-            "Use 'list(elem)' or iteration over elem instead.",
-            DeprecationWarning, stacklevel=2
-            )
-        return self._children
-
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.
 
@@ -408,15 +395,6 @@ class Element:
             yield self
         for e in self._children:
             yield from e.iter(tag)
-
-    # compatibility
-    def getiterator(self, tag=None):
-        warnings.warn(
-            "This method will be removed in future versions.  "
-            "Use 'elem.iter()' or 'list(elem.iter())' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        return list(self.iter(tag))
 
     def itertext(self):
         """Create text iterator.
@@ -616,15 +594,6 @@ class ElementTree:
         """
         # assert self._root is not None
         return self._root.iter(tag)
-
-    # compatibility
-    def getiterator(self, tag=None):
-        warnings.warn(
-            "This method will be removed in future versions.  "
-            "Use 'tree.iter()' or 'list(tree.iter())' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        return list(self.iter(tag))
 
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.
