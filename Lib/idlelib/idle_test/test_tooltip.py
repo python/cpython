@@ -104,19 +104,41 @@ class HovertipTest(unittest.TestCase):
         self.assertTrue(self.is_tipwindow_shown(tooltip))
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
-    def test_showtip_on_mouse_enter_hover_delay(self):
-        tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=50)
-        self.addCleanup(tooltip.hidetip)
-        tooltip.showtip = add_call_counting(tooltip.showtip)
+    def test_hover_with_delay(self):
+        # Run multiple tests requiring an actual delay simultaneously.
+
+        # Test #1: A hover tip with a non-zero delay appears after the delay.
+        tooltip1 = Hovertip(self.button, 'ToolTip text', hover_delay=50)
+        self.addCleanup(tooltip1.hidetip)
+        tooltip1.showtip = add_call_counting(tooltip1.showtip)
         root_update()
-        self.assertFalse(self.is_tipwindow_shown(tooltip))
+        self.assertFalse(self.is_tipwindow_shown(tooltip1))
         self.button.event_generate('<Enter>', x=0, y=0)
         root_update()
-        self.assertFalse(self.is_tipwindow_shown(tooltip))
+        self.assertFalse(self.is_tipwindow_shown(tooltip1))
+
+        # Test #2: A hover tip with a non-zero delay doesn't appear when
+        # the mouse stops hovering over the base widget before the delay
+        # expires.
+        tooltip2 = Hovertip(self.button, 'ToolTip text', hover_delay=50)
+        self.addCleanup(tooltip2.hidetip)
+        tooltip2.showtip = add_call_counting(tooltip2.showtip)
+        root_update()
+        self.button.event_generate('<Enter>', x=0, y=0)
+        root_update()
+        self.button.event_generate('<Leave>', x=0, y=0)
+        root_update()
+
         time.sleep(0.1)
         root_update()
-        self.assertTrue(self.is_tipwindow_shown(tooltip))
-        self.assertGreater(len(tooltip.showtip.call_args_list), 0)
+
+        # Test #1 assertions.
+        self.assertTrue(self.is_tipwindow_shown(tooltip1))
+        self.assertGreater(len(tooltip1.showtip.call_args_list), 0)
+
+        # Test #2 assertions.
+        self.assertFalse(self.is_tipwindow_shown(tooltip2))
+        self.assertEqual(tooltip2.showtip.call_args_list, [])
 
     def test_hidetip_on_mouse_leave(self):
         tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=None)
@@ -129,20 +151,6 @@ class HovertipTest(unittest.TestCase):
         root_update()
         self.assertFalse(self.is_tipwindow_shown(tooltip))
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
-
-    def test_dont_show_on_mouse_leave_before_delay(self):
-        tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=50)
-        self.addCleanup(tooltip.hidetip)
-        tooltip.showtip = add_call_counting(tooltip.showtip)
-        root_update()
-        self.button.event_generate('<Enter>', x=0, y=0)
-        root_update()
-        self.button.event_generate('<Leave>', x=0, y=0)
-        root_update()
-        time.sleep(0.1)
-        root_update()
-        self.assertFalse(self.is_tipwindow_shown(tooltip))
-        self.assertEqual(tooltip.showtip.call_args_list, [])
 
 
 if __name__ == '__main__':
