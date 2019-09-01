@@ -1,0 +1,2 @@
+Increase the ``hover_delay`` in IDLE's test_tooltip, and run both tests
+waiting for a delay to expire simultaneously, to reduce total run time.
