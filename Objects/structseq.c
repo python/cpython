@@ -442,6 +442,82 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
     (void)PyStructSequence_InitType2(type, desc);
 }
 
+static PyObject *
+isocalendardate_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // Construct the tuple that this reduces to
+    PyObject * reduce_tuple = Py_BuildValue(
+        "O((OOO))", &PyTuple_Type,
+        PyTuple_GET_ITEM(self, 0),
+        PyTuple_GET_ITEM(self, 1),
+        PyTuple_GET_ITEM(self, 2)
+    );
+    return reduce_tuple;
+}
+
+static PyMethodDef iso_calendar_date_methods[] = {
+    {"__reduce__", (PyCFunction)isocalendardate_reduce, METH_NOARGS,
+     PyDoc_STR("__reduce__() -> (cls, state)")},
+    {NULL, NULL},
+};
+
+int
+IsoCalendarDateType_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
+{
+    PyMemberDef *members;
+    Py_ssize_t n_members, n_unnamed_members;
+
+#ifdef Py_TRACE_REFS
+    /* if the type object was chained, unchain it first
+       before overwriting its storage */
+    if (type->ob_base.ob_base._ob_next) {
+        _Py_ForgetReference((PyObject *)type);
+    }
+#endif
+
+    /* PyTypeObject has already been initialized */
+    if (Py_REFCNT(type) != 0) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    type->tp_name = desc->name;
+    type->tp_basicsize = sizeof(PyStructSequence) - sizeof(PyObject *);
+    type->tp_itemsize = sizeof(PyObject *);
+    type->tp_dealloc = (destructor)structseq_dealloc;
+    type->tp_repr = (reprfunc)structseq_repr;
+    type->tp_doc = desc->doc;
+    type->tp_base = &PyTuple_Type;
+    type->tp_methods = iso_calendar_date_methods;
+    type->tp_new = structseq_new;
+    type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
+    type->tp_traverse = (traverseproc) structseq_traverse;
+
+    n_members = count_members(desc, &n_unnamed_members);
+    members = PyMem_NEW(PyMemberDef, n_members - n_unnamed_members + 1);
+    if (members == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    initialize_members(desc, members, n_members);
+    type->tp_members = members;
+
+    if (PyType_Ready(type) < 0) {
+        PyMem_FREE(members);
+        return -1;
+    }
+    Py_INCREF(type);
+
+    if (initialize_structseq_dict(
+            desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
+        PyMem_FREE(members);
+        Py_DECREF(type);
+        return -1;
+    }
+
+    return 0;
+}
+
 PyTypeObject *
 PyStructSequence_NewType(PyStructSequence_Desc *desc)
 {

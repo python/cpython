@@ -3225,6 +3225,45 @@ date_isoweekday(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
     return PyLong_FromLong(dow + 1);
 }
 
+static PyStructSequence_Field struct_iso_calendar_date_fields[] = {
+    {"year", "year, for example, 1993"},
+    {"week", "week, range [1, 53]"},
+    {"weekday", "week day, range [1, 7]"},
+    {0}
+};
+
+PyDoc_STRVAR(struct_iso_calendar_date__doc__,
+"The result of date.isocalendar() or datetime.isocalendar()\n\n\
+This object may be accessed either as a tuple of\n\
+  ((year, week, weekday)\n\
+or via the object attributes as named in the above tuple.");
+
+static PyStructSequence_Desc struct_iso_calendar_date_desc = {
+    "datetime.IsoCalendarDate",
+    struct_iso_calendar_date__doc__,
+    struct_iso_calendar_date_fields,
+    3
+};
+
+static int isocalendardate_initialized;
+static PyTypeObject StructIsoCalendarDateType;
+
+/* Method to add our custom reduce type to the IsoCalendarDate type */
+static int
+_initialize_isocalendardate() {
+    if (isocalendardate_initialized) {
+        return 0;
+    }
+
+    if (IsoCalendarDateType_InitType(&StructIsoCalendarDateType,
+                                   &struct_iso_calendar_date_desc) < 0) {
+        return -1;
+    }
+
+    isocalendardate_initialized = 1;
+    return 0;
+}
+
 static PyObject *
 date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 {
@@ -3244,10 +3283,22 @@ date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
         ++year;
         week = 0;
     }
-    return Py_BuildValue("iii", year, week + 1, day + 1);
-}
 
-/* Miscellaneous methods. */
+    PyObject *v = PyStructSequence_New(&StructIsoCalendarDateType);
+
+    if (v == NULL) {
+        return NULL;
+    }
+
+    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong(year));
+    PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong(week + 1));
+    PyStructSequence_SET_ITEM(v, 2, PyLong_FromLong(day + 1));
+    if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
+}
 
 static PyObject *
 date_richcompare(PyObject *self, PyObject *other, int op)
@@ -3383,7 +3434,7 @@ static PyMethodDef date_methods[] = {
      PyDoc_STR("Return time tuple, compatible with time.localtime().")},
 
     {"isocalendar", (PyCFunction)date_isocalendar,  METH_NOARGS,
-     PyDoc_STR("Return a 3-tuple containing ISO year, week number, and "
+     PyDoc_STR("Return a named tuple containing ISO year, week number, and "
                "weekday.")},
 
     {"isoformat",   (PyCFunction)date_isoformat,        METH_NOARGS,
@@ -6515,6 +6566,11 @@ PyInit__datetime(void)
     /* module initialization */
     PyModule_AddIntMacro(m, MINYEAR);
     PyModule_AddIntMacro(m, MAXYEAR);
+
+    /* IsoCalendarDate */
+    if (_initialize_isocalendardate()) {
+        return NULL;
+    }
 
     Py_INCREF(&PyDateTime_DateType);
     PyModule_AddObject(m, "date", (PyObject *) &PyDateTime_DateType);
