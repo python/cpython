@@ -1382,7 +1382,10 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    self->write = _PyObject_GetAttrId(output_file, &PyId_write);
+    if (_PyObject_LookupAttrId(output_file, &PyId_write, &self->write) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
     if (self->write == NULL || !PyCallable_Check(self->write)) {
         PyErr_SetString(PyExc_TypeError,
                         "argument 1 must have a \"write\" method");

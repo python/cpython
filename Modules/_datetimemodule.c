@@ -3610,24 +3610,24 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     _Py_IDENTIFIER(__getinitargs__);
     _Py_IDENTIFIER(__getstate__);
 
-    getinitargs = _PyObject_GetAttrId(self, &PyId___getinitargs__);
+    if (_PyObject_LookupAttrId(self, &PyId___getinitargs__, &getinitargs) < 0) {
+        return NULL;
+    }
     if (getinitargs != NULL) {
         args = _PyObject_CallNoArg(getinitargs);
         Py_DECREF(getinitargs);
-        if (args == NULL) {
-            return NULL;
-        }
     }
     else {
-        PyErr_Clear();
-
         args = PyTuple_New(0);
-        if (args == NULL) {
-            return NULL;
-        }
+    }
+    if (args == NULL) {
+        return NULL;
     }
 
-    getstate = _PyObject_GetAttrId(self, &PyId___getstate__);
+    if (_PyObject_LookupAttrId(self, &PyId___getstate__, &getstate) < 0) {
+        Py_DECREF(args);
+        return NULL;
+    }
     if (getstate != NULL) {
         state = _PyObject_CallNoArg(getstate);
         Py_DECREF(getstate);
@@ -3638,7 +3638,6 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     else {
         PyObject **dictptr;
-        PyErr_Clear();
         state = Py_None;
         dictptr = _PyObject_GetDictPtr(self);
         if (dictptr && *dictptr && PyDict_GET_SIZE(*dictptr)) {
