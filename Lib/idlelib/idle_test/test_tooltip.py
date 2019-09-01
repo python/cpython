@@ -108,7 +108,7 @@ class HovertipTest(unittest.TestCase):
         # Run multiple tests requiring an actual delay simultaneously.
 
         # Test #1: A hover tip with a non-zero delay appears after the delay.
-        tooltip1 = Hovertip(self.button, 'ToolTip text', hover_delay=50)
+        tooltip1 = Hovertip(self.button, 'ToolTip text', hover_delay=100)
         self.addCleanup(tooltip1.hidetip)
         tooltip1.showtip = add_call_counting(tooltip1.showtip)
         root_update()
@@ -120,7 +120,7 @@ class HovertipTest(unittest.TestCase):
         # Test #2: A hover tip with a non-zero delay doesn't appear when
         # the mouse stops hovering over the base widget before the delay
         # expires.
-        tooltip2 = Hovertip(self.button, 'ToolTip text', hover_delay=50)
+        tooltip2 = Hovertip(self.button, 'ToolTip text', hover_delay=100)
         self.addCleanup(tooltip2.hidetip)
         tooltip2.showtip = add_call_counting(tooltip2.showtip)
         root_update()
@@ -129,7 +129,7 @@ class HovertipTest(unittest.TestCase):
         self.button.event_generate('<Leave>', x=0, y=0)
         root_update()
 
-        time.sleep(0.1)
+        time.sleep(0.15)
         root_update()
 
         # Test #1 assertions.
