@@ -65,22 +65,25 @@ class HovertipTest(unittest.TestCase):
     def setUp(self):
         self.top, self.button = _make_top_and_button(self)
 
+    def is_tipwindow_shown(self, tooltip):
+        return tooltip.tipwindow and tooltip.tipwindow.winfo_viewable()
+
     def test_showtip(self):
         tooltip = Hovertip(self.button, 'ToolTip text')
         self.addCleanup(tooltip.hidetip)
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
         tooltip.showtip()
-        self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertTrue(self.is_tipwindow_shown(tooltip))
 
     def test_showtip_twice(self):
         tooltip = Hovertip(self.button, 'ToolTip text')
         self.addCleanup(tooltip.hidetip)
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
         tooltip.showtip()
-        self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertTrue(self.is_tipwindow_shown(tooltip))
         orig_tipwindow = tooltip.tipwindow
         tooltip.showtip()
-        self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertTrue(self.is_tipwindow_shown(tooltip))
         self.assertIs(tooltip.tipwindow, orig_tipwindow)
 
     def test_hidetip(self):
@@ -88,17 +91,17 @@ class HovertipTest(unittest.TestCase):
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip()
         tooltip.hidetip()
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
 
     def test_showtip_on_mouse_enter_no_delay(self):
         tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=None)
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
         root_update()
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
         self.button.event_generate('<Enter>', x=0, y=0)
         root_update()
-        self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertTrue(self.is_tipwindow_shown(tooltip))
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
     def test_showtip_on_mouse_enter_hover_delay(self):
@@ -106,13 +109,13 @@ class HovertipTest(unittest.TestCase):
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
         root_update()
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
         self.button.event_generate('<Enter>', x=0, y=0)
         root_update()
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
         time.sleep(0.1)
         root_update()
-        self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertTrue(self.is_tipwindow_shown(tooltip))
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
     def test_hidetip_on_mouse_leave(self):
@@ -124,7 +127,7 @@ class HovertipTest(unittest.TestCase):
         root_update()
         self.button.event_generate('<Leave>', x=0, y=0)
         root_update()
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
     def test_dont_show_on_mouse_leave_before_delay(self):
@@ -138,7 +141,7 @@ class HovertipTest(unittest.TestCase):
         root_update()
         time.sleep(0.1)
         root_update()
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
         self.assertEqual(tooltip.showtip.call_args_list, [])
 
 
