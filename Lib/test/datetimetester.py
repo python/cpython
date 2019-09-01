@@ -6160,7 +6160,7 @@ class CapiTest(unittest.TestCase):
     def test_date_from_date(self):
         exp_date = date(1993, 8, 26)
 
-        for macro in [0, 1]:
+        for macro in False, True:
             with self.subTest(macro=macro):
                 c_api_date = _testcapi.get_date_fromdate(
                     macro,
@@ -6173,7 +6173,7 @@ class CapiTest(unittest.TestCase):
     def test_datetime_from_dateandtime(self):
         exp_date = datetime(1993, 8, 26, 22, 12, 55, 99999)
 
-        for macro in [0, 1]:
+        for macro in False, True:
             with self.subTest(macro=macro):
                 c_api_date = _testcapi.get_datetime_fromdateandtime(
                     macro,
@@ -6191,7 +6191,7 @@ class CapiTest(unittest.TestCase):
         exp_date = datetime(1993, 8, 26, 22, 12, 55, 99999)
 
         for fold in [0, 1]:
-            for macro in [0, 1]:
+            for macro in False, True:
                 with self.subTest(macro=macro, fold=fold):
                     c_api_date = _testcapi.get_datetime_fromdateandtimeandfold(
                         macro,
@@ -6210,7 +6210,7 @@ class CapiTest(unittest.TestCase):
     def test_time_from_time(self):
         exp_time = time(22, 12, 55, 99999)
 
-        for macro in [0, 1]:
+        for macro in False, True:
             with self.subTest(macro=macro):
                 c_api_time = _testcapi.get_time_fromtime(
                     macro,
@@ -6225,7 +6225,7 @@ class CapiTest(unittest.TestCase):
         exp_time = time(22, 12, 55, 99999)
 
         for fold in [0, 1]:
-            for macro in [0, 1]:
+            for macro in False, True:
                 with self.subTest(macro=macro, fold=fold):
                     c_api_time = _testcapi.get_time_fromtimeandfold(
                         macro,
@@ -6241,7 +6241,7 @@ class CapiTest(unittest.TestCase):
     def test_delta_from_dsu(self):
         exp_delta = timedelta(26, 55, 99999)
 
-        for macro in [0, 1]:
+        for macro in False, True:
             with self.subTest(macro=macro):
                 c_api_delta = _testcapi.get_delta_fromdsu(
                     macro,
@@ -6254,7 +6254,7 @@ class CapiTest(unittest.TestCase):
     def test_date_from_timestamp(self):
         ts = datetime(1995, 4, 12).timestamp()
 
-        for macro in [0, 1]:
+        for macro in False, True:
             with self.subTest(macro=macro):
                 d = _testcapi.get_date_fromtimestamp(int(ts), macro)
 
@@ -6272,7 +6272,7 @@ class CapiTest(unittest.TestCase):
 
         from_timestamp = _testcapi.get_datetime_fromtimestamp
         for case in cases:
-            for macro in [0, 1]:
+            for macro in False, True:
                 with self.subTest(case=case, macro=macro):
                     dtup, tzinfo, usetz = case
                     dt_orig = datetime(*dtup, tzinfo=tzinfo)
