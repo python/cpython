@@ -1710,14 +1710,14 @@ class XMLParser:
     def feed(self, data):
         """Feed encoded data to parser."""
         try:
-            self.parser.Parse(data, 0)
+            self.parser.Parse(data, False)
         except self._error as v:
             self._raiseerror(v)
 
     def close(self):
         """Finish feeding data to parser and return element structure."""
         try:
-            self.parser.Parse("", 1) # end of data
+            self.parser.Parse(b"", True) # end of data
         except self._error as v:
             self._raiseerror(v)
         try:
