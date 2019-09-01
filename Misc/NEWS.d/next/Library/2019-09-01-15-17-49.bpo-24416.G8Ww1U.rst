@@ -1,0 +1,4 @@
+The :meth:`~datetime.date.isocalendar()` of :class:`datetime.date` and
+:meth:`~datetime.datetime.isocalendar()` of :class:`datetime.datetime`
+methods now returns a :func:`~collections.namedtuple` instead of a
+:class:`tuple`. It can't be unpickled in previous versions.

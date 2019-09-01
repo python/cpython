@@ -76,7 +76,8 @@ class TestModule(unittest.TestCase):
         names = set(name for name in dir(datetime)
                     if not name.startswith('__') and not name.endswith('__'))
         allowed = set(['MAXYEAR', 'MINYEAR', 'date', 'datetime',
-                       'datetime_CAPI', 'time', 'timedelta', 'timezone',
+                       'datetime_CAPI', 'IsoCalendarDate', 'namedtuple',
+                       'time', 'timedelta', 'timezone',
                        'tzinfo', 'sys'])
         self.assertEqual(names - allowed, set([]))
 
@@ -1368,6 +1369,13 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.assertEqual(d.isocalendar(), (2009, 53, i+1))
             d = self.theclass(2010, 1, 4+i)
             self.assertEqual(d.isocalendar(), (2010, 1, i+1))
+
+    def test_isocalendar_named(self):
+        d = self.theclass(2008, 12, 3)
+        t = d.isocalendar()
+        self.assertEqual(t.year, 2008)
+        self.assertEqual(t.week, 49)
+        self.assertEqual(t.weekday, 3)
 
     def test_iso_long_years(self):
         # Calculate long ISO years and compare to table from
