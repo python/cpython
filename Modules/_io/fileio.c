@@ -254,12 +254,6 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             self->fd = -1;
     }
 
-    if (PyFloat_Check(nameobj)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float");
-        return -1;
-    }
-
     fd = _PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
@@ -894,10 +888,6 @@ portable_lseek(fileio *self, PyObject *posobj, int whence)
         pos = 0;
     }
     else {
-        if(PyFloat_Check(posobj)) {
-            PyErr_SetString(PyExc_TypeError, "an integer is required");
-            return NULL;
-        }
 #if defined(HAVE_LARGEFILE_SUPPORT)
         pos = PyLong_AsLongLong(posobj);
 #else

@@ -171,11 +171,6 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         _PyArg_BadArgument("pbkdf2_hmac", "argument 'salt'", "contiguous buffer", args[2]);
         goto exit;
     }
-    if (PyFloat_Check(args[3])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     iterations = PyLong_AsLong(args[3]);
     if (iterations == -1 && PyErr_Occurred()) {
         goto exit;
@@ -292,11 +287,6 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[5]) {
-        if (PyFloat_Check(args[5])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         maxmem = PyLong_AsLong(args[5]);
         if (maxmem == -1 && PyErr_Occurred()) {
             goto exit;
@@ -304,11 +294,6 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
-    }
-    if (PyFloat_Check(args[6])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     dklen = PyLong_AsLong(args[6]);
     if (dklen == -1 && PyErr_Occurred()) {
@@ -409,4 +394,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=565dcbe3452e71f4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=928712251a68ac12 input=a9049054013a1b77]*/

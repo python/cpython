@@ -430,11 +430,6 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
     if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = PyNumber_Index(args[0]);
@@ -916,4 +911,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f5dbf9b4a095d310 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1f62c5727383a9bf input=a9049054013a1b77]*/

@@ -102,11 +102,6 @@ gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     generation = _PyLong_AsInt(args[0]);
     if (generation == -1 && PyErr_Occurred()) {
         goto exit;
@@ -151,11 +146,6 @@ gc_set_debug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flags;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flags = _PyLong_AsInt(arg);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
@@ -373,4 +363,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e40d384b1f0d513c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=529edb510745486e input=a9049054013a1b77]*/

@@ -95,11 +95,6 @@ _bz2_BZ2Compressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     if (PyTuple_GET_SIZE(args) < 1) {
         goto skip_optional;
     }
-    if (PyFloat_Check(PyTuple_GET_ITEM(args, 0))) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     compresslevel = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
     if (compresslevel == -1 && PyErr_Occurred()) {
         goto exit;
@@ -162,11 +157,6 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = PyNumber_Index(args[1]);
@@ -220,4 +210,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ec3d1b3652c98823 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f0f626bde653d7c4 input=a9049054013a1b77]*/

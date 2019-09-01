@@ -1967,7 +1967,7 @@ static const unsigned long SmallFactorials[] = {
 /*[clinic input]
 math.factorial
 
-    x as arg: object
+    x: long
     /
 
 Find x!.
@@ -1976,52 +1976,13 @@ Raise a ValueError if x is negative or non-integral.
 [clinic start generated code]*/
 
 static PyObject *
-math_factorial(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=6686f26fae00e9ca input=6d1c8105c0d91fb4]*/
+math_factorial_impl(PyObject *module, long x)
+/*[clinic end generated code: output=a64174000ce6a64a input=8038b991011c50b7]*/
 {
-    long x, two_valuation;
-    int overflow;
-    PyObject *result, *odd_part, *pyint_form;
+    long two_valuation;
+    PyObject *result, *odd_part;
 
-    if (PyFloat_Check(arg)) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "Using factorial() with floats is deprecated",
-                         1) < 0)
-        {
-            return NULL;
-        }
-        PyObject *lx;
-        double dx = PyFloat_AS_DOUBLE((PyFloatObject *)arg);
-        if (!(Py_IS_FINITE(dx) && dx == floor(dx))) {
-            PyErr_SetString(PyExc_ValueError,
-                            "factorial() only accepts integral values");
-            return NULL;
-        }
-        lx = PyLong_FromDouble(dx);
-        if (lx == NULL)
-            return NULL;
-        x = PyLong_AsLongAndOverflow(lx, &overflow);
-        Py_DECREF(lx);
-    }
-    else {
-        pyint_form = PyNumber_Index(arg);
-        if (pyint_form == NULL) {
-            return NULL;
-        }
-        x = PyLong_AsLongAndOverflow(pyint_form, &overflow);
-        Py_DECREF(pyint_form);
-    }
-
-    if (x == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    else if (overflow == 1) {
-        PyErr_Format(PyExc_OverflowError,
-                     "factorial() argument should not exceed %ld",
-                     LONG_MAX);
-        return NULL;
-    }
-    else if (overflow == -1 || x < 0) {
+    if (x < 0) {
         PyErr_SetString(PyExc_ValueError,
                         "factorial() not defined for negative values");
         return NULL;

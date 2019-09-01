@@ -31,11 +31,6 @@ pyexpat_xmlparser_Parse(xmlparseobject *self, PyObject *const *args, Py_ssize_t 
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     isfinal = _PyLong_AsInt(args[1]);
     if (isfinal == -1 && PyErr_Occurred()) {
         goto exit;
@@ -220,11 +215,6 @@ pyexpat_xmlparser_SetParamEntityParsing(xmlparseobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flag = _PyLong_AsInt(arg);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
@@ -383,11 +373,6 @@ pyexpat_ErrorString(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     long code;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     code = PyLong_AsLong(arg);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
@@ -401,4 +386,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=133a4105d508ebec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=087847c344e92f4b input=a9049054013a1b77]*/

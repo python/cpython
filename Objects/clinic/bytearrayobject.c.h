@@ -188,11 +188,6 @@ bytearray_replace(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = PyNumber_Index(args[2]);
@@ -265,11 +260,6 @@ bytearray_split(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs
         if (!--noptargs) {
             goto skip_optional_pos;
         }
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     {
         Py_ssize_t ival = -1;
@@ -370,11 +360,6 @@ bytearray_rsplit(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
             goto skip_optional_pos;
         }
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = PyNumber_Index(args[1]);
@@ -437,11 +422,6 @@ bytearray_insert(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
     int item;
 
     if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     {
@@ -536,11 +516,6 @@ bytearray_pop(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if (nargs < 1) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     {
         Py_ssize_t ival = -1;
@@ -816,11 +791,6 @@ bytearray_splitlines(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     keepends = _PyLong_AsInt(args[0]);
     if (keepends == -1 && PyErr_Occurred()) {
         goto exit;
@@ -920,11 +890,6 @@ bytearray_hex(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, 
             goto skip_optional_pos;
         }
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     bytes_per_sep = _PyLong_AsInt(args[1]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
         goto exit;
@@ -978,11 +943,6 @@ bytearray_reduce_ex(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t n
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     proto = _PyLong_AsInt(args[0]);
     if (proto == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1011,4 +971,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=09df354d3374dfb2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=84d9d89cbaa47135 input=a9049054013a1b77]*/

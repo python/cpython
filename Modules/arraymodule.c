@@ -330,17 +330,6 @@ II_getitem(arrayobject *ap, Py_ssize_t i)
         (unsigned long) ((unsigned int *)ap->ob_item)[i]);
 }
 
-static PyObject *
-get_int_unless_float(PyObject *v)
-{
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "array item must be integer");
-        return NULL;
-    }
-    return _PyLong_FromNbIndexOrNbInt(v);
-}
-
 static int
 II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
@@ -348,7 +337,7 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        v = get_int_unless_float(v);
+        v = PyNumber_Index(v);
         if (NULL == v) {
             return -1;
         }
@@ -408,7 +397,7 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        v = get_int_unless_float(v);
+        v = PyNumber_Index(v);
         if (NULL == v) {
             return -1;
         }
@@ -461,7 +450,7 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        v = get_int_unless_float(v);
+        v = PyNumber_Index(v);
         if (NULL == v) {
             return -1;
         }

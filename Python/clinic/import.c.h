@@ -420,11 +420,6 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!args) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     key = PyLong_AsLong(args[0]);
     if (key == -1 && PyErr_Occurred()) {
         goto exit;
@@ -454,4 +449,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=ff06f7cf4b73eb76 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8fb06a4829ff9597 input=a9049054013a1b77]*/

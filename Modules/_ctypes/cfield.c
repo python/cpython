@@ -353,14 +353,7 @@ PyTypeObject PyCField_Type = {
 static int
 get_long(PyObject *v, long *p)
 {
-    long x;
-
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongMask(v);
+    long x = PyLong_AsUnsignedLongMask(v);
     if (x == -1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -372,14 +365,7 @@ get_long(PyObject *v, long *p)
 static int
 get_ulong(PyObject *v, unsigned long *p)
 {
-    unsigned long x;
-
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongMask(v);
+    unsigned long x = PyLong_AsUnsignedLongMask(v);
     if (x == (unsigned long)-1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -391,13 +377,7 @@ get_ulong(PyObject *v, unsigned long *p)
 static int
 get_longlong(PyObject *v, long long *p)
 {
-    long long x;
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongLongMask(v);
+    long long x = PyLong_AsUnsignedLongLongMask(v);
     if (x == -1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -409,13 +389,7 @@ get_longlong(PyObject *v, long long *p)
 static int
 get_ulonglong(PyObject *v, unsigned long long *p)
 {
-    unsigned long long x;
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongLongMask(v);
+    unsigned long long x = PyLong_AsUnsignedLongLongMask(v);
     if (x == (unsigned long long)-1 && PyErr_Occurred())
         return -1;
     *p = x;

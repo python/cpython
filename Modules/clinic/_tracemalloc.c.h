@@ -101,11 +101,6 @@ _tracemalloc_start(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     nframe = _PyLong_AsInt(args[0]);
     if (nframe == -1 && PyErr_Occurred()) {
         goto exit;
@@ -197,4 +192,4 @@ _tracemalloc_get_traced_memory(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_get_traced_memory_impl(module);
 }
-/*[clinic end generated code: output=1bc96dc569706afa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d3054c5e0d186a6a input=a9049054013a1b77]*/

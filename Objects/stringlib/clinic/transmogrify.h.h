@@ -33,11 +33,6 @@ stringlib_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     tabsize = _PyLong_AsInt(args[0]);
     if (tabsize == -1 && PyErr_Occurred()) {
         goto exit;
@@ -71,11 +66,6 @@ stringlib_ljust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     char fillchar = ' ';
 
     if (!_PyArg_CheckPositional("ljust", nargs, 1, 2)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     {
@@ -134,11 +124,6 @@ stringlib_rjust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("rjust", nargs, 1, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = PyNumber_Index(args[0]);
@@ -195,11 +180,6 @@ stringlib_center(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("center", nargs, 1, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = PyNumber_Index(args[0]);
@@ -252,11 +232,6 @@ stringlib_zfill(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t width;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = PyNumber_Index(arg);
@@ -274,4 +249,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=15be047aef999b4e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd5ecdbf1d9e849a input=a9049054013a1b77]*/
