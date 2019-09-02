@@ -5,98 +5,309 @@ import glob
 import os.path
 import re
 
-from c_statics import KNOWN_FILE, SOURCE_DIRS, REPO_ROOT
+from c_parser.preprocessor import _iter_clean_lines
+from c_parser.naive import (
+        iter_variables, parse_variable_declaration, find_variables,
+        )
+from c_parser.info import Variable
 
-from . import known
+from . import SOURCE_DIRS, REPO_ROOT
+from .known import DATA_FILE as KNOWN_FILE, HEADER as KNOWN_HEADER
 from .info import UNKNOWN, ID
 from .util import run_cmd, write_tsv
+from .files import iter_cpython_files
 
 
-@contextlib.contextmanager
-def get_srclines(filename, srclines=None, *,
-                 cache=None,
-                 _open=open,
-                 ):
-    if srclines is None:
-        if cache is None:
-            with _open(filename) as srcfile:
-                srclines = list(srcfile)
-        else:
-            try:
-                srclines = cache[filename]
-            except KeyError:
-                with open(filename) as srcfile:
-                    srclines = [line.rstrip() for line in srcfile]
-                cache[filename] = srclines
-    yield srclines
+POTS = ('char ', 'wchar_t ', 'int ', 'Py_ssize_t ')
+POTS += tuple('const ' + v for v in POTS)
+STRUCTS = ('PyTypeObject', 'PyObject', 'PyMethodDef', 'PyModuleDef', 'grammar')
 
 
-def find_matching_variable(varid, filename, srclines=None, *,
-                           cache=None,
-                           _used=set(),
-                           _get_srclines=get_srclines,
-                           ):
-    # XXX Store found variables in the cache instead of the src lines?
-    # Then we would pop from cache instead of using "_used".
-    name = varid.name
-    funcname = varid.funcname
-    with _get_srclines(filename, srclines, cache=cache) as srclines:
-        for line in srclines:
-            # XXX remember current funcname
-            if not re.match(rf'.*\b{name}\b', line):
-                continue
-            if funcname:
-                if not line.startswith('    '):
-                    continue
-                line = line.strip()
-            if not line.startswith('static '):
-                continue
-            filename = os.path.relpath(filename, REPO_ROOT)
-            newid = ID(filename, funcname, name)
-            if newid in _used:
-                continue
-            _used.add(newid)
+def _parse_static(line, funcname=None):
+    line = line.strip()
+    if line.startswith('static '):
+        if '(' in line and '[' not in line and ' = ' not in line:
+            return None, None
+        name, decl = parse_variable_declaration(line)
+    elif line.startswith(('Py_LOCAL(', 'Py_LOCAL_INLINE(')):
+        name, decl = parse_variable_declaration(line)
+    elif line.startswith('_Py_static_string('):
+        decl = line.strip(';').strip()
+        name = line.split('(')[1].split(',')[0].strip()
+    elif line.startswith('_Py_IDENTIFIER('):
+        decl = line.strip(';').strip()
+        name = 'PyId_' + line.split('(')[1].split(')')[0].strip()
+    elif funcname:
+        return None, None
 
-            decl = line.split('=')[0].strip()
-            decl = decl.strip(';').strip()
-            return newid, decl
-    return varid, UNKNOWN
+    # global-only
+    elif line.startswith(POTS):  # implied static
+        if '(' in line and '[' not in line and ' = ' not in line:
+            return None, None
+        name, decl = parse_variable_declaration(line)
+    elif line.startswith('PyAPI_DATA('):
+        name, decl = parse_variable_declaration(line)
+    elif line.startswith(STRUCTS) and line.endswith(' = {'):  # implied static
+        name, decl = parse_variable_declaration(line)
+    elif line.startswith(STRUCTS) and line.endswith(' = NULL;'):  # implied static
+        name, decl = parse_variable_declaration(line)
+    elif line.startswith('struct '):
+        if not line.endswith(' = {'):
+            return None, None
+        if not line.partition(' ')[2].startswith(STRUCTS):
+            return None, None
+        # implied static
+        name, decl = parse_variable_declaration(line)
+    elif line.startswith('PyDoc_VAR('):
+        decl = line.strip(';').strip()
+        name = line.split('(')[1].split(')')[0].strip()
+
+    # file-specific
+    elif line.startswith(('SLOT1BINFULL(', 'SLOT1BIN(')):
+        # Objects/typeobject.c
+        funcname = line.split('(')[1].split(',')[0]
+        return [
+                ('op_id', funcname, '_Py_static_string(op_id, OPSTR)'),
+                ('rop_id', funcname, '_Py_static_string(op_id, OPSTR)'),
+                ]
+    elif line.startswith('WRAP_METHOD('):
+        # Objects/weakrefobject.c
+        funcname, name = (v.strip() for v in line.split('(')[1].split(')')[0].split(','))
+        return [
+                ('PyId_' + name, funcname, f'_Py_IDENTIFIER({name})'),
+                ]
+    else:
+        return None, None
+    return name, decl
 
 
-def known_rows(symbols, *,
-               dirnames=SOURCE_DIRS,
-               _find_match=find_matching_variable,
-               ):
-    cache = {}
-    for symbol in symbols:
-        if symbol.filename and symbol.filename != UNKNOWN:
-            filenames = [symbol.filename]
-        else:
-            filenames = []
-            for suffix in ('.c', '.h'):
-                for dirname in SOURCE_DIRS:
-                    filenames.extend(glob.glob(f'{dirname}/*{suffix}'))
-                    filenames.extend(glob.glob(f'{dirname}/**/*{suffix}'))
+def _pop_cached(varcache, filename, funcname, name, *,
+                _iter_variables=iter_variables,
+                ):
+    # Look for the file.
+    try:
+        cached = varcache[filename]
+    except KeyError:
+        cached = varcache[filename] = {}
+        for variable in _iter_variables(filename,
+                                        parse_variable=_parse_static,
+                                        ):
+            variable._isstatic = True
+            cached[variable.id] = variable
+        for var in cached:
+            print(' ', var)
 
-        if symbol.funcname == UNKNOWN:
-            print(symbol)
-
-        if not filenames:
-            raise ValueError(f'no files found for dirnames {dirnames}')
-        for filename in filenames:
-            found, decl = _find_match(symbol.id, filename, cache=cache)
-            if decl != UNKNOWN:
+    # Look for the variable.
+    if funcname == UNKNOWN:
+        for varid in cached:
+            if varid.name == name:
                 break
-        # else we will have made at least one pass, so found will be
-        # symbol.id and decl will be UNKNOWN.
+        else:
+            return None
+        return cached.pop(varid)
+    else:
+        return cached.pop((filename, funcname, name), None)
 
-        yield (
-            found.filename,
-            found.funcname or '-',
-            found.name,
+
+def find_matching_variable(varid, varcache, allfilenames, *,
+                           _pop_cached=_pop_cached,
+                           ):
+    if varid.filename and varid.filename != UNKNOWN:
+        filenames = [varid.filename]
+    else:
+        filenames = allfilenames
+    for filename in filenames:
+        static = _pop_cached(varcache, filename, varid.funcname, varid.name)
+        if static is not None:
+            return static
+    else:
+        if varid.filename and varid.filename != UNKNOWN and varid.funcname is None:
+            for filename in allfilenames:
+                if not filename.endswith('.h'):
+                    continue
+                static = _pop_cached(varcache, filename, None, varid.name)
+                if static is not None:
+                    return static
+        return None
+
+
+MULTILINE = {
+    # Python/Python-ast.c
+    'Load_singleton': 'PyObject *',
+    'Store_singleton': 'PyObject *',
+    'Del_singleton': 'PyObject *',
+    'AugLoad_singleton': 'PyObject *',
+    'AugStore_singleton': 'PyObject *',
+    'Param_singleton': 'PyObject *',
+    'And_singleton': 'PyObject *',
+    'Or_singleton': 'PyObject *',
+    'Add_singleton': 'static PyObject *',
+    'Sub_singleton': 'static PyObject *',
+    'Mult_singleton': 'static PyObject *',
+    'MatMult_singleton': 'static PyObject *',
+    'Div_singleton': 'static PyObject *',
+    'Mod_singleton': 'static PyObject *',
+    'Pow_singleton': 'static PyObject *',
+    'LShift_singleton': 'static PyObject *',
+    'RShift_singleton': 'static PyObject *',
+    'BitOr_singleton': 'static PyObject *',
+    'BitXor_singleton': 'static PyObject *',
+    'BitAnd_singleton': 'static PyObject *',
+    'FloorDiv_singleton': 'static PyObject *',
+    'Invert_singleton': 'static PyObject *',
+    'Not_singleton': 'static PyObject *',
+    'UAdd_singleton': 'static PyObject *',
+    'USub_singleton': 'static PyObject *',
+    'Eq_singleton': 'static PyObject *',
+    'NotEq_singleton': 'static PyObject *',
+    'Lt_singleton': 'static PyObject *',
+    'LtE_singleton': 'static PyObject *',
+    'Gt_singleton': 'static PyObject *',
+    'GtE_singleton': 'static PyObject *',
+    'Is_singleton': 'static PyObject *',
+    'IsNot_singleton': 'static PyObject *',
+    'In_singleton': 'static PyObject *',
+    'NotIn_singleton': 'static PyObject *',
+    # Python/symtable.c
+    'top': 'static identifier ',
+    'lambda': 'static identifier ',
+    'genexpr': 'static identifier ',
+    'listcomp': 'static identifier ',
+    'setcomp': 'static identifier ',
+    'dictcomp': 'static identifier ',
+    '__class__': 'static identifier ',
+    # Python/compile.c
+    '__doc__': 'static PyObject *',
+    '__annotations__': 'static PyObject *',
+    # Objects/floatobject.c
+    'double_format': 'static float_format_type ',
+    'float_format': 'static float_format_type ',
+    'detected_double_format': 'static float_format_type ',
+    'detected_float_format': 'static float_format_type ',
+    # Parser/listnode.c
+    'level': 'static int ',
+    'atbol': 'static int ',
+    # Python/dtoa.c
+    'private_mem': 'static double private_mem[PRIVATE_mem]',
+    'pmem_next': 'static double *',
+    # Modules/_weakref.c
+    'weakref_functions': 'static PyMethodDef ',
+}
+INLINE = {
+    # Modules/_tracemalloc.c
+    'allocators': 'static struct { PyMemAllocatorEx mem; PyMemAllocatorEx raw; PyMemAllocatorEx obj; } ',
+    # Modules/faulthandler.c
+    'fatal_error': 'static struct { int enabled; PyObject *file; int fd; int all_threads; PyInterpreterState *interp; void *exc_handler; } ',
+    'thread': 'static struct { PyObject *file; int fd; PY_TIMEOUT_T timeout_us; int repeat; PyInterpreterState *interp; int exit; char *header; size_t header_len; PyThread_type_lock cancel_event; PyThread_type_lock running; } ',
+    # Modules/signalmodule.c
+    'Handlers': 'static volatile struct { _Py_atomic_int tripped; PyObject *func; } Handlers[NSIG]',
+    'wakeup': 'static volatile struct { SOCKET_T fd; int warn_on_full_buffer; int use_send; } ',
+    # Python/dynload_shlib.c
+    'handles': 'static struct { dev_t dev; ino_t ino; void *handle; } handles[128]',
+    # Objects/obmalloc.c
+    '_PyMem_Debug': 'static struct { debug_alloc_api_t raw; debug_alloc_api_t mem; debug_alloc_api_t obj; } ',
+    # Python/bootstrap_hash.c
+    'urandom_cache': 'static struct { int fd; dev_t st_dev; ino_t st_ino; } ',
+    }
+FUNC = {
+    # Objects/object.c
+    '_Py_abstract_hack': 'Py_ssize_t (*_Py_abstract_hack)(PyObject *)',
+    # Parser/myreadline.c
+    'PyOS_InputHook': 'int (*PyOS_InputHook)(void)',
+    # Python/pylifecycle.c
+    '_PyOS_mystrnicmp_hack': 'int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t)',
+    # Parser/myreadline.c
+    'PyOS_ReadlineFunctionPointer': 'char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *)',
+    }
+IMPLIED = {
+    # Objects/boolobject.c
+    '_Py_FalseStruct': 'static struct _longobject ',
+    '_Py_TrueStruct': 'static struct _longobject ',
+    # Modules/config.c
+    '_PyImport_Inittab': 'struct _inittab _PyImport_Inittab[]',
+    }
+GLOBALS = {}
+GLOBALS.update(MULTILINE)
+GLOBALS.update(INLINE)
+GLOBALS.update(FUNC)
+GLOBALS.update(IMPLIED)
+
+LOCALS = {
+    'buildinfo': ('Modules/getbuildinfo.c',
+                  'Py_GetBuildInfo',
+                  'static char buildinfo[50 + sizeof(GITVERSION) + ((sizeof(GITTAG) > sizeof(GITBRANCH)) ?  sizeof(GITTAG) : sizeof(GITBRANCH))]'),
+    'methods': ('Python/codecs.c',
+                '_PyCodecRegistry_Init',
+                'static struct { char *name; PyMethodDef def; } methods[]'),
+    }
+
+
+def _known(symbol):
+    if symbol.funcname:
+        if symbol.funcname != UNKNOWN or symbol.filename != UNKNOWN:
+            raise KeyError(symbol.name)
+        filename, funcname, decl = LOCALS[symbol.name]
+        varid = ID(filename, funcname, symbol.name)
+    elif not symbol.filename or symbol.filename == UNKNOWN:
+        raise KeyError(symbol.name)
+    else:
+        varid = symbol.id
+        try:
+            decl = GLOBALS[symbol.name]
+        except KeyError:
+
+            if symbol.name.endswith('_methods'):
+                decl = 'static PyMethodDef '
+            elif symbol.filename == 'Objects/exceptions.c' and symbol.name.startswith(('PyExc_', '_PyExc_')):
+                decl = 'static PyTypeObject '
+            else:
+                raise
+    if symbol.name not in decl:
+        decl = decl + symbol.name
+    return Variable(varid, decl)
+
+
+def known_row(varid, decl):
+    return (
+            varid.filename,
+            varid.funcname or '-',
+            varid.name,
             'variable',
             decl,
             )
+
+
+def known_rows(symbols, *,
+               cached=True,
+               _get_filenames=iter_cpython_files,
+               _find_match=find_matching_variable,
+               _find_symbols=find_variables,
+               _as_known=known_row,
+               ):
+    filenames = list(_get_filenames())
+    cache = {}
+    if cached:
+        for symbol in symbols:
+            try:
+                found = _known(symbol)
+            except KeyError:
+                found = _find_match(symbol, cache, filenames)
+                if found is None:
+                    found = Variable(symbol.id, UNKNOWN)
+            yield _as_known(found.id, found.vartype)
+    else:
+        raise NotImplementedError  # XXX incorporate KNOWN
+        for static in _find_symbols(symbols, filenames,
+                                    srccache=cache,
+                                    parse_variable=_parse_static,
+                                    ):
+            #static = static._replace(
+            #    filename=os.path.relpath(static.filename, REPO_ROOT))
+            if static.funcname == UNKNOWN:
+                print(static)
+            if static.vartype== UNKNOWN:
+                print(static)
+            yield _as_known(static.id, static.vartype)
 
 
 def known_file(symbols, filename=None, *,
@@ -106,4 +317,13 @@ def known_file(symbols, filename=None, *,
         filename = KNOWN_FILE + '.new'
 
     rows = _generate_rows(symbols)
-    write_tsv(filename, known.HEADER, rows)
+    write_tsv(filename, KNOWN_HEADER, rows)
+
+
+if __name__ == '__main__':
+    from c_symbols import binary
+    symbols = binary.iter_symbols(
+            binary.PYTHON,
+            find_local_symbol=None,
+            )
+    known_file(symbols)
