@@ -105,7 +105,8 @@ def _encode_result(obj, encoding=_implicit_encoding,
 
 def _decode_args(args, encoding=_implicit_encoding,
                        errors=_implicit_errors):
-    return tuple(x.decode(encoding, errors) if x else '' for x in args)
+    return tuple(x.decode(encoding, errors) if x else None if x is None else ''
+                 for x in args)
 
 def _coerce_args(*args):
     # Invokes decode if necessary to create str args
@@ -129,7 +130,9 @@ class _ResultMixinStr(object):
     __slots__ = ()
 
     def encode(self, encoding='ascii', errors='strict'):
-        return self._encoded_counterpart(*(x.encode(encoding, errors) for x in self))
+        return self._encoded_counterpart(*(x.encode(encoding, errors)
+                                           if x is not None else None
+                                           for x in self))
 
 
 class _ResultMixinBytes(object):
@@ -137,7 +140,9 @@ class _ResultMixinBytes(object):
     __slots__ = ()
 
     def decode(self, encoding='ascii', errors='strict'):
-        return self._decoded_counterpart(*(x.decode(encoding, errors) for x in self))
+        return self._decoded_counterpart(*(x.decode(encoding, errors)
+                                           if x is not None else None
+                                           for x in self))
 
 
 class _NetlocResultMixinBase(object):
