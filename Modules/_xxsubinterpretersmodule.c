@@ -1592,30 +1592,28 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
     int equal;
     if (PyObject_TypeCheck(other, &ChannelIDtype)) {
         channelid *othercid = (channelid *)other;
-        if (cid->end != othercid->end) {
-            equal = 0;
-        }
-        else {
-            equal = (cid->id == othercid->id);
-        }
+        equal = (cid->end == othercid->end) && (cid->id == othercid->id);
     }
-    else {
-        other = PyNumber_Long(other);
-        if (other == NULL) {
-            PyErr_Clear();
-            Py_RETURN_NOTIMPLEMENTED;
-        }
-        int64_t othercid = PyLong_AsLongLong(other);
-        Py_DECREF(other);
-        if (othercid == -1 && PyErr_Occurred() != NULL) {
+    else if (PyLong_Check(other)) {
+        /* Fast path */
+        int overflow;
+        long long othercid = PyLong_AsLongLongAndOverflow(other, &overflow);
+        if (othercid == -1 && PyErr_Occurred()) {
             return NULL;
         }
-        if (othercid < 0) {
-            equal = 0;
+        equal = !overflow && (othercid >= 0) && (cid->id == othercid);
+    }
+    else if (PyNumber_Check(other)) {
+        PyObject *pyid = PyLong_FromLongLong(cid->id);
+        if (pyid == NULL) {
+            return NULL;
         }
-        else {
-            equal = (cid->id == othercid);
-        }
+        PyObject *res = PyObject_RichCompare(pyid, other, op);
+        Py_DECREF(pyid);
+        return res;
+    }
+    else {
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     if ((op == Py_EQ && equal) || (op == Py_NE && !equal)) {

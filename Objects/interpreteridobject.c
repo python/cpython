@@ -12,9 +12,9 @@ _Py_CoerceID(PyObject *orig)
     if (pyid == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Format(PyExc_TypeError,
-                         "'id' must be a non-negative int, got %R", orig);
+                         "'id' must be a non-negative int, got %s", orig->ob_type->tp_name);
         }
-        else {
+        else if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Format(PyExc_ValueError,
                          "'id' must be a non-negative int, got %R", orig);
         }
@@ -22,11 +22,7 @@ _Py_CoerceID(PyObject *orig)
     }
     int64_t id = PyLong_AsLongLong(pyid);
     Py_DECREF(pyid);
-    if (id == -1 && PyErr_Occurred() != NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_OverflowError)) {
-            PyErr_Format(PyExc_ValueError,
-                         "'id' must be a non-negative int, got %R", orig);
-        }
+    if (id == -1 && PyErr_Occurred()) {
         return -1;
     }
     if (id < 0) {
@@ -202,23 +198,26 @@ interpid_richcompare(PyObject *self, PyObject *other, int op)
         interpid *otherid = (interpid *)other;
         equal = (id->id == otherid->id);
     }
-    else {
-        other = PyNumber_Long(other);
-        if (other == NULL) {
-            PyErr_Clear();
-            Py_RETURN_NOTIMPLEMENTED;
-        }
-        int64_t otherid = PyLong_AsLongLong(other);
-        Py_DECREF(other);
-        if (otherid == -1 && PyErr_Occurred() != NULL) {
+    else if (PyLong_CheckExact(other)) {
+        /* Fast path */
+        int overflow;
+        long long otherid = PyLong_AsLongLongAndOverflow(other, &overflow);
+        if (otherid == -1 && PyErr_Occurred()) {
             return NULL;
         }
-        if (otherid < 0) {
-            equal = 0;
+        equal = !overflow && (otherid >= 0) && (id->id == otherid);
+    }
+    else if (PyNumber_Check(other)) {
+        PyObject *pyid = PyLong_FromLongLong(id->id);
+        if (pyid == NULL) {
+            return NULL;
         }
-        else {
-            equal = (id->id == otherid);
-        }
+        PyObject *res = PyObject_RichCompare(pyid, other, op);
+        Py_DECREF(pyid);
+        return res;
+    }
+    else {
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     if ((op == Py_EQ && equal) || (op == Py_NE && !equal)) {
