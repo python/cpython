@@ -2926,7 +2926,8 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             /* assign slice */
             PyObject *ins, *seq;
             PyObject **garbage, **seqitems, **selfitems;
-            Py_ssize_t cur, i;
+            Py_ssize_t i;
+            size_t cur;
 
             /* protect against a[::-1] = a */
             if (self == (PyListObject*)value) {

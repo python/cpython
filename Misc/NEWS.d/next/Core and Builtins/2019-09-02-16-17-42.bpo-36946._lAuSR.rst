@@ -1,1 +1,1 @@
-A complement to fix possible signed integer overflow when handling slices.
+Fix possible signed integer overflow when handling slices. Patch by hongweipeng.
