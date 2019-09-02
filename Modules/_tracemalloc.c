@@ -79,7 +79,7 @@ __attribute__((packed))
 typedef struct {
     Py_uhash_t hash;
     /* Number of frames stored */
-    int nframe;
+    uint16_t nframe;
     /* Total number of frames the traceback had */
     uint16_t total_nframe;
     frame_t frames[1];
@@ -88,8 +88,10 @@ typedef struct {
 #define TRACEBACK_SIZE(NFRAME) \
         (sizeof(traceback_t) + sizeof(frame_t) * (NFRAME - 1))
 
-#define MAX_NFRAME \
-        ((INT_MAX - (int)sizeof(traceback_t)) / (int)sizeof(frame_t) + 1)
+/* The maximum number of frames is either:
+ - The maximum number of frames we can store in `traceback_t.nframe`
+ - The maximum memory size_t we can allocate */
+static const unsigned long MAX_NFRAME = Py_MIN(UINT16_MAX, ((SIZE_MAX - sizeof(traceback_t)) / sizeof(frame_t) + 1));
 
 
 static PyObject *unknown_filename = NULL;
@@ -1057,10 +1059,10 @@ tracemalloc_start(int max_nframe)
     PyMemAllocatorEx alloc;
     size_t size;
 
-    if (max_nframe < 1 || max_nframe > MAX_NFRAME) {
+    if (max_nframe < 1 || (unsigned long) max_nframe > MAX_NFRAME) {
         PyErr_Format(PyExc_ValueError,
-                     "the number of frames must be in range [1; %i]",
-                     (int)MAX_NFRAME);
+                     "the number of frames must be in range [1; %lu]",
+                     MAX_NFRAME);
         return -1;
     }
 
@@ -1073,7 +1075,6 @@ tracemalloc_start(int max_nframe)
         return 0;
     }
 
-    assert(1 <= max_nframe && max_nframe <= MAX_NFRAME);
     _Py_tracemalloc_config.max_nframe = max_nframe;
 
     /* allocate a buffer to store a new traceback */
