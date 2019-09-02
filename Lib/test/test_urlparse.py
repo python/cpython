@@ -155,34 +155,34 @@ class UrlParseTestCase(unittest.TestCase):
     def test_roundtrips(self):
         str_cases = [
             ('file:///tmp/junk.txt',
-             ('file', '', '/tmp/junk.txt', '', '', ''),
-             ('file', '', '/tmp/junk.txt', '', '')),
+             ('file', '', '/tmp/junk.txt', '', None, None),
+             ('file', '', '/tmp/junk.txt', None, None)),
             ('imap://mail.python.org/mbox1',
-             ('imap', 'mail.python.org', '/mbox1', '', '', ''),
-             ('imap', 'mail.python.org', '/mbox1', '', '')),
+             ('imap', 'mail.python.org', '/mbox1', '', None, None),
+             ('imap', 'mail.python.org', '/mbox1', None, None)),
             ('mms://wms.sys.hinet.net/cts/Drama/09006251100.asf',
              ('mms', 'wms.sys.hinet.net', '/cts/Drama/09006251100.asf',
-              '', '', ''),
+              '', None, None),
              ('mms', 'wms.sys.hinet.net', '/cts/Drama/09006251100.asf',
-              '', '')),
+              None, None)),
             ('nfs://server/path/to/file.txt',
-             ('nfs', 'server', '/path/to/file.txt', '', '', ''),
-             ('nfs', 'server', '/path/to/file.txt', '', '')),
+             ('nfs', 'server', '/path/to/file.txt', '', None, None),
+             ('nfs', 'server', '/path/to/file.txt', None, None)),
             ('svn+ssh://svn.zope.org/repos/main/ZConfig/trunk/',
              ('svn+ssh', 'svn.zope.org', '/repos/main/ZConfig/trunk/',
-              '', '', ''),
+              '', None, None),
              ('svn+ssh', 'svn.zope.org', '/repos/main/ZConfig/trunk/',
-              '', '')),
+              None, None)),
             ('git+ssh://git@github.com/user/project.git',
             ('git+ssh', 'git@github.com','/user/project.git',
-             '','',''),
+             '', None, None),
             ('git+ssh', 'git@github.com','/user/project.git',
-             '', '')),
+             None, None)),
             ]
         def _encode(t):
             return (t[0].encode('ascii'),
-                    tuple(x.encode('ascii') for x in t[1]),
-                    tuple(x.encode('ascii') for x in t[2]))
+                    tuple(x.encode('ascii') if x is not None else None for x in t[1]),
+                    tuple(x.encode('ascii') if x is not None else None for x in t[2]))
         bytes_cases = [_encode(x) for x in str_cases]
         for url, parsed, split in str_cases + bytes_cases:
             self.checkRoundtrips(url, parsed, split)
@@ -193,25 +193,34 @@ class UrlParseTestCase(unittest.TestCase):
         # Three cheers for white box knowledge!
         str_cases = [
             ('://www.python.org',
-             ('www.python.org', '', '', '', ''),
-             ('www.python.org', '', '', '')),
+             ('www.python.org', '', '', None, None),
+             ('www.python.org', '', None, None)),
             ('://www.python.org#abc',
-             ('www.python.org', '', '', '', 'abc'),
-             ('www.python.org', '', '', 'abc')),
+             ('www.python.org', '', '', None, 'abc'),
+             ('www.python.org', '', None, 'abc')),
             ('://www.python.org?q=abc',
-             ('www.python.org', '', '', 'q=abc', ''),
-             ('www.python.org', '', 'q=abc', '')),
+             ('www.python.org', '', '', 'q=abc', None),
+             ('www.python.org', '', 'q=abc', None)),
             ('://www.python.org/#abc',
-             ('www.python.org', '/', '', '', 'abc'),
-             ('www.python.org', '/', '', 'abc')),
+             ('www.python.org', '/', '', None, 'abc'),
+             ('www.python.org', '/', None, 'abc')),
             ('://a/b/c/d;p?q#f',
              ('a', '/b/c/d', 'p', 'q', 'f'),
              ('a', '/b/c/d;p', 'q', 'f')),
+            ('://a/?',
+             ('a', '/', '', '', None),
+             ('a', '/', '', None)),
+            ('://a/#',
+             ('a', '/', '', None, ''),
+             ('a', '/', None, '')),
+            ('://a/?#',
+             ('a', '/', '', '', ''),
+             ('a', '/', '', '')),
             ]
         def _encode(t):
             return (t[0].encode('ascii'),
-                    tuple(x.encode('ascii') for x in t[1]),
-                    tuple(x.encode('ascii') for x in t[2]))
+                    tuple(x.encode('ascii') if x is not None else None for x in t[1]),
+                    tuple(x.encode('ascii') if x is not None else None for x in t[2]))
         bytes_cases = [_encode(x) for x in str_cases]
         str_schemes = ('http', 'https')
         bytes_schemes = (b'http', b'https')
@@ -290,7 +299,7 @@ class UrlParseTestCase(unittest.TestCase):
     def test_RFC2368(self):
         # Issue 11467: path that starts with a number is not parsed correctly
         self.assertEqual(urllib.parse.urlparse('mailto:1337@example.org'),
-                ('mailto', '', '1337@example.org', '', '', ''))
+                ('mailto', '', '1337@example.org', '', None, None))
 
     def test_RFC2396(self):
         # cases from RFC 2396
@@ -684,9 +693,9 @@ class UrlParseTestCase(unittest.TestCase):
     def test_noslash(self):
         # Issue 1637: http://foo.com?query is legal
         self.assertEqual(urllib.parse.urlparse("http://example.com?blahblah=/foo"),
-                         ('http', 'example.com', '', '', 'blahblah=/foo', ''))
+                         ('http', 'example.com', '', '', 'blahblah=/foo', None))
         self.assertEqual(urllib.parse.urlparse(b"http://example.com?blahblah=/foo"),
-                         (b'http', b'example.com', b'', b'', b'blahblah=/foo', b''))
+                         (b'http', b'example.com', b'', b'', b'blahblah=/foo', None))
 
     def test_withoutscheme(self):
         # Test urlparse without scheme
@@ -694,34 +703,34 @@ class UrlParseTestCase(unittest.TestCase):
         # RFC 1808 specifies that netloc should start with //, urlparse expects
         # the same, otherwise it classifies the portion of url as path.
         self.assertEqual(urllib.parse.urlparse("path"),
-                ('','','path','','',''))
+                ('','','path','',None,None))
         self.assertEqual(urllib.parse.urlparse("//www.python.org:80"),
-                ('','www.python.org:80','','','',''))
+                ('','www.python.org:80','','',None,None))
         self.assertEqual(urllib.parse.urlparse("http://www.python.org:80"),
-                ('http','www.python.org:80','','','',''))
+                ('http','www.python.org:80','','',None,None))
         # Repeat for bytes input
         self.assertEqual(urllib.parse.urlparse(b"path"),
-                (b'',b'',b'path',b'',b'',b''))
+                (b'',b'',b'path',b'',None,None))
         self.assertEqual(urllib.parse.urlparse(b"//www.python.org:80"),
-                (b'',b'www.python.org:80',b'',b'',b'',b''))
+                (b'',b'www.python.org:80',b'',b'',None,None))
         self.assertEqual(urllib.parse.urlparse(b"http://www.python.org:80"),
-                (b'http',b'www.python.org:80',b'',b'',b'',b''))
+                (b'http',b'www.python.org:80',b'',b'',None,None))
 
     def test_portseparator(self):
         # Issue 754016 makes changes for port separator ':' from scheme separator
         self.assertEqual(urllib.parse.urlparse("path:80"),
-                ('','','path:80','','',''))
-        self.assertEqual(urllib.parse.urlparse("http:"),('http','','','','',''))
-        self.assertEqual(urllib.parse.urlparse("https:"),('https','','','','',''))
+                ('','','path:80','',None,None))
+        self.assertEqual(urllib.parse.urlparse("http:"),('http','','','',None,None))
+        self.assertEqual(urllib.parse.urlparse("https:"),('https','','','',None,None))
         self.assertEqual(urllib.parse.urlparse("http://www.python.org:80"),
-                ('http','www.python.org:80','','','',''))
+                ('http','www.python.org:80','','',None,None))
         # As usual, need to check bytes input as well
         self.assertEqual(urllib.parse.urlparse(b"path:80"),
-                (b'',b'',b'path:80',b'',b'',b''))
-        self.assertEqual(urllib.parse.urlparse(b"http:"),(b'http',b'',b'',b'',b'',b''))
-        self.assertEqual(urllib.parse.urlparse(b"https:"),(b'https',b'',b'',b'',b'',b''))
+                (b'',b'',b'path:80',b'',None,None))
+        self.assertEqual(urllib.parse.urlparse(b"http:"),(b'http',b'',b'',b'',None,None))
+        self.assertEqual(urllib.parse.urlparse(b"https:"),(b'https',b'',b'',b'',None,None))
         self.assertEqual(urllib.parse.urlparse(b"http://www.python.org:80"),
-                (b'http',b'www.python.org:80',b'',b'',b'',b''))
+                (b'http',b'www.python.org:80',b'',b'',None,None))
 
     def test_usingsys(self):
         # Issue 3314: sys module is used in the error
@@ -730,23 +739,23 @@ class UrlParseTestCase(unittest.TestCase):
     def test_anyscheme(self):
         # Issue 7904: s3://foo.com/stuff has netloc "foo.com".
         self.assertEqual(urllib.parse.urlparse("s3://foo.com/stuff"),
-                         ('s3', 'foo.com', '/stuff', '', '', ''))
+                         ('s3', 'foo.com', '/stuff', '', None, None))
         self.assertEqual(urllib.parse.urlparse("x-newscheme://foo.com/stuff"),
-                         ('x-newscheme', 'foo.com', '/stuff', '', '', ''))
+                         ('x-newscheme', 'foo.com', '/stuff', '', None, None))
         self.assertEqual(urllib.parse.urlparse("x-newscheme://foo.com/stuff?query#fragment"),
                          ('x-newscheme', 'foo.com', '/stuff', '', 'query', 'fragment'))
         self.assertEqual(urllib.parse.urlparse("x-newscheme://foo.com/stuff?query"),
-                         ('x-newscheme', 'foo.com', '/stuff', '', 'query', ''))
+                         ('x-newscheme', 'foo.com', '/stuff', '', 'query', None))
 
         # And for bytes...
         self.assertEqual(urllib.parse.urlparse(b"s3://foo.com/stuff"),
-                         (b's3', b'foo.com', b'/stuff', b'', b'', b''))
+                         (b's3', b'foo.com', b'/stuff', b'', None, None))
         self.assertEqual(urllib.parse.urlparse(b"x-newscheme://foo.com/stuff"),
-                         (b'x-newscheme', b'foo.com', b'/stuff', b'', b'', b''))
+                         (b'x-newscheme', b'foo.com', b'/stuff', b'', None, None))
         self.assertEqual(urllib.parse.urlparse(b"x-newscheme://foo.com/stuff?query#fragment"),
                          (b'x-newscheme', b'foo.com', b'/stuff', b'', b'query', b'fragment'))
         self.assertEqual(urllib.parse.urlparse(b"x-newscheme://foo.com/stuff?query"),
-                         (b'x-newscheme', b'foo.com', b'/stuff', b'', b'query', b''))
+                         (b'x-newscheme', b'foo.com', b'/stuff', b'', b'query', None))
 
     def test_default_scheme(self):
         # Exercise the scheme parameter of urlparse() and urlsplit()
@@ -783,10 +792,10 @@ class UrlParseTestCase(unittest.TestCase):
                     attr = "path"
                 with self.subTest(url=url, function=func):
                     result = func(url, allow_fragments=False)
-                    self.assertEqual(result.fragment, "")
+                    self.assertEqual(result.fragment, None)
                     self.assertTrue(
                             getattr(result, attr).endswith("#" + expected_frag))
-                    self.assertEqual(func(url, "", False).fragment, "")
+                    self.assertEqual(func(url, "", False).fragment, None)
 
                     result = func(url, allow_fragments=True)
                     self.assertEqual(result.fragment, expected_frag)
