@@ -72,7 +72,7 @@ module gc
 static inline int
 gc_is_collecting(PyGC_Head *g)
 {
-    return (g->_gc_prev & PREV_MASK_COLLECTING) != 0;
+    return _PyObject_GC_IS_COLLECTING(g);
 }
 
 static inline void

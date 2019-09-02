@@ -97,6 +97,8 @@ typedef struct {
 #define _PyGC_SET_FINALIZED(o) \
     _PyGCHead_SET_FINALIZED(_Py_AS_GC(o))
 
+#define _PyObject_GC_IS_COLLECTING(op) \
+    ((((PyGC_Head*)op)->_gc_prev & _PyGC_PREV_MASK_COLLECTING) != 0)
 
 PyAPI_FUNC(PyObject *) _PyObject_GC_Malloc(size_t size);
 PyAPI_FUNC(PyObject *) _PyObject_GC_Calloc(size_t size);

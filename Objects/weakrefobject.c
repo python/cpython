@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "objimpl.h"
 #include "structmember.h"
 
 
@@ -874,6 +875,29 @@ PyWeakref_GetObject(PyObject *ref)
 static void
 handle_callback(PyWeakReference *ref, PyObject *callback)
 {
+    /* A weak reference may try to invoke a callback object that is being
+     * cleaned (tp_clear) by the garbage collector and it may be in an
+     * inconsistent state. As the garbage collector explicitly does not
+     * invoke callbacks that are part of the same cycle isolate as the
+     * weak reference (pretending that the weak reference was destroyed first),
+     * we should act in the same way here.
+     *
+     * For example, consider the following scenario:
+     *
+     * - F is a function.
+     * - An object O is in a cycle with F.
+     * - O has a weak reference with F as a callback.
+     *
+     * When running the garbage collector, is possible to end in this function
+     * if the tp_clear of F decrements the references of O, invoking the weak
+     * reference callback that will try to call F, which is in an incosistent
+     * state as is in the middle of its tp_clear and some internal fields may
+     * be NULL. */
+
+    if (PyObject_IS_GC(callback) && _PyObject_GC_IS_COLLECTING(callback)) {
+        return;
+    }
+
     PyObject *cbresult = _PyObject_CallOneArg(callback, (PyObject *)ref);
 
     if (cbresult == NULL)
