@@ -109,7 +109,7 @@ class FTP:
         """Initialization method (called by class instantiation).
         Initialize host to localhost, port to standard ftp port.
         Optional arguments are host (for connect()),
-        and user, passwd, acct (for login())
+        and user, passwd, acct (for login()).
         """
         self.source_address = source_address
         self.timeout = timeout
