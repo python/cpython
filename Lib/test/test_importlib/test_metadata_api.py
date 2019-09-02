@@ -109,6 +109,8 @@ class APITests(
     def test_requires_dist_info(self):
         deps = list(requires('distinfo-pkg'))
         assert deps and all(deps)
+        assert 'wheel >= 1.0' in deps
+        assert "pytest; extra == 'test'" in deps
 
     def test_more_complex_deps_requires_text(self):
         requires = textwrap.dedent("""

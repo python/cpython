@@ -213,6 +213,15 @@ class Distribution:
 
     @property
     def files(self):
+        """Files in this distribution.
+
+        :return: Iterable of PackagePath for this distribution or None
+
+        Result is `None` if the metadata file that enumerates files
+        (i.e. RECORD for dist-info or SOURCES.txt for egg-info) is
+        missing.
+        Result may be empty if the metadata exists but is empty.
+        """
         file_lines = self._read_files_distinfo() or self._read_files_egginfo()
 
         def make_file(name, hash=None, size_str=None):
@@ -245,8 +254,7 @@ class Distribution:
         return self._read_dist_info_reqs() or self._read_egg_info_reqs()
 
     def _read_dist_info_reqs(self):
-        spec = self.metadata['Requires-Dist']
-        return spec and filter(None, spec.splitlines())
+        return self.metadata.get_all('Requires-Dist')
 
     def _read_egg_info_reqs(self):
         source = self.read_text('requires.txt')
@@ -318,7 +326,11 @@ class DistributionFinder(MetaPathFinder):
 
 class PathDistribution(Distribution):
     def __init__(self, path):
-        """Construct a distribution from a path to the metadata directory."""
+        """Construct a distribution from a path to the metadata directory.
+
+        :param path: A pathlib.Path or similar object supporting
+                     .joinpath(), __div__, .parent, and .read_text().
+        """
         self._path = path
 
     def read_text(self, filename):
