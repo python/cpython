@@ -468,11 +468,11 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     /* Initialize Spec */
     /* The name in this PyType_Spec is statically allocated so it is */
     /* expected that it'll outlive the PyType_Spec */
-    spec.name = desc->name;
-    spec.basicsize = sizeof(PyStructSequence) - sizeof(PyObject *);
-    spec.itemsize = sizeof(PyObject *);
-    spec.flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
-    spec.slots = slots;
+    spec.ts_name = desc->name;
+    spec.ts_basicsize = sizeof(PyStructSequence) - sizeof(PyObject *);
+    spec.ts_itemsize = sizeof(PyObject *);
+    spec.ts_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
+    spec.ts_slots = slots;
 
     bases = PyTuple_Pack(1, &PyTuple_Type);
     if (bases == NULL) {

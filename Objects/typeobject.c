@@ -2857,7 +2857,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     char *s, *res_start;
 
     nmembers = 0;
-    for (slot = spec->slots; slot->slot; slot++) {
+    for (slot = spec->ts_slots; slot->slot; slot++) {
         if (slot->slot == Py_tp_members) {
             nmembers = 0;
             for (memb = slot->pfunc; memb->name != NULL; memb++) {
@@ -2871,34 +2871,34 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
         return NULL;
     res_start = (char*)res;
 
-    if (spec->name == NULL) {
+    if (spec->ts_name == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Type spec does not define the name field.");
         goto fail;
     }
 
     /* Set the type name and qualname */
-    s = strrchr(spec->name, '.');
+    s = strrchr(spec->ts_name, '.');
     if (s == NULL)
-        s = (char*)spec->name;
+        s = (char*)spec->ts_name;
     else
         s++;
 
     type = &res->ht_type;
     /* The flags must be initialized early, before the GC traverses us */
-    type->tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
+    type->tp_flags = spec->ts_flags | Py_TPFLAGS_HEAPTYPE;
     res->ht_name = PyUnicode_FromString(s);
     if (!res->ht_name)
         goto fail;
     res->ht_qualname = res->ht_name;
     Py_INCREF(res->ht_qualname);
-    type->tp_name = spec->name;
+    type->tp_name = spec->ts_name;
 
     /* Adjust for empty tuple bases */
     if (!bases) {
         base = &PyBaseObject_Type;
         /* See whether Py_tp_base(s) was specified */
-        for (slot = spec->slots; slot->slot; slot++) {
+        for (slot = spec->ts_slots; slot->slot; slot++) {
             if (slot->slot == Py_tp_base)
                 base = slot->pfunc;
             else if (slot->slot == Py_tp_bases) {
@@ -2938,10 +2938,10 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     Py_INCREF(base);
     type->tp_base = base;
 
-    type->tp_basicsize = spec->basicsize;
-    type->tp_itemsize = spec->itemsize;
+    type->tp_basicsize = spec->ts_basicsize;
+    type->tp_itemsize = spec->ts_itemsize;
 
-    for (slot = spec->slots; slot->slot; slot++) {
+    for (slot = spec->ts_slots; slot->slot; slot++) {
         if (slot->slot < 0
             || (size_t)slot->slot >= Py_ARRAY_LENGTH(slotoffsets)) {
             PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
@@ -2991,11 +2991,11 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     }
 
     /* Set type.__module__ */
-    s = strrchr(spec->name, '.');
+    s = strrchr(spec->ts_name, '.');
     if (s != NULL) {
         int err;
         modname = PyUnicode_FromStringAndSize(
-                spec->name, (Py_ssize_t)(s - spec->name));
+                spec->ts_name, (Py_ssize_t)(s - spec->ts_name));
         if (modname == NULL) {
             goto fail;
         }
@@ -3006,7 +3006,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     } else {
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                 "builtin type %.200s has no __module__ attribute",
-                spec->name))
+                spec->ts_name))
             goto fail;
     }
 
