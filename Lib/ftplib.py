@@ -107,7 +107,7 @@ class FTP:
     def __init__(self, host='', user='', passwd='', acct='',
                  timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None):
         """Initialization method (called by class instantiation).
-        Initialize host to localhost, port to standard ftp port
+        Initialize host to localhost, port to standard ftp port.
         Optional arguments are host (for connect()),
         and user, passwd, acct (for login())
         """
