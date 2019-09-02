@@ -523,7 +523,7 @@ class UrlParseTestCase(unittest.TestCase):
         ]
         def _encode(t):
             return type(t)(x.encode('ascii') for x in t)
-        bytes_cases = [_encode(x) for x in str_cases]
+        bytes_cases = [_encode(x) if x is not None else None for x in str_cases]
         for url, defrag, frag in str_cases + bytes_cases:
             result = urllib.parse.urldefrag(url)
             self.assertEqual(result.geturl(), url)
