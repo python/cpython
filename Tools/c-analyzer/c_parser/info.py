@@ -49,15 +49,18 @@ class Variable(_NTBase,
             raise TypeError('missing id')
 
         if not self.filename or self.filename == info.UNKNOWN:
-            raise TypeError('id missing filename')
+            raise TypeError(f'id missing filename ({self.id})')
 
         if self.funcname and self.funcname == info.UNKNOWN:
-            raise TypeError('id missing funcname')
+            raise TypeError(f'id missing funcname ({self.id})')
 
         self.id.validate()
 
     def validate(self):
         """Fail if the object is invalid (i.e. init with bad data)."""
+        if self.name == 'id':  # XXX drop this case
+            return
+
         self._validate_id()
 
         if self.vartype is None or self.vartype == info.UNKNOWN:
