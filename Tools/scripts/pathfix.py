@@ -181,6 +181,7 @@ def fix(filename):
 
 
 def parse_shebang(shebangline):
+    shebangline = shebangline.strip()
     end = len(shebangline)
     start = shebangline.find(b' -', 0, end)
     if start == -1:
@@ -196,7 +197,7 @@ def fixline(line):
         return line
     if keep_flags:
         flags = parse_shebang(line)
-        return b'#! ' + new_interpreter + b" -" + flags
+        return b'#! ' + new_interpreter + b' -' + flags + b'\n'
     return b'#! ' + new_interpreter + b'\n'
 
 
