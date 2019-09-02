@@ -158,6 +158,13 @@ Once you have the file, you can also read its contents::
             return s.encode('utf-8')
         return s
 
+In the case where the metadata file listing files
+(RECORD or SOURCES.txt) is missing, ``files()`` will
+return ``None``. The caller may wish to wrap calls to
+``files()`` in `always_iterable
+<https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.always_iterable>`_
+or otherwise guard against this condition if the target
+distribution is not known to have the metadata present.
 
 .. _requirements:
 
