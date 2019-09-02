@@ -89,9 +89,9 @@ def get_resolver(knownvars=None, dirnames=None, *,
             if found is None:
                 return None
             elif symbol.funcname == UNKNOWN:
-                knownvars.pop(var.id)
+                knownvars.pop(found.id)
             elif not symbol.filename or symbol.filename == UNKNOWN:
-                knownvars.pop(var.id)
+                knownvars.pop(found.id)
             return found
         if dirnames:
             def resolve(symbol):
@@ -127,7 +127,7 @@ def symbols_to_variables(symbols, *,
             continue
         resolved = resolve(symbol)
         if resolved is None:
-            raise NotImplementedError(symbol)
+            #raise NotImplementedError(symbol)
             resolved = info.Variable(
                     id=symbol.id,
                     vartype=UNKNOWN,

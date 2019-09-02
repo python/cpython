@@ -1,3 +1,4 @@
+from c_analyzer_common import SOURCE_DIRS
 from c_symbols import (
         info as s_info,
         binary as b_symbols,
@@ -23,17 +24,16 @@ def statics_from_binary(binfile=b_symbols.PYTHON, *,
     """
     symbols = _iter_symbols(binfile, find_local_symbol=None)
     symbols = list(symbols)
-    #import c_analyzer_common._generate
-    #c_analyzer_common._generate.known_file(symbols)
     for variable in _resolve(symbols,
-                             resolve=_get_symbol_resolver(knownvars, dirnames),
+                             #resolve=_get_symbol_resolver(knownvars, dirnames),
+                             resolve=_get_symbol_resolver(knownvars),
                              ):
         if not variable.isstatic:
             continue
         yield variable
 
 
-def statics_from_declarations(dirnames, *,
+def statics_from_declarations(dirnames=SOURCE_DIRS, *,
                               known=None,
                               ):
     """Yield a Variable for each found declaration.
