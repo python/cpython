@@ -428,7 +428,8 @@ def urlsplit(url, scheme='', allow_fragments=True):
         return _coerce_result(cached)
     if len(_parse_cache) >= MAX_CACHE_SIZE: # avoid runaway growth
         clear_cache()
-    netloc = query = fragment = None  # no components NOR DELIMITERS
+    netloc = ''
+    query = fragment = None  # no components NOR DELIMITERS
     i = url.find(':')
     if i > 0:
         if url[:i] == 'http': # optimize the common case
