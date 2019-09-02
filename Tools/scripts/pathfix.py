@@ -38,7 +38,6 @@ rep = sys.stdout.write
 new_interpreter = None
 preserve_timestamps = False
 create_backup = True
-add_flag = None
 keep_flags = False
 
 
@@ -183,15 +182,13 @@ def fix(filename):
 
 def parse_shebang(shebangline):
     end = len(shebangline)
-    start = shebangline.find(b' -', 0, end)  # .find() returns index at space
+    start = shebangline.find(b' -', 0, end)
     if start == -1:
         return b'', b''
-    print(shebangline[(start + 2):end])
     return shebangline[(start + 2):end]
 
 
 def fixline(line):
-    global keep_flags
     if not line.startswith(b'#!'):
         return line
 
