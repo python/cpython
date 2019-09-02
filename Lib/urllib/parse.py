@@ -582,7 +582,7 @@ def urldefrag(url):
     Returns a tuple of the defragmented URL and the fragment.
     If the URL contained no fragment, the second element is None.
     If the URL contained an empty fragment with its '#' delimiter, the second
-    element is the empty string. 
+    element is the empty string.
     """
     url, _coerce_result = _coerce_args(url)
     if '#' in url:
