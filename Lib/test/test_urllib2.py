@@ -1080,9 +1080,7 @@ class HandlerTests(unittest.TestCase):
             parsed = urlparse(url)
 
             self.assertEqual(r.get_full_url(), url)
-            # full_url setter uses splittag to split into components.
-            # splittag sets the fragment as None while urlparse sets it to ''
-            self.assertEqual(r.fragment or '', parsed.fragment)
+            self.assertEqual(r.fragment, parsed.fragment)
             self.assertEqual(urlparse(r.get_full_url()).query, parsed.query)
 
     def test_full_url_deleter(self):
