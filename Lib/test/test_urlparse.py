@@ -546,7 +546,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.scheme, "http")
         self.assertEqual(p.netloc, "WWW.PYTHON.ORG")
         self.assertEqual(p.path, "/doc/")
-        self.assertEqual(p.query, "")
+        self.assertEqual(p.query, None)
         self.assertEqual(p.fragment, "frag")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
