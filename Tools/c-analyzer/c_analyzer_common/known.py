@@ -35,6 +35,7 @@ def from_file(infile, *,
         if kind == 'variable':
             values = known['variables']
             value = Variable(id, declaration)
+            value._isstatic = True
         else:
             raise ValueError(f'unsupported kind in row {row}')
         value.validate()
