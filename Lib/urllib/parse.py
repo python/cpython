@@ -428,7 +428,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
         return _coerce_result(cached)
     if len(_parse_cache) >= MAX_CACHE_SIZE: # avoid runaway growth
         clear_cache()
-    netloc = query = fragment = ''
+    netloc = query = fragment = None  # no components NOR DELIMITERS
     i = url.find(':')
     if i > 0:
         if url[:i] == 'http': # optimize the common case
@@ -495,9 +495,11 @@ def urlunsplit(components):
         url = '//' + (netloc or '') + url
     if scheme:
         url = scheme + ':' + url
-    if query:
+    # keep the delimiter if present (even if the component is empty)
+    if query is not None:
         url = url + '?' + query
-    if fragment:
+    # keep the delimiter if present (even if the component is empty)
+    if fragment is not None:
         url = url + '#' + fragment
     return _coerce_result(url)
 
