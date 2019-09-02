@@ -152,6 +152,7 @@ class ListTest(list_tests.CommonTest):
 
     def test_step_overflow(self):
         a = [0, 1, 2, 3, 4]
+        a[1::sys.maxsize] = [0]
         self.assertEqual(a[3::sys.maxsize], [3])
 
     def test_no_comdat_folding(self):
