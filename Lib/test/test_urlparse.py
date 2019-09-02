@@ -511,15 +511,15 @@ class UrlParseTestCase(unittest.TestCase):
     def test_urldefrag(self):
         str_cases = [
             ('http://python.org#frag', 'http://python.org', 'frag'),
-            ('http://python.org', 'http://python.org', ''),
+            ('http://python.org', 'http://python.org', None),
             ('http://python.org/#frag', 'http://python.org/', 'frag'),
-            ('http://python.org/', 'http://python.org/', ''),
+            ('http://python.org/', 'http://python.org/', None),
             ('http://python.org/?q#frag', 'http://python.org/?q', 'frag'),
-            ('http://python.org/?q', 'http://python.org/?q', ''),
+            ('http://python.org/?q', 'http://python.org/?q', None),
             ('http://python.org/p#frag', 'http://python.org/p', 'frag'),
-            ('http://python.org/p?q', 'http://python.org/p?q', ''),
+            ('http://python.org/p?q', 'http://python.org/p?q', None),
             (RFC1808_BASE, 'http://a/b/c/d;p?q', 'f'),
-            (RFC2396_BASE, 'http://a/b/c/d;p?q', ''),
+            (RFC2396_BASE, 'http://a/b/c/d;p?q', None),
         ]
         def _encode(t):
             return type(t)(x.encode('ascii') for x in t)
