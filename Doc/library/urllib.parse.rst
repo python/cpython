@@ -239,10 +239,7 @@ or on combining URL components into a URL string.
 .. function:: urlunparse(parts)
 
    Construct a URL from a tuple as returned by ``urlparse()``. The *parts*
-   argument can be any six-item iterable. This may result in a slightly
-   different, but equivalent URL, if the URL that was parsed originally had
-   unnecessary delimiters (for example, a ``?`` with an empty query; the RFC
-   states that these are equivalent).
+   argument can be any six-item iterable.
 
 
 .. function:: urlsplit(urlstring, scheme='', allow_fragments=True)
@@ -307,9 +304,7 @@ or on combining URL components into a URL string.
 
    Combine the elements of a tuple as returned by :func:`urlsplit` into a
    complete URL as a string. The *parts* argument can be any five-item
-   iterable. This may result in a slightly different, but equivalent URL, if the
-   URL that was parsed originally had unnecessary delimiters (for example, a ?
-   with an empty query; the RFC states that these are equivalent).
+   iterable.
 
 
 .. function:: urljoin(base, url, allow_fragments=True)
