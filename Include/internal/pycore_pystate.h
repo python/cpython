@@ -134,7 +134,7 @@ struct _is {
     PyObject *audit_hooks;
 };
 
-PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
+PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(int64_t);
 
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(struct _is *);
 PyAPI_FUNC(void) _PyInterpreterState_IDIncref(struct _is *);

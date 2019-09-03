@@ -747,10 +747,10 @@ STRINGLIB(utf16_encode)(const STRINGLIB_CHAR *in,
 Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(utf32_encode)(const STRINGLIB_CHAR *in,
                         Py_ssize_t len,
-                        PY_UINT32_T **outptr,
+                        uint32_t **outptr,
                         int native_ordering)
 {
-    PY_UINT32_T *out = *outptr;
+    uint32_t *out = *outptr;
     const STRINGLIB_CHAR *end = in + len;
     if (native_ordering) {
         const STRINGLIB_CHAR *unrolled_end = in + _Py_SIZE_ROUND_DOWN(len, 4);

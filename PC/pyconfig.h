@@ -347,13 +347,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 #endif
 
-/* define signed and unsigned exact-width 32-bit and 64-bit types, used in the
-   implementation of Python integers. */
-#define PY_UINT32_T uint32_t
-#define PY_UINT64_T uint64_t
-#define PY_INT32_T int32_t
-#define PY_INT64_T int64_t
-
 /* Fairly standard from here! */
 
 /* Define to 1 if you have the `copysign' function. */
