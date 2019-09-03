@@ -3,6 +3,9 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-35771: To avoid occasional spurious test_idle failures on slower
+machines, increase the ``hover_delay`` in test_tooltip.
+
 bpo-37824: Properly handle user input warnings in IDLE shell.
 Cease turning SyntaxWarnings into SyntaxErrors.
 
