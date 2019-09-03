@@ -1899,7 +1899,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     chars = self.prefix_chars
                     if (arg_count == 0 and
                         option_string[1] not in chars and
-                        explicit_arg is not ''):
+                        explicit_arg != ''):
                         action_tuples.append((action, [], option_string))
                         char = option_string[0]
                         option_string = char + explicit_arg[0]
