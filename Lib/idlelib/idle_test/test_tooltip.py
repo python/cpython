@@ -1,23 +1,23 @@
-from functools import wraps
+"""Test tooltip, coverage 100%.
+
+Coverage is 100% after excluding 6 lines with "# pragma: no cover".
+They involve TclErrors that either should or should not happen in a
+particular situation, and which are 'pass'ed if they do.
+"""
+
 from idlelib.tooltip import TooltipBase, Hovertip
 from test.support import requires
+requires('gui')
+
+from functools import wraps
 import time
 from tkinter import Button, Tk, Toplevel
 import unittest
 
 
-requires('gui')
-
-
 def setUpModule():
     global root
     root = Tk()
-
-
-def root_update():
-    global root
-    root.update()
-
 
 def tearDownModule():
     global root
@@ -101,10 +101,10 @@ class HovertipTest(unittest.TestCase):
         tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=None)
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
-        root_update()
+        root.update()
         self.assertFalse(self.is_tipwindow_shown(tooltip))
         self.button.event_generate('<Enter>', x=0, y=0)
-        root_update()
+        root.update()
         self.assertTrue(self.is_tipwindow_shown(tooltip))
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
@@ -115,10 +115,10 @@ class HovertipTest(unittest.TestCase):
         tooltip1 = Hovertip(self.button, 'ToolTip text', hover_delay=100)
         self.addCleanup(tooltip1.hidetip)
         tooltip1.showtip = add_call_counting(tooltip1.showtip)
-        root_update()
+        root.update()
         self.assertFalse(self.is_tipwindow_shown(tooltip1))
         self.button.event_generate('<Enter>', x=0, y=0)
-        root_update()
+        root.update()
         self.assertFalse(self.is_tipwindow_shown(tooltip1))
 
         # Test #2: A hover tip with a non-zero delay doesn't appear when
@@ -127,14 +127,14 @@ class HovertipTest(unittest.TestCase):
         tooltip2 = Hovertip(self.button, 'ToolTip text', hover_delay=100)
         self.addCleanup(tooltip2.hidetip)
         tooltip2.showtip = add_call_counting(tooltip2.showtip)
-        root_update()
+        root.update()
         self.button.event_generate('<Enter>', x=0, y=0)
-        root_update()
+        root.update()
         self.button.event_generate('<Leave>', x=0, y=0)
-        root_update()
+        root.update()
 
         time.sleep(0.15)
-        root_update()
+        root.update()
 
         # Test #1 assertions.
         self.assertTrue(self.is_tipwindow_shown(tooltip1))
@@ -148,11 +148,11 @@ class HovertipTest(unittest.TestCase):
         tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=None)
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
-        root_update()
+        root.update()
         self.button.event_generate('<Enter>', x=0, y=0)
-        root_update()
+        root.update()
         self.button.event_generate('<Leave>', x=0, y=0)
-        root_update()
+        root.update()
         self.assertFalse(self.is_tipwindow_shown(tooltip))
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
