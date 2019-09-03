@@ -111,7 +111,7 @@ static PyMethodDef statistics_methods[] = {
 };
 
 PyDoc_STRVAR(statistics_doc,
-"statistics accelerator\n");
+"Accelerators for the statistics module.\n");
 
 static struct PyModuleDef statisticsmodule = {
         PyModuleDef_HEAD_INIT,
