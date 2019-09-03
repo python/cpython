@@ -524,6 +524,9 @@ class ForwardRef(_Final, _Immutable, _root=True):
     def __eq__(self, other):
         if not isinstance(other, ForwardRef):
             return NotImplemented
+        if self.__forward_evaluated__ and other.__forward_evaluated__:
+            return (self.__forward_arg__ == other.__forward_arg__ and
+                    self.__forward_value__ == other.__forward_value__)
         return self.__forward_arg__ == other.__forward_arg__
 
     def __hash__(self):
