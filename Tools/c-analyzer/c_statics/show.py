@@ -7,5 +7,10 @@ def basic(statics, *,
             line = f'{static.filename}:{static.funcname}():{static.name}'
         else:
             line = f'{static.filename}:{static.name}'
-        line = f'{line:<64} {static.vartype.partition(" ")[2]}'
+        vartype = static.vartype
+        if vartype.startswith('static '):
+            vartype = vartype.partition(' ')[2]
+        else:
+            vartype = '=' + vartype
+        line = f'{line:<64} {vartype}'
         _print(line)
