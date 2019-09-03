@@ -7818,7 +7818,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     HANDLE reparse_point_handle;
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    PyObject *result;
+    PyObject *result = NULL;
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
@@ -7872,7 +7872,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
             name[1] = L'\\';
         }
         result = PyUnicode_FromWideChar(name, nameLen);
-        if (path->narrow) {
+        if (result && path->narrow) {
             Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
         }
     }
