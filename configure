@@ -9973,8 +9973,8 @@ $as_echo "#define WITH_LIBINTL 1" >>confdefs.h
 fi
 
 
-# checks for system dependent C++ extensions support
 case "$ac_sys_system" in
+# checks for system dependent C++ extensions support
 	AIX*)	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for genuine AIX C++ extensions support" >&5
 $as_echo_n "checking for genuine AIX C++ extensions support... " >&6; }
 		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -10005,7 +10005,20 @@ $as_echo "no" >&6; }
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext;;
+    conftest$ac_exeext conftest.$ac_ext
+# AIX_BUILDDATE + GNU_HOST_TYPE are utilized in pypa tools
+# to set a deployment baseline for compatible wheel tags
+               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the system builddate" >&5
+$as_echo_n "checking for the system builddate... " >&6; }
+               AIX_BUILDDATE=$(lslpp -Lcq bos.mp64 | awk -F:  '{ print $NF }')
+
+cat >>confdefs.h <<_ACEOF
+#define AIX_BUILDDATE $AIX_BUILDDATE
+_ACEOF
+
+               { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AIX_BUILDDATE" >&5
+$as_echo "$AIX_BUILDDATE" >&6; }
+               ;;
 	*) ;;
 esac
 
@@ -10236,7 +10249,6 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
-
 
 
 
