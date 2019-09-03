@@ -27,14 +27,6 @@
 #    include <semaphore.h>
      typedef sem_t *SEM_HANDLE;
 #  endif
-#  define HANDLE int
-#  define SOCKET int
-#  define BOOL int
-#  define UINT32 uint32_t
-#  define INT32 int32_t
-#  define TRUE 1
-#  define FALSE 0
-#  define INVALID_HANDLE_VALUE (-1)
 #endif
 
 /*
