@@ -393,10 +393,12 @@ statement, whether an exception has occurred or not. When an exception has
 occurred in the :keyword:`!try` clause and has not been handled by an
 :keyword:`except` clause (or it has occurred in an :keyword:`!except` or
 :keyword:`!else` clause), it is re-raised after the :keyword:`finally` clause has
-been executed.  The :keyword:`!finally` clause is also executed "on the way out"
-when any other clause of the :keyword:`!try` statement is left via a
-:keyword:`break`, :keyword:`continue` or :keyword:`return` statement.  A more
-complicated example::
+been executed.  The :keyword:`!finally` clause is also executed penultimately
+when the :keyword:`!try` statement is left via a :keyword:`break`,
+:keyword:`continue` or :keyword:`return` statement (thus a :keyword:`return`
+in a :keyword:`finally` clause will execute before and instead of a 
+:keyword:`return` statement in a :keyword:`try` clause).  
+A more complicated example::
 
    >>> def divide(x, y):
    ...     try:
