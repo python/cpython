@@ -215,7 +215,7 @@ Removed
 
 * The old :mod:`plistlib` API has been removed, it was deprecated since Python
   3.4. Use the :func:`load`, :func:`loads`, :func:`dump`, and :func:`dumps`
-  functions. Additionally, the `use_builtin_types` parameter was removed,
+  functions. Additionally, the ``use_builtin_types`` parameter was removed,
   standard :class:`bytes` objects are always used.
   (Contributed by Jon Janzen in :issue:`36409`.)
 
