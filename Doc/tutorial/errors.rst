@@ -396,8 +396,8 @@ occurred in the :keyword:`!try` clause and has not been handled by an
 been executed.  The :keyword:`!finally` clause is also executed penultimately
 when the :keyword:`!try` statement is left via a :keyword:`break`,
 :keyword:`continue` or :keyword:`return` statement (thus a :keyword:`return`
-in a :keyword:`finally` clause will execute before and instead of a 
-:keyword:`return` statement in a :keyword:`try` clause).  
+in a :keyword:`finally` clause will execute before and instead of a
+:keyword:`return` statement in a :keyword:`try` clause).
 A more complicated example::
 
    >>> def divide(x, y):
