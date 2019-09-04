@@ -452,6 +452,7 @@ typedef struct {
     teedataobject *dataobj;
     int index;                  /* 0 <= index <= LINKCELLS */
     PyObject *weakreflist;
+    unsigned long thread_id;
 } teeobject;
 
 static PyTypeObject teedataobject_type;
@@ -680,6 +681,11 @@ tee_next(teeobject *to)
 {
     PyObject *value, *link;
 
+    if (to->thread_id != PyThread_get_thread_ident()) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "tee() iterator can not be consumed from different threads.");
+        return NULL;
+    }
     if (to->index >= LINKCELLS) {
         link = teedataobject_jumplink(to->dataobj);
         if (link == NULL)
@@ -713,6 +719,7 @@ tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
     newto->dataobj = to->dataobj;
     newto->index = to->index;
     newto->weakreflist = NULL;
+    newto->thread_id = to->thread_id;
     PyObject_GC_Track(newto);
     return (PyObject *)newto;
 }
@@ -745,6 +752,7 @@ tee_fromiterable(PyObject *iterable)
 
     to->index = 0;
     to->weakreflist = NULL;
+    to->thread_id = PyThread_get_thread_ident();
     PyObject_GC_Track(to);
 done:
     Py_XDECREF(it);
@@ -1051,10 +1059,10 @@ cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
             }
             Py_DECREF(res);
         }
-        return Py_BuildValue("O(N)(Oi)", Py_TYPE(lz), it, lz->saved, 1);
+        return Py_BuildValue("O(N)(OO)", Py_TYPE(lz), it, lz->saved, Py_True);
     }
-    return Py_BuildValue("O(O)(Oi)", Py_TYPE(lz), lz->it, lz->saved,
-                         lz->firstpass);
+    return Py_BuildValue("O(O)(OO)", Py_TYPE(lz), lz->it, lz->saved,
+                         lz->firstpass ? Py_True : Py_False);
 }
 
 static PyObject *
@@ -4434,10 +4442,6 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *item = PyTuple_GET_ITEM(args, i);
         PyObject *it = PyObject_GetIter(item);
         if (it == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError))
-                PyErr_Format(PyExc_TypeError,
-                    "zip_longest argument #%zd must support iteration",
-                    i+1);
             Py_DECREF(ittuple);
             return NULL;
         }

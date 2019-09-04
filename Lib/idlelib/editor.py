@@ -10,6 +10,7 @@ import traceback
 import webbrowser
 
 from tkinter import *
+from tkinter.font import Font
 from tkinter.ttk import Scrollbar
 import tkinter.simpledialog as tkSimpleDialog
 import tkinter.messagebox as tkMessageBox
@@ -121,14 +122,13 @@ class EditorWindow(object):
         self.prompt_last_line = ''  # Override in PyShell
         self.text_frame = text_frame = Frame(top)
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
-        self.width = idleConf.GetOption('main', 'EditorWindow',
-                                        'width', type='int')
+        width = idleConf.GetOption('main', 'EditorWindow', 'width', type='int')
         text_options = {
                 'name': 'text',
                 'padx': 5,
                 'wrap': 'none',
                 'highlightthickness': 0,
-                'width': self.width,
+                'width': width,
                 'tabstyle': 'wordprocessor',  # new in 8.5
                 'height': idleConf.GetOption(
                         'main', 'EditorWindow', 'height', type='int'),
@@ -152,9 +152,11 @@ class EditorWindow(object):
         else:
             # Elsewhere, use right-click for popup menus.
             text.bind("<3>",self.right_menu_event)
-        text.bind('<MouseWheel>', self.wheel_event)
-        text.bind('<Button-4>', self.wheel_event)
-        text.bind('<Button-5>', self.wheel_event)
+
+        text.bind('<MouseWheel>', wheel_event)
+        text.bind('<Button-4>', wheel_event)
+        text.bind('<Button-5>', wheel_event)
+        text.bind('<Configure>', self.handle_winconfig)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
         text.bind("<<paste>>", self.paste)
@@ -212,6 +214,7 @@ class EditorWindow(object):
         text['font'] = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         text.grid(row=1, column=1, sticky=NSEW)
         text.focus_set()
+        self.set_width()
 
         # usetabs true  -> literal tab characters are used by indent and
         #                  dedent cmds, possibly mixed with spaces if
@@ -338,6 +341,22 @@ class EditorWindow(object):
             text.bind("<<toggle-line-numbers>>", self.toggle_line_numbers_event)
         else:
             self.update_menu_state('options', '*Line Numbers', 'disabled')
+
+    def handle_winconfig(self, event=None):
+        self.set_width()
+
+    def set_width(self):
+        text = self.text
+        inner_padding = sum(map(text.tk.getint, [text.cget('border'),
+                                                 text.cget('padx')]))
+        pixel_width = text.winfo_width() - 2 * inner_padding
+
+        # Divide the width of the Text widget by the font width,
+        # which is taken to be the width of '0' (zero).
+        # http://www.tcl.tk/man/tcl8.6/TkCmd/text.htm#M21
+        zero_char_width = \
+            Font(text, font=text.cget('font')).measure('0')
+        self.width = pixel_width // zero_char_width
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so displayable in Tk."""
@@ -814,6 +833,7 @@ class EditorWindow(object):
         # Finally, update the main text widget.
         new_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         self.text['font'] = new_font
+        self.set_width()
 
     def RemoveKeybindings(self):
         "Remove the keybindings before they are changed."

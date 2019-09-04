@@ -18,7 +18,7 @@
 #include <sys/ioctl.h>
 
 /* HP-UX requires that this be included to pick up MDCD, MCTS, MDSR,
- * MDTR, MRI, and MRTS (appearantly used internally by some things
+ * MDTR, MRI, and MRTS (apparently used internally by some things
  * defined as macros; these are not used here directly).
  */
 #ifdef HAVE_SYS_MODEM_H

@@ -1547,6 +1547,30 @@ class TestAddressAndGroup(TestEmailBase):
 
 class TestFolding(TestHeaderBase):
 
+    def test_address_display_names(self):
+        """Test the folding and encoding of address headers."""
+        for name, result in (
+                ('Foo Bar, France', '"Foo Bar, France"'),
+                ('Foo Bar (France)', '"Foo Bar (France)"'),
+                ('Foo Bar, España', 'Foo =?utf-8?q?Bar=2C_Espa=C3=B1a?='),
+                ('Foo Bar (España)', 'Foo Bar =?utf-8?b?KEVzcGHDsWEp?='),
+                ('Foo, Bar España', '=?utf-8?q?Foo=2C_Bar_Espa=C3=B1a?='),
+                ('Foo, Bar [España]', '=?utf-8?q?Foo=2C_Bar_=5BEspa=C3=B1a=5D?='),
+                ('Foo Bär, France', 'Foo =?utf-8?q?B=C3=A4r=2C?= France'),
+                ('Foo Bär <France>', 'Foo =?utf-8?q?B=C3=A4r_=3CFrance=3E?='),
+                (
+                    'Lôrem ipsum dôlôr sit amet, cônsectetuer adipiscing. '
+                    'Suspendisse pôtenti. Aliquam nibh. Suspendisse pôtenti.',
+                    '=?utf-8?q?L=C3=B4rem_ipsum_d=C3=B4l=C3=B4r_sit_amet=2C_c'
+                    '=C3=B4nsectetuer?=\n =?utf-8?q?adipiscing=2E_Suspendisse'
+                    '_p=C3=B4tenti=2E_Aliquam_nibh=2E?=\n Suspendisse =?utf-8'
+                    '?q?p=C3=B4tenti=2E?=',
+                    ),
+                ):
+            h = self.make_header('To', Address(name, addr_spec='a@b.com'))
+            self.assertEqual(h.fold(policy=policy.default),
+                                    'To: %s <a@b.com>\n' % result)
+
     def test_short_unstructured(self):
         h = self.make_header('subject', 'this is a test')
         self.assertEqual(h.fold(policy=policy.default),

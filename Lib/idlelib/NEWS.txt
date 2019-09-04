@@ -3,6 +3,15 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-35771: To avoid occasional spurious test_idle failures on slower
+machines, increase the ``hover_delay`` in test_tooltip.
+
+bpo-37824: Properly handle user input warnings in IDLE shell.
+Cease turning SyntaxWarnings into SyntaxErrors.
+
+bpo-37929: IDLE Settings dialog now closes properly when there is no
+shell window.
+
 bpo-37849: Fix completions list appearing too high or low when shown
 above the current line.
 
