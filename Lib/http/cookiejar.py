@@ -1999,7 +1999,7 @@ class MozillaCookieJar(FileCookieJar):
     header by default (Mozilla can cope with that).
 
     """
-    magic_re = re.compile("#( Netscape)? HTTP Cookie File")
+    magic_re = re.compile("#( Netscape)? HTTP Cookie File", re.IGNORECASE)
     header = """\
 # Netscape HTTP Cookie File
 # http://curl.haxx.se/rfc/cookie_spec.html
