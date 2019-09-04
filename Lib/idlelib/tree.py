@@ -65,19 +65,18 @@ def wheel_event(event, widget=None):
     Macs use wheel down (delta = 1*n) to scroll up, so positive
     delta means to scroll up on both systems.
 
-    X-11 sends Control-Button-4 event instead.
+    X-11 sends Control-Button-4,5 events instead.
 
-    If widget is passed as an argument, its yview command will be
-    called (instead of event.widget's).
+    The widget parameter is needed so browser label bindings can pass
+    the underlying canvas.
 
     This function depends on widget.yview to not be overridden by
     a subclass.
     """
     up = {EventType.MouseWheel: event.delta > 0,
           EventType.ButtonPress: event.num == 4}
-    lines = (-5 if up[event.type] else 5)
-    if widget is None:
-        widget = event.widget
+    lines = -5 if up[event.type] else 5
+    widget = event.widget if widget is None else widget
     widget.yview(SCROLL, lines, 'units')
     return 'break'
 
