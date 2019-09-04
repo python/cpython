@@ -1794,13 +1794,13 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             case ERROR_INVALID_PARAMETER:
             case ERROR_INVALID_FUNCTION:
             case ERROR_NOT_SUPPORTED:
-                retval = -1;
+                /* Volumes and physical disks are block devices, e.g.
+                   \\.\C: and \\.\PhysicalDrive0. */
+                memset(result, 0, sizeof(*result));
+                result->st_mode = 0x6000; /* S_IFBLK */
                 goto cleanup;
             }
-            /* Volumes and physical disks are block devices, e.g.
-               \\.\C: and \\.\PhysicalDrive0. */
-            memset(result, 0, sizeof(*result));
-            result->st_mode = 0x6000; /* S_IFBLK */
+            retval = -1;
             goto cleanup;
         }
     }
@@ -1827,7 +1827,14 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
 
 cleanup:
     if (hFile != INVALID_HANDLE_VALUE) {
-        CloseHandle(hFile);
+        /* Preserve last error if we are failing */
+        error = retval ? GetLastError() : 0;
+        if (!CloseHandle(hFile)) {
+            retval = -1;
+        } else if (retval) {
+            /* Restore last error */
+            SetLastError(error);
+        }
     }
 
     return retval;
