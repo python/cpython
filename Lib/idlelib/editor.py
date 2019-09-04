@@ -153,9 +153,9 @@ class EditorWindow(object):
             # Elsewhere, use right-click for popup menus.
             text.bind("<3>",self.right_menu_event)
 
-        text.bind('<MouseWheel>', wheel_event)
-        text.bind('<Button-4>', wheel_event)
-        text.bind('<Button-5>', wheel_event)
+        text.bind('<MouseWheel>', self.wheel_event)
+        text.bind('<Button-4>', self.wheel_event)
+        text.bind('<Button-5>', self.wheel_event)
         text.bind('<Configure>', self.handle_winconfig)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
