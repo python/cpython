@@ -1,0 +1,3 @@
+The implementation of :func:`~unicodedata.is_normalized` has been greatly
+sped up on strings that aren't normalized, by implementing the full
+normalization-quick-check algorithm from the Unicode standard.

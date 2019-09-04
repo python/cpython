@@ -208,6 +208,8 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.normalize('NFC', u11a7_str_a), u11a7_str_b)
         self.assertEqual(self.db.normalize('NFC', u11c3_str_a), u11c3_str_b)
 
+    # For tests of unicodedata.is_normalized / self.db.is_normalized ,
+    # see test_normalization.py .
 
     def test_east_asian_width(self):
         eaw = self.db.east_asian_width
