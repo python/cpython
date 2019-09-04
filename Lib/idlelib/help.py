@@ -130,12 +130,13 @@ class HelpParser(HTMLParser):
     def handle_endtag(self, tag):
         "Handle endtags in help.html."
         if tag in ['h1', 'h2', 'h3']:
-            self.indent(0)  # Clear tag, reset indent.
+            assert self.level == 0
             if self.show:
                 indent = ('        ' if tag == 'h3' else
                           '    ' if tag == 'h2' else
                           '')
                 self.toc.append((indent+self.header, self.text.index('insert')))
+            self.tags = ''
         elif tag in ['span', 'em']:
             self.chartags = ''
         elif tag == 'a':
@@ -210,7 +211,6 @@ class HelpFrame(Frame):
     "Display html text, scrollbar, and toc."
     def __init__(self, parent, filename):
         Frame.__init__(self, parent)
-        # Keep references to widgets for test access.
         self.text = text = HelpText(self, filename)
         self['background'] = text['background']
         self.toc = toc = self.toc_menu(text)
@@ -218,7 +218,7 @@ class HelpFrame(Frame):
         text['yscrollcommand'] = scroll.set
 
         self.rowconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)  # Only expand text.
+        self.columnconfigure(1, weight=1)  # Only expand the text widget.
         toc.grid(row=0, column=0, sticky='nw')
         text.grid(row=0, column=1, sticky='nsew')
         scroll.grid(row=0, column=2, sticky='ns')
