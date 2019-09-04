@@ -615,28 +615,28 @@ def multimode(data):
 # position is that fewer options make for easier choices and that
 # external packages can be used for anything more advanced.
 
-def quantiles(dist, /, *, n=4, method='exclusive'):
-    """Divide *dist* into *n* continuous intervals with equal probability.
+def quantiles(data, /, *, n=4, method='exclusive'):
+    """Divide *data* into *n* continuous intervals with equal probability.
 
     Returns a list of (n - 1) cut points separating the intervals.
 
     Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
     Set *n* to 100 for percentiles which gives the 99 cuts points that
-    separate *dist* in to 100 equal sized groups.
+    separate *data* in to 100 equal sized groups.
 
-    The *dist* can be any iterable containing sample data or it can be
+    The *data* can be any iterable containing sample data or it can be
     an instance of a class that defines an inv_cdf() method.  For sample
     data, the cut points are linearly interpolated between data points.
 
-    If *method* is set to *inclusive*, *dist* is treated as population
+    If *method* is set to *inclusive*, *data* is treated as population
     data.  The minimum value is treated as the 0th percentile and the
     maximum value is treated as the 100th percentile.
     """
     if n < 1:
         raise StatisticsError('n must be at least 1')
-    if hasattr(dist, 'inv_cdf'):
-        return [dist.inv_cdf(i / n) for i in range(1, n)]
-    data = sorted(dist)
+    if hasattr(data, 'inv_cdf'):
+        return [data.inv_cdf(i / n) for i in range(1, n)]
+    data = sorted(data)
     ld = len(data)
     if ld < 2:
         raise StatisticsError('must have at least two data points')

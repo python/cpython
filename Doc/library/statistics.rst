@@ -502,19 +502,19 @@ However, for reading convenience, most of the examples show sorted sequences.
       :func:`pvariance` function as the *mu* parameter to get the variance of a
       sample.
 
-.. function:: quantiles(dist, *, n=4, method='exclusive')
+.. function:: quantiles(data, *, n=4, method='exclusive')
 
-   Divide *dist* into *n* continuous intervals with equal probability.
+   Divide *data* into *n* continuous intervals with equal probability.
    Returns a list of ``n - 1`` cut points separating the intervals.
 
    Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.  Set
    *n* to 100 for percentiles which gives the 99 cuts points that separate
-   *dist* in to 100 equal sized groups.  Raises :exc:`StatisticsError` if *n*
+   *data* in to 100 equal sized groups.  Raises :exc:`StatisticsError` if *n*
    is not least 1.
 
-   The *dist* can be any iterable containing sample data or it can be an
+   The *data* can be any iterable containing sample data or it can be an
    instance of a class that defines an :meth:`~inv_cdf` method.  For meaningful
-   results, the number of data points in *dist* should be larger than *n*.
+   results, the number of data points in *data* should be larger than *n*.
    Raises :exc:`StatisticsError` if there are not at least two data points.
 
    For sample data, the cut points are linearly interpolated from the
@@ -523,7 +523,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    cut-point will evaluate to ``104``.
 
    The *method* for computing quantiles can be varied depending on
-   whether the data in *dist* includes or excludes the lowest and
+   whether the data in *data* includes or excludes the lowest and
    highest possible values from the population.
 
    The default *method* is "exclusive" and is used for data sampled from
@@ -535,14 +535,14 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Setting the *method* to "inclusive" is used for describing population
    data or for samples that are known to include the most extreme values
-   from the population.  The minimum value in *dist* is treated as the 0th
+   from the population.  The minimum value in *data* is treated as the 0th
    percentile and the maximum value is treated as the 100th percentile.
    The portion of the population falling below the *i-th* of *m* sorted
    data points is computed as ``(i - 1) / (m - 1)``.  Given 11 sample
    values, the method sorts them and assigns the following percentiles:
    0%, 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%.
 
-   If *dist* is an instance of a class that defines an
+   If *data* is an instance of a class that defines an
    :meth:`~inv_cdf` method, setting *method* has no effect.
 
    .. doctest::
