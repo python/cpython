@@ -182,7 +182,7 @@ class BaseLockTests(BaseTestCase):
     def test_timeout(self):
         lock = self.locktype()
         # Can't set timeout if not blocking
-        self.assertRaises(ValueError, lock.acquire, 0, 1)
+        self.assertRaises(ValueError, lock.acquire, False, 1)
         # Invalid timeout values
         self.assertRaises(ValueError, lock.acquire, timeout=-100)
         self.assertRaises(OverflowError, lock.acquire, timeout=1e100)
@@ -467,7 +467,7 @@ class ConditionTests(BaseTestCase):
         # of the workers.
         # Secondly, this test assumes that condition variables are not subject
         # to spurious wakeups.  The absence of spurious wakeups is an implementation
-        # detail of Condition Cariables in current CPython, but in general, not
+        # detail of Condition Variables in current CPython, but in general, not
         # a guaranteed property of condition variables as a programming
         # construct.  In particular, it is possible that this can no longer
         # be conveniently guaranteed should their implementation ever change.

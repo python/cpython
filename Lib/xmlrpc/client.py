@@ -442,7 +442,7 @@ class ExpatParser:
         target.xml(encoding, None)
 
     def feed(self, data):
-        self._parser.Parse(data, 0)
+        self._parser.Parse(data, False)
 
     def close(self):
         try:

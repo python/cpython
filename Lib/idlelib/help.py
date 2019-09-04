@@ -62,6 +62,7 @@ class HelpParser(HTMLParser):
         self.simplelist = False  # simple list (no double spacing)
         self.toc = []            # pair headers with text indexes for toc
         self.header = ''         # text within header tags for toc
+        self.prevtag = None      # info about previous tag (was opener, tag)
 
     def indent(self, amt=1):
         self.level += amt
@@ -78,8 +79,11 @@ class HelpParser(HTMLParser):
             self.show = True    # start of main content
         elif tag == 'div' and class_ == 'sphinxsidebar':
             self.show = False   # end of main content
-        elif tag == 'p' and class_ != 'first':
-            s = '\n\n'
+        elif tag == 'p' and self.prevtag and not self.prevtag[0]:
+            # begin a new block for <p> tags after a closed tag
+            # avoid extra lines, e.g. after <pre> tags
+            lastline = self.text.get('end-1c linestart', 'end-1c')
+            s = '\n\n' if lastline and not lastline.isspace() else '\n'
         elif tag == 'span' and class_ == 'pre':
             self.chartags = 'pre'
         elif tag == 'span' and class_ == 'versionmodified':
@@ -120,6 +124,7 @@ class HelpParser(HTMLParser):
             self.tags = tag
         if self.show:
             self.text.insert('end', s, (self.tags, self.chartags))
+        self.prevtag = (True, tag)
 
     def handle_endtag(self, tag):
         "Handle endtags in help.html."
@@ -139,6 +144,7 @@ class HelpParser(HTMLParser):
             self.tags = ''
         elif tag in ['ul', 'dd', 'ol']:
             self.indent(amt=-1)
+        self.prevtag = (False, tag)
 
     def handle_data(self, data):
         "Handle date segments in help.html."

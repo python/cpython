@@ -242,7 +242,6 @@ class ElementTreeTest(unittest.TestCase):
         check_method(element.extend)
         check_method(element.insert)
         check_method(element.remove)
-        check_method(element.getchildren)
         check_method(element.find)
         check_method(element.iterfind)
         check_method(element.findall)
@@ -254,7 +253,6 @@ class ElementTreeTest(unittest.TestCase):
         check_method(element.items)
         check_method(element.iter)
         check_method(element.itertext)
-        check_method(element.getiterator)
 
         # These methods return an iterable. See bug 6472.
 
@@ -741,24 +739,20 @@ class ElementTreeTest(unittest.TestCase):
                 ('end-ns', ''),
             ])
 
-    # Element.getchildren() and ElementTree.getiterator() are deprecated.
-    @checkwarnings(("This method will be removed in future versions.  "
-                    "Use .+ instead.",
-                    DeprecationWarning))
-    def test_getchildren(self):
-        # Test Element.getchildren()
+    def test_children(self):
+        # Test Element children iteration
 
         with open(SIMPLE_XMLFILE, "rb") as f:
             tree = ET.parse(f)
-        self.assertEqual([summarize_list(elem.getchildren())
+        self.assertEqual([summarize_list(elem)
                           for elem in tree.getroot().iter()], [
                 ['element', 'element', 'empty-element'],
                 [],
                 [],
                 [],
             ])
-        self.assertEqual([summarize_list(elem.getchildren())
-                          for elem in tree.getiterator()], [
+        self.assertEqual([summarize_list(elem)
+                          for elem in tree.iter()], [
                 ['element', 'element', 'empty-element'],
                 [],
                 [],
@@ -766,13 +760,13 @@ class ElementTreeTest(unittest.TestCase):
             ])
 
         elem = ET.XML(SAMPLE_XML)
-        self.assertEqual(len(elem.getchildren()), 3)
-        self.assertEqual(len(elem[2].getchildren()), 1)
-        self.assertEqual(elem[:], elem.getchildren())
+        self.assertEqual(len(list(elem)), 3)
+        self.assertEqual(len(list(elem[2])), 1)
+        self.assertEqual(elem[:], list(elem))
         child1 = elem[0]
         child2 = elem[2]
         del elem[1:2]
-        self.assertEqual(len(elem.getchildren()), 2)
+        self.assertEqual(len(list(elem)), 2)
         self.assertEqual(child1, elem[0])
         self.assertEqual(child2, elem[1])
         elem[0:2] = [child2, child1]
@@ -780,7 +774,7 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(child1, elem[1])
         self.assertNotEqual(child1, elem[0])
         elem.clear()
-        self.assertEqual(elem.getchildren(), [])
+        self.assertEqual(list(elem), [])
 
     def test_writestring(self):
         elem = ET.XML("<html><body>text</body></html>")
@@ -2954,40 +2948,6 @@ class ElementIterTest(unittest.TestCase):
         self.assertEqual(summarize_list(doc.iter()), all_tags)
         self.assertEqual(self._ilist(doc), all_tags)
         self.assertEqual(self._ilist(doc, '*'), all_tags)
-
-    # Element.getiterator() is deprecated.
-    @checkwarnings(("This method will be removed in future versions.  "
-                    "Use .+ instead.", DeprecationWarning))
-    def test_getiterator(self):
-        doc = ET.XML('''
-            <document>
-                <house>
-                    <room>bedroom1</room>
-                    <room>bedroom2</room>
-                </house>
-                <shed>nothing here
-                </shed>
-                <house>
-                    <room>bedroom8</room>
-                </house>
-            </document>''')
-
-        self.assertEqual(summarize_list(doc.getiterator('room')),
-                         ['room'] * 3)
-        self.assertEqual(summarize_list(doc.getiterator('house')),
-                         ['house'] * 2)
-
-        # test that getiterator also accepts 'tag' as a keyword arg
-        self.assertEqual(
-            summarize_list(doc.getiterator(tag='room')),
-            ['room'] * 3)
-
-        # make sure both tag=None and tag='*' return all tags
-        all_tags = ['document', 'house', 'room', 'room',
-                    'shed', 'house', 'room']
-        self.assertEqual(summarize_list(doc.getiterator()), all_tags)
-        self.assertEqual(summarize_list(doc.getiterator(None)), all_tags)
-        self.assertEqual(summarize_list(doc.getiterator('*')), all_tags)
 
     def test_copy(self):
         a = ET.Element('a')
