@@ -26,6 +26,7 @@ from idlelib import pyparse
 from idlelib import query
 from idlelib import replace
 from idlelib import search
+from idlelib.tree import wheel_event
 from idlelib import window
 
 # The default tab setting for a Text widget, in average-width characters.
@@ -61,7 +62,6 @@ class EditorWindow(object):
     from idlelib.parenmatch import ParenMatch
     from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
-    from idlelib.tree import wheel_event
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
     help_url = None
@@ -153,9 +153,9 @@ class EditorWindow(object):
             # Elsewhere, use right-click for popup menus.
             text.bind("<3>",self.right_menu_event)
 
-        text.bind('<MouseWheel>', self.wheel_event)
-        text.bind('<Button-4>', self.wheel_event)
-        text.bind('<Button-5>', self.wheel_event)
+        text.bind('<MouseWheel>', wheel_event)
+        text.bind('<Button-4>', wheel_event)
+        text.bind('<Button-5>', wheel_event)
         text.bind('<Configure>', self.handle_winconfig)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
