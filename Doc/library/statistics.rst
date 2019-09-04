@@ -580,7 +580,7 @@ A single exception is defined:
 :class:`NormalDist` is a tool for creating and manipulating normal
 distributions of a `random variable
 <http://www.stat.yale.edu/Courses/1997-98/101/ranvar.htm>`_.  It is a
-composite class that treats the mean and standard deviation of data
+class that treats the mean and standard deviation of data
 measurements as a single entity.
 
 Normal distributions arise from the `Central Limit Theorem
