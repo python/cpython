@@ -146,6 +146,9 @@ PyTuple_New(Py_ssize_t size)
     }
 #endif
     op = tuple_alloc(size);
+    if (op == NULL) {
+        return NULL;
+    }
     for (Py_ssize_t i = 0; i < size; i++) {
         op->ob_item[i] = NULL;
     }
