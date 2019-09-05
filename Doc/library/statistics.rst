@@ -403,10 +403,6 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> pvariance(data, mu)
       1.25
 
-   This function does not attempt to verify that you have passed the actual mean
-   as *mu*.  Using arbitrary values for *mu* may lead to invalid or impossible
-   results.
-
    Decimals and Fractions are supported:
 
    .. doctest::
