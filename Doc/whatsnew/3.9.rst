@@ -219,6 +219,10 @@ Removed
   standard :class:`bytes` objects are always used.
   (Contributed by Jon Janzen in :issue:`36409`.)
 
+* The C function ``PyGen_NeedsFinalizing`` has been removed. It was documented
+  and not used anywhere in the source code.
+  (Contributed by Joannah Nanjekye in :issue:`15088`)
+
 
 Porting to Python 3.9
 =====================
