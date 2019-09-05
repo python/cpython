@@ -16,17 +16,20 @@ class TestPathfixFunctional(unittest.TestCase):
     def pathfix(self, shebang, pathfix_flags):
         with open(self.temp_file, 'w', encoding='utf8') as f:
             f.write(f'{shebang}\n' + 'print("Hello world")\n')
+
         proc = subprocess.run(
             [sys.executable, self.script,
              *pathfix_flags, '-n', self.temp_file],
             capture_output=True)
         self.assertEqual(proc.returncode, 0, proc)
+
         with open(self.temp_file, 'r', encoding='utf8') as f:
             output = f.read()
-            lines = output.split('\n')
-            self.assertEqual(lines[1:], ['print("Hello world")', ''])
-            shebang = lines[0]
-            return shebang
+
+        lines = output.split('\n')
+        self.assertEqual(lines[1:], ['print("Hello world")', ''])
+        shebang = lines[0]
+        return shebang
 
     def test_pathfix(self):
         self.assertEqual(
@@ -55,7 +58,6 @@ class TestPathfixFunctional(unittest.TestCase):
                 ['-i', '/usr/bin/python3', '-k',]),
             '#! /usr/bin/python3',
         )
-
 
 
 if __name__ == '__main__':
