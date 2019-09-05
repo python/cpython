@@ -133,6 +133,10 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Convert *data* to floats and compute the geometric mean.
 
+   The geometric mean indicates the central tendency or typical value of the
+   *data* using the product of the values (as opposed to the arithmetic mean
+   which uses their sum).
+
    Raises a :exc:`StatisticsError` if the input dataset is empty,
    if it contains a zero, or if it contains a negative value.
    The *data* may be a sequence or iterator.
@@ -142,7 +146,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. doctest::
 
-      >>> round(geometric_mean([54, 24, 36]), 9)
+      >>> round(geometric_mean([54, 24, 36]), 1)
       36.0
 
    .. versionadded:: 3.8
