@@ -20,33 +20,39 @@ class TestPathfixFunctional(unittest.TestCase):
         with open(self.temp_file, 'r', encoding='utf8') as f:
             output = f.read()
             lines = output.split('\n')
-            self.assertEqual(lines[1:], ['print("Hello world")\n']
-            shebang = lines[0][:-1]  # strip the newline
+            self.assertEqual(lines[1:], ['print("Hello world")', ''])
+            shebang = lines[0]
             return shebang
-
-    def test_pathfix_keeping_flags(self):
-        self.assertEqual(
-            self.pathfix(
-                '#! /usr/bin/env python -R',
-                ['-i', '/usr/bin/python3', '-k',]),
-            '#! /usr/bin/python3 -R\n',
-        )
-
-    def test_pathfix_without_keeping_flags(self):
-        self.assertEqual(
-            self.pathfix(
-                '#! /usr/bin/env python -R',
-                ['-i', '/usr/bin/python3',]),
-            '#! /usr/bin/python3\n',
-        )
 
     def test_pathfix(self):
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python',
                 ['-i', '/usr/bin/python3',]),
-            '#! /usr/bin/python3\n',
+            '#! /usr/bin/python3',
         )
+        self.assertEqual(
+            self.pathfix(
+                '#! /usr/bin/env python -R',
+                ['-i', '/usr/bin/python3', ]),
+            '#! /usr/bin/python3',
+        )
+
+    def test_pathfix_keeping_flags(self):
+        self.assertEqual(
+            self.pathfix(
+                '#! /usr/bin/env python -R',
+                ['-i', '/usr/bin/python3', '-k',]),
+            '#! /usr/bin/python3 -R',
+        )
+        self.assertEqual(
+            self.pathfix(
+                '#! /usr/bin/env python',
+                ['-i', '/usr/bin/python3', '-k',]),
+            '#! /usr/bin/python3',
+        )
+
+
 
 if __name__ == '__main__':
     unittest.main()

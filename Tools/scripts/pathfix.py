@@ -182,11 +182,10 @@ def fix(filename):
 
 def parse_shebang(shebangline):
     shebangline = shebangline.strip()
-    end = len(shebangline)
-    start = shebangline.find(b' -', 0, end)
+    start = shebangline.find(b' -')
     if start == -1:
         return b''
-    return shebangline[(start + 2):end]
+    return shebangline[(start):]
 
 
 def fixline(line):
@@ -195,10 +194,10 @@ def fixline(line):
 
     if b"python" not in line:
         return line
+    flags = b''
     if keep_flags:
         flags = parse_shebang(line)
-        return b'#! ' + new_interpreter + b' -' + flags + b'\n'
-    return b'#! ' + new_interpreter + b'\n'
+    return b'#! ' + new_interpreter + flags + b'\n'
 
 
 if __name__ == '__main__':
