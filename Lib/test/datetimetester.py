@@ -413,6 +413,11 @@ class TestTimeZone(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     timezone(delta)
 
+    def test_comparison_with_tzinfo(self):
+        # Constructing tzinfo objects directly should not be done by users
+        # and serves only to check the bug described in bpo-37915
+        self.assertNotEqual(timezone.utc, tzinfo())
+        self.assertNotEqual(timezone(timedelta(hours=1)), tzinfo())
 
 #############################################################################
 # Base class for testing a particular aspect of timedelta, time, date and
@@ -3319,16 +3324,25 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
     def test_compat_unpickle(self):
         tests = [
-            b"cdatetime\ntime\n(S'\\x14;\\x10\\x00\\x10\\x00'\ntR.",
-            b'cdatetime\ntime\n(U\x06\x14;\x10\x00\x10\x00tR.',
-            b'\x80\x02cdatetime\ntime\nU\x06\x14;\x10\x00\x10\x00\x85R.',
+            (b"cdatetime\ntime\n(S'\\x14;\\x10\\x00\\x10\\x00'\ntR.",
+             (20, 59, 16, 64**2)),
+            (b'cdatetime\ntime\n(U\x06\x14;\x10\x00\x10\x00tR.',
+             (20, 59, 16, 64**2)),
+            (b'\x80\x02cdatetime\ntime\nU\x06\x14;\x10\x00\x10\x00\x85R.',
+             (20, 59, 16, 64**2)),
+            (b"cdatetime\ntime\n(S'\\x14;\\x19\\x00\\x10\\x00'\ntR.",
+             (20, 59, 25, 64**2)),
+            (b'cdatetime\ntime\n(U\x06\x14;\x19\x00\x10\x00tR.',
+             (20, 59, 25, 64**2)),
+            (b'\x80\x02cdatetime\ntime\nU\x06\x14;\x19\x00\x10\x00\x85R.',
+             (20, 59, 25, 64**2)),
         ]
-        args = 20, 59, 16, 64**2
-        expected = self.theclass(*args)
-        for data in tests:
-            for loads in pickle_loads:
-                derived = loads(data, encoding='latin1')
-                self.assertEqual(derived, expected)
+        for i, (data, args) in enumerate(tests):
+            with self.subTest(i=i):
+                expected = self.theclass(*args)
+                for loads in pickle_loads:
+                    derived = loads(data, encoding='latin1')
+                    self.assertEqual(derived, expected)
 
     def test_bool(self):
         # time is always True.
@@ -5927,6 +5941,65 @@ class CapiTest(unittest.TestCase):
 
                 self.assertEqual(dt1.astimezone(timezone.utc), dt_utc)
 
+    def test_PyDateTime_DELTA_GET(self):
+        class TimeDeltaSubclass(timedelta):
+            pass
+
+        for klass in [timedelta, TimeDeltaSubclass]:
+            for args in [(26, 55, 99999), (26, 55, 99999)]:
+                d = klass(*args)
+                with self.subTest(cls=klass, date=args):
+                    days, seconds, microseconds = _testcapi.PyDateTime_DELTA_GET(d)
+
+                    self.assertEqual(days, d.days)
+                    self.assertEqual(seconds, d.seconds)
+                    self.assertEqual(microseconds, d.microseconds)
+
+    def test_PyDateTime_GET(self):
+        class DateSubclass(date):
+            pass
+
+        for klass in [date, DateSubclass]:
+            for args in [(2000, 1, 2), (2012, 2, 29)]:
+                d = klass(*args)
+                with self.subTest(cls=klass, date=args):
+                    year, month, day = _testcapi.PyDateTime_GET(d)
+
+                    self.assertEqual(year, d.year)
+                    self.assertEqual(month, d.month)
+                    self.assertEqual(day, d.day)
+
+    def test_PyDateTime_DATE_GET(self):
+        class DateTimeSubclass(datetime):
+            pass
+
+        for klass in [datetime, DateTimeSubclass]:
+            for args in [(1993, 8, 26, 22, 12, 55, 99999),
+                         (1993, 8, 26, 22, 12, 55, 99999)]:
+                d = klass(*args)
+                with self.subTest(cls=klass, date=args):
+                    hour, minute, second, microsecond = _testcapi.PyDateTime_DATE_GET(d)
+
+                    self.assertEqual(hour, d.hour)
+                    self.assertEqual(minute, d.minute)
+                    self.assertEqual(second, d.second)
+                    self.assertEqual(microsecond, d.microsecond)
+
+    def test_PyDateTime_TIME_GET(self):
+        class TimeSubclass(time):
+            pass
+
+        for klass in [time, TimeSubclass]:
+            for args in [(12, 30, 20, 10), (12, 30, 20, 10)]:
+                d = klass(*args)
+                with self.subTest(cls=klass, date=args):
+                    hour, minute, second, microsecond = _testcapi.PyDateTime_TIME_GET(d)
+
+                    self.assertEqual(hour, d.hour)
+                    self.assertEqual(minute, d.minute)
+                    self.assertEqual(second, d.second)
+                    self.assertEqual(microsecond, d.microsecond)
+
     def test_timezones_offset_zero(self):
         utc0, utc1, non_utc = _testcapi.get_timezones_offset_zero()
 
@@ -6087,7 +6160,7 @@ class CapiTest(unittest.TestCase):
     def test_date_from_date(self):
         exp_date = date(1993, 8, 26)
 
-        for macro in [0, 1]:
+        for macro in False, True:
             with self.subTest(macro=macro):
                 c_api_date = _testcapi.get_date_fromdate(
                     macro,
@@ -6100,7 +6173,7 @@ class CapiTest(unittest.TestCase):
     def test_datetime_from_dateandtime(self):
         exp_date = datetime(1993, 8, 26, 22, 12, 55, 99999)
 
-        for macro in [0, 1]:
+        for macro in False, True:
             with self.subTest(macro=macro):
                 c_api_date = _testcapi.get_datetime_fromdateandtime(
                     macro,
@@ -6118,7 +6191,7 @@ class CapiTest(unittest.TestCase):
         exp_date = datetime(1993, 8, 26, 22, 12, 55, 99999)
 
         for fold in [0, 1]:
-            for macro in [0, 1]:
+            for macro in False, True:
                 with self.subTest(macro=macro, fold=fold):
                     c_api_date = _testcapi.get_datetime_fromdateandtimeandfold(
                         macro,
@@ -6137,7 +6210,7 @@ class CapiTest(unittest.TestCase):
     def test_time_from_time(self):
         exp_time = time(22, 12, 55, 99999)
 
-        for macro in [0, 1]:
+        for macro in False, True:
             with self.subTest(macro=macro):
                 c_api_time = _testcapi.get_time_fromtime(
                     macro,
@@ -6152,7 +6225,7 @@ class CapiTest(unittest.TestCase):
         exp_time = time(22, 12, 55, 99999)
 
         for fold in [0, 1]:
-            for macro in [0, 1]:
+            for macro in False, True:
                 with self.subTest(macro=macro, fold=fold):
                     c_api_time = _testcapi.get_time_fromtimeandfold(
                         macro,
@@ -6168,7 +6241,7 @@ class CapiTest(unittest.TestCase):
     def test_delta_from_dsu(self):
         exp_delta = timedelta(26, 55, 99999)
 
-        for macro in [0, 1]:
+        for macro in False, True:
             with self.subTest(macro=macro):
                 c_api_delta = _testcapi.get_delta_fromdsu(
                     macro,
@@ -6181,7 +6254,7 @@ class CapiTest(unittest.TestCase):
     def test_date_from_timestamp(self):
         ts = datetime(1995, 4, 12).timestamp()
 
-        for macro in [0, 1]:
+        for macro in False, True:
             with self.subTest(macro=macro):
                 d = _testcapi.get_date_fromtimestamp(int(ts), macro)
 
@@ -6199,7 +6272,7 @@ class CapiTest(unittest.TestCase):
 
         from_timestamp = _testcapi.get_datetime_fromtimestamp
         for case in cases:
-            for macro in [0, 1]:
+            for macro in False, True:
                 with self.subTest(case=case, macro=macro):
                     dtup, tzinfo, usetz = case
                     dt_orig = datetime(*dtup, tzinfo=tzinfo)

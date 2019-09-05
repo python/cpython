@@ -729,7 +729,7 @@ PyState_RemoveModule(struct PyModuleDef* def)
         return -1;
     }
     if (state->modules_by_index == NULL) {
-        Py_FatalError("PyState_RemoveModule: Interpreters module-list not acessible.");
+        Py_FatalError("PyState_RemoveModule: Interpreters module-list not accessible.");
         return -1;
     }
     if (index > PyList_GET_SIZE(state->modules_by_index)) {
@@ -882,7 +882,7 @@ _PyThreadState_DeleteCurrent(_PyRuntimeState *runtime)
  * Note that, if there is a current thread state, it *must* be the one
  * passed as argument.  Also, this won't touch any other interpreters
  * than the current one, since we don't know which thread state should
- * be kept in those other interpreteres.
+ * be kept in those other interpreters.
  */
 void
 _PyThreadState_DeleteExcept(_PyRuntimeState *runtime, PyThreadState *tstate)

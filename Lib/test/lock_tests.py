@@ -182,7 +182,7 @@ class BaseLockTests(BaseTestCase):
     def test_timeout(self):
         lock = self.locktype()
         # Can't set timeout if not blocking
-        self.assertRaises(ValueError, lock.acquire, 0, 1)
+        self.assertRaises(ValueError, lock.acquire, False, 1)
         # Invalid timeout values
         self.assertRaises(ValueError, lock.acquire, timeout=-100)
         self.assertRaises(OverflowError, lock.acquire, timeout=1e100)
@@ -467,7 +467,7 @@ class ConditionTests(BaseTestCase):
         # of the workers.
         # Secondly, this test assumes that condition variables are not subject
         # to spurious wakeups.  The absence of spurious wakeups is an implementation
-        # detail of Condition Cariables in current CPython, but in general, not
+        # detail of Condition Variables in current CPython, but in general, not
         # a guaranteed property of condition variables as a programming
         # construct.  In particular, it is possible that this can no longer
         # be conveniently guaranteed should their implementation ever change.
@@ -662,6 +662,38 @@ class BaseSemaphoreTests(BaseTestCase):
         sem.release()
         b.wait_for_finished()
         self.assertEqual(sem_results, [True] * (6 + 7 + 6 + 1))
+
+    def test_multirelease(self):
+        sem = self.semtype(7)
+        sem.acquire()
+        results1 = []
+        results2 = []
+        phase_num = 0
+        def f():
+            sem.acquire()
+            results1.append(phase_num)
+            sem.acquire()
+            results2.append(phase_num)
+        b = Bunch(f, 10)
+        b.wait_for_started()
+        while len(results1) + len(results2) < 6:
+            _wait()
+        self.assertEqual(results1 + results2, [0] * 6)
+        phase_num = 1
+        sem.release(7)
+        while len(results1) + len(results2) < 13:
+            _wait()
+        self.assertEqual(sorted(results1 + results2), [0] * 6 + [1] * 7)
+        phase_num = 2
+        sem.release(6)
+        while len(results1) + len(results2) < 19:
+            _wait()
+        self.assertEqual(sorted(results1 + results2), [0] * 6 + [1] * 7 + [2] * 6)
+        # The semaphore is still locked
+        self.assertFalse(sem.acquire(False))
+        # Final release, to let the last thread finish
+        sem.release()
+        b.wait_for_finished()
 
     def test_try_acquire(self):
         sem = self.semtype(2)

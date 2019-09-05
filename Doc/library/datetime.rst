@@ -401,7 +401,7 @@ systems.
 
 .. class:: date(year, month, day)
 
-   All arguments are required.  Arguments may be integers, in the following
+   All arguments are required.  Arguments must be integers in the following
    ranges:
 
    * ``MINYEAR <= year <= MAXYEAR``
@@ -714,7 +714,7 @@ Constructor:
 .. class:: datetime(year, month, day, hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0)
 
    The year, month and day arguments are required.  *tzinfo* may be ``None``, or an
-   instance of a :class:`tzinfo` subclass.  The remaining arguments may be integers,
+   instance of a :class:`tzinfo` subclass.  The remaining arguments must be integers
    in the following ranges:
 
    * ``MINYEAR <= year <= MAXYEAR``,
@@ -857,7 +857,9 @@ Other constructors, all class methods:
   .. caution::
 
     This does not support parsing arbitrary ISO 8601 strings - it is only intended
-    as the inverse operation of :meth:`datetime.isoformat`.
+    as the inverse operation of :meth:`datetime.isoformat`. A more full-featured
+    ISO 8601 parser, ``dateutil.parser.isoparse`` is available in the third-party package
+    `dateutil <https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.isoparse>`_.
 
   .. versionadded:: 3.7
 
@@ -1439,7 +1441,7 @@ day, and subject to adjustment via a :class:`tzinfo` object.
 .. class:: time(hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0)
 
    All arguments are optional.  *tzinfo* may be ``None``, or an instance of a
-   :class:`tzinfo` subclass.  The remaining arguments may be integers, in the
+   :class:`tzinfo` subclass.  The remaining arguments must be integers in the
    following ranges:
 
    * ``0 <= hour < 24``,

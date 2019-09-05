@@ -1318,6 +1318,7 @@ static int
 thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
                        PyObject *exc_traceback, PyObject *thread)
 {
+    _Py_IDENTIFIER(name);
     /* print(f"Exception in thread {thread.name}:", file=file) */
     if (PyFile_WriteString("Exception in thread ", file) < 0) {
         return -1;
@@ -1325,7 +1326,9 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
 
     PyObject *name = NULL;
     if (thread != Py_None) {
-        name = PyObject_GetAttrString(thread, "name");
+        if (_PyObject_LookupAttrId(thread, &PyId_name, &name) < 0) {
+            return -1;
+        }
     }
     if (name != NULL) {
         if (PyFile_WriteObject(name, file, Py_PRINT_RAW) < 0) {
@@ -1335,8 +1338,6 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
         Py_DECREF(name);
     }
     else {
-        PyErr_Clear();
-
         unsigned long ident = PyThread_get_thread_ident();
         PyObject *str = PyUnicode_FromFormat("%lu", ident);
         if (str != NULL) {

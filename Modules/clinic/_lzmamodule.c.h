@@ -29,7 +29,7 @@ _lzma_LZMACompressor_compress(Compressor *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("compress", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _lzma_LZMACompressor_compress_impl(self, &data);
@@ -110,7 +110,7 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("decompress", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("decompress", "argument 'data'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -321,7 +321,7 @@ _lzma__decode_filter_properties(PyObject *module, PyObject *const *args, Py_ssiz
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&encoded_props, 'C')) {
-        _PyArg_BadArgument("_decode_filter_properties", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("_decode_filter_properties", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = _lzma__decode_filter_properties_impl(module, filter_id, &encoded_props);
@@ -334,4 +334,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=1a290aa478603107 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f7477a10e86a717d input=a9049054013a1b77]*/

@@ -1,42 +1,180 @@
+"""Python parser generator
+
+
+This parser generator transforms a Python grammar file into parsing tables
+that can be consumed by Python's LL(1) parser written in C.
+
+Concepts
+--------
+
+* An LL(1) parser (Left-to-right, Leftmost derivation, 1 token-lookahead) is a
+  top-down parser for a subset of context-free languages. It parses the input
+  from Left to right, performing Leftmost derivation of the sentence, and can
+  only use 1 token of lookahead when parsing a sentence.
+
+* A parsing table is a collection of data that a generic implementation of the
+  LL(1) parser consumes to know how to parse a given context-free grammar. In
+  this case the collection of data involves Deterministic Finite Automatons,
+  calculated first sets, keywords and transition labels.
+
+* A grammar is defined by production rules (or just 'productions') that specify
+  which symbols may replace which other symbols; these rules may be used to
+  generate strings, or to parse them. Each such rule has a head, or left-hand
+  side, which consists of the string that may be replaced, and a body, or
+  right-hand side, which consists of a string that may replace it. In the
+  Python grammar, rules are written in the form
+
+  rule_name: rule_description;
+
+  meaning the rule 'a: b' specifies that a can be replaced by b. A context-free
+  grammar is a grammar in which the left-hand side of each production rule
+  consists of only a single nonterminal symbol. Context-free grammars can
+  always be recognized by a Non-Deterministic Automatons.
+
+* Terminal symbols are literal symbols which may appear in the outputs of the
+  production rules of the grammar and which cannot be changed using the rules
+  of the grammar. Applying the rules recursively to a source string of symbols
+  will usually terminate in a final output string consisting only of terminal
+  symbols.
+
+* Nonterminal symbols are those symbols which can be replaced. The grammar
+  includes a start symbol a designated member of the set of nonterminals from
+  which all the strings in the language may be derived by successive
+  applications of the production rules.
+
+* The language defined by the grammar is defined as the set of terminal strings
+  that can be derived using the production rules.
+
+* The first sets of a rule (FIRST(rule)) are defined to be the set of terminals
+  that can appear in the first position of any string derived from the rule.
+  This is useful for LL(1) parsers as the parser is only allowed to look at the
+  next token in the input to know which rule needs to parse. For example, given
+  this grammar:
+
+  start: '(' A | B ')'
+  A: 'a' '<'
+  B: 'b' '<'
+
+  and the input '(b<)' the parser can only look at 'b' to know if it needs
+  to parse A o B. Because FIRST(A) = {'a'} and FIRST(B) = {'b'} it knows
+  that needs to continue parsing rule B because only that rule can start
+  with 'b'.
+
+Description
+-----------
+
+The input for the parser generator is a grammar in extended BNF form (using *
+for repetition, + for at-least-once repetition, [] for optional parts, | for
+alternatives and () for grouping).
+
+Each rule in the grammar file is considered as a regular expression in its
+own right. It is turned into a Non-deterministic Finite Automaton (NFA),
+which is then turned into a Deterministic Finite Automaton (DFA), which is
+then optimized to reduce the number of states. See [Aho&Ullman 77] chapter 3,
+or similar compiler books (this technique is more often used for lexical
+analyzers).
+
+The DFA's are used by the parser as parsing tables in a special way that's
+probably unique. Before they are usable, the FIRST sets of all non-terminals
+are computed so the LL(1) parser consuming the parsing tables can distinguish
+between different transitions.
+Reference
+---------
+
+[Aho&Ullman 77]
+    Aho&Ullman, Principles of Compiler Design, Addison-Wesley 1977
+    (first edition)
+"""
+
+from ast import literal_eval
 import collections
-import tokenize  # from stdlib
 
 from . import grammar, token
+from .automata import DFA
+from .metaparser import GrammarParser
+
+import enum
+
+
+class LabelType(enum.Enum):
+    NONTERMINAL = 0
+    NAMED_TOKEN = 1
+    KEYWORD = 2
+    OPERATOR = 3
+    NONE = 4
+
+
+class Label(str):
+    def __init__(self, value):
+        self.type = self._get_type()
+
+    def _get_type(self):
+        if self[0].isalpha():
+            if self.upper() == self:
+                # NAMED tokens (ASYNC, NAME...) are all uppercase by convention
+                return LabelType.NAMED_TOKEN
+            else:
+                # If is not uppercase it must be a non terminal.
+                return LabelType.NONTERMINAL
+        else:
+            # Keywords and operators are wrapped in quotes
+            assert self[0] == self[-1] in ('"', "'"), self
+            value = literal_eval(self)
+            if value[0].isalpha():
+                return LabelType.KEYWORD
+            else:
+                return LabelType.OPERATOR
+
+    def __repr__(self):
+        return "{}({})".format(self.type, super().__repr__())
 
 
 class ParserGenerator(object):
-
-    def __init__(self, grammar_file, token_file, stream=None, verbose=False):
-        close_stream = None
-        if stream is None:
-            stream = open(grammar_file)
-            close_stream = stream.close
+    def __init__(self, grammar_file, token_file, verbose=False):
+        with open(grammar_file) as f:
+            self.grammar = f.read()
         with open(token_file) as tok_file:
             token_lines = tok_file.readlines()
         self.tokens = dict(token.generate_tokens(token_lines))
         self.opmap = dict(token.generate_opmap(token_lines))
         # Manually add <> so it does not collide with !=
-        self.opmap['<>'] = "NOTEQUAL"
+        self.opmap["<>"] = "NOTEQUAL"
         self.verbose = verbose
         self.filename = grammar_file
-        self.stream = stream
-        self.generator = tokenize.generate_tokens(stream.readline)
-        self.gettoken() # Initialize lookahead
-        self.dfas, self.startsymbol = self.parse()
-        if close_stream is not None:
-            close_stream()
-        self.first = {} # map from symbol name to set of tokens
-        self.addfirstsets()
+        self.dfas, self.startsymbol = self.create_dfas()
+        self.first = {}  # map from symbol name to set of tokens
+        self.calculate_first_sets()
+
+    def create_dfas(self):
+        rule_to_dfas = collections.OrderedDict()
+        start_nonterminal = None
+        for nfa in GrammarParser(self.grammar).parse():
+            if self.verbose:
+                print("Dump of NFA for", nfa.name)
+                nfa.dump()
+            dfa = DFA.from_nfa(nfa)
+            if self.verbose:
+                print("Dump of DFA for", dfa.name)
+                dfa.dump()
+            dfa.simplify()
+            rule_to_dfas[dfa.name] = dfa
+
+            if start_nonterminal is None:
+                start_nonterminal = dfa.name
+
+        return rule_to_dfas, start_nonterminal
 
     def make_grammar(self):
         c = grammar.Grammar()
+        c.all_labels = set()
         names = list(self.dfas.keys())
         names.remove(self.startsymbol)
         names.insert(0, self.startsymbol)
         for name in names:
             i = 256 + len(c.symbol2number)
-            c.symbol2number[name] = i
-            c.number2symbol[i] = name
+            c.symbol2number[Label(name)] = i
+            c.number2symbol[i] = Label(name)
+            c.all_labels.add(name)
         for name in names:
             self.make_label(c, name)
             dfa = self.dfas[name]
@@ -44,12 +182,13 @@ class ParserGenerator(object):
             for state in dfa:
                 arcs = []
                 for label, next in sorted(state.arcs.items()):
-                    arcs.append((self.make_label(c, label), dfa.index(next)))
-                if state.isfinal:
-                    arcs.append((0, dfa.index(state)))
+                    c.all_labels.add(label)
+                    arcs.append((self.make_label(c, label), dfa.states.index(next)))
+                if state.is_final:
+                    arcs.append((0, dfa.states.index(state)))
                 states.append(arcs)
             c.states.append(states)
-            c.dfas[c.symbol2number[name]] = (states, self.make_first(c, name))
+            c.dfas[c.symbol2number[name]] = (states, self.make_first_sets(c, name))
         c.start = c.symbol2number[self.startsymbol]
 
         if self.verbose:
@@ -68,7 +207,7 @@ class ParserGenerator(object):
             )
         return c
 
-    def make_first(self, c, name):
+    def make_first_sets(self, c, name):
         rawfirst = self.first[name]
         first = set()
         for label in sorted(rawfirst):
@@ -78,67 +217,65 @@ class ParserGenerator(object):
         return first
 
     def make_label(self, c, label):
-        # XXX Maybe this should be a method on a subclass of converter?
+        label = Label(label)
         ilabel = len(c.labels)
-        if label[0].isalpha():
-            # Either a symbol name or a named token
-            if label in c.symbol2number:
-                # A symbol name (a non-terminal)
-                if label in c.symbol2label:
-                    return c.symbol2label[label]
-                else:
-                    c.labels.append((c.symbol2number[label], None))
-                    c.symbol2label[label] = ilabel
-                    return ilabel
-            else:
-                # A named token (NAME, NUMBER, STRING)
-                itoken = self.tokens.get(label, None)
-                assert isinstance(itoken, int), label
-                assert itoken in self.tokens.values(), label
-                if itoken in c.tokens:
-                    return c.tokens[itoken]
-                else:
-                    c.labels.append((itoken, None))
-                    c.tokens[itoken] = ilabel
-                    return ilabel
-        else:
-            # Either a keyword or an operator
-            assert label[0] in ('"', "'"), label
-            value = eval(label)
-            if value[0].isalpha():
-                # A keyword
-                if value in c.keywords:
-                    return c.keywords[value]
-                else:
-                    c.labels.append((self.tokens["NAME"], value))
-                    c.keywords[value] = ilabel
-                    return ilabel
-            else:
-                # An operator (any non-numeric token)
-                tok_name = self.opmap[value] # Fails if unknown token
-                itoken = self.tokens[tok_name]
-                if itoken in c.tokens:
-                    return c.tokens[itoken]
-                else:
-                    c.labels.append((itoken, None))
-                    c.tokens[itoken] = ilabel
-                    return ilabel
 
-    def addfirstsets(self):
+        if label.type == LabelType.NONTERMINAL:
+            if label in c.symbol2label:
+                return c.symbol2label[label]
+            else:
+                c.labels.append((c.symbol2number[label], None))
+                c.symbol2label[label] = ilabel
+                return ilabel
+        elif label.type == LabelType.NAMED_TOKEN:
+            # A named token (NAME, NUMBER, STRING)
+            itoken = self.tokens.get(label, None)
+            assert isinstance(itoken, int), label
+            assert itoken in self.tokens.values(), label
+            if itoken in c.tokens:
+                return c.tokens[itoken]
+            else:
+                c.labels.append((itoken, None))
+                c.tokens[itoken] = ilabel
+                return ilabel
+        elif label.type == LabelType.KEYWORD:
+            # A keyword
+            value = literal_eval(label)
+            if value in c.keywords:
+                return c.keywords[value]
+            else:
+                c.labels.append((self.tokens["NAME"], value))
+                c.keywords[value] = ilabel
+                return ilabel
+        elif label.type == LabelType.OPERATOR:
+            # An operator (any non-numeric token)
+            value = literal_eval(label)
+            tok_name = self.opmap[value]  # Fails if unknown token
+            itoken = self.tokens[tok_name]
+            if itoken in c.tokens:
+                return c.tokens[itoken]
+            else:
+                c.labels.append((itoken, None))
+                c.tokens[itoken] = ilabel
+                return ilabel
+        else:
+            raise ValueError("Cannot categorize label {}".format(label))
+
+    def calculate_first_sets(self):
         names = list(self.dfas.keys())
         for name in names:
             if name not in self.first:
-                self.calcfirst(name)
+                self.calculate_first_sets_for_rule(name)
 
             if self.verbose:
                 print("First set for {dfa_name}".format(dfa_name=name))
                 for item in self.first[name]:
                     print("    - {terminal}".format(terminal=item))
 
-    def calcfirst(self, name):
+    def calculate_first_sets_for_rule(self, name):
         dfa = self.dfas[name]
-        self.first[name] = None # dummy to detect left recursion
-        state = dfa[0]
+        self.first[name] = None  # dummy to detect left recursion
+        state = dfa.states[0]
         totalset = set()
         overlapcheck = {}
         for label, next in state.arcs.items():
@@ -148,7 +285,7 @@ class ParserGenerator(object):
                     if fset is None:
                         raise ValueError("recursion for rule %r" % name)
                 else:
-                    self.calcfirst(label)
+                    self.calculate_first_sets_for_rule(label)
                     fset = self.first[label]
                 totalset.update(fset)
                 overlapcheck[label] = fset
@@ -159,248 +296,10 @@ class ParserGenerator(object):
         for label, itsfirst in overlapcheck.items():
             for symbol in itsfirst:
                 if symbol in inverse:
-                    raise ValueError("rule %s is ambiguous; %s is in the"
-                                     " first sets of %s as well as %s" %
-                                     (name, symbol, label, inverse[symbol]))
+                    raise ValueError(
+                        "rule %s is ambiguous; %s is in the"
+                        " first sets of %s as well as %s"
+                        % (name, symbol, label, inverse[symbol])
+                    )
                 inverse[symbol] = label
         self.first[name] = totalset
-
-    def parse(self):
-        dfas = collections.OrderedDict()
-        startsymbol = None
-        # MSTART: (NEWLINE | RULE)* ENDMARKER
-        while self.type != tokenize.ENDMARKER:
-            while self.type == tokenize.NEWLINE:
-                self.gettoken()
-            # RULE: NAME ':' RHS NEWLINE
-            name = self.expect(tokenize.NAME)
-            if self.verbose:
-                print("Processing rule {dfa_name}".format(dfa_name=name))
-            self.expect(tokenize.OP, ":")
-            a, z = self.parse_rhs()
-            self.expect(tokenize.NEWLINE)
-            if self.verbose:
-                self.dump_nfa(name, a, z)
-            dfa = self.make_dfa(a, z)
-            if self.verbose:
-                self.dump_dfa(name, dfa)
-            self.simplify_dfa(dfa)
-            dfas[name] = dfa
-            if startsymbol is None:
-                startsymbol = name
-        return dfas, startsymbol
-
-    def make_dfa(self, start, finish):
-        # To turn an NFA into a DFA, we define the states of the DFA
-        # to correspond to *sets* of states of the NFA.  Then do some
-        # state reduction.  Let's represent sets as dicts with 1 for
-        # values.
-        assert isinstance(start, NFAState)
-        assert isinstance(finish, NFAState)
-        def closure(state):
-            base = set()
-            addclosure(state, base)
-            return base
-        def addclosure(state, base):
-            assert isinstance(state, NFAState)
-            if state in base:
-                return
-            base.add(state)
-            for label, next in state.arcs:
-                if label is None:
-                    addclosure(next, base)
-        states = [DFAState(closure(start), finish)]
-        for state in states: # NB states grows while we're iterating
-            arcs = {}
-            for nfastate in state.nfaset:
-                for label, next in nfastate.arcs:
-                    if label is not None:
-                        addclosure(next, arcs.setdefault(label, set()))
-            for label, nfaset in sorted(arcs.items()):
-                for st in states:
-                    if st.nfaset == nfaset:
-                        break
-                else:
-                    st = DFAState(nfaset, finish)
-                    states.append(st)
-                state.addarc(st, label)
-        return states # List of DFAState instances; first one is start
-
-    def dump_nfa(self, name, start, finish):
-        print("Dump of NFA for", name)
-        todo = [start]
-        for i, state in enumerate(todo):
-            print("  State", i, state is finish and "(final)" or "")
-            for label, next in state.arcs:
-                if next in todo:
-                    j = todo.index(next)
-                else:
-                    j = len(todo)
-                    todo.append(next)
-                if label is None:
-                    print("    -> %d" % j)
-                else:
-                    print("    %s -> %d" % (label, j))
-
-    def dump_dfa(self, name, dfa):
-        print("Dump of DFA for", name)
-        for i, state in enumerate(dfa):
-            print("  State", i, state.isfinal and "(final)" or "")
-            for label, next in sorted(state.arcs.items()):
-                print("    %s -> %d" % (label, dfa.index(next)))
-
-    def simplify_dfa(self, dfa):
-        # This is not theoretically optimal, but works well enough.
-        # Algorithm: repeatedly look for two states that have the same
-        # set of arcs (same labels pointing to the same nodes) and
-        # unify them, until things stop changing.
-
-        # dfa is a list of DFAState instances
-        changes = True
-        while changes:
-            changes = False
-            for i, state_i in enumerate(dfa):
-                for j in range(i+1, len(dfa)):
-                    state_j = dfa[j]
-                    if state_i == state_j:
-                        #print "  unify", i, j
-                        del dfa[j]
-                        for state in dfa:
-                            state.unifystate(state_j, state_i)
-                        changes = True
-                        break
-
-    def parse_rhs(self):
-        # RHS: ALT ('|' ALT)*
-        a, z = self.parse_alt()
-        if self.value != "|":
-            return a, z
-        else:
-            aa = NFAState()
-            zz = NFAState()
-            aa.addarc(a)
-            z.addarc(zz)
-            while self.value == "|":
-                self.gettoken()
-                a, z = self.parse_alt()
-                aa.addarc(a)
-                z.addarc(zz)
-            return aa, zz
-
-    def parse_alt(self):
-        # ALT: ITEM+
-        a, b = self.parse_item()
-        while (self.value in ("(", "[") or
-               self.type in (tokenize.NAME, tokenize.STRING)):
-            c, d = self.parse_item()
-            b.addarc(c)
-            b = d
-        return a, b
-
-    def parse_item(self):
-        # ITEM: '[' RHS ']' | ATOM ['+' | '*']
-        if self.value == "[":
-            self.gettoken()
-            a, z = self.parse_rhs()
-            self.expect(tokenize.OP, "]")
-            a.addarc(z)
-            return a, z
-        else:
-            a, z = self.parse_atom()
-            value = self.value
-            if value not in ("+", "*"):
-                return a, z
-            self.gettoken()
-            z.addarc(a)
-            if value == "+":
-                return a, z
-            else:
-                return a, a
-
-    def parse_atom(self):
-        # ATOM: '(' RHS ')' | NAME | STRING
-        if self.value == "(":
-            self.gettoken()
-            a, z = self.parse_rhs()
-            self.expect(tokenize.OP, ")")
-            return a, z
-        elif self.type in (tokenize.NAME, tokenize.STRING):
-            a = NFAState()
-            z = NFAState()
-            a.addarc(z, self.value)
-            self.gettoken()
-            return a, z
-        else:
-            self.raise_error("expected (...) or NAME or STRING, got %s/%s",
-                             self.type, self.value)
-
-    def expect(self, type, value=None):
-        if self.type != type or (value is not None and self.value != value):
-            self.raise_error("expected %s/%s, got %s/%s",
-                             type, value, self.type, self.value)
-        value = self.value
-        self.gettoken()
-        return value
-
-    def gettoken(self):
-        tup = next(self.generator)
-        while tup[0] in (tokenize.COMMENT, tokenize.NL):
-            tup = next(self.generator)
-        self.type, self.value, self.begin, self.end, self.line = tup
-        # print(getattr(tokenize, 'tok_name')[self.type], repr(self.value))
-
-    def raise_error(self, msg, *args):
-        if args:
-            try:
-                msg = msg % args
-            except Exception:
-                msg = " ".join([msg] + list(map(str, args)))
-        raise SyntaxError(msg, (self.filename, self.end[0],
-                                self.end[1], self.line))
-
-class NFAState(object):
-
-    def __init__(self):
-        self.arcs = [] # list of (label, NFAState) pairs
-
-    def addarc(self, next, label=None):
-        assert label is None or isinstance(label, str)
-        assert isinstance(next, NFAState)
-        self.arcs.append((label, next))
-
-class DFAState(object):
-
-    def __init__(self, nfaset, final):
-        assert isinstance(nfaset, set)
-        assert isinstance(next(iter(nfaset)), NFAState)
-        assert isinstance(final, NFAState)
-        self.nfaset = nfaset
-        self.isfinal = final in nfaset
-        self.arcs = {} # map from label to DFAState
-
-    def addarc(self, next, label):
-        assert isinstance(label, str)
-        assert label not in self.arcs
-        assert isinstance(next, DFAState)
-        self.arcs[label] = next
-
-    def unifystate(self, old, new):
-        for label, next in self.arcs.items():
-            if next is old:
-                self.arcs[label] = new
-
-    def __eq__(self, other):
-        # Equality test -- ignore the nfaset instance variable
-        assert isinstance(other, DFAState)
-        if self.isfinal != other.isfinal:
-            return False
-        # Can't just return self.arcs == other.arcs, because that
-        # would invoke this method recursively, with cycles...
-        if len(self.arcs) != len(other.arcs):
-            return False
-        for label, next in self.arcs.items():
-            if next is not other.arcs.get(label):
-                return False
-        return True
-
-    __hash__ = None # For Py3 compatibility.
