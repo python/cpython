@@ -118,8 +118,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    Convert *data* to floats and compute the arithmetic mean.
 
    This runs faster than the :func:`mean` function and it always returns a
-   :class:`float`.  The result is highly accurate but not as perfect as
-   :func:`mean`.  If the input dataset is empty, raises a
+   :class:`float`.  If the input dataset is empty, raises a
    :exc:`StatisticsError`.
 
    .. doctest::

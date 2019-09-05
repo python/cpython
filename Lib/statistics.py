@@ -322,7 +322,6 @@ def fmean(data):
     """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
-    The result is highly accurate but not as perfect as mean().
     If the input dataset is empty, it raises a StatisticsError.
 
     >>> fmean([3.5, 4.0, 5.25])
