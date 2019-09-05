@@ -668,6 +668,7 @@ of applications in statistics.
 
     .. method:: NormalDist.overlap(other)
 
+       Measures the agreement between two normal probability distributions.
        Returns a value between 0.0 and 1.0 giving the overlapping area for
        the two probability density functions.
 
