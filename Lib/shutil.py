@@ -783,6 +783,7 @@ def move(src, dst, copy_function=copy2):
         # Using _basename instead of os.path.basename is important, as we must
         # ignore any trailing slash to avoid the basename returning ''
         real_dst = os.path.join(dst, _basename(src))
+        
         if os.path.exists(real_dst):
             raise Error("Destination path '%s' already exists" % real_dst)
     try:
