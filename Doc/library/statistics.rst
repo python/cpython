@@ -616,13 +616,14 @@ of applications in statistics.
 
     .. classmethod:: NormalDist.from_samples(data)
 
-       Makes a normal distribution instance computed from sample data.  The
-       *data* can be any :term:`iterable` and should consist of values that
-       can be converted to type :class:`float`.
+       Makes a normal distribution instance with *mu* and *sigma* parameters
+       estimated from the *data* using :func:`fmean` and :func:`stdev`.
 
-       If *data* does not contain at least two elements, raises
-       :exc:`StatisticsError` because it takes at least one point to estimate
-       a central value and at least two points to estimate dispersion.
+       The *data* can be any :term:`iterable` and should consist of values
+       that can be converted to type :class:`float`.  If *data* does not
+       contain at least two elements, raises :exc:`StatisticsError` because it
+       takes at least one point to estimate a central value and at least two
+       points to estimate dispersion.
 
     .. method:: NormalDist.samples(n, *, seed=None)
 
