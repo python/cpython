@@ -1,0 +1,2 @@
+Remove urllib.parse._splituser and urllib.parse._splittype from
+xmlrpc.client. Patch by Dong-hee Na.
