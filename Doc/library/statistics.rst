@@ -727,9 +727,9 @@ Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
 
 .. doctest::
 
-    >>> [round(sat.inv_cdf(p)) for p in (0.25, 0.50, 0.75)]
+    >>> list(map(round, quantiles(sat)))
     [928, 1060, 1192]
-    >>> [round(sat.inv_cdf(p / 10)) for p in range(1, 10)]
+    >>> list(map(round, quantiles(sat, n=10)))
     [810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
 
 To estimate the distribution for a model than isn't easy to solve
