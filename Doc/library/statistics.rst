@@ -326,8 +326,8 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> mode([1, 1, 2, 3, 3, 3, 3, 4])
       3
 
-   The mode is unique in that it is the only statistic which also applies
-   to nominal (non-numeric) data:
+   The mode is unique in that it is the only statistic in this package that
+   also applies to nominal (non-numeric) data:
 
    .. doctest::
 
