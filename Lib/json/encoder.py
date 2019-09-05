@@ -350,7 +350,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             item_separator = _item_separator
         first = True
         if _sort_keys:
-            items = sorted(dct.items())
+            items = sorted(dct.items(), key=lambda k: str(k[0]))
         else:
             items = dct.items()
         for key, value in items:
