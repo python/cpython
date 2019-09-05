@@ -191,6 +191,9 @@ Removed
   Use :meth:`~threading.Thread.is_alive()` instead.
   (Contributed by Dong-hee Na in :issue:`37804`.)
 
+* ``PyThreadState_DeleteCurrent()`` has been removed. It was not documented.
+  (Contributed by Joannah Nanjekye in :issue:`37878`.)
+
 Porting to Python 3.9
 =====================
 
