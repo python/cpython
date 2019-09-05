@@ -351,10 +351,10 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
-      
+
    .. versionchanged:: 3.9
       Accepts a :term:`path-like object` for both *src* and *dst*.
-      
+
 
 .. function:: disk_usage(path)
 
