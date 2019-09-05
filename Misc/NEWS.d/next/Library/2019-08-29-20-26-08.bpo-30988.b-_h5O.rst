@@ -1,1 +1,1 @@
-Fix parsing invalid email address headers starting or ending with a dot.
+Fix parsing of emails with invalid address headers having a leading or trailing dot. Patch by tsufeki.
