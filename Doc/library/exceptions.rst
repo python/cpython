@@ -637,13 +637,13 @@ depending on the system error code.
 .. exception:: NotADirectoryError
 
    Raised when a directory operation (such as :func:`os.listdir`) is requested
-   on something which is not a directory.
+   on something which is a directory.
    Corresponds to :c:data:`errno` ``ENOTDIR``.
 
 .. exception:: DirectoryNotEmptyError
 
    Raised when a directory operation (such as :func:`os.rmdir`) is requested
-   on a directory which is empty.
+   on a directory which is not empty.
    Corresponds to :c:data:`errno` ``ENOTEMPTY``
 
 .. exception:: PermissionError
