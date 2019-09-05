@@ -219,8 +219,9 @@ Removed
   standard :class:`bytes` objects are always used.
   (Contributed by Jon Janzen in :issue:`36409`.)
 
-* The C function ``PyGen_NeedsFinalizing`` has been removed. It was not documented
-  and not used anywhere in the source code.
+* The C function ``PyGen_NeedsFinalizing`` has been deprecated. It was not
+  documented anor even used wnywhere in the codebase. It will therefore be
+  removed in the next release.
   (Contributed by Joannah Nanjekye in :issue:`15088`)
 
 

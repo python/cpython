@@ -820,7 +820,7 @@ PyGen_New(PyFrameObject *f)
 }
 
 int
-_PyGen_NeedsFinalizing(PyGenObject *gen)
+PyGen_NeedsFinalizing(PyGenObject *gen)
 {
     PyFrameObject *f = gen->gi_frame;
 
