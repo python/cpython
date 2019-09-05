@@ -778,6 +778,7 @@ the variables:
    single: PyExc_ConnectionError
    single: PyExc_ConnectionRefusedError
    single: PyExc_ConnectionResetError
+   single: PyExc_DirectoryNotEmptyError
    single: PyExc_EOFError
    single: PyExc_FileExistsError
    single: PyExc_FileNotFoundError
@@ -788,7 +789,6 @@ the variables:
    single: PyExc_IndexError
    single: PyExc_InterruptedError
    single: PyExc_IsADirectoryError
-   single: PyExc_DirectoryNotEmptyError
    single: PyExc_KeyError
    single: PyExc_KeyboardInterrupt
    single: PyExc_LookupError
@@ -849,6 +849,8 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ConnectionResetError`    | :exc:`ConnectionResetError`     |          |
 +-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_DirectoryNotEmptyError`  | :exc:`DirectoryNotEmptyError`   |          |
++--------------------------------------------------------------------------------------+
 | :c:data:`PyExc_EOFError`                | :exc:`EOFError`                 |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_FileExistsError`         | :exc:`FileExistsError`          |          |
@@ -867,8 +869,6 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_InterruptedError`        | :exc:`InterruptedError`         |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_DirectoryNotEmptyError`  | :exc:`DirectoryNotEmptyError`   |          |
-+--------------------------------------------------------------------------------------+
 | :c:data:`PyExc_IsADirectoryError`       | :exc:`IsADirectoryError`        |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_KeyError`                | :exc:`KeyError`                 |          |

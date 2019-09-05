@@ -608,6 +608,12 @@ depending on the system error code.
    reset by the peer.
    Corresponds to :c:data:`errno` ``ECONNRESET``.
 
+.. exception:: DirectoryNotEmptyError
+
+   Raised when a directory operation (such as :func:`os.rmdir`) is requested
+   on a directory which is not empty.
+   Corresponds to :c:data:`errno` ``ENOTEMPTY``
+
 .. exception:: FileExistsError
 
    Raised when trying to create a file or directory which already exists.
@@ -637,14 +643,8 @@ depending on the system error code.
 .. exception:: NotADirectoryError
 
    Raised when a directory operation (such as :func:`os.listdir`) is requested
-   on something which is a directory.
+   on something which is not a directory.
    Corresponds to :c:data:`errno` ``ENOTDIR``.
-
-.. exception:: DirectoryNotEmptyError
-
-   Raised when a directory operation (such as :func:`os.rmdir`) is requested
-   on a directory which is not empty.
-   Corresponds to :c:data:`errno` ``ENOTEMPTY``
 
 .. exception:: PermissionError
 

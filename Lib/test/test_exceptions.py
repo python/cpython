@@ -2,6 +2,7 @@
 
 import copy
 import os
+import tempfile
 import sys
 import unittest
 import pickle
@@ -1172,8 +1173,14 @@ class ExceptionTests(unittest.TestCase):
 
     def test_errno_ENOTEMPTY(self):
         with self.assertRaises(OSError) as cm:
-            test_dir = os.path.dirname(__file__)
-            os.rmdir(test_dir)
+            dirname = tempfile.mkdtemp()
+
+            pkgdir = os.path.join(dirname, "pkgname")
+            os.mkdir(pkgdir)
+            with open(os.path.join(pkgdir, '__init__.py'), 'w') as fl:
+                fl.write('from pkgutil import extend_path\n__path__ = extend_path(__path__, __name__)\n')
+
+            os.rmdir(dirname)
         self.assertEqual(cm.exception.errno, errno.ENOTEMPTY, cm.exception)
 
     def test_errno_ENOTDIR(self):
