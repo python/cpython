@@ -1,0 +1,1 @@
+Add flag -k to pathscript.py script: preserve shebang flags.
