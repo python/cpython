@@ -369,11 +369,11 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: pvariance(data, mu=None)
 
-   Return the population variance of *data*, a non-empty iterable of real-valued
-   numbers.  Variance, or second moment about the mean, is a measure of the
-   variability (spread or dispersion) of data.  A large variance indicates that
-   the data is spread out; a small variance indicates it is clustered closely
-   around the mean.
+   Return the population variance of *data*, a non-empty sequence or iterator
+   of real-valued numbers.  Variance, or second moment about the mean, is a
+   measure of the variability (spread or dispersion) of data.  A large
+   variance indicates that the data is spread out; a small variance indicates
+   it is clustered closely around the mean.
 
    If the optional second argument *mu* is given, it is typically the mean of
    the *data*.  It can also be used to compute the second moment around a

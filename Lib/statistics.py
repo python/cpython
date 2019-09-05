@@ -745,7 +745,7 @@ def variance(data, xbar=None):
 def pvariance(data, mu=None):
     """Return the population variance of ``data``.
 
-    data should be an iterable of Real-valued numbers, with at least one
+    data should be a sequence or iterator of Real-valued numbers, with at least one
     value. The optional argument mu, if given, should be the mean of
     the data. If it is missing or None, the mean is automatically calculated.
 
@@ -765,10 +765,6 @@ def pvariance(data, mu=None):
     >>> mu = mean(data)
     >>> pvariance(data, mu)
     1.25
-
-    This function does not check that ``mu`` is actually the mean of ``data``.
-    Giving arbitrary values for ``mu`` may lead to invalid or impossible
-    results.
 
     Decimals and Fractions are supported:
 
