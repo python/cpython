@@ -34,7 +34,7 @@ static struct {
 #if defined(TRACE_RAW_MALLOC)
 /* This lock is needed because tracemalloc_free() is called without
    the GIL held from PyMem_RawFree(). It cannot acquire the lock because it
-   would introduce a deadlock in PyThreadState_DeleteCurrent(). */
+   would introduce a deadlock in _PyThreadState_DeleteCurrent(). */
 static PyThread_type_lock tables_lock;
 #  define TABLES_LOCK() PyThread_acquire_lock(tables_lock, 1)
 #  define TABLES_UNLOCK() PyThread_release_lock(tables_lock)
@@ -728,7 +728,7 @@ tracemalloc_free(void *ctx, void *ptr)
         return;
 
      /* GIL cannot be locked in PyMem_RawFree() because it would introduce
-        a deadlock in PyThreadState_DeleteCurrent(). */
+        a deadlock in _PyThreadState_DeleteCurrent(). */
 
     alloc->free(alloc->ctx, ptr);
 

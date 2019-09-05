@@ -50,7 +50,6 @@ PyAPI_FUNC(PyObject*) PyState_FindModule(struct PyModuleDef*);
 PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
 PyAPI_FUNC(void) PyThreadState_Clear(PyThreadState *);
 PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
-PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Get the current thread state.
 
