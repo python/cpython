@@ -1558,7 +1558,7 @@ def _shadowed_dict(klass):
         except KeyError:
             pass
         else:
-            if not (isinstance(class_dict, types.GetSetDescriptorType) and
+            if not (type(class_dict) is types.GetSetDescriptorType and
                     class_dict.__name__ == "__dict__" and
                     class_dict.__objclass__ is entry):
                 return class_dict
@@ -1580,7 +1580,7 @@ def getattr_static(obj, attr, default=_sentinel):
         klass = type(obj)
         dict_attr = _shadowed_dict(klass)
         if (dict_attr is _sentinel or
-            isinstance(dict_attr, types.MemberDescriptorType)):
+            type(dict_attr) is types.MemberDescriptorType):
             instance_result = _check_instance(obj, attr)
     else:
         klass = obj
