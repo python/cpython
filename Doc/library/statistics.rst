@@ -122,7 +122,6 @@ However, for reading convenience, most of the examples show sorted sequences.
    dataset is empty, raises a :exc:`StatisticsError`.
 
    .. doctest::
-
       >>> fmean([3.5, 4.0, 5.25])
       4.25
 
@@ -176,7 +175,7 @@ However, for reading convenience, most of the examples show sorted sequences.
       3.6
 
    Using the arithmetic mean would give an average of about 5.167, which
-   is too high.
+   is well over the aggregate P/E ratio.
 
    :exc:`StatisticsError` is raised if *data* is empty, or any element
    is less than zero.
