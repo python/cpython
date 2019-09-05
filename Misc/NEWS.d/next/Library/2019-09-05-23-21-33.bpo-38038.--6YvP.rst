@@ -1,2 +1,2 @@
-Remove urllib.parse._splituser and urllib.parse._splittype from
-xmlrpc.client. Patch by Dong-hee Na.
+Remove urllib.parse._splittype from :meth:`__init__` of 
+:class:`xmlrpc.client.ServerProxy`. Patch by Dong-hee Na.

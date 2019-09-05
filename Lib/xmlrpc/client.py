@@ -1220,9 +1220,7 @@ class Transport:
         if isinstance(host, tuple):
             host, x509 = host
 
-        p = urllib.parse.urlparse(host)
-        user, delim, host = p.path.rpartition('@')
-        auth = user if delim else None
+        auth, host = urllib.parse._splituser(host)
 
         if auth:
             auth = urllib.parse.unquote_to_bytes(auth)
