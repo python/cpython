@@ -185,7 +185,7 @@ def parse_shebang(shebangline):
     end = len(shebangline)
     start = shebangline.find(b' -', 0, end)
     if start == -1:
-        return b'', b''
+        return b''
     return shebangline[(start + 2):end]
 
 

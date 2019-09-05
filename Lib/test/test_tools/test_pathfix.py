@@ -1,7 +1,9 @@
-import unittest, os, subprocess
-from test.test_tools import import_tool, scriptsdir
+import os
+import subprocess
 import sys
+import unittest
 from test import support
+from test.test_tools import import_tool, scriptsdir
 
 
 class TestPathfixFunctional(unittest.TestCase):
@@ -12,36 +14,38 @@ class TestPathfixFunctional(unittest.TestCase):
         self.addCleanup(support.unlink, support.TESTFN)
 
     def pathfix(self, shebang, pathfix_flags):
-        with open(self.temp_file, 'w') as f:
+        with open(self.temp_file, 'w', encoding='utf8') as f:
             f.write(f'{shebang}\n' + 'print("Hello world")\n')
-        subprocess.call([sys.executable, self.script, *pathfix_flags, self.temp_file])
-        with open(self.temp_file) as f:
+        subprocess.call([sys.executable, self.script, *pathfix_flags, '-n', self.temp_file])
+        with open(self.temp_file, 'r', encoding='utf8') as f:
             output = f.read()
-        print(output)
-        return output
+            lines = output.split('\n')
+            self.assertEqual(lines[1:], ['print("Hello world")\n']
+            shebang = lines[0][:-1]  # strip the newline
+            return shebang
 
     def test_pathfix_keeping_flags(self):
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python -R',
-                ['-i', '/usr/bin/python', '-k', '-n']),
-            '#! /usr/bin/python -R\n' + 'print("Hello world")\n'
+                ['-i', '/usr/bin/python3', '-k',]),
+            '#! /usr/bin/python3 -R\n',
         )
 
     def test_pathfix_without_keeping_flags(self):
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python -R',
-                ['-i', '/usr/bin/python', '-n']),
-            '#! /usr/bin/python\n' + 'print("Hello world")\n'
+                ['-i', '/usr/bin/python3',]),
+            '#! /usr/bin/python3\n',
         )
 
     def test_pathfix(self):
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python',
-                ['-i', '/usr/bin/python', '-n']),
-            '#! /usr/bin/python\n' + 'print("Hello world")\n'
+                ['-i', '/usr/bin/python3',]),
+            '#! /usr/bin/python3\n',
         )
 
 if __name__ == '__main__':
