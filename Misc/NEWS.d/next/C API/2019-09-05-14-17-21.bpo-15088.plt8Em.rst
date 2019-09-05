@@ -1,0 +1,1 @@
+Remove undocumented and unused `PyGen_NeedsFinalizing()`.
