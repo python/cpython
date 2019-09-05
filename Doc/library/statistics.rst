@@ -375,9 +375,10 @@ However, for reading convenience, most of the examples show sorted sequences.
    the data is spread out; a small variance indicates it is clustered closely
    around the mean.
 
-   If the optional second argument *mu* is given, it should be the mean of
-   *data*.  If it is missing or ``None`` (the default), the mean is
-   automatically calculated.
+   If the optional second argument *mu* is given, it is typically the mean of
+   the *data*.  It can also be used to compute the second moment around a
+   point that is not the mean.  If it is missing or ``None`` (the default),
+   the arithmetic mean is automatically calculated.
 
    Use this function to calculate the variance from the entire population.  To
    estimate the variance from a sample, the :func:`variance` function is usually
