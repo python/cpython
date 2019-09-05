@@ -421,11 +421,11 @@ However, for reading convenience, most of the examples show sorted sequences.
       σ².  When called on a sample instead, this is the biased sample variance
       s², also known as variance with N degrees of freedom.
 
-      If you somehow know the true population mean μ, you may use this function
-      to calculate the variance of a sample, giving the known population mean as
-      the second argument.  Provided the data points are representative
-      (e.g. independent and identically distributed), the result will be an
-      unbiased estimate of the population variance.
+      If you somehow know the true population mean μ, you may use this
+      function to calculate the variance of a sample, giving the known
+      population mean as the second argument.  Provided the data points are a
+      random sample of the population, the result will be an unbiased estimate
+      of the population variance.
 
 
 .. function:: stdev(data, xbar=None)
