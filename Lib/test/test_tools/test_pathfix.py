@@ -16,7 +16,11 @@ class TestPathfixFunctional(unittest.TestCase):
     def pathfix(self, shebang, pathfix_flags):
         with open(self.temp_file, 'w', encoding='utf8') as f:
             f.write(f'{shebang}\n' + 'print("Hello world")\n')
-        subprocess.call([sys.executable, self.script, *pathfix_flags, '-n', self.temp_file])
+        proc = subprocess.run(
+            [sys.executable, self.script,
+             *pathfix_flags, '-n', self.temp_file],
+            capture_output=True)
+        self.assertEqual(proc.returncode, 0, proc)
         with open(self.temp_file, 'r', encoding='utf8') as f:
             output = f.read()
             lines = output.split('\n')

@@ -185,7 +185,7 @@ def parse_shebang(shebangline):
     start = shebangline.find(b' -')
     if start == -1:
         return b''
-    return shebangline[(start):]
+    return shebangline[start:]
 
 
 def fixline(line):
