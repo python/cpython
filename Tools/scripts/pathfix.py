@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Change the #! line occurring in Python scripts.  The new interpreter
+# Change the #! line (shebang) occurring in Python scripts.  The new interpreter
 # pathname must be given with a -i option.
 #
 # Command line arguments are files or directories to be processed.
@@ -10,7 +10,12 @@
 # arguments).
 # The original file is kept as a back-up (with a "~" attached to its name),
 # -n flag can be used to disable this.
-#
+
+# Sometimes you may find shebangs with flags such as `#! /usr/bin/env python -si`.
+# Normally, pathfix overwrites the entire line, including the flags.
+# To change interpreter and keep flags from the original shebang line, use -k.
+
+
 # Undoubtedly you can do this using find and sed or perl, but this is
 # a nice example of Python code that recurses down a directory tree
 # and uses regular expressions.  Also note several subtleties like
@@ -33,16 +38,19 @@ rep = sys.stdout.write
 new_interpreter = None
 preserve_timestamps = False
 create_backup = True
+keep_flags = False
 
 
 def main():
     global new_interpreter
     global preserve_timestamps
     global create_backup
-    usage = ('usage: %s -i /interpreter -p -n file-or-directory ...\n' %
+    global keep_flags
+
+    usage = ('usage: %s -i /interpreter -p -n -k file-or-directory ...\n' %
              sys.argv[0])
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i:pn')
+        opts, args = getopt.getopt(sys.argv[1:], 'i:kpn')
     except getopt.error as msg:
         err(str(msg) + '\n')
         err(usage)
@@ -54,6 +62,8 @@ def main():
             preserve_timestamps = True
         if o == '-n':
             create_backup = False
+        if o == '-k':
+            keep_flags = True
     if not new_interpreter or not new_interpreter.startswith(b'/') or \
            not args:
         err('-i option or file-or-directory missing\n')
@@ -70,9 +80,13 @@ def main():
             if fix(arg): bad = 1
     sys.exit(bad)
 
+
 ispythonprog = re.compile(r'^[a-zA-Z0-9_]+\.py$')
+
+
 def ispython(name):
     return bool(ispythonprog.match(name))
+
 
 def recursedown(dirname):
     dbg('recursedown(%r)\n' % (dirname,))
@@ -95,6 +109,7 @@ def recursedown(dirname):
     for fullname in subdirs:
         if recursedown(fullname): bad = 1
     return bad
+
 
 def fix(filename):
 ##  dbg('fix(%r)\n' % (filename,))
@@ -164,12 +179,26 @@ def fix(filename):
     # Return success
     return 0
 
+
+def parse_shebang(shebangline):
+    shebangline = shebangline.rstrip(b'\n')
+    start = shebangline.find(b' -')
+    if start == -1:
+        return b''
+    return shebangline[start:]
+
+
 def fixline(line):
     if not line.startswith(b'#!'):
         return line
+
     if b"python" not in line:
         return line
-    return b'#! ' + new_interpreter + b'\n'
+    flags = b''
+    if keep_flags:
+        flags = parse_shebang(line)
+    return b'#! ' + new_interpreter + flags + b'\n'
+
 
 if __name__ == '__main__':
     main()
