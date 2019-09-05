@@ -118,6 +118,14 @@ class MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_type("?k1=v1&k2=v2.tar.gz"), gzip_expected)
         eq(self.db.guess_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
 
+    def test_url(self):
+        result = self.db.guess_type('http://host.html')
+        msg = 'URL only has a host name, not a file'
+        self.assertSequenceEqual(result, (None, None), msg)
+        result = self.db.guess_type('http://example.com/host.html')
+        msg = 'Should be text/html'
+        self.assertSequenceEqual(result, ('text/html', None), msg)
+
     def test_guess_all_types(self):
         # First try strict.  Use a set here for testing the results because if
         # test_urllib2 is run before test_mimetypes, global state is modified
