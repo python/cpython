@@ -875,6 +875,13 @@ class IOTest(unittest.TestCase):
             open('non-existent', 'r', opener=badopener)
         self.assertEqual(str(cm.exception), 'opener returned -2')
 
+    def test_opener_invalid_fd(self):
+        self.open(support.TESTFN, 'w').close()
+        fd = os.open(support.TESTFN, os.O_RDONLY)
+        os.close(fd)
+        with self.assertRaisesRegex(OSError, 'Bad file descriptor'):
+            self.open('foo', opener=lambda name, flags: fd)
+
     def test_fileio_closefd(self):
         # Issue #4841
         with self.open(__file__, 'rb') as f1, \
