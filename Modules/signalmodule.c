@@ -1351,10 +1351,12 @@ PyInit__signal(void)
     d = PyModule_GetDict(m);
 
     x = DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
+    Py_XINCREF(x);
     if (PyModule_AddObject(m, "SIG_DFL", x))
         goto finally;
 
     x = IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
+    Py_XINCREF(x);
     if (PyModule_AddObject(m, "SIG_IGN", x))
         goto finally;
 
