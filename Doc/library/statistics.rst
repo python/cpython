@@ -742,12 +742,11 @@ Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
     ...     return (3*x + 7*x*y - 5*y) / (11 * z)
     ...
     >>> n = 100_000
-    >>> seed = 86753099035768
-    >>> X = NormalDist(10, 2.5).samples(n, seed=seed)
-    >>> Y = NormalDist(15, 1.75).samples(n, seed=seed)
-    >>> Z = NormalDist(50, 1.25).samples(n, seed=seed)
-    >>> NormalDist.from_samples(map(model, X, Y, Z))     # doctest: +SKIP
-    NormalDist(mu=1.8661894803304777, sigma=0.65238717376862)
+    >>> X = NormalDist(10, 2.5).samples(n, seed=3652260728)
+    >>> Y = NormalDist(15, 1.75).samples(n, seed=4582495471)
+    >>> Z = NormalDist(50, 1.25).samples(n, seed=6582483453)
+    >>> quantiles(map(model, X, Y, Z))       # doctest: +SKIP
+    [1.4591308524824727, 1.8035946855390597, 2.175091447274739]
 
 Normal distributions commonly arise in machine learning problems.
 
