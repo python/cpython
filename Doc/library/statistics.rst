@@ -313,10 +313,10 @@ However, for reading convenience, most of the examples show sorted sequences.
    The mode (when it exists) is the most typical value and serves as a
    measure of central location.
 
-   If there are multiple modes, returns the first one encountered in the *data*.
-   If the smallest or largest of multiple modes is desired instead, use
-   ``min(multimode(data))`` or ``max(multimode(data))``.  If the input *data* is
-   empty, :exc:`StatisticsError` is raised.
+   If there are multiple modes with the same frequency, returns the first one
+   encountered in the *data*.  If the smallest or largest of those is
+   desired instead, use ``min(multimode(data))`` or ``max(multimode(data))``.
+   If the input *data* is empty, :exc:`StatisticsError` is raised.
 
    ``mode`` assumes discrete data, and returns a single value. This is the
    standard treatment of the mode as commonly taught in schools:

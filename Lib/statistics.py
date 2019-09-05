@@ -537,15 +537,16 @@ def mode(data):
     ``mode`` assumes discrete data, and returns a single value. This is the
     standard treatment of the mode as commonly taught in schools:
 
-    >>> mode([1, 1, 2, 3, 3, 3, 3, 4])
-    3
+        >>> mode([1, 1, 2, 3, 3, 3, 3, 4])
+        3
 
     This also works with nominal (non-numeric) data:
 
-    >>> mode(["red", "blue", "blue", "red", "green", "red", "red"])
-    'red'
+        >>> mode(["red", "blue", "blue", "red", "green", "red", "red"])
+        'red'
 
-    If there are multiple modes, return the first one encountered.
+    If there are multiple modes with same frequency, return the first one
+    encountered:
 
         >>> mode(['red', 'red', 'green', 'blue', 'blue'])
         'red'
