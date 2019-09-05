@@ -637,10 +637,10 @@ of applications in statistics.
     .. method:: NormalDist.pdf(x)
 
        Using a `probability density function (pdf)
-       <https://en.wikipedia.org/wiki/Probability_density_function>`_,
-       compute the relative likelihood that a random variable *X* will be near
-       the given value *x*.  Mathematically, it is the ratio ``P(x <= X <
-       x+dx) / dx``.
+       <https://en.wikipedia.org/wiki/Probability_density_function>`_, compute
+       the relative likelihood that a random variable *X* will be near the
+       given value *x*.  Mathematically, it is the limit of the ratio ``P(x <=
+       X < x+dx) / dx`` as *dx* approaches zero.
 
        The relative likelihood is computed as the probability of a sample
        occurring in a narrow range divided by the width of the range (hence
