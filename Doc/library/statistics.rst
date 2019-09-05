@@ -122,6 +122,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    dataset is empty, raises a :exc:`StatisticsError`.
 
    .. doctest::
+
       >>> fmean([3.5, 4.0, 5.25])
       4.25
 
