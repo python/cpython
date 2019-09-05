@@ -219,6 +219,9 @@ Removed
   standard :class:`bytes` objects are always used.
   (Contributed by Jon Janzen in :issue:`36409`.)
 
+* ``PyThreadState_DeleteCurrent()`` has been removed. It was not documented.
+  (Contributed by Joannah Nanjekye in :issue:`37878`.)
+
 
 Porting to Python 3.9
 =====================
