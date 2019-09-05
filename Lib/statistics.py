@@ -913,8 +913,8 @@ class NormalDist:
         "NormalDist where mu is the mean and sigma is the standard deviation."
         if sigma < 0.0:
             raise StatisticsError('sigma must be non-negative')
-        self._mu = mu
-        self._sigma = sigma
+        self._mu = float(mu)
+        self._sigma = float(sigma)
 
     @classmethod
     def from_samples(cls, data):
