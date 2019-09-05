@@ -181,7 +181,7 @@ def fix(filename):
 
 
 def parse_shebang(shebangline):
-    shebangline = shebangline.strip()
+    shebangline = shebangline.rstrip(b'\n')
     start = shebangline.find(b' -')
     if start == -1:
         return b''
