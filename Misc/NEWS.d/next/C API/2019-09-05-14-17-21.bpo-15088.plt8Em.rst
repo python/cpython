@@ -1,4 +1,4 @@
-The C function ``PyGen_NeedsFinalizing`` has been deprecated. It was not
-documented anor even used wnywhere in the codebase. It will therefore be
-removed in the next release.
+The C function ``PyGen_NeedsFinalizing`` has been removed. It was not
+documented, tested or even used anywhere in the code base after
+PEP 442 implementation made it useless.
 (Patch by Joannah Nanjekye)
