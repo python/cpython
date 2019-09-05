@@ -1570,6 +1570,7 @@ PyInit__signal(void)
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
     ItimerError = PyErr_NewException("signal.ItimerError",
             PyExc_OSError, NULL);
+    Py_XINCREF(ItimerError);
     if (PyModule_AddObject(m, "ItimerError", ItimerError))
         goto finally;
 #endif
