@@ -1329,7 +1329,7 @@ static struct PyModuleDef signalmodule = {
 PyMODINIT_FUNC
 PyInit__signal(void)
 {
-    PyObject *m, *d, *x;
+    PyObject *m, *d;
     int i;
 
     /* Create the module and add the functions */
@@ -1350,14 +1350,14 @@ PyInit__signal(void)
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);
 
-    x = DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
-    Py_XINCREF(x);
-    if (PyModule_AddObject(m, "SIG_DFL", x))
+    DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
+    Py_XINCREF(DefaultHandler);
+    if (PyModule_AddObject(m, "SIG_DFL", DefaultHandler))
         goto finally;
 
-    x = IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
-    Py_XINCREF(x);
-    if (PyModule_AddObject(m, "SIG_IGN", x))
+    IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
+    Py_XINCREF(IgnoreHandler);
+    if (PyModule_AddObject(m, "SIG_IGN", IgnoreHandler))
         goto finally;
 
     if (PyModule_AddIntMacro(m, NSIG))
@@ -1376,8 +1376,8 @@ PyInit__signal(void)
          goto finally;
 #endif
 
-    x = IntHandler = PyDict_GetItemString(d, "default_int_handler");
-    if (!x)
+    IntHandler = PyDict_GetItemString(d, "default_int_handler");
+    if (!IntHandler)
         goto finally;
     Py_INCREF(IntHandler);
 
