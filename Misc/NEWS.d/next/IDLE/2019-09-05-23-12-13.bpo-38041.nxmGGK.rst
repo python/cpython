@@ -1,3 +1,3 @@
-IDLE Shell restart lines now fill the window width and always start with
-'='.  Filenames still wrap if long relative to the width, but there is
-no longer a trailing space that can wrap by itself.
+Shell restart lines now fill the window width, always start with '=',
+and avoid wrapping unnecessarily. The line will still wrap if the
+included file name is long relative to the width.
