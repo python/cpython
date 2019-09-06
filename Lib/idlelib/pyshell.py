@@ -388,10 +388,9 @@ class MyRPCClient(rpc.RPCClient):
         raise EOFError
 
 def restart_line(width, filename):
-    tag = 'RESTART: ' + (filename if filename else 'Shell')
-    print(tag, len(tag))
-    div, mod = divmod((width -len(tag) - 2), 2)
-    return f"\n{(div+mod)*'='} {tag} {div*'='}"
+    tag = f"= RESTART: {filename if filename else 'Shell'} ="
+    div, mod = divmod((width -len(tag)), 2)
+    return f"\n{(div+mod)*'='}{tag}{div*'='}"
 
 
 class ModifiedInterpreter(InteractiveInterpreter):
