@@ -14,6 +14,7 @@
 # Sometimes you may find shebangs with flags such as `#! /usr/bin/env python -si`.
 # Normally, pathfix overwrites the entire line, including the flags.
 # To change interpreter and keep flags from the original shebang line, use -k.
+# If you want to keep flags and add to them one single literal flag, use option -a.
 
 
 # Undoubtedly you can do this using find and sed or perl, but this is
@@ -39,18 +40,19 @@ new_interpreter = None
 preserve_timestamps = False
 create_backup = True
 keep_flags = False
-
+add_flag = False
 
 def main():
     global new_interpreter
     global preserve_timestamps
     global create_backup
     global keep_flags
+    global add_flag
 
-    usage = ('usage: %s -i /interpreter -p -n -k file-or-directory ...\n' %
+    usage = ('usage: %s -i /interpreter -p -n -k -a file-or-directory ...\n' %
              sys.argv[0])
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i:kpn')
+        opts, args = getopt.getopt(sys.argv[1:], 'i:a:kpn')
     except getopt.error as msg:
         err(str(msg) + '\n')
         err(usage)
@@ -64,6 +66,13 @@ def main():
             create_backup = False
         if o == '-k':
             keep_flags = True
+        if o == '-a':
+            add_flag = a.encode()
+            if len(add_flag) > 1:
+                err('-a option supports one literal flag')
+                err(usage)
+                sys.exit(2)
+
     if not new_interpreter or not new_interpreter.startswith(b'/') or \
            not args:
         err('-i option or file-or-directory missing\n')
@@ -188,6 +197,14 @@ def parse_shebang(shebangline):
     return shebangline[start:]
 
 
+def insert_flag_to_shebang(shebangline):
+    flags = parse_shebang(shebangline)
+    if flags:
+        flags = flags[2:]
+
+    return b' -' + add_flag + flags
+
+
 def fixline(line):
     if not line.startswith(b'#!'):
         return line
@@ -197,6 +214,8 @@ def fixline(line):
     flags = b''
     if keep_flags:
         flags = parse_shebang(line)
+    if add_flag:
+        flags = insert_flag_to_shebang(line)
     return b'#! ' + new_interpreter + flags + b'\n'
 
 

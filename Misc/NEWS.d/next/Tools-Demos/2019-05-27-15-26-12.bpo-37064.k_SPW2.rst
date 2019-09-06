@@ -1,1 +1,2 @@
 Add flag -k to pathscript.py script: preserve shebang flags.
+Add option -a to pathscript.py script: add single literal flag to preserved flags.

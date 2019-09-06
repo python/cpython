@@ -17,7 +17,7 @@ class TestPathfixFunctional(unittest.TestCase):
         self.temp_file = support.TESTFN
         self.addCleanup(support.unlink, support.TESTFN)
 
-    def pathfix(self, shebang, pathfix_flags):
+    def pathfix(self, shebang, pathfix_flags, expected_returncode=0):
         with open(self.temp_file, 'w', encoding='utf8') as f:
             f.write(f'{shebang}\n' + 'print("Hello world")\n')
 
@@ -25,7 +25,7 @@ class TestPathfixFunctional(unittest.TestCase):
             [sys.executable, self.script,
              *pathfix_flags, '-n', self.temp_file],
             capture_output=True)
-        self.assertEqual(proc.returncode, 0, proc)
+        self.assertEqual(proc.returncode, expected_returncode, proc)
 
         with open(self.temp_file, 'r', encoding='utf8') as f:
             output = f.read()
@@ -61,6 +61,33 @@ class TestPathfixFunctional(unittest.TestCase):
                 '#! /usr/bin/env python',
                 ['-i', '/usr/bin/python3', '-k',]),
             '#! /usr/bin/python3',
+        )
+
+    def test_pathfix_adding_flag(self):
+        self.assertEqual(
+            self.pathfix(
+                '#! /usr/bin/env python',
+                ['-i', '/usr/bin/python3', '-a', 's',]),
+            '#! /usr/bin/python3 -s',
+        )
+        self.assertEqual(
+            self.pathfix(
+                '#! /usr/bin/env python -s',
+                ['-i', '/usr/bin/python3', '-a', 's', ]),
+            '#! /usr/bin/python3 -ss',
+        )
+        self.assertEqual(
+            self.pathfix(
+                '#! /usr/bin/env python',
+                ['-i', '/usr/bin/python3', '-a', 'Rs',],
+                expected_returncode=2),
+            '#! /usr/bin/env python'
+        )
+        self.assertEqual(
+            self.pathfix(
+                '#! /usr/bin/env python -W something',
+                ['-i', '/usr/bin/python3', '-a', 's', ]),
+            '#! /usr/bin/python3 -sW something',
         )
 
 
