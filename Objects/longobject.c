@@ -46,23 +46,18 @@ static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
 
 #ifdef COUNT_ALLOCS
 Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
+#define COUNT_SMALL_INT_ALLOC(ival) ( \
+    (ival) < 0 ? _Py_quick_neg_int_allocs++ : _Py_quick_int_allocs++)
+#else
+#define COUNT_SMALL_INT_ALLOC(ival) ((void)0)
 #endif
 
-static PyObject *
-get_small_int(sdigit ival)
-{
-    PyObject *v;
-    assert(IS_SMALL_INT(ival));
-    v = (PyObject *)&small_ints[ival + NSMALLNEGINTS];
-    Py_INCREF(v);
-#ifdef COUNT_ALLOCS
-    if (ival >= 0)
-        _Py_quick_int_allocs++;
-    else
-        _Py_quick_neg_int_allocs++;
-#endif
-    return v;
-}
+#define GET_SMALL_INT(ival) ( \
+    assert(IS_SMALL_INT(ival)), \
+    COUNT_SMALL_INT_ALLOC(ival), \
+    Py_INCREF(&small_ints[(ival) + NSMALLNEGINTS]), \
+    (PyObject *)&small_ints[(ival) + NSMALLNEGINTS] \
+)
 
 static PyLongObject *
 maybe_small_long(PyLongObject *v)
@@ -71,14 +66,14 @@ maybe_small_long(PyLongObject *v)
         sdigit ival = MEDIUM_VALUE(v);
         if (IS_SMALL_INT(ival)) {
             Py_DECREF(v);
-            return (PyLongObject *)get_small_int(ival);
+            return (PyLongObject *)GET_SMALL_INT(ival);
         }
     }
     return v;
 }
 #else
 #define IS_SMALL_INT(ival) 0
-#define get_small_int(ival) (Py_UNREACHABLE(), NULL)
+#define GET_SMALL_INT(ival) (Py_UNREACHABLE(), NULL)
 #define maybe_small_long(val) (val)
 #endif
 
@@ -294,7 +289,7 @@ _PyLong_Copy(PyLongObject *src)
     if (i < 2) {
         sdigit ival = MEDIUM_VALUE(src);
         if (IS_SMALL_INT(ival)) {
-            return get_small_int(ival);
+            return GET_SMALL_INT(ival);
         }
     }
     result = _PyLong_New(i);
@@ -318,7 +313,7 @@ PyLong_FromLong(long ival)
     int sign;
 
     if (IS_SMALL_INT(ival)) {
-        return get_small_int((sdigit)ival);
+        return GET_SMALL_INT(ival);
     }
 
     if (ival < 0) {
@@ -1151,7 +1146,7 @@ PyLong_FromLongLong(long long ival)
     int negative = 0;
 
     if (IS_SMALL_INT(ival)) {
-        return get_small_int((sdigit)ival);
+        return GET_SMALL_INT(ival);
     }
 
     if (ival < 0) {
@@ -1226,7 +1221,7 @@ PyLong_FromSsize_t(Py_ssize_t ival)
     int negative = 0;
 
     if (IS_SMALL_INT(ival)) {
-        return get_small_int((sdigit)ival);
+        return GET_SMALL_INT(ival);
     }
 
     if (ival < 0) {
