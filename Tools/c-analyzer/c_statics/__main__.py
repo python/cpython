@@ -42,7 +42,7 @@ def cmd_check(cmd, dirs=SOURCE_DIRS, *,
     _print('ERROR: found unsupported static variables')
     _print()
     _show(sorted(unsupported))
-    # XXX totals?
+    _print(f' ({len(unsupported)} total)')
     sys.exit(1)
 
 
@@ -67,12 +67,12 @@ def cmd_show(cmd, dirs=SOURCE_DIRS, *,
     _print('supported:')
     _print('----------')
     _show(sorted(allsupported))
-    # XXX totals?
+    _print(f' ({len(allsupported)} total)')
     _print()
     _print('unsupported:')
     _print('------------')
     _show(sorted(allunsupported))
-    # XXX totals?
+    _print(f' ({len(allunsupported)} total)')
 
 
 #############################
