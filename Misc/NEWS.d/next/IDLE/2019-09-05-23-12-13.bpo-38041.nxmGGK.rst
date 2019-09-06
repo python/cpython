@@ -1,0 +1,3 @@
+Shell restart lines now fill the window width, always start with '=',
+and avoid wrapping unnecessarily. The line will still wrap if the
+included file name is long relative to the width.

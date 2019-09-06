@@ -387,6 +387,19 @@ class MyRPCClient(rpc.RPCClient):
         "Override the base class - just re-raise EOFError"
         raise EOFError
 
+def restart_line(width, filename):  # See bpo-38141.
+    """Return width long restart line formatted with filename.
+
+    Fill line with balanced '='s, with any extras and at least one at
+    the beginning.  Do not end with a trailing space.
+    """
+    tag = f"= RESTART: {filename or 'Shell'} ="
+    if width >= len(tag):
+        div, mod = divmod((width -len(tag)), 2)
+        return f"{(div+mod)*'='}{tag}{div*'='}"
+    else:
+        return tag[:-2]  # Remove ' ='.
+
 
 class ModifiedInterpreter(InteractiveInterpreter):
 
@@ -491,9 +504,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
         console.stop_readline()
         # annotate restart in shell window and mark it
         console.text.delete("iomark", "end-1c")
-        tag = 'RESTART: ' + (filename if filename else 'Shell')
-        halfbar = ((int(console.width) -len(tag) - 4) // 2) * '='
-        console.write("\n{0} {1} {0}".format(halfbar, tag))
+        console.write('\n')
+        console.write(restart_line(console.width, filename))
         console.text.mark_set("restart", "end-1c")
         console.text.mark_gravity("restart", "left")
         if not filename:
