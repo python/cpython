@@ -1,10 +1,10 @@
 import csv
 import os.path
 
-from c_analyzer_common import DATA_DIR
 from c_parser.info import Variable
 
-from .info import ID
+from . import DATA_DIR
+from .info import ID, UNKNOWN
 from .util import read_tsv
 
 
@@ -38,6 +38,10 @@ def from_file(infile, *,
             value._isstatic = True
         else:
             raise ValueError(f'unsupported kind in row {row}')
-        value.validate()
+        if value.name == 'id' and declaration == UNKNOWN:
+            # None of these are static variables.
+            declaration = 'int id';
+        else:
+            value.validate()
         values[id] = value
     return known

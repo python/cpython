@@ -58,9 +58,6 @@ class Variable(_NTBase,
 
     def validate(self):
         """Fail if the object is invalid (i.e. init with bad data)."""
-        if self.name == 'id':  # XXX drop this case
-            return
-
         self._validate_id()
 
         if self.vartype is None or self.vartype == info.UNKNOWN:
