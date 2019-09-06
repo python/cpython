@@ -1351,14 +1351,22 @@ PyInit__signal(void)
     d = PyModule_GetDict(m);
 
     DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
-    Py_XINCREF(DefaultHandler);
-    if (PyModule_AddObject(m, "SIG_DFL", DefaultHandler))
+    if (!DefaultHandler)
         goto finally;
+    Py_INCREF(DefaultHandler);
+    if (PyModule_AddObject(m, "SIG_DFL", DefaultHandler)) {
+        Py_DECREF(DefaultHandler);
+        goto finally;
+    }
 
     IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
-    Py_XINCREF(IgnoreHandler);
-    if (PyModule_AddObject(m, "SIG_IGN", IgnoreHandler))
+    if (!IgnoreHandler)
         goto finally;
+    Py_INCREF(IgnoreHandler);
+    if (PyModule_AddObject(m, "SIG_IGN", IgnoreHandler)) {
+        Py_DECREF(IgnoreHandler);
+        goto finally;
+    }
 
     if (PyModule_AddIntMacro(m, NSIG))
         goto finally;
@@ -1570,9 +1578,13 @@ PyInit__signal(void)
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
     ItimerError = PyErr_NewException("signal.ItimerError",
             PyExc_OSError, NULL);
-    Py_XINCREF(ItimerError);
-    if (PyModule_AddObject(m, "ItimerError", ItimerError))
+    if (!ItimerError)
         goto finally;
+    Py_INCREF(ItimerError);
+    if (PyModule_AddObject(m, "ItimerError", ItimerError)) {
+        Py_DECREF(ItimerError);
+        goto finally;
+    }
 #endif
 
 #ifdef CTRL_C_EVENT
@@ -1618,6 +1630,9 @@ finisignal(void)
     Py_CLEAR(IntHandler);
     Py_CLEAR(DefaultHandler);
     Py_CLEAR(IgnoreHandler);
+#ifdef HAVE_GETITIMER
+    Py_CLEAR(ItimerError);
+#endif
 }
 
 
