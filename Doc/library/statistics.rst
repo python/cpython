@@ -522,7 +522,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    cut-point will evaluate to ``104``.
 
    The *method* for computing quantiles can be varied depending on
-   whether the data in *data* includes or excludes the lowest and
+   whether the *data* includes or excludes the lowest and
    highest possible values from the population.
 
    The default *method* is "exclusive" and is used for data sampled from
