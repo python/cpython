@@ -22,7 +22,7 @@ RECURSION_LIMIT = sys.getrecursionlimit()
 
 __all__ = ["compile_dir","compile_file","compile_path"]
 
-def _walk_dir(dir, ddir=None, maxlevels=RECURSION_LIMIT, quiet=0):
+def _walk_dir(dir, maxlevels=RECURSION_LIMIT, quiet=0):
     if quiet < 2 and isinstance(dir, os.PathLike):
         dir = os.fspath(dir)
     if not quiet:
@@ -38,16 +38,12 @@ def _walk_dir(dir, ddir=None, maxlevels=RECURSION_LIMIT, quiet=0):
         if name == '__pycache__':
             continue
         fullname = os.path.join(dir, name)
-        if ddir is not None:
-            dfile = os.path.join(ddir, name)
-        else:
-            dfile = None
         if not os.path.isdir(fullname):
             yield fullname
         elif (maxlevels > 0 and name != os.curdir and name != os.pardir and
               os.path.isdir(fullname) and not os.path.islink(fullname)):
-            yield from _walk_dir(fullname, ddir=dfile,
-                                 maxlevels=maxlevels - 1, quiet=quiet)
+            yield from _walk_dir(fullname, maxlevels=maxlevels - 1,
+                                 quiet=quiet)
 
 def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
                 rx=None, quiet=0, legacy=False, optimize=-1, workers=1,
@@ -78,8 +74,7 @@ def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
             from concurrent.futures import ProcessPoolExecutor
         except ImportError:
             workers = 1
-    files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels,
-                      ddir=ddir)
+    files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels)
     success = True
     if workers != 1 and ProcessPoolExecutor is not None:
         # If workers == 0, let ProcessPoolExecutor choose
