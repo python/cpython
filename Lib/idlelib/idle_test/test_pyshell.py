@@ -16,7 +16,7 @@ class FunctionTest(unittest.TestCase):
             width = 60
             bar = mul * '='
             with self.subTest(file=file, bar=bar):
-                file = file if file else 'Shell'
+                file = file or 'Shell'
                 line = pyshell.restart_line(width, file)
                 eq(len(line), width + 1)  # +1 for '\n'
                 eq(line, f"\n{bar+extra} RESTART: {file} {bar}")
