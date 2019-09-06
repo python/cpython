@@ -19,17 +19,21 @@
 --------------
 
 This module provides functions for calculating mathematical statistics of
-numeric (:class:`Real`-valued) data.
+numeric (:class:`~numbers.Real`-valued) data.
 
-.. note::
+The module is not intended to be a competitor to third-party libraries such
+as `NumPy <https://numpy.org>`_, `SciPy <https://www.scipy.org/>`_, or
+proprietary full-featured statistics packages aimed at professional
+statisticians such as Minitab, SAS and Matlab. It is aimed at the level of
+graphing and scientific calculators.
 
-   Unless explicitly noted otherwise, these functions support :class:`int`,
-   :class:`float`, :class:`decimal.Decimal` and :class:`fractions.Fraction`.
-   Behaviour with other types (whether in the numeric tower or not) is
-   currently unsupported.  Collections with a mix of types are also undefined
-   and implementation-dependent.  If your input data consists of mixed types,
-   you may be able to use :func:`map` to ensure a consistent result, for
-   example: ``map(float, input_data)``.
+Unless explicitly noted, these functions support :class:`int`,
+:class:`float`, :class:`~decimal.Decimal` and :class:`~fractions.Fraction`.
+Behaviour with other types (whether in the numeric tower or not) is
+currently unsupported.  Collections with a mix of types are also undefined
+and implementation-dependent.  If your input data consists of mixed types,
+you may be able to use :func:`map` to ensure a consistent result, for
+example: ``map(float, input_data)``.
 
 Averages and measures of central location
 -----------------------------------------
@@ -107,7 +111,7 @@ However, for reading convenience, most of the examples show sorted sequences.
       :func:`median` and :func:`mode`.
 
       The sample mean gives an unbiased estimate of the true population mean,
-      which means that, taken on average over all the possible samples,
+      so that when taken on average over all the possible samples,
       ``mean(sample)`` converges on the true mean of the entire population.  If
       *data* represents the entire population rather than a sample, then
       ``mean(data)`` is equivalent to calculating the true population mean μ.
@@ -163,8 +167,16 @@ However, for reading convenience, most of the examples show sorted sequences.
    will be equivalent to ``3/(1/a + 1/b + 1/c)``.
 
    The harmonic mean is a type of average, a measure of the central
-   location of the data.  It is often appropriate when averaging quantities
-   which are rates or ratios, for example speeds. For example:
+   location of the data.  It is often appropriate when averaging
+   rates or ratios, for example speeds.
+
+   Suppose a car travels 10 km at 40 km/hr, then another 10 km at 60 km/hr.
+   What is the average speed?
+
+   .. doctest::
+
+      >>> harmonic_mean([40, 60])
+      48.0
 
    Suppose an investor purchases an equal value of shares in each of
    three companies, with P/E (price/earning) ratios of 2.5, 3 and 10.
@@ -174,9 +186,6 @@ However, for reading convenience, most of the examples show sorted sequences.
 
       >>> harmonic_mean([2.5, 3, 10])  # For an equal investment portfolio.
       3.6
-
-   Using the arithmetic mean would give an average of about 5.167, which
-   is well over the aggregate P/E ratio.
 
    :exc:`StatisticsError` is raised if *data* is empty, or any element
    is less than zero.
@@ -190,9 +199,9 @@ However, for reading convenience, most of the examples show sorted sequences.
    middle two" method.  If *data* is empty, :exc:`StatisticsError` is raised.
    *data* can be a sequence or iterator.
 
-   The median is a robust measure of central location, and is less affected by
-   the presence of outliers in your data.  When the number of data points is
-   odd, the middle data point is returned:
+   The median is a robust measure of central location and is less affected by
+   the presence of outliers.  When the number of data points is odd, the
+   middle data point is returned:
 
    .. doctest::
 
@@ -210,12 +219,9 @@ However, for reading convenience, most of the examples show sorted sequences.
    This is suited for when your data is discrete, and you don't mind that the
    median may not be an actual data point.
 
-   If your data is ordinal (supports order operations) but not numeric (doesn't
-   support addition), you should use :func:`median_low` or :func:`median_high`
+   If the data is ordinal (supports order operations) but not numeric (doesn't
+   support addition), consider using :func:`median_low` or :func:`median_high`
    instead.
-
-   .. seealso:: :func:`median_low`, :func:`median_high`, :func:`median_grouped`
-
 
 .. function:: median_low(data)
 
@@ -319,7 +325,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    desired instead, use ``min(multimode(data))`` or ``max(multimode(data))``.
    If the input *data* is empty, :exc:`StatisticsError` is raised.
 
-   ``mode`` assumes discrete data, and returns a single value. This is the
+   ``mode`` assumes discrete data and returns a single value. This is the
    standard treatment of the mode as commonly taught in schools:
 
    .. doctest::
@@ -522,7 +528,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    cut-point will evaluate to ``104``.
 
    The *method* for computing quantiles can be varied depending on
-   whether the data in *data* includes or excludes the lowest and
+   whether the *data* includes or excludes the lowest and
    highest possible values from the population.
 
    The default *method* is "exclusive" and is used for data sampled from
