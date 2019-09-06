@@ -3227,11 +3227,6 @@ main_loop:
         }
 
         case TARGET(SETUP_FINALLY): {
-            /* NOTE: If you add any new block-setup opcodes that
-               are not try/except/finally handlers, you may need
-               to update the PyGen_NeedsFinalizing() function.
-               */
-
             PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
             DISPATCH();
