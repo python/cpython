@@ -7,7 +7,7 @@ with tool_imports_for_tests():
 
 
 TYPICAL = [
-        info.Variable.from_parts('src1/spam.c', None, 'var1', 'statc const char *'),
+        info.Variable.from_parts('src1/spam.c', None, 'var1', 'static const char *'),
         info.Variable.from_parts('src1/spam.c', 'ham', 'initialized', 'static int'),
         info.Variable.from_parts('src1/spam.c', None, 'var2', 'static PyObject *'),
         info.Variable.from_parts('src1/eggs.c', 'tofu', 'ready', 'static int'),
