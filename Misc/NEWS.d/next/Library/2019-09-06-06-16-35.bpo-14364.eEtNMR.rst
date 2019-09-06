@@ -1,0 +1,1 @@
+Fix behavior of argparse when '--' as argument to option.
