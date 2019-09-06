@@ -222,6 +222,11 @@ Removed
 * ``PyThreadState_DeleteCurrent()`` has been removed. It was not documented.
   (Contributed by Joannah Nanjekye in :issue:`37878`.)
 
+* The C function ``PyGen_NeedsFinalizing`` has been removed. It was not
+  documented, tested or used anywhere within CPython after the implementation
+  of :pep:`442`. Patch by Joannah Nanjekye.
+  (Contributed by Joannah Nanjekye in :issue:`15088`)
+
 
 Porting to Python 3.9
 =====================
