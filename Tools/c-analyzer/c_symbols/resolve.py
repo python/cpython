@@ -31,6 +31,8 @@ def look_up_known_symbol(symbol, knownvars, *,
                     continue
                 if varid.name == symbol.name:
                     return knownvars[varid]
+            else:
+                return None
         else:
             for varid in knownvars:
                 if not varid.funcname:
@@ -39,6 +41,8 @@ def look_up_known_symbol(symbol, knownvars, *,
                     continue
                 if varid.name == symbol.name:
                     return knownvars[varid]
+            else:
+                return None
     elif not symbol.filename or symbol.filename == UNKNOWN:
         raise NotImplementedError
     else:

@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from c_analyzer_common import SOURCE_DIRS
+from c_analyzer_common.info import UNKNOWN
 from c_analyzer_common.known import (
     from_file as known_from_file,
     DATA_FILE as KNOWN_FILE,
@@ -10,15 +11,72 @@ from . import find, show
 from .supported import is_supported, ignored_from_file, IGNORED_FILE
 
 
+def _match_unused_global(static, knownvars, used):
+    found = []
+    for varid in knownvars:
+        if varid in used:
+            continue
+        if varid.funcname is not None:
+            continue
+        if varid.name != static.name:
+            continue
+        if static.filename and static.filename != UNKNOWN:
+            if static.filename == varid.filename:
+                found.append(varid)
+        else:
+            found.append(varid)
+    return found
+
+
 def _find_statics(dirnames, known, ignored):
     ignored = ignored_from_file(ignored)
     known = known_from_file(known)
 
+    used = set()
+    unknown = set()
     knownvars = (known or {}).get('variables')
     for static in find.statics_from_binary(knownvars=knownvars,
                                            dirnames=dirnames):
     #for static in find.statics(dirnames, known, kind='platform'):
+        if static.vartype == UNKNOWN:
+            unknown.add(static)
+            continue
         yield static, is_supported(static, ignored, known)
+        used.add(static.id)
+
+    #return
+    badknown = set()
+    for static in sorted(unknown):
+        msg = None
+        if static.funcname != UNKNOWN:
+            msg = f'could not find global symbol {static.id}'
+        elif m := _match_unused_global(static, knownvars, used):
+            assert isinstance(m, list)
+            badknown.update(m)
+        elif static.name in ('completed', 'id'):  # XXX Figure out where these variables are.
+            unknown.remove(static)
+        else:
+            msg = f'could not find local symbol {static.id}'
+        if msg:
+            #raise Exception(msg)
+            print(msg)
+    if badknown:
+        print('---')
+        print(f'{len(badknown)} globals in known.tsv, but may actually be local:')
+        for varid in sorted(badknown):
+            print(f'{varid.filename:30} {varid.name}')
+    unused = sorted(varid
+                    for varid in set(knownvars) - used
+                    if varid.name != 'id')  # XXX Figure out where these variables are.
+    if unused:
+        print('---')
+        print(f'did not use {len(unused)} known vars:')
+        for varid in unused:
+            print(f'{varid.filename:30} {varid.funcname or "-":20} {varid.name}')
+        raise Exception('not all known symbols used')
+    if unknown:
+        print('---')
+        raise Exception('could not find all symbols')
 
 
 def cmd_check(cmd, dirs=SOURCE_DIRS, *,

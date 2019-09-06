@@ -1,4 +1,5 @@
 from c_analyzer_common import SOURCE_DIRS
+from c_analyzer_common.info import UNKNOWN
 from c_symbols import (
         info as s_info,
         binary as b_symbols,
@@ -23,12 +24,14 @@ def statics_from_binary(binfile=b_symbols.PYTHON, *,
     Details are filled in from the given "known" variables and types.
     """
     symbols = _iter_symbols(binfile, find_local_symbol=None)
-    symbols = list(symbols)
+    #symbols = list(symbols)
     for variable in _resolve(symbols,
                              #resolve=_get_symbol_resolver(knownvars, dirnames),
                              resolve=_get_symbol_resolver(knownvars),
                              ):
-        if not variable.isstatic:
+        # Skip each non-static variable (unless we couldn't find it).
+        # XXX Drop the "UNKNOWN" condition?
+        if not variable.isstatic and variable.vartype != UNKNOWN:
             continue
         yield variable
 
