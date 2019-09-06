@@ -1959,6 +1959,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             for action, arg_count in zip(positionals, arg_counts):
                 args = arg_strings[start_index: start_index + arg_count]
                 start_index += arg_count
+                if action.nargs not in [PARSER, REMAINDER]:
+                    if '--' in args:
+                        args.remove('--')
                 take_action(action, args)
 
             # slice off the Positionals that we just parsed and return the
@@ -2352,13 +2355,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # Value conversion methods
     # ========================
     def _get_values(self, action, arg_strings):
-        # for everything but PARSER, REMAINDER args, strip out first '--'
-        if action.nargs not in [PARSER, REMAINDER]:
-            try:
-                arg_strings.remove('--')
-            except ValueError:
-                pass
-
         # optional argument produces a default when not present
         if not arg_strings and action.nargs == OPTIONAL:
             if action.option_strings:

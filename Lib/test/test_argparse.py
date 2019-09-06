@@ -5262,6 +5262,47 @@ class TestWrappingMetavar(TestCase):
             '''))
 
 
+class TestDoubleDashRemoval(ParserTestCase):
+    """Test actions with multiple -- values"""
+
+    """argparse removed all '--'
+    a 3-2012 patch removed just the 1st -- of each positional group
+    this new patch removes just the 1st --
+    this change is most valuable when passing arg strings to another process"""
+
+    argument_signatures = [
+        Sig('-f', '--foo', help='an optional'),
+        Sig('cmd', help='a command'),
+        Sig('rest', nargs='*', help='zero or more args'),
+    ]
+    failures = ['cmd --foo bar 1 2 3', 'cmd -f1 2 3']
+    successes = [
+        ('-f1 1 -- 2 3', NS(cmd='1', foo='1', rest=['2', '3'])),
+        ('cmd -- --foo bar', NS(cmd='cmd', foo=None, rest=['--foo', 'bar'])),
+        ('cmd -- --foo -- -f2', NS(cmd='cmd', foo=None, rest=['--foo', '-f2'])),
+        ('-- --foo -- --bar 2', NS(cmd='--foo', foo=None, rest=['--bar', '2'])),
+        ('-f1 -- -- 1 -- 2', NS(cmd='--', foo='1', rest=['1', '2'])),
+        ('-- cmd -- -- --foo', NS(cmd='cmd', foo=None, rest=['--', '--foo'])),
+        ('cmd test --foo=--', NS(cmd='cmd', foo='--', rest=['test']))
+    ]
+
+
+class TestDoubleDashRemoval1(ParserTestCase):
+    """Test actions with multiple -- values, with '+' positional"""
+
+    argument_signatures = [
+        Sig('-f', '--foo', help='an optional'),
+        Sig('cmd', help='a command'),
+        Sig('rest', nargs='+', help='1 or more args'),
+    ]
+    failures = ['cmd -f1', '-f1 -- cmd', '-f1 cmd --']
+    successes = [
+        ('cmd -f1 2 3', NS(cmd='cmd', foo='1', rest=['2', '3'])),
+        ('cmd -f1 -- 2 3', NS(cmd='cmd', foo='1', rest=['2', '3'])),
+        ('-f1 -- cmd -- -f2 3', NS(cmd='cmd', foo='1', rest=['-f2', '3']))
+    ]
+
+
 def test_main():
     support.run_unittest(__name__)
     # Remove global references to avoid looking like we have refleaks.
