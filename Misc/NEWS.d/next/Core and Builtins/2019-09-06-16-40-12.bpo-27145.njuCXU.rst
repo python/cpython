@@ -1,1 +1,1 @@
-small_ints[x] could be returned in long_add and long_sub. Patch by hongweipeng.
+int + int and int - int operators can now return small integer singletons. Patch by hongweipeng.

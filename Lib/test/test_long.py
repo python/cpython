@@ -961,9 +961,10 @@ class LongTest(unittest.TestCase):
         a = 2 ** SHIFT
         b = 2 ** SHIFT - 1
         c = 2 ** SHIFT + 1
+        d = -a
+        self.assertIsNot(a + b, 2 ** (SHIFT + 1) - 1)
         self.assertIs(a - b, 1)
-        self.assertIs(c + (-a), 1)
-        self.assertIs(a // a, 1)
+        self.assertIs(c + d, 1)
 
     def test_small_ints(self):
         for i in range(-5, 257):
