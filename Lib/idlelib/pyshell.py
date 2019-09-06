@@ -389,8 +389,9 @@ class MyRPCClient(rpc.RPCClient):
 
 def restart_line(width, filename):
     tag = 'RESTART: ' + (filename if filename else 'Shell')
-    halfbar = ((width -len(tag) - 4) // 2) * '='
-    return "\n{0} {1} {0}".format(halfbar, tag)
+    print(tag, len(tag))
+    div, mod = divmod((width -len(tag) - 2), 2)
+    return f"\n{(div+mod)*'='} {tag} {div*'='}"
 
 
 class ModifiedInterpreter(InteractiveInterpreter):

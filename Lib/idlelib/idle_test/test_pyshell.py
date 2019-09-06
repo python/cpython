@@ -10,10 +10,15 @@ from tkinter import Tk
 class FunctionTest(unittest.TestCase):
     # Test stand-alone module level non-gui functions.
     def test_restart_line(self):
-        self.assertEqual(pyshell.restart_line(80, ''),
-                         f"\n{31*'='} RESTART: Shell {31*'='}")
-        self.assertEqual(pyshell.restart_line(80, 'finame'),
-                         f"\n{30*'='} RESTART: finame {30*'='}")
+        eq = self.assertEqual
+        for file, mul, extra in (('', 22, ''), ('finame', 21, '=')):
+            width = 60
+            bar = mul * '='
+            with self.subTest(file=file, bar=bar):
+                file = file if file else 'Shell'
+                line = pyshell.restart_line(width, file)
+                eq(len(line), width + 1)  # +1 for '\n'
+                eq(line, f"\n{bar+extra} RESTART: {file} {bar}")
 
 
 class PyShellFileListTest(unittest.TestCase):
