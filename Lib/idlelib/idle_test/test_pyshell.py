@@ -9,6 +9,7 @@ from tkinter import Tk
 
 class FunctionTest(unittest.TestCase):
     # Test stand-alone module level non-gui functions.
+
     def test_restart_line_wide(self):
         eq = self.assertEqual
         for file, mul, extra in (('', 22, ''), ('finame', 21, '=')):
