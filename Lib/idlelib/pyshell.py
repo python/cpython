@@ -387,10 +387,15 @@ class MyRPCClient(rpc.RPCClient):
         "Override the base class - just re-raise EOFError"
         raise EOFError
 
-def restart_line(width, filename):
-    tag = f"= RESTART: {filename if filename else 'Shell'} ="
-    div, mod = divmod((width -len(tag)), 2)
-    return f"\n{(div+mod)*'='}{tag}{div*'='}"
+def restart_line(width, filename):  # See bpo-38141.
+    if filename == '':
+        filename = 'Shell'
+    tag = f"= RESTART: {filename} ="
+    if width >= 13 + len(filename):  # The length of tag.
+        div, mod = divmod((width -len(tag)), 2)
+        return f"\n{(div+mod)*'='}{tag}{div*'='}"
+    else:
+        return '\n' + tag[:-2]  # Remove ' ='.
 
 
 class ModifiedInterpreter(InteractiveInterpreter):

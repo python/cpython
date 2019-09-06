@@ -9,7 +9,7 @@ from tkinter import Tk
 
 class FunctionTest(unittest.TestCase):
     # Test stand-alone module level non-gui functions.
-    def test_restart_line(self):
+    def test_restart_line_wide(self):
         eq = self.assertEqual
         for file, mul, extra in (('', 22, ''), ('finame', 21, '=')):
             width = 60
@@ -19,6 +19,13 @@ class FunctionTest(unittest.TestCase):
                 line = pyshell.restart_line(width, file)
                 eq(len(line), width + 1)  # +1 for '\n'
                 eq(line, f"\n{bar+extra} RESTART: {file} {bar}")
+
+    def test_restart_line_narrow(self):
+        expect, taglen = "\n= RESTART: Shell", 16  # Don't count '\n'.
+        for width in (taglen-1, taglen, taglen+1):
+            with self.subTest(width=width):
+                self.assertEqual(pyshell.restart_line(width, ''), expect)
+        self.assertEqual(pyshell.restart_line(taglen+2, ''), expect+' =')
 
 
 class PyShellFileListTest(unittest.TestCase):
