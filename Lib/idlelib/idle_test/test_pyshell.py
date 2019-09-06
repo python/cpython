@@ -7,6 +7,15 @@ from test.support import requires
 from tkinter import Tk
 
 
+class FunctionTest(unittest.TestCase):
+    # Test stand-alone module level non-gui functions.
+    def test_restart_line(self):
+        self.assertEqual(pyshell.restart_line(80, ''),
+                         f"\n{31*'='} RESTART: Shell {31*'='}")
+        self.assertEqual(pyshell.restart_line(80, 'finame'),
+                         f"\n{30*'='} RESTART: finame {30*'='}")
+
+
 class PyShellFileListTest(unittest.TestCase):
 
     @classmethod

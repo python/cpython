@@ -387,6 +387,11 @@ class MyRPCClient(rpc.RPCClient):
         "Override the base class - just re-raise EOFError"
         raise EOFError
 
+def restart_line(width, filename):
+    tag = 'RESTART: ' + (filename if filename else 'Shell')
+    halfbar = ((width -len(tag) - 4) // 2) * '='
+    return "\n{0} {1} {0}".format(halfbar, tag)
+
 
 class ModifiedInterpreter(InteractiveInterpreter):
 
@@ -491,9 +496,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         console.stop_readline()
         # annotate restart in shell window and mark it
         console.text.delete("iomark", "end-1c")
-        tag = 'RESTART: ' + (filename if filename else 'Shell')
-        halfbar = ((int(console.width) -len(tag) - 4) // 2) * '='
-        console.write("\n{0} {1} {0}".format(halfbar, tag))
+        console.write(restart_line(console.width, filename))
         console.text.mark_set("restart", "end-1c")
         console.text.mark_gravity("restart", "left")
         if not filename:
