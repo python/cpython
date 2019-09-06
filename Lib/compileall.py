@@ -18,9 +18,11 @@ import struct
 
 from functools import partial
 
+RECURSION_LIMIT = sys.getrecursionlimit()
+
 __all__ = ["compile_dir","compile_file","compile_path"]
 
-def _walk_dir(dir, ddir=None, maxlevels=10, quiet=0):
+def _walk_dir(dir, ddir=None, maxlevels=RECURSION_LIMIT, quiet=0):
     if quiet < 2 and isinstance(dir, os.PathLike):
         dir = os.fspath(dir)
     if not quiet:
@@ -47,15 +49,15 @@ def _walk_dir(dir, ddir=None, maxlevels=10, quiet=0):
             yield from _walk_dir(fullname, ddir=dfile,
                                  maxlevels=maxlevels - 1, quiet=quiet)
 
-def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
-                quiet=0, legacy=False, optimize=-1, workers=1,
+def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
+                rx=None, quiet=0, legacy=False, optimize=-1, workers=1,
                 invalidation_mode=None):
     """Byte-compile all modules in the given directory tree.
 
     Arguments (only dir is required):
 
     dir:       the directory to byte-compile
-    maxlevels: maximum recursion level (default 10)
+    maxlevels: maximum recursion level (default `sys.getrecursionlimit()`)
     ddir:      the directory that will be prepended to the path to the
                file as it is compiled into each byte-code file.
     force:     if True, force compilation, even if timestamps are up-to-date
@@ -225,7 +227,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Utilities to support installing Python libraries.')
     parser.add_argument('-l', action='store_const', const=0,
-                        default=10, dest='maxlevels',
+                        default=RECURSION_LIMIT, dest='maxlevels',
                         help="don't recurse into subdirectories")
     parser.add_argument('-r', type=int, dest='recursion',
                         help=('control the maximum recursion level. '
