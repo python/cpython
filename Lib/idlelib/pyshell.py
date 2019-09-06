@@ -391,7 +391,7 @@ def restart_line(width, filename):  # See bpo-38141.
     if filename == '':
         filename = 'Shell'
     tag = f"= RESTART: {filename} ="
-    if width >= 13 + len(filename):  # The length of tag.
+    if width >= len(tag):
         div, mod = divmod((width -len(tag)), 2)
         return f"\n{(div+mod)*'='}{tag}{div*'='}"
     else:
