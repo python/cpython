@@ -21,13 +21,13 @@
 This module provides functions for calculating mathematical statistics of
 numeric (:class:`~numbers.Real`-valued) data.
 
-The module is not intended to be a competitor to such third-party libraries
+The module is not intended to be a competitor to third-party libraries such
 as `NumPy <https://numpy.org>`_, `SciPy <https://www.scipy.org/>`_, or
 proprietary full-featured statistics packages aimed at professional
 statisticians such as Minitab, SAS and Matlab. It is aimed at the level of
 graphing and scientific calculators.
 
-Unless explicitly noted otherwise, these functions support :class:`int`,
+Unless explicitly noted, these functions support :class:`int`,
 :class:`float`, :class:`~decimal.Decimal` and :class:`~fractions.Fraction`.
 Behaviour with other types (whether in the numeric tower or not) is
 currently unsupported.  Collections with a mix of types are also undefined
