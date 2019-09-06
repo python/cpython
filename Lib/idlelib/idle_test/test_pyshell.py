@@ -18,11 +18,11 @@ class FunctionTest(unittest.TestCase):
             with self.subTest(file=file, bar=bar):
                 file = file or 'Shell'
                 line = pyshell.restart_line(width, file)
-                eq(len(line), width + 1)  # +1 for '\n'
-                eq(line, f"\n{bar+extra} RESTART: {file} {bar}")
+                eq(len(line), width)
+                eq(line, f"{bar+extra} RESTART: {file} {bar}")
 
     def test_restart_line_narrow(self):
-        expect, taglen = "\n= RESTART: Shell", 16  # Don't count '\n'.
+        expect, taglen = "= RESTART: Shell", 16
         for width in (taglen-1, taglen, taglen+1):
             with self.subTest(width=width):
                 self.assertEqual(pyshell.restart_line(width, ''), expect)
