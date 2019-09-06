@@ -40,7 +40,7 @@ new_interpreter = None
 preserve_timestamps = False
 create_backup = True
 keep_flags = False
-add_flag = b''
+add_flags = b''
 
 
 def main():
@@ -48,7 +48,7 @@ def main():
     global preserve_timestamps
     global create_backup
     global keep_flags
-    global add_flag
+    global add_flags
 
     usage = ('usage: %s -i /interpreter -p -n -k -a file-or-directory ...\n' %
              sys.argv[0])
@@ -68,7 +68,7 @@ def main():
         if o == '-k':
             keep_flags = True
         if o == '-a':
-            add_flag = a.encode()
+            add_flags = a.encode()
 
     if not new_interpreter or not new_interpreter.startswith(b'/') or \
            not args:
@@ -200,9 +200,9 @@ def populate_flags(shebangline):
         old_flags = parse_shebang(shebangline)
         if old_flags:
             old_flags = old_flags[2:]
-    if not (old_flags or add_flag):
+    if not (old_flags or add_flags):
         return b''
-    return b' -' + add_flag + old_flags
+    return b' -' + add_flags + old_flags
 
 
 def fixline(line):
@@ -212,7 +212,7 @@ def fixline(line):
     if b"python" not in line:
         return line
     flags = b''
-    if keep_flags or add_flag:
+    if keep_flags or add_flags:
         flags = populate_flags(line)
     return b'#! ' + new_interpreter + flags + b'\n'
 
