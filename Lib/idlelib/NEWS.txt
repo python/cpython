@@ -3,6 +3,10 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-38401: Shell restart lines now fill the window width, always start
+with '=', and avoid wrapping unnecessarily. The line will still wrap
+if the included file name is long relative to the width.
+
 bpo-37092: Add mousewheel scrolling for IDLE module, path, and stack
 browsers.  Patch by George Zhang.
 
