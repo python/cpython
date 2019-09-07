@@ -1,0 +1,1 @@
+multi-arch headers and libs will not be added when cross compiling.

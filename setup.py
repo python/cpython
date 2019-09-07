@@ -651,10 +651,10 @@ class PyBuildExt(build_ext):
         if not CROSS_COMPILING:
             add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
             add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
+            self.add_multiarch_paths()
         # only change this for cross builds for 3.3, issues on Mageia
         if CROSS_COMPILING:
             self.add_cross_compiling_paths()
-        self.add_multiarch_paths()
         self.add_ldflags_cppflags()
 
     def init_inc_lib_dirs(self):
