@@ -184,11 +184,11 @@ class _PlistParser:
         self.parser.ParseFile(fileobj)
         return self.root
 
-    def handle_begin_element(self, element, attrs):
+    def handle_begin_element(self, element, _):
         self.data = []
         handler = getattr(self, "begin_" + element, None)
         if handler is not None:
-            handler(attrs)
+            handler()
 
     def handle_end_element(self, element):
         handler = getattr(self, "end_" + element, None)
@@ -221,7 +221,7 @@ class _PlistParser:
 
     # element handlers
 
-    def begin_dict(self, attrs):
+    def begin_dict(self):
         d = self._dict_type()
         self.add_object(d)
         self.stack.append(d)
@@ -238,7 +238,7 @@ class _PlistParser:
                              self.parser.CurrentLineNumber)
         self.current_key = self.get_data()
 
-    def begin_array(self, attrs):
+    def begin_array(self):
         a = []
         self.add_object(a)
         self.stack.append(a)

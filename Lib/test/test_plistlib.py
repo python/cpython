@@ -114,7 +114,8 @@ class TestPlistlib(unittest.TestCase):
         except:
             pass
 
-    def _create(self, fmt=None):
+    @staticmethod
+    def _create():
         pl = dict(
             aString="Doodah",
             aList=["A", "B", 12, 32.5, [1, 2, 3]],
@@ -274,7 +275,7 @@ class TestPlistlib(unittest.TestCase):
         self.maxDiff = None
         for fmt in ALL_FORMATS:
             with self.subTest(fmt=fmt):
-                pl = self._create(fmt=fmt)
+                pl = self._create()
                 pl2 = plistlib.loads(TESTDATA[fmt], fmt=fmt)
                 self.assertEqual(dict(pl), dict(pl2),
                                  "generated data was not identical to Apple's output")
@@ -286,7 +287,7 @@ class TestPlistlib(unittest.TestCase):
         for fmt in ALL_FORMATS:
             with self.subTest(fmt=fmt):
                 b = BytesIO()
-                pl = self._create(fmt=fmt)
+                pl = self._create()
                 plistlib.dump(pl, b, fmt=fmt)
                 pl2 = plistlib.load(BytesIO(b.getvalue()), fmt=fmt)
                 self.assertEqual(dict(pl), dict(pl2))
@@ -494,7 +495,7 @@ class TestPlistlib(unittest.TestCase):
             # (b'utf-32', 'utf-32-le', codecs.BOM_UTF32_LE),
             # (b'utf-32', 'utf-32-be', codecs.BOM_UTF32_BE),
         ]:
-            pl = self._create(fmt=plistlib.FMT_XML)
+            pl = self._create()
             with self.subTest(encoding=encoding):
                 data = base.replace(b'UTF-8', xml_encoding)
                 data = bom + data.decode('utf-8').encode(encoding)
