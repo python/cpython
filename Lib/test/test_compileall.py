@@ -41,6 +41,16 @@ class CompileallTestsBase:
         os.mkdir(self.subdirectory)
         self.source_path3 = os.path.join(self.subdirectory, '_test3.py')
         shutil.copyfile(self.source_path, self.source_path3)
+        many_directories = [str(number) for number in range(1, 100)]
+        self.long_path = os.path.join(self.directory,
+                                      "long",
+                                      *many_directories)
+        os.makedirs(self.long_path)
+        self.source_path_long = os.path.join(self.long_path, '_test4.py')
+        shutil.copyfile(self.source_path, self.source_path_long)
+        self.bc_path_long = importlib.util.cache_from_source(
+            self.source_path_long
+        )
 
     def tearDown(self):
         shutil.rmtree(self.directory)
@@ -193,6 +203,15 @@ class CompileallTestsBase:
     def test_compile_missing_multiprocessing(self, compile_file_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=5)
         self.assertTrue(compile_file_mock.called)
+
+    def text_compile_dir_maxlevels(self):
+        # Test the actual impact of maxlevels attr
+        compileall.compile_dir(os.path.join(self.directory, "long"),
+                               maxlevels=10, quiet=True)
+        self.assertFalse(os.path.isfile(self.bc_path_long))
+        compileall.compile_dir(os.path.join(self.directory, "long"),
+                               maxlevels=110, quiet=True)
+        self.assertTrue(os.path.isfile(self.bc_path_long))
 
 
 class CompileallTestsWithSourceEpoch(CompileallTestsBase,
