@@ -360,7 +360,6 @@ class TestPlistlib(unittest.TestCase):
                 fp = BytesIO()
                 plistlib.dump(
                     pl, fp, fmt=fmt, skipkeys=True, sort_keys=False)
-                data = fp.getvalue()
                 pl2 = plistlib.loads(fp.getvalue())
                 self.assertEqual(pl2, {'snake': 'aWord'})
 
