@@ -227,6 +227,7 @@ with an exception object (leaving out the error checking for now)::
            Py_DECREF(m);
            return NULL;
        }
+
        return m;
    }
 
