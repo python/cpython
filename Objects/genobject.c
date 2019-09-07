@@ -819,22 +819,6 @@ PyGen_New(PyFrameObject *f)
     return gen_new_with_qualname(&PyGen_Type, f, NULL, NULL);
 }
 
-int
-PyGen_NeedsFinalizing(PyGenObject *gen)
-{
-    PyFrameObject *f = gen->gi_frame;
-
-    if (f == NULL || f->f_stacktop == NULL)
-        return 0; /* no frame or empty blockstack == no finalization */
-
-    /* Any (exception-handling) block type requires cleanup. */
-    if (f->f_iblock > 0)
-        return 1;
-
-    /* No blocks, it's safe to skip finalization. */
-    return 0;
-}
-
 /* Coroutine Object */
 
 typedef struct {
