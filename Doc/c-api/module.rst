@@ -421,10 +421,10 @@ state:
 
    .. note::
 
-      Unlike other functions which steal references, ``PyModule_AddObject`` only
+      Unlike other functions that steal references, ``PyModule_AddObject`` only
       decrements the reference count of *value* **on success**.
 
-      This means you must check this function's return value and
+      This means that its return value must be checked, and calling code must
       :c:func:`Py_DECREF` *value* manually on error. Example usage::
 
          Py_INCREF(spam);
