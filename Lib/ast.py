@@ -532,33 +532,18 @@ _const_node_type_names = {
 def main():
     import argparse
 
-    # Helper error handling routines
-    def perror(message):
-        sys.stderr.write(message)
-        sys.stderr.write('\n')
-
-    def error(message, filename=None, location=None):
-        if location:
-            args = (filename,) + location + (message,)
-            perror("%s:%d:%d: error: %s" % args)
-        elif filename:
-            perror("%s: error: %s" % (filename, message))
-        else:
-            perror("error: %s" % message)
-        sys.exit(1)
-
-    # Parse the arguments and options
     parser = argparse.ArgumentParser(prog='python -m ast')
     parser.add_argument('infile', type=argparse.FileType(mode='rb'), nargs='?',
                         default='-',
                         help='the file to parse; defaults to stdin')
     parser.add_argument('-m', '--mode', default='exec',
-                        choices=('exec', 'single', 'eval'),
-                        help='the file to parse; defaults to stdin')
+                        choices=('exec', 'single', 'eval', 'func_type'),
+                        help='specify what kind of code must be parsed')
     parser.add_argument('-a', '--include-attributes', action='store_true',
                         help='include attributes such as line numbers and '
                              'column offsets')
     args = parser.parse_args()
+
     with args.infile as infile:
         source = infile.read()
     tree = parse(source, args.infile.name, args.mode, type_comments=True)

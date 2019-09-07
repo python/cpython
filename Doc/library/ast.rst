@@ -342,11 +342,26 @@ It is as simple as:
 
 .. code-block:: sh
 
-   python -m ast [-e] [filename.py]
+   python -m ast [-m <mode>] [-a] [infile]
 
 The following options are accepted:
 
-If :file:`filename.py` is specified its contents are parsed to AST and dumped
+.. program:: ast
+
+.. cmdoption:: -h, --help
+
+   Show the help message and exit.
+
+.. cmdoption:: -m <mode>
+               --mode <mode>
+
+   Specify what kind of code must be compiled.
+
+.. cmdoption:: -a, --include-attributes
+
+   Include attributes such as line numbers and column offsets.
+
+If :file:`infile` is specified its contents are parsed to AST and dumped
 to stdout.  Otherwise, the content is read from stdin.
 
 
