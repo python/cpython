@@ -277,6 +277,25 @@ class CompileallTestsBase:
             compileall.compile_dir(path, quiet=True, ddir="/bar",
                                    stripdir="/foo", prependdir="/bar")
 
+    def test_multiple_optimization_levels(self):
+        script = script_helper.make_script(self.directory,
+                                           "test_optimization",
+                                           "a = 0")
+        bc = []
+        for opt_level in "", 1, 2, 3:
+            bc.append(importlib.util.cache_from_source(script,
+                                                       optimization=opt_level))
+        test_combinations = [[0, 1], [1, 2], [0, 2], [0, 1, 2]]
+        for opt_combination in test_combinations:
+            compileall.compile_file(script, quiet=True,
+                                    optimize=opt_combination)
+            for opt_level in opt_combination:
+                self.assertTrue(os.path.isfile(bc[opt_level]))
+                try:
+                    os.unlink(bc[opt_level])
+                except Exception:
+                    pass
+
 
 class CompileallTestsWithSourceEpoch(CompileallTestsBase,
                                      unittest.TestCase,
@@ -679,6 +698,29 @@ class CommandLineTestsBase:
             stripdir,
             str(err, encoding=sys.getdefaultencoding())
         )
+
+    def test_multiple_optimization_levels(self):
+        path = os.path.join(self.directory, "optimizations")
+        os.makedirs(path)
+        script = script_helper.make_script(path,
+                                           "test_optimization",
+                                           "a = 0")
+        bc = []
+        for opt_level in "", 1, 2, 3:
+            bc.append(importlib.util.cache_from_source(script,
+                                                       optimization=opt_level))
+        test_combinations = [["0", "1"],
+                             ["1", "2"],
+                             ["0", "2"],
+                             ["0", "1", "2"]]
+        for opt_combination in test_combinations:
+            self.assertRunOK(path, *("-o" + str(n) for n in opt_combination))
+            for opt_level in opt_combination:
+                self.assertTrue(os.path.isfile(bc[int(opt_level)]))
+                try:
+                    os.unlink(bc[opt_level])
+                except Exception:
+                    pass
 
 
 class CommandLineTestsWithSourceEpoch(CommandLineTestsBase,
