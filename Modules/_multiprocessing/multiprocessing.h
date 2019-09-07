@@ -64,8 +64,6 @@
 #  define T_HANDLE T_POINTER
 #  define F_SEM_HANDLE F_HANDLE
 #  define T_SEM_HANDLE T_HANDLE
-#  define F_DWORD "k"
-#  define T_DWORD T_ULONG
 #else
 #  define F_HANDLE "i"
 #  define T_HANDLE T_INT
