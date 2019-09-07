@@ -38,6 +38,12 @@ except ImportError:
     from asyncio import test_support as support
 
 
+if ssl is not None:
+    IS_OPENSSL_1_1_1 = ssl.OPENSSL_VERSION_INFO >= (1, 1, 1)
+else:
+    IS_OPENSSL_1_1_1 = False
+
+
 def data_file(filename):
     if hasattr(support, 'TEST_HOME_DIR'):
         fullname = os.path.join(support.TEST_HOME_DIR, filename)
@@ -1145,6 +1151,7 @@ class EventLoopTestsMixin:
             self.test_create_unix_server_ssl_verify_failed()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
+    @unittest.skipIf(IS_OPENSSL_1_1_1, "bpo-36576: fail on OpenSSL 1.1.1")
     def test_create_server_ssl_match_failed(self):
         proto = MyProto(loop=self.loop)
         server, host, port = self._make_ssl_server(
