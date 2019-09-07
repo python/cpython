@@ -14,11 +14,11 @@ from io import BytesIO
 
 from plistlib import UID
 
-ALL_FORMATS=(plistlib.FMT_XML, plistlib.FMT_BINARY)
+ALL_FORMATS = (plistlib.FMT_XML, plistlib.FMT_BINARY)
 
 # The testdata is generated using Mac/Tools/plistlib_generate_testdata.py
 # (which using PyObjC to control the Cocoa classes for generating plists)
-TESTDATA={
+TESTDATA = {
     plistlib.FMT_XML: binascii.a2b_base64(b'''
         PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCFET0NU
         WVBFIHBsaXN0IFBVQkxJQyAiLS8vQXBwbGUvL0RURCBQTElTVCAxLjAvL0VO
@@ -118,12 +118,12 @@ class TestPlistlib(unittest.TestCase):
         pl = dict(
             aString="Doodah",
             aList=["A", "B", 12, 32.5, [1, 2, 3]],
-            aFloat = 0.5,
-            anInt = 728,
-            aBigInt = 2 ** 63 - 44,
-            aBigInt2 = 2 ** 63 + 44,
-            aNegativeInt = -5,
-            aNegativeBigInt = -80000000000,
+            aFloat=0.5,
+            anInt=728,
+            aBigInt=2 ** 63 - 44,
+            aBigInt2=2 ** 63 + 44,
+            aNegativeInt=-5,
+            aNegativeBigInt=-80000000000,
             aDict=dict(
                 anotherString="<hello & 'hi' there!>",
                 aUnicodeValue='M\xe4ssig, Ma\xdf',
@@ -131,12 +131,12 @@ class TestPlistlib(unittest.TestCase):
                 aFalseValue=False,
                 deeperDict=dict(a=17, b=32.5, c=[1, 2, "text"]),
             ),
-            someData = b"<binary gunk>",
-            someMoreData = b"<lots of binary gunk>\0\1\2\3" * 10,
-            nestedData = [b"<lots of binary gunk>\0\1\2\3" * 10],
-            aDate = datetime.datetime(2004, 10, 26, 10, 33, 33),
-            anEmptyDict = dict(),
-            anEmptyList = list()
+            someData=b"<binary gunk>",
+            someMoreData=b"<lots of binary gunk>\0\1\2\3" * 10,
+            nestedData=[b"<lots of binary gunk>\0\1\2\3" * 10],
+            aDate=datetime.datetime(2004, 10, 26, 10, 33, 33),
+            anEmptyDict=dict(),
+            anEmptyList=list()
         )
         pl['\xc5benraa'] = "That was a unicode key."
         return pl
@@ -160,7 +160,7 @@ class TestPlistlib(unittest.TestCase):
         self.assertRaises(AttributeError, plistlib.load, 'filename')
 
     def test_invalid_type(self):
-        pl = [ object() ]
+        pl = [object()]
 
         for fmt in ALL_FORMATS:
             with self.subTest(fmt=fmt):
@@ -175,8 +175,8 @@ class TestPlistlib(unittest.TestCase):
             UID(-19)
 
     def test_int(self):
-        for pl in [0, 2**8-1, 2**8, 2**16-1, 2**16, 2**32-1, 2**32,
-                   2**63-1, 2**64-1, 1, -2**63]:
+        for pl in [0, 2 ** 8 - 1, 2 ** 8, 2 ** 16 - 1, 2 ** 16, 2 ** 32 - 1, 2 ** 32,
+                   2 ** 63 - 1, 2 ** 64 - 1, 1, -2 ** 63]:
             for fmt in ALL_FORMATS:
                 with self.subTest(pl=pl, fmt=fmt):
                     data = plistlib.dumps(pl, fmt=fmt)
@@ -187,7 +187,7 @@ class TestPlistlib(unittest.TestCase):
                     self.assertEqual(data, data2)
 
         for fmt in ALL_FORMATS:
-            for pl in (2 ** 64 + 1, 2 ** 127-1, -2**64, -2 ** 127):
+            for pl in (2 ** 64 + 1, 2 ** 127 - 1, -2 ** 64, -2 ** 127):
                 with self.subTest(pl=pl, fmt=fmt):
                     self.assertRaises(OverflowError, plistlib.dumps,
                                       pl, fmt=fmt)
@@ -268,8 +268,7 @@ class TestPlistlib(unittest.TestCase):
                 pl = plistlib.loads(TESTDATA[fmt])
                 data = plistlib.dumps(pl, fmt=fmt)
                 self.assertEqual(data, TESTDATA[fmt],
-                    "generated data was not identical to Apple's output")
-
+                                 "generated data was not identical to Apple's output")
 
     def test_appleformattingfromliteral(self):
         self.maxDiff = None
@@ -278,10 +277,10 @@ class TestPlistlib(unittest.TestCase):
                 pl = self._create(fmt=fmt)
                 pl2 = plistlib.loads(TESTDATA[fmt], fmt=fmt)
                 self.assertEqual(dict(pl), dict(pl2),
-                    "generated data was not identical to Apple's output")
+                                 "generated data was not identical to Apple's output")
                 pl2 = plistlib.loads(TESTDATA[fmt])
                 self.assertEqual(dict(pl), dict(pl2),
-                    "generated data was not identical to Apple's output")
+                                 "generated data was not identical to Apple's output")
 
     def test_bytesio(self):
         for fmt in ALL_FORMATS:
@@ -307,7 +306,7 @@ class TestPlistlib(unittest.TestCase):
 
                     plistlib.dump(pl, b, fmt=fmt, sort_keys=sort_keys)
                     pl2 = plistlib.load(BytesIO(b.getvalue()),
-                        dict_type=collections.OrderedDict)
+                                        dict_type=collections.OrderedDict)
 
                     self.assertEqual(dict(pl), dict(pl2))
                     if sort_keys:
@@ -334,7 +333,7 @@ class TestPlistlib(unittest.TestCase):
                         self.assertEqual(list(pl2.keys()), ['b', 'a', 'c'])
 
     def test_keys_no_string(self):
-        pl = { 42: 'aNumber' }
+        pl = {42: 'aNumber'}
 
         for fmt in ALL_FORMATS:
             with self.subTest(fmt=fmt):
@@ -405,7 +404,7 @@ class TestPlistlib(unittest.TestCase):
         pl = {
             'first': {'a': 1},
             'second': {'a': 1},
-            'third': {'b': 2 },
+            'third': {'b': 2},
         }
 
         for fmt in ALL_FORMATS:
@@ -415,7 +414,7 @@ class TestPlistlib(unittest.TestCase):
                 self.assertEqual(pl2, {
                     'first': {'a': 1},
                     'second': {'a': 1},
-                    'third': {'b': 2 },
+                    'third': {'b': 2},
                 })
                 self.assertIsNot(pl2['first'], pl2['second'])
 
@@ -463,7 +462,7 @@ class TestPlistlib(unittest.TestCase):
                   "<key>key inside an array2</key><real>3</real>",
                   "<true/><key>key inside an array3</key>"]:
             self.assertRaises(ValueError, plistlib.loads,
-                              ("<plist><array>%s</array></plist>"%i).encode())
+                              ("<plist><array>%s</array></plist>" % i).encode())
 
     def test_invaliddict(self):
         for i in ["<key><true/>k</key><string>compound key</string>",
@@ -472,9 +471,9 @@ class TestPlistlib(unittest.TestCase):
                   "<key>k1</key><string>v1</string><real>5.3</real>"
                   "<key>k1</key><key>k2</key><string>double key</string>"]:
             self.assertRaises(ValueError, plistlib.loads,
-                              ("<plist><dict>%s</dict></plist>"%i).encode())
+                              ("<plist><dict>%s</dict></plist>" % i).encode())
             self.assertRaises(ValueError, plistlib.loads,
-                              ("<plist><array><dict>%s</dict></array></plist>"%i).encode())
+                              ("<plist><array><dict>%s</dict></array></plist>" % i).encode())
 
     def test_invalidinteger(self):
         self.assertRaises(ValueError, plistlib.loads,
@@ -488,14 +487,13 @@ class TestPlistlib(unittest.TestCase):
         base = TESTDATA[plistlib.FMT_XML]
 
         for xml_encoding, encoding, bom in [
-                    (b'utf-8', 'utf-8', codecs.BOM_UTF8),
-                    (b'utf-16', 'utf-16-le', codecs.BOM_UTF16_LE),
-                    (b'utf-16', 'utf-16-be', codecs.BOM_UTF16_BE),
-                    # Expat does not support UTF-32
-                    #(b'utf-32', 'utf-32-le', codecs.BOM_UTF32_LE),
-                    #(b'utf-32', 'utf-32-be', codecs.BOM_UTF32_BE),
-                ]:
-
+            (b'utf-8', 'utf-8', codecs.BOM_UTF8),
+            (b'utf-16', 'utf-16-le', codecs.BOM_UTF16_LE),
+            (b'utf-16', 'utf-16-be', codecs.BOM_UTF16_BE),
+            # Expat does not support UTF-32
+            # (b'utf-32', 'utf-32-le', codecs.BOM_UTF32_LE),
+            # (b'utf-32', 'utf-32-be', codecs.BOM_UTF32_BE),
+        ]:
             pl = self._create(fmt=plistlib.FMT_XML)
             with self.subTest(encoding=encoding):
                 data = base.replace(b'UTF-8', xml_encoding)
@@ -524,7 +522,7 @@ class TestBinaryPlistlib(unittest.TestCase):
                   datetime.datetime(2004, 10, 26, 10, 33, 33),
                   bytearray(b'abcde'), [12, 345], (12, 345), {'12': 345}):
             with self.subTest(x=x):
-                data = plistlib.dumps([x]*1000, fmt=plistlib.FMT_BINARY)
+                data = plistlib.dumps([x] * 1000, fmt=plistlib.FMT_BINARY)
                 self.assertLess(len(data), 1100, repr(data))
 
     def test_identity(self):
@@ -532,7 +530,7 @@ class TestBinaryPlistlib(unittest.TestCase):
                   datetime.datetime(2004, 10, 26, 10, 33, 33),
                   bytearray(b'abcde'), [12, 345], (12, 345), {'12': 345}):
             with self.subTest(x=x):
-                data = plistlib.dumps([x]*2, fmt=plistlib.FMT_BINARY)
+                data = plistlib.dumps([x] * 2, fmt=plistlib.FMT_BINARY)
                 a, b = plistlib.loads(data)
                 if isinstance(x, tuple):
                     x = list(x)
@@ -559,7 +557,7 @@ class TestBinaryPlistlib(unittest.TestCase):
 
     def test_large_timestamp(self):
         # Issue #26709: 32-bit timestamp out of range
-        for ts in -2**31-1, 2**31:
+        for ts in -2 ** 31 - 1, 2 ** 31:
             with self.subTest(ts=ts):
                 d = (datetime.datetime.utcfromtimestamp(0) +
                      datetime.timedelta(seconds=ts))
@@ -568,51 +566,51 @@ class TestBinaryPlistlib(unittest.TestCase):
 
     def test_invalid_binary(self):
         for data in [
-                # too short data
-                b'',
-                # too large offset_table_offset and nonstandard offset_size
-                b'\x00\x08'
-                b'\x00\x00\x00\x00\x00\x00\x03\x01'
-                b'\x00\x00\x00\x00\x00\x00\x00\x01'
-                b'\x00\x00\x00\x00\x00\x00\x00\x00'
-                b'\x00\x00\x00\x00\x00\x00\x00\x2a',
-                # integer overflow in offset_table_offset
-                b'\x00\x08'
-                b'\x00\x00\x00\x00\x00\x00\x01\x01'
-                b'\x00\x00\x00\x00\x00\x00\x00\x01'
-                b'\x00\x00\x00\x00\x00\x00\x00\x00'
-                b'\xff\xff\xff\xff\xff\xff\xff\xff',
-                # offset_size = 0
-                b'\x00\x08'
-                b'\x00\x00\x00\x00\x00\x00\x00\x01'
-                b'\x00\x00\x00\x00\x00\x00\x00\x01'
-                b'\x00\x00\x00\x00\x00\x00\x00\x00'
-                b'\x00\x00\x00\x00\x00\x00\x00\x09',
-                # ref_size = 0
-                b'\xa1\x01\x00\x08\x0a'
-                b'\x00\x00\x00\x00\x00\x00\x01\x00'
-                b'\x00\x00\x00\x00\x00\x00\x00\x02'
-                b'\x00\x00\x00\x00\x00\x00\x00\x00'
-                b'\x00\x00\x00\x00\x00\x00\x00\x0b',
-                # integer overflow in offset
-                b'\x00\xff\xff\xff\xff\xff\xff\xff\xff'
-                b'\x00\x00\x00\x00\x00\x00\x08\x01'
-                b'\x00\x00\x00\x00\x00\x00\x00\x01'
-                b'\x00\x00\x00\x00\x00\x00\x00\x00'
-                b'\x00\x00\x00\x00\x00\x00\x00\x09',
-                # invalid ASCII
-                b'\x51\xff\x08'
-                b'\x00\x00\x00\x00\x00\x00\x01\x01'
-                b'\x00\x00\x00\x00\x00\x00\x00\x01'
-                b'\x00\x00\x00\x00\x00\x00\x00\x00'
-                b'\x00\x00\x00\x00\x00\x00\x00\x0a',
-                # invalid UTF-16
-                b'\x61\xd8\x00\x08'
-                b'\x00\x00\x00\x00\x00\x00\x01\x01'
-                b'\x00\x00\x00\x00\x00\x00\x00\x01'
-                b'\x00\x00\x00\x00\x00\x00\x00\x00'
-                b'\x00\x00\x00\x00\x00\x00\x00\x0b',
-                ]:
+            # too short data
+            b'',
+            # too large offset_table_offset and nonstandard offset_size
+            b'\x00\x08'
+            b'\x00\x00\x00\x00\x00\x00\x03\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x2a',
+            # integer overflow in offset_table_offset
+            b'\x00\x08'
+            b'\x00\x00\x00\x00\x00\x00\x01\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\xff\xff\xff\xff\xff\xff\xff\xff',
+            # offset_size = 0
+            b'\x00\x08'
+            b'\x00\x00\x00\x00\x00\x00\x00\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x09',
+            # ref_size = 0
+            b'\xa1\x01\x00\x08\x0a'
+            b'\x00\x00\x00\x00\x00\x00\x01\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x02'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x0b',
+            # integer overflow in offset
+            b'\x00\xff\xff\xff\xff\xff\xff\xff\xff'
+            b'\x00\x00\x00\x00\x00\x00\x08\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x09',
+            # invalid ASCII
+            b'\x51\xff\x08'
+            b'\x00\x00\x00\x00\x00\x00\x01\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x0a',
+            # invalid UTF-16
+            b'\x61\xd8\x00\x08'
+            b'\x00\x00\x00\x00\x00\x00\x01\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x0b',
+        ]:
             with self.assertRaises(plistlib.InvalidFileException):
                 plistlib.loads(b'bplist00' + data, fmt=plistlib.FMT_BINARY)
 
