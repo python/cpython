@@ -656,7 +656,7 @@ class MiscTestCase(unittest.TestCase):
 
 
 def test_main():
-    support.run_unittest(TestPlistlib, TestKeyedArchive, MiscTestCase)
+    support.run_unittest(TestPlistlib, TestBinaryPlistlib, TestKeyedArchive, MiscTestCase)
 
 
 if __name__ == '__main__':
