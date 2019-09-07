@@ -17,6 +17,7 @@ import py_compile
 import struct
 
 from functools import partial
+from pathlib import Path
 
 RECURSION_LIMIT = sys.getrecursionlimit()
 
@@ -48,7 +49,7 @@ def _walk_dir(dir, maxlevels=RECURSION_LIMIT, quiet=0):
 def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
                 rx=None, quiet=0, legacy=False, optimize=-1, workers=1,
                 invalidation_mode=None, stripdir=None,
-                prependdir=None):
+                prependdir=None, limit_sl_dest=None):
     """Byte-compile all modules in the given directory tree.
 
     Arguments (only dir is required):
@@ -69,6 +70,8 @@ def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
     stripdir:  part of path to left-strip from source file path
     prependdir: path to prepend to beggining of original file path, applied
                after stripdir
+    limit_sl_dest: ignore symlinks if they are pointing outside of
+                   the defined path
     """
     ProcessPoolExecutor = None
     if workers < 0:
@@ -93,20 +96,23 @@ def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
                                            optimize=optimize,
                                            invalidation_mode=invalidation_mode,
                                            stripdir=stripdir,
-                                           prependdir=prependdir),
+                                           prependdir=prependdir,
+                                           limit_sl_dest=limit_sl_dest),
                                    files)
             success = min(results, default=True)
     else:
         for file in files:
             if not compile_file(file, ddir, force, rx, quiet,
                                 legacy, optimize, invalidation_mode,
-                                stripdir=stripdir, prependdir=prependdir):
+                                stripdir=stripdir, prependdir=prependdir,
+                                limit_sl_dest=limit_sl_dest):
                 success = False
     return success
 
 def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                  legacy=False, optimize=-1,
-                 invalidation_mode=None, stripdir=None, prependdir=None):
+                 invalidation_mode=None, stripdir=None, prependdir=None,
+                 limit_sl_dest=None):
     """Byte-compile one file.
 
     Arguments (only fullname is required):
@@ -125,6 +131,8 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     stripdir:  part of path to left-strip from source file path
     prependdir: path to prepend to beggining of original file path, applied
                after stripdir
+    limit_sl_dest: ignore symlinks if they are pointing outside of
+                   the defined path.
     """
 
     if ddir is not None and (stripdir is not None or prependdir is not None):
@@ -164,6 +172,10 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     if rx is not None:
         mo = rx.search(fullname)
         if mo:
+            return success
+
+    if limit_sl_dest is not None and os.path.islink(fullname):
+        if Path(limit_sl_dest).resolve() not in Path(fullname).resolve().parents:
             return success
 
     opt_cfiles = {}
@@ -331,6 +343,8 @@ def main():
                         help=('Optimization levels to run compilation with.'
                               'Default is -1 which uses optimization level of'
                               'Python interpreter itself (specified by -O).'))
+    parser.add_argument('-e', metavar='DIR', dest='limit_sl_dest',
+                        help='Ignore symlinks pointing outsite of the DIR')
 
     args = parser.parse_args()
     compile_dests = args.compile_dest
@@ -339,6 +353,8 @@ def main():
         import re
         args.rx = re.compile(args.rx)
 
+    if args.limit_sl_dest == "":
+        args.limit_sl_dest = None
 
     if args.recursion is not None:
         maxlevels = args.recursion
@@ -375,7 +391,8 @@ def main():
                                         invalidation_mode=invalidation_mode,
                                         stripdir=args.stripdir,
                                         prependdir=args.prependdir,
-                                        optimize=args.opt_levels):
+                                        optimize=args.opt_levels,
+                                        limit_sl_dest=args.limit_sl_dest):
                         success = False
                 else:
                     if not compile_dir(dest, maxlevels, args.ddir,
@@ -384,7 +401,8 @@ def main():
                                        invalidation_mode=invalidation_mode,
                                        stripdir=args.stripdir,
                                        prependdir=args.prependdir,
-                                       optimize=args.opt_levels):
+                                       optimize=args.opt_levels,
+                                       limit_sl_dest=args.limit_sl_dest):
                         success = False
             return success
         else:
