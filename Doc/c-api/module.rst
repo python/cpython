@@ -419,6 +419,21 @@ state:
    be used from the module's initialization function.  This steals a reference to
    *value*.  Return ``-1`` on error, ``0`` on success.
 
+   .. note::
+
+      Unlike other functions which steal references, ``PyModule_AddObject`` only
+      decrements the reference count of *value* **on success**.
+
+      This means you must check this function's return value and
+      :c:func:`Py_DECREF` *value* manually on error. Example usage::
+
+         Py_INCREF(spam);
+         if (PyModule_AddObject(module, "spam", spam)) {
+             Py_DECREF(module);
+             Py_DECREF(spam);
+             return NULL;
+         }
+
 .. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)
 
    Add an integer constant to *module* as *name*.  This convenience function can be
