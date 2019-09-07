@@ -421,16 +421,16 @@ class TestPlistlib(unittest.TestCase):
     def test_controlcharacters(self):
         for i in range(128):
             c = chr(i)
-            testString = "string containing %s" % c
+            test_string = "string containing %s" % c
             if i >= 32 or c in "\r\n\t":
                 # \r, \n and \t are the only legal control chars in XML
-                data = plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+                data = plistlib.dumps(test_string, fmt=plistlib.FMT_XML)
                 if c != "\r":
-                    self.assertEqual(plistlib.loads(data), testString)
+                    self.assertEqual(plistlib.loads(data), test_string)
             else:
                 with self.assertRaises(ValueError):
-                    plistlib.dumps(testString, fmt=plistlib.FMT_XML)
-            plistlib.dumps(testString, fmt=plistlib.FMT_BINARY)
+                    plistlib.dumps(test_string, fmt=plistlib.FMT_XML)
+            plistlib.dumps(test_string, fmt=plistlib.FMT_BINARY)
 
     def test_non_bmp_characters(self):
         pl = {'python': '\U0001f40d'}

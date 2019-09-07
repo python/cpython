@@ -308,10 +308,10 @@ class _DumbXMLWriter:
 
 class _PlistWriter(_DumbXMLWriter):
     def __init__(
-            self, file, indent_level=0, indent=b"\t", writeHeader=1,
+            self, file, indent_level=0, indent=b"\t", write_header=1,
             sort_keys=True, skipkeys=False):
 
-        if writeHeader:
+        if write_header:
             file.write(PLISTHEADER)
         _DumbXMLWriter.__init__(self, file, indent_level, indent)
         self._sort_keys = sort_keys
@@ -481,15 +481,15 @@ class _BinaryPlistParser:
                 UnicodeDecodeError):
             raise InvalidFileException()
 
-    def _get_size(self, tokenL):
+    def _get_size(self, token_l):
         """ return the size of the next object."""
-        if tokenL == 0xF:
+        if token_l == 0xF:
             m = self._fp.read(1)[0] & 0x3
             s = 1 << m
             f = '>' + _BINARY_FORMAT[s]
             return struct.unpack(f, self._fp.read(s))[0]
 
-        return tokenL
+        return token_l
 
     def _read_ints(self, n, size):
         data = self._fp.read(size * n)
@@ -517,7 +517,7 @@ class _BinaryPlistParser:
         offset = self._object_offsets[ref]
         self._fp.seek(offset)
         token = self._fp.read(1)[0]
-        tokenH, tokenL = token & 0xF0, token & 0x0F
+        token_h, token_l = token & 0xF0, token & 0x0F
 
         if token == 0x00:
             result = None
@@ -534,9 +534,9 @@ class _BinaryPlistParser:
         elif token == 0x0f:
             result = b''
 
-        elif tokenH == 0x10:  # int
-            result = int.from_bytes(self._fp.read(1 << tokenL),
-                                    'big', signed=tokenL >= 3)
+        elif token_h == 0x10:  # int
+            result = int.from_bytes(self._fp.read(1 << token_l),
+                                    'big', signed=token_l >= 3)
 
         elif token == 0x22:  # real
             result = struct.unpack('>f', self._fp.read(4))[0]
@@ -551,37 +551,37 @@ class _BinaryPlistParser:
             result = (datetime.datetime(2001, 1, 1) +
                       datetime.timedelta(seconds=f))
 
-        elif tokenH == 0x40:  # data
-            s = self._get_size(tokenL)
+        elif token_h == 0x40:  # data
+            s = self._get_size(token_l)
             result = self._fp.read(s)
 
-        elif tokenH == 0x50:  # ascii string
-            s = self._get_size(tokenL)
+        elif token_h == 0x50:  # ascii string
+            s = self._get_size(token_l)
             result = self._fp.read(s).decode('ascii')
 
-        elif tokenH == 0x60:  # unicode string
-            s = self._get_size(tokenL)
+        elif token_h == 0x60:  # unicode string
+            s = self._get_size(token_l)
             result = self._fp.read(s * 2).decode('utf-16be')
 
-        elif tokenH == 0x80:  # UID
+        elif token_h == 0x80:  # UID
             # used by Key-Archiver plist files
-            result = UID(int.from_bytes(self._fp.read(1 + tokenL), 'big'))
+            result = UID(int.from_bytes(self._fp.read(1 + token_l), 'big'))
 
-        elif tokenH == 0xA0:  # array
-            s = self._get_size(tokenL)
+        elif token_h == 0xA0:  # array
+            s = self._get_size(token_l)
             obj_refs = self._read_refs(s)
             result = []
             self._objects[ref] = result
             result.extend(self._read_object(x) for x in obj_refs)
 
-        # tokenH == 0xB0 is documented as 'ordset', but is not actually
+        # token_h == 0xB0 is documented as 'ordset', but is not actually
         # implemented in the Apple reference code.
 
-        # tokenH == 0xC0 is documented as 'set', but sets cannot be used in
+        # token_h == 0xC0 is documented as 'set', but sets cannot be used in
         # plists.
 
-        elif tokenH == 0xD0:  # dict
-            s = self._get_size(tokenL)
+        elif token_h == 0xD0:  # dict
+            s = self._get_size(token_l)
             key_refs = self._read_refs(s)
             obj_refs = self._read_refs(s)
             result = self._dict_type()
@@ -801,25 +801,25 @@ class _BinaryPlistWriter(object):
             self._fp.write(struct.pack('>' + self._ref_format * s, *refs))
 
         elif isinstance(value, dict):
-            keyRefs, valRefs = [], []
+            key_refs, val_refs = [], []
 
             if self._sort_keys:
-                rootItems = sorted(value.items())
+                root_items = sorted(value.items())
             else:
-                rootItems = value.items()
+                root_items = value.items()
 
-            for k, v in rootItems:
+            for k, v in root_items:
                 if not isinstance(k, str):
                     if self._skipkeys:
                         continue
                     raise TypeError("keys must be strings")
-                keyRefs.append(self._getrefnum(k))
-                valRefs.append(self._getrefnum(v))
+                key_refs.append(self._getrefnum(k))
+                val_refs.append(self._getrefnum(v))
 
-            s = len(keyRefs)
+            s = len(key_refs)
             self._write_size(0xD0, s)
-            self._fp.write(struct.pack('>' + self._ref_format * s, *keyRefs))
-            self._fp.write(struct.pack('>' + self._ref_format * s, *valRefs))
+            self._fp.write(struct.pack('>' + self._ref_format * s, *key_refs))
+            self._fp.write(struct.pack('>' + self._ref_format * s, *val_refs))
 
         else:
             raise TypeError(value)
@@ -856,16 +856,16 @@ def load(fp, *, fmt=None, dict_type=dict):
         fp.seek(0)
         for info in _FORMATS.values():
             if info['detect'](header):
-                P = info['parser']
+                parser = info['parser']
                 break
 
         else:
             raise InvalidFileException()
 
     else:
-        P = _FORMATS[fmt]['parser']
+        parser = _FORMATS[fmt]['parser']
 
-    p = P(dict_type=dict_type)
+    p = parser(dict_type=dict_type)
     return p.parse(fp)
 
 
