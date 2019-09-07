@@ -1351,8 +1351,9 @@ PyInit__signal(void)
     d = PyModule_GetDict(m);
 
     DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
-    if (!DefaultHandler)
+    if (!DefaultHandler) {
         goto finally;
+    }
     Py_INCREF(DefaultHandler);
     if (PyModule_AddObject(m, "SIG_DFL", DefaultHandler)) {
         Py_DECREF(DefaultHandler);
@@ -1360,8 +1361,9 @@ PyInit__signal(void)
     }
 
     IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
-    if (!IgnoreHandler)
+    if (!IgnoreHandler) {
         goto finally;
+    }
     Py_INCREF(IgnoreHandler);
     if (PyModule_AddObject(m, "SIG_IGN", IgnoreHandler)) {
         Py_DECREF(IgnoreHandler);
@@ -1578,8 +1580,9 @@ PyInit__signal(void)
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
     ItimerError = PyErr_NewException("signal.ItimerError",
             PyExc_OSError, NULL);
-    if (!ItimerError)
+    if (!ItimerError) {
         goto finally;
+    }
     Py_INCREF(ItimerError);
     if (PyModule_AddObject(m, "ItimerError", ItimerError)) {
         Py_DECREF(ItimerError);
