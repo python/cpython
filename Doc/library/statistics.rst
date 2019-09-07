@@ -546,9 +546,6 @@ However, for reading convenience, most of the examples show sorted sequences.
    values, the method sorts them and assigns the following percentiles:
    0%, 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%.
 
-   If *data* is an instance of a class that defines an
-   :meth:`~inv_cdf` method, setting *method* has no effect.
-
    .. doctest::
 
         # Decile cut points for empirically sampled data
