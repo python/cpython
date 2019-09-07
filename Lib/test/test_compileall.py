@@ -213,6 +213,70 @@ class CompileallTestsBase:
                                maxlevels=110, quiet=True)
         self.assertTrue(os.path.isfile(self.bc_path_long))
 
+    def test_strip_only(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        stripdir = os.path.join(self.directory, *fullpath[:2])
+        compileall.compile_dir(path, quiet=True, stripdir=stripdir)
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_in = os.path.join(*fullpath[2:])
+        self.assertIn(
+            expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            stripdir,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
+    def test_prepend_only(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        prependdir = "/foo"
+        compileall.compile_dir(path, quiet=True, prependdir=prependdir)
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_in = os.path.join(prependdir, self.directory, *fullpath)
+        self.assertIn(
+            expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
+    def test_strip_and_prepend(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        stripdir = os.path.join(self.directory, *fullpath[:2])
+        prependdir = "/foo"
+        compileall.compile_dir(path, quiet=True,
+                               stripdir=stripdir, prependdir=prependdir)
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_in = os.path.join(prependdir, *fullpath[2:])
+        self.assertIn(
+            expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            stripdir,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
+    def test_strip_prepend_and_ddir(self):
+        fullpath = ["test", "build", "real", "path", "ddir"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script_helper.make_script(path, "test", "1 / 0")
+        with self.assertRaises(ValueError):
+            compileall.compile_dir(path, quiet=True, ddir="/bar",
+                                   stripdir="/foo", prependdir="/bar")
+
 
 class CompileallTestsWithSourceEpoch(CompileallTestsBase,
                                      unittest.TestCase,
@@ -595,6 +659,26 @@ class CommandLineTestsBase:
             compileall.main()
             self.assertTrue(compile_dir.called)
             self.assertEqual(compile_dir.call_args[-1]['workers'], 0)
+
+    def test_strip_and_prepend(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        stripdir = os.path.join(self.directory, *fullpath[:2])
+        prependdir = "/foo"
+        self.assertRunOK("-s", stripdir, "-p", prependdir, path)
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_in = os.path.join(prependdir, *fullpath[2:])
+        self.assertIn(
+            expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            stripdir,
+            str(err, encoding=sys.getdefaultencoding())
+        )
 
 
 class CommandLineTestsWithSourceEpoch(CommandLineTestsBase,
