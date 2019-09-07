@@ -952,6 +952,17 @@ class NormalDist:
             raise StatisticsError('cdf() not defined when sigma at or below zero')
         return _normal_dist_inv_cdf(p, self._mu, self._sigma)
 
+    def quantiles(self, n=4):
+        """Divide into *n* continuous intervals with equal probability.
+
+        Returns a list of (n - 1) cut points separating the intervals.
+
+        Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
+        Set *n* to 100 for percentiles which gives the 99 cuts points that
+        separate the normal distribution in to 100 equal sized groups.
+        """
+        return [self.inv_cdf(i / n) for i in range(1, n)]
+
     def overlap(self, other):
         """Compute the overlapping coefficient (OVL) between two normal distributions.
 
