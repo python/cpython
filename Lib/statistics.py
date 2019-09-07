@@ -624,9 +624,8 @@ def quantiles(data, /, *, n=4, method='exclusive'):
     Set *n* to 100 for percentiles which gives the 99 cuts points that
     separate *data* in to 100 equal sized groups.
 
-    The *data* can be any iterable containing sample data or it can be
-    an instance of a class that defines an inv_cdf() method.  For sample
-    data, the cut points are linearly interpolated between data points.
+    The *data* can be any iterable containing sample.
+    The cut points are linearly interpolated between data points.
 
     If *method* is set to *inclusive*, *data* is treated as population
     data.  The minimum value is treated as the 0th percentile and the
@@ -634,8 +633,6 @@ def quantiles(data, /, *, n=4, method='exclusive'):
     """
     if n < 1:
         raise StatisticsError('n must be at least 1')
-    if hasattr(data, 'inv_cdf'):
-        return [data.inv_cdf(i / n) for i in range(1, n)]
     data = sorted(data)
     ld = len(data)
     if ld < 2:
