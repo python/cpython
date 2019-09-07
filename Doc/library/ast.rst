@@ -329,6 +329,27 @@ and classes for traversing abstract syntax trees:
    numbers and column offsets are not dumped by default.  If this is wanted,
    *include_attributes* can be set to true.
 
+
+.. _ast-cli:
+
+Command-Line Usage
+------------------
+
+.. versionadded:: 3.9
+
+The :mod:`ast` module can be executed as a script from the command line.
+It is as simple as:
+
+.. code-block:: sh
+
+   python -m ast [-e] [filename.py]
+
+The following options are accepted:
+
+If :file:`filename.py` is specified its contents are parsed to AST and dumped
+to stdout.  Otherwise, the content is read from stdin.
+
+
 .. seealso::
 
     `Green Tree Snakes <https://greentreesnakes.readthedocs.io/>`_, an external documentation resource, has good
