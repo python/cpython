@@ -1424,9 +1424,8 @@ class ServerProxy:
         p = urllib.parse.urlparse(uri)
         if p.scheme not in ("http", "https"):
             raise OSError("unsupported XML-RPC protocol")
-        self.__host, self.__handler = p.netloc, p.path
-        if not self.__handler:
-            self.__handler = "/RPC2"
+        self.__host = p.netloc
+        self.__handler = p.path or "/RPC2"
 
         if transport is None:
             if p.scheme == "https":
