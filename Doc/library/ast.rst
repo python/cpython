@@ -355,7 +355,8 @@ The following options are accepted:
 .. cmdoption:: -m <mode>
                --mode <mode>
 
-   Specify what kind of code must be compiled.
+   Specify what kind of code must be compiled, like the *mode* argument
+   in :func:`parse`.
 
 .. cmdoption:: -a, --include-attributes
 
