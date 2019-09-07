@@ -1,8 +1,8 @@
-:mod:`plistlib` --- Generate and parse Mac OS X ``.plist`` files
-================================================================
+:mod:`plistlib` --- Generate and parse Apple ``.plist`` files
+=============================================================
 
 .. module:: plistlib
-   :synopsis: Generate and parse Mac OS X plist files.
+   :synopsis: Generate and parse Apple plist files.
 
 .. moduleauthor:: Jack Jansen
 .. sectionauthor:: Georg Brandl <georg@python.org>
@@ -17,7 +17,8 @@
 --------------
 
 This module provides an interface for reading and writing the "property list"
-files used mainly by Mac OS X and supports both binary and XML plist files.
+files used by Apple, primarily on macOS and iOS. This module supports both binary
+and XML plist files.
 
 The property list (``.plist``) file format is a simple serialization supporting
 basic object types, like dictionaries, lists, numbers and strings.  Usually the
@@ -32,9 +33,6 @@ and :func:`loads`.
 Values can be strings, integers, floats, booleans, tuples, lists, dictionaries
 (but only with string keys), :class:`bytes`, :class:`bytearray`
 or :class:`datetime.datetime` objects.
-
-.. versionchanged:: 3.4
-   New API, old API deprecated.  Support for binary format plists added.
 
 .. versionchanged:: 3.8
    Support added for reading and writing :class:`UID` tokens in binary plists as used
@@ -76,15 +74,11 @@ This module defines the following functions:
    The parser for the binary format raises :exc:`InvalidFileException`
    when the file cannot be parsed.
 
-   .. versionadded:: 3.4
-
 
 .. function:: loads(data, \*, fmt=None, dict_type=dict)
 
    Load a plist from a bytes object. See :func:`load` for an explanation of
    the keyword arguments.
-
-   .. versionadded:: 3.4
 
 
 .. function:: dump(value, fp, \*, fmt=FMT_XML, sort_keys=True, skipkeys=False)
@@ -112,8 +106,6 @@ This module defines the following functions:
    An :exc:`OverflowError` will be raised for integer values that cannot
    be represented in (binary) plist files.
 
-   .. versionadded:: 3.4
-
 
 .. function:: dumps(value, \*, fmt=FMT_XML, sort_keys=True, skipkeys=False)
 
@@ -121,7 +113,18 @@ This module defines the following functions:
    the documentation for :func:`dump` for an explanation of the keyword
    arguments of this function.
 
-   .. versionadded:: 3.4
+
+The following classes are available:
+
+.. class:: UID(data)
+
+   Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
+   encoded data, which contains UID (see PList manual).
+
+   It has one attribute, :attr:`data` which can be used to retrieve the int value
+   of the UID.  :attr:`data` must be in the range `0 <= data <= 2**64`.
+
+   .. versionadded:: 3.8
 
 
 The following constants are available:
@@ -130,14 +133,10 @@ The following constants are available:
 
    The XML format for plist files.
 
-   .. versionadded:: 3.4
-
 
 .. data:: FMT_BINARY
 
    The binary format for plist files
-
-   .. versionadded:: 3.4
 
 
 Examples
