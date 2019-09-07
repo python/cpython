@@ -96,7 +96,7 @@ def literal_eval(node_or_string):
     return _convert(node_or_string)
 
 
-def dump(node, annotate_fields=True, include_attributes=False, indent=None):
+def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
     debugging purposes.  If annotate_fields is true (by default),
