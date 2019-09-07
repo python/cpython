@@ -652,16 +652,10 @@ Module(
    body=[
       Expr(
          value=Call(
-            func=Name(
-               id='spam',
-               ctx=Load()),
+            func=Name(id='spam', ctx=Load()),
             args=[
-               Name(
-                  id='eggs',
-                  ctx=Load()),
-               Constant(
-                  value='and cheese',
-                  kind=None)],
+               Name(id='eggs', ctx=Load()),
+               Constant(value='and cheese', kind=None)],
             keywords=[]))],
    type_ignores=[])""")
         self.assertEqual(ast.dump(node, annotate_fields=False, indent='\t'), """\
@@ -669,16 +663,10 @@ Module(
 \t[
 \t\tExpr(
 \t\t\tCall(
-\t\t\t\tName(
-\t\t\t\t\t'spam',
-\t\t\t\t\tLoad()),
+\t\t\t\tName('spam', Load()),
 \t\t\t\t[
-\t\t\t\t\tName(
-\t\t\t\t\t\t'eggs',
-\t\t\t\t\t\tLoad()),
-\t\t\t\t\tConstant(
-\t\t\t\t\t\t'and cheese',
-\t\t\t\t\t\tNone)],
+\t\t\t\t\tName('eggs', Load()),
+\t\t\t\t\tConstant('and cheese', None)],
 \t\t\t\t[]))],
 \t[])""")
         self.assertEqual(ast.dump(node, include_attributes=True, indent=3), """\

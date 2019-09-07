@@ -118,6 +118,7 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
             sep = ', '
         if isinstance(node, AST):
             args = []
+            allsimple = True
             keywords = annotate_fields
             for field in node._fields:
                 try:
@@ -125,29 +126,36 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
                 except AttributeError:
                     keywords = True
                 else:
+                    value, simple = _format(value, level)
+                    allsimple = allsimple and simple
                     if keywords:
-                        args.append('%s=%s' % (field, _format(value, level)))
+                        args.append('%s=%s' % (field, value))
                     else:
-                        args.append(_format(value, level))
+                        args.append(value)
             if include_attributes and node._attributes:
-                for a in node._attributes:
+                for attr in node._attributes:
                     try:
-                        args.append('%s=%s' % (a, _format(getattr(node, a), level)))
+                        value = getattr(node, attr)
                     except AttributeError:
                         pass
-            if not args:
-                return '%s()' % (node.__class__.__name__,)
-            return '%s(%s%s)' % (node.__class__.__name__, prefix, sep.join(args))
+                    else:
+                        value, simple = _format(value, level)
+                        allsimple = allsimple and simple
+                        args.append('%s=%s' % (attr, value))
+            if allsimple and len(args) <= 3:
+                return '%s(%s)' % (node.__class__.__name__, ', '.join(args)), not args
+            return '%s(%s%s)' % (node.__class__.__name__, prefix, sep.join(args)), False
         elif isinstance(node, list):
             if not node:
-                return '[]'
-            return '[%s%s]' % (prefix, sep.join(_format(x, level) for x in node))
-        return repr(node)
+                return '[]', True
+            return '[%s%s]' % (prefix, sep.join(_format(x, level)[0] for x in node)), False
+        return repr(node), True
+
     if not isinstance(node, AST):
         raise TypeError('expected AST, got %r' % node.__class__.__name__)
     if indent is not None and not isinstance(indent, str):
         indent = ' ' * indent
-    return _format(node)
+    return _format(node)[0]
 
 
 def copy_location(new_node, old_node):
