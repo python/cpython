@@ -1,1 +1,1 @@
-Fix ref leaks in signal module.
+Fix reference counters in the :mod:`signal` module. 
