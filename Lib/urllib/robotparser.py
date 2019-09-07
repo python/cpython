@@ -25,13 +25,14 @@ class RobotFileParser:
 
     """
 
-    def __init__(self, url=''):
+    def __init__(self, url='', headers={}):
         self.entries = []
         self.default_entry = None
         self.disallow_all = False
         self.allow_all = False
         self.set_url(url)
         self.last_checked = 0
+        self.headers = headers
 
     def mtime(self):
         """Returns the time the robots.txt file was last fetched.
@@ -58,7 +59,10 @@ class RobotFileParser:
     def read(self):
         """Reads the robots.txt URL and feeds it to the parser."""
         try:
-            f = urllib.request.urlopen(self.url)
+            req = urllib.request.Request(self.url)
+            for k in self.headers.keys():
+                req.add_header(k, self.headers[k])
+            f = urllib.request.urlopen(req)
         except urllib.error.HTTPError as err:
             if err.code in (401, 403):
                 self.disallow_all = True
