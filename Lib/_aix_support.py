@@ -1,7 +1,7 @@
 """Shared AIX support functions."""
 
 import sys
-from subprocess import Popen, PIPE, DEVNULL
+from subprocess import run
 from sysconfig import get_config_var as get_var
 
 _is_32bit = sys.maxsize == 2147483647
@@ -32,10 +32,9 @@ def aix_pep425():
     The pep425 platform tag for AIX becomes:
     AIX.VRTL.YYWW.SZ, e.g., AIX.6107.1415.32
     """
-    p = Popen(["/usr/bin/lslpp", "-Lqc", "bos.mp64"],
-              universal_newlines=True, stdout=PIPE, stderr=DEVNULL)
-    _lslppLqc = p.stdout.read().strip().split(":")
-    p.wait()
+    p = run(["/usr/bin/lslpp", "-Lqc", "bos.mp64"],
+           capture_output=True, text=True)
+    _lslppLqc = p.stdout.strip().split(":")
 
     (lpp, vrmf, bd) = list(_lslppLqc[index] for index in [0, 2, -1])
     assert lpp == "bos.mp64", "%s != %s" % (lpp, "bos.mp64")
