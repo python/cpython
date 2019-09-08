@@ -1,7 +1,8 @@
 import argparse
+import os.path
 import sys
 
-from c_analyzer_common import SOURCE_DIRS
+from c_analyzer_common import SOURCE_DIRS, REPO_ROOT
 from c_analyzer_common.info import UNKNOWN
 from c_analyzer_common.known import (
     from_file as known_from_file,
@@ -65,6 +66,9 @@ def _check_results(unknown, knownvars, used):
 
 
 def _find_statics(dirnames, known, ignored):
+    if dirnames == SOURCE_DIRS:
+        dirnames = [os.path.relpath(d, REPO_ROOT) for d in dirnames]
+
     ignored = ignored_from_file(ignored)
     known = known_from_file(known)
 
