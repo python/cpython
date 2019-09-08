@@ -598,6 +598,18 @@ of applications in statistics.
        <https://en.wikipedia.org/wiki/Arithmetic_mean>`_ of a normal
        distribution.
 
+    .. attribute:: median
+
+       A read-only property for the `median
+       <https://en.wikipedia.org/wiki/Median>`_ of a normal
+       distribution.
+
+    .. attribute:: mode
+
+       A read-only property for the `mode
+       <https://en.wikipedia.org/wiki/Mode_(statistics)>`_ of a normal
+       distribution.
+
     .. attribute:: stdev
 
        A read-only property for the `standard deviation

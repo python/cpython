@@ -2605,6 +2605,8 @@ class TestNormalDist:
     def test_properties(self):
         X = self.module.NormalDist(100, 15)
         self.assertEqual(X.mean, 100)
+        self.assertEqual(X.median, 100)
+        self.assertEqual(X.mode, 100)
         self.assertEqual(X.stdev, 15)
         self.assertEqual(X.variance, 225)
 

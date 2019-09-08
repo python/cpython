@@ -1003,6 +1003,20 @@ class NormalDist:
         return self._mu
 
     @property
+    def median(self):
+        "Return the median of the normal distribution"
+        return self._mu
+
+    @property
+    def mode(self):
+        """Return the mode of the normal distribution
+
+        The mode is the value x where which the probability density
+        function (pdf) takes its maximum value.
+        """
+        return self._mu
+
+    @property
     def stdev(self):
         "Standard deviation of the normal distribution."
         return self._sigma
