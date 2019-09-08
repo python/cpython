@@ -289,7 +289,7 @@ _PyInterpreterID_LookUp(PyObject *requested_id)
     if (PyObject_TypeCheck(requested_id, &_PyInterpreterID_Type)) {
         id = ((interpid *)requested_id)->id;
     }
-    else if (PyLong_Check(requested_id)) {
+    else if (PyIndex_Check(requested_id)) {
         id = PyLong_AsLongLong(requested_id);
         if (id == -1 && PyErr_Occurred() != NULL) {
             return NULL;
