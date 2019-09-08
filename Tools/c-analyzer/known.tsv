@@ -86,7 +86,7 @@ Python/Python-ast.c	-	boolop_type	variable	static PyTypeObject *boolop_type
 Python/Python-ast.c	-	BoolOp_type	variable	static PyTypeObject *BoolOp_type
 Python/_warnings.c	is_internal_frame	bootstrap_string	variable	static PyObject *bootstrap_string
 Python/Python-ast.c	-	Break_type	variable	static PyTypeObject *Break_type
-Python/ast.c	-	buf	variable	char *buf
+Python/ast.c	decode_unicode_with_escapes	buf	variable	char *buf
 Modules/_io/bufferedio.c	-	bufferediobase_methods	variable	static PyMethodDef bufferediobase_methods
 Modules/_io/bufferedio.c	-	bufferedrandom_getset	variable	static PyGetSetDef bufferedrandom_getset[]
 Modules/_io/bufferedio.c	-	bufferedrandom_members	variable	static PyMemberDef bufferedrandom_members[]
@@ -142,7 +142,6 @@ Modules/itertoolsmodule.c	-	combinations_type	variable	static PyTypeObject combi
 Objects/typeobject.c	object_new	comma_id	variable	"_Py_static_string(comma_id, "", "")"
 Python/Python-ast.c	-	Compare_fields	variable	static char *Compare_fields[]
 Python/Python-ast.c	-	Compare_type	variable	static PyTypeObject *Compare_type
-Modules/_winapi.c	-	completed	variable	int completed
 Objects/complexobject.c	-	complex_as_number	variable	static PyNumberMethods complex_as_number
 Objects/complexobject.c	-	complex_members	variable	static PyMemberDef complex_members[]
 Objects/complexobject.c	-	complex_methods	variable	static PyMethodDef complex_methods
@@ -220,7 +219,7 @@ Objects/floatobject.c	-	double_format	variable	static float_format_type double_f
 Modules/itertoolsmodule.c	-	dropwhile_methods	variable	static PyMethodDef dropwhile_methods
 Modules/itertoolsmodule.c	-	dropwhile_type	variable	static PyTypeObject dropwhile_type
 Objects/setobject.c	-	_dummy_struct	variable	static PyObject _dummy_struct
-Modules/posixmodule.c	-	dup3_works	variable	static int dup3_works
+Modules/posixmodule.c	os_dup2_impl	dup3_works	variable	static int dup3_works
 Modules/_io/bufferedio.c	_PyIO_trap_eintr	eintr_int	variable	static PyObject *eintr_int
 Objects/sliceobject.c	-	ellipsis_methods	variable	static PyMethodDef ellipsis_methods
 Python/hamt.c	-	_empty_bitmap_node	variable	static PyHamtNode_Bitmap *_empty_bitmap_node
@@ -334,22 +333,21 @@ Python/sysmodule.c	-	hash_info_desc	variable	static PyStructSequence_Desc hash_i
 Python/sysmodule.c	-	hash_info_fields	variable	static PyStructSequence_Field hash_info_fields[]
 Python/sysmodule.c	-	Hash_InfoType	variable	static PyTypeObject Hash_InfoType
 Python/import.c	import_find_and_load	header	variable	static int header
-Modules/_tkinter.c	-	id	variable	int id
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
+Modules/_elementtree.c	_elementtree_Element___deepcopy___impl	id	variable	PyObject* id
+Objects/obmalloc.c	_PyMem_DebugCheckAddress	id	variable	char id
+Objects/obmalloc.c	_PyObject_DebugDumpAddress	id	variable	char id
+Python/ast.c	ast_for_dotted_name	id	variable	identifier id
+Python/Python-ast.c	obj2ast_expr	id	variable	identifier id
+Modules/_xxsubinterpretersmodule.c	_channels_next_id	id	variable	int64_t id
+Modules/_xxsubinterpretersmodule.c	_channels_add	id	variable	int64_t id
+Modules/_xxsubinterpretersmodule.c	_channel_create	id	variable	int64_t id
+Modules/_xxsubinterpretersmodule.c	interp_get_main	id	variable	PY_INT64_T id
+Objects/interpreteridobject.c	_Py_CoerceID	id	variable	int64_t id
+Objects/interpreteridobject.c	interpid_new	id	variable	int64_t id
+Objects/interpreteridobject.c	interpid_dealloc	id	variable	int64_t id
+Objects/interpreteridobject.c	_PyInterpreterID_LookUp	id	variable	int64_t id
+Objects/interpreteridobject.c	_PyInterpreterState_GetIDObject	id	variable	PY_INT64_T id
+Python/pystate.c	interp_look_up_id	id	variable	PY_INT64_T id
 ???	???	id	variable	???
 ???	???	id	variable	???
 ???	???	id	variable	???
@@ -524,7 +522,7 @@ Python/frozen.c	-	M___hello__	variable	static unsigned char M___hello__[]
 Python/Python-ast.c	-	Mod_singleton	variable	static PyObject *Mod_singleton
 Python/Python-ast.c	-	mod_type	variable	static PyTypeObject *mod_type
 Python/Python-ast.c	-	Mod_type	variable	static PyTypeObject *Mod_type
-Python/_warnings.c	-	module	variable	PyObject *module
+Python/_warnings.c	normalize_module	module	variable	PyObject *module
 Modules/faulthandler.c	-	module_def	variable	static struct PyModuleDef module_def
 Modules/_tracemalloc.c	-	module_def	variable	static struct PyModuleDef module_def
 Python/Python-ast.c	-	Module_fields	variable	static char *Module_fields[]
@@ -555,7 +553,7 @@ Objects/namespaceobject.c	-	namespace_methods	variable	static PyMethodDef namesp
 Python/Python-ast.c	-	Name_type	variable	static PyTypeObject *Name_type
 Objects/obmalloc.c	-	narenas_currently_allocated	variable	static size_t narenas_currently_allocated
 Objects/obmalloc.c	-	narenas_highwater	variable	static size_t narenas_highwater
-Python/sysmodule.c	-	newline	variable	static PyObject *newline
+Python/sysmodule.c	sys_displayhook	newline	variable	static PyObject *newline
 Objects/typeobject.c	-	next_version_tag	variable	static unsigned int next_version_tag
 Objects/obmalloc.c	-	nfp2lasta	variable	static struct arena_object* nfp2lasta[MAX_POOLS_IN_ARENA + 1]
 Python/dynload_shlib.c	-	nhandles	variable	static int nhandles
@@ -583,7 +581,7 @@ Modules/_collectionsmodule.c	-	numfreeblocks	variable	static Py_ssize_t numfreeb
 Objects/dictobject.c	-	numfreekeys	variable	static int numfreekeys
 Objects/typeobject.c	-	object_getsets	variable	static PyGetSetDef object_getsets[]
 Objects/typeobject.c	-	object_methods	variable	static PyMethodDef object_methods
-Objects/typeobject.c	-	objreduce	variable	static PyObject *objreduce
+Objects/typeobject.c	object___reduce_ex___impl	objreduce	variable	static PyObject *objreduce
 Objects/odictobject.c	-	odict_as_mapping	variable	static PyMappingMethods odict_as_mapping
 Objects/odictobject.c	-	odict_getset	variable	static PyGetSetDef odict_getset[]
 Objects/odictobject.c	-	odictitems_methods	variable	static PyMethodDef odictitems_methods
@@ -1024,7 +1022,7 @@ Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	variable	int _Py_HasFi
 Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	variable	int Py_HasFileSystemDefaultEncoding
 Python/pyhash.c	-	PyHash_Func	variable	static PyHash_FuncDef PyHash_Func
 Python/initconfig.c	-	Py_HashRandomizationFlag	variable	int Py_HashRandomizationFlag
-Include/pyhash.h	-	_Py_HashSecret	variable	PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret
+Python/pyhash.c	-	_Py_HashSecret	variable	_Py_HashSecret_t _Py_HashSecret
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	variable	static int _Py_HashSecret_Initialized
 Python/codecs.c	-	Py_hexdigits	variable	const char *Py_hexdigits
 Python/sysmodule.c	-	PyId__	variable	_Py_IDENTIFIER(_)
@@ -1051,7 +1049,7 @@ Modules/_abc.c	-	PyId___bases__	variable	_Py_IDENTIFIER(__bases__)
 Objects/abstract.c	abstract_get_bases	PyId___bases__	variable	_Py_IDENTIFIER(__bases__)
 Objects/typeobject.c	merge_class_dict	PyId___bases__	variable	_Py_IDENTIFIER(__bases__)
 Objects/longobject.c	-	PyId_big	variable	_Py_IDENTIFIER(big)
-Modules/_io/_iomodule.c	-	PyId__blksize	variable	_Py_IDENTIFIER(_blksize)
+Modules/_io/_iomodule.c	_io_open_impl	PyId__blksize	variable	_Py_IDENTIFIER(_blksize)
 Python/Python-ast.c	-	PyId_body	variable	_Py_IDENTIFIER(body)
 Objects/typeobject.c	slot_nb_bool	PyId___bool__	variable	_Py_IDENTIFIER(__bool__)
 Python/sysmodule.c	-	PyId_buffer	variable	_Py_IDENTIFIER(buffer)
@@ -1071,7 +1069,7 @@ Objects/typeobject.c	slot_tp_call	PyId___call__	variable	_Py_IDENTIFIER(__call__
 Python/Python-ast.c	-	PyId_cause	variable	_Py_IDENTIFIER(cause)
 Objects/typeobject.c	-	PyId___class__	variable	_Py_IDENTIFIER(__class__)
 Modules/_abc.c	-	PyId___class__	variable	_Py_IDENTIFIER(__class__)
-Python/compile.c	-	PyId___class__	variable	_Py_IDENTIFIER(__class__)
+Python/compile.c	compiler_enter_scope	PyId___class__	variable	_Py_IDENTIFIER(__class__)
 Objects/abstract.c	recursive_isinstance	PyId___class__	variable	_Py_IDENTIFIER(__class__)
 Objects/typeobject.c	type_new	PyId___classcell__	variable	_Py_IDENTIFIER(__classcell__)
 Objects/typeobject.c	-	PyId___class_getitem__	variable	_Py_IDENTIFIER(__class_getitem__)
@@ -1090,7 +1088,7 @@ Objects/complexobject.c	try_complex_special_method	PyId___complex__	variable	_Py
 Objects/typeobject.c	slot_sq_contains	PyId___contains__	variable	_Py_IDENTIFIER(__contains__)
 Python/Python-ast.c	-	PyId_context_expr	variable	_Py_IDENTIFIER(context_expr)
 Python/Python-ast.c	-	PyId_conversion	variable	_Py_IDENTIFIER(conversion)
-Modules/itertoolsmodule.c	-	PyId___copy__	variable	_Py_IDENTIFIER(__copy__)
+Modules/itertoolsmodule.c	itertools_tee_impl	PyId___copy__	variable	_Py_IDENTIFIER(__copy__)
 Objects/descrobject.c	mappingproxy_copy	PyId_copy	variable	_Py_IDENTIFIER(copy)
 Objects/typeobject.c	import_copyreg	PyId_copyreg	variable	_Py_IDENTIFIER(copyreg)
 Python/Python-ast.c	-	PyId_ctx	variable	_Py_IDENTIFIER(ctx)
@@ -1120,15 +1118,15 @@ Objects/object.c	-	PyId___dir__	variable	_Py_IDENTIFIER(__dir__)
 Objects/moduleobject.c	module_dir	PyId___dir__	variable	_Py_IDENTIFIER(__dir__)
 Python/ceval.c	_PyEval_EvalFrameDefault	PyId_displayhook	variable	_Py_IDENTIFIER(displayhook)
 Objects/typeobject.c	-	PyId___doc__	variable	_Py_IDENTIFIER(__doc__)
-Objects/descrobject.c	-	PyId___doc__	variable	_Py_IDENTIFIER(__doc__)
-Objects/moduleobject.c	-	PyId___doc__	variable	_Py_IDENTIFIER(__doc__)
+Objects/descrobject.c	property_init_impl	PyId___doc__	variable	_Py_IDENTIFIER(__doc__)
+Objects/moduleobject.c	module_init_dict	PyId___doc__	variable	_Py_IDENTIFIER(__doc__)
 Objects/moduleobject.c	PyModule_SetDocString	PyId___doc__	variable	_Py_IDENTIFIER(__doc__)
 Python/Python-ast.c	-	PyId_elt	variable	_Py_IDENTIFIER(elt)
 Python/Python-ast.c	-	PyId_elts	variable	_Py_IDENTIFIER(elts)
 Modules/faulthandler.c	-	PyId_enable	variable	_Py_IDENTIFIER(enable)
 Python/sysmodule.c	-	PyId_encoding	variable	_Py_IDENTIFIER(encoding)
 Python/bltinmodule.c	-	PyId_encoding	variable	_Py_IDENTIFIER(encoding)
-Python/pythonrun.c	-	PyId_encoding	variable	_Py_IDENTIFIER(encoding)
+Python/pythonrun.c	PyRun_InteractiveOneObjectEx	PyId_encoding	variable	_Py_IDENTIFIER(encoding)
 Python/Python-ast.c	-	PyId_end_col_offset	variable	_Py_IDENTIFIER(end_col_offset)
 Python/Python-ast.c	-	PyId_end_lineno	variable	_Py_IDENTIFIER(end_lineno)
 Python/ceval.c	_PyEval_EvalFrameDefault	PyId___enter__	variable	_Py_IDENTIFIER(__enter__)
@@ -1141,17 +1139,17 @@ Modules/_pickle.c	do_append	PyId_extend	variable	_Py_IDENTIFIER(extend)
 Python/Python-ast.c	-	PyId__fields	variable	_Py_IDENTIFIER(_fields)
 Objects/moduleobject.c	PyModule_GetFilenameObject	PyId___file__	variable	_Py_IDENTIFIER(__file__)
 Python/errors.c	PyErr_SyntaxLocationObject	PyId_filename	variable	_Py_IDENTIFIER(filename)
-Python/pythonrun.c	-	PyId_filename	variable	_Py_IDENTIFIER(filename)
+Python/pythonrun.c	parse_syntax_error	PyId_filename	variable	_Py_IDENTIFIER(filename)
 Modules/_io/textio.c	-	PyId_fileno	variable	_Py_IDENTIFIER(fileno)
 Modules/faulthandler.c	-	PyId_fileno	variable	_Py_IDENTIFIER(fileno)
 Python/bltinmodule.c	-	PyId_fileno	variable	_Py_IDENTIFIER(fileno)
 Objects/fileobject.c	PyObject_AsFileDescriptor	PyId_fileno	variable	_Py_IDENTIFIER(fileno)
 Modules/itertoolsmodule.c	zip_longest_new	PyId_fillvalue	variable	_Py_IDENTIFIER(fillvalue)
-Python/_warnings.c	-	PyId_filters	variable	_Py_IDENTIFIER(filters)
+Python/_warnings.c	get_filter	PyId_filters	variable	_Py_IDENTIFIER(filters)
 Python/Python-ast.c	-	PyId_finalbody	variable	_Py_IDENTIFIER(finalbody)
 Modules/_io/iobase.c	iobase_finalize	PyId__finalizing	variable	_Py_IDENTIFIER(_finalizing)
 Python/import.c	import_find_and_load	PyId__find_and_load	variable	_Py_IDENTIFIER(_find_and_load)
-Python/import.c	-	PyId__fix_up_module	variable	_Py_IDENTIFIER(_fix_up_module)
+Python/import.c	PyImport_ExecCodeModuleObject	PyId__fix_up_module	variable	_Py_IDENTIFIER(_fix_up_module)
 Python/errors.c	-	PyId_flush	variable	_Py_IDENTIFIER(flush)
 Python/pylifecycle.c	-	PyId_flush	variable	_Py_IDENTIFIER(flush)
 Python/pythonrun.c	-	PyId_flush	variable	_Py_IDENTIFIER(flush)
@@ -1181,15 +1179,15 @@ Objects/typeobject.c	_PyObject_GetNewArguments	PyId___getnewargs__	variable	_Py_
 Objects/typeobject.c	_PyObject_GetNewArguments	PyId___getnewargs_ex__	variable	_Py_IDENTIFIER(__getnewargs_ex__)
 Modules/_io/textio.c	-	PyId_getpreferredencoding	variable	_Py_IDENTIFIER(getpreferredencoding)
 Python/_warnings.c	get_source_line	PyId_get_source	variable	_Py_IDENTIFIER(get_source)
-Python/import.c	-	PyId__get_sourcefile	variable	_Py_IDENTIFIER(_get_sourcefile)
+Python/import.c	PyImport_ExecCodeModuleWithPathnames	PyId__get_sourcefile	variable	_Py_IDENTIFIER(_get_sourcefile)
 Objects/typeobject.c	_PyObject_GetState	PyId___getstate__	variable	_Py_IDENTIFIER(__getstate__)
-Python/import.c	-	PyId__handle_fromlist	variable	_Py_IDENTIFIER(_handle_fromlist)
+Python/import.c	PyImport_ImportModuleLevelObject	PyId__handle_fromlist	variable	_Py_IDENTIFIER(_handle_fromlist)
 Python/Python-ast.c	-	PyId_handlers	variable	_Py_IDENTIFIER(handlers)
 Objects/typeobject.c	-	PyId___hash__	variable	_Py_IDENTIFIER(__hash__)
 Python/Python-ast.c	-	PyId_id	variable	_Py_IDENTIFIER(id)
 Python/Python-ast.c	-	PyId_ifs	variable	_Py_IDENTIFIER(ifs)
 Python/import.c	PyImport_ReloadModule	PyId_imp	variable	_Py_IDENTIFIER(imp)
-Python/ceval.c	-	PyId___import__	variable	_Py_IDENTIFIER(__import__)
+Python/ceval.c	import_name	PyId___import__	variable	_Py_IDENTIFIER(__import__)
 Objects/typeobject.c	slot_nb_index	PyId___index__	variable	_Py_IDENTIFIER(__index__)
 Objects/typeobject.c	slot_tp_init	PyId___init__	variable	_Py_IDENTIFIER(__init__)
 Objects/moduleobject.c	_PyModuleSpec_IsInitializing	PyId__initializing	variable	_Py_IDENTIFIER(_initializing)
@@ -1202,16 +1200,16 @@ Objects/object.c	-	PyId___isabstractmethod__	variable	_Py_IDENTIFIER(__isabstrac
 Python/Python-ast.c	-	PyId_is_async	variable	_Py_IDENTIFIER(is_async)
 Modules/_io/bufferedio.c	-	PyId_isatty	variable	_Py_IDENTIFIER(isatty)
 Modules/_io/textio.c	-	PyId_isatty	variable	_Py_IDENTIFIER(isatty)
-Python/pylifecycle.c	-	PyId_isatty	variable	_Py_IDENTIFIER(isatty)
-Modules/_io/_iomodule.c	-	PyId_isatty	variable	_Py_IDENTIFIER(isatty)
-Python/codecs.c	-	PyId__is_text_encoding	variable	_Py_IDENTIFIER(_is_text_encoding)
+Python/pylifecycle.c	create_stdio	PyId_isatty	variable	_Py_IDENTIFIER(isatty)
+Modules/_io/_iomodule.c	_io_open_impl	PyId_isatty	variable	_Py_IDENTIFIER(isatty)
+Python/codecs.c	_PyCodec_LookupTextEncoding	PyId__is_text_encoding	variable	_Py_IDENTIFIER(_is_text_encoding)
 Python/Python-ast.c	-	PyId_items	variable	_Py_IDENTIFIER(items)
 Objects/abstract.c	PyMapping_Items	PyId_items	variable	_Py_IDENTIFIER(items)
 Objects/descrobject.c	mappingproxy_items	PyId_items	variable	_Py_IDENTIFIER(items)
 Objects/odictobject.c	odict_reduce	PyId_items	variable	_Py_IDENTIFIER(items)
 Objects/odictobject.c	odict_repr	PyId_items	variable	_Py_IDENTIFIER(items)
 Objects/odictobject.c	mutablemapping_update	PyId_items	variable	_Py_IDENTIFIER(items)
-Objects/typeobject.c	-	PyId_items	variable	_Py_IDENTIFIER(items)
+Objects/typeobject.c	_PyObject_GetItemsIter	PyId_items	variable	_Py_IDENTIFIER(items)
 Modules/_collectionsmodule.c	defdict_reduce	PyId_items	variable	_Py_IDENTIFIER(items)
 Python/Python-ast.c	-	PyId_iter	variable	_Py_IDENTIFIER(iter)
 Objects/bytearrayobject.c	bytearrayiter_reduce	PyId_iter	variable	_Py_IDENTIFIER(iter)
@@ -1227,12 +1225,12 @@ Objects/setobject.c	setiter_reduce	PyId_iter	variable	_Py_IDENTIFIER(iter)
 Objects/tupleobject.c	tupleiter_reduce	PyId_iter	variable	_Py_IDENTIFIER(iter)
 Objects/unicodeobject.c	unicodeiter_reduce	PyId_iter	variable	_Py_IDENTIFIER(iter)
 Objects/typeobject.c	slot_tp_iter	PyId___iter__	variable	_Py_IDENTIFIER(__iter__)
-Modules/arraymodule.c	-	PyId_iter	variable	_Py_IDENTIFIER(iter)
+Modules/arraymodule.c	array_arrayiterator___reduce___impl	PyId_iter	variable	_Py_IDENTIFIER(iter)
 Python/Python-ast.c	-	PyId_key	variable	_Py_IDENTIFIER(key)
 Python/Python-ast.c	-	PyId_keys	variable	_Py_IDENTIFIER(keys)
 Objects/abstract.c	PyMapping_Keys	PyId_keys	variable	_Py_IDENTIFIER(keys)
 Objects/descrobject.c	mappingproxy_keys	PyId_keys	variable	_Py_IDENTIFIER(keys)
-Objects/dictobject.c	-	PyId_keys	variable	_Py_IDENTIFIER(keys)
+Objects/dictobject.c	dict_update_common	PyId_keys	variable	_Py_IDENTIFIER(keys)
 Objects/odictobject.c	mutablemapping_update	PyId_keys	variable	_Py_IDENTIFIER(keys)
 Python/Python-ast.c	-	PyId_keywords	variable	_Py_IDENTIFIER(keywords)
 Python/Python-ast.c	-	PyId_kind	variable	_Py_IDENTIFIER(kind)
@@ -1248,52 +1246,55 @@ Objects/abstract.c	PyObject_LengthHint	PyId___length_hint__	variable	_Py_IDENTIF
 Python/Python-ast.c	-	PyId_level	variable	_Py_IDENTIFIER(level)
 Python/Python-ast.c	-	PyId_lineno	variable	_Py_IDENTIFIER(lineno)
 Python/errors.c	PyErr_SyntaxLocationObject	PyId_lineno	variable	_Py_IDENTIFIER(lineno)
-Python/pythonrun.c	-	PyId_lineno	variable	_Py_IDENTIFIER(lineno)
+Python/pythonrun.c	parse_syntax_error	PyId_lineno	variable	_Py_IDENTIFIER(lineno)
 Objects/longobject.c	-	PyId_little	variable	_Py_IDENTIFIER(little)
 Python/_warnings.c	get_source_line	PyId___loader__	variable	_Py_IDENTIFIER(__loader__)
-Objects/moduleobject.c	-	PyId___loader__	variable	_Py_IDENTIFIER(__loader__)
-Python/import.c	-	PyId__lock_unlock_module	variable	_Py_IDENTIFIER(_lock_unlock_module)
+Objects/moduleobject.c	module_init_dict	PyId___loader__	variable	_Py_IDENTIFIER(__loader__)
+Python/import.c	PyImport_ImportModuleLevelObject	PyId__lock_unlock_module	variable	_Py_IDENTIFIER(_lock_unlock_module)
 Python/Python-ast.c	-	PyId_lower	variable	_Py_IDENTIFIER(lower)
 Python/ceval.c	_PyEval_EvalFrameDefault	PyId___ltrace__	variable	_Py_IDENTIFIER(__ltrace__)
-Python/pythonrun.c	-	PyId___main__	variable	_Py_IDENTIFIER(__main__)
+Python/pythonrun.c	PyRun_InteractiveOneObjectEx	PyId___main__	variable	_Py_IDENTIFIER(__main__)
 Python/_warnings.c	check_matched	PyId_match	variable	_Py_IDENTIFIER(match)
 Python/bltinmodule.c	-	PyId_metaclass	variable	_Py_IDENTIFIER(metaclass)
 Objects/dictobject.c	dict_subscript	PyId___missing__	variable	_Py_IDENTIFIER(__missing__)
 Modules/_io/bufferedio.c	-	PyId_mode	variable	_Py_IDENTIFIER(mode)
 Modules/_io/textio.c	-	PyId_mode	variable	_Py_IDENTIFIER(mode)
-Python/pylifecycle.c	-	PyId_mode	variable	_Py_IDENTIFIER(mode)
-Modules/_io/_iomodule.c	-	PyId_mode	variable	_Py_IDENTIFIER(mode)
+Python/pylifecycle.c	create_stdio	PyId_mode	variable	_Py_IDENTIFIER(mode)
+Modules/_io/_iomodule.c	_io_open_impl	PyId_mode	variable	_Py_IDENTIFIER(mode)
 Python/Python-ast.c	-	PyId_module	variable	_Py_IDENTIFIER(module)
 Objects/typeobject.c	-	PyId___module__	variable	_Py_IDENTIFIER(__module__)
 Python/Python-ast.c	make_type	PyId___module__	variable	_Py_IDENTIFIER(__module__)
 Python/errors.c	PyErr_NewException	PyId___module__	variable	_Py_IDENTIFIER(__module__)
-Python/errors.c	-	PyId___module__	variable	_Py_IDENTIFIER(__module__)
+Python/errors.c	PyErr_NewException	PyId___module__	variable	_Py_IDENTIFIER(__module__)
 Python/pythonrun.c	print_exception	PyId___module__	variable	_Py_IDENTIFIER(__module__)
-Objects/typeobject.c	-	PyId_mro	variable	_Py_IDENTIFIER(mro)
+Modules/_pickle.c	whichmodule	PyId___module__	variable	_Py_IDENTIFIER(__module__)
+Objects/typeobject.c	type_mro_modified	PyId_mro	variable	_Py_IDENTIFIER(mro)
 Objects/typeobject.c	mro_invoke	PyId_mro	variable	_Py_IDENTIFIER(mro)
 Python/bltinmodule.c	-	PyId___mro_entries__	variable	_Py_IDENTIFIER(__mro_entries__)
 Objects/typeobject.c	type_new	PyId___mro_entries__	variable	_Py_IDENTIFIER(__mro_entries__)
 Python/Python-ast.c	-	PyId_msg	variable	_Py_IDENTIFIER(msg)
 Python/errors.c	PyErr_SyntaxLocationObject	PyId_msg	variable	_Py_IDENTIFIER(msg)
-Python/pythonrun.c	-	PyId_msg	variable	_Py_IDENTIFIER(msg)
+Python/pythonrun.c	parse_syntax_error	PyId_msg	variable	_Py_IDENTIFIER(msg)
 Python/pylifecycle.c	-	PyId_name	variable	_Py_IDENTIFIER(name)
 Modules/_io/fileio.c	-	PyId_name	variable	_Py_IDENTIFIER(name)
 Modules/_io/bufferedio.c	-	PyId_name	variable	_Py_IDENTIFIER(name)
 Modules/_io/textio.c	-	PyId_name	variable	_Py_IDENTIFIER(name)
 Python/Python-ast.c	-	PyId_name	variable	_Py_IDENTIFIER(name)
+Objects/exceptions.c	ImportError_getstate	PyId_name	variable	_Py_IDENTIFIER(name)
 Objects/typeobject.c	-	PyId___name__	variable	_Py_IDENTIFIER(__name__)
 Objects/classobject.c	-	PyId___name__	variable	_Py_IDENTIFIER(__name__)
-Python/_warnings.c	-	PyId___name__	variable	_Py_IDENTIFIER(__name__)
+Python/_warnings.c	setup_context	PyId___name__	variable	_Py_IDENTIFIER(__name__)
 Python/_warnings.c	get_source_line	PyId___name__	variable	_Py_IDENTIFIER(__name__)
+Python/_warnings.c	show_warning	PyId___name__	variable	_Py_IDENTIFIER(__name__)
 Python/ceval.c	import_from	PyId___name__	variable	_Py_IDENTIFIER(__name__)
 Python/ceval.c	import_all_from	PyId___name__	variable	_Py_IDENTIFIER(__name__)
 Python/import.c	resolve_name	PyId___name__	variable	_Py_IDENTIFIER(__name__)
-Objects/moduleobject.c	-	PyId___name__	variable	_Py_IDENTIFIER(__name__)
+Objects/moduleobject.c	module_init_dict	PyId___name__	variable	_Py_IDENTIFIER(__name__)
 Objects/moduleobject.c	PyModule_GetNameObject	PyId___name__	variable	_Py_IDENTIFIER(__name__)
-Objects/exceptions.c	ImportError_getstate	PyId_name	variable	_Py_IDENTIFIER(name)
 Objects/moduleobject.c	module_getattro	PyId___name__	variable	_Py_IDENTIFIER(__name__)
 Objects/weakrefobject.c	weakref_repr	PyId___name__	variable	_Py_IDENTIFIER(__name__)
 Modules/_pickle.c	save_global	PyId___name__	variable	_Py_IDENTIFIER(__name__)
+Modules/_pickle.c	save_reduce	PyId___name__	variable	_Py_IDENTIFIER(__name__)
 Python/Python-ast.c	-	PyId_names	variable	_Py_IDENTIFIER(names)
 Objects/typeobject.c	-	PyId___new__	variable	_Py_IDENTIFIER(__new__)
 Objects/typeobject.c	reduce_newobj	PyId___newobj__	variable	_Py_IDENTIFIER(__newobj__)
@@ -1304,20 +1305,20 @@ Python/ast.c	new_identifier	PyId_NFKC	variable	_Py_IDENTIFIER(NFKC)
 Objects/structseq.c	-	PyId_n_sequence_fields	variable	_Py_IDENTIFIER(n_sequence_fields)
 Objects/structseq.c	-	PyId_n_unnamed_fields	variable	_Py_IDENTIFIER(n_unnamed_fields)
 Python/errors.c	PyErr_SyntaxLocationObject	PyId_offset	variable	_Py_IDENTIFIER(offset)
-Python/pythonrun.c	-	PyId_offset	variable	_Py_IDENTIFIER(offset)
+Python/pythonrun.c	parse_syntax_error	PyId_offset	variable	_Py_IDENTIFIER(offset)
 Python/_warnings.c	get_once_registry	PyId_onceregistry	variable	_Py_IDENTIFIER(onceregistry)
 Python/Python-ast.c	-	PyId_op	variable	_Py_IDENTIFIER(op)
 Python/traceback.c	-	PyId_open	variable	_Py_IDENTIFIER(open)
-Python/pylifecycle.c	-	PyId_open	variable	_Py_IDENTIFIER(open)
+Python/pylifecycle.c	create_stdio	PyId_open	variable	_Py_IDENTIFIER(open)
 Parser/tokenizer.c	fp_setreadl	PyId_open	variable	_Py_IDENTIFIER(open)
-Objects/fileobject.c	-	PyId_open	variable	_Py_IDENTIFIER(open)
+Objects/fileobject.c	PyFile_FromFd	PyId_open	variable	_Py_IDENTIFIER(open)
 Objects/fileobject.c	PyFile_OpenCodeObject	PyId_open	variable	_Py_IDENTIFIER(open)
 Python/Python-ast.c	-	PyId_operand	variable	_Py_IDENTIFIER(operand)
 Python/Python-ast.c	-	PyId_ops	variable	_Py_IDENTIFIER(ops)
 Python/Python-ast.c	-	PyId_optional_vars	variable	_Py_IDENTIFIER(optional_vars)
 Python/Python-ast.c	-	PyId_orelse	variable	_Py_IDENTIFIER(orelse)
 Python/import.c	resolve_name	PyId___package__	variable	_Py_IDENTIFIER(__package__)
-Objects/moduleobject.c	-	PyId___package__	variable	_Py_IDENTIFIER(__package__)
+Objects/moduleobject.c	module_init_dict	PyId___package__	variable	_Py_IDENTIFIER(__package__)
 Python/import.c	resolve_name	PyId_parent	variable	_Py_IDENTIFIER(parent)
 Modules/_operator.c	methodcaller_reduce	PyId_partial	variable	_Py_IDENTIFIER(partial)
 Python/sysmodule.c	-	PyId_path	variable	_Py_IDENTIFIER(path)
@@ -1325,7 +1326,7 @@ Python/traceback.c	-	PyId_path	variable	_Py_IDENTIFIER(path)
 Objects/exceptions.c	ImportError_getstate	PyId_path	variable	_Py_IDENTIFIER(path)
 Modules/main.c	pymain_sys_path_add_path0	PyId_path	variable	_Py_IDENTIFIER(path)
 Python/import.c	resolve_name	PyId___path__	variable	_Py_IDENTIFIER(__path__)
-Python/import.c	-	PyId___path__	variable	_Py_IDENTIFIER(__path__)
+Python/import.c	PyImport_ImportModuleLevelObject	PyId___path__	variable	_Py_IDENTIFIER(__path__)
 Modules/_io/bufferedio.c	-	PyId_peek	variable	_Py_IDENTIFIER(peek)
 Python/Python-ast.c	-	PyId_posonlyargs	variable	_Py_IDENTIFIER(posonlyargs)
 Objects/typeobject.c	slot_nb_power	PyId___pow__	variable	_Py_IDENTIFIER(__pow__)
@@ -1340,33 +1341,33 @@ Objects/descrobject.c	calculate_qualname	PyId___qualname__	variable	_Py_IDENTIFI
 Objects/methodobject.c	meth_get__qualname__	PyId___qualname__	variable	_Py_IDENTIFIER(__qualname__)
 Objects/typeobject.c	type_new	PyId___qualname__	variable	_Py_IDENTIFIER(__qualname__)
 Modules/_io/textio.c	-	PyId_raw	variable	_Py_IDENTIFIER(raw)
-Python/pylifecycle.c	-	PyId_raw	variable	_Py_IDENTIFIER(raw)
+Python/pylifecycle.c	create_stdio	PyId_raw	variable	_Py_IDENTIFIER(raw)
 Modules/_io/iobase.c	-	PyId_read	variable	_Py_IDENTIFIER(read)
 Modules/_io/bufferedio.c	-	PyId_read	variable	_Py_IDENTIFIER(read)
 Modules/_io/textio.c	-	PyId_read	variable	_Py_IDENTIFIER(read)
 Modules/_io/bufferedio.c	-	PyId_read1	variable	_Py_IDENTIFIER(read1)
-Python/marshal.c	-	PyId_read	variable	_Py_IDENTIFIER(read)
+Python/marshal.c	marshal_load	PyId_read	variable	_Py_IDENTIFIER(read)
 Modules/_io/bufferedio.c	-	PyId_readable	variable	_Py_IDENTIFIER(readable)
 Modules/_io/textio.c	-	PyId_readable	variable	_Py_IDENTIFIER(readable)
-Modules/_io/iobase.c	-	PyId_readall	variable	_Py_IDENTIFIER(readall)
+Modules/_io/iobase.c	_io__RawIOBase_read_impl	PyId_readall	variable	_Py_IDENTIFIER(readall)
 Modules/_io/bufferedio.c	-	PyId_readinto	variable	_Py_IDENTIFIER(readinto)
 Modules/_io/bufferedio.c	-	PyId_readinto1	variable	_Py_IDENTIFIER(readinto1)
 Python/marshal.c	r_string	PyId_readinto	variable	_Py_IDENTIFIER(readinto)
 Parser/tokenizer.c	fp_setreadl	PyId_readline	variable	_Py_IDENTIFIER(readline)
 Objects/fileobject.c	PyFile_GetLine	PyId_readline	variable	_Py_IDENTIFIER(readline)
-Objects/typeobject.c	-	PyId___reduce__	variable	_Py_IDENTIFIER(__reduce__)
+Objects/typeobject.c	object___reduce_ex___impl	PyId___reduce__	variable	_Py_IDENTIFIER(__reduce__)
 Python/import.c	PyImport_ReloadModule	PyId_reload	variable	_Py_IDENTIFIER(reload)
 Modules/_io/textio.c	-	PyId_replace	variable	_Py_IDENTIFIER(replace)
-Python/importdl.c	-	PyId_replace	variable	_Py_IDENTIFIER(replace)
+Python/importdl.c	get_encoded_name	PyId_replace	variable	_Py_IDENTIFIER(replace)
 Objects/typeobject.c	slot_tp_repr	PyId___repr__	variable	_Py_IDENTIFIER(__repr__)
 Modules/_io/textio.c	-	PyId_reset	variable	_Py_IDENTIFIER(reset)
 Python/Python-ast.c	-	PyId_returns	variable	_Py_IDENTIFIER(returns)
-Objects/enumobject.c	-	PyId___reversed__	variable	_Py_IDENTIFIER(__reversed__)
+Objects/enumobject.c	reversed_new_impl	PyId___reversed__	variable	_Py_IDENTIFIER(__reversed__)
 Objects/listobject.c	listiter_reduce_general	PyId_reversed	variable	_Py_IDENTIFIER(reversed)
 Python/Python-ast.c	-	PyId_right	variable	_Py_IDENTIFIER(right)
 Python/bltinmodule.c	-	PyId___round__	variable	_Py_IDENTIFIER(__round__)
 Modules/_io/textio.c	-	PyId_seek	variable	_Py_IDENTIFIER(seek)
-Modules/_io/iobase.c	-	PyId_seek	variable	_Py_IDENTIFIER(seek)
+Modules/_io/iobase.c	_io__IOBase_tell_impl	PyId_seek	variable	_Py_IDENTIFIER(seek)
 Modules/_io/textio.c	-	PyId_seekable	variable	_Py_IDENTIFIER(seekable)
 Python/ceval.c	_PyEval_EvalFrameDefault	PyId_send	variable	_Py_IDENTIFIER(send)
 Objects/typeobject.c	slot_tp_descr_set	PyId___set__	variable	_Py_IDENTIFIER(__set__)
@@ -1376,7 +1377,7 @@ Modules/_collectionsmodule.c	_count_elements	PyId___setitem__	variable	_Py_IDENT
 Objects/typeobject.c	-	PyId___set_name__	variable	_Py_IDENTIFIER(__set_name__)
 Modules/_io/textio.c	-	PyId_setstate	variable	_Py_IDENTIFIER(setstate)
 Modules/_pickle.c	load_build	PyId___setstate__	variable	_Py_IDENTIFIER(__setstate__)
-Python/_warnings.c	-	PyId__showwarnmsg	variable	_Py_IDENTIFIER(_showwarnmsg)
+Python/_warnings.c	call_show_warning	PyId__showwarnmsg	variable	_Py_IDENTIFIER(_showwarnmsg)
 Python/pylifecycle.c	wait_for_thread_shutdown	PyId__shutdown	variable	_Py_IDENTIFIER(_shutdown)
 Python/Python-ast.c	-	PyId_simple	variable	_Py_IDENTIFIER(simple)
 Python/sysmodule.c	-	PyId___sizeof__	variable	_Py_IDENTIFIER(__sizeof__)
@@ -1386,8 +1387,8 @@ Objects/typeobject.c	_PyType_GetSlotNames	PyId__slotnames	variable	_Py_IDENTIFIE
 Objects/typeobject.c	type_new	PyId___slots__	variable	_Py_IDENTIFIER(__slots__)
 Python/bltinmodule.c	-	PyId_sort	variable	_Py_IDENTIFIER(sort)
 Python/import.c	resolve_name	PyId___spec__	variable	_Py_IDENTIFIER(__spec__)
-Python/import.c	-	PyId___spec__	variable	_Py_IDENTIFIER(__spec__)
-Objects/moduleobject.c	-	PyId___spec__	variable	_Py_IDENTIFIER(__spec__)
+Python/import.c	PyImport_ImportModuleLevelObject	PyId___spec__	variable	_Py_IDENTIFIER(__spec__)
+Objects/moduleobject.c	module_init_dict	PyId___spec__	variable	_Py_IDENTIFIER(__spec__)
 Objects/moduleobject.c	module_getattro	PyId___spec__	variable	_Py_IDENTIFIER(__spec__)
 Python/_warnings.c	-	PyId_stderr	variable	_Py_IDENTIFIER(stderr)
 Python/errors.c	-	PyId_stderr	variable	_Py_IDENTIFIER(stderr)
@@ -1420,11 +1421,11 @@ Python/Python-ast.c	-	PyId_targets	variable	_Py_IDENTIFIER(targets)
 Modules/_io/textio.c	-	PyId_tell	variable	_Py_IDENTIFIER(tell)
 Python/Python-ast.c	-	PyId_test	variable	_Py_IDENTIFIER(test)
 Python/errors.c	PyErr_SyntaxLocationObject	PyId_text	variable	_Py_IDENTIFIER(text)
-Python/pythonrun.c	-	PyId_text	variable	_Py_IDENTIFIER(text)
+Python/pythonrun.c	parse_syntax_error	PyId_text	variable	_Py_IDENTIFIER(text)
 Python/traceback.c	-	PyId_TextIOWrapper	variable	_Py_IDENTIFIER(TextIOWrapper)
-Python/pylifecycle.c	-	PyId_TextIOWrapper	variable	_Py_IDENTIFIER(TextIOWrapper)
+Python/pylifecycle.c	create_stdio	PyId_TextIOWrapper	variable	_Py_IDENTIFIER(TextIOWrapper)
 Python/pylifecycle.c	-	PyId_threading	variable	_Py_IDENTIFIER(threading)
-Objects/genobject.c	-	PyId_throw	variable	_Py_IDENTIFIER(throw)
+Objects/genobject.c	_gen_throw	PyId_throw	variable	_Py_IDENTIFIER(throw)
 Objects/abstract.c	PyNumber_Long	PyId___trunc__	variable	_Py_IDENTIFIER(__trunc__)
 Python/Python-ast.c	-	PyId_type	variable	_Py_IDENTIFIER(type)
 Python/Python-ast.c	-	PyId_type_comment	variable	_Py_IDENTIFIER(type_comment)
@@ -1438,8 +1439,8 @@ Objects/abstract.c	PyMapping_Values	PyId_values	variable	_Py_IDENTIFIER(values)
 Objects/descrobject.c	mappingproxy_values	PyId_values	variable	_Py_IDENTIFIER(values)
 Python/Python-ast.c	-	PyId_vararg	variable	_Py_IDENTIFIER(vararg)
 Python/_warnings.c	already_warned	PyId_version	variable	_Py_IDENTIFIER(version)
-Python/_warnings.c	-	PyId_WarningMessage	variable	_Py_IDENTIFIER(WarningMessage)
-Python/_warnings.c	-	PyId___warningregistry__	variable	_Py_IDENTIFIER(__warningregistry__)
+Python/_warnings.c	call_show_warning	PyId_WarningMessage	variable	_Py_IDENTIFIER(WarningMessage)
+Python/_warnings.c	setup_context	PyId___warningregistry__	variable	_Py_IDENTIFIER(__warningregistry__)
 Python/_warnings.c	get_warnings_attr	PyId_warnings	variable	_Py_IDENTIFIER(warnings)
 Python/sysmodule.c	-	PyId_warnoptions	variable	_Py_IDENTIFIER(warnoptions)
 Python/_warnings.c	_PyErr_WarnUnawaitedCoroutine	PyId__warn_unawaited_coroutine	variable	_Py_IDENTIFIER(_warn_unawaited_coroutine)
@@ -1447,15 +1448,15 @@ Modules/_io/bufferedio.c	-	PyId_writable	variable	_Py_IDENTIFIER(writable)
 Modules/_io/textio.c	-	PyId_writable	variable	_Py_IDENTIFIER(writable)
 Python/sysmodule.c	-	PyId_write	variable	_Py_IDENTIFIER(write)
 Modules/_io/bufferedio.c	-	PyId_write	variable	_Py_IDENTIFIER(write)
-Python/marshal.c	-	PyId_write	variable	_Py_IDENTIFIER(write)
+Python/marshal.c	marshal_dump_impl	PyId_write	variable	_Py_IDENTIFIER(write)
 Objects/fileobject.c	PyFile_WriteObject	PyId_write	variable	_Py_IDENTIFIER(write)
 Python/sysmodule.c	-	PyId__xoptions	variable	_Py_IDENTIFIER(_xoptions)
 Python/import.c	_PyImportZip_Init	PyId_zipimporter	variable	_Py_IDENTIFIER(zipimporter)
 Python/initconfig.c	-	Py_IgnoreEnvironmentFlag	variable	int Py_IgnoreEnvironmentFlag
 Python/dynload_shlib.c	-	_PyImport_DynLoadFiletab	variable	const char *_PyImport_DynLoadFiletab[]
-Include/import.h	-	PyImport_FrozenModules	variable	PyAPI_DATA(const struct _frozen *) PyImport_FrozenModules
+Python/frozen.c	-	PyImport_FrozenModules	variable	const struct _frozen * PyImport_FrozenModules
 Modules/config.c	-	_PyImport_Inittab	variable	struct _inittab _PyImport_Inittab[]
-Include/import.h	-	PyImport_Inittab	variable	PyAPI_DATA(struct _inittab *) PyImport_Inittab
+Python/import.c	-	PyImport_Inittab	variable	struct _inittab * PyImport_Inittab
 Modules/_io/textio.c	-	PyIncrementalNewlineDecoder_Type	variable	PyTypeObject PyIncrementalNewlineDecoder_Type
 Python/initconfig.c	-	Py_InspectFlag	variable	int Py_InspectFlag
 Objects/classobject.c	-	PyInstanceMethod_Type	variable	PyTypeObject PyInstanceMethod_Type
@@ -1495,7 +1496,7 @@ Objects/listobject.c	-	PyListIter_Type	variable	PyTypeObject PyListIter_Type
 Objects/listobject.c	-	PyListRevIter_Type	variable	PyTypeObject PyListRevIter_Type
 Objects/listobject.c	-	PyList_Type	variable	PyTypeObject PyList_Type
 Modules/_localemodule.c	-	PyLocale_Methods	variable	static struct PyMethodDef PyLocale_Methods[]
-Include/longobject.h	-	_PyLong_DigitValue	variable	PyAPI_DATA(unsigned char) _PyLong_DigitValue[256]
+Objects/longobject.c	-	_PyLong_DigitValue	variable	unsigned char _PyLong_DigitValue[256]
 Objects/longobject.c	-	_PyLong_One	variable	PyObject *_PyLong_One
 Objects/rangeobject.c	-	PyLongRangeIter_Type	variable	PyTypeObject PyLongRangeIter_Type
 Objects/longobject.c	-	PyLong_Type	variable	PyTypeObject PyLong_Type
@@ -1535,10 +1536,10 @@ Python/getopt.c	-	_PyOS_opterr	variable	int _PyOS_opterr
 Python/getopt.c	-	_PyOS_optind	variable	Py_ssize_t _PyOS_optind
 Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	variable	char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *)
 Parser/myreadline.c	-	_PyOS_ReadlineLock	variable	static PyThread_type_lock _PyOS_ReadlineLock
-Include/pythonrun.h	-	_PyOS_ReadlineTState	variable	PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState
+Parser/myreadline.c	-	_PyOS_ReadlineTState	variable	PyThreadState* _PyOS_ReadlineTState
 Python/modsupport.c	-	_Py_PackageContext	variable	const char *_Py_PackageContext
 Python/graminit.c	-	_PyParser_Grammar	variable	grammar _PyParser_Grammar
-Include/internal/pycore_pathconfig.h	-	_Py_path_config	variable	PyAPI_DATA(_PyPathConfig) _Py_path_config
+Python/pathconfig.c	-	_Py_path_config	variable	_PyPathConfig _Py_path_config
 Objects/picklebufobject.c	-	PyPickleBuffer_Type	variable	PyTypeObject PyPickleBuffer_Type
 Objects/descrobject.c	-	PyProperty_Type	variable	PyTypeObject PyProperty_Type
 Python/initconfig.c	-	Py_QuietFlag	variable	int Py_QuietFlag
@@ -1547,9 +1548,9 @@ Objects/rangeobject.c	-	PyRange_Type	variable	PyTypeObject PyRange_Type
 Modules/_io/iobase.c	-	PyRawIOBase_Type	variable	PyTypeObject PyRawIOBase_Type
 Objects/object.c	-	_Py_RefTotal	variable	Py_ssize_t _Py_RefTotal
 Objects/enumobject.c	-	PyReversed_Type	variable	PyTypeObject PyReversed_Type
-Include/internal/pycore_pystate.h	-	_PyRuntime	variable	PyAPI_DATA(_PyRuntimeState) _PyRuntime
+Python/pylifecycle.c	-	_PyRuntime	variable	_PyRuntimeState _PyRuntime
 Objects/iterobject.c	-	PySeqIter_Type	variable	PyTypeObject PySeqIter_Type
-Include/setobject.h	-	_PySet_Dummy	variable	PyAPI_DATA(PyObject *) _PySet_Dummy
+Objects/setobject.c	-	_PySet_Dummy	variable	PyObject * _PySet_Dummy
 Objects/setobject.c	-	_PySetDummy_Type	variable	static PyTypeObject _PySetDummy_Type
 Objects/setobject.c	-	PySetIter_Type	variable	PyTypeObject PySetIter_Type
 Objects/setobject.c	-	PySet_Type	variable	PyTypeObject PySet_Type
@@ -1568,7 +1569,7 @@ Python/sysmodule.c	-	_PySys_ImplName	variable	const char *_PySys_ImplName
 Modules/_io/textio.c	-	PyTextIOBase_Type	variable	PyTypeObject PyTextIOBase_Type
 Modules/_io/textio.c	-	PyTextIOWrapper_Type	variable	PyTypeObject PyTextIOWrapper_Type
 Python/traceback.c	-	PyTraceBack_Type	variable	PyTypeObject PyTraceBack_Type
-Include/pymem.h	-	_Py_tracemalloc_config	variable	PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config
+Objects/obmalloc.c	-	_Py_tracemalloc_config	variable	struct _PyTraceMalloc_Config _Py_tracemalloc_config
 Objects/boolobject.c	-	_Py_TrueStruct	variable	static struct _longobject _Py_TrueStruct
 Objects/tupleobject.c	-	PyTupleIter_Type	variable	PyTypeObject PyTupleIter_Type
 Objects/tupleobject.c	-	PyTuple_Type	variable	PyTypeObject PyTuple_Type
@@ -1579,9 +1580,10 @@ Objects/unicodeobject.c	-	PyUnicodeIter_Type	variable	PyTypeObject PyUnicodeIter
 Objects/unicodeobject.c	-	PyUnicode_Type	variable	PyTypeObject PyUnicode_Type
 Python/initconfig.c	-	Py_UTF8Mode	variable	int Py_UTF8Mode
 Python/initconfig.c	-	Py_VerboseFlag	variable	int Py_VerboseFlag
-Include/weakrefobject.h	-	_PyWeakref_CallableProxyType	variable	PyAPI_DATA(PyTypeObject) _PyWeakref_CallableProxyType
-Include/weakrefobject.h	-	_PyWeakref_ProxyType	variable	PyAPI_DATA(PyTypeObject) _PyWeakref_ProxyType
-Include/weakrefobject.h	-	_PyWeakref_RefType	variable	PyAPI_DATA(PyTypeObject) _PyWeakref_RefType
+Objects/weakrefobject.c	-	_PyWeakref_CallableProxyType	variable	PyTypeObject _PyWeakref_CallableProxyType
+Objects/weakrefobject.c	-	_PyWeakref_ProxyType	variable	PyTypeObject _PyWeakref_ProxyType
+Objects/weakrefobject.c	-	_PyWeakref_RefType	variable	PyTypeObject _PyWeakref_RefType
+Objects/weakrefobject.c	-	_PyWeakref_RefType	variable	PyTypeObject _PyWeakref_RefType
 Objects/descrobject.c	-	PyWrapperDescr_Type	variable	PyTypeObject PyWrapperDescr_Type
 Python/bltinmodule.c	-	PyZip_Type	variable	PyTypeObject PyZip_Type
 Python/Python-ast.c	-	Raise_fields	variable	static char *Raise_fields[]
@@ -1594,11 +1596,11 @@ Objects/rangeobject.c	-	range_members	variable	static PyMemberDef range_members[
 Objects/rangeobject.c	-	range_methods	variable	static PyMethodDef range_methods
 Modules/_io/iobase.c	-	rawiobase_methods	variable	static PyMethodDef rawiobase_methods
 Python/pylifecycle.c	fatal_error	reentrant	variable	static int reentrant
-Modules/faulthandler.c	-	reentrant	variable	static volatile int reentrant
+Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	variable	static volatile int reentrant
 Modules/itertoolsmodule.c	-	repeat_methods	variable	static PyMethodDef repeat_methods
 Modules/itertoolsmodule.c	-	repeat_type	variable	static PyTypeObject repeat_type
 Python/Python-ast.c	-	Return_fields	variable	static char *Return_fields[]
-Python/compile.c	-	return_str	variable	static identifier return_str
+Python/compile.c	compiler_visit_annotations	return_str	variable	static identifier return_str
 Python/Python-ast.c	-	Return_type	variable	static PyTypeObject *Return_type
 Objects/enumobject.c	-	reversediter_methods	variable	static PyMethodDef reversediter_methods
 Modules/_threadmodule.c	-	rlock_methods	variable	static PyMethodDef rlock_methods
