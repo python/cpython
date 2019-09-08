@@ -2198,16 +2198,6 @@ class TestQuantiles(unittest.TestCase):
             exp = list(map(f, expected))
             act = quantiles(map(f, data), n=n)
             self.assertTrue(all(math.isclose(e, a) for e, a in zip(exp, act)))
-        # Quartiles of a standard normal distribution
-        for n, expected in [
-            (1, []),
-            (2, [0.0]),
-            (3, [-0.4307, 0.4307]),
-            (4 ,[-0.6745, 0.0, 0.6745]),
-                ]:
-            actual = quantiles(statistics.NormalDist(), n=n)
-            self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
-                            for e, a in zip(expected, actual)))
         # Q2 agrees with median()
         for k in range(2, 60):
             data = random.choices(range(100), k=k)
@@ -2248,16 +2238,6 @@ class TestQuantiles(unittest.TestCase):
             exp = list(map(f, expected))
             act = quantiles(map(f, data), n=n, method="inclusive")
             self.assertTrue(all(math.isclose(e, a) for e, a in zip(exp, act)))
-        # Quartiles of a standard normal distribution
-        for n, expected in [
-            (1, []),
-            (2, [0.0]),
-            (3, [-0.4307, 0.4307]),
-            (4 ,[-0.6745, 0.0, 0.6745]),
-                ]:
-            actual = quantiles(statistics.NormalDist(), n=n, method="inclusive")
-            self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
-                            for e, a in zip(expected, actual)))
         # Natural deciles
         self.assertEqual(quantiles([0, 100], n=10, method='inclusive'),
                          [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0])
@@ -2546,6 +2526,19 @@ class TestNormalDist:
         # Special values
         self.assertTrue(math.isnan(Z.inv_cdf(float('NaN'))))
 
+    def test_quantiles(self):
+        # Quartiles of a standard normal distribution
+        Z = self.module.NormalDist()
+        for n, expected in [
+            (1, []),
+            (2, [0.0]),
+            (3, [-0.4307, 0.4307]),
+            (4 ,[-0.6745, 0.0, 0.6745]),
+                ]:
+            actual = Z.quantiles(n=n)
+            self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
+                            for e, a in zip(expected, actual)))
+
     def test_overlap(self):
         NormalDist = self.module.NormalDist
 
@@ -2612,6 +2605,8 @@ class TestNormalDist:
     def test_properties(self):
         X = self.module.NormalDist(100, 15)
         self.assertEqual(X.mean, 100)
+        self.assertEqual(X.median, 100)
+        self.assertEqual(X.mode, 100)
         self.assertEqual(X.stdev, 15)
         self.assertEqual(X.variance, 225)
 
