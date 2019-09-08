@@ -71,7 +71,7 @@ class StaticsFromBinaryTests(_Base):
         self.assertEqual(self.calls, [
             ('_iter_symbols', ('python', None)),
             ('_get_symbol_resolver', (knownvars, None)),
-            ('_resolve_symbols', (list(symbols), resolver)),
+            ('_resolve_symbols', (symbols, resolver)),
             ])
 
 #        self._return_iter_symbols = [

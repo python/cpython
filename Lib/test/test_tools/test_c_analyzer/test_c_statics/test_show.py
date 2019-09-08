@@ -34,15 +34,15 @@ class BasicTests(unittest.TestCase):
               _print=self.print)
 
         self.assertEqual(self.lines, [
-            'src1/spam.c:var1                                                 const char *',
-            'src1/spam.c:ham():initialized                                    int',
-            'src1/spam.c:var2                                                 PyObject *',
-            'src1/eggs.c:tofu():ready                                         int',
-            'src1/spam.c:freelist                                             (PyTupleObject *)[10]',
-            'src1/sub/ham.c:var1                                              const char const *',
-            'src2/jam.c:var1                                                  int',
-            'src2/jam.c:var2                                                  MyObject *',
-            'Include/spam.h:data                                              const int',
+            'src1/spam.c:var1                                                 static const char *',
+            'src1/spam.c:ham():initialized                                    static int',
+            'src1/spam.c:var2                                                 static PyObject *',
+            'src1/eggs.c:tofu():ready                                         static int',
+            'src1/spam.c:freelist                                             static (PyTupleObject *)[10]',
+            'src1/sub/ham.c:var1                                              static const char const *',
+            'src2/jam.c:var1                                                  static int',
+            'src2/jam.c:var2                                                  static MyObject *',
+            'Include/spam.h:data                                              static const int',
             ])
 
     def test_no_rows(self):

@@ -124,6 +124,7 @@ class CheckTests(CMDBase):
             ('_print', ('ERROR: found unsupported static variables',)),
             ('_print', ()),
             ('_show', (sorted(unsupported),)),
+            ('_print', (' (3 total)',)),
             ])
         self.assertEqual(cm.exception.code, 1)
 
@@ -167,10 +168,12 @@ class ShowTests(CMDBase):
             ('_print', ('supported:',)),
             ('_print', ('----------',)),
             ('_show', (sorted(supported),)),
+            ('_print', (' (6 total)',)),
             ('_print', ()),
             ('_print', ('unsupported:',)),
             ('_print', ('------------',)),
             ('_show', (sorted(unsupported),)),
+            ('_print', (' (3 total)',)),
             ])
 
 
