@@ -28,6 +28,7 @@
 #include "prepare_protocol.h"
 #include "microprotocols.h"
 #include "row.h"
+#include "named_row.h"
 
 #if SQLITE_VERSION_NUMBER >= 3003003
 #define HAVE_SHARED_CACHE
@@ -355,6 +356,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     module = PyModule_Create(&_sqlite3module);
 
     if (!module ||
+        (named_row_setup_types() < 0) ||
         (pysqlite_row_setup_types() < 0) ||
         (pysqlite_cursor_setup_types() < 0) ||
         (pysqlite_connection_setup_types() < 0) ||
@@ -374,6 +376,8 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     PyModule_AddObject(module, "PrepareProtocol", (PyObject*) &pysqlite_PrepareProtocolType);
     Py_INCREF(&pysqlite_RowType);
     PyModule_AddObject(module, "Row", (PyObject*) &pysqlite_RowType);
+    Py_INCREF(&pysqlite_NamedRowType);
+    PyModule_AddObject(module, "NamedRow", (PyObject*) &pysqlite_NamedRowType);
 
     if (!(dict = PyModule_GetDict(module))) {
         goto error;

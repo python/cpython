@@ -1418,6 +1418,7 @@ class PyBuildExt(build_ext):
                 '_sqlite/module.c',
                 '_sqlite/prepare_protocol.c',
                 '_sqlite/row.c',
+                '_sqlite/named_row.c',
                 '_sqlite/statement.c',
                 '_sqlite/util.c', ]
 
