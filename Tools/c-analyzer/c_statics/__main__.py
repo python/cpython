@@ -28,23 +28,8 @@ def _match_unused_global(static, knownvars, used):
     return found
 
 
-def _find_statics(dirnames, known, ignored):
-    ignored = ignored_from_file(ignored)
-    known = known_from_file(known)
-
-    used = set()
-    unknown = set()
-    knownvars = (known or {}).get('variables')
-    for static in find.statics_from_binary(knownvars=knownvars,
-                                           dirnames=dirnames):
-    #for static in find.statics(dirnames, known, kind='platform'):
-        if static.vartype == UNKNOWN:
-            unknown.add(static)
-            continue
-        yield static, is_supported(static, ignored, known)
-        used.add(static.id)
-
-    #return
+def _check_results(unknown, knownvars, used):
+    return
     badknown = set()
     for static in sorted(unknown):
         msg = None
@@ -77,6 +62,25 @@ def _find_statics(dirnames, known, ignored):
     if unknown:
         print('---')
         raise Exception('could not find all symbols')
+
+
+def _find_statics(dirnames, known, ignored):
+    ignored = ignored_from_file(ignored)
+    known = known_from_file(known)
+
+    used = set()
+    unknown = set()
+    knownvars = (known or {}).get('variables')
+    for static in find.statics_from_binary(knownvars=knownvars,
+                                           dirnames=dirnames):
+    #for static in find.statics(dirnames, known, kind='platform'):
+        if static.vartype == UNKNOWN:
+            unknown.add(static)
+            continue
+        yield static, is_supported(static, ignored, known)
+        used.add(static.id)
+
+    _check_results(unknown, knownvars, used)
 
 
 def cmd_check(cmd, dirs=SOURCE_DIRS, *,
