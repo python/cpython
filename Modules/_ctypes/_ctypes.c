@@ -5019,7 +5019,8 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         PyObject *np;
         StgDictObject *stgdict, *itemdict;
         PyObject *proto;
-        Py_ssize_t i, len, cur;
+        Py_ssize_t i, len;
+        size_t cur;
 
         /* Since pointers have no length, and we want to apply
            different semantics to negative indices than normal
