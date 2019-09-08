@@ -3247,7 +3247,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
     if (sign < 0) {
         Py_SIZE(z) = -Py_SIZE(z);
     }
-    return long_normalize(z);
+    return maybe_small_long(long_normalize(z));
 }
 
 static PyObject *
@@ -3281,7 +3281,7 @@ long_add(PyLongObject *a, PyLongObject *b)
         else
             z = x_add(a, b);
     }
-    return (PyObject *)maybe_small_long(z);
+    return (PyObject *)z;
 }
 
 static PyObject *
@@ -3296,12 +3296,13 @@ long_sub(PyLongObject *a, PyLongObject *b)
     }
     if (Py_SIZE(a) < 0) {
         if (Py_SIZE(b) < 0)
-            z = x_sub(a, b);
-        else
+            z = x_sub(b, a);
+        else {
             z = x_add(a, b);
-        if (z != NULL) {
-            assert(Py_SIZE(z) == 0 || Py_REFCNT(z) == 1);
-            Py_SIZE(z) = -(Py_SIZE(z));
+            if (z != NULL) {
+                assert(Py_SIZE(z) == 0 || Py_REFCNT(z) == 1);
+                Py_SIZE(z) = -(Py_SIZE(z));
+            }
         }
     }
     else {
@@ -3310,7 +3311,7 @@ long_sub(PyLongObject *a, PyLongObject *b)
         else
             z = x_sub(a, b);
     }
-    return (PyObject *)maybe_small_long(z);
+    return (PyObject *)z;
 }
 
 /* Grade school multiplication, ignoring the signs.
