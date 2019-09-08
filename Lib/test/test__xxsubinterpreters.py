@@ -1113,26 +1113,21 @@ class ChannelIDTests(TestBase):
 
     def test_coerce_id(self):
         class Int(str):
-            def __init__(self, value):
-                self._value = value
-            def __int__(self):
-                return self._value
+            def __index__(self):
+                return 10
 
-        for id in ('10', b'10', bytearray(b'10'), memoryview(b'10'), '1_0',
-                   10.0, 10.1, Int(10)):
-            with self.subTest(id=id):
-                cid = interpreters._channel_id(id, force=True)
-                self.assertEqual(int(cid), 10)
+        cid = interpreters._channel_id(Int(), force=True)
+        self.assertEqual(int(cid), 10)
 
     def test_bad_id(self):
-        for cid in [-1, 'spam']:
-            with self.subTest(cid):
-                with self.assertRaises(ValueError):
+        for cid in (10.0, '10', b'10', []):
+            with self.subTest(cid=cid):
+                with self.assertRaises(TypeError):
                     interpreters._channel_id(cid)
+        with self.assertRaises(ValueError):
+            interpreters._channel_id(-1)
         with self.assertRaises(OverflowError):
             interpreters._channel_id(2**64)
-        with self.assertRaises(TypeError):
-            interpreters._channel_id(object())
 
     def test_bad_kwargs(self):
         with self.assertRaises(ValueError):
@@ -1170,10 +1165,7 @@ class ChannelIDTests(TestBase):
         self.assertTrue(cid1 == int(cid1))
         self.assertTrue(int(cid1) == cid1)
         self.assertTrue(cid1 == float(int(cid1)))
-        t = float(int(cid1))
-        print(type(cid1), repr(cid1))
-        print(repr(t))
-        self.assertTrue(t == cid1)
+        self.assertTrue(float(int(cid1)) == cid1)
         self.assertFalse(cid1 == float(int(cid1)) + 0.1)
         self.assertFalse(cid1 == str(int(cid1)))
         self.assertFalse(cid1 == 2**1000)

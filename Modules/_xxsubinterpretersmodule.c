@@ -1405,6 +1405,33 @@ typedef struct channelid {
     _channels *channels;
 } channelid;
 
+static int
+channel_id_converter(PyObject *arg, void *ptr)
+{
+    int64_t cid;
+    if (PyObject_TypeCheck(arg, &ChannelIDtype)) {
+        cid = ((channelid *)arg)->id;
+    }
+    else if (PyIndex_Check(arg)) {
+        cid = PyLong_AsLongLong(arg);
+        if (cid == -1 && PyErr_Occurred()) {
+            return 0;
+        }
+        if (cid < 0) {
+            PyErr_Format(PyExc_ValueError,
+                        "channel id must be a non-negative int, got %R", arg);
+            return 0;
+        }
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "channel id must be a non-negative int, got %s", arg->ob_type->tp_name);
+        return 0;
+    }
+    *(int64_t *)ptr = cid;
+    return 1;
+}
+
 static channelid *
 newchannelid(PyTypeObject *cls, int64_t cid, int end, _channels *channels,
              int force, int resolve)
@@ -1437,24 +1464,15 @@ static PyObject *
 channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "send", "recv", "force", "_resolve", NULL};
-    PyObject *id;
+    int64_t cid;
     int send = -1;
     int recv = -1;
     int force = 0;
     int resolve = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$pppp:ChannelID.__new__", kwlist,
-                                     &id, &send, &recv, &force, &resolve))
+                                     "O&|$pppp:ChannelID.__new__", kwlist,
+                                     channel_id_converter, &cid, &send, &recv, &force, &resolve))
         return NULL;
-
-    // Coerce and check the ID.
-    int64_t cid;
-    if (PyObject_TypeCheck(id, &ChannelIDtype)) {
-        cid = ((channelid *)id)->id;
-    }
-    else if (!_Py_ID_Converter(id, &cid)) {
-        return NULL;
-    }
 
     // Handle "send" and "recv".
     if (send == 0 && recv == 0) {
@@ -2252,7 +2270,7 @@ channel_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"cid", NULL};
     int64_t cid;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_destroy", kwlist,
-                                     _Py_ID_Converter, &cid)) {
+                                     channel_id_converter, &cid)) {
         return NULL;
     }
 
@@ -2312,7 +2330,7 @@ channel_send(PyObject *self, PyObject *args, PyObject *kwds)
     int64_t cid;
     PyObject *obj;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O:channel_send", kwlist,
-                                     _Py_ID_Converter, &cid, &obj)) {
+                                     channel_id_converter, &cid, &obj)) {
         return NULL;
     }
 
@@ -2333,7 +2351,7 @@ channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"cid", NULL};
     int64_t cid;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_recv", kwlist,
-                                     _Py_ID_Converter, &cid)) {
+                                     channel_id_converter, &cid)) {
         return NULL;
     }
 
@@ -2355,7 +2373,7 @@ channel_close(PyObject *self, PyObject *args, PyObject *kwds)
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&|$ppp:channel_close", kwlist,
-                                     _Py_ID_Converter, &cid, &send, &recv, &force)) {
+                                     channel_id_converter, &cid, &send, &recv, &force)) {
         return NULL;
     }
 
@@ -2403,7 +2421,7 @@ channel_release(PyObject *self, PyObject *args, PyObject *kwds)
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&|$ppp:channel_release", kwlist,
-                                     _Py_ID_Converter, &cid, &send, &recv, &force)) {
+                                     channel_id_converter, &cid, &send, &recv, &force)) {
         return NULL;
     }
     if (send == 0 && recv == 0) {
