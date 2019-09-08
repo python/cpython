@@ -35,7 +35,7 @@ def from_file(infile, *,
         if kind == 'variable':
             values = known['variables']
             value = Variable(id, declaration)
-            value._isstatic = True
+            value._isstatic = _is_static(declaration)
         else:
             raise ValueError(f'unsupported kind in row {row}')
         if value.name == 'id' and declaration == UNKNOWN:
@@ -45,3 +45,19 @@ def from_file(infile, *,
             value.validate()
         values[id] = value
     return known
+
+
+def _is_static(vartype):
+    if vartype.startswith('static '):
+        return True
+    if vartype.startswith(('Py_LOCAL(', 'Py_LOCAL_INLINE(')):
+        return True
+    if vartype.startswith(('_Py_IDENTIFIER(', '_Py_static_string(')):
+        return True
+    if vartype.startswith('PyDoc_VAR('):
+        return True
+    if vartype.startswith(('SLOT1BINFULL(', 'SLOT1BIN(')):
+        return True
+    if vartype.startswith('WRAP_METHOD('):
+        return True
+    return False
