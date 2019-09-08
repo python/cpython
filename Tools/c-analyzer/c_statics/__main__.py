@@ -10,7 +10,7 @@ from c_analyzer_common.known import (
     DATA_FILE as KNOWN_FILE,
     )
 from . import find, show
-from .supported import is_supported, ignored_from_file, IGNORED_FILE
+from .supported import is_supported, ignored_from_file, IGNORED_FILE, _is_object
 
 
 def _match_unused_global(static, knownvars, used):
@@ -130,9 +130,7 @@ def cmd_show(cmd, dirs=SOURCE_DIRS, *,
     allunsupported = []
     for found, supported in _find(dirs, known, ignored):
         if skip_objects:  # XXX Support proper filters instead.
-            if found.vartype.startswith(('_Py_IDENTIFIER(', '_Py_static_string(')):
-                continue
-            if re.match(r'.*Py[a-zA-z]*Object', found.vartype):
+            if _is_object(found.vartype):
                 continue
         (allsupported if supported else allunsupported
          ).append(found)

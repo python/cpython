@@ -134,8 +134,7 @@ def _is_vartype_okay(vartype, ignoredtypes=None):
 
     # functions
     if '(' in vartype and '[' not in vartype:
-        if not vartype.startswith(('_Py_IDENTIFIER(', '_Py_static_string(')):
-            return True
+        return True
 
     # XXX finish!
     # * allow const values?
@@ -146,7 +145,9 @@ def _is_vartype_okay(vartype, ignoredtypes=None):
 def _is_object(vartype):
     if re.match(r'.*\bPy\w*Object\b', vartype):
         return True
-    if '_Py_Identifier' in vartype:
+    if '_PyArg_Parser ' in vartype:
+        return True
+    if vartype.startswith(('_Py_IDENTIFIER(', '_Py_static_string(')):
         return True
     if 'traceback_t' in vartype:
         return True
