@@ -179,6 +179,8 @@ class ShowTests(CMDBase):
 
 class ParseArgsTests(unittest.TestCase):
 
+    maxDiff = None
+
     def test_no_args(self):
         self.errmsg = None
         def fail(msg):
@@ -229,6 +231,7 @@ class ParseArgsTests(unittest.TestCase):
             'ignored': IGNORED_FILE,
             'known': KNOWN_FILE,
             'dirs': SOURCE_DIRS,
+            'skip_objects': False,
             })
 
     def test_show_full_args(self):
@@ -245,7 +248,8 @@ class ParseArgsTests(unittest.TestCase):
         self.assertEqual(cmdkwargs, {
             'ignored': 'spam.tsv',
             'known': 'eggs.tsv',
-            'dirs': ['dir1', 'dir2', 'dir3']
+            'dirs': ['dir1', 'dir2', 'dir3'],
+            'skip_objects': False,
             })
 
 

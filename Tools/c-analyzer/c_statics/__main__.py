@@ -1,5 +1,6 @@
 import argparse
 import os.path
+import re
 import sys
 
 from c_analyzer_common import SOURCE_DIRS, REPO_ROOT
@@ -115,6 +116,7 @@ def cmd_check(cmd, dirs=SOURCE_DIRS, *,
 def cmd_show(cmd, dirs=SOURCE_DIRS, *,
              ignored=IGNORED_FILE,
              known=KNOWN_FILE,
+             skip_objects=False,
               _find=_find_statics,
              _show=show.basic,
              _print=print,
@@ -127,6 +129,11 @@ def cmd_show(cmd, dirs=SOURCE_DIRS, *,
     allsupported = []
     allunsupported = []
     for found, supported in _find(dirs, known, ignored):
+        if skip_objects:  # XXX Support proper filters instead.
+            if found.vartype.startswith(('_Py_IDENTIFIER(', '_Py_static_string(')):
+                continue
+            if re.match(r'.*Py[a-zA-z]*Object', found.vartype):
+                continue
         (allsupported if supported else allunsupported
          ).append(found)
 
@@ -173,6 +180,7 @@ def parse_args(prog=PROG, argv=sys.argv[1:], *, _fail=None):
     check = subs.add_parser('check', parents=[common])
 
     show = subs.add_parser('show', parents=[common])
+    show.add_argument('--skip-objects', action='store_true')
 
     if _fail is None:
         def _fail(msg):
