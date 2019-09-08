@@ -168,7 +168,7 @@ def parse_args(prog=PROG, argv=sys.argv[1:], *, _fail=None):
 
     check = subs.add_parser('check', parents=[common])
 
-    check = subs.add_parser('show', parents=[common])
+    show = subs.add_parser('show', parents=[common])
 
     if _fail is None:
         def _fail(msg):
