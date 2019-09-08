@@ -527,28 +527,24 @@ class InterpreterIDTests(TestBase):
 
     def test_coerce_id(self):
         class Int(str):
-            def __init__(self, value):
-                self._value = value
-            def __int__(self):
-                return self._value
+            def __index__(self):
+                return 10
 
-        for id in ('10', b'10', bytearray(b'10'), memoryview(b'10'), '1_0',
-                   10.0, 10.1, Int(10)):
+        for id in ('10', '1_0', Int()):
             with self.subTest(id=id):
                 id = interpreters.InterpreterID(id, force=True)
                 self.assertEqual(int(id), 10)
 
     def test_bad_id(self):
-        for id in [-1, 'spam']:
+        for id in (10.0, b'10', []):
             with self.subTest(id):
-                with self.assertRaises(ValueError):
+                with self.assertRaises(TypeError):
                     interpreters.InterpreterID(id)
+        for id in (-1, '-1', 'spam'):
+            with self.assertRaises(ValueError):
+                interpreters.InterpreterID(id)
         with self.assertRaises(OverflowError):
             interpreters.InterpreterID(2**64)
-        with self.assertRaises(OverflowError):
-            interpreters.InterpreterID(float('inf'))
-        with self.assertRaises(TypeError):
-            interpreters.InterpreterID(object())
 
     def test_does_not_exist(self):
         id = interpreters.channel_create()

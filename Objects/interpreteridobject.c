@@ -5,35 +5,6 @@
 #include "interpreteridobject.h"
 
 
-int
-_Py_ID_Converter(PyObject *arg, void *ptr)
-{
-    PyObject *pyid = PyNumber_Long(arg);
-    if (pyid == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_Format(PyExc_TypeError,
-                         "'id' must be a non-negative int, got %s", arg->ob_type->tp_name);
-        }
-        else if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Format(PyExc_ValueError,
-                         "'id' must be a non-negative int, got %R", arg);
-        }
-        return 0;
-    }
-    int64_t id = PyLong_AsLongLong(pyid);
-    Py_DECREF(pyid);
-    if (id == -1 && PyErr_Occurred()) {
-        return 0;
-    }
-    if (id < 0) {
-        PyErr_Format(PyExc_ValueError,
-                     "'id' must be a non-negative int, got %R", arg);
-        return 0;
-    }
-    *(int64_t *)ptr = id;
-    return 1;
-}
-
 typedef struct interpid {
     PyObject_HEAD
     int64_t id;
@@ -81,8 +52,33 @@ interpid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
     if (PyObject_TypeCheck(idobj, &_PyInterpreterID_Type)) {
         id = ((interpid *)idobj)->id;
     }
-    else if (!_Py_ID_Converter(idobj, &id)) {
-        return NULL;
+    else {
+        PyObject *pyid;
+        if (PyIndex_Check(idobj)) {
+            pyid = idobj;
+            Py_INCREF(pyid);
+        }
+        else if (PyUnicode_Check(idobj)) {
+            pyid = PyNumber_Long(idobj);
+            if (pyid == NULL) {
+                return NULL;
+            }
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                         "interpreter id must be a non-negative int, got %.100s", idobj->ob_type->tp_name);
+            return NULL;
+        }
+        id = PyLong_AsLongLong(pyid);
+        Py_DECREF(pyid);
+        if (id == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (id < 0) {
+            PyErr_Format(PyExc_ValueError,
+                         "interpreter id must be a non-negative int, got %R", idobj);
+            return NULL;
+        }
     }
 
     return (PyObject *)newinterpid(cls, id, force);
