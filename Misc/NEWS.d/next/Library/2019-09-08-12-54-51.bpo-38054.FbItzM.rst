@@ -1,0 +1,2 @@
+A key-word argument *trigger* is added to the pdb.set_trace() command. If
+specified, allows to execute the command only when the condition is true.

@@ -1399,6 +1399,16 @@ class PdbTestCase(unittest.TestCase):
             pdb.set_trace(header=header)
         self.assertEqual(stdout.getvalue(), header + '\n')
 
+    def test_trigger(self):
+        stdout = StringIO()
+        with ExitStack() as resources:
+            resources.enter_context(patch('sys.stdout', stdout))
+            resources.enter_context(patch.object(pdb.Pdb, 'set_trace'))
+            pdb.set_trace(header="unspecified")
+            pdb.set_trace(header="trigger set to True", trigger=True)
+            pdb.set_trace(header="trigger set to False", trigger=False)
+        self.assertEqual(stdout.getvalue(), "unspecified\ntrigger set to True\n")
+
     def test_run_module(self):
         script = """print("SUCCESS")"""
         commands = """

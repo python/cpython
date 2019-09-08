@@ -1600,7 +1600,9 @@ def runctx(statement, globals, locals):
 def runcall(*args, **kwds):
     return Pdb().runcall(*args, **kwds)
 
-def set_trace(*, header=None):
+def set_trace(*, header=None, trigger=True):
+    if not trigger:
+        return
     pdb = Pdb()
     if header is not None:
         pdb.message(header)
