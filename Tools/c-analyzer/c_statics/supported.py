@@ -132,9 +132,10 @@ def _is_vartype_okay(vartype, ignoredtypes=None):
     # stack_t
     # _PyUnicode_Name_CAPI
 
-    # funcsions
+    # functions
     if '(' in vartype and '[' not in vartype:
-        return True
+        if not vartype.startswith(('_Py_IDENTIFIER(', '_Py_static_string(')):
+            return True
 
     # XXX finish!
     # * allow const values?
