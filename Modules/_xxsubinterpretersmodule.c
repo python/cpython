@@ -1419,13 +1419,14 @@ channel_id_converter(PyObject *arg, void *ptr)
         }
         if (cid < 0) {
             PyErr_Format(PyExc_ValueError,
-                        "channel id must be a non-negative int, got %R", arg);
+                        "channel ID must be a non-negative int, got %R", arg);
             return 0;
         }
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "channel id must be a non-negative int, got %s", arg->ob_type->tp_name);
+                     "channel ID must be an int, got %.100s",
+                     arg->ob_type->tp_name);
         return 0;
     }
     *(int64_t *)ptr = cid;

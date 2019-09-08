@@ -66,7 +66,8 @@ interpid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
         }
         else {
             PyErr_Format(PyExc_TypeError,
-                         "interpreter id must be a non-negative int, got %.100s", idobj->ob_type->tp_name);
+                         "interpreter ID must be an int, got %.100s",
+                         idobj->ob_type->tp_name);
             return NULL;
         }
         id = PyLong_AsLongLong(pyid);
@@ -76,7 +77,7 @@ interpid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
         }
         if (id < 0) {
             PyErr_Format(PyExc_ValueError,
-                         "interpreter id must be a non-negative int, got %R", idobj);
+                         "interpreter ID must be a non-negative int, got %R", idobj);
             return NULL;
         }
     }
@@ -297,7 +298,7 @@ _PyInterpreterID_LookUp(PyObject *requested_id)
         assert(id <= INT64_MAX);
     }
     else {
-        PyErr_Format(PyExc_TypeError, "ID must be an int, got %.100s",
+        PyErr_Format(PyExc_TypeError, "interpreter ID must be an int, got %.100s",
                      requested_id->ob_type->tp_name);
         return NULL;
     }
