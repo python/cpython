@@ -26,8 +26,7 @@ def statics_from_binary(binfile=b_symbols.PYTHON, *,
     symbols = _iter_symbols(binfile, find_local_symbol=None)
     #symbols = list(symbols)
     for variable in _resolve(symbols,
-                             #resolve=_get_symbol_resolver(knownvars, dirnames),
-                             resolve=_get_symbol_resolver(knownvars),
+                             resolve=_get_symbol_resolver(knownvars, dirnames),
                              ):
         # Skip each non-static variable (unless we couldn't find it).
         # XXX Drop the "UNKNOWN" condition?

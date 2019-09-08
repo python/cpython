@@ -1,3 +1,5 @@
+import os.path
+
 from c_analyzer_common import files
 from c_analyzer_common.info import UNKNOWN
 from c_parser import declarations, info
@@ -101,8 +103,16 @@ def get_resolver(knownvars=None, dirnames=None, *,
             def resolve(symbol):
                 found = resolve_known(symbol)
                 if found is None:
-                    return _from_source(symbol, dirnames)
+                    return None
+                    #return _from_source(symbol, dirnames)
                 else:
+                    for dirname in dirnames:
+                        if not dirname.endswith(os.path.sep):
+                            dirname += os.path.sep
+                        if found.filename.startswith(dirname):
+                            break
+                    else:
+                        return None
                     return found
         else:
             resolve = resolve_known
