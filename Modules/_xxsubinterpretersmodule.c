@@ -1752,8 +1752,7 @@ static PyTypeObject ChannelIDtype = {
     0,                              /* tp_getattro */
     0,                              /* tp_setattro */
     0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_LONG_SUBCLASS,   /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
     channelid_doc,                  /* tp_doc */
     0,                              /* tp_traverse */
     0,                              /* tp_clear */
@@ -2015,10 +2014,6 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
                                      "O:destroy", kwlist, &id)) {
         return NULL;
     }
-    if (!PyLong_Check(id)) {
-        PyErr_SetString(PyExc_TypeError, "ID must be an int");
-        return NULL;
-    }
 
     // Look up the interpreter.
     PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
@@ -2143,10 +2138,6 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
                                      &id, &code, &shared)) {
         return NULL;
     }
-    if (!PyLong_Check(id)) {
-        PyErr_SetString(PyExc_TypeError, "first arg (ID) must be an int");
-        return NULL;
-    }
 
     // Look up the interpreter.
     PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
@@ -2212,10 +2203,6 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *id;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O:is_running", kwlist, &id)) {
-        return NULL;
-    }
-    if (!PyLong_Check(id)) {
-        PyErr_SetString(PyExc_TypeError, "ID must be an int");
         return NULL;
     }
 
@@ -2536,7 +2523,6 @@ PyInit__xxsubinterpreters(void)
     }
 
     /* Initialize types */
-    ChannelIDtype.tp_base = &PyLong_Type;
     if (PyType_Ready(&ChannelIDtype) != 0) {
         return NULL;
     }

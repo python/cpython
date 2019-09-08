@@ -249,8 +249,7 @@ PyTypeObject _PyInterpreterID_Type = {
     0,                              /* tp_getattro */
     0,                              /* tp_setattro */
     0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_LONG_SUBCLASS,   /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
     interpid_doc,                   /* tp_doc */
     0,                              /* tp_traverse */
     0,                              /* tp_clear */
@@ -261,7 +260,7 @@ PyTypeObject _PyInterpreterID_Type = {
     0,                              /* tp_methods */
     0,                              /* tp_members */
     0,                              /* tp_getset */
-    &PyLong_Type,                   /* tp_base */
+    0,                              /* tp_base */
     0,                              /* tp_dict */
     0,                              /* tp_descr_get */
     0,                              /* tp_descr_set */
@@ -296,12 +295,17 @@ _PyInterpreterID_LookUp(PyObject *requested_id)
     if (PyObject_TypeCheck(requested_id, &_PyInterpreterID_Type)) {
         id = ((interpid *)requested_id)->id;
     }
-    else {
+    else if (PyLong_Check(requested_id)) {
         id = PyLong_AsLongLong(requested_id);
         if (id == -1 && PyErr_Occurred() != NULL) {
             return NULL;
         }
         assert(id <= INT64_MAX);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError, "ID must be an int, got %.100s",
+                     requested_id->ob_type->tp_name);
+        return NULL;
     }
     return _PyInterpreterState_LookUpID(id);
 }
