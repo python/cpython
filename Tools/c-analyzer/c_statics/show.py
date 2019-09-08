@@ -8,9 +8,9 @@ def basic(statics, *,
         else:
             line = f'{static.filename}:{static.name}'
         vartype = static.vartype
-        if vartype.startswith('static '):
-            vartype = vartype.partition(' ')[2]
-        else:
-            vartype = '=' + vartype
+        #if vartype.startswith('static '):
+        #    vartype = vartype.partition(' ')[2]
+        #else:
+        #    vartype = '=' + vartype
         line = f'{line:<64} {vartype}'
         _print(line)
