@@ -5,32 +5,33 @@
 #include "interpreteridobject.h"
 
 
-int64_t
-_Py_CoerceID(PyObject *orig)
+int
+_Py_ID_Converter(PyObject *arg, void *ptr)
 {
-    PyObject *pyid = PyNumber_Long(orig);
+    PyObject *pyid = PyNumber_Long(arg);
     if (pyid == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Format(PyExc_TypeError,
-                         "'id' must be a non-negative int, got %s", orig->ob_type->tp_name);
+                         "'id' must be a non-negative int, got %s", arg->ob_type->tp_name);
         }
         else if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Format(PyExc_ValueError,
-                         "'id' must be a non-negative int, got %R", orig);
+                         "'id' must be a non-negative int, got %R", arg);
         }
-        return -1;
+        return 0;
     }
     int64_t id = PyLong_AsLongLong(pyid);
     Py_DECREF(pyid);
     if (id == -1 && PyErr_Occurred()) {
-        return -1;
+        return 0;
     }
     if (id < 0) {
         PyErr_Format(PyExc_ValueError,
-                     "'id' must be a non-negative int, got %R", orig);
-        return -1;
+                     "'id' must be a non-negative int, got %R", arg);
+        return 0;
     }
-    return id;
+    *(int64_t *)ptr = id;
+    return 1;
 }
 
 typedef struct interpid {
@@ -80,11 +81,8 @@ interpid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
     if (PyObject_TypeCheck(idobj, &_PyInterpreterID_Type)) {
         id = ((interpid *)idobj)->id;
     }
-    else {
-        id = _Py_CoerceID(idobj);
-        if (id < 0) {
-            return NULL;
-        }
+    else if (!_Py_ID_Converter(idobj, &id)) {
+        return NULL;
     }
 
     return (PyObject *)newinterpid(cls, id, force);

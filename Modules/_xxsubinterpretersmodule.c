@@ -1452,11 +1452,8 @@ channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
     if (PyObject_TypeCheck(id, &ChannelIDtype)) {
         cid = ((channelid *)id)->id;
     }
-    else {
-        cid = _Py_CoerceID(id);
-        if (cid < 0) {
-            return NULL;
-        }
+    else if (!_Py_ID_Converter(id, &cid)) {
+        return NULL;
     }
 
     // Handle "send" and "recv".
@@ -2253,13 +2250,9 @@ static PyObject *
 channel_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", NULL};
-    PyObject *id;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O:channel_destroy", kwlist, &id)) {
-        return NULL;
-    }
-    int64_t cid = _Py_CoerceID(id);
-    if (cid < 0) {
+    int64_t cid;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_destroy", kwlist,
+                                     _Py_ID_Converter, &cid)) {
         return NULL;
     }
 
@@ -2316,14 +2309,10 @@ static PyObject *
 channel_send(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "obj", NULL};
-    PyObject *id;
+    int64_t cid;
     PyObject *obj;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO:channel_send", kwlist, &id, &obj)) {
-        return NULL;
-    }
-    int64_t cid = _Py_CoerceID(id);
-    if (cid < 0) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O:channel_send", kwlist,
+                                     _Py_ID_Converter, &cid, &obj)) {
         return NULL;
     }
 
@@ -2342,13 +2331,9 @@ static PyObject *
 channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", NULL};
-    PyObject *id;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O:channel_recv", kwlist, &id)) {
-        return NULL;
-    }
-    int64_t cid = _Py_CoerceID(id);
-    if (cid < 0) {
+    int64_t cid;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_recv", kwlist,
+                                     _Py_ID_Converter, &cid)) {
         return NULL;
     }
 
@@ -2364,17 +2349,13 @@ static PyObject *
 channel_close(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
-    PyObject *id;
+    int64_t cid;
     int send = 0;
     int recv = 0;
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$ppp:channel_close", kwlist,
-                                     &id, &send, &recv, &force)) {
-        return NULL;
-    }
-    int64_t cid = _Py_CoerceID(id);
-    if (cid < 0) {
+                                     "O&|$ppp:channel_close", kwlist,
+                                     _Py_ID_Converter, &cid, &send, &recv, &force)) {
         return NULL;
     }
 
@@ -2416,17 +2397,13 @@ channel_release(PyObject *self, PyObject *args, PyObject *kwds)
 {
     // Note that only the current interpreter is affected.
     static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
-    PyObject *id;
+    int64_t cid;
     int send = 0;
     int recv = 0;
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$ppp:channel_release", kwlist,
-                                     &id, &send, &recv, &force)) {
-        return NULL;
-    }
-    int64_t cid = _Py_CoerceID(id);
-    if (cid < 0) {
+                                     "O&|$ppp:channel_release", kwlist,
+                                     _Py_ID_Converter, &cid, &send, &recv, &force)) {
         return NULL;
     }
     if (send == 0 && recv == 0) {
