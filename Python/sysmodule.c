@@ -1179,7 +1179,7 @@ static PyStructSequence_Desc asyncgen_hooks_desc = {
 static PyObject *
 sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 {
-    static char *keywords[] = {"firstiter", "finalizer", NULL};
+    static const char *keywords[] = {"firstiter", "finalizer", NULL};
     PyObject *firstiter = NULL;
     PyObject *finalizer = NULL;
     PyThreadState *tstate = _PyThreadState_GET();
@@ -1608,7 +1608,7 @@ _PySys_GetSizeOf(PyObject *o)
 static PyObject *
 sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"object", "default", 0};
+    static const char *kwlist[] = {"object", "default", 0};
     size_t size;
     PyObject *o, *dflt = NULL;
     PyThreadState *tstate = _PyThreadState_GET();

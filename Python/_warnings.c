@@ -1024,7 +1024,7 @@ get_source_line(PyObject *module_globals, int lineno)
 static PyObject *
 warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwd_list[] = {"message", "category", "filename", "lineno",
+    static const char *kwd_list[] = {"message", "category", "filename", "lineno",
                                 "module", "registry", "module_globals",
                                 "source", 0};
     PyObject *message;

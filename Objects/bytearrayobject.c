@@ -750,7 +750,7 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
 static int
 bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"source", "encoding", "errors", 0};
+    static const char *kwlist[] = {"source", "encoding", "errors", 0};
     PyObject *arg = NULL;
     const char *encoding = NULL;
     const char *errors = NULL;

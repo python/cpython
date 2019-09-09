@@ -51,7 +51,7 @@ bisect_right(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+    static const char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
@@ -87,7 +87,7 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+    static const char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
@@ -168,7 +168,7 @@ bisect_left(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+    static const char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
@@ -204,7 +204,7 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+    static const char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);

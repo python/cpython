@@ -1174,7 +1174,7 @@ scanner_call(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *rval;
     Py_ssize_t idx;
     Py_ssize_t next_idx = -1;
-    static char *kwlist[] = {"string", "idx", NULL};
+    static const char *kwlist[] = {"string", "idx", NULL};
     PyScannerObject *s;
     assert(PyScanner_Check(self));
     s = (PyScannerObject *)self;
@@ -1202,7 +1202,7 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyScannerObject *s;
     PyObject *ctx;
     PyObject *strict;
-    static char *kwlist[] = {"context", NULL};
+    static const char *kwlist[] = {"context", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:make_scanner", kwlist, &ctx))
         return NULL;
@@ -1295,7 +1295,7 @@ PyTypeObject PyScannerType = {
 static PyObject *
 encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", NULL};
+    static const char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", NULL};
 
     PyEncoderObject *s;
     PyObject *markers, *defaultfn, *encoder, *indent, *key_separator;
@@ -1350,7 +1350,7 @@ static PyObject *
 encoder_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
     /* Python callable interface to encode_listencode_obj */
-    static char *kwlist[] = {"obj", "_current_indent_level", NULL};
+    static const char *kwlist[] = {"obj", "_current_indent_level", NULL};
     PyObject *obj;
     Py_ssize_t indent_level;
     PyEncoderObject *s;

@@ -57,7 +57,7 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
      * C-level, so this code is redundant with the one in connection_init in
      * connection.c and must always be copied from there ... */
 
-    static char *kwlist[] = {
+    static const char *kwlist[] = {
         "database", "timeout", "detect_types", "isolation_level",
         "check_same_thread", "factory", "cached_statements", "uri",
         NULL
@@ -105,7 +105,7 @@ RAM instead of on disk.");
 static PyObject* module_complete(PyObject* self, PyObject* args, PyObject*
         kwargs)
 {
-    static char *kwlist[] = {"statement", NULL, NULL};
+    static const char *kwlist[] = {"statement", NULL, NULL};
     char* statement;
 
     PyObject* result;
@@ -135,7 +135,7 @@ Checks if a string contains a complete SQL statement. Non-standard.");
 static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyObject*
         kwargs)
 {
-    static char *kwlist[] = {"do_enable", NULL, NULL};
+    static const char *kwlist[] = {"do_enable", NULL, NULL};
     int do_enable;
     int rc;
 

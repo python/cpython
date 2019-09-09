@@ -1008,7 +1008,7 @@ static PyObject * _odict_popkey(PyObject *, PyObject *, PyObject *);
 static PyObject *
 odict_pop(PyObject *od, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"key", "default", 0};
+    static const char *kwlist[] = {"key", "default", 0};
     PyObject *key, *failobj = NULL;
 
     /* borrowed */

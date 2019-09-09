@@ -3549,7 +3549,7 @@ the remote end is closed and all data is read, return the empty string.");
 static PyObject*
 sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"buffer", "nbytes", "flags", 0};
+    static const char *kwlist[] = {"buffer", "nbytes", "flags", 0};
 
     int flags = 0;
     Py_buffer pbuf;
@@ -3736,7 +3736,7 @@ Like recv(buffersize, flags) but also return the sender's address info.");
 static PyObject *
 sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
 {
-    static char *kwlist[] = {"buffer", "nbytes", "flags", 0};
+    static const char *kwlist[] = {"buffer", "nbytes", "flags", 0};
 
     int flags = 0;
     Py_buffer pbuf;
@@ -4653,7 +4653,7 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
     struct sock_sendmsg ctx;
     Py_ssize_t controllen;
     void *controlbuf = NULL;
-    static char *keywords[] = {"msg", "op", "iv", "assoclen", "flags", 0};
+    static const char *keywords[] = {"msg", "op", "iv", "assoclen", "flags", 0};
 
     if (self->sock_family != AF_ALG) {
         PyErr_SetString(PyExc_OSError,
@@ -5100,7 +5100,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *fdobj = NULL;
     SOCKET_T fd = INVALID_SOCKET;
     int family = -1, type = -1, proto = -1;
-    static char *keywords[] = {"family", "type", "proto", "fileno", 0};
+    static const char *keywords[] = {"family", "type", "proto", "fileno", 0};
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
     int *atomic_flag_works = &sock_cloexec_works;
@@ -6458,8 +6458,8 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 static PyObject *
 socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 {
-    static char* kwnames[] = {"host", "port", "family", "type", "proto",
-                              "flags", 0};
+    static const char *kwnames[] = {"host", "port", "family", "type", "proto",
+                                    "flags", 0};
     struct addrinfo hints, *res;
     struct addrinfo *res0 = NULL;
     PyObject *hobj = NULL;

@@ -820,7 +820,7 @@ class _contextvars.ContextVar "PyContextVar *" "&PyContextVar_Type"
 static PyObject *
 contextvar_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"", "default", NULL};
+    static const char *kwlist[] = {"", "default", NULL};
     PyObject *name;
     PyObject *def = NULL;
 

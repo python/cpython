@@ -2110,7 +2110,7 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t i;
 
     if (kwds != NULL) {
-        char *kwlist[] = {"repeat", 0};
+        static const char *kwlist[] = {"repeat", 0};
         PyObject *tmpargs = PyTuple_New(0);
         if (tmpargs == NULL)
             return NULL;
@@ -4254,7 +4254,7 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     repeatobject *ro;
     PyObject *element;
     Py_ssize_t cnt = -1, n_kwds = 0;
-    static char *kwargs[] = {"object", "times", NULL};
+    static const char *kwargs[] = {"object", "times", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:repeat", kwargs,
                                      &element, &cnt))

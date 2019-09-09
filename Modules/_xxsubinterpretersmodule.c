@@ -1436,7 +1436,7 @@ static _channels * _global_channels(void);
 static PyObject *
 channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "send", "recv", "force", "_resolve", NULL};
+    static const char *kwlist[] = {"id", "send", "recv", "force", "_resolve", NULL};
     PyObject *id;
     int send = -1;
     int recv = -1;
@@ -2010,7 +2010,7 @@ Create a new interpreter and return a unique generated ID.");
 static PyObject *
 interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", NULL};
+    static const char *kwlist[] = {"id", NULL};
     PyObject *id;
     // XXX Use "L" for id?
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
@@ -2137,7 +2137,7 @@ Return the ID of main interpreter.");
 static PyObject *
 interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "script", "shared", NULL};
+    static const char *kwlist[] = {"id", "script", "shared", NULL};
     PyObject *id, *code;
     PyObject *shared = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
@@ -2186,7 +2186,7 @@ See PyRun_SimpleStrings.");
 static PyObject *
 object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"obj", NULL};
+    static const char *kwlist[] = {"obj", NULL};
     PyObject *obj;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O:is_shareable", kwlist, &obj)) {
@@ -2210,7 +2210,7 @@ False otherwise.");
 static PyObject *
 interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", NULL};
+    static const char *kwlist[] = {"id", NULL};
     PyObject *id;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O:is_running", kwlist, &id)) {
@@ -2267,7 +2267,7 @@ Create a new cross-interpreter channel and return a unique generated ID.");
 static PyObject *
 channel_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"cid", NULL};
+    static const char *kwlist[] = {"cid", NULL};
     PyObject *id;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O:channel_destroy", kwlist, &id)) {
@@ -2330,7 +2330,7 @@ Return the list of all IDs for active channels.");
 static PyObject *
 channel_send(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"cid", "obj", NULL};
+    static const char *kwlist[] = {"cid", "obj", NULL};
     PyObject *id;
     PyObject *obj;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
@@ -2356,7 +2356,7 @@ Add the object's data to the channel's queue.");
 static PyObject *
 channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"cid", NULL};
+    static const char *kwlist[] = {"cid", NULL};
     PyObject *id;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O:channel_recv", kwlist, &id)) {
@@ -2378,7 +2378,7 @@ Return a new object from the data at the from of the channel's queue.");
 static PyObject *
 channel_close(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
+    static const char *kwlist[] = {"cid", "send", "recv", "force", NULL};
     PyObject *id;
     int send = 0;
     int recv = 0;
@@ -2430,7 +2430,7 @@ static PyObject *
 channel_release(PyObject *self, PyObject *args, PyObject *kwds)
 {
     // Note that only the current interpreter is affected.
-    static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
+    static const char *kwlist[] = {"cid", "send", "recv", "force", NULL};
     PyObject *id;
     int send = 0;
     int recv = 0;

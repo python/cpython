@@ -547,7 +547,7 @@ Overlapped_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     OverlappedObject *self;
     HANDLE event = INVALID_HANDLE_VALUE;
-    static char *kwlist[] = {"event", NULL};
+    static const char *kwlist[] = {"event", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|" F_HANDLE, kwlist, &event))
         return NULL;

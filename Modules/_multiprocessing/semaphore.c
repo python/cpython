@@ -67,7 +67,7 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
     DWORD res, full_msecs, nhandles;
     HANDLE handles[2], sigint_event;
 
-    static char *kwlist[] = {"block", "timeout", NULL};
+    static const char *kwlist[] = {"block", "timeout", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iO", kwlist,
                                      &blocking, &timeout_obj))
@@ -274,7 +274,7 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
     struct timeval now;
     long sec, nsec;
 
-    static char *kwlist[] = {"block", "timeout", NULL};
+    static const char *kwlist[] = {"block", "timeout", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iO", kwlist,
                                      &blocking, &timeout_obj))
@@ -435,7 +435,7 @@ semlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     int kind, maxvalue, value, unlink;
     PyObject *result;
     char *name, *name_copy = NULL;
-    static char *kwlist[] = {"kind", "value", "maxvalue", "name", "unlink",
+    static const char *kwlist[] = {"kind", "value", "maxvalue", "name", "unlink",
                              NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "iiisi", kwlist,

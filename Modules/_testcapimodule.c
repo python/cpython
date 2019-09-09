@@ -1045,7 +1045,7 @@ getargs_tuple(PyObject *self, PyObject *args)
 static PyObject *
 getargs_keywords(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *keywords[] = {"arg1","arg2","arg3","arg4","arg5", NULL};
+    static const char *keywords[] = {"arg1","arg2","arg3","arg4","arg5", NULL};
     static const char fmt[] = "(ii)i|(i(ii))(iii)i";
     int int_args[10]={-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
@@ -1062,7 +1062,7 @@ getargs_keywords(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 getargs_keyword_only(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *keywords[] = {"required", "optional", "keyword_only", NULL};
+    static const char *keywords[] = {"required", "optional", "keyword_only", NULL};
     int required = -1;
     int optional = -1;
     int keyword_only = -1;
@@ -1077,7 +1077,7 @@ getargs_keyword_only(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 getargs_positional_only_and_keywords(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *keywords[] = {"", "", "keyword", NULL};
+    static const char *keywords[] = {"", "", "keyword", NULL};
     int required = -1;
     int optional = -1;
     int keyword = -1;
@@ -1643,7 +1643,7 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
     }
 
     result = PyArg_ParseTupleAndKeywords(sub_args, sub_kwargs,
-        sub_format, keywords,
+        sub_format, (const char **)keywords,
         buffers + 0, buffers + 1, buffers + 2, buffers + 3,
         buffers + 4, buffers + 5, buffers + 6, buffers + 7);
 
@@ -2108,7 +2108,7 @@ test_empty_argparse(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     /* Test that formats can begin with '|'. See issue #4720. */
     PyObject *tuple, *dict = NULL;
-    static char *kwlist[] = {NULL};
+    static const char *kwlist[] = {NULL};
     int result;
     tuple = PyTuple_New(0);
     if (!tuple)
@@ -3291,7 +3291,7 @@ make_exception_with_doc(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *base = NULL;
     PyObject *dict = NULL;
 
-    static char *kwlist[] = {"name", "doc", "base", "dict", NULL};
+    static const char *kwlist[] = {"name", "doc", "base", "dict", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
                     "s|sOO:make_exception_with_doc", kwlist,
@@ -5464,7 +5464,7 @@ static struct PyMemberDef test_members[] = {
 static PyObject *
 test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    static char *keywords[] = {
+    static const char *keywords[] = {
         "T_BOOL", "T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT",
         "T_INT", "T_UINT", "T_LONG", "T_ULONG", "T_PYSSIZET",
         "T_FLOAT", "T_DOUBLE", "T_STRING_INPLACE",

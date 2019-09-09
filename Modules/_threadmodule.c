@@ -101,7 +101,7 @@ static int
 lock_acquire_parse_args(PyObject *args, PyObject *kwds,
                         _PyTime_t *timeout)
 {
-    char *kwlist[] = {"blocking", "timeout", NULL};
+    static const char *kwlist[] = {"blocking", "timeout", NULL};
     int blocking = 1;
     PyObject *timeout_obj = NULL;
     const _PyTime_t unset_timeout = _PyTime_FromSeconds(-1);

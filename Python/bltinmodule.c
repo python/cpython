@@ -267,8 +267,8 @@ Internal helper function used by the class statement.");
 static PyObject *
 builtin___import__(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"name", "globals", "locals", "fromlist",
-                             "level", 0};
+    static const char *kwlist[] = {"name", "globals", "locals", "fromlist",
+                                   "level", 0};
     PyObject *name, *globals = NULL, *locals = NULL, *fromlist = NULL;
     int level = 0;
 
@@ -1583,7 +1583,7 @@ min_max(PyObject *args, PyObject *kwds, int op)
 {
     PyObject *v, *it, *item, *val, *maxitem, *maxval, *keyfunc=NULL;
     PyObject *emptytuple, *defaultval = NULL;
-    static char *kwlist[] = {"key", "default", NULL};
+    static const char *kwlist[] = {"key", "default", NULL};
     const char *name = op == Py_LT ? "min" : "max";
     const int positional = PyTuple_Size(args) > 1;
     int ret;

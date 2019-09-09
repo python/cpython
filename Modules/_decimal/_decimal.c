@@ -1225,7 +1225,7 @@ context_dealloc(PyDecContextObject *self)
 static int
 context_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {
+    static const char *kwlist[] = {
       "prec", "rounding", "Emin", "Emax", "capitals", "clamp",
       "flags", "traps", NULL
     };
@@ -1577,7 +1577,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
 static PyObject *
 ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"ctx", NULL};
+    static const char *kwlist[] = {"ctx", NULL};
     PyDecContextManagerObject *self;
     PyObject *local = Py_None;
     PyObject *global;
@@ -2641,7 +2641,7 @@ PyDec_FromObject(PyObject *v, PyObject *context)
 static PyObject *
 dec_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"value", "context", NULL};
+    static const char *kwlist[] = {"value", "context", NULL};
     PyObject *v = NULL;
     PyObject *context = Py_None;
 
@@ -3364,7 +3364,7 @@ error:
 static PyObject *
 PyDec_ToIntegralValue(PyObject *dec, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"rounding", "context", NULL};
+    static const char *kwlist[] = {"rounding", "context", NULL};
     PyObject *result;
     PyObject *rounding = Py_None;
     PyObject *context = Py_None;
@@ -3405,7 +3405,7 @@ PyDec_ToIntegralValue(PyObject *dec, PyObject *args, PyObject *kwds)
 static PyObject *
 PyDec_ToIntegralExact(PyObject *dec, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"rounding", "context", NULL};
+    static const char *kwlist[] = {"rounding", "context", NULL};
     PyObject *result;
     PyObject *rounding = Py_None;
     PyObject *context = Py_None;
@@ -3689,7 +3689,7 @@ dec_##MPDFUNC(PyObject *self, PyObject *dummy UNUSED)       \
 static PyObject *                                                         \
 dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)             \
 {                                                                         \
-    static char *kwlist[] = {"context", NULL};                            \
+    static const char *kwlist[] = {"context", NULL};                            \
     PyObject *context = Py_None;                                          \
                                                                           \
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist,            \
@@ -3706,7 +3706,7 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)             \
 static PyObject *                                              \
 dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)  \
 {                                                              \
-    static char *kwlist[] = {"context", NULL};                 \
+    static const char *kwlist[] = {"context", NULL};                 \
     PyObject *result;                                          \
     PyObject *context = Py_None;                               \
     uint32_t status = 0;                                       \
@@ -3735,7 +3735,7 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)  \
 static PyObject *                                                \
 dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)    \
 {                                                                \
-    static char *kwlist[] = {"other", "context", NULL};          \
+    static const char *kwlist[] = {"other", "context", NULL};          \
     PyObject *other;                                             \
     PyObject *a, *b;                                             \
     PyObject *result;                                            \
@@ -3773,7 +3773,7 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)    \
 static PyObject *                                               \
 dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)   \
 {                                                               \
-    static char *kwlist[] = {"other", "context", NULL};         \
+    static const char *kwlist[] = {"other", "context", NULL};         \
     PyObject *context = Py_None;                                \
     PyObject *other;                                            \
     PyObject *a, *b;                                            \
@@ -3804,7 +3804,7 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)   \
 static PyObject *                                                        \
 dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)            \
 {                                                                        \
-    static char *kwlist[] = {"other", "third", "context", NULL};         \
+    static const char *kwlist[] = {"other", "third", "context", NULL};         \
     PyObject *other, *third;                                             \
     PyObject *a, *b, *c;                                                 \
     PyObject *result;                                                    \
@@ -4087,7 +4087,7 @@ Dec_UnaryFuncVA(mpd_qlogb)
 static PyObject *
 dec_mpd_class(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"context", NULL};
+    static const char *kwlist[] = {"context", NULL};
     PyObject *context = Py_None;
     const char *cp;
 
@@ -4104,7 +4104,7 @@ dec_mpd_class(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 dec_mpd_to_eng(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"context", NULL};
+    static const char *kwlist[] = {"context", NULL};
     PyObject *result;
     PyObject *context = Py_None;
     mpd_ssize_t size;
@@ -4135,7 +4135,7 @@ Dec_BinaryFuncVA_NO_CTX(mpd_compare_total_mag)
 static PyObject *
 dec_mpd_qcopy_sign(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"other", "context", NULL};
+    static const char *kwlist[] = {"other", "context", NULL};
     PyObject *other;
     PyObject *a, *b;
     PyObject *result;
@@ -4170,7 +4170,7 @@ dec_mpd_qcopy_sign(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 dec_mpd_same_quantum(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"other", "context", NULL};
+    static const char *kwlist[] = {"other", "context", NULL};
     PyObject *other;
     PyObject *a, *b;
     PyObject *result;
@@ -4202,7 +4202,7 @@ Dec_BinaryFuncVA(mpd_qshift)
 static PyObject *
 dec_mpd_qquantize(PyObject *v, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"exp", "rounding", "context", NULL};
+    static const char *kwlist[] = {"exp", "rounding", "context", NULL};
     PyObject *rounding = Py_None;
     PyObject *context = Py_None;
     PyObject *w, *a, *b;
@@ -4975,7 +4975,7 @@ ctx_mpd_qdivmod(PyObject *context, PyObject *args)
 static PyObject *
 ctx_mpd_qpow(PyObject *context, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"a", "b", "modulo", NULL};
+    static const char *kwlist[] = {"a", "b", "modulo", NULL};
     PyObject *base, *exp, *mod = Py_None;
     PyObject *a, *b, *c = NULL;
     PyObject *result;

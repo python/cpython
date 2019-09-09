@@ -1461,7 +1461,7 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
     PyObject *iterable = NULL;
     PyObject *maxlenobj = NULL;
     Py_ssize_t maxlen = -1;
-    char *kwlist[] = {"iterable", "maxlen", 0};
+    static const char *kwlist[] = {"iterable", "maxlen", 0};
 
     if (kwdargs == NULL && PyTuple_GET_SIZE(args) <= 2) {
         if (PyTuple_GET_SIZE(args) > 0) {

@@ -73,7 +73,7 @@ static void _sqlite3_result_error(sqlite3_context* ctx, const char* errmsg, int 
 
 int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
-    static char *kwlist[] = {
+    static const char *kwlist[] = {
         "database", "timeout", "detect_types", "isolation_level",
         "check_same_thread", "factory", "cached_statements", "uri",
         NULL
@@ -291,7 +291,7 @@ error:
 
 PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
-    static char *kwlist[] = {"factory", NULL};
+    static const char *kwlist[] = {"factory", NULL};
     PyObject* factory = NULL;
     PyObject* cursor;
 
@@ -811,7 +811,7 @@ static void _destructor(void* args)
 
 PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
-    static char *kwlist[] = {"name", "narg", "func", "deterministic", NULL};
+    static const char *kwlist[] = {"name", "narg", "func", "deterministic", NULL};
 
     PyObject* func;
     char* name;
@@ -869,7 +869,7 @@ PyObject* pysqlite_connection_create_aggregate(pysqlite_Connection* self, PyObje
 
     int n_arg;
     char* name;
-    static char *kwlist[] = { "name", "n_arg", "aggregate_class", NULL };
+    static const char *kwlist[] = { "name", "n_arg", "aggregate_class", NULL };
     int rc;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
@@ -996,7 +996,7 @@ static PyObject* pysqlite_connection_set_authorizer(pysqlite_Connection* self, P
 {
     PyObject* authorizer_cb;
 
-    static char *kwlist[] = { "authorizer_callback", NULL };
+    static const char *kwlist[] = { "authorizer_callback", NULL };
     int rc;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
@@ -1025,7 +1025,7 @@ static PyObject* pysqlite_connection_set_progress_handler(pysqlite_Connection* s
     PyObject* progress_handler;
     int n;
 
-    static char *kwlist[] = { "progress_handler", "n", NULL };
+    static const char *kwlist[] = { "progress_handler", "n", NULL };
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1052,7 +1052,7 @@ static PyObject* pysqlite_connection_set_trace_callback(pysqlite_Connection* sel
 {
     PyObject* trace_callback;
 
-    static char *kwlist[] = { "trace_callback", NULL };
+    static const char *kwlist[] = { "trace_callback", NULL };
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1493,7 +1493,7 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
     int sleep_ms = 250;
     sqlite3 *bck_conn;
     sqlite3_backup *bck_handle;
-    static char *keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
+    static const char *keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|$iOsO:backup", keywords,
                                      &pysqlite_ConnectionType, &target,

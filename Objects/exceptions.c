@@ -623,7 +623,7 @@ SimpleExtendsException(PyExc_BaseException, KeyboardInterrupt,
 static int
 ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"name", "path", 0};
+    static const char *kwlist[] = {"name", "path", 0};
     PyObject *empty_tuple;
     PyObject *msg = NULL;
     PyObject *name = NULL;

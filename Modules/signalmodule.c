@@ -666,7 +666,7 @@ static PyObject*
 signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
 {
     struct _Py_stat_struct status;
-    static char *kwlist[] = {
+    static const char *kwlist[] = {
         "", "warn_on_full_buffer", NULL,
     };
     int warn_on_full_buffer = 1;

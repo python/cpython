@@ -41,7 +41,7 @@ Custom_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"first", "last", "number", NULL};
+    static const char *kwlist[] = {"first", "last", "number", NULL};
     PyObject *first = NULL, *last = NULL, *tmp;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist,

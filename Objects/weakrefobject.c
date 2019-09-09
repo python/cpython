@@ -129,7 +129,7 @@ gc_clear(PyWeakReference *self)
 static PyObject *
 weakref_call(PyWeakReference *self, PyObject *args, PyObject *kw)
 {
-    static char *kwlist[] = {NULL};
+    static const char *kwlist[] = {NULL};
 
     if (PyArg_ParseTupleAndKeywords(args, kw, ":__call__", kwlist)) {
         PyObject *object = PyWeakref_GET_OBJECT(self);

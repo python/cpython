@@ -8976,7 +8976,7 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
     struct sf_hdtr sf;
     int flags = 0;
     /* Beware that "in" clashes with Python's own "in" operator keyword */
-    static char *keywords[] = {"out", "in",
+    static const char *keywords[] = {"out", "in",
                                 "offset", "count",
                                 "headers", "trailers", "flags", NULL};
 
@@ -9092,7 +9092,7 @@ done:
 #else
     Py_ssize_t count;
     PyObject *offobj;
-    static char *keywords[] = {"out", "in",
+    static const char *keywords[] = {"out", "in",
                                 "offset", "count", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiOn:sendfile",
             keywords, &out, &in, &offobj, &count))

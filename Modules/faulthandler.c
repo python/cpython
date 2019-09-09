@@ -259,7 +259,7 @@ static PyObject*
 faulthandler_dump_traceback_py(PyObject *self,
                                PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"file", "all_threads", NULL};
+    static const char *kwlist[] = {"file", "all_threads", NULL};
     PyObject *file = NULL;
     int all_threads = 1;
     PyThreadState *tstate;
@@ -522,7 +522,7 @@ faulthandler_enable(void)
 static PyObject*
 faulthandler_py_enable(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"file", "all_threads", NULL};
+    static const char *kwlist[] = {"file", "all_threads", NULL};
     PyObject *file = NULL;
     int all_threads = 1;
     int fd;
@@ -687,7 +687,7 @@ static PyObject*
 faulthandler_dump_traceback_later(PyObject *self,
                                    PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"timeout", "repeat", "file", "exit", NULL};
+    static const char *kwlist[] = {"timeout", "repeat", "file", "exit", NULL};
     PyObject *timeout_obj;
     _PyTime_t timeout, timeout_us;
     int repeat = 0;
@@ -890,7 +890,7 @@ static PyObject*
 faulthandler_register_py(PyObject *self,
                          PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"signum", "file", "all_threads", "chain", NULL};
+    static const char *kwlist[] = {"signum", "file", "all_threads", "chain", NULL};
     int signum;
     PyObject *file = NULL;
     int all_threads = 1;

@@ -29,8 +29,8 @@ typedef struct {
     _PyUnicodeWriter    writer;
 } MultibyteDecodeBuffer;
 
-static char *incnewkwarglist[] = {"errors", NULL};
-static char *streamkwarglist[] = {"stream", "errors", NULL};
+static const char *incnewkwarglist[] = {"errors", NULL};
+static const char *streamkwarglist[] = {"stream", "errors", NULL};
 
 static PyObject *multibytecodec_encode(MultibyteCodec *,
                 MultibyteCodec_State *, PyObject *, Py_ssize_t *,

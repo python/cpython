@@ -1280,7 +1280,7 @@ static int
 ndarray_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     NDArrayObject *nd = (NDArrayObject *)self;
-    static char *kwlist[] = {
+    static const char *kwlist[] = {
         "obj", "shape", "strides", "offset", "format", "flags", "getbuf", NULL
     };
     PyObject *v = NULL;  /* initializer: scalar, list, tuple or base object */
@@ -1346,7 +1346,7 @@ static PyObject *
 ndarray_push(PyObject *self, PyObject *args, PyObject *kwds)
 {
     NDArrayObject *nd = (NDArrayObject *)self;
-    static char *kwlist[] = {
+    static const char *kwlist[] = {
         "items", "shape", "strides", "offset", "format", "flags", NULL
     };
     PyObject *items = NULL;   /* initializer: scalar, list or tuple */
@@ -2719,7 +2719,7 @@ static int
 staticarray_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     StaticArrayObject *a = (StaticArrayObject *)self;
-    static char *kwlist[] = {
+    static const char *kwlist[] = {
         "legacy_mode", NULL
     };
     PyObject *legacy_mode = Py_False;

@@ -956,7 +956,7 @@ static PyObject *
 memory_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
 {
     PyObject *obj;
-    static char *kwlist[] = {"object", NULL};
+    static const char *kwlist[] = {"object", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:memoryview", kwlist,
                                      &obj)) {
@@ -1345,7 +1345,7 @@ zero_in_shape(PyMemoryViewObject *mv)
 static PyObject *
 memory_cast(PyMemoryViewObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"format", "shape", NULL};
+    static const char *kwlist[] = {"format", "shape", NULL};
     PyMemoryViewObject *mv = NULL;
     PyObject *shape = NULL;
     PyObject *format;
@@ -2128,7 +2128,7 @@ memory_tolist(PyMemoryViewObject *mv, PyObject *noargs)
 static PyObject *
 memory_tobytes(PyMemoryViewObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"order", NULL};
+    static const char *kwlist[] = {"order", NULL};
     Py_buffer *src = VIEW_ADDR(self);
     char *order = NULL;
     char ord = 'C';

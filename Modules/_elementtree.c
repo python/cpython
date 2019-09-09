@@ -1090,7 +1090,7 @@ element_setstate_from_attributes(ElementObject *self,
 static PyObject *
 element_setstate_from_Python(ElementObject *self, PyObject *state)
 {
-    static char *kwlist[] = {PICKLED_TAG, PICKLED_ATTRIB, PICKLED_TEXT,
+    static const char *kwlist[] = {PICKLED_TAG, PICKLED_ATTRIB, PICKLED_TEXT,
                              PICKLED_TAIL, PICKLED_CHILDREN, 0};
     PyObject *args;
     PyObject *tag, *attrib, *text, *tail, *children;

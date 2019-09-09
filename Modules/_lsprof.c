@@ -635,7 +635,7 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
 {
     int subcalls = -1;
     int builtins = -1;
-    static char *kwlist[] = {"subcalls", "builtins", 0};
+    static const char *kwlist[] = {"subcalls", "builtins", 0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii:enable",
                                      kwlist, &subcalls, &builtins))
         return NULL;
@@ -710,7 +710,7 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
     double timeunit = 0.0;
     int subcalls = 1;
     int builtins = 1;
-    static char *kwlist[] = {"timer", "timeunit",
+    static const char *kwlist[] = {"timer", "timeunit",
                                    "subcalls", "builtins", 0};
 
     if (!PyArg_ParseTupleAndKeywords(args, kw, "|Odii:Profiler", kwlist,

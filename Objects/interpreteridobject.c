@@ -70,7 +70,7 @@ newinterpid(PyTypeObject *cls, int64_t id, int force)
 static PyObject *
 interpid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "force", NULL};
+    static const char *kwlist[] = {"id", "force", NULL};
     PyObject *idobj;
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
