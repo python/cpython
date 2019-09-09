@@ -2134,7 +2134,7 @@ ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stropts.h termios.h \
 utime.h \
 poll.h sys/devpoll.h sys/epoll.h sys/poll.h \
-sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
+sys/audioio.h sys/xattr.h sys/bsdtty.h sys/capability.h sys/event.h sys/file.h sys/ioctl.h \
 sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
 sys/param.h sys/random.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
 sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
@@ -5293,6 +5293,99 @@ AIX*)
   AC_DEFINE(HAVE_BROKEN_PIPE_BUF, 1, [Define if the system reports an invalid PIPE_BUF value.]) ;;
 esac
 
+
+# if have cap_flag_t then define SIZEOF_CAP_FLAG_T
+if test "$ac_cv_header_sys_capability_h" = "yes"
+then
+AC_MSG_CHECKING(for cap_flag_t)
+have_cap_flag_t=no
+AC_TRY_COMPILE([#include <sys/capability.h>], [cap_flag_t x; x = *(cap_flag_t*)0;], have_cap_flag_t=yes)
+AC_MSG_RESULT($have_cap_flag_t)
+if test "$have_cap_flag_t" = yes ; then
+  # AC_CHECK_SIZEOF() doesn't include <sys/capability.h>.
+  AC_MSG_CHECKING(size of cap_flag_t)
+  AC_CACHE_VAL(ac_cv_sizeof_cap_flag_t,
+  [AC_TRY_RUN([#include <stdio.h>
+#include <sys/capability.h>
+  main()
+  {
+    FILE *f=fopen("conftestval", "w");
+    if (!f) exit(1);
+    fprintf(f, "%d\n", sizeof(cap_flag_t));
+    exit(0);
+  }],
+  ac_cv_sizeof_cap_flag_t=`cat conftestval`,
+  ac_cv_sizeof_cap_flag_t=0,
+  ac_cv_sizeof_cap_flag_t=4)
+  ])
+  AC_MSG_RESULT($ac_cv_sizeof_cap_flag_t)
+  AC_DEFINE_UNQUOTED(SIZEOF_CAP_FLAG_T, $ac_cv_sizeof_cap_flag_t,
+   [The number of bytes in a cap_flag_t.])
+fi
+fi
+
+# if have cap_value_t then define SIZEOF_CAP_VALUE_T
+if test "$ac_cv_header_sys_capability_h" = "yes"
+then
+AC_MSG_CHECKING(for cap_value_t)
+have_cap_value_t=no
+AC_TRY_COMPILE([#include <sys/capability.h>], [cap_value_t x; x = *(cap_value_t*)0;], have_cap_value_t=yes)
+AC_MSG_RESULT($have_cap_value_t)
+if test "$have_cap_value_t" = yes ; then
+  # AC_CHECK_SIZEOF() doesn't include <sys/capability.h>.
+  AC_MSG_CHECKING(size of cap_value_t)
+  AC_CACHE_VAL(ac_cv_sizeof_cap_value_t,
+  [AC_TRY_RUN([#include <stdio.h>
+#include <sys/capability.h>
+  main()
+  {
+    FILE *f=fopen("conftestval", "w");
+    if (!f) exit(1);
+    fprintf(f, "%d\n", sizeof(cap_value_t));
+    exit(0);
+  }],
+  ac_cv_sizeof_cap_value_t=`cat conftestval`,
+  ac_cv_sizeof_cap_value_t=0,
+  ac_cv_sizeof_cap_value_t=4)
+  ])
+  AC_MSG_RESULT($ac_cv_sizeof_cap_value_t)
+  AC_DEFINE_UNQUOTED(SIZEOF_CAP_VALUE_T, $ac_cv_sizeof_cap_value_t,
+   [The number of bytes in a cap_value_t.])
+fi
+fi
+
+# if have cap_flag_value_t then define SIZEOF_CAP_FLAG_VALUE_T
+if test "$ac_cv_header_sys_capability_h" = "yes"
+then
+AC_MSG_CHECKING(for cap_flag_value_t)
+have_cap_flag_value_t=no
+AC_TRY_COMPILE([#include <sys/capability.h>], [cap_flag_value_t x; x = *(cap_flag_value_t*)0;], have_cap_flag_value_t=yes)
+AC_MSG_RESULT($have_cap_flag_value_t)
+if test "$have_cap_flag_value_t" = yes ; then
+  # AC_CHECK_SIZEOF() doesn't include <sys/capability.h>.
+  AC_MSG_CHECKING(size of cap_flag_value_t)
+  AC_CACHE_VAL(ac_cv_sizeof_cap_flag_value_t,
+  [AC_TRY_RUN([#include <stdio.h>
+#include <sys/capability.h>
+  main()
+  {
+    FILE *f=fopen("conftestval", "w");
+    if (!f) exit(1);
+    fprintf(f, "%d\n", sizeof(cap_flag_value_t));
+    exit(0);
+  }],
+  ac_cv_sizeof_cap_flag_value_t=`cat conftestval`,
+  ac_cv_sizeof_cap_flag_value_t=0,
+  ac_cv_sizeof_cap_flag_value_t=4)
+  ])
+  AC_MSG_RESULT($ac_cv_sizeof_cap_flag_value_t)
+  AC_DEFINE_UNQUOTED(SIZEOF_CAP_FLAG_VALUE_T, $ac_cv_sizeof_cap_flag_value_t,
+   [The number of bytes in a cap_flag_value_t.])
+fi
+fi
+
+# check for POSIX capabilities library
+AC_CHECK_LIB(cap, cap_get_proc, [LIBS="-lcap $LIBS"])
 
 AC_SUBST(THREADHEADERS)
 

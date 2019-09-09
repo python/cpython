@@ -1450,6 +1450,18 @@
 /* The size of `pthread_t', as computed by sizeof. */
 #undef SIZEOF_PTHREAD_T
 
+/* The size of `cap_flag_t', as computed by sizeof. */
+#undef SIZEOF_CAP_FLAG_T
+
+/* Define to 1 if you have the <sys/capability.h> header file. */
+#undef HAVE_SYS_CAPABILITY_H
+
+/* The size of `cap_value_t', as computed by sizeof. */
+#undef SIZEOF_CAP_VALUE_T
+
+/* The size of `cap_flag_value_t', as computed by sizeof. */
+#undef SIZEOF_CAP_FLAG_VALUE_T
+
 /* The size of `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
 

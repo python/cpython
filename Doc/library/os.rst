@@ -4474,3 +4474,129 @@ Random numbers
    ``/dev/random`` pool instead of the ``/dev/urandom`` pool.
 
    .. versionadded:: 3.6
+
+
+POSIX Capabilities
+------------------
+
+This class provides an interface to POSIX 1003.1e capabilities.  On
+supported systems, capabilities partition the all powerful root or
+administrator privilege into a set of distinct privileges.
+
+.. data:: CAP_CHOWN
+          CAP_DAC_EXECUTE
+          CAP_DAC_WRITE
+          CAP_DAC_OVERRIDE
+          CAP_DAC_READ_SEARCH
+          CAP_FOWNER
+          CAP_FSETID
+          CAP_FS_MASK
+          CAP_KILL
+          CAP_LINK_DIR
+          CAP_SETFCAP
+          CAP_SETGID
+          CAP_SETUID
+          CAP_AUDIT_CONTROL
+          CAP_AUDIT_WRITE
+          CAP_SETPCAP
+          CAP_LINUX_IMMUTABLE
+          CAP_NET_BIND_SERVICE
+          CAP_NET_BROADCAST
+          CAP_NET_ADMIN
+          CAP_NET_RAW
+          CAP_IPC_LOCK
+          CAP_IPC_OWNER
+          CAP_SYS_MODULE
+          CAP_SYS_RAWIO
+          CAP_SYS_CHROOT
+          CAP_SYS_PTRACE
+          CAP_SYS_PACCT
+          CAP_SYS_ADMIN
+          CAP_SYS_BOOT
+          CAP_SYS_NICE
+          CAP_SYS_RESOURCE
+          CAP_SYS_TIME
+          CAP_SYS_TTY_CONFIG
+          CAP_MKNOD
+          CAP_LEASE
+
+  Capability value.
+
+.. data:: CAP_EFFECTIVE
+          CAP_PERMITTED
+          CAP_INHERITABLE
+
+  Capability flag.
+
+.. data:: CAP_SET
+          CAP_CLEAR
+
+  Capability flag value.
+
+.. function:: cap_init()
+
+  Create a capability state in working storage.  The initial value of
+  all flags are cleared.  Availability: POSIX 1003.1e.
+
+.. class:: CapabilityState
+
+  Working storage containing a representation of capability state.
+
+  .. method:: cap_clear()
+
+    Clears a capability state in working storage.  Availability:
+    POSIX 1003.1e.
+
+  .. method:: cap_copy_ext()
+
+    Translates a capability state in working storage into an external
+    respresentation.  Availability: POSIX 1003.1e.
+
+  .. method:: cap_copy_int(ext)
+
+    Translates an external representation of a capability state into a
+    capability state in working storage.  Availability: POSIX 1003.1e.
+
+ .. method:: cap_dup()
+
+    Duplicate a capability state in working storage.  Availability:
+    POSIX 1003.1e.
+
+  .. method:: cap_from_text(text)
+
+    Translates an textual representation of a capability state into a
+    capability state in working storage.  Availability: POSIX 1003.1e.
+
+  .. method:: cap_get_flag(cap, flag)
+
+    Get a flag value of a capability state in working storage.
+    Availability: POSIX 1003.1e.
+
+  .. method:: cap_get_proc()
+
+    Return the capability state of the calling process in working
+    storage.  Availability: POSIX 1003.1e.
+
+  .. method:: cap_set_flag(cap, flag, flag_value)
+
+    Set a flag value of a capability state in working storage.
+    Availability: POSIX 1003.1e.
+
+  .. method:: cap_set_proc()
+
+    Sets the capability state of the calling process.  Availability:
+    POSIX 1003.1e.
+
+  .. method:: cap_size()
+
+    Returns the size of the translation of a capability state in
+    working storage into an external respresentation.  Availability:
+    POSIX 1003.1e.
+
+  .. method:: cap_to_text()
+
+    Translates a capability state in working storage into a textual
+    respresentation.  Availability: POSIX 1003.1e.
+
+
+ .. _os-newstreams:
