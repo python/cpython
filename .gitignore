@@ -27,7 +27,8 @@ Include/pydtrace_probes.h
 Lib/distutils/command/*.pdb
 Lib/lib2to3/*.pickle
 Lib/test/data/*
-Makefile
+!Lib/test/data/README
+/Makefile
 Makefile.pre
 Misc/python.pc
 Misc/python-config.sh
@@ -77,6 +78,7 @@ config.log
 config.status
 config.status.lineno
 core
+!Tools/msi/core/
 db_home
 .hg/
 .idea/
@@ -87,7 +89,7 @@ libpython*.dylib
 libpython*.dll
 platform
 pybuilddir.txt
-pyconfig.h
+/pyconfig.h
 python-config
 python-config.py
 python.bat
