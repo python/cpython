@@ -11,27 +11,27 @@ static PyObject* ast2obj_mod(void*);
 static PyTypeObject *Module_type;
 _Py_IDENTIFIER(body);
 _Py_IDENTIFIER(type_ignores);
-static char *Module_fields[]={
+static const char *Module_fields[]={
     "body",
     "type_ignores",
 };
 static PyTypeObject *Interactive_type;
-static char *Interactive_fields[]={
+static const char *Interactive_fields[]={
     "body",
 };
 static PyTypeObject *Expression_type;
-static char *Expression_fields[]={
+static const char *Expression_fields[]={
     "body",
 };
 static PyTypeObject *FunctionType_type;
 _Py_IDENTIFIER(argtypes);
 _Py_IDENTIFIER(returns);
-static char *FunctionType_fields[]={
+static const char *FunctionType_fields[]={
     "argtypes",
     "returns",
 };
 static PyTypeObject *Suite_type;
-static char *Suite_fields[]={
+static const char *Suite_fields[]={
     "body",
 };
 static PyTypeObject *stmt_type;
@@ -39,7 +39,7 @@ _Py_IDENTIFIER(lineno);
 _Py_IDENTIFIER(col_offset);
 _Py_IDENTIFIER(end_lineno);
 _Py_IDENTIFIER(end_col_offset);
-static char *stmt_attributes[] = {
+static const char *stmt_attributes[] = {
     "lineno",
     "col_offset",
     "end_lineno",
@@ -51,7 +51,7 @@ _Py_IDENTIFIER(name);
 _Py_IDENTIFIER(args);
 _Py_IDENTIFIER(decorator_list);
 _Py_IDENTIFIER(type_comment);
-static char *FunctionDef_fields[]={
+static const char *FunctionDef_fields[]={
     "name",
     "args",
     "body",
@@ -60,7 +60,7 @@ static char *FunctionDef_fields[]={
     "type_comment",
 };
 static PyTypeObject *AsyncFunctionDef_type;
-static char *AsyncFunctionDef_fields[]={
+static const char *AsyncFunctionDef_fields[]={
     "name",
     "args",
     "body",
@@ -71,7 +71,7 @@ static char *AsyncFunctionDef_fields[]={
 static PyTypeObject *ClassDef_type;
 _Py_IDENTIFIER(bases);
 _Py_IDENTIFIER(keywords);
-static char *ClassDef_fields[]={
+static const char *ClassDef_fields[]={
     "name",
     "bases",
     "keywords",
@@ -80,16 +80,16 @@ static char *ClassDef_fields[]={
 };
 static PyTypeObject *Return_type;
 _Py_IDENTIFIER(value);
-static char *Return_fields[]={
+static const char *Return_fields[]={
     "value",
 };
 static PyTypeObject *Delete_type;
 _Py_IDENTIFIER(targets);
-static char *Delete_fields[]={
+static const char *Delete_fields[]={
     "targets",
 };
 static PyTypeObject *Assign_type;
-static char *Assign_fields[]={
+static const char *Assign_fields[]={
     "targets",
     "value",
     "type_comment",
@@ -97,7 +97,7 @@ static char *Assign_fields[]={
 static PyTypeObject *AugAssign_type;
 _Py_IDENTIFIER(target);
 _Py_IDENTIFIER(op);
-static char *AugAssign_fields[]={
+static const char *AugAssign_fields[]={
     "target",
     "op",
     "value",
@@ -105,7 +105,7 @@ static char *AugAssign_fields[]={
 static PyTypeObject *AnnAssign_type;
 _Py_IDENTIFIER(annotation);
 _Py_IDENTIFIER(simple);
-static char *AnnAssign_fields[]={
+static const char *AnnAssign_fields[]={
     "target",
     "annotation",
     "value",
@@ -114,7 +114,7 @@ static char *AnnAssign_fields[]={
 static PyTypeObject *For_type;
 _Py_IDENTIFIER(iter);
 _Py_IDENTIFIER(orelse);
-static char *For_fields[]={
+static const char *For_fields[]={
     "target",
     "iter",
     "body",
@@ -122,7 +122,7 @@ static char *For_fields[]={
     "type_comment",
 };
 static PyTypeObject *AsyncFor_type;
-static char *AsyncFor_fields[]={
+static const char *AsyncFor_fields[]={
     "target",
     "iter",
     "body",
@@ -131,26 +131,26 @@ static char *AsyncFor_fields[]={
 };
 static PyTypeObject *While_type;
 _Py_IDENTIFIER(test);
-static char *While_fields[]={
+static const char *While_fields[]={
     "test",
     "body",
     "orelse",
 };
 static PyTypeObject *If_type;
-static char *If_fields[]={
+static const char *If_fields[]={
     "test",
     "body",
     "orelse",
 };
 static PyTypeObject *With_type;
 _Py_IDENTIFIER(items);
-static char *With_fields[]={
+static const char *With_fields[]={
     "items",
     "body",
     "type_comment",
 };
 static PyTypeObject *AsyncWith_type;
-static char *AsyncWith_fields[]={
+static const char *AsyncWith_fields[]={
     "items",
     "body",
     "type_comment",
@@ -158,14 +158,14 @@ static char *AsyncWith_fields[]={
 static PyTypeObject *Raise_type;
 _Py_IDENTIFIER(exc);
 _Py_IDENTIFIER(cause);
-static char *Raise_fields[]={
+static const char *Raise_fields[]={
     "exc",
     "cause",
 };
 static PyTypeObject *Try_type;
 _Py_IDENTIFIER(handlers);
 _Py_IDENTIFIER(finalbody);
-static char *Try_fields[]={
+static const char *Try_fields[]={
     "body",
     "handlers",
     "orelse",
@@ -173,40 +173,40 @@ static char *Try_fields[]={
 };
 static PyTypeObject *Assert_type;
 _Py_IDENTIFIER(msg);
-static char *Assert_fields[]={
+static const char *Assert_fields[]={
     "test",
     "msg",
 };
 static PyTypeObject *Import_type;
 _Py_IDENTIFIER(names);
-static char *Import_fields[]={
+static const char *Import_fields[]={
     "names",
 };
 static PyTypeObject *ImportFrom_type;
 _Py_IDENTIFIER(module);
 _Py_IDENTIFIER(level);
-static char *ImportFrom_fields[]={
+static const char *ImportFrom_fields[]={
     "module",
     "names",
     "level",
 };
 static PyTypeObject *Global_type;
-static char *Global_fields[]={
+static const char *Global_fields[]={
     "names",
 };
 static PyTypeObject *Nonlocal_type;
-static char *Nonlocal_fields[]={
+static const char *Nonlocal_fields[]={
     "names",
 };
 static PyTypeObject *Expr_type;
-static char *Expr_fields[]={
+static const char *Expr_fields[]={
     "value",
 };
 static PyTypeObject *Pass_type;
 static PyTypeObject *Break_type;
 static PyTypeObject *Continue_type;
 static PyTypeObject *expr_type;
-static char *expr_attributes[] = {
+static const char *expr_attributes[] = {
     "lineno",
     "col_offset",
     "end_lineno",
@@ -215,98 +215,98 @@ static char *expr_attributes[] = {
 static PyObject* ast2obj_expr(void*);
 static PyTypeObject *BoolOp_type;
 _Py_IDENTIFIER(values);
-static char *BoolOp_fields[]={
+static const char *BoolOp_fields[]={
     "op",
     "values",
 };
 static PyTypeObject *NamedExpr_type;
-static char *NamedExpr_fields[]={
+static const char *NamedExpr_fields[]={
     "target",
     "value",
 };
 static PyTypeObject *BinOp_type;
 _Py_IDENTIFIER(left);
 _Py_IDENTIFIER(right);
-static char *BinOp_fields[]={
+static const char *BinOp_fields[]={
     "left",
     "op",
     "right",
 };
 static PyTypeObject *UnaryOp_type;
 _Py_IDENTIFIER(operand);
-static char *UnaryOp_fields[]={
+static const char *UnaryOp_fields[]={
     "op",
     "operand",
 };
 static PyTypeObject *Lambda_type;
-static char *Lambda_fields[]={
+static const char *Lambda_fields[]={
     "args",
     "body",
 };
 static PyTypeObject *IfExp_type;
-static char *IfExp_fields[]={
+static const char *IfExp_fields[]={
     "test",
     "body",
     "orelse",
 };
 static PyTypeObject *Dict_type;
 _Py_IDENTIFIER(keys);
-static char *Dict_fields[]={
+static const char *Dict_fields[]={
     "keys",
     "values",
 };
 static PyTypeObject *Set_type;
 _Py_IDENTIFIER(elts);
-static char *Set_fields[]={
+static const char *Set_fields[]={
     "elts",
 };
 static PyTypeObject *ListComp_type;
 _Py_IDENTIFIER(elt);
 _Py_IDENTIFIER(generators);
-static char *ListComp_fields[]={
+static const char *ListComp_fields[]={
     "elt",
     "generators",
 };
 static PyTypeObject *SetComp_type;
-static char *SetComp_fields[]={
+static const char *SetComp_fields[]={
     "elt",
     "generators",
 };
 static PyTypeObject *DictComp_type;
 _Py_IDENTIFIER(key);
-static char *DictComp_fields[]={
+static const char *DictComp_fields[]={
     "key",
     "value",
     "generators",
 };
 static PyTypeObject *GeneratorExp_type;
-static char *GeneratorExp_fields[]={
+static const char *GeneratorExp_fields[]={
     "elt",
     "generators",
 };
 static PyTypeObject *Await_type;
-static char *Await_fields[]={
+static const char *Await_fields[]={
     "value",
 };
 static PyTypeObject *Yield_type;
-static char *Yield_fields[]={
+static const char *Yield_fields[]={
     "value",
 };
 static PyTypeObject *YieldFrom_type;
-static char *YieldFrom_fields[]={
+static const char *YieldFrom_fields[]={
     "value",
 };
 static PyTypeObject *Compare_type;
 _Py_IDENTIFIER(ops);
 _Py_IDENTIFIER(comparators);
-static char *Compare_fields[]={
+static const char *Compare_fields[]={
     "left",
     "ops",
     "comparators",
 };
 static PyTypeObject *Call_type;
 _Py_IDENTIFIER(func);
-static char *Call_fields[]={
+static const char *Call_fields[]={
     "func",
     "args",
     "keywords",
@@ -314,54 +314,54 @@ static char *Call_fields[]={
 static PyTypeObject *FormattedValue_type;
 _Py_IDENTIFIER(conversion);
 _Py_IDENTIFIER(format_spec);
-static char *FormattedValue_fields[]={
+static const char *FormattedValue_fields[]={
     "value",
     "conversion",
     "format_spec",
 };
 static PyTypeObject *JoinedStr_type;
-static char *JoinedStr_fields[]={
+static const char *JoinedStr_fields[]={
     "values",
 };
 static PyTypeObject *Constant_type;
 _Py_IDENTIFIER(kind);
-static char *Constant_fields[]={
+static const char *Constant_fields[]={
     "value",
     "kind",
 };
 static PyTypeObject *Attribute_type;
 _Py_IDENTIFIER(attr);
 _Py_IDENTIFIER(ctx);
-static char *Attribute_fields[]={
+static const char *Attribute_fields[]={
     "value",
     "attr",
     "ctx",
 };
 static PyTypeObject *Subscript_type;
 _Py_IDENTIFIER(slice);
-static char *Subscript_fields[]={
+static const char *Subscript_fields[]={
     "value",
     "slice",
     "ctx",
 };
 static PyTypeObject *Starred_type;
-static char *Starred_fields[]={
+static const char *Starred_fields[]={
     "value",
     "ctx",
 };
 static PyTypeObject *Name_type;
 _Py_IDENTIFIER(id);
-static char *Name_fields[]={
+static const char *Name_fields[]={
     "id",
     "ctx",
 };
 static PyTypeObject *List_type;
-static char *List_fields[]={
+static const char *List_fields[]={
     "elts",
     "ctx",
 };
 static PyTypeObject *Tuple_type;
-static char *Tuple_fields[]={
+static const char *Tuple_fields[]={
     "elts",
     "ctx",
 };
@@ -381,18 +381,18 @@ static PyTypeObject *Slice_type;
 _Py_IDENTIFIER(lower);
 _Py_IDENTIFIER(upper);
 _Py_IDENTIFIER(step);
-static char *Slice_fields[]={
+static const char *Slice_fields[]={
     "lower",
     "upper",
     "step",
 };
 static PyTypeObject *ExtSlice_type;
 _Py_IDENTIFIER(dims);
-static char *ExtSlice_fields[]={
+static const char *ExtSlice_fields[]={
     "dims",
 };
 static PyTypeObject *Index_type;
-static char *Index_fields[]={
+static const char *Index_fields[]={
     "value",
 };
 static PyTypeObject *boolop_type;
@@ -446,14 +446,14 @@ static PyTypeObject *comprehension_type;
 static PyObject* ast2obj_comprehension(void*);
 _Py_IDENTIFIER(ifs);
 _Py_IDENTIFIER(is_async);
-static char *comprehension_fields[]={
+static const char *comprehension_fields[]={
     "target",
     "iter",
     "ifs",
     "is_async",
 };
 static PyTypeObject *excepthandler_type;
-static char *excepthandler_attributes[] = {
+static const char *excepthandler_attributes[] = {
     "lineno",
     "col_offset",
     "end_lineno",
@@ -462,7 +462,7 @@ static char *excepthandler_attributes[] = {
 static PyObject* ast2obj_excepthandler(void*);
 static PyTypeObject *ExceptHandler_type;
 _Py_IDENTIFIER(type);
-static char *ExceptHandler_fields[]={
+static const char *ExceptHandler_fields[]={
     "type",
     "name",
     "body",
@@ -475,7 +475,7 @@ _Py_IDENTIFIER(kwonlyargs);
 _Py_IDENTIFIER(kw_defaults);
 _Py_IDENTIFIER(kwarg);
 _Py_IDENTIFIER(defaults);
-static char *arguments_fields[]={
+static const char *arguments_fields[]={
     "posonlyargs",
     "args",
     "vararg",
@@ -486,28 +486,28 @@ static char *arguments_fields[]={
 };
 static PyTypeObject *arg_type;
 static PyObject* ast2obj_arg(void*);
-static char *arg_attributes[] = {
+static const char *arg_attributes[] = {
     "lineno",
     "col_offset",
     "end_lineno",
     "end_col_offset",
 };
 _Py_IDENTIFIER(arg);
-static char *arg_fields[]={
+static const char *arg_fields[]={
     "arg",
     "annotation",
     "type_comment",
 };
 static PyTypeObject *keyword_type;
 static PyObject* ast2obj_keyword(void*);
-static char *keyword_fields[]={
+static const char *keyword_fields[]={
     "arg",
     "value",
 };
 static PyTypeObject *alias_type;
 static PyObject* ast2obj_alias(void*);
 _Py_IDENTIFIER(asname);
-static char *alias_fields[]={
+static const char *alias_fields[]={
     "name",
     "asname",
 };
@@ -515,7 +515,7 @@ static PyTypeObject *withitem_type;
 static PyObject* ast2obj_withitem(void*);
 _Py_IDENTIFIER(context_expr);
 _Py_IDENTIFIER(optional_vars);
-static char *withitem_fields[]={
+static const char *withitem_fields[]={
     "context_expr",
     "optional_vars",
 };
@@ -523,7 +523,7 @@ static PyTypeObject *type_ignore_type;
 static PyObject* ast2obj_type_ignore(void*);
 static PyTypeObject *TypeIgnore_type;
 _Py_IDENTIFIER(tag);
-static char *TypeIgnore_fields[]={
+static const char *TypeIgnore_fields[]={
     "lineno",
     "tag",
 };
@@ -677,7 +677,8 @@ static PyTypeObject AST_type = {
 };
 
 
-static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int num_fields)
+static PyTypeObject* make_type(char *type, PyTypeObject* base,
+                               const char * const *fields, int num_fields)
 {
     _Py_IDENTIFIER(__module__);
     _Py_IDENTIFIER(_ast);
@@ -702,7 +703,8 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
     return (PyTypeObject*)result;
 }
 
-static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
+static int add_attributes(PyTypeObject* type,
+                          const char * const *attrs, int num_fields)
 {
     int i, result;
     PyObject *s, *l = PyTuple_New(num_fields);
