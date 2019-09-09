@@ -795,7 +795,7 @@ typedef enum {YES = 0, MAYBE = 1, NO = 2} QuickcheckResult;
  */
 static QuickcheckResult
 is_normalized_quickcheck(PyObject *self, PyObject *input,
-                         int nfc, int k, bool yes_only)
+                         bool nfc, bool k, bool yes_only)
 {
     /* An older version of the database is requested, quickchecks must be
        disabled. */
@@ -869,25 +869,25 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
     }
 
     PyObject *result;
-    int nfc = 0;
-    int k = 0;
+    bool nfc = false;
+    bool k = false;
     QuickcheckResult m;
 
     PyObject *cmp;
     int match = 0;
 
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
-        nfc = 1;
+        nfc = true;
     }
     else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
-        nfc = 1;
-        k = 1;
+        nfc = true;
+        k = true;
     }
     else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
         /* matches default values for `nfc` and `k` */
     }
     else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
-        k = 1;
+        k = true;
     }
     else {
         PyErr_SetString(PyExc_ValueError, "invalid normalization form");
@@ -940,28 +940,28 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
     }
 
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
-        if (is_normalized_quickcheck(self, input, 1, 0, true) == YES) {
+        if (is_normalized_quickcheck(self, input, true,  false, true) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfc_nfkc(self, input, 0);
     }
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
-        if (is_normalized_quickcheck(self, input, 1, 1, true) == YES) {
+        if (is_normalized_quickcheck(self, input, true,  true,  true) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfc_nfkc(self, input, 1);
     }
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
-        if (is_normalized_quickcheck(self, input, 0, 0, true) == YES) {
+        if (is_normalized_quickcheck(self, input, false, false, true) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfd_nfkd(self, input, 0);
     }
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
-        if (is_normalized_quickcheck(self, input, 0, 1, true) == YES) {
+        if (is_normalized_quickcheck(self, input, false, true,  true) == YES) {
             Py_INCREF(input);
             return input;
         }
