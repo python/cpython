@@ -3,6 +3,7 @@ import tempfile
 import errno
 import io
 import os
+import pathlib
 import signal
 import sys
 import re
@@ -61,6 +62,9 @@ class TestLowLevelInternals(unittest.TestCase):
         with self.assertRaises(TypeError):
             tempfile._infer_return_type(b'', None, '')
 
+    def test_infer_return_type_pathlib(self):
+        self.assertIs(str, tempfile._infer_return_type(pathlib.Path('/')))
+
 
 # Common functionality.
 
@@ -84,8 +88,13 @@ class BaseTestCase(unittest.TestCase):
         nsuf  = nbase[len(nbase)-len(suf):]
 
         if dir is not None:
-            self.assertIs(type(name), str if type(dir) is str else bytes,
-                          "unexpected return type")
+            self.assertIs(
+                type(name),
+                str
+                if type(dir) is str or isinstance(dir, os.PathLike) else
+                bytes,
+                "unexpected return type",
+            )
         if pre is not None:
             self.assertIs(type(name), str if type(pre) is str else bytes,
                           "unexpected return type")
@@ -430,6 +439,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir).write(b"blat")
+            self.do_create(dir=pathlib.Path(dir)).write(b"blat")
         finally:
             os.rmdir(dir)
 
@@ -666,6 +676,7 @@ class TestMkstemp(BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir)
+            self.do_create(dir=pathlib.Path(dir))
         finally:
             os.rmdir(dir)
 
@@ -735,6 +746,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             os.rmdir(self.do_create(dir=dir))
+            os.rmdir(self.do_create(dir=pathlib.Path(dir)))
         finally:
             os.rmdir(dir)
 
