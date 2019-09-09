@@ -376,6 +376,8 @@ static int
 visit_decref(PyObject *op, void *data)
 {
     assert(op != NULL);
+    _PyObject_ASSERT(op, !_PyObject_IsFreed(op));
+
     if (PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
         /* We're only interested in gc_refs for objects in the
