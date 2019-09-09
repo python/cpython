@@ -643,8 +643,7 @@ loops that truncate the stream.
 
    Once :func:`tee` has made a split, the original *iterable* should not be
    used anywhere else; otherwise, the *iterable* could get advanced without
-   the tee objects being informed. the :func:`tee` iterator can not be consumed
-   from different threads, even if an underlying iterator is thread-safe.
+   the tee objects being informed.
 
    This itertool may require significant auxiliary storage (depending on how
    much temporary data needs to be stored). In general, if one iterator uses
