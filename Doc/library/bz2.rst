@@ -31,7 +31,7 @@ All of the classes in this module may safely be accessed from multiple threads.
 (De)compression of files
 ------------------------
 
-.. function:: open(filename, mode='r', compresslevel=9, encoding=None, errors=None, newline=None)
+.. function:: open(filename, mode='rb', compresslevel=9, encoding=None, errors=None, newline=None)
 
    Open a bzip2-compressed file in binary or text mode, returning a :term:`file
    object`.
