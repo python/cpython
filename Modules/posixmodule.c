@@ -7489,6 +7489,12 @@ wait_helper(pid_t pid, int status, struct rusage *ru)
     if (pid == -1)
         return posix_error();
 
+    // If wait succeeded but no child was ready to report status, ru will not
+    // have been populated.
+    if (pid == 0) {
+        memset(ru, 0, sizeof(*ru));
+    }
+
     if (struct_rusage == NULL) {
         PyObject *m = PyImport_ImportModuleNoBlock("resource");
         if (m == NULL)
