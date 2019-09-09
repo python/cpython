@@ -32,6 +32,8 @@
 #  error "_testcapi must test the public Python C API, not CPython internal C API"
 #endif
 
+static struct PyModuleDef _testcapimodule;
+
 static PyObject *TestError;     /* set to exception object in init */
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
@@ -5999,19 +6001,6 @@ static PyTypeObject MethodDescriptor2_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_HAVE_VECTORCALL,
 };
 
-
-static struct PyModuleDef _testcapimodule = {
-    PyModuleDef_HEAD_INIT,
-    "_testcapi",
-    NULL,
-    -1,
-    TestMethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
 typedef struct {
     PyObject_HEAD
     int value;
@@ -6173,6 +6162,18 @@ static PyType_Spec HeapCTypeSubclassWithFinalizer_spec = {
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE,
     HeapCTypeSubclassWithFinalizer_slots
+};
+
+static struct PyModuleDef _testcapimodule = {
+    PyModuleDef_HEAD_INIT,
+    "_testcapi",
+    NULL,
+    -1,
+    TestMethods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 /* Per PEP 489, this module will not be converted to multi-phase initialization
