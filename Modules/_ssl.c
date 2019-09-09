@@ -5581,6 +5581,7 @@ ssl_collect_certificates(const char *store_name)
             if (result) {
                 ++storesAdded;
             }
+            CertCloseStore(hSystemStore, 0);  /* flag must be 0 */
         }
     }
     if (storesAdded == 0) {
