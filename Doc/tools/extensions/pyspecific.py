@@ -22,7 +22,10 @@ from docutils import nodes, utils
 
 from sphinx import addnodes
 from sphinx.builders import Builder
-from sphinx.errors import NoUri
+try:
+    from sphinx.errors import NoUri
+except ImportError:
+    from sphinx.environment import NoUri
 from sphinx.locale import translators
 from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
