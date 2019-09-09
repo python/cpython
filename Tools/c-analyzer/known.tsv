@@ -11,32 +11,32 @@ Objects/genobject.c	-	ag_asend_freelist	variable	static PyAsyncGenASend *ag_asen
 Objects/genobject.c	-	ag_asend_freelist_free	variable	static int ag_asend_freelist_free
 Objects/genobject.c	-	ag_value_freelist	variable	static _PyAsyncGenWrappedValue *ag_value_freelist[_PyAsyncGen_MAXFREELIST]
 Objects/genobject.c	-	ag_value_freelist_free	variable	static int ag_value_freelist_free
-Python/Python-ast.c	-	alias_fields	variable	static char *alias_fields[]
+Python/Python-ast.c	-	alias_fields	variable	static const char *alias_fields[]
 Python/Python-ast.c	-	alias_type	variable	static PyTypeObject *alias_type
 Modules/_tracemalloc.c	-	allocators	variable	static struct { PyMemAllocatorEx mem; PyMemAllocatorEx raw; PyMemAllocatorEx obj; } allocators
 Python/Python-ast.c	-	And_singleton	variable	PyObject *And_singleton
 Python/Python-ast.c	-	And_type	variable	static PyTypeObject *And_type
-Python/Python-ast.c	-	AnnAssign_fields	variable	static char *AnnAssign_fields[]
+Python/Python-ast.c	-	AnnAssign_fields	variable	static const char *AnnAssign_fields[]
 Python/Python-ast.c	-	AnnAssign_type	variable	static PyTypeObject *AnnAssign_type
 Python/compile.c	-	__annotations__	variable	static PyObject *__annotations__
 Objects/obmalloc.c	-	arenas	variable	static struct arena_object* arenas
-Python/Python-ast.c	-	arg_attributes	variable	static char *arg_attributes[]
-Python/Python-ast.c	-	arg_fields	variable	static char *arg_fields[]
+Python/Python-ast.c	-	arg_attributes	variable	static const char *arg_attributes[]
+Python/Python-ast.c	-	arg_fields	variable	static const char *arg_fields[]
 Python/Python-ast.c	-	arg_type	variable	static PyTypeObject *arg_type
-Python/Python-ast.c	-	arguments_fields	variable	static char *arguments_fields[]
+Python/Python-ast.c	-	arguments_fields	variable	static const char *arguments_fields[]
 Python/Python-ast.c	-	arguments_type	variable	static PyTypeObject *arguments_type
-Python/Python-ast.c	-	Assert_fields	variable	static char *Assert_fields[]
+Python/Python-ast.c	-	Assert_fields	variable	static const char *Assert_fields[]
 Python/compile.c	compiler_assert	assertion_error	variable	static PyObject *assertion_error
 Python/Python-ast.c	-	Assert_type	variable	static PyTypeObject *Assert_type
-Python/Python-ast.c	-	Assign_fields	variable	static char *Assign_fields[]
+Python/Python-ast.c	-	Assign_fields	variable	static const char *Assign_fields[]
 Python/Python-ast.c	-	Assign_type	variable	static PyTypeObject *Assign_type
 Python/Python-ast.c	-	_astmodule	variable	static struct PyModuleDef _astmodule
 Python/Python-ast.c	-	AST_type	variable	static PyTypeObject AST_type
 Python/Python-ast.c	-	ast_type_getsets	variable	static PyGetSetDef ast_type_getsets[]
 Python/Python-ast.c	-	ast_type_methods	variable	static PyMethodDef ast_type_methods
-Python/Python-ast.c	-	AsyncFor_fields	variable	static char *AsyncFor_fields[]
+Python/Python-ast.c	-	AsyncFor_fields	variable	static const char *AsyncFor_fields[]
 Python/Python-ast.c	-	AsyncFor_type	variable	static PyTypeObject *AsyncFor_type
-Python/Python-ast.c	-	AsyncFunctionDef_fields	variable	static char *AsyncFunctionDef_fields[]
+Python/Python-ast.c	-	AsyncFunctionDef_fields	variable	static const char *AsyncFunctionDef_fields[]
 Python/Python-ast.c	-	AsyncFunctionDef_type	variable	static PyTypeObject *AsyncFunctionDef_type
 Objects/genobject.c	-	async_gen_as_async	variable	static PyAsyncMethods async_gen_as_async
 Objects/genobject.c	-	async_gen_asend_as_async	variable	static PyAsyncMethods async_gen_asend_as_async
@@ -49,7 +49,7 @@ Python/sysmodule.c	-	asyncgen_hooks_fields	variable	static PyStructSequence_Fiel
 Python/sysmodule.c	-	AsyncGenHooksType	variable	static PyTypeObject AsyncGenHooksType
 Objects/genobject.c	-	async_gen_memberlist	variable	static PyMemberDef async_gen_memberlist[]
 Objects/genobject.c	-	async_gen_methods	variable	static PyMethodDef async_gen_methods
-Python/Python-ast.c	-	AsyncWith_fields	variable	static char *AsyncWith_fields[]
+Python/Python-ast.c	-	AsyncWith_fields	variable	static const char *AsyncWith_fields[]
 Python/Python-ast.c	-	AsyncWith_type	variable	static PyTypeObject *AsyncWith_type
 Parser/listnode.c	-	atbol	variable	static int atbol
 Modules/atexitmodule.c	-	atexit_methods	variable	static PyMethodDef atexit_methods
@@ -57,21 +57,21 @@ Modules/atexitmodule.c	-	atexitmodule	variable	static struct PyModuleDef atexitm
 Modules/atexitmodule.c	-	atexit_slots	variable	static PyModuleDef_Slot atexit_slots[]
 Modules/_operator.c	-	attrgetter_methods	variable	static PyMethodDef attrgetter_methods
 Modules/_operator.c	-	attrgetter_type	variable	static PyTypeObject attrgetter_type
-Python/Python-ast.c	-	Attribute_fields	variable	static char *Attribute_fields[]
+Python/Python-ast.c	-	Attribute_fields	variable	static const char *Attribute_fields[]
 Python/Python-ast.c	-	Attribute_type	variable	static PyTypeObject *Attribute_type
-Python/Python-ast.c	-	AugAssign_fields	variable	static char *AugAssign_fields[]
+Python/Python-ast.c	-	AugAssign_fields	variable	static const char *AugAssign_fields[]
 Python/Python-ast.c	-	AugAssign_type	variable	static PyTypeObject *AugAssign_type
 Python/Python-ast.c	-	AugLoad_singleton	variable	PyObject *AugLoad_singleton
 Python/Python-ast.c	-	AugLoad_type	variable	static PyTypeObject *AugLoad_type
 Python/Python-ast.c	-	AugStore_singleton	variable	PyObject *AugStore_singleton
 Python/Python-ast.c	-	AugStore_type	variable	static PyTypeObject *AugStore_type
-Python/Python-ast.c	-	Await_fields	variable	static char *Await_fields[]
+Python/Python-ast.c	-	Await_fields	variable	static const char *Await_fields[]
 Python/Python-ast.c	-	Await_type	variable	static PyTypeObject *Await_type
 Objects/exceptions.c	-	BaseException_getset	variable	static PyGetSetDef BaseException_getset[]
 Objects/exceptions.c	-	BaseException_members	variable	static struct PyMemberDef BaseException_members[]
 Objects/exceptions.c	-	BaseException_methods	variable	static PyMethodDef BaseException_methods
 Modules/posixmodule.c	-	billion	variable	static PyObject *billion
-Python/Python-ast.c	-	BinOp_fields	variable	static char *BinOp_fields[]
+Python/Python-ast.c	-	BinOp_fields	variable	static const char *BinOp_fields[]
 Python/Python-ast.c	-	BinOp_type	variable	static PyTypeObject *BinOp_type
 Python/Python-ast.c	-	BitAnd_singleton	variable	static PyObject *BitAnd_singleton
 Python/Python-ast.c	-	BitAnd_type	variable	static PyTypeObject *BitAnd_type
@@ -81,7 +81,7 @@ Python/Python-ast.c	-	BitXor_singleton	variable	static PyObject *BitXor_singleto
 Python/Python-ast.c	-	BitXor_type	variable	static PyTypeObject *BitXor_type
 Objects/unicodeobject.c	-	bloom_linebreak	variable	static BLOOM_MASK bloom_linebreak
 Objects/boolobject.c	-	bool_as_number	variable	static PyNumberMethods bool_as_number
-Python/Python-ast.c	-	BoolOp_fields	variable	static char *BoolOp_fields[]
+Python/Python-ast.c	-	BoolOp_fields	variable	static const char *BoolOp_fields[]
 Python/Python-ast.c	-	boolop_type	variable	static PyTypeObject *boolop_type
 Python/Python-ast.c	-	BoolOp_type	variable	static PyTypeObject *BoolOp_type
 Python/_warnings.c	is_internal_frame	bootstrap_string	variable	static PyObject *bootstrap_string
@@ -119,7 +119,7 @@ Modules/_io/bytesio.c	-	bytesio_getsetlist	variable	static PyGetSetDef bytesio_g
 Modules/_io/bytesio.c	-	bytesio_methods	variable	static PyMethodDef bytesio_methods
 Objects/bytesobject.c	-	bytes_methods	variable	static PyMethodDef bytes_methods
 Python/thread_pthread.h	init_condattr	ca	variable	static pthread_condattr_t ca
-Python/Python-ast.c	-	Call_fields	variable	static char *Call_fields[]
+Python/Python-ast.c	-	Call_fields	variable	static const char *Call_fields[]
 Objects/iterobject.c	-	calliter_methods	variable	static PyMethodDef calliter_methods
 Python/Python-ast.c	-	Call_type	variable	static PyTypeObject *Call_type
 Objects/cellobject.c	-	cell_getsetlist	variable	static PyGetSetDef cell_getsetlist[]
@@ -127,7 +127,7 @@ Modules/itertoolsmodule.c	-	chain_methods	variable	static PyMethodDef chain_meth
 Modules/itertoolsmodule.c	-	chain_type	variable	static PyTypeObject chain_type
 Objects/bytesobject.c	-	characters	variable	static PyBytesObject *characters[UCHAR_MAX + 1]
 Python/symtable.c	-	__class__	variable	static identifier __class__
-Python/Python-ast.c	-	ClassDef_fields	variable	static char *ClassDef_fields[]
+Python/Python-ast.c	-	ClassDef_fields	variable	static const char *ClassDef_fields[]
 Python/Python-ast.c	-	ClassDef_type	variable	static PyTypeObject *ClassDef_type
 Objects/funcobject.c	-	cm_getsetlist	variable	static PyGetSetDef cm_getsetlist[]
 Objects/funcobject.c	-	cm_memberlist	variable	static PyMemberDef cm_memberlist[]
@@ -140,17 +140,17 @@ Modules/_collectionsmodule.c	-	_collectionsmodule	variable	static struct PyModul
 Modules/itertoolsmodule.c	-	combinations_methods	variable	static PyMethodDef combinations_methods
 Modules/itertoolsmodule.c	-	combinations_type	variable	static PyTypeObject combinations_type
 Objects/typeobject.c	object_new	comma_id	variable	"_Py_static_string(comma_id, "", "")"
-Python/Python-ast.c	-	Compare_fields	variable	static char *Compare_fields[]
+Python/Python-ast.c	-	Compare_fields	variable	static const char *Compare_fields[]
 Python/Python-ast.c	-	Compare_type	variable	static PyTypeObject *Compare_type
 Objects/complexobject.c	-	complex_as_number	variable	static PyNumberMethods complex_as_number
 Objects/complexobject.c	-	complex_members	variable	static PyMemberDef complex_members[]
 Objects/complexobject.c	-	complex_methods	variable	static PyMethodDef complex_methods
-Python/Python-ast.c	-	comprehension_fields	variable	static char *comprehension_fields[]
+Python/Python-ast.c	-	comprehension_fields	variable	static const char *comprehension_fields[]
 Python/Python-ast.c	-	comprehension_type	variable	static PyTypeObject *comprehension_type
 Modules/itertoolsmodule.c	-	compress_methods	variable	static PyMethodDef compress_methods
 Modules/itertoolsmodule.c	-	compress_type	variable	static PyTypeObject compress_type
 Python/thread_pthread.h	-	condattr_monotonic	variable	static pthread_condattr_t *condattr_monotonic
-Python/Python-ast.c	-	Constant_fields	variable	static char *Constant_fields[]
+Python/Python-ast.c	-	Constant_fields	variable	static const char *Constant_fields[]
 Python/Python-ast.c	-	Constant_type	variable	static PyTypeObject *Constant_type
 Python/Python-ast.c	-	Continue_type	variable	static PyTypeObject *Continue_type
 Objects/longobject.c	PyLong_FromString	convmultmax_base	variable	static twodigits convmultmax_base[37]
@@ -173,7 +173,7 @@ Modules/signalmodule.c	-	DefaultHandler	variable	static PyObject *DefaultHandler
 Modules/_collectionsmodule.c	-	defdict_members	variable	static PyMemberDef defdict_members[]
 Modules/_collectionsmodule.c	-	defdict_methods	variable	static PyMethodDef defdict_methods
 Modules/_collectionsmodule.c	-	defdict_type	variable	static PyTypeObject defdict_type
-Python/Python-ast.c	-	Delete_fields	variable	static char *Delete_fields[]
+Python/Python-ast.c	-	Delete_fields	variable	static const char *Delete_fields[]
 Python/Python-ast.c	-	Delete_type	variable	static PyTypeObject *Delete_type
 Python/Python-ast.c	-	Del_singleton	variable	PyObject *Del_singleton
 Python/Python-ast.c	-	Del_type	variable	static PyTypeObject *Del_type
@@ -193,9 +193,9 @@ Objects/floatobject.c	-	detected_float_format	variable	static float_format_type 
 Objects/dictobject.c	-	dict_as_mapping	variable	static PyMappingMethods dict_as_mapping
 Objects/dictobject.c	-	dict_as_sequence	variable	static PySequenceMethods dict_as_sequence
 Python/symtable.c	-	dictcomp	variable	static identifier dictcomp
-Python/Python-ast.c	-	DictComp_fields	variable	static char *DictComp_fields[]
+Python/Python-ast.c	-	DictComp_fields	variable	static const char *DictComp_fields[]
 Python/Python-ast.c	-	DictComp_type	variable	static PyTypeObject *DictComp_type
-Python/Python-ast.c	-	Dict_fields	variable	static char *Dict_fields[]
+Python/Python-ast.c	-	Dict_fields	variable	static const char *Dict_fields[]
 Objects/dictobject.c	-	dictitems_as_sequence	variable	static PySequenceMethods dictitems_as_sequence
 Objects/dictobject.c	-	dictitems_methods	variable	static PyMethodDef dictitems_methods
 Objects/dictobject.c	-	dictiter_methods	variable	static PyMethodDef dictiter_methods
@@ -238,23 +238,23 @@ Objects/exceptions.c	-	errnomap	variable	static PyObject *errnomap
 Modules/errnomodule.c	-	errno_methods	variable	static PyMethodDef errno_methods
 Modules/errnomodule.c	-	errnomodule	variable	static struct PyModuleDef errnomodule
 Modules/_localemodule.c	-	Error	variable	static PyObject *Error
-Python/Python-ast.c	-	excepthandler_attributes	variable	static char *excepthandler_attributes[]
-Python/Python-ast.c	-	ExceptHandler_fields	variable	static char *ExceptHandler_fields[]
+Python/Python-ast.c	-	excepthandler_attributes	variable	static const char *excepthandler_attributes[]
+Python/Python-ast.c	-	ExceptHandler_fields	variable	static const char *ExceptHandler_fields[]
 Python/Python-ast.c	-	excepthandler_type	variable	static PyTypeObject *excepthandler_type
 Python/Python-ast.c	-	ExceptHandler_type	variable	static PyTypeObject *ExceptHandler_type
 Modules/_threadmodule.c	-	ExceptHookArgs_desc	variable	static PyStructSequence_Desc ExceptHookArgs_desc
 Modules/_threadmodule.c	-	ExceptHookArgs_fields	variable	static PyStructSequence_Field ExceptHookArgs_fields[]
 Modules/_threadmodule.c	-	ExceptHookArgsType	variable	static PyTypeObject ExceptHookArgsType
 Objects/exceptions.c	_check_for_legacy_statements	exec_prefix	variable	static PyObject *exec_prefix
-Python/Python-ast.c	-	expr_attributes	variable	static char *expr_attributes[]
+Python/Python-ast.c	-	expr_attributes	variable	static const char *expr_attributes[]
 Python/Python-ast.c	-	expr_context_type	variable	static PyTypeObject *expr_context_type
-Python/Python-ast.c	-	Expression_fields	variable	static char *Expression_fields[]
+Python/Python-ast.c	-	Expression_fields	variable	static const char *Expression_fields[]
 Python/Python-ast.c	-	Expression_type	variable	static PyTypeObject *Expression_type
-Python/Python-ast.c	-	Expr_fields	variable	static char *Expr_fields[]
+Python/Python-ast.c	-	Expr_fields	variable	static const char *Expr_fields[]
 Python/Python-ast.c	-	expr_type	variable	static PyTypeObject *expr_type
 Python/Python-ast.c	-	Expr_type	variable	static PyTypeObject *Expr_type
 Python/import.c	-	extensions	variable	static PyObject *extensions
-Python/Python-ast.c	-	ExtSlice_fields	variable	static char *ExtSlice_fields[]
+Python/Python-ast.c	-	ExtSlice_fields	variable	static const char *ExtSlice_fields[]
 Python/Python-ast.c	-	ExtSlice_type	variable	static PyTypeObject *ExtSlice_type
 Objects/boolobject.c	-	false_str	variable	static PyObject *false_str
 Modules/faulthandler.c	-	fatal_error	variable	static struct { int enabled; PyObject *file; int fd; int all_threads; PyInterpreterState *interp; void *exc_handler; } fatal_error
@@ -279,8 +279,8 @@ Objects/floatobject.c	-	float_methods	variable	static PyMethodDef float_methods
 Python/Python-ast.c	-	FloorDiv_singleton	variable	static PyObject *FloorDiv_singleton
 Python/Python-ast.c	-	FloorDiv_type	variable	static PyTypeObject *FloorDiv_type
 Python/fileutils.c	-	force_ascii	variable	static int force_ascii
-Python/Python-ast.c	-	For_fields	variable	static char *For_fields[]
-Python/Python-ast.c	-	FormattedValue_fields	variable	static char *FormattedValue_fields[]
+Python/Python-ast.c	-	For_fields	variable	static const char *For_fields[]
+Python/Python-ast.c	-	FormattedValue_fields	variable	static const char *FormattedValue_fields[]
 Python/Python-ast.c	-	FormattedValue_type	variable	static PyTypeObject *FormattedValue_type
 Objects/stringlib/unicode_format.h	-	formatteriter_methods	variable	static PyMethodDef formatteriter_methods
 Python/Python-ast.c	-	For_type	variable	static PyTypeObject *For_type
@@ -300,16 +300,16 @@ Objects/setobject.c	-	frozenset_as_number	variable	static PyNumberMethods frozen
 Objects/setobject.c	-	frozenset_methods	variable	static PyMethodDef frozenset_methods
 Objects/funcobject.c	-	func_getsetlist	variable	static PyGetSetDef func_getsetlist[]
 Objects/funcobject.c	-	func_memberlist	variable	static PyMemberDef func_memberlist[]
-Python/Python-ast.c	-	FunctionDef_fields	variable	static char *FunctionDef_fields[]
+Python/Python-ast.c	-	FunctionDef_fields	variable	static const char *FunctionDef_fields[]
 Python/Python-ast.c	-	FunctionDef_type	variable	static PyTypeObject *FunctionDef_type
 Modules/_sre.c	-	_functions	variable	static PyMethodDef _functions[]
-Python/Python-ast.c	-	FunctionType_fields	variable	static char *FunctionType_fields[]
+Python/Python-ast.c	-	FunctionType_fields	variable	static const char *FunctionType_fields[]
 Python/Python-ast.c	-	FunctionType_type	variable	static PyTypeObject *FunctionType_type
 Modules/_functoolsmodule.c	-	_functoolsmodule	variable	static struct PyModuleDef _functoolsmodule
 Modules/gcmodule.c	-	GcMethods	variable	static PyMethodDef GcMethods[]
 Modules/gcmodule.c	-	gcmodule	variable	static struct PyModuleDef gcmodule
 Modules/gcmodule.c	-	gc_str	variable	static PyObject *gc_str
-Python/Python-ast.c	-	GeneratorExp_fields	variable	static char *GeneratorExp_fields[]
+Python/Python-ast.c	-	GeneratorExp_fields	variable	static const char *GeneratorExp_fields[]
 Python/Python-ast.c	-	GeneratorExp_type	variable	static PyTypeObject *GeneratorExp_type
 Python/symtable.c	-	genexpr	variable	static identifier genexpr
 Objects/genobject.c	-	gen_getsetlist	variable	static PyGetSetDef gen_getsetlist[]
@@ -317,7 +317,7 @@ Objects/genobject.c	-	gen_memberlist	variable	static PyMemberDef gen_memberlist[
 Objects/genobject.c	-	gen_methods	variable	static PyMethodDef gen_methods
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	variable	static int getrandom_works
 Objects/descrobject.c	-	getset_getset	variable	static PyGetSetDef getset_getset[]
-Python/Python-ast.c	-	Global_fields	variable	static char *Global_fields[]
+Python/Python-ast.c	-	Global_fields	variable	static const char *Global_fields[]
 Python/Python-ast.c	-	Global_type	variable	static PyTypeObject *Global_type
 Modules/itertoolsmodule.c	-	groupby_methods	variable	static PyMethodDef groupby_methods
 Modules/itertoolsmodule.c	-	groupby_type	variable	static PyTypeObject groupby_type
@@ -352,17 +352,17 @@ Python/pystate.c	interp_look_up_id	id	variable	PY_INT64_T id
 ???	???	id	variable	???
 ???	???	id	variable	???
 ???	???	id	variable	???
-Python/Python-ast.c	-	IfExp_fields	variable	static char *IfExp_fields[]
+Python/Python-ast.c	-	IfExp_fields	variable	static const char *IfExp_fields[]
 Python/Python-ast.c	-	IfExp_type	variable	static PyTypeObject *IfExp_type
-Python/Python-ast.c	-	If_fields	variable	static char *If_fields[]
+Python/Python-ast.c	-	If_fields	variable	static const char *If_fields[]
 Python/Python-ast.c	-	If_type	variable	static PyTypeObject *If_type
 Modules/signalmodule.c	-	IgnoreHandler	variable	static PyObject *IgnoreHandler
 Python/import.c	-	imp_methods	variable	static PyMethodDef imp_methods
 Python/import.c	-	impmodule	variable	static struct PyModuleDef impmodule
 Objects/exceptions.c	-	ImportError_members	variable	static PyMemberDef ImportError_members[]
 Objects/exceptions.c	-	ImportError_methods	variable	static PyMethodDef ImportError_methods
-Python/Python-ast.c	-	Import_fields	variable	static char *Import_fields[]
-Python/Python-ast.c	-	ImportFrom_fields	variable	static char *ImportFrom_fields[]
+Python/Python-ast.c	-	Import_fields	variable	static const char *Import_fields[]
+Python/Python-ast.c	-	ImportFrom_fields	variable	static const char *ImportFrom_fields[]
 Python/Python-ast.c	-	ImportFrom_type	variable	static PyTypeObject *ImportFrom_type
 Python/import.c	import_find_and_load	import_level	variable	static int import_level
 Python/_warnings.c	is_internal_frame	importlib_string	variable	static PyObject *importlib_string
@@ -374,7 +374,7 @@ Python/Python-ast.c	-	Import_type	variable	static PyTypeObject *Import_type
 Modules/_io/textio.c	-	incrementalnewlinedecoder_getset	variable	static PyGetSetDef incrementalnewlinedecoder_getset[]
 Modules/_io/textio.c	-	incrementalnewlinedecoder_methods	variable	static PyMethodDef incrementalnewlinedecoder_methods
 Objects/listobject.c	-	indexerr	variable	static PyObject *indexerr
-Python/Python-ast.c	-	Index_fields	variable	static char *Index_fields[]
+Python/Python-ast.c	-	Index_fields	variable	static const char *Index_fields[]
 Python/Python-ast.c	-	Index_type	variable	static PyTypeObject *Index_type
 Python/thread.c	-	initialized	variable	static int initialized
 Modules/posixmodule.c	-	initialized	variable	static int initialized
@@ -387,7 +387,7 @@ Python/import.c	-	inittab_copy	variable	static struct _inittab *inittab_copy
 Python/Python-ast.c	-	In_singleton	variable	static PyObject *In_singleton
 Objects/classobject.c	-	instancemethod_getset	variable	static PyGetSetDef instancemethod_getset[]
 Objects/classobject.c	-	instancemethod_memberlist	variable	static PyMemberDef instancemethod_memberlist[]
-Python/Python-ast.c	-	Interactive_fields	variable	static char *Interactive_fields[]
+Python/Python-ast.c	-	Interactive_fields	variable	static const char *Interactive_fields[]
 Python/Python-ast.c	-	Interactive_type	variable	static PyTypeObject *Interactive_type
 Objects/unicodeobject.c	-	interned	variable	static PyObject *interned
 Objects/interpreteridobject.c	-	interpid_as_number	variable	static PyNumberMethods interpid_as_number
@@ -412,50 +412,50 @@ Modules/_operator.c	-	itemgetter_methods	variable	static PyMethodDef itemgetter_
 Modules/_operator.c	-	itemgetter_type	variable	static PyTypeObject itemgetter_type
 Modules/itertoolsmodule.c	-	itertoolsmodule	variable	static struct PyModuleDef itertoolsmodule
 Modules/signalmodule.c	-	ItimerError	variable	static PyObject *ItimerError
-Python/Python-ast.c	-	JoinedStr_fields	variable	static char *JoinedStr_fields[]
+Python/Python-ast.c	-	JoinedStr_fields	variable	static const char *JoinedStr_fields[]
 Python/Python-ast.c	-	JoinedStr_type	variable	static PyTypeObject *JoinedStr_type
 Modules/_functoolsmodule.c	-	keyobject_members	variable	static PyMemberDef keyobject_members[]
 Modules/_functoolsmodule.c	-	keyobject_type	variable	static PyTypeObject keyobject_type
 Objects/dictobject.c	-	keys_free_list	variable	static PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST]
-Python/Python-ast.c	-	keyword_fields	variable	static char *keyword_fields[]
-Python/sysmodule.c	sys_set_asyncgen_hooks	keywords	variable	static char *keywords[]
-Modules/_bisectmodule.c	bisect_right	keywords	variable	static char *keywords[]
-Modules/_bisectmodule.c	insort_right	keywords	variable	static char *keywords[]
+Python/Python-ast.c	-	keyword_fields	variable	static const char *keyword_fields[]
+Python/sysmodule.c	sys_set_asyncgen_hooks	keywords	variable	static const char *keywords[]
+Modules/_bisectmodule.c	bisect_right	keywords	variable	static const char *keywords[]
+Modules/_bisectmodule.c	insort_right	keywords	variable	static const char *keywords[]
 Python/Python-ast.c	-	keyword_type	variable	static PyTypeObject *keyword_type
-Modules/_functoolsmodule.c	keyobject_call	kwargs	variable	static char *kwargs[]
-Modules/_functoolsmodule.c	functools_cmp_to_key	kwargs	variable	static char *kwargs[]
-Modules/itertoolsmodule.c	repeat_new	kwargs	variable	static char *kwargs[]
-Python/_warnings.c	warnings_warn_explicit	kwd_list	variable	static char *kwd_list[]
+Modules/_functoolsmodule.c	keyobject_call	kwargs	variable	static const char *kwargs[]
+Modules/_functoolsmodule.c	functools_cmp_to_key	kwargs	variable	static const char *kwargs[]
+Modules/itertoolsmodule.c	repeat_new	kwargs	variable	static const char *kwargs[]
+Python/_warnings.c	warnings_warn_explicit	kwd_list	variable	static const char *kwd_list[]
 Modules/_functoolsmodule.c	-	kwd_mark	variable	static PyObject *kwd_mark
-Python/bltinmodule.c	builtin___import__	kwlist	variable	static char *kwlist[]
-Python/bltinmodule.c	min_max	kwlist	variable	static char *kwlist[]
-Python/context.c	contextvar_tp_new	kwlist	variable	static char *kwlist[]
-Python/sysmodule.c	sys_getsizeof	kwlist	variable	static char *kwlist[]
-Objects/bytearrayobject.c	bytearray_init	kwlist	variable	static char *kwlist[]
-Objects/bytesobject.c	bytes_new	kwlist	variable	static char *kwlist[]
-Objects/exceptions.c	ImportError_init	kwlist	variable	static char *kwlist[]
-Objects/interpreteridobject.c	interpid_new	kwlist	variable	static char *kwlist[]
-Objects/memoryobject.c	memory_new	kwlist	variable	static char *kwlist[]
-Objects/memoryobject.c	memory_cast	kwlist	variable	static char *kwlist[]
-Objects/memoryobject.c	memory_tobytes	kwlist	variable	static char *kwlist[]
-Objects/odictobject.c	odict_pop	kwlist	variable	static char *kwlist[]
-Objects/unicodeobject.c	unicode_new	kwlist	variable	static char *kwlist[]
-Objects/weakrefobject.c	weakref_call	kwlist	variable	static char *kwlist[]
-Modules/_elementtree.c	element_setstate_from_Python	kwlist	variable	static char *kwlist[]
-Modules/_json.c	scanner_call	kwlist	variable	static char *kwlist[]
-Modules/_json.c	scanner_new	kwlist	variable	static char *kwlist[]
-Modules/_json.c	encoder_new	kwlist	variable	static char *kwlist[]
-Modules/_json.c	encoder_call	kwlist	variable	static char *kwlist[]
+Python/bltinmodule.c	builtin___import__	kwlist	variable	static const char *kwlist[]
+Python/bltinmodule.c	min_max	kwlist	variable	static const char *kwlist[]
+Python/context.c	contextvar_tp_new	kwlist	variable	static const char *kwlist[]
+Python/sysmodule.c	sys_getsizeof	kwlist	variable	static const char *kwlist[]
+Objects/bytearrayobject.c	bytearray_init	kwlist	variable	static const char *kwlist[]
+Objects/bytesobject.c	bytes_new	kwlist	variable	static const char *kwlist[]
+Objects/exceptions.c	ImportError_init	kwlist	variable	static const char *kwlist[]
+Objects/interpreteridobject.c	interpid_new	kwlist	variable	static const char *kwlist[]
+Objects/memoryobject.c	memory_new	kwlist	variable	static const char *kwlist[]
+Objects/memoryobject.c	memory_cast	kwlist	variable	static const char *kwlist[]
+Objects/memoryobject.c	memory_tobytes	kwlist	variable	static const char *kwlist[]
+Objects/odictobject.c	odict_pop	kwlist	variable	static const char *kwlist[]
+Objects/unicodeobject.c	unicode_new	kwlist	variable	static const char *kwlist[]
+Objects/weakrefobject.c	weakref_call	kwlist	variable	static const char *kwlist[]
+Modules/_elementtree.c	element_setstate_from_Python	kwlist	variable	static const char *kwlist[]
+Modules/_json.c	scanner_call	kwlist	variable	static const char *kwlist[]
+Modules/_json.c	scanner_new	kwlist	variable	static const char *kwlist[]
+Modules/_json.c	encoder_new	kwlist	variable	static const char *kwlist[]
+Modules/_json.c	encoder_call	kwlist	variable	static const char *kwlist[]
 Python/symtable.c	-	lambda	variable	static identifier lambda
-Python/Python-ast.c	-	Lambda_fields	variable	static char *Lambda_fields[]
+Python/Python-ast.c	-	Lambda_fields	variable	static const char *Lambda_fields[]
 Python/Python-ast.c	-	Lambda_type	variable	static PyTypeObject *Lambda_type
 Parser/listnode.c	-	level	variable	static int level
 Objects/listobject.c	-	list_as_mapping	variable	static PyMappingMethods list_as_mapping
 Objects/listobject.c	-	list_as_sequence	variable	static PySequenceMethods list_as_sequence
 Python/symtable.c	-	listcomp	variable	static identifier listcomp
-Python/Python-ast.c	-	ListComp_fields	variable	static char *ListComp_fields[]
+Python/Python-ast.c	-	ListComp_fields	variable	static const char *ListComp_fields[]
 Python/Python-ast.c	-	ListComp_type	variable	static PyTypeObject *ListComp_type
-Python/Python-ast.c	-	List_fields	variable	static char *List_fields[]
+Python/Python-ast.c	-	List_fields	variable	static const char *List_fields[]
 Objects/listobject.c	-	listiter_methods	variable	static PyMethodDef listiter_methods
 Objects/listobject.c	-	list_methods	variable	static PyMethodDef list_methods
 Objects/listobject.c	-	listreviter_methods	variable	static PyMethodDef listreviter_methods
@@ -525,7 +525,7 @@ Python/Python-ast.c	-	Mod_type	variable	static PyTypeObject *Mod_type
 Python/_warnings.c	normalize_module	module	variable	PyObject *module
 Modules/faulthandler.c	-	module_def	variable	static struct PyModuleDef module_def
 Modules/_tracemalloc.c	-	module_def	variable	static struct PyModuleDef module_def
-Python/Python-ast.c	-	Module_fields	variable	static char *Module_fields[]
+Python/Python-ast.c	-	Module_fields	variable	static const char *Module_fields[]
 Modules/_collectionsmodule.c	-	module_functions	variable	static struct PyMethodDef module_functions[]
 Modules/_abc.c	-	module_functions	variable	static struct PyMethodDef module_functions[]
 Objects/moduleobject.c	-	module_members	variable	static PyMemberDef module_members[]
@@ -544,9 +544,9 @@ Python/compile.c	compiler_genexp	name	variable	static identifier name
 Python/compile.c	compiler_listcomp	name	variable	static identifier name
 Python/compile.c	compiler_setcomp	name	variable	static identifier name
 Python/compile.c	compiler_dictcomp	name	variable	static identifier name
-Python/Python-ast.c	-	NamedExpr_fields	variable	static char *NamedExpr_fields[]
+Python/Python-ast.c	-	NamedExpr_fields	variable	static const char *NamedExpr_fields[]
 Python/Python-ast.c	-	NamedExpr_type	variable	static PyTypeObject *NamedExpr_type
-Python/Python-ast.c	-	Name_fields	variable	static char *Name_fields[]
+Python/Python-ast.c	-	Name_fields	variable	static const char *Name_fields[]
 Objects/typeobject.c	-	name_op	variable	static _Py_Identifier name_op[]
 Objects/namespaceobject.c	-	namespace_members	variable	static PyMemberDef namespace_members[]
 Objects/namespaceobject.c	-	namespace_methods	variable	static PyMethodDef namespace_methods
@@ -558,7 +558,7 @@ Objects/typeobject.c	-	next_version_tag	variable	static unsigned int next_versio
 Objects/obmalloc.c	-	nfp2lasta	variable	static struct arena_object* nfp2lasta[MAX_POOLS_IN_ARENA + 1]
 Python/dynload_shlib.c	-	nhandles	variable	static int nhandles
 Objects/object.c	-	none_as_number	variable	static PyNumberMethods none_as_number
-Python/Python-ast.c	-	Nonlocal_fields	variable	static char *Nonlocal_fields[]
+Python/Python-ast.c	-	Nonlocal_fields	variable	static const char *Nonlocal_fields[]
 Python/Python-ast.c	-	Nonlocal_type	variable	static PyTypeObject *Nonlocal_type
 Python/Python-ast.c	-	NotEq_singleton	variable	static PyObject *NotEq_singleton
 Python/Python-ast.c	-	NotEq_type	variable	static PyTypeObject *NotEq_type
@@ -1586,7 +1586,7 @@ Objects/weakrefobject.c	-	_PyWeakref_RefType	variable	PyTypeObject _PyWeakref_Re
 Objects/weakrefobject.c	-	_PyWeakref_RefType	variable	PyTypeObject _PyWeakref_RefType
 Objects/descrobject.c	-	PyWrapperDescr_Type	variable	PyTypeObject PyWrapperDescr_Type
 Python/bltinmodule.c	-	PyZip_Type	variable	PyTypeObject PyZip_Type
-Python/Python-ast.c	-	Raise_fields	variable	static char *Raise_fields[]
+Python/Python-ast.c	-	Raise_fields	variable	static const char *Raise_fields[]
 Python/Python-ast.c	-	Raise_type	variable	static PyTypeObject *Raise_type
 Objects/rangeobject.c	-	range_as_mapping	variable	static PyMappingMethods range_as_mapping
 Objects/rangeobject.c	-	range_as_number	variable	static PyNumberMethods range_as_number
@@ -1599,7 +1599,7 @@ Python/pylifecycle.c	fatal_error	reentrant	variable	static int reentrant
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	variable	static volatile int reentrant
 Modules/itertoolsmodule.c	-	repeat_methods	variable	static PyMethodDef repeat_methods
 Modules/itertoolsmodule.c	-	repeat_type	variable	static PyTypeObject repeat_type
-Python/Python-ast.c	-	Return_fields	variable	static char *Return_fields[]
+Python/Python-ast.c	-	Return_fields	variable	static const char *Return_fields[]
 Python/compile.c	compiler_visit_annotations	return_str	variable	static identifier return_str
 Python/Python-ast.c	-	Return_type	variable	static PyTypeObject *Return_type
 Objects/enumobject.c	-	reversediter_methods	variable	static PyMethodDef reversediter_methods
@@ -1634,9 +1634,9 @@ Objects/iterobject.c	-	seqiter_methods	variable	static PyMethodDef seqiter_metho
 Objects/setobject.c	-	set_as_number	variable	static PyNumberMethods set_as_number
 Objects/setobject.c	-	set_as_sequence	variable	static PySequenceMethods set_as_sequence
 Python/symtable.c	-	setcomp	variable	static identifier setcomp
-Python/Python-ast.c	-	SetComp_fields	variable	static char *SetComp_fields[]
+Python/Python-ast.c	-	SetComp_fields	variable	static const char *SetComp_fields[]
 Python/Python-ast.c	-	SetComp_type	variable	static PyTypeObject *SetComp_type
-Python/Python-ast.c	-	Set_fields	variable	static char *Set_fields[]
+Python/Python-ast.c	-	Set_fields	variable	static const char *Set_fields[]
 Objects/setobject.c	-	setiter_methods	variable	static PyMethodDef setiter_methods
 Objects/setobject.c	-	set_methods	variable	static PyMethodDef set_methods
 Python/Python-ast.c	-	Set_type	variable	static PyTypeObject *Set_type
@@ -1645,7 +1645,7 @@ Modules/signalmodule.c	-	signal_methods	variable	static PyMethodDef signal_metho
 Modules/signalmodule.c	-	signalmodule	variable	static struct PyModuleDef signalmodule
 Python/import.c	PyImport_Import	silly_list	variable	static PyObject *silly_list
 Objects/sliceobject.c	-	slice_cache	variable	static PySliceObject *slice_cache
-Python/Python-ast.c	-	Slice_fields	variable	static char *Slice_fields[]
+Python/Python-ast.c	-	Slice_fields	variable	static const char *Slice_fields[]
 Objects/sliceobject.c	-	slice_members	variable	static PyMemberDef slice_members[]
 Objects/sliceobject.c	-	slice_methods	variable	static PyMethodDef slice_methods
 Python/Python-ast.c	-	slice_type	variable	static PyTypeObject *slice_type
@@ -1665,7 +1665,7 @@ Modules/_sre.c	-	sremodule	variable	static struct PyModuleDef sremodule
 Modules/faulthandler.c	-	stack	variable	static stack_t stack
 Modules/itertoolsmodule.c	-	starmap_methods	variable	static PyMethodDef starmap_methods
 Modules/itertoolsmodule.c	-	starmap_type	variable	static PyTypeObject starmap_type
-Python/Python-ast.c	-	Starred_fields	variable	static char *Starred_fields[]
+Python/Python-ast.c	-	Starred_fields	variable	static const char *Starred_fields[]
 Python/Python-ast.c	-	Starred_type	variable	static PyTypeObject *Starred_type
 Python/graminit.c	-	states_0	variable	static state states_0[3]
 Python/graminit.c	-	states_1	variable	static state states_1[2]
@@ -1772,7 +1772,7 @@ Modules/posixmodule.c	-	StatVFSResultType	variable	static PyTypeObject* StatVFSR
 Objects/fileobject.c	-	stdprinter_getsetlist	variable	static PyGetSetDef stdprinter_getsetlist[]
 Objects/fileobject.c	-	stdprinter_methods	variable	static PyMethodDef stdprinter_methods
 Python/symtable.c	-	ste_memberlist	variable	static PyMemberDef ste_memberlist[]
-Python/Python-ast.c	-	stmt_attributes	variable	static char *stmt_attributes[]
+Python/Python-ast.c	-	stmt_attributes	variable	static const char *stmt_attributes[]
 Python/Python-ast.c	-	stmt_type	variable	static PyTypeObject *stmt_type
 Objects/exceptions.c	-	StopIteration_members	variable	static PyMemberDef StopIteration_members[]
 Python/Python-ast.c	-	Store_singleton	variable	PyObject *Store_singleton
@@ -1798,14 +1798,14 @@ Modules/signalmodule.c	-	struct_siginfo_fields	variable	static PyStructSequence_
 Modules/timemodule.c	-	StructTimeType	variable	static PyTypeObject StructTimeType
 Modules/timemodule.c	-	struct_time_type_desc	variable	static PyStructSequence_Desc struct_time_type_desc
 Modules/timemodule.c	-	struct_time_type_fields	variable	static PyStructSequence_Field struct_time_type_fields[]
-Python/Python-ast.c	-	Subscript_fields	variable	static char *Subscript_fields[]
+Python/Python-ast.c	-	Subscript_fields	variable	static const char *Subscript_fields[]
 Python/Python-ast.c	-	Subscript_type	variable	static PyTypeObject *Subscript_type
 Python/Python-ast.c	-	Sub_singleton	variable	static PyObject *Sub_singleton
 Python/Python-ast.c	-	Sub_type	variable	static PyTypeObject *Sub_type
 Objects/typeobject.c	-	subtype_getsets_dict_only	variable	static PyGetSetDef subtype_getsets_dict_only[]
 Objects/typeobject.c	-	subtype_getsets_full	variable	static PyGetSetDef subtype_getsets_full[]
 Objects/typeobject.c	-	subtype_getsets_weakref_only	variable	static PyGetSetDef subtype_getsets_weakref_only[]
-Python/Python-ast.c	-	Suite_fields	variable	static char *Suite_fields[]
+Python/Python-ast.c	-	Suite_fields	variable	static const char *Suite_fields[]
 Python/Python-ast.c	-	Suite_type	variable	static PyTypeObject *Suite_type
 Objects/typeobject.c	-	super_members	variable	static PyMemberDef super_members[]
 Modules/symtablemodule.c	-	symtable_methods	variable	static PyMethodDef symtable_methods
@@ -1860,11 +1860,11 @@ Modules/_tracemalloc.c	-	tracemalloc_tracebacks	variable	static _Py_hashtable_t 
 Modules/_tracemalloc.c	-	tracemalloc_traced_memory	variable	static size_t tracemalloc_traced_memory
 Modules/_tracemalloc.c	-	tracemalloc_traces	variable	static _Py_hashtable_t *tracemalloc_traces
 Objects/boolobject.c	-	true_str	variable	static PyObject *true_str
-Python/Python-ast.c	-	Try_fields	variable	static char *Try_fields[]
+Python/Python-ast.c	-	Try_fields	variable	static const char *Try_fields[]
 Python/Python-ast.c	-	Try_type	variable	static PyTypeObject *Try_type
 Objects/tupleobject.c	-	tuple_as_mapping	variable	static PyMappingMethods tuple_as_mapping
 Objects/tupleobject.c	-	tuple_as_sequence	variable	static PySequenceMethods tuple_as_sequence
-Python/Python-ast.c	-	Tuple_fields	variable	static char *Tuple_fields[]
+Python/Python-ast.c	-	Tuple_fields	variable	static const char *Tuple_fields[]
 Modules/_collectionsmodule.c	-	tuplegetter_members	variable	static PyMemberDef tuplegetter_members[]
 Modules/_collectionsmodule.c	-	tuplegetter_methods	variable	static PyMethodDef tuplegetter_methods
 Modules/_collectionsmodule.c	-	tuplegetter_type	variable	static PyTypeObject tuplegetter_type
@@ -1872,7 +1872,7 @@ Objects/tupleobject.c	-	tupleiter_methods	variable	static PyMethodDef tupleiter_
 Objects/tupleobject.c	-	tuple_methods	variable	static PyMethodDef tuple_methods
 Python/Python-ast.c	-	Tuple_type	variable	static PyTypeObject *Tuple_type
 Objects/typeobject.c	-	type_getsets	variable	static PyGetSetDef type_getsets[]
-Python/Python-ast.c	-	TypeIgnore_fields	variable	static char *TypeIgnore_fields[]
+Python/Python-ast.c	-	TypeIgnore_fields	variable	static const char *TypeIgnore_fields[]
 Python/Python-ast.c	-	type_ignore_type	variable	static PyTypeObject *type_ignore_type
 Python/Python-ast.c	-	TypeIgnore_type	variable	static PyTypeObject *TypeIgnore_type
 Objects/typeobject.c	-	type_members	variable	static PyMemberDef type_members[]
@@ -1885,7 +1885,7 @@ Python/ast.c	-	u_kind	variable	static PyObject *u_kind
 Modules/posixmodule.c	-	uname_result_desc	variable	static PyStructSequence_Desc uname_result_desc
 Modules/posixmodule.c	-	uname_result_fields	variable	static PyStructSequence_Field uname_result_fields[]
 Modules/posixmodule.c	-	UnameResultType	variable	static PyTypeObject* UnameResultType
-Python/Python-ast.c	-	UnaryOp_fields	variable	static char *UnaryOp_fields[]
+Python/Python-ast.c	-	UnaryOp_fields	variable	static const char *UnaryOp_fields[]
 Python/Python-ast.c	-	unaryop_type	variable	static PyTypeObject *unaryop_type
 Python/Python-ast.c	-	UnaryOp_type	variable	static PyTypeObject *UnaryOp_type
 Objects/unicodeobject.c	-	unicode_as_mapping	variable	static PyMappingMethods unicode_as_mapping
@@ -1921,10 +1921,10 @@ Modules/_weakref.c	-	weakref_functions	variable	static PyMethodDef weakref_funct
 Objects/weakrefobject.c	-	weakref_members	variable	static PyMemberDef weakref_members[]
 Modules/_weakref.c	-	weakrefmodule	variable	static struct PyModuleDef weakrefmodule
 Python/sysmodule.c	-	whatstrings	variable	static PyObject *whatstrings[8]
-Python/Python-ast.c	-	While_fields	variable	static char *While_fields[]
+Python/Python-ast.c	-	While_fields	variable	static const char *While_fields[]
 Python/Python-ast.c	-	While_type	variable	static PyTypeObject *While_type
-Python/Python-ast.c	-	With_fields	variable	static char *With_fields[]
-Python/Python-ast.c	-	withitem_fields	variable	static char *withitem_fields[]
+Python/Python-ast.c	-	With_fields	variable	static const char *With_fields[]
+Python/Python-ast.c	-	withitem_fields	variable	static const char *withitem_fields[]
 Python/Python-ast.c	-	withitem_type	variable	static PyTypeObject *withitem_type
 Python/Python-ast.c	-	With_type	variable	static PyTypeObject *With_type
 Objects/descrobject.c	-	wrapperdescr_getset	variable	static PyGetSetDef wrapperdescr_getset[]
@@ -1935,8 +1935,8 @@ Modules/_threadmodule.c	local_new	wr_callback_def	variable	static PyMethodDef wr
 Modules/xxsubtype.c	-	xxsubtype_functions	variable	static PyMethodDef xxsubtype_functions[]
 Modules/xxsubtype.c	-	xxsubtypemodule	variable	static struct PyModuleDef xxsubtypemodule
 Modules/xxsubtype.c	-	xxsubtype_slots	variable	static struct PyModuleDef_Slot xxsubtype_slots[]
-Python/Python-ast.c	-	Yield_fields	variable	static char *Yield_fields[]
-Python/Python-ast.c	-	YieldFrom_fields	variable	static char *YieldFrom_fields[]
+Python/Python-ast.c	-	Yield_fields	variable	static const char *Yield_fields[]
+Python/Python-ast.c	-	YieldFrom_fields	variable	static const char *YieldFrom_fields[]
 Python/Python-ast.c	-	YieldFrom_type	variable	static PyTypeObject *YieldFrom_type
 Python/Python-ast.c	-	Yield_type	variable	static PyTypeObject *Yield_type
 Modules/itertoolsmodule.c	-	zip_longest_methods	variable	static PyMethodDef zip_longest_methods

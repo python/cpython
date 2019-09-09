@@ -85,6 +85,9 @@ def _is_vartype_okay(vartype, ignoredtypes=None):
     if _is_object(vartype):
         return False
 
+    if vartype.startswith('static const '):
+        return True
+
     # components for TypeObject definitions
     for name in ('PyMethodDef', 'PyGetSetDef', 'PyMemberDef'):
         if name in vartype:
