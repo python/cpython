@@ -5164,6 +5164,18 @@ test_write_unraisable_exc(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+sequence_getitem(PyObject *self, PyObject *args)
+{
+    PyObject *seq;
+    Py_ssize_t i;
+    if (!PyArg_ParseTuple(args, "On", &seq, &i)) {
+        return NULL;
+    }
+    return PySequence_GetItem(seq, i);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -5413,6 +5425,7 @@ static PyMethodDef TestMethods[] = {
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
+    {"sequence_getitem", sequence_getitem, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

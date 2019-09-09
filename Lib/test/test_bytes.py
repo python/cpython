@@ -962,6 +962,15 @@ class BaseBytesTest:
         c = b.translate(None, delete=b'e')
         self.assertEqual(c, b'hllo')
 
+    def test_sq_item(self):
+        _testcapi = test.support.import_module('_testcapi')
+        obj = self.type2test((42,))
+        with self.assertRaises(IndexError):
+            _testcapi.sequence_getitem(obj, -2)
+        with self.assertRaises(IndexError):
+            _testcapi.sequence_getitem(obj, 1)
+        self.assertEqual(_testcapi.sequence_getitem(obj, 0), 42)
+
 
 class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
