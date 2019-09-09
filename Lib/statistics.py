@@ -624,9 +624,8 @@ def quantiles(data, /, *, n=4, method='exclusive'):
     Set *n* to 100 for percentiles which gives the 99 cuts points that
     separate *data* in to 100 equal sized groups.
 
-    The *data* can be any iterable containing sample data or it can be
-    an instance of a class that defines an inv_cdf() method.  For sample
-    data, the cut points are linearly interpolated between data points.
+    The *data* can be any iterable containing sample.
+    The cut points are linearly interpolated between data points.
 
     If *method* is set to *inclusive*, *data* is treated as population
     data.  The minimum value is treated as the 0th percentile and the
@@ -634,8 +633,6 @@ def quantiles(data, /, *, n=4, method='exclusive'):
     """
     if n < 1:
         raise StatisticsError('n must be at least 1')
-    if hasattr(data, 'inv_cdf'):
-        return [data.inv_cdf(i / n) for i in range(1, n)]
     data = sorted(data)
     ld = len(data)
     if ld < 2:
@@ -955,6 +952,17 @@ class NormalDist:
             raise StatisticsError('cdf() not defined when sigma at or below zero')
         return _normal_dist_inv_cdf(p, self._mu, self._sigma)
 
+    def quantiles(self, n=4):
+        """Divide into *n* continuous intervals with equal probability.
+
+        Returns a list of (n - 1) cut points separating the intervals.
+
+        Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
+        Set *n* to 100 for percentiles which gives the 99 cuts points that
+        separate the normal distribution in to 100 equal sized groups.
+        """
+        return [self.inv_cdf(i / n) for i in range(1, n)]
+
     def overlap(self, other):
         """Compute the overlapping coefficient (OVL) between two normal distributions.
 
@@ -992,6 +1000,20 @@ class NormalDist:
     @property
     def mean(self):
         "Arithmetic mean of the normal distribution."
+        return self._mu
+
+    @property
+    def median(self):
+        "Return the median of the normal distribution"
+        return self._mu
+
+    @property
+    def mode(self):
+        """Return the mode of the normal distribution
+
+        The mode is the value x where which the probability density
+        function (pdf) takes its maximum value.
+        """
         return self._mu
 
     @property

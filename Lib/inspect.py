@@ -3118,7 +3118,7 @@ def _main():
                                                     type(exc).__name__,
                                                     exc)
         print(msg, file=sys.stderr)
-        exit(2)
+        sys.exit(2)
 
     if has_attrs:
         parts = attrs.split(".")
@@ -3128,7 +3128,7 @@ def _main():
 
     if module.__name__ in sys.builtin_module_names:
         print("Can't get info for builtin modules.", file=sys.stderr)
-        exit(1)
+        sys.exit(1)
 
     if args.details:
         print('Target: {}'.format(target))

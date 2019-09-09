@@ -443,6 +443,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *it;
     int numread;                /* 0 <= numread <= LINKCELLS */
+    int running;
     PyObject *nextlink;
     PyObject *(values[LINKCELLS]);
 } teedataobject;
@@ -452,7 +453,6 @@ typedef struct {
     teedataobject *dataobj;
     int index;                  /* 0 <= index <= LINKCELLS */
     PyObject *weakreflist;
-    unsigned long thread_id;
 } teeobject;
 
 static PyTypeObject teedataobject_type;
@@ -466,6 +466,7 @@ teedataobject_newinternal(PyObject *it)
     if (tdo == NULL)
         return NULL;
 
+    tdo->running = 0;
     tdo->numread = 0;
     tdo->nextlink = NULL;
     Py_INCREF(it);
@@ -494,7 +495,14 @@ teedataobject_getitem(teedataobject *tdo, int i)
     else {
         /* this is the lead iterator, so fetch more data */
         assert(i == tdo->numread);
+        if (tdo->running) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "cannot re-enter the tee iterator");
+            return NULL;
+        }
+        tdo->running = 1;
         value = PyIter_Next(tdo->it);
+        tdo->running = 0;
         if (value == NULL)
             return NULL;
         tdo->numread++;
@@ -681,11 +689,6 @@ tee_next(teeobject *to)
 {
     PyObject *value, *link;
 
-    if (to->thread_id != PyThread_get_thread_ident()) {
-        PyErr_SetString(PyExc_RuntimeError,
-            "tee() iterator can not be consumed from different threads.");
-        return NULL;
-    }
     if (to->index >= LINKCELLS) {
         link = teedataobject_jumplink(to->dataobj);
         if (link == NULL)
@@ -719,7 +722,6 @@ tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
     newto->dataobj = to->dataobj;
     newto->index = to->index;
     newto->weakreflist = NULL;
-    newto->thread_id = to->thread_id;
     PyObject_GC_Track(newto);
     return (PyObject *)newto;
 }
@@ -752,7 +754,6 @@ tee_fromiterable(PyObject *iterable)
 
     to->index = 0;
     to->weakreflist = NULL;
-    to->thread_id = PyThread_get_thread_ident();
     PyObject_GC_Track(to);
 done:
     Py_XDECREF(it);

@@ -514,15 +514,14 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.  Set
    *n* to 100 for percentiles which gives the 99 cuts points that separate
-   *data* in to 100 equal sized groups.  Raises :exc:`StatisticsError` if *n*
+   *data* into 100 equal sized groups.  Raises :exc:`StatisticsError` if *n*
    is not least 1.
 
-   The *data* can be any iterable containing sample data or it can be an
-   instance of a class that defines an :meth:`~inv_cdf` method.  For meaningful
+   The *data* can be any iterable containing sample data.  For meaningful
    results, the number of data points in *data* should be larger than *n*.
    Raises :exc:`StatisticsError` if there are not at least two data points.
 
-   For sample data, the cut points are linearly interpolated from the
+   The cut points are linearly interpolated from the
    two nearest data points.  For example, if a cut point falls one-third
    of the distance between two sample values, ``100`` and ``112``, the
    cut-point will evaluate to ``104``.
@@ -547,9 +546,6 @@ However, for reading convenience, most of the examples show sorted sequences.
    values, the method sorts them and assigns the following percentiles:
    0%, 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%.
 
-   If *data* is an instance of a class that defines an
-   :meth:`~inv_cdf` method, setting *method* has no effect.
-
    .. doctest::
 
         # Decile cut points for empirically sampled data
@@ -560,11 +556,6 @@ However, for reading convenience, most of the examples show sorted sequences.
         ...         103, 107, 101, 81, 109, 104]
         >>> [round(q, 1) for q in quantiles(data, n=10)]
         [81.0, 86.2, 89.0, 99.4, 102.5, 103.6, 106.0, 109.8, 111.0]
-
-        >>> # Quartile cut points for the standard normal distribution
-        >>> Z = NormalDist()
-        >>> [round(q, 4) for q in quantiles(Z, n=4)]
-        [-0.6745, 0.0, 0.6745]
 
    .. versionadded:: 3.8
 
@@ -605,6 +596,18 @@ of applications in statistics.
 
        A read-only property for the `arithmetic mean
        <https://en.wikipedia.org/wiki/Arithmetic_mean>`_ of a normal
+       distribution.
+
+    .. attribute:: median
+
+       A read-only property for the `median
+       <https://en.wikipedia.org/wiki/Median>`_ of a normal
+       distribution.
+
+    .. attribute:: mode
+
+       A read-only property for the `mode
+       <https://en.wikipedia.org/wiki/Mode_(statistics)>`_ of a normal
        distribution.
 
     .. attribute:: stdev
@@ -678,6 +681,16 @@ of applications in statistics.
        the two probability density functions
        <https://www.rasch.org/rmt/rmt101r.htm>`_.
 
+    .. method:: NormalDist.quantiles()
+
+        Divide the normal distribution into *n* continuous intervals with
+        equal probability.  Returns a list of (n - 1) cut points separating
+        the intervals.
+
+        Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
+        Set *n* to 100 for percentiles which gives the 99 cuts points that
+        separate the normal distribution into 100 equal sized groups.
+
     Instances of :class:`NormalDist` support addition, subtraction,
     multiplication and division by a constant.  These operations
     are used for translation and scaling.  For example:
@@ -733,9 +746,9 @@ Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
 
 .. doctest::
 
-    >>> list(map(round, quantiles(sat)))
+    >>> list(map(round, sat.quantiles()))
     [928, 1060, 1192]
-    >>> list(map(round, quantiles(sat, n=10)))
+    >>> list(map(round, sat.quantiles(n=10)))
     [810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
 
 To estimate the distribution for a model than isn't easy to solve
