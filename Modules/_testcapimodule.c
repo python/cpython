@@ -6084,22 +6084,11 @@ typedef struct {
 static int
 heapctypesubclass_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    /* Get HeapCTypeSubclass */
-    PyObject *m = PyState_FindModule(&_testcapimodule);
-    if (m == NULL) {
+    /* Call __init__ of the superclass */
+    if (heapctype_init(self, args, kwargs) < 0) {
         return -1;
     }
-    PyTypeObject *ctypesubclass = (PyTypeObject *)PyObject_GetAttrString(m, "HeapCTypeSubclass");
-    if (ctypesubclass == NULL) {
-        return -1;
-    }
-
-    PyTypeObject *base = (PyTypeObject *)PyType_GetSlot(ctypesubclass, Py_tp_base);
-    Py_DECREF(ctypesubclass);
-    initproc base_init = PyType_GetSlot(base, Py_tp_init);
-    if (base_init(self, args, kwargs) < 0) {
-        return -1;
-    }
+    /* Initialize additional element */
     ((HeapCTypeSubclassObject *)self)->value2 = 20;
     return 0;
 }
