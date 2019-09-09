@@ -171,7 +171,6 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
 
 
 
-@cpython_only
 class TestCallingConventions(unittest.TestCase):
     """Test calling using various C calling conventions (METH_*) from Python
 
@@ -311,7 +310,6 @@ class TestCallingConventions(unittest.TestCase):
         )
 
 
-@cpython_only
 class TestCallingConventionsInstance(TestCallingConventions):
     """Test calling instance methods using various calling conventions"""
 
@@ -319,7 +317,6 @@ class TestCallingConventionsInstance(TestCallingConventions):
         self.obj = self.expected_self = _testcapi.MethInstance()
 
 
-@cpython_only
 class TestCallingConventionsClass(TestCallingConventions):
     """Test calling class methods using various calling conventions"""
 
@@ -327,7 +324,6 @@ class TestCallingConventionsClass(TestCallingConventions):
         self.obj = self.expected_self = _testcapi.MethClass
 
 
-@cpython_only
 class TestCallingConventionsClassInstance(TestCallingConventions):
     """Test calling class methods on instance"""
 
@@ -336,7 +332,6 @@ class TestCallingConventionsClassInstance(TestCallingConventions):
         self.expected_self = _testcapi.MethClass
 
 
-@cpython_only
 class TestCallingConventionsStatic(TestCallingConventions):
     """Test calling static methods using various calling conventions"""
 
@@ -373,7 +368,6 @@ PYTHON_INSTANCE = PythonClass()
 
 NULL_OR_EMPTY = object()
 
-@cpython_only
 class FastCallTests(unittest.TestCase):
     """Test calling using various callables from C
     """
