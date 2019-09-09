@@ -319,7 +319,7 @@ and classes for traversing abstract syntax trees:
       node = YourTransformer().visit(node)
 
 
-.. function:: dump(node, annotate_fields=True, include_attributes=False)
+.. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
    debugging purposes.  If *annotate_fields* is true (by default),
@@ -328,6 +328,17 @@ and classes for traversing abstract syntax trees:
    omitting unambiguous field names.  Attributes such as line
    numbers and column offsets are not dumped by default.  If this is wanted,
    *include_attributes* can be set to true.
+
+   If *indent* is a non-negative integer or string, then the tree will be
+   pretty-printed with that indent level.  An indent level
+   of 0, negative, or ``""`` will only insert newlines.  ``None`` (the default)
+   selects the single line representation. Using a positive integer indent
+   indents that many spaces per level.  If *indent* is a string (such as ``"\t"``),
+   that string is used to indent each level.
+
+   .. versionchanged:: 3.9
+      Added the *indent* option.
+
 
 .. seealso::
 
