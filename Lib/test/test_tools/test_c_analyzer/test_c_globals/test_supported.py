@@ -5,7 +5,7 @@ from .. import tool_imports_for_tests
 with tool_imports_for_tests():
     from c_analyzer_common.info import ID
     from c_parser import info
-    from c_statics.supported import is_supported, ignored_from_file
+    from c_globals.supported import is_supported, ignored_from_file
 
 
 class IsSupportedTests(unittest.TestCase):

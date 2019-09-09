@@ -7,11 +7,11 @@ from c_analyzer_common.info import ID
 from c_analyzer_common.util import read_tsv
 
 
-def is_supported(static, ignored=None, known=None):
-    """Return True if the given static variable is okay in CPython."""
-    if _is_ignored(static, ignored and ignored.get('variables')):
+def is_supported(variable, ignored=None, known=None):
+    """Return True if the given global variable is okay in CPython."""
+    if _is_ignored(variable, ignored and ignored.get('variables')):
         return True
-    elif _is_vartype_okay(static.vartype, ignored.get('types')):
+    elif _is_vartype_okay(variable.vartype, ignored.get('types')):
         return True
     else:
         return False
@@ -49,33 +49,33 @@ IGNORED = {
         }
 
 
-def _is_ignored(static, ignoredvars=None):
-    if static.name in IGNORED:
+def _is_ignored(variable, ignoredvars=None):
+    if variable.name in IGNORED:
         return True
 
-    if ignoredvars and static.id in ignoredvars:
+    if ignoredvars and variable.id in ignoredvars:
         return True
 
     # compiler
-    if static.filename == 'Python/graminit.c':
-        if static.vartype.startswith('static state '):
+    if variable.filename == 'Python/graminit.c':
+        if variable.vartype.startswith('static state '):
             return True
-    if static.filename == 'Python/symtable.c':
-        if static.vartype.startswith('static identifier '):
+    if variable.filename == 'Python/symtable.c':
+        if variable.vartype.startswith('static identifier '):
             return True
-    if static.filename == 'Python/Python-ast.c':
+    if variable.filename == 'Python/Python-ast.c':
         # These should be const.
-        if static.name.endswith('_field'):
+        if variable.name.endswith('_field'):
             return True
-        if static.name.endswith('_attribute'):
+        if variable.name.endswith('_attribute'):
             return True
 
     # other
-    if static.filename == 'Python/dtoa.c':
+    if variable.filename == 'Python/dtoa.c':
         # guarded by lock?
-        if static.name in ('p5s', 'freelist'):
+        if variable.name in ('p5s', 'freelist'):
             return True
-        if static.name in ('private_mem', 'pmem_next'):
+        if variable.name in ('private_mem', 'pmem_next'):
             return True
 
     return False

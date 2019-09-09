@@ -20,14 +20,14 @@ class Variable(_NTBase,
     """Information about a single variable declaration."""
 
     __slots__ = ()
-    _isstatic = util.Slot()
+    _isglobal = util.Slot()
 
     @classonly
-    def from_parts(cls, filename, funcname, name, vartype, isstatic=False):
+    def from_parts(cls, filename, funcname, name, vartype, isglobal=False):
         id = info.ID(filename, funcname, name)
         self = cls(id, vartype)
-        if isstatic:
-            self._isstatic = True
+        if isglobal:
+            self._isglobal = True
         return self
 
     def __new__(cls, id, vartype):
@@ -64,12 +64,14 @@ class Variable(_NTBase,
             raise TypeError('missing vartype')
 
     @property
-    def isstatic(self):
+    def isglobal(self):
         try:
-            return self._isstatic
+            return self._isglobal
         except AttributeError:
-            self._isstatic = ('static' in self.vartype.split())
-            return self._isstatic
+            # XXX Include extern variables.
+            # XXX Ignore functions.
+            self._isglobal = ('static' in self.vartype.split())
+            return self._isglobal
 
     @property
     def isconst(self):

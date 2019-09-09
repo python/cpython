@@ -1,13 +1,13 @@
 
-def basic(statics, *,
+def basic(globals, *,
           _print=print):
     """Print each row simply."""
-    for static in statics:
-        if static.funcname:
-            line = f'{static.filename}:{static.funcname}():{static.name}'
+    for variable in globals:
+        if variable.funcname:
+            line = f'{variable.filename}:{variable.funcname}():{variable.name}'
         else:
-            line = f'{static.filename}:{static.name}'
-        vartype = static.vartype
+            line = f'{variable.filename}:{variable.name}'
+        vartype = variable.vartype
         #if vartype.startswith('static '):
         #    vartype = vartype.partition(' ')[2]
         #else:

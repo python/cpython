@@ -12,7 +12,7 @@ from c_parser import info, declarations
 # XXX needs tests:
 # * iter_variables
 
-def statics_from_binary(binfile=b_symbols.PYTHON, *,
+def globals_from_binary(binfile=b_symbols.PYTHON, *,
                         knownvars=None,
                         dirnames=None,
                         _iter_symbols=b_symbols.iter_symbols,
@@ -28,14 +28,14 @@ def statics_from_binary(binfile=b_symbols.PYTHON, *,
     for variable in _resolve(symbols,
                              resolve=_get_symbol_resolver(knownvars, dirnames),
                              ):
-        # Skip each non-static variable (unless we couldn't find it).
+        # Skip each non-global variable (unless we couldn't find it).
         # XXX Drop the "UNKNOWN" condition?
-        if not variable.isstatic and variable.vartype != UNKNOWN:
+        if not variable.isglobal and variable.vartype != UNKNOWN:
             continue
         yield variable
 
 
-def statics_from_declarations(dirnames=SOURCE_DIRS, *,
+def globals_from_declarations(dirnames=SOURCE_DIRS, *,
                               known=None,
                               ):
     """Yield a Variable for each found declaration.
@@ -84,12 +84,12 @@ def iter_variables(kind='platform', *,
         raise ValueError(f'unsupported kind {kind!r}')
 
 
-def statics(dirnames, known, *,
+def globals(dirnames, known, *,
             kind=None,  # Use the default.
             _iter_variables=iter_variables,
             ):
-    """Return a list of (StaticVar, <supported>) for each found static var."""
+    """Return a list of (StaticVar, <supported>) for each found global var."""
     for found in _iter_variables(kind, known=known, dirnames=dirnames):
-        if not found.isstatic:
+        if not found.isglobal:
             continue
         yield found

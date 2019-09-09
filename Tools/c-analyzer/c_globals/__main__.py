@@ -13,17 +13,17 @@ from . import find, show
 from .supported import is_supported, ignored_from_file, IGNORED_FILE, _is_object
 
 
-def _match_unused_global(static, knownvars, used):
+def _match_unused_global(variable, knownvars, used):
     found = []
     for varid in knownvars:
         if varid in used:
             continue
         if varid.funcname is not None:
             continue
-        if varid.name != static.name:
+        if varid.name != variable.name:
             continue
-        if static.filename and static.filename != UNKNOWN:
-            if static.filename == varid.filename:
+        if variable.filename and variable.filename != UNKNOWN:
+            if variable.filename == varid.filename:
                 found.append(varid)
         else:
             found.append(varid)
@@ -33,17 +33,17 @@ def _match_unused_global(static, knownvars, used):
 def _check_results(unknown, knownvars, used):
     return
     badknown = set()
-    for static in sorted(unknown):
+    for variable in sorted(unknown):
         msg = None
-        if static.funcname != UNKNOWN:
-            msg = f'could not find global symbol {static.id}'
-        elif m := _match_unused_global(static, knownvars, used):
+        if variable.funcname != UNKNOWN:
+            msg = f'could not find global symbol {variable.id}'
+        elif m := _match_unused_global(variable, knownvars, used):
             assert isinstance(m, list)
             badknown.update(m)
-        elif static.name in ('completed', 'id'):  # XXX Figure out where these variables are.
-            unknown.remove(static)
+        elif variable.name in ('completed', 'id'):  # XXX Figure out where these variables are.
+            unknown.remove(variable)
         else:
-            msg = f'could not find local symbol {static.id}'
+            msg = f'could not find local symbol {variable.id}'
         if msg:
             #raise Exception(msg)
             print(msg)
@@ -66,7 +66,7 @@ def _check_results(unknown, knownvars, used):
         raise Exception('could not find all symbols')
 
 
-def _find_statics(dirnames, known, ignored):
+def _find_globals(dirnames, known, ignored):
     if dirnames == SOURCE_DIRS:
         dirnames = [os.path.relpath(d, REPO_ROOT) for d in dirnames]
 
@@ -76,14 +76,14 @@ def _find_statics(dirnames, known, ignored):
     used = set()
     unknown = set()
     knownvars = (known or {}).get('variables')
-    for static in find.statics_from_binary(knownvars=knownvars,
+    for variable in find.globals_from_binary(knownvars=knownvars,
                                            dirnames=dirnames):
-    #for static in find.statics(dirnames, known, kind='platform'):
-        if static.vartype == UNKNOWN:
-            unknown.add(static)
+    #for variable in find.globals(dirnames, known, kind='platform'):
+        if variable.vartype == UNKNOWN:
+            unknown.add(variable)
             continue
-        yield static, is_supported(static, ignored, known)
-        used.add(static.id)
+        yield variable, is_supported(variable, ignored, known)
+        used.add(variable.id)
 
     _check_results(unknown, knownvars, used)
 
@@ -91,12 +91,12 @@ def _find_statics(dirnames, known, ignored):
 def cmd_check(cmd, dirs=SOURCE_DIRS, *,
               ignored=IGNORED_FILE,
               known=KNOWN_FILE,
-              _find=_find_statics,
+              _find=_find_globals,
               _show=show.basic,
               _print=print,
               ):
     """
-    Fail if there are unsupported statics variables.
+    Fail if there are unsupported globals variables.
 
     In the failure case, the list of unsupported variables
     will be printed out.
@@ -106,7 +106,7 @@ def cmd_check(cmd, dirs=SOURCE_DIRS, *,
         #_print('okay')
         return
 
-    _print('ERROR: found unsupported static variables')
+    _print('ERROR: found unsupported global variables')
     _print()
     _show(sorted(unsupported))
     _print(f' ({len(unsupported)} total)')
@@ -117,12 +117,12 @@ def cmd_show(cmd, dirs=SOURCE_DIRS, *,
              ignored=IGNORED_FILE,
              known=KNOWN_FILE,
              skip_objects=False,
-              _find=_find_statics,
+              _find=_find_globals,
              _show=show.basic,
              _print=print,
              ):
     """
-    print out the list of found static variables.
+    Print out the list of found global variables.
 
     The variables will be distinguished as "supported" or "unsupported".
     """
@@ -155,7 +155,7 @@ COMMANDS = {
         }
 
 PROG = sys.argv[0]
-PROG = 'c-statics.py'
+PROG = 'c-globals.py'
 
 
 def parse_args(prog=PROG, argv=sys.argv[1:], *, _fail=None):

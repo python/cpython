@@ -3,7 +3,7 @@ import unittest
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
     from c_parser import info
-    from c_statics.find import statics_from_binary, statics
+    from c_globals.find import globals_from_binary, globals
 
 
 class _Base(unittest.TestCase):
@@ -59,7 +59,7 @@ class StaticsFromBinaryTests(_Base):
             ]
         knownvars = object()
 
-        found = list(statics_from_binary('python',
+        found = list(globals_from_binary('python',
                                          knownvars=knownvars,
                                          **self.kwargs))
 
@@ -91,8 +91,8 @@ class StaticsFromBinaryTests(_Base):
 #                ]
 #        known = object()
 #
-#        statics_from_binary('python', knownvars=known, **this.kwargs)
-#        found = list(statics_from_symbols(['dir1'], self.iter_symbols))
+#        globals_from_binary('python', knownvars=known, **this.kwargs)
+#        found = list(globals_from_symbols(['dir1'], self.iter_symbols))
 #
 #        self.assertEqual(found, [
 #            info.Variable.from_parts('dir1/spam.c', None, 'var1', '???'),
@@ -108,7 +108,7 @@ class StaticsFromBinaryTests(_Base):
 #    def test_no_symbols(self):
 #        self._return_iter_symbols = []
 #
-#        found = list(statics_from_symbols(['dir1'], self.iter_symbols))
+#        found = list(globals_from_symbols(['dir1'], self.iter_symbols))
 #
 #        self.assertEqual(found, [])
 #        self.assertEqual(self.calls, [
@@ -140,7 +140,7 @@ class StaticsFromBinaryTests(_Base):
 #            object(),
 #            ]
 #
-#        found = list(statics_from_declarations(['dir1'], self.iter_declarations))
+#        found = list(globals_from_declarations(['dir1'], self.iter_declarations))
 #
 #        self.assertEqual(found, [
 #            info.Variable.from_parts('dir1/spam.c', None, 'var1', '???'),
@@ -156,7 +156,7 @@ class StaticsFromBinaryTests(_Base):
 #    def test_no_declarations(self):
 #        self._return_iter_declarations = []
 #
-#        found = list(statics_from_declarations(['dir1'], self.iter_declarations))
+#        found = list(globals_from_declarations(['dir1'], self.iter_declarations))
 #
 #        self.assertEqual(found, [])
 #        self.assertEqual(self.calls, [
@@ -311,7 +311,7 @@ class StaticsTest(_Base):
         dirnames = object()
         known = object()
 
-        found = list(statics(dirnames, known,
+        found = list(globals(dirnames, known,
                              kind='platform',
                              _iter_variables=self._iter_variables,
                              ))

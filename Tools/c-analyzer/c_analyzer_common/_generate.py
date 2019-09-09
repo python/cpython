@@ -23,7 +23,7 @@ POTS += tuple('const ' + v for v in POTS)
 STRUCTS = ('PyTypeObject', 'PyObject', 'PyMethodDef', 'PyModuleDef', 'grammar')
 
 
-def _parse_static(line, funcname=None):
+def _parse_global(line, funcname=None):
     line = line.strip()
     if line.startswith('static '):
         if '(' in line and '[' not in line and ' = ' not in line:
@@ -90,9 +90,9 @@ def _pop_cached(varcache, filename, funcname, name, *,
     except KeyError:
         cached = varcache[filename] = {}
         for variable in _iter_variables(filename,
-                                        parse_variable=_parse_static,
+                                        parse_variable=_parse_global,
                                         ):
-            variable._isstatic = True
+            variable._isglobal = True
             cached[variable.id] = variable
         for var in cached:
             print(' ', var)
@@ -117,17 +117,17 @@ def find_matching_variable(varid, varcache, allfilenames, *,
     else:
         filenames = allfilenames
     for filename in filenames:
-        static = _pop_cached(varcache, filename, varid.funcname, varid.name)
-        if static is not None:
-            return static
+        variable = _pop_cached(varcache, filename, varid.funcname, varid.name)
+        if variable is not None:
+            return variable
     else:
         if varid.filename and varid.filename != UNKNOWN and varid.funcname is None:
             for filename in allfilenames:
                 if not filename.endswith('.h'):
                     continue
-                static = _pop_cached(varcache, filename, None, varid.name)
-                if static is not None:
-                    return static
+                variable = _pop_cached(varcache, filename, None, varid.name)
+                if variable is not None:
+                    return variable
         return None
 
 
@@ -297,17 +297,17 @@ def known_rows(symbols, *,
             yield _as_known(found.id, found.vartype)
     else:
         raise NotImplementedError  # XXX incorporate KNOWN
-        for static in _find_symbols(symbols, filenames,
-                                    srccache=cache,
-                                    parse_variable=_parse_static,
-                                    ):
-            #static = static._replace(
-            #    filename=os.path.relpath(static.filename, REPO_ROOT))
-            if static.funcname == UNKNOWN:
-                print(static)
-            if static.vartype== UNKNOWN:
-                print(static)
-            yield _as_known(static.id, static.vartype)
+        for variable in _find_symbols(symbols, filenames,
+                                      srccache=cache,
+                                      parse_variable=_parse_global,
+                                      ):
+            #variable = variable._replace(
+            #    filename=os.path.relpath(variable.filename, REPO_ROOT))
+            if variable.funcname == UNKNOWN:
+                print(variable)
+            if variable.vartype== UNKNOWN:
+                print(variable)
+            yield _as_known(variable.id, variable.vartype)
 
 
 def known_file(symbols, filename=None, *,

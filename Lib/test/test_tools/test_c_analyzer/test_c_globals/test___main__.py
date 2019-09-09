@@ -6,9 +6,9 @@ with tool_imports_for_tests():
     from c_analyzer_common import SOURCE_DIRS
     from c_analyzer_common.known import DATA_FILE as KNOWN_FILE
     from c_parser import info
-    import c_statics as cg
-    from c_statics.supported import IGNORED_FILE
-    from c_statics.__main__ import cmd_check, cmd_show, parse_args, main
+    import c_globals as cg
+    from c_globals.supported import IGNORED_FILE
+    from c_globals.__main__ import cmd_check, cmd_show, parse_args, main
 
 
 TYPICAL = [
@@ -121,7 +121,7 @@ class CheckTests(CMDBase):
         unsupported = [v for v, s in TYPICAL if not s]
         self.assertEqual(self.calls, [
             ('_find', (dirs, 'known.tsv', 'ignored.tsv')),
-            ('_print', ('ERROR: found unsupported static variables',)),
+            ('_print', ('ERROR: found unsupported global variables',)),
             ('_print', ()),
             ('_show', (sorted(unsupported),)),
             ('_print', (' (3 total)',)),

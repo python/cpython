@@ -3,7 +3,7 @@ import unittest
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
     from c_parser import info
-    from c_statics.show import basic
+    from c_globals.show import basic
 
 
 TYPICAL = [

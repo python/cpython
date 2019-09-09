@@ -13,7 +13,7 @@ PYTHON = sys.executable
 
 def iter_symbols(binary=PYTHON, dirnames=None, *,
                  # Alternately, use look_up_known_symbol()
-                 # from c_statics.supported.
+                 # from c_globals.supported.
                  find_local_symbol=source.find_symbol,
                  _file_exists=os.path.exists,
                  _iter_symbols_nm=(lambda b, *a: _iter_symbols_nm(b, *a)),
