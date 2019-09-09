@@ -321,8 +321,8 @@ IGNORE_RESULT = object()
 
 @cpython_only
 class FastCallTests(unittest.TestCase):
-    from _testcapi import CallTest as C
-    c = C()
+    from _testcapi import CallTest
+    calltest = CallTest()
 
     # Test calls with positional arguments
     CALLS_POSARGS = (
@@ -345,23 +345,23 @@ class FastCallTests(unittest.TestCase):
         (PYTHON_INSTANCE.static_method, (), "staticmethod"),
 
         # C methods
-        (c.varargs,           (1, 2),    [(1, 2), {}]),
-        (c.varargs_keywords,  (1, 2),    [(1, 2), {}]),
-        (c.fastcall,          (1, 2),    [(1, 2), {}]),
-        (c.fastcall_keywords, (1, 2),    [(1, 2), {}]),
-        (c.noargs,            (),        [(), {}]),
-        (c.onearg,            (123,),    [(123,), {}]),
-        (c.staticmeth,        (1, 2),    [(1, 2), {}]),
-        (c.classmeth,         (1, 2),    [(1, 2), {}]),
+        (calltest.varargs,           (1, 2),    [(1, 2), {}]),
+        (calltest.varargs_keywords,  (1, 2),    [(1, 2), {}]),
+        (calltest.fastcall,          (1, 2),    [(1, 2), {}]),
+        (calltest.fastcall_keywords, (1, 2),    [(1, 2), {}]),
+        (calltest.noargs,            (),        [(), {}]),
+        (calltest.onearg,            (123,),    [(123,), {}]),
+        (calltest.staticmeth,        (1, 2),    [(1, 2), {}]),
+        (calltest.classmeth,         (1, 2),    [(1, 2), {}]),
 
-        (C.varargs,           (c, 1, 2), [(1, 2), {}]),
-        (C.varargs_keywords,  (c, 1, 2), [(1, 2), {}]),
-        (C.fastcall,          (c, 1, 2), [(1, 2), {}]),
-        (C.fastcall_keywords, (c, 1, 2), [(1, 2), {}]),
-        (C.noargs,            (c,),      [(), {}]),
-        (C.onearg,            (c, 123),  [(123,), {}]),
-        (C.staticmeth,        (1, 2),    [(1, 2), {}]),
-        (C.classmeth,         (1, 2),    [(1, 2), {}]),
+        (CallTest.varargs,           (calltest, 1, 2), [(1, 2), {}]),
+        (CallTest.varargs_keywords,  (calltest, 1, 2), [(1, 2), {}]),
+        (CallTest.fastcall,          (calltest, 1, 2), [(1, 2), {}]),
+        (CallTest.fastcall_keywords, (calltest, 1, 2), [(1, 2), {}]),
+        (CallTest.noargs,            (calltest,),      [(), {}]),
+        (CallTest.onearg,            (calltest, 123),  [(123,), {}]),
+        (CallTest.staticmeth,        (1, 2),    [(1, 2), {}]),
+        (CallTest.classmeth,         (1, 2),    [(1, 2), {}]),
 
         # C type static method: METH_FASTCALL | METH_CLASS
         (int.from_bytes, (b'\x01\x00', 'little'), 1),
@@ -384,15 +384,15 @@ class FastCallTests(unittest.TestCase):
         (PYTHON_INSTANCE.method, (), {'arg1': 1, 'arg2': 2}, [1, 2]),
 
         # C methods
-        (c.varargs_keywords,  (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
-        (c.fastcall_keywords, (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
-        (c.staticmeth,        (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
-        (c.classmeth,         (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (calltest.varargs_keywords,  (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (calltest.fastcall_keywords, (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (calltest.staticmeth,        (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (calltest.classmeth,         (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
 
-        (C.varargs_keywords,  (c, 1, 2), {'x': 'y'}, [(1, 2), {'x': 'y'}]),
-        (C.fastcall_keywords, (c, 1, 2), {'x': 'y'}, [(1, 2), {'x': 'y'}]),
-        (C.staticmeth,        (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
-        (C.classmeth,         (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (CallTest.varargs_keywords,  (calltest, 1, 2), {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (CallTest.fastcall_keywords, (calltest, 1, 2), {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (CallTest.staticmeth,        (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
+        (CallTest.classmeth,         (1, 2),    {'x': 'y'}, [(1, 2), {'x': 'y'}]),
 
         # C type static method: METH_FASTCALL | METH_CLASS
         (int.from_bytes, (b'\x01\x00',), {'byteorder': 'little'}, 1),
