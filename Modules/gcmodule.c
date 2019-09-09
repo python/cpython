@@ -69,10 +69,22 @@ module gc
 /* Get the object given the GC head */
 #define FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
 
+#define _PyGCHead_IS_COLLECTING(o) \
+    (((o)->_gc_prev & PREV_MASK_COLLECTING) != 0)
+
+int _PyObject_GC_IS_COLLECTING(PyObject *op){
+    if (PyObject_IS_GC(op)) {
+        PyGC_Head *gc = AS_GC(op);
+        return _PyGCHead_IS_COLLECTING(gc);
+    } else {
+        return 0;
+    }
+}
+
 static inline int
 gc_is_collecting(PyGC_Head *g)
 {
-    return _PyObject_GC_IS_COLLECTING(g);
+    return _PyGCHead_IS_COLLECTING(g);
 }
 
 static inline void
