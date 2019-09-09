@@ -23,7 +23,7 @@ env:
 branches:
   only:
     - master
-    - /^\d\.\d$/
+    - /^\d\.\d+$/
     - buildbot-custom
 
 matrix:
