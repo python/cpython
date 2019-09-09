@@ -1454,6 +1454,14 @@ class Stream:
     def exception(self):
         return self._exception
 
+    def set_exception(self, exc):
+        warnings.warn("Stream.set_exception() is deprecated "
+                      "since Python 3.8, and scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
+        self._set_exception(exc)
+
     def _set_exception(self, exc):
         self._exception = exc
 

@@ -1806,6 +1806,9 @@ os.close(fd)
         with self.assertWarns(DeprecationWarning):
             stream.feed_eof()
 
+        with self.assertWarns(DeprecationWarning):
+            stream.set_exception(ConnectionResetError("test"))
+
 
 if __name__ == '__main__':
     unittest.main()
