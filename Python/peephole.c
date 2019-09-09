@@ -21,8 +21,15 @@
         (ABSOLUTE_JUMP(_Py_OPCODE(arr[i])) ? 0 : i+1))
 #define ISBASICBLOCK(blocks, start, end) \
     (blocks[start]==blocks[end])
-#define MAX_BYTECODE_OPT_ITERS 5
 
+/* Maximum number of iterations of the main peephole optimizer function
+ * over the same bytecode object. Theretically, this number can be infinite
+ * as the peephole optimizer keeps the code object untouched or smaller but
+ * having a higher bound allows us to scope the performance impact of
+ * repeating the main peephole optimizer function while making sure than even
+ * if something goes wrong, the loop will always end. */
+
+#define MAX_BYTECODE_OPT_ITERS 5
 
 /* Scans back N consecutive LOAD_CONST instructions, skipping NOPs,
    returns index of the Nth last's LOAD_CONST's EXTENDED_ARG prefix.
@@ -476,9 +483,13 @@ optimize_bytecode_once(PyObject *code, PyObject* consts, PyObject *names,
         cum_orig_offset += lnotab[i];
         assert(cum_orig_offset % sizeof(_Py_CODEUNIT) == 0);
         index = cum_orig_offset / sizeof(_Py_CODEUNIT);
-        if (index >= codelen) {
+        if (index == codelen) {
+            /* When running this function multiple times over the same bytecode
+             * *offset_delta* can be bigger than 255 when the index from the origin
+             * is exactly as big as the code. In that case we don't need to adjust. */
             continue;
         } else {
+            assert(index < codelen);
             new_offset = blocks[index] * sizeof(_Py_CODEUNIT);
             offset_delta = new_offset - last_offset;
             assert(offset_delta < 255);
