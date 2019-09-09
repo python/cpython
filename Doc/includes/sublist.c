@@ -59,7 +59,7 @@ PyInit_sublist(void)
         return NULL;
 
     Py_INCREF(&SubListType);
-    if ((m, "SubList", (PyObject *) &SubListType)) {
+    if (PyModule_AddObject(m, "SubList", (PyObject *) &SubListType)) {
         Py_DECREF(&SubListType);
         Py_DECREF(m);
         return NULL;
