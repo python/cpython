@@ -22,6 +22,10 @@ from docutils import nodes, utils
 
 from sphinx import addnodes
 from sphinx.builders import Builder
+try:
+    from sphinx.errors import NoUri
+except ImportError:
+    from sphinx.environment import NoUri
 from sphinx.locale import translators
 from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
@@ -569,10 +573,13 @@ def process_audit_events(app, doctree, fromdocname):
         for i, (doc, label) in backlinks:
             if isinstance(label, str):
                 ref = nodes.reference("", nodes.Text("[{}]".format(i)), internal=True)
-                ref['refuri'] = "{}#{}".format(
-                    app.builder.get_relative_uri(fromdocname, doc),
-                    label,
-                )
+                try:
+                    ref['refuri'] = "{}#{}".format(
+                        app.builder.get_relative_uri(fromdocname, doc),
+                        label,
+                    )
+                except NoUri:
+                    continue
                 node += ref
         row += nodes.entry('', node)
 
