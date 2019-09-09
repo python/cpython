@@ -79,7 +79,7 @@ listed below:
 **Static factory functions**
 
 The below functions when called create a modal, native look-and-feel dialog,
-wait for the user's selection, then return the selected value(s) or None to the
+wait for the user's selection, then return the selected value(s) or ``None`` to the
 caller.
 
 .. function:: askopenfile(mode="r", **options)
@@ -102,7 +102,7 @@ caller.
 
    Create a :class:`SaveAs` dialog and return the selected filename.
 
-.. function:: askdirectory (**options)
+.. function:: askdirectory(**options)
 
  | Prompt user to select a directory.
  | Additional keyword option:
@@ -121,7 +121,7 @@ These do not emulate the native look-and-feel of the platform.
 
 .. class:: Directory(master=None, **options)
 
-   Create a dialog prompting user to select a directory.
+   Create a dialog prompting the user to select a directory.
 
 .. note::  The *FileDialog* class should be subclassed for custom event
    handling and behaviour.

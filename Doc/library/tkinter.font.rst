@@ -27,7 +27,7 @@ The different font weights and slants are:
    fonts as a single object, rather than specifying a font by its attributes
    with each occurrence.
 
-    keyword arguments:
+    arguments:
 
        | *font* - font specifier tuple (family, size, options)
        | *name* - unique font name
@@ -40,8 +40,8 @@ The different font weights and slants are:
        |     If *size* is positive it is interpreted as size in points.
        |     If *size* is a negative number its absolute value is treated as
              as size in pixels.
-       | *weight* - font emphasis {NORMAL, BOLD}
-       | *slant* - {ROMAN, ITALIC}
+       | *weight* - font emphasis (NORMAL, BOLD)
+       | *slant* - ROMAN, ITALIC
        | *underline* - font underlining (0 - none, 1 - underline)
        | *overstrike* - font strikeout (0 - none, 1 - strikeout)
 

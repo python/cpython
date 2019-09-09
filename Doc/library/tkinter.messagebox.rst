@@ -19,7 +19,7 @@ limited to:
 
 .. class:: Message(master=None, **options)
 
-   Return a default message box.
+   Create a default information message box.
 
 **Information message box**
 
