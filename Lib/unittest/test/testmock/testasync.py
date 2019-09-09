@@ -361,17 +361,14 @@ class AsyncArguments(unittest.TestCase):
 
 
 class AsyncContextManagerTest(unittest.TestCase):
+
     class WithAsyncContextManager:
-        def __init__(self):
-            self.entered = False
-            self.exited = False
 
         async def __aenter__(self, *args, **kwargs):
-            self.entered = True
             return self
 
         async def __aexit__(self, *args, **kwargs):
-            self.exited = True
+            pass
 
     def test_magic_methods_are_async_mocks(self):
         mock = MagicMock(self.WithAsyncContextManager())
@@ -390,11 +387,7 @@ class AsyncContextManagerTest(unittest.TestCase):
             return result
 
         result = asyncio.run(use_context_manager())
-        self.assertFalse(instance.entered)
-        self.assertFalse(instance.exited)
         self.assertTrue(called)
-        self.assertTrue(mock_instance.entered)
-        self.assertTrue(mock_instance.exited)
         self.assertTrue(mock_instance.__aenter__.called)
         self.assertTrue(mock_instance.__aexit__.called)
         self.assertIsNot(mock_instance, result)
