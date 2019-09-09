@@ -6083,7 +6083,6 @@ heapctypesubclass_init(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static struct PyMemberDef heapctypesubclass_members[] = {
-    {"value", T_INT, offsetof(HeapCTypeObject, value)},
     {"value2", T_INT, offsetof(HeapCTypeSubclassObject, value2)},
     {NULL} /* Sentinel */
 };
