@@ -96,7 +96,7 @@ def literal_eval(node_or_string):
     return _convert(node_or_string)
 
 
-def dump(node, annotate_fields=True, include_attributes=False):
+def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
     debugging purposes.  If annotate_fields is true (by default),
@@ -104,11 +104,21 @@ def dump(node, annotate_fields=True, include_attributes=False):
     If annotate_fields is false, the result string will be more compact by
     omitting unambiguous field names.  Attributes such as line
     numbers and column offsets are not dumped by default.  If this is wanted,
-    include_attributes can be set to true.
+    include_attributes can be set to true.  If indent is a non-negative
+    integer or string, then the tree will be pretty-printed with that indent
+    level. None (the default) selects the single line representation.
     """
-    def _format(node):
+    def _format(node, level=0):
+        if indent is not None:
+            level += 1
+            prefix = '\n' + indent * level
+            sep = ',\n' + indent * level
+        else:
+            prefix = ''
+            sep = ', '
         if isinstance(node, AST):
             args = []
+            allsimple = True
             keywords = annotate_fields
             for field in node._fields:
                 try:
@@ -116,23 +126,36 @@ def dump(node, annotate_fields=True, include_attributes=False):
                 except AttributeError:
                     keywords = True
                 else:
+                    value, simple = _format(value, level)
+                    allsimple = allsimple and simple
                     if keywords:
-                        args.append('%s=%s' % (field, _format(value)))
+                        args.append('%s=%s' % (field, value))
                     else:
-                        args.append(_format(value))
+                        args.append(value)
             if include_attributes and node._attributes:
-                for a in node._attributes:
+                for attr in node._attributes:
                     try:
-                        args.append('%s=%s' % (a, _format(getattr(node, a))))
+                        value = getattr(node, attr)
                     except AttributeError:
                         pass
-            return '%s(%s)' % (node.__class__.__name__, ', '.join(args))
+                    else:
+                        value, simple = _format(value, level)
+                        allsimple = allsimple and simple
+                        args.append('%s=%s' % (attr, value))
+            if allsimple and len(args) <= 3:
+                return '%s(%s)' % (node.__class__.__name__, ', '.join(args)), not args
+            return '%s(%s%s)' % (node.__class__.__name__, prefix, sep.join(args)), False
         elif isinstance(node, list):
-            return '[%s]' % ', '.join(_format(x) for x in node)
-        return repr(node)
+            if not node:
+                return '[]', True
+            return '[%s%s]' % (prefix, sep.join(_format(x, level)[0] for x in node)), False
+        return repr(node), True
+
     if not isinstance(node, AST):
         raise TypeError('expected AST, got %r' % node.__class__.__name__)
-    return _format(node)
+    if indent is not None and not isinstance(indent, str):
+        indent = ' ' * indent
+    return _format(node)[0]
 
 
 def copy_location(new_node, old_node):
