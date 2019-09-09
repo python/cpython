@@ -1133,9 +1133,9 @@ class _BaseStreamProtocol(FlowControlMixin, protocols.Protocol):
         stream = self._stream
         if stream is not None:
             if exc is None:
-                stream.feed_eof()
+                stream._feed_eof()
             else:
-                stream.set_exception(exc)
+                stream._set_exception(exc)
         if not self._closed.done():
             if exc is None:
                 self._closed.set_result(None)
@@ -1147,12 +1147,12 @@ class _BaseStreamProtocol(FlowControlMixin, protocols.Protocol):
     def data_received(self, data):
         stream = self._stream
         if stream is not None:
-            stream.feed_data(data)
+            stream._feed_data(data)
 
     def eof_received(self):
         stream = self._stream
         if stream is not None:
-            stream.feed_eof()
+            stream._feed_eof()
         if self._over_ssl:
             # Prevent a warning in SSLProtocol.eof_received:
             # "returning true from eof_received()
@@ -1219,7 +1219,7 @@ class _StreamProtocol(_BaseStreamProtocol):
         stream = self._stream
         if stream is None:
             return
-        stream.set_transport(transport)
+        stream._set_transport(transport)
         stream._protocol = self
 
     def connection_lost(self, exc):
@@ -1449,7 +1449,7 @@ class Stream:
     def exception(self):
         return self._exception
 
-    def set_exception(self, exc):
+    def _set_exception(self, exc):
         self._exception = exc
 
         waiter = self._waiter
@@ -1466,7 +1466,7 @@ class Stream:
             if not waiter.cancelled():
                 waiter.set_result(None)
 
-    def set_transport(self, transport):
+    def _set_transport(self, transport):
         if transport is self._transport:
             return
         assert self._transport is None, 'Transport already set'
@@ -1477,7 +1477,7 @@ class Stream:
             self._paused = False
             self._transport.resume_reading()
 
-    def feed_eof(self):
+    def _feed_eof(self):
         self._eof = True
         self._wakeup_waiter()
 
@@ -1485,7 +1485,7 @@ class Stream:
         """Return True if the buffer is empty and 'feed_eof' was called."""
         return self._eof and not self._buffer
 
-    def feed_data(self, data):
+    def _feed_data(self, data):
         _ensure_can_read(self._mode)
         assert not self._eof, 'feed_data after feed_eof'
 
