@@ -120,8 +120,8 @@ tuple_alloc(Py_ssize_t size)
 #endif
     {
         /* Check for overflow */
-        if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - sizeof(PyTupleObject) -
-                    sizeof(PyObject *)) / sizeof(PyObject *)) {
+        if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
+                    sizeof(PyObject *))) / sizeof(PyObject *)) {
             return (PyTupleObject *)PyErr_NoMemory();
         }
         op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
