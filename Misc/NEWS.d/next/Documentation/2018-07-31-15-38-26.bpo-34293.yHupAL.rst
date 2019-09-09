@@ -1,0 +1,1 @@
+Fix the Doc/Makefile regarding PAPER environment variable and PDF builds
