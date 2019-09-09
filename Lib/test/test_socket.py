@@ -1,30 +1,35 @@
 import unittest
 from test import support
 
+import _thread as thread
+import array
+import contextlib
 import errno
 import io
 import itertools
-import socket
+import math
+import os
+import pickle
+import platform
+import queue
+import random
 import select
+import shutil
+import signal
+import socket
+import string
+import struct
+import sys
 import tempfile
+import threading
 import time
 import traceback
-import queue
-import sys
-import os
-import platform
-import array
-import contextlib
 from weakref import proxy
-import signal
-import math
-import pickle
-import struct
-import random
-import shutil
-import string
-import _thread as thread
-import threading
+
+try:
+    import _socket
+except ImportError:
+    _socket = None
 try:
     import multiprocessing
 except ImportError:
@@ -34,6 +39,7 @@ try:
 except ImportError:
     fcntl = None
 
+
 HOST = support.HOST
 # test unicode string and carriage return
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
@@ -42,10 +48,6 @@ MAIN_TIMEOUT = 60.0
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
 
-try:
-    import _socket
-except ImportError:
-    _socket = None
 
 def get_cid():
     if fcntl is None:
@@ -6437,81 +6439,18 @@ class CreateServerFunctionalTest(unittest.TestCase):
             self.echo_client(("::1", port), socket.AF_INET6)
 
 
-def test_main():
-    tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
-             TestExceptions, BufferIOTest, BasicTCPTest2, BasicUDPTest,
-             UDPTimeoutTest, CreateServerTest, CreateServerFunctionalTest]
+_thread_info = None
 
-    tests.extend([
-        NonBlockingTCPTests,
-        FileObjectClassTestCase,
-        UnbufferedFileObjectClassTestCase,
-        LineBufferedFileObjectClassTestCase,
-        SmallBufferedFileObjectClassTestCase,
-        UnicodeReadFileObjectClassTestCase,
-        UnicodeWriteFileObjectClassTestCase,
-        UnicodeReadWriteFileObjectClassTestCase,
-        NetworkConnectionNoServer,
-        NetworkConnectionAttributesTest,
-        NetworkConnectionBehaviourTest,
-        ContextManagersTest,
-        InheritanceTest,
-        NonblockConstantTest
-    ])
-    tests.append(BasicSocketPairTest)
-    tests.append(TestUnixDomain)
-    tests.append(TestLinuxAbstractNamespace)
-    tests.extend([TIPCTest, TIPCThreadableTest])
-    tests.extend([BasicCANTest, CANTest])
-    tests.extend([BasicRDSTest, RDSTest])
-    tests.append(LinuxKernelCryptoAPI)
-    tests.append(BasicQIPCRTRTest)
-    tests.extend([
-        BasicVSOCKTest,
-        ThreadedVSOCKSocketStreamTest,
-    ])
-    tests.append(BasicBluetoothTest)
-    tests.extend([
-        CmsgMacroTests,
-        SendmsgUDPTest,
-        RecvmsgUDPTest,
-        RecvmsgIntoUDPTest,
-        SendmsgUDP6Test,
-        RecvmsgUDP6Test,
-        RecvmsgRFC3542AncillaryUDP6Test,
-        RecvmsgIntoRFC3542AncillaryUDP6Test,
-        RecvmsgIntoUDP6Test,
-        SendmsgUDPLITETest,
-        RecvmsgUDPLITETest,
-        RecvmsgIntoUDPLITETest,
-        SendmsgUDPLITE6Test,
-        RecvmsgUDPLITE6Test,
-        RecvmsgRFC3542AncillaryUDPLITE6Test,
-        RecvmsgIntoRFC3542AncillaryUDPLITE6Test,
-        RecvmsgIntoUDPLITE6Test,
-        SendmsgTCPTest,
-        RecvmsgTCPTest,
-        RecvmsgIntoTCPTest,
-        SendmsgSCTPStreamTest,
-        RecvmsgSCTPStreamTest,
-        RecvmsgIntoSCTPStreamTest,
-        SendmsgUnixStreamTest,
-        RecvmsgUnixStreamTest,
-        RecvmsgIntoUnixStreamTest,
-        RecvmsgSCMRightsStreamTest,
-        RecvmsgIntoSCMRightsStreamTest,
-        # These are slow when setitimer() is not available
-        InterruptedRecvTimeoutTest,
-        InterruptedSendTimeoutTest,
-        TestSocketSharing,
-        SendfileUsingSendTest,
-        SendfileUsingSendfileTest,
-    ])
-    tests.append(TestMSWindowsTCPFlags)
 
-    thread_info = support.threading_setup()
-    support.run_unittest(*tests)
-    support.threading_cleanup(*thread_info)
+def setUpModule():
+    global _thread_info
+    _thread_info = support.threading_setup()
+
+
+def tearDownModule():
+    global _thread_info
+    support.threading_cleanup(*_thread_info)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
