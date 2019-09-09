@@ -48,7 +48,7 @@ exception is raised if the entry asked for cannot be found.");
 
 
 typedef struct {
-  PyTypeObject *StructPwdType;
+    PyTypeObject *StructPwdType;
 } pwdmodulestate;
 #define modulestate(o) ((pwdmodulestate *)PyModule_GetState(o))
 #define modulestate_global modulestate(PyState_FindModule(&pwdmodule))
@@ -353,8 +353,9 @@ PyInit_pwd(void)
 
     pwdmodulestate *state = PyModule_GetState(m);
     state->StructPwdType = PyStructSequence_NewType(&struct_pwd_type_desc);
-    if (state->StructPwdType == NULL)
+    if (state->StructPwdType == NULL) {
         return NULL;
+    }
     Py_INCREF(state->StructPwdType);
     PyModule_AddObject(m, "struct_passwd", (PyObject *) state->StructPwdType);
     return m;
