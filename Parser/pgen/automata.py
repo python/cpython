@@ -242,7 +242,7 @@ class DFA:
             # Now create new DFAs by visiting all posible transitions between
             # the current DFA state and the new power-set states (each nfa_set)
             # via the different labels. As the nodes are appended to *states* this
-            # is performing a deep-first search traversal over the power-set of
+            # is performing a breadth-first search traversal over the power-set of
             # the states of the original NFA.
             for label, nfa_set in sorted(arcs.items()):
                 for exisisting_state in states:
