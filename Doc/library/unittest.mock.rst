@@ -514,6 +514,18 @@ the *new_callable* argument to :func:`patch`.
             >>> mock.call_count
             2
 
+        For :class:`AsyncMock` the :attr:`call_count` is only iterated if the function
+        has been awaited:
+
+            >>> mock = AsyncMock()
+            >>> mock()
+            >>> mock.call_count
+            0
+            >>> async def main():
+            >>>    await mock()
+            >>> asyncio.run(main())
+            >>> mock.call_count
+            1
 
     .. attribute:: return_value
 
