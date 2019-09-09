@@ -1,2 +1,2 @@
-All functions accept now arguments of any types instead of just ``bool`` and
-``int`` for boolean parameters.
+All built-in functions now accept arguments of any type instead of just
+``bool`` and ``int`` for boolean parameters.
