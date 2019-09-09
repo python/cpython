@@ -518,7 +518,8 @@ the *new_callable* argument to :func:`patch`.
         has been awaited:
 
             >>> mock = AsyncMock()
-            >>> mock()
+            >>> mock()  # doctest: +SKIP
+            >>> <coroutine object AsyncMockMixin._mock_call at ...>
             >>> mock.call_count
             0
             >>> async def main():
