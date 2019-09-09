@@ -6001,6 +6001,10 @@ static PyTypeObject MethodDescriptor2_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_HAVE_VECTORCALL,
 };
 
+PyDoc_STRVAR(heapgctype__doc__,
+"A heap type with GC, and with overridden dealloc.\n\n"
+"The 'value' attribute is set to 10 in __init__.");
+
 typedef struct {
     PyObject_HEAD
     int value;
@@ -6031,6 +6035,7 @@ static PyType_Slot HeapGcCType_slots[] = {
     {Py_tp_init, heapctype_init},
     {Py_tp_members, heapctype_members},
     {Py_tp_dealloc, heapgcctype_dealloc},
+    {Py_tp_doc, heapgctype__doc__},
     {0, 0},
 };
 
@@ -6041,6 +6046,10 @@ static PyType_Spec HeapGcCType_spec = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     HeapGcCType_slots
 };
+
+PyDoc_STRVAR(heapctype__doc__,
+"A heap type without GC, but with overridden dealloc.\n\n"
+"The 'value' attribute is set to 10 in __init__.");
 
 static void
 heapctype_dealloc(HeapCTypeObject *self)
@@ -6054,6 +6063,7 @@ static PyType_Slot HeapCType_slots[] = {
     {Py_tp_init, heapctype_init},
     {Py_tp_members, heapctype_members},
     {Py_tp_dealloc, heapctype_dealloc},
+    {Py_tp_doc, heapctype__doc__},
     {0, 0},
 };
 
@@ -6064,6 +6074,10 @@ static PyType_Spec HeapCType_spec = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     HeapCType_slots
 };
+
+PyDoc_STRVAR(heapctypesubclass__doc__,
+"Subclass of HeapCType, without GC.\n\n"
+"__init__ sets the 'value' attribute to 10 and 'value2' to 20.");
 
 typedef struct {
     HeapCTypeObject base;
@@ -6090,6 +6104,7 @@ static struct PyMemberDef heapctypesubclass_members[] = {
 static PyType_Slot HeapCTypeSubclass_slots[] = {
     {Py_tp_init, heapctypesubclass_init},
     {Py_tp_members, heapctypesubclass_members},
+    {Py_tp_doc, heapctypesubclass__doc__},
     {0, 0},
 };
 
@@ -6100,6 +6115,11 @@ static PyType_Spec HeapCTypeSubclass_spec = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     HeapCTypeSubclass_slots
 };
+
+PyDoc_STRVAR(heapctypesubclasswithfinalizer__doc__,
+"Subclass of HeapCType with a finalizer that reassigns __class__.\n\n"
+"__class__ is set to plain HeapCTypeSubclass during finalization.\n"
+"__init__ sets the 'value' attribute to 10 and 'value2' to 20.");
 
 static int
 heapctypesubclasswithfinalizer_init(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -6152,6 +6172,7 @@ static PyType_Slot HeapCTypeSubclassWithFinalizer_slots[] = {
     {Py_tp_init, heapctypesubclasswithfinalizer_init},
     {Py_tp_members, heapctypesubclass_members},
     {Py_tp_finalize, heapctypesubclasswithfinalizer_finalize},
+    {Py_tp_doc, heapctypesubclasswithfinalizer__doc__},
     {0, 0},
 };
 
