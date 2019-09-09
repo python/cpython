@@ -6187,6 +6187,8 @@ static PyTypeObject MethInstance_Type = {
     .tp_new = PyType_GenericNew,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_methods = meth_instance_methods,
+    .tp_doc = PyDoc_STR(
+        "Class with normal (instance) methods to test calling conventions"),
 };
 
 static PyMethodDef meth_class_methods[] = {
@@ -6207,6 +6209,8 @@ static PyTypeObject MethClass_Type = {
     .tp_new = PyType_GenericNew,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_methods = meth_class_methods,
+    .tp_doc = PyDoc_STR(
+        "Class with class methods to test calling conventions"),
 };
 
 static PyMethodDef meth_static_methods[] = {
@@ -6227,6 +6231,8 @@ static PyTypeObject MethStatic_Type = {
     .tp_new = PyType_GenericNew,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_methods = meth_static_methods,
+    .tp_doc = PyDoc_STR(
+        "Class with static methods to test calling conventions"),
 };
 
 
