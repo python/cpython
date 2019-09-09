@@ -1785,6 +1785,27 @@ os.close(fd)
                                     "by asyncio internals only"):
             asyncio.Stream(asyncio.StreamMode.READWRITE)
 
+    def test_deprecated_methods(self):
+        async def f():
+            return asyncio.Stream(mode=asyncio.StreamMode.READWRITE,
+                                  _asyncio_internal=True)
+
+        stream = self.loop.run_until_complete(f())
+
+        tr = mock.Mock()
+
+        with self.assertWarns(DeprecationWarning):
+            stream.set_transport(tr)
+
+        with self.assertWarns(DeprecationWarning):
+            stream.transport is tr
+
+        with self.assertWarns(DeprecationWarning):
+            stream.feed_data(b'data')
+
+        with self.assertWarns(DeprecationWarning):
+            stream.feed_eof()
+
 
 if __name__ == '__main__':
     unittest.main()

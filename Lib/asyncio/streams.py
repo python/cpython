@@ -1351,6 +1351,11 @@ class Stream:
 
     @property
     def transport(self):
+        warnings.warn("Stream.transport attribute is deprecated "
+                      "since Python 3.8, and scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
         return self._transport
 
     def write(self, data):
@@ -1366,7 +1371,7 @@ class Stream:
     def _fast_drain(self):
         # The helper tries to use fast-path to return already existing
         # complete future object if underlying transport is not paused
-        #and actual waiting for writing resume is not needed
+        # and actual waiting for writing resume is not needed
         exc = self.exception()
         if exc is not None:
             fut = self._loop.create_future()
@@ -1466,6 +1471,14 @@ class Stream:
             if not waiter.cancelled():
                 waiter.set_result(None)
 
+    def set_transport(self, transport):
+        warnings.warn("Stream.set_transport() is deprecated "
+                      "since Python 3.8, and scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
+        self._set_transport(transport)
+
     def _set_transport(self, transport):
         if transport is self._transport:
             return
@@ -1477,6 +1490,14 @@ class Stream:
             self._paused = False
             self._transport.resume_reading()
 
+    def feed_eof(self):
+        warnings.warn("Stream.feed_eof() is deprecated "
+                      "since Python 3.8, and scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
+        self._feed_eof()
+
     def _feed_eof(self):
         self._eof = True
         self._wakeup_waiter()
@@ -1484,6 +1505,14 @@ class Stream:
     def at_eof(self):
         """Return True if the buffer is empty and 'feed_eof' was called."""
         return self._eof and not self._buffer
+
+    def feed_data(self, data):
+        warnings.warn("Stream.feed_data() is deprecated "
+                      "since Python 3.8, and scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
+        self._feed_data(data)
 
     def _feed_data(self, data):
         _ensure_can_read(self._mode)
