@@ -5233,10 +5233,17 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
         PyErr_SetImportError(errmsg, pkgname, NULL);
     }
     else {
-        errmsg = PyUnicode_FromFormat(
-            "cannot import name %R from %R (%S)",
-            name, pkgname_or_unknown, pkgpath
-        );
+        _Py_IDENTIFIER(__spec__);
+        PyObject *spec = _PyObject_GetAttrId(v, &PyId___spec__);
+        Py_XINCREF(spec);
+        const char *fmt =
+            _PyModuleSpec_IsInitializing(spec) ?
+            "cannot import name %R from partially initialized module %R "
+            "(most likely due to a circular import) (%S)" :
+            "cannot import name %R from %R (%S)";
+        Py_XDECREF(spec);
+
+        errmsg = PyUnicode_FromFormat(fmt, name, pkgname_or_unknown, pkgpath);
         /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
         PyErr_SetImportError(errmsg, pkgname, pkgpath);
     }
