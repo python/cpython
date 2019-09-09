@@ -202,6 +202,8 @@ def populate_flags(shebangline):
             old_flags = old_flags[2:]
     if not (old_flags or add_flags):
         return b''
+    # On Linux, the entire string following the interpreter name
+    # is passed as a single argument to the interpreter.
     return b' -' + add_flags + old_flags
 
 
@@ -211,9 +213,8 @@ def fixline(line):
 
     if b"python" not in line:
         return line
-    flags = b''
-    if keep_flags or add_flags:
-        flags = populate_flags(line)
+
+    flags = populate_flags(line)
     return b'#! ' + new_interpreter + flags + b'\n'
 
 
