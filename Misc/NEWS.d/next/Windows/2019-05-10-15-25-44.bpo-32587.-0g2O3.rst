@@ -1,0 +1,1 @@
+Make :data:`winreg.REG_MULTI_SZ` support zero-length strings.
