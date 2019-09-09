@@ -253,9 +253,14 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
         except PermissionError:
             # This exception is thrown when a directory with the chosen name
             # already exists on windows.
+            # or hasnt permission to folder, then we get (TMP_MAX) FOR cycle with CONTINUE, and long loading import
+            # have folder in c:/, win 10, and run without admin rule, and i get long loading ~15 min
             if (_os.name == 'nt' and _os.path.isdir(dir) and
                 _os.access(dir, _os.W_OK)):
-                continue
+                if seq > 1000000:
+                    raise PermissionError("No permission to folder %s".format(dir))
+                else:
+                    continue
             else:
                 raise
         return (fd, _os.path.abspath(file))
