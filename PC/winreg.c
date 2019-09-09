@@ -518,11 +518,18 @@ fixupMultiSZ(wchar_t **str, wchar_t *data, int len)
     int i;
     wchar_t *Q;
 
-    Q = data + len;
-    for (P = data, i = 0; P < Q && *P != '\0'; P++, i++) {
+    if (len > 0 && data[len - 1] == '\0') {
+        Q = data + len - 1;
+    }
+    else {
+        Q = data + len;
+    }
+
+    for (P = data, i = 0; P < Q; P++, i++) {
         str[i] = P;
-        for (; P < Q && *P != '\0'; P++)
+        for (; P < Q && *P != '\0'; P++) {
             ;
+        }
     }
 }
 
@@ -530,12 +537,20 @@ static int
 countStrings(wchar_t *data, int len)
 {
     int strings;
-    wchar_t *P;
-    wchar_t *Q = data + len;
+    wchar_t *P, *Q;
 
-    for (P = data, strings = 0; P < Q && *P != '\0'; P++, strings++)
-        for (; P < Q && *P != '\0'; P++)
+    if (len > 0 && data[len - 1] == '\0') {
+        Q = data + len - 1;
+    }
+    else {
+        Q = data + len;
+    }
+
+    for (P = data, strings = 0; P < Q; P++, strings++) {
+        for (; P < Q && *P != '\0'; P++) {
             ;
+        }
+    }
     return strings;
 }
 
@@ -749,21 +764,15 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
                 }
                 for (index = 0; index < s; index++)
                 {
-                    size_t len = wcslen(str[index]);
-                    if (len > INT_MAX) {
-                        PyErr_SetString(PyExc_OverflowError,
-                            "registry string is too long for a Python string");
-                        Py_DECREF(obData);
-                        PyMem_Free(str);
-                        return NULL;
-                    }
-                    PyObject *uni = PyUnicode_FromWideChar(str[index], len);
+                    size_t slen = wcsnlen(str[index], len);
+                    PyObject *uni = PyUnicode_FromWideChar(str[index], slen);
                     if (uni == NULL) {
                         Py_DECREF(obData);
                         PyMem_Free(str);
                         return NULL;
                     }
                     PyList_SET_ITEM(obData, index, uni);
+                    len -= slen + 1;
                 }
                 PyMem_Free(str);
 
