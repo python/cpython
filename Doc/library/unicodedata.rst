@@ -22,7 +22,7 @@ this database is compiled from the `UCD version 11.0.0
 
 The module uses the same names and symbols as defined by Unicode
 Standard Annex #44, `"Unicode Character Database"
-<http://www.unicode.org/reports/tr44/tr44-6.html>`_.  It defines the
+<https://www.unicode.org/reports/tr44/>`_.  It defines the
 following functions:
 
 
