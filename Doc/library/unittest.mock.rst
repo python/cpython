@@ -519,7 +519,7 @@ the *new_callable* argument to :func:`patch`.
 
             >>> mock = AsyncMock()
             >>> mock()  # doctest: +SKIP
-            >>> <coroutine object AsyncMockMixin._mock_call at ...>
+            <coroutine object AsyncMockMixin._mock_call at ...>
             >>> mock.call_count
             0
             >>> async def main():
