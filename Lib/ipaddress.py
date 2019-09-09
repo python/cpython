@@ -595,8 +595,8 @@ class _BaseAddress(_IPAddressBase):
         return self.__class__, (self._ip,)
 
     def __format__(self, fmt):
-        """Returns an IP address as a formatted string. 
-        
+        """Returns an IP address as a formatted string.
+
         Supported presentation types are:
         's': returns the IP address as a string (default)
         'b' or 'n': converts to binary and returns a zero-padded string
