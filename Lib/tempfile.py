@@ -239,9 +239,11 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
     """Code common to mkstemp, TemporaryFile, and NamedTemporaryFile."""
 
     names = _get_candidate_names()
+    exceptPermissionIndex = 0
     if output_type is bytes:
         names = map(_os.fsencode, names)
-
+    
+    #may be for in len(names)?
     for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, pre + name + suf)
@@ -257,7 +259,8 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
             # have folder in c:/, win 10, and run without admin rule, and i get long loading ~15 min
             if (_os.name == 'nt' and _os.path.isdir(dir) and
                 _os.access(dir, _os.W_OK)):
-                if seq > 1000000:
+                exceptPermissionIndex = exceptPermissionIndex + 1
+                if seq > 2 and exceptPermissionIndex == seq:
                     raise PermissionError("No permission to folder %s".format(dir))
                 else:
                     continue
