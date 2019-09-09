@@ -523,7 +523,8 @@ the *new_callable* argument to :func:`patch`.
             >>> mock.call_count
             0
             >>> async def main():
-            >>>    await mock()
+            ...     await mock()
+            ...
             >>> asyncio.run(main())
             >>> mock.call_count
             1
