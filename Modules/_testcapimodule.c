@@ -5918,20 +5918,28 @@ CallTest_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 }
 
 static PyObject *
-CallTest_fastcall_keywords(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+CallTest_fastcall_keywords(PyObject *self, PyObject *const *args,
+                           Py_ssize_t nargs, PyObject *kwnames)
 {
     return _PyObject_Vectorcall(self, args, nargs, kwnames);
 }
 
 static PyMethodDef CallTest_methods[] = {
-    {"varargs", (PyCFunction)(void(*)(void))CallTest_varargs, METH_VARARGS, NULL},
-    {"varargs_keywords", (PyCFunction)(void(*)(void))CallTest_varargs_keywords, METH_VARARGS|METH_KEYWORDS, NULL},
+    {"varargs", (PyCFunction)(void(*)(void))CallTest_varargs,
+        METH_VARARGS, NULL},
+    {"varargs_keywords", (PyCFunction)(void(*)(void))CallTest_varargs_keywords,
+        METH_VARARGS|METH_KEYWORDS, NULL},
     {"noargs", (PyCFunction)(void(*)(void))CallTest_noargs, METH_NOARGS, NULL},
     {"onearg", (PyCFunction)(void(*)(void))CallTest_onearg, METH_O, NULL},
-    {"fastcall", (PyCFunction)(void(*)(void))CallTest_fastcall, METH_FASTCALL, NULL},
-    {"fastcall_keywords", (PyCFunction)(void(*)(void))CallTest_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS, NULL},
-    {"staticmeth", (PyCFunction)(void(*)(void))CallTest_call, METH_STATIC|METH_VARARGS|METH_KEYWORDS, NULL},
-    {"classmeth", (PyCFunction)(void(*)(void))CallTest_call, METH_CLASS|METH_VARARGS|METH_KEYWORDS, NULL},
+    {"fastcall", (PyCFunction)(void(*)(void))CallTest_fastcall,
+        METH_FASTCALL, NULL},
+    {"fastcall_keywords",
+        (PyCFunction)(void(*)(void))CallTest_fastcall_keywords,
+        METH_FASTCALL|METH_KEYWORDS, NULL},
+    {"staticmeth", (PyCFunction)(void(*)(void))CallTest_call,
+        METH_STATIC|METH_VARARGS|METH_KEYWORDS, NULL},
+    {"classmeth", (PyCFunction)(void(*)(void))CallTest_call,
+        METH_CLASS|METH_VARARGS|METH_KEYWORDS, NULL},
     {NULL}  /* sentinel */
 };
 
