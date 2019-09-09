@@ -2659,12 +2659,8 @@ order (MRO) for bases """
         self.assertEqual(Sub.test(), Base.aProp)
 
         # Verify that super() doesn't allow keyword args
-        try:
+        with self.assertRaises(TypeError):
             super(Base, kw=1)
-        except TypeError:
-            pass
-        else:
-            self.assertEqual("super shouldn't accept keyword args")
 
     def test_basic_inheritance(self):
         # Testing inheritance from basic types...
@@ -3029,7 +3025,7 @@ order (MRO) for bases """
         # Testing a str subclass used as dict key ..
 
         class cistr(str):
-            """Sublcass of str that computes __eq__ case-insensitively.
+            """Subclass of str that computes __eq__ case-insensitively.
 
             Also computes a hash code of the string in canonical form.
             """

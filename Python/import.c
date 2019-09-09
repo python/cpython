@@ -833,7 +833,7 @@ import_add_module(PyThreadState *tstate, PyObject *name)
     }
     else {
         m = PyObject_GetItem(modules, name);
-        // For backward-comaptibility we copy the behavior
+        // For backward-compatibility we copy the behavior
         // of PyDict_GetItemWithError().
         if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
             _PyErr_Clear(tstate);
@@ -1671,7 +1671,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             goto error;
         }
         else if (last_dot == -1) {
-            _PyErr_SetString(tstate, PyExc_ValueError,
+            _PyErr_SetString(tstate, PyExc_ImportError,
                              "attempted relative import beyond top-level "
                              "package");
             goto error;

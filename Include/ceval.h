@@ -8,25 +8,25 @@ extern "C" {
 /* Interface to random parts in ceval.c */
 
 /* PyEval_CallObjectWithKeywords(), PyEval_CallObject(), PyEval_CallFunction
- * and PyEval_CallMethod are kept for backward compatibility: PyObject_Call(),
- * PyObject_CallFunction() and PyObject_CallMethod() are recommended to call
- * a callable object.
+ * and PyEval_CallMethod are deprecated. Since they are officially part of the
+ * stable ABI (PEP 384), they must be kept for backward compatibility.
+ * PyObject_Call(), PyObject_CallFunction() and PyObject_CallMethod() are
+ * recommended to call a callable object.
  */
 
-PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
+Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
     PyObject *callable,
     PyObject *args,
     PyObject *kwargs);
 
-/* Inline this */
+/* Deprecated since PyEval_CallObjectWithKeywords is deprecated */
 #define PyEval_CallObject(callable, arg) \
     PyEval_CallObjectWithKeywords(callable, arg, (PyObject *)NULL)
 
-PyAPI_FUNC(PyObject *) PyEval_CallFunction(PyObject *callable,
-                                           const char *format, ...);
-PyAPI_FUNC(PyObject *) PyEval_CallMethod(PyObject *obj,
-                                         const char *name,
-                                         const char *format, ...);
+Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallFunction(
+    PyObject *callable, const char *format, ...);
+Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallMethod(
+    PyObject *obj, const char *name, const char *format, ...);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);

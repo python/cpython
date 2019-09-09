@@ -345,7 +345,7 @@ class BasicTest(BaseTest):
         """
         Test that the multiprocessing is able to spawn.
         """
-        # Issue bpo-36342: Instanciation of a Pool object imports the
+        # Issue bpo-36342: Instantiation of a Pool object imports the
         # multiprocessing.synchronize module. Skip the test if this module
         # cannot be imported.
         import_module('multiprocessing.synchronize')
@@ -394,11 +394,7 @@ class EnsurePipTest(BaseTest):
         with open(os.devnull, "rb") as f:
             self.assertEqual(f.read(), b"")
 
-        # Issue #20541: os.path.exists('nul') is False on Windows
-        if os.devnull.lower() == 'nul':
-            self.assertFalse(os.path.exists(os.devnull))
-        else:
-            self.assertTrue(os.path.exists(os.devnull))
+        self.assertTrue(os.path.exists(os.devnull))
 
     def do_test_with_pip(self, system_site_packages):
         rmtree(self.env_dir)
@@ -473,8 +469,9 @@ class EnsurePipTest(BaseTest):
         #    Please check the permissions and owner of that directory. If
         #    executing pip with sudo, you may want sudo's -H flag."
         # where $HOME is replaced by the HOME environment variable.
-        err = re.sub("^The directory .* or its parent directory is not owned "
-                     "by the current user .*$", "", err, flags=re.MULTILINE)
+        err = re.sub("^(WARNING: )?The directory .* or its parent directory "
+                     "is not owned by the current user .*$", "",
+                     err, flags=re.MULTILINE)
         self.assertEqual(err.rstrip(), "")
         # Being fairly specific regarding the expected behaviour for the
         # initial bundling phase in Python 3.4. If the output changes in

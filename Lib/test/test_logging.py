@@ -4856,6 +4856,7 @@ class LoggerTest(BaseTest):
         self.assertIs(root, logging.root)
         self.assertIs(root, logging.getLogger(None))
         self.assertIs(root, logging.getLogger(''))
+        self.assertIs(root, logging.getLogger('root'))
         self.assertIs(root, logging.getLogger('foo').root)
         self.assertIs(root, logging.getLogger('foo.bar').root)
         self.assertIs(root, logging.getLogger('foo').parent)

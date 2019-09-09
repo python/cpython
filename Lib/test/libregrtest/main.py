@@ -14,9 +14,10 @@ from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
-    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
+    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN, TIMEOUT,
     PROGRESS_MIN_TIME, format_test_result, is_failed)
 from test.libregrtest.setup import setup_tests
+from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
 
@@ -114,6 +115,8 @@ class Regrtest:
             self.run_no_tests.append(test_name)
         elif ok == INTERRUPTED:
             self.interrupted = True
+        elif ok == TIMEOUT:
+            self.bad.append(test_name)
         else:
             raise ValueError("invalid test result: %r" % ok)
 
@@ -213,6 +216,10 @@ class Regrtest:
                         self.tests.append(match.group())
 
         removepy(self.tests)
+
+        if self.ns.pgo:
+            # add default PGO tests if no tests are specified
+            setup_pgo_tests(self.ns)
 
         stdtests = STDTESTS[:]
         nottests = NOTTESTS.copy()
@@ -638,6 +645,7 @@ class Regrtest:
             input("Press any key to continue...")
 
         support.PGO = self.ns.pgo
+        support.PGO_EXTENDED = self.ns.pgo_extended
 
         setup_tests(self.ns)
 

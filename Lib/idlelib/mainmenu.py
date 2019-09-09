@@ -73,10 +73,10 @@ menudefs = [
    ]),
 
  ('run', [
-   ('Python Shell', '<<open-python-shell>>'),
-   ('C_heck Module', '<<check-module>>'),
    ('R_un Module', '<<run-module>>'),
    ('Run... _Customized', '<<run-custom>>'),
+   ('C_heck Module', '<<check-module>>'),
+   ('Python Shell', '<<open-python-shell>>'),
    ]),
 
  ('shell', [
@@ -100,7 +100,8 @@ menudefs = [
    ('Configure _IDLE', '<<open-config-dialog>>'),
    None,
    ('Show _Code Context', '<<toggle-code-context>>'),
-   ('Zoom Height', '<<zoom-height>>'),
+   ('Show _Line Numbers', '<<toggle-line-numbers>>'),
+   ('_Zoom Height', '<<zoom-height>>'),
    ]),
 
  ('window', [

@@ -13,7 +13,7 @@ import re
 from sys import maxsize as INFINITY
 
 import tkinter
-from tkinter.constants import TOP, X, SUNKEN
+from tkinter.constants import NSEW, SUNKEN
 
 from idlelib.config import idleConf
 
@@ -63,10 +63,14 @@ class CodeContext:
         """
         self.editwin = editwin
         self.text = editwin.text
+        self._reset()
+
+    def _reset(self):
         self.context = None
+        self.cell00 = None
+        self.t1 = None
         self.topvisible = 1
         self.info = [(0, -1, "", False)]
-        self.t1 = None
 
     @classmethod
     def reload(cls):
@@ -102,27 +106,39 @@ class CodeContext:
             padx = 0
             border = 0
             for widget in widgets:
-                padx += widget.tk.getint(widget.pack_info()['padx'])
+                info = (widget.grid_info()
+                        if widget is self.editwin.text
+                        else widget.pack_info())
+                padx += widget.tk.getint(info['padx'])
                 padx += widget.tk.getint(widget.cget('padx'))
                 border += widget.tk.getint(widget.cget('border'))
             self.context = tkinter.Text(
-                self.editwin.top, font=self.text['font'],
+                self.editwin.text_frame,
                 height=1,
                 width=1,  # Don't request more than we get.
+                highlightthickness=0,
                 padx=padx, border=border, relief=SUNKEN, state='disabled')
+            self.update_font()
             self.update_highlight_colors()
             self.context.bind('<ButtonRelease-1>', self.jumptoline)
-            # Pack the context widget before and above the text_frame widget,
-            # thus ensuring that it will appear directly above text_frame.
-            self.context.pack(side=TOP, fill=X, expand=False,
-                              before=self.editwin.text_frame)
+            # Get the current context and initiate the recurring update event.
+            self.timer_event()
+            # Grid the context widget above the text widget.
+            self.context.grid(row=0, column=1, sticky=NSEW)
+
+            line_number_colors = idleConf.GetHighlight(idleConf.CurrentTheme(),
+                                                       'linenumber')
+            self.cell00 = tkinter.Frame(self.editwin.text_frame,
+                                        bg=line_number_colors['background'])
+            self.cell00.grid(row=0, column=0, sticky=NSEW)
             menu_status = 'Hide'
-            self.t1 = self.text.after(self.UPDATEINTERVAL, self.timer_event)
         else:
             self.context.destroy()
             self.context = None
+            self.cell00.destroy()
+            self.cell00 = None
             self.text.after_cancel(self.t1)
-            self.t1 = None
+            self._reset()
             menu_status = 'Show'
         self.editwin.update_menu_label(menu='options', index='* Code Context',
                                        label=f'{menu_status} Code Context')
@@ -218,8 +234,9 @@ class CodeContext:
             self.update_code_context()
             self.t1 = self.text.after(self.UPDATEINTERVAL, self.timer_event)
 
-    def update_font(self, font):
+    def update_font(self):
         if self.context is not None:
+            font = idleConf.GetFont(self.text, 'main', 'EditorWindow')
             self.context['font'] = font
 
     def update_highlight_colors(self):
@@ -227,6 +244,11 @@ class CodeContext:
             colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'context')
             self.context['background'] = colors['background']
             self.context['foreground'] = colors['foreground']
+
+        if self.cell00 is not None:
+            line_number_colors = idleConf.GetHighlight(idleConf.CurrentTheme(),
+                                                       'linenumber')
+            self.cell00.config(bg=line_number_colors['background'])
 
 
 CodeContext.reload()

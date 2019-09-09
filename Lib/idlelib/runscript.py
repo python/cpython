@@ -39,6 +39,8 @@ class ScriptBinding:
         # XXX This should be done differently
         self.flist = self.editwin.flist
         self.root = self.editwin.root
+        # cli_args is list of strings that extends sys.argv
+        self.cli_args = []
 
         if macosx.isCocoaTk():
             self.editwin.text_frame.bind('<<run-module-event-2>>', self._run_module_event)
@@ -137,10 +139,11 @@ class ScriptBinding:
             return 'break'
         if customize:
             title = f"Customize {self.editwin.short_title()} Run"
-            run_args = CustomRun(self.shell.text, title).result
+            run_args = CustomRun(self.shell.text, title,
+                                 cli_args=self.cli_args).result
             if not run_args:  # User cancelled.
                 return 'break'
-        cli_args, restart = run_args if customize else ([], True)
+        self.cli_args, restart = run_args if customize else ([], True)
         interp = self.shell.interp
         if pyshell.use_subprocess and restart:
             interp.restart_subprocess(
@@ -148,8 +151,8 @@ class ScriptBinding:
                     self.editwin._filename_to_unicode(filename))
         dirname = os.path.dirname(filename)
         argv = [filename]
-        if cli_args:
-            argv += cli_args
+        if self.cli_args:
+            argv += self.cli_args
         interp.runcommand(f"""if 1:
             __file__ = {filename!r}
             import sys as _sys

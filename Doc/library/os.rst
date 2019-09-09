@@ -1858,6 +1858,12 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
 
+   .. versionchanged:: 3.8
+      On Windows, now opens reparse points that represent another path
+      (name surrogates), including symbolic links and directory junctions.
+      Other kinds of reparse points are resolved by the operating system as
+      for :func:`~os.stat`.
+
 
 .. function:: mkdir(path, mode=0o777, *, dir_fd=None)
 
@@ -2039,6 +2045,10 @@ features:
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
+   When trying to resolve a path that may contain links, use
+   :func:`~os.path.realpath` to properly handle recursion and platform
+   differences.
+
    .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
@@ -2052,6 +2062,11 @@ features:
 
    .. versionchanged:: 3.8
       Accepts a :term:`path-like object` and a bytes object on Windows.
+
+   .. versionchanged:: 3.8
+      Added support for directory junctions, and changed to return the
+      substitution path (which typically includes ``\\?\`` prefix) rather
+      than the optional "print name" field that was previously returned.
 
 .. function:: remove(path, *, dir_fd=None)
 
@@ -2366,7 +2381,8 @@ features:
 
       On Unix, this method always requires a system call. On Windows, it
       only requires a system call if *follow_symlinks* is ``True`` and the
-      entry is a symbolic link.
+      entry is a reparse point (for example, a symbolic link or directory
+      junction).
 
       On Windows, the ``st_ino``, ``st_dev`` and ``st_nlink`` attributes of the
       :class:`stat_result` are always set to zero. Call :func:`os.stat` to
@@ -2403,6 +2419,17 @@ features:
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
+   On Windows, passing ``follow_symlinks=False`` will disable following all
+   name-surrogate reparse points, which includes symlinks and directory
+   junctions. Other types of reparse points that do not resemble links or that
+   the operating system is unable to follow will be opened directly. When
+   following a chain of multiple links, this may result in the original link
+   being returned instead of the non-link that prevented full traversal. To
+   obtain stat results for the final path in this case, use the
+   :func:`os.path.realpath` function to resolve the path name as far as
+   possible and call :func:`lstat` on the result. This does not apply to
+   dangling symlinks or junction points, which will raise the usual exceptions.
+
    .. index:: module: stat
 
    Example::
@@ -2426,6 +2453,14 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.8
+      On Windows, all reparse points that can be resolved by the operating
+      system are now followed, and passing ``follow_symlinks=False``
+      disables following all name surrogate reparse points. If the operating
+      system reaches a reparse point that it is not able to follow, *stat* now
+      returns the information for the original path as if
+      ``follow_symlinks=False`` had been specified instead of raising an error.
 
 
 .. class:: stat_result
@@ -2578,7 +2613,7 @@ features:
 
       File type.
 
-   On Windows systems, the following attribute is also available:
+   On Windows systems, the following attributes are also available:
 
    .. attribute:: st_file_attributes
 
@@ -2586,6 +2621,12 @@ features:
       ``BY_HANDLE_FILE_INFORMATION`` structure returned by
       :c:func:`GetFileInformationByHandle`. See the ``FILE_ATTRIBUTE_*``
       constants in the :mod:`stat` module.
+
+   .. attribute:: st_reparse_tag
+
+      When :attr:`st_file_attributes` has the ``FILE_ATTRIBUTE_REPARSE_POINT``
+      set, this field contains the tag identifying the type of reparse point.
+      See the ``IO_REPARSE_TAG_*`` constants in the :mod:`stat` module.
 
    The standard module :mod:`stat` defines functions and constants that are
    useful for extracting information from a :c:type:`stat` structure. (On
@@ -2613,6 +2654,14 @@ features:
 
    .. versionadded:: 3.7
       Added the :attr:`st_fstype` member to Solaris/derivatives.
+
+   .. versionadded:: 3.8
+      Added the :attr:`st_reparse_tag` member on Windows.
+
+   .. versionchanged:: 3.8
+      On Windows, the :attr:`st_mode` member now identifies special
+      files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
+      as appropriate.
 
 .. function:: statvfs(path)
 
@@ -3830,7 +3879,9 @@ written in Python, such as a mail server's external command delivery program.
    :attr:`children_system`, and :attr:`elapsed` in that order.
 
    See the Unix manual page
-   :manpage:`times(2)` or the corresponding Windows Platform API documentation.
+   :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
+   <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`
+   _ on Windows.
    On Windows, only :attr:`user` and :attr:`system` are known; the other
    attributes are zero.
 

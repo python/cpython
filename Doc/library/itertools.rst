@@ -645,6 +645,10 @@ loops that truncate the stream.
    used anywhere else; otherwise, the *iterable* could get advanced without
    the tee objects being informed.
 
+   ``tee`` iterators are not threadsafe. A :exc:`RuntimeError` may be
+   raised when using simultaneously iterators returned by the same :func:`tee`
+   call, even if the original *iterable* is threadsafe.
+
    This itertool may require significant auxiliary storage (depending on how
    much temporary data needs to be stored). In general, if one iterator uses
    most or all of the data before another iterator starts, it is faster to use
@@ -690,6 +694,12 @@ Itertools Recipes
 
 This section shows recipes for creating an extended toolset using the existing
 itertools as building blocks.
+
+Substantially all of these recipes and many, many others can be installed from
+the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
+on the Python Package Index::
+
+    pip install more-itertools
 
 The extended tools offer the same high performance as the underlying toolset.
 The superior memory performance is kept by processing elements one at a time
@@ -913,9 +923,3 @@ which incur interpreter overhead.
            result.append(pool[-1-n])
        return tuple(result)
 
-Note, many of the above recipes can be optimized by replacing global lookups
-with local variables defined as default values.  For example, the
-*dotproduct* recipe can be written as::
-
-   def dotproduct(vec1, vec2, sum=sum, map=map, mul=operator.mul):
-       return sum(map(mul, vec1, vec2))

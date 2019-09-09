@@ -210,7 +210,7 @@ static int fuzz_sre_compile(const char* data, size_t size) {
 
 /* Some random patterns used to test re.match.
    Be careful not to add catostraphically slow regexes here, we want to
-   excercise the matching code without causing timeouts.*/
+   exercise the matching code without causing timeouts.*/
 static const char* regex_patterns[] = {
     ".", "^", "abc", "abc|def", "^xxx$", "\\b", "()", "[a-zA-Z0-9]",
     "abc+", "[^A-Z]", "[x]", "(?=)", "a{z}", "a+b", "a*?", "a??", "a+?",

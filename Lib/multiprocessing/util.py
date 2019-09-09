@@ -238,7 +238,7 @@ class Finalize(object):
         if self._kwargs:
             x += ', kwargs=' + str(self._kwargs)
         if self._key[0] is not None:
-            x += ', exitprority=' + str(self._key[0])
+            x += ', exitpriority=' + str(self._key[0])
         return x + '>'
 
 

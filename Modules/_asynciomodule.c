@@ -937,7 +937,7 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
     ENSURE_FUTURE_ALIVE(self)
 
     if (self->fut_callback0 != NULL) {
-        int cmp = PyObject_RichCompareBool(fn, self->fut_callback0, Py_EQ);
+        int cmp = PyObject_RichCompareBool(self->fut_callback0, fn, Py_EQ);
         if (cmp == -1) {
             return NULL;
         }
@@ -962,7 +962,7 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
     if (len == 1) {
         PyObject *cb_tup = PyList_GET_ITEM(self->fut_callbacks, 0);
         int cmp = PyObject_RichCompareBool(
-            fn, PyTuple_GET_ITEM(cb_tup, 0), Py_EQ);
+            PyTuple_GET_ITEM(cb_tup, 0), fn, Py_EQ);
         if (cmp == -1) {
             return NULL;
         }
@@ -984,7 +984,7 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
         int ret;
         PyObject *item = PyList_GET_ITEM(self->fut_callbacks, i);
         Py_INCREF(item);
-        ret = PyObject_RichCompareBool(fn, PyTuple_GET_ITEM(item, 0), Py_EQ);
+        ret = PyObject_RichCompareBool(PyTuple_GET_ITEM(item, 0), fn, Py_EQ);
         if (ret == 0) {
             if (j < len) {
                 PyList_SET_ITEM(newlist, j, item);
