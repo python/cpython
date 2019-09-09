@@ -1,3 +1,2 @@
 Document and test that ``tempfile`` functions may accept a
 :term:`path-like object` for the ``dir`` argument.  Patch by Anthony Sottile.
-is a :term:`path-like object`.  Patch by Anthony Sottile.
