@@ -1,0 +1,3 @@
+weakref.WeakValueDictionary defines a local remove() function used as
+callback for weak references. This function was created with a closure.
+Modify the implementation to avoid the closure.

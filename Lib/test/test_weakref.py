@@ -1792,6 +1792,11 @@ class MappingTestCase(TestBase):
         # copying should not result in a crash.
         self.check_threaded_weak_dict_copy(weakref.WeakValueDictionary, True)
 
+    @support.cpython_only
+    def test_remove_closure(self):
+        d = weakref.WeakValueDictionary()
+        self.assertIsNone(d._remove.__closure__)
+
 
 from test import mapping_tests
 
