@@ -109,6 +109,14 @@ New Modules
 Improved Modules
 ================
 
+ast
+---
+
+Added the *indent* option to :func:`~ast.dump` which allows it to produce a
+multiline indented output.
+(Contributed by Serhiy Storchaka in :issue:`37995`.)
+
+
 threading
 ---------
 
