@@ -312,12 +312,6 @@ class TestCallingConventions(unittest.TestCase):
 
 
 @cpython_only
-class TestCallingConventionsFunction(TestCallingConventions):
-    """Test calling module-level functions using various calling conventions"""
-
-
-
-@cpython_only
 class TestCallingConventionsInstance(TestCallingConventions):
     """Test calling instance methods using various calling conventions"""
 
