@@ -21,8 +21,8 @@ in the Python language.
 but *kwargs* may be *NULL* if there are no keyword arguments.
 
 This convention is not only used by *tp_call*:
-also :c:member:`~PyTypeObject.tp_new` and :c:member:`~PyTypeObject.tp_init`
-pass arguments this way
+:c:member:`~PyTypeObject.tp_new` and :c:member:`~PyTypeObject.tp_init`
+also pass arguments this way
 (apart from the special handling of *subtype* and *self*).
 
 For making a call this way, use :c:func:`PyObject_Call`.
@@ -53,8 +53,8 @@ This is a function with the following signature:
      :const:`PY_VECTORCALL_ARGUMENTS_OFFSET` flag.
      To get the actual number of positional arguments from *nargsf*,
      use :c:func:`PyVectorcall_NARGS`.
-   - *kwnames* is a tuple containing the names of the keyword arguments,
-     in other words the keys of the kwargs dict.
+   - *kwnames* is a tuple containing the names of the keyword arguments;
+     in other words, the keys of the kwargs dict.
      These names must be strings (instances of ``str`` or a subclass)
      and they must be unique.
      If there are no keyword arguments, then *kwnames* can instead be *NULL*.
@@ -79,7 +79,7 @@ This is a function with the following signature:
    As rule of thumb, CPython will internally use the vectorcall
    protocol if the callable supports it. However, this is not a hard rule,
    *tp_call* may be used instead.
-   Therefore, a class supporting vectorcall must also set
+   Therefore, a class supporting vectorcall must also implement
    :c:member:`~PyTypeObject.tp_call`.
    Moreover, the callable must behave the same
    regardless of which protocol is used.
@@ -141,7 +141,7 @@ C API Functions
    Call a callable Python object *callable*, with arguments given by the
    tuple *args*, and named arguments given by the dictionary *kwargs*.
 
-   *args* must not be *NULL*, use an empty tuple if no arguments are needed.
+   *args* must not be *NULL*; use an empty tuple if no arguments are needed.
    If no named arguments are needed, *kwargs* can be *NULL*.
 
    Return the result of the call on success, or raise an exception and return
@@ -184,7 +184,7 @@ C API Functions
 
    Call the method named *name* of object *obj* with a variable number of C
    arguments.  The C arguments are described by a :c:func:`Py_BuildValue` format
-   string that should  produce a tuple.
+   string that should produce a tuple.
 
    The format can be *NULL*, indicating that no arguments are provided.
 
@@ -204,7 +204,7 @@ C API Functions
 .. c:function:: PyObject* PyObject_CallFunctionObjArgs(PyObject *callable, ..., NULL)
 
    Call a callable Python object *callable*, with a variable number of
-   :c:type:`PyObject\*` arguments.  The arguments are provided as a variable number
+   :c:type:`PyObject \*` arguments.  The arguments are provided as a variable number
    of parameters followed by *NULL*.
 
    Return the result of the call on success, or raise an exception and return
@@ -216,9 +216,9 @@ C API Functions
 
 .. c:function:: PyObject* PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ..., NULL)
 
-   Calls a method of the Python object *obj*, where the name of the method is given as a
+   Call a method of the Python object *obj*, where the name of the method is given as a
    Python string object in *name*.  It is called with a variable number of
-   :c:type:`PyObject\*` arguments.  The arguments are provided as a variable number
+   :c:type:`PyObject \*` arguments.  The arguments are provided as a variable number
    of parameters followed by *NULL*.
 
    Return the result of the call on success, or raise an exception and return
@@ -268,7 +268,7 @@ C API Functions
 
 .. c:function:: PyObject* _PyObject_FastCallDict(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwdict)
 
-   Call *callable* with positional arguments passed exactly as in the vectorcall_ protocol
+   Call *callable* with positional arguments passed exactly as in the vectorcall_ protocol,
    but with keyword arguments passed as a dictionary *kwdict*.
    The *args* array contains only the positional arguments.
 
@@ -304,7 +304,7 @@ C API Functions
    If *op* does not support the vectorcall protocol (either because the type
    does not or because the specific instance does not), return *NULL*.
    Otherwise, return the vectorcall function pointer stored in *op*.
-   This function never sets an exception.
+   This function never raises an exception.
 
    This is mostly useful to check whether or not *op* supports vectorcall,
    which can be done by checking ``_PyVectorcall_Function(op) != NULL``.
@@ -326,8 +326,8 @@ C API Functions
 .. c:function:: PyObject* _PyObject_VectorcallMethod(PyObject *name, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 
    Call a method using the vectorcall calling convention. The name of the method
-   is given as Python string *name*. The object whose method is called is
-   *args[0]* and the *args* array starting at *args[1]* represents the arguments
+   is given as a Python string *name*. The object whose method is called is
+   *args[0]*, and the *args* array starting at *args[1]* represents the arguments
    of the call. There must be at least one positional argument.
    *nargsf* is the number of positional arguments including *args[0]*,
    plus :const:`PY_VECTORCALL_ARGUMENTS_OFFSET` if the value of ``args[0]`` may
