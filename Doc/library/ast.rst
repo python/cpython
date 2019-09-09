@@ -340,6 +340,42 @@ and classes for traversing abstract syntax trees:
       Added the *indent* option.
 
 
+.. _ast-cli:
+
+Command-Line Usage
+------------------
+
+.. versionadded:: 3.9
+
+The :mod:`ast` module can be executed as a script from the command line.
+It is as simple as:
+
+.. code-block:: sh
+
+   python -m ast [-m <mode>] [-a] [infile]
+
+The following options are accepted:
+
+.. program:: ast
+
+.. cmdoption:: -h, --help
+
+   Show the help message and exit.
+
+.. cmdoption:: -m <mode>
+               --mode <mode>
+
+   Specify what kind of code must be compiled, like the *mode* argument
+   in :func:`parse`.
+
+.. cmdoption:: -a, --include-attributes
+
+   Include attributes such as line numbers and column offsets.
+
+If :file:`infile` is specified its contents are parsed to AST and dumped
+to stdout.  Otherwise, the content is read from stdin.
+
+
 .. seealso::
 
     `Green Tree Snakes <https://greentreesnakes.readthedocs.io/>`_, an external documentation resource, has good

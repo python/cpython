@@ -550,3 +550,27 @@ _const_node_type_names = {
     bytes: 'Bytes',
     type(...): 'Ellipsis',
 }
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(prog='python -m ast')
+    parser.add_argument('infile', type=argparse.FileType(mode='rb'), nargs='?',
+                        default='-',
+                        help='the file to parse; defaults to stdin')
+    parser.add_argument('-m', '--mode', default='exec',
+                        choices=('exec', 'single', 'eval', 'func_type'),
+                        help='specify what kind of code must be parsed')
+    parser.add_argument('-a', '--include-attributes', action='store_true',
+                        help='include attributes such as line numbers and '
+                             'column offsets')
+    args = parser.parse_args()
+
+    with args.infile as infile:
+        source = infile.read()
+    tree = parse(source, args.infile.name, args.mode, type_comments=True)
+    print(dump(tree, include_attributes=args.include_attributes, indent=3))
+
+if __name__ == '__main__':
+    main()
