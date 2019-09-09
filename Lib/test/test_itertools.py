@@ -10,6 +10,10 @@ import random
 import copy
 import pickle
 from functools import reduce
+try:
+    import threading
+except ImportError:
+    threading = None
 maxsize = test_support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
@@ -983,6 +987,43 @@ class TestBasicOps(unittest.TestCase):
         except:
             del forward, backward
             raise
+
+    def test_tee_reenter(self):
+        class I:
+            first = True
+            def __iter__(self):
+                return self
+            def next(self):
+                first = self.first
+                self.first = False
+                if first:
+                    return next(b)
+
+        a, b = tee(I())
+        with self.assertRaisesRegexp(RuntimeError, "tee"):
+            next(a)
+
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    def test_tee_concurrent(self):
+        start = threading.Event()
+        finish = threading.Event()
+        class I:
+            def __iter__(self):
+                return self
+            def next(self):
+                start.set()
+                finish.wait()
+
+        a, b = tee(I())
+        thread = threading.Thread(target=next, args=[a])
+        thread.start()
+        try:
+            start.wait()
+            with self.assertRaisesRegexp(RuntimeError, "tee"):
+                next(b)
+        finally:
+            finish.set()
+            thread.join()
 
     def test_StopIteration(self):
         self.assertRaises(StopIteration, izip().next)

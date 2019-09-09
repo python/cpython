@@ -1,0 +1,2 @@
+Fixed a crash in the :func:`tee` iterator when re-enter it. RuntimeError is
+now raised in this case.
