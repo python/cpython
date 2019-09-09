@@ -576,7 +576,7 @@ def process_audit_events(app, doctree, fromdocname):
                         label,
                     )
                 except NoUri:
-                    pass
+                    continue
                 node += ref
         row += nodes.entry('', node)
 
