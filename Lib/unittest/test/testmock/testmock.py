@@ -1571,11 +1571,11 @@ class MockTest(unittest.TestCase):
             m.assert_called_once()
         self.assertNotIn("Calls:", str(e.exception))
 
-    #Issue21256 printout of keyword args should be in deterministic order
-    def test_sorted_call_signature(self):
+    #Issue37212 printout of keyword args now preserves the original order
+    def test_ordered_call_signature(self):
         m = Mock()
         m.hello(name='hello', daddy='hero')
-        text = "call(daddy='hero', name='hello')"
+        text = "call(name='hello', daddy='hero')"
         self.assertEqual(repr(m.hello.call_args), text)
 
     #Issue21270 overrides tuple methods for mock.call objects
