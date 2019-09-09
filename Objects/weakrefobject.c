@@ -875,26 +875,28 @@ PyWeakref_GetObject(PyObject *ref)
 static void
 handle_callback(PyWeakReference *ref, PyObject *callback)
 {
-    /* A weak reference may try to invoke a callback object that is being
+    /* If the garbage collector support is not properly implemented on
+     * some classes that are involved in a reference cycle, a weak
+     * reference may try to invoke a callback object that is being
      * cleaned (tp_clear) by the garbage collector and it may be in an
-     * inconsistent state. As the garbage collector explicitly does not
-     * invoke callbacks that are part of the same cycle isolate as the
-     * weak reference (pretending that the weak reference was destroyed first),
-     * we should act in the same way here.
+     * inconsistent state. As the garbage collector explicitly does
+     * not invoke callbacks that are part of the same cycle isolate as
+     * the weak reference (pretending that the weak reference was
+     * destroyed first), we should act in the same way here.
      *
-     * For example, consider the following scenario:
-     *
-     * - F is a function.
-     * - An object O is in a cycle with F.
-     * - O has a weak reference with F as a callback.
-     *
-     * When running the garbage collector, is possible to end in this function
-     * if the tp_clear of F decrements the references of O, invoking the weak
-     * reference callback that will try to call F, which is in an incosistent
-     * state as is in the middle of its tp_clear and some internal fields may
+     * When running the garbage collector pass over a generation, is
+     * possible to end in this function if the tp_clear of a function
+     * decrements the references of some internal object that is
+     * weak-referenced, invoking the weak reference callback that will
+     * try to call the function, which is in an incosistent state as
+     * is in the middle of its tp_clear and some internal fields may
      * be NULL. */
 
     if (PyObject_IS_GC(callback) && _PyObject_GC_IS_COLLECTING(callback)) {
+        PyErr_WarnEx(PyExc_RuntimeWarning, "A weak reference"
+                " was triying to execute a callback to a function that is being cleared by"
+                " the garbage collector.\n Some C extension class in the dependence"
+                " chain is probably not implementing correctly the garbage collector support.", 1);
         return;
     }
 
