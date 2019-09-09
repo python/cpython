@@ -174,6 +174,9 @@ The module defines the following user-callable items:
       *suffix* and *prefix* now accept and default to ``None`` to cause
       an appropriate default value to be used.
 
+   .. versionchanged:: 3.6
+      The *dir* parameter now accepts a :term:`path-like object`.
+
 
 .. function:: mkdtemp(suffix=None, prefix=None, dir=None)
 
@@ -194,6 +197,9 @@ The module defines the following user-callable items:
       obtain a bytes return value.  Prior to this, only str was allowed.
       *suffix* and *prefix* now accept and default to ``None`` to cause
       an appropriate default value to be used.
+
+   .. versionchanged:: 3.6
+      The *dir* parameter now accepts a :term:`path-like object`.
 
 
 .. function:: gettempdir()
