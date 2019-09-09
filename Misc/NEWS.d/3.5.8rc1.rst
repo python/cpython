@@ -1,0 +1,80 @@
+.. bpo: 37461
+.. date: 2019-07-16-08-11-00
+.. nonce: 1Ahz7O
+.. release date: 2019-09-09
+.. section: Security
+
+Fix an infinite loop when parsing specially crafted email headers. Patch by
+Abhilash Raj.
+
+..
+
+.. bpo: 35907
+.. date: 2019-05-21-23-20-18
+.. nonce: NC_zNK
+.. section: Security
+
+CVE-2019-9948: Avoid file reading by disallowing ``local-file://`` and
+``local_file://`` URL schemes in ``URLopener().open()`` and
+``URLopener().retrieve()`` of :mod:`urllib.request`.
+
+..
+
+.. bpo: 34155
+.. date: 2019-05-04-13-33-37
+.. nonce: MJll68
+.. section: Security
+
+Fix parsing of invalid email addresses with more than one ``@`` (e.g.
+a@b@c.com.) to not return the part before 2nd ``@`` as valid email address.
+Patch by maxking & jpic.
+
+..
+
+.. bpo: 36742
+.. date: 2019-04-29-15-34-59
+.. nonce: QCUY0i
+.. section: Security
+
+Fixes mishandling of pre-normalization characters in urlsplit().
+
+..
+
+.. bpo: 30458
+.. date: 2019-04-10-08-53-30
+.. nonce: 51E-DA
+.. section: Security
+
+Address CVE-2019-9740 by disallowing URL paths with embedded whitespace or
+control characters through into the underlying http client request.  Such
+potentially malicious header injection URLs now cause an
+http.client.InvalidURL exception to be raised.
+
+..
+
+.. bpo: 36816
+.. date: 2019-05-08-15-55-46
+.. nonce: WBKRGZ
+.. section: Tests
+
+Update Lib/test/selfsigned_pythontestdotnet.pem to match
+self-signed.pythontest.net's new TLS certificate.
+
+..
+
+.. bpo: 36576
+.. date: 2019-04-05-10-34-29
+.. nonce: 7Cp2kK
+.. section: Tests
+
+Skip test_ssl and test_asyncio tests failing with OpenSSL 1.1.1.
+
+..
+
+.. bpo: 36478
+.. date: 2019-03-29-14-29-06
+.. nonce: hzyneF
+.. section: Build
+
+Fix compatibility with ISO C89 needed by "gnu89" standard of GCC 4.8: use
+C89 for loops in backported pickle patch. Patch by Anthony Sottile.
