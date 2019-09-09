@@ -3343,5 +3343,42 @@ class LocaleCodecTest(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'unsupported error handler')
 
 
+class Rot13Test(unittest.TestCase):
+    """Test the educational ROT-13 codec."""
+    def test_encode(self):
+        ciphertext = codecs.encode("Caesar liked ciphers", 'rot-13')
+        self.assertEqual(ciphertext, 'Pnrfne yvxrq pvcuref')
+
+    def test_decode(self):
+        plaintext = codecs.decode('Rg gh, Oehgr?', 'rot-13')
+        self.assertEqual(plaintext, 'Et tu, Brute?')
+
+    def test_incremental_encode(self):
+        encoder = codecs.getincrementalencoder('rot-13')()
+        ciphertext = encoder.encode('ABBA nag Cheryl Baker')
+        self.assertEqual(ciphertext, 'NOON ant Purely Onxre')
+
+    def test_incremental_decode(self):
+        decoder = codecs.getincrementaldecoder('rot-13')()
+        plaintext = decoder.decode('terra Ares envy tha')
+        self.assertEqual(plaintext, 'green Nerf rail gun')
+
+
+class Rot13UtilTest(unittest.TestCase):
+    """Test the ROT-13 codec via rot13 function,
+    i.e. the user has done something like:
+    $ echo "Hello World" | python -m encodings.rot_13
+    """
+    def test_rot13_func(self):
+        infile = io.StringIO('Gb or, be abg gb or, gung vf gur dhrfgvba')
+        outfile = io.StringIO()
+        encodings.rot_13.rot13(infile, outfile)
+        outfile.seek(0)
+        plain_text = outfile.read()
+        self.assertEqual(
+            plain_text,
+            'To be, or not to be, that is the question')
+
+
 if __name__ == "__main__":
     unittest.main()
