@@ -772,7 +772,7 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
                         return NULL;
                     }
                     PyList_SET_ITEM(obData, index, uni);
-                    len -= slen + 1;
+                    len -= Py_SAFE_DOWNCAST(slen + 1, size_t, int);
                 }
                 PyMem_Free(str);
 
