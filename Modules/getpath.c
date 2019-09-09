@@ -909,7 +909,7 @@ calculate_init(PyCalculatePath *calculate,
         return DECODE_LOCALE_ERR("PREFIX define", len);
     }
     calculate->exec_prefix = Py_DecodeLocale(EXEC_PREFIX, &len);
-    if (!calculate->prefix) {
+    if (!calculate->exec_prefix) {
         return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
     }
     calculate->lib_python = Py_DecodeLocale("lib/python" VERSION, &len);
