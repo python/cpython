@@ -5203,7 +5203,7 @@ meth_varargs(PyObject* self, PyObject* args)
 static PyObject*
 meth_varargs_keywords(PyObject* self, PyObject* args, PyObject* kwargs)
 {
-    return Py_BuildValue("NOO", _null_to_none(self), args, _null_to_none(kwargs));
+    return Py_BuildValue("NON", _null_to_none(self), args, _null_to_none(kwargs));
 }
 
 static PyObject*
