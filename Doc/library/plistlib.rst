@@ -1,8 +1,8 @@
-:mod:`plistlib` --- Generate and parse Mac OS X ``.plist`` files
-================================================================
+:mod:`plistlib` --- Generate and parse Apple ``.plist`` files
+=============================================================
 
 .. module:: plistlib
-   :synopsis: Generate and parse Mac OS X plist files.
+   :synopsis: Generate and parse Apple plist files.
 
 .. moduleauthor:: Jack Jansen
 .. sectionauthor:: Georg Brandl <georg@python.org>
@@ -17,7 +17,8 @@
 --------------
 
 This module provides an interface for reading and writing the "property list"
-files used mainly by Mac OS X and supports both binary and XML plist files.
+files used by Apple, primarily on macOS and iOS. This module supports both binary
+and XML plist files.
 
 The property list (``.plist``) file format is a simple serialization supporting
 basic object types, like dictionaries, lists, numbers and strings.  Usually the
@@ -122,6 +123,19 @@ This module defines the following functions:
    arguments of this function.
 
    .. versionadded:: 3.4
+
+
+The following classes are available:
+
+.. class:: UID(data)
+
+   Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
+   encoded data, which contains UID (see PList manual).
+
+   It has one attribute, :attr:`data`, which can be used to retrieve the int value
+   of the UID.  :attr:`data` must be in the range `0 <= data <= 2**64`.
+
+   .. versionadded:: 3.8
 
 
 The following constants are available:
