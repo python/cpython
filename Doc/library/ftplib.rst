@@ -190,6 +190,8 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    *source_address* is a 2-tuple ``(host, port)`` for the socket to bind to as
    its source address before connecting.
 
+   .. audit-event:: ftplib.connect self,host,port ftplib.FTP.connect
+
    .. versionchanged:: 3.3
       *source_address* parameter was added.
 
@@ -223,12 +225,16 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
    Send a simple command string to the server and return the response string.
 
+   .. audit-event:: ftplib.sendcmd self,cmd ftplib.FTP.sendcmd
+
 
 .. method:: FTP.voidcmd(cmd)
 
    Send a simple command string to the server and handle the response.  Return
    nothing if a response code corresponding to success (codes in the range
    200--299) is received.  Raise :exc:`error_reply` otherwise.
+
+   .. audit-event:: ftplib.sendcmd self,cmd ftplib.FTP.voidcmd
 
 
 .. method:: FTP.retrbinary(cmd, callback, blocksize=8192, rest=None)
@@ -295,7 +301,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    If optional *rest* is given, a ``REST`` command is sent to the server, passing
    *rest* as an argument.  *rest* is usually a byte offset into the requested file,
    telling the server to restart sending the file's bytes at the requested offset,
-   skipping over the initial bytes.  Note however that RFC 959 requires only that
+   skipping over the initial bytes.  Note however that :rfc:`959` requires only that
    *rest* be a string containing characters in the printable range from ASCII code
    33 to ASCII code 126.  The :meth:`transfercmd` method, therefore, converts
    *rest* to a string, but no check is performed on the string's contents.  If the

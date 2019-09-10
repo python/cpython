@@ -1,5 +1,6 @@
 import sys
 from test import list_tests
+from test.support import cpython_only
 import pickle
 import unittest
 
@@ -149,6 +150,11 @@ class ListTest(list_tests.CommonTest):
             a[:] = data
             self.assertEqual(list(it), [])
 
+    def test_step_overflow(self):
+        a = [0, 1, 2, 3, 4]
+        a[1::sys.maxsize] = [0]
+        self.assertEqual(a[3::sys.maxsize], [3])
+
     def test_no_comdat_folding(self):
         # Issue 8847: In the PGO build, the MSVC linker's COMDAT folding
         # optimization causes failures in code that relies on distinct
@@ -156,6 +162,14 @@ class ListTest(list_tests.CommonTest):
         class L(list): pass
         with self.assertRaises(TypeError):
             (3,) + L([1,2])
+
+    @cpython_only
+    def test_preallocation(self):
+        iterable = [0] * 10
+        iter_size = sys.getsizeof(iterable)
+
+        self.assertEqual(iter_size, sys.getsizeof(list([0] * 10)))
+        self.assertEqual(iter_size, sys.getsizeof(list(range(10))))
 
 if __name__ == "__main__":
     unittest.main()

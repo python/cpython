@@ -13,7 +13,7 @@ http://homepage.univie.ac.at/erich.neuwirth/
 """
 from turtle import Turtle, colormode, tracer, mainloop
 from random import randrange
-from time import clock
+from time import perf_counter as clock
 
 def symRandom(n):
     return randrange(-n,n+1)

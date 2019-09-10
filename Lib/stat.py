@@ -111,6 +111,7 @@ SF_SNAPSHOT  = 0x00200000  # file is a snapshot file
 
 _filemode_table = (
     ((S_IFLNK,         "l"),
+     (S_IFSOCK,        "s"),  # Must appear before IFREG and IFDIR as IFSOCK == IFREG | IFDIR
      (S_IFREG,         "-"),
      (S_IFBLK,         "b"),
      (S_IFDIR,         "d"),

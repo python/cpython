@@ -1,1 +1,0 @@
-Avoid ctypes use (if possible) and improve import time for uuid.

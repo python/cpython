@@ -16,7 +16,7 @@ PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 #define _PyHASH_MULTIPLIER 1000003UL  /* 0xf4243 */
 
 /* Parameters used for the numeric hash implementation.  See notes for
-   _Py_HashDouble in Objects/object.c.  Numeric hashes are based on
+   _Py_HashDouble in Python/pyhash.c.  Numeric hashes are based on
    reduction modulo the prime 2**_PyHASH_BITS - 1. */
 
 #if SIZEOF_VOID_P >= 8
@@ -119,7 +119,7 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
  * configure script.
  *
  * - FNV is available on all platforms and architectures.
- * - SIPHASH24 only works on plaforms that don't require aligned memory for integers.
+ * - SIPHASH24 only works on platforms that don't require aligned memory for integers.
  * - With EXTERNAL embedders can provide an alternative implementation with::
  *
  *     PyHash_FuncDef PyHash_Func = {...};

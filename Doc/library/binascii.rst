@@ -80,7 +80,7 @@ The :mod:`binascii` module defines the following functions:
    *quotetabs* is present and true, all tabs and spaces will be encoded.   If the
    optional argument *istext* is present and true, newlines are not encoded but
    trailing whitespace will be encoded. If the optional argument *header* is
-   present and true, spaces will be encoded as underscores per RFC1522. If the
+   present and true, spaces will be encoded as underscores per :rfc:`1522`. If the
    optional argument *header* is present and false, newline characters will be
    encoded as well; otherwise linefeed conversion might corrupt the binary data
    stream.
@@ -145,13 +145,33 @@ The :mod:`binascii` module defines the following functions:
       platforms, use ``crc32(data) & 0xffffffff``.
 
 
-.. function:: b2a_hex(data)
-              hexlify(data)
+.. function:: b2a_hex(data[, sep[, bytes_per_sep=1]])
+              hexlify(data[, sep[, bytes_per_sep=1]])
 
    Return the hexadecimal representation of the binary *data*.  Every byte of
    *data* is converted into the corresponding 2-digit hex representation.  The
    returned bytes object is therefore twice as long as the length of *data*.
 
+   Similar functionality (but returning a text string) is also conveniently
+   accessible using the :meth:`bytes.hex` method.
+
+   If *sep* is specified, it must be a single character str or bytes object.
+   It will be inserted in the output after every *bytes_per_sep* input bytes.
+   Separator placement is counted from the right end of the output by default,
+   if you wish to count from the left, supply a negative *bytes_per_sep* value.
+
+      >>> import binascii
+      >>> binascii.b2a_hex(b'\xb9\x01\xef')
+      b'b901ef'
+      >>> binascii.hexlify(b'\xb9\x01\xef', '-')
+      b'b9-01-ef'
+      >>> binascii.b2a_hex(b'\xb9\x01\xef', b'_', 2)
+      b'b9_01ef'
+      >>> binascii.b2a_hex(b'\xb9\x01\xef', b' ', -2)
+      b'b901 ef'
+
+   .. versionchanged:: 3.8
+      The *sep* and *bytes_per_sep* parameters were added.
 
 .. function:: a2b_hex(hexstr)
               unhexlify(hexstr)
@@ -161,6 +181,9 @@ The :mod:`binascii` module defines the following functions:
    of hexadecimal digits (which can be upper or lower case), otherwise an
    :exc:`Error` exception is raised.
 
+   Similar functionality (accepting only text string arguments, but more
+   liberal towards whitespace) is also accessible using the
+   :meth:`bytes.fromhex` class method.
 
 .. exception:: Error
 

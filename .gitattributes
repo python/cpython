@@ -19,6 +19,7 @@
 
 # Specific binary files
 Lib/test/sndhdrdata/sndhdr.* binary
+PC/classicAppCompat.* binary
 
 # Text files that should not be subject to eol conversion
 Lib/test/cjkencodings/* -text
@@ -26,6 +27,7 @@ Lib/test/decimaltestdata/*.decTest -text
 Lib/test/test_email/data/*.txt -text
 Lib/test/xmltestdata/* -text
 Lib/test/coding20731.py -text
+Lib/test/test_importlib/data01/* -text
 
 # CRLF files
 *.bat text eol=crlf
@@ -36,3 +38,24 @@ Lib/test/coding20731.py -text
 *.proj text eol=crlf
 PCbuild/readme.txt text eol=crlf
 PC/readme.txt text eol=crlf
+
+# Generated files
+# https://github.com/github/linguist#generated-code
+Include/graminit.h          linguist-generated=true
+Python/graminit.h           linguist-generated=true
+Modules/clinic/*.h          linguist-generated=true
+Objects/clinic/*.h          linguist-generated=true
+PC/clinic/*.h               linguist-generated=true
+Python/clinic/*.h           linguist-generated=true
+Python/importlib.h          linguist-generated=true
+Python/importlib_external.h linguist-generated=true
+Include/Python-ast.h        linguist-generated=true
+Python/Python-ast.c         linguist-generated=true
+Include/opcode.h            linguist-generated=true
+Python/opcode_targets.h     linguist-generated=true
+Objects/typeslots.inc       linguist-generated=true
+*_db.h                      linguist-generated=true
+Doc/library/token-list.inc  linguist-generated=true
+Include/token.h             linguist-generated=true
+Lib/token.py                linguist-generated=true
+Parser/token.c              linguist-generated=true

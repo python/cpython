@@ -72,7 +72,6 @@ B_CRLF = b'\r\n'
 
 # The class itself
 class FTP:
-
     '''An FTP client class.
 
     To create a connection, call the class using these arguments:
@@ -105,12 +104,13 @@ class FTP:
     passiveserver = 1
     encoding = "latin-1"
 
-    # Initialization method (called by class instantiation).
-    # Initialize host to localhost, port to standard ftp port
-    # Optional arguments are host (for connect()),
-    # and user, passwd, acct (for login())
     def __init__(self, host='', user='', passwd='', acct='',
                  timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None):
+        """Initialization method (called by class instantiation).
+        Initialize host to localhost, port to standard ftp port.
+        Optional arguments are host (for connect()),
+        and user, passwd, acct (for login()).
+        """
         self.source_address = source_address
         self.timeout = timeout
         if host:
@@ -148,6 +148,7 @@ class FTP:
             self.timeout = timeout
         if source_address is not None:
             self.source_address = source_address
+        sys.audit("ftplib.connect", self, self.host, self.port)
         self.sock = socket.create_connection((self.host, self.port), self.timeout,
                                              source_address=self.source_address)
         self.af = self.sock.family
@@ -188,6 +189,7 @@ class FTP:
     def putline(self, line):
         if '\r' in line or '\n' in line:
             raise ValueError('an illegal newline character should not be contained')
+        sys.audit("ftplib.sendcmd", self, line)
         line = line + CRLF
         if self.debugging > 1:
             print('*put*', self.sanitize(line))
@@ -302,26 +304,7 @@ class FTP:
 
     def makeport(self):
         '''Create a new socket and send a PORT command for it.'''
-        err = None
-        sock = None
-        for res in socket.getaddrinfo(None, 0, self.af, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
-            af, socktype, proto, canonname, sa = res
-            try:
-                sock = socket.socket(af, socktype, proto)
-                sock.bind(sa)
-            except OSError as _:
-                err = _
-                if sock:
-                    sock.close()
-                sock = None
-                continue
-            break
-        if sock is None:
-            if err is not None:
-                raise err
-            else:
-                raise OSError("getaddrinfo returns an empty list")
-        sock.listen(1)
+        sock = socket.create_server(("", 0), family=self.af, backlog=1)
         port = sock.getsockname()[1] # Get proper port
         host = self.sock.getsockname()[0] # Get proper host
         if self.af == socket.AF_INET:
@@ -732,7 +715,7 @@ else:
                                  "exclusive")
             if keyfile is not None or certfile is not None:
                 import warnings
-                warnings.warn("keyfile and certfile are deprecated, use a"
+                warnings.warn("keyfile and certfile are deprecated, use a "
                               "custom context instead", DeprecationWarning, 2)
             self.keyfile = keyfile
             self.certfile = certfile
@@ -840,7 +823,6 @@ def parse227(resp):
     '''Parse the '227' response for a PASV request.
     Raises error_proto if it does not contain '(h1,h2,h3,h4,p1,p2)'
     Return ('host.addr.as.numbers', port#) tuple.'''
-
     if resp[:3] != '227':
         raise error_reply(resp)
     global _227_re
@@ -860,7 +842,6 @@ def parse229(resp, peer):
     '''Parse the '229' response for an EPSV request.
     Raises error_proto if it does not contain '(|||port|)'
     Return ('host.addr.as.numbers', port#) tuple.'''
-
     if resp[:3] != '229':
         raise error_reply(resp)
     left = resp.find('(')
@@ -882,7 +863,6 @@ def parse257(resp):
     '''Parse the '257' response for a MKD or PWD request.
     This is a response to a MKD or PWD request: a directory name.
     Returns the directoryname in the 257 reply.'''
-
     if resp[:3] != '257':
         raise error_reply(resp)
     if resp[3:5] != ' "':

@@ -1,0 +1,2 @@
+For math.perm(n, k), let k default to n, giving the same result as
+factorial.

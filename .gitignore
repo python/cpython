@@ -2,6 +2,7 @@
 # Ignore ./python binary on Unix but still look into ./Python/ directory.
 /python
 !/Python/
+
 *.cover
 *.iml
 *.o
@@ -26,11 +27,12 @@ Include/pydtrace_probes.h
 Lib/distutils/command/*.pdb
 Lib/lib2to3/*.pickle
 Lib/test/data/*
-Makefile
+!Lib/test/data/README
+/Makefile
 Makefile.pre
 Misc/python.pc
+Misc/python-embed.pc
 Misc/python-config.sh
-Modules/Setup
 Modules/Setup.config
 Modules/Setup.local
 Modules/config.c
@@ -62,11 +64,12 @@ PCbuild/*.VC.db
 PCbuild/*.VC.opendb
 PCbuild/.vs/
 PCbuild/amd64/
+PCbuild/arm32/
+PCbuild/arm64/
 PCbuild/obj/
 PCbuild/win32/
+Tools/unicode/data/
 .purify
-Parser/pgen
-Parser/pgen.exe
 __pycache__
 autom4te.cache
 build/
@@ -76,6 +79,7 @@ config.log
 config.status
 config.status.lineno
 core
+!Tools/msi/core/
 db_home
 .hg/
 .idea/
@@ -86,7 +90,7 @@ libpython*.dylib
 libpython*.dll
 platform
 pybuilddir.txt
-pyconfig.h
+/pyconfig.h
 python-config
 python-config.py
 python.bat
@@ -106,3 +110,5 @@ Tools/ssl/amd64
 Tools/ssl/win32
 .vs/
 .vscode/
+gmon.out
+.mypy_cache/

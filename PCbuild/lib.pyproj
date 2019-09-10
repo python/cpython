@@ -250,7 +250,6 @@
     <Compile Include="distutils\_msvccompiler.py" />
     <Compile Include="distutils\__init__.py" />
     <Compile Include="doctest.py" />
-    <Compile Include="dummy_threading.py" />
     <Compile Include="email\base64mime.py" />
     <Compile Include="email\charset.py" />
     <Compile Include="email\contentmanager.py" />
@@ -392,7 +391,6 @@
     <Compile Include="encodings\tis_620.py" />
     <Compile Include="encodings\undefined.py" />
     <Compile Include="encodings\unicode_escape.py" />
-    <Compile Include="encodings\unicode_internal.py" />
     <Compile Include="encodings\utf_16.py" />
     <Compile Include="encodings\utf_16_be.py" />
     <Compile Include="encodings\utf_16_le.py" />
@@ -655,7 +653,6 @@
     <Compile Include="logging\handlers.py" />
     <Compile Include="logging\__init__.py" />
     <Compile Include="lzma.py" />
-    <Compile Include="macpath.py" />
     <Compile Include="mailbox.py" />
     <Compile Include="mailcap.py" />
     <Compile Include="mimetypes.py" />
@@ -680,7 +677,7 @@
     <Compile Include="multiprocessing\queues.py" />
     <Compile Include="multiprocessing\reduction.py" />
     <Compile Include="multiprocessing\resource_sharer.py" />
-    <Compile Include="multiprocessing\semaphore_tracker.py" />
+    <Compile Include="multiprocessing\resource_tracker.py" />
     <Compile Include="multiprocessing\sharedctypes.py" />
     <Compile Include="multiprocessing\spawn.py" />
     <Compile Include="multiprocessing\synchronize.py" />
@@ -833,7 +830,6 @@
     <Compile Include="test\mp_fork_bomb.py" />
     <Compile Include="test\mp_preload.py" />
     <Compile Include="test\multibytecodec_support.py" />
-    <Compile Include="test\outstanding_bugs.py" />
     <Compile Include="test\pickletester.py" />
     <Compile Include="test\profilee.py" />
     <Compile Include="test\pyclbr_input.py" />
@@ -978,8 +974,6 @@
     <Compile Include="test\test_doctest2.py" />
     <Compile Include="test\test_docxmlrpc.py" />
     <Compile Include="test\test_dtrace.py" />
-    <Compile Include="test\test_dummy_thread.py" />
-    <Compile Include="test\test_dummy_threading.py" />
     <Compile Include="test\test_dynamic.py" />
     <Compile Include="test\test_dynamicclassattribute.py" />
     <Compile Include="test\test_eintr.py" />
@@ -1176,7 +1170,6 @@
     <Compile Include="test\test_long.py" />
     <Compile Include="test\test_longexp.py" />
     <Compile Include="test\test_lzma.py" />
-    <Compile Include="test\test_macpath.py" />
     <Compile Include="test\test_mailbox.py" />
     <Compile Include="test\test_mailcap.py" />
     <Compile Include="test\test_marshal.py" />
@@ -1198,7 +1191,6 @@
     <Compile Include="test\test_netrc.py" />
     <Compile Include="test\test_nis.py" />
     <Compile Include="test\test_nntplib.py" />
-    <Compile Include="test\test_normalization.py" />
     <Compile Include="test\test_ntpath.py" />
     <Compile Include="test\test_numeric_tower.py" />
     <Compile Include="test\test_opcodes.py" />
@@ -1567,7 +1559,6 @@
     <Compile Include="_collections_abc.py" />
     <Compile Include="_compat_pickle.py" />
     <Compile Include="_compression.py" />
-    <Compile Include="_dummy_thread.py" />
     <Compile Include="_markupbase.py" />
     <Compile Include="_osx_support.py" />
     <Compile Include="_pydecimal.py" />

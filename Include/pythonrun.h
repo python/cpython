@@ -9,7 +9,6 @@ extern "C" {
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char *, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_AnyFileFlags(FILE *, const char *, PyCompilerFlags *);
 PyAPI_FUNC(int) PyRun_AnyFileExFlags(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */
@@ -119,10 +118,23 @@ PyAPI_FUNC(struct symtable *) Py_SymtableString(
     const char *filename,       /* decoded from the filesystem encoding */
     int start);
 #ifndef Py_LIMITED_API
+PyAPI_FUNC(const char *) _Py_SourceAsString(
+    PyObject *cmd,
+    const char *funcname,
+    const char *what,
+    PyCompilerFlags *cf,
+    PyObject **cmd_copy);
+
 PyAPI_FUNC(struct symtable *) Py_SymtableStringObject(
     const char *str,
     PyObject *filename,
     int start);
+
+PyAPI_FUNC(struct symtable *) _Py_SymtableStringObjectFlags(
+    const char *str,
+    PyObject *filename,
+    int start,
+    PyCompilerFlags *flags);
 #endif
 
 PyAPI_FUNC(void) PyErr_Print(void);
@@ -130,6 +142,23 @@ PyAPI_FUNC(void) PyErr_PrintEx(int);
 PyAPI_FUNC(void) PyErr_Display(PyObject *, PyObject *, PyObject *);
 
 #ifndef Py_LIMITED_API
+/* A function flavor is also exported by libpython. It is required when
+    libpython is accessed directly rather than using header files which defines
+    macros below. On Windows, for example, PyAPI_FUNC() uses dllexport to
+    export functions in pythonXX.dll. */
+PyAPI_FUNC(PyObject *) PyRun_String(const char *str, int s, PyObject *g, PyObject *l);
+PyAPI_FUNC(int) PyRun_AnyFile(FILE *fp, const char *name);
+PyAPI_FUNC(int) PyRun_AnyFileEx(FILE *fp, const char *name, int closeit);
+PyAPI_FUNC(int) PyRun_AnyFileFlags(FILE *, const char *, PyCompilerFlags *);
+PyAPI_FUNC(int) PyRun_SimpleString(const char *s);
+PyAPI_FUNC(int) PyRun_SimpleFile(FILE *f, const char *p);
+PyAPI_FUNC(int) PyRun_SimpleFileEx(FILE *f, const char *p, int c);
+PyAPI_FUNC(int) PyRun_InteractiveOne(FILE *f, const char *p);
+PyAPI_FUNC(int) PyRun_InteractiveLoop(FILE *f, const char *p);
+PyAPI_FUNC(PyObject *) PyRun_File(FILE *fp, const char *p, int s, PyObject *g, PyObject *l);
+PyAPI_FUNC(PyObject *) PyRun_FileEx(FILE *fp, const char *p, int s, PyObject *g, PyObject *l, int c);
+PyAPI_FUNC(PyObject *) PyRun_FileFlags(FILE *fp, const char *p, int s, PyObject *g, PyObject *l, PyCompilerFlags *flags);
+
 /* Use macros for a bunch of old variants */
 #define PyRun_String(str, s, g, l) PyRun_StringFlags(str, s, g, l, NULL)
 #define PyRun_AnyFile(fp, name) PyRun_AnyFileExFlags(fp, name, 0, NULL)
@@ -165,7 +194,7 @@ PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
    to an 8k margin. */
 #define PYOS_STACK_MARGIN 2048
 
-#if defined(WIN32) && !defined(MS_WIN64) && defined(_MSC_VER) && _MSC_VER >= 1300
+#if defined(WIN32) && !defined(MS_WIN64) && !defined(_M_ARM) && defined(_MSC_VER) && _MSC_VER >= 1300
 /* Enable stack checking under Microsoft C */
 #define USE_STACKCHECK
 #endif

@@ -78,9 +78,6 @@ options:
 
 Providing both of the script selection options will trigger an exception.
 
-.. versionchanged:: 3.7.0
-   The exit status is non-zero if the command fails.
-
 
 Module API
 ----------
@@ -121,6 +118,8 @@ Module API
 
    *verbosity* controls the level of output to :data:`sys.stdout` from the
    bootstrapping operation.
+
+   .. audit-event:: ensurepip.bootstrap root ensurepip.bootstrap
 
    .. note::
 

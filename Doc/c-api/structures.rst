@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _common-structs:
 
@@ -8,6 +8,10 @@ Common Object Structures
 There are a large number of structures which are used in the definition of
 object types for Python.  This section describes these structures and how they
 are used.
+
+
+Base object types and macros
+----------------------------
 
 All Python objects ultimately share a small number of fields at the beginning
 of the object's representation in memory.  These are represented by the
@@ -102,6 +106,9 @@ the definition of all other Python objects.
       1, type, size,
 
 
+Implementing functions and methods
+----------------------------------
+
 .. c:type:: PyCFunction
 
    Type of the functions used to implement most Python callables in C.
@@ -114,10 +121,20 @@ the definition of all other Python objects.
 
 .. c:type:: PyCFunctionWithKeywords
 
-   Type of the functions used to implement Python callables in C that take
-   keyword arguments: they take three :c:type:`PyObject\*` parameters and return
-   one such value.  See :c:type:`PyCFunction` above for the meaning of the return
-   value.
+   Type of the functions used to implement Python callables in C
+   with signature :const:`METH_VARARGS | METH_KEYWORDS`.
+
+
+.. c:type:: _PyCFunctionFast
+
+   Type of the functions used to implement Python callables in C
+   with signature :const:`METH_FASTCALL`.
+
+
+.. c:type:: _PyCFunctionFastWithKeywords
+
+   Type of the functions used to implement Python callables in C
+   with signature :const:`METH_FASTCALL | METH_KEYWORDS`.
 
 
 .. c:type:: PyMethodDef
@@ -149,10 +166,11 @@ specific C type of the *self* object.
 
 The :attr:`ml_flags` field is a bitfield which can include the following flags.
 The individual flags indicate either a calling convention or a binding
-convention.  Of the calling convention flags, only :const:`METH_VARARGS` and
-:const:`METH_KEYWORDS` can be combined. Any of the calling convention flags
-can be combined with a binding flag.
+convention.
 
+There are four basic calling conventions for positional arguments
+and two of them can be combined with :const:`METH_KEYWORDS` to support
+also keyword arguments.  So there are a total of 6 calling conventions:
 
 .. data:: METH_VARARGS
 
@@ -164,13 +182,42 @@ can be combined with a binding flag.
    using :c:func:`PyArg_ParseTuple` or :c:func:`PyArg_UnpackTuple`.
 
 
-.. data:: METH_KEYWORDS
+.. data:: METH_VARARGS | METH_KEYWORDS
 
    Methods with these flags must be of type :c:type:`PyCFunctionWithKeywords`.
-   The function expects three parameters: *self*, *args*, and a dictionary of
-   all the keyword arguments.  The flag must be combined with
-   :const:`METH_VARARGS`, and the parameters are typically processed using
-   :c:func:`PyArg_ParseTupleAndKeywords`.
+   The function expects three parameters: *self*, *args*, *kwargs* where
+   *kwargs* is a dictionary of all the keyword arguments or possibly *NULL*
+   if there are no keyword arguments.  The parameters are typically processed
+   using :c:func:`PyArg_ParseTupleAndKeywords`.
+
+
+.. data:: METH_FASTCALL
+
+   Fast calling convention supporting only positional arguments.
+   The methods have the type :c:type:`_PyCFunctionFast`.
+   The first parameter is *self*, the second parameter is a C array
+   of :c:type:`PyObject\*` values indicating the arguments and the third
+   parameter is the number of arguments (the length of the array).
+
+   This is not part of the :ref:`limited API <stable>`.
+
+   .. versionadded:: 3.7
+
+
+.. data:: METH_FASTCALL | METH_KEYWORDS
+
+   Extension of :const:`METH_FASTCALL` supporting also keyword arguments,
+   with methods of type :c:type:`_PyCFunctionFastWithKeywords`.
+   Keyword arguments are passed the same way as in the vectorcall protocol:
+   there is an additional fourth :c:type:`PyObject\*` parameter
+   which is a tuple representing the names of the keyword arguments
+   (which are guaranteed to be strings)
+   or possibly *NULL* if there are no keywords.  The values of the keyword
+   arguments are stored in the *args* array, after the positional arguments.
+
+   This is not part of the :ref:`limited API <stable>`.
+
+   .. versionadded:: 3.7
 
 
 .. data:: METH_NOARGS
@@ -230,6 +277,9 @@ definition with the same method name.
    slot.  This is helpful because calls to PyCFunctions are optimized more
    than wrapper object calls.
 
+
+Accessing attributes of extension types
+---------------------------------------
 
 .. c:type:: PyMemberDef
 
@@ -292,7 +342,8 @@ definition with the same method name.
 
    :attr:`flags` can be ``0`` for write and read access or :c:macro:`READONLY` for
    read-only access.  Using :c:macro:`T_STRING` for :attr:`type` implies
-   :c:macro:`READONLY`.  Only :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX`
+   :c:macro:`READONLY`.  :c:macro:`T_STRING` data is interpreted as UTF-8.
+   Only :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX`
    members can be deleted.  (They are set to *NULL*).
 
 
