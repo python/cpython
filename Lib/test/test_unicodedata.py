@@ -7,10 +7,11 @@
 """
 
 import hashlib
+from http.client import HTTPException
 import sys
 import unicodedata
 import unittest
-from test.support import script_helper
+from test.support import open_urlresource, script_helper
 
 
 class UnicodeMethodsTest(unittest.TestCase):
@@ -171,13 +172,6 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertRaises(TypeError, self.db.combining)
         self.assertRaises(TypeError, self.db.combining, 'xx')
 
-    def test_normalize(self):
-        self.assertRaises(TypeError, self.db.normalize)
-        self.assertRaises(ValueError, self.db.normalize, 'unknown', 'xx')
-        self.assertEqual(self.db.normalize('NFKC', ''), '')
-        # The rest can be found in test_normalization.py
-        # which requires an external file.
-
     def test_pr29(self):
         # http://www.unicode.org/review/pr-29.html
         # See issues #1054943 and #10254.
@@ -207,9 +201,6 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.normalize('NFC', u1176_str_a), u1176_str_b)
         self.assertEqual(self.db.normalize('NFC', u11a7_str_a), u11a7_str_b)
         self.assertEqual(self.db.normalize('NFC', u11c3_str_a), u11c3_str_b)
-
-    # For tests of unicodedata.is_normalized / self.db.is_normalized ,
-    # see test_normalization.py .
 
     def test_east_asian_width(self):
         eaw = self.db.east_asian_width
@@ -314,6 +305,103 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
             else:
                 self.assertEqual(len(lines), 1,
                                  r"\u%.4x should not be a linebreak" % i)
+
+class NormalizationTest(unittest.TestCase):
+    @staticmethod
+    def check_version(testfile):
+        hdr = testfile.readline()
+        return unicodedata.unidata_version in hdr
+
+    @staticmethod
+    def unistr(data):
+        data = [int(x, 16) for x in data.split(" ")]
+        return "".join([chr(x) for x in data])
+
+    def test_normalization(self):
+        TESTDATAFILE = "NormalizationTest.txt"
+        TESTDATAURL = f"http://www.pythontest.net/unicode/{unicodedata.unidata_version}/{TESTDATAFILE}"
+
+        # Hit the exception early
+        try:
+            testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
+                                        check=self.check_version)
+        except PermissionError:
+            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
+                          f"into the test data directory")
+        except (OSError, HTTPException):
+            self.fail(f"Could not retrieve {TESTDATAURL}")
+
+        with testdata:
+            self.run_normalization_tests(testdata)
+
+    def run_normalization_tests(self, testdata):
+        part = None
+        part1_data = {}
+
+        def NFC(str):
+            return unicodedata.normalize("NFC", str)
+
+        def NFKC(str):
+            return unicodedata.normalize("NFKC", str)
+
+        def NFD(str):
+            return unicodedata.normalize("NFD", str)
+
+        def NFKD(str):
+            return unicodedata.normalize("NFKD", str)
+
+        for line in testdata:
+            if '#' in line:
+                line = line.split('#')[0]
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("@Part"):
+                part = line.split()[0]
+                continue
+            c1,c2,c3,c4,c5 = [self.unistr(x) for x in line.split(';')[:-1]]
+
+            # Perform tests
+            self.assertTrue(c2 ==  NFC(c1) ==  NFC(c2) ==  NFC(c3), line)
+            self.assertTrue(c4 ==  NFC(c4) ==  NFC(c5), line)
+            self.assertTrue(c3 ==  NFD(c1) ==  NFD(c2) ==  NFD(c3), line)
+            self.assertTrue(c5 ==  NFD(c4) ==  NFD(c5), line)
+            self.assertTrue(c4 == NFKC(c1) == NFKC(c2) == \
+                            NFKC(c3) == NFKC(c4) == NFKC(c5),
+                            line)
+            self.assertTrue(c5 == NFKD(c1) == NFKD(c2) == \
+                            NFKD(c3) == NFKD(c4) == NFKD(c5),
+                            line)
+
+            self.assertTrue(unicodedata.is_normalized("NFC", c2))
+            self.assertTrue(unicodedata.is_normalized("NFC", c4))
+
+            self.assertTrue(unicodedata.is_normalized("NFD", c3))
+            self.assertTrue(unicodedata.is_normalized("NFD", c5))
+
+            self.assertTrue(unicodedata.is_normalized("NFKC", c4))
+            self.assertTrue(unicodedata.is_normalized("NFKD", c5))
+
+            # Record part 1 data
+            if part == "@Part1":
+                part1_data[c1] = 1
+
+        # Perform tests for all other data
+        for c in range(sys.maxunicode+1):
+            X = chr(c)
+            if X in part1_data:
+                continue
+            self.assertTrue(X == NFC(X) == NFD(X) == NFKC(X) == NFKD(X), c)
+
+    def test_edge_cases(self):
+        self.assertRaises(TypeError, unicodedata.normalize)
+        self.assertRaises(ValueError, unicodedata.normalize, 'unknown', 'xx')
+        self.assertEqual(unicodedata.normalize('NFKC', ''), '')
+
+    def test_bug_834676(self):
+        # Check for bug 834676
+        unicodedata.normalize('NFC', '\ud55c\uae00')
+
 
 if __name__ == "__main__":
     unittest.main()
