@@ -172,12 +172,6 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertRaises(TypeError, self.db.combining)
         self.assertRaises(TypeError, self.db.combining, 'xx')
 
-    def test_normalize(self):
-        self.assertRaises(TypeError, self.db.normalize)
-        self.assertRaises(ValueError, self.db.normalize, 'unknown', 'xx')
-        self.assertEqual(self.db.normalize('NFKC', ''), '')
-        # See also comprehensive tests in NormalizationTest below.
-
     def test_pr29(self):
         # http://www.unicode.org/review/pr-29.html
         # See issues #1054943 and #10254.
@@ -398,6 +392,11 @@ class NormalizationTest(unittest.TestCase):
             if X in part1_data:
                 continue
             self.assertTrue(X == NFC(X) == NFD(X) == NFKC(X) == NFKD(X), c)
+
+    def test_edge_cases(self):
+        self.assertRaises(TypeError, unicodedata.normalize)
+        self.assertRaises(ValueError, unicodedata.normalize, 'unknown', 'xx')
+        self.assertEqual(unicodedata.normalize('NFKC', ''), '')
 
     def test_bug_834676(self):
         # Check for bug 834676
