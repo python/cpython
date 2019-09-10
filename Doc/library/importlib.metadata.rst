@@ -231,7 +231,7 @@ method::
     @abc.abstractmethod
     def find_distributions(context=DistributionFinder.Context()):
         """Return an iterable of all Distribution instances capable of
-        loading the metadata for packages for the indicated ``context``.
+        loading the metadata for packages for the indicated 'context'.
         """
 
 The ``DistributionFinder.Context`` object provides ``.path`` and ``.name``
