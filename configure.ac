@@ -3865,15 +3865,6 @@ AC_CHECK_FUNCS(setpgrp,
     [AC_DEFINE(SETPGRP_HAVE_ARG, 1, [Define if setpgrp() must be called as setpgrp(0, 0).])],
     [])
 )
-AC_CHECK_FUNCS(gettimeofday,
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/time.h>]],
-  				     [[gettimeofday((struct timeval*)0,(struct timezone*)0);]])],
-    [],
-    [AC_DEFINE(GETTIMEOFDAY_NO_TZ, 1,
-      [Define if gettimeofday() does not have second (timezone) argument
-       This is the case on Motorola V4 (R40V4.2)])
-    ])
-)
 
 # We search for both crypt and crypt_r as one or the other may be defined
 # This gets us our -lcrypt in LIBS when required on the target platform.
