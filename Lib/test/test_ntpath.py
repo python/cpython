@@ -48,7 +48,7 @@ def tester(fn, wantResult):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         gotResult = eval(fn)
-    if wantResult != gotResult and _norm(wantResult) != _norm(gotResult):
+    if _norm(wantResult) != _norm(gotResult):
         raise TestFailed("%s should return: %s but returned: %s" \
               %(str(fn), str(wantResult), repr(gotResult)))
 
