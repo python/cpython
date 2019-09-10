@@ -6143,7 +6143,7 @@ heapctypesubclasswithfinalizer_finalize(PyObject *self)
 
     m = PyState_FindModule(&_testcapimodule);
     if (m == NULL) {
-        return;
+        goto cleanup_finalize;
     }
     oldtype = PyObject_GetAttrString(m, "HeapCTypeSubclassWithFinalizer");
     newtype = PyObject_GetAttrString(m, "HeapCTypeSubclass");
