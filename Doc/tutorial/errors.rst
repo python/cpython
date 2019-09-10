@@ -397,7 +397,18 @@ been executed.  The :keyword:`!finally` clause is also executed penultimately
 when the :keyword:`!try` statement is left via a :keyword:`break`,
 :keyword:`continue` or :keyword:`return` statement (thus a :keyword:`return`
 in a :keyword:`finally` clause will execute before and instead of a
-:keyword:`return` statement in a :keyword:`try` clause).
+:keyword:`return` statement in a :keyword:`try` clause). For
+example::
+
+   >>> def bool_return(): -> bool:
+   ...     try:
+   ...         return True
+   ...     finally:
+   ...         return False
+   ...
+   >>> bool_return()
+   False
+
 A more complicated example::
 
    >>> def divide(x, y):
