@@ -3689,7 +3689,7 @@ dec_##MPDFUNC(PyObject *self, PyObject *dummy UNUSED)       \
 static PyObject *                                                         \
 dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)             \
 {                                                                         \
-    static const char *kwlist[] = {"context", NULL};                            \
+    static const char *kwlist[] = {"context", NULL};                      \
     PyObject *context = Py_None;                                          \
                                                                           \
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist,            \
