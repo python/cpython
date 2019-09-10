@@ -4013,7 +4013,7 @@ static PyGetSetDef time_getset[] = {
  */
 
 static const char *time_kws[] = {"hour", "minute", "second", "microsecond",
-                                "tzinfo", "fold", NULL};
+                                 "tzinfo", "fold", NULL};
 
 static PyObject *
 time_from_pickle(PyTypeObject *type, PyObject *state, PyObject *tzinfo)
