@@ -72,9 +72,6 @@ class StringPtrTestCase(unittest.TestCase):
         del buf
         # Because r is a pointer to memory that is freed after deleting buf,
         # the pointer is hanging and using it would reference freed memory.
-        # The value of x1 may not, and often will not, be the same as x if
-        # something else overwrites the released memory.
-        # x1 = r[0], r[1], r[2], r[3], r[4]
 
 if __name__ == '__main__':
     unittest.main()
