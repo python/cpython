@@ -69,10 +69,12 @@ standard headers) have one of the prefixes ``Py`` or ``_Py``.  Names beginning
 with ``_Py`` are for internal use by the Python implementation and should not be
 used by extension writers. Structure member names do not have a reserved prefix.
 
-**Important:** user code should never define names that begin with ``Py`` or
-``_Py``.  This confuses the reader, and jeopardizes the portability of the user
-code to future Python versions, which may define additional names beginning with
-one of these prefixes.
+.. note::
+
+   User code should never define names that begin with ``Py`` or ``_Py``. This
+   confuses the reader, and jeopardizes the portability of the user code to
+   future Python versions, which may define additional names beginning with one
+   of these prefixes.
 
 The header files are typically installed with Python.  On Unix, these  are
 located in the directories :file:`{prefix}/include/pythonversion/` and
@@ -90,9 +92,9 @@ multi-platform builds since the platform independent headers under
 :envvar:`prefix` include the platform specific headers from
 :envvar:`exec_prefix`.
 
-C++ users should note that though the API is defined entirely using C, the
-header files do properly declare the entry points to be ``extern "C"``, so there
-is no need to do anything special to use the API from C++.
+C++ users should note that although the API is defined entirely using C, the
+header files properly declare the entry points to be ``extern "C"``. As a result,
+there is no need to do anything special to use the API from C++.
 
 
 Useful macros
