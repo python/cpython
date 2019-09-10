@@ -645,8 +645,8 @@ The :mod:`test.support` module defines the following functions:
 
 
 .. function:: captured_stdin()
-              captured_stdout()
-              captured_stderr()
+              captured_stdout(encoding=None)
+              captured_stderr(encoding=None)
 
    A context managers that temporarily replaces the named stream with
    :class:`io.StringIO` object.
@@ -659,6 +659,13 @@ The :mod:`test.support` module defines the following functions:
       assert stdout.getvalue() == "hello\n"
       assert stderr.getvalue() == "error\n"
 
+   You can use the *encoding* keyword-only parameter to simulate different
+   encodings for output streams::
+
+      with captured_stdout(encoding="ascii") as stdout:
+          print("hello")
+      assert stdout.getvalue() == b"hello\n"
+
    Example use with input stream::
 
       with captured_stdin() as stdin:
@@ -668,6 +675,9 @@ The :mod:`test.support` module defines the following functions:
           captured = input()
       self.assertEqual(captured, "hello")
 
+   .. versionchanged:: 3.8
+      Added *encoding* keyword-only parameters to :func:`captured_stdout` and
+      :func:`captured_stderr`.
 
 .. function:: temp_dir(path=None, quiet=False)
 

@@ -1579,36 +1579,47 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
     finally:
         socket.setdefaulttimeout(old_timeout)
 
+import io
+class StringIOWrapper(io.StringIO):
+    def __init__(self, stream, encoding):
+        super().__init__()
+        self.stream = stream
+        self._encoding = encoding
+
+    def getvalue(self):
+        if self._encoding is not None:
+            return self.stream.getvalue().encode(self._encoding)
+        return self.stream.getvalue()
 
 @contextlib.contextmanager
-def captured_output(stream_name):
+def captured_output(stream_name, *, encoding=None):
     """Return a context manager used by captured_stdout/stdin/stderr
     that temporarily replaces the sys stream *stream_name* with a StringIO."""
-    import io
     orig_stdout = getattr(sys, stream_name)
-    setattr(sys, stream_name, io.StringIO())
+    wrapper = StringIOWrapper(io.StringIO, encoding)
+    setattr(sys, stream_name,  wrapper)
     try:
         yield getattr(sys, stream_name)
     finally:
         setattr(sys, stream_name, orig_stdout)
 
-def captured_stdout():
+def captured_stdout(*, encoding=None):
     """Capture the output of sys.stdout:
 
        with captured_stdout() as stdout:
            print("hello")
        self.assertEqual(stdout.getvalue(), "hello\\n")
     """
-    return captured_output("stdout")
+    return captured_output("stdout", encoding=encoding)
 
-def captured_stderr():
+def captured_stderr(*, encoding=None):
     """Capture the output of sys.stderr:
 
        with captured_stderr() as stderr:
            print("hello", file=sys.stderr)
        self.assertEqual(stderr.getvalue(), "hello\\n")
     """
-    return captured_output("stderr")
+    return captured_output("stderr", encoding=encoding)
 
 def captured_stdin():
     """Capture the input to sys.stdin:
