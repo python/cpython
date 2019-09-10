@@ -377,12 +377,12 @@ Stream
 
    .. attribute:: mode
 
-      Returns the mode of the stream which is a :class:`StreamMode` value.
+      Returns the mode of the stream which is a :class:`StreamMode` value. It could
+      be one of the below :
 
-   .. method:: set_exception(exc)
-
-      Sets the exception to be raised when :meth:`read`, :meth:`readexactly` and
-      :meth:`readuntil` are called.
+      * :attr:`StreamMode.READ` - Connection can receive data.
+      * :attr:`StreamMode.WRITE` - Connection can send data.
+      * :attr:`StreamMode.READWRITE` - Connection can send and receive data.
 
    .. coroutinemethod:: abort()
 
@@ -405,14 +405,14 @@ Stream
 
    .. coroutinemethod:: sendfile(file, offset=0, count=None, *, fallback=True)
 
-      Calls :meth:`Stream.drain()` and rest of the arguments are passed directly to
-      :meth:`loop.sendfile`.
+      Calls :meth:`Stream.drain()` to write to the connection and uses :meth:`loop.sendfile`
+      to send *file* over *transport*.
 
    .. coroutinemethod:: start_tls(sslcontext, *, server_hostname=None, \
                                   ssl_handshake_timeout=None)
 
-      Calls :meth:`Stream.drain()` and rest of the arguments are passed directly to
-      :meth:`loop.start_tls`.
+      Calls :meth:`Stream.drain()` to write to the connection and uses :meth:`loop.start_tls`
+      to upgrade the existing transport-based connection to TLS.
 
    .. coroutinemethod:: read(n=-1)
 
@@ -508,17 +508,7 @@ Stream
 
    .. method:: at_eof()
 
-      Return ``True`` if the buffer is empty and :meth:`feed_eof`
-      was called.
-
-   .. method:: feed_data(data)
-
-      Adds ``data`` to the write buffer. It raises an :exc:`AssertionError` when
-      it was called after :meth:`feed_eof`.
-
-   .. attribute:: transport
-
-      Return the underlying asyncio transport.
+      Return ``True`` if the buffer is empty.
 
    .. method:: get_extra_info(name, default=None)
 
@@ -622,8 +612,7 @@ StreamReader
 
    .. method:: at_eof()
 
-      Return ``True`` if the buffer is empty and :meth:`feed_eof`
-      was called.
+      Return ``True`` if the buffer is empty.
 
 
 StreamWriter

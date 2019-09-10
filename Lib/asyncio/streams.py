@@ -70,8 +70,7 @@ def connect(host=None, port=None, *,
             server_hostname=None,
             ssl_handshake_timeout=None,
             happy_eyeballs_delay=None, interleave=None):
-    """Connect to TCP socket on *host* : *port* address and return a `Stream`
-    object of mode StreamMode.READWRITE.
+    """Connect to TCP socket on *host* : *port* address to send and receive data.
 
     *limit* determines the buffer size limit used by the returned `Stream`
     instance. By default the *limit* is set to 64 KiB.
@@ -116,7 +115,9 @@ async def _connect(host, port,
 
 
 def connect_read_pipe(pipe, *, limit=_DEFAULT_LIMIT):
-    """Takes a file-like object *pipe* to return a Stream object of the mode
+    """Establish a connection to a file-like object *pipe* to receive data.
+
+    Takes a file-like object *pipe* to return a Stream object of the mode
     StreamMode.READ that has similar API of StreamReader. It can also be used
     as an async context manager.
     """
@@ -142,7 +143,9 @@ async def _connect_read_pipe(pipe, limit):
 
 
 def connect_write_pipe(pipe, *, limit=_DEFAULT_LIMIT):
-    """Takes a file-like object *pipe* to return a Stream object of the mode
+    """Establish a connection to a file-like object *pipe* to send data.
+
+    Takes a file-like object *pipe* to return a Stream object of the mode
     StreamMode.WRITE that has similar API of StreamWriter. It can also be used
     as an async context manager.
     """

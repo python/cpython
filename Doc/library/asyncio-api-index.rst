@@ -132,17 +132,42 @@ High-level APIs to work with network IO.
     :widths: 50 50
     :class: full-width-table
 
+    * - ``await`` :func:`connect`
+      -  Establish a TCP connection to send and receive data.
+
     * - ``await`` :func:`open_connection`
       -  Establish a TCP connection.
+
+    * - ``await`` :func:`connect_unix`
+      -  Establish a Unix socket connection to send and receive data.
 
     * - ``await`` :func:`open_unix_connection`
       -  Establish a Unix socket connection.
 
+    * - :class:`StreamServer`
+      - Start a TCP server.
+
     * - ``await`` :func:`start_server`
       - Start a TCP server.
 
+    * - :class:`UnixStreamServer`
+      - Start a Unix socket server.
+
     * - ``await`` :func:`start_unix_server`
       - Start a Unix socket server.
+
+    * - :func:`connect_read_pipe`
+      - Establish a connection to :term:`file-like object <file object>` *pipe*
+        to receive data.
+
+    * - :func:`connect_write_pipe`
+      - Establish a connection to :term:`file-like object <file object>` *pipe*
+        to send data.
+
+    * - :class:`Stream`
+      - High-level async/await object to send and receive network data.
+        It includes the API provided by :class:`StreamReader`
+        and :class:`StreamWriter`.
 
     * - :class:`StreamReader`
       - High-level async/await object to receive network data.
