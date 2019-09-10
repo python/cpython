@@ -1352,7 +1352,7 @@ class Stream:
     @property
     def transport(self):
         warnings.warn("Stream.transport attribute is deprecated "
-                      "since Python 3.8, and scheduled for removal in 3.10; "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
                       "it is an internal API",
                       DeprecationWarning,
                       stacklevel=2)
@@ -1456,7 +1456,7 @@ class Stream:
 
     def set_exception(self, exc):
         warnings.warn("Stream.set_exception() is deprecated "
-                      "since Python 3.8, and scheduled for removal in 3.10; "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
                       "it is an internal API",
                       DeprecationWarning,
                       stacklevel=2)
@@ -1481,7 +1481,7 @@ class Stream:
 
     def set_transport(self, transport):
         warnings.warn("Stream.set_transport() is deprecated "
-                      "since Python 3.8, and scheduled for removal in 3.10; "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
                       "it is an internal API",
                       DeprecationWarning,
                       stacklevel=2)
@@ -1500,7 +1500,7 @@ class Stream:
 
     def feed_eof(self):
         warnings.warn("Stream.feed_eof() is deprecated "
-                      "since Python 3.8, and scheduled for removal in 3.10; "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
                       "it is an internal API",
                       DeprecationWarning,
                       stacklevel=2)
@@ -1516,7 +1516,7 @@ class Stream:
 
     def feed_data(self, data):
         warnings.warn("Stream.feed_data() is deprecated "
-                      "since Python 3.8, and scheduled for removal in 3.10; "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
                       "it is an internal API",
                       DeprecationWarning,
                       stacklevel=2)
