@@ -1142,7 +1142,6 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
     end = s + len;
     while (s < end) {
         if (*s != '\\') {
-          non_esc:
             if (!(recode_encoding && (*s & 0x80))) {
                 *p++ = *s++;
             }
@@ -1229,8 +1228,6 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
             }
             *p++ = '\\';
             s--;
-            goto non_esc; /* an arbitrary number of unescaped
-                             UTF-8 bytes may follow. */
         }
     }
 
