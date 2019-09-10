@@ -40,7 +40,7 @@ jobs:
     testRunPlatform: macos
 
   pool:
-    vmImage: xcode9-macos10.13
+    vmImage: macos-10.14
 
   steps:
   - template: ./macos-steps.yml
@@ -131,7 +131,7 @@ jobs:
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
   pool:
-    vmImage: vs2017-win2016
+    vmImage: windows-2019
 
   strategy:
     matrix:

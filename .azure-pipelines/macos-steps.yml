@@ -14,6 +14,8 @@ steps:
 
 - script: make buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
   displayName: 'Tests'
+  continueOnError: true
+  timeoutInMinutes: 30
 
 - task: PublishTestResults@2
   displayName: 'Publish Test Results'
