@@ -1794,13 +1794,13 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             case ERROR_INVALID_PARAMETER:
             case ERROR_INVALID_FUNCTION:
             case ERROR_NOT_SUPPORTED:
-                retval = -1;
+                /* Volumes and physical disks are block devices, e.g.
+                   \\.\C: and \\.\PhysicalDrive0. */
+                memset(result, 0, sizeof(*result));
+                result->st_mode = 0x6000; /* S_IFBLK */
                 goto cleanup;
             }
-            /* Volumes and physical disks are block devices, e.g.
-               \\.\C: and \\.\PhysicalDrive0. */
-            memset(result, 0, sizeof(*result));
-            result->st_mode = 0x6000; /* S_IFBLK */
+            retval = -1;
             goto cleanup;
         }
     }
@@ -1827,7 +1827,14 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
 
 cleanup:
     if (hFile != INVALID_HANDLE_VALUE) {
-        CloseHandle(hFile);
+        /* Preserve last error if we are failing */
+        error = retval ? GetLastError() : 0;
+        if (!CloseHandle(hFile)) {
+            retval = -1;
+        } else if (retval) {
+            /* Restore last error */
+            SetLastError(error);
+        }
     }
 
     return retval;
@@ -7482,6 +7489,12 @@ wait_helper(pid_t pid, int status, struct rusage *ru)
     if (pid == -1)
         return posix_error();
 
+    // If wait succeeded but no child was ready to report status, ru will not
+    // have been populated.
+    if (pid == 0) {
+        memset(ru, 0, sizeof(*ru));
+    }
+
     if (struct_rusage == NULL) {
         PyObject *m = PyImport_ImportModuleNoBlock("resource");
         if (m == NULL)
@@ -7818,7 +7831,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     HANDLE reparse_point_handle;
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    PyObject *result;
+    PyObject *result = NULL;
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
@@ -7872,7 +7885,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
             name[1] = L'\\';
         }
         result = PyUnicode_FromWideChar(name, nameLen);
-        if (path->narrow) {
+        if (result && path->narrow) {
             Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
         }
     }

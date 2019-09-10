@@ -880,9 +880,9 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
         return -1;
 
     if (self->readuniversal) {
-        PyObject *incrementalDecoder = PyObject_CallFunction(
+        PyObject *incrementalDecoder = PyObject_CallFunctionObjArgs(
             (PyObject *)&PyIncrementalNewlineDecoder_Type,
-            "Oi", self->decoder, (int)self->readtranslate);
+            self->decoder, self->readtranslate ? Py_True : Py_False, NULL);
         if (incrementalDecoder == NULL)
             return -1;
         Py_CLEAR(self->decoder);
@@ -2591,8 +2591,8 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         }
         Py_XSETREF(self->snapshot, snapshot);
 
-        decoded = _PyObject_CallMethodId(self->decoder, &PyId_decode,
-            "Oi", input_chunk, (int)cookie.need_eof);
+        decoded = _PyObject_CallMethodIdObjArgs(self->decoder, &PyId_decode,
+            input_chunk, cookie.need_eof ? Py_True : Py_False, NULL);
 
         if (check_decoded(decoded) < 0)
             goto fail;
@@ -2819,7 +2819,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     if (input == input_end) {
         /* We didn't get enough decoded data; signal EOF to get more. */
         PyObject *decoded = _PyObject_CallMethodId(
-            self->decoder, &PyId_decode, "yi", "", /* final = */ 1);
+            self->decoder, &PyId_decode, "yO", "", /* final = */ Py_True);
         if (check_decoded(decoded) < 0)
             goto fail;
         chars_decoded += PyUnicode_GET_LENGTH(decoded);

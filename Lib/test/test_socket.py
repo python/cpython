@@ -4597,7 +4597,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def testAccept(self):
         # Testing non-blocking accept
-        self.serv.setblocking(0)
+        self.serv.setblocking(False)
 
         # connect() didn't start: non-blocking accept() fails
         start_time = time.monotonic()
@@ -4628,7 +4628,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         # Testing non-blocking recv
         conn, addr = self.serv.accept()
         self.addCleanup(conn.close)
-        conn.setblocking(0)
+        conn.setblocking(False)
 
         # the server didn't send data yet: non-blocking recv() fails
         with self.assertRaises(BlockingIOError):
@@ -5698,15 +5698,15 @@ class NonblockConstantTest(unittest.TestCase):
         with socket.socket(socket.AF_INET,
                            socket.SOCK_STREAM | socket.SOCK_NONBLOCK) as s:
             self.checkNonblock(s)
-            s.setblocking(1)
+            s.setblocking(True)
             self.checkNonblock(s, nonblock=False)
-            s.setblocking(0)
+            s.setblocking(False)
             self.checkNonblock(s)
             s.settimeout(None)
             self.checkNonblock(s, nonblock=False)
             s.settimeout(2.0)
             self.checkNonblock(s, timeout=2.0)
-            s.setblocking(1)
+            s.setblocking(True)
             self.checkNonblock(s, nonblock=False)
         # defaulttimeout
         t = socket.getdefaulttimeout()

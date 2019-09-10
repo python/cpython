@@ -767,7 +767,7 @@ numbers::
 
     >>> prior = 0.8
     >>> likelihoods = [0.625, 0.84, 0.30]
-    >>> (link: http://math.prod) math.prod(likelihoods, start=prior)
+    >>> math.prod(likelihoods, start=prior)
     0.126
 
 (Contributed by Pablo Galindo in :issue:`35606`)
@@ -1090,8 +1090,9 @@ unicodedata
   <http://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
 
 * New function :func:`~unicodedata.is_normalized` can be used to verify a string
-  is in a specific normal form. (Contributed by Max Belanger and David Euresti in
-  :issue:`32285`).
+  is in a specific normal form, often much faster than by actually normalizing
+  the string.  (Contributed by Max Belanger, David Euresti, and Greg Price in
+  :issue:`32285` and :issue:`37966`).
 
 
 unittest

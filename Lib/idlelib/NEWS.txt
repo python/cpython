@@ -3,6 +3,19 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-38077: IDLE no longer adds 'argv' to the user namespace when
+initializing it.  This bug only affected 3.7.4 and 3.8.0b2 to 3.8.0b4.
+
+bpo-38401: Shell restart lines now fill the window width, always start
+with '=', and avoid wrapping unnecessarily. The line will still wrap
+if the included file name is long relative to the width.
+
+bpo-37092: Add mousewheel scrolling for IDLE module, path, and stack
+browsers.  Patch by George Zhang.
+
+bpo-35771: To avoid occasional spurious test_idle failures on slower
+machines, increase the ``hover_delay`` in test_tooltip.
+
 bpo-37824: Properly handle user input warnings in IDLE shell.
 Cease turning SyntaxWarnings into SyntaxErrors.
 

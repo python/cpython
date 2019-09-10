@@ -810,7 +810,9 @@ pyexpat_xmlparser_ParseFile(xmlparseobject *self, PyObject *file)
     PyObject *readmethod = NULL;
     _Py_IDENTIFIER(read);
 
-    readmethod = _PyObject_GetAttrId(file, &PyId_read);
+    if (_PyObject_LookupAttrId(file, &PyId_read, &readmethod) < 0) {
+        return NULL;
+    }
     if (readmethod == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "argument must have 'read' attribute");
