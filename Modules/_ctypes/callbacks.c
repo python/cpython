@@ -422,8 +422,8 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 static void LoadPython(void)
 {
     if (!Py_IsInitialized()) {
-        PyEval_InitThreads();
         Py_Initialize();
+        PyEval_InitThreads();
     }
 }
 
