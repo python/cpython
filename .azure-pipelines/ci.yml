@@ -12,7 +12,7 @@ jobs:
   displayName: Pre-build checks
 
   pool:
-    vmImage: ubuntu-latest
+    vmImage: ubuntu-16.04
 
   steps:
   - template: ./prebuild-checks.yml
@@ -24,7 +24,7 @@ jobs:
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['docs.run'], 'true'))
 
   pool:
-    vmImage: ubuntu-latest
+    vmImage: ubuntu-16.04
 
   steps:
   - template: ./docs-steps.yml
@@ -42,7 +42,7 @@ jobs:
     testRunPlatform: macos
 
   pool:
-    vmImage: macos-latest
+    vmImage: macos-10.14
 
   steps:
   - template: ./macos-steps.yml
@@ -54,7 +54,7 @@ jobs:
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
   pool:
-    vmImage: ubuntu-latest
+    vmImage: ubuntu-16.04
 
   variables:
     testRunTitle: '$(build.sourceBranchName)-linux'
@@ -80,7 +80,7 @@ jobs:
     )
 
   pool:
-    vmImage: ubuntu-latest
+    vmImage: ubuntu-16.04
 
   container: manylinux1
 
@@ -111,7 +111,7 @@ jobs:
     )
 
   pool:
-    vmImage: ubuntu-latest
+    vmImage: ubuntu-16.04
 
   variables:
     testRunTitle: '$(Build.SourceBranchName)-linux-coverage'
@@ -131,7 +131,7 @@ jobs:
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
   pool:
-    vmImage: windows-latest
+    vmImage: windows-2019
 
   strategy:
     matrix:
