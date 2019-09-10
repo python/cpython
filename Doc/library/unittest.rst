@@ -1555,7 +1555,7 @@ Test cases
 
           def tearDown(self):
               self._sync_connection.close()
-	      events.append("tearDown")
+              events.append("tearDown")
 
           async def asyncTearDown(self):
               await self._async_connection.close()
