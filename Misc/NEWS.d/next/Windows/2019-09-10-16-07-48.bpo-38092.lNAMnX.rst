@@ -1,0 +1,1 @@
+Fix an internal issue affecting the creation of new processes in Windows when running Python from a virtual environment.
