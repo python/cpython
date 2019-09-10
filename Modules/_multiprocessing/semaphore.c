@@ -436,7 +436,7 @@ semlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *result;
     char *name, *name_copy = NULL;
     static const char *kwlist[] = {"kind", "value", "maxvalue", "name", "unlink",
-                             NULL};
+                                   NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "iiisi", kwlist,
                                      &kind, &value, &maxvalue, &name, &unlink))
