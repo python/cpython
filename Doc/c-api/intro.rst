@@ -46,9 +46,7 @@ Include Files
 =============
 
 All function, type and macro definitions needed to use the Python/C API are
-included in your code by the following line:
-
-.. code:: c
+included in your code by the following line::
 
    #define PY_SSIZE_T_CLEAN
    #include <Python.h>
@@ -71,7 +69,7 @@ standard headers) have one of the prefixes ``Py`` or ``_Py``.  Names beginning
 with ``_Py`` are for internal use by the Python implementation and should not be
 used by extension writers. Structure member names do not have a reserved prefix.
 
-.. important::
+.. note::
 
    User code should never define names that begin with ``Py`` or
    ``_Py``.  This confuses the reader, and jeopardizes the portability of the user
@@ -94,11 +92,9 @@ multi-platform builds since the platform independent headers under
 :envvar:`prefix` include the platform specific headers from
 :envvar:`exec_prefix`.
 
-.. note::
-
-   C++ users should note that although the API is defined entirely using C, the
-   header files properly declare the entry points to be ``extern "C"``. As a result,
-   there is no need to do anything special to use the API from C++.
+C++ users should note that although the API is defined entirely using C, the
+header files properly declare the entry points to be ``extern "C"``. As a result,
+there is no need to do anything special to use the API from C++.
 
 
 Useful macros
