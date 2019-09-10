@@ -42,7 +42,7 @@ jobs:
     testRunPlatform: macos
 
   pool:
-    vmImage: xcode9-macos10.13
+    vmImage: macos-10.14
 
   steps:
   - template: ./macos-steps.yml
