@@ -1,0 +1,2 @@
+IDLE no longer adds 'argv' to the user namespace when initializing it.  This
+bug only affected 3.7.4 and 3.8.0b2 to 3.8.0b4.
