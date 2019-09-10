@@ -1,0 +1,3 @@
+When adding a wrapper descriptor from one class to a different class
+(for example, setting ``__add__ = str.__add__`` on an ``int`` subclass),
+an exception is correctly raised when the operator is called.
