@@ -12,10 +12,29 @@ import time as _time
 import math as _math
 import sys
 
-from collections import namedtuple
 
+class IsoCalendarDate(tuple):
+    def __new__(cls, seq):
+        if len(seq) != 3:
+            raise TypeError(f'{cls.__name__}() takes a 3-sequence '
+                    f'({len(seq)}-sequence given)')
+        return tuple.__new__(cls, seq)
 
-IsoCalendarDate = namedtuple('IsoCalendarDate', 'year week weekday')
+    @property
+    def year(self):
+        return self[0]
+
+    @property
+    def week(self):
+        return self[1]
+
+    @property
+    def weekday(self):
+        return self[2]
+
+    def __repr__(self):
+        return (f'{self.__class__.__name__}'
+            f'(year={self[0]}, week={self[1]}, weekday={self[2]})')
 
 
 def _cmp(x, y):
@@ -1126,7 +1145,7 @@ class date:
             if today >= _isoweek1monday(year+1):
                 year += 1
                 week = 0
-        return IsoCalendarDate(year, week+1, day+1)
+        return IsoCalendarDate((year, week+1, day+1))
 
     # Pickle support.
 
