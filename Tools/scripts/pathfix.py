@@ -70,7 +70,7 @@ def main():
         if o == '-a':
             add_flags = a.encode()
             if b' ' in add_flags:
-                err('Does not support arguments')
+                err("-a option doesn't support whitespaces")
                 sys.exit(2)
     if not new_interpreter or not new_interpreter.startswith(b'/') or \
            not args:
