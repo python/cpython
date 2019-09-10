@@ -160,10 +160,13 @@ class Lock(_ContextManagerMixin):
     def __init__(self, *, loop=None):
         self._waiters = None
         self._locked = False
-        if loop is not None:
-            self._loop = loop
-        else:
+        if loop is None:
             self._loop = events.get_event_loop()
+        else:
+            self._loop = loop
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
 
     def __repr__(self):
         res = super().__repr__()
@@ -253,10 +256,13 @@ class Event:
     def __init__(self, *, loop=None):
         self._waiters = collections.deque()
         self._value = False
-        if loop is not None:
-            self._loop = loop
-        else:
+        if loop is None:
             self._loop = events.get_event_loop()
+        else:
+            self._loop = loop
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
 
     def __repr__(self):
         res = super().__repr__()
@@ -317,10 +323,13 @@ class Condition(_ContextManagerMixin):
     """
 
     def __init__(self, lock=None, *, loop=None):
-        if loop is not None:
-            self._loop = loop
-        else:
+        if loop is None:
             self._loop = events.get_event_loop()
+        else:
+            self._loop = loop
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
 
         if lock is None:
             lock = Lock(loop=self._loop)
@@ -445,10 +454,13 @@ class Semaphore(_ContextManagerMixin):
             raise ValueError("Semaphore initial value must be >= 0")
         self._value = value
         self._waiters = collections.deque()
-        if loop is not None:
-            self._loop = loop
-        else:
+        if loop is None:
             self._loop = events.get_event_loop()
+        else:
+            self._loop = loop
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
 
     def __repr__(self):
         res = super().__repr__()
@@ -508,6 +520,11 @@ class BoundedSemaphore(Semaphore):
     """
 
     def __init__(self, value=1, *, loop=None):
+        if loop:
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
+
         self._bound_value = value
         super().__init__(value, loop=loop)
 
