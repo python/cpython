@@ -2935,7 +2935,6 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
         Py_ssize_t oldsize;
         Py_buffer wb;
 
-        wb.len = -1;
         if (PyObject_GetBuffer(w, &wb, PyBUF_SIMPLE) != 0) {
             PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
                          Py_TYPE(w)->tp_name, Py_TYPE(*pv)->tp_name);
