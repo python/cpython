@@ -2300,7 +2300,7 @@ PyLong_FromString(const char *str, char **pend, int base)
                         "int() arg 2 must be >= 2 and <= 36");
         return NULL;
     }
-    while (*str != '\0' && Py_ISSPACE(Py_CHARMASK(*str))) {
+    while (*str != '\0' && Py_ISSPACE(*str)) {
         str++;
     }
     if (*str == '+') {
@@ -2609,7 +2609,7 @@ digit beyond the first.
     if (sign < 0) {
         Py_SIZE(z) = -(Py_SIZE(z));
     }
-    while (*str && Py_ISSPACE(Py_CHARMASK(*str))) {
+    while (*str && Py_ISSPACE(*str)) {
         str++;
     }
     if (*str != '\0') {

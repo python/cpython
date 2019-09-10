@@ -671,8 +671,8 @@ Tkapp_New(const char *screenName, const char *className,
     }
 
     strcpy(argv0, className);
-    if (Py_ISUPPER(Py_CHARMASK(argv0[0])))
-        argv0[0] = Py_TOLOWER(Py_CHARMASK(argv0[0]));
+    if (Py_ISUPPER(argv0[0]))
+        argv0[0] = Py_TOLOWER(argv0[0]);
     Tcl_SetVar(v->interp, "argv0", argv0, TCL_GLOBAL_ONLY);
     PyMem_Free(argv0);
 
