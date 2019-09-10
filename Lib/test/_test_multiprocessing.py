@@ -3732,16 +3732,21 @@ class _TestSharedMemory(BaseTestCase):
         with unittest.mock.patch(
             'multiprocessing.shared_memory._make_filename') as mock_make_filename:
 
+            NAME_PREFIX = shared_memory._SHM_NAME_PREFIX
             names = ['test01_fn', 'test02_fn']
+            # Prepend NAME_PREFIX which can be '/psm_' or 'wnsm_', necessary
+            # because some POSIX compliant systems require name to start with /
+            names = [NAME_PREFIX + name for name in names]
+
             mock_make_filename.side_effect = names
             shm1 = shared_memory.SharedMemory(create=True, size=1)
             self.addCleanup(shm1.unlink)
-            self.assertEqual(shm1.name, names[0])
+            self.assertEqual(shm1._name, names[0])
 
             mock_make_filename.side_effect = names
             shm2 = shared_memory.SharedMemory(create=True, size=1)
             self.addCleanup(shm2.unlink)
-            self.assertEqual(shm2.name, names[1])
+            self.assertEqual(shm2._name, names[1])
 
         if shared_memory._USE_POSIX:
             # Posix Shared Memory can only be unlinked once.  Here we
