@@ -43,6 +43,7 @@ PyObject *_PyLong_One = NULL;
 static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
 
 #define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
+#define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
 
 #ifdef COUNT_ALLOCS
 Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
@@ -78,6 +79,7 @@ maybe_small_long(PyLongObject *v)
 }
 #else
 #define IS_SMALL_INT(ival) 0
+#define IS_SMALL_UINT(ival) 0
 #define get_small_int(ival) (Py_UNREACHABLE(), NULL)
 #define maybe_small_long(val) (val)
 #endif
@@ -378,32 +380,52 @@ PyLong_FromLong(long ival)
     return (PyObject *)v;
 }
 
+#define PYLONG_FROM_UINT(INT_TYPE, ival) \
+    do { \
+        if (IS_SMALL_UINT(ival)) { \
+            return get_small_int((ival)); \
+        } \
+        /* Count the number of Python digits. */ \
+        Py_ssize_t ndigits = 0; \
+        INT_TYPE t = (ival); \
+        while (t) { \
+            ++ndigits; \
+            t >>= PyLong_SHIFT; \
+        } \
+        PyLongObject *v = _PyLong_New(ndigits); \
+        if (v == NULL) { \
+            return NULL; \
+        } \
+        digit *p = v->ob_digit; \
+        while ((ival)) { \
+            *p++ = (digit)((ival) & PyLong_MASK); \
+            (ival) >>= PyLong_SHIFT; \
+        } \
+        return (PyObject *)v; \
+    } while(0)
+
 /* Create a new int object from a C unsigned long int */
 
 PyObject *
 PyLong_FromUnsignedLong(unsigned long ival)
 {
-    PyLongObject *v;
-    unsigned long t;
-    int ndigits = 0;
+    PYLONG_FROM_UINT(unsigned long, ival);
+}
 
-    if (ival < PyLong_BASE)
-        return PyLong_FromLong(ival);
-    /* Count the number of Python digits. */
-    t = ival;
-    while (t) {
-        ++ndigits;
-        t >>= PyLong_SHIFT;
-    }
-    v = _PyLong_New(ndigits);
-    if (v != NULL) {
-        digit *p = v->ob_digit;
-        while (ival) {
-            *p++ = (digit)(ival & PyLong_MASK);
-            ival >>= PyLong_SHIFT;
-        }
-    }
-    return (PyObject *)v;
+/* Create a new int object from a C unsigned long long int. */
+
+PyObject *
+PyLong_FromUnsignedLongLong(unsigned long long ival)
+{
+    PYLONG_FROM_UINT(unsigned long long, ival);
+}
+
+/* Create a new int object from a C size_t. */
+
+PyObject *
+PyLong_FromSize_t(size_t ival)
+{
+    PYLONG_FROM_UINT(size_t, ival);
 }
 
 /* Create a new int object from a C double */
@@ -1186,34 +1208,6 @@ PyLong_FromLongLong(long long ival)
     return (PyObject *)v;
 }
 
-/* Create a new int object from a C unsigned long long int. */
-
-PyObject *
-PyLong_FromUnsignedLongLong(unsigned long long ival)
-{
-    PyLongObject *v;
-    unsigned long long t;
-    int ndigits = 0;
-
-    if (ival < PyLong_BASE)
-        return PyLong_FromLong((long)ival);
-    /* Count the number of Python digits. */
-    t = ival;
-    while (t) {
-        ++ndigits;
-        t >>= PyLong_SHIFT;
-    }
-    v = _PyLong_New(ndigits);
-    if (v != NULL) {
-        digit *p = v->ob_digit;
-        while (ival) {
-            *p++ = (digit)(ival & PyLong_MASK);
-            ival >>= PyLong_SHIFT;
-        }
-    }
-    return (PyObject *)v;
-}
-
 /* Create a new int object from a C Py_ssize_t. */
 
 PyObject *
@@ -1252,35 +1246,6 @@ PyLong_FromSsize_t(Py_ssize_t ival)
         while (t) {
             *p++ = (digit)(t & PyLong_MASK);
             t >>= PyLong_SHIFT;
-        }
-    }
-    return (PyObject *)v;
-}
-
-/* Create a new int object from a C size_t. */
-
-PyObject *
-PyLong_FromSize_t(size_t ival)
-{
-    PyLongObject *v;
-    size_t t;
-    int ndigits = 0;
-
-    if (ival < PyLong_BASE)
-        return PyLong_FromLong((long)ival);
-    /* Count the number of Python digits. */
-    t = ival;
-    while (t) {
-        ++ndigits;
-        t >>= PyLong_SHIFT;
-    }
-    v = _PyLong_New(ndigits);
-    if (v != NULL) {
-        digit *p = v->ob_digit;
-        Py_SIZE(v) = ndigits;
-        while (ival) {
-            *p++ = (digit)(ival & PyLong_MASK);
-            ival >>= PyLong_SHIFT;
         }
     }
     return (PyObject *)v;
