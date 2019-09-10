@@ -3706,7 +3706,7 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)             \
 static PyObject *                                              \
 dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)  \
 {                                                              \
-    static const char *kwlist[] = {"context", NULL};                 \
+    static const char *kwlist[] = {"context", NULL};           \
     PyObject *result;                                          \
     PyObject *context = Py_None;                               \
     uint32_t status = 0;                                       \
