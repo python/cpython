@@ -45,7 +45,7 @@ class Queue:
         # Futures.
         self._putters = collections.deque()
         self._unfinished_tasks = 0
-        self._finished = locks.Event(loop=self._loop)
+        self._finished = locks.Event(loop=loop)
         self._finished.set()
         self._init(maxsize)
 
