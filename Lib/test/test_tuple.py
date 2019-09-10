@@ -59,6 +59,7 @@ class TupleTest(seq_tests.CommonTest):
         u2 = u
         u += (2, 3)
         self.assertTrue(u is not u2)
+        import sys
         if sys.platform == "darwin":
             # XXX: Just to test timeouts on macOS
             import time
