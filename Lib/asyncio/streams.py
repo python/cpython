@@ -1133,9 +1133,9 @@ class _BaseStreamProtocol(FlowControlMixin, protocols.Protocol):
         stream = self._stream
         if stream is not None:
             if exc is None:
-                stream.feed_eof()
+                stream._feed_eof()
             else:
-                stream.set_exception(exc)
+                stream._set_exception(exc)
         if not self._closed.done():
             if exc is None:
                 self._closed.set_result(None)
@@ -1147,12 +1147,12 @@ class _BaseStreamProtocol(FlowControlMixin, protocols.Protocol):
     def data_received(self, data):
         stream = self._stream
         if stream is not None:
-            stream.feed_data(data)
+            stream._feed_data(data)
 
     def eof_received(self):
         stream = self._stream
         if stream is not None:
-            stream.feed_eof()
+            stream._feed_eof()
         if self._over_ssl:
             # Prevent a warning in SSLProtocol.eof_received:
             # "returning true from eof_received()
@@ -1219,7 +1219,7 @@ class _StreamProtocol(_BaseStreamProtocol):
         stream = self._stream
         if stream is None:
             return
-        stream.set_transport(transport)
+        stream._set_transport(transport)
         stream._protocol = self
 
     def connection_lost(self, exc):
@@ -1351,6 +1351,11 @@ class Stream:
 
     @property
     def transport(self):
+        warnings.warn("Stream.transport attribute is deprecated "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
         return self._transport
 
     def write(self, data):
@@ -1366,7 +1371,7 @@ class Stream:
     def _fast_drain(self):
         # The helper tries to use fast-path to return already existing
         # complete future object if underlying transport is not paused
-        #and actual waiting for writing resume is not needed
+        # and actual waiting for writing resume is not needed
         exc = self.exception()
         if exc is not None:
             fut = self._loop.create_future()
@@ -1450,6 +1455,14 @@ class Stream:
         return self._exception
 
     def set_exception(self, exc):
+        warnings.warn("Stream.set_exception() is deprecated "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
+        self._set_exception(exc)
+
+    def _set_exception(self, exc):
         self._exception = exc
 
         waiter = self._waiter
@@ -1467,6 +1480,14 @@ class Stream:
                 waiter.set_result(None)
 
     def set_transport(self, transport):
+        warnings.warn("Stream.set_transport() is deprecated "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
+        self._set_transport(transport)
+
+    def _set_transport(self, transport):
         if transport is self._transport:
             return
         assert self._transport is None, 'Transport already set'
@@ -1478,6 +1499,14 @@ class Stream:
             self._transport.resume_reading()
 
     def feed_eof(self):
+        warnings.warn("Stream.feed_eof() is deprecated "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
+        self._feed_eof()
+
+    def _feed_eof(self):
         self._eof = True
         self._wakeup_waiter()
 
@@ -1486,6 +1515,14 @@ class Stream:
         return self._eof and not self._buffer
 
     def feed_data(self, data):
+        warnings.warn("Stream.feed_data() is deprecated "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
+        self._feed_data(data)
+
+    def _feed_data(self, data):
         _ensure_can_read(self._mode)
         assert not self._eof, 'feed_data after feed_eof'
 
