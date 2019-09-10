@@ -2142,7 +2142,9 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
    Called to implement :func:`operator.length_hint`. Should return an estimated
    length for the object (which may be greater or less than the actual length).
-   The length must be an integer ``>=`` 0. This method is purely an
+   The length must be an integer ``>=`` 0. The return value may also be
+   :const:`NotImplemented`, which is treated the same as if the
+   ``__length_hint__`` method didn't exist at all. This method is purely an
    optimization and is never required for correctness.
 
    .. versionadded:: 3.4
