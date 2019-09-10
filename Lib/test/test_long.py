@@ -958,13 +958,11 @@ class LongTest(unittest.TestCase):
 
     @support.cpython_only
     def test_small_ints_in_huge_calculation(self):
-        a = 2 ** SHIFT
-        b = 2 ** SHIFT - 1
-        c = 2 ** SHIFT + 1
-        d = -a
-        self.assertIsNot(a + b, 2 ** (SHIFT + 1) - 1)
-        self.assertIs(a - b, 1)
-        self.assertIs(c + d, 1)
+        a = 2 ** 100
+        b = -a + 1
+        c = a + 1
+        self.assertIs(a + b, 1)
+        self.assertIs(c - a, 1)
 
     def test_small_ints(self):
         for i in range(-5, 257):
