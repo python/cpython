@@ -1,0 +1,3 @@
+Change "clean" makefile target to also clean the program guided optimization
+(PGO) data.  Previously you would have to use "make clean" and "make
+profile-removal", or "make clobber".

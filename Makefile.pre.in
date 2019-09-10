@@ -461,7 +461,7 @@ check-clean-src:
 
 # Profile generation build must start from a clean tree.
 profile-clean-stamp:
-	$(MAKE) clean profile-removal
+	$(MAKE) clean
 	touch $@
 
 # Compile with profile generation enabled.
@@ -485,7 +485,7 @@ profile-run-stamp:
 	$(MAKE) run_profile_task
 	$(MAKE) build_all_merge_profile
 	# Remove profile generation binary since we are done with it.
-	$(MAKE) clean
+	$(MAKE) clean-retain-profile
 	# This is an expensive target to build and it does not have proper
 	# makefile dependency information.  So, we create a "stamp" file
 	# to record its completion and avoid re-running it.
@@ -512,7 +512,7 @@ profile-opt: profile-run-stamp
 .PHONY=coverage coverage-lcov coverage-report
 coverage:
 	@echo "Building with support for coverage checking:"
-	$(MAKE) clean profile-removal
+	$(MAKE) clean
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg -fprofile-arcs -ftest-coverage" LIBS="$(LIBS) -lgcov"
 
 coverage-lcov:
@@ -1752,7 +1752,9 @@ docclean:
 	-rm -rf Doc/build
 	-rm -rf Doc/tools/sphinx Doc/tools/pygments Doc/tools/docutils
 
-clean: pycremoval
+# like the 'clean' target but retain the profile guided optimization (PGO)
+# data.  The PGO data is only valid if source code remains unchanged.
+clean-retain-profile: pycremoval
 	find . -name '*.[oa]' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
 	find . -name '*.so.[0-9]*.[0-9]*' -exec rm -f {} ';'
@@ -1774,14 +1776,19 @@ profile-removal:
 	rm -rf $(COVERAGE_REPORT)
 	rm -f profile-run-stamp
 
-clobber: clean profile-removal
+clean: clean-retain-profile
+	@if test @DEF_MAKE_ALL_RULE@ = profile-opt; then \
+		rm -f profile-gen-stamp profile-clean-stamp; \
+		$(MAKE) profile-removal; \
+	fi
+
+clobber: clean
 	-rm -f $(BUILDPYTHON) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
 		tags TAGS \
 		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
 	-rm -f python-config.py python-config
-	-rm -f profile-gen-stamp profile-clean-stamp
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
@@ -1855,6 +1862,8 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck clean clobber distclean
 .PHONY: smelly funny patchcheck touch altmaninstall commoninstall
+.PHONY: clean-retain-profile profile-removal run_profile_task
+.PHONY: build_all_generate_profile build_all_merge_profile
 .PHONY: gdbhooks
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
