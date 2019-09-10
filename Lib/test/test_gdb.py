@@ -873,7 +873,7 @@ id(42)
             ):
                 with self.subTest(f'{obj}.{func_name}'):
                     cmd = textwrap.dedent(f'''
-                        import _testcapi  # (not always needed)
+                        import _testcapi
                         def foo():
                             {obj}.{func_name}({args})
                         def bar():
