@@ -293,7 +293,7 @@ channel_exceptions_init(PyObject *ns)
     // XXX Move the exceptions into per-module memory?
 
     // A channel-related operation failed.
-    ChannelError = PyErr_NewException("_xxsubinterpreters.ChannelError",
+    ChannelError = PyErr_NewException("_interpreters.ChannelError",
                                       PyExc_RuntimeError, NULL);
     if (ChannelError == NULL) {
         return -1;
@@ -304,7 +304,7 @@ channel_exceptions_init(PyObject *ns)
 
     // An operation tried to use a channel that doesn't exist.
     ChannelNotFoundError = PyErr_NewException(
-            "_xxsubinterpreters.ChannelNotFoundError", ChannelError, NULL);
+            "_interpreters.ChannelNotFoundError", ChannelError, NULL);
     if (ChannelNotFoundError == NULL) {
         return -1;
     }
@@ -314,7 +314,7 @@ channel_exceptions_init(PyObject *ns)
 
     // An operation tried to use a closed channel.
     ChannelClosedError = PyErr_NewException(
-            "_xxsubinterpreters.ChannelClosedError", ChannelError, NULL);
+            "_interpreters.ChannelClosedError", ChannelError, NULL);
     if (ChannelClosedError == NULL) {
         return -1;
     }
@@ -324,7 +324,7 @@ channel_exceptions_init(PyObject *ns)
 
     // An operation tried to pop from an empty channel.
     ChannelEmptyError = PyErr_NewException(
-            "_xxsubinterpreters.ChannelEmptyError", ChannelError, NULL);
+            "_interpreters.ChannelEmptyError", ChannelError, NULL);
     if (ChannelEmptyError == NULL) {
         return -1;
     }
@@ -334,7 +334,7 @@ channel_exceptions_init(PyObject *ns)
 
     // An operation tried to close a non-empty channel.
     ChannelNotEmptyError = PyErr_NewException(
-            "_xxsubinterpreters.ChannelNotEmptyError", ChannelError, NULL);
+            "_interpreters.ChannelNotEmptyError", ChannelError, NULL);
     if (ChannelNotEmptyError == NULL) {
         return -1;
     }
@@ -1736,7 +1736,7 @@ PyDoc_STRVAR(channelid_doc,
 
 static PyTypeObject ChannelIDtype = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "_xxsubinterpreters.ChannelID", /* tp_name */
+    "_interpreters.ChannelID", /* tp_name */
     sizeof(channelid),              /* tp_basicsize */
     0,                              /* tp_itemsize */
     (destructor)channelid_dealloc,  /* tp_dealloc */
@@ -1793,7 +1793,7 @@ interp_exceptions_init(PyObject *ns)
 
     if (RunFailedError == NULL) {
         // An uncaught exception came out of interp_run_string().
-        RunFailedError = PyErr_NewException("_xxsubinterpreters.RunFailedError",
+        RunFailedError = PyErr_NewException("_interpreters.RunFailedError",
                                             PyExc_RuntimeError, NULL);
         if (RunFailedError == NULL) {
             return -1;
@@ -2519,7 +2519,7 @@ The 'interpreters' module provides a more convenient interface.");
 
 static struct PyModuleDef interpretersmodule = {
     PyModuleDef_HEAD_INIT,
-    "_xxsubinterpreters",  /* m_name */
+    "_interpreters",  /* m_name */
     module_doc,            /* m_doc */
     -1,                    /* m_size */
     module_functions,      /* m_methods */
@@ -2531,7 +2531,7 @@ static struct PyModuleDef interpretersmodule = {
 
 
 PyMODINIT_FUNC
-PyInit__xxsubinterpreters(void)
+PyInit__interpreters(void)
 {
     if (_init_globals() != 0) {
         return NULL;

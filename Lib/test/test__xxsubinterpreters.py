@@ -13,7 +13,7 @@ from test import support
 from test.support import script_helper
 
 
-interpreters = support.import_module('_xxsubinterpreters')
+interpreters = support.import_module('_interpreters')
 
 
 ##################################
@@ -446,7 +446,7 @@ class GetCurrentTests(TestBase):
         main = interpreters.get_main()
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             cur = _interpreters.get_current()
             print(cur)
             assert isinstance(cur, _interpreters.InterpreterID)
@@ -469,7 +469,7 @@ class GetMainTests(TestBase):
         [expected] = interpreters.list_all()
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             main = _interpreters.get_main()
             print(main)
             assert isinstance(main, _interpreters.InterpreterID)
@@ -495,7 +495,7 @@ class IsRunningTests(TestBase):
     def test_from_subinterpreter(self):
         interp = interpreters.create()
         out = _run_output(interp, dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             if _interpreters.is_running({interp}):
                 print(True)
             else:
@@ -616,7 +616,7 @@ class CreateTests(TestBase):
         main, = interpreters.list_all()
         id1 = interpreters.create()
         out = _run_output(id1, dedent("""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             id = _interpreters.create()
             print(id)
             assert isinstance(id, _interpreters.InterpreterID)
@@ -632,7 +632,7 @@ class CreateTests(TestBase):
         def f():
             nonlocal id2
             out = _run_output(id1, dedent("""
-                import _xxsubinterpreters as _interpreters
+                import _interpreters
                 id = _interpreters.create()
                 print(id)
                 """))
@@ -726,7 +726,7 @@ class DestroyTests(TestBase):
         main, = interpreters.list_all()
         id = interpreters.create()
         script = dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             try:
                 _interpreters.destroy({id})
             except RuntimeError:
@@ -741,7 +741,7 @@ class DestroyTests(TestBase):
         id1 = interpreters.create()
         id2 = interpreters.create()
         script = dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             _interpreters.destroy({id2})
             """)
         interpreters.run_string(id1, script)
@@ -1057,7 +1057,7 @@ class RunStringTests(TestBase):
         script = dedent(f"""
         from textwrap import dedent
         import threading
-        import _xxsubinterpreters as _interpreters
+        import _interpreters
         id = _interpreters.create()
         def f():
             _interpreters.run_string(id, dedent('''
@@ -1191,7 +1191,7 @@ class ChannelTests(TestBase):
     def test_ids_global(self):
         id1 = interpreters.create()
         out = _run_output(id1, dedent("""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             cid = _interpreters.channel_create()
             print(cid)
             """))
@@ -1199,7 +1199,7 @@ class ChannelTests(TestBase):
 
         id2 = interpreters.create()
         out = _run_output(id2, dedent("""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             cid = _interpreters.channel_create()
             print(cid)
             """))
@@ -1221,7 +1221,7 @@ class ChannelTests(TestBase):
     def test_send_recv_same_interpreter(self):
         id1 = interpreters.create()
         out = _run_output(id1, dedent("""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             cid = _interpreters.channel_create()
             orig = b'spam'
             _interpreters.channel_send(cid, orig)
@@ -1234,7 +1234,7 @@ class ChannelTests(TestBase):
         cid = interpreters.channel_create()
         id1 = interpreters.create()
         out = _run_output(id1, dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             _interpreters.channel_send({cid}, b'spam')
             """))
         obj = interpreters.channel_recv(cid)
@@ -1270,7 +1270,7 @@ class ChannelTests(TestBase):
             nonlocal out
             out = _run_output(id1, dedent(f"""
                 import time
-                import _xxsubinterpreters as _interpreters
+                import _interpreters
                 while True:
                     try:
                         obj = _interpreters.channel_recv({cid})
@@ -1307,7 +1307,7 @@ class ChannelTests(TestBase):
         interp = interpreters.create()
 
         out = _run_output(interp, dedent("""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             print(cid.end)
             _interpreters.channel_send(cid, b'spam')
             """),
@@ -1327,7 +1327,7 @@ class ChannelTests(TestBase):
         interp = interpreters.create()
 
         out = _run_output(interp, dedent("""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             print(chan.id.end)
             _interpreters.channel_send(chan.id, b'spam')
             """),
@@ -1355,11 +1355,11 @@ class ChannelTests(TestBase):
         id1 = interpreters.create()
         id2 = interpreters.create()
         interpreters.run_string(id1, dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             _interpreters.channel_send({cid}, b'spam')
             """))
         interpreters.run_string(id2, dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             _interpreters.channel_recv({cid})
             """))
         interpreters.channel_close(cid)
@@ -1498,7 +1498,7 @@ class ChannelTests(TestBase):
         interpreters.channel_send(cid, b'spam')
         interp = interpreters.create()
         interpreters.run_string(interp, dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             _interpreters.channel_close({cid}, force=True)
             """))
         with self.assertRaises(interpreters.ChannelClosedError):
@@ -1579,11 +1579,11 @@ class ChannelReleaseTests(TestBase):
         id1 = interpreters.create()
         id2 = interpreters.create()
         interpreters.run_string(id1, dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             _interpreters.channel_send({cid}, b'spam')
             """))
         out = _run_output(id2, dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             obj = _interpreters.channel_recv({cid})
             _interpreters.channel_release({cid})
             print(repr(obj))
@@ -1637,7 +1637,7 @@ class ChannelReleaseTests(TestBase):
         interpreters.channel_send(cid, b'spam')
         interp = interpreters.create()
         interpreters.run_string(interp, dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             _interpreters.channel_release({cid})
             """))
         obj = interpreters.channel_recv(cid)
@@ -1652,7 +1652,7 @@ class ChannelReleaseTests(TestBase):
         cid = interpreters.channel_create()
         interp = interpreters.create()
         interpreters.run_string(interp, dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             obj = _interpreters.channel_send({cid}, b'spam')
             _interpreters.channel_release({cid})
             """))
@@ -1756,12 +1756,12 @@ class ChannelCloseFixture(namedtuple('ChannelCloseFixture',
         else:
             ch = interpreters.channel_create()
             run_interp(creator.id, f"""
-                import _xxsubinterpreters
-                cid = _xxsubinterpreters.channel_create()
+                import _interpreters
+                cid = _interpreters.channel_create()
                 # We purposefully send back an int to avoid tying the
                 # channel to the other interpreter.
-                _xxsubinterpreters.channel_send({ch}, int(cid))
-                del _xxsubinterpreters
+                _interpreters.channel_send({ch}, int(cid))
+                del _interpreters
                 """)
             self._cid = interpreters.channel_recv(ch)
         return self._cid
@@ -1788,7 +1788,7 @@ class ChannelCloseFixture(namedtuple('ChannelCloseFixture',
         if interp.name == 'main':
             return
         run_interp(interp.id, f"""
-            import _xxsubinterpreters as interpreters
+            import _interpreters as interpreters
             import test.test__xxsubinterpreters as helpers
             ChannelState = helpers.ChannelState
             try:
