@@ -46,10 +46,9 @@ FILTER_DIR = True
 _safe_super = super
 
 def _is_async_obj(obj):
-    if getattr(obj, '__code__', None):
-        return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
-    else:
+    if _is_instance_mock(obj) and not isinstance(obj, AsyncMock):
         return False
+    return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
 
 
 def _is_async_func(func):
