@@ -1,6 +1,6 @@
 variables:
   manylinux: false
-  coverage: true
+  coverage: false
 
 resources:
   containers:
