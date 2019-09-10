@@ -12741,37 +12741,6 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 done
 
-for ac_func in gettimeofday
-do :
-  ac_fn_c_check_func "$LINENO" "gettimeofday" "ac_cv_func_gettimeofday"
-if test "x$ac_cv_func_gettimeofday" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_GETTIMEOFDAY 1
-_ACEOF
- cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/time.h>
-int
-main ()
-{
-gettimeofday((struct timeval*)0,(struct timezone*)0);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-else
-
-$as_echo "#define GETTIMEOFDAY_NO_TZ 1" >>confdefs.h
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-done
-
 
 # We search for both crypt and crypt_r as one or the other may be defined
 # This gets us our -lcrypt in LIBS when required on the target platform.
