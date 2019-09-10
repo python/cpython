@@ -7197,8 +7197,9 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
         *pp = NULL;
     }
 
-    /* Look in all matching slots of the type; if exactly one of these has
-       a filled-in slot, return its value.      Otherwise return NULL. */
+    /* Look in all slots of the type matching the name. If exactly one of these
+       has a filled-in slot, return a pointer to that slot.
+       Otherwise, return NULL. */
     res = NULL;
     for (pp = ptrs; *pp; pp++) {
         ptr = slotptr(type, (*pp)->offset);
@@ -7211,12 +7212,61 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
     return res;
 }
 
-/* Common code for update_slots_callback() and fixup_slot_dispatchers().  This
-   does some incredibly complex thinking and then sticks something into the
-   slot.  (It sees if the adjacent slotdefs for the same slot have conflicting
-   interests, and then stores a generic wrapper or a specific function into
-   the slot.)  Return a pointer to the next slotdef with a different offset,
-   because that's convenient  for fixup_slot_dispatchers(). */
+
+/* Common code for update_slots_callback() and fixup_slot_dispatchers().
+ *
+ * This is meant to set a "slot" like type->tp_repr or
+ * type->tp_as_sequence->sq_concat by looking up special methods like
+ * __repr__ or __add__. The opposite (adding special methods from slots) is
+ * done by add_operators(), called from PyType_Ready(). Since update_one_slot()
+ * calls PyType_Ready() if needed, the special methods are already in place.
+ *
+ * The special methods corresponding to each slot are defined in the "slotdef"
+ * array. Note that one slot may correspond to multiple special methods and vice
+ * versa. For example, tp_richcompare uses 6 methods __lt__, ..., __ge__ and
+ * tp_as_number->nb_add uses __add__ and __radd__. In the other direction,
+ * __add__ is used by the number and sequence protocols and __getitem__ by the
+ * sequence and mapping protocols. This causes a lot of complications.
+ *
+ * In detail, update_one_slot() does the following:
+ *
+ * First of all, if the slot in question does not exist, return immediately.
+ * This can happen for example if it's tp_as_number->nb_add but tp_as_number
+ * is NULL.
+ *
+ * For the given slot, we loop over all the special methods with a name
+ * corresponding to that slot (for example, for tp_descr_set, this would be
+ * __set__ and __delete__) and we look up these names in the MRO of the type.
+ * If we don't find any special method, the slot is set to NULL (regardless of
+ * what was in the slot before).
+ *
+ * Suppose that we find exactly one special method. If it's a wrapper_descriptor
+ * (i.e. a special method calling a slot, for example str.__repr__ which calls
+ * the tp_repr for the 'str' class) with the correct name ("__repr__" for
+ * tp_repr), for the right class, calling the right wrapper C function (like
+ * wrap_unaryfunc for tp_repr), then the slot is set to the slot that the
+ * wrapper_descriptor originally wrapped. For example, a class inheriting
+ * from 'str' and not redefining __repr__ will have tp_repr set to the tp_repr
+ * of 'str'.
+ * In all other cases where the special method exists, the slot is set to a
+ * wrapper calling the special method. There is one exception: if the special
+ * method is a wrapper_descriptor with the correct name but the type has
+ * precisely one slot set for that name and that slot is not the one that we
+ * are updating, then NULL is put in the slot (this exception is the only place
+ * in update_one_slot() where the *existing* slots matter).
+ *
+ * When there are multiple special methods for the same slot, the above is
+ * applied for each special method. As long as the results agree, the common
+ * resulting slot is applied. If the results disagree, then a wrapper for
+ * the special methods is installed. This is always safe, but less efficient
+ * because it uses method lookup instead of direct C calls.
+ *
+ * There are some further special cases for specific slots, like supporting
+ * __hash__ = None for tp_hash and special code for tp_new.
+ *
+ * When done, return a pointer to the next slotdef with a different offset,
+ * because that's convenient for fixup_slot_dispatchers(). This function never
+ * sets an exception: if an internal error happens (unlikely), it's ignored. */
 static slotdef *
 update_one_slot(PyTypeObject *type, slotdef *p)
 {
@@ -7241,7 +7291,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         descr = find_name_in_mro(type, p->name_strobj, &error);
         if (descr == NULL) {
             if (error == -1) {
-                /* It is unlikely by not impossible that there has been an exception
+                /* It is unlikely but not impossible that there has been an exception
                    during lookup. Since this function originally expected no errors,
                    we ignore them here in order to keep up the interface. */
                 PyErr_Clear();
