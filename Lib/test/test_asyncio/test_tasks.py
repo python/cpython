@@ -1231,15 +1231,16 @@ class BaseTaskTests:
             for f in asyncio.as_completed([b, c, a], loop=loop):
                 values.append(await f)
             return values
-
-        res = loop.run_until_complete(self.new_task(loop, foo()))
+        with self.assertWarns(DeprecationWarning):
+            res = loop.run_until_complete(self.new_task(loop, foo()))
         self.assertAlmostEqual(0.15, loop.time())
         self.assertTrue('a' in res[:2])
         self.assertTrue('b' in res[:2])
         self.assertEqual(res[2], 'c')
 
         # Doing it again should take no time and exercise a different path.
-        res = loop.run_until_complete(self.new_task(loop, foo()))
+        with self.assertWarns(DeprecationWarning):
+            res = loop.run_until_complete(self.new_task(loop, foo()))
         self.assertAlmostEqual(0.15, loop.time())
 
     def test_as_completed_with_timeout(self):
@@ -1267,7 +1268,8 @@ class BaseTaskTests:
                     values.append((2, exc))
             return values
 
-        res = loop.run_until_complete(self.new_task(loop, foo()))
+        with self.assertWarns(DeprecationWarning):
+            res = loop.run_until_complete(self.new_task(loop, foo()))
         self.assertEqual(len(res), 2, res)
         self.assertEqual(res[0], (1, 'a'))
         self.assertEqual(res[1][0], 2)
@@ -1294,7 +1296,8 @@ class BaseTaskTests:
                 v = await f
                 self.assertEqual(v, 'a')
 
-        loop.run_until_complete(self.new_task(loop, foo()))
+        with self.assertWarns(DeprecationWarning):
+            loop.run_until_complete(self.new_task(loop, foo()))
 
     def test_as_completed_reverse_wait(self):
 
@@ -1308,7 +1311,9 @@ class BaseTaskTests:
         a = asyncio.sleep(0.05, 'a')
         b = asyncio.sleep(0.10, 'b')
         fs = {a, b}
-        futs = list(asyncio.as_completed(fs, loop=loop))
+
+        with self.assertWarns(DeprecationWarning):
+            futs = list(asyncio.as_completed(fs, loop=loop))
         self.assertEqual(len(futs), 2)
 
         x = loop.run_until_complete(futs[1])
@@ -1333,7 +1338,8 @@ class BaseTaskTests:
         a = asyncio.sleep(0.05, 'a')
         b = asyncio.sleep(0.05, 'b')
         fs = {a, b}
-        futs = list(asyncio.as_completed(fs, loop=loop))
+        with self.assertWarns(DeprecationWarning):
+            futs = list(asyncio.as_completed(fs, loop=loop))
         self.assertEqual(len(futs), 2)
         waiter = asyncio.wait(futs)
         done, pending = loop.run_until_complete(waiter)
@@ -1356,8 +1362,9 @@ class BaseTaskTests:
                     result.append((yield from f))
                 return result
 
-        fut = self.new_task(self.loop, runner())
-        self.loop.run_until_complete(fut)
+        with self.assertWarns(DeprecationWarning):
+            fut = self.new_task(self.loop, runner())
+            self.loop.run_until_complete(fut)
         result = fut.result()
         self.assertEqual(set(result), {'ham', 'spam'})
         self.assertEqual(len(result), 2)
