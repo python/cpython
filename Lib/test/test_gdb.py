@@ -844,6 +844,12 @@ id(42)
     # Some older versions of gdb will fail with
     #  "Cannot find new threads: generic error"
     # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
+    #
+    # gdb will also generate many erroneous errors such as:
+    #     Function "meth_varargs" not defined.
+    # This is because we are calling functions from an "external" module
+    # (_testcapimodule) rather than compiled-in functions. It seems difficult
+    # to suppress these. See also the comment in DebuggerTests.get_stack_trace
     def test_pycfunction(self):
         'Verify that "py-bt" displays invocations of PyCFunction instances'
         # Various optimizations multiply the code paths by which these are
@@ -866,12 +872,14 @@ id(42)
                 # '_testcapi.MethInstance()',
             ):
                 with self.subTest(f'{obj}.{func_name}'):
-                    cmd = ('import _testcapi\n'  # (not always needed)
-                        'def foo():\n'
-                        f'    {obj}.{func_name}({args})\n'
-                        'def bar():\n'
-                        '    foo()\n'
-                        'bar()\n')
+                    cmd = textwrap.dedent(f'''
+                        import _testcapi  # (not always needed)
+                        def foo():
+                            {obj}.{func_name}({args})
+                        def bar():
+                            foo()
+                        bar()
+                    ''')
                     # Verify with "py-bt":
                     gdb_output = self.get_stack_trace(
                         cmd,
