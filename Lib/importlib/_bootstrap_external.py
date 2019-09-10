@@ -1370,21 +1370,19 @@ class PathFinder:
         return spec.loader
 
     @classmethod
-    def find_distributions(cls, name=None, path=None):
+    def find_distributions(self, context=None):
         """
         Find distributions.
 
         Return an iterable of all Distribution instances capable of
-        loading the metadata for packages matching the ``name``
-        (or all names if not supplied) along the paths in the list
-        of directories ``path`` (defaults to sys.path).
+        loading the metadata for packages matching ``context.name``
+        (or all names if ``None`` indicated) along the paths in the list
+        of directories ``context.path``.
         """
-        import re
-        from importlib.metadata import PathDistribution
-        if path is None:
-            path = sys.path
-        pattern = '.*' if name is None else re.escape(name)
-        found = cls._search_paths(pattern, path)
+        from importlib.metadata import PathDistribution, DistributionFinder
+        if context is None:
+            context = DistributionFinder.Context()
+        found = self._search_paths(context.pattern, context.path)
         return map(PathDistribution, found)
 
     @classmethod
