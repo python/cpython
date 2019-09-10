@@ -395,7 +395,7 @@ def check_output(*popenargs, timeout=None, **kwargs):
     b'when in the course of barman events\n'
 
     By default, all communication is in bytes, and therefore any "input"
-    should be bytes, and the return value wil be bytes.  If in text mode,
+    should be bytes, and the return value will be bytes.  If in text mode,
     any "input" should be a string, and the return value will be a string
     decoded according to locale encoding, or by "encoding" if set. Text mode
     is triggered by setting any of text, encoding, errors or universal_newlines.
