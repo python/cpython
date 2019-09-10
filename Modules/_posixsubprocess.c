@@ -49,18 +49,28 @@
 
 #define POSIX_CALL(call)   do { if ((call) == -1) goto error; } while (0)
 
+typedef struct {
+    PyObject* disable;
+    PyObject* enable;
+    PyObject* isenabled;
+} _posixsubprocessstate;
+
+static struct PyModuleDef _posixsubprocessmodule;
+
+#define _posixsubprocessstate(o) ((_posixsubprocessstate *)PyModule_GetState(o))
+#define _posixsubprocessstate_global _posixsubprocessstate(PyState_FindModule(&_posixsubprocessmodule))
 
 /* If gc was disabled, call gc.enable().  Return 0 on success. */
 static int
 _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
 {
     PyObject *result;
-    _Py_IDENTIFIER(enable);
     PyObject *exctype, *val, *tb;
 
     if (need_to_reenable_gc) {
         PyErr_Fetch(&exctype, &val, &tb);
-        result = _PyObject_CallMethodIdNoArgs(gc_module, &PyId_enable);
+        result = _PyObject_CallMethodNoArgs(
+            gc_module, _posixsubprocessstate_global->enable);
         if (exctype != NULL) {
             PyErr_Restore(exctype, val, tb);
         }
@@ -602,13 +612,12 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     /* We need to call gc.disable() when we'll be calling preexec_fn */
     if (preexec_fn != Py_None) {
         PyObject *result;
-        _Py_IDENTIFIER(isenabled);
-        _Py_IDENTIFIER(disable);
 
         gc_module = PyImport_ImportModule("gc");
         if (gc_module == NULL)
             return NULL;
-        result = _PyObject_CallMethodIdNoArgs(gc_module, &PyId_isenabled);
+        result = _PyObject_CallMethodNoArgs(
+            gc_module, _posixsubprocessstate_global->isenabled);
         if (result == NULL) {
             Py_DECREF(gc_module);
             return NULL;
@@ -619,7 +628,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             Py_DECREF(gc_module);
             return NULL;
         }
-        result = _PyObject_CallMethodIdNoArgs(gc_module, &PyId_disable);
+        result = _PyObject_CallMethodNoArgs(
+            gc_module, _posixsubprocessstate_global->disable);
         if (result == NULL) {
             Py_DECREF(gc_module);
             return NULL;
@@ -798,16 +808,56 @@ static PyMethodDef module_methods[] = {
 };
 
 
+static int _posixsubprocess_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(_posixsubprocessstate(m)->disable);
+    Py_VISIT(_posixsubprocessstate(m)->enable);
+    Py_VISIT(_posixsubprocessstate(m)->isenabled);
+    return 0;
+}
+
+static int _posixsubprocess_clear(PyObject *m) {
+    Py_CLEAR(_posixsubprocessstate(m)->disable);
+    Py_CLEAR(_posixsubprocessstate(m)->enable);
+    Py_CLEAR(_posixsubprocessstate(m)->isenabled);
+    return 0;
+}
+
+static void _posixsubprocess_free(void *m) {
+    _posixsubprocess_clear((PyObject *)m);
+}
+
 static struct PyModuleDef _posixsubprocessmodule = {
         PyModuleDef_HEAD_INIT,
         "_posixsubprocess",
         module_doc,
-        -1,  /* No memory is needed. */
+        sizeof(_posixsubprocessstate),
         module_methods,
+        NULL,
+        _posixsubprocess_traverse,
+        _posixsubprocess_clear,
+        _posixsubprocess_free,
 };
 
 PyMODINIT_FUNC
 PyInit__posixsubprocess(void)
 {
-    return PyModule_Create(&_posixsubprocessmodule);
+    PyObject* m;
+
+    m = PyState_FindModule(&_posixsubprocessmodule);
+    if (m != NULL) {
+      Py_INCREF(m);
+      return m;
+    }
+
+    m = PyModule_Create(&_posixsubprocessmodule);
+    if (m == NULL) {
+      return NULL;
+    }
+
+    _posixsubprocessstate(m)->disable = PyUnicode_InternFromString("disable");
+    _posixsubprocessstate(m)->enable = PyUnicode_InternFromString("enable");
+    _posixsubprocessstate(m)->isenabled = PyUnicode_InternFromString("isenabled");
+
+    PyState_AddModule(m, &_posixsubprocessmodule);
+    return m;
 }
