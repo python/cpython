@@ -12,6 +12,7 @@
 
 .. testsetup::
 
+    import asyncio
     import unittest
     from unittest.mock import Mock, MagicMock, patch, call, sentinel
 
@@ -274,6 +275,44 @@ function returns is what the call returns:
     1
     >>> mock(2, 3)
     2
+
+
+Mocking asynchronous iterators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since Python 3.8, ``MagicMock`` has support to mock :ref:`async-iterators`
+through ``__aiter__``. The :attr:`~Mock.return_value` attribute of ``__aiter__``
+can be used to set the return values to be used for iteration.
+
+    >>> mock = MagicMock()
+    >>> mock.__aiter__.return_value = [1, 2, 3]
+    >>> async def main():
+    ...     return [i async for i in mock]
+    >>> asyncio.run(main())
+    [1, 2, 3]
+
+
+Mocking asynchronous context manager
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since Python 3.8, ``MagicMock`` has support to mock
+:ref:`async-context-managers` through ``__aenter__`` and ``__aexit__``. The
+return value of ``__aenter__`` is an :class:`AsyncMock`.
+
+    >>> class AsyncContextManager:
+    ...
+    ...     async def __aenter__(self):
+    ...         return self
+    ...
+    ...     async def __aexit__(self):
+    ...         pass
+    >>> mock_instance = MagicMock(AsyncContextManager())
+    >>> async def main():
+    ...     async with mock_instance as result:
+    ...         pass
+    >>> asyncio.run(main())
+    >>> mock_instance.__aenter__.assert_called_once()
+    >>> mock_instance.__aexit__.assert_called_once()
 
 
 Creating a Mock from an Existing Object
