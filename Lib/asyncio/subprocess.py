@@ -50,7 +50,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                                          limit=self._limit,
                                          loop=self._loop,
                                          _asyncio_internal=True)
-            self.stdout.set_transport(stdout_transport)
+            self.stdout._set_transport(stdout_transport)
             self._pipe_fds.append(1)
 
         stderr_transport = transport.get_pipe_transport(2)
@@ -61,7 +61,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                                          limit=self._limit,
                                          loop=self._loop,
                                          _asyncio_internal=True)
-            self.stderr.set_transport(stderr_transport)
+            self.stderr._set_transport(stderr_transport)
             self._pipe_fds.append(2)
 
         stdin_transport = transport.get_pipe_transport(0)
@@ -80,7 +80,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         else:
             reader = None
         if reader is not None:
-            reader.feed_data(data)
+            reader._feed_data(data)
 
     def pipe_connection_lost(self, fd, exc):
         if fd == 0:
@@ -101,9 +101,9 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
             reader = None
         if reader is not None:
             if exc is None:
-                reader.feed_eof()
+                reader._feed_eof()
             else:
-                reader.set_exception(exc)
+                reader._set_exception(exc)
 
         if fd in self._pipe_fds:
             self._pipe_fds.remove(fd)

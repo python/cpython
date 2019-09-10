@@ -98,8 +98,8 @@ class StreamReaderTests(BaseTest):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(DATA)
-        stream.feed_eof()
+        stream._feed_data(DATA)
+        stream._feed_eof()
 
         async def reader():
             data = []

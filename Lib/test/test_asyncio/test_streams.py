@@ -165,7 +165,7 @@ class StreamTests(test_utils.TestCase):
                                 loop=self.loop,
                                 _asyncio_internal=True)
 
-        stream.feed_data(b'')
+        stream._feed_data(b'')
         self.assertEqual(b'', stream._buffer)
 
     def test_feed_nonempty_data(self):
@@ -173,7 +173,7 @@ class StreamTests(test_utils.TestCase):
                                 loop=self.loop,
                                 _asyncio_internal=True)
 
-        stream.feed_data(self.DATA)
+        stream._feed_data(self.DATA)
         self.assertEqual(self.DATA, stream._buffer)
 
     def test_read_zero(self):
@@ -181,7 +181,7 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(self.DATA)
+        stream._feed_data(self.DATA)
 
         data = self.loop.run_until_complete(stream.read(0))
         self.assertEqual(b'', data)
@@ -195,7 +195,7 @@ class StreamTests(test_utils.TestCase):
         read_task = asyncio.Task(stream.read(30), loop=self.loop)
 
         def cb():
-            stream.feed_data(self.DATA)
+            stream._feed_data(self.DATA)
         self.loop.call_soon(cb)
 
         data = self.loop.run_until_complete(read_task)
@@ -207,8 +207,8 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'line1')
-        stream.feed_data(b'line2')
+        stream._feed_data(b'line1')
+        stream._feed_data(b'line2')
 
         data = self.loop.run_until_complete(stream.read(5))
 
@@ -223,7 +223,7 @@ class StreamTests(test_utils.TestCase):
         read_task = asyncio.Task(stream.read(1024), loop=self.loop)
 
         def cb():
-            stream.feed_eof()
+            stream._feed_eof()
         self.loop.call_soon(cb)
 
         data = self.loop.run_until_complete(read_task)
@@ -238,9 +238,9 @@ class StreamTests(test_utils.TestCase):
         read_task = asyncio.Task(stream.read(-1), loop=self.loop)
 
         def cb():
-            stream.feed_data(b'chunk1\n')
-            stream.feed_data(b'chunk2')
-            stream.feed_eof()
+            stream._feed_data(b'chunk1\n')
+            stream._feed_data(b'chunk2')
+            stream._feed_eof()
         self.loop.call_soon(cb)
 
         data = self.loop.run_until_complete(read_task)
@@ -252,12 +252,12 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'line\n')
+        stream._feed_data(b'line\n')
 
         data = self.loop.run_until_complete(stream.read(2))
         self.assertEqual(b'li', data)
 
-        stream.set_exception(ValueError())
+        stream._set_exception(ValueError())
         self.assertRaises(
             ValueError, self.loop.run_until_complete, stream.read(2))
 
@@ -276,7 +276,7 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 limit=3, loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'chunk')
+        stream._feed_data(b'chunk')
         data = self.loop.run_until_complete(stream.read(5))
         self.assertEqual(b'chunk', data)
         self.assertEqual(b'', stream._buffer)
@@ -287,13 +287,13 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'chunk1 ')
+        stream._feed_data(b'chunk1 ')
         read_task = asyncio.Task(stream.readline(), loop=self.loop)
 
         def cb():
-            stream.feed_data(b'chunk2 ')
-            stream.feed_data(b'chunk3 ')
-            stream.feed_data(b'\n chunk4')
+            stream._feed_data(b'chunk2 ')
+            stream._feed_data(b'chunk3 ')
+            stream._feed_data(b'\n chunk4')
         self.loop.call_soon(cb)
 
         line = self.loop.run_until_complete(read_task)
@@ -307,8 +307,8 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 limit=3, loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'li')
-        stream.feed_data(b'ne1\nline2\n')
+        stream._feed_data(b'li')
+        stream._feed_data(b'ne1\nline2\n')
 
         self.assertRaises(
             ValueError, self.loop.run_until_complete, stream.readline())
@@ -318,9 +318,9 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 limit=3, loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'li')
-        stream.feed_data(b'ne1')
-        stream.feed_data(b'li')
+        stream._feed_data(b'li')
+        stream._feed_data(b'ne1')
+        stream._feed_data(b'li')
 
         self.assertRaises(
             ValueError, self.loop.run_until_complete, stream.readline())
@@ -337,14 +337,14 @@ class StreamTests(test_utils.TestCase):
                                 _asyncio_internal=True)
         self.assertFalse(stream.at_eof())
 
-        stream.feed_data(b'some data\n')
+        stream._feed_data(b'some data\n')
         self.assertFalse(stream.at_eof())
 
         self.loop.run_until_complete(stream.readline())
         self.assertFalse(stream.at_eof())
 
-        stream.feed_data(b'some data\n')
-        stream.feed_eof()
+        stream._feed_data(b'some data\n')
+        stream._feed_eof()
         self.loop.run_until_complete(stream.readline())
         self.assertTrue(stream.at_eof())
 
@@ -356,10 +356,10 @@ class StreamTests(test_utils.TestCase):
                                 limit=7, loop=self.loop,
                                 _asyncio_internal=True)
         def cb():
-            stream.feed_data(b'chunk1')
-            stream.feed_data(b'chunk2')
-            stream.feed_data(b'chunk3\n')
-            stream.feed_eof()
+            stream._feed_data(b'chunk1')
+            stream._feed_data(b'chunk2')
+            stream._feed_data(b'chunk3\n')
+            stream._feed_eof()
         self.loop.call_soon(cb)
 
         self.assertRaises(
@@ -372,10 +372,10 @@ class StreamTests(test_utils.TestCase):
                                 limit=7, loop=self.loop,
                                 _asyncio_internal=True)
         def cb():
-            stream.feed_data(b'chunk1')
-            stream.feed_data(b'chunk2\n')
-            stream.feed_data(b'chunk3\n')
-            stream.feed_eof()
+            stream._feed_data(b'chunk1')
+            stream._feed_data(b'chunk2\n')
+            stream._feed_data(b'chunk3\n')
+            stream._feed_eof()
         self.loop.call_soon(cb)
 
         self.assertRaises(
@@ -386,17 +386,17 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 limit=7, loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'1234567\n')
+        stream._feed_data(b'1234567\n')
         line = self.loop.run_until_complete(stream.readline())
         self.assertEqual(b'1234567\n', line)
         self.assertEqual(b'', stream._buffer)
 
-        stream.feed_data(b'12345678\n')
+        stream._feed_data(b'12345678\n')
         with self.assertRaises(ValueError) as cm:
             self.loop.run_until_complete(stream.readline())
         self.assertEqual(b'', stream._buffer)
 
-        stream.feed_data(b'12345678')
+        stream._feed_data(b'12345678')
         with self.assertRaises(ValueError) as cm:
             self.loop.run_until_complete(stream.readline())
         self.assertEqual(b'', stream._buffer)
@@ -407,8 +407,8 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(self.DATA[:6])
-        stream.feed_data(self.DATA[6:])
+        stream._feed_data(self.DATA[:6])
+        stream._feed_data(self.DATA[6:])
 
         line = self.loop.run_until_complete(stream.readline())
 
@@ -419,8 +419,8 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'some data')
-        stream.feed_eof()
+        stream._feed_data(b'some data')
+        stream._feed_eof()
 
         line = self.loop.run_until_complete(stream.readline())
         self.assertEqual(b'some data', line)
@@ -429,7 +429,7 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_eof()
+        stream._feed_eof()
 
         line = self.loop.run_until_complete(stream.readline())
         self.assertEqual(b'', line)
@@ -438,7 +438,7 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(self.DATA)
+        stream._feed_data(self.DATA)
 
         self.loop.run_until_complete(stream.readline())
 
@@ -451,12 +451,12 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'line\n')
+        stream._feed_data(b'line\n')
 
         data = self.loop.run_until_complete(stream.readline())
         self.assertEqual(b'line\n', data)
 
-        stream.set_exception(ValueError())
+        stream._set_exception(ValueError())
         self.assertRaises(
             ValueError, self.loop.run_until_complete, stream.readline())
         self.assertEqual(b'', stream._buffer)
@@ -473,17 +473,17 @@ class StreamTests(test_utils.TestCase):
                                 loop=self.loop,
                                 _asyncio_internal=True)
 
-        stream.feed_data(b'lineAAA')
+        stream._feed_data(b'lineAAA')
         data = self.loop.run_until_complete(stream.readuntil(separator=b'AAA'))
         self.assertEqual(b'lineAAA', data)
         self.assertEqual(b'', stream._buffer)
 
-        stream.feed_data(b'lineAAA')
+        stream._feed_data(b'lineAAA')
         data = self.loop.run_until_complete(stream.readuntil(b'AAA'))
         self.assertEqual(b'lineAAA', data)
         self.assertEqual(b'', stream._buffer)
 
-        stream.feed_data(b'lineAAAxxx')
+        stream._feed_data(b'lineAAAxxx')
         data = self.loop.run_until_complete(stream.readuntil(b'AAA'))
         self.assertEqual(b'lineAAA', data)
         self.assertEqual(b'xxx', stream._buffer)
@@ -493,34 +493,34 @@ class StreamTests(test_utils.TestCase):
                                 loop=self.loop,
                                 _asyncio_internal=True)
 
-        stream.feed_data(b'QWEaa')
-        stream.feed_data(b'XYaa')
-        stream.feed_data(b'a')
+        stream._feed_data(b'QWEaa')
+        stream._feed_data(b'XYaa')
+        stream._feed_data(b'a')
         data = self.loop.run_until_complete(stream.readuntil(b'aaa'))
         self.assertEqual(b'QWEaaXYaaa', data)
         self.assertEqual(b'', stream._buffer)
 
-        stream.feed_data(b'QWEaa')
-        stream.feed_data(b'XYa')
-        stream.feed_data(b'aa')
+        stream._feed_data(b'QWEaa')
+        stream._feed_data(b'XYa')
+        stream._feed_data(b'aa')
         data = self.loop.run_until_complete(stream.readuntil(b'aaa'))
         self.assertEqual(b'QWEaaXYaaa', data)
         self.assertEqual(b'', stream._buffer)
 
-        stream.feed_data(b'aaa')
+        stream._feed_data(b'aaa')
         data = self.loop.run_until_complete(stream.readuntil(b'aaa'))
         self.assertEqual(b'aaa', data)
         self.assertEqual(b'', stream._buffer)
 
-        stream.feed_data(b'Xaaa')
+        stream._feed_data(b'Xaaa')
         data = self.loop.run_until_complete(stream.readuntil(b'aaa'))
         self.assertEqual(b'Xaaa', data)
         self.assertEqual(b'', stream._buffer)
 
-        stream.feed_data(b'XXX')
-        stream.feed_data(b'a')
-        stream.feed_data(b'a')
-        stream.feed_data(b'a')
+        stream._feed_data(b'XXX')
+        stream._feed_data(b'a')
+        stream._feed_data(b'a')
+        stream._feed_data(b'a')
         data = self.loop.run_until_complete(stream.readuntil(b'aaa'))
         self.assertEqual(b'XXXaaa', data)
         self.assertEqual(b'', stream._buffer)
@@ -529,8 +529,8 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'some dataAA')
-        stream.feed_eof()
+        stream._feed_data(b'some dataAA')
+        stream._feed_eof()
 
         with self.assertRaises(asyncio.IncompleteReadError) as cm:
             self.loop.run_until_complete(stream.readuntil(b'AAA'))
@@ -542,7 +542,7 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop, limit=3,
                                 _asyncio_internal=True)
-        stream.feed_data(b'some dataAA')
+        stream._feed_data(b'some dataAA')
 
         with self.assertRaisesRegex(asyncio.LimitOverrunError,
                                     'not found') as cm:
@@ -550,7 +550,7 @@ class StreamTests(test_utils.TestCase):
 
         self.assertEqual(b'some dataAA', stream._buffer)
 
-        stream.feed_data(b'A')
+        stream._feed_data(b'A')
         with self.assertRaisesRegex(asyncio.LimitOverrunError,
                                     'is found') as cm:
             self.loop.run_until_complete(stream.readuntil(b'AAA'))
@@ -562,7 +562,7 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(self.DATA)
+        stream._feed_data(self.DATA)
 
         data = self.loop.run_until_complete(stream.readexactly(0))
         self.assertEqual(b'', data)
@@ -582,9 +582,9 @@ class StreamTests(test_utils.TestCase):
         read_task = asyncio.Task(stream.readexactly(n), loop=self.loop)
 
         def cb():
-            stream.feed_data(self.DATA)
-            stream.feed_data(self.DATA)
-            stream.feed_data(self.DATA)
+            stream._feed_data(self.DATA)
+            stream._feed_data(self.DATA)
+            stream._feed_data(self.DATA)
         self.loop.call_soon(cb)
 
         data = self.loop.run_until_complete(read_task)
@@ -595,7 +595,7 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 limit=3, loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'chunk')
+        stream._feed_data(b'chunk')
         data = self.loop.run_until_complete(stream.readexactly(5))
         self.assertEqual(b'chunk', data)
         self.assertEqual(b'', stream._buffer)
@@ -609,8 +609,8 @@ class StreamTests(test_utils.TestCase):
         read_task = asyncio.Task(stream.readexactly(n), loop=self.loop)
 
         def cb():
-            stream.feed_data(self.DATA)
-            stream.feed_eof()
+            stream._feed_data(self.DATA)
+            stream._feed_eof()
         self.loop.call_soon(cb)
 
         with self.assertRaises(asyncio.IncompleteReadError) as cm:
@@ -625,12 +625,12 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'line\n')
+        stream._feed_data(b'line\n')
 
         data = self.loop.run_until_complete(stream.readexactly(2))
         self.assertEqual(b'li', data)
 
-        stream.set_exception(ValueError())
+        stream._set_exception(ValueError())
         self.assertRaises(
             ValueError, self.loop.run_until_complete, stream.readexactly(2))
 
@@ -641,7 +641,7 @@ class StreamTests(test_utils.TestCase):
         self.assertIsNone(stream.exception())
 
         exc = ValueError()
-        stream.set_exception(exc)
+        stream._set_exception(exc)
         self.assertIs(stream.exception(), exc)
 
     def test_exception_waiter(self):
@@ -650,7 +650,7 @@ class StreamTests(test_utils.TestCase):
                                 _asyncio_internal=True)
 
         async def set_err():
-            stream.set_exception(ValueError())
+            stream._set_exception(ValueError())
 
         t1 = asyncio.Task(stream.readline(), loop=self.loop)
         t2 = asyncio.Task(set_err(), loop=self.loop)
@@ -669,7 +669,7 @@ class StreamTests(test_utils.TestCase):
         t.cancel()
         test_utils.run_briefly(self.loop)
         # The following line fails if set_exception() isn't careful.
-        stream.set_exception(RuntimeError('message'))
+        stream._set_exception(RuntimeError('message'))
         test_utils.run_briefly(self.loop)
         self.assertIs(stream._waiter, None)
 
@@ -993,14 +993,14 @@ os.close(fd)
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_eof()
+        stream._feed_eof()
         self.assertEqual("<Stream mode=StreamMode.READ eof>", repr(stream))
 
     def test___repr__data(self):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream.feed_data(b'data')
+        stream._feed_data(b'data')
         self.assertEqual("<Stream mode=StreamMode.READ 4 bytes>", repr(stream))
 
     def test___repr__exception(self):
@@ -1008,7 +1008,7 @@ os.close(fd)
                                 loop=self.loop,
                                 _asyncio_internal=True)
         exc = RuntimeError()
-        stream.set_exception(exc)
+        stream._set_exception(exc)
         self.assertEqual("<Stream mode=StreamMode.READ exception=RuntimeError()>",
                          repr(stream))
 
@@ -1260,7 +1260,7 @@ os.close(fd)
             stream = asyncio.Stream(mode=asyncio.StreamMode.WRITE,
                                     _asyncio_internal=True)
             with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
-                stream.feed_data(b'data')
+                stream._feed_data(b'data')
             with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
                 await stream.readline()
             with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
@@ -1784,6 +1784,30 @@ os.close(fd)
                                     "should be instantiated "
                                     "by asyncio internals only"):
             asyncio.Stream(asyncio.StreamMode.READWRITE)
+
+    def test_deprecated_methods(self):
+        async def f():
+            return asyncio.Stream(mode=asyncio.StreamMode.READWRITE,
+                                  _asyncio_internal=True)
+
+        stream = self.loop.run_until_complete(f())
+
+        tr = mock.Mock()
+
+        with self.assertWarns(DeprecationWarning):
+            stream.set_transport(tr)
+
+        with self.assertWarns(DeprecationWarning):
+            stream.transport is tr
+
+        with self.assertWarns(DeprecationWarning):
+            stream.feed_data(b'data')
+
+        with self.assertWarns(DeprecationWarning):
+            stream.feed_eof()
+
+        with self.assertWarns(DeprecationWarning):
+            stream.set_exception(ConnectionResetError("test"))
 
 
 if __name__ == '__main__':
