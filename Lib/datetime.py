@@ -1120,7 +1120,7 @@ class date:
         return self.toordinal() % 7 or 7
 
     def isocalendar(self):
-        """Return a named tuple containing ISO year, week number, and weekday.
+        """Return a IsoCalendarDate containing ISO year, week number, and weekday.
 
         The first ISO week of the year is the (Mon-Sun) week
         containing the year's first Thursday; everything else derives
