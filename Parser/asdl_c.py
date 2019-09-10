@@ -537,8 +537,11 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("if (%s == NULL) goto failed;" % field.name, depth+1)
             self.emit("for (i = 0; i < len; i++) {", depth+1)
             self.emit("%s val;" % ctype, depth+2)
-            self.emit("res = obj2ast_%s(PyList_GET_ITEM(tmp, i), &val, arena);" %
+            self.emit("PyObject *tmp2 = PyList_GET_ITEM(tmp, i);", depth+2)
+            self.emit("Py_INCREF(tmp2);", depth+2)
+            self.emit("res = obj2ast_%s(tmp2, &val, arena);" %
                       field.type, depth+2, reflow=False)
+            self.emit("Py_DECREF(tmp2);", depth+2)
             self.emit("if (res != 0) goto failed;", depth+2)
             self.emit("if (len != PyList_GET_SIZE(tmp)) {", depth+2)
             self.emit("PyErr_SetString(PyExc_RuntimeError, \"%s field \\\"%s\\\" "
@@ -576,14 +579,14 @@ class PyTypesDeclareVisitor(PickleVisitor):
         if prod.attributes:
             for a in prod.attributes:
                 self.emit_identifier(a.name)
-            self.emit("static char *%s_attributes[] = {" % name, 0)
+            self.emit("static const char * const %s_attributes[] = {" % name, 0)
             for a in prod.attributes:
                 self.emit('"%s",' % a.name, 1)
             self.emit("};", 0)
         if prod.fields:
             for f in prod.fields:
                 self.emit_identifier(f.name)
-            self.emit("static char *%s_fields[]={" % name,0)
+            self.emit("static const char * const %s_fields[]={" % name,0)
             for f in prod.fields:
                 self.emit('"%s",' % f.name, 1)
             self.emit("};", 0)
@@ -593,7 +596,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
         if sum.attributes:
             for a in sum.attributes:
                 self.emit_identifier(a.name)
-            self.emit("static char *%s_attributes[] = {" % name, 0)
+            self.emit("static const char * const %s_attributes[] = {" % name, 0)
             for a in sum.attributes:
                 self.emit('"%s",' % a.name, 1)
             self.emit("};", 0)
@@ -614,7 +617,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
         if cons.fields:
             for t in cons.fields:
                 self.emit_identifier(t.name)
-            self.emit("static char *%s_fields[]={" % cons.name, 0)
+            self.emit("static const char * const %s_fields[]={" % cons.name, 0)
             for t in cons.fields:
                 self.emit('"%s",' % t.name, 1)
             self.emit("};",0)
@@ -771,7 +774,8 @@ static PyTypeObject AST_type = {
 };
 
 
-static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int num_fields)
+static PyTypeObject *
+make_type(const char *type, PyTypeObject *base, const char * const *fields, int num_fields)
 {
     _Py_IDENTIFIER(__module__);
     _Py_IDENTIFIER(_ast);
@@ -780,7 +784,7 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
     fnames = PyTuple_New(num_fields);
     if (!fnames) return NULL;
     for (i = 0; i < num_fields; i++) {
-        PyObject *field = PyUnicode_FromString(fields[i]);
+        PyObject *field = PyUnicode_InternFromString(fields[i]);
         if (!field) {
             Py_DECREF(fnames);
             return NULL;
@@ -796,14 +800,15 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
     return (PyTypeObject*)result;
 }
 
-static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
+static int
+add_attributes(PyTypeObject *type, const char * const *attrs, int num_fields)
 {
     int i, result;
     PyObject *s, *l = PyTuple_New(num_fields);
     if (!l)
         return 0;
     for (i = 0; i < num_fields; i++) {
-        s = PyUnicode_FromString(attrs[i]);
+        s = PyUnicode_InternFromString(attrs[i]);
         if (!s) {
             Py_DECREF(l);
             return 0;
@@ -1193,7 +1198,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 {
     mod_ty res;
     PyObject *req_type[3];
-    char *req_name[] = {"Module", "Expression", "Interactive"};
+    const char * const req_name[] = {"Module", "Expression", "Interactive"};
     int isinstance;
 
     if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
