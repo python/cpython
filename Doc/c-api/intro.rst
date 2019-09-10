@@ -71,10 +71,10 @@ used by extension writers. Structure member names do not have a reserved prefix.
 
 .. note::
 
-   User code should never define names that begin with ``Py`` or
-   ``_Py``.  This confuses the reader, and jeopardizes the portability of the user
-   code to future Python versions, which may define additional names beginning with
-   one of these prefixes.
+   User code should never define names that begin with ``Py`` or ``_Py``. This
+   confuses the reader, and jeopardizes the portability of the user code to
+   future Python versions, which may define additional names beginning with one
+   of these prefixes.
 
 The header files are typically installed with Python.  On Unix, these  are
 located in the directories :file:`{prefix}/include/pythonversion/` and
