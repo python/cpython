@@ -162,6 +162,10 @@ class DiscoveryTests(fixtures.EggInfoPkg,
             for dist in dists
             )
 
+    def test_invalid_usage(self):
+        with self.assertRaises(ValueError):
+            list(distributions(context='something', name='else'))
+
 
 class DirectoryTest(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     def test_egg_info(self):
