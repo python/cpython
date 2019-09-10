@@ -31,7 +31,8 @@ This module defines the following functions:
 
 .. function:: destroy(id)
 
-   Destroy the interpreter whose ID is *id*.
+   Destroy the interpreter whose ID is *id*. Attempting to destroy the current
+   interpreter results in a `RuntimeError`. So does an unrecognized ID.
 
 .. function:: get_main()
 

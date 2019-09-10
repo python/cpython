@@ -1,18 +1,7 @@
 import interpreters
-import _interpreters #remove when all methods are implemented
-from collections import namedtuple
-import contextlib
-import itertools
 import os
-import pickle
-import sys
 from textwrap import dedent
-import threading
-import time
 import unittest
-
-from test import support
-from test.support import script_helper
 
 def _captured_script(script):
     r, w = os.pipe()
@@ -70,6 +59,7 @@ class CreateTests(TestBase):
     def test_create(self):
         id = interpreters.create()
         self.assertIn(id, interpreters.list_all())
+
 
 class DestroyTests(TestBase):
 

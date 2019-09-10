@@ -1,8 +1,10 @@
 """Sub-interpreters High Level Module."""
 
-import _interpreters
+__all__ = ['create', 'list_all', 'get_current', 'get_main',
+            'run_string', 'destroy']
 
-__all__ = ['create', 'list_all', 'get_current']
+
+import _interpreters
 
 # Rename so that "from interpreters import *" is safe
 _list_all = _interpreters.list_all
@@ -38,7 +40,6 @@ def get_main():
 
     Return the ID of the main interpreter.
     """
-
     return _get_main()
 
 def destroy(id):
@@ -46,7 +47,6 @@ def destroy(id):
 
     Destroy the identified interpreter.
     """
-
     return _interpreters.destroy(id)
 
 def run_string(id, script, shared):
@@ -55,5 +55,4 @@ def run_string(id, script, shared):
     Execute the provided string in the identified interpreter.
     See PyRun_SimpleStrings.
     """
-
     return _run_string(id, script, shared)
