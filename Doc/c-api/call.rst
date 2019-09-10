@@ -11,21 +11,24 @@ CPython supports two different calling protocols:
 The *tp_call* Protocol
 ----------------------
 
-Classes can implement callables by setting :c:member:`~PyTypeObject.tp_call`.
+Instances of classes that set :c:member:`~PyTypeObject.tp_call` are callable.
+The signature of the slot is::
+
+    PyObject *tp_call(PyObject *callable, PyObject *args, PyObject *kwargs);
 
 A call is made using a tuple for the positional arguments
-and a dict for the keyword arguments, just like ``f(*args, **kwargs)``
-in the Python language.
-*args* must be non-NULL
-(use an empty tuple if there are no arguments)
+and a dict for the keyword arguments, similarly to
+``callable(*args, **kwargs)`` in Python code.
+*args* must be non-NULL (use an empty tuple if there are no arguments)
 but *kwargs* may be *NULL* if there are no keyword arguments.
 
 This convention is not only used by *tp_call*:
 :c:member:`~PyTypeObject.tp_new` and :c:member:`~PyTypeObject.tp_init`
-also pass arguments this way
-(apart from the special handling of *subtype* and *self*).
+also pass arguments this way.
 
-For making a call this way, use :c:func:`PyObject_Call`.
+To call an object, use :c:func:`PyObject_Call` or other
+:ref:`call API <capi-call>`.
+
 
 .. _vectorcall:
 
@@ -34,30 +37,58 @@ The Vectorcall Protocol
 
 .. versionadded:: 3.8
 
-The vectorcall protocol was introduced in :pep:`590`
+The vectorcall protocol was introduced in :pep:`590` as an additional protocol
 for making calls more efficient.
+
+.. warning::
+
+   The vectorcall API is provisional and expected to become public in
+   Python 3.9, with a different name and, possibly, changed semantics.
+   If you use the function, plan for updating your code for Python 3.9.
+
+As rule of thumb, CPython will prefer the vectorcall for internal calls
+if the callable supports it. However, this is not a hard rule.
+Additionally, some third-party extensions use *tp_call* directly
+(rather than using :c:func:`PyObject_Call`).
+Therefore, a class supporting vectorcall must also implement
+:c:member:`~PyTypeObject.tp_call`.
+Moreover, the callable must behave the same
+regardless of which protocol is used.
+The recommended way to achieve this is by setting
+:c:member:`~PyTypeObject.tp_call` to :c:func:`PyVectorcall_Call`.
+This bears repeating:
+
+.. warning::
+
+   A class supporting vectorcall **must** also implement
+   :c:member:`~PyTypeObject.tp_call` with the same semantics.
+
+A class should not implement vectorcall if that would be slower
+than *tp_call*. For example, if the callee needs to convert
+the arguments to an args tuple and kwargs dict anyway, then there is no point
+in implementing vectorcall.
 
 Classes can implement the vectorcall protocol by enabling the
 :const:`_Py_TPFLAGS_HAVE_VECTORCALL` flag and setting
 :c:member:`~PyTypeObject.tp_vectorcall_offset` to the offset inside the
 object structure where a *vectorcallfunc* appears.
-This is a function with the following signature:
+This is a pointer to a function with the following signature:
 
 .. c:type:: PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 
-   - *callable* is the object being called.
-   - *args* is a C array consisting of the positional arguments followed by the
-     values of the keyword arguments.
-     This can be *NULL* if there are no arguments.
-   - *nargsf* is the number of positional arguments plus possibly the
-     :const:`PY_VECTORCALL_ARGUMENTS_OFFSET` flag.
-     To get the actual number of positional arguments from *nargsf*,
-     use :c:func:`PyVectorcall_NARGS`.
-   - *kwnames* is a tuple containing the names of the keyword arguments;
-     in other words, the keys of the kwargs dict.
-     These names must be strings (instances of ``str`` or a subclass)
-     and they must be unique.
-     If there are no keyword arguments, then *kwnames* can instead be *NULL*.
+- *callable* is the object being called.
+- *args* is a C array consisting of the positional arguments followed by the
+   values of the keyword arguments.
+   This can be *NULL* if there are no arguments.
+- *nargsf* is the number of positional arguments plus possibly the
+   :const:`PY_VECTORCALL_ARGUMENTS_OFFSET` flag.
+   To get the actual number of positional arguments from *nargsf*,
+   use :c:func:`PyVectorcall_NARGS`.
+- *kwnames* is a tuple containing the names of the keyword arguments;
+   in other words, the keys of the kwargs dict.
+   These names must be strings (instances of ``str`` or a subclass)
+   and they must be unique.
+   If there are no keyword arguments, then *kwnames* can instead be *NULL*.
 
 .. c:var:: PY_VECTORCALL_ARGUMENTS_OFFSET
 
@@ -74,27 +105,13 @@ This is a function with the following signature:
    Doing so will allow callables such as bound methods to make their onward
    calls (which include a prepended *self* argument) very efficiently.
 
-.. warning::
+To call an object that implements vectorcall, use a :ref:`call API <capi-call>`
+function as with any other callable.
+:c:func:`_PyObject_Vectorcall` will usually be most efficient.
 
-   As rule of thumb, CPython will internally use the vectorcall
-   protocol if the callable supports it. However, this is not a hard rule,
-   *tp_call* may be used instead.
-   Therefore, a class supporting vectorcall must also implement
-   :c:member:`~PyTypeObject.tp_call`.
-   Moreover, the callable must behave the same
-   regardless of which protocol is used.
-   The recommended way to achieve this is by setting
-   :c:member:`~PyTypeObject.tp_call` to :c:func:`PyVectorcall_Call`.
-
-   An object should not implement vectorcall if that would be slower
-   than *tp_call*. For example, if the callee needs to convert
-   the arguments to an args tuple and kwargs dict anyway, then there is no point
-   in implementing vectorcall.
-
-For making a vectorcall, use :c:func:`_PyObject_Vectorcall`.
 
 Recursion Control
------------------
+.................
 
 When using *tp_call*, callees do not need to worry about
 :ref:`recursion <recursion>`: CPython uses
@@ -105,13 +122,102 @@ For efficiency, this is not the case for calls done using vectorcall:
 the callee should use *Py_EnterRecursiveCall* and *Py_LeaveRecursiveCall*
 if needed.
 
-C API Functions
----------------
 
-.. c:function:: int PyCallable_Check(PyObject *o)
+Vectorcall Support API
+......................
 
-   Determine if the object *o* is callable.  Return ``1`` if the object is callable
-   and ``0`` otherwise.  This function always succeeds.
+.. c:function:: Py_ssize_t PyVectorcall_NARGS(size_t nargsf)
+
+   Given a vectorcall *nargsf* argument, return the actual number of
+   arguments.
+   Currently equivalent to::
+
+      (Py_ssize_t)(nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET)
+
+   However, the function ``PyVectorcall_NARGS`` should be used to allow
+   for future extensions.
+
+   .. versionadded:: 3.8
+
+.. c:function:: vectorcallfunc _PyVectorcall_Function(PyObject *op)
+
+   If *op* does not support the vectorcall protocol (either because the type
+   does not or because the specific instance does not), return *NULL*.
+   Otherwise, return the vectorcall function pointer stored in *op*.
+   This function never raises an exception.
+
+   This is mostly useful to check whether or not *op* supports vectorcall,
+   which can be done by checking ``_PyVectorcall_Function(op) != NULL``.
+
+   .. versionadded:: 3.8
+
+.. c:function:: PyObject* PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict)
+
+   Call *callable*'s :c:type:`vectorcallfunc` with positional and keyword
+   arguments given in a tuple and dict, respectively.
+
+   This is a specialized function, intended to be put in the
+   :c:member:`~PyTypeObject.tp_call` slot or be used in an implementation of ``tp_call``.
+   It does not check the :const:`_Py_TPFLAGS_HAVE_VECTORCALL` flag
+   and it does not fall back to ``tp_call``.
+
+   .. versionadded:: 3.8
+
+
+.. _capi-call:
+
+Object Calling API
+------------------
+
+Various functions are available for calling a Python object.
+Each converts its arguments to a convention supported by the called object –
+either *tp_call* or vectorcall.
+In order to do as litle conversion as possible, pick one that best fits
+the format of data you have available.
+
+The following table summarizes the available functions;
+please see individual documentation for details.
+
++------------------------------------------+------------------+--------------------+---------------+
+| Function                                 | callable         | args               | kwargs        |
++==========================================+==================+====================+===============+
+| :c:func:`PyObject_Call`                  | ``PyObject *``   | tuple              | dict/``NULL`` |
++------------------------------------------+------------------+--------------------+---------------+
+| :c:func:`PyObject_CallNoArgs`            | ``PyObject *``   | ---                | ---           |
++------------------------------------------+------------------+--------------------+---------------+
+| :c:func:`PyObject_CallOneArg`            | ``PyObject *``   | 1 object           | ---           |
++------------------------------------------+------------------+--------------------+---------------+
+| :c:func:`PyObject_CallObject`            | ``PyObject *``   | tuple/``NULL``     | ---           |
++------------------------------------------+------------------+--------------------+---------------+
+| :c:func:`PyObject_CallMethod`            | obj + ``char*``  | format             | ---           |
++------------------------------------------+------------------+--------------------+---------------+
+| :c:func:`PyObject_CallFunctionObjArgs`   | ``PyObject *``   | variadic           | ---           |
++------------------------------------------+------------------+--------------------+---------------+
+| :c:func:`PyObject_CallMethodObjArgs`     | obj + ``char*``  | variadic           | ---           |
++------------------------------------------+------------------+--------------------+---------------+
+| :c:func:`_PyObject_CallMethodOneArg`     | obj + ``char*``  | 1 object           | ---           |
++------------------------------------------+------------------+--------------------+---------------+
+| :c:func:`_PyObject_Vectorcall`           | ``PyObject *``   | vectorcall         | vectorcall    |
++------------------------------------------+------------------+--------------------+---------------+
+| :c:func:`_PyObject_FastCallDict`         | ``PyObject *``   | array & size       | dict/``NULL`` |
++------------------------------------------+------------------+--------------------+---------------+
+| :c:func:`_PyObject_VectorcallMethod`     | arg + ``char*``  | vectorcall         | vectorcall    |
++------------------------------------------+------------------+--------------------+---------------+
+
+
+.. c:function:: PyObject* PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
+
+   Call a callable Python object *callable*, with arguments given by the
+   tuple *args*, and named arguments given by the dictionary *kwargs*.
+
+   *args* must not be *NULL*; use an empty tuple if no arguments are needed.
+   If no named arguments are needed, *kwargs* can be *NULL*.
+
+   Return the result of the call on success, or raise an exception and return
+   *NULL* on failure.
+
+   This is the equivalent of the Python expression:
+   ``callable(*args, **kwargs)``.
 
 
 .. c:function:: PyObject* PyObject_CallNoArgs(PyObject *callable)
@@ -134,21 +240,6 @@ C API Functions
    *NULL* on failure.
 
    .. versionadded:: 3.9
-
-
-.. c:function:: PyObject* PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
-
-   Call a callable Python object *callable*, with arguments given by the
-   tuple *args*, and named arguments given by the dictionary *kwargs*.
-
-   *args* must not be *NULL*; use an empty tuple if no arguments are needed.
-   If no named arguments are needed, *kwargs* can be *NULL*.
-
-   Return the result of the call on success, or raise an exception and return
-   *NULL* on failure.
-
-   This is the equivalent of the Python expression:
-   ``callable(*args, **kwargs)``.
 
 
 .. c:function:: PyObject* PyObject_CallObject(PyObject *callable, PyObject *args)
@@ -286,43 +377,6 @@ C API Functions
 
    .. versionadded:: 3.8
 
-.. c:function:: Py_ssize_t PyVectorcall_NARGS(size_t nargsf)
-
-   Given a vectorcall *nargsf* argument, return the actual number of
-   arguments.
-   Currently equivalent to::
-
-      (Py_ssize_t)(nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET)
-
-   However, the function ``PyVectorcall_NARGS`` should be used to allow
-   for future extensions.
-
-   .. versionadded:: 3.8
-
-.. c:function:: vectorcallfunc _PyVectorcall_Function(PyObject *op)
-
-   If *op* does not support the vectorcall protocol (either because the type
-   does not or because the specific instance does not), return *NULL*.
-   Otherwise, return the vectorcall function pointer stored in *op*.
-   This function never raises an exception.
-
-   This is mostly useful to check whether or not *op* supports vectorcall,
-   which can be done by checking ``_PyVectorcall_Function(op) != NULL``.
-
-   .. versionadded:: 3.8
-
-.. c:function:: PyObject* PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict)
-
-   Call *callable*'s :c:type:`vectorcallfunc` with positional and keyword
-   arguments given in a tuple and dict, respectively.
-
-   This is a specialized function, intended to be put in the
-   :c:member:`~PyTypeObject.tp_call` slot or be used in an implementation of ``tp_call``.
-   It does not check the :const:`_Py_TPFLAGS_HAVE_VECTORCALL` flag
-   and it does not fall back to ``tp_call``.
-
-   .. versionadded:: 3.8
-
 .. c:function:: PyObject* _PyObject_VectorcallMethod(PyObject *name, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 
    Call a method using the vectorcall calling convention. The name of the method
@@ -335,10 +389,19 @@ C API Functions
    :c:func:`_PyObject_Vectorcall`.
 
    If the object has the :const:`Py_TPFLAGS_METHOD_DESCRIPTOR` feature,
-   this will actually call the unbound method object with the full
+   this will call the unbound method object with the full
    *args* vector as arguments.
 
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
    .. versionadded:: 3.9
+
+
+Call Support API
+----------------
+
+.. c:function:: int PyCallable_Check(PyObject *o)
+
+   Determine if the object *o* is callable.  Return ``1`` if the object is callable
+   and ``0`` otherwise.  This function always succeeds.
