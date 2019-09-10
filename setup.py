@@ -1905,11 +1905,11 @@ class PyBuildExt(build_ext):
         if HOST_PLATFORM == 'sunos5':
             include_dirs.append('/usr/openwin/include')
             added_lib_dirs.append('/usr/openwin/lib')
-        elif os.path.exists('/usr/X11R6/include'):
+        elif os.path.exists('/usr/X11R6/include/X11/Xlib.h'):
             include_dirs.append('/usr/X11R6/include')
             added_lib_dirs.append('/usr/X11R6/lib64')
             added_lib_dirs.append('/usr/X11R6/lib')
-        elif os.path.exists('/usr/X11R5/include'):
+        elif os.path.exists('/usr/X11R5/include/X11/Xlib.h'):
             include_dirs.append('/usr/X11R5/include')
             added_lib_dirs.append('/usr/X11R5/lib')
         else:

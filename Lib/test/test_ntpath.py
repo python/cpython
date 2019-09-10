@@ -23,10 +23,12 @@ else:
     HAVE_GETFINALPATHNAME = True
 
 
-def _norm(fn):
-    if isinstance(fn, (bytes, str, os.PathLike)):
-        return ntpath.normcase(os.fsdecode(fn))
-    return tuple(map(ntpath.normcase, map(os.fsdecode, fn)))
+def _norm(path):
+    if isinstance(path, (bytes, str, os.PathLike)):
+        return ntpath.normcase(os.fsdecode(path))
+    elif hasattr(path, "__iter__"):
+        return tuple(ntpath.normcase(os.fsdecode(p) for p in path))
+    return path
 
 
 def tester(fn, wantResult):
