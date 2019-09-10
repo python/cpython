@@ -222,10 +222,12 @@ are always available.  They are listed here in alphabetical order.
    implied first argument.
 
    Class methods are different than C++ or Java static methods. If you want those,
-   see :func:`staticmethod`.
-
+   see :func:`staticmethod` in this section.
    For more information on class methods, see :ref:`types`.
 
+   .. versionchanged:: 3.9
+      Class methods can now wrap other :term:`descriptors <descriptor>` such as
+      :func:`property`.
 
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
@@ -465,12 +467,16 @@ are always available.  They are listed here in alphabetical order.
    dictionaries as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
-   inserted under that key before *expression* is parsed.
-   This means that *expression* normally has full
-   access to the standard :mod:`builtins` module and restricted environments are
-   propagated.  If the *locals* dictionary is omitted it defaults to the *globals*
-   dictionary.  If both dictionaries are omitted, the expression is executed in the
-   environment where :func:`eval` is called.  The return value is the result of
+   inserted under that key before *expression* is parsed.  This means that
+   *expression* normally has full access to the standard :mod:`builtins`
+   module and restricted environments are propagated.  If the *locals*
+   dictionary is omitted it defaults to the *globals* dictionary.  If both
+   dictionaries are omitted, the expression is executed with the *globals* and
+   *locals* in the environment where :func:`eval` is called.  Note, *eval()*
+   does not have access to the :term:`nested scope`\s (non-locals) in the
+   enclosing environment.
+
+   The return value is the result of
    the evaluated expression. Syntax errors are reported as exceptions.  Example:
 
       >>> x = 1
@@ -1064,12 +1070,12 @@ are always available.  They are listed here in alphabetical order.
    ``'a'``   open for writing, appending to the end of the file if it exists
    ``'b'``   binary mode
    ``'t'``   text mode (default)
-   ``'+'``   open a disk file for updating (reading and writing)
+   ``'+'``   open for updating (reading and writing)
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
-   For binary read-write access, the mode ``'w+b'`` opens and truncates the file
-   to 0 bytes.  ``'r+b'`` opens the file without truncation.
+   Modes ``'w+'`` and ``'w+b'`` open and truncate the file.  Modes ``'r+'``
+   and ``'r+b'`` open the file with no truncation.
 
    As mentioned in the :ref:`io-overview`, Python distinguishes between binary
    and text I/O.  Files opened in binary mode (including ``'b'`` in the *mode*
@@ -1583,10 +1589,17 @@ are always available.  They are listed here in alphabetical order.
 
    Return a proxy object that delegates method calls to a parent or sibling
    class of *type*.  This is useful for accessing inherited methods that have
-   been overridden in a class. The search order is same as that used by
-   :func:`getattr` except that the *type* itself is skipped.
+   been overridden in a class.
 
-   The :attr:`~class.__mro__` attribute of the *type* lists the method
+   The *object-or-type* determines the :term:`method resolution order`
+   to be searched.  The search starts from the class right after the
+   *type*.
+
+   For example, if :attr:`~class.__mro__` of *object-or-type* is
+   ``D -> B -> C -> A -> object`` and the value of *type* is ``B``,
+   then :func:`super` searches ``C -> A -> object``.
+
+   The :attr:`~class.__mro__` attribute of the *object-or-type* lists the method
    resolution search order used by both :func:`getattr` and :func:`super`.  The
    attribute is dynamic and can change whenever the inheritance hierarchy is
    updated.

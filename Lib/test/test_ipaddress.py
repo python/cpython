@@ -12,6 +12,7 @@ import operator
 import pickle
 import ipaddress
 import weakref
+from test.support import LARGEST, SMALLEST
 
 
 class BaseTestCase(unittest.TestCase):
@@ -673,20 +674,6 @@ class FactoryFunctionErrors(BaseTestCase):
         self.assertFactoryError(ipaddress.ip_network, "network")
 
 
-@functools.total_ordering
-class LargestObject:
-    def __eq__(self, other):
-        return isinstance(other, LargestObject)
-    def __lt__(self, other):
-        return False
-
-@functools.total_ordering
-class SmallestObject:
-    def __eq__(self, other):
-        return isinstance(other, SmallestObject)
-    def __gt__(self, other):
-        return False
-
 class ComparisonTests(unittest.TestCase):
 
     v4addr = ipaddress.IPv4Address(1)
@@ -775,8 +762,6 @@ class ComparisonTests(unittest.TestCase):
 
     def test_foreign_type_ordering(self):
         other = object()
-        smallest = SmallestObject()
-        largest = LargestObject()
         for obj in self.objects:
             with self.assertRaises(TypeError):
                 obj < other
@@ -786,14 +771,14 @@ class ComparisonTests(unittest.TestCase):
                 obj <= other
             with self.assertRaises(TypeError):
                 obj >= other
-            self.assertTrue(obj < largest)
-            self.assertFalse(obj > largest)
-            self.assertTrue(obj <= largest)
-            self.assertFalse(obj >= largest)
-            self.assertFalse(obj < smallest)
-            self.assertTrue(obj > smallest)
-            self.assertFalse(obj <= smallest)
-            self.assertTrue(obj >= smallest)
+            self.assertTrue(obj < LARGEST)
+            self.assertFalse(obj > LARGEST)
+            self.assertTrue(obj <= LARGEST)
+            self.assertFalse(obj >= LARGEST)
+            self.assertFalse(obj < SMALLEST)
+            self.assertTrue(obj > SMALLEST)
+            self.assertFalse(obj <= SMALLEST)
+            self.assertTrue(obj >= SMALLEST)
 
     def test_mixed_type_key(self):
         # with get_mixed_type_key, you can sort addresses and network.

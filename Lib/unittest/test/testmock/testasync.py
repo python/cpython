@@ -18,6 +18,10 @@ class AsyncClass:
     def normal_method(self):
         pass
 
+class AwaitableClass:
+    def __await__(self):
+        yield
+
 async def async_func():
     pass
 
@@ -159,6 +163,10 @@ class AsyncAutospecTest(unittest.TestCase):
     def test_create_autospec_instance(self):
         with self.assertRaises(RuntimeError):
             create_autospec(async_func, instance=True)
+
+    def test_create_autospec_awaitable_class(self):
+        awaitable_mock = create_autospec(spec=AwaitableClass())
+        self.assertIsInstance(create_autospec(awaitable_mock), AsyncMock)
 
     def test_create_autospec(self):
         spec = create_autospec(async_func_args)
@@ -321,6 +329,13 @@ class AsyncSpecSetTest(unittest.TestCase):
         self.assertIsInstance(mock.normal_method, MagicMock)
         self.assertIsInstance(mock, MagicMock)
 
+    def test_magicmock_lambda_spec(self):
+        mock_obj = MagicMock()
+        mock_obj.mock_func = MagicMock(spec=lambda x: x)
+
+        with patch.object(mock_obj, "mock_func") as cm:
+            self.assertIsInstance(cm, MagicMock)
+
 
 class AsyncArguments(unittest.TestCase):
     def test_add_return_value(self):
@@ -361,17 +376,14 @@ class AsyncArguments(unittest.TestCase):
 
 
 class AsyncContextManagerTest(unittest.TestCase):
+
     class WithAsyncContextManager:
-        def __init__(self):
-            self.entered = False
-            self.exited = False
 
         async def __aenter__(self, *args, **kwargs):
-            self.entered = True
             return self
 
         async def __aexit__(self, *args, **kwargs):
-            self.exited = True
+            pass
 
     def test_magic_methods_are_async_mocks(self):
         mock = MagicMock(self.WithAsyncContextManager())
@@ -390,11 +402,7 @@ class AsyncContextManagerTest(unittest.TestCase):
             return result
 
         result = asyncio.run(use_context_manager())
-        self.assertFalse(instance.entered)
-        self.assertFalse(instance.exited)
         self.assertTrue(called)
-        self.assertTrue(mock_instance.entered)
-        self.assertTrue(mock_instance.exited)
         self.assertTrue(mock_instance.__aenter__.called)
         self.assertTrue(mock_instance.__aexit__.called)
         self.assertIsNot(mock_instance, result)

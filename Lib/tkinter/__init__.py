@@ -484,6 +484,8 @@ class Variable:
         Note: if the Variable's master matters to behavior
         also compare self._master == other._master
         """
+        if not isinstance(other, Variable):
+            return NotImplemented
         return self.__class__.__name__ == other.__class__.__name__ \
             and self._name == other._name
 
@@ -2239,7 +2241,7 @@ class Tk(Misc, Wm):
     _w = '.'
 
     def __init__(self, screenName=None, baseName=None, className='Tk',
-                 useTk=1, sync=0, use=None):
+                 useTk=True, sync=False, use=None):
         """Return a new Toplevel widget on screen SCREENNAME. A new Tcl interpreter will
         be created. BASENAME will be used for the identification of the profile file (see
         readprofile).
@@ -2257,7 +2259,7 @@ class Tk(Misc, Wm):
             baseName, ext = os.path.splitext(baseName)
             if ext not in ('.py', '.pyc'):
                 baseName = baseName + ext
-        interactive = 0
+        interactive = False
         self.tk = _tkinter.create(screenName, baseName, className, interactive, wantobjects, useTk, sync, use)
         if useTk:
             self._loadtk()
@@ -2359,7 +2361,7 @@ class Tk(Misc, Wm):
 # copied into the Pack, Place or Grid class.
 
 
-def Tcl(screenName=None, baseName=None, className='Tk', useTk=0):
+def Tcl(screenName=None, baseName=None, className='Tk', useTk=False):
     return Tk(screenName, baseName, className, useTk)
 
 

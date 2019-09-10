@@ -381,8 +381,6 @@ bytearray_irepeat(PyByteArrayObject *self, Py_ssize_t count)
 static PyObject *
 bytearray_getitem(PyByteArrayObject *self, Py_ssize_t i)
 {
-    if (i < 0)
-        i += Py_SIZE(self);
     if (i < 0 || i >= Py_SIZE(self)) {
         PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return NULL;
@@ -2061,9 +2059,10 @@ _common_reduce(PyByteArrayObject *self, int proto)
     _Py_IDENTIFIER(__dict__);
     char *buf;
 
-    dict = _PyObject_GetAttrId((PyObject *)self, &PyId___dict__);
+    if (_PyObject_LookupAttrId((PyObject *)self, &PyId___dict__, &dict) < 0) {
+        return NULL;
+    }
     if (dict == NULL) {
-        PyErr_Clear();
         dict = Py_None;
         Py_INCREF(dict);
     }

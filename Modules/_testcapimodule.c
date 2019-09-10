@@ -2629,6 +2629,55 @@ get_datetime_fromtimestamp(PyObject* self, PyObject *args)
     return rv;
 }
 
+static PyObject *
+test_PyDateTime_GET(PyObject *self, PyObject *obj)
+{
+    int year, month, day;
+
+    year = PyDateTime_GET_YEAR(obj);
+    month = PyDateTime_GET_MONTH(obj);
+    day = PyDateTime_GET_DAY(obj);
+
+    return Py_BuildValue("(lll)", year, month, day);
+}
+
+static PyObject *
+test_PyDateTime_DATE_GET(PyObject *self, PyObject *obj)
+{
+    int hour, minute, second, microsecond;
+
+    hour = PyDateTime_DATE_GET_HOUR(obj);
+    minute = PyDateTime_DATE_GET_MINUTE(obj);
+    second = PyDateTime_DATE_GET_SECOND(obj);
+    microsecond = PyDateTime_DATE_GET_MICROSECOND(obj);
+
+    return Py_BuildValue("(llll)", hour, minute, second, microsecond);
+}
+
+static PyObject *
+test_PyDateTime_TIME_GET(PyObject *self, PyObject *obj)
+{
+    int hour, minute, second, microsecond;
+
+    hour = PyDateTime_TIME_GET_HOUR(obj);
+    minute = PyDateTime_TIME_GET_MINUTE(obj);
+    second = PyDateTime_TIME_GET_SECOND(obj);
+    microsecond = PyDateTime_TIME_GET_MICROSECOND(obj);
+
+    return Py_BuildValue("(llll)", hour, minute, second, microsecond);
+}
+
+static PyObject *
+test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
+{
+    int days, seconds, microseconds;
+
+    days = PyDateTime_DELTA_GET_DAYS(obj);
+    seconds = PyDateTime_DELTA_GET_SECONDS(obj);
+    microseconds = PyDateTime_DELTA_GET_MICROSECONDS(obj);
+
+    return Py_BuildValue("(lll)", days, seconds, microseconds);
+}
 
 /* test_thread_state spawns a thread of its own, and that thread releases
  * `thread_done` when it's finished.  The driver code has to know when the
@@ -3361,6 +3410,26 @@ getbuffer_with_null_view(PyObject* self, PyObject *obj)
         return NULL;
 
     Py_RETURN_NONE;
+}
+
+/* PyBuffer_SizeFromFormat() */
+static PyObject *
+test_PyBuffer_SizeFromFormat(PyObject *self, PyObject *args)
+{
+    const char *format;
+    Py_ssize_t result;
+
+    if (!PyArg_ParseTuple(args, "s:test_PyBuffer_SizeFromFormat",
+                          &format)) {
+        return NULL;
+    }
+
+    result = PyBuffer_SizeFromFormat(format);
+    if (result == -1) {
+        return NULL;
+    }
+
+    return PyLong_FromSsize_t(result);
 }
 
 /* Test that the fatal error from not having a current thread doesn't
@@ -4565,7 +4634,7 @@ check_pyobject_forbidden_bytes_is_freed(PyObject *self, PyObject *Py_UNUSED(args
     /* Initialize reference count to avoid early crash in ceval or GC */
     Py_REFCNT(op) = 1;
     /* ob_type field is after the memory block: part of "forbidden bytes"
-       when using debug hooks on memory allocatrs! */
+       when using debug hooks on memory allocators! */
     return test_pyobject_is_freed("check_pyobject_forbidden_bytes_is_freed", op);
 }
 
@@ -5095,6 +5164,95 @@ test_write_unraisable_exc(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+sequence_getitem(PyObject *self, PyObject *args)
+{
+    PyObject *seq;
+    Py_ssize_t i;
+    if (!PyArg_ParseTuple(args, "On", &seq, &i)) {
+        return NULL;
+    }
+    return PySequence_GetItem(seq, i);
+}
+
+
+/* Functions for testing C calling conventions (METH_*) are named meth_*,
+ * e.g. "meth_varargs" for METH_VARARGS.
+ *
+ * They all return a tuple of their C-level arguments, with None instead
+ * of NULL and Python tuples instead of C arrays.
+ */
+
+
+static PyObject*
+_null_to_none(PyObject* obj)
+{
+    if (obj == NULL) {
+        Py_RETURN_NONE;
+    }
+    Py_INCREF(obj);
+    return obj;
+}
+
+static PyObject*
+meth_varargs(PyObject* self, PyObject* args)
+{
+    return Py_BuildValue("NO", _null_to_none(self), args);
+}
+
+static PyObject*
+meth_varargs_keywords(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    return Py_BuildValue("NON", _null_to_none(self), args, _null_to_none(kwargs));
+}
+
+static PyObject*
+meth_o(PyObject* self, PyObject* obj)
+{
+    return Py_BuildValue("NO", _null_to_none(self), obj);
+}
+
+static PyObject*
+meth_noargs(PyObject* self, PyObject* ignored)
+{
+    return _null_to_none(self);
+}
+
+static PyObject*
+_fastcall_to_tuple(PyObject* const* args, Py_ssize_t nargs)
+{
+    PyObject *tuple = PyTuple_New(nargs);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i=0; i < nargs; i++) {
+        Py_INCREF(args[i]);
+        PyTuple_SET_ITEM(tuple, i, args[i]);
+    }
+    return tuple;
+}
+
+static PyObject*
+meth_fastcall(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+{
+    return Py_BuildValue(
+        "NN", _null_to_none(self), _fastcall_to_tuple(args, nargs)
+    );
+}
+
+static PyObject*
+meth_fastcall_keywords(PyObject* self, PyObject* const* args,
+                       Py_ssize_t nargs, PyObject* kwargs)
+{
+    PyObject *pyargs = _fastcall_to_tuple(args, nargs);
+    if (pyargs == NULL) {
+        return NULL;
+    }
+    PyObject *pykwargs = _PyObject_Vectorcall((PyObject*)&PyDict_Type,
+                                              args + nargs, 0, kwargs);
+    return Py_BuildValue("NNN", _null_to_none(self), pyargs, pykwargs);
+}
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -5118,6 +5276,10 @@ static PyMethodDef TestMethods[] = {
     {"get_delta_fromdsu",        get_delta_fromdsu,              METH_VARARGS},
     {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
     {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
+    {"PyDateTime_GET",             test_PyDateTime_GET,           METH_O},
+    {"PyDateTime_DATE_GET",        test_PyDateTime_DATE_GET,      METH_O},
+    {"PyDateTime_TIME_GET",        test_PyDateTime_TIME_GET,      METH_O},
+    {"PyDateTime_DELTA_GET",       test_PyDateTime_DELTA_GET,     METH_O},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
@@ -5153,6 +5315,7 @@ static PyMethodDef TestMethods[] = {
     {"test_pep3118_obsolete_write_locks", (PyCFunction)test_pep3118_obsolete_write_locks, METH_NOARGS},
 #endif
     {"getbuffer_with_null_view", getbuffer_with_null_view, METH_O},
+    {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat, METH_VARARGS},
     {"test_buildvalue_N",       test_buildvalue_N,               METH_NOARGS},
     {"get_args", get_args, METH_VARARGS},
     {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs, METH_VARARGS|METH_KEYWORDS},
@@ -5339,6 +5502,13 @@ static PyMethodDef TestMethods[] = {
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
+    {"sequence_getitem", sequence_getitem, METH_VARARGS},
+    {"meth_varargs", meth_varargs, METH_VARARGS},
+    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS},
+    {"meth_o", meth_o, METH_O},
+    {"meth_noargs", meth_noargs, METH_NOARGS},
+    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL},
+    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -5999,6 +6169,72 @@ static PyTypeObject MethodDescriptor2_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_HAVE_VECTORCALL,
 };
 
+static PyMethodDef meth_instance_methods[] = {
+    {"meth_varargs", meth_varargs, METH_VARARGS},
+    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS},
+    {"meth_o", meth_o, METH_O},
+    {"meth_noargs", meth_noargs, METH_NOARGS},
+    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL},
+    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS},
+    {NULL, NULL} /* sentinel */
+};
+
+
+static PyTypeObject MethInstance_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MethInstance",
+    sizeof(PyObject),
+    .tp_new = PyType_GenericNew,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_methods = meth_instance_methods,
+    .tp_doc = PyDoc_STR(
+        "Class with normal (instance) methods to test calling conventions"),
+};
+
+static PyMethodDef meth_class_methods[] = {
+    {"meth_varargs", meth_varargs, METH_VARARGS|METH_CLASS},
+    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS|METH_CLASS},
+    {"meth_o", meth_o, METH_O|METH_CLASS},
+    {"meth_noargs", meth_noargs, METH_NOARGS|METH_CLASS},
+    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL|METH_CLASS},
+    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS|METH_CLASS},
+    {NULL, NULL} /* sentinel */
+};
+
+
+static PyTypeObject MethClass_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MethClass",
+    sizeof(PyObject),
+    .tp_new = PyType_GenericNew,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_methods = meth_class_methods,
+    .tp_doc = PyDoc_STR(
+        "Class with class methods to test calling conventions"),
+};
+
+static PyMethodDef meth_static_methods[] = {
+    {"meth_varargs", meth_varargs, METH_VARARGS|METH_STATIC},
+    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS|METH_STATIC},
+    {"meth_o", meth_o, METH_O|METH_STATIC},
+    {"meth_noargs", meth_noargs, METH_NOARGS|METH_STATIC},
+    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL|METH_STATIC},
+    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS|METH_STATIC},
+    {NULL, NULL} /* sentinel */
+};
+
+
+static PyTypeObject MethStatic_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MethStatic",
+    sizeof(PyObject),
+    .tp_new = PyType_GenericNew,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_methods = meth_static_methods,
+    .tp_doc = PyDoc_STR(
+        "Class with static methods to test calling conventions"),
+};
+
 
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
@@ -6084,6 +6320,21 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&Generic_Type);
     PyModule_AddObject(m, "Generic", (PyObject *)&Generic_Type);
+
+    if (PyType_Ready(&MethInstance_Type) < 0)
+        return NULL;
+    Py_INCREF(&MethInstance_Type);
+    PyModule_AddObject(m, "MethInstance", (PyObject *)&MethInstance_Type);
+
+    if (PyType_Ready(&MethClass_Type) < 0)
+        return NULL;
+    Py_INCREF(&MethClass_Type);
+    PyModule_AddObject(m, "MethClass", (PyObject *)&MethClass_Type);
+
+    if (PyType_Ready(&MethStatic_Type) < 0)
+        return NULL;
+    Py_INCREF(&MethStatic_Type);
+    PyModule_AddObject(m, "MethStatic", (PyObject *)&MethStatic_Type);
 
     PyRecursingInfinitelyError_Type.tp_base = (PyTypeObject *)PyExc_Exception;
     if (PyType_Ready(&PyRecursingInfinitelyError_Type) < 0) {

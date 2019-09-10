@@ -182,6 +182,7 @@ _symtable symtablemodule.c
 #_heapq _heapqmodule.c	# Heap queue algorithm
 #_asyncio _asynciomodule.c  # Fast asyncio Future
 #_json -I$(srcdir)/Include/internal -DPy_BUILD_CORE_BUILTIN _json.c	# _json speedups
+#_statistics _statisticsmodule.c # statistics accelerator
 
 #unicodedata unicodedata.c    # static Unicode character database
 

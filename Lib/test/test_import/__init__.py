@@ -1324,6 +1324,16 @@ class CircularImportTests(unittest.TestCase):
         self.assertIn('partially initialized module', errmsg)
         self.assertIn('circular import', errmsg)
 
+    def test_circular_from_import(self):
+        with self.assertRaises(ImportError) as cm:
+            import test.test_import.data.circular_imports.from_cycle1
+        self.assertIn(
+            "cannot import name 'b' from partially initialized module "
+            "'test.test_import.data.circular_imports.from_cycle1' "
+            "(most likely due to a circular import)",
+            str(cm.exception),
+        )
+
 
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.

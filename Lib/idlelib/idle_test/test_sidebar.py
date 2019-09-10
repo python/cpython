@@ -240,7 +240,6 @@ class LineNumbersTest(unittest.TestCase):
         self.assert_sidebar_n_lines(1)
         self.assertEqual(get_width(), 1)
 
-    @unittest.skipIf(platform == 'darwin', 'test tk version dependent')
     def test_click_selection(self):
         self.linenumber.show_sidebar()
         self.text.insert('1.0', 'one\ntwo\nthree\nfour\n')
@@ -254,44 +253,47 @@ class LineNumbersTest(unittest.TestCase):
 
         self.assertEqual(self.get_selection(), ('2.0', '3.0'))
 
-    @unittest.skipIf(platform == 'darwin', 'test tk version dependent')
+    def simulate_drag(self, start_line, end_line):
+        start_x, start_y = self.get_line_screen_position(start_line)
+        end_x, end_y = self.get_line_screen_position(end_line)
+
+        self.linenumber.sidebar_text.event_generate('<Button-1>',
+                                                    x=start_x, y=start_y)
+        self.root.update()
+
+        def lerp(a, b, steps):
+            """linearly interpolate from a to b (inclusive) in equal steps"""
+            last_step = steps - 1
+            for i in range(steps):
+                yield ((last_step - i) / last_step) * a + (i / last_step) * b
+
+        for x, y in zip(
+                map(int, lerp(start_x, end_x, steps=11)),
+                map(int, lerp(start_y, end_y, steps=11)),
+        ):
+            self.linenumber.sidebar_text.event_generate('<B1-Motion>', x=x, y=y)
+            self.root.update()
+
+        self.linenumber.sidebar_text.event_generate('<ButtonRelease-1>',
+                                                    x=end_x, y=end_y)
+        self.root.update()
+
     def test_drag_selection_down(self):
         self.linenumber.show_sidebar()
         self.text.insert('1.0', 'one\ntwo\nthree\nfour\nfive\n')
         self.root.update()
 
         # Drag from the second line to the fourth line.
-        start_x, start_y = self.get_line_screen_position(2)
-        end_x, end_y = self.get_line_screen_position(4)
-        self.linenumber.sidebar_text.event_generate('<Button-1>',
-                                                    x=start_x, y=start_y)
-        self.linenumber.sidebar_text.event_generate('<B1-Motion>',
-                                                    x=start_x, y=start_y)
-        self.linenumber.sidebar_text.event_generate('<B1-Motion>',
-                                                    x=end_x, y=end_y)
-        self.linenumber.sidebar_text.event_generate('<ButtonRelease-1>',
-                                                    x=end_x, y=end_y)
-        self.root.update()
+        self.simulate_drag(2, 4)
         self.assertEqual(self.get_selection(), ('2.0', '5.0'))
 
-    @unittest.skipIf(platform == 'darwin', 'test tk version dependent')
     def test_drag_selection_up(self):
         self.linenumber.show_sidebar()
         self.text.insert('1.0', 'one\ntwo\nthree\nfour\nfive\n')
         self.root.update()
 
         # Drag from the fourth line to the second line.
-        start_x, start_y = self.get_line_screen_position(4)
-        end_x, end_y = self.get_line_screen_position(2)
-        self.linenumber.sidebar_text.event_generate('<Button-1>',
-                                                    x=start_x, y=start_y)
-        self.linenumber.sidebar_text.event_generate('<B1-Motion>',
-                                                    x=start_x, y=start_y)
-        self.linenumber.sidebar_text.event_generate('<B1-Motion>',
-                                                    x=end_x, y=end_y)
-        self.linenumber.sidebar_text.event_generate('<ButtonRelease-1>',
-                                                    x=end_x, y=end_y)
-        self.root.update()
+        self.simulate_drag(4, 2)
         self.assertEqual(self.get_selection(), ('2.0', '5.0'))
 
     def test_scroll(self):

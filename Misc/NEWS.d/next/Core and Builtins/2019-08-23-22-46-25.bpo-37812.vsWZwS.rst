@@ -1,0 +1,2 @@
+The ``CHECK_SMALL_INT`` macro used inside :file:`Object/longobject.c` has
+been replaced with an explicit ``return`` at each call site.

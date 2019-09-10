@@ -4671,12 +4671,12 @@ warn_invalid_escape_sequence(struct compiling *c, const node *n,
     if (msg == NULL) {
         return -1;
     }
-    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
+    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg,
                                    c->c_filename, LINENO(n),
                                    NULL, NULL) < 0)
     {
-        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
-            /* Replace the SyntaxWarning exception with a SyntaxError
+        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+            /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
             ast_error(c, n, "%U", msg);
@@ -5356,7 +5356,7 @@ typedef struct {
        doubling the number allocated each time. Note that the f-string
        f'{0}a{1}' contains 3 expr_ty's: 2 FormattedValue's, and one
        Constant for the literal 'a'. So you add expr_ty's about twice as
-       fast as you add exressions in an f-string. */
+       fast as you add expressions in an f-string. */
 
     Py_ssize_t allocated;  /* Number we've allocated. */
     Py_ssize_t size;       /* Number we've used. */
