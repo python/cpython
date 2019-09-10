@@ -77,7 +77,7 @@ def _find_globals(dirnames, known, ignored):
     unknown = set()
     knownvars = (known or {}).get('variables')
     for variable in find.globals_from_binary(knownvars=knownvars,
-                                           dirnames=dirnames):
+                                             dirnames=dirnames):
     #for variable in find.globals(dirnames, known, kind='platform'):
         if variable.vartype == UNKNOWN:
             unknown.add(variable)

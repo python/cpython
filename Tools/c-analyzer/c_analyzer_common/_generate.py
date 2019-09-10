@@ -1,10 +1,5 @@
 # The code here consists of hacks for pre-populating the known.tsv file.
 
-import contextlib
-import glob
-import os.path
-import re
-
 from c_parser.preprocessor import _iter_clean_lines
 from c_parser.naive import (
         iter_variables, parse_variable_declaration, find_variables,
@@ -14,7 +9,7 @@ from c_parser.info import Variable
 from . import SOURCE_DIRS, REPO_ROOT
 from .known import DATA_FILE as KNOWN_FILE, HEADER as KNOWN_HEADER
 from .info import UNKNOWN, ID
-from .util import run_cmd, write_tsv
+from .util import write_tsv
 from .files import iter_cpython_files
 
 
@@ -311,14 +306,15 @@ def known_rows(symbols, *,
             yield _as_known(variable.id, variable.vartype)
 
 
-def known_file(symbols, filename=None, *,
-               _generate_rows=known_rows,
-               ):
+def generate(symbols, filename=None, *,
+             _generate_rows=known_rows,
+             _write_tsv=write_tsv,
+             ):
     if not filename:
         filename = KNOWN_FILE + '.new'
 
     rows = _generate_rows(symbols)
-    write_tsv(filename, KNOWN_HEADER, rows)
+    _write_tsv(filename, KNOWN_HEADER, rows)
 
 
 if __name__ == '__main__':
@@ -327,4 +323,4 @@ if __name__ == '__main__':
             binary.PYTHON,
             find_local_symbol=None,
             )
-    known_file(symbols)
+    generate(symbols)

@@ -1,133 +1,147 @@
-import csv
 import os.path
 import re
 
 from c_analyzer_common import DATA_DIR
 from c_analyzer_common.info import ID
-from c_analyzer_common.util import read_tsv
+from c_analyzer_common.util import read_tsv, write_tsv
 
 
-def is_supported(variable, ignored=None, known=None):
+IGNORED_FILE = os.path.join(DATA_DIR, 'ignored.tsv')
+
+IGNORED_COLUMNS = ('filename', 'funcname', 'name', 'kind', 'reason')
+IGNORED_HEADER = '\t'.join(IGNORED_COLUMNS)
+
+# XXX Move these to ignored.tsv.
+IGNORED = {
+        # global
+        'PyImport_FrozenModules': 'process-global',
+        'M___hello__': 'process-global',
+        'inittab_copy': 'process-global',
+        'PyHash_Func': 'process-global',
+        '_Py_HashSecret_Initialized': 'process-global',
+        '_TARGET_LOCALES': 'process-global',
+
+        # startup
+        'runtime_initialized': 'runtime startup',
+        'static_arg_parsers': 'runtime startup',
+        'orig_argv': 'runtime startup',
+        'opt_ptr': 'runtime startup',
+        '_preinit_warnoptions': 'runtime startup',
+        '_Py_StandardStreamEncoding': 'runtime startup',
+        '_Py_StandardStreamErrors': 'runtime startup',
+
+        # should be const
+        'tracemalloc_empty_traceback': 'const',
+        '_empty_bitmap_node': 'const',
+        'posix_constants_pathconf': 'const',
+        'posix_constants_confstr': 'const',
+        'posix_constants_sysconf': 'const',
+
+        # signals are main-thread only
+        'faulthandler_handlers': 'signals are main-thread only',
+        'user_signals': 'signals are main-thread only',
+        }
+
+
+def is_supported(variable, ignored=None, known=None, *,
+                 _ignored=(lambda *a, **k: _is_ignored(*a, **k)),
+                 _vartype_okay=(lambda *a, **k: _is_vartype_okay(*a, **k)),
+                 ):
     """Return True if the given global variable is okay in CPython."""
-    if _is_ignored(variable, ignored and ignored.get('variables')):
+    if _ignored(variable,
+                ignored and ignored.get('variables')):
         return True
-    elif _is_vartype_okay(variable.vartype, ignored.get('types')):
+    elif _vartype_okay(variable.vartype,
+                       ignored.get('types')):
         return True
     else:
         return False
 
 
-# XXX Move these to ignored.tsv.
-IGNORED = {
-        # global
-        'PyImport_FrozenModules',
-        'M___hello__',
-        'inittab_copy',
-        'PyHash_Func',
-        '_Py_HashSecret_Initialized',
-        '_TARGET_LOCALES',
-        'runtime_initialized',
+def _is_ignored(variable, ignoredvars=None, *,
+                _IGNORED=IGNORED,
+                ):
+    """Return the reason if the variable is a supported global.
 
-        # startup
-        'static_arg_parsers',
-        'orig_argv',
-        'opt_ptr',
-        '_preinit_warnoptions',
-        '_Py_StandardStreamEncoding',
-        '_Py_StandardStreamErrors',
+    Return None if the variable is not a supported global.
+    """
+    if ignoredvars and (reason := ignoredvars.get(variable.id)):
+        return reason
 
-        # should be const
-        'tracemalloc_empty_traceback',
-        '_empty_bitmap_node',
-        'posix_constants_pathconf',
-        'posix_constants_confstr',
-        'posix_constants_sysconf',
-
-        # signals are main-thread only
-        'faulthandler_handlers',
-        'user_signals',
-        }
-
-
-def _is_ignored(variable, ignoredvars=None):
-    if variable.name in IGNORED:
-        return True
-
-    if ignoredvars and variable.id in ignoredvars:
-        return True
+    if variable.funcname is None:
+        if reason := _IGNORED.get(variable.name):
+            return reason
 
     # compiler
     if variable.filename == 'Python/graminit.c':
         if variable.vartype.startswith('static state '):
-            return True
+            return 'compiler'
     if variable.filename == 'Python/symtable.c':
         if variable.vartype.startswith('static identifier '):
-            return True
+            return 'compiler'
     if variable.filename == 'Python/Python-ast.c':
         # These should be const.
         if variable.name.endswith('_field'):
-            return True
+            return 'compiler'
         if variable.name.endswith('_attribute'):
-            return True
+            return 'compiler'
 
     # other
     if variable.filename == 'Python/dtoa.c':
         # guarded by lock?
         if variable.name in ('p5s', 'freelist'):
-            return True
+            return 'dtoa is thread-safe?'
         if variable.name in ('private_mem', 'pmem_next'):
-            return True
+            return 'dtoa is thread-safe?'
 
-    return False
+    return None
 
 
 def _is_vartype_okay(vartype, ignoredtypes=None):
     if _is_object(vartype):
-        return False
+        return None
 
     if vartype.startswith('static const '):
-        return True
+        return 'const'
 
     # components for TypeObject definitions
     for name in ('PyMethodDef', 'PyGetSetDef', 'PyMemberDef'):
         if name in vartype:
-            return True
+            return 'const'
     for name in ('PyNumberMethods', 'PySequenceMethods', 'PyMappingMethods',
                  'PyBufferProcs', 'PyAsyncMethods'):
         if name in vartype:
-            return True
+            return 'const'
     for name in ('slotdef', 'newfunc'):
         if name in vartype:
-            return True
+            return 'const'
 
     # structseq
     for name in ('PyStructSequence_Desc', 'PyStructSequence_Field'):
         if name in vartype:
-            return True
+            return 'const'
 
     # other definiitions
     if 'PyModuleDef' in vartype:
-        return True
+        return 'const'
 
     # thread-safe
     if '_Py_atomic_int' in vartype:
-        return True
+        return 'thread-safe'
     if 'pthread_condattr_t' in vartype:
-        return True
+        return 'thread-safe'
 
     # startup
     if '_Py_PreInitEntry' in vartype:
-        return True
+        return 'startup'
 
     # global
-    if 'PyMemAllocatorEx' in vartype:
-        return True
+#    if 'PyMemAllocatorEx' in vartype:
+#        return True
 
     # others
-    if 'PyThread_type_lock' in vartype:
-        return True
-    #if '_Py_hashtable_t' in vartype:
-    #    return True  # ???
+#    if 'PyThread_type_lock' in vartype:
+#        return True
 
     # XXX ???
     # _Py_tss_t
@@ -137,12 +151,12 @@ def _is_vartype_okay(vartype, ignoredtypes=None):
 
     # functions
     if '(' in vartype and '[' not in vartype:
-        return True
+        return 'function pointer'
 
     # XXX finish!
     # * allow const values?
     #raise NotImplementedError
-    return False
+    return None
 
 
 def _is_object(vartype):
@@ -172,26 +186,17 @@ def _is_object(vartype):
     return False
 
 
-#############################
-# ignored
-
-IGNORED_FILE = os.path.join(DATA_DIR, 'ignored.tsv')
-
-COLUMNS = ('filename', 'funcname', 'name', 'kind', 'reason')
-HEADER = '\t'.join(COLUMNS)
-
-
 def ignored_from_file(infile, *,
                       _read_tsv=read_tsv,
                       ):
-    """Yield StaticVar for each ignored var in the file."""
+    """Yield a Variable for each ignored var in the file."""
     ignored = {
         'variables': {},
         #'types': {},
         #'constants': {},
         #'macros': {},
         }
-    for row in _read_tsv(infile, HEADER):
+    for row in _read_tsv(infile, IGNORED_HEADER):
         filename, funcname, name, kind, reason = row
         if not funcname or funcname == '-':
             funcname = None
@@ -202,3 +207,63 @@ def ignored_from_file(infile, *,
             raise ValueError(f'unsupported kind in row {row}')
         values[id] = reason
     return ignored
+
+
+##################################
+# generate
+
+def _get_row(varid, reason):
+    return (
+            varid.filename,
+            varid.funcname or '-',
+            varid.name,
+            'variable',
+            str(reason),
+            )
+
+
+def _get_rows(variables, ignored=None, *,
+              _as_row=_get_row,
+              _is_ignored=_is_ignored,
+              _vartype_okay=_is_vartype_okay,
+              ):
+    count = 0
+    for variable in variables:
+        reason = _is_ignored(variable,
+                             ignored and ignored.get('variables'),
+                             )
+        if not reason:
+            reason = _vartype_okay(variable.vartype,
+                                   ignored and ignored.get('types'))
+        if not reason:
+            continue
+
+        print(' ', variable, repr(reason))
+        yield _as_row(variable.id, reason)
+        count += 1
+    print(f'total: {count}')
+
+
+def _generate_ignored_file(variables, filename=None, *,
+                           _generate_rows=_get_rows,
+                           _write_tsv=write_tsv,
+                           ):
+    if not filename:
+        filename = IGNORED_FILE + '.new'
+    rows = _generate_rows(variables)
+    _write_tsv(filename, IGNORED_HEADER, rows)
+
+
+if __name__ == '__main__':
+    from c_analyzer_common import SOURCE_DIRS
+    from c_analyzer_common.known import (
+        from_file as known_from_file,
+        DATA_FILE as KNOWN_FILE,
+        )
+    from . import find
+    known = known_from_file(KNOWN_FILE)
+    knownvars = (known or {}).get('variables')
+    variables = find.globals_from_binary(knownvars=knownvars,
+                                         dirnames=SOURCE_DIRS)
+
+    _generate_ignored_file(variables)
