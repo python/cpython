@@ -99,7 +99,7 @@ More condensed:
    >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
    'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
 
-.. function:: new(name[, data])
+.. function:: new(name[, data, **kwargs])
 
    Is a generic constructor that takes the string *name* of the desired
    algorithm as its first parameter.  It also exists to allow access to the
@@ -107,12 +107,21 @@ More condensed:
    library may offer.  The named constructors are much faster than :func:`new`
    and should be preferred.
 
+   Optionally provide an initial chunk of *data* to hash and additional
+   keyword arguments that are specific to the selected hashing algorithm.
+
 Using :func:`new` with an algorithm provided by OpenSSL:
 
    >>> h = hashlib.new('ripemd160')
    >>> h.update(b"Nobody inspects the spammish repetition")
    >>> h.hexdigest()
    'cc4a5ce1b3df48aec5d22d1f16b894a0b894eccc'
+
+Using :func:`new` with an initial data chunk and some keyword arguments:
+
+   >>> h = hashlib.new('blake2s', data=b'top secret', salt=b'foo', digest_size=16)
+   >>> h.hexdigest()
+   'a6a80726652c81c0195b108d6aa07bce'
 
 Hashlib provides the following constant attributes:
 

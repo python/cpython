@@ -129,16 +129,17 @@ def __get_openssl_constructor(name):
 
 
 def __py_new(name, data=b'', **kwargs):
-    """new(name, data=b'', **kwargs) - Return a new hashing object using the
-    named algorithm; optionally initialized with data (which must be
-    a bytes-like object).
+    """Return a new hashing object using the named algorithm; optionally
+    initialized with data (which must be a bytes-like object) and keyword
+    arguments specific to the named algorithm.
     """
     return __get_builtin_constructor(name)(data, **kwargs)
 
 
 def __hash_new(name, data=b'', **kwargs):
-    """new(name, data=b'') - Return a new hashing object using the named algorithm;
-    optionally initialized with data (which must be a bytes-like object).
+    """Return a new hashing object using the named algorithm; optionally
+    initialized with data (which must be a bytes-like object) and keyword
+    arguments specific to the named algorithm.
     """
     if name in {'blake2b', 'blake2s'}:
         # Prefer our blake2 implementation.
