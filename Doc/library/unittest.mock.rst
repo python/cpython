@@ -215,13 +215,15 @@ return the same mock. Mocks record how you use them, allowing you to make
 assertions about what your code has done to them.
 
 :class:`MagicMock` is a subclass of :class:`Mock` with all the magic methods
-pre-created and ready to use. There are also non-callable variants, useful
+pre-created and ready to use. :class:`AsyncMock` is a subclass of :class:`Mock` that returns
+an asynchronous version of :class:`Mock`. There are also non-callable variants, useful
 when you are mocking out objects that aren't callable:
 :class:`NonCallableMock` and :class:`NonCallableMagicMock`
 
 The :func:`patch` decorators makes it easy to temporarily replace classes
 in a particular module with a :class:`Mock` object. By default :func:`patch` will create
-a :class:`MagicMock` for you. You can specify an alternative class of :class:`Mock` using
+a :class:`MagicMock` for you unless the patched object is an async func, in which case
+an :class:`AsyncMock` is returned. You can specify an alternative class of :class:`Mock` using
 the *new_callable* argument to :func:`patch`.
 
 
