@@ -500,7 +500,7 @@ def run(*popenargs,
                 exc.stdout, exc.stderr = process.communicate()
             else:
                 # POSIX _communicate already populated the output so
-                # far into the TimeourExpired exception.
+                # far into the TimeoutExpired exception.
                 process.wait()
             raise
         except:  # Including KeyboardInterrupt, communicate handled that.
