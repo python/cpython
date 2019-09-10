@@ -69,7 +69,9 @@ def main():
             keep_flags = True
         if o == '-a':
             add_flags = a.encode()
-
+            if ' ' in a:
+                err('Does not support arguments')
+                sys.exit(2)
     if not new_interpreter or not new_interpreter.startswith(b'/') or \
            not args:
         err('-i option or file-or-directory missing\n')

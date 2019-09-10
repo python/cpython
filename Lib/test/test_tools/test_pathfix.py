@@ -40,60 +40,57 @@ class TestPathfixFunctional(unittest.TestCase):
             self.pathfix(
                 '#! /usr/bin/env python',
                 ['-i', '/usr/bin/python3']),
-            '#! /usr/bin/python3',
-        )
+            '#! /usr/bin/python3',)
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python -R',
                 ['-i', '/usr/bin/python3']),
-            '#! /usr/bin/python3',
-        )
+            '#! /usr/bin/python3',)
 
     def test_pathfix_keeping_flags(self):
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python -R',
                 ['-i', '/usr/bin/python3', '-k']),
-            '#! /usr/bin/python3 -R',
-        )
+            '#! /usr/bin/python3 -R',)
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python',
                 ['-i', '/usr/bin/python3', '-k']),
-            '#! /usr/bin/python3',
-        )
+            '#! /usr/bin/python3',)
 
     def test_pathfix_adding_flag(self):
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python',
                 ['-i', '/usr/bin/python3', '-a', 's']),
-            '#! /usr/bin/python3 -s',
-        )
+            '#! /usr/bin/python3 -s',)
         self.assertEqual(
             self.pathfix(
-                '#! /usr/bin/env python -s',
+                '#! /usr/bin/env python -S',
                 ['-i', '/usr/bin/python3', '-a', 's']),
-            '#! /usr/bin/python3 -s',
-        )
+            '#! /usr/bin/python3 -s',)
         self.assertEqual(
             self.pathfix(
-                '#! /usr/bin/env python -v',
+                '#! /usr/bin/env python -V',
                 ['-i', '/usr/bin/python3', '-a', 'v', '-k']),
-            '#! /usr/bin/python3 -vv',
-        )
+            '#! /usr/bin/python3 -vV',)
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python',
                 ['-i', '/usr/bin/python3', '-a', 'Rs']),
-            '#! /usr/bin/python3 -Rs'
-        )
+            '#! /usr/bin/python3 -Rs')
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python -W something',
                 ['-i', '/usr/bin/python3', '-a', 's', '-k']),
-            '#! /usr/bin/python3 -sW something',
-        )
+            '#! /usr/bin/python3 -sW something',)
+        self.assertEqual(
+            self.pathfix(
+                '#! /usr/bin/env python -W something',
+                ['-i', '/usr/bin/python3', '-a', ' af', '-k'],
+                expected_returncode=2),
+            '#! /usr/bin/env python -W something',)
 
 
 if __name__ == '__main__':
