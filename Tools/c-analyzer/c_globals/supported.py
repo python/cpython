@@ -211,7 +211,8 @@ def _is_object(vartype):
         return True
     if '_PyArg_Parser ' in vartype:
         return True
-    if vartype.startswith(('_Py_IDENTIFIER(', '_Py_static_string(')):
+    if vartype.startswith(('_Py_IDENTIFIER(', 'static _Py_Identifier',
+                           '_Py_static_string(')):
         return True
     if 'traceback_t' in vartype:
         return True
@@ -222,6 +223,10 @@ def _is_object(vartype):
     if 'PyContext' in vartype:
         return True
     if 'method_cache_entry' in vartype:
+        return True
+    if vartype.startswith('static identifier '):
+        return True
+    if vartype.endswith((' _Py_FalseStruct', ' _Py_TrueStruct')):
         return True
 
     # XXX Add more?
