@@ -5780,6 +5780,8 @@ class ZoneInfoTest(unittest.TestCase):
     zonename = 'America/New_York'
 
     def setUp(self):
+        if sys.platform == "vxworks":
+            self.skipTest("Skipping zoneinfo tests on VxWorks")
         if sys.platform == "win32":
             self.skipTest("Skipping zoneinfo tests on Windows")
         try:
