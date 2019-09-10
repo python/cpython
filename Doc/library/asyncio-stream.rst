@@ -378,7 +378,7 @@ Stream
    .. attribute:: mode
 
       Returns the mode of the stream which is a :class:`StreamMode` value. It could
-      be one of the below :
+      be one of the below:
 
       * :attr:`StreamMode.READ` - Connection can receive data.
       * :attr:`StreamMode.WRITE` - Connection can send data.
@@ -386,7 +386,7 @@ Stream
 
    .. coroutinemethod:: abort()
 
-      Aborts the :ref:`Transport <asyncio-transport>` instance used by the Stream.
+      Aborts the connection immediately, without waiting for the send buffer to drain.
 
    .. coroutinemethod:: drain()
 
