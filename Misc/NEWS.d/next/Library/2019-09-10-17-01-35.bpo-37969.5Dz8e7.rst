@@ -1,0 +1,5 @@
+Make the :func:`urllib.parse.urlsplit` and :func:`urllib.parse.urlunsplit` 
+functions keep the ``?`` delimiter in a URI with an empty query component and 
+keep the ``#`` delimiter in a URI with an empty fragment component, as required 
+by `RFC 3986 <https://tools.ietf.org/html/rfc3986?#section-6.2.3>`_. Patch by 
+Géry Ogam.
