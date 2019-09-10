@@ -1533,23 +1533,25 @@ Test cases
 
       events = []
 
+
       class Test(IsolatedAsyncioTestCase):
+
 
           def setUp(self):
               self._sync_connection = ExpensiveSyncConnection()
-	      events.append("setUp")
+              events.append("setUp")
 
           async def asyncSetUp(self):
               self._async_connection = await ExpensiveAsyncConnection()
-	      events.append("asyncSetUp")
+              events.append("asyncSetUp")
 
           async def test_response(self):
-	      response = await self._async_connection.get("https://example.com")
-	      self.assertEqual(response.status_code, 200)
-	      self.addAsyncCleanup(self.on_cleanup)
+              response = await self._async_connection.get("https://example.com")
+              self.assertEqual(response.status_code, 200)
+              self.addAsyncCleanup(self.on_cleanup)
 
               response = self._sync_connection.get("https://example.com")
-	      self.assertEqual(response.status_code, 200)
+              self.assertEqual(response.status_code, 200)
 
           def tearDown(self):
               self._sync_connection.close()
@@ -1557,10 +1559,10 @@ Test cases
 
           async def asyncTearDown(self):
               await self._async_connection.close()
-	      events.append("asyncTearDown")
+              events.append("asyncTearDown")
 
-	  async def on_cleanup(self):
-	      events.append("cleanup")
+          async def on_cleanup(self):
+              events.append("cleanup")
 
       test = Test("test_response")
       test.run()
