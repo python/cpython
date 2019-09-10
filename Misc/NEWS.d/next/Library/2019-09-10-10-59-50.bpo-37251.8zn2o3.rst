@@ -1,0 +1,3 @@
+Remove `__code__` check in AsyncMock that incorrectly
+evaluated function specs as async objects but failed to evaluate classes
+with `__await__` but no `__code__` attribute defined as async objects.
