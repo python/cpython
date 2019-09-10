@@ -130,6 +130,7 @@ purposes.
    :meth:`SSLContext.load_verify_locations`.  If all three are
    :const:`None`, this function can choose to trust the system's default
    CA certificates instead.
+   CA certificates instead.
 
    The settings are: :data:`PROTOCOL_TLS`, :data:`OP_NO_SSLv2`, and
    :data:`OP_NO_SSLv3` with high encryption cipher suites without RC4 and
@@ -2226,13 +2227,16 @@ right)::
 certificates in ``/etc/ssl/certs/ca-bundle.crt``; if not, you'll get an
 error and have to adjust the location)
 
+The :data:`PROTOCOL_TLS_CLIENT` protocol configures the context for cert
+validation and hostname verification. :attr:`~SSLContext.verify_mode` is
+set to :data:`CERT_REQUIRED` and :attr:`~SSLContext.check_hostname` is set
+to ``True``. All other protocols create SSL contexts with insecure defaults.
+
 When you use the context to connect to a server, :const:`CERT_REQUIRED`
-validates the server certificate and :meth:`~SSLContext.check_hostname`
-matches the hostname. Both setting ensure that the server certificate
-was signed with one of the CA certificates and is a valid certificate
-for the given server name. The :data:`PROTOCOL_TLS_CLIENT` protocol
-configures the context for cert and hostname verification. All
-remaining protocols are insecure by default::
+and :attr:`~SSLContext.check_hostname` validate the server certificate: it
+ensures that the server certificate was signed with one of the CA
+certificates, checks the signature for correctness, and verifies other
+properties like validity and identity of the host::
 
    >>> conn = context.wrap_socket(socket.socket(socket.AF_INET),
    ...                            server_hostname="www.python.org")
