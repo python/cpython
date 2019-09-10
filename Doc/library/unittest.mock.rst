@@ -1321,8 +1321,10 @@ patch
     is patched with a *new* object. When the function/with statement exits
     the patch is undone.
 
-    If *new* is omitted, then the target is replaced with a
-    :class:`MagicMock`. If :func:`patch` is used as a decorator and *new* is
+    If *new* is omitted, then the target is replaced with an
+    :class:`AsyncMock` if the patched object is an async function or
+    a :class:`MagicMock` otherwise.
+    If :func:`patch` is used as a decorator and *new* is
     omitted, the created mock is passed in as an extra argument to the
     decorated function. If :func:`patch` is used as a context manager the created
     mock is returned by the context manager.
@@ -1340,8 +1342,8 @@ patch
     patch to pass in the object being mocked as the spec/spec_set object.
 
     *new_callable* allows you to specify a different class, or callable object,
-    that will be called to create the *new* object. By default :class:`MagicMock` is
-    used.
+    that will be called to create the *new* object. By default :class:`AsyncMock`
+    is used for async functions and :class:`MagicMock` for the rest.
 
     A more powerful form of *spec* is *autospec*. If you set ``autospec=True``
     then the mock will be created with a spec from the object being replaced.
@@ -1504,6 +1506,10 @@ work as expected::
     ...     assert sys.non_existing_attribute == 42
     ...
     >>> test()
+
+.. versionchanged:: 3.8
+
+    :func:`patch` now returns an :class:`AsyncMock` if the target is an async function.
 
 
 patch.object
@@ -2287,6 +2293,12 @@ create_autospec
 
 See :ref:`auto-speccing` for examples of how to use auto-speccing with
 :func:`create_autospec` and the *autospec* argument to :func:`patch`.
+
+
+.. versionchanged:: 3.8
+
+    :func:`create_autospec` now returns an :class:`AsyncMock` if the target is
+    an async function.
 
 
 ANY
