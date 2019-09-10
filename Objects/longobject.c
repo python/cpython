@@ -3216,10 +3216,10 @@ x_sub(PyLongObject *a, PyLongObject *b)
     else if (size_a == size_b) {
         /* Find highest digit where a and b differ: */
         i = size_a;
-        while (--i > 0 && a->ob_digit[i] == b->ob_digit[i])
+        while (--i >= 0 && a->ob_digit[i] == b->ob_digit[i])
             ;
-        if (i == 0)
-            return (PyLongObject *)PyLong_FromLong((sdigit)a->ob_digit[0] - (sdigit)b->ob_digit[0]);
+        if (i < 0)
+            return (PyLongObject *)PyLong_FromLong(0);
         if (a->ob_digit[i] < b->ob_digit[i]) {
             sign = -1;
             { PyLongObject *temp = a; a = b; b = temp; }
