@@ -1,1 +1,1 @@
-`:mod:`pwd` is :pep:`384` compatible
+Make pwd extension module PEP-384 compatible
