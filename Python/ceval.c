@@ -5235,7 +5235,6 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     else {
         _Py_IDENTIFIER(__spec__);
         PyObject *spec = _PyObject_GetAttrId(v, &PyId___spec__);
-        Py_XINCREF(spec);
         const char *fmt =
             _PyModuleSpec_IsInitializing(spec) ?
             "cannot import name %R from partially initialized module %R "
