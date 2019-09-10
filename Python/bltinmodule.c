@@ -2342,7 +2342,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     return NULL;
                 return PyLong_FromLong(i_result);
             }
-            if (PyLong_CheckExact(item)) {
+            if (PyLong_CheckExact(item) || PyBool_Check(item)) {
                 long b = PyLong_AsLongAndOverflow(item, &overflow);
                 if (overflow == 0 &&
                     (i_result >= 0 ? (b <= LONG_MAX - i_result)
@@ -2390,7 +2390,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(item);
                 continue;
             }
-            if (PyLong_CheckExact(item)) {
+            if (PyLong_Check(item)) {
                 long value;
                 int overflow;
                 value = PyLong_AsLongAndOverflow(item, &overflow);

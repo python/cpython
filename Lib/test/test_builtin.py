@@ -1373,6 +1373,24 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertEqual(sum(range(10), 1000), 1045)
         self.assertEqual(sum(range(10), start=1000), 1045)
+        self.assertEqual(sum(range(10), 2**31-5), 2**31+40)
+        self.assertEqual(sum(range(10), 2**63-5), 2**63+40)
+
+        self.assertEqual(sum(i % 2 != 0 for i in range(10)), 5)
+        self.assertEqual(sum((i % 2 != 0 for i in range(10)), 2**31-3),
+                         2**31+2)
+        self.assertEqual(sum((i % 2 != 0 for i in range(10)), 2**63-3),
+                         2**63+2)
+        self.assertIs(sum([], False), False)
+
+        self.assertEqual(sum(i / 2 for i in range(10)), 22.5)
+        self.assertEqual(sum((i / 2 for i in range(10)), 1000), 1022.5)
+        self.assertEqual(sum((i / 2 for i in range(10)), 1000.25), 1022.75)
+        self.assertEqual(sum([0.5, 1]), 1.5)
+        self.assertEqual(sum([1, 0.5]), 1.5)
+        self.assertEqual(repr(sum([-0.0])), '0.0')
+        self.assertEqual(repr(sum([-0.0], -0.0)), '-0.0')
+        self.assertEqual(repr(sum([], -0.0)), '-0.0')
 
         self.assertRaises(TypeError, sum)
         self.assertRaises(TypeError, sum, 42)
@@ -1384,6 +1402,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, sum, [[1], [2], [3]])
         self.assertRaises(TypeError, sum, [{2:3}])
         self.assertRaises(TypeError, sum, [{2:3}]*2, {2:3})
+        self.assertRaises(TypeError, sum, [], '')
+        self.assertRaises(TypeError, sum, [], b'')
+        self.assertRaises(TypeError, sum, [], bytearray())
 
         class BadSeq:
             def __getitem__(self, index):
