@@ -356,8 +356,8 @@ To read a file's contents, call ``f.read(size)``, which reads some quantity of
 data and returns it as a string (in text mode) or bytes object (in binary mode).
 *size* is an optional numeric argument.  When *size* is omitted or negative, the
 entire contents of the file will be read and returned; it's your problem if the
-file is twice as large as your machine's memory. Otherwise, at most *size* bytes
-are read and returned.
+file is twice as large as your machine's memory. Otherwise, at most *size*
+characters (in text mode) or *size* bytes (in binary mode) are read and returned.
 If the end of the file has been reached, ``f.read()`` will return an empty
 string (``''``).  ::
 
