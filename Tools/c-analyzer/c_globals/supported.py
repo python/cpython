@@ -42,6 +42,8 @@ IGNORED = {
         'user_signals': 'signals are main-thread only',
         }
 
+BENIGN = 'races here are benign and unlikely'
+
 
 def is_supported(variable, ignored=None, known=None, *,
                  _ignored=(lambda *a, **k: _is_ignored(*a, **k)),
@@ -93,6 +95,51 @@ def _is_ignored(variable, ignoredvars=None, *,
             return 'dtoa is thread-safe?'
         if variable.name in ('private_mem', 'pmem_next'):
             return 'dtoa is thread-safe?'
+    if variable.filename == 'Python/thread.c':
+        # Threads do not become an issue until after these have been set
+        # and these never get changed after that.
+        if variable.name in ('initialized', 'thread_debug'):
+            return 'thread-safe'
+    if variable.filename == 'Python/getversion.c':
+        if variable.name == 'version':
+            # Races are benign here, as well as unlikely.
+            return BENIGN
+    if variable.filename == 'Python/fileutils.c':
+        if variable.name == 'force_ascii':
+            return BENIGN
+        if variable.name == 'ioctl_works':
+            return BENIGN
+    if variable.filename == 'Python/codecs.c':
+        if variable.name == 'ucnhash_CAPI':
+            return BENIGN
+    if variable.filename == 'Python/bootstrap_hash.c':
+        if variable.name == 'getrandom_works':
+            return BENIGN
+    if variable.filename == 'Objects/unicodeobject.c':
+        if variable.name == 'ucnhash_CAPI':
+            return BENIGN
+        if variable.name == 'bloom_linebreak':
+            # *mostly* benign
+            return BENIGN
+    if variable.filename == 'Modules/getbuildinfo.c':
+        if variable.name == 'buildinfo':
+            # The static is used for pre-allocation.
+            return BENIGN
+    if variable.filename == 'Modules/posixmodule.c':
+        if variable.name == 'ticks_per_second':
+            return BENIGN
+        if variable.name == 'dup3_works':
+            return BENIGN
+    if variable.filename == 'Modules/timemodule.c':
+        if variable.name == 'ticks_per_second':
+            return BENIGN
+    if variable.filename == 'Objects/longobject.c':
+        if variable.name == 'log_base_BASE':
+            return BENIGN
+        if variable.name == 'convwidth_base':
+            return BENIGN
+        if variable.name == 'convmultmax_base':
+            return BENIGN
 
     return None
 
