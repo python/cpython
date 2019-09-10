@@ -1271,10 +1271,13 @@ class _BasePathTest(object):
             func(*args, **kwargs)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
 
+    def assertEqualNormCase(self, path_a, path_b):
+        self.assertEqual(os.path.normcase(path_a), os.path.normcase(path_b))
+
     def _test_cwd(self, p):
         q = self.cls(os.getcwd())
         self.assertEqual(p, q)
-        self.assertEqual(str(p), str(q))
+        self.assertEqualNormCase(str(p), str(q))
         self.assertIs(type(p), type(q))
         self.assertTrue(p.is_absolute())
 
@@ -1285,7 +1288,7 @@ class _BasePathTest(object):
     def _test_home(self, p):
         q = self.cls(os.path.expanduser('~'))
         self.assertEqual(p, q)
-        self.assertEqual(str(p), str(q))
+        self.assertEqualNormCase(str(p), str(q))
         self.assertIs(type(p), type(q))
         self.assertTrue(p.is_absolute())
 
@@ -1491,15 +1494,15 @@ class _BasePathTest(object):
             p.resolve(strict=True)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         # Non-strict
-        self.assertEqual(str(p.resolve(strict=False)),
-                         os.path.join(BASE, 'foo'))
+        self.assertEqualNormCase(str(p.resolve(strict=False)),
+                                 os.path.join(BASE, 'foo'))
         p = P(BASE, 'foo', 'in', 'spam')
-        self.assertEqual(str(p.resolve(strict=False)),
-                         os.path.join(BASE, 'foo', 'in', 'spam'))
+        self.assertEqualNormCase(str(p.resolve(strict=False)),
+                                 os.path.join(BASE, 'foo', 'in', 'spam'))
         p = P(BASE, '..', 'foo', 'in', 'spam')
-        self.assertEqual(str(p.resolve(strict=False)),
-                         os.path.abspath(os.path.join('foo', 'in', 'spam')))
-        # These are all relative symlinks
+        self.assertEqualNormCase(str(p.resolve(strict=False)),
+                                 os.path.abspath(os.path.join('foo', 'in', 'spam')))
+        # These are all relative symlinks.
         p = P(BASE, 'dirB', 'fileB')
         self._check_resolve_relative(p, p)
         p = P(BASE, 'linkA')
@@ -1996,16 +1999,16 @@ class _BasePathTest(object):
         # Resolve absolute paths
         p = (P / 'link0').resolve()
         self.assertEqual(p, P)
-        self.assertEqual(str(p), BASE)
+        self.assertEqualNormCase(str(p), BASE)
         p = (P / 'link1').resolve()
         self.assertEqual(p, P)
-        self.assertEqual(str(p), BASE)
+        self.assertEqualNormCase(str(p), BASE)
         p = (P / 'link2').resolve()
         self.assertEqual(p, P)
-        self.assertEqual(str(p), BASE)
+        self.assertEqualNormCase(str(p), BASE)
         p = (P / 'link3').resolve()
         self.assertEqual(p, P)
-        self.assertEqual(str(p), BASE)
+        self.assertEqualNormCase(str(p), BASE)
 
         # Resolve relative paths
         old_path = os.getcwd()
@@ -2013,16 +2016,16 @@ class _BasePathTest(object):
         try:
             p = self.cls('link0').resolve()
             self.assertEqual(p, P)
-            self.assertEqual(str(p), BASE)
+            self.assertEqualNormCase(str(p), BASE)
             p = self.cls('link1').resolve()
             self.assertEqual(p, P)
-            self.assertEqual(str(p), BASE)
+            self.assertEqualNormCase(str(p), BASE)
             p = self.cls('link2').resolve()
             self.assertEqual(p, P)
-            self.assertEqual(str(p), BASE)
+            self.assertEqualNormCase(str(p), BASE)
             p = self.cls('link3').resolve()
             self.assertEqual(p, P)
-            self.assertEqual(str(p), BASE)
+            self.assertEqualNormCase(str(p), BASE)
         finally:
             os.chdir(old_path)
 
