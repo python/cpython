@@ -1119,6 +1119,9 @@ call fails (for example because the path doesn't exist).
       >>> p.read_text()
       'Text file contents'
 
+   An existing file of the same name is overwritten. The optional parameters
+   have the same meaning as in :func:`open`.
+
    .. versionadded:: 3.5
 
 Correspondence to tools in the :mod:`os` module
