@@ -2462,6 +2462,12 @@ class _Call(tuple):
         return _Call(name=name, parent=self, from_kall=False)
 
 
+    def __getattribute__(self, attr):
+        if attr in tuple.__dict__:
+            raise AttributeError
+        return tuple.__getattribute__(self, attr)
+
+
     def count(self, /, *args, **kwargs):
         return self.__getattr__('count')(*args, **kwargs)
 
