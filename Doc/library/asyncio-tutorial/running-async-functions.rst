@@ -137,8 +137,8 @@ it works).
             return await http.get('http://example.com/2')
         }
         async main () {
-            task1 = func1()  // In Python: `task1 = create_task(func1())`
-            task2 = func2()  // In Python: `task2 = create_task(func2())`
+            task1 = func1()  // In Python: task1 = create_task(func1())
+            task2 = func2()  // In Python: task2 = create_task(func2())
             [result1, result2] = [await task1, await task2]
         }
 
