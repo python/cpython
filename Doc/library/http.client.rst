@@ -497,8 +497,11 @@ Here is an example session that uses the ``GET`` method::
    >>> # The following example demonstrates reading data in chunks.
    >>> conn.request("GET", "/")
    >>> r1 = conn.getresponse()
-   >>> while not r1.closed:
-   ...     print(r1.read(200))  # 200 bytes
+   >>> while True:
+   ...     chunk = r1.read(200)  # 200 bytes
+   ...     if not chunk:
+   ...          break
+   ...     print(repr(chunk))
    b'<!doctype html>\n<!--[if"...
    ...
    >>> # Example of an invalid request
