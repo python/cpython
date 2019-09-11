@@ -537,7 +537,7 @@ _Py_Uid_Converter(PyObject *obj, void *p)
     if (index == NULL) {
         PyErr_Format(PyExc_TypeError,
                      "uid should be integer, not %.200s",
-                     Py_TYPE(obj)->tp_name);
+                     _PyType_Name(Py_TYPE(obj)));
         return 0;
     }
 
@@ -643,7 +643,7 @@ _Py_Gid_Converter(PyObject *obj, void *p)
     if (index == NULL) {
         PyErr_Format(PyExc_TypeError,
                      "gid should be integer, not %.200s",
-                     Py_TYPE(obj)->tp_name);
+                     _PyType_Name(Py_TYPE(obj)));
         return 0;
     }
 
@@ -810,7 +810,7 @@ dir_fd_converter(PyObject *o, void *p)
     else {
         PyErr_Format(PyExc_TypeError,
                      "argument should be integer or None, not %.200s",
-                     Py_TYPE(o)->tp_name);
+                     _PyType_Name(Py_TYPE(o)));
         return 0;
     }
 }
@@ -1005,8 +1005,8 @@ path_converter(PyObject *o, void *p)
         else {
             PyErr_Format(PyExc_TypeError,
                  "expected %.200s.__fspath__() to return str or bytes, "
-                 "not %.200s", Py_TYPE(o)->tp_name,
-                 Py_TYPE(res)->tp_name);
+                 "not %.200s", _PyType_Name(Py_TYPE(o)),
+                 _PyType_Name(Py_TYPE(res)));
             Py_DECREF(res);
             goto error_exit;
         }
@@ -1058,7 +1058,7 @@ path_converter(PyObject *o, void *p)
             path->allow_fd ? "string, bytes, os.PathLike or integer" :
             path->nullable ? "string, bytes, os.PathLike or None" :
                              "string, bytes or os.PathLike",
-            Py_TYPE(o)->tp_name)) {
+            _PyType_Name(Py_TYPE(o)))) {
             goto error_exit;
         }
         bytes = PyBytes_FromObject(o);
@@ -1089,7 +1089,7 @@ path_converter(PyObject *o, void *p)
             path->allow_fd ? "string, bytes, os.PathLike or integer" :
             path->nullable ? "string, bytes, os.PathLike or None" :
                              "string, bytes or os.PathLike",
-            Py_TYPE(o)->tp_name);
+            _PyType_Name(Py_TYPE(o)));
         goto error_exit;
     }
 
@@ -2059,12 +2059,16 @@ static PyTypeObject* SchedParamType;
 static newfunc structseq_new;
 
 static PyObject *
-statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+statresult_new(PyTypeObject *type, PyObject *args)
 {
+    PyObject *sequence, *kwds;
     PyStructSequence *result;
     int i;
 
-    result = (PyStructSequence*)structseq_new(type, args, kwds);
+    /* Remove the cls object from the argument list */
+    sequence = PyTuple_GetSlice(args, 1, PyTuple_Size(args));
+    kwds = PyDict_New();
+    result = (PyStructSequence*)structseq_new(type, sequence, kwds);
     if (!result)
         return NULL;
     /* If we have been initialized from a tuple,
@@ -4715,7 +4719,7 @@ split_py_long_to_s_and_ns(PyObject *py_long, time_t *s, long *ns)
     if (!PyTuple_Check(divmod) || PyTuple_GET_SIZE(divmod) != 2) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s.__divmod__() must return a 2-tuple, not %.200s",
-                     Py_TYPE(py_long)->tp_name, Py_TYPE(divmod)->tp_name);
+                     _PyType_Name(Py_TYPE(py_long)), _PyType_Name(Py_TYPE(divmod)));
         goto exit;
     }
     *s = _PyLong_AsTime_t(PyTuple_GET_ITEM(divmod, 0));
@@ -5962,7 +5966,7 @@ check_null_or_callable(PyObject *obj, const char* obj_name)
 {
     if (obj && !PyCallable_Check(obj)) {
         PyErr_Format(PyExc_TypeError, "'%s' must be callable, not %s",
-                     obj_name, Py_TYPE(obj)->tp_name);
+                     obj_name, _PyType_Name(Py_TYPE(obj)));
         return -1;
     }
     return 0;
@@ -12390,19 +12394,20 @@ static PyObject *
 DirEntry_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyErr_Format(PyExc_TypeError,
-        "cannot create '%.100s' instances", type->tp_name);
+        "cannot create '%.100s' instances", _PyType_Name(type));
     return NULL;
 }
 
 static void
 DirEntry_dealloc(DirEntry *entry)
 {
+    PyTypeObject *tp = Py_TYPE(entry);
     Py_XDECREF(entry->name);
     Py_XDECREF(entry->path);
     Py_XDECREF(entry->stat);
     Py_XDECREF(entry->lstat);
-    Py_DECREF(Py_TYPE(entry));
     Py_TYPE(entry)->tp_free((PyObject *)entry);
+    Py_DECREF(tp);
 }
 
 /* Forward reference */
@@ -12673,7 +12678,7 @@ os_DirEntry___reduce___impl(DirEntry *self)
 /*[clinic end generated code: output=45167543e30c210c input=c1689a589f9c38f2]*/
 {
     PyErr_Format(PyExc_TypeError,
-        "cannot pickle '%.100s' instances", Py_TYPE(self)->tp_name);
+        "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
     return NULL;
 }
 
@@ -13147,7 +13152,7 @@ static PyObject *
 ScandirIterator_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyErr_Format(PyExc_TypeError,
-        "cannot create '%.100s' instances", type->tp_name);
+        "cannot create '%.100s' instances", _PyType_Name(type));
     return NULL;
 }
 
@@ -13155,7 +13160,7 @@ static PyObject *
 ScandirIterator_reduce(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyErr_Format(PyExc_TypeError,
-        "cannot pickle '%.100s' instances", Py_TYPE(self)->tp_name);
+        "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
     return NULL;
 }
 
@@ -13168,11 +13173,12 @@ ScandirIterator_reduce_ex(PyObject *self, PyObject *arg)
 static void
 ScandirIterator_dealloc(ScandirIterator *iterator)
 {
+    PyTypeObject *tp = Py_TYPE(iterator);
     if (PyObject_CallFinalizerFromDealloc((PyObject *)iterator) < 0)
         return;
 
-    Py_DECREF(Py_TYPE(iterator));
     Py_TYPE(iterator)->tp_free((PyObject *)iterator);
+    Py_DECREF(tp);
 }
 
 static PyMethodDef ScandirIterator_methods[] = {
@@ -13341,7 +13347,7 @@ PyOS_FSPath(PyObject *path)
         return PyErr_Format(PyExc_TypeError,
                             "expected str, bytes or os.PathLike object, "
                             "not %.200s",
-                            Py_TYPE(path)->tp_name);
+                            _PyType_Name(Py_TYPE(path)));
     }
 
     path_repr = _PyObject_CallNoArg(func);
@@ -13353,8 +13359,8 @@ PyOS_FSPath(PyObject *path)
     if (!(PyUnicode_Check(path_repr) || PyBytes_Check(path_repr))) {
         PyErr_Format(PyExc_TypeError,
                      "expected %.200s.__fspath__() to return str or bytes, "
-                     "not %.200s", Py_TYPE(path)->tp_name,
-                     Py_TYPE(path_repr)->tp_name);
+                     "not %.200s", _PyType_Name(Py_TYPE(path)),
+                     _PyType_Name(Py_TYPE(path_repr)));
         Py_DECREF(path_repr);
         return NULL;
     }
@@ -13549,6 +13555,16 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
 }
 
 #endif
+
+#if defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM)
+static PyMethodDef SchedParamType_dunder_new = {
+    "__new__", (PyCFunction)os_sched_param, METH_VARARGS | METH_KEYWORDS
+};
+#endif
+
+static PyMethodDef StatResultType_dunder_new = {
+    "__new__", (PyCFunction)statresult_new, METH_VARARGS
+};
 
 static PyMethodDef posix_methods[] = {
 
@@ -14403,7 +14419,7 @@ static const char * const have_functions[] = {
 PyMODINIT_FUNC
 INITFUNC(void)
 {
-    PyObject *m, *v;
+    PyObject *m, *v, *dunder_new;
     PyObject *list;
     const char * const *trace;
 
@@ -14449,8 +14465,12 @@ INITFUNC(void)
         if (StatResultType == NULL) {
             return NULL;
         }
-        structseq_new = StatResultType->tp_new;
-        StatResultType->tp_new = statresult_new;
+
+        /* Add a custom __new__ to the structsequence */
+        structseq_new = (newfunc)PyType_GetSlot((PyTypeObject *)StatResultType, Py_tp_new);
+        dunder_new = PyDescr_NewClassMethod((PyTypeObject *)StatResultType, &StatResultType_dunder_new);
+        PyObject_SetAttrString((PyObject *)StatResultType, "__new__", dunder_new);
+        Py_DECREF(dunder_new);
 
         statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
         StatVFSResultType = PyStructSequence_NewType(&statvfs_result_desc);
@@ -14473,7 +14493,10 @@ INITFUNC(void)
         if (SchedParamType == NULL) {
             return NULL;
         }
-        SchedParamType->tp_new = os_sched_param;
+        /* Add a custom __new__ to the structsequence */
+        dunder_new = PyDescr_NewClassMethod((PyTypeObject *)SchedParamType, &SchedParamType_dunder_new);
+        PyObject_SetAttrString((PyObject *)SchedParamType, "__new__", dunder_new);
+        Py_DECREF(dunder_new);
 #endif
 
         /* initialize TerminalSize_info */
