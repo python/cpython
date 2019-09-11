@@ -2,7 +2,6 @@
 
 See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
 """
-import io
 import itertools
 import bisect
 import copy
@@ -1383,20 +1382,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             with self.subTest(d=d, comparison="fields"):
                 t = d.isocalendar()
                 self.assertEqual((t.year, t.week, t.weekday), exp_iso)
-
-    def test_isocalendar_pickling(self):
-        """Test that the result of datetime.isocalendar() can be pickled.
-
-        The result of a round trip should be a plain tuple.
-        """
-        d = self.theclass(2019, 1, 1)
-        f = io.BytesIO()
-        pickle.dump(d.isocalendar(), f)
-        f.seek(0)
-
-        res = pickle.load(f)
-
-        self.assertEqual(res, (2019, 1, 2))
 
     def test_iso_long_years(self):
         # Calculate long ISO years and compare to table from

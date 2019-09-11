@@ -3245,52 +3245,8 @@ static PyStructSequence_Desc struct_iso_calendar_date_desc = {
     3
 };
 
-static int isocalendardate_initialized;
+static int initialized;
 static PyTypeObject StructIsoCalendarDateType;
-
-// Required for pickling as a tuple
-static PyObject *
-isocalendardate_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    // Construct the tuple that this reduces to
-    PyObject * reduce_tuple = Py_BuildValue(
-        "O((OOO))", &PyTuple_Type,
-        PyStructSequence_GET_ITEM(self, 0),
-        PyStructSequence_GET_ITEM(self, 1),
-        PyStructSequence_GET_ITEM(self, 2)
-    );
-
-    return reduce_tuple;
-}
-
-/* Method to add our custom reduce type to the IsoCalendarDate type */
-static int
-_initialize_isocalendardate() {
-    if (isocalendardate_initialized) {
-        return 0;
-    }
-
-    if (PyStructSequence_InitType2(&StructIsoCalendarDateType,
-                                   &struct_iso_calendar_date_desc) < 0) {
-        return -1;
-    }
-
-    // Add our custom __reduce__
-    PyMethodDef *method = StructIsoCalendarDateType.tp_methods;
-    int reduce_missing = 1;
-    while (method != NULL) {
-        if (strcmp("__reduce__", method->ml_name) == 0) {
-            reduce_missing = 0;
-            method->ml_meth = (PyCFunction)isocalendardate_reduce;
-            method->ml_doc = "Reduce IsoCalendarDate to a simple tuple";
-
-            break;
-        }
-    }
-
-    assert(!reduce_missing);
-    return 0;
-}
 
 static PyObject *
 date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
@@ -6598,10 +6554,15 @@ PyInit__datetime(void)
     PyModule_AddIntMacro(m, MAXYEAR);
 
     /* IsoCalendarDate */
-    if (_initialize_isocalendardate()) {
-        return NULL;
+    if (!initialized) {
+        if (PyStructSequence_InitType2(&StructIsoCalendarDateType,
+                                       &struct_iso_calendar_date_desc) < 0) {
+            return NULL;
+        }
+        initialized = 1;
     }
     Py_INCREF((PyObject *) &StructIsoCalendarDateType);
+    PyModule_AddObject(m, "IsoCalendarDate", (PyObject *) &StructIsoCalendarDateType);
 
     Py_INCREF(&PyDateTime_DateType);
     PyModule_AddObject(m, "date", (PyObject *) &PyDateTime_DateType);
