@@ -405,14 +405,16 @@ Stream
 
    .. coroutinemethod:: sendfile(file, offset=0, count=None, *, fallback=True)
 
-      Calls :meth:`Stream.drain()` to write to the connection and uses :meth:`loop.sendfile`
-      to send *file* over *transport*.
+      Sends a *file* over the stream using an optimized syscall if available.
+
+      For other parameters meaning please see :meth:`AbstractEventloop.sendfile`.
 
    .. coroutinemethod:: start_tls(sslcontext, *, server_hostname=None, \
                                   ssl_handshake_timeout=None)
 
-      Calls :meth:`Stream.drain()` to write to the connection and uses :meth:`loop.start_tls`
-      to upgrade the existing transport-based connection to TLS.
+      Upgrades the existing transport-based connection to TLS.
+
+      For other parameters meaning please see :meth:`AbstractEventloop.start_tls`.
 
    .. coroutinemethod:: read(n=-1)
 
@@ -458,18 +460,25 @@ Stream
       buffer is reset.  The :attr:`IncompleteReadError.partial` attribute
       may contain a portion of the separator.
 
+   .. coroutinemethod:: write(data)
+
+      Write *data* to the underlying socket; wait until the data is sent, e.g.::
+
+         await stream.write(data)
+
    .. method:: write(data)
 
       The method attempts to write the *data* to the underlying socket immediately.
       If that fails, the data is queued in an internal write buffer until it can be
-      sent.
+      sent. :meth:`drain` can be used to flush the underlying buffer once writing is
+      available::
 
-      It is possible to directly await on the `write()` method::
+         stream.write(data)
+         await stream.drain()
+
+      It is recommended to directly await on the `write()` method instead::
 
          await stream.write(data)
-
-      The ``await`` pauses the current coroutine until the data is written to the
-      socket.
 
    .. method:: writelines(data)
 
