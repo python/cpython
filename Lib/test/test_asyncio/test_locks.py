@@ -192,7 +192,7 @@ class LockTests(test_utils.TestCase):
             finally:
                 lock.release()
 
-        fa = asyncio.Future(loop=self.loop)
+        fa = self.loop.create_future()
         ta = asyncio.Task(lockit('A', fa), loop=self.loop)
         test_utils.run_briefly(self.loop)
         self.assertTrue(lock.locked())

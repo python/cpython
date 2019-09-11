@@ -1016,7 +1016,7 @@ os.close(fd)
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream._waiter = asyncio.Future(loop=self.loop)
+        stream._waiter = self.loop.create_future()
         self.assertRegex(
             repr(stream),
             r"<Stream .+ waiter=<Future pending[\S ]*>>")

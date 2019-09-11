@@ -181,7 +181,7 @@ class QueueGetTests(_QueueTestBase):
             q = asyncio.Queue(1, loop=self.loop)
         q.put_nowait(1)
 
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         q._putters.append(waiter)
 
         res = self.loop.run_until_complete(q.get())
