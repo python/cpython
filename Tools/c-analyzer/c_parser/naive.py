@@ -165,7 +165,7 @@ def find_variables(varids, filenames=None, *,
             if not filenames:
                 yield Variable(varid, UNKNOWN)
                 continue
-            srcfiles = filenames 
+            srcfiles = filenames
         for filename in srcfiles:
             found = _find_varid(filename, varid.funcname, varid.name,
                                  ignored=used,

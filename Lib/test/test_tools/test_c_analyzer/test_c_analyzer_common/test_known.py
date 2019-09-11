@@ -1,3 +1,4 @@
+import re
 import textwrap
 import unittest
 
@@ -28,13 +29,14 @@ class FromFileTests(unittest.TestCase):
 
     def test_typical(self):
         lines = textwrap.dedent('''
-            filename	funcname	name	kind	declaration
-            file1.c	-	var1	variable	static int
-            file1.c	func1	local1	variable	static int
-            file1.c	-	var2	variable	int
-            file1.c	func2	local2	variable	char *
-            file2.c	-	var1	variable	char *
+            filename    funcname        name    kind    declaration
+            file1.c     -       var1    variable        static int
+            file1.c     func1   local1  variable        static int
+            file1.c     -       var2    variable        int
+            file1.c     func2   local2  variable        char *
+            file2.c     -       var1    variable        char *
             ''').strip().splitlines()
+        lines = [re.sub(r'\s+', '\t', line, 4) for line in lines]
         self._return_read_tsv = [tuple(v.strip() for v in line.split('\t'))
                                  for line in lines[1:]]
 
@@ -50,7 +52,7 @@ class FromFileTests(unittest.TestCase):
                 ]},
             })
         self.assertEqual(self.calls, [
-            ('_read_tsv', ('spam.c', 'filename	funcname	name	kind	declaration')),
+            ('_read_tsv', ('spam.c', 'filename\tfuncname\tname\tkind\tdeclaration')),
             ])
 
     def test_empty(self):
@@ -62,5 +64,5 @@ class FromFileTests(unittest.TestCase):
             'variables': {},
             })
         self.assertEqual(self.calls, [
-            ('_read_tsv', ('spam.c', 'filename	funcname	name	kind	declaration')),
+            ('_read_tsv', ('spam.c', 'filename\tfuncname\tname\tkind\tdeclaration')),
             ])
