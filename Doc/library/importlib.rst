@@ -1349,7 +1349,7 @@ find and load modules.
    (Read-only) The fully-qualified name of the package under which the
    module should be loaded as a submodule (or the empty string for top-level
    modules).  For packages, it is the same as :attr:`__name__` (since in
-   that case ``parent`` relates to the package's `__init__` module).
+   that case ``parent`` relates to the package's ``__init__`` module).
 
    .. attribute:: has_location
 
