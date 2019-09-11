@@ -653,17 +653,18 @@ Here's an example that demonstrates use of the XInclude module. To include an XM
 
 .. code-block:: xml
 
-   <document xmlns:xi="http://www.w3.org/2001/XInclude">
-   <xi:include href="source.xml" parse="xml" />
-   </document>
+    <?xml version="1.0"?>
+    <document xmlns:xi="http://www.w3.org/2001/XInclude">
+      <xi:include href="source.xml" parse="xml" />
+    </document>
 
 By default, the **href** attribute is treated as a file name. You can use custom loaders to override this behaviour. Also note that the standard helper does not support XPointer syntax.
 
-To process this file, load it as usual, and pass the root element to the **ElementTree** module:
+To process this file, load it as usual, and pass the root element to the :mod:`xml.etree.ElementTree` module:
 
 .. code-block:: python
 
-   from elementtree import ElementTree, ElementInclude
+   from xml.etree import ElementTree, ElementInclude
 
    tree = ElementTree.parse("document.xml")
    root = tree.getroot()
@@ -674,9 +675,9 @@ The ElementInclude module replaces the ``{http://www.w3.org/2001/XInclude}includ
 
 .. code-block:: xml
 
-   <document xmlns:xi="http://www.w3.org/2001/XInclude">
-   <para>This is a paragraph.</para>
-   </document>
+    <document xmlns:xi="http://www.w3.org/2001/XInclude">
+      <para>This is a paragraph.</para>
+    </document>
 
 If the **parse** attribute is omitted, it defaults to "xml". The href attribute is required.
 
@@ -684,17 +685,18 @@ To include a text document, use the ``{http://www.w3.org/2001/XInclude}include``
 
 .. code-block:: xml
 
-   <document xmlns:xi="http://www.w3.org/2001/XInclude">
-   Copyright (c) <xi:include href="year.txt" parse="text" />.
-   </document>
+    <?xml version="1.0"?>
+    <document xmlns:xi="http://www.w3.org/2001/XInclude">
+      Copyright (c) <xi:include href="year.txt" parse="text" />.
+    </document>
 
 The result might look something like:
 
 .. code-block:: xml
 
-   <document xmlns:xi="http://www.w3.org/2001/XInclude">
-   Copyright (c) 2003.
-   </document>
+    <document xmlns:xi="http://www.w3.org/2001/XInclude">
+      Copyright (c) 2003.
+    </document>
 
 Reference
 ---------
