@@ -166,7 +166,7 @@ Running and stopping the loop
         loop.close()
 
    .. versionadded:: 3.6
-
+ 
 .. coroutinemethod:: loop.shutdown_default_executor()
 
    Schedule the closure of the default executor, but wait for the
