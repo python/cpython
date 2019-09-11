@@ -396,7 +396,7 @@ I/O Base Classes
 
    Raw binary streams typically provide low-level access to an underlying OS
    device or API, and do not try to encapsulate it in high-level primitives
-   (this is left to buffered binary streams and text streams, described later
+   (this functionality is done at a higher-level in buffered binary streams and text streams, described later
    in this page).
 
    :class:`RawIOBase` provides these methods in addition to those from
@@ -669,7 +669,7 @@ than raw I/O does.
 
 .. class:: BufferedReader(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
-   A buffered binary stream over a readable, sequential :class:`RawIOBase`
+   A buffered binary stream providing higher-level access to a readable, sequential :class:`RawIOBase`
    raw binary stream.  It inherits :class:`BufferedIOBase`.
 
    When reading data from this object, a larger amount of data may be
@@ -706,7 +706,7 @@ than raw I/O does.
 
 .. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
-   A buffered binary stream over a writeable, sequential :class:`RawIOBase`
+   A buffered binary stream providing higher-level access to a writeable, sequential :class:`RawIOBase`
    raw binary stream.  It inherits :class:`BufferedIOBase`.
 
    When writing to this object, data is normally placed into an internal
