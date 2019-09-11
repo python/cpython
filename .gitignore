@@ -88,7 +88,6 @@ PCbuild/win32/
 Tools/unicode/data/
 /autom4te.cache
 /build/
-/buildno
 /config.cache
 /config.log
 /config.status
