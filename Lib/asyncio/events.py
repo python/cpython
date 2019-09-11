@@ -250,7 +250,7 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     def shutdown_default_executor(self):
-        """Shutdown the default executor and wait for the threads
+        """Shutdown the default executor, but wait for the threads
         in the threadpool to finish joining.
         """
         raise NotImplementedError
