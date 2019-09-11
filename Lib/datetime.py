@@ -1121,7 +1121,7 @@ class date:
             if today >= _isoweek1monday(year+1):
                 year += 1
                 week = 0
-        return IsoCalendarDate((year, week+1, day+1))
+        return _IsoCalendarDate((year, week+1, day+1))
 
     # Pickle support.
 
@@ -1238,6 +1238,9 @@ class IsoCalendarDate(tuple):
     def __repr__(self):
         return (f'{self.__class__.__name__}'
                 f'(year={self[0]}, week={self[1]}, weekday={self[2]})')
+
+_IsoCalendarDate = IsoCalendarDate
+del IsoCalendarDate
 
 
 _tzinfo_class = tzinfo
@@ -2545,7 +2548,7 @@ else:
          _format_time, _format_offset, _is_leap, _isoweek1monday, _math,
          _ord2ymd, _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
          _divide_and_round, _parse_isoformat_date, _parse_isoformat_time,
-         _parse_hh_mm_ss_ff)
+         _parse_hh_mm_ss_ff, _IsoCalendarDate)
     # XXX Since import * above excludes names that start with _,
     # docstring does not get overwritten. In the future, it may be
     # appropriate to maintain a single module level docstring and
