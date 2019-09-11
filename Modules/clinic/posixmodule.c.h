@@ -7936,57 +7936,6 @@ os_DirEntry_inode(DirEntry *self, PyObject *Py_UNUSED(ignored))
     return os_DirEntry_inode_impl(self);
 }
 
-PyDoc_STRVAR(os_DirEntry___reduce____doc__,
-"__reduce__($self, /)\n"
-"--\n"
-"\n"
-"returns null and raises an exception to avoid pickling");
-
-#define OS_DIRENTRY___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)os_DirEntry___reduce__, METH_NOARGS, os_DirEntry___reduce____doc__},
-
-static PyObject *
-os_DirEntry___reduce___impl(DirEntry *self);
-
-static PyObject *
-os_DirEntry___reduce__(DirEntry *self, PyObject *Py_UNUSED(ignored))
-{
-    return os_DirEntry___reduce___impl(self);
-}
-
-PyDoc_STRVAR(os_DirEntry___reduce_ex____doc__,
-"__reduce_ex__($self, protocol, /)\n"
-"--\n"
-"\n"
-"Returns NULL and raises an exception to avoid pickling");
-
-#define OS_DIRENTRY___REDUCE_EX___METHODDEF    \
-    {"__reduce_ex__", (PyCFunction)os_DirEntry___reduce_ex__, METH_O, os_DirEntry___reduce_ex____doc__},
-
-static PyObject *
-os_DirEntry___reduce_ex___impl(DirEntry *self, int protocol);
-
-static PyObject *
-os_DirEntry___reduce_ex__(DirEntry *self, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    int protocol;
-
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    protocol = _PyLong_AsInt(arg);
-    if (protocol == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = os_DirEntry___reduce_ex___impl(self, protocol);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(os_DirEntry___fspath____doc__,
 "__fspath__($self, /)\n"
 "--\n"

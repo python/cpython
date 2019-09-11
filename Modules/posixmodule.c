@@ -12668,37 +12668,6 @@ os_DirEntry_inode_impl(DirEntry *self)
 #endif
 }
 
-/*[clinic input]
-os.DirEntry.__reduce__
-
-returns null and raises an exception to avoid pickling
-[clinic start generated code]*/
-
-static PyObject *
-os_DirEntry___reduce___impl(DirEntry *self)
-/*[clinic end generated code: output=45167543e30c210c input=c1689a589f9c38f2]*/
-{
-    PyErr_Format(PyExc_TypeError,
-        "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
-    return NULL;
-}
-
-/*[clinic input]
-os.DirEntry.__reduce_ex__
-
-  protocol: int
-  /
-
-Returns NULL and raises an exception to avoid pickling
-[clinic start generated code]*/
-
-static PyObject *
-os_DirEntry___reduce_ex___impl(DirEntry *self, int protocol)
-/*[clinic end generated code: output=a81881dfe241a631 input=1afbee3b136a7ece]*/
-{
-    return os_DirEntry___reduce___impl(self);
-}
-
 static PyObject *
 DirEntry_repr(DirEntry *self)
 {
@@ -12730,8 +12699,6 @@ static PyMemberDef DirEntry_members[] = {
 #include "clinic/posixmodule.c.h"
 
 static PyMethodDef DirEntry_methods[] = {
-    OS_DIRENTRY___REDUCE___METHODDEF
-    OS_DIRENTRY___REDUCE_EX___METHODDEF
     OS_DIRENTRY_IS_DIR_METHODDEF
     OS_DIRENTRY_IS_FILE_METHODDEF
     OS_DIRENTRY_IS_SYMLINK_METHODDEF
@@ -13157,20 +13124,6 @@ ScandirIterator_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     return NULL;
 }
 
-static PyObject *
-ScandirIterator_reduce(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    PyErr_Format(PyExc_TypeError,
-        "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
-    return NULL;
-}
-
-static PyObject *
-ScandirIterator_reduce_ex(PyObject *self, PyObject *arg)
-{
-    return ScandirIterator_reduce(self, NULL, NULL);
-}
-
 static void
 ScandirIterator_dealloc(ScandirIterator *iterator)
 {
@@ -13184,8 +13137,6 @@ ScandirIterator_dealloc(ScandirIterator *iterator)
 }
 
 static PyMethodDef ScandirIterator_methods[] = {
-    {"__reduce__", (PyCFunction)ScandirIterator_reduce, METH_NOARGS},
-    {"__reduce_ex__", (PyCFunction)ScandirIterator_reduce_ex, METH_O},
     {"__enter__", (PyCFunction)ScandirIterator_enter, METH_NOARGS},
     {"__exit__", (PyCFunction)ScandirIterator_exit, METH_VARARGS},
     {"close", (PyCFunction)ScandirIterator_close, METH_NOARGS},
@@ -14467,7 +14418,6 @@ INITFUNC(void)
         if (StatResultType == NULL) {
             return NULL;
         }
-
         /* Add a custom __new__ to the structsequence */
         structseq_new = (newfunc)PyType_GetSlot((PyTypeObject *)StatResultType, Py_tp_new);
         dunder_new = PyDescr_NewClassMethod((PyTypeObject *)StatResultType, &StatResultType_dunder_new);
