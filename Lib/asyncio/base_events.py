@@ -550,9 +550,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 })
 
     def shutdown_default_executor(self):
-        """Shutdown the default executor, but wait for the threads
-        in the threadpool to finish joining.
-        """
+        """Shutdown the default executor, but wait for the threadpool to finish."""
         self._executor_shutdown_called = True
         executor = self._default_executor
         if executor is not None:
