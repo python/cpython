@@ -93,7 +93,6 @@ Tools/unicode/data/
 /config.status
 /config.status.lineno
 /.hg/
-/ipch/
 /libpython*.a
 /libpython*.so*
 /libpython*.dylib
