@@ -301,7 +301,7 @@ Initializing and finalizing the interpreter
    than once; this can happen if an application calls :c:func:`Py_Initialize` and
    :c:func:`Py_FinalizeEx` more than once.
 
-   .. audit-event:: cpython._PySys_ClearAuditHooks "" c._PySys_ClearAuditHooks
+   .. audit-event:: cpython._PySys_ClearAuditHooks "" c.Py_FinalizeEx
 
    .. versionadded:: 3.6
 
