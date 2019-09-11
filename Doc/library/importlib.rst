@@ -1340,7 +1340,7 @@ find and load modules.
    Where a compiled version of the code should be stored.  For modules
    that do not need compiled code stored, ``cached`` should be ``None``.
    This is typically a filename as provided by
-   ::func::`importlib.util.cache_from_source`.
+   :func:`importlib.util.cache_from_source`.
 
    .. attribute:: parent
 
