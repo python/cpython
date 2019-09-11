@@ -14,7 +14,7 @@ Objects/genobject.c	-	ag_value_freelist_free	variable	static int ag_value_freeli
 Python/Python-ast.c	-	alias_fields	variable	static const char *alias_fields[]
 Python/Python-ast.c	-	alias_type	variable	static PyTypeObject *alias_type
 Modules/_tracemalloc.c	-	allocators	variable	static struct { PyMemAllocatorEx mem; PyMemAllocatorEx raw; PyMemAllocatorEx obj; } allocators
-Python/Python-ast.c	-	And_singleton	variable	PyObject *And_singleton
+Python/Python-ast.c	-	And_singleton	variable	static PyObject *And_singleton
 Python/Python-ast.c	-	And_type	variable	static PyTypeObject *And_type
 Python/Python-ast.c	-	AnnAssign_fields	variable	static const char *AnnAssign_fields[]
 Python/Python-ast.c	-	AnnAssign_type	variable	static PyTypeObject *AnnAssign_type
@@ -61,9 +61,9 @@ Python/Python-ast.c	-	Attribute_fields	variable	static const char *Attribute_fie
 Python/Python-ast.c	-	Attribute_type	variable	static PyTypeObject *Attribute_type
 Python/Python-ast.c	-	AugAssign_fields	variable	static const char *AugAssign_fields[]
 Python/Python-ast.c	-	AugAssign_type	variable	static PyTypeObject *AugAssign_type
-Python/Python-ast.c	-	AugLoad_singleton	variable	PyObject *AugLoad_singleton
+Python/Python-ast.c	-	AugLoad_singleton	variable	static PyObject *AugLoad_singleton
 Python/Python-ast.c	-	AugLoad_type	variable	static PyTypeObject *AugLoad_type
-Python/Python-ast.c	-	AugStore_singleton	variable	PyObject *AugStore_singleton
+Python/Python-ast.c	-	AugStore_singleton	variable	static PyObject *AugStore_singleton
 Python/Python-ast.c	-	AugStore_type	variable	static PyTypeObject *AugStore_type
 Python/Python-ast.c	-	Await_fields	variable	static const char *Await_fields[]
 Python/Python-ast.c	-	Await_type	variable	static PyTypeObject *Await_type
@@ -86,7 +86,6 @@ Python/Python-ast.c	-	boolop_type	variable	static PyTypeObject *boolop_type
 Python/Python-ast.c	-	BoolOp_type	variable	static PyTypeObject *BoolOp_type
 Python/_warnings.c	is_internal_frame	bootstrap_string	variable	static PyObject *bootstrap_string
 Python/Python-ast.c	-	Break_type	variable	static PyTypeObject *Break_type
-Python/ast.c	decode_unicode_with_escapes	buf	variable	char *buf
 Modules/_io/bufferedio.c	-	bufferediobase_methods	variable	static PyMethodDef bufferediobase_methods
 Modules/_io/bufferedio.c	-	bufferedrandom_getset	variable	static PyGetSetDef bufferedrandom_getset[]
 Modules/_io/bufferedio.c	-	bufferedrandom_members	variable	static PyMemberDef bufferedrandom_members[]
@@ -139,7 +138,7 @@ Objects/codeobject.c	-	code_methods	variable	static PyMethodDef code_methods
 Modules/_collectionsmodule.c	-	_collectionsmodule	variable	static struct PyModuleDef _collectionsmodule
 Modules/itertoolsmodule.c	-	combinations_methods	variable	static PyMethodDef combinations_methods
 Modules/itertoolsmodule.c	-	combinations_type	variable	static PyTypeObject combinations_type
-Objects/typeobject.c	object_new	comma_id	variable	"_Py_static_string(comma_id, "", "")"
+Objects/typeobject.c	object_new	comma_id	variable	_Py_static_string(comma_id, "", "")
 Python/Python-ast.c	-	Compare_fields	variable	static const char *Compare_fields[]
 Python/Python-ast.c	-	Compare_type	variable	static PyTypeObject *Compare_type
 Objects/complexobject.c	-	complex_as_number	variable	static PyNumberMethods complex_as_number
@@ -175,7 +174,7 @@ Modules/_collectionsmodule.c	-	defdict_methods	variable	static PyMethodDef defdi
 Modules/_collectionsmodule.c	-	defdict_type	variable	static PyTypeObject defdict_type
 Python/Python-ast.c	-	Delete_fields	variable	static const char *Delete_fields[]
 Python/Python-ast.c	-	Delete_type	variable	static PyTypeObject *Delete_type
-Python/Python-ast.c	-	Del_singleton	variable	PyObject *Del_singleton
+Python/Python-ast.c	-	Del_singleton	variable	static PyObject *Del_singleton
 Python/Python-ast.c	-	Del_type	variable	static PyTypeObject *Del_type
 Modules/_collectionsmodule.c	-	deque_as_number	variable	static PyNumberMethods deque_as_number
 Modules/_collectionsmodule.c	-	deque_as_sequence	variable	static PySequenceMethods deque_as_sequence
@@ -213,8 +212,8 @@ Python/Python-ast.c	-	Div_type	variable	static PyTypeObject *Div_type
 Python/compile.c	-	__doc__	variable	static PyObject *__doc__
 Objects/classobject.c	method_get_doc	docstr	variable	static PyObject *docstr
 Objects/classobject.c	instancemethod_get_doc	docstr	variable	static PyObject *docstr
-Python/compile.c	compiler_set_qualname	dot	variable	"_Py_static_string(dot, ""."")"
-Python/compile.c	compiler_set_qualname	dot_locals	variable	"_Py_static_string(dot_locals, "".<locals>"")"
+Python/compile.c	compiler_set_qualname	dot	variable	_Py_static_string(dot, ""."")
+Python/compile.c	compiler_set_qualname	dot_locals	variable	_Py_static_string(dot_locals, "".<locals>"")
 Objects/floatobject.c	-	double_format	variable	static float_format_type double_format
 Modules/itertoolsmodule.c	-	dropwhile_methods	variable	static PyMethodDef dropwhile_methods
 Modules/itertoolsmodule.c	-	dropwhile_type	variable	static PyTypeObject dropwhile_type
@@ -333,25 +332,6 @@ Python/sysmodule.c	-	hash_info_desc	variable	static PyStructSequence_Desc hash_i
 Python/sysmodule.c	-	hash_info_fields	variable	static PyStructSequence_Field hash_info_fields[]
 Python/sysmodule.c	-	Hash_InfoType	variable	static PyTypeObject Hash_InfoType
 Python/import.c	import_find_and_load	header	variable	static int header
-Modules/_elementtree.c	_elementtree_Element___deepcopy___impl	id	variable	PyObject* id
-Objects/obmalloc.c	_PyMem_DebugCheckAddress	id	variable	char id
-Objects/obmalloc.c	_PyObject_DebugDumpAddress	id	variable	char id
-Python/ast.c	ast_for_dotted_name	id	variable	identifier id
-Python/Python-ast.c	obj2ast_expr	id	variable	identifier id
-Modules/_xxsubinterpretersmodule.c	_channels_next_id	id	variable	int64_t id
-Modules/_xxsubinterpretersmodule.c	_channels_add	id	variable	int64_t id
-Modules/_xxsubinterpretersmodule.c	_channel_create	id	variable	int64_t id
-Modules/_xxsubinterpretersmodule.c	interp_get_main	id	variable	PY_INT64_T id
-Objects/interpreteridobject.c	_Py_CoerceID	id	variable	int64_t id
-Objects/interpreteridobject.c	interpid_new	id	variable	int64_t id
-Objects/interpreteridobject.c	interpid_dealloc	id	variable	int64_t id
-Objects/interpreteridobject.c	_PyInterpreterID_LookUp	id	variable	int64_t id
-Objects/interpreteridobject.c	_PyInterpreterState_GetIDObject	id	variable	PY_INT64_T id
-Python/pystate.c	interp_look_up_id	id	variable	PY_INT64_T id
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
-???	???	id	variable	???
 Python/Python-ast.c	-	IfExp_fields	variable	static const char *IfExp_fields[]
 Python/Python-ast.c	-	IfExp_type	variable	static PyTypeObject *IfExp_type
 Python/Python-ast.c	-	If_fields	variable	static const char *If_fields[]
@@ -461,7 +441,7 @@ Objects/listobject.c	-	list_methods	variable	static PyMethodDef list_methods
 Objects/listobject.c	-	listreviter_methods	variable	static PyMethodDef listreviter_methods
 Python/Python-ast.c	-	List_type	variable	static PyTypeObject *List_type
 Python/ceval.c	-	lltrace	variable	static int lltrace
-Python/Python-ast.c	-	Load_singleton	variable	PyObject *Load_singleton
+Python/Python-ast.c	-	Load_singleton	variable	static PyObject *Load_singleton
 Python/Python-ast.c	-	Load_type	variable	static PyTypeObject *Load_type
 Modules/_threadmodule.c	-	localdummytype	variable	static PyTypeObject localdummytype
 Modules/_localemodule.c	-	_localemodule	variable	static struct PyModuleDef _localemodule
@@ -522,7 +502,6 @@ Python/frozen.c	-	M___hello__	variable	static unsigned char M___hello__[]
 Python/Python-ast.c	-	Mod_singleton	variable	static PyObject *Mod_singleton
 Python/Python-ast.c	-	mod_type	variable	static PyTypeObject *mod_type
 Python/Python-ast.c	-	Mod_type	variable	static PyTypeObject *Mod_type
-Python/_warnings.c	normalize_module	module	variable	PyObject *module
 Modules/faulthandler.c	-	module_def	variable	static struct PyModuleDef module_def
 Modules/_tracemalloc.c	-	module_def	variable	static struct PyModuleDef module_def
 Python/Python-ast.c	-	Module_fields	variable	static const char *Module_fields[]
@@ -609,13 +588,13 @@ Objects/typeobject.c	slot_nb_floor_divide	op_id	variable	_Py_static_string(op_id
 Objects/typeobject.c	slot_nb_true_divide	op_id	variable	_Py_static_string(op_id, OPSTR)
 Python/getopt.c	-	opt_ptr	variable	static const wchar_t *opt_ptr
 Python/initconfig.c	-	orig_argv	variable	static PyWideStringList orig_argv
-Python/Python-ast.c	-	Or_singleton	variable	PyObject *Or_singleton
+Python/Python-ast.c	-	Or_singleton	variable	static PyObject *Or_singleton
 Python/Python-ast.c	-	Or_type	variable	static PyTypeObject *Or_type
 Objects/exceptions.c	-	OSError_getset	variable	static PyGetSetDef OSError_getset[]
 Objects/exceptions.c	-	OSError_members	variable	static PyMemberDef OSError_members[]
 Objects/exceptions.c	-	OSError_methods	variable	static PyMethodDef OSError_methods
 Python/dtoa.c	-	p5s	variable	static Bigint *p5s
-Python/Python-ast.c	-	Param_singleton	variable	PyObject *Param_singleton
+Python/Python-ast.c	-	Param_singleton	variable	static PyObject *Param_singleton
 Python/Python-ast.c	-	Param_type	variable	static PyTypeObject *Param_type
 Python/bltinmodule.c	builtin_print	_parser	variable	static struct _PyArg_Parser _parser
 Python/clinic/_warnings.c.h	warnings_warn	_parser	variable	static _PyArg_Parser _parser
@@ -802,7 +781,6 @@ Objects/weakrefobject.c	-	proxy_methods	variable	static PyMethodDef proxy_method
 Objects/typeobject.c	resolve_slotdups	ptrs	variable	static slotdef *ptrs[MAX_EQUIV]
 Modules/pwdmodule.c	-	pwd_methods	variable	static PyMethodDef pwd_methods
 Modules/pwdmodule.c	-	pwdmodule	variable	static struct PyModuleDef pwdmodule
-Objects/object.c	-	_Py_abstract_hack	variable	Py_ssize_t (*_Py_abstract_hack)(PyObject *)
 Objects/obmalloc.c	-	_Py_AllocatedBlocks	variable	static Py_ssize_t _Py_AllocatedBlocks
 Objects/genobject.c	-	_PyAsyncGenASend_Type	variable	PyTypeObject _PyAsyncGenASend_Type
 Objects/genobject.c	-	_PyAsyncGenAThrow_Type	variable	PyTypeObject _PyAsyncGenAThrow_Type
@@ -997,7 +975,7 @@ Objects/boolobject.c	-	_Py_FalseStruct	variable	static struct _longobject _Py_Fa
 Objects/stringlib/unicode_format.h	-	PyFieldNameIter_Type	variable	static PyTypeObject PyFieldNameIter_Type
 Modules/_io/fileio.c	-	PyFileIO_Type	variable	PyTypeObject PyFileIO_Type
 Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	variable	const char *Py_FileSystemDefaultEncodeErrors
-Python/preconfig.c	-	Py_FileSystemDefaultEncoding	variable	const char *Py_FileSystemDefaultEncoding
+Python/preconfig.c	-	Py_FileSystemDefaultEncoding	variable	const char * Py_FileSystemDefaultEncoding
 Python/bltinmodule.c	-	PyFilter_Type	variable	PyTypeObject PyFilter_Type
 Objects/floatobject.c	-	PyFloat_Type	variable	PyTypeObject PyFloat_Type
 Objects/stringlib/unicode_format.h	-	PyFormatterIter_Type	variable	static PyTypeObject PyFormatterIter_Type
@@ -1018,13 +996,13 @@ Python/hamt.c	-	_PyHamtKeys_Type	variable	PyTypeObject _PyHamtKeys_Type
 Python/hamt.c	-	PyHamt_methods	variable	static PyMethodDef PyHamt_methods
 Python/hamt.c	-	_PyHamt_Type	variable	PyTypeObject _PyHamt_Type
 Python/hamt.c	-	_PyHamtValues_Type	variable	PyTypeObject _PyHamtValues_Type
-Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	variable	int _Py_HasFileSystemDefaultEncodeErrors
-Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	variable	int Py_HasFileSystemDefaultEncoding
+Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	variable	const(int) _Py_HasFileSystemDefaultEncodeErrors
+Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	variable	const(int) Py_HasFileSystemDefaultEncoding
 Python/pyhash.c	-	PyHash_Func	variable	static PyHash_FuncDef PyHash_Func
 Python/initconfig.c	-	Py_HashRandomizationFlag	variable	int Py_HashRandomizationFlag
 Python/pyhash.c	-	_Py_HashSecret	variable	_Py_HashSecret_t _Py_HashSecret
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	variable	static int _Py_HashSecret_Initialized
-Python/codecs.c	-	Py_hexdigits	variable	const char *Py_hexdigits
+Python/codecs.c	-	Py_hexdigits	variable	const char * Py_hexdigits
 Python/sysmodule.c	-	PyId__	variable	_Py_IDENTIFIER(_)
 Modules/_abc.c	-	PyId__abc_impl	variable	_Py_IDENTIFIER(_abc_impl)
 Objects/typeobject.c	-	PyId___abstractmethods__	variable	_Py_IDENTIFIER(__abstractmethods__)
@@ -1408,7 +1386,7 @@ Python/bltinmodule.c	-	PyId_stdout	variable	_Py_IDENTIFIER(stdout)
 Python/Python-ast.c	-	PyId_step	variable	_Py_IDENTIFIER(step)
 Modules/posixmodule.c	DirEntry_test_mode	PyId_st_mode	variable	_Py_IDENTIFIER(st_mode)
 Modules/_io/textio.c	-	PyId_strict	variable	_Py_IDENTIFIER(strict)
-Python/pythonrun.c	-	PyId_string	variable	"_Py_static_string(PyId_string, ""<string>"")"
+Python/pythonrun.c	-	PyId_string	variable	_Py_static_string(PyId_string, ""<string>"")
 Modules/timemodule.c	time_strptime	PyId__strptime_time	variable	_Py_IDENTIFIER(_strptime_time)
 Modules/posixmodule.c	wait_helper	PyId_struct_rusage	variable	_Py_IDENTIFIER(struct_rusage)
 Modules/_abc.c	-	PyId___subclasscheck__	variable	_Py_IDENTIFIER(__subclasscheck__)
@@ -1775,7 +1753,7 @@ Python/symtable.c	-	ste_memberlist	variable	static PyMemberDef ste_memberlist[]
 Python/Python-ast.c	-	stmt_attributes	variable	static const char *stmt_attributes[]
 Python/Python-ast.c	-	stmt_type	variable	static PyTypeObject *stmt_type
 Objects/exceptions.c	-	StopIteration_members	variable	static PyMemberDef StopIteration_members[]
-Python/Python-ast.c	-	Store_singleton	variable	PyObject *Store_singleton
+Python/Python-ast.c	-	Store_singleton	variable	static PyObject *Store_singleton
 Python/Python-ast.c	-	Store_type	variable	static PyTypeObject *Store_type
 Python/ast_unparse.c	-	_str_close_br	variable	static PyObject *_str_close_br
 Python/ast_unparse.c	-	_str_dbl_close_br	variable	static PyObject *_str_dbl_close_br

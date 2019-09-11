@@ -38,24 +38,26 @@ def _parse_global(line, funcname=None):
     # global-only
     elif line.startswith('PyAPI_DATA('):  # only in .h files
         name, decl = parse_variable_declaration(line)
+    elif line.startswith('extern '):  # only in .h files
+        name, decl = parse_variable_declaration(line)
     elif line.startswith('PyDoc_VAR('):
         decl = line.strip(';').strip()
         name = line.split('(')[1].split(')')[0].strip()
-#    elif line.startswith(POTS):  # implied static
-#        if '(' in line and '[' not in line and ' = ' not in line:
-#            return None, None
-#        name, decl = parse_variable_declaration(line)
-#    elif line.startswith(STRUCTS) and line.endswith(' = {'):  # implied static
-#        name, decl = parse_variable_declaration(line)
-#    elif line.startswith(STRUCTS) and line.endswith(' = NULL;'):  # implied static
-#        name, decl = parse_variable_declaration(line)
-#    elif line.startswith('struct '):
-#        if not line.endswith(' = {'):
-#            return None, None
-#        if not line.partition(' ')[2].startswith(STRUCTS):
-#            return None, None
-#        # implied static
-#        name, decl = parse_variable_declaration(line)
+    elif line.startswith(POTS):  # implied static
+        if '(' in line and '[' not in line and ' = ' not in line:
+            return None, None
+        name, decl = parse_variable_declaration(line)
+    elif line.startswith(STRUCTS) and line.endswith(' = {'):  # implied static
+        name, decl = parse_variable_declaration(line)
+    elif line.startswith(STRUCTS) and line.endswith(' = NULL;'):  # implied static
+        name, decl = parse_variable_declaration(line)
+    elif line.startswith('struct '):
+        if not line.endswith(' = {'):
+            return None, None
+        if not line.partition(' ')[2].startswith(STRUCTS):
+            return None, None
+        # implied static
+        name, decl = parse_variable_declaration(line)
 
     # file-specific
     elif line.startswith(('SLOT1BINFULL(', 'SLOT1BIN(')):

@@ -35,7 +35,7 @@ def from_file(infile, *,
         if kind == 'variable':
             values = known['variables']
             value = Variable(id, declaration)
-            value._isglobal = _is_global(declaration)
+            value._isglobal = _is_global(declaration) or id.funcname is None
         else:
             raise ValueError(f'unsupported kind in row {row}')
         if value.name == 'id' and declaration == UNKNOWN:

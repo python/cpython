@@ -31,7 +31,6 @@ def _match_unused_global(variable, knownvars, used):
 
 
 def _check_results(unknown, knownvars, used):
-    return
     badknown = set()
     for variable in sorted(unknown):
         msg = None
@@ -85,7 +84,7 @@ def _find_globals(dirnames, known, ignored):
         yield variable, is_supported(variable, ignored, known)
         used.add(variable.id)
 
-    _check_results(unknown, knownvars, used)
+    #_check_results(unknown, knownvars, used)
 
 
 def cmd_check(cmd, dirs=SOURCE_DIRS, *,
