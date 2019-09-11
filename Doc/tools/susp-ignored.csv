@@ -332,6 +332,9 @@ library/xml.etree.elementtree,,:character,<fictional:character>Commander Clement
 library/xml.etree.elementtree,,:actor,"for actor in root.findall('real_person:actor', ns):"
 library/xml.etree.elementtree,,:name,"name = actor.find('real_person:name', ns)"
 library/xml.etree.elementtree,,:character,"for char in actor.findall('role:character', ns):"
+library/xml.etree.elementtree,,:xi,<document xmlns:xi="http://www.w3.org/2001/XInclude">
+library/xml.etree.elementtree,,:include,  <xi:include href="source.xml" parse="xml" />
+library/xml.etree.elementtree,,:include,  Copyright (c) <xi:include href="year.txt" parse="text" />.
 library/zipapp,,:main,"$ python -m zipapp myapp -m ""myapp:main"""
 library/zipapp,,:fn,"pkg.mod:fn"
 library/zipapp,,:callable,"pkg.module:callable"
