@@ -1904,8 +1904,6 @@ _calculate_return_value = {
     '__str__': lambda self: object.__str__(self),
     '__sizeof__': lambda self: object.__sizeof__(self),
     '__fspath__': lambda self: f"{type(self).__name__}/{self._extract_mock_name()}/{id(self)}",
-    '__aenter__': lambda self: AsyncMockMixin._mock_call(self),
-    '__aexit__': lambda self: AsyncMockMixin._mock_call(self)
 }
 
 _return_values = {

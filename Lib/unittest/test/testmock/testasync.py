@@ -378,6 +378,9 @@ class AsyncContextManagerTest(unittest.TestCase):
 
     class ProductionCode:
         # Example real-world(ish) code
+        def __init__(self):
+            self.session = None
+
         async def main(self):
             async with self.session.post('https://python.org') as response:
                 val = await response.json()
@@ -387,6 +390,12 @@ class AsyncContextManagerTest(unittest.TestCase):
         cm_mock = MagicMock(self.WithAsyncContextManager)
         self.assertIsInstance(cm_mock.__aenter__, AsyncMock)
         self.assertIsInstance(cm_mock.__aexit__, AsyncMock)
+
+    def test_magicmock_has_async_magic_methods(self):
+        cm = MagicMock(name='magic_cm')
+        self.assertTrue(hasattr(cm, "__aenter__"))
+        self.assertTrue(hasattr(cm, "__aexit__"))
+        self.assertTrue(asyncio.iscoroutinefunction(cm.__aexit__))
 
     def test_set_return_value_of_aenter_magicmock(self):
         pc = self.ProductionCode()
