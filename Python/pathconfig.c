@@ -741,7 +741,6 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
     char buffer[MAXPATHLEN * 2 + 1];  /* allow extra for key, '=', etc. */
     buffer[Py_ARRAY_LENGTH(buffer)-1] = '\0';
 
-    fseek(env_file, 0, SEEK_SET);
     while (!feof(env_file)) {
         char * p = fgets(buffer, Py_ARRAY_LENGTH(buffer) - 1, env_file);
 

@@ -133,8 +133,9 @@ typedef int Py_ssize_clean_t;
 
 /* PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
  * format to convert an argument with the width of a size_t or Py_ssize_t.
- * C99 introduced "z" for this purpose, but not all platforms support that;
- * e.g., MS compilers use "I" instead.
+ * C99 introduced "z" for this purpose, but old MSVCs had not supported it.
+ * Since MSVC supports "z" since (at least) 2015, we can just use "z"
+ * for new code.
  *
  * These "high level" Python format functions interpret "z" correctly on
  * all platforms (Python interprets the format string itself, and does whatever
@@ -152,19 +153,11 @@ typedef int Py_ssize_clean_t;
  *     Py_ssize_t index;
  *     fprintf(stderr, "index %" PY_FORMAT_SIZE_T "d sucks\n", index);
  *
- * That will expand to %ld, or %Id, or to something else correct for a
- * Py_ssize_t on the platform.
+ * That will expand to %zd or to something else correct for a Py_ssize_t on
+ * the platform.
  */
 #ifndef PY_FORMAT_SIZE_T
-#   if SIZEOF_SIZE_T == SIZEOF_INT && !defined(__APPLE__)
-#       define PY_FORMAT_SIZE_T ""
-#   elif SIZEOF_SIZE_T == SIZEOF_LONG
-#       define PY_FORMAT_SIZE_T "l"
-#   elif defined(MS_WINDOWS)
-#       define PY_FORMAT_SIZE_T "I"
-#   else
-#       error "This platform's pyconfig.h needs to define PY_FORMAT_SIZE_T"
-#   endif
+#   define PY_FORMAT_SIZE_T "z"
 #endif
 
 /* Py_LOCAL can be used instead of static to get the fastest possible calling

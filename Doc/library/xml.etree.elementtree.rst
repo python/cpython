@@ -572,6 +572,18 @@ Functions
    .. versionadded:: 3.2
 
 
+.. function:: indent(tree, space="  ", level=0)
+
+   Appends whitespace to the subtree to indent the tree visually.
+   This can be used to generate pretty-printed XML output.
+   *tree* can be an Element or ElementTree.  *space* is the whitespace
+   string that will be inserted for each indentation level, two space
+   characters by default.  For indenting partial subtrees inside of an
+   already indented tree, pass the initial indentation level as *level*.
+
+   .. versionadded:: 3.9
+
+
 .. function:: iselement(element)
 
    Checks if an object appears to be a valid element object.  *element* is an
@@ -861,18 +873,6 @@ Element Objects
       in the expression into the given namespace.
 
 
-   .. method:: getchildren()
-
-      .. deprecated-removed:: 3.2 3.9
-         Use ``list(elem)`` or iteration.
-
-
-   .. method:: getiterator(tag=None)
-
-      .. deprecated-removed:: 3.2 3.9
-         Use method :meth:`Element.iter` instead.
-
-
    .. method:: insert(index, subelement)
 
       Inserts *subelement* at the given position in this element.  Raises
@@ -1005,12 +1005,6 @@ ElementTree Objects
    .. method:: findtext(match, default=None, namespaces=None)
 
       Same as :meth:`Element.findtext`, starting at the root of the tree.
-
-
-   .. method:: getiterator(tag=None)
-
-      .. deprecated-removed:: 3.2 3.9
-         Use method :meth:`ElementTree.iter` instead.
 
 
    .. method:: getroot()

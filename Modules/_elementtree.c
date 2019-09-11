@@ -1426,42 +1426,6 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
     return value;
 }
 
-/*[clinic input]
-_elementtree.Element.getchildren
-
-[clinic start generated code]*/
-
-static PyObject *
-_elementtree_Element_getchildren_impl(ElementObject *self)
-/*[clinic end generated code: output=e50ffe118637b14f input=0f754dfded150d5f]*/
-{
-    Py_ssize_t i;
-    PyObject* list;
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "This method will be removed in future versions.  "
-                     "Use 'list(elem)' or iteration over elem instead.",
-                     1) < 0) {
-        return NULL;
-    }
-
-    if (!self->extra)
-        return PyList_New(0);
-
-    list = PyList_New(self->extra->length);
-    if (!list)
-        return NULL;
-
-    for (i = 0; i < self->extra->length; i++) {
-        PyObject* item = self->extra->children[i];
-        Py_INCREF(item);
-        PyList_SET_ITEM(list, i, item);
-    }
-
-    return list;
-}
-
-
 static PyObject *
 create_elementiter(ElementObject *self, PyObject *tag, int gettext);
 
@@ -1489,27 +1453,6 @@ _elementtree_Element_iter_impl(ElementObject *self, PyObject *tag)
     }
 
     return create_elementiter(self, tag, 0);
-}
-
-
-/*[clinic input]
-_elementtree.Element.getiterator
-
-    tag: object = None
-
-[clinic start generated code]*/
-
-static PyObject *
-_elementtree_Element_getiterator_impl(ElementObject *self, PyObject *tag)
-/*[clinic end generated code: output=cb69ff4a3742dfa1 input=500da1a03f7b9e28]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "This method will be removed in future versions.  "
-                     "Use 'tree.iter()' or 'list(tree.iter())' instead.",
-                     1) < 0) {
-        return NULL;
-    }
-    return _elementtree_Element_iter_impl(self, tag);
 }
 
 
@@ -4219,9 +4162,6 @@ static PyMethodDef element_methods[] = {
     _ELEMENTTREE_ELEMENT_ITER_METHODDEF
     _ELEMENTTREE_ELEMENT_ITERTEXT_METHODDEF
     _ELEMENTTREE_ELEMENT_ITERFIND_METHODDEF
-
-    _ELEMENTTREE_ELEMENT_GETITERATOR_METHODDEF
-    _ELEMENTTREE_ELEMENT_GETCHILDREN_METHODDEF
 
     _ELEMENTTREE_ELEMENT_ITEMS_METHODDEF
     _ELEMENTTREE_ELEMENT_KEYS_METHODDEF

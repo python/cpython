@@ -1,0 +1,2 @@
+Fixed silencing arbitrary errors if an attribute lookup fails in several
+sites. Only AttributeError should be silenced.
