@@ -23,6 +23,8 @@
 .gdb_history
 .purify
 __pycache__
+.hg/
+.svn/
 .idea/
 tags
 TAGS
@@ -96,7 +98,6 @@ Tools/unicode/data/
 /config.log
 /config.status
 /config.status.lineno
-/.hg/
 /platform
 /pybuilddir.txt
 /pyconfig.h
@@ -106,7 +107,6 @@ Tools/unicode/data/
 /python-gdb.py
 /python.exe-gdb.py
 /reflog.txt
-/.svn/
 /.coverage
 /coverage/
 /externals/
