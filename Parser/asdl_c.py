@@ -1252,19 +1252,19 @@ def generate_module_def(f, mod):
     state_strings = set(["__dict__", "_attributes", "_fields", "__module__", "_ast"])
     module_state = set(["__dict__", "_attributes", "_fields", "__module__", "_ast"])
     for visitor in visitor_list:
-          for identifier in visitor.identifiers:
-              module_state.add(identifier)
-              state_strings.add(identifier)
-          for singleton in visitor.singletons:
-              module_state.add(singleton)
-          for tp in visitor.types:
-              module_state.add(tp)
+        for identifier in visitor.identifiers:
+            module_state.add(identifier)
+            state_strings.add(identifier)
+        for singleton in visitor.singletons:
+            module_state.add(singleton)
+        for tp in visitor.types:
+            module_state.add(tp)
     state_strings = sorted(state_strings)
     module_state = sorted(module_state)
     f.write('typedef struct {\n')
     f.write('    int initialized;\n')
     for s in module_state:
-          f.write('    PyObject *' + s + ';\n')
+        f.write('    PyObject *' + s + ';\n')
     f.write('} astmodulestate;\n\n')
     f.write("""
 #define astmodulestate(o) ((astmodulestate *)PyModule_GetState(o))
