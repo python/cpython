@@ -1,0 +1,1 @@
+Fix a bug in the bytecode optimizer that could (rarely) generate invalid bytecode offsets in the code object's line number information.
