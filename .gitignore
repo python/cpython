@@ -5,6 +5,10 @@
 *.cover
 *.iml
 *.o
+*.a
+*.so*
+*.dylib
+*.dll
 *.orig
 *.pyc
 *.pyd
@@ -93,10 +97,6 @@ Tools/unicode/data/
 /config.status
 /config.status.lineno
 /.hg/
-/libpython*.a
-/libpython*.so*
-/libpython*.dylib
-/libpython*.dll
 /platform
 /pybuilddir.txt
 /pyconfig.h
