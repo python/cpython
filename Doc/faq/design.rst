@@ -151,8 +151,12 @@ to tell Python which namespace to use.
 Why can't I use an assignment in an expression?
 -----------------------------------------------
 
-Starting in Python 3.8, you can! There is a new syntax, `:=`, that assigns a
-variable in an expression.
+Starting in Python 3.8, you can!
+
+Assignment expressions using the walrus operator `:=` assigns a variable in an expression::
+
+    while chunk := fp.read(200):
+        print(chunk)
 
 See :pep:`572` for more information.
 
