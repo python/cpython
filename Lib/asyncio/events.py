@@ -249,6 +249,12 @@ class AbstractEventLoop:
         """Shutdown all active asynchronous generators."""
         raise NotImplementedError
 
+    def shutdown_default_executor(self):
+        """Shutdown the default executor and wait for the threads
+        in the threadpool to finish joining.
+        """
+        raise NotImplementedError
+
     # Methods scheduling callbacks.  All these return Handles.
 
     def _timer_handle_cancelled(self, handle):
