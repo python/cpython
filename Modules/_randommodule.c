@@ -264,6 +264,7 @@ random_seed(RandomObject *self, PyObject *arg)
     uint32_t *key = NULL;
     size_t bits, keyused;
     int res;
+    PyObject *args[1];
 
     if (arg == NULL || arg == Py_None) {
        if (random_seed_urandom(self) < 0) {
@@ -280,10 +281,13 @@ random_seed(RandomObject *self, PyObject *arg)
      * So: if the arg is a PyLong, use its absolute value.
      * Otherwise use its hash value, cast to unsigned.
      */
-    if (PyLong_Check(arg)) {
+    if (PyLong_CheckExact(arg)) {
+        n = PyNumber_Absolute(arg);
+    } else if (PyLong_Check(arg)) {
         /* Calling int.__abs__() prevents calling arg.__abs__(), which might
            return an invalid value. See issue #31478. */
-        n = PyObject_CallFunctionObjArgs(_randomstate_global->Long___abs__, arg,
+        args[0] = arg;
+        n = _PyObject_Vectorcall(_randomstate_global->Long___abs__, args, 0,
                                          NULL);
     }
     else {
