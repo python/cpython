@@ -11,7 +11,7 @@ cache:
 
 env:
   global:
-    - OPENSSL=1.1.1c
+    - OPENSSL=1.1.1d
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
     # Use -O3 because we don't use debugger on Travis-CI
