@@ -31,6 +31,9 @@ TAGS
 gmon.out
 .mypy_cache/
 
+*.exe
+!Lib/distutils/command/*.exe
+
 # Ignore core dumps... but not Tools/msi/core/ or the like.
 core
 !core/
@@ -60,12 +63,9 @@ Modules/Setup.local
 Modules/config.c
 Modules/ld_so_aix
 Programs/_freeze_importlib
-Programs/_freeze_importlib.exe
 Programs/_testembed
-Programs/_testembed.exe
 PC/python_nt*.h
 PC/pythonnt_rc*.h
-PC/*/*.exe
 PC/*/*.exp
 PC/*/*.lib
 PC/*/*.bsc
@@ -103,7 +103,6 @@ Tools/unicode/data/
 /python-config
 /python-config.py
 /python.bat
-/python.exe
 /python-gdb.py
 /python.exe-gdb.py
 /reflog.txt
