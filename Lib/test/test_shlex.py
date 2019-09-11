@@ -308,6 +308,14 @@ class ShlexTest(unittest.TestCase):
             self.assertEqual(shlex.quote("test%s'name'" % u),
                              "'test%s'\"'\"'name'\"'\"''" % u)
 
+    def testPunctuationCharsReadOnly(self):
+        punctuation_chars = "/|$%^"
+        shlex_instance = shlex.shlex(punctuation_chars=punctuation_chars)
+        self.assertEqual(shlex_instance.punctuation_chars, punctuation_chars)
+        with self.assertRaises(AttributeError):
+            shlex_instance.punctuation_chars = False
+
+
 # Allow this test to be used with old shlex.py
 if not getattr(shlex, "split", None):
     for methname in dir(ShlexTest):
