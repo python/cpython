@@ -1,4 +1,0 @@
-Fix a bug in :func:`select.select` where, in some cases, the file descriptor
-sequences were returned unmodified after a signal interruption, even though the
-file descriptors might not be ready yet.  :func:`select.select` will now always
-return empty lists if a timeout has occurred.  Patch by Oran Avraham.

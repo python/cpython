@@ -1,2 +1,0 @@
-Fixed the code page decoder for input longer than 2 GiB containing
-undecodable bytes.

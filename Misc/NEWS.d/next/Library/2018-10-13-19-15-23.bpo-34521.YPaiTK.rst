@@ -1,3 +1,0 @@
-Use :func:`socket.CMSG_SPACE` to calculate ancillary data size instead of
-:func:`socket.CMSG_LEN` in :func:`multiprocessing.reduction.recvfds` as
-:rfc:`3542` requires the use of the former for portable applications.

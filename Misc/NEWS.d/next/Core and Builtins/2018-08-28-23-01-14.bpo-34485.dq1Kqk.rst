@@ -1,3 +1,0 @@
-Fix the error handler of standard streams like sys.stdout:
-PYTHONIOENCODING=":" is now ignored instead of setting the error handler to
-"strict".

@@ -345,7 +345,7 @@ array_array_fromstring(arrayobject *self, PyObject *arg)
             goto exit;
         }
         if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-            _PyArg_BadArgument("fromstring", 0, "contiguous buffer", arg);
+            _PyArg_BadArgument("fromstring", "argument", "contiguous buffer", arg);
             goto exit;
         }
     }
@@ -382,7 +382,7 @@ array_array_frombytes(arrayobject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("frombytes", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("frombytes", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = array_array_frombytes_impl(self, &buffer);
@@ -537,14 +537,14 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
     }
     arraytype = (PyTypeObject *)args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("_array_reconstructor", 2, "a unicode character", args[1]);
+        _PyArg_BadArgument("_array_reconstructor", "argument 2", "a unicode character", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1])) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[1]) != 1) {
-        _PyArg_BadArgument("_array_reconstructor", 2, "a unicode character", args[1]);
+        _PyArg_BadArgument("_array_reconstructor", "argument 2", "a unicode character", args[1]);
         goto exit;
     }
     typecode = PyUnicode_READ_CHAR(args[1], 0);
@@ -599,4 +599,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=c9a40f11f1a866fb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6aa421571e2c0756 input=a9049054013a1b77]*/

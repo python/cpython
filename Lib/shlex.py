@@ -14,7 +14,7 @@ from collections import deque
 
 from io import StringIO
 
-__all__ = ["shlex", "split", "quote"]
+__all__ = ["shlex", "split", "quote", "join"]
 
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
@@ -250,7 +250,8 @@ class shlex:
                     escapedstate = 'a'
                     self.state = nextchar
                 elif (nextchar in self.wordchars or nextchar in self.quotes
-                      or self.whitespace_split):
+                      or (self.whitespace_split and
+                          nextchar not in self.punctuation_chars)):
                     self.token += nextchar
                 else:
                     if self.punctuation_chars:
@@ -307,6 +308,11 @@ def split(s, comments=False, posix=True):
     if not comments:
         lex.commenters = ''
     return list(lex)
+
+
+def join(split_command):
+    """Return a shell-escaped string from *split_command*."""
+    return ' '.join(quote(arg) for arg in split_command)
 
 
 _find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search

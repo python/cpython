@@ -6,12 +6,12 @@
 /* XXX To do: error recovery */
 
 #include "Python.h"
-#include "pgenheaders.h"
 #include "token.h"
 #include "grammar.h"
 #include "node.h"
 #include "parser.h"
 #include "errcode.h"
+#include "graminit.h"
 
 
 #ifdef Py_DEBUG
@@ -35,7 +35,7 @@ s_reset(stack *s)
 #define s_empty(s) ((s)->s_top == &(s)->s_base[MAXSTACK])
 
 static int
-s_push(stack *s, dfa *d, node *parent)
+s_push(stack *s, const dfa *d, node *parent)
 {
     stackentry *top;
     if (s->s_top == s->s_base) {
@@ -105,11 +105,13 @@ PyParser_Delete(parser_state *ps)
 /* PARSER STACK OPERATIONS */
 
 static int
-shift(stack *s, int type, char *str, int newstate, int lineno, int col_offset)
+shift(stack *s, int type, char *str, int newstate, int lineno, int col_offset,
+      int end_lineno, int end_col_offset)
 {
     int err;
     assert(!s_empty(s));
-    err = PyNode_AddChild(s->s_top->s_parent, type, str, lineno, col_offset);
+    err = PyNode_AddChild(s->s_top->s_parent, type, str, lineno, col_offset,
+                          end_lineno, end_col_offset);
     if (err)
         return err;
     s->s_top->s_state = newstate;
@@ -117,13 +119,15 @@ shift(stack *s, int type, char *str, int newstate, int lineno, int col_offset)
 }
 
 static int
-push(stack *s, int type, dfa *d, int newstate, int lineno, int col_offset)
+push(stack *s, int type, const dfa *d, int newstate, int lineno, int col_offset,
+     int end_lineno, int end_col_offset)
 {
     int err;
     node *n;
     n = s->s_top->s_parent;
     assert(!s_empty(s));
-    err = PyNode_AddChild(n, type, (char *)NULL, lineno, col_offset);
+    err = PyNode_AddChild(n, type, (char *)NULL, lineno, col_offset,
+                          end_lineno, end_col_offset);
     if (err)
         return err;
     s->s_top->s_state = newstate;
@@ -140,7 +144,7 @@ classify(parser_state *ps, int type, const char *str)
     int n = g->g_ll.ll_nlabels;
 
     if (type == NAME) {
-        label *l = g->g_ll.ll_label;
+        const label *l = g->g_ll.ll_label;
         int i;
         for (i = n; i > 0; i--, l++) {
             if (l->lb_type != NAME || l->lb_str == NULL ||
@@ -164,7 +168,7 @@ classify(parser_state *ps, int type, const char *str)
     }
 
     {
-        label *l = g->g_ll.ll_label;
+        const label *l = g->g_ll.ll_label;
         int i;
         for (i = n; i > 0; i--, l++) {
             if (l->lb_type == type && l->lb_str == NULL) {
@@ -225,7 +229,9 @@ future_hack(parser_state *ps)
 
 int
 PyParser_AddToken(parser_state *ps, int type, char *str,
-                  int lineno, int col_offset, int *expected_ret)
+                  int lineno, int col_offset,
+                  int end_lineno, int end_col_offset,
+                  int *expected_ret)
 {
     int ilabel;
     int err;
@@ -240,7 +246,7 @@ PyParser_AddToken(parser_state *ps, int type, char *str,
     /* Loop until the token is shifted or an error occurred */
     for (;;) {
         /* Fetch the current dfa and state */
-        dfa *d = ps->p_stack.s_top->s_dfa;
+        const dfa *d = ps->p_stack.s_top->s_dfa;
         state *s = &d->d_state[ps->p_stack.s_top->s_state];
 
         D(printf(" DFA '%s', state %d:",
@@ -254,20 +260,29 @@ PyParser_AddToken(parser_state *ps, int type, char *str,
                     /* Push non-terminal */
                     int nt = (x >> 8) + NT_OFFSET;
                     int arrow = x & ((1<<7)-1);
-                    dfa *d1 = PyGrammar_FindDFA(
+                    if (nt == func_body_suite && !(ps->p_flags & PyCF_TYPE_COMMENTS)) {
+                        /* When parsing type comments is not requested,
+                           we can provide better errors about bad indentation
+                           by using 'suite' for the body of a funcdef */
+                        D(printf(" [switch func_body_suite to suite]"));
+                        nt = suite;
+                    }
+                    const dfa *d1 = PyGrammar_FindDFA(
                         ps->p_grammar, nt);
                     if ((err = push(&ps->p_stack, nt, d1,
-                        arrow, lineno, col_offset)) > 0) {
+                        arrow, lineno, col_offset,
+                        end_lineno, end_col_offset)) > 0) {
                         D(printf(" MemError: push\n"));
                         return err;
                     }
-                    D(printf(" Push ...\n"));
+                    D(printf(" Push '%s'\n", d1->d_name));
                     continue;
                 }
 
                 /* Shift the token */
                 if ((err = shift(&ps->p_stack, type, str,
-                                x, lineno, col_offset)) > 0) {
+                                x, lineno, col_offset,
+                                end_lineno, end_col_offset)) > 0) {
                     D(printf(" MemError: shift.\n"));
                     return err;
                 }

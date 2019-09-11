@@ -638,7 +638,7 @@ define in order to be compatible with the Python codec registry.
 
    .. method:: setstate(state)
 
-      Set the state of the encoder to *state*. *state* must be a decoder state
+      Set the state of the decoder to *state*. *state* must be a decoder state
       returned by :meth:`getstate`.
 
 
@@ -1106,11 +1106,6 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | cp1258          | windows-1258                   | Vietnamese                     |
 +-----------------+--------------------------------+--------------------------------+
-| cp65001         |                                | Windows only: Windows UTF-8    |
-|                 |                                | (``CP_UTF8``)                  |
-|                 |                                |                                |
-|                 |                                | .. versionadded:: 3.3          |
-+-----------------+--------------------------------+--------------------------------+
 | euc_jp          | eucjp, ujis, u-jis             | Japanese                       |
 +-----------------+--------------------------------+--------------------------------+
 | euc_jis_2004    | jisx0213, eucjis2004           | Japanese                       |
@@ -1203,7 +1198,8 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | mac_iceland     | maciceland                     | Icelandic                      |
 +-----------------+--------------------------------+--------------------------------+
-| mac_latin2      | maclatin2, maccentraleurope    | Central and Eastern Europe     |
+| mac_latin2      | maclatin2, maccentraleurope,   | Central and Eastern Europe     |
+|                 | mac_centeuro                   |                                |
 +-----------------+--------------------------------+--------------------------------+
 | mac_roman       | macroman, macintosh            | Western Europe                 |
 +-----------------+--------------------------------+--------------------------------+
@@ -1235,7 +1231,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | utf_7           | U7, unicode-1-1-utf-7          | all languages                  |
 +-----------------+--------------------------------+--------------------------------+
-| utf_8           | U8, UTF, utf8                  | all languages                  |
+| utf_8           | U8, UTF, utf8, cp65001         | all languages                  |
 +-----------------+--------------------------------+--------------------------------+
 | utf_8_sig       |                                | all languages                  |
 +-----------------+--------------------------------+--------------------------------+
@@ -1245,6 +1241,9 @@ particular, the following variants typically exist:
    (``U+D800``--``U+DFFF``) to be encoded.
    The utf-32\* decoders no longer decode
    byte sequences that correspond to surrogate code points.
+
+.. versionchanged:: 3.8
+   ``cp65001`` is now an alias to ``utf_8``.
 
 
 Python Specific Encodings
@@ -1316,16 +1315,10 @@ encodings.
 |                    |         | code actually uses UTF-8  |
 |                    |         | by default.               |
 +--------------------+---------+---------------------------+
-| unicode_internal   |         | Return the internal       |
-|                    |         | representation of the     |
-|                    |         | operand. Stateful codecs  |
-|                    |         | are not supported.        |
-|                    |         |                           |
-|                    |         | .. deprecated:: 3.3       |
-|                    |         |    This representation is |
-|                    |         |    obsoleted by           |
-|                    |         |    :pep:`393`.            |
-+--------------------+---------+---------------------------+
+
+.. versionchanged:: 3.8
+   "unicode_internal" codec is removed.
+
 
 .. _binary-transforms:
 

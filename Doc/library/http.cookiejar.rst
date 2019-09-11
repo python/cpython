@@ -71,6 +71,10 @@ The following classes are provided:
    :meth:`load` or :meth:`revert` method is called.  Subclasses of this class are
    documented in section :ref:`file-cookie-jar-classes`.
 
+   .. versionchanged:: 3.8
+
+      The filename parameter supports a :term:`path-like object`.
+
 
 .. class:: CookiePolicy()
 
@@ -155,7 +159,7 @@ contained :class:`Cookie` objects.
    the :class:`CookieJar`'s :class:`CookiePolicy` instance are true and false
    respectively), the :mailheader:`Cookie2` header is also added when appropriate.
 
-   The *request* object (usually a :class:`urllib.request..Request` instance)
+   The *request* object (usually a :class:`urllib.request.Request` instance)
    must support the methods :meth:`get_full_url`, :meth:`get_host`,
    :meth:`get_type`, :meth:`unverifiable`, :meth:`has_header`,
    :meth:`get_header`, :meth:`header_items`, :meth:`add_unredirected_header`
@@ -341,6 +345,9 @@ writing.
    compatible with the libwww-perl library's ``Set-Cookie3`` file format.  This is
    convenient if you want to store cookies in a human-readable file.
 
+   .. versionchanged:: 3.8
+
+      The filename parameter supports a :term:`path-like object`.
 
 .. _cookie-policy-objects:
 

@@ -1,0 +1,2 @@
+The :file:`.gitignore` file no longer applies to any files that are in fact
+tracked in the Git repository.  Patch by Greg Price.

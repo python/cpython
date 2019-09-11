@@ -4,7 +4,7 @@ import itertools
 import os
 import pickle
 import sys
-from textwrap import dedent, indent
+from textwrap import dedent
 import threading
 import time
 import unittest
@@ -393,7 +393,19 @@ class ShareableTypeTests(unittest.TestCase):
                             for i in range(-1, 258))
 
     def test_int(self):
-        self._assert_values(range(-1, 258))
+        self._assert_values(itertools.chain(range(-1, 258),
+                                            [sys.maxsize, -sys.maxsize - 1]))
+
+    def test_non_shareable_int(self):
+        ints = [
+            sys.maxsize + 1,
+            -sys.maxsize - 2,
+            2**1000,
+        ]
+        for i in ints:
+            with self.subTest(i):
+                with self.assertRaises(OverflowError):
+                    interpreters.channel_send(self.cid, i)
 
 
 ##################################

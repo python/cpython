@@ -1,4 +1,5 @@
 """Tests for distutils.sysconfig."""
+import contextlib
 import os
 import shutil
 import subprocess
@@ -9,7 +10,7 @@ import unittest
 from distutils import sysconfig
 from distutils.ccompiler import get_default_compiler
 from distutils.tests import support
-from test.support import TESTFN, run_unittest, check_warnings
+from test.support import TESTFN, run_unittest, check_warnings, swap_item
 
 class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
     def setUp(self):
@@ -74,12 +75,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
             os.chdir(cwd)
         self.assertEqual(srcdir, srcdir2)
 
-    @unittest.skipUnless(get_default_compiler() == 'unix',
-                         'not testing if default compiler is not unix')
-    def test_customize_compiler(self):
-        os.environ['AR'] = 'my_ar'
-        os.environ['ARFLAGS'] = '-arflags'
-
+    def customize_compiler(self):
         # make sure AR gets caught
         class compiler:
             compiler_type = 'unix'
@@ -87,9 +83,89 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
             def set_executables(self, **kw):
                 self.exes = kw
 
+        sysconfig_vars = {
+            'AR': 'sc_ar',
+            'CC': 'sc_cc',
+            'CXX': 'sc_cxx',
+            'ARFLAGS': '--sc-arflags',
+            'CFLAGS': '--sc-cflags',
+            'CCSHARED': '--sc-ccshared',
+            'LDSHARED': 'sc_ldshared',
+            'SHLIB_SUFFIX': 'sc_shutil_suffix',
+
+            # On macOS, disable _osx_support.customize_compiler()
+            'CUSTOMIZED_OSX_COMPILER': 'True',
+        }
+
         comp = compiler()
-        sysconfig.customize_compiler(comp)
-        self.assertEqual(comp.exes['archiver'], 'my_ar -arflags')
+        with contextlib.ExitStack() as cm:
+            for key, value in sysconfig_vars.items():
+                cm.enter_context(swap_item(sysconfig._config_vars, key, value))
+            sysconfig.customize_compiler(comp)
+
+        return comp
+
+    @unittest.skipUnless(get_default_compiler() == 'unix',
+                         'not testing if default compiler is not unix')
+    def test_customize_compiler(self):
+        # Make sure that sysconfig._config_vars is initialized
+        sysconfig.get_config_vars()
+
+        os.environ['AR'] = 'env_ar'
+        os.environ['CC'] = 'env_cc'
+        os.environ['CPP'] = 'env_cpp'
+        os.environ['CXX'] = 'env_cxx --env-cxx-flags'
+        os.environ['LDSHARED'] = 'env_ldshared'
+        os.environ['LDFLAGS'] = '--env-ldflags'
+        os.environ['ARFLAGS'] = '--env-arflags'
+        os.environ['CFLAGS'] = '--env-cflags'
+        os.environ['CPPFLAGS'] = '--env-cppflags'
+
+        comp = self.customize_compiler()
+        self.assertEqual(comp.exes['archiver'],
+                         'env_ar --env-arflags')
+        self.assertEqual(comp.exes['preprocessor'],
+                         'env_cpp --env-cppflags')
+        self.assertEqual(comp.exes['compiler'],
+                         'env_cc --sc-cflags --env-cflags --env-cppflags')
+        self.assertEqual(comp.exes['compiler_so'],
+                         ('env_cc --sc-cflags '
+                          '--env-cflags ''--env-cppflags --sc-ccshared'))
+        self.assertEqual(comp.exes['compiler_cxx'],
+                         'env_cxx --env-cxx-flags')
+        self.assertEqual(comp.exes['linker_exe'],
+                         'env_cc')
+        self.assertEqual(comp.exes['linker_so'],
+                         ('env_ldshared --env-ldflags --env-cflags'
+                          ' --env-cppflags'))
+        self.assertEqual(comp.shared_lib_extension, 'sc_shutil_suffix')
+
+        del os.environ['AR']
+        del os.environ['CC']
+        del os.environ['CPP']
+        del os.environ['CXX']
+        del os.environ['LDSHARED']
+        del os.environ['LDFLAGS']
+        del os.environ['ARFLAGS']
+        del os.environ['CFLAGS']
+        del os.environ['CPPFLAGS']
+
+        comp = self.customize_compiler()
+        self.assertEqual(comp.exes['archiver'],
+                         'sc_ar --sc-arflags')
+        self.assertEqual(comp.exes['preprocessor'],
+                         'sc_cc -E')
+        self.assertEqual(comp.exes['compiler'],
+                         'sc_cc --sc-cflags')
+        self.assertEqual(comp.exes['compiler_so'],
+                         'sc_cc --sc-cflags --sc-ccshared')
+        self.assertEqual(comp.exes['compiler_cxx'],
+                         'sc_cxx')
+        self.assertEqual(comp.exes['linker_exe'],
+                         'sc_cc')
+        self.assertEqual(comp.exes['linker_so'],
+                         'sc_ldshared')
+        self.assertEqual(comp.shared_lib_extension, 'sc_shutil_suffix')
 
     def test_parse_makefile_base(self):
         self.makefile = TESTFN

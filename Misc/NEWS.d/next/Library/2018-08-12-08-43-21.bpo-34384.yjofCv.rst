@@ -1,2 +1,0 @@
-:func:`os.readlink` now accepts :term:`path-like <path-like object>` and
-:class:`bytes` objects on Windows.

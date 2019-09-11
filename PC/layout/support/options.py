@@ -30,6 +30,7 @@ OPTIONS = {
     "launchers": {"help": "specific launchers"},
     "appxmanifest": {"help": "an appxmanifest"},
     "props": {"help": "a python.props file"},
+    "nuspec": {"help": "a python.nuspec file"},
     "chm": {"help": "the CHM documentation"},
     "html-doc": {"help": "the HTML documentation"},
 }
@@ -53,8 +54,18 @@ PRESETS = {
     },
     "nuget": {
         "help": "nuget package",
-        "options": ["stable", "pip", "distutils", "dev", "props"],
+        "options": [
+            "dev",
+            "tools",
+            "pip",
+            "stable",
+            "distutils",
+            "venv",
+            "props",
+            "nuspec",
+        ],
     },
+    "iot": {"help": "Windows IoT Core", "options": ["stable", "pip"]},
     "default": {
         "help": "development kit package",
         "options": [

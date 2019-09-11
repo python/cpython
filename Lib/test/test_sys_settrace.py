@@ -53,21 +53,51 @@ basic.events = [(0, 'call'),
 # following that clause?
 
 
-# The entire "while 0:" statement is optimized away.  No code
-# exists for it, so the line numbers skip directly from "del x"
-# to "x = 1".
-def arigo_example():
+# Some constructs like "while 0:", "if 0:" or "if 1:...else:..." are optimized
+# away.  No code # exists for them, so the line numbers skip directly from
+# "del x" to "x = 1".
+def arigo_example0():
     x = 1
     del x
     while 0:
         pass
     x = 1
 
-arigo_example.events = [(0, 'call'),
+arigo_example0.events = [(0, 'call'),
                         (1, 'line'),
                         (2, 'line'),
                         (5, 'line'),
                         (5, 'return')]
+
+def arigo_example1():
+    x = 1
+    del x
+    if 0:
+        pass
+    x = 1
+
+arigo_example1.events = [(0, 'call'),
+                        (1, 'line'),
+                        (2, 'line'),
+                        (5, 'line'),
+                        (5, 'return')]
+
+def arigo_example2():
+    x = 1
+    del x
+    if 1:
+        x = 1
+    else:
+        pass
+    return None
+
+arigo_example2.events = [(0, 'call'),
+                        (1, 'line'),
+                        (2, 'line'),
+                        (4, 'line'),
+                        (7, 'line'),
+                        (7, 'return')]
+
 
 # check that lines consisting of just one instruction get traced:
 def one_instr_line():
@@ -349,8 +379,12 @@ class TraceTestCase(unittest.TestCase):
 
     def test_01_basic(self):
         self.run_test(basic)
-    def test_02_arigo(self):
-        self.run_test(arigo_example)
+    def test_02_arigo0(self):
+        self.run_test(arigo_example0)
+    def test_02_arigo1(self):
+        self.run_test(arigo_example1)
+    def test_02_arigo2(self):
+        self.run_test(arigo_example2)
     def test_03_one_instr(self):
         self.run_test(one_instr_line)
     def test_04_no_pop_blocks(self):

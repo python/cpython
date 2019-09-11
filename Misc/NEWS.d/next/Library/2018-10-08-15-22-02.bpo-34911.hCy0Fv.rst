@@ -1,3 +1,0 @@
-Added *secure_protocols* argument to *http.cookiejar.DefaultCookiePolicy* to
-allow for tweaking of protocols and also to add support by default for
-*wss*, the secure websocket protocol.

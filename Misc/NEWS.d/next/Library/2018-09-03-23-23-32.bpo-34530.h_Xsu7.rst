@@ -1,2 +1,0 @@
-``distutils.spawn.find_executable()`` now falls back on :data:`os.defpath`
-if the ``PATH`` environment variable is not set.

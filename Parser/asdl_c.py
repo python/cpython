@@ -537,8 +537,11 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("if (%s == NULL) goto failed;" % field.name, depth+1)
             self.emit("for (i = 0; i < len; i++) {", depth+1)
             self.emit("%s val;" % ctype, depth+2)
-            self.emit("res = obj2ast_%s(PyList_GET_ITEM(tmp, i), &val, arena);" %
+            self.emit("PyObject *tmp2 = PyList_GET_ITEM(tmp, i);", depth+2)
+            self.emit("Py_INCREF(tmp2);", depth+2)
+            self.emit("res = obj2ast_%s(tmp2, &val, arena);" %
                       field.type, depth+2, reflow=False)
+            self.emit("Py_DECREF(tmp2);", depth+2)
             self.emit("if (res != 0) goto failed;", depth+2)
             self.emit("if (len != PyList_GET_SIZE(tmp)) {", depth+2)
             self.emit("PyErr_SetString(PyExc_RuntimeError, \"%s field \\\"%s\\\" "
@@ -576,14 +579,14 @@ class PyTypesDeclareVisitor(PickleVisitor):
         if prod.attributes:
             for a in prod.attributes:
                 self.emit_identifier(a.name)
-            self.emit("static char *%s_attributes[] = {" % name, 0)
+            self.emit("static const char * const %s_attributes[] = {" % name, 0)
             for a in prod.attributes:
                 self.emit('"%s",' % a.name, 1)
             self.emit("};", 0)
         if prod.fields:
             for f in prod.fields:
                 self.emit_identifier(f.name)
-            self.emit("static char *%s_fields[]={" % name,0)
+            self.emit("static const char * const %s_fields[]={" % name,0)
             for f in prod.fields:
                 self.emit('"%s",' % f.name, 1)
             self.emit("};", 0)
@@ -593,7 +596,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
         if sum.attributes:
             for a in sum.attributes:
                 self.emit_identifier(a.name)
-            self.emit("static char *%s_attributes[] = {" % name, 0)
+            self.emit("static const char * const %s_attributes[] = {" % name, 0)
             for a in sum.attributes:
                 self.emit('"%s",' % a.name, 1)
             self.emit("};", 0)
@@ -614,7 +617,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
         if cons.fields:
             for t in cons.fields:
                 self.emit_identifier(t.name)
-            self.emit("static char *%s_fields[]={" % cons.name, 0)
+            self.emit("static const char * const %s_fields[]={" % cons.name, 0)
             for t in cons.fields:
                 self.emit('"%s",' % t.name, 1)
             self.emit("};",0)
@@ -734,10 +737,10 @@ static PyTypeObject AST_type = {
     sizeof(AST_object),
     0,
     (destructor)ast_dealloc, /* tp_dealloc */
-    0,                       /* tp_print */
+    0,                       /* tp_vectorcall_offset */
     0,                       /* tp_getattr */
     0,                       /* tp_setattr */
-    0,                       /* tp_reserved */
+    0,                       /* tp_as_async */
     0,                       /* tp_repr */
     0,                       /* tp_as_number */
     0,                       /* tp_as_sequence */
@@ -771,7 +774,8 @@ static PyTypeObject AST_type = {
 };
 
 
-static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int num_fields)
+static PyTypeObject *
+make_type(const char *type, PyTypeObject *base, const char * const *fields, int num_fields)
 {
     _Py_IDENTIFIER(__module__);
     _Py_IDENTIFIER(_ast);
@@ -780,7 +784,7 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
     fnames = PyTuple_New(num_fields);
     if (!fnames) return NULL;
     for (i = 0; i < num_fields; i++) {
-        PyObject *field = PyUnicode_FromString(fields[i]);
+        PyObject *field = PyUnicode_InternFromString(fields[i]);
         if (!field) {
             Py_DECREF(fnames);
             return NULL;
@@ -796,14 +800,15 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
     return (PyTypeObject*)result;
 }
 
-static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
+static int
+add_attributes(PyTypeObject *type, const char * const *attrs, int num_fields)
 {
     int i, result;
     PyObject *s, *l = PyTuple_New(num_fields);
     if (!l)
         return 0;
     for (i = 0; i < num_fields; i++) {
-        s = PyUnicode_FromString(attrs[i]);
+        s = PyUnicode_InternFromString(attrs[i]);
         if (!s) {
             Py_DECREF(l);
             return 0;
@@ -885,6 +890,15 @@ static int obj2ast_identifier(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
         PyErr_SetString(PyExc_TypeError, "AST identifier must be of type str");
+        return 1;
+    }
+    return obj2ast_object(obj, out, arena);
+}
+
+static int obj2ast_string(PyObject* obj, PyObject** out, PyArena* arena)
+{
+    if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
+        PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
         return 1;
     }
     return obj2ast_object(obj, out, arena);
@@ -991,7 +1005,11 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("if (!m) return NULL;", 1)
         self.emit("d = PyModule_GetDict(m);", 1)
         self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)', 1)
+        self.emit("return NULL;", 2)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)', 1)
+        self.emit("return NULL;", 2)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)', 1)
         self.emit("return NULL;", 2)
         for dfn in mod.dfns:
             self.visit(dfn)
@@ -1180,8 +1198,12 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 {
     mod_ty res;
     PyObject *req_type[3];
-    char *req_name[] = {"Module", "Expression", "Interactive"};
+    const char * const req_name[] = {"Module", "Expression", "Interactive"};
     int isinstance;
+
+    if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
+        return NULL;
+    }
 
     req_type[0] = (PyObject*)Module_type;
     req_type[1] = (PyObject*)Expression_type;
@@ -1250,10 +1272,12 @@ def main(srcfile, dump_module=False):
             f.write('#undef Yield   /* undefine macro conflicting with <winbase.h> */\n')
             f.write('\n')
             c = ChainOfVisitors(TypeDefVisitor(f),
-                                StructVisitor(f),
-                                PrototypeVisitor(f),
-                                )
+                                StructVisitor(f))
+
             c.visit(mod)
+            f.write("// Note: these macros affect function definitions, not only call sites.\n")
+            PrototypeVisitor(f).visit(mod)
+            f.write("\n")
             f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
             f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
             f.write("int PyAST_Check(PyObject* obj);\n")
@@ -1294,9 +1318,9 @@ if __name__ == "__main__":
     for o, v in opts:
         if o == '-h':
             H_FILE = v
-        if o == '-c':
+        elif o == '-c':
             C_FILE = v
-        if o == '-d':
+        elif o == '-d':
             dump_module = True
     if H_FILE and C_FILE:
         print('Must specify exactly one output file')

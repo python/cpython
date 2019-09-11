@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _floatobjects:
 
@@ -47,8 +47,12 @@ Floating Point Objects
    Return a C :c:type:`double` representation of the contents of *pyfloat*.  If
    *pyfloat* is not a Python floating point object but has a :meth:`__float__`
    method, this method will first be called to convert *pyfloat* into a float.
+   If ``__float__()`` is not defined then it falls back to :meth:`__index__`.
    This method returns ``-1.0`` upon failure, so one should call
    :c:func:`PyErr_Occurred` to check for errors.
+
+   .. versionchanged:: 3.8
+      Use :meth:`__index__` if available.
 
 
 .. c:function:: double PyFloat_AS_DOUBLE(PyObject *pyfloat)

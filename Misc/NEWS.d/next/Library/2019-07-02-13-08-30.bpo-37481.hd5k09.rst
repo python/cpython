@@ -1,0 +1,2 @@
+The distutils ``bdist_wininst`` command is deprecated in Python 3.8, use
+``bdist_wheel`` (wheel packages) instead.

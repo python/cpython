@@ -87,11 +87,52 @@ class SpawnTestCase(support.TempdirManager,
             rv = find_executable(dont_exist_program , path=tmp_dir)
             self.assertIsNone(rv)
 
-            # test os.defpath: missing PATH environment variable
+            # PATH='': no match, except in the current directory
             with test_support.EnvironmentVarGuard() as env:
-                with mock.patch('distutils.spawn.os.defpath', tmp_dir):
-                    env.pop('PATH')
+                env['PATH'] = ''
+                with unittest.mock.patch('distutils.spawn.os.confstr',
+                                         return_value=tmp_dir, create=True), \
+                     unittest.mock.patch('distutils.spawn.os.defpath',
+                                         tmp_dir):
+                    rv = find_executable(program)
+                    self.assertIsNone(rv)
 
+                    # look in current directory
+                    with test_support.change_cwd(tmp_dir):
+                        rv = find_executable(program)
+                        self.assertEqual(rv, program)
+
+            # PATH=':': explicitly looks in the current directory
+            with test_support.EnvironmentVarGuard() as env:
+                env['PATH'] = os.pathsep
+                with unittest.mock.patch('distutils.spawn.os.confstr',
+                                         return_value='', create=True), \
+                     unittest.mock.patch('distutils.spawn.os.defpath', ''):
+                    rv = find_executable(program)
+                    self.assertIsNone(rv)
+
+                    # look in current directory
+                    with test_support.change_cwd(tmp_dir):
+                        rv = find_executable(program)
+                        self.assertEqual(rv, program)
+
+            # missing PATH: test os.confstr("CS_PATH") and os.defpath
+            with test_support.EnvironmentVarGuard() as env:
+                env.pop('PATH', None)
+
+                # without confstr
+                with unittest.mock.patch('distutils.spawn.os.confstr',
+                                         side_effect=ValueError,
+                                         create=True), \
+                     unittest.mock.patch('distutils.spawn.os.defpath',
+                                         tmp_dir):
+                    rv = find_executable(program)
+                    self.assertEqual(rv, filename)
+
+                # with confstr
+                with unittest.mock.patch('distutils.spawn.os.confstr',
+                                         return_value=tmp_dir, create=True), \
+                     unittest.mock.patch('distutils.spawn.os.defpath', ''):
                     rv = find_executable(program)
                     self.assertEqual(rv, filename)
 

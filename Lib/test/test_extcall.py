@@ -237,7 +237,7 @@ What about willful misconduct?
     >>> f(**{1:2})
     Traceback (most recent call last):
       ...
-    TypeError: f() keywords must be strings
+    TypeError: keywords must be strings
 
     >>> h(**{'e': 2})
     Traceback (most recent call last):
@@ -264,7 +264,8 @@ What about willful misconduct?
       ...
     TypeError: dir() argument after * must be an iterable, not function
 
-    >>> None(*h)
+    >>> nothing = None
+    >>> nothing(*h)
     Traceback (most recent call last):
       ...
     TypeError: NoneType object argument after * must be an iterable, \
@@ -305,7 +306,7 @@ not function
       ...
     TypeError: dir() argument after ** must be a mapping, not function
 
-    >>> None(**h)
+    >>> nothing(**h)
     Traceback (most recent call last):
       ...
     TypeError: NoneType object argument after ** must be a mapping, \

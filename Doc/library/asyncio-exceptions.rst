@@ -65,11 +65,11 @@ Exceptions
 
 .. exception:: IncompleteReadError
 
-    The requested read operation did not complete fully.
+   The requested read operation did not complete fully.
 
-    Raised by the :ref:`asyncio stream APIs<asyncio-streams>`.
+   Raised by the :ref:`asyncio stream APIs<asyncio-streams>`.
 
-    This exception is a subclass of :exc:`EOFError`.
+   This exception is a subclass of :exc:`EOFError`.
 
    .. attribute:: expected
 

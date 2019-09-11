@@ -24,10 +24,6 @@
  *  Py_[X]DECREF() and Py_[X]INCREF() macros.  The lint annotations
  *  look like "NOTE(...)".
  *
- *  To debug parser errors like
- *      "parser.ParserError: Expected node type 12, got 333."
- *  decode symbol numbers using the automatically-generated files
- *  Lib/symbol.h and Include/token.h.
  */
 
 #include "Python.h"                     /* general Python API             */
@@ -228,10 +224,10 @@ PyTypeObject PyST_Type = {
     (int) sizeof(PyST_Object),          /* tp_basicsize         */
     0,                                  /* tp_itemsize          */
     (destructor)parser_free,            /* tp_dealloc           */
-    0,                                  /* tp_print             */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr           */
     0,                                  /* tp_setattr           */
-    0,                                  /* tp_reserved          */
+    0,                                  /* tp_as_async          */
     0,                                  /* tp_repr              */
     0,                                  /* tp_as_number         */
     0,                                  /* tp_as_sequence       */
@@ -340,7 +336,7 @@ parser_newstobject(node *st, int type)
     if (o != 0) {
         o->st_node = st;
         o->st_type = type;
-        o->st_flags.cf_flags = 0;
+        o->st_flags = _PyCompilerFlags_INIT;
     }
     else {
         PyNode_Free(st);
@@ -584,8 +580,10 @@ parser_do_parse(PyObject *args, PyObject *kw, const char *argspec, int type)
 
         if (n) {
             res = parser_newstobject(n, type);
-            if (res)
+            if (res) {
                 ((PyST_Object *)res)->st_flags.cf_flags = flags & PyCF_MASK;
+                ((PyST_Object *)res)->st_flags.cf_feature_version = PY_MINOR_VERSION;
+            }
         }
         else {
             PyParser_SetError(&err);
@@ -645,7 +643,6 @@ validate_node(node *tree)
 {
     int type = TYPE(tree);
     int nch = NCH(tree);
-    dfa *nt_dfa;
     state *dfa_state;
     int pos, arc;
 
@@ -655,18 +652,36 @@ validate_node(node *tree)
         PyErr_Format(parser_error, "Unrecognized node type %d.", TYPE(tree));
         return 0;
     }
-    nt_dfa = &_PyParser_Grammar.g_dfa[type];
+    const dfa *nt_dfa = &_PyParser_Grammar.g_dfa[type];
     REQ(tree, nt_dfa->d_type);
 
     /* Run the DFA for this nonterminal. */
-    dfa_state = &nt_dfa->d_state[nt_dfa->d_initial];
+    dfa_state = nt_dfa->d_state;
     for (pos = 0; pos < nch; ++pos) {
         node *ch = CHILD(tree, pos);
         int ch_type = TYPE(ch);
+        if ((ch_type >= NT_OFFSET + _PyParser_Grammar.g_ndfas)
+            || (ISTERMINAL(ch_type) && (ch_type >= N_TOKENS))
+            || (ch_type < 0)
+           ) {
+            PyErr_Format(parser_error, "Unrecognized node type %d.", ch_type);
+            return 0;
+        }
+        if (ch_type == suite && TYPE(tree) == funcdef) {
+            /* This is the opposite hack of what we do in parser.c
+               (search for func_body_suite), except we don't ever
+               support type comments here. */
+            ch_type = func_body_suite;
+        }
         for (arc = 0; arc < dfa_state->s_narcs; ++arc) {
             short a_label = dfa_state->s_arc[arc].a_lbl;
             assert(a_label < _PyParser_Grammar.g_ll.ll_nlabels);
-            if (_PyParser_Grammar.g_ll.ll_label[a_label].lb_type == ch_type) {
+
+            const char *label_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
+            if ((_PyParser_Grammar.g_ll.ll_label[a_label].lb_type == ch_type)
+                && ((ch->n_str == NULL) || (label_str == NULL)
+                     || (strcmp(ch->n_str, label_str) == 0))
+               ) {
                 /* The child is acceptable; if non-terminal, validate it recursively. */
                 if (ISNONTERMINAL(ch_type) && !validate_node(ch))
                     return 0;
@@ -679,17 +694,26 @@ validate_node(node *tree)
         /* What would this state have accepted? */
         {
             short a_label = dfa_state->s_arc->a_lbl;
-            int next_type;
             if (!a_label) /* Wouldn't accept any more children */
                 goto illegal_num_children;
 
-            next_type = _PyParser_Grammar.g_ll.ll_label[a_label].lb_type;
-            if (ISNONTERMINAL(next_type))
-                PyErr_Format(parser_error, "Expected node type %d, got %d.",
-                             next_type, ch_type);
-            else
+            int next_type = _PyParser_Grammar.g_ll.ll_label[a_label].lb_type;
+            const char *expected_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
+
+            if (ISNONTERMINAL(next_type)) {
+                PyErr_Format(parser_error, "Expected %s, got %s.",
+                             _PyParser_Grammar.g_dfa[next_type - NT_OFFSET].d_name,
+                             ISTERMINAL(ch_type) ? _PyParser_TokenNames[ch_type] :
+                             _PyParser_Grammar.g_dfa[ch_type - NT_OFFSET].d_name);
+            }
+            else if (expected_str != NULL) {
+                PyErr_Format(parser_error, "Illegal terminal: expected '%s'.",
+                             expected_str);
+            }
+            else {
                 PyErr_Format(parser_error, "Illegal terminal: expected %s.",
                              _PyParser_TokenNames[next_type]);
+            }
             return 0;
         }
 
@@ -920,7 +944,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             Py_DECREF(elem);
             return NULL;
         }
-        err = PyNode_AddChild(root, type, strn, *line_num, 0);
+        err = PyNode_AddChild(root, type, strn, *line_num, 0, *line_num, 0);
         if (err == E_NOMEM) {
             Py_DECREF(elem);
             PyObject_FREE(strn);
@@ -1056,25 +1080,20 @@ parser__pickler(PyObject *self, PyObject *args)
     NOTE(ARGUNUSED(self))
     PyObject *result = NULL;
     PyObject *st = NULL;
-    PyObject *empty_dict = NULL;
 
     if (PyArg_ParseTuple(args, "O!:_pickler", &PyST_Type, &st)) {
         PyObject *newargs;
         PyObject *tuple;
 
-        if ((empty_dict = PyDict_New()) == NULL)
-            goto finally;
-        if ((newargs = Py_BuildValue("Oi", st, 1)) == NULL)
-            goto finally;
-        tuple = parser_st2tuple((PyST_Object*)NULL, newargs, empty_dict);
+        if ((newargs = PyTuple_Pack(2, st, Py_True)) == NULL)
+            return NULL;
+        tuple = parser_st2tuple((PyST_Object*)NULL, newargs, NULL);
         if (tuple != NULL) {
             result = Py_BuildValue("O(O)", pickle_constructor, tuple);
             Py_DECREF(tuple);
         }
         Py_DECREF(newargs);
     }
-  finally:
-    Py_XDECREF(empty_dict);
 
     return (result);
 }
@@ -1133,6 +1152,12 @@ PyMODINIT_FUNC
 PyInit_parser(void)
 {
     PyObject *module, *copyreg;
+
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "The parser module is deprecated and will be removed "
+            "in future versions of Python", 7) != 0) {
+        return NULL;
+    }
 
     if (PyType_Ready(&PyST_Type) < 0)
         return NULL;
