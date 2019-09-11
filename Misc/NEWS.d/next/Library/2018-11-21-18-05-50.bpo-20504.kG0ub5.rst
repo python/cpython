@@ -1,0 +1,2 @@
+Fixes a bug in :mod:`cgi` module when a multipart/form-data request has no
+`Content-Length` header.
