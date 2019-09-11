@@ -3735,7 +3735,7 @@ class ThreadedTests(unittest.TestCase):
         server_context.maximum_version = ssl.TLSVersion.TLSv1_2
         server_context.minimum_version = ssl.TLSVersion.TLSv1_2
         client_context.maximum_version = ssl.TLSVersion.TLSv1
-        client_context.maximum_version = ssl.TLSVersion.TLSv1
+        client_context.minimum_version = ssl.TLSVersion.TLSv1
         with ThreadedEchoServer(context=server_context) as server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
