@@ -118,26 +118,6 @@ class BufferedSubFile(object):
         self.pushlines(parts)
 
     def pushlines(self, lines):
-        # Crack into lines, but preserve the newlines on the end of each
-        parts = NLCRE_crack.split(data)
-        # The *ahem* interesting behaviour of re.split when supplied grouping
-        # parentheses is that the last element of the resulting list is the
-        # data after the final RE.  In the case of a NL/CR terminated string,
-        # this is the empty string.
-        self._partial = parts.pop()
-        #GAN 29Mar09  bugs 1555570, 1721862  Confusion at 8K boundary ending with \r:
-        # is there a \n to follow later?
-        if not self._partial and parts and parts[-1].endswith('\r'):
-            self._partial = parts.pop(-2)+parts.pop()
-        # parts is a list of strings, alternating between the line contents
-        # and the eol character(s).  Gather up a list of lines after
-        # re-attaching the newlines.
-        lines = []
-        for i in range(len(parts) // 2):
-            lines.append(parts[i*2] + parts[i*2+1])
-        self.pushlines(lines)
-
-    def pushlines(self, lines):
         # Reverse and insert at the front of the lines.
         self._lines[:0] = lines[::-1]
 
