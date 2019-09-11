@@ -193,7 +193,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.close()
 
         # operation blocked when the loop is closed
-        f = asyncio.Future(loop=self.loop)
+        f = self.loop.create_future()
         self.assertRaises(RuntimeError, self.loop.run_forever)
         self.assertRaises(RuntimeError, self.loop.run_until_complete, f)
 
@@ -324,7 +324,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         def test_thread(loop, debug, create_loop=False):
             event = threading.Event()
-            fut = asyncio.Future(loop=loop)
+            fut = loop.create_future()
             loop.call_soon(event.set)
             args = (loop, event, debug, create_loop, fut)
             thread = threading.Thread(target=check_in_thread, args=args)
@@ -472,7 +472,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.loop.run_until_complete, 'blah')
 
     def test_run_until_complete_loop(self):
-        task = asyncio.Future(loop=self.loop)
+        task = self.loop.create_future()
         other_loop = self.new_test_loop()
         self.addCleanup(other_loop.close)
         self.assertRaises(ValueError,
@@ -555,7 +555,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         # Test call_soon (events.Handle)
         with mock.patch('asyncio.base_events.logger') as log:
-            fut = asyncio.Future(loop=self.loop)
+            fut = self.loop.create_future()
             self.loop.call_soon(zero_error, fut)
             fut.add_done_callback(lambda fut: self.loop.stop())
             self.loop.run_forever()
@@ -565,7 +565,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         # Test call_later (events.TimerHandle)
         with mock.patch('asyncio.base_events.logger') as log:
-            fut = asyncio.Future(loop=self.loop)
+            fut = self.loop.create_future()
             self.loop.call_later(0.01, zero_error, fut)
             fut.add_done_callback(lambda fut: self.loop.stop())
             self.loop.run_forever()
@@ -996,7 +996,7 @@ class MyProto(asyncio.Protocol):
         self.state = 'INITIAL'
         self.nbytes = 0
         if create_future:
-            self.done = asyncio.Future()
+            self.done = asyncio.get_running_loop().create_future()
 
     def connection_made(self, transport):
         self.transport = transport
@@ -1026,7 +1026,7 @@ class MyDatagramProto(asyncio.DatagramProtocol):
         self.state = 'INITIAL'
         self.nbytes = 0
         if create_future:
-            self.done = asyncio.Future(loop=loop)
+            self.done = loop.create_future()
 
     def connection_made(self, transport):
         self.transport = transport
@@ -1071,7 +1071,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                     (2, 1, 6, '', ('107.6.106.82', 80))]
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         idx = -1
         errors = ['err1', 'err2']
@@ -1098,7 +1098,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         m_socket.socket.return_value = sock
 
         def getaddrinfo(*args, **kw):
-            fut = asyncio.Future(loop=self.loop)
+            fut = self.loop.create_future()
             addr = (socket.AF_INET, socket.SOCK_STREAM, 0, '',
                     ('127.0.0.1', 80))
             fut.set_result([addr])
@@ -1190,7 +1190,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             return []
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         self.loop.getaddrinfo = getaddrinfo_task
         coro = self.loop.create_connection(MyProto, 'example.com', 80)
@@ -1202,7 +1202,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             return [(2, 1, 6, '', ('107.6.106.82', 80))]
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         self.loop.getaddrinfo = getaddrinfo_task
         self.loop.sock_connect = mock.Mock()
@@ -1218,7 +1218,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                     (2, 1, 6, '', ('0.0.0.2', 80))]
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         self.loop.getaddrinfo = getaddrinfo_task
         self.loop.sock_connect = mock.Mock()
@@ -1245,7 +1245,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                     (2, 1, 6, '', ('0.0.0.2', 80))]
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         self.loop.getaddrinfo = getaddrinfo_task
         self.loop.sock_connect = mock.Mock()
@@ -1377,7 +1377,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 return []
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
         self.loop.getaddrinfo = getaddrinfo_task
 
         coro = self.loop.create_connection(
@@ -1405,7 +1405,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop.getaddrinfo = mock.Mock()
 
         def mock_getaddrinfo(*args, **kwds):
-            f = asyncio.Future(loop=self.loop)
+            f = self.loop.create_future()
             f.set_result([(socket.AF_INET, socket.SOCK_STREAM,
                            socket.SOL_TCP, '', ('1.2.3.4', 80))])
             return f
@@ -1513,7 +1513,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             return []
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         self.loop.getaddrinfo = getaddrinfo_task
         fut = self.loop.create_server(MyProto, '', 0)

@@ -206,7 +206,7 @@ class CoroutineTests(BaseTest):
 
         async def runner():
             coro = afunc()
-            t = asyncio.Task(coro, loop=self.loop)
+            t = self.loop.create_task(coro)
             try:
                 await asyncio.sleep(0)
                 await coro
