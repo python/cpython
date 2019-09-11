@@ -1091,48 +1091,54 @@ OSError_traverse(PyOSErrorObject *self, visitproc visit,
 }
 
 static PyObject *
+_OSError_str_format(const char *errno_name,
+                    PyObject *errnum, PyObject *strerror,
+                    PyObject *filename, PyObject *filename2)
+{
+    const char *format = filename
+        ? (filename2 ? "[%s %S] %S: %R -> %R" : "[%s %S] %S: %R")
+        : "[%s %S] %S";
+    return PyUnicode_FromFormat(format,
+                                errno_name,
+                                errnum ? errnum : Py_None,
+                                strerror ? strerror : Py_None,
+                                filename ? filename : Py_None,
+                                filename2 ? filename2 : Py_None);
+}
+
+static PyObject *
 OSError_str(PyOSErrorObject *self)
 {
-#define OR_NONE(x) ((x)?(x):Py_None)
+    PyObject *msg = NULL;
 #ifdef MS_WINDOWS
     /* If available, winerror has the priority over myerrno */
-    if (self->winerror && self->filename) {
-        if (self->filename2) {
-            return PyUnicode_FromFormat("[WinError %S] %S: %R -> %R",
-                                        OR_NONE(self->winerror),
-                                        OR_NONE(self->strerror),
-                                        self->filename,
-                                        self->filename2);
-        } else {
-            return PyUnicode_FromFormat("[WinError %S] %S: %R",
-                                        OR_NONE(self->winerror),
-                                        OR_NONE(self->strerror),
-                                        self->filename);
-        }
+    if (self->winerror) {
+        msg = _OSError_str_format("WinError", self->winerror, self->strerror,
+                                  self->filename, self->filename2);
     }
-    if (self->winerror && self->strerror)
-        return PyUnicode_FromFormat("[WinError %S] %S",
-                                    self->winerror ? self->winerror: Py_None,
-                                    self->strerror ? self->strerror: Py_None);
+    else
 #endif
-    if (self->filename) {
-        if (self->filename2) {
-            return PyUnicode_FromFormat("[Errno %S] %S: %R -> %R",
-                                        OR_NONE(self->myerrno),
-                                        OR_NONE(self->strerror),
-                                        self->filename,
-                                        self->filename2);
+    if (self->myerrno) {
+        msg = _OSError_str_format("Errno", self->myerrno, self->strerror,
+                                  self->filename, self->filename2);
+    } else {
+        msg = BaseException_str((PyBaseExceptionObject *)self);
+    }
+#ifdef MS_WINDOWS
+    if (msg && self->filename) {
+        if (PyObject_Size(self->filename) > 260) {
+            Py_SETREF(msg, PyUnicode_FromFormat(
+                "%S\nThis may be because your path is too long. "
+                "See https://docs.python.org/3/using/windows.html"
+                "#removing-the-max-path-limitation",
+                msg));
         } else {
-            return PyUnicode_FromFormat("[Errno %S] %S: %R",
-                                        OR_NONE(self->myerrno),
-                                        OR_NONE(self->strerror),
-                                        self->filename);
+            /* may have had an error in PyObject_Size */
+            PyErr_Clear();
         }
     }
-    if (self->myerrno && self->strerror)
-        return PyUnicode_FromFormat("[Errno %S] %S",
-                                    self->myerrno, self->strerror);
-    return BaseException_str((PyBaseExceptionObject *)self);
+#endif
+    return msg;
 }
 
 static PyObject *
