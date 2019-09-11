@@ -537,8 +537,8 @@ character ``'$'``.
    Matches any character which is not a word character. This is
    the opposite of ``\w``. If the :const:`ASCII` flag is used this
    becomes the equivalent of ``[^a-zA-Z0-9_]``.  If the :const:`LOCALE` flag is
-   used, matches characters considered alphanumeric in the current locale
-   and the underscore.
+   used, matches characters which are neither alphanumeric in the current locale
+   nor the underscore.
 
 .. index:: single: \Z; in regular expressions
 
