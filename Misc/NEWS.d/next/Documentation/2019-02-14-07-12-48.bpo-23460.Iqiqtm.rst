@@ -1,0 +1,1 @@
+The documentation for decimal string formatting using the `:g` specifier has been updated to reflect the correct exponential notation cutoff point. Original patch contributed by Tuomas Suutari.
