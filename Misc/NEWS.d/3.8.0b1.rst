@@ -808,7 +808,7 @@ detect classes that can be passed to `hex()`, `oct()` and `bin()`.
 .. nonce: LoeUNh
 .. section: Library
 
-Implement ``unittest.AsyncTestCase`` to help testing asyncio-based code.
+Implement ``unittest.IsolatedAsyncioTestCase`` to help testing asyncio-based code.
 
 ..
 
