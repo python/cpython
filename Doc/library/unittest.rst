@@ -1542,16 +1542,14 @@ Test cases
               events.append("setUp")
 
           async def asyncSetUp(self):
-              self._async_connection = await ExpensiveAsyncConnection()
+              self._async_connection = await AsyncConnection()
               events.append("asyncSetUp")
 
           async def test_response(self):
+              events.append("test_response")
               response = await self._async_connection.get("https://example.com")
               self.assertEqual(response.status_code, 200)
               self.addAsyncCleanup(self.on_cleanup)
-
-              response = self._sync_connection.get("https://example.com")
-              self.assertEqual(response.status_code, 200)
 
           def tearDown(self):
               self._sync_connection.close()
@@ -1564,9 +1562,10 @@ Test cases
           async def on_cleanup(self):
               events.append("cleanup")
 
-      test = Test("test_response")
-      test.run()
-      assert events == ["setUp", "asyncSetUp", "asyncTearDown", "tearDown", "cleanup"]
+      if __name__ == "__main__":
+          unittest.main()
+
+   After running the test ``events`` would contain ``["setUp", "asyncSetUp", "test_response", "asyncTearDown", "tearDown", "cleanup"]``
 
 
 .. class:: FunctionTestCase(testFunc, setUp=None, tearDown=None, description=None)

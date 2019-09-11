@@ -1123,7 +1123,7 @@ unittest
     class TestRequest(unittest.IsolatedAsyncioTestCase):
 
         async def asyncSetUp(self):
-            self.connection = await ExpensiveConnection()
+            self.connection = await AsyncConnection()
 
         async def test_get(self):
             response = await self.connection.get("https://example.com")
