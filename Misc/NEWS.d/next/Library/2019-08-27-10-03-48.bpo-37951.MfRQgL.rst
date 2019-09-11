@@ -1,0 +1,2 @@
+Most features of the subprocess module now work again in subinterpreters.
+Only *preexec_fn* is restricted in subinterpreters.

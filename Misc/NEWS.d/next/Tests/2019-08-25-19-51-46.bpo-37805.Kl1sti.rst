@@ -1,0 +1,1 @@
+Add tests for json.dump(..., skipkeys=True). Patch by Dong-hee Na.

@@ -500,10 +500,14 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
     }
     else {
         PyCompactUnicodeObject *compact = (PyCompactUnicodeObject *)op;
+#ifndef NDEBUG
         void *data;
+#endif
 
         if (ascii->state.compact == 1) {
+#ifndef NDEBUG
             data = compact + 1;
+#endif
             _PyObject_ASSERT(op, kind == PyUnicode_1BYTE_KIND
                                  || kind == PyUnicode_2BYTE_KIND
                                  || kind == PyUnicode_4BYTE_KIND);
@@ -512,9 +516,11 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             _PyObject_ASSERT(op, compact->utf8 != data);
         }
         else {
+#ifndef NDEBUG
             PyUnicodeObject *unicode = (PyUnicodeObject *)op;
 
             data = unicode->data.any;
+#endif
             if (kind == PyUnicode_WCHAR_KIND) {
                 _PyObject_ASSERT(op, ascii->length == 0);
                 _PyObject_ASSERT(op, ascii->hash == -1);
@@ -7186,6 +7192,12 @@ PyUnicode_AsASCIIString(PyObject *unicode)
 #define NEED_RETRY
 #endif
 
+/* INT_MAX is the theoretical largest chunk (or INT_MAX / 2 when
+   transcoding from UTF-16), but INT_MAX / 4 perfoms better in
+   both cases also and avoids partial characters overrunning the
+   length limit in MultiByteToWideChar on Windows */
+#define DECODING_CHUNK_SIZE (INT_MAX/4)
+
 #ifndef WC_ERR_INVALID_CHARS
 #  define WC_ERR_INVALID_CHARS 0x0080
 #endif
@@ -7422,8 +7434,8 @@ decode_code_page_stateful(int code_page,
     do
     {
 #ifdef NEED_RETRY
-        if (size > INT_MAX) {
-            chunk_size = INT_MAX;
+        if (size > DECODING_CHUNK_SIZE) {
+            chunk_size = DECODING_CHUNK_SIZE;
             final = 0;
             done = 0;
         }
@@ -7827,10 +7839,8 @@ encode_code_page(int code_page,
     do
     {
 #ifdef NEED_RETRY
-        /* UTF-16 encoding may double the size, so use only INT_MAX/2
-           chunks. */
-        if (len > INT_MAX/2) {
-            chunk_len = INT_MAX/2;
+        if (len > DECODING_CHUNK_SIZE) {
+            chunk_len = DECODING_CHUNK_SIZE;
             done = 0;
         }
         else

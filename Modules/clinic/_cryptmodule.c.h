@@ -30,7 +30,7 @@ crypt_crypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("crypt", 1, "str", args[0]);
+        _PyArg_BadArgument("crypt", "argument 1", "str", args[0]);
         goto exit;
     }
     Py_ssize_t word_length;
@@ -43,7 +43,7 @@ crypt_crypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("crypt", 2, "str", args[1]);
+        _PyArg_BadArgument("crypt", "argument 2", "str", args[1]);
         goto exit;
     }
     Py_ssize_t salt_length;
@@ -60,4 +60,4 @@ crypt_crypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3f75d4d4be4dddbb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=549de0d43b030126 input=a9049054013a1b77]*/

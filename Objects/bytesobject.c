@@ -1142,7 +1142,6 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
     end = s + len;
     while (s < end) {
         if (*s != '\\') {
-          non_esc:
             if (!(recode_encoding && (*s & 0x80))) {
                 *p++ = *s++;
             }
@@ -1229,8 +1228,6 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
             }
             *p++ = '\\';
             s--;
-            goto non_esc; /* an arbitrary number of unescaped
-                             UTF-8 bytes may follow. */
         }
     }
 
@@ -2938,7 +2935,6 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
         Py_ssize_t oldsize;
         Py_buffer wb;
 
-        wb.len = -1;
         if (PyObject_GetBuffer(w, &wb, PyBUF_SIMPLE) != 0) {
             PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
                          Py_TYPE(w)->tp_name, Py_TYPE(*pv)->tp_name);
@@ -3047,7 +3043,7 @@ error:
 }
 
 void
-PyBytes_Fini(void)
+_PyBytes_Fini(void)
 {
     int i;
     for (i = 0; i < UCHAR_MAX + 1; i++)

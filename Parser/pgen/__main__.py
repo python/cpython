@@ -8,17 +8,15 @@ def main():
     parser.add_argument(
         "grammar", type=str, help="The file with the grammar definition in EBNF format"
     )
-    parser.add_argument(
-        "tokens", type=str, help="The file with the token definitions"
-    )
+    parser.add_argument("tokens", type=str, help="The file with the token definitions")
     parser.add_argument(
         "graminit_h",
-        type=argparse.FileType('w'),
+        type=argparse.FileType("w"),
         help="The path to write the grammar's non-terminals as #defines",
     )
     parser.add_argument(
         "graminit_c",
-        type=argparse.FileType('w'),
+        type=argparse.FileType("w"),
         help="The path to write the grammar as initialized data",
     )
 

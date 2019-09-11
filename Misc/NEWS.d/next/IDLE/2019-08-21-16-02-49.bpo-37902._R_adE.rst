@@ -1,0 +1,2 @@
+Add mousewheel scrolling for IDLE module, path, and stack browsers.
+Patch by George Zhang.
