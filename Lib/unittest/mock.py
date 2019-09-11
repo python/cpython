@@ -2214,7 +2214,7 @@ class AsyncMockMixin(Base):
         they must all appear in :attr:`await_args_list`.
         """
         expected = [self._call_matcher(c) for c in calls]
-        cause = expected if isinstance(expected, Exception) else None
+        cause = next((e for e in expected if isinstance(e, Exception)), None)
         all_awaits = _CallList(self._call_matcher(c) for c in self.await_args_list)
         if not any_order:
             if expected not in all_awaits:
