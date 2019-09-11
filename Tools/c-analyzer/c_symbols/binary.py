@@ -1,3 +1,4 @@
+import os
 import os.path
 import shutil
 import sys
@@ -22,12 +23,17 @@ def iter_symbols(binary=PYTHON, dirnames=None, *,
     if not _file_exists(binary):
         raise Exception('executable missing (need to build it first?)')
 
-    if not find_local_symbol:
-        yield from _iter_symbols_nm(binary)
-    else:
+    if find_local_symbol:
         cache = {}
         def find_local_symbol(name, *, _find=find_local_symbol):
             return _find(name, dirnames, _perfilecache=cache)
+    else:
+        find_local_symbol = None
+
+    if os.name == 'nt':
+        # XXX Support this.
+        raise NotImplementedError
+    else:
         yield from _iter_symbols_nm(binary, find_local_symbol)
 
 
@@ -75,6 +81,8 @@ def _iter_symbols_nm(binary, find_local_symbol=None,
                      _run=util.run_cmd,
                      ):
     nm = _which('nm')
+    if not nm:
+        raise NotImplementedError
     argv = [nm,
             '--line-numbers',
             binary,

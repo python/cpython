@@ -1,6 +1,7 @@
 import itertools
 import textwrap
 import unittest
+import sys
 
 from ..util import wrapped_arg_combos, StrProxy
 from .. import tool_imports_for_tests
@@ -181,6 +182,7 @@ class IterLinesTests(TestCaseBase):
                 ('_parse_directive', '#define eggs ( a , b ) { a = b ; }'),
                 )
 
+    @unittest.skipIf(sys.platform == 'win32', 'needs fix under Windows')
     def test_split_lines(self):
         directive = Macro('eggs', ('a', 'b'), '{ a = b; }')
         self.parsed = [
@@ -341,6 +343,7 @@ class IterLinesTests(TestCaseBase):
                 ('_parse_directive', '#endif'),
                 )
 
+    @unittest.skipIf(sys.platform == 'win32', 'needs fix under Windows')
     def test_basic(self):
         directives = [
             Include('<stdio.h>'),
@@ -455,6 +458,7 @@ class IterLinesTests(TestCaseBase):
             (23, 'print("end");', None, ()),
             ])
 
+    @unittest.skipIf(sys.platform == 'win32', 'needs fix under Windows')
     def test_typical(self):
         # We use Include/compile.h from commit 66c4f3f38b86.  It has
         # a good enough mix of code without being too large.

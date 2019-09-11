@@ -11,7 +11,10 @@ class ActualChecks(unittest.TestCase):
     # XXX Also run the check in "make check".
     @unittest.expectedFailure
     def test_check_c_globals(self):
-        main('check', {})
+        try:
+            main('check', {})
+        except NotImplementedError:
+            raise unittest.SkipTest('not supported on this host')
 
 
 if __name__ == '__main__':

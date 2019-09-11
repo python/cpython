@@ -226,8 +226,8 @@ class IterFilesTests(unittest.TestCase):
             fixpath('z/eggs/ham/file3.c'),
             ])
         self.assertEqual(self.calls, [
-            ('_walk', ('/x/y/z/spam', '.c', _walk_tree)),
-            ('_walk', ('/x/y/z/eggs', '.c', _walk_tree)),
+            ('_walk', (fixpath('/x/y/z/spam'), '.c', _walk_tree)),
+            ('_walk', (fixpath('/x/y/z/eggs'), '.c', _walk_tree)),
             ])
 
     def test_glob(self):
