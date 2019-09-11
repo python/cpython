@@ -549,17 +549,13 @@ class BaseEventLoop(events.AbstractEventLoop):
                     'asyncgen': agen
                 })
 
-
-    def _shutdown_default_executor(self, wait=True):
-        self._executor_shutdown_called = True
-        executor = self._default_executor
-        if executor is not None:
-            self._default_executor = None
-            executor.shutdown(wait)
-
-    def shutdown_default_executor(self):
+    async def shutdown_default_executor(self):
         """Shutdown the default executor, but wait for the threadpool to finish."""
-        self._shutdown_default_executor()
+        future = self.create_future()
+        thread = threading.Thread(target=self._do_shutdown, args=(future,))
+        thread.start()
+        await future
+        thread.join()
 
     def run_forever(self):
         """Run until stop() is called."""
@@ -650,7 +646,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._closed = True
         self._ready.clear()
         self._scheduled.clear()
-        self._shutdown_default_executor(wait=False)
+        self._executor_shutdown_called = True
+        executor = self._default_executor
+        if executor is not None:
+            self._default_executor = None
+            executor.shutdown(wait=False)
 
     def is_closed(self):
         """Returns True if the event loop was closed."""

@@ -249,7 +249,7 @@ class AbstractEventLoop:
         """Shutdown all active asynchronous generators."""
         raise NotImplementedError
 
-    def shutdown_default_executor(self):
+    async def shutdown_default_executor(self):
         """Shutdown the default executor, but wait for the threadpool to finish."""
         raise NotImplementedError
 
