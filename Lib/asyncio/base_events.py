@@ -549,21 +549,23 @@ class BaseEventLoop(events.AbstractEventLoop):
                     'asyncgen': agen
                 })
 
-    def _do_shutdown(self, future):
-        try:
-            self._executor.shutdown(wait=True)
-            self.call_soon_threadsafe(future.set_result, None)
-        except:
-            self.call_soon_threadsafe(future.set_exception, ex)
-
     async def shutdown_default_executor(self):
         """Schedule the shutdown of the default executor."""
         self._executor_shutdown_called = True
         future = self.create_future()
         thread = threading.Thread(target=self._do_shutdown, args=(future,))
         thread.start()
-        await future
-        thread.join()
+        try:
+            await future
+        finally:
+            thread.join()
+
+    def _do_shutdown(self, future):
+        try:
+            self._executor.shutdown(wait=True)
+            self.call_soon_threadsafe(future.set_result, None)
+        except Exception as ex:
+            self.call_soon_threadsafe(future.set_exception, ex)
 
     def run_forever(self):
         """Run until stop() is called."""
