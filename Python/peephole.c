@@ -457,7 +457,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         }
     }
 
-    /* Fixup lnotab */
+    /* Map old to new bytecode positions */
     for (i = 0, nops = 0; i < codelen; i++) {
         size_t block = (size_t)i - nops;
         /* cannot overflow: codelen <= INT_MAX */
@@ -468,18 +468,14 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             nops++;
         }
     }
-    cum_orig_offset = 0;
-    last_offset = 0;
-    for (i=0 ; i < tabsiz ; i+=2) {
-        unsigned int offset_delta, new_offset;
-        cum_orig_offset += lnotab[i];
-        assert(cum_orig_offset % sizeof(_Py_CODEUNIT) == 0);
-        new_offset = blocks[cum_orig_offset / sizeof(_Py_CODEUNIT)] *
-                sizeof(_Py_CODEUNIT);
-        offset_delta = new_offset - last_offset;
-        assert(offset_delta <= 255);
-        lnotab[i] = (unsigned char)offset_delta;
-        last_offset = new_offset;
+    /* The 'blocks' old-to-new opcode position map can leave the new opcode
+     * position invalid in the new codestring, if the old codestring ended
+     * with NOPs. Normally a NOP should map to the next bytecode after the
+     * NOP (in case the NOP is a jump target), but positions past the end
+     * should point at the end, instead. This (currently) doesn't matter for
+     * jump targets, but it matters for lnotab. */
+    while (blocks[--i] > (codelen - nops - 1)) {
+        blocks[i] = (codelen - nops - 1);
     }
 
     /* Remove NOPs and fixup jump targets */
@@ -521,6 +517,23 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         h += ilen;
     }
     assert(h + (Py_ssize_t)nops == codelen);
+    assert(blocks[codelen - 1] < h);
+
+    /* Fixup lnotab. This modifies the lnotab bytes object in-place, so it
+     * has to happen last. */
+    cum_orig_offset = 0;
+    last_offset = 0;
+    for (i=0 ; i < tabsiz ; i+=2) {
+        unsigned int offset_delta, new_offset;
+        cum_orig_offset += lnotab[i];
+        assert(cum_orig_offset % sizeof(_Py_CODEUNIT) == 0);
+        new_offset = blocks[cum_orig_offset / sizeof(_Py_CODEUNIT)] *
+                sizeof(_Py_CODEUNIT);
+        offset_delta = new_offset - last_offset;
+        assert(offset_delta <= 255);
+        lnotab[i] = (unsigned char)offset_delta;
+        last_offset = new_offset;
+    }
 
     PyMem_Free(blocks);
     code = PyBytes_FromStringAndSize((char *)codestr, h * sizeof(_Py_CODEUNIT));
