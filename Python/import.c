@@ -1646,23 +1646,20 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             if (dot == -2) {
                 goto error;
             }
-
-            if (dot >= 0) {
-                PyObject *substr = PyUnicode_Substring(package, 0, dot);
-                if (substr == NULL) {
-                    goto error;
-                }
-                Py_SETREF(package, substr);
+            else if (dot == -1) {
+                goto no_parent_error;
             }
+            PyObject *substr = PyUnicode_Substring(package, 0, dot);
+            if (substr == NULL) {
+                goto error;
+            }
+            Py_SETREF(package, substr);
         }
     }
 
     last_dot = PyUnicode_GET_LENGTH(package);
     if (last_dot == 0) {
-        _PyErr_SetString(tstate, PyExc_ImportError,
-                         "attempted relative import "
-                         "with no known parent package");
-        goto error;
+        goto no_parent_error;
     }
 
     for (level_up = 1; level_up < level; level_up += 1) {
@@ -1687,6 +1684,11 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
     abs_name = PyUnicode_FromFormat("%U.%U", base, name);
     Py_DECREF(base);
     return abs_name;
+
+  no_parent_error:
+    _PyErr_SetString(tstate, PyExc_ImportError,
+                     "attempted relative import "
+                     "with no known parent package");
 
   error:
     Py_XDECREF(package);
