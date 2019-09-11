@@ -192,7 +192,7 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        read_task = asyncio.Task(stream.read(30), loop=self.loop)
+        read_task = self.loop.create_task(stream.read(30))
 
         def cb():
             stream._feed_data(self.DATA)
@@ -220,7 +220,7 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        read_task = asyncio.Task(stream.read(1024), loop=self.loop)
+        read_task = self.loop.create_task(stream.read(1024))
 
         def cb():
             stream._feed_eof()
@@ -235,7 +235,7 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        read_task = asyncio.Task(stream.read(-1), loop=self.loop)
+        read_task = self.loop.create_task(stream.read(-1))
 
         def cb():
             stream._feed_data(b'chunk1\n')
@@ -288,7 +288,7 @@ class StreamTests(test_utils.TestCase):
                                 loop=self.loop,
                                 _asyncio_internal=True)
         stream._feed_data(b'chunk1 ')
-        read_task = asyncio.Task(stream.readline(), loop=self.loop)
+        read_task = self.loop.create_task(stream.readline())
 
         def cb():
             stream._feed_data(b'chunk2 ')
@@ -579,7 +579,7 @@ class StreamTests(test_utils.TestCase):
                                 _asyncio_internal=True)
 
         n = 2 * len(self.DATA)
-        read_task = asyncio.Task(stream.readexactly(n), loop=self.loop)
+        read_task = self.loop.create_task(stream.readexactly(n))
 
         def cb():
             stream._feed_data(self.DATA)
@@ -606,7 +606,7 @@ class StreamTests(test_utils.TestCase):
                                 loop=self.loop,
                                 _asyncio_internal=True)
         n = 2 * len(self.DATA)
-        read_task = asyncio.Task(stream.readexactly(n), loop=self.loop)
+        read_task = self.loop.create_task(stream.readexactly(n))
 
         def cb():
             stream._feed_data(self.DATA)
@@ -652,8 +652,8 @@ class StreamTests(test_utils.TestCase):
         async def set_err():
             stream._set_exception(ValueError())
 
-        t1 = asyncio.Task(stream.readline(), loop=self.loop)
-        t2 = asyncio.Task(set_err(), loop=self.loop)
+        t1 = self.loop.create_task(stream.readline())
+        t2 = self.loop.create_task(set_err())
 
         self.loop.run_until_complete(asyncio.wait([t1, t2]))
 
@@ -664,7 +664,7 @@ class StreamTests(test_utils.TestCase):
                                 loop=self.loop,
                                 _asyncio_internal=True)
 
-        t = asyncio.Task(stream.readline(), loop=self.loop)
+        t = self.loop.create_task(stream.readline())
         test_utils.run_briefly(self.loop)
         t.cancel()
         test_utils.run_briefly(self.loop)
@@ -735,8 +735,7 @@ class StreamTests(test_utils.TestCase):
         server = MyServer(self.loop)
         with self.assertWarns(DeprecationWarning):
             addr = server.start()
-        msg = self.loop.run_until_complete(asyncio.Task(client(addr),
-                                                        loop=self.loop))
+        msg = self.loop.run_until_complete(self.loop.create_task(client(addr)))
         server.stop()
         self.assertEqual(msg, b"hello world!\n")
 
@@ -744,8 +743,7 @@ class StreamTests(test_utils.TestCase):
         server = MyServer(self.loop)
         with self.assertWarns(DeprecationWarning):
             addr = server.start_callback()
-        msg = self.loop.run_until_complete(asyncio.Task(client(addr),
-                                                        loop=self.loop))
+        msg = self.loop.run_until_complete(self.loop.create_task(client(addr)))
         server.stop()
         self.assertEqual(msg, b"hello world!\n")
 
@@ -810,8 +808,8 @@ class StreamTests(test_utils.TestCase):
             server = MyServer(self.loop, path)
             with self.assertWarns(DeprecationWarning):
                 server.start()
-            msg = self.loop.run_until_complete(asyncio.Task(client(path),
-                                                            loop=self.loop))
+            msg = self.loop.run_until_complete(
+                self.loop.create_task(client(path)))
             server.stop()
             self.assertEqual(msg, b"hello world!\n")
 
@@ -820,8 +818,8 @@ class StreamTests(test_utils.TestCase):
             server = MyServer(self.loop, path)
             with self.assertWarns(DeprecationWarning):
                 server.start_callback()
-            msg = self.loop.run_until_complete(asyncio.Task(client(path),
-                                                            loop=self.loop))
+            msg = self.loop.run_until_complete(
+                self.loop.create_task(client(path)))
             server.stop()
             self.assertEqual(msg, b"hello world!\n")
 
@@ -1016,7 +1014,7 @@ os.close(fd)
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop,
                                 _asyncio_internal=True)
-        stream._waiter = asyncio.Future(loop=self.loop)
+        stream._waiter = self.loop.create_future()
         self.assertRegex(
             repr(stream),
             r"<Stream .+ waiter=<Future pending[\S ]*>>")
