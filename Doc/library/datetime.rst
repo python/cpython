@@ -670,8 +670,8 @@ Instance methods:
 
 .. method:: date.isocalendar()
 
-   Return a :term:`named tuple` object with three components: `year`, `week`
-   and `weekday`.
+   Return a :term:`named tuple` object with three components: ``year``,
+   ``week`` and ``weekday``.
 
    The ISO calendar is a widely used variant of the Gregorian calendar. [#]_
 
@@ -1403,9 +1403,8 @@ Instance methods:
 
 .. method:: datetime.isocalendar()
 
-   Return a :term:`named tuple` object with three components: `year`, `week`
-   and `weekday`.
-   The same as ``self.date().isocalendar()``.
+   Return a :term:`named tuple` with three components: ``year``, ``week``
+   and ``weekday``. The same as ``self.date().isocalendar()``.
 
 
 .. method:: datetime.isoformat(sep='T', timespec='auto')

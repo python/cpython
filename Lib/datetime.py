@@ -1096,7 +1096,7 @@ class date:
         return self.toordinal() % 7 or 7
 
     def isocalendar(self):
-        """Return a IsoCalendarDate containing ISO year, week number, and weekday.
+        """Return a named tuple containing ISO year, week number, and weekday.
 
         The first ISO week of the year is the (Mon-Sun) week
         containing the year's first Thursday; everything else derives
@@ -1121,7 +1121,7 @@ class date:
             if today >= _isoweek1monday(year+1):
                 year += 1
                 week = 0
-        return _IsoCalendarDate((year, week+1, day+1))
+        return IsoCalendarDate((year, week+1, day+1))
 
     # Pickle support.
 
@@ -1212,7 +1212,7 @@ class tzinfo:
             return (self.__class__, args, state)
 
 
-class _IsoCalendarDate(tuple):
+class IsoCalendarDate(tuple):
 
     def __new__(cls, seq):
         if len(seq) != 3:
@@ -1233,12 +1233,8 @@ class _IsoCalendarDate(tuple):
         return self[2]
 
     def __repr__(self):
-        return ('datetime.IsoCalendarDate'
+        return (f'{self.__class__.__name__}'
             f'(year={self[0]}, week={self[1]}, weekday={self[2]})')
-
-
-_IsoCalendarDate.__name__ = "IsoCalendarDate"
-_IsoCalendarDate.__qualname__ = "IsoCalendarDate"
 
 
 _tzinfo_class = tzinfo
@@ -2546,7 +2542,7 @@ else:
          _format_time, _format_offset, _is_leap, _isoweek1monday, _math,
          _ord2ymd, _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
          _divide_and_round, _parse_isoformat_date, _parse_isoformat_time,
-         _parse_hh_mm_ss_ff, _IsoCalendarDate)
+         _parse_hh_mm_ss_ff)
     # XXX Since import * above excludes names that start with _,
     # docstring does not get overwritten. In the future, it may be
     # appropriate to maintain a single module level docstring and

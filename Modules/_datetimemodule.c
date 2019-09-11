@@ -6561,7 +6561,8 @@ PyInit__datetime(void)
         }
         initialized = 1;
     }
-
+    Py_INCREF((PyObject *) &StructIsoCalendarDateType);
+    PyModule_AddObject(m, "IsoCalendarDate", (PyObject *) &StructIsoCalendarDateType);
 
     Py_INCREF(&PyDateTime_DateType);
     PyModule_AddObject(m, "date", (PyObject *) &PyDateTime_DateType);
