@@ -739,7 +739,7 @@ class EventLoopTestsMixin:
                 return [(family, socket.SOCK_STREAM, 6, '', (host, port, 0, 0))]
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         unique_hosts = set(hosts)
 
@@ -1588,7 +1588,7 @@ class EventLoopTestsMixin:
             return res
 
         start = time.monotonic()
-        t = asyncio.Task(main(), loop=self.loop)
+        t = self.loop.create_task(main())
         self.loop.run_forever()
         elapsed = time.monotonic() - start
 
