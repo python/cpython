@@ -12179,6 +12179,7 @@ os_cpu_count_impl(PyObject *module)
 {
     int ncpu = 0;
 #ifdef MS_WINDOWS
+    /* Declare prototype here to avoid pulling in all of the Win7 APIs in 3.8 */
     DWORD WINAPI GetActiveProcessorCount(WORD group);
     ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
 #elif defined(__hpux)
