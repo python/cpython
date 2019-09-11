@@ -474,7 +474,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
      * NOP (in case the NOP is a jump target), but positions past the end
      * should point at the end, instead. This (currently) doesn't matter for
      * jump targets, but it matters for lnotab. */
-    while (blocks[--i] > (codelen - nops - 1)) {
+    while (i-- > 0 && blocks[i] > (codelen - nops - 1)) {
         blocks[i] = (codelen - nops - 1);
     }
 
