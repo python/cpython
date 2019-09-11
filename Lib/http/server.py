@@ -684,7 +684,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 self.send_header("Location", new_url)
                 self.end_headers()
                 return None
-            for index in "index.html", "index.htm":
+            for index in self.directory_index:
                 index = os.path.join(path, index)
                 if os.path.exists(index):
                     path = index
@@ -884,6 +884,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         '.c': 'text/plain',
         '.h': 'text/plain',
         })
+    directory_index = ["index.html", "index.htm"]
 
 
 # Utilities for CGIHTTPRequestHandler
