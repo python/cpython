@@ -989,9 +989,9 @@ class NonCallableMock(Base):
         _type = type(self)
         if issubclass(_type, MagicMock) and _new_name in _async_method_magics:
             klass = AsyncMock
-        if issubclass(_type, AsyncMockMixin):
-            klass = MagicMock
-        if not issubclass(_type, CallableMixin):
+        elif issubclass(_type, AsyncMockMixin):
+            klass = AsyncMock
+        elif not issubclass(_type, CallableMixin):
             if issubclass(_type, NonCallableMagicMock):
                 klass = MagicMock
             elif issubclass(_type, NonCallableMock) :
@@ -1904,6 +1904,8 @@ _calculate_return_value = {
     '__str__': lambda self: object.__str__(self),
     '__sizeof__': lambda self: object.__sizeof__(self),
     '__fspath__': lambda self: f"{type(self).__name__}/{self._extract_mock_name()}/{id(self)}",
+    '__aenter__': lambda self: AsyncMockMixin._mock_call(self),
+    '__aexit__': lambda self: AsyncMockMixin._mock_call(self)
 }
 
 _return_values = {

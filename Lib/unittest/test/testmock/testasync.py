@@ -363,22 +363,58 @@ class AsyncArguments(unittest.TestCase):
 class AsyncContextManagerTest(unittest.TestCase):
 
     class WithAsyncContextManager:
-
         async def __aenter__(self, *args, **kwargs):
             return self
 
         async def __aexit__(self, *args, **kwargs):
             pass
 
-    def test_magic_methods_are_async_mocks(self):
-        mock = MagicMock(self.WithAsyncContextManager())
-        self.assertIsInstance(mock.__aenter__, AsyncMock)
-        self.assertIsInstance(mock.__aexit__, AsyncMock)
+    class WithSyncContextManager:
+        def __enter__(self, *args, **kwargs):
+            return self
+
+        def __exit__(self, *args, **kwargs):
+            pass
+
+    class ProductionCode:
+        # Example real-world(ish) code
+        async def main(self):
+            async with self.session.post('https://python.org') as response:
+                val = await response.json()
+                return val
+
+    def test_async_magic_methods_are_async_mocks_with_magicmock(self):
+        cm_mock = MagicMock(self.WithAsyncContextManager)
+        self.assertIsInstance(cm_mock.__aenter__, AsyncMock)
+        self.assertIsInstance(cm_mock.__aexit__, AsyncMock)
+
+    def test_set_return_value_of_aenter_magicmock(self):
+        pc = self.ProductionCode()
+        pc.session = MagicMock(name='sessionmock')
+        cm = MagicMock(name='magic_cm')
+        response = AsyncMock(name='response')
+        response.json = AsyncMock(return_value={'json':123})
+        cm.__aenter__.return_value = response
+        pc.session.post.return_value = cm
+        result = asyncio.run(pc.main())
+        self.assertEqual(result, {'json':123})
+
+    def test_set_return_value_of_aenter_asyncmock(self):
+        pc = self.ProductionCode()
+        pc.session = MagicMock(name='sessionmock')
+        cm = AsyncMock(name='async_cm')
+        response = AsyncMock(name='response')
+        response.json = AsyncMock(return_value={'json':123})
+        cm.__aenter__.return_value = response
+        pc.session.post.return_value = cm
+        result = asyncio.run(pc.main())
+        self.assertEqual(result, {'json':123})
 
     def test_mock_supports_async_context_manager(self):
         called = False
         instance = self.WithAsyncContextManager()
-        mock_instance = MagicMock(instance)
+        # TODO: Horrible error message if you use a MagicMock here
+        mock_instance = AsyncMock(instance)
 
         async def use_context_manager():
             nonlocal called
@@ -391,7 +427,6 @@ class AsyncContextManagerTest(unittest.TestCase):
         self.assertTrue(mock_instance.__aenter__.called)
         self.assertTrue(mock_instance.__aexit__.called)
         self.assertIsNot(mock_instance, result)
-        self.assertIsInstance(result, AsyncMock)
 
     def test_mock_customize_async_context_manager(self):
         instance = self.WithAsyncContextManager()
