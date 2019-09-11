@@ -21,25 +21,61 @@ IGNORED = {
         '_Py_HashSecret_Initialized': 'process-global',
         '_TARGET_LOCALES': 'process-global',
 
-        # startup
+        # startup (only changed before/during)
+        '_PyRuntime': 'runtime startup',
         'runtime_initialized': 'runtime startup',
         'static_arg_parsers': 'runtime startup',
         'orig_argv': 'runtime startup',
         'opt_ptr': 'runtime startup',
         '_preinit_warnoptions': 'runtime startup',
         '_Py_StandardStreamEncoding': 'runtime startup',
+        'Py_FileSystemDefaultEncoding': 'runtime startup',
         '_Py_StandardStreamErrors': 'runtime startup',
+        'Py_FileSystemDefaultEncodeErrors': 'runtime startup',
+        'Py_BytesWarningFlag': 'runtime startup',
+        'Py_DebugFlag': 'runtime startup',
+        'Py_DontWriteBytecodeFlag': 'runtime startup',
+        'Py_FrozenFlag': 'runtime startup',
+        'Py_HashRandomizationFlag': 'runtime startup',
+        'Py_IgnoreEnvironmentFlag': 'runtime startup',
+        'Py_InspectFlag': 'runtime startup',
+        'Py_InteractiveFlag': 'runtime startup',
+        'Py_IsolatedFlag': 'runtime startup',
+        'Py_NoSiteFlag': 'runtime startup',
+        'Py_NoUserSiteDirectory': 'runtime startup',
+        'Py_OptimizeFlag': 'runtime startup',
+        'Py_QuietFlag': 'runtime startup',
+        'Py_UTF8Mode': 'runtime startup',
+        'Py_UnbufferedStdioFlag': 'runtime startup',
+        'Py_VerboseFlag': 'runtime startup',
+        '_Py_path_config': 'runtime startup',
+        '_PyOS_optarg': 'runtime startup',
+        '_PyOS_opterr': 'runtime startup',
+        '_PyOS_optind': 'runtime startup',
+        '_Py_HashSecret': 'runtime startup',
 
-        # should be const
+        # effectively const
         'tracemalloc_empty_traceback': 'const',
         '_empty_bitmap_node': 'const',
         'posix_constants_pathconf': 'const',
         'posix_constants_confstr': 'const',
         'posix_constants_sysconf': 'const',
+        '_PySys_ImplCacheTag': 'const',
+        '_PySys_ImplName': 'const',
+        'PyImport_Inittab': 'const',
+        '_PyImport_DynLoadFiletab': 'const',
+        '_PyParser_Grammar': 'const',
+        'Py_hexdigits': 'const',
+        '_PyImport_Inittab': 'const',
+        '_PyByteArray_empty_string': 'const',
+        '_PyLong_DigitValue': 'const',
+        '_Py_SwappedOp': 'const',
+        'PyStructSequence_UnnamedField': 'const',
 
         # signals are main-thread only
         'faulthandler_handlers': 'signals are main-thread only',
         'user_signals': 'signals are main-thread only',
+        'wakeup': 'signals are main-thread only',
         }
 
 BENIGN = 'races here are benign and unlikely'
@@ -109,6 +145,8 @@ def _is_ignored(variable, ignoredvars=None, *,
             return BENIGN
         if variable.name == 'ioctl_works':
             return BENIGN
+        if variable.name == '_Py_open_cloexec_works':
+            return BENIGN
     if variable.filename == 'Python/codecs.c':
         if variable.name == 'ucnhash_CAPI':
             return BENIGN
@@ -149,6 +187,8 @@ def _is_vartype_okay(vartype, ignoredtypes=None):
         return None
 
     if vartype.startswith('static const '):
+        return 'const'
+    if vartype.startswith('const '):
         return 'const'
 
     # components for TypeObject definitions
