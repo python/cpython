@@ -41,7 +41,7 @@ class TestBasicOps:
         class MySeed(object):
             def __hash__(self):
                 return -1729
-        for arg in [None, 0, 0, 1, 1, -1, -1, 10**20, -(10**20),
+        for arg in [None, 0, 1, -1, 10**20, -(10**20),
                     3.14, 'a']:
             self.gen.seed(arg)
 
