@@ -400,6 +400,10 @@ class TestNtpath(NtpathTestCase):
         self.assertPathEqual(ntpath.realpath("\\\\?\\" + ABSTFN + "3.link"),
                              "\\\\?\\" + ABSTFN + "3.")
 
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
+    def test_realpath_nul(self):
+        tester("ntpath.realpath('NUL')", r'\\.\NUL')
+
     def test_expandvars(self):
         with support.EnvironmentVarGuard() as env:
             env.clear()

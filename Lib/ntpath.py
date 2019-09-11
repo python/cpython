@@ -535,9 +535,10 @@ else:
             try:
                 path = _nt_readlink(path)
             except OSError as ex:
-                # Stop on file (2) or directory (3) not found, or
-                # paths that are not reparse points (4390)
-                if ex.winerror in (2, 3, 4390):
+                # Stop on incorrect function (1), file (2) or
+                # directory (3) not found, or paths that are
+                # not reparse points (4390)
+                if ex.winerror in (1, 2, 3, 4390):
                     break
                 raise
             except ValueError:
@@ -553,9 +554,9 @@ else:
         except OSError:
             pass
 
-        # Allow file (2) or directory (3) not found, invalid syntax (123),
-        # and symlinks that cannot be followed (1921)
-        allowed_winerror = 2, 3, 123, 1921
+        # Allow file (2) or directory (3) not found, incorrect parameter (87),
+        # invalid syntax (123), and symlinks that cannot be followed (1921)
+        allowed_winerror = 2, 3, 87, 123, 1921
 
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
