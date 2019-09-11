@@ -313,9 +313,7 @@ def cleanup_test_droppings(test_name, verbose):
     # since if a test leaves a file open, it cannot be deleted by name (while
     # there's nothing we can do about that here either, we can display the
     # name of the offending test, which is a real help).
-    for name in (support.TESTFN,
-                 "db_home",
-                ):
+    for name in (support.TESTFN,):
         if not os.path.exists(name):
             continue
 
