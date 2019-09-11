@@ -667,7 +667,6 @@ class _BaseAddress(_IPAddressBase):
         return retstr
 
 
-
 @functools.total_ordering
 class _BaseNetwork(_IPAddressBase):
 
