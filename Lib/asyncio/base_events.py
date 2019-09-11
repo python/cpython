@@ -785,6 +785,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             self._check_callback(func, 'run_in_executor')
         if executor is None:
             executor = self._default_executor
+            # Only check when the default executor is being used
+            self._check_default_executor()
             if executor is None:
                 executor = concurrent.futures.ThreadPoolExecutor()
                 self._default_executor = executor
