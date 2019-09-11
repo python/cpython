@@ -1046,7 +1046,7 @@ possible, while any potentially slow operations (such as sending an email via
    versions - to always pass each message to each handler.
 
    .. versionchanged:: 3.5
-      The ``respect_handler_levels`` argument was added.
+      The ``respect_handler_level`` argument was added.
 
    .. method:: dequeue(block)
 
