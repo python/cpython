@@ -6161,32 +6161,37 @@ os_sched_getscheduler_impl(PyObject *module, pid_t pid)
 
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
-/*[clinic input]
-class os.sched_param "PyObject *" "SchedParamType"
-
-@classmethod
-os.sched_param.__new__
-
-    sched_priority: object
-        A scheduling parameter.
-
-Current has only one field: sched_priority");
-[clinic start generated code]*/
+PyDoc_STRVAR(os_sched_param__doc__,
+"sched_param(sched_priority)\n"
+"--\n"
+"\n"
+"Current has only one field: sched_priority\");\n"
+"\n"
+"  sched_priority\n"
+"    A scheduling parameter.");
 
 static PyObject *
-os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
-/*[clinic end generated code: output=48f4067d60f48c13 input=ab4de35a9a7811f2]*/
+os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    PyObject *res;
+    static char* _keywords[] = {"sched_priority", NULL};
+    static const char * _format = "O:sched_param";
+    PyObject *sequence, *sched_priority, *res;
 
-    res = PyStructSequence_New(type);
+    /* Remove the cls object from the argument list */
+    sequence = PyTuple_GetSlice(args, 1, PyTuple_Size(args));
+    int result = PyArg_ParseTupleAndKeywords(sequence, kwargs, _format, _keywords,
+        &sched_priority);
+    Py_DECREF(sequence);
+    if (!result) {
+        return NULL;
+    }
+    res = PyStructSequence_New((PyTypeObject *)type);
     if (!res)
         return NULL;
     Py_INCREF(sched_priority);
     PyStructSequence_SET_ITEM(res, 0, sched_priority);
     return res;
 }
-
 
 PyDoc_VAR(os_sched_param__doc__);
 
