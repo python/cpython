@@ -670,17 +670,20 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
          * correctly. It means one more loop over the fields, but if we got
          * here, the structure is small, so there aren't too many of those.
          */
-        ffi_type * actual_types[MAX_ELEMENTS + 1];
+        ffi_type *actual_types[MAX_ELEMENTS + 1];
         int actual_type_index = 0;
 
         memset(actual_types, 0, sizeof(actual_types));
         for (i = 0; i < len; ++i) {
-            PyObject *name = NULL, *desc = NULL;
+            PyObject *name, *desc;
             PyObject *pair = PySequence_GetItem(fields, i);
             StgDictObject *dict;
             int bitsize = 0;
 
-            if (!pair || !PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
+            if (pair == NULL) {
+                return -1;
+            }
+            if (!PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "'_fields_' must be a sequence of (name, C type) pairs");
                 Py_XDECREF(pair);
