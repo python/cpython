@@ -518,7 +518,38 @@ class AsyncIteratorTest(unittest.TestCase):
 
             raise StopAsyncIteration
 
-    def test_mock_aiter_and_anext(self):
+    def test_aiter_set_return_value(self):
+        mock_iter = AsyncMock(name="tester")
+        mock_iter.__aiter__.return_value = [1, 2, 3]
+        async def main():
+            async for i in mock_iter:
+                return [i async for i in mock_iter]
+        result = asyncio.run(main())
+        self.assertEqual(result, [1, 2, 3])
+
+    def test_mock_aiter_and_anext_asyncmock(self):
+        instance = self.WithAsyncIterator()
+        mock_instance = AsyncMock(instance)
+
+        self.assertEqual(asyncio.iscoroutine(instance.__aiter__),
+                         asyncio.iscoroutine(mock_instance.__aiter__))
+        self.assertEqual(asyncio.iscoroutine(instance.__anext__),
+                         asyncio.iscoroutine(mock_instance.__anext__))
+
+        iterator = instance.__aiter__()
+        if asyncio.iscoroutine(iterator):
+            iterator = asyncio.run(iterator)
+
+        mock_iterator = mock_instance.__aiter__()
+        if asyncio.iscoroutine(mock_iterator):
+            mock_iterator = asyncio.run(mock_iterator)
+
+        self.assertEqual(asyncio.iscoroutine(iterator.__aiter__),
+                         asyncio.iscoroutine(mock_iterator.__aiter__))
+        self.assertEqual(asyncio.iscoroutine(iterator.__anext__),
+                         asyncio.iscoroutine(mock_iterator.__anext__))
+
+    def test_mock_aiter_and_anext_magicmock(self):
         instance = self.WithAsyncIterator()
         mock_instance = MagicMock(instance)
 
@@ -549,17 +580,31 @@ class AsyncIteratorTest(unittest.TestCase):
             return accumulator
 
         expected = ["FOO", "BAR", "BAZ"]
-        with self.subTest("iterate through default value"):
+        with self.subTest("iterate through default value with magicmock"):
             mock_instance = MagicMock(self.WithAsyncIterator())
             self.assertEqual([], asyncio.run(iterate(mock_instance)))
 
-        with self.subTest("iterate through set return_value"):
+        with self.subTest("iterate through default value using asyncmock"):
+            mock_instance = AsyncMock(self.WithAsyncIterator())
+            self.assertEqual([], asyncio.run(iterate(mock_instance)))
+
+        with self.subTest("iterate through set return_value with magicmock"):
             mock_instance = MagicMock(self.WithAsyncIterator())
             mock_instance.__aiter__.return_value = expected[:]
             self.assertEqual(expected, asyncio.run(iterate(mock_instance)))
 
-        with self.subTest("iterate through set return_value iterator"):
+        with self.subTest("iterate through set return_value with asyncmock"):
+            mock_instance = AsyncMock(self.WithAsyncIterator())
+            mock_instance.__aiter__.return_value = expected[:]
+            self.assertEqual(expected, asyncio.run(iterate(mock_instance)))
+
+        with self.subTest("iterate through set return_value iterator with magicmock"):
             mock_instance = MagicMock(self.WithAsyncIterator())
+            mock_instance.__aiter__.return_value = iter(expected[:])
+            self.assertEqual(expected, asyncio.run(iterate(mock_instance)))
+
+        with self.subTest("iterate through set return_value iterator with asyncmock"):
+            mock_instance = AsyncMock(self.WithAsyncIterator())
             mock_instance.__aiter__.return_value = iter(expected[:])
             self.assertEqual(expected, asyncio.run(iterate(mock_instance)))
 
