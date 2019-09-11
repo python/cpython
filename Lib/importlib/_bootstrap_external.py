@@ -1380,7 +1380,7 @@ class PathFinder:
         of directories ``context.path``.
         """
         from importlib.metadata import MetadataPathFinder
-        MetadataPathFinder.find_distributions(*args, **kwargs)
+        return MetadataPathFinder.find_distributions(*args, **kwargs)
 
 
 class FileFinder:
