@@ -404,7 +404,6 @@ class BaseEventLoop(events.AbstractEventLoop):
         # A weak set of all asynchronous generators that are
         # being iterated by the loop.
         self._asyncgens = weakref.WeakSet()
-
         # Set to True when `loop.shutdown_asyncgens` is called.
         self._asyncgens_shutdown_called = False
         # Set to True when `loop.shutdown_default_executor` is called.
