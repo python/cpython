@@ -1,0 +1,2 @@
+Changed to judgment method for jpeg based on file signature.
+ref: https://en.wikipedia.org/wiki/List_of_file_signatures
