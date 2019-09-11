@@ -1,0 +1,4 @@
+The C function ``PyGen_NeedsFinalizing`` has been removed. It was not
+documented, tested or used anywhere within CPython after the implementation
+of :pep:`442`. Patch by Joannah Nanjekye.
+(Patch by Joannah Nanjekye)

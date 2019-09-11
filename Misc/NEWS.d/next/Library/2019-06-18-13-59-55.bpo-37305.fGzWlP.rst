@@ -1,0 +1,2 @@
+Add .webmanifest -> application/manifest+json to list of recognized file types
+and content type headers

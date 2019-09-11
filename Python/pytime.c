@@ -718,11 +718,7 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 #else   /* HAVE_CLOCK_GETTIME */
 
      /* test gettimeofday() */
-#ifdef GETTIMEOFDAY_NO_TZ
-    err = gettimeofday(&tv);
-#else
     err = gettimeofday(&tv, (struct timezone *)NULL);
-#endif
     if (err) {
         if (raise) {
             PyErr_SetFromErrno(PyExc_OSError);

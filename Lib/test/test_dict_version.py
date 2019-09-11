@@ -98,20 +98,25 @@ class DictVersionTests(unittest.TestCase):
         value2 = AlwaysEqual()
         self.assertTrue(value1 == value2)
         self.assertFalse(value1 != value2)
+        self.assertIsNot(value1, value2)
 
         d = self.new_dict()
         self.check_version_changed(d, d.__setitem__, 'key', value1)
+        self.assertIs(d['key'], value1)
 
         # setting a key to a value equal to the current value
         # with dict.__setitem__() must change the version
         self.check_version_changed(d, d.__setitem__, 'key', value2)
+        self.assertIs(d['key'], value2)
 
         # setting a key to a value equal to the current value
         # with dict.update() must change the version
         self.check_version_changed(d, d.update, key=value1)
+        self.assertIs(d['key'], value1)
 
         d2 = self.new_dict(key=value2)
         self.check_version_changed(d, d.update, d2)
+        self.assertIs(d['key'], value2)
 
     def test_setdefault(self):
         d = self.new_dict()

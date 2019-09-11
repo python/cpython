@@ -1,0 +1,2 @@
+Fix :func:`repr` on empty :class:`ZipInfo` object. Patch by Mickaël
+Schoentgen.

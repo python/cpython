@@ -466,7 +466,7 @@ class TypesTests(unittest.TestCase):
 
         # No format code means use g, but must have a decimal
         # and a number after the decimal.  This is tricky, because
-        # a totaly empty format specifier means something else.
+        # a totally empty format specifier means something else.
         # So, just use a sign flag
         test(1e200, '+g', '+1e+200')
         test(1e200, '+', '+1e+200')

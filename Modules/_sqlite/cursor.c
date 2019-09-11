@@ -106,7 +106,7 @@ _pysqlite_get_converter(const char *keystr, Py_ssize_t keylen)
     if (!key) {
         return NULL;
     }
-    upcase_key = _PyObject_CallMethodId(key, &PyId_upper, NULL);
+    upcase_key = _PyObject_CallMethodIdNoArgs(key, &PyId_upper);
     Py_DECREF(key);
     if (!upcase_key) {
         return NULL;
@@ -266,7 +266,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 item = PyBytes_FromStringAndSize(val_str, nbytes);
                 if (!item)
                     goto error;
-                converted = PyObject_CallFunction(converter, "O", item);
+                converted = _PyObject_CallOneArg(converter, item);
                 Py_DECREF(item);
             }
         } else {
@@ -384,12 +384,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
 
     if (multiple) {
         /* executemany() */
-        if (!PyArg_ParseTuple(args, "OO", &operation, &second_argument)) {
-            goto error;
-        }
-
-        if (!PyUnicode_Check(operation)) {
-            PyErr_SetString(PyExc_ValueError, "operation parameter must be str");
+        if (!PyArg_ParseTuple(args, "UO", &operation, &second_argument)) {
             goto error;
         }
 
@@ -406,12 +401,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
         }
     } else {
         /* execute() */
-        if (!PyArg_ParseTuple(args, "O|O", &operation, &second_argument)) {
-            goto error;
-        }
-
-        if (!PyUnicode_Check(operation)) {
-            PyErr_SetString(PyExc_ValueError, "operation parameter must be str");
+        if (!PyArg_ParseTuple(args, "U|O", &operation, &second_argument)) {
             goto error;
         }
 

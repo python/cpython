@@ -20,7 +20,7 @@ functionality.  The fields of the type object are examined in detail in this
 section.  The fields will be described in the order in which they occur in the
 structure.
 
-In addition to the following quick reference, the :ref:`examples`
+In addition to the following quick reference, the :ref:`typedef-examples`
 section provides at-a-glance insight into the meaning and use of
 :c:type:`PyTypeObject`.
 
@@ -285,7 +285,7 @@ sub-slots
    +---------------------------------------------------------+-----------------------------------+--------------+
    | :c:member:`~PyNumberMethods.nb_inplace_true_divide`     | :c:type:`binaryfunc`              | __truediv__  |
    +---------------------------------------------------------+-----------------------------------+--------------+
-   | :c:member:`~PyNumberMethods.nb_index`                   | :c:type:`binaryfunc`              | __index__    |
+   | :c:member:`~PyNumberMethods.nb_index`                   | :c:type:`unaryfunc`               | __index__    |
    +---------------------------------------------------------+-----------------------------------+--------------+
    | :c:member:`~PyNumberMethods.nb_matrix_multiply`         | :c:type:`binaryfunc`              | __matmul__   |
    |                                                         |                                   | __rmatmul__  |
@@ -2450,7 +2450,7 @@ Slot Type typedefs
 .. c:type:: int (*objobjargproc)(PyObject *, PyObject *, PyObject *)
 
 
-.. _examples:
+.. _typedef-examples:
 
 Examples
 ========

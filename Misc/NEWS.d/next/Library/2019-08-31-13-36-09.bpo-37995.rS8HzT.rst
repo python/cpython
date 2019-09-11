@@ -1,0 +1,2 @@
+Added the *indent* option to :func:`ast.dump` which allows it to produce a
+multiline indented output.

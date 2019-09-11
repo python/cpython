@@ -1,7 +1,6 @@
 from test import support
 
 from contextlib import contextmanager
-import errno
 import imaplib
 import os.path
 import socketserver
