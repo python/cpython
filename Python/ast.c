@@ -294,7 +294,7 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         if (!validate_constant(exp->v.Constant.value)) {
             PyErr_Format(PyExc_TypeError,
                          "got an invalid type in Constant: %s",
-                         Py_TYPE(exp->v.Constant.value)->tp_name);
+                         _PyType_Name(Py_TYPE(exp->v.Constant.value)));
             return 0;
         }
         return 1;
@@ -618,12 +618,11 @@ new_identifier(const char *n, struct compiling *c)
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id)) {
         PyObject *id2;
-        _Py_IDENTIFIER(NFKC);
         if (!c->c_normalize && !init_normalization(c)) {
             Py_DECREF(id);
             return NULL;
         }
-        PyObject *form = _PyUnicode_FromId(&PyId_NFKC);
+        PyObject *form = PyUnicode_InternFromString("NFKC");
         if (form == NULL) {
             Py_DECREF(id);
             return NULL;
@@ -637,7 +636,7 @@ new_identifier(const char *n, struct compiling *c)
             PyErr_Format(PyExc_TypeError,
                          "unicodedata.normalize() must return a string, not "
                          "%.200s",
-                         Py_TYPE(id2)->tp_name);
+                         _PyType_Name(Py_TYPE(id2)));
             Py_DECREF(id2);
             return NULL;
         }
