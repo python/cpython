@@ -13,7 +13,7 @@ socket() -- create a new socket object
 socketpair() -- create a pair of new socket objects [*]
 fromfd() -- create a socket object from an open file descriptor [*]
 send_fds() -- Send file descriptor to the socket.
-recv_fds() -- Recieve file descriptor from the socket.
+recv_fds() -- Recieve file descriptors from the socket.
 fromshare() -- create a socket object from data received from socket.share() [*]
 gethostname() -- return the current hostname
 gethostbyname() -- map a hostname to its IP number
@@ -493,7 +493,6 @@ if hasattr(_socket.socket, "recvmsg"):
             _socket.CMSG_LEN(maxfds * fds.itemsize))
         for cmsg_level, cmsg_type, cmsg_data in ancdata:
             if (cmsg_level == _socket.SOL_SOCKET and cmsg_type == _socket.SCM_RIGHTS):
-                # Append data, ignoring any truncated integers at the end.
                 fds.frombytes(cmsg_data[:
                         len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
 
