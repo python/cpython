@@ -524,7 +524,7 @@ class SubprocessMixin:
                 isinstance(self, SubprocessFastWatcherTests)):
             asyncio.get_child_watcher()._callbacks.clear()
 
-    def _test_popen_error(self, stdin):
+    async def _test_popen_error(self, stdin):
         if sys.platform == 'win32':
             target = 'asyncio.windows_utils.Popen'
         else:
@@ -533,23 +533,26 @@ class SubprocessMixin:
             exc = ZeroDivisionError
             popen.side_effect = exc
 
-            create = asyncio.create_subprocess_exec(sys.executable, '-c',
-                                                    'pass', stdin=stdin,
-                                                    loop=self.loop)
             with warnings.catch_warnings(record=True) as warns:
                 with self.assertRaises(exc):
-                    self.loop.run_until_complete(create)
+                    await asyncio.create_subprocess_exec(
+                        sys.executable,
+                        '-c',
+                        'pass',
+                        stdin=stdin
+                    )
                 self.assertEqual(warns, [])
 
     def test_popen_error(self):
         # Issue #24763: check that the subprocess transport is closed
         # when BaseSubprocessTransport fails
-        self._test_popen_error(stdin=None)
+        self.loop.run_until_complete(self._test_popen_error(stdin=None))
 
     def test_popen_error_with_stdin_pipe(self):
         # Issue #35721: check that newly created socket pair is closed when
         # Popen fails
-        self._test_popen_error(stdin=subprocess.PIPE)
+        self.loop.run_until_complete(
+            self._test_popen_error(stdin=subprocess.PIPE))
 
     def test_read_stdout_after_process_exit(self):
 
@@ -560,12 +563,11 @@ class SubprocessMixin:
                               'sys.stdout.flush()',
                               'sys.exit(1)'])
 
-            fut = asyncio.create_subprocess_exec(
+            process = await asyncio.create_subprocess_exec(
                 sys.executable, '-c', code,
                 stdout=asyncio.subprocess.PIPE,
-                loop=self.loop)
+            )
 
-            process = await fut
             while True:
                 data = await process.stdout.read(65536)
                 if data:
