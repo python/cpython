@@ -2429,7 +2429,7 @@ class _Call(tuple):
 
 
     def __getattribute__(self, attr):
-        if attr not in tuple.__getattribute__(self, '__dict__'):
+        if attr in tuple.__dict__:
             raise AttributeError
         return tuple.__getattribute__(self, attr)
 
