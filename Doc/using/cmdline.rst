@@ -102,7 +102,7 @@ source.
    the current directory will be added to the start of :data:`sys.path`.
 
    :option:`-I` option can  be used to run the script in isolated mode where
-   :data:`sys.path` contains neither the script's directory nor the user's
+   :data:`sys.path` contains neither the current directory nor the user's
    site-packages directory. All :envvar:`PYTHON*` environment variables are
    ignored, too.
 
