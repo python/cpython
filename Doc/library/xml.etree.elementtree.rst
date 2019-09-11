@@ -696,8 +696,8 @@ Functions
 
 .. function:: xml.etree.ElementInclude.default_loader( href, parse, encoding = None)
 
-   Default loader. This default loader reads an included resource from disk.  *href* is a resource
-   reference.  *parse* is for parse mode either "xml" or "text".  *encoding* 
+   Default loader. This default loader reads an included resource from disk.  *href* is a URL.
+   *parse* is for parse mode either "xml" or "text".  *encoding* 
    is an optional text encoding.  If not given, encoding is 'utf-8'.  Returns the 
    expanded resource.  If the parse mode is ``"xml"``, this is an ElementTree 
    instance.  If the parse mode is "text", this is a Unicode string.  If the 
@@ -712,7 +712,7 @@ Functions
    default_loader.  Returns the expanded resource.  If the parse mode is 
    ``"xml"``, this is an ElementTree instance.  If the parse mode is "text", 
    this is a Unicode string.  If the loader fails, it can return None or 
-   raise an **IOError** exception.
+   raise an exception.
 
 
 .. _elementtree-element-objects:
