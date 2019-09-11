@@ -1157,11 +1157,9 @@ subtype_dealloc(PyObject *self)
     /* Test whether the type has GC exactly once */
 
     if (!PyType_IS_GC(type)) {
-        /* It's really rare to find a dynamic type that doesn't have
-           GC; it can only happen when deriving from 'object' and not
-           adding any slots or instance variables.  This allows
-           certain simplifications: there's no need to call
-           clear_slots(), or DECREF the dict, or clear weakrefs. */
+        /* A non GC dynamic type allows certain simplifications:
+           there's no need to call clear_slots(), or DECREF the dict,
+           or clear weakrefs. */
 
         /* Maybe call finalizer; exit early if resurrected */
         if (type->tp_finalize) {
@@ -1177,7 +1175,6 @@ subtype_dealloc(PyObject *self)
         /* Find the nearest base with a different tp_dealloc */
         base = type;
         while ((basedealloc = base->tp_dealloc) == subtype_dealloc) {
-            assert(Py_SIZE(base) == 0);
             base = base->tp_base;
             assert(base);
         }
@@ -1189,8 +1186,10 @@ subtype_dealloc(PyObject *self)
         assert(basedealloc);
         basedealloc(self);
 
-        /* Can't reference self beyond this point */
-        Py_DECREF(type);
+       /* Only decref if the base type is not already a heap allocated type.
+          Otherwise, basedealloc should have decref'd it already */
+        if (type->tp_flags & Py_TPFLAGS_HEAPTYPE && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE))
+            Py_DECREF(type);
 
         /* Done */
         return;
@@ -1289,8 +1288,9 @@ subtype_dealloc(PyObject *self)
 
     /* Can't reference self beyond this point. It's possible tp_del switched
        our type from a HEAPTYPE to a non-HEAPTYPE, so be careful about
-       reference counting. */
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+       reference counting. Only decref if the base type is not already a heap
+       allocated type. Otherwise, basedealloc should have decref'd it already */
+    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE))
       Py_DECREF(type);
 
   endlabel:
