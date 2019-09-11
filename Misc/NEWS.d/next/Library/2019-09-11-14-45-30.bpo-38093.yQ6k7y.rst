@@ -1,3 +1,2 @@
-Fixes AsyncMock so MagicMocks on AsyncContextManagers do not have to
-manually set `__aenter__` and `__aexit__`. Also fixes AsyncMock so they
-don't crash when used with AsyncContextManager.
+Fixes AsyncMock so it doesn't crash when used with AsynContextManagers
+or AsyncIterators.
