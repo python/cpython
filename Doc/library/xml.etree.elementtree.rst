@@ -697,21 +697,21 @@ Functions
 .. function:: xml.etree.ElementInclude.default_loader( href, parse, encoding = None)
 
    Default loader. This default loader reads an included resource from disk.  *href* is a URL.
-   *parse* is for parse mode either "xml" or "text".  *encoding* 
-   is an optional text encoding.  If not given, encoding is 'utf-8'.  Returns the 
-   expanded resource.  If the parse mode is ``"xml"``, this is an ElementTree 
-   instance.  If the parse mode is "text", this is a Unicode string.  If the 
+   *parse* is for parse mode either "xml" or "text".  *encoding*
+   is an optional text encoding.  If not given, encoding is 'utf-8'.  Returns the
+   expanded resource.  If the parse mode is ``"xml"``, this is an ElementTree
+   instance.  If the parse mode is "text", this is a Unicode string.  If the
    loader fails, it can return None or raise an **IOError** exception.
 
 
 .. function:: xml.etree.ElementInclude.include( elem, loader = None)
 
-   This function expands XInclude directives.  *elem* is the root element.  *loader* is 
-   an optional resource loader.  If omitted, it defaults to default_loader.  
-   If given, it should be a callable that implements the same interface as 
-   default_loader.  Returns the expanded resource.  If the parse mode is 
-   ``"xml"``, this is an ElementTree instance.  If the parse mode is "text", 
-   this is a Unicode string.  If the loader fails, it can return None or 
+   This function expands XInclude directives.  *elem* is the root element.  *loader* is
+   an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
+   If given, it should be a callable that implements the same interface as
+   :func:`default_loader`.  Returns the expanded resource.  If the parse mode is
+   ``"xml"``, this is an ElementTree instance.  If the parse mode is "text",
+   this is a Unicode string.  If the loader fails, it can return None or
    raise an exception.
 
 
