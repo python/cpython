@@ -1232,9 +1232,12 @@ class IsoCalendarDate(tuple):
     def weekday(self):
         return self[2]
 
+    def __reduce__(self):
+        return (tuple, (tuple(self),))
+
     def __repr__(self):
         return (f'{self.__class__.__name__}'
-            f'(year={self[0]}, week={self[1]}, weekday={self[2]})')
+                f'(year={self[0]}, week={self[1]}, weekday={self[2]})')
 
 
 _tzinfo_class = tzinfo
