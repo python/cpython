@@ -1486,7 +1486,7 @@ Test cases
       .. versionadded:: 3.8
 
 
-.. class:: async_case.IsolatedAsyncioTestCase(methodName='runTest')
+.. class:: IsolatedAsyncioTestCase(methodName='runTest')
 
    This class provides an API similar to :class:`TestCase` and also accepts
    coroutines as test functions.
@@ -1529,7 +1529,7 @@ Test cases
 
    An example illustrating the order::
 
-      from unittest.async_case import IsolatedAsyncioTestCase
+      from unittest import IsolatedAsyncioTestCase
 
       events = []
 
