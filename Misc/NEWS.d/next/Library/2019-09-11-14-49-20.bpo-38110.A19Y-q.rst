@@ -1,0 +1,2 @@
+The os.closewalk() implementation now uses the libc fdwalk() API on
+platforms where it is available.
