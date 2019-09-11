@@ -198,8 +198,8 @@ to provide an interface to files in the machine's file system.
 The :class:`BufferedIOBase` ABC extends :class:`IOBase`.  It deals with
 buffering on a raw binary stream (:class:`RawIOBase`).  Its subclasses,
 :class:`BufferedWriter`, :class:`BufferedReader`, and :class:`BufferedRWPair`
-buffer streams that are readable, writable, and both readable and writable, respectively.
-:class:`BufferedRandom` provides a buffered interface to seekable streams.
+buffer raw binary streams that are readable, writable, and both readable and writable,
+respectively. :class:`BufferedRandom` provides a buffered interface to seekable streams.
 Another :class:`BufferedIOBase` subclass, :class:`BytesIO`, is a stream of
 in-memory bytes.
 
@@ -669,8 +669,9 @@ than raw I/O does.
 
 .. class:: BufferedReader(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
-   A buffered binary stream providing higher-level access to a readable, sequential :class:`RawIOBase`
-   raw binary stream.  It inherits :class:`BufferedIOBase`.
+   A buffered binary stream providing higher-level access to a readable, non
+   seekable :class:`RawIOBase` raw binary stream.  It inherits
+   :class:`BufferedIOBase`.
 
    When reading data from this object, a larger amount of data may be
    requested from the underlying raw stream, and kept in an internal buffer.
@@ -706,8 +707,9 @@ than raw I/O does.
 
 .. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
-   A buffered binary stream providing higher-level access to a writeable, sequential :class:`RawIOBase`
-   raw binary stream.  It inherits :class:`BufferedIOBase`.
+   A buffered binary stream providing higher-level access to a writeable, non
+   seekable :class:`RawIOBase` raw binary stream.  It inherits
+   :class:`BufferedIOBase`.
 
    When writing to this object, data is normally placed into an internal
    buffer.  The buffer will be written out to the underlying :class:`RawIOBase`
@@ -740,8 +742,9 @@ than raw I/O does.
 
 .. class:: BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
-   A buffered binary stream over a seekable :class:`RawIOBase` raw binary stream.
-   It inherits :class:`BufferedReader` and :class:`BufferedWriter`.
+   A buffered binary stream providing higher-level access to a seekable
+   :class:`RawIOBase` raw binary stream.  It inherits :class:`BufferedReader`
+   and :class:`BufferedWriter`.
 
    The constructor creates a reader and writer for a seekable raw stream, given
    in the first argument.  If the *buffer_size* is omitted it defaults to
@@ -754,9 +757,9 @@ than raw I/O does.
 
 .. class:: BufferedRWPair(reader, writer, buffer_size=DEFAULT_BUFFER_SIZE)
 
-   A buffered binary stream over two unidirectional :class:`RawIOBase` raw binary
-   streams---one readable, the other writeable.  It inherits
-   :class:`BufferedIOBase`.
+   A buffered binary stream providing higher-level access to two non seekable
+   :class:`RawIOBase` raw binary streams---one readable, the other writeable.
+   It inherits :class:`BufferedIOBase`.
 
    *reader* and *writer* are :class:`RawIOBase` objects that are readable and
    writeable respectively.  If the *buffer_size* is omitted it defaults to
@@ -868,8 +871,9 @@ Text I/O
 .. class:: TextIOWrapper(buffer, encoding=None, errors=None, newline=None, \
                          line_buffering=False, write_through=False)
 
-   A buffered text stream over a :class:`BufferedIOBase` buffered binary stream.
-   It inherits :class:`TextIOBase`.
+   A buffered text stream providing higher-level access to a
+   :class:`BufferedIOBase` buffered binary stream.  It inherits
+   :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
    encoded with.  It defaults to
