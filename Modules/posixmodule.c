@@ -2067,10 +2067,20 @@ statresult_new(PyTypeObject *type, PyObject *args)
 
     /* Remove the cls object from the argument list */
     sequence = PyTuple_GetSlice(args, 1, PyTuple_Size(args));
-    kwds = PyDict_New();
-    result = (PyStructSequence*)structseq_new(type, sequence, kwds);
-    if (!result)
+    if (!sequence) {
         return NULL;
+    }
+    kwds = PyDict_New();
+    if (!kwds) {
+        Py_DECREF(sequence);
+        return NULL;
+    }
+    result = (PyStructSequence*)structseq_new(type, sequence, kwds);
+    if (!result) {
+        Py_DECREF(sequence);
+        Py_DECREF(kwds);
+        return NULL;
+    }
     /* If we have been initialized from a tuple,
        st_?time might be set to None. Initialize it
        from the int slots.  */
@@ -6179,6 +6189,9 @@ os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
     /* Remove the cls object from the argument list */
     sequence = PyTuple_GetSlice(args, 1, PyTuple_Size(args));
+    if (!sequence) {
+        return NULL;
+    }
     int result = PyArg_ParseTupleAndKeywords(sequence, kwargs, _format, _keywords,
         &sched_priority);
     Py_DECREF(sequence);
@@ -6186,8 +6199,9 @@ os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     res = PyStructSequence_New((PyTypeObject *)type);
-    if (!res)
+    if (!res) {
         return NULL;
+    }
     Py_INCREF(sched_priority);
     PyStructSequence_SET_ITEM(res, 0, sched_priority);
     return res;
