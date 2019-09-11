@@ -388,7 +388,7 @@ example::
      File "<stdin>", line 2, in <module>
    KeyboardInterrupt
 
-If a :keyword:`finally` clause is present, the :keyword:`finally` clause will execute as the last task before the :keyword:`try` statement completes. The :keyword:`finally` clause runs whether or not the :keyword:try statement produces an exception. The following points discuss more complex cases when an exception occurs:
+If a :keyword:`finally` clause is present, the :keyword:`finally` clause will execute as the last task before the :keyword:`try` statement completes. The :keyword:`finally` clause runs whether or not the :keyword:`try` statement produces an exception. The following points discuss more complex cases when an exception occurs:
 
 * If an exception occurs during execution of the :keyword:`!try` clause, the exception may be handled by an :keyword:`except` clause. In all cases, the exception is re-raised after the :keyword:`!finally` clause has been executed.
 
