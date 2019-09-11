@@ -2,8 +2,8 @@ import os
 import os.path
 import sys
 import tempfile
-
 from importlib import resources
+
 from . import _bundled
 
 
