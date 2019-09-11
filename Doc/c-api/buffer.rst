@@ -483,6 +483,13 @@ Buffer-related functions
    *indices* must point to an array of ``view->ndim`` indices.
 
 
+.. c:function:: int PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
+
+   Copy contiguous *len* bytes from *buf* to *view*.
+   *fort* can be ``'C'`` or ``'F'`` (for C-style or Fortran-style ordering).
+   ``0`` is returned on success, ``-1`` on error.
+
+
 .. c:function:: int PyBuffer_ToContiguous(void *buf, Py_buffer *src, Py_ssize_t len, char order)
 
    Copy *len* bytes from *src* to its contiguous representation in *buf*.
