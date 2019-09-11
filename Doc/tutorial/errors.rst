@@ -398,7 +398,7 @@ If a :keyword:`finally` clause is present, the :keyword:`finally` clause will ex
 
 * If a :keyword:`finally` clause includes a :keyword:`return` statement, the :keyword:`finally` clause's :keyword:`return` statement will execute before, and instead of, the :keyword:`return` statement in a :keyword:`try` clause.
 
-Forexample::
+For example::
 
    >>> def bool_return(): -> bool:
    ...     try:
