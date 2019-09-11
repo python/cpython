@@ -250,7 +250,7 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     async def shutdown_default_executor(self):
-        """Shutdown the default executor, but wait for the threadpool to finish."""
+        """Schedule the shutdown of the default executor."""
         raise NotImplementedError
 
     # Methods scheduling callbacks.  All these return Handles.

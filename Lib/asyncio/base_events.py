@@ -557,7 +557,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             self.call_soon_threadsafe(future.set_exception, ex)
 
     async def shutdown_default_executor(self):
-        """Shutdown the default executor, but wait for the threadpool to finish."""
+        """Schedule the shutdown of the default executor."""
         self._executor_shutdown_called = True
         future = self.create_future()
         thread = threading.Thread(target=self._do_shutdown, args=(future,))
