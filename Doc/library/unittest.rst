@@ -1538,7 +1538,6 @@ Test cases
 
 
           def setUp(self):
-              self._sync_connection = ExpensiveSyncConnection()
               events.append("setUp")
 
           async def asyncSetUp(self):
@@ -1552,7 +1551,6 @@ Test cases
               self.addAsyncCleanup(self.on_cleanup)
 
           def tearDown(self):
-              self._sync_connection.close()
               events.append("tearDown")
 
           async def asyncTearDown(self):
