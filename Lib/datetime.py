@@ -12,7 +12,6 @@ import time as _time
 import math as _math
 import sys
 
-
 def _cmp(x, y):
     return 0 if x == y else 1 if x > y else -1
 

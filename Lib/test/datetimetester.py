@@ -1376,10 +1376,13 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 test_cases.append((new_date, new_iso))
 
         for d, exp_iso in test_cases:
-            with self.subTest(d=d, comparison="fields and tuple"):
+            with self.subTest(d=d, comparison="tuple"):
+                self.assertEqual(d.isocalendar(), exp_iso)
+
+            # Check that the tuple contents are accessible by field name
+            with self.subTest(d=d, comparison="fields"):
                 t = d.isocalendar()
                 self.assertEqual((t.year, t.week, t.weekday), exp_iso)
-                self.assertEqual(d.isocalendar(), exp_iso)
 
     def test_isocalendar_pickling(self):
         """Test that the result of datetime.isocalendar() can be pickled.
