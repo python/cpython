@@ -83,8 +83,7 @@ class QueueBasicTests(_QueueTestBase):
 
     def test_ctor_noloop(self):
         asyncio.set_event_loop(self.loop)
-        with self.assertWarns(DeprecationWarning):
-            q = asyncio.Queue()
+        q = asyncio.Queue()
         self.assertIs(q._loop, self.loop)
 
     def test_repr(self):

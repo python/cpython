@@ -332,7 +332,7 @@ class Condition(_ContextManagerMixin):
                           DeprecationWarning, stacklevel=2)
 
         if lock is None:
-            lock = Lock(loop=self._loop)
+            lock = Lock(loop=loop)
         elif lock._loop is not self._loop:
             raise ValueError("loop argument must agree with lock")
 

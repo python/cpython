@@ -500,10 +500,9 @@ class ConditionTests(test_utils.TestCase):
             self.assertIs(cond._loop, self.loop)
 
     def test_ctor_noloop(self):
-        with self.assertWarns(DeprecationWarning):
-            asyncio.set_event_loop(self.loop)
-            cond = asyncio.Condition()
-            self.assertIs(cond._loop, self.loop)
+        asyncio.set_event_loop(self.loop)
+        cond = asyncio.Condition()
+        self.assertIs(cond._loop, self.loop)
 
     def test_wait(self):
         with self.assertWarns(DeprecationWarning):
