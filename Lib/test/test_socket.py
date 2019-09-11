@@ -6436,11 +6436,53 @@ class CreateServerFunctionalTest(unittest.TestCase):
             self.echo_server(sock)
             self.echo_client(("::1", port), socket.AF_INET6)
 
+@requireAttrs(socket, "send_fds")
+@requireAttrs(socket, "recv_fds")
+@requireAttrs(socket, "AF_UNIX")
+class SendRecvFdsTests(unittest.TestCase):
+    def testSendAndRecvFds(self):
+        def close_pipes(pipes):
+            for fd1, fd2 in pipes:
+                os.close(fd1)
+                os.close(fd2)
+
+        def close_fds(fds):
+            for fd in fds:
+                os.close(fd)
+
+        # send 10 file descriptors
+        pipes = [os.pipe() for _ in range(10)]
+        self.addCleanup(close_pipes, pipes)
+        fds = [rfd for rfd, wfd in pipes]
+
+        # use a UNIX socket pair to exchange file descriptors locally
+        sock1, sock2 = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        with sock1, sock2:
+            socket.send_fds(sock1, [MSG], fds)
+            # request more data and file descriptors than expected
+            msg, fds2, flags, addr = socket.recv_fds(sock2, len(MSG) * 2, len(fds) * 2)
+            self.addCleanup(close_fds, fds2)
+
+        self.assertEqual(msg, MSG)
+        self.assertEqual(len(fds2), len(fds))
+        self.assertEqual(flags, 0)
+        # don't test addr
+
+        # test that file descriptors are connected
+        for index, fds in enumerate(pipes):
+            rfd, wfd = fds
+            os.write(wfd, str(index).encode())
+
+        for index, rfd in enumerate(fds2):
+            data = os.read(rfd, 100)
+            self.assertEqual(data,  str(index).encode())
+
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
              TestExceptions, BufferIOTest, BasicTCPTest2, BasicUDPTest,
-             UDPTimeoutTest, CreateServerTest, CreateServerFunctionalTest]
+             UDPTimeoutTest, CreateServerTest, CreateServerFunctionalTest,
+             SendRecvFdsTests]
 
     tests.extend([
         NonBlockingTCPTests,
@@ -6512,6 +6554,7 @@ def test_main():
     thread_info = support.threading_setup()
     support.run_unittest(*tests)
     support.threading_cleanup(*thread_info)
+
 
 if __name__ == "__main__":
     test_main()
