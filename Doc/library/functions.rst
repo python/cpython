@@ -1391,14 +1391,14 @@ are always available.  They are listed here in alphabetical order.
 .. note::
 
    setattr() attempts to update the object with the given attr/value pair.
-   Whether this succeeds and what its affect is is determined by the target object.
+   Whether this succeeds and the effect it has determined by the target object.
    If an object's class defines `__slots__`, the attribute may not be writeable.
-   If an object's class defines property with a setter method, the *setattr()*
+   If an object's class defines :class:`property` with a setter method, the *setattr()*
    will trigger the setter method which may or may not actually write the attribute.
    For objects that have a regular dictionary (which is the typical case), the
    *setattr()* call can make any string keyed update allowed by the dictionary
-   including keys that aren't valid identifiers -- for example setattr(a, '1', 'one')
-   will be the equivalent of vars()['1'] ='one'.
+   including keys that aren't valid identifiers -- for example ``setattr(a, '1', 'one')``
+   will be the equivalent of ``vars()['1'] ='one'``.
 
 .. class:: slice(stop)
            slice(start, stop[, step])
