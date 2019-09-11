@@ -887,7 +887,7 @@ The following tokens are operators:
 
 
    +       -       *       **      /       //      %      @
-   <<      >>      &       |       ^       ~
+   <<      >>      &       |       ^       ~       :=
    <       >       <=      >=      ==      !=
 
 
