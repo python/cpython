@@ -5424,7 +5424,7 @@ static PyTypeObject Int_InfoType;
 PyDoc_STRVAR(int_info__doc__,
 "sys.int_info\n\
 \n\
-A struct sequence that holds information about Python's\n\
+A named tuple that holds information about Python's\n\
 internal representation of integers.  The attributes are read only.");
 
 static PyStructSequence_Field int_info_fields[] = {

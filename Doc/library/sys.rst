@@ -324,7 +324,7 @@ always available.
 
 .. data:: flags
 
-   The :term:`struct sequence` *flags* exposes the status of command line
+   The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
    ============================= =============================
@@ -366,7 +366,7 @@ always available.
 
 .. data:: float_info
 
-   A :term:`struct sequence` holding information about the float type. It
+   A :term:`named tuple` holding information about the float type. It
    contains low level information about the precision and internal
    representation.  The values correspond to the various floating-point
    constants defined in the standard header file :file:`float.h` for the 'C'
@@ -716,7 +716,7 @@ always available.
 
 .. data:: hash_info
 
-   A :term:`struct sequence` giving parameters of the numeric hash
+   A :term:`named tuple` giving parameters of the numeric hash
    implementation.  For more details about hashing of numeric types, see
    :ref:`numeric-hash`.
 
@@ -764,7 +764,7 @@ always available.
 
    This is called ``hexversion`` since it only really looks meaningful when viewed
    as the result of passing it to the built-in :func:`hex` function.  The
-   :term:`struct sequence`  :data:`sys.version_info` may be used for a more
+   :term:`named tuple`  :data:`sys.version_info` may be used for a more
    human-friendly encoding of the same information.
 
    More details of ``hexversion`` can be found at :ref:`apiabiversion`.
@@ -816,7 +816,7 @@ always available.
 
 .. data:: int_info
 
-   A :term:`struct sequence` that holds information about Python's internal
+   A :term:`named tuple` that holds information about Python's internal
    representation of integers.  The attributes are read only.
 
    .. tabularcolumns:: |l|L|
@@ -1423,7 +1423,7 @@ always available.
 
 .. data:: thread_info
 
-   A :term:`struct sequence` holding information about the thread
+   A :term:`named tuple` holding information about the thread
    implementation.
 
    .. tabularcolumns:: |l|p{0.7\linewidth}|
