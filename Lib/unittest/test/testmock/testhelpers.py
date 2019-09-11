@@ -334,12 +334,24 @@ class CallTest(unittest.TestCase):
         self.assertEqual(_Call((('bar', 'barz'),),)[0], '')
         self.assertEqual(_Call((('bar', 'barz'), {'hello': 'world'}),)[0], '')
 
-    def test_subscriptable_call(self):
+    def test_dunder_call(self):
         m = MagicMock()
         m().foo()['bar']()
         self.assertEqual(
             m.mock_calls,
             [call(), call().foo(), call().foo().__getitem__('bar'), call().foo().__getitem__()()]
+        )
+        m = MagicMock()
+        m().foo()['bar'] = 1
+        self.assertEqual(
+            m.mock_calls,
+            [call(), call().foo(), call().foo().__setitem__('bar', 1)]
+        )
+        m = MagicMock()
+        iter(m().foo())
+        self.assertEqual(
+            m.mock_calls,
+            [call(), call().foo(), call().foo().__iter__()]
         )
 
 
