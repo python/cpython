@@ -533,15 +533,12 @@ class SubprocessMixin:
             exc = ZeroDivisionError
             popen.side_effect = exc
 
-            async def f():
-                return await asyncio.create_subprocess_exec(
-                    sys.executable, '-c',
-                    'pass', stdin=stdin,
-                )
-
+            create = asyncio.create_subprocess_exec(sys.executable, '-c',
+                                                    'pass', stdin=stdin,
+                                                    loop=self.loop)
             with warnings.catch_warnings(record=True) as warns:
                 with self.assertRaises(exc):
-                    self.loop.run_until_complete(f())
+                    self.loop.run_until_complete(create)
                 self.assertEqual(warns, [])
 
     def test_popen_error(self):
@@ -563,11 +560,12 @@ class SubprocessMixin:
                               'sys.stdout.flush()',
                               'sys.exit(1)'])
 
-            process = await asyncio.create_subprocess_exec(
+            fut = asyncio.create_subprocess_exec(
                 sys.executable, '-c', code,
-                stdout=asyncio.subprocess.PIPE
-            )
+                stdout=asyncio.subprocess.PIPE,
+                loop=self.loop)
 
+            process = await fut
             while True:
                 data = await process.stdout.read(65536)
                 if data:
