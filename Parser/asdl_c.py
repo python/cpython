@@ -395,8 +395,9 @@ class Obj2ModVisitor(PickleVisitor):
     def simpleSum(self, sum, name):
         self.funcHeader(name)
         for t in sum.types:
-            self.emit("isinstance = PyObject_IsInstance(obj, "
-                      f"astmodulestate_global->{t.name}_type);", 1)
+            line = ("isinstance = PyObject_IsInstance(obj, "
+                    "astmodulestate_global->%s_type);")
+            self.emit(line % (t.name,), 1)
             self.emit("if (isinstance == -1) {", 1)
             self.emit("return 1;", 2)
             self.emit("}", 1)
@@ -424,7 +425,7 @@ class Obj2ModVisitor(PickleVisitor):
         for a in sum.attributes:
             self.visitField(a, name, sum=sum, depth=1)
         for t in sum.types:
-            self.emit(f"tp = astmodulestate_global->{t.name}_type;", 1)
+            self.emit("tp = astmodulestate_global->%s_type;" % (t.name,), 1)
             self.emit("isinstance = PyObject_IsInstance(obj, tp);", 1)
             self.emit("if (isinstance == -1) {", 1)
             self.emit("return 1;", 2)
@@ -501,7 +502,8 @@ class Obj2ModVisitor(PickleVisitor):
 
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
-        self.emit(f"if (_PyObject_LookupAttr(obj, astmodulestate_global->{field.name}, &tmp) < 0) {{", depth)
+        line = "if (_PyObject_LookupAttr(obj, astmodulestate_global->%s, &tmp) < 0) {"
+        self.emit(line % field.name, depth)
         self.emit("return 1;", depth+1)
         self.emit("}", depth)
         if not field.opt:
@@ -527,8 +529,9 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("Py_ssize_t len;", depth+1)
             self.emit("Py_ssize_t i;", depth+1)
             self.emit("if (!PyList_Check(tmp)) {", depth+1)
-            self.emit(f"PyErr_Format(PyExc_TypeError, \"{name} field \\\"{field.name}\\\" must "
-                      "be a list, not a %.200s\", _PyType_Name(Py_TYPE(tmp)));",
+            self.emit("PyErr_Format(PyExc_TypeError, \"%s field \\\"%s\\\" must "
+                      "be a list, not a %%.200s\", _PyType_Name(Py_TYPE(tmp)));" %
+                      (name, field.name),
                       depth+2, reflow=False)
             self.emit("goto failed;", depth+2)
             self.emit("}", depth+1)
@@ -577,7 +580,7 @@ class MarshalPrototypeVisitor(PickleVisitor):
 class PyTypesDeclareVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
-        self.emit_type(f"{name}_type")
+        self.emit_type("%s_type" % name)
         self.emit("static PyObject* ast2obj_%s(void*);" % name, 0)
         if prod.attributes:
             for a in prod.attributes:
@@ -595,7 +598,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
             self.emit("};", 0)
 
     def visitSum(self, sum, name):
-        self.emit_type(f"{name}_type")
+        self.emit_type("%s_type" % name)
         if sum.attributes:
             for a in sum.attributes:
                 self.emit_identifier(a.name)
@@ -607,7 +610,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
         if is_simple(sum):
             ptype = get_c_type(name)
             for t in sum.types:
-                self.emit_singleton(f"{str(t.name)}_singleton")
+                self.emit_singleton("%s_singleton" % t.name)
         self.emit("static PyObject* ast2obj_%s(%s);" % (name, ptype), 0)
         for t in sum.types:
             self.visitConstructor(t, name)
@@ -936,29 +939,27 @@ static int add_ast_fields(void)
             fields = name+"_fields"
         else:
             fields = "NULL"
-        state_name = f"state->{name}"
+        self.emit('state->%s_type = make_type("%s", state->AST_type, %s, %d);' %
+                        (name, name, fields, len(prod.fields)), 1)
+        self.emit("if (!state->%s_type) return 0;" % name, 1)
         self.emit_type("AST_type")
-        self.emit(f"{state_name}_type = make_type(\"{name}\", "
-                  f"state->AST_type, {fields}, {len(prod.fields)});", 1)
-        self.emit_type(f"{name}_type")
-        self.emit(f"if (!{state_name}_type) return 0;", 1)
+        self.emit_type("%s_type" % name)
         if prod.attributes:
-            self.emit(f"if (!add_attributes({state_name}_type, {name}_attributes, "
-                      f"{len(prod.attributes)})) return 0;", 1)
+            self.emit("if (!add_attributes(state->%s_type, %s_attributes, %d)) return 0;" %
+                            (name, name, len(prod.attributes)), 1)
         else:
-            self.emit(f"if (!add_attributes({state_name}_type, NULL, 0)) return 0;", 1)
+            self.emit("if (!add_attributes(state->%s_type, NULL, 0)) return 0;" % name, 1)
 
     def visitSum(self, sum, name):
-        state_name = f"state->{name}"
-        self.emit(f"{state_name}_type = make_type(\"{name}\", "
-                  "state->AST_type, NULL, 0);", 1)
-        self.emit_type(f"{name}_type")
-        self.emit(f"if (!{state_name}_type) return 0;", 1)
+        self.emit('state->%s_type = make_type("%s", state->AST_type, NULL, 0);' %
+                  (name, name), 1)
+        self.emit_type("%s_type" % name)
+        self.emit("if (!state->%s_type) return 0;" % name, 1)
         if sum.attributes:
-            self.emit(f"if (!add_attributes({state_name}_type, "
-                      f"{name}_attributes, {len(sum.attributes)})) return 0;", 1)
+            self.emit("if (!add_attributes(state->%s_type, %s_attributes, %d)) return 0;" %
+                            (name, name, len(sum.attributes)), 1)
         else:
-            self.emit(f"if (!add_attributes({state_name}_type, NULL, 0)) return 0;", 1)
+            self.emit("if (!add_attributes(state->%s_type, NULL, 0)) return 0;" % name, 1)
         simple = is_simple(sum)
         for t in sum.types:
             self.visitConstructor(t, name, simple)
@@ -968,16 +969,15 @@ static int add_ast_fields(void)
             fields = cons.name+"_fields"
         else:
             fields = "NULL"
-        state_name = f"state->{name}"
-        cons_state_name = f"state->{cons.name}"
-        self.emit(f"{cons_state_name}_type = make_type(\"{cons.name}\", "
-                  f"{state_name}_type, {fields}, {len(cons.fields)});", 1)
-        self.emit_type(f"{cons.name}_type")
-        self.emit(f"if (!{cons_state_name}_type) return 0;", 1)
+        self.emit('state->%s_type = make_type("%s", state->%s_type, %s, %d);' %
+                            (cons.name, cons.name, name, fields, len(cons.fields)), 1)
+        self.emit("if (!state->%s_type) return 0;" % cons.name, 1)
+        self.emit_type("%s_type" % cons.name)
         if simple:
-            self.emit(f"{cons_state_name}_singleton = PyType_GenericNew("
-                      f"(PyTypeObject *){cons_state_name}_type, NULL, NULL);", 1)
-            self.emit(f"if (!{cons_state_name}_singleton) return 0;", 1)
+            self.emit("state->%s_singleton = PyType_GenericNew((PyTypeObject *)"
+                      "state->%s_type, NULL, NULL);" %
+                             (cons.name, cons.name), 1)
+            self.emit("if (!state->%s_singleton) return 0;" % cons.name, 1)
 
 
 class ASTModuleVisitor(PickleVisitor):
@@ -1015,9 +1015,9 @@ class ASTModuleVisitor(PickleVisitor):
         self.addObj(cons.name)
 
     def addObj(self, name):
-        self.emit(f"if (PyModule_AddObject(m, \"{name}\", "
-                  f"astmodulestate_global->{name}_type) < 0) return NULL;", 1)
-        self.emit(f"Py_INCREF(astmodulestate(m)->{name}_type);", 1)
+        self.emit("if (PyModule_AddObject(m, \"%s\", "
+                  "astmodulestate_global->%s_type) < 0) return NULL;" % (name, name), 1)
+        self.emit("Py_INCREF(astmodulestate(m)->%s_type);" % name, 1)
 
 
 _SPECIALIZED_SEQUENCES = ('stmt', 'expr')
@@ -1083,7 +1083,7 @@ class ObjVisitor(PickleVisitor):
         for a in sum.attributes:
             self.emit("value = ast2obj_%s(o->%s);" % (a.type, a.name), 1)
             self.emit("if (!value) goto failed;", 1)
-            self.emit(f"if (PyObject_SetAttr(result, astmodulestate_global->{a.name}, value) < 0)", 1)
+            self.emit('if (PyObject_SetAttr(result, astmodulestate_global->%s, value) < 0)' % a.name, 1)
             self.emit('goto failed;', 2)
             self.emit('Py_DECREF(value);', 1)
         self.func_end()
@@ -1094,8 +1094,8 @@ class ObjVisitor(PickleVisitor):
         self.emit("switch(o) {", 1)
         for t in sum.types:
             self.emit("case %s:" % t.name, 2)
-            self.emit(f"Py_INCREF(astmodulestate_global->{t.name}_singleton);", 3)
-            self.emit(f"return astmodulestate_global->{t.name}_singleton;", 3)
+            self.emit("Py_INCREF(astmodulestate_global->%s_singleton);" % t.name, 3)
+            self.emit("return astmodulestate_global->%s_singleton;" % t.name, 3)
         self.emit("default:", 2)
         self.emit('/* should never happen, but just in case ... */', 3)
         code = "PyErr_Format(PyExc_SystemError, \"unknown %s found\");" % name
@@ -1106,7 +1106,7 @@ class ObjVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
         self.func_begin(name)
-        self.emit(f"tp = (PyTypeObject *)astmodulestate_global->{name}_type;", 1)
+        self.emit("tp = (PyTypeObject *)astmodulestate_global->%s_type;" % name, 1)
         self.emit("result = PyType_GenericNew(tp, NULL, NULL);", 1);
         self.emit("if (!result) return NULL;", 1)
         for field in prod.fields:
@@ -1114,14 +1114,14 @@ class ObjVisitor(PickleVisitor):
         for a in prod.attributes:
             self.emit("value = ast2obj_%s(o->%s);" % (a.type, a.name), 1)
             self.emit("if (!value) goto failed;", 1)
-            self.emit(f"if (PyObject_SetAttr(result, astmodulestate_global->{a.name}, value) < 0)", 1)
+            self.emit("if (PyObject_SetAttr(result, astmodulestate_global->%s, value) < 0)" % a.name, 1)
             self.emit('goto failed;', 2)
             self.emit('Py_DECREF(value);', 1)
         self.func_end()
 
     def visitConstructor(self, cons, enum, name):
         self.emit("case %s_kind:" % cons.name, 1)
-        self.emit(f"tp = (PyTypeObject *)astmodulestate_global->{cons.name}_type;", 2)
+        self.emit("tp = (PyTypeObject *)astmodulestate_global->%s_type;" % cons.name, 2)
         self.emit("result = PyType_GenericNew(tp, NULL, NULL);", 2);
         self.emit("if (!result) goto failed;", 2)
         for f in cons.fields:
@@ -1137,7 +1137,7 @@ class ObjVisitor(PickleVisitor):
             value = "o->v.%s.%s" % (name, field.name)
         self.set(field, value, depth)
         emit("if (!value) goto failed;", 0)
-        emit(f"if (PyObject_SetAttr(result, astmodulestate_global->{field.name}, value) == -1)", 0)
+        emit("if (PyObject_SetAttr(result, astmodulestate_global->%s, value) == -1)" % field.name, 0)
         emit("goto failed;", 1)
         emit("Py_DECREF(value);", 0)
 
