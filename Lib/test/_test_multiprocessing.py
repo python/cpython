@@ -3908,6 +3908,27 @@ class _TestSharedMemory(BaseTestCase):
 
         sms.close()
 
+    def test_shared_memory_across_independently_started_processes(self):
+        # A Process may not trigger the same exit path as an independently
+        # spawned process (for example, resource trackers on a separate
+        # process).  This tests that independently created processes can
+        # indeed continue to access shared memory and that that shared
+        # memory persists at least so long as one of the processes with a
+        # handle on it is alive.
+        sms = shared_memory.SharedMemory('test04_indep', True, size=256)
+        self.addCleanup(sms.unlink)
+
+        prog = (
+            "from multiprocessing import shared_memory; "
+            "sms =  shared_memory.SharedMemory('test04_indep'); "
+            "sms.buf[:4] = b'1234'; "
+            "sms.close()"
+        )
+        rc, out, err = test.support.script_helper.assert_python_ok('-c', prog)
+
+        self.assertFalse(err)
+        self.assertEqual(bytes(sms.buf[:4]), b'1234')
+
     @unittest.skipIf(os.name != "posix", "not feasible in non-posix platforms")
     def test_shared_memory_SharedMemoryServer_ignores_sigint(self):
         # bpo-36368: protect SharedMemoryManager server process from
@@ -3931,27 +3952,6 @@ class _TestSharedMemory(BaseTestCase):
             os.kill(os.getpid(), signal.SIGINT)
 
         smm.shutdown()
-
-    @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
-    def test_shared_memory_SharedMemoryManager_reuses_resource_tracker(self):
-        # bpo-36867: test that a SharedMemoryManager uses the
-        # same resource_tracker process as its parent.
-        cmd = '''if 1:
-            from multiprocessing.managers import SharedMemoryManager
-
-
-            smm = SharedMemoryManager()
-            smm.start()
-            sl = smm.ShareableList(range(10))
-            smm.shutdown()
-        '''
-        rc, out, err = test.support.script_helper.assert_python_ok('-c', cmd)
-
-        # Before bpo-36867 was fixed, a SharedMemoryManager not using the same
-        # resource_tracker process as its parent would make the parent's
-        # tracker complain about sl being leaked even though smm.shutdown()
-        # properly released sl.
-        self.assertFalse(err)
 
     def test_shared_memory_SharedMemoryManager_basics(self):
         smm1 = multiprocessing.managers.SharedMemoryManager()
@@ -5075,9 +5075,6 @@ class TestResourceTracker(unittest.TestCase):
                 if rtype == "semaphore":
                     lock = mp.Lock()
                     return lock, lock._semlock.name
-                elif rtype == "shared_memory":
-                    sm = SharedMemory(create=True, size=10)
-                    return sm, sm._name
                 else:
                     raise ValueError(
                         "Resource type {{}} not understood".format(rtype))
