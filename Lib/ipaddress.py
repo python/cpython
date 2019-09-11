@@ -632,7 +632,7 @@ class _BaseAddress(_IPAddressBase):
             if self._version == 6:
                 fmt_base = 'x'  # Hex is default for ipv6
 
-        # Handle binary formatting 
+        # Handle binary formatting
         if fmt_base == 'b':
             if self._version == 4:
                 # resulting string is '0b' + 32 bits
