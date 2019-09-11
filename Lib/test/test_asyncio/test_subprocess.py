@@ -43,7 +43,6 @@ class SubprocessTransportTests(test_utils.TestCase):
         self.loop = self.new_test_loop()
         self.set_event_loop(self.loop)
 
-
     def create_transport(self, waiter=None):
         protocol = mock.Mock()
         protocol.connection_made._is_coroutine = False
@@ -54,7 +53,7 @@ class SubprocessTransportTests(test_utils.TestCase):
         return (transport, protocol)
 
     def test_proc_exited(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         transport, protocol = self.create_transport(waiter)
         transport._process_exited(6)
         self.loop.run_until_complete(waiter)
@@ -80,7 +79,7 @@ class SubprocessTransportTests(test_utils.TestCase):
         transport.close()
 
     def test_subprocess_repr(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         transport, protocol = self.create_transport(waiter)
         transport._process_exited(6)
         self.loop.run_until_complete(waiter)

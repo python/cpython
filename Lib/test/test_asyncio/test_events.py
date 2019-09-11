@@ -81,8 +81,8 @@ class MyBaseProto(asyncio.Protocol):
         self.state = 'INITIAL'
         self.nbytes = 0
         if loop is not None:
-            self.connected = asyncio.Future(loop=loop)
-            self.done = asyncio.Future(loop=loop)
+            self.connected = loop.create_future()
+            self.done = loop.create_future()
 
     def connection_made(self, transport):
         self.transport = transport
@@ -119,7 +119,7 @@ class MyDatagramProto(asyncio.DatagramProtocol):
         self.state = 'INITIAL'
         self.nbytes = 0
         if loop is not None:
-            self.done = asyncio.Future(loop=loop)
+            self.done = loop.create_future()
 
     def connection_made(self, transport):
         self.transport = transport
@@ -148,7 +148,7 @@ class MyReadPipeProto(asyncio.Protocol):
         self.nbytes = 0
         self.transport = None
         if loop is not None:
-            self.done = asyncio.Future(loop=loop)
+            self.done = loop.create_future()
 
     def connection_made(self, transport):
         self.transport = transport
@@ -179,7 +179,7 @@ class MyWritePipeProto(asyncio.BaseProtocol):
         self.state = 'INITIAL'
         self.transport = None
         if loop is not None:
-            self.done = asyncio.Future(loop=loop)
+            self.done = loop.create_future()
 
     def connection_made(self, transport):
         self.transport = transport
@@ -198,9 +198,9 @@ class MySubprocessProtocol(asyncio.SubprocessProtocol):
     def __init__(self, loop):
         self.state = 'INITIAL'
         self.transport = None
-        self.connected = asyncio.Future(loop=loop)
-        self.completed = asyncio.Future(loop=loop)
-        self.disconnects = {fd: asyncio.Future(loop=loop) for fd in range(3)}
+        self.connected = loop.create_future()
+        self.completed = loop.create_future()
+        self.disconnects = {fd: loop.create_future() for fd in range(3)}
         self.data = {1: b'', 2: b''}
         self.returncode = None
         self.got_data = {1: asyncio.Event(loop=loop),
@@ -738,7 +738,7 @@ class EventLoopTestsMixin:
                 return [(family, socket.SOCK_STREAM, 6, '', (host, port, 0, 0))]
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         unique_hosts = set(hosts)
 
@@ -1094,7 +1094,7 @@ class EventLoopTestsMixin:
         client, pr = self.loop.run_until_complete(f_c)
 
         # extra info is available
-        self.check_ssl_extra_info(client,peername=(host, port),
+        self.check_ssl_extra_info(client, peername=(host, port),
                                   peercert=test_utils.PEERCERT)
 
         # close connection
@@ -1104,7 +1104,7 @@ class EventLoopTestsMixin:
         self.loop.run_until_complete(proto.done)
 
     def test_create_server_sock(self):
-        proto = asyncio.Future(loop=self.loop)
+        proto = self.loop.create_future()
 
         class TestMyProto(MyProto):
             def connection_made(self, transport):
@@ -1143,7 +1143,7 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 not supported or enabled')
     def test_create_server_dual_stack(self):
-        f_proto = asyncio.Future(loop=self.loop)
+        f_proto = self.loop.create_future()
 
         class TestMyProto(MyProto):
             def connection_made(self, transport):
@@ -1172,7 +1172,7 @@ class EventLoopTestsMixin:
         proto.transport.close()
         client.close()
 
-        f_proto = asyncio.Future(loop=self.loop)
+        f_proto = self.loop.create_future()
         client = socket.socket(socket.AF_INET6)
         client.connect(('::1', port))
         client.send(b'xxx')
@@ -1587,7 +1587,7 @@ class EventLoopTestsMixin:
             return res
 
         start = time.monotonic()
-        t = asyncio.Task(main(), loop=self.loop)
+        t = self.loop.create_task(main())
         self.loop.run_forever()
         elapsed = time.monotonic() - start
 
@@ -1673,7 +1673,7 @@ class EventLoopTestsMixin:
         with self.assertRaises(RuntimeError):
             self.loop.run_forever()
         with self.assertRaises(RuntimeError):
-            fut = asyncio.Future(loop=self.loop)
+            fut = self.loop.create_future()
             self.loop.run_until_complete(fut)
         with self.assertRaises(RuntimeError):
             self.loop.call_soon(func)
