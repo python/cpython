@@ -122,8 +122,6 @@ See :pep:`572` for a full description.
 
 (Contributed by Emily Morehouse in :issue:`35224`.)
 
-.. TODO: Emily will sprint on docs at PyCon US 2019.
-
 
 Positional-only parameters
 --------------------------
