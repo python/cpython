@@ -862,13 +862,10 @@ Other constructors, all class methods:
    (for example, this may be possible on platforms supplying the C
    :c:func:`gettimeofday` function).
 
-   If *tz* is not ``None``, it must be an instance of a :class:`tzinfo` subclass, and the
-   current date and time are converted to *tz*’s time zone. In this case the
-   result is equivalent to::
+   If *tz* is not ``None``, it must be an instance of a :class:`tzinfo` subclass,
+   and the current date and time are converted to *tz*’s time zone.
 
-     tz.fromutc(datetime.utcnow().replace(tzinfo=tz))
-
-   See also :meth:`today`, :meth:`utcnow`.
+   This function is preferred over :meth:`today` and :meth:`utcnow`.
 
 
 .. classmethod:: datetime.utcnow()
@@ -878,6 +875,14 @@ Other constructors, all class methods:
    This is like :meth:`now`, but returns the current UTC date and time, as a naive
    :class:`.datetime` object. An aware current UTC datetime can be obtained by
    calling ``datetime.now(timezone.utc)``. See also :meth:`now`.
+
+   .. warning::
+
+      Because naive ``datetime`` objects are treated by many ``datetime`` methods
+      as local times, it is preferred to use aware datetimes to represent times
+      in UTC. As such, the recommended way to create an object representing the
+      current time in UTC  by calling ``datetime.now(timezone.utc)``.
+
 
 .. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
 
@@ -889,10 +894,6 @@ Other constructors, all class methods:
    If *tz* is not ``None``, it must be an instance of a :class:`tzinfo` subclass, and the
    timestamp is converted to *tz*’s time zone.
 
-   In this case the result is equivalent to::
-
-     tz.fromutc(datetime.utcfromtimestamp(timestamp).replace(tzinfo=tz))
-
    :meth:`fromtimestamp` may raise :exc:`OverflowError`, if the timestamp is out of
    the range of values supported by the platform C :c:func:`localtime` or
    :c:func:`gmtime` functions, and :exc:`OSError` on :c:func:`localtime` or
@@ -901,7 +902,8 @@ Other constructors, all class methods:
    1970 through 2038. Note that on non-POSIX systems that include leap seconds in
    their notion of a timestamp, leap seconds are ignored by :meth:`fromtimestamp`,
    and then it's possible to have two timestamps differing by a second that yield
-   identical :class:`.datetime` objects. See also :meth:`utcfromtimestamp`.
+   identical :class:`.datetime` objects. This method is preferred over
+   :meth:`utcfromtimestamp`.
 
    .. versionchanged:: 3.3
       Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
@@ -934,6 +936,14 @@ Other constructors, all class methods:
 
    except the latter formula always supports the full years range: between
    :const:`MINYEAR` and :const:`MAXYEAR` inclusive.
+
+   .. warning::
+
+      Because naive ``datetime`` objects are treated by many ``datetime`` methods
+      as local times, it is preferred to use aware datetimes to represent times
+      in UTC. As such, the recommended way to create an object representing a
+      specific timestamp in UTC  by calling
+      ``datetime.fromtimestamp(timestamp, tz=timezone.utc)``.
 
    .. versionchanged:: 3.3
       Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
@@ -1322,6 +1332,14 @@ Instance methods:
    ``MINYEAR`` or ``MAXYEAR`` and UTC adjustment spills over a year
    boundary.
 
+   .. warning::
+
+      Because naive ``datetime`` objects are treated by many ``datetime`` methods
+      as local times, it is preferred to use aware datetimes to represent times
+      in UTC; as a result, using ``utcfromtimetuple`` may give misleading
+      results. If you have a naive ``datetime`` representing UTC, use
+      ``datetime.replace(tzinfo=timezone.utc)`` to make it aware, at which point
+      you can use :meth:`.datetime.timetuple`.
 
 .. method:: datetime.toordinal()
 
@@ -1500,7 +1518,7 @@ Examples of working with :class:`~datetime.datetime` objects:
 
 .. doctest::
 
-    >>> from datetime import datetime, date, time
+    >>> from datetime import datetime, date, time, timezone
 
     >>> # Using datetime.combine()
     >>> d = date(2005, 7, 14)
@@ -1508,11 +1526,11 @@ Examples of working with :class:`~datetime.datetime` objects:
     >>> datetime.combine(d, t)
     datetime.datetime(2005, 7, 14, 12, 30)
 
-    >>> # Using datetime.now() or datetime.utcnow()
+    >>> # Using datetime.now()
     >>> datetime.now()   # doctest: +SKIP
     datetime.datetime(2007, 12, 6, 16, 29, 43, 79043)   # GMT +1
-    >>> datetime.utcnow()   # doctest: +SKIP
-    datetime.datetime(2007, 12, 6, 15, 29, 43, 79060)
+    >>> datetime.now(timezone.utc)   # doctest: +SKIP
+    datetime.datetime(2007, 12, 6, 15, 29, 43, 79060, tzinfo=datetime.timezone.utc)
 
     >>> # Using datetime.strptime()
     >>> dt = datetime.strptime("21/11/06 16:30", "%d/%m/%y %H:%M")
@@ -1616,7 +1634,7 @@ Usage of ``KabulTz`` from above::
    datetime.datetime(2006, 6, 14, 8, 30, tzinfo=datetime.timezone.utc)
    >>> dt2
    datetime.datetime(2006, 6, 14, 13, 0, tzinfo=KabulTz())
-   >>> dt2.utctimetuple() == dt3.utctimetuple()
+   >>> dt2 == dt3
    True
 
 .. _datetime-time:
