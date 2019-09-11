@@ -14,7 +14,7 @@
 
     import asyncio
     import unittest
-    from unittest.mock import Mock, MagicMock, patch, call, sentinel
+    from unittest.mock import AsyncMock, Mock, MagicMock, patch, call, sentinel
 
     class SomeClass:
         attribute = 'this is a doctest'
