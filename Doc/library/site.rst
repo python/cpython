@@ -61,6 +61,19 @@ directory rather than a file.  No item is added to ``sys.path`` more than
 once.  Blank lines and lines beginning with ``#`` are skipped.  Lines starting
 with ``import`` (followed by space or tab) are executed.
 
+.. note::
+
+   An executable line in a :file:`.pth` file is run at every Python startup,
+   regardless of whether a particular module is actually going to be used.
+   Its impact should thus be kept to a minimum.
+   The primary intended purpose of executable lines is to make the
+   corresponding module(s) importable
+   (load 3rd-party import hooks, adjust :envvar:`PATH` etc).
+   Any other initialization is supposed to be done upon a module's
+   actual import, if and when it happens.
+   Limiting a code chunk to a single line is a deliberate measure
+   to discourage putting anything more complex here.
+
 .. index::
    single: package
    triple: path; configuration; file
