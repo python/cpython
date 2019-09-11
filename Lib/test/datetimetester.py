@@ -1375,13 +1375,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 test_cases.append((new_date, new_iso))
 
         for d, exp_iso in test_cases:
-            with self.subTest(d=d, comparison="tuple"):
-                self.assertEqual(d.isocalendar(), exp_iso)
-
-            # Check that the tuple contents are accessible by field name
-            with self.subTest(d=d, comparison="fields"):
+            with self.subTest(d=d, comparison="fields and tuple"):
                 t = d.isocalendar()
                 self.assertEqual((t.year, t.week, t.weekday), exp_iso)
+                self.assertEqual(d.isocalendar(), exp_iso)
 
     def test_iso_long_years(self):
         # Calculate long ISO years and compare to table from
