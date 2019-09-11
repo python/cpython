@@ -1,0 +1,2 @@
+Allow passing a :term:`path-like object` as ``directory`` argument to the
+:class:`http.server.SimpleHTTPRequestHandler` class. Patch by Géry Ogam.
