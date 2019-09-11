@@ -1355,7 +1355,7 @@ find and load modules.
 
    True if the spec's :attr:`origin` refers to a loadable location.  False
    otherwise.  This value impacts how :attr:`origin` is interpreted and how
-   the module's :attr:`__file__`` is populated.
+   the module's :attr:`__file__` is populated.
 
 :mod:`importlib.util` -- Utility code for importers
 ---------------------------------------------------
