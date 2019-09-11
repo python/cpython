@@ -323,7 +323,13 @@ class RefactoringTool(object):
             return f.read(), encoding
 
     def refactor_file(self, filename, write=False, doctests_only=False):
-        """Refactors a file."""
+        """Refactors a file.
+
+        Returns:
+          True: if the file was modified.
+          False: if the file was not modified.
+          None: if the file could not be read.
+        """
         input, encoding = self._read_python_source(filename)
         if input is None:
             # Reading the file failed.
