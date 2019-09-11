@@ -415,6 +415,7 @@ def _default_mime_types():
         '.js'     : 'application/javascript',
         '.mjs'    : 'application/javascript',
         '.json'   : 'application/json',
+        '.webmanifest': 'application/manifest+json',
         '.doc'    : 'application/msword',
         '.dot'    : 'application/msword',
         '.wiz'    : 'application/msword',
