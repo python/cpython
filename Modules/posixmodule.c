@@ -8420,7 +8420,7 @@ os_closerange_impl(PyObject *module, int fd_low, int fd_high)
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_FDWALK
-    lohi[0] = fd_low;
+    lohi[0] = Py_MAX(fd_low, 0);
     lohi[1] = fd_high;
     fdwalk(_fdwalk_close_func, lohi);
 #else
