@@ -263,7 +263,6 @@ aliases = {
     'hex'                : 'hex_codec',
 
     # hp_roman8 codec
-    'hp-roman8'          : 'hp_roman8',
     'roman8'             : 'hp_roman8',
     'r8'                 : 'hp_roman8',
     'csHPRoman8'         : 'hp_roman8',
