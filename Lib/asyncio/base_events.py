@@ -554,7 +554,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         executor = self._default_executor
         if executor is not None:
             self._default_executor = None
-            executor.shutdown(wait=True) 
+            executor.shutdown(wait=True)
 
     def run_forever(self):
         """Run until stop() is called."""
