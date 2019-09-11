@@ -1467,7 +1467,8 @@ The following features and APIs have been removed from Python 3.8:
   script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
 * ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from :mod:`cgi`
-  module.  They are deprecated from Python 3.2 or older.
+  module.  They are deprecated from Python 3.2 or older. They should be imported
+  from the ``urllib.parse`` and ``html`` modules instead.
 
 * ``filemode`` function is removed from :mod:`tarfile` module.
   It is not documented and deprecated since Python 3.3.
