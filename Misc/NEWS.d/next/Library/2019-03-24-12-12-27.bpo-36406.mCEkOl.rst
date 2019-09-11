@@ -1,1 +1,1 @@
-Handle empty packages in :mod:`doctest`. Patch by Karthikeyan Singaravelan.
+Handle namespace packages in :mod:`doctest`. Patch by Karthikeyan Singaravelan.
