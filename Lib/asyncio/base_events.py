@@ -546,6 +546,16 @@ class BaseEventLoop(events.AbstractEventLoop):
                     'asyncgen': agen
                 })
 
+    def shutdown_default_executor(self):
+        """Shutdown the default executor, but wait for the threads
+        in the threadpool to finish joining.
+        """
+        self._executor_shutdown_called = True
+        executor = self._default_executor
+        if executor is not None:
+            self._default_executor = None
+            executor.shutdown(wait=True) 
+
     def run_forever(self):
         """Run until stop() is called."""
         self._check_closed()
