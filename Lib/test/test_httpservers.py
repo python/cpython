@@ -14,6 +14,7 @@ import sys
 import re
 import base64
 import ntpath
+import pathlib
 import shutil
 import email.message
 import email.utils
@@ -790,10 +791,10 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, directory=None):
         request = mock.Mock()
         request.makefile.return_value = BytesIO()
-        super().__init__(request, None, None)
+        super().__init__(request, None, None, directory=directory)
 
         self.get_called = False
         self.protocol_version = "HTTP/1.1"
@@ -1068,41 +1069,91 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
 class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
     """ Test url parsing """
     def setUp(self):
-        self.translated = os.getcwd()
-        self.translated = os.path.join(self.translated, 'filename')
-        self.handler = SocketlessRequestHandler()
+        self.translated_1 = os.path.join(os.getcwd(), 'filename')
+        self.translated_2 = os.path.join('foo', 'filename')
+        self.translated_3 = os.path.join('bar', 'filename')
+        self.handler_1 = SocketlessRequestHandler()
+        self.handler_2 = SocketlessRequestHandler(directory='foo')
+        self.handler_3 = SocketlessRequestHandler(directory=pathlib.PurePath('bar'))
 
     def test_query_arguments(self):
-        path = self.handler.translate_path('/filename')
-        self.assertEqual(path, self.translated)
-        path = self.handler.translate_path('/filename?foo=bar')
-        self.assertEqual(path, self.translated)
-        path = self.handler.translate_path('/filename?a=b&spam=eggs#zot')
-        self.assertEqual(path, self.translated)
+        path = self.handler_1.translate_path('/filename')
+        self.assertEqual(path, self.translated_1)
+        path = self.handler_2.translate_path('/filename')
+        self.assertEqual(path, self.translated_2)
+        path = self.handler_3.translate_path('/filename')
+        self.assertEqual(path, self.translated_3)
+
+        path = self.handler_1.translate_path('/filename?foo=bar')
+        self.assertEqual(path, self.translated_1)
+        path = self.handler_2.translate_path('/filename?foo=bar')
+        self.assertEqual(path, self.translated_2)
+        path = self.handler_3.translate_path('/filename?foo=bar')
+        self.assertEqual(path, self.translated_3)
+
+        path = self.handler_1.translate_path('/filename?a=b&spam=eggs#zot')
+        self.assertEqual(path, self.translated_1)
+        path = self.handler_2.translate_path('/filename?a=b&spam=eggs#zot')
+        self.assertEqual(path, self.translated_2)
+        path = self.handler_3.translate_path('/filename?a=b&spam=eggs#zot')
+        self.assertEqual(path, self.translated_3)
 
     def test_start_with_double_slash(self):
-        path = self.handler.translate_path('//filename')
-        self.assertEqual(path, self.translated)
-        path = self.handler.translate_path('//filename?foo=bar')
-        self.assertEqual(path, self.translated)
+        path = self.handler_1.translate_path('//filename')
+        self.assertEqual(path, self.translated_1)
+        path = self.handler_2.translate_path('//filename')
+        self.assertEqual(path, self.translated_2)
+        path = self.handler_3.translate_path('//filename')
+        self.assertEqual(path, self.translated_3)
+
+        path = self.handler_1.translate_path('//filename?foo=bar')
+        self.assertEqual(path, self.translated_1)
+        path = self.handler_2.translate_path('//filename?foo=bar')
+        self.assertEqual(path, self.translated_2)
+        path = self.handler_3.translate_path('//filename?foo=bar')
+        self.assertEqual(path, self.translated_3)
 
     def test_windows_colon(self):
         with support.swap_attr(server.os, 'path', ntpath):
-            path = self.handler.translate_path('c:c:c:foo/filename')
+            path = self.handler_1.translate_path('c:c:c:foo/filename')
             path = path.replace(ntpath.sep, os.sep)
-            self.assertEqual(path, self.translated)
+            self.assertEqual(path, self.translated_1)
+            path = self.handler_2.translate_path('c:c:c:foo/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_2)
+            path = self.handler_3.translate_path('c:c:c:foo/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_3)
 
-            path = self.handler.translate_path('\\c:../filename')
+            path = self.handler_1.translate_path('\\c:../filename')
             path = path.replace(ntpath.sep, os.sep)
-            self.assertEqual(path, self.translated)
+            self.assertEqual(path, self.translated_1)
+            path = self.handler_2.translate_path('\\c:../filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_2)
+            path = self.handler_3.translate_path('\\c:../filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_3)
 
-            path = self.handler.translate_path('c:\\c:..\\foo/filename')
+            path = self.handler_1.translate_path('c:\\c:..\\foo/filename')
             path = path.replace(ntpath.sep, os.sep)
-            self.assertEqual(path, self.translated)
+            self.assertEqual(path, self.translated_1)
+            path = self.handler_2.translate_path('c:\\c:..\\foo/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_2)
+            path = self.handler_3.translate_path('c:\\c:..\\foo/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_3)
 
-            path = self.handler.translate_path('c:c:foo\\c:c:bar/filename')
+            path = self.handler_1.translate_path('c:c:foo\\c:c:bar/filename')
             path = path.replace(ntpath.sep, os.sep)
-            self.assertEqual(path, self.translated)
+            self.assertEqual(path, self.translated_1)
+            path = self.handler_2.translate_path('c:c:foo\\c:c:bar/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_2)
+            path = self.handler_3.translate_path('c:c:foo\\c:c:bar/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_3)
 
 
 class MiscTestCase(unittest.TestCase):
