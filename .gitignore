@@ -31,6 +31,7 @@ TAGS
 .vs/
 .vscode/
 gmon.out
+.coverage
 .mypy_cache/
 
 *.exe
@@ -107,7 +108,6 @@ Tools/unicode/data/
 /python-gdb.py
 /python.exe-gdb.py
 /reflog.txt
-/.coverage
 /coverage/
 /externals/
 /htmlcov/
