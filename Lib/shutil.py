@@ -594,8 +594,11 @@ def _rmtree_unsafe(path, onerror):
         entries = []
     for entry in entries:
         fullname = entry.path
-        with contextlib.suppress(FileNotFoundError):
-          if _rmtree_isdir(entry):
+        try:
+            is_dir = _rmtree_isdir(entry)
+        except FileNotFoundError:
+            continue
+        if is_dir:
             try:
                 if entry.is_symlink():
                     # This can only happen if someone replaces
@@ -606,7 +609,7 @@ def _rmtree_unsafe(path, onerror):
                 onerror(os.path.islink, fullname, sys.exc_info())
                 continue
             _rmtree_unsafe(fullname, onerror)
-          else:
+        else:
             try:
                 os.unlink(fullname)
             except FileNotFoundError:
