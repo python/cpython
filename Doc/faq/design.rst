@@ -156,8 +156,8 @@ Starting in Python 3.8, you can!
 Assignment expressions using the walrus operator `:=` assign a variable in an
 expression::
 
-    while chunk := fp.read(200):
-        print(chunk)
+   while chunk := fp.read(200):
+      print(chunk)
 
 See :pep:`572` for more information.
 
