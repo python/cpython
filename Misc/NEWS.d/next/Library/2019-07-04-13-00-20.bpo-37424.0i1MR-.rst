@@ -1,0 +1,5 @@
+Fixes a possible hang when using a timeout on `subprocess.run()` while
+capturing output.  If the child process spawned its own children or
+otherwise connected its stdout or stderr handles with another process, we
+could hang after the timeout was reached and our child was killed when
+attempting to read final output from the pipes.
