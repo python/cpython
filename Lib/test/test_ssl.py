@@ -1109,6 +1109,7 @@ class ContextTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(ssl.SSLContext, 'minimum_version'),
                          "required OpenSSL 1.1.0g")
+    @unittest.skipIf(IS_LIBRESSL, "see bpo-34001")
     def test_min_max_version(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         # OpenSSL default is MINIMUM_SUPPORTED, however some vendors like
@@ -3731,8 +3732,8 @@ class ThreadedTests(unittest.TestCase):
                 self.assertEqual(s.version(), 'TLSv1.1')
 
         # client 1.0, server 1.2 (mismatch)
-        server_context.minimum_version = ssl.TLSVersion.TLSv1_2
         server_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_2
         client_context.maximum_version = ssl.TLSVersion.TLSv1
         client_context.maximum_version = ssl.TLSVersion.TLSv1
         with ThreadedEchoServer(context=server_context) as server:
