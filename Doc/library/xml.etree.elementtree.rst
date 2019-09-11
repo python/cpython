@@ -644,7 +644,7 @@ XInclude support
 ----------------
 
 This module provides limited support for
-`XInclude directives <https://www.w3.org/TR/xinclude/>`_ , via the :mod:`xml.etree.ElementInclude` helper module.  This module can be used to insert subtrees and text strings into element trees, based on information in the tree.
+`XInclude directives <https://www.w3.org/TR/xinclude/>`_, via the :mod:`xml.etree.ElementInclude` helper module.  This module can be used to insert subtrees and text strings into element trees, based on information in the tree.
 
 Example
 ^^^^^^^
