@@ -130,7 +130,6 @@ purposes.
    :meth:`SSLContext.load_verify_locations`.  If all three are
    :const:`None`, this function can choose to trust the system's default
    CA certificates instead.
-   CA certificates instead.
 
    The settings are: :data:`PROTOCOL_TLS`, :data:`OP_NO_SSLv2`, and
    :data:`OP_NO_SSLv3` with high encryption cipher suites without RC4 and
@@ -2236,7 +2235,7 @@ When you use the context to connect to a server, :const:`CERT_REQUIRED`
 and :attr:`~SSLContext.check_hostname` validate the server certificate: it
 ensures that the server certificate was signed with one of the CA
 certificates, checks the signature for correctness, and verifies other
-properties like validity and identity of the host::
+properties like validity and identity of the hostname::
 
    >>> conn = context.wrap_socket(socket.socket(socket.AF_INET),
    ...                            server_hostname="www.python.org")
