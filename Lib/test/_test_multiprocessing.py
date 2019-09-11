@@ -4120,49 +4120,6 @@ class _TestSharedMemory(BaseTestCase):
         deserialized_sl.shm.close()
         sl.shm.close()
 
-    def test_shared_memory_cleaned_after_process_termination(self):
-        cmd = '''if 1:
-            import os, time, sys
-            from multiprocessing import shared_memory
-
-            # Create a shared_memory segment, and send the segment name
-            sm = shared_memory.SharedMemory(create=True, size=10)
-            sys.stdout.write(sm.name + '\\n')
-            sys.stdout.flush()
-            time.sleep(100)
-        '''
-        with subprocess.Popen([sys.executable, '-E', '-c', cmd],
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE) as p:
-            name = p.stdout.readline().strip().decode()
-
-            # killing abruptly processes holding reference to a shared memory
-            # segment should not leak the given memory segment.
-            p.terminate()
-            p.wait()
-
-            deadline = time.monotonic() + support.LONG_TIMEOUT
-            t = 0.1
-            while time.monotonic() < deadline:
-                time.sleep(t)
-                t = min(t*2, 5)
-                try:
-                    smm = shared_memory.SharedMemory(name, create=False)
-                except FileNotFoundError:
-                    break
-            else:
-                raise AssertionError("A SharedMemory segment was leaked after"
-                                     " a process was abruptly terminated.")
-
-            if os.name == 'posix':
-                # A warning was emitted by the subprocess' own
-                # resource_tracker (on Windows, shared memory segments
-                # are released automatically by the OS).
-                err = p.stderr.read().decode()
-                self.assertIn(
-                    "resource_tracker: There appear to be 1 leaked "
-                    "shared_memory objects to clean up at shutdown", err)
-
 #
 #
 #
