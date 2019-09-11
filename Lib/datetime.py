@@ -1218,7 +1218,7 @@ class IsoCalendarDate(tuple):
         if len(seq) != 3:
             raise TypeError(f'{cls.__name__}() takes a 3-sequence '
                     f'({len(seq)}-sequence given)')
-        return tuple.__new__(cls, seq)
+        return super().__new__(cls, seq)
 
     @property
     def year(self):
