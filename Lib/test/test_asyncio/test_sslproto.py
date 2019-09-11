@@ -72,7 +72,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
                                  ssl_handshake_timeout=-10)
 
     def test_eof_received_waiter(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
         self.connection_made(ssl_proto)
         ssl_proto.eof_received()
@@ -83,7 +83,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         # From issue #363.
         # _fatal_error() generates a NameError if sslproto.py
         # does not import base_events.
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
         # Temporarily turn off error logging so as not to spoil test output.
         log_level = log.logger.getEffectiveLevel()
@@ -97,7 +97,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
     def test_connection_lost(self):
         # From issue #472.
         # yield from waiter hang if lost_connection was called.
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
         self.connection_made(ssl_proto)
         ssl_proto.connection_lost(ConnectionAbortedError)
@@ -106,7 +106,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
 
     def test_close_during_handshake(self):
         # bpo-29743 Closing transport during handshake process leaks socket
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
 
         transport = self.connection_made(ssl_proto)
@@ -116,7 +116,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         self.assertTrue(transport.abort.called)
 
     def test_get_extra_info_on_closed_connection(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
         self.assertIsNone(ssl_proto._get_extra_info('socket'))
         default = object()
@@ -127,7 +127,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         self.assertIsNone(ssl_proto._get_extra_info('socket'))
 
     def test_set_new_app_protocol(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
         new_app_proto = asyncio.Protocol()
         ssl_proto._app_transport.set_protocol(new_app_proto)

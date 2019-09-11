@@ -540,6 +540,7 @@ def process_audit_events(app, doctree, fromdocname):
         nodes.colspec(colwidth=30),
         nodes.colspec(colwidth=55),
         nodes.colspec(colwidth=15),
+        cols=3,
     )
     head = nodes.thead()
     body = nodes.tbody()

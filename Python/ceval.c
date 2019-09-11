@@ -5001,7 +5001,7 @@ do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject
     PyObject *result;
 
     if (PyCFunction_Check(func)) {
-        C_TRACE(result, PyCFunction_Call(func, callargs, kwdict));
+        C_TRACE(result, PyObject_Call(func, callargs, kwdict));
         return result;
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type) {
@@ -5235,7 +5235,6 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     else {
         _Py_IDENTIFIER(__spec__);
         PyObject *spec = _PyObject_GetAttrId(v, &PyId___spec__);
-        Py_XINCREF(spec);
         const char *fmt =
             _PyModuleSpec_IsInitializing(spec) ?
             "cannot import name %R from partially initialized module %R "

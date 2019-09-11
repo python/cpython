@@ -461,7 +461,7 @@ class FieldStorage:
             if maxlen and clen > maxlen:
                 raise ValueError('Maximum content length exceeded')
         self.length = clen
-        if self.limit is None and clen:
+        if self.limit is None and clen >= 0:
             self.limit = clen
 
         self.list = self.file = None
@@ -642,8 +642,10 @@ class FieldStorage:
             if 'content-length' in headers:
                 del headers['content-length']
 
+            limit = None if self.limit is None \
+                else self.limit - self.bytes_read
             part = klass(self.fp, headers, ib, environ, keep_blank_values,
-                         strict_parsing,self.limit-self.bytes_read,
+                         strict_parsing, limit,
                          self.encoding, self.errors, max_num_fields)
 
             if max_num_fields is not None:
@@ -734,7 +736,7 @@ class FieldStorage:
         last_line_lfend = True
         _read = 0
         while 1:
-            if _read >= self.limit:
+            if self.limit is not None and _read >= self.limit:
                 break
             line = self.fp.readline(1<<16) # bytes
             self.bytes_read += len(line)

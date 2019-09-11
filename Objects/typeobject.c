@@ -1157,11 +1157,9 @@ subtype_dealloc(PyObject *self)
     /* Test whether the type has GC exactly once */
 
     if (!PyType_IS_GC(type)) {
-        /* It's really rare to find a dynamic type that doesn't have
-           GC; it can only happen when deriving from 'object' and not
-           adding any slots or instance variables.  This allows
-           certain simplifications: there's no need to call
-           clear_slots(), or DECREF the dict, or clear weakrefs. */
+        /* A non GC dynamic type allows certain simplifications:
+           there's no need to call clear_slots(), or DECREF the dict,
+           or clear weakrefs. */
 
         /* Maybe call finalizer; exit early if resurrected */
         if (type->tp_finalize) {
@@ -1177,7 +1175,6 @@ subtype_dealloc(PyObject *self)
         /* Find the nearest base with a different tp_dealloc */
         base = type;
         while ((basedealloc = base->tp_dealloc) == subtype_dealloc) {
-            assert(Py_SIZE(base) == 0);
             base = base->tp_base;
             assert(base);
         }
@@ -1189,8 +1186,10 @@ subtype_dealloc(PyObject *self)
         assert(basedealloc);
         basedealloc(self);
 
-        /* Can't reference self beyond this point */
-        Py_DECREF(type);
+       /* Only decref if the base type is not already a heap allocated type.
+          Otherwise, basedealloc should have decref'd it already */
+        if (type->tp_flags & Py_TPFLAGS_HEAPTYPE && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE))
+            Py_DECREF(type);
 
         /* Done */
         return;
@@ -1289,8 +1288,9 @@ subtype_dealloc(PyObject *self)
 
     /* Can't reference self beyond this point. It's possible tp_del switched
        our type from a HEAPTYPE to a non-HEAPTYPE, so be careful about
-       reference counting. */
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+       reference counting. Only decref if the base type is not already a heap
+       allocated type. Otherwise, basedealloc should have decref'd it already */
+    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE))
       Py_DECREF(type);
 
   endlabel:
@@ -3753,6 +3753,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *joined;
         PyObject *comma;
         _Py_static_string(comma_id, ", ");
+        Py_ssize_t method_count;
 
         /* Compute ", ".join(sorted(type.__abstractmethods__))
            into joined. */
@@ -3773,14 +3774,18 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
         joined = PyUnicode_Join(comma, sorted_methods);
+        method_count = PyObject_Length(sorted_methods);
         Py_DECREF(sorted_methods);
         if (joined == NULL)
+            return NULL;
+        if (method_count == -1)
             return NULL;
 
         PyErr_Format(PyExc_TypeError,
                      "Can't instantiate abstract class %s "
-                     "with abstract methods %U",
+                     "with abstract method%s %U",
                      type->tp_name,
+                     method_count > 1 ? "s" : "",
                      joined);
         Py_DECREF(joined);
         return NULL;
@@ -7307,14 +7312,21 @@ update_one_slot(PyTypeObject *type, slotdef *p)
             if (tptr == NULL || tptr == ptr)
                 generic = p->function;
             d = (PyWrapperDescrObject *)descr;
-            if (d->d_base->wrapper == p->wrapper &&
+            if ((specific == NULL || specific == d->d_wrapped) &&
+                d->d_base->wrapper == p->wrapper &&
                 PyType_IsSubtype(type, PyDescr_TYPE(d)))
             {
-                if (specific == NULL ||
-                    specific == d->d_wrapped)
-                    specific = d->d_wrapped;
-                else
-                    use_generic = 1;
+                specific = d->d_wrapped;
+            }
+            else {
+                /* We cannot use the specific slot function because either
+                   - it is not unique: there are multiple methods for this
+                     slot and they conflict
+                   - the signature is wrong (as checked by the ->wrapper
+                     comparison above)
+                   - it's wrapping the wrong class
+                 */
+                use_generic = 1;
             }
         }
         else if (Py_TYPE(descr) == &PyCFunction_Type &&

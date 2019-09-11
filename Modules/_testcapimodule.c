@@ -32,6 +32,8 @@
 #  error "_testcapi must test the public Python C API, not CPython internal C API"
 #endif
 
+static struct PyModuleDef _testcapimodule;
+
 static PyObject *TestError;     /* set to exception object in init */
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
@@ -5176,6 +5178,83 @@ sequence_getitem(PyObject *self, PyObject *args)
 }
 
 
+/* Functions for testing C calling conventions (METH_*) are named meth_*,
+ * e.g. "meth_varargs" for METH_VARARGS.
+ *
+ * They all return a tuple of their C-level arguments, with None instead
+ * of NULL and Python tuples instead of C arrays.
+ */
+
+
+static PyObject*
+_null_to_none(PyObject* obj)
+{
+    if (obj == NULL) {
+        Py_RETURN_NONE;
+    }
+    Py_INCREF(obj);
+    return obj;
+}
+
+static PyObject*
+meth_varargs(PyObject* self, PyObject* args)
+{
+    return Py_BuildValue("NO", _null_to_none(self), args);
+}
+
+static PyObject*
+meth_varargs_keywords(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    return Py_BuildValue("NON", _null_to_none(self), args, _null_to_none(kwargs));
+}
+
+static PyObject*
+meth_o(PyObject* self, PyObject* obj)
+{
+    return Py_BuildValue("NO", _null_to_none(self), obj);
+}
+
+static PyObject*
+meth_noargs(PyObject* self, PyObject* ignored)
+{
+    return _null_to_none(self);
+}
+
+static PyObject*
+_fastcall_to_tuple(PyObject* const* args, Py_ssize_t nargs)
+{
+    PyObject *tuple = PyTuple_New(nargs);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i=0; i < nargs; i++) {
+        Py_INCREF(args[i]);
+        PyTuple_SET_ITEM(tuple, i, args[i]);
+    }
+    return tuple;
+}
+
+static PyObject*
+meth_fastcall(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+{
+    return Py_BuildValue(
+        "NN", _null_to_none(self), _fastcall_to_tuple(args, nargs)
+    );
+}
+
+static PyObject*
+meth_fastcall_keywords(PyObject* self, PyObject* const* args,
+                       Py_ssize_t nargs, PyObject* kwargs)
+{
+    PyObject *pyargs = _fastcall_to_tuple(args, nargs);
+    if (pyargs == NULL) {
+        return NULL;
+    }
+    PyObject *pykwargs = _PyObject_Vectorcall((PyObject*)&PyDict_Type,
+                                              args + nargs, 0, kwargs);
+    return Py_BuildValue("NNN", _null_to_none(self), pyargs, pykwargs);
+}
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -5426,6 +5505,12 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
     {"sequence_getitem", sequence_getitem, METH_VARARGS},
+    {"meth_varargs", meth_varargs, METH_VARARGS},
+    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS},
+    {"meth_o", meth_o, METH_O},
+    {"meth_noargs", meth_noargs, METH_NOARGS},
+    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL},
+    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -6086,6 +6171,255 @@ static PyTypeObject MethodDescriptor2_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_HAVE_VECTORCALL,
 };
 
+PyDoc_STRVAR(heapgctype__doc__,
+"A heap type with GC, and with overridden dealloc.\n\n"
+"The 'value' attribute is set to 10 in __init__.");
+
+typedef struct {
+    PyObject_HEAD
+    int value;
+} HeapCTypeObject;
+
+static struct PyMemberDef heapctype_members[] = {
+    {"value", T_INT, offsetof(HeapCTypeObject, value)},
+    {NULL} /* Sentinel */
+};
+
+static int
+heapctype_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    ((HeapCTypeObject *)self)->value = 10;
+    return 0;
+}
+
+static void
+heapgcctype_dealloc(HeapCTypeObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    PyObject_GC_Del(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot HeapGcCType_slots[] = {
+    {Py_tp_init, heapctype_init},
+    {Py_tp_members, heapctype_members},
+    {Py_tp_dealloc, heapgcctype_dealloc},
+    {Py_tp_doc, heapgctype__doc__},
+    {0, 0},
+};
+
+static PyType_Spec HeapGcCType_spec = {
+    "_testcapi.HeapGcCType",
+    sizeof(HeapCTypeObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    HeapGcCType_slots
+};
+
+PyDoc_STRVAR(heapctype__doc__,
+"A heap type without GC, but with overridden dealloc.\n\n"
+"The 'value' attribute is set to 10 in __init__.");
+
+static void
+heapctype_dealloc(HeapCTypeObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_Del(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot HeapCType_slots[] = {
+    {Py_tp_init, heapctype_init},
+    {Py_tp_members, heapctype_members},
+    {Py_tp_dealloc, heapctype_dealloc},
+    {Py_tp_doc, heapctype__doc__},
+    {0, 0},
+};
+
+static PyType_Spec HeapCType_spec = {
+    "_testcapi.HeapCType",
+    sizeof(HeapCTypeObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    HeapCType_slots
+};
+
+PyDoc_STRVAR(heapctypesubclass__doc__,
+"Subclass of HeapCType, without GC.\n\n"
+"__init__ sets the 'value' attribute to 10 and 'value2' to 20.");
+
+typedef struct {
+    HeapCTypeObject base;
+    int value2;
+} HeapCTypeSubclassObject;
+
+static int
+heapctypesubclass_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    /* Call __init__ of the superclass */
+    if (heapctype_init(self, args, kwargs) < 0) {
+        return -1;
+    }
+    /* Initialize additional element */
+    ((HeapCTypeSubclassObject *)self)->value2 = 20;
+    return 0;
+}
+
+static struct PyMemberDef heapctypesubclass_members[] = {
+    {"value2", T_INT, offsetof(HeapCTypeSubclassObject, value2)},
+    {NULL} /* Sentinel */
+};
+
+static PyType_Slot HeapCTypeSubclass_slots[] = {
+    {Py_tp_init, heapctypesubclass_init},
+    {Py_tp_members, heapctypesubclass_members},
+    {Py_tp_doc, heapctypesubclass__doc__},
+    {0, 0},
+};
+
+static PyType_Spec HeapCTypeSubclass_spec = {
+    "_testcapi.HeapCTypeSubclass",
+    sizeof(HeapCTypeSubclassObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    HeapCTypeSubclass_slots
+};
+
+PyDoc_STRVAR(heapctypesubclasswithfinalizer__doc__,
+"Subclass of HeapCType with a finalizer that reassigns __class__.\n\n"
+"__class__ is set to plain HeapCTypeSubclass during finalization.\n"
+"__init__ sets the 'value' attribute to 10 and 'value2' to 20.");
+
+static int
+heapctypesubclasswithfinalizer_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyTypeObject *base = (PyTypeObject *)PyType_GetSlot(Py_TYPE(self), Py_tp_base);
+    initproc base_init = PyType_GetSlot(base, Py_tp_init);
+    base_init(self, args, kwargs);
+    return 0;
+}
+
+static void
+heapctypesubclasswithfinalizer_finalize(PyObject *self)
+{
+    PyObject *error_type, *error_value, *error_traceback, *m, *oldtype, *newtype;
+
+    /* Save the current exception, if any. */
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+    m = PyState_FindModule(&_testcapimodule);
+    if (m == NULL) {
+        goto cleanup_finalize;
+    }
+    oldtype = PyObject_GetAttrString(m, "HeapCTypeSubclassWithFinalizer");
+    newtype = PyObject_GetAttrString(m, "HeapCTypeSubclass");
+    if (oldtype == NULL || newtype == NULL) {
+        goto cleanup_finalize;
+    }
+
+    if (PyObject_SetAttrString(self, "__class__", newtype) < 0) {
+        goto cleanup_finalize;
+    }
+    if (PyObject_SetAttrString(
+        oldtype, "refcnt_in_del", PyLong_FromSsize_t(Py_REFCNT(oldtype))) < 0) {
+        goto cleanup_finalize;
+    }
+    if (PyObject_SetAttrString(
+        newtype, "refcnt_in_del", PyLong_FromSsize_t(Py_REFCNT(newtype))) < 0) {
+        goto cleanup_finalize;
+    }
+
+cleanup_finalize:
+    Py_XDECREF(oldtype);
+    Py_XDECREF(newtype);
+
+    /* Restore the saved exception. */
+    PyErr_Restore(error_type, error_value, error_traceback);
+}
+
+static PyType_Slot HeapCTypeSubclassWithFinalizer_slots[] = {
+    {Py_tp_init, heapctypesubclasswithfinalizer_init},
+    {Py_tp_members, heapctypesubclass_members},
+    {Py_tp_finalize, heapctypesubclasswithfinalizer_finalize},
+    {Py_tp_doc, heapctypesubclasswithfinalizer__doc__},
+    {0, 0},
+};
+
+static PyType_Spec HeapCTypeSubclassWithFinalizer_spec = {
+    "_testcapi.HeapCTypeSubclassWithFinalizer",
+    sizeof(HeapCTypeSubclassObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE,
+    HeapCTypeSubclassWithFinalizer_slots
+};
+
+static PyMethodDef meth_instance_methods[] = {
+    {"meth_varargs", meth_varargs, METH_VARARGS},
+    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS},
+    {"meth_o", meth_o, METH_O},
+    {"meth_noargs", meth_noargs, METH_NOARGS},
+    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL},
+    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS},
+    {NULL, NULL} /* sentinel */
+};
+
+
+static PyTypeObject MethInstance_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MethInstance",
+    sizeof(PyObject),
+    .tp_new = PyType_GenericNew,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_methods = meth_instance_methods,
+    .tp_doc = PyDoc_STR(
+        "Class with normal (instance) methods to test calling conventions"),
+};
+
+static PyMethodDef meth_class_methods[] = {
+    {"meth_varargs", meth_varargs, METH_VARARGS|METH_CLASS},
+    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS|METH_CLASS},
+    {"meth_o", meth_o, METH_O|METH_CLASS},
+    {"meth_noargs", meth_noargs, METH_NOARGS|METH_CLASS},
+    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL|METH_CLASS},
+    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS|METH_CLASS},
+    {NULL, NULL} /* sentinel */
+};
+
+
+static PyTypeObject MethClass_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MethClass",
+    sizeof(PyObject),
+    .tp_new = PyType_GenericNew,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_methods = meth_class_methods,
+    .tp_doc = PyDoc_STR(
+        "Class with class methods to test calling conventions"),
+};
+
+static PyMethodDef meth_static_methods[] = {
+    {"meth_varargs", meth_varargs, METH_VARARGS|METH_STATIC},
+    {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS|METH_STATIC},
+    {"meth_o", meth_o, METH_O|METH_STATIC},
+    {"meth_noargs", meth_noargs, METH_NOARGS|METH_STATIC},
+    {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL|METH_STATIC},
+    {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS|METH_STATIC},
+    {NULL, NULL} /* sentinel */
+};
+
+
+static PyTypeObject MethStatic_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MethStatic",
+    sizeof(PyObject),
+    .tp_new = PyType_GenericNew,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_methods = meth_static_methods,
+    .tp_doc = PyDoc_STR(
+        "Class with static methods to test calling conventions"),
+};
+
 
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
@@ -6172,6 +6506,21 @@ PyInit__testcapi(void)
     Py_INCREF(&Generic_Type);
     PyModule_AddObject(m, "Generic", (PyObject *)&Generic_Type);
 
+    if (PyType_Ready(&MethInstance_Type) < 0)
+        return NULL;
+    Py_INCREF(&MethInstance_Type);
+    PyModule_AddObject(m, "MethInstance", (PyObject *)&MethInstance_Type);
+
+    if (PyType_Ready(&MethClass_Type) < 0)
+        return NULL;
+    Py_INCREF(&MethClass_Type);
+    PyModule_AddObject(m, "MethClass", (PyObject *)&MethClass_Type);
+
+    if (PyType_Ready(&MethStatic_Type) < 0)
+        return NULL;
+    Py_INCREF(&MethStatic_Type);
+    PyModule_AddObject(m, "MethStatic", (PyObject *)&MethStatic_Type);
+
     PyRecursingInfinitelyError_Type.tp_base = (PyTypeObject *)PyExc_Exception;
     if (PyType_Ready(&PyRecursingInfinitelyError_Type) < 0) {
         return NULL;
@@ -6216,5 +6565,40 @@ PyInit__testcapi(void)
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
     PyModule_AddObject(m, "error", TestError);
+
+    PyObject *HeapGcCType = PyType_FromSpec(&HeapGcCType_spec);
+    if (HeapGcCType == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "HeapGcCType", HeapGcCType);
+
+    PyObject *HeapCType = PyType_FromSpec(&HeapCType_spec);
+    if (HeapCType == NULL) {
+        return NULL;
+    }
+    PyObject *subclass_bases = PyTuple_Pack(1, HeapCType);
+    if (subclass_bases == NULL) {
+        return NULL;
+    }
+    PyObject *HeapCTypeSubclass = PyType_FromSpecWithBases(&HeapCTypeSubclass_spec, subclass_bases);
+    if (HeapCTypeSubclass == NULL) {
+        return NULL;
+    }
+    Py_DECREF(subclass_bases);
+    PyModule_AddObject(m, "HeapCTypeSubclass", HeapCTypeSubclass);
+
+    PyObject *subclass_with_finalizer_bases = PyTuple_Pack(1, HeapCTypeSubclass);
+    if (subclass_with_finalizer_bases == NULL) {
+        return NULL;
+    }
+    PyObject *HeapCTypeSubclassWithFinalizer = PyType_FromSpecWithBases(
+        &HeapCTypeSubclassWithFinalizer_spec, subclass_with_finalizer_bases);
+    if (HeapCTypeSubclassWithFinalizer == NULL) {
+        return NULL;
+    }
+    Py_DECREF(subclass_with_finalizer_bases);
+    PyModule_AddObject(m, "HeapCTypeSubclassWithFinalizer", HeapCTypeSubclassWithFinalizer);
+
+    PyState_AddModule(m, &_testcapimodule);
     return m;
 }

@@ -1048,7 +1048,7 @@ calls these functions.
    Run the command described by *args*.  Wait for command to complete, then
    return the :attr:`~Popen.returncode` attribute.
 
-   Code needing to capture stdout or stderr should use :func:`run` instead:
+   Code needing to capture stdout or stderr should use :func:`run` instead::
 
        run(...).returncode
 
@@ -1076,7 +1076,7 @@ calls these functions.
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
 
-   Code needing to capture stdout or stderr should use :func:`run` instead:
+   Code needing to capture stdout or stderr should use :func:`run` instead::
 
        run(..., check=True)
 
@@ -1198,8 +1198,8 @@ becomes::
    p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
    output = p2.communicate()[0]
 
-The p1.stdout.close() call after starting the p2 is important in order for p1
-to receive a SIGPIPE if p2 exits before p1.
+The ``p1.stdout.close()`` call after starting the p2 is important in order for
+p1 to receive a SIGPIPE if p2 exits before p1.
 
 Alternatively, for trusted input, the shell's own pipeline support may still
 be used directly:

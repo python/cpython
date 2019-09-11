@@ -46,10 +46,9 @@ FILTER_DIR = True
 _safe_super = super
 
 def _is_async_obj(obj):
-    if getattr(obj, '__code__', None):
-        return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
-    else:
+    if _is_instance_mock(obj) and not isinstance(obj, AsyncMock):
         return False
+    return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
 
 
 def _is_async_func(func):
@@ -2466,6 +2465,12 @@ class _Call(tuple):
             return _Call(name=attr, from_kall=False)
         name = '%s.%s' % (self._mock_name, attr)
         return _Call(name=name, parent=self, from_kall=False)
+
+
+    def __getattribute__(self, attr):
+        if attr in tuple.__dict__:
+            raise AttributeError
+        return tuple.__getattribute__(self, attr)
 
 
     def count(self, /, *args, **kwargs):
