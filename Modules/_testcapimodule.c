@@ -6353,7 +6353,7 @@ static PyType_Spec HeapCTypeSubclassWithFinalizer_spec = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE,
     HeapCTypeSubclassWithFinalizer_slots
 };
-=======
+
 static PyMethodDef meth_instance_methods[] = {
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS},
