@@ -180,7 +180,7 @@ ArgumentParser objects
      abbreviation is unambiguous. (default: ``True``)
 
    * exit_on_error_ - Determines whether or not ArgumentParser exits with
-     error info when an error occur. (default: ``True``)
+     error info when an error occurs. (default: ``True``)
 
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
