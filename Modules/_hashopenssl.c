@@ -96,7 +96,7 @@ newEVPobject(void)
     return retval;
 }
 
-static void
+static int
 EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
 {
     unsigned int process;
@@ -108,11 +108,12 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
         if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
             _setException(PyExc_ValueError);
-            break;
+            return -1;
         }
         len -= process;
         cp += process;
     }
+    return 0;
 }
 
 /* Internal methods for a hash object */
@@ -243,6 +244,7 @@ static PyObject *
 EVP_update(EVPobject *self, PyObject *obj)
 /*[clinic end generated code: output=ec1d55ed2432e966 input=9b30ec848f015501]*/
 {
+    int result;
     Py_buffer view;
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
@@ -255,14 +257,17 @@ EVP_update(EVPobject *self, PyObject *obj)
     if (self->lock != NULL) {
         Py_BEGIN_ALLOW_THREADS
         PyThread_acquire_lock(self->lock, 1);
-        EVP_hash(self, view.buf, view.len);
+        result = EVP_hash(self, view.buf, view.len);
         PyThread_release_lock(self->lock);
         Py_END_ALLOW_THREADS
     } else {
-        EVP_hash(self, view.buf, view.len);
+        result = EVP_hash(self, view.buf, view.len);
     }
 
     PyBuffer_Release(&view);
+
+    if (result == -1)
+        return NULL;
     Py_RETURN_NONE;
 }
 
@@ -396,6 +401,7 @@ static PyObject *
 EVPnew(const EVP_MD *digest,
        const unsigned char *cp, Py_ssize_t len)
 {
+    int result = 0;
     EVPobject *self;
 
     if (!digest) {
@@ -415,10 +421,14 @@ EVPnew(const EVP_MD *digest,
     if (cp && len) {
         if (len >= HASHLIB_GIL_MINSIZE) {
             Py_BEGIN_ALLOW_THREADS
-            EVP_hash(self, cp, len);
+            result = EVP_hash(self, cp, len);
             Py_END_ALLOW_THREADS
         } else {
-            EVP_hash(self, cp, len);
+            result = EVP_hash(self, cp, len);
+        }
+        if (result == -1) {
+            Py_DECREF(self);
+            return NULL;
         }
     }
 
