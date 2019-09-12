@@ -2007,10 +2007,13 @@ Exiting methods
 
     import sys
 
+    class AbnormalError(Exception):
+        pass
+
     class ErrorCatchingArgumentParser(argparse.ArgumentParser):
-        def exit(self, status=0, message=None)
+        def exit(self, status=0, message=None):
             if status:
-                print(f'Exiting because of an error: {message}')
+                raise AbnormalError(f'Raising an abnormal error: {message}')
             sys.exit(status)
 
 .. method:: ArgumentParser.error(message)
