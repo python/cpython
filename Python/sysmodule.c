@@ -836,7 +836,7 @@ static PyTypeObject AsyncGenHooksType;
 PyDoc_STRVAR(asyncgen_hooks_doc,
 "asyncgen_hooks\n\
 \n\
-A struct sequence providing information about asynhronous\n\
+A named tuple providing information about asynchronous\n\
 generators hooks.  The attributes are read only.");
 
 static PyStructSequence_Field asyncgen_hooks_fields[] = {
@@ -943,7 +943,7 @@ static PyTypeObject Hash_InfoType;
 PyDoc_STRVAR(hash_info_doc,
 "hash_info\n\
 \n\
-A struct sequence providing parameters used for computing\n\
+A named tuple providing parameters used for computing\n\
 hashes. The attributes are read only.");
 
 static PyStructSequence_Field hash_info_fields[] = {
@@ -1967,17 +1967,17 @@ builtin_module_names -- tuple of module names built into this interpreter\n\
 copyright -- copyright notice pertaining to this interpreter\n\
 exec_prefix -- prefix used to find the machine-specific Python library\n\
 executable -- absolute path of the executable binary of the Python interpreter\n\
-float_info -- a struct sequence with information about the float implementation.\n\
+float_info -- a named tuple with information about the float implementation.\n\
 float_repr_style -- string indicating the style of repr() output for floats\n\
-hash_info -- a struct sequence with information about the hash algorithm.\n\
+hash_info -- a named tuple with information about the hash algorithm.\n\
 hexversion -- version information encoded as a single integer\n\
 implementation -- Python implementation information.\n\
-int_info -- a struct sequence with information about the int implementation.\n\
+int_info -- a named tuple with information about the int implementation.\n\
 maxsize -- the largest supported length of containers.\n\
 maxunicode -- the value of the largest Unicode code point\n\
 platform -- platform identifier\n\
 prefix -- prefix used to find the Python library\n\
-thread_info -- a struct sequence with information about the thread implementation.\n\
+thread_info -- a named tuple with information about the thread implementation.\n\
 version -- the version of this interpreter as a string\n\
 version_info -- version information as a named tuple\n\
 "
