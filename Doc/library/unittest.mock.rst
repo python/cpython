@@ -1572,6 +1572,11 @@ patch.dict
     :func:`patch.dict` can also be called with arbitrary keyword arguments to set
     values in the dictionary.
 
+    .. versionchanged:: 3.8
+
+        :func:`patch.dict` now returns the patched dictionary when used as a context
+        manager.
+
 :func:`patch.dict` can be used as a context manager, decorator or class
 decorator:
 
@@ -1596,11 +1601,6 @@ When used as a class decorator :func:`patch.dict` honours
 If you want to use a different prefix for your test, you can inform the
 patchers of the different prefix by setting ``patch.TEST_PREFIX``. For
 more details about how to change the value of see :ref:`test-prefix`.
-
-    .. versionchanged:: 3.8
-
-        :func:`patch.dict` now returns the patched dictionary when used as a context
-        manager.
 
 :func:`patch.dict` can be used to add members to a dictionary, or simply let a test
 change a dictionary, and ensure the dictionary is restored when the test
