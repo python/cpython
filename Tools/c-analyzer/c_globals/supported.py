@@ -257,7 +257,7 @@ PYOBJECT_RE = re.compile(r'''
         ^
         (
             # must start with "static "
-            static \w+
+            static \s+
             (
                 identifier
             )
@@ -265,12 +265,13 @@ PYOBJECT_RE = re.compile(r'''
         ) |
         (
             # may start with "static "
-            ( static \w+ )?
+            ( static \s+ )?
             (
+                .*
                 (
                     PyObject |
                     PyTypeObject |
-                    _? Py\w+Object |
+                    _? Py \w+ Object |
                     _PyArg_Parser |
                     _Py_Identifier |
                     traceback_t |
@@ -296,8 +297,6 @@ def _is_object(vartype):
     if 'PyDictKeysObject' in vartype:
         return False
     if PYOBJECT_RE.match(vartype):
-        return True
-    if re.match(r'.*\bPy\w*Object\b', vartype):
         return True
     if vartype.endswith((' _Py_FalseStruct', ' _Py_TrueStruct')):
         return True
