@@ -224,6 +224,13 @@ async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
                                   **kwds):
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8 "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning,
+                      stacklevel=2
+        )
+
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop,
                                                         _asyncio_internal=True)
@@ -239,6 +246,12 @@ async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
                                  limit=streams._DEFAULT_LIMIT, **kwds):
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8 "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning,
+                      stacklevel=2
+        )
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop,
                                                         _asyncio_internal=True)
