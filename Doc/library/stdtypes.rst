@@ -4213,7 +4213,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       >>> c = dict(zip(['one', 'two', 'three'], [1, 2, 3]))
       >>> d = dict([('two', 2), ('one', 1), ('three', 3)])
       >>> e = dict({'three': 3, 'one': 1, 'two': 2})
-      >>> a == b == c == d == e
+      >>> f = dict({'one': 1, 'three': 3}, two=2)
+      >>> a == b == c == d == e == f
       True
 
    Providing keyword arguments as in the first example only works for keys that
