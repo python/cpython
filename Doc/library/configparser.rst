@@ -135,9 +135,10 @@ involves the ``DEFAULT`` section which provides default values for all other
 sections [1]_.  Note also that keys in sections are
 case-insensitive and stored in lowercase [1]_.
 
-If it is necessary to read several configurations, with each one having more
-priority than the previous one, an instance of :class:`ConfigParser` can be
-used to override previously defined properties and retain existing ones.
+It is possible to read several configurations into a single
+:class:`ConfigParser`, where the most recently added configuration has the
+highest priority. Any conflicting keys are taken from the more recent
+configuration while the previously existing keys are retained.
 
 .. doctest::
 
