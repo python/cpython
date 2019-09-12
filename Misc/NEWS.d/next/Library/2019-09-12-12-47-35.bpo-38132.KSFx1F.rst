@@ -1,0 +1,3 @@
+The OpenSSL hashlib wrapper uses a simpler implementation. Several Macros
+and pointless caches are gone. The hash name now comes from OpenSSL's EVP.
+The algorithm name stays the same, except it is now always lower case.
