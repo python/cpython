@@ -179,8 +179,8 @@ ArgumentParser objects
    * allow_abbrev_ - Allows long options to be abbreviated if the
      abbreviation is unambiguous. (default: ``True``)
 
-   * exit_on_error_ - Determines whether or not argparser exits with error info
-     when an error occur. (default: ``True``)
+   * exit_on_error_ - Determines whether or not ArgumentParser exits with
+     error info when an error occur. (default: ``True``)
 
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
@@ -659,7 +659,7 @@ exit_on_error
 Normally, when you pass an invalid argument list to the :meth:`~ArgumentParser.parse_args`
 method of an :class:`ArgumentParser`, it will exit with error info.
 
-If the user would like catch errors manually, they can enable this feature by setting
+If the user would like catch errors manually, the feature can be enable by setting
 ``exit_on_error`` to ``False``::
 
    >>> parser = argparse.ArgumentParser(exit_on_error=False)
