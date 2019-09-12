@@ -1948,7 +1948,9 @@ class BasicCANTest(unittest.TestCase):
 
     def testBindAny(self):
         with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
-            s.bind(('', ))
+            address = ('', )
+            s.bind(address)
+            self.assertEqual(s.getsockname(), address)
 
     def testTooLongInterfaceName(self):
         # most systems limit IFNAMSIZ to 16, take 1024 to be sure
