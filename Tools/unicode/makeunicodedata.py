@@ -992,7 +992,7 @@ def from_row(row: List[str]) -> UcdRecord:
 # load a unicode-data file from disk
 
 class UnicodeData:
-    # table: Dict[int, UcdRecord]  # key is codepoint
+    # table: List[Optional[UcdRecord]]  # index is codepoint; None means unassigned
 
     def __init__(self, version, cjk_check=True):
         self.changed = []
