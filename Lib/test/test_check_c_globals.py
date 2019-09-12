@@ -9,7 +9,9 @@ with test.test_tools.imports_under_tool('c-analyzer'):
 class ActualChecks(unittest.TestCase):
 
     # XXX Also run the check in "make check".
-    @unittest.expectedFailure
+    #@unittest.expectedFailure
+    # Failing on one of the buildbots (see https://bugs.python.org/issue36876).
+    @unittest.skip('activate this once all the globals have been resolved')
     def test_check_c_globals(self):
         try:
             main('check', {})
