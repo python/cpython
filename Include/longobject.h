@@ -74,7 +74,7 @@ PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 #endif
 
 /* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
-   _PyBytes_DecodeEscapeRecode(), etc. */
+   _PyBytes_DecodeEscape(), etc. */
 #ifndef Py_LIMITED_API
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
 #endif
