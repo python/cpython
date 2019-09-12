@@ -134,12 +134,11 @@ Sequence Protocol
    ``PySequence_Fast*`` family of functions. If the object is not a sequence or
    iterable, raises :exc:`TypeError` with *m* as the message text.
 
-   The ``PySequence_Fast*`` functions are thus named because they can assume
-   *o* is a :c:type:`PyTupleObject` or a :c:type:`PyListObject`, and accesses
-   the type's data fields directly.
+   The ``PySequence_Fast*`` functions are thus named because they assume
+   *o* is a :c:type:`PyTupleObject` or a :c:type:`PyListObject`, and access
+   the data fields of *o* directly.
 
-   Returns *NULL* on failure.  If the object is not a sequence or iterable,
-   raises :exc:`TypeError` with *m* as the message text.
+   Returns *NULL* on failure.
 
    As a CPython implementation detail, if *o* is already a sequence or list, it
    will be returned.
