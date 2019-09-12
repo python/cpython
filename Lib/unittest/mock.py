@@ -2031,14 +2031,16 @@ class MagicMixin(Base):
         self._mock_set_magics()  # fix magic broken by upper level init
 
 
-    def _mock_set_magics(self):
+    def _mock_set_magics(self, async_magics=False):
+        orig_magics = _magics if not async_magics else _async_magics
+        these_magics = orig_magics
         these_magics = _magics
 
         if getattr(self, "_mock_methods", None) is not None:
-            these_magics = _magics.intersection(self._mock_methods)
+            these_magics = orig_magics.intersection(self._mock_methods)
 
             remove_magics = set()
-            remove_magics = _magics - these_magics
+            remove_magics = orig_magics - these_magics
 
             for entry in remove_magics:
                 if entry in type(self).__dict__:
@@ -2068,29 +2070,9 @@ class NonCallableMagicMock(MagicMixin, NonCallableMock):
 
 class AsyncMagicMixin(MagicMixin):
     def __init__(self, /, *args, **kw):
-        self._mock_set_async_magics()  # make magic work for kwargs in init
+        self._mock_set_magics(async_magics=True)  # make magic work for kwargs in init
         _safe_super(AsyncMagicMixin, self).__init__(*args, **kw)
-        self._mock_set_async_magics()  # fix magic broken by upper level init
-
-    def _mock_set_async_magics(self):
-        these_magics = _async_magics
-
-        if getattr(self, "_mock_methods", None) is not None:
-            these_magics = _async_magics.intersection(self._mock_methods)
-            remove_magics = _async_magics - these_magics
-
-            for entry in remove_magics:
-                if entry in type(self).__dict__:
-                    # remove unneeded magic methods
-                    delattr(self, entry)
-
-        # don't overwrite existing attributes if called a second time
-        these_magics = these_magics - set(type(self).__dict__)
-
-        _type = type(self)
-        for entry in these_magics:
-            setattr(_type, entry, MagicProxy(entry, self))
-
+        self._mock_set_magics(async_magics=True)  # fix magic broken by upper level init
 
 class MagicMock(AsyncMagicMixin, Mock):
     """
