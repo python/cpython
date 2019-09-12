@@ -35,7 +35,7 @@ PyInit_custom(void)
         return NULL;
 
     Py_INCREF(&CustomType);
-    if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType)) {
+    if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
         Py_DECREF(&CustomType);
         PY_DECREF(m);
         return NULL;

@@ -180,7 +180,7 @@ to the appropriate default values, including :attr:`ob_type` that we initially
 set to *NULL*. ::
 
    Py_INCREF(&CustomType);
-   if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType)) {
+   if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
        Py_DECREF(&CustomType);
        PY_DECREF(m);
        return NULL;
@@ -869,7 +869,7 @@ function::
            return NULL;
 
        Py_INCREF(&SubListType);
-       if (PyModule_AddObject(m, "SubList", (PyObject *) &SubListType)) {
+       if (PyModule_AddObject(m, "SubList", (PyObject *) &SubListType) < 0) {
            Py_DECREF(&SubListType);
            Py_DECREF(m);
            return NULL;
