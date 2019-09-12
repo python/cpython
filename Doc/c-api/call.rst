@@ -43,8 +43,8 @@ for making calls more efficient.
 .. warning::
 
    The vectorcall API is provisional and expected to become public in
-   Python 3.9, with a different name and, possibly, changed semantics.
-   If you use the function, plan for updating your code for Python 3.9.
+   Python 3.9, with a different names and, possibly, changed semantics.
+   If you use the it, plan for updating your code for Python 3.9.
 
 As rule of thumb, CPython will prefer the vectorcall for internal calls
 if the callable supports it. However, this is not a hard rule.
@@ -185,23 +185,27 @@ please see individual documentation for details.
 +------------------------------------------+------------------+--------------------+---------------+
 | :c:func:`PyObject_CallNoArgs`            | ``PyObject *``   | ---                | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
-| :c:func:`PyObject_CallOneArg`            | ``PyObject *``   | 1 object           | ---           |
+| :c:func:`_PyObject_CallOneArg`           | ``PyObject *``   | 1 object           | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
 | :c:func:`PyObject_CallObject`            | ``PyObject *``   | tuple/``NULL``     | ---           |
++------------------------------------------+------------------+--------------------+---------------+
+| :c:func:`PyObject_CallFunction`          | ``PyObject *``   | format             | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
 | :c:func:`PyObject_CallMethod`            | obj + ``char*``  | format             | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
 | :c:func:`PyObject_CallFunctionObjArgs`   | ``PyObject *``   | variadic           | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
-| :c:func:`PyObject_CallMethodObjArgs`     | obj + ``char*``  | variadic           | ---           |
+| :c:func:`PyObject_CallMethodObjArgs`     | obj + name       | variadic           | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
-| :c:func:`_PyObject_CallMethodOneArg`     | obj + ``char*``  | 1 object           | ---           |
+| :c:func:`_PyObject_CallMethodNoArgs`     | obj + name       | ---                | ---           |
++------------------------------------------+------------------+--------------------+---------------+
+| :c:func:`_PyObject_CallMethodOneArg`     | obj + name       | 1 object           | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
 | :c:func:`_PyObject_Vectorcall`           | ``PyObject *``   | vectorcall         | vectorcall    |
 +------------------------------------------+------------------+--------------------+---------------+
-| :c:func:`_PyObject_FastCallDict`         | ``PyObject *``   | array & size       | dict/``NULL`` |
+| :c:func:`_PyObject_FastCallDict`         | ``PyObject *``   | vectorcall         | dict/``NULL`` |
 +------------------------------------------+------------------+--------------------+---------------+
-| :c:func:`_PyObject_VectorcallMethod`     | arg + ``char*``  | vectorcall         | vectorcall    |
+| :c:func:`_PyObject_VectorcallMethod`     | arg + name       | vectorcall         | vectorcall    |
 +------------------------------------------+------------------+--------------------+---------------+
 
 
