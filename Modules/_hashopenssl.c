@@ -30,25 +30,12 @@
 
 typedef struct {
     PyObject_HEAD
-    PyObject            *name;  /* name of this hash algorithm */
     EVP_MD_CTX          *ctx;   /* OpenSSL message digest context */
     PyThread_type_lock   lock;  /* OpenSSL context lock */
 } EVPobject;
 
 
 static PyTypeObject EVPtype;
-
-
-#define DEFINE_CONSTS_FOR_NEW(Name)  \
-    static PyObject *CONST_ ## Name ## _name_obj = NULL; \
-    static EVP_MD_CTX *CONST_new_ ## Name ## _ctx_p = NULL;
-
-DEFINE_CONSTS_FOR_NEW(md5)
-DEFINE_CONSTS_FOR_NEW(sha1)
-DEFINE_CONSTS_FOR_NEW(sha224)
-DEFINE_CONSTS_FOR_NEW(sha256)
-DEFINE_CONSTS_FOR_NEW(sha384)
-DEFINE_CONSTS_FOR_NEW(sha512)
 
 #include "clinic/_hashopenssl.c.h"
 /*[clinic input]
@@ -90,16 +77,13 @@ _setException(PyObject *exc)
 /* LCOV_EXCL_STOP */
 
 static EVPobject *
-newEVPobject(PyObject *name)
+newEVPobject(void)
 {
     EVPobject *retval = (EVPobject *)PyObject_New(EVPobject, &EVPtype);
     if (retval == NULL) {
         return NULL;
     }
 
-    /* save the name for .name to return */
-    Py_INCREF(name);
-    retval->name = name;
     retval->lock = NULL;
 
     retval->ctx = EVP_MD_CTX_new();
@@ -139,7 +123,6 @@ EVP_dealloc(EVPobject *self)
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
     EVP_MD_CTX_free(self->ctx);
-    Py_XDECREF(self->name);
     PyObject_Del(self);
 }
 
@@ -167,7 +150,7 @@ EVP_copy_impl(EVPobject *self)
 {
     EVPobject *newobj;
 
-    if ( (newobj = newEVPobject(self->name))==NULL)
+    if ( (newobj = newEVPobject())==NULL)
         return NULL;
 
     if (!locked_EVP_MD_CTX_copy(newobj->ctx, self)) {
@@ -307,10 +290,20 @@ EVP_get_digest_size(EVPobject *self, void *closure)
     return PyLong_FromLong(size);
 }
 
-static PyMemberDef EVP_members[] = {
-    {"name", T_OBJECT, offsetof(EVPobject, name), READONLY, PyDoc_STR("algorithm name.")},
-    {NULL}  /* Sentinel */
-};
+static PyObject *
+EVP_get_name(EVPobject *self, void *closure)
+{
+    const char *name = EVP_MD_name(EVP_MD_CTX_md(self->ctx));
+    PyObject *name_obj, *name_lower;
+
+    name_obj = PyUnicode_FromString(name);
+    if (!name_obj) {
+        return NULL;
+    }
+    name_lower = PyObject_CallMethod(name_obj, "lower", NULL);
+    Py_DECREF(name_obj);
+    return name_lower;
+}
 
 static PyGetSetDef EVP_getseters[] = {
     {"digest_size",
@@ -321,6 +314,10 @@ static PyGetSetDef EVP_getseters[] = {
      (getter)EVP_get_block_size, NULL,
      NULL,
      NULL},
+    {"name",
+     (getter)EVP_get_name, NULL,
+     NULL,
+     PyDoc_STR("algorithm name.")},
     {NULL}  /* Sentinel */
 };
 
@@ -328,7 +325,14 @@ static PyGetSetDef EVP_getseters[] = {
 static PyObject *
 EVP_repr(EVPobject *self)
 {
-    return PyUnicode_FromFormat("<%U HASH object @ %p>", self->name, self);
+    PyObject *name_obj, *repr;
+    name_obj = EVP_get_name(self, NULL);
+    if (!name_obj) {
+        return NULL;
+    }
+    repr = PyUnicode_FromFormat("<%U HASH object @ %p>", name_obj, self);
+    Py_DECREF(name_obj);
+    return repr;
 }
 
 PyDoc_STRVAR(hashtype_doc,
@@ -379,7 +383,7 @@ static PyTypeObject EVPtype = {
     0,                  /*tp_iter*/
     0,                  /*tp_iternext*/
     EVP_methods,        /* tp_methods */
-    EVP_members,        /* tp_members */
+    NULL,        /* tp_members */
     EVP_getseters,      /* tp_getset */
     0,                  /* tp_base */
     0,                  /* tp_dict */
@@ -389,28 +393,23 @@ static PyTypeObject EVPtype = {
 };
 
 static PyObject *
-EVPnew(PyObject *name_obj,
-       const EVP_MD *digest, const EVP_MD_CTX *initial_ctx,
+EVPnew(const EVP_MD *digest,
        const unsigned char *cp, Py_ssize_t len)
 {
     EVPobject *self;
 
-    if (!digest && !initial_ctx) {
+    if (!digest) {
         PyErr_SetString(PyExc_ValueError, "unsupported hash type");
         return NULL;
     }
 
-    if ((self = newEVPobject(name_obj)) == NULL)
+    if ((self = newEVPobject()) == NULL)
         return NULL;
 
-    if (initial_ctx) {
-        EVP_MD_CTX_copy(self->ctx, initial_ctx);
-    } else {
-        if (!EVP_DigestInit(self->ctx, digest)) {
-            _setException(PyExc_ValueError);
-            Py_DECREF(self);
-            return NULL;
-        }
+    if (!EVP_DigestInit(self->ctx, digest)) {
+        _setException(PyExc_ValueError);
+        Py_DECREF(self);
+        return NULL;
     }
 
     if (cp && len) {
@@ -462,12 +461,131 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj)
 
     digest = EVP_get_digestbyname(name);
 
-    ret_obj = EVPnew(name_obj, digest, NULL, (unsigned char*)view.buf, view.len);
+    ret_obj = EVPnew(digest, (unsigned char*)view.buf, view.len);
 
     if (data_obj)
         PyBuffer_Release(&view);
     return ret_obj;
 }
+
+static PyObject*
+EVP_fast_new(PyObject *module, PyObject *data_obj, const EVP_MD *digest)
+{
+    Py_buffer view = { 0 };
+    PyObject *ret_obj;
+
+    if (data_obj)
+        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
+
+    ret_obj = EVPnew(digest, (unsigned char*)view.buf, view.len);
+
+    if (data_obj)
+        PyBuffer_Release(&view);
+
+    return ret_obj;
+}
+
+/*[clinic input]
+_hashlib.openssl_md5
+
+    string as data_obj: object(py_default="b''") = NULL
+
+Returns a md5 hash object; optionally initialized with a string
+
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_openssl_md5_impl(PyObject *module, PyObject *data_obj)
+/*[clinic end generated code: output=6caae75b73e22c3f input=52010d3869e1b1a7]*/
+{
+    return EVP_fast_new(module, data_obj, EVP_md5());
+}
+
+
+/*[clinic input]
+_hashlib.openssl_sha1
+
+    string as data_obj: object(py_default="b''") = NULL
+
+Returns a sha1 hash object; optionally initialized with a string
+
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_openssl_sha1_impl(PyObject *module, PyObject *data_obj)
+/*[clinic end generated code: output=07606d8f75153e61 input=16807d30e4aa8ae9]*/
+{
+    return EVP_fast_new(module, data_obj, EVP_sha1());
+}
+
+
+/*[clinic input]
+_hashlib.openssl_sha224
+
+    string as data_obj: object(py_default="b''") = NULL
+
+Returns a sha224 hash object; optionally initialized with a string
+
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_openssl_sha224_impl(PyObject *module, PyObject *data_obj)
+/*[clinic end generated code: output=55e848761bcef0c9 input=5dbc2f1d84eb459b]*/
+{
+    return EVP_fast_new(module, data_obj, EVP_sha224());
+}
+
+
+/*[clinic input]
+_hashlib.openssl_sha256
+
+    string as data_obj: object(py_default="b''") = NULL
+
+Returns a sha256 hash object; optionally initialized with a string
+
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_openssl_sha256_impl(PyObject *module, PyObject *data_obj)
+/*[clinic end generated code: output=05851d7cce34ac65 input=a68a5d21cda5a80f]*/
+{
+    return EVP_fast_new(module, data_obj, EVP_sha256());
+}
+
+
+/*[clinic input]
+_hashlib.openssl_sha384
+
+    string as data_obj: object(py_default="b''") = NULL
+
+Returns a sha384 hash object; optionally initialized with a string
+
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_openssl_sha384_impl(PyObject *module, PyObject *data_obj)
+/*[clinic end generated code: output=5101a4704a932c2f input=6bdfa006622b64ea]*/
+{
+    return EVP_fast_new(module, data_obj, EVP_sha384());
+}
+
+
+/*[clinic input]
+_hashlib.openssl_sha512
+
+    string as data_obj: object(py_default="b''") = NULL
+
+Returns a sha512 hash object; optionally initialized with a string
+
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_openssl_sha512_impl(PyObject *module, PyObject *data_obj)
+/*[clinic end generated code: output=20c8e63ee560a5cb input=ece50182ad4b76a6]*/
+{
+    return EVP_fast_new(module, data_obj, EVP_sha512());
+}
+
 
 /*[clinic input]
 _hashlib.pbkdf2_hmac as pbkdf2_hmac
@@ -800,76 +918,6 @@ generate_hash_name_list(void)
     return state.set;
 }
 
-
-/*
- *  This macro generates constructor function definitions for specific
- *  hash algorithms.  These constructors are much faster than calling
- *  the generic one passing it a python string and are noticeably
- *  faster than calling a python new() wrapper.  That is important for
- *  code that wants to make hashes of a bunch of small strings.
- *  The first call will lazy-initialize, which reports an exception
- *  if initialization fails.
- */
-#define GEN_CONSTRUCTOR(NAME)  \
-    static PyObject * \
-    EVP_new_ ## NAME (PyObject *self, PyObject *const *args, Py_ssize_t nargs) \
-    { \
-        PyObject *data_obj = NULL; \
-        Py_buffer view = { 0 }; \
-        PyObject *ret_obj; \
-     \
-        if (!_PyArg_ParseStack(args, nargs, "|O:" #NAME , &data_obj)) { \
-            return NULL; \
-        } \
-     \
-        if (CONST_new_ ## NAME ## _ctx_p == NULL) { \
-            EVP_MD_CTX *ctx_p = EVP_MD_CTX_new(); \
-            if (!EVP_get_digestbyname(#NAME) || \
-                !EVP_DigestInit(ctx_p, EVP_get_digestbyname(#NAME))) { \
-                _setException(PyExc_ValueError); \
-                EVP_MD_CTX_free(ctx_p); \
-                return NULL; \
-            } \
-            CONST_new_ ## NAME ## _ctx_p = ctx_p; \
-        } \
-     \
-        if (data_obj) \
-            GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view); \
-     \
-        ret_obj = EVPnew( \
-                    CONST_ ## NAME ## _name_obj, \
-                    NULL, \
-                    CONST_new_ ## NAME ## _ctx_p, \
-                    (unsigned char*)view.buf, \
-                    view.len); \
-     \
-        if (data_obj) \
-            PyBuffer_Release(&view); \
-        return ret_obj; \
-    }
-
-/* a PyMethodDef structure for the constructor */
-#define CONSTRUCTOR_METH_DEF(NAME)  \
-    {"openssl_" #NAME, (PyCFunction)(void(*)(void))EVP_new_ ## NAME, METH_FASTCALL, \
-        PyDoc_STR("Returns a " #NAME \
-                  " hash object; optionally initialized with a string") \
-    }
-
-/* used in the init function to setup a constructor: initialize OpenSSL
-   constructor constants if they haven't been initialized already.  */
-#define INIT_CONSTRUCTOR_CONSTANTS(NAME)  do { \
-    if (CONST_ ## NAME ## _name_obj == NULL) { \
-        CONST_ ## NAME ## _name_obj = PyUnicode_FromString(#NAME); \
-    } \
-} while (0);
-
-GEN_CONSTRUCTOR(md5)
-GEN_CONSTRUCTOR(sha1)
-GEN_CONSTRUCTOR(sha224)
-GEN_CONSTRUCTOR(sha256)
-GEN_CONSTRUCTOR(sha384)
-GEN_CONSTRUCTOR(sha512)
-
 /* List of functions exported by this module */
 
 static struct PyMethodDef EVP_functions[] = {
@@ -877,12 +925,12 @@ static struct PyMethodDef EVP_functions[] = {
     PBKDF2_HMAC_METHODDEF
     _HASHLIB_SCRYPT_METHODDEF
     _HASHLIB_HMAC_DIGEST_METHODDEF
-    CONSTRUCTOR_METH_DEF(md5),
-    CONSTRUCTOR_METH_DEF(sha1),
-    CONSTRUCTOR_METH_DEF(sha224),
-    CONSTRUCTOR_METH_DEF(sha256),
-    CONSTRUCTOR_METH_DEF(sha384),
-    CONSTRUCTOR_METH_DEF(sha512),
+    _HASHLIB_OPENSSL_MD5_METHODDEF
+    _HASHLIB_OPENSSL_SHA1_METHODDEF
+    _HASHLIB_OPENSSL_SHA224_METHODDEF
+    _HASHLIB_OPENSSL_SHA256_METHODDEF
+    _HASHLIB_OPENSSL_SHA384_METHODDEF
+    _HASHLIB_OPENSSL_SHA512_METHODDEF
     {NULL,      NULL}            /* Sentinel */
 };
 
@@ -939,12 +987,5 @@ PyInit__hashlib(void)
     Py_INCREF((PyObject *)&EVPtype);
     PyModule_AddObject(m, "HASH", (PyObject *)&EVPtype);
 
-    /* these constants are used by the convenience constructors */
-    INIT_CONSTRUCTOR_CONSTANTS(md5);
-    INIT_CONSTRUCTOR_CONSTANTS(sha1);
-    INIT_CONSTRUCTOR_CONSTANTS(sha224);
-    INIT_CONSTRUCTOR_CONSTANTS(sha256);
-    INIT_CONSTRUCTOR_CONSTANTS(sha384);
-    INIT_CONSTRUCTOR_CONSTANTS(sha512);
     return m;
 }

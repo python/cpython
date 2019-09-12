@@ -194,6 +194,9 @@ class HashLibTestCase(unittest.TestCase):
         self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
         self.assertRaises(TypeError, hashlib.new, 1)
 
+    def test_new_upper_to_lower(self):
+        self.assertEqual(hashlib.new("SHA256").name, "sha256")
+
     def test_get_builtin_constructor(self):
         get_builtin_constructor = getattr(hashlib,
                                           '__get_builtin_constructor')
