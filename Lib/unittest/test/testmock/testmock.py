@@ -1430,8 +1430,20 @@ class MockTest(unittest.TestCase):
         def f(): pass
 
         mock = Mock(spec=f)
-        with self.assertRaises(AssertionError) as cm:
-            mock.assert_has_calls([call('wrong')])
+
+        with self.assertRaisesRegex(
+                AssertionError,
+                re.escape('Calls not found.\nExpected:')) as cm:
+            mock.assert_has_calls([call()])
+        self.assertIsNone(cm.exception.__cause__)
+
+        with self.assertRaisesRegex(
+                AssertionError,
+                re.escape('Error processing expected calls.\n'
+                          "Errors: [None, TypeError('too many positional "
+                          "arguments')]\n"
+                          'Expected:')) as cm:
+            mock.assert_has_calls([call(), call('wrong')])
         self.assertIsInstance(cm.exception.__cause__, TypeError)
 
     def test_assert_any_call(self):
