@@ -990,19 +990,11 @@ def _allow_reckless_class_cheks():
 
 
 _PROTO_WHITELIST = {
-    'Callable': 'collections.abc',
-    'Awaitable': 'collections.abc',
-    'Iterable': 'collections.abc',
-    'Iterator': 'collections.abc',
-    'AsyncIterable': 'collections.abc',
-    'AsyncIterator': 'collections.abc',
-    'Hashable': 'collections.abc',
-    'Sized': 'collections.abc',
-    'Container': 'collections.abc',
-    'Collection': 'collections.abc',
-    'Reversible': 'collections.abc',
-    'AbstractContextManager': 'contextlib',
-    'AbstractAsyncContextManager': 'contextlib',
+    'collections.abc': [
+        'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
+        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
+    ],
+    'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
 }
 
 
@@ -1116,8 +1108,8 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # ... otherwise check consistency of bases, and prohibit instantiation.
         for base in cls.__bases__:
             if not (base in (object, Generic) or
-                    base.__name__ in _PROTO_WHITELIST and
-                    base.__module__ == _PROTO_WHITELIST[base.__name__] or
+                    base.__module__ in _PROTO_WHITELIST and
+                    base.__name__ in _PROTO_WHITELIST[base.__module__] or
                     issubclass(base, Generic) and base._is_protocol):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)
