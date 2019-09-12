@@ -1254,7 +1254,7 @@ no meaning outside Python. These are listed in the tables below based on the
 expected input and output types (note that while text encodings are the most
 common use case for codecs, the underlying codec infrastructure supports
 arbitrary data transforms rather than just text encodings). For asymmetric
-codecs, the stated purpose describes the encoding direction.
+codecs, the stated meaning describes the encoding direction.
 
 Text Encodings
 ^^^^^^^^^^^^^^
