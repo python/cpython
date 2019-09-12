@@ -1562,6 +1562,23 @@ class _BasePathTest(object):
                   }
         self.assertEqual(given, {p / x for x in expect})
 
+    def test_glob_many_open_files(self):
+        depth = 30
+        P = self.cls
+        base = P(BASE) / 'deep'
+        p = P(base, *(['d']*depth))
+        p.mkdir(parents=True)
+        pattern = '/'.join(['*'] * depth)
+        iters = [base.glob(pattern) for j in range(100)]
+        for it in iters:
+            self.assertEqual(next(it), p)
+        iters = [base.rglob('d') for j in range(100)]
+        p = base
+        for i in range(depth):
+            p = p / 'd'
+            for it in iters:
+                self.assertEqual(next(it), p)
+
     def test_glob_dotdot(self):
         # ".." is not special in globs.
         P = self.cls
