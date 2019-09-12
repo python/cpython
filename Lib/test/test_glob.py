@@ -39,7 +39,10 @@ class GlobTests(unittest.TestCase):
             os.symlink(self.norm('broken'), self.norm('sym1'))
             os.symlink('broken', self.norm('sym2'))
             os.symlink(os.path.join('a', 'bcd'), self.norm('sym3'))
-        self.dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+        if glob.glob in os.supports_dir_fd:
+            self.dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+        else:
+            self.dir_fd = None
 
     def tearDown(self):
         if self.dir_fd is not None:

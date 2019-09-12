@@ -226,3 +226,7 @@ def escape(pathname):
     else:
         pathname = magic_check.sub(r'[\1]', pathname)
     return drive + pathname
+
+
+if {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd:
+    os.supports_dir_fd.update((glob, iglob))
