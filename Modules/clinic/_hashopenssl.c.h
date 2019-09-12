@@ -109,8 +109,6 @@ exit:
     return return_value;
 }
 
-#if ((OPENSSL_VERSION_NUMBER >= 0x10000000 && !defined(OPENSSL_NO_HMAC) && !defined(OPENSSL_NO_SHA)))
-
 PyDoc_STRVAR(pbkdf2_hmac__doc__,
 "pbkdf2_hmac($module, /, hash_name, password, salt, iterations,\n"
 "            dklen=None)\n"
@@ -199,8 +197,6 @@ exit:
 
     return return_value;
 }
-
-#endif /* ((OPENSSL_VERSION_NUMBER >= 0x10000000 && !defined(OPENSSL_NO_HMAC) && !defined(OPENSSL_NO_SHA))) */
 
 #if (OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER))
 
@@ -402,11 +398,7 @@ exit:
     return return_value;
 }
 
-#ifndef PBKDF2_HMAC_METHODDEF
-    #define PBKDF2_HMAC_METHODDEF
-#endif /* !defined(PBKDF2_HMAC_METHODDEF) */
-
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=565dcbe3452e71f4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cfe686cb2fa042e1 input=a9049054013a1b77]*/
