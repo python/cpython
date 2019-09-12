@@ -936,12 +936,12 @@ class NonCallableMock(Base):
         if not any_order:
             if expected not in all_calls:
                 if cause is None:
-                  problem = 'Calls not found.'
+                    problem = 'Calls not found.'
                 else:
-                  problem = ('Error processing expected calls.\n'
-                             'Errors: {}').format(
-                                 [e if isinstance(e, Exception) else None
-                                  for e in expected])
+                    problem = ('Error processing expected calls.\n'
+                               'Errors: {}').format(
+                                   [e if isinstance(e, Exception) else None
+                                    for e in expected])
                 raise AssertionError(
                     f'{problem}\n'
                     f'Expected: {_CallList(calls)}\n'
@@ -2227,12 +2227,12 @@ class AsyncMockMixin(Base):
         if not any_order:
             if expected not in all_awaits:
                 if cause is None:
-                  problem = 'Awaits not found.'
+                    problem = 'Awaits not found.'
                 else:
-                  problem = ('Error processing expected awaits.\n'
-                             'Errors: {}').format(
-                                 [e if isinstance(e, Exception) else None
-                                  for e in expected])
+                    problem = ('Error processing expected awaits.\n'
+                               'Errors: {}').format(
+                                   [e if isinstance(e, Exception) else None
+                                    for e in expected])
                 raise AssertionError(
                     f'{problem}\n'
                     f'Expected: {_CallList(calls)}\n'
