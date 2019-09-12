@@ -520,7 +520,7 @@ functions.
    will be passed verbatim. (POSIX only)
 
    .. availability:: POSIX
-   .. versionadded:: 3.8
+   .. versionadded:: 3.9
 
    If *extra_groups* is not ``None``, the setgroups() system call will be
    made in the child process prior to the execution of the subprocess.
@@ -529,7 +529,7 @@ functions.
    Integer values will be passed verbatim. (POSIX only)
 
    .. availability:: POSIX
-   .. versionadded:: 3.8
+   .. versionadded:: 3.9
 
    If *user* is not ``None``, the setreuid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
@@ -538,7 +538,7 @@ functions.
    be passed verbatim. (POSIX only)
 
    .. availability:: POSIX
-   .. versionadded:: 3.8
+   .. versionadded:: 3.9
 
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
