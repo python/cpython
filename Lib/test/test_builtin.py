@@ -161,9 +161,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, __import__, '')
         self.assertRaises(TypeError, __import__, 'sys', name='sys')
         # Relative import outside of a package with no __package__ or __spec__ (bpo-37409).
-        self.assertRaises(ImportError, __import__, '',
-                          {'__package__': None, '__spec__': None, '__name__': '__main__'},
-                          locals={}, fromlist=('foo',), level=1)
+        with self.assertWarns(ImportWarning):
+            self.assertRaises(ImportError, __import__, '',
+                              {'__package__': None, '__spec__': None, '__name__': '__main__'},
+                              locals={}, fromlist=('foo',), level=1)
         # embedded null character
         self.assertRaises(ModuleNotFoundError, __import__, 'string\x00')
 
