@@ -573,6 +573,10 @@ def as_completed(fs, *, loop=None, timeout=None):
     """
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
         raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
+
+    from .queues import Queue  # Import here to avoid circular import problem.
+    done = Queue(loop=loop)
+
     if loop is None:
         loop = events.get_event_loop()
     else:
@@ -580,8 +584,6 @@ def as_completed(fs, *, loop=None, timeout=None):
                       "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
     todo = {ensure_future(f, loop=loop) for f in set(fs)}
-    from .queues import Queue  # Import here to avoid circular import problem.
-    done = Queue(loop=loop)
     timeout_handle = None
 
     def _on_timeout():
@@ -653,10 +655,6 @@ def ensure_future(coro_or_future, *, loop=None):
 
     If the argument is a Future, it is returned directly.
     """
-    if loop is not None:
-        warnings.warn("The loop argument is deprecated since Python 3.8, "
-                      "and scheduled for removal in Python 3.10.",
-                      DeprecationWarning, stacklevel=2)
     if coroutines.iscoroutine(coro_or_future):
         if loop is None:
             loop = events.get_event_loop()
