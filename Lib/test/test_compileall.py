@@ -563,6 +563,20 @@ class CommandLineTestsBase:
         self.assertCompiled(spamfn)
         self.assertCompiled(eggfn)
 
+    @support.skip_unless_symlink
+    def test_symlink_loop(self):
+        # Currently, compileall ignores symlinks to directories.
+        # If that limitation is ever lifted, it should protect against
+        # recursion in symlink loops.
+        pkg = os.path.join(self.pkgdir, 'spam')
+        script_helper.make_pkg(pkg)
+        os.symlink('.', os.path.join(pkg, 'evil'))
+        os.symlink('.', os.path.join(pkg, 'evil2'))
+        self.assertRunOK('-q', self.pkgdir)
+        self.assertCompiled(os.path.join(
+            self.pkgdir, 'spam', 'evil', 'evil2', '__init__.py'
+        ))
+
     def test_quiet(self):
         noisy = self.assertRunOK(self.pkgdir)
         quiet = self.assertRunOK('-q', self.pkgdir)
