@@ -632,3 +632,11 @@ class AsyncMockAssert(unittest.TestCase):
         asyncio.run(self._runnable_test())
         with self.assertRaises(AssertionError):
             self.mock.assert_not_awaited()
+
+    def test_assert_has_awaits_not_matching_spec_error(self):
+        async def f(): pass
+
+        mock = AsyncMock(spec=f)
+        with self.assertRaises(AssertionError) as cm:
+            mock.assert_has_awaits([call('wrong')])
+        self.assertIsInstance(cm.exception.__cause__, TypeError)

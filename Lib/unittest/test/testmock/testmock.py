@@ -1426,6 +1426,13 @@ class MockTest(unittest.TestCase):
             mock.assert_has_calls(calls[:-1])
         mock.assert_has_calls(calls[:-1], any_order=True)
 
+    def test_assert_has_calls_not_matching_spec_error(self):
+        def f(): pass
+
+        mock = Mock(spec=f)
+        with self.assertRaises(AssertionError) as cm:
+            mock.assert_has_calls([call('wrong')])
+        self.assertIsInstance(cm.exception.__cause__, TypeError)
 
     def test_assert_any_call(self):
         mock = Mock()
